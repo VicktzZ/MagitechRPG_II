@@ -1,0 +1,76 @@
+@font-face {
+    font-family: DarkFuture;
+    src: url(Dark\ Future\ Italic.ttf);
+}
+
+@font-face {
+    font-family: KarmaFut;
+    src: url(KARMAFUT.ttf);
+}
+
+@font-face {
+    font-family: FM;
+    src: url(FutureMillennium.ttf);
+}
+
+@font-face {
+    font-family: Robus;
+    src: url(Robus\ Demo.otf);
+}
+
+@font-face {
+    font-family: WBZ;
+    src: url(TheWildBreathOfZelda-15Lv.ttf);
+}
+
+@font-face {
+    font-family: Ysgarth;
+    src: url(Ysgarth-ZVWjq.ttf);
+}
+
+@font-face {
+    font-family: Appears;
+    src: url(AGoblinAppears-o2aV.ttf);
+}
+
+@font-face {
+    font-family: Poppins;
+    src: url(Poppins-Medium.ttf);
+}
+
+@font-face {
+    font-family: Inter;
+    src: url(Inter-Regular.ttf);
+}
+
+/* RPG Assets */
+
+@font-face {
+    font-family: D4;
+    src: url(rpg/D4.ttf);
+}
+
+@font-face {
+    font-family: D6;
+    src: url(rpg/D6.ttf);
+}
+
+@font-face {
+    font-family: D8;
+    src: url(rpg/D8.ttf);
+}
+
+@font-face {
+    font-family: D10;
+    src: url(rpg/D10.ttf);
+}
+
+@font-face {
+    font-family: D12;
+    src: url(rpg/D12.ttf);
+}
+
+@font-face {
+    font-family: D20;
+    src: url(rpg/D20.ttf);
+}
