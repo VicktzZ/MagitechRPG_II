@@ -153,13 +153,15 @@ export const fichaModel: Partial<Ficha> = {
     points: {
         attributes: 9,
         expertises: 0,
+        diligence: 1,
+        perks: 0,
         skills: 0,
         magics: 0  
     },
 
     attributes: {
         lp: 0,
-        ap: 0,
+        ap: 5,
         car: 0,
         vig: 0,
         des: 0,

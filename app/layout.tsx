@@ -23,6 +23,8 @@ export default function RootLayout({
                 padding: 0,
                 overflowX: 'hidden',
                 backgroundColor: '#101621',
+                WebkitBoxSizing: 'border-box',
+                MozBoxSizing: 'border-box',
                 color: '#f4f4f4',
                 fontFamily: 'Inter'
             }}>

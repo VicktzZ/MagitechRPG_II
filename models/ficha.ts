@@ -167,6 +167,16 @@ const fichaSchema = new Schema({
             required: [ true, 'Attributes is required!' ],
             default: 9
         },
+        diligence: {
+            type: Number,
+            required: [ true, 'Diligence is required!' ],
+            default: 1
+        },
+        perks: {
+            type: Number,
+            required: [ true, 'Perks is required!' ],
+            default: 0
+        },
         expertises: {
             type: Number,
             required: [ true, 'Expertises is required!' ],

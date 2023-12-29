@@ -23,6 +23,8 @@ export interface Ficha {
     points: {
         attributes: number
         expertises: number
+        diligence: number
+        perks: number
         skills: number
         magics: number
     }

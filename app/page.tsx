@@ -1,7 +1,7 @@
 'use client';
 
 import { Footer, LandingPageHeader } from '@layout';
-import { Avatar, Box, Button, Card, Container, Typography } from '@mui/material';
+import { Avatar, Box, Button, Card, Container, Typography, useMediaQuery } from '@mui/material';
 import { type ReactElement } from 'react';
 import { Animate, AnimateOnScroll, Parallax } from '@components/misc';
 import { intro, about, landingPageGrimoire, landingPageSynopse, BLOB_API_URL } from '@constants';
@@ -15,6 +15,7 @@ import Image from 'next/image';
 
 export default function LandingPage(): ReactElement {
     const theme = useTheme()
+    const matches = useMediaQuery(theme.breakpoints.down('md'))
 
     return (
         <>
@@ -24,33 +25,39 @@ export default function LandingPage(): ReactElement {
                     <Box sx={{
                         display: 'flex',
                         alignItems: 'center',
-                        width: '100%',
+                        width: !matches ? '100%' : '50%',
                         height: '90vh'
                     }}>
                         <Box  
+                            display='flex'
                             p='5rem'
                             sx={{ userSelect: 'none' }}
                         >
                             <Animate isVisible={true} animationIn='fadeInDown' animationInDelay={500} animationInDuration={1500}>
                                 <Box 
                                     display='flex'
+                                    flexDirection={!matches ? 'row' : 'column'}
                                     alignItems='center'
                                     gap={5}
                                 >
-                                    <Image 
-                                        src={logo} 
-                                        alt="Magitech Logo"
-                                        height={150}
-                                    /> 
-                                    <Typography 
-                                        fontSize='10rem' 
+                                    {!matches && (
+                                        <Image 
+                                            src={logo} 
+                                            alt="Magitech Logo"
+                                            height={150}
+                                        /> 
+                                    )}
+                                    <Typography
+                                        fontSize={!matches ? '10rem' : '6.5rem'} 
                                         fontFamily='WBZ'
+                                        textAlign={!matches ? 'initial' : 'center'}
                                     >
                                         Magitech II
                                     </Typography>
                                 </Box>
                                 <Typography 
-                                    width='65%'
+                                    width={!matches ? '65%' : '100%'}
+                                    mt={!matches ? 0 : 5}
                                     color='#eee' 
                                     fontSize='1.5rem' 
                                     fontFamily='Inter'
@@ -85,10 +92,11 @@ export default function LandingPage(): ReactElement {
                         <Typography variant='h3' fontFamily='WBZ' textAlign='center' p={5} width='100%'>
                             Sobre
                         </Typography>
-                        <AnimateOnScroll animateOnce animation='fadeInDown'>
+                        <AnimateOnScroll animateOnce animation={!matches ? 'fadeInDown' : 'fadeInLeft'}>
                             <Box 
                                 display='flex'
                                 justifyContent='center'
+                                flexDirection={!matches ? 'row' : 'column'}
                                 alignItems='center'
                                 width='100%'
                                 gap={4}
@@ -100,7 +108,7 @@ export default function LandingPage(): ReactElement {
                                         display: 'flex',
                                         flexDirection: 'column',
                                         bgcolor: 'background.paper2',
-                                        width: '33%',
+                                        width: !matches ? '33%' : '100%',
                                         borderRadius: 4,
                                         p: 3,
                                         gap: 2
@@ -122,7 +130,7 @@ export default function LandingPage(): ReactElement {
                                         display: 'flex',
                                         flexDirection: 'column',
                                         bgcolor: 'background.paper2',
-                                        width: '33%',
+                                        width: !matches ? '33%' : '100%',
                                         borderRadius: 4,
                                         p: 3,
                                         gap: 2
@@ -145,7 +153,7 @@ export default function LandingPage(): ReactElement {
                                         display: 'flex',
                                         flexDirection: 'column',
                                         bgcolor: 'background.paper2',
-                                        width: '33%',
+                                        width: !matches ? '33%' : '100%',
                                         borderRadius: 4,
                                         p: 3,
                                         gap: 2
@@ -220,14 +228,15 @@ export default function LandingPage(): ReactElement {
                                 display='flex'
                                 alignItems='center'
                                 justifyContent='center'
+                                flexDirection={!matches ? 'row' : 'column'}
                                 width='100%' 
                                 border={`1px solid ${theme.palette.primary.light}`}
                                 borderRadius={2}
-                                p={10}
+                                p={!matches ? 10 : 3}
                                 gap={5}
                             >
                                 <Box
-                                    width='50%'
+                                    width={!matches ? '50%' : '100%'}
                                     sx={{
                                         display: 'flex',
                                         justifyContent: 'center'
@@ -247,7 +256,7 @@ export default function LandingPage(): ReactElement {
                                         }}
                                         style={{
                                             height: '100%',
-                                            width: '50%',
+                                            width: !matches ? '50%' : '100%',
                                             boxShadow: theme.shadows[10],
                                             cursor: 'pointer',
                                             transition: 'ease-in-out .3s'
@@ -255,7 +264,7 @@ export default function LandingPage(): ReactElement {
                                         
                                     />
                                 </Box>
-                                <Box display='flex' gap={1} height='100%' width='50%'>
+                                <Box display='flex' gap={1} height='100%' width={!matches ? '50%' : '100%'}>
                                     <Typography position='relative' bottom='1.5rem' fontSize='4rem' fontFamily='WBZ'>E</Typography>
                                     <Box display='flex' gap={5} flexDirection='column' justifyContent='space-between'>
                                         <Typography>{landingPageSynopse}</Typography>
@@ -285,13 +294,18 @@ export default function LandingPage(): ReactElement {
                                 display='flex'
                                 alignItems='center'
                                 justifyContent='center'
+                                flexDirection={!matches ? 'row' : 'column-reverse'}
                                 width='100%' 
                                 border={`1px solid ${theme.palette.primary.light}`}
                                 borderRadius={2}
-                                p={10}
+                                p={!matches ? 10 : 3}
                                 gap={5}
                             >
-                                <Box display='flex' gap={1} height='100%' width='50%'>
+                                <Box 
+                                    display='flex' gap={1} 
+                                    height='100%'
+                                    width={!matches ? '50%' : '100%'}
+                                >
                                     <Typography position='relative' bottom='1.5rem' fontSize='4rem' fontFamily='WBZ'>M</Typography>
                                     <Box display='flex' gap={5} flexDirection='column' justifyContent='space-between'>
                                         <Typography>{landingPageGrimoire}</Typography>
@@ -308,7 +322,7 @@ export default function LandingPage(): ReactElement {
                                     </Box>
                                 </Box>
                                 <Box
-                                    width='50%'
+                                    width={!matches ? '50%' : '100%'}
                                     sx={{
                                         display: 'flex',
                                         justifyContent: 'center'
@@ -329,7 +343,7 @@ export default function LandingPage(): ReactElement {
                                         }}
                                         style={{
                                             height: '100%',
-                                            width: '50%',
+                                            width: !matches ? '50%' : '100%',
                                             boxShadow: theme.shadows[10],
                                             cursor: 'pointer',
                                             transition: 'ease-in-out .3s'
@@ -354,7 +368,7 @@ export default function LandingPage(): ReactElement {
                                 width='100%' 
                                 border={`1px solid ${theme.palette.primary.light}`}
                                 borderRadius={2}
-                                p={10}
+                                p={!matches ? 10 : 3}
                                 gap={5}
                             >
                                 <Box display='flex' gap={1}>

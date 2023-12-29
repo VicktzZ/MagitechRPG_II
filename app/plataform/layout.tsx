@@ -7,9 +7,13 @@ export default function RootLayout({
 }: {
   children: ReactElement
 }): ReactElement<any, any> {
-    return (
+    const NODE_ENV = process.env.NODE_ENV
+    
+    return NODE_ENV === 'production' ? (
         <RequireAuth>
             {children}
         </RequireAuth>
+    ) : (
+        <>{children}</>
     )
 }
