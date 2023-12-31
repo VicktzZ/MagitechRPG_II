@@ -16,8 +16,7 @@ export interface Ficha {
     subclass: Subclass | string
     financialCondition: FinancialCondition
     expertises: Expertises
-    perks: Perk[]
-    penalties: Perk[]
+    traits: Trait[]
 
     skills: {
         lineage: Skill[],
@@ -30,7 +29,7 @@ export interface Ficha {
         attributes: number
         expertises: number
         diligence: number
-        perks: number
+        traits: number
         skills: number
         magics: number
     }
@@ -125,11 +124,13 @@ export interface Expertise<T extends Attributes | null> {
     defaultAttribute?: T
 }
 
-export interface Perk {
+export interface Trait {
     name: string
     description: string
     level: number
-    kind: string
+    value: number
+    kind: 'positive' | 'negative'
+    effect: Record<'expertise' | 'attriute', number>
 }
 
 export interface TradeOff {
@@ -195,7 +196,7 @@ export interface Subclass {
     skills: Skill[]
 }
 
-export type FinancialCondition = 'Miserável' | 'Pobre' | 'Classe Média' | 'Rico'
+export type FinancialCondition = 'Miserável' | 'Pobre' | 'Estável' | 'Rico'
 export type Gender = 'Masculino' | 'Feminino' | 'Não-binário' | 'Outro' | 'Não definido'
 export type Classes = 'Marcial' | 'Explorador' | 'Feiticeiro' | 'Bruxo' | 'Monge' | 'Druida' | 'Arcano' | 'Ladino'
 export type Attributes = 'des' | 'vig' | 'log' | 'sab' | 'foc' | 'car'

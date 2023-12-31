@@ -1,28 +1,27 @@
-import { type Ficha } from '@types';
+import type { Classes, Ficha, Gender } from '@types';
 
 export const fichaModel: Partial<Ficha> = {
     playerName: '',
     name: '',
     age: 0,
-    class: '',
+    class: '' as Classes,
     race: '',
     lineage: '',
     elementalMastery: undefined,
-    gender: undefined,
+    gender: '' as Gender,
     financialCondition: undefined,
-    perks: [],
-    penalties: [],
+    traits: [],
     capacity: 5,
     displacement: 9,
     level: 0,
     magics: [],
+    subclass: '',
     skills: {
         lineage: [],
         bonus: [],
         class: [],
         subclass: []
     },
-    subclass: '',
 
     inventory: {
         items: [],
@@ -152,8 +151,8 @@ export const fichaModel: Partial<Ficha> = {
     points: {
         attributes: 9,
         expertises: 0,
-        diligence: 1,
-        perks: 0,
+        diligence: 0,
+        perks: 20,
         skills: 0,
         magics: 0  
     },

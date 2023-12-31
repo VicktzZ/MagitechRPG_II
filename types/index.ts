@@ -2,7 +2,10 @@ import type {
     Ficha,
     Classes,
     Class,
-    Attributes
+    Attributes,
+    FinancialCondition,
+    Gender,
+    Trait
 } from './ficha';
 import type { Session, User } from './models';
 
@@ -12,5 +15,8 @@ export type {
     Ficha,
     Attributes,
     Classes,
-    Class
+    Class,
+    Gender,
+    Trait,
+    FinancialCondition
 }

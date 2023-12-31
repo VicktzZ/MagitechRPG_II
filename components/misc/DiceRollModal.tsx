@@ -1,7 +1,7 @@
 /* eslint-disable no-eval */
 'use client';
 
-import { Box, Chip, Modal, Typography, useTheme } from '@mui/material'
+import { Box, Chip, Modal, Typography, useMediaQuery, useTheme } from '@mui/material'
 import { useMemo, type ReactElement, useEffect } from 'react'
 import { Chance } from 'chance'
 import type { Attributes } from '@types';
@@ -34,6 +34,7 @@ export default function DiceRollModal({
     }
 }): ReactElement {
     const theme = useTheme()
+    const matches = useMediaQuery(theme.breakpoints.down('md'))
 
     const chanceRoll = useMemo(() => {
         const chance = new Chance()
@@ -171,7 +172,7 @@ export default function DiceRollModal({
                 <Box
                     height='20vh'
                     minHeight='20vh'
-                    width='30vw'
+                    width={matches ? '80vw' : '30vw'}
                     bgcolor='background.paper'
                     borderRadius={2}
                     boxShadow={theme.shadows[10]}
