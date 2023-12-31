@@ -1,15 +1,17 @@
 'use client';
 
-import { Box, Button, Chip, FormControl, IconButton, InputLabel, LinearProgress, MenuItem, Select, Slider, TextField, Tooltip, Typography, useTheme } from '@mui/material'
+import { Box, Button, Chip, FormControl, IconButton, InputLabel, LinearProgress, ListSubheader, MenuItem, Select, Slider, TextField, Tooltip, Typography, useTheme } from '@mui/material'
 import React, { useContext, type ReactElement, useState } from 'react'
 import { useFormik } from 'formik'
-import { User, type Ficha } from '@types';
-import { fichaModel } from '@contexts/fichaContext';
+import { User, type Ficha, type Classes } from '@types';
+import { fichaModel } from '@constants/ficha';
 import { useSession } from 'next-auth/react';
 import { RadarChart } from '@components/misc';
 import { LinearProgressWithLabel } from '@layout';
 import FormHeader from './FormHeader';
 import * as Yup from 'yup'
+import { classesModel } from '@constants/classes';
+import DiceRollModal from '@components/misc/DiceRollModal';
 
 const validationSchema = Yup.object().shape({
     playerName: Yup.string().notRequired().default(''),
@@ -56,6 +58,8 @@ export default function CreateFichaModal({
     const { data: session } = useSession()
     const theme = useTheme()
 
+    const [ modalOpen, setModalOpen ] = useState(false)
+
     const initialValues: Ficha = { 
         ...fichaModel as Ficha,
         playerName: session?.user?.name ?? ''
@@ -70,13 +74,18 @@ export default function CreateFichaModal({
     })
 
     const setDiligencePoints = (point: 'lp' | 'mp' | 'ap', action: 'add' | 'sub', value: number): void => {
+        const classe = classesModel[formik.values.class as Classes] || null
+
         if (action === 'add') {
             if (formik.values.points.diligence > 0) {
                 formik.setFieldValue('points.diligence', formik.values.points.diligence - 1)
                 formik.setFieldValue(`attributes.${point}`, formik.values.attributes[point] + value)
             }
         } else {
-            if (formik.values.attributes[point] - value >= 0) {
+            if (
+                classe ? (formik.values.attributes[point] - value >= classe.attributes[point]) :
+                    (formik.values.attributes[point] - value >= 0)
+            ) {
                 formik.setFieldValue('points.diligence', formik.values.points.diligence + 1)
                 formik.setFieldValue(`attributes.${point}`, formik.values.attributes[point] - value)
             }
@@ -133,37 +142,89 @@ export default function CreateFichaModal({
         )
     }
 
+    const setFinancialCondition = (r: number | number[]): void => {
+        const financialCondition = {
+            '8': {
+                name: 'Miserável',
+                money: 10_000
+            },
+            '14': {
+                name: 'Pobre',
+                money: 50_000
+            },
+            '20': {
+                name: 'Estável',
+                money: 100_000
+            },
+            '26': {
+                name: 'Rico',
+                money: 300_000
+            }
+        }
+
+        if (r < 26) {
+            formik.setFieldValue('financialCondition', financialCondition[26].name) 
+            formik.setFieldValue('inventory.money', financialCondition[26].money) 
+        } else if (r < 20) {
+            formik.setFieldValue('financialCondition', financialCondition[20].name) 
+            formik.setFieldValue('inventory.money', financialCondition[20].money)
+        } else if (r < 14) {
+            formik.setFieldValue('financialCondition', financialCondition[14].name) 
+            formik.setFieldValue('inventory.money', financialCondition[14].money)
+        } else if (r < 8) {
+            formik.setFieldValue('financialCondition', financialCondition[8].name) 
+            formik.setFieldValue('inventory.money', financialCondition[8].money)
+        }
+    }
+
     return (
-        <Box 
-            display='flex' 
-            height='100%' 
-            width='100%'
-            borderRadius='10px'
-        >
+        <>
             <Box 
-                display='flex'
+                display='flex' 
+                height='100%' 
                 width='100%'
-                flexDirection='column'
-                p={5} 
-                gap={5}
+                borderRadius='10px'
             >
-                <Box>
-                    <Typography variant='h5'>Criar ficha</Typography>
-                </Box>
-                <Box width='100%'>
+                <Box
+                    display='flex'
+                    height='100%'
+                    width='100%'
+                    flexDirection='column'
+                    p={5} 
+                    gap={5}
+                >
+                    <Box display='flex' flexDirection='column' gap={2.5}>
+                        <Box>
+                            <Typography variant='h5'>Criar ficha</Typography>
+                        </Box>
+                        <Box width='100%'>
+                            <Box
+                                component='form'
+                                onSubmit={formik.handleSubmit}
+                                sx={{
+                                    display: 'flex',
+                                    width: '100%',
+                                    flexDirection: 'column',
+                                    gap: 5
+                                }} 
+                            >
+                                <FormHeader 
+                                    formik={formik}
+                                />
+                            </Box>
+                        </Box>
+                    </Box>
                     <Box
                         component='form'
                         onSubmit={formik.handleSubmit}
                         sx={{
                             display: 'flex',
                             width: '100%',
+                            height: '1rem',
                             flexDirection: 'column',
                             gap: 5
                         }} 
                     >
-                        <FormHeader 
-                            formik={formik}
-                        />
                         <Box 
                             width='100%'
                             display='flex'
@@ -174,10 +235,12 @@ export default function CreateFichaModal({
                                 <Typography variant='h6'>Atributos</Typography>
                             </Box>
                             <Box display='flex' width='100%' gap={3}>
-                                <Box 
+                                <Box
+                                    height='100%'
                                     width='25%'
                                     display='flex' 
                                     flexDirection='column'
+                                    justifyContent='space-between'
                                     gap={4} 
                                 >
                                     <RadarChart
@@ -226,14 +289,16 @@ export default function CreateFichaModal({
                                             }
                                         }}
                                     />
-                                    <Box 
+                                    <Box
+                                        height='100%'
                                         display='flex'
                                         flexDirection='column'
+                                        justifyContent='space-between'
                                         gap={1}
                                     >
                                         <Box alignItems='center' display='flex' gap={1}>
                                             <Typography display='flex' gap={1} >Pontos de diligência: 
-                                                <Tooltip title='(FOC + LOG) + 1'>
+                                                <Tooltip title='LOG'>
                                                     <b style={{ color: theme.palette.primary.main }}>{formik.values.points.diligence}</b>
                                                 </Tooltip>
                                             </Typography>
@@ -296,115 +361,171 @@ export default function CreateFichaModal({
                                 </Box>
                                 <Box 
                                     display='flex'
-                                    gap={3}
+                                    gap={10}
                                     flexDirection='column'
                                     width='20%'
                                 >
-                                    <Box>
+                                    <Box
+                                        display='flex'
+                                        flexDirection='column'
+                                        gap={3}
+                                    >
                                         <Typography>Pontos de atributo: <b style={{ color: theme.palette.primary.main }}>{formik.values.points.attributes}</b></Typography>
+                                        <Box display='flex' flexDirection='column' gap={1}>
+                                            <Box 
+                                                display='flex'
+                                                justifyContent='space-between'
+                                                alignItems='center'
+                                            >
+                                                <Box 
+                                                    display='flex'
+                                                    alignItems='center' 
+                                                    gap={1}
+                                                >
+                                                    <Typography>Vigor:</Typography>
+                                                    <Chip 
+                                                        label={formik.values.attributes.vig}
+                                                    /> 
+                                                </Box>
+                                                {attributePoints('vig', { attr: 'lp', value: 3 })}
+                                            </Box>
+                                            <Box 
+                                                display='flex'
+                                                justifyContent='space-between'
+                                                alignItems='center'
+                                            >
+                                                <Box 
+                                                    display='flex'
+                                                    alignItems='center' 
+                                                    gap={1}
+                                                >
+                                                    <Typography>Destreza:</Typography>
+                                                    <Chip 
+                                                        label={formik.values.attributes.des}
+                                                    /> 
+                                                </Box>
+                                                {attributePoints('des')}
+                                            </Box>
+                                            <Box 
+                                                display='flex'
+                                                justifyContent='space-between'
+                                                alignItems='center'
+                                            >
+                                                <Box 
+                                                    display='flex'
+                                                    alignItems='center' 
+                                                    gap={1}
+                                                >
+                                                    <Typography>Foco:</Typography>
+                                                    <Chip 
+                                                        label={formik.values.attributes.foc}
+                                                    /> 
+                                                </Box>
+                                                {attributePoints('foc', { attr: 'mp', value: 5 })}
+                                            </Box>
+                                            <Box 
+                                                display='flex'
+                                                justifyContent='space-between'
+                                                alignItems='center'
+                                            >
+                                                <Box 
+                                                    display='flex'
+                                                    alignItems='center' 
+                                                    gap={1}
+                                                >
+                                                    <Typography>Lógica:</Typography>
+                                                    <Chip 
+                                                        label={formik.values.attributes.log}
+                                                    /> 
+                                                </Box>
+                                                {attributePoints('log', { attr: 'pd', value: 1 })}
+                                            </Box>
+                                            <Box 
+                                                display='flex'
+                                                justifyContent='space-between'
+                                                alignItems='center'
+                                            >
+                                                <Box 
+                                                    display='flex'
+                                                    alignItems='center' 
+                                                    gap={1}
+                                                >
+                                                    <Typography>Sabedoria:</Typography>
+                                                    <Chip 
+                                                        label={formik.values.attributes.sab}
+                                                    /> 
+                                                </Box>
+                                                {attributePoints('sab', { attr: 'pt', value: 1 })}
+                                            </Box>
+                                            <Box 
+                                                display='flex'
+                                                justifyContent='space-between'
+                                                alignItems='center'
+                                            >
+                                                <Box 
+                                                    display='flex'
+                                                    alignItems='center' 
+                                                    gap={1}
+                                                >
+                                                    <Typography>Carisma:</Typography>
+                                                    <Chip 
+                                                        label={formik.values.attributes.car}
+                                                    /> 
+                                                </Box>
+                                                {attributePoints('car')}
+                                            </Box>
+                                        </Box>
                                     </Box>
-                                    <Box display='flex' flexDirection='column' gap={1}>
-                                        <Box 
-                                            display='flex'
-                                            justifyContent='space-between'
-                                            alignItems='center'
-                                        >
-                                            <Box 
-                                                display='flex'
-                                                alignItems='center' 
-                                                gap={1}
-                                            >
-                                                <Typography>Vigor:</Typography>
-                                                <Chip 
-                                                    label={formik.values.attributes.vig}
-                                                /> 
-                                            </Box>
-                                            {attributePoints('vig', { attr: 'lp', value: 3 })}
+                                    <Box 
+                                        display='flex'
+                                        flexDirection='column'
+                                        gap={5}
+                                    >
+                                        <Box display='flex' flexDirection='column' gap={1}>
+                                            <FormControl fullWidth>
+                                                <InputLabel>Condição financeira *</InputLabel>
+                                                <Select 
+                                                    name='financialCondition'
+                                                    label='Condição financeira'
+                                                    value={formik.values.financialCondition}
+                                                    required
+                                                    fullWidth
+                                                    onChange={formik.handleChange}
+                                                >
+                                                    <ListSubheader>{'< 8'}</ListSubheader>
+                                                    <MenuItem value='Miserável'>Miserável</MenuItem>
+                                                    <ListSubheader>8 - 14</ListSubheader>
+                                                    <MenuItem value='Pobre'>Pobre</MenuItem>
+                                                    <ListSubheader>15 - 20</ListSubheader>
+                                                    <MenuItem value='Estável'>Estável</MenuItem>
+                                                    <ListSubheader>20+</ListSubheader>
+                                                    <MenuItem value='Rico'>Rico</MenuItem>
+                                                </Select>
+                                            </FormControl>
+                                            <Button onClick={() => { setModalOpen(true) }} variant='outlined' >Rolar dados</Button>
                                         </Box>
-                                        <Box 
-                                            display='flex'
-                                            justifyContent='space-between'
-                                            alignItems='center'
-                                        >
-                                            <Box 
-                                                display='flex'
-                                                alignItems='center' 
-                                                gap={1}
-                                            >
-                                                <Typography>Destreza:</Typography>
-                                                <Chip 
-                                                    label={formik.values.attributes.des}
-                                                /> 
+                                        <Box display='flex' flexDirection='column' gap={1}>
+                                            <Box display='flex' alignItems='center' gap={1}>
+                                                <Typography>Nível:</Typography>
+                                                <Chip
+                                                    color='primary' 
+                                                    label={formik.values.level}
+                                                />
                                             </Box>
-                                            {attributePoints('des')}
-                                        </Box>
-                                        <Box 
-                                            display='flex'
-                                            justifyContent='space-between'
-                                            alignItems='center'
-                                        >
-                                            <Box 
-                                                display='flex'
-                                                alignItems='center' 
-                                                gap={1}
-                                            >
-                                                <Typography>Foco:</Typography>
-                                                <Chip 
-                                                    label={formik.values.attributes.foc}
-                                                /> 
+                                            <Box display='flex' alignItems='center' gap={1}>
+                                                <Typography>Deslocamento:</Typography>
+                                                <Chip
+                                                    color='primary' 
+                                                    label={formik.values.displacement + 'm'}
+                                                />
                                             </Box>
-                                            {attributePoints('foc', { attr: 'mp', value: 5 })}
-                                        </Box>
-                                        <Box 
-                                            display='flex'
-                                            justifyContent='space-between'
-                                            alignItems='center'
-                                        >
-                                            <Box 
-                                                display='flex'
-                                                alignItems='center' 
-                                                gap={1}
-                                            >
-                                                <Typography>Lógica:</Typography>
-                                                <Chip 
-                                                    label={formik.values.attributes.log}
-                                                /> 
+                                            <Box display='flex' alignItems='center' gap={1}>
+                                                <Typography>Dinheiro:</Typography>
+                                                <Chip
+                                                    color='primary' 
+                                                    label={'¥' + formik.values.inventory.money}
+                                                />
                                             </Box>
-                                            {attributePoints('log', { attr: 'pd', value: 1 })}
-                                        </Box>
-                                        <Box 
-                                            display='flex'
-                                            justifyContent='space-between'
-                                            alignItems='center'
-                                        >
-                                            <Box 
-                                                display='flex'
-                                                alignItems='center' 
-                                                gap={1}
-                                            >
-                                                <Typography>Sabedoria:</Typography>
-                                                <Chip 
-                                                    label={formik.values.attributes.sab}
-                                                /> 
-                                            </Box>
-                                            {attributePoints('sab', { attr: 'pt', value: 1 })}
-                                        </Box>
-                                        <Box 
-                                            display='flex'
-                                            justifyContent='space-between'
-                                            alignItems='center'
-                                        >
-                                            <Box 
-                                                display='flex'
-                                                alignItems='center' 
-                                                gap={1}
-                                            >
-                                                <Typography>Carisma:</Typography>
-                                                <Chip 
-                                                    label={formik.values.attributes.car}
-                                                /> 
-                                            </Box>
-                                            {attributePoints('car')}
                                         </Box>
                                     </Box>
                                 </Box>
@@ -413,6 +534,21 @@ export default function CreateFichaModal({
                     </Box>
                 </Box>
             </Box>
-        </Box>
+            <DiceRollModal 
+                open={modalOpen}
+                onClose={() => { setModalOpen(false) }}
+                bonus={[ formik.values.attributes.car * 2 ]}
+                isDisadvantage={formik.values.attributes.car < 0}
+                setResult={(r) => console.log(r)}
+                visibleDices
+                visibleBaseAttribute
+                roll={{
+                    dice: 20,
+                    quantity: Math.floor((formik.values.attributes.car < 0 ? 2 : formik.values.attributes.car) / 2) + 1,
+                    name: 'Condição Financeira',
+                    attribute: 'car'
+                }}
+            />
+        </>
     )
 }

@@ -3,16 +3,60 @@
 import { InputLabel, MenuItem, Select, type SelectChangeEvent } from '@mui/material'
 import { Box, FormControl, TextField } from '@mui/material'
 import { clickEffect } from '@public/sounds'
-import React, { type ReactElement } from 'react'
+import { classesModel } from '@constants/classes';
+import React, { useRef, type ReactElement } from 'react'
+import { type Classes } from '@types';
+import { useFormikContext } from 'formik';
+import { type fichaModel } from '@constants/ficha';
 
 const audio = new Audio(clickEffect)
 
-export default function FormHeader({ formik }: { formik: any }): ReactElement {
-    const setClass = (e: SelectChangeEvent<any>): void => {
-        formik.handleChange(e)
-        audio.play()
+const reset = {
+    attributes: {
+        des: 0,
+        vig: 0,
+        log: 0,
+        sab: 0,
+        foc: 0,
+        car: 0
+    },
 
-        console.log(e.target.value)
+    points: {
+        attributes: 9,
+        expertises: 0,
+        diligence: 1,
+        perks: 0,
+        skills: 0,
+        magics: 0
+    }
+}
+
+export default function FormHeader({ formik }: { formik: any }): ReactElement {
+    const classRef = useRef<any>(null)
+    const FormikType = useFormikContext<typeof fichaModel>()
+
+    const f: typeof FormikType = formik
+
+    const setClass = (e: SelectChangeEvent<any>): void => {
+        const classe: Classes = e.target.value
+        f.handleChange(e)
+
+        f.setFieldValue('attributes', {
+            ...reset.attributes,
+            ...classesModel[classe].attributes
+        })
+
+        f.setFieldValue('points', {
+            ...reset.points,
+            ...classesModel[classe].points
+        })
+
+        f.setFieldValue('skills.class', {
+            ...classesModel[classe].skills
+        })
+        
+        audio.play()
+        classRef.current = classesModel[classe]
     }
 
     return (
@@ -21,18 +65,18 @@ export default function FormHeader({ formik }: { formik: any }): ReactElement {
                 <TextField 
                     name='name'
                     label='Nome'
-                    value={formik.values.name}
-                    onChange={formik.handleChange}
+                    value={f.values.name}
+                    onChange={f.handleChange}
                     required
                     fullWidth
                 />
                 <Box display='flex' gap={3}>
                     <FormControl fullWidth>
                         <InputLabel>Classe de Mago *</InputLabel>
-                        <Select 
+                        <Select
                             name='class'
                             label='Classe de Mago'
-                            value={formik.values.class}
+                            value={f.values.class}
                             required
                             fullWidth
                             onChange={e => { 
@@ -55,11 +99,11 @@ export default function FormHeader({ formik }: { formik: any }): ReactElement {
                         <Select
                             name='lineage'
                             label='Linhagem'
-                            value={formik.values.lineage}
+                            value={f.values.lineage}
                             required
                             fullWidth
                             onChange={e => {
-                                formik.handleChange(e)
+                                f.handleChange(e)
                                 audio.play()
                             }}
                             MenuProps={{
@@ -99,11 +143,11 @@ export default function FormHeader({ formik }: { formik: any }): ReactElement {
                     <Select 
                         name='race'
                         label='Raça'
-                        value={formik.values.race}
+                        value={f.values.race}
                         required
                         fullWidth
                         onChange={e => { 
-                            formik.handleChange(e)
+                            f.handleChange(e)
                             audio.play()
                         }}
                     >
@@ -119,8 +163,8 @@ export default function FormHeader({ formik }: { formik: any }): ReactElement {
                     <TextField 
                         name='age'
                         label='Idade'
-                        value={formik.values.age}
-                        onChange={formik.handleChange}
+                        value={f.values.age}
+                        onChange={f.handleChange}
                         required
                         sx={{ width: '50%' }}
                     />
@@ -129,8 +173,8 @@ export default function FormHeader({ formik }: { formik: any }): ReactElement {
                         <Select 
                             name='gender'
                             label='Gênero'
-                            value={formik.values.gender}
-                            onChange={formik.handleChange}
+                            value={f.values.gender}
+                            onChange={f.handleChange}
                             required
                             fullWidth
                         >

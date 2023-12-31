@@ -3,22 +3,28 @@ export interface Ficha {
     playerName: string
     name: string
     age: number
-    class: Class | string
+    class: Class | Classes
     race: Race | string
     lineage: Lineage | string
     inventory: Inventory
     displacement: number
     capacity: number
     magics: Magic[]
-    gender: 'Masculino' | 'Feminino' | 'Não-binário' | 'Outro' | 'Não definido'
+    gender: Gender
     elementalMastery: Element
     level: number
     subclass: Subclass | string
-    financialCondition: 'Miserável' | 'Pobre' | 'Classe Média' | 'Classe Média Alta' | 'Rico' | 'Muito Rico'
-    skills: Skill[]
+    financialCondition: FinancialCondition
     expertises: Expertises
     perks: Perk[]
     penalties: Perk[]
+
+    skills: {
+        lineage: Skill[],
+        class: Skill[],
+        subclass: Skill[],
+        bonus: Skill[]
+    }
 
     points: {
         attributes: number
@@ -48,20 +54,18 @@ export interface Class {
     name: Classes
     description: string
 
-    effects: {
+    attributes: {
         lp: number
         mp: number
         ap: number
     }
 
-    restrictions: {
-        vig: number
-        des: number
-        log: number
-        sab: number
-        foc: number
-        car: number
+    points: {
+        diligence: number
+        expertises: number
     }
+
+    skills: Skill[]
 }
 
 export interface Lineage {
@@ -182,6 +186,7 @@ export interface Skill {
     name: string
     description: string
     effects?: number[]
+    level?: number
 }
 
 export interface Subclass {
@@ -190,6 +195,8 @@ export interface Subclass {
     skills: Skill[]
 }
 
+export type FinancialCondition = 'Miserável' | 'Pobre' | 'Classe Média' | 'Rico'
+export type Gender = 'Masculino' | 'Feminino' | 'Não-binário' | 'Outro' | 'Não definido'
 export type Classes = 'Marcial' | 'Explorador' | 'Feiticeiro' | 'Bruxo' | 'Monge' | 'Druida' | 'Arcano' | 'Ladino'
 export type Attributes = 'des' | 'vig' | 'log' | 'sab' | 'foc' | 'car'
 export type ItemType = 'Especial' | 'Utilidade' | 'Consumível' | 'Item Chave' | 'Munição' | 'Capacidade'

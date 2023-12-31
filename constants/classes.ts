@@ -1,9 +1,11 @@
-export const classes = {
+import type { Class, Classes } from  '@types';
+
+export const classesModel: Record<Classes, Class> = {
     'Marcial': {
         name: 'Marcial',
         description: 'A classe de mago com habilidades de combate e defesa. O seu poder de ataque e de defesa aumentam com o nível da classe.',
         attributes: {
-            lp: 24,
+            lp: 25,
             mp: 10,
             ap: 8
         },
@@ -147,7 +149,7 @@ export const classes = {
         },
 
         points: {
-            diligence: 10,
+            diligence: 6,
             expertises: 5
         },
 
@@ -165,7 +167,7 @@ export const classes = {
         description: 'A classe de mago com habilidades de combate e defesa. O seu poder de ataque e de defesa aumentam com o nível da classe.',
         attributes: {
             lp: 10,
-            mp: 20,
+            mp: 18,
             ap: 5
         },
 
