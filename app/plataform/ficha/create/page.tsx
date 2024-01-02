@@ -46,13 +46,7 @@ const validationSchema = Yup.object().shape({
         magics: 0
     })
 })
-export default function CreateFichaModal({
-    open,
-    handleClose 
-}: { 
-    open: boolean,
-    handleClose: () => void
-}): ReactElement {
+export default function CreateFichaModal(): ReactElement {
     const { data: session } = useSession()
 
     const initialValues: Ficha = { 

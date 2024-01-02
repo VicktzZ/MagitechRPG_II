@@ -7,15 +7,23 @@ import { Animate, AnimateOnScroll, Parallax } from '@components/misc';
 import { intro, about, landingPageGrimoire, landingPageSynopse, BLOB_API_URL } from '@constants';
 import { landingPageBg as bg } from '@constants';
 import { useTheme } from '@mui/material';
+import { useRouter } from 'next/navigation';
 import logo from '@public/magitech_logo.png'
 import magitechCapa from '@public/magitech_capa.png'
 import magitechCapaGrimorio from '@public/Magitech_capa_grimorio.png'
 import profilePhoto from '@public/profile_photo.jpg'
 import Image from 'next/image';
+import useEnvironmentVariables from '@hooks/useEnvironmentVariables';
 
 export default function LandingPage(): ReactElement {
     const theme = useTheme()
     const matches = useMediaQuery(theme.breakpoints.down('md'))
+
+    const router = useRouter()
+    const env = useEnvironmentVariables()
+
+    console.log(env.GOOGLE_CLIENT_ID);
+    
 
     return (
         <>
@@ -67,8 +75,8 @@ export default function LandingPage(): ReactElement {
                                 <Button 
                                     variant="contained"
                                     color="secondary"
-                                    sx={{ mt: '2rem' }}
-                                    onClick={() => { location.href = '/api/auth/signin' }}
+                                    sx={{ mt: '2rem', zIndex: 999 }}
+                                    onClick={() => { router.push('/api/auth/signin') }}
                                 >
                                     Comece Já!
                                 </Button>
