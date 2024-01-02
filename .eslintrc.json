@@ -115,10 +115,7 @@
       "arrow-spacing": "error",
       "space-before-blocks": "error",
       "block-spacing": "error",
-      "linebreak-style": [
-          "error",
-          "windows"
-      ],
+      "linebreak-style": 0,
       "quotes": [
           "error",
           "single"
