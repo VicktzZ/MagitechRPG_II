@@ -69,22 +69,20 @@ export default function Attributes({ formik }: { formik: any }): ReactElement {
 
     const attributePoints = (
         attribute: 'vig' | 'des' | 'foc' | 'log' | 'sab' | 'car',
-        otherAttrs?: { attr: 'lp' | 'mp' | 'pd' | 'pt' | 'pp', value: number }
+        otherAttrs?: { attr: 'lp' | 'mp' | 'pd' | 'pt', value: number }
     ): ReactElement => {
         const onClick = (action: 'add' | 'sub'): void => {
             const point = 
-                otherAttrs?.attr === 'pd' ? 'diligence' :
-                    otherAttrs?.attr === 'pt' ? 'expertises' : 'perks'
+                otherAttrs?.attr === 'pd' ? 'diligence' : 'expertises'
 
             if (action === 'add') {
-                if (f.values.points.attributes !== 0 && f.values.attributes[attribute] !== 3) {
+                if (f.values.points.attributes !== 0 && f.values.attributes[attribute] < 3) {
                     f.setFieldValue('points.attributes', f.values.points.attributes - 1)
                     f.setFieldValue(`attributes.${attribute}`, f.values.attributes[attribute] + 1)
 
                     if (
                         otherAttrs && otherAttrs.attr !== 'pd' &&
-                        otherAttrs.attr !== 'pt' &&
-                        otherAttrs.attr !== 'pp'
+                        otherAttrs.attr !== 'pt'
                     ) {
                         f.setFieldValue(`attributes.${otherAttrs.attr}`, f.values.attributes[otherAttrs.attr] + otherAttrs.value)
                     } else {
@@ -98,8 +96,7 @@ export default function Attributes({ formik }: { formik: any }): ReactElement {
 
                     if (
                         otherAttrs && otherAttrs.attr !== 'pd' &&
-                        otherAttrs.attr !== 'pt' &&
-                        otherAttrs.attr !== 'pp'
+                        otherAttrs.attr !== 'pt'
                     ) {
                         f.setFieldValue(`attributes.${otherAttrs.attr}`, f.values.attributes[otherAttrs.attr] - otherAttrs.value)
                     } else {
@@ -133,6 +130,8 @@ export default function Attributes({ formik }: { formik: any }): ReactElement {
             }
         }
 
+        // console.log(f.values.expertises[trait?.target.name ?? '' as keyof Expertises].value)
+
         if (traitRef.current) {
             if (prevTrait?.target.kind === 'attribute') {
                 f.setFieldValue(
@@ -153,10 +152,10 @@ export default function Attributes({ formik }: { formik: any }): ReactElement {
                 f.values.attributes[trait?.target.name.toLowerCase() as AttributesType] + trait?.value
             )
         } else {
-            f.setFieldValue(
-                `expertises.${trait?.target.name.toLowerCase()}`,
-                f.values.expertises[trait?.target.name ?? '' as keyof Expertises].value + (trait?.value ?? 0)
-            )
+            // f.setFieldValue(
+            //     `expertises.${trait?.target.name.toLowerCase()}`,
+            //     f.values.expertises[trait?.target.name ?? '' as keyof Expertises].value + (trait?.value ?? 0)
+            // )
         }
 
         console.log(trait);

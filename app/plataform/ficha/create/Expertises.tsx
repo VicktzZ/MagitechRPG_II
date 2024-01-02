@@ -15,7 +15,7 @@ export default function Expertises({ formik }: { formik: any }): ReactElement {
     return (
         <>
             <Box display='flex' flexDirection='column' gap={3}>
-                <Box display='flex' gap={2}>
+                <Box display='flex' alignItems='center' gap={2}>
                     <Typography>Pontos de Perícia: <b style={{ color: theme.palette.primary.main }}>{f.values.points.expertises}</b></Typography>
                     <IconButton onClick={() => { setOpenModal(true) }}>
                         <Edit />
@@ -23,7 +23,7 @@ export default function Expertises({ formik }: { formik: any }): ReactElement {
                 </Box>
                 <Grid
                     sx={{ flexGrow: 1 }} 
-                    spacing={2} 
+                    spacing={1.5} 
                     container
                 >
                     {Object.entries(f.values.expertises).map(([ name, expertise ]: [ name: string, expertise: Expertise<any> ]) => (
@@ -40,7 +40,7 @@ export default function Expertises({ formik }: { formik: any }): ReactElement {
                         variant='caption'
                         fontWeight={900}
                         color={grey[500]}
-                    >Destreinado: {'< 1'}</Typography>
+                    >Destreinado: {'< 2'}</Typography>
                     <Typography 
                         variant='caption'
                         fontWeight={900}

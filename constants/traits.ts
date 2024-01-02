@@ -32,7 +32,7 @@ export const traits: Trait[] = [
     },
 
     {
-        name: 'Genialidade',
+        name: 'Genial',
         description: 'você tem uma inteligência superior, que te permite resolver problemas, aprender e otimizar. Você tem vantagem em testes de lógica, e pode usar um número de pontos de lógica por dia igual ao seu LOG para obter um sucesso automático em qualquer teste que envolva inteligência.',
         value: 1,
         target: {
@@ -62,7 +62,7 @@ export const traits: Trait[] = [
     },
 
     {
-        name: 'Sentidos aguçados',
+        name: 'Perspicaz',
         description: '',
         value: 3,
         target: {
@@ -72,7 +72,7 @@ export const traits: Trait[] = [
     },
 
     {
-        name: 'Valentia',
+        name: 'Valente',
         description: '',
         value: 3,
         target: {
@@ -82,7 +82,7 @@ export const traits: Trait[] = [
     },
 
     {
-        name: 'Concentração',
+        name: 'Concentrado',
         description: '',
         value: 3,
         target: {
@@ -92,7 +92,7 @@ export const traits: Trait[] = [
     },
 
     {
-        name: 'Perfeccionismo',
+        name: 'Perfeccionista',
         description: '',
         value: 3,
         target: {
@@ -102,7 +102,7 @@ export const traits: Trait[] = [
     },
 
     {
-        name: 'Moderação',
+        name: 'Moderado',
         description: '',
         value: 3,
         target: {
@@ -112,7 +112,7 @@ export const traits: Trait[] = [
     },
 
     {
-        name: 'Diligência',
+        name: 'Diligente',
         description: '',
         value: 3,
         target: {
@@ -132,7 +132,7 @@ export const traits: Trait[] = [
     },
 
     {
-        name: 'Sagacidade',
+        name: 'Sagaz',
         description: '',
         value: 3,
         target: {
@@ -152,7 +152,7 @@ export const traits: Trait[] = [
     },
     
     {
-        name: 'Eloquência',
+        name: 'Eloquênte',
         description: '',
         value: 3,
         target: {
@@ -217,12 +217,12 @@ export const traits: Trait[] = [
         value: 3,
         target: {
             kind: 'expertise',
-            name: 'Conhecimento'
+            name: 'Agilidade'
         }
     },
 
     {
-        name: 'Diplomacia',
+        name: 'Diplomata',
         description: '',
         value: 3,
         target: {
@@ -242,7 +242,7 @@ export const traits: Trait[] = [
     },
 
     {
-        name: 'Robustez',
+        name: 'Robusto',
         description: '',
         value: 3,
         target: {

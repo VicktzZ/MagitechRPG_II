@@ -3,7 +3,7 @@
 import { Box, Grid, Typography, useTheme } from '@mui/material';
 import { useState, type ReactElement } from 'react';
 import type { Expertise } from '@types';
-import { green } from '@mui/material/colors';
+import { blue, green, grey, purple, yellow } from '@mui/material/colors';
 import DiceRollModal from '@components/misc/DiceRollModal';
 
 export default function Test({ name, expertise, diceQuantity }: { name: string, expertise: Expertise<any>, diceQuantity: number }): ReactElement {
@@ -11,11 +11,25 @@ export default function Test({ name, expertise, diceQuantity }: { name: string, 
 
     const [ open, setOpen ] = useState<boolean>(false)
 
+    const determinateColor = () => {
+        if (expertise.value < 2) {
+            return grey[500]
+        } else if (expertise.value < 5) {
+            return green[500]
+        } else if (expertise.value < 10) {
+            return blue[500]
+        } else if (expertise.value < 15) {
+            return purple[500]
+        } else {
+            return yellow[500]
+        }
+    }
+
     return (
         <>
             <Grid
                 height='10rem'
-                width='10rem'
+                width='9.5rem'
                 key={name} 
                 item
                 onClick={() => { setOpen(true) }}
@@ -41,7 +55,7 @@ export default function Test({ name, expertise, diceQuantity }: { name: string, 
                         <Typography>+</Typography>
                         <Typography>{expertise.value}</Typography>
                     </Box>
-                    <Typography fontWeight={900} color={green[500]}>{name}</Typography>
+                    <Typography fontWeight={900} color={determinateColor}>{name}</Typography>
                 </Box>
             </Grid>
             <DiceRollModal 
