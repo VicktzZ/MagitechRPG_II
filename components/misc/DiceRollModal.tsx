@@ -186,7 +186,7 @@ export default function DiceRollModal({
                                     {visibleDices ? (
                                         <Result />
                                     ) : (
-                                        <Typography position='relative' top={2} >{chanceRoll.result}</Typography>
+                                        <Typography position='relative'>{chanceRoll.result}</Typography>
                                     )}
                                 </Box>
                             </Box>

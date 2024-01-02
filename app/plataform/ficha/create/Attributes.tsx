@@ -2,17 +2,46 @@ import { RadarChart } from '@components/misc'
 import { classesModel } from '@constants/classes'
 import { numberWithSpaces } from '@functions'
 import { LinearProgressWithLabel } from '@layout'
-import { Button, Chip, InputLabel, ListSubheader, MenuItem, Select, Tooltip, Typography, useMediaQuery, useTheme } from '@mui/material'
 import { FormControl } from '@mui/material'
 import { Box } from '@mui/material'
-import { useFormikContext } from 'formik'
-import { type ReactElement, useState } from 'react'
-import type { Classes, Ficha, FinancialCondition } from '@types'
+import { green } from '@mui/material/colors'
+import { type FormikContextType } from 'formik'
+import { type ReactElement, useState, useRef } from 'react'
+import type { Attributes as AttributesType, Classes, Ficha, FinancialCondition, Expertises } from '@types'
 import DiceRollModal from '@components/misc/DiceRollModal'
+import traits from '@constants/traits'
+
+import { 
+    type SelectChangeEvent,
+    Button,
+    Chip,
+    InputLabel,
+    ListSubheader,
+    MenuItem,
+    OutlinedInput,
+    Select,
+    Tooltip,
+    Typography,
+    useMediaQuery,
+    useTheme 
+} from '@mui/material'
+
+const ITEM_HEIGHT = 48;
+const ITEM_PADDING_TOP = 8;
+
+const MenuProps = {
+    PaperProps: {
+        style: {
+            maxHeight: ITEM_HEIGHT * 4.5 + ITEM_PADDING_TOP,
+            width: 250
+        }
+    }
+};
 
 export default function Attributes({ formik }: { formik: any }): ReactElement {
-    const FormikType = useFormikContext<Ficha>()
-    const f: typeof FormikType  = formik
+    const f: FormikContextType<Ficha> = formik
+
+    const traitRef = useRef<string | null>(null)
 
     const theme = useTheme()
     const [ modalOpen, setModalOpen ] = useState(false)
@@ -86,6 +115,53 @@ export default function Attributes({ formik }: { formik: any }): ReactElement {
                 <Button onClick={() => { onClick('sub') }} variant='outlined'>-1</Button>
             </Box>
         )
+    }
+
+    const setTraits = (e: SelectChangeEvent): void => {
+        f.setFieldValue('traits', [ e.target.value ])
+
+        let trait
+        let prevTrait
+
+        for (const item of traits) {
+            if (item.name === e.target.value) {
+                trait = item
+            }
+
+            if (item.name === traitRef.current) {
+                prevTrait = item
+            }
+        }
+
+        if (traitRef.current) {
+            if (prevTrait?.target.kind === 'attribute') {
+                f.setFieldValue(
+                    `attributes.${prevTrait?.target.name.toLowerCase()}`, 
+                    f.values.attributes[prevTrait?.target.name.toLowerCase() as AttributesType] - prevTrait.value
+                )
+            } else {
+                f.setFieldValue(
+                    `expertises.${prevTrait?.target.name}`,
+                    f.values.expertises[prevTrait?.target.name ?? '' as keyof Expertises].value - (prevTrait?.value ?? 0)
+                )
+            }
+        }
+
+        if (trait?.target.kind === 'attribute') {
+            f.setFieldValue(
+                `attributes.${trait?.target.name.toLowerCase()}`, 
+                f.values.attributes[trait?.target.name.toLowerCase() as AttributesType] + trait?.value
+            )
+        } else {
+            f.setFieldValue(
+                `expertises.${trait?.target.name.toLowerCase()}`,
+                f.values.expertises[trait?.target.name ?? '' as keyof Expertises].value + (trait?.value ?? 0)
+            )
+        }
+
+        console.log(trait);
+        console.log(traitRef);
+        traitRef.current = e.target.value
     }
 
     return (
@@ -216,7 +292,7 @@ export default function Attributes({ formik }: { formik: any }): ReactElement {
             </Box>
             <Box 
                 display='flex'
-                gap={10}
+                gap={3}
                 flexDirection='column'
                 width={matches ? '100%' : '50%'}
             >
@@ -334,42 +410,75 @@ export default function Attributes({ formik }: { formik: any }): ReactElement {
                 <Box 
                     display='flex'
                     flexDirection='column'
-                    gap={5}
+                    gap={3}
                 >
                     <Box display='flex' flexDirection='column' gap={1}>
-                        <FormControl fullWidth>
-                            <InputLabel>Condição financeira *</InputLabel>
-                            <Select 
-                                name='financialCondition'
-                                label='Condição financeira'
-                                value={f.values.financialCondition}
-                                required
-                                fullWidth
-                                onChange={e => {
-                                    const financialCondition = {
-                                        'Miserável': 10_000,
-                                        'Pobre': 50_000,
-                                        'Estável': 100_000,
-                                        'Rico': 300_000
-                                    }
+                        <Box display='flex' flexDirection='column' gap={2.5}>
+                            <FormControl fullWidth>
+                                <InputLabel>Traços *</InputLabel>
+                                <Select
+                                    name='traits'
+                                    value={String(f.values.traits)}
+                                    onChange={setTraits}
+                                    input={<OutlinedInput label="Chip" />}
+                                    MenuProps={MenuProps}
+                                    renderValue={(selected) => (
+                                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                            <Chip key={String(selected)} label={String(selected)} />
+                                        </Box>
+                                    )}
+                                >
+                                    {traits.map((trait) => (
+                                        <MenuItem
+                                            key={trait.name}
+                                            value={trait.name}
+                                        >
+                                            <Box>
+                                                <Typography>
+                                                    {trait.name}
+                                                </Typography>
+                                                <Typography color={green[500]} variant='caption'>
+                                                    +{trait.value} {trait.target.name}
+                                                </Typography>
+                                            </Box>
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+                            <FormControl fullWidth>
+                                <InputLabel>Condição financeira *</InputLabel>
+                                <Select 
+                                    name='financialCondition'
+                                    label='Condição financeira'
+                                    value={f.values.financialCondition}
+                                    required
+                                    fullWidth
+                                    onChange={e => {
+                                        const financialCondition = {
+                                            'Miserável': 10_000,
+                                            'Pobre': 50_000,
+                                            'Estável': 100_000,
+                                            'Rico': 300_000
+                                        }
 
-                                    const value = e.target.value as FinancialCondition
+                                        const value = e.target.value as FinancialCondition
 
-                                    f.handleChange(e)
-                                    f.setFieldValue('inventory.money', financialCondition[value])
-                                }}
-                            >
-                                <ListSubheader>{'< 8'}</ListSubheader>
-                                <MenuItem value='Miserável'>Miserável</MenuItem>
-                                <ListSubheader>8 - 14</ListSubheader>
-                                <MenuItem value='Pobre'>Pobre</MenuItem>
-                                <ListSubheader>15 - 20</ListSubheader>
-                                <MenuItem value='Estável'>Estável</MenuItem>
-                                <ListSubheader>20+</ListSubheader>
-                                <MenuItem value='Rico'>Rico</MenuItem>
-                            </Select>
-                        </FormControl>
-                        <Button onClick={() => { setModalOpen(true) }} variant='outlined' >Rolar dados</Button>
+                                        f.handleChange(e)
+                                        f.setFieldValue('inventory.money', financialCondition[value])
+                                    }}
+                                >
+                                    <ListSubheader>{'< 8'}</ListSubheader>
+                                    <MenuItem value='Miserável'>Miserável</MenuItem>
+                                    <ListSubheader>8 - 14</ListSubheader>
+                                    <MenuItem value='Pobre'>Pobre</MenuItem>
+                                    <ListSubheader>15 - 20</ListSubheader>
+                                    <MenuItem value='Estável'>Estável</MenuItem>
+                                    <ListSubheader>20+</ListSubheader>
+                                    <MenuItem value='Rico'>Rico</MenuItem>
+                                </Select>
+                            </FormControl>
+                        </Box>
+                        <Button onClick={() => { setModalOpen(true); f.handleSubmit() }} variant='outlined' >Rolar dados</Button>
                     </Box>
                     <Box display='flex' flexDirection='column' gap={1}>
                         <Box display='flex' alignItems='center' gap={1}>

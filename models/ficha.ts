@@ -94,8 +94,8 @@ const fichaSchema = new Schema({
         type: String,
         required: [ true, 'Gender is required!' ]
     },
-    elementalAffinities: {
-        type: [ String ],
+    elementalMastery: {
+        type: String,
         required: [ true, 'Elemental affinities is required!' ]
     },
     level: {
@@ -151,16 +151,12 @@ const fichaSchema = new Schema({
             'Liderança': 0
         }
     },
-    perks: {
+    traits: {
         type: [ Object ],
-        required: [ true, 'Perks is required!' ],
+        required: [ true, 'Traits is required!' ],
         default: []
     },
-    penalties: {
-        type: [ Object ],
-        required: [ true, 'Penalties is required!' ],
-        deafult: []
-    },
+
     points: {
         attributes: {
             type: Number,
@@ -172,11 +168,7 @@ const fichaSchema = new Schema({
             required: [ true, 'Diligence is required!' ],
             default: 1
         },
-        perks: {
-            type: Number,
-            required: [ true, 'Perks is required!' ],
-            default: 0
-        },
+
         expertises: {
             type: Number,
             required: [ true, 'Expertises is required!' ],

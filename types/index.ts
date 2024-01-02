@@ -5,6 +5,8 @@ import type {
     Attributes,
     FinancialCondition,
     Gender,
+    Expertises,
+    Expertise,
     Trait
 } from './ficha';
 import type { Session, User } from './models';
@@ -18,5 +20,7 @@ export type {
     Class,
     Gender,
     Trait,
+    Expertises,
+    Expertise,
     FinancialCondition
 }

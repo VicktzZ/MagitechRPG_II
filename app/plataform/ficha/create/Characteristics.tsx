@@ -1,61 +1,42 @@
 'use client';
 
-import { InputLabel, MenuItem, Select, useMediaQuery, type SelectChangeEvent, useTheme } from '@mui/material'
+import { InputLabel, MenuItem, Select, useMediaQuery, type SelectChangeEvent, useTheme, Typography } from '@mui/material'
 import { Box, FormControl, TextField } from '@mui/material'
 import { clickEffect } from '@public/sounds'
 import { classesModel } from '@constants/classes';
 import React, { useRef, type ReactElement } from 'react'
 import { type Classes } from '@types';
-import { useFormikContext } from 'formik';
+import { type FormikContextType } from 'formik';
 import { type fichaModel } from '@constants/ficha';
+import { green, red } from '@mui/material/colors';
 
 const audio = new Audio(clickEffect)
-
-const reset = {
-    attributes: {
-        des: 0,
-        vig: 0,
-        log: 0,
-        sab: 0,
-        foc: 0,
-        car: 0
-    },
-
-    points: {
-        attributes: 9,
-        expertises: 0,
-        diligence: 1,
-        perks: 0,
-        skills: 0,
-        magics: 0
-    }
-}
-
 export default function Characteristics({ formik }: { formik: any }): ReactElement {
     const classRef = useRef<any>(null)
-    const FormikType = useFormikContext<typeof fichaModel>()
-
-    const f: typeof FormikType = formik
+    const f: FormikContextType<typeof fichaModel> = formik
 
     const setClass = (e: SelectChangeEvent<any>): void => {
         const classe: Classes = e.target.value
+
         f.handleChange(e)
 
         f.setFieldValue('attributes', {
-            ...reset.attributes,
-            ...classesModel[classe].attributes
+            ...f.values.attributes,
+            ...classesModel[classe].attributes,
+            lp: classesModel[classe].attributes.lp + (f.values.attributes?.vig ?? 1) * 3,
+            mp: classesModel[classe].attributes.mp + (f.values.attributes?.foc ?? 1) * 5
         })
 
         f.setFieldValue('points', {
-            ...reset.points,
-            ...classesModel[classe].points
+            ...f.values.points,
+            ...classesModel[classe].points,
+            diligence: classesModel[classe].points.diligence + (f.values.attributes?.log ?? 0)
         })
 
-        f.setFieldValue('skills.class', {
-            ...classesModel[classe].skills
-        })
+        f.setFieldValue('skills.class', classesModel[classe].skills)
         
         audio.play()
+
         classRef.current = classesModel[classe]
     }
 
@@ -201,12 +182,47 @@ export default function Characteristics({ formik }: { formik: any }): ReactEleme
                             audio.play()
                         }}
                     >
-                        <MenuItem value='Humano'>Humano</MenuItem>
-                        <MenuItem value='Ciborgue'>Ciborgue</MenuItem>
-                        <MenuItem value='Autômato'>Autômato</MenuItem>
-                        <MenuItem value='Humanoide'>Humanoide</MenuItem>
-                        <MenuItem value='Mutante'>Mutante</MenuItem>
-                        <MenuItem value='Magia-viva'>Magia-viva</MenuItem>
+                        <MenuItem value='Humano'>
+                            <Box>
+                                <Typography>Humano</Typography>
+                                <Typography variant='caption' color={green[500]}>+1 Ponto de Atributo</Typography>
+                            </Box>
+                        </MenuItem>
+                        <MenuItem value='Ciborgue'>
+                            <Box display='flex' flexDirection='column'>
+                                <Typography>Ciborgue</Typography>
+                                <Typography variant='caption' color={green[500]}>+1 AP</Typography>
+                                <Typography variant='caption' color={red[500]}>-6 MP</Typography>
+                            </Box>
+                        </MenuItem>
+                        <MenuItem value='Autômato'>
+                            <Box display='flex' flexDirection='column'>
+                                <Typography>Autômato</Typography>
+                                <Typography variant='caption' color={green[500]}>+6 MP</Typography>
+                                <Typography variant='caption' color={red[500]}>-1 AP</Typography>
+                            </Box>
+                        </MenuItem>
+                        <MenuItem value='Humanoide'>
+                            <Box display='flex' flexDirection='column'>
+                                <Typography>Humanóide</Typography>
+                                <Typography variant='caption' color={green[500]}>+3 LP</Typography>
+                                <Typography variant='caption' color={green[500]}>+3 MP</Typography>
+                            </Box>
+                        </MenuItem>
+                        <MenuItem value='Mutante'>
+                            <Box display='flex' flexDirection='column'>
+                                <Typography>Mutante</Typography>
+                                <Typography variant='caption' color={green[500]}>+6 LP</Typography>
+                                <Typography variant='caption' color={red[500]}>-6 MP</Typography>
+                            </Box>
+                        </MenuItem>
+                        <MenuItem value='Magia-viva'>
+                            <Box display='flex' flexDirection='column'>
+                                <Typography>Magia-viva</Typography>
+                                <Typography variant='caption' color={green[500]}>+8 MP</Typography>
+                                <Typography variant='caption' color={red[500]}>-8 LP</Typography>
+                            </Box>
+                        </MenuItem>
                     </Select>
                 </FormControl>
                 <Box display='flex' gap={3}>

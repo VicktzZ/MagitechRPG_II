@@ -19,8 +19,9 @@ const theme = createTheme({
         background: {
             light: '#f4f4f4',
             dark: '#101621',
-            paper: '#393940',
-            paper2: '#1b1f2b'
+            paper: '#363b45',
+            paper2: '#393940',
+            paper3: '#1b1f2b'
         },
 
         primary: {

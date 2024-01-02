@@ -126,7 +126,7 @@ export const classesModel: Record<Classes, Class> = {
         },
 
         points: {
-            diligence: 6,
+            diligence: 5,
             expertises: 6
         },
 

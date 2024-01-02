@@ -1,234 +1,295 @@
-import type { Trait } from "@types";
+import type { Trait } from '@types';
 
-const traits: {
-    good: Record<string, Trait>,
-    bad: Record<string, Trait>
-} = {
-    good: {
-        'Sentidos aguçados': {
-            'Competência': 2,
-            'Agilidade': 2
-        },
-    
-        'Saúde de ferro': {
-            'Sobrevivência': 2,
-            'Destreza': 2
-        },
-    
-        'Regeneração aprimorada': {
-            'Resistência Física': 3
-        },
-    
-        'Valentia': {
-            'Força': 3
-        },
-    
-        'Concentração': {
-            'Destreza': 3
-        },
-    
-        'Perfeccionismo': {
-            'Competência': 3
-        },
-        
-        'Imunidade': {
-            'Sobrevivência': 3
-        },
-    
-        'Sensatez': {
-            'Argumentação': 3
-        },
-    
-        'Moderação': {
-            'Controle': 3
-        },
-    
-        'Diligência': {
-            'Competência': 2
-        },
-    
-        'Otimismo': {
-            'Persuasão': 2
-        },
-    
-        'Coragem': {
-            'Resistência Mental': 2
-        },
-    
-        'Honradez': {
-            'Liderança': 2
-        },
-    
-        'Hipertrofia': {
-            'Força': 2
-        },
-    
-        'Robustez': {
-            'Resistência Física': 2
-        },
-    
-        'Atraente': {
-            'Enganação': 2
-        },
-    
-        'Conhecido como justo': {
-            'Persuasão': 2
-        },
-    
-        'Paciência': {
-            'Controle': 1
-        },
-    
-        'Bom humor': {
-            'Resistência Mental': 1
-        },
-    
-        'Ceticismo': {
-            'Argumentação': 1
-        },
-    
-        'Flexibilidade': {
-            'Criatividade': 1
-        },
-    
-        'Extroversão': {
-            'Persuasão': 1
-        },
-    
-        'Perspicácia': {
-            'Percepção': 1
-        },
-    
-        'Sagacidade': {
-            'Agilidade': 1
-        },
-    
-        'Eloquência': {
-            'Liderança': 1
+export const traits: Trait[] = [
+    {
+        name: 'Saúde de Ferro',
+        description: 'você se recupera rapidamente de ferimentos, doenças ou efeitos nocivos. Você pode curar uma quantidade de pontos de vida igual ao seu VIG por hora, e tem vantagem em testes de resistência contra venenos, doenças ou efeitos similares.',
+        value: 1,
+        target: {
+            kind: 'attribute',
+            name: 'VIG'
+        }
+    },
+
+    {
+        name: 'Reflexos de Gato',
+        description: 'você tem reflexos tão rápidos que pode reagir a situações perigosas ou inesperadas. Você tem vantagem em testes de iniciativa, e pode se esquivar de ataques surpresa, armadilhas ou efeitos que exijam um teste de DES para evitar.',
+        value: 1,
+        target: {
+            kind: 'attribute',
+            name: 'DES'
+        }
+    },
+
+    {
+        name: 'Foco Absoluto',
+        description: 'você tem uma experiência vasta, que te permite sobreviver, se adaptar ou se aprimorar em situações adversas. Você tem vantagem em testes de sobrevivência, e pode usar um ponto de sabedoria para obter uma vantagem, uma oportunidade ou uma melhoria em algo.',
+        value: 1,
+        target: {
+            kind: 'attribute',
+            name: 'FOC'
+        }
+    },
+
+    {
+        name: 'Genialidade',
+        description: 'você tem uma inteligência superior, que te permite resolver problemas, aprender e otimizar. Você tem vantagem em testes de lógica, e pode usar um número de pontos de lógica por dia igual ao seu LOG para obter um sucesso automático em qualquer teste que envolva inteligência.',
+        value: 1,
+        target: {
+            kind: 'attribute',
+            name: 'LOG'
+        }
+    },
+
+    {
+        name: 'Veterano',
+        description: 'Você tem uma experiência vasta, que te permite sobreviver, se adaptar ou se aprimorar em situações adversas. Você tem vantagem em testes de sobrevivência, e pode usar um ponto de sabedoria para obter uma vantagem, uma oportunidade ou uma melhoria em algo.',
+        value: 1,
+        target: {
+            kind: 'attribute',
+            name: 'SAB'
+        }
+    },
+
+    {
+        name: 'Lider',
+        description: 'Você tem uma capacidade de influenciar, motivar ou inspirar outras pessoas, seja por meio de ordens, conselhos, exemplos, etc. Você tem vantagem em testes de liderança, e pode usar um ponto de carisma para obter uma ajuda, uma lealdade ou uma admiração de alguém.',
+        value: 1,
+        target: {
+            kind: 'attribute',
+            name: 'CAR'
+        }
+    },
+
+    {
+        name: 'Sentidos aguçados',
+        description: '',
+        value: 3,
+        target: {
+            kind: 'expertise',
+            name: 'Percepção'
+        }
+    },
+
+    {
+        name: 'Valentia',
+        description: '',
+        value: 3,
+        target: {
+            kind: 'expertise',
+            name: 'RES Mental'
+        }
+    },
+
+    {
+        name: 'Concentração',
+        description: '',
+        value: 3,
+        target: {
+            kind: 'expertise',
+            name: 'Reflexos'
+        }
+    },
+
+    {
+        name: 'Perfeccionismo',
+        description: '',
+        value: 3,
+        target: {
+            kind: 'expertise',
+            name: 'Competência'
+        }
+    },
+
+    {
+        name: 'Moderação',
+        description: '',
+        value: 3,
+        target: {
+            kind: 'expertise',
+            name: 'Controle'
+        }
+    },
+
+    {
+        name: 'Diligência',
+        description: '',
+        value: 3,
+        target: {
+            kind: 'expertise',
+            name: 'Sobrevivência'
+        }
+    },
+
+    {
+        name: 'Atraente',
+        description: '',
+        value: 3,
+        target: {
+            kind: 'expertise',
+            name: 'Enganação'
+        }
+    },
+
+    {
+        name: 'Sagacidade',
+        description: '',
+        value: 3,
+        target: {
+            kind: 'expertise',
+            name: 'Conhecimento'
         }
     },
     
-    bad: {
-        'Timidez': {
-            'Persuasão': -1
-        },
+    {
+        name: 'Oportunista',
+        description: '',
+        value: 3,
+        target: {
+            kind: 'expertise',
+            name: 'Sorte'
+        }
+    },
     
-        'Ingenuidade': {
-            'Criatividade': -1
-        },
-    
-        'Monotomia': {
-            'Agilidade': -1
-        },
-    
-        'Dicção prejudicada': {
-            'Argumentação': -1
-        },
-    
-        'Pavio curto': {
-            'Controle': -2
-        },
-    
-        'Depressão': {
-            'Resistência Mental': -2 
-        },
-    
-        'Fanatismo': {
-            'Argumentação': -2
-        },
-    
-        'Teimosia': {
-            'Criatividade': -2
-        },
-    
-        'Desnutrição': {
-            'Força': -2
-        },
-    
-        'Baixa estatura': {
-            'Resistência Física': -2
-        },
-    
-        'Repulsividade': {
-            'Persuasão': -2
-        },
-    
-        'Conhecido como injusto': {
-            'Enganação': -2
-        },
-    
-        'Preguiça': {
-            'Competência': -3
-        },
-    
-        'Pessimismo': {
-            'Argumentação': -3
-        },
-    
-        'Covardia': {
-            'Resistência Mental': -3
-        },
-        
-        'Desonra': {
-            'Liderança': -3
-        },
-    
-        'Negligência': {
-            'Competência': -3
-        },
-    
-        'Distração': {
-            'Destreza': -3
-        },
-    
-        'Insensatez': {
-            'Criatividade':  -3
-        },
-    
-        'Compulsão': {
-            'Controle': -3
-        },
-    
-        'Doença crônica/mental': {
-            'Resistência Mental': -2,
-            'Competência': -2
-        },
-    
-        'Vulnerável a temperatura/química': {
-            'Sobrevivência': -4
-        },
-    
-        'Fobia incontrolável': {
-            'Resistência Mental': -4 
-        },
-    
-        'Alergia': {
-            'Sobrevivência': -4
-        },
-    
-        'Limitação física/sensorial': {
-            'Força': -1,
-            'Resistência Mental': -1,
-            'Resistência Física': -1,
-            'Competência': -2
-        },
-    
-        'Doença degenerativa': {
-            'Força': -1,
-            'Resistência Física': -2,
-            'Sobrevivência': -2
-        },
-    
-        'Sociopatia': {
-            'Liderança': -3,
-            'Controle': -2
-        },
-    
-        'Autodestruição': {
-            'Resistência Mental': -2,
-            'Controle': -3
+    {
+        name: 'Eloquência',
+        description: '',
+        value: 3,
+        target: {
+            kind: 'expertise',
+            name: 'Liderança'
+        }
+    },
+
+    {
+        name: 'Hipertrofia',
+        description: '',
+        value: 3,
+        target: {
+            kind: 'expertise',
+            name: 'Luta'
+        }
+    },
+
+    {
+        name: 'Racional',
+        description: '',
+        value: 3,
+        target: {
+            kind: 'expertise',
+            name: 'Intuição'
+        }
+    },
+
+    {
+        name: 'Observador',
+        description: '',
+        value: 3,
+        target: {
+            kind: 'expertise',
+            name: 'Investigação'
+        }
+    },
+
+    {
+        name: 'Preciso',
+        description: '',
+        value: 3,
+        target: {
+            kind: 'expertise',
+            name: 'Pontaria'
+        }
+    },
+
+    {
+        name: 'Engenhoso',
+        description: '',
+        value: 3,
+        target: {
+            kind: 'expertise',
+            name: 'Criatividade'
+        }
+    },
+
+    {
+        name: 'Fugaz',
+        description: '',
+        value: 3,
+        target: {
+            kind: 'expertise',
+            name: 'Conhecimento'
+        }
+    },
+
+    {
+        name: 'Diplomacia',
+        description: '',
+        value: 3,
+        target: {
+            kind: 'expertise',
+            name: 'Comunicação'
+        }
+    },
+
+    {
+        name: 'Destapado',
+        description: '',
+        value: 3,
+        target: {
+            kind: 'expertise',
+            name: 'Furtividade'
+        }
+    },
+
+    {
+        name: 'Robustez',
+        description: '',
+        value: 3,
+        target: {
+            kind: 'expertise',
+            name: 'RES Física'
+        }
+    },
+
+    {
+        name: 'Sarado',
+        description: '',
+        value: 3,
+        target: {
+            kind: 'expertise',
+            name: 'Atletismo'
+        }
+    },
+
+    {
+        name: 'Convincente',
+        description: '',
+        value: 3,
+        target: {
+            kind: 'expertise',
+            name: 'Persuasão'
+        }
+    },
+
+    {
+        name: 'Metódico',
+        description: '',
+        value: 3,
+        target: {
+            kind: 'expertise',
+            name: 'Medicina'
+        }
+    },
+
+    {
+        name: 'Eficiente',
+        description: '',
+        value: 3,
+        target: {
+            kind: 'expertise',
+            name: 'Tecnologia'
         }
     }
-}
+]
 
 export default traits

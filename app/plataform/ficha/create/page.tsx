@@ -8,8 +8,8 @@ import Characteristics from './Characteristics';
 import Attributes from './Attributes';
 import * as Yup from 'yup'
 import type { Ficha } from '@types';
-import type { ReactElement } from 'react'
-import Traits from './Traits';
+import { useEffect, type ReactElement } from 'react'
+import Expertises from './Expertises';
 
 const validationSchema = Yup.object().shape({
     playerName: Yup.string().notRequired().default(''),
@@ -137,14 +137,12 @@ export default function CreateFichaModal({
                             gap={2.5}
                         >
                             <Box>
-                                <Typography variant='h6'>Traços & Perícias</Typography>
+                                <Typography variant='h6'>Perícias</Typography>
                             </Box>
                             <Box display='flex' width='100%' gap={3}>
-                                <Box>
-                                    <Traits 
-                                        formik={formik}
-                                    />
-                                </Box>
+                                <Expertises 
+                                    formik={formik}
+                                />
                             </Box>
                         </Box>
                     </Box>

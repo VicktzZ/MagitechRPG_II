@@ -29,7 +29,6 @@ export interface Ficha {
         attributes: number
         expertises: number
         diligence: number
-        traits: number
         skills: number
         magics: number
     }
@@ -127,10 +126,14 @@ export interface Expertise<T extends Attributes | null> {
 export interface Trait {
     name: string
     description: string
-    level: number
     value: number
-    kind: 'positive' | 'negative'
-    effect: Record<'expertise' | 'attriute', number>
+    target: {
+        kind: 'attribute',
+        name: Attributes | UpperCaseAttributes
+    } | {
+        kind: 'expertise',
+        name: keyof Expertises
+    }
 }
 
 export interface TradeOff {
@@ -200,6 +203,7 @@ export type FinancialCondition = 'Miserável' | 'Pobre' | 'Estável' | 'Rico'
 export type Gender = 'Masculino' | 'Feminino' | 'Não-binário' | 'Outro' | 'Não definido'
 export type Classes = 'Marcial' | 'Explorador' | 'Feiticeiro' | 'Bruxo' | 'Monge' | 'Druida' | 'Arcano' | 'Ladino'
 export type Attributes = 'des' | 'vig' | 'log' | 'sab' | 'foc' | 'car'
+export type UpperCaseAttributes = 'DES' | 'VIG' | 'LOG' | 'SAB' | 'FOC' | 'CAR'
 export type ItemType = 'Especial' | 'Utilidade' | 'Consumível' | 'Item Chave' | 'Munição' | 'Capacidade'
 export type WeaponType = 'Arremessável' | 'Duas mãos'
 export type DamageType = 'Cortante' | 'Impactante' | 'Perfurante' | Element
@@ -242,6 +246,10 @@ export type SubclassesNames =
     'Espectro' |
     'Metafísico' |
     'Supernaturalista'
+
+export type ExpertisesNames = {
+    [key in keyof Expertises]: string
+}
 
 export type WeaponCategory<T extends 'Leve' | 'Pesada'> = 
     `Arma Branca (${T})` |
