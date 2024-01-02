@@ -4,7 +4,7 @@ import { Footer, LandingPageHeader } from '@layout';
 import { Avatar, Box, Button, Card, Container, Typography, useMediaQuery } from '@mui/material';
 import { type ReactElement } from 'react';
 import { Animate, AnimateOnScroll, Parallax } from '@components/misc';
-import { intro, about, landingPageGrimoire, landingPageSynopse, BLOB_API_URL } from '@constants';
+import { intro, landingPageGrimoire, landingPageSynopse, BLOB_API_URL } from '@constants';
 import { landingPageBg as bg } from '@constants';
 import { useTheme } from '@mui/material';
 import { useRouter } from 'next/navigation';
@@ -23,7 +23,6 @@ export default function LandingPage(): ReactElement {
     const env = useEnvironmentVariables()
 
     console.log(env.GOOGLE_CLIENT_ID);
-    
 
     return (
         <>
@@ -280,7 +279,7 @@ export default function LandingPage(): ReactElement {
                                             <Button 
                                                 sx={{ width: '33%' }} 
                                                 variant='contained' 
-                                                color='terciary'
+                                                color={'terciary' as any}
                                                 onClick={() => { window.open(BLOB_API_URL + 'mlr.pdf') }}
                                             >
                                                 Baixe agora
@@ -321,7 +320,7 @@ export default function LandingPage(): ReactElement {
                                             <Button 
                                                 sx={{ width: '33%' }} 
                                                 variant='contained' 
-                                                color='terciary'
+                                                color={'terciary' as any}
                                                 onClick={() => { window.open(BLOB_API_URL + 'mlr.pdf') }}
                                             >
                                                 Baixe agora

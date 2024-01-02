@@ -46,7 +46,7 @@ export default function AnimateOnScroll({
     })
 
     useEffect(() => {
-        observer.observe(ref.current)
+        observer.observe(ref.current as Element)
     }, [ observer ])
 
     return (

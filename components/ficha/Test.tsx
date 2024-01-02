@@ -11,7 +11,7 @@ export default function Test({ name, expertise, diceQuantity }: { name: string, 
 
     const [ open, setOpen ] = useState<boolean>(false)
 
-    const determinateColor = () => {
+    const determinateColor = (): string => {
         if (expertise.value < 2) {
             return grey[500]
         } else if (expertise.value < 5) {

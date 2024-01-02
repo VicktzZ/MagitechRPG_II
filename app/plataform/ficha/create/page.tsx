@@ -6,46 +6,46 @@ import { fichaModel } from '@constants/ficha';
 import { useSession } from 'next-auth/react';
 import Characteristics from './Characteristics';
 import Attributes from './Attributes';
-import * as Yup from 'yup'
 import type { Ficha } from '@types';
-import { useEffect, type ReactElement } from 'react'
+import { type ReactElement } from 'react'
 import Expertises from './Expertises';
+// import * as Yup from 'yup'
 
-const validationSchema = Yup.object().shape({
-    playerName: Yup.string().notRequired().default(''),
-    name: Yup.string().notRequired(),
-    age: Yup.number().notRequired(),
-    gender: Yup.string().notRequired(),
-    class: Yup.string().notRequired(),
-    race: Yup.string().notRequired(),
-    lineage: Yup.string().notRequired(),
-    financialCondition: Yup.string().notRequired().default(''),
-    capacity: Yup.number().notRequired().default(5),
-    displacement: Yup.number().notRequired().default(9),
-    skills: Yup.array().of(Yup.string()).notRequired().default([]),
-    magics: Yup.array().of(Yup.string()).notRequired().default([]),
-    expertises: Yup.array().of(Yup.string()).notRequired().default([]),
-    perks: Yup.array().of(Yup.string()).notRequired().default([]),
-    penalties: Yup.array().of(Yup.string()).notRequired().default([]),
-    attributes: Yup.number().notRequired().default(9),
-    subClass: Yup.string().notRequired().default(''),
-    level: Yup.number().notRequired().default(0),
-    elementMastery: Yup.string().notRequired().default(''),
+// const validationSchema = Yup.object().shape({
+//     playerName: Yup.string().notRequired().default(''),
+//     name: Yup.string().notRequired(),
+//     age: Yup.number().notRequired(),
+//     gender: Yup.string().notRequired(),
+//     class: Yup.string().notRequired(),
+//     race: Yup.string().notRequired(),
+//     lineage: Yup.string().notRequired(),
+//     financialCondition: Yup.string().notRequired().default(''),
+//     capacity: Yup.number().notRequired().default(5),
+//     displacement: Yup.number().notRequired().default(9),
+//     skills: Yup.array().of(Yup.string()).notRequired().default([]),
+//     magics: Yup.array().of(Yup.string()).notRequired().default([]),
+//     expertises: Yup.array().of(Yup.string()).notRequired().default([]),
+//     perks: Yup.array().of(Yup.string()).notRequired().default([]),
+//     penalties: Yup.array().of(Yup.string()).notRequired().default([]),
+//     attributes: Yup.number().notRequired().default(9),
+//     subClass: Yup.string().notRequired().default(''),
+//     level: Yup.number().notRequired().default(0),
+//     elementMastery: Yup.string().notRequired().default(''),
 
-    inventory: Yup.object().notRequired().default({
-        items: [],
-        weapons: [],
-        armors: [],
-        money: 0
-    }),
+//     inventory: Yup.object().notRequired().default({
+//         items: [],
+//         weapons: [],
+//         armors: [],
+//         money: 0
+//     }),
 
-    points: Yup.object().notRequired().default({
-        attributes: 9,
-        expertises: 0,
-        skills: 0,
-        magics: 0
-    })
-})
+//     points: Yup.object().notRequired().default({
+//         attributes: 9,
+//         expertises: 0,
+//         skills: 0,
+//         magics: 0
+//     })
+// })
 export default function CreateFichaModal(): ReactElement {
     const { data: session } = useSession()
 

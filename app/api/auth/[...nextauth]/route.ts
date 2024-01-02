@@ -32,9 +32,11 @@ const handler = NextAuth({
             return session
         },
         
-        signIn: async ({ profile }: { profile: any }) => {
+        signIn: async ({ profile }) => {
             try {
                 await connectToDb()
+
+                const p: any = profile
     
                 const userExists = await User.findOne({
                     email: profile?.email
@@ -43,8 +45,8 @@ const handler = NextAuth({
                 if (!userExists) {
                     await User.create({
                         email: profile?.email?.toLowerCase(),
-                        name: profile?.name?.replace(' ', '').toLowerCase() ?? profile?.username?.replace(' ', '').toLowerCase(),
-                        image: profile?.image || profile?.image_url
+                        name: profile?.name?.replace(' ', '').toLowerCase() ?? p?.username?.replace(' ', '').toLowerCase(),
+                        image: profile?.image ?? p?.image_url
                     })
                 }
     

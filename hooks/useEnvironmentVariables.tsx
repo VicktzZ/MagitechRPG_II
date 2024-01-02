@@ -9,10 +9,6 @@ export default function useEnvironmentVariables() {
     const NEXTAUTH_URL_INTERNAL = process.env.NEXTAUTH_URL_INTERNAL
     const NODE_ENV = process.env.NODE_ENV
     const MONGODB_URI = process.env.MONGODB_URI
-    const HOST = process.env.HOST
-
-    console.log(HOST);
-    
 
     return {
         DISCORD_CLIENT_ID,
