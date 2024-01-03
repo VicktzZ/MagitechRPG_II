@@ -23,9 +23,11 @@ export default function AnimateOnScroll({
 }) : ReactElement {
     const animationDelay = delay ?? 0
     const ref: MutableRefObject<React.ReactNode | any> = useRef()
+    const observerRef = useRef<IntersectionObserver | null>()
+
     const [ isVisible, setIsVisible ] = useState(false)
 
-    const observer = new IntersectionObserver(entries => {
+    const mountItersectionObserver = (): IntersectionObserver => new IntersectionObserver(entries => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
                 setIsVisible(true)
@@ -46,8 +48,9 @@ export default function AnimateOnScroll({
     })
 
     useEffect(() => {
-        observer.observe(ref.current as Element)
-    }, [ observer ])
+        observerRef.current = mountItersectionObserver()
+        observerRef?.current?.observe(ref.current as Element)
+    }, [])
 
     return (
         <Box visibility='hidden' ref={ref}>

@@ -1,10 +1,10 @@
-import { Test } from '@components/ficha';
+import { Expertise } from '@components/ficha';
 import { Box, Grid, IconButton, Modal, Typography, useTheme } from '@mui/material';
 import { blue, green, grey, purple, yellow } from '@mui/material/colors';
 import { type FormikContextType } from 'formik';
 import { useState, type ReactElement } from 'react';
 import { Edit } from '@mui/icons-material';
-import type { Ficha, Expertise, Attributes } from '@types';
+import type { Ficha, Expertise as ExpertiseType, Attributes } from '@types';
 
 export default function Expertises({ formik }: { formik: any }): ReactElement {
     const f: FormikContextType<Ficha> = formik
@@ -26,8 +26,8 @@ export default function Expertises({ formik }: { formik: any }): ReactElement {
                     spacing={1.5} 
                     container
                 >
-                    {Object.entries(f.values.expertises).map(([ name, expertise ]: [ name: string, expertise: Expertise<any> ]) => (
-                        <Test 
+                    {Object.entries(f.values.expertises).map(([ name, expertise ]: [ name: string, expertise: ExpertiseType<any> ]) => (
+                        <Expertise 
                             key={name}
                             name={name}
                             expertise={expertise}

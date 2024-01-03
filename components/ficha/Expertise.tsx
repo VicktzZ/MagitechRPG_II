@@ -2,11 +2,11 @@
 
 import { Box, Grid, Typography, useTheme } from '@mui/material';
 import { useState, type ReactElement } from 'react';
-import type { Expertise } from '@types';
+import type { Expertise as ExpertiseType } from '@types';
 import { blue, green, grey, purple, yellow } from '@mui/material/colors';
 import DiceRollModal from '@components/misc/DiceRollModal';
 
-export default function Test({ name, expertise, diceQuantity }: { name: string, expertise: Expertise<any>, diceQuantity: number }): ReactElement {
+export default function Expertise({ name, expertise, diceQuantity }: { name: string, expertise: ExpertiseType<any>, diceQuantity: number }): ReactElement {
     const theme = useTheme()
 
     const [ open, setOpen ] = useState<boolean>(false)
@@ -64,6 +64,7 @@ export default function Test({ name, expertise, diceQuantity }: { name: string, 
                 bonus={[ expertise.value ]}
                 isDisadvantage={expertise.value < 0 || diceQuantity < 0}
                 visibleBaseAttribute
+                visibleDices
                 roll={{
                     name,
                     dice: 20,

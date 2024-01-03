@@ -30,122 +30,36 @@ export const fichaModel: Partial<Ficha> = {
         money: 0
     },
     expertises: {
-        'Atletismo': {
-            value: 0,
-            defaultAttribute: 'vig'
-        },
-        'RES Física': {
-            value: 0,
-            defaultAttribute: 'vig'
-        },
-        'RES Mental': {
-            value: 0,
-            defaultAttribute: 'log'
-        },
-        'RES Mágica': {
-            value: 0,
-            defaultAttribute: 'foc'
-        },
-        'Crime': {
-            value: 0,
-            defaultAttribute: 'des'
-        },
-        'Agilidade': {
-            value: 0,
-            defaultAttribute: 'des'
-        },
-        'Sobrevivência': {
-            value: 0,
-            defaultAttribute: 'sab'
-        },
-        'Competência': {
-            value: 0,
-            defaultAttribute: 'log'
-        },
-        'Luta': {
-            value: 0,
-            defaultAttribute: 'vig'
-        },
-        'Conhecimento': {
-            value: 0,
-            defaultAttribute: 'sab'
-        },
-        'Criatividade': {
-            value: 0,
-            defaultAttribute: 'log'
-        },
-        'Furtividade': {
-            value: 0,
-            defaultAttribute: 'des'
-        },
-        'Pontaria': {
-            value: 0,
-            defaultAttribute: 'des'
-        },
-        'Reflexos': {
-            value: 0,
-            defaultAttribute: 'foc'
-        },
-        'Controle': {
-            value: 0,
-            defaultAttribute: 'foc'
-        },
-        'Condução': {
-            value: 0,
-            defaultAttribute: 'des'
-        },
-        'Sorte': {
-            value: 0,
-            defaultAttribute: 'sab'
-        },
-        'Enganação': {
-            value: 0,
-            defaultAttribute: 'car'
-        },
-        'Tecnologia': {
-            value: 0,
-            defaultAttribute: 'log'
-        },
-        'Magia': {
-            value: 0,
-            defaultAttribute: 'foc'
-        },
-        'Medicina': {
-            value: 0,
-            defaultAttribute: 'sab'
-        },
-        'Percepção': {
-            value: 0,
-            defaultAttribute: 'foc'
-        },
-        'Intuição': {
-            value: 0,
-            defaultAttribute: 'log'
-        },
-        'Investigação': {
-            value: 0,
-            defaultAttribute: 'log'
-        },
-        'Argumentação': {
-            value: 0,
-            defaultAttribute: 'sab'
-        },
-        'Intimidação': {
-            value: 0,
-            defaultAttribute: 'car'
-        },
-        'Persuasão': {
-            value: 0,
-            defaultAttribute: 'car'
-        },
-        'Comunicação': {
-            value: 0,
-            defaultAttribute: 'car'
-        },
-        'Liderança': {
-            value: 0,
-            defaultAttribute: 'car'
-        }
+        'Agilidade': { value: 0, defaultAttribute: 'des' },
+        'Argumentação': { value: 0, defaultAttribute: 'sab' },
+        'Atletismo': { value: 0, defaultAttribute: 'vig' },
+        'Competência': { value: 0, defaultAttribute: 'log' },
+        'Comunicação': { value: 0, defaultAttribute: 'car' },
+        'Condução': { value: 0, defaultAttribute: 'des' },
+        'Conhecimento': { value: 0, defaultAttribute: 'sab' },
+        'Controle': { value: 0, defaultAttribute: 'foc' },
+        'Criatividade': { value: 0, defaultAttribute: 'log' },
+        'Enganação': { value: 0, defaultAttribute: 'car' },
+        'Furtividade': { value: 0, defaultAttribute: 'des' },
+        'Intimidação': { value: 0, defaultAttribute: 'car' },
+        'Intuição': { value: 0, defaultAttribute: 'log' },
+        'Investigação': { value: 0, defaultAttribute: 'log' },
+        'Ladinagem': { value: 0, defaultAttribute: 'des' },
+        'Liderança': { value: 0, defaultAttribute: 'car' },
+        'Luta': { value: 0, defaultAttribute: 'vig' },
+        'Magia': { value: 0, defaultAttribute: 'foc' },
+        'Medicina': { value: 0, defaultAttribute: 'sab' },
+        'Percepção': { value: 0, defaultAttribute: 'foc' },
+        'Persuasão': { value: 0, defaultAttribute: 'car' },
+        'Pontaria': { value: 0, defaultAttribute: 'des' },
+        'Reflexos': { value: 0, defaultAttribute: 'foc' },
+        'RES Física': { value: 0, defaultAttribute: 'vig' },
+        'RES Mágica': { value: 0, defaultAttribute: 'foc' },
+        'RES Mental': { value: 0, defaultAttribute: 'log' },
+        'Sorte': { value: 0, defaultAttribute: 'sab' },
+        'Sobrevivência': { value: 0, defaultAttribute: 'sab' },
+        'Tecnologia': { value: 0, defaultAttribute: 'log' },
+        'Vontade': { value: 0, defaultAttribute: 'foc' }
     },
     
     points: {

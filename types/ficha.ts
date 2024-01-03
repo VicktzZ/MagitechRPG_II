@@ -87,35 +87,36 @@ export interface Inventory {
 }
 
 export interface Expertises {
-    'Atletismo': Expertise<'vig'>
-    'RES Física': Expertise<'vig'>
-    'RES Mental': Expertise<'log'>
-    'RES Mágica': Expertise<'foc'>
-    'Crime': Expertise<'des'>
     'Agilidade': Expertise<'des'>
-    'Sobrevivência': Expertise<'sab'>
+    'Argumentação': Expertise<'sab'>
+    'Atletismo': Expertise<'vig'>
     'Competência': Expertise<'log'>
-    'Luta': Expertise<'vig'>
-    'Conhecimento': Expertise<'sab'>
-    'Criatividade': Expertise<'log'>
-    'Furtividade': Expertise<'des'>
-    'Pontaria': Expertise<'des'>
-    'Reflexos': Expertise<'foc'>
-    'Controle': Expertise<'foc'>
+    'Comunicação': Expertise<'car'>
     'Condução': Expertise<'des'>
-    'Sorte': Expertise<'sab'>
+    'Conhecimento': Expertise<'sab'>
+    'Controle': Expertise<'foc'>
+    'Criatividade': Expertise<'log'>
     'Enganação': Expertise<'car'>
-    'Tecnologia': Expertise<'log'>
+    'Furtividade': Expertise<'des'>
+    'Intimidação': Expertise<'car'>
+    'Intuição': Expertise<'log'>
+    'Investigação': Expertise<'log'>
+    'Ladinagem': Expertise<'des'>
+    'Liderança': Expertise<'car'>
+    'Luta': Expertise<'vig'>
     'Magia': Expertise<'foc'>
     'Medicina': Expertise<'sab'>
     'Percepção': Expertise<'foc'>
-    'Intuição': Expertise<'log'>
-    'Investigação': Expertise<'log'>
-    'Argumentação': Expertise<'sab'>
-    'Intimidação': Expertise<'car'>
-    'Comunicação': Expertise<'car'>
     'Persuasão': Expertise<'car'>
-    'Liderança': Expertise<'car'>
+    'Pontaria': Expertise<'des'>
+    'Reflexos': Expertise<'foc'>
+    'RES Física': Expertise<'vig'>
+    'RES Mágica': Expertise<'foc'>
+    'RES Mental': Expertise<'log'>
+    'Sorte': Expertise<'sab'>
+    'Sobrevivência': Expertise<'sab'>
+    'Tecnologia': Expertise<'log'>
+    'Vontade': Expertise<'foc'>
 }
 
 export interface Expertise<T extends Attributes | null> {

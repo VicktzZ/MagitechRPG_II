@@ -13,16 +13,12 @@ import magitechCapa from '@public/magitech_capa.png'
 import magitechCapaGrimorio from '@public/Magitech_capa_grimorio.png'
 import profilePhoto from '@public/profile_photo.jpg'
 import Image from 'next/image';
-import useEnvironmentVariables from '@hooks/useEnvironmentVariables';
 
 export default function LandingPage(): ReactElement {
     const theme = useTheme()
     const matches = useMediaQuery(theme.breakpoints.down('md'))
 
     const router = useRouter()
-    const env = useEnvironmentVariables()
-
-    console.log(env.GOOGLE_CLIENT_ID);
 
     return (
         <>

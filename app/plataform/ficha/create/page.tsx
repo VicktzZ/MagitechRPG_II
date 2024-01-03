@@ -6,9 +6,10 @@ import { fichaModel } from '@constants/ficha';
 import { useSession } from 'next-auth/react';
 import Characteristics from './Characteristics';
 import Attributes from './Attributes';
-import type { Ficha } from '@types';
-import { type ReactElement } from 'react'
 import Expertises from './Expertises';
+import Skills from './Skills';
+import type { ReactElement } from 'react'
+import type { Ficha } from '@types';
 // import * as Yup from 'yup'
 
 // const validationSchema = Yup.object().shape({
@@ -75,7 +76,7 @@ export default function CreateFichaModal(): ReactElement {
             >
                 <Box
                     display='flex'
-                    height='100%'
+                    minHeight='100vh'
                     width='100%'
                     flexDirection='column'
                     component='form'
@@ -107,7 +108,6 @@ export default function CreateFichaModal(): ReactElement {
                             display: 'flex',
                             flexDirection: matches ? 'column' : 'row',
                             width: '100%',
-                            height: '1rem',
                             gap: 8
                         }} 
                     >
@@ -115,14 +115,24 @@ export default function CreateFichaModal(): ReactElement {
                             width='100%'
                             display='flex'
                             flexDirection='column'
-                            gap={2.5}
+                            gap={8}
                         >
                             <Box>
-                                <Typography variant='h6'>Atributos</Typography>
+                                <Box>
+                                    <Typography variant='h6'>Atributos</Typography>
+                                </Box>
+                                <Attributes
+                                    formik={formik}
+                                />
                             </Box>
-                            <Attributes
-                                formik={formik}
-                            />
+                            <Box>
+                                <Box>
+                                    <Typography variant='h6'>Habilidades</Typography>
+                                </Box>
+                                <Skills
+                                    formik={formik}
+                                />
+                            </Box>
                         </Box>
                         <Box 
                             width='100%'

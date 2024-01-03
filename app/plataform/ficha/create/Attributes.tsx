@@ -166,7 +166,6 @@ export default function Attributes({ formik }: { formik: any }): ReactElement {
     return (
         <Box display='flex' flexDirection={matches ? 'column' : 'row'} width='100%' gap={matches ? 6 : 3}>
             <Box
-                height='100%'
                 width={matches ? '100%' : '50%'}
                 display='flex' 
                 flexDirection='column'
@@ -220,10 +219,10 @@ export default function Attributes({ formik }: { formik: any }): ReactElement {
                     }}
                 />
                 <Box
-                    height='100%'
                     display='flex'
                     flexDirection='column'
                     justifyContent='space-between'
+                    height='100%'
                     gap={1}
                 >
                     <Box alignItems='center' display='flex' gap={1}>
@@ -479,7 +478,7 @@ export default function Attributes({ formik }: { formik: any }): ReactElement {
                         </Box>
                         <Button onClick={() => { setModalOpen(true); f.handleSubmit() }} variant='outlined' >Rolar dados</Button>
                     </Box>
-                    <Box display='flex' flexDirection='column' gap={1}>
+                    <Box display='flex' flexDirection='column' justifyContent='space-between' height='100%' gap={1}>
                         <Box display='flex' alignItems='center' gap={1}>
                             <Typography>Nível:</Typography>
                             <Chip

@@ -9,12 +9,14 @@ import { type Classes } from '@types';
 import { type FormikContextType } from 'formik';
 import { type fichaModel } from '@constants/ficha';
 import { green, red } from '@mui/material/colors';
+import { useAudio } from '@hooks';
 
-const audio = new Audio(clickEffect)
 export default function Characteristics({ formik }: { formik: any }): ReactElement {
     const classRef = useRef<any>(null)
     const f: FormikContextType<typeof fichaModel> = formik
 
+    const audio = useAudio(clickEffect)
+    
     const setClass = (e: SelectChangeEvent<any>): void => {
         const classe: Classes = e.target.value
 
