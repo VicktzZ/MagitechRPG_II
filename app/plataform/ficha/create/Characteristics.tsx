@@ -1,6 +1,6 @@
 'use client';
 
-import { InputLabel, MenuItem, Select, useMediaQuery, type SelectChangeEvent, useTheme, Typography } from '@mui/material'
+import { InputLabel, MenuItem, Select, useMediaQuery, type SelectChangeEvent, useTheme, Typography, Chip } from '@mui/material'
 import { Box, FormControl, TextField } from '@mui/material'
 import { clickEffect } from '@public/sounds'
 import { classesModel } from '@constants/classes';
@@ -10,13 +10,14 @@ import { type FormikContextType } from 'formik';
 import { type fichaModel } from '@constants/ficha';
 import { green, red } from '@mui/material/colors';
 import { useAudio } from '@hooks';
+import { skills } from '@constants/skills';
 
 export default function Characteristics({ formik }: { formik: any }): ReactElement {
     const classRef = useRef<any>(null)
     const f: FormikContextType<typeof fichaModel> = formik
 
     const audio = useAudio(clickEffect)
-    
+
     const setClass = (e: SelectChangeEvent<any>): void => {
         const classe: Classes = e.target.value
 
@@ -40,6 +41,18 @@ export default function Characteristics({ formik }: { formik: any }): ReactEleme
         audio.play()
 
         classRef.current = classesModel[classe]
+    }
+
+    const setLineage = (e: SelectChangeEvent<any>): void => {
+        f.handleChange(e)
+        f.setFieldValue('lineage', e.target.value)
+
+        skills.lineage?.forEach(skill => {
+            if (skill.origin === e.target.value)
+                f.setFieldValue('skills.lineage', [ skill ])
+        })
+
+        audio.play()
     }
 
     const theme = useTheme()
@@ -66,8 +79,7 @@ export default function Characteristics({ formik }: { formik: any }): ReactEleme
                             required
                             fullWidth
                             onChange={e => { 
-                                setClass(e)
-                                
+                                setClass(e)                              
                             }}
                         >
                             <MenuItem value='Marcial'>Marcial</MenuItem>
@@ -89,10 +101,7 @@ export default function Characteristics({ formik }: { formik: any }): ReactEleme
                                 value={f.values.lineage}
                                 required
                                 fullWidth
-                                onChange={e => {
-                                    f.handleChange(e)
-                                    audio.play()
-                                }}
+                                onChange={setLineage}
                                 MenuProps={{
                                     sx: { maxHeight: '60vh' }
                                 }}
@@ -134,10 +143,7 @@ export default function Characteristics({ formik }: { formik: any }): ReactEleme
                                 value={f.values.lineage}
                                 required
                                 fullWidth
-                                onChange={e => {
-                                    f.handleChange(e)
-                                    audio.play()
-                                }}
+                                onChange={setLineage}
                                 MenuProps={{
                                     sx: { maxHeight: '60vh' }
                                 }}
@@ -179,6 +185,7 @@ export default function Characteristics({ formik }: { formik: any }): ReactEleme
                         value={f.values.race}
                         required
                         fullWidth
+                        renderValue={selected => String(selected)}
                         onChange={e => { 
                             f.handleChange(e)
                             audio.play()

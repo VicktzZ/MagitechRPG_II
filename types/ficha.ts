@@ -19,10 +19,11 @@ export interface Ficha {
     traits: Trait[]
 
     skills: {
-        lineage: Skill[],
-        class: Skill[],
-        subclass: Skill[],
+        lineage: Skill[]
+        class: Skill[]
+        subclass: Skill[]
         bonus: Skill[]
+        powers: Skill[]
     }
 
     points: {
@@ -190,6 +191,8 @@ export interface Magic {
 export interface Skill {
     name: string
     description: string
+    type: 'Poder Mágico' | 'Classe' | 'Linhagem' | 'Subclasse' | 'Bônus'
+    origin?: string
     effects?: number[]
     level?: number
 }

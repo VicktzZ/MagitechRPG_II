@@ -20,6 +20,7 @@ export const fichaModel: Partial<Ficha> = {
         lineage: [],
         bonus: [],
         class: [],
+        powers: [],
         subclass: []
     },
 

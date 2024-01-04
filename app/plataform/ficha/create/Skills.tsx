@@ -2,8 +2,9 @@
 
 import { Box, FormControl, InputLabel, Typography, useMediaQuery, useTheme } from '@mui/material'
 import { useState, type ReactElement, type ChangeEvent, MouseEventHandler, MouseEvent, useRef } from 'react'
-import type { Ficha } from '@types'
+import type { Ficha, Skill } from '@types'
 import type { FormikContextType } from 'formik'
+import { skills } from '@constants/skills';
 
 const names = [
     'Oliver Hansen',
@@ -21,26 +22,26 @@ const names = [
 export default function Skills({ formik }: { formik: any }): ReactElement {
     const f: FormikContextType<Ficha> = formik
     const skillRef = useRef<EventTarget & HTMLSpanElement | null>()
-    const [ selected, setSelected ] = useState<string | null>(null)
+    const [ selectedSkill, setSelectedSkill ] = useState<Skill | null>(null)
     
     const theme = useTheme()
     const matches = useMediaQuery(theme.breakpoints.down('md'))
 
-    const onClick = (event: MouseEvent<HTMLSpanElement>): void => {
+    const onClick = (event: MouseEvent<HTMLSpanElement>, skill: Skill): void => {
         if (skillRef.current) {
             skillRef.current.style.backgroundColor = 'transparent'
         }
 
         if (skillRef.current === event.currentTarget) {
             event.currentTarget.style.backgroundColor = 'transparent'
-            setSelected(null)
+            setSelectedSkill(null)
 
             return 
         }
 
         event.currentTarget.style.backgroundColor = theme.palette.background.paper
 
-        setSelected(event.currentTarget.innerHTML)
+        setSelectedSkill(skill)
 
         skillRef.current = event.currentTarget
     }
@@ -82,19 +83,19 @@ export default function Skills({ formik }: { formik: any }): ReactElement {
                         p: 2
                     }}
                 >
-                    {names.map((name) => (
+                    {Object.values(f.values.skills).map(item => item.map(skill => (
                         <Typography
-                            key={name}
+                            key={skill.name}
                             noWrap
-                            onClick={onClick}
+                            onClick={e => { onClick(e, skill) }}
                             sx={{
                                 cursor: 'pointer',
                                 p: 0.5
                             }}
                         >
-                            {name}
+                            {skill.name}
                         </Typography>
-                    ))}
+                    )))}
                 </FormControl>
                 <Box
                     minHeight='100%'
@@ -110,10 +111,10 @@ export default function Skills({ formik }: { formik: any }): ReactElement {
                         p={2}
                     >
                         <Box>
-                            <Typography fontFamily='WBZ' variant='h3'>Visão do futuro</Typography>
+                            <Typography fontWeight={900} fontFamily='Inter' variant='h4'>{selectedSkill?.name} { selectedSkill ? `(${selectedSkill?.type})` : ''}</Typography>
                         </Box>
                         <Box>
-                            <Typography whiteSpace='pre-wrap'>{selected}</Typography>
+                            <Typography whiteSpace='pre-wrap'>{selectedSkill?.description}</Typography>
                         </Box>
                     </Box>
                 </Box>
