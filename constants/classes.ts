@@ -1,4 +1,18 @@
 import type { Class, Classes } from  '@types';
+import { skills } from './skills';
+
+const { 
+    class: { 
+        Marcial: marcialSkills,
+        Explorador: exploradorSkills,
+        Feiticeiro: feiticeiroSkills,
+        Bruxo: bruxoSkills,
+        Monge: mongeSkills,
+        Druida: druidaSkills,
+        Arcano: arcanoSkills,
+        Ladino: ladinoSkills
+    }
+} = skills
 
 export const classesModel: Record<Classes, Class> = {
     'Marcial': {
@@ -15,13 +29,7 @@ export const classesModel: Record<Classes, Class> = {
             expertises: 4
         },
 
-        skills: [
-            {
-                level: 0,
-                name: '',
-                description: ''
-            }
-        ]
+        skills: marcialSkills
     },
 
     'Explorador': {
@@ -38,13 +46,7 @@ export const classesModel: Record<Classes, Class> = {
             expertises: 10
         },
 
-        skills: [
-            {
-                level: 0,
-                name: '',
-                description: ''
-            }
-        ]
+        skills: exploradorSkills
     },
 
     'Feiticeiro': {
@@ -61,13 +63,7 @@ export const classesModel: Record<Classes, Class> = {
             expertises: 6
         },
 
-        skills: [
-            {
-                level: 0,
-                name: '',
-                description: ''
-            }
-        ]
+        skills: feiticeiroSkills
     },
 
     'Bruxo': {
@@ -84,13 +80,7 @@ export const classesModel: Record<Classes, Class> = {
             expertises: 6
         },
 
-        skills: [
-            {
-                level: 0,
-                name: '',
-                description: ''
-            }
-        ]
+        skills: bruxoSkills
     },
 
     'Monge': {
@@ -107,13 +97,7 @@ export const classesModel: Record<Classes, Class> = {
             expertises: 8
         },
 
-        skills: [
-            {
-                level: 0,
-                name: '',
-                description: ''
-            }
-        ]
+        skills: mongeSkills
     },
 
     'Druida': {
@@ -130,13 +114,7 @@ export const classesModel: Record<Classes, Class> = {
             expertises: 6
         },
 
-        skills: [
-            {
-                level: 0,
-                name: '',
-                description: ''
-            }
-        ]
+        skills: druidaSkills
     },
 
     'Arcano': {
@@ -153,13 +131,7 @@ export const classesModel: Record<Classes, Class> = {
             expertises: 5
         },
 
-        skills: [
-            {
-                level: 0,
-                name: '',
-                description: ''
-            }
-        ]
+        skills: arcanoSkills
     },
 
     'Ladino': {
@@ -176,12 +148,6 @@ export const classesModel: Record<Classes, Class> = {
             expertises: 5
         },
 
-        skills: [
-            {
-                level: 0,
-                name: '',
-                description: ''
-            }
-        ]
+        skills: ladinoSkills
     }
 }

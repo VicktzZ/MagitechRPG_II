@@ -25,6 +25,8 @@ import {
     useMediaQuery,
     useTheme 
 } from '@mui/material'
+import { useAudio } from '@hooks'
+import { selectEffect } from '@public/sounds'
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
@@ -47,6 +49,8 @@ export default function Attributes({ formik }: { formik: any }): ReactElement {
     const [ modalOpen, setModalOpen ] = useState(false)
 
     const matches = useMediaQuery(theme.breakpoints.down('md'))
+
+    const audio = useAudio(selectEffect)
 
     const setDiligencePoints = (point: 'lp' | 'mp' | 'ap', action: 'add' | 'sub', value: number): void => {
         const classe = classesModel[f.values.class as Classes] || null
@@ -130,8 +134,6 @@ export default function Attributes({ formik }: { formik: any }): ReactElement {
             }
         }
 
-        // console.log(f.values.expertises[trait?.target.name ?? '' as keyof Expertises].value)
-
         if (traitRef.current) {
             if (prevTrait?.target.kind === 'attribute') {
                 f.setFieldValue(
@@ -139,10 +141,13 @@ export default function Attributes({ formik }: { formik: any }): ReactElement {
                     f.values.attributes[prevTrait?.target.name.toLowerCase() as AttributesType] - prevTrait.value
                 )
             } else {
-                f.setFieldValue(
-                    `expertises.${prevTrait?.target.name}`,
-                    f.values.expertises[prevTrait?.target.name ?? '' as keyof Expertises].value - (prevTrait?.value ?? 0)
-                )
+                f.values.expertises = { 
+                    ...f.values.expertises,
+                    [(prevTrait?.target.name ?? '') as keyof Expertises]: {
+                        ...f.values.expertises[(prevTrait?.target.name ?? '') as keyof Expertises],
+                        value: f.values.expertises[(prevTrait?.target.name ?? '') as keyof Expertises].value - (prevTrait?.value ?? 0)
+                    }
+                }
             }
         }
 
@@ -152,14 +157,16 @@ export default function Attributes({ formik }: { formik: any }): ReactElement {
                 f.values.attributes[trait?.target.name.toLowerCase() as AttributesType] + trait?.value
             )
         } else {
-            // f.setFieldValue(
-            //     `expertises.${trait?.target.name.toLowerCase()}`,
-            //     f.values.expertises[trait?.target.name ?? '' as keyof Expertises].value + (trait?.value ?? 0)
-            // )
+            f.setFieldValue('expertises', {
+                ...f.values.expertises,
+                [(trait?.target.name ?? '') as keyof Expertises]: {
+                    ...f.values.expertises[(trait?.target.name ?? '') as keyof Expertises],
+                    value: f.values.expertises[(trait?.target.name ?? '') as keyof Expertises].value + (trait?.value ?? 0)
+                }
+            })
         }
 
-        console.log(trait);
-        console.log(traitRef);
+        audio.play()
         traitRef.current = e.target.value
     }
 
@@ -463,6 +470,8 @@ export default function Attributes({ formik }: { formik: any }): ReactElement {
 
                                         f.handleChange(e)
                                         f.setFieldValue('inventory.money', financialCondition[value])
+
+                                        audio.play()
                                     }}
                                 >
                                     <ListSubheader>{'< 8'}</ListSubheader>

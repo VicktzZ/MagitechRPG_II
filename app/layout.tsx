@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 
-import '@public/fonts/fonts.css'
+import '@public/global.css'
 
 import { type ReactElement } from 'react';
 import ContextProvider from '@contexts/ContextProvider';
@@ -16,7 +16,7 @@ export default function RootLayout({
   children: React.ReactNode
 }): ReactElement<any, any> {
     return (
-        <html lang="en">
+        <html className='html' lang="en">
             <body style={{
                 boxSizing: 'border-box',
                 margin: 0,

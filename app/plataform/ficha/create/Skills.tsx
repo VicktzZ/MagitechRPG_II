@@ -6,19 +6,6 @@ import type { Ficha, Skill } from '@types'
 import type { FormikContextType } from 'formik'
 import { skills } from '@constants/skills';
 
-const names = [
-    'Oliver Hansen',
-    'Van Henry',
-    'April Tucker',
-    'Ralph Hubbard',
-    'Omar Alexander',
-    'Carlos Abbott',
-    'Miriam Wagner',
-    'Bradley Wilkerson',
-    'Virginia Andrews',
-    'Kelly Snyder'
-];
-
 export default function Skills({ formik }: { formik: any }): ReactElement {
     const f: FormikContextType<Ficha> = formik
     const skillRef = useRef<EventTarget & HTMLSpanElement | null>()
@@ -36,6 +23,7 @@ export default function Skills({ formik }: { formik: any }): ReactElement {
             event.currentTarget.style.backgroundColor = 'transparent'
             setSelectedSkill(null)
 
+            skillRef.current = null
             return 
         }
 
@@ -60,23 +48,24 @@ export default function Skills({ formik }: { formik: any }): ReactElement {
                 gap={2}
                 p={2}
             >
-                <Typography>Todos</Typography>
+                {/* <Typography>Todos</Typography>
                 <Typography>Classe</Typography>
                 <Typography>Subclasse</Typography>
                 <Typography>Linhagem</Typography>
                 <Typography>Poderes</Typography>
-                <Typography>Bõnus</Typography>
+                <Typography>Bõnus</Typography> */}
             </Box>
             <Box
                 display='flex'
-                minHeight='25rem'
-                maxHeight='35rem'
+                minHeight={matches ? '40rem' : '25rem'}
+                maxHeight={matches ? '60rem' : '35rem'}
                 gap={4}
+                flexDirection={matches ? 'column' : 'row'}
             >
                 <FormControl
                     sx={{
                         minHeight: '100%',
-                        width: '20%',
+                        width: matches ? '100%' : '20%',
                         bgcolor: 'background.paper3',
                         borderRadius: 2,
                         overflow: 'auto',
@@ -98,13 +87,14 @@ export default function Skills({ formik }: { formik: any }): ReactElement {
                     )))}
                 </FormControl>
                 <Box
-                    minHeight='100%'
-                    width='80%'
+                    minHeight={matches ? '40rem' : '100%'}
+                    width={matches ? '100%' : '80%'}
                     bgcolor='background.paper3'
                     borderRadius={2}
                 >
                     <Box 
-                        overflow='auto' 
+                        overflow='auto'
+                        maxHeight='35rem' 
                         display='flex' 
                         flexDirection='column' 
                         gap={3} 

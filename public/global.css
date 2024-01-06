@@ -1,0 +1,9 @@
+@import url(../public/fonts/fonts.css);
+
+/* max-width:899.95px */
+
+@media (max-width:1535.95px) {
+    html {
+        font-size: 12px;
+    }
+}

@@ -60,13 +60,7 @@ const theme = createTheme({
         MuiCssBaseline: {
             styleOverrides: {
                 scrollBehavior: 'smooth',
-
-                html: {
-                    '@media (max-width:1535.95px)': {
-                        fontSize: '12px'
-                    }
-                },
-
+                
                 // Custom Scrollbar
 
                 body: {

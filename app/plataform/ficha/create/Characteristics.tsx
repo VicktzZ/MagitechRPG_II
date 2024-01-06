@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
 'use client';
 
 import { InputLabel, MenuItem, Select, useMediaQuery, type SelectChangeEvent, useTheme, Typography, Chip } from '@mui/material'
@@ -16,10 +17,12 @@ export default function Characteristics({ formik }: { formik: any }): ReactEleme
     const classRef = useRef<any>(null)
     const f: FormikContextType<typeof fichaModel> = formik
 
-    const audio = useAudio(clickEffect)
+    const audio1 = useAudio(clickEffect)
 
     const setClass = (e: SelectChangeEvent<any>): void => {
         const classe: Classes = e.target.value
+
+        const expertiseHasValue = Object.values(f.values.expertises as any).some((expertise: any) => expertise.value > 1)
 
         f.handleChange(e)
 
@@ -33,12 +36,13 @@ export default function Characteristics({ formik }: { formik: any }): ReactEleme
         f.setFieldValue('points', {
             ...f.values.points,
             ...classesModel[classe].points,
-            diligence: classesModel[classe].points.diligence + (f.values.attributes?.log ?? 0)
+            diligence: classesModel[classe].points.diligence + (f.values.attributes?.log ?? 0),
+            expertises: !expertiseHasValue ? classesModel[classe].points.expertises : 0 
         })
 
         f.setFieldValue('skills.class', classesModel[classe].skills)
         
-        audio.play()
+        audio1.play()
 
         classRef.current = classesModel[classe]
     }
@@ -52,7 +56,7 @@ export default function Characteristics({ formik }: { formik: any }): ReactEleme
                 f.setFieldValue('skills.lineage', [ skill ])
         })
 
-        audio.play()
+        audio1.play()
     }
 
     const theme = useTheme()
@@ -188,7 +192,7 @@ export default function Characteristics({ formik }: { formik: any }): ReactEleme
                         renderValue={selected => String(selected)}
                         onChange={e => { 
                             f.handleChange(e)
-                            audio.play()
+                            audio1.play()
                         }}
                     >
                         <MenuItem value='Humano'>

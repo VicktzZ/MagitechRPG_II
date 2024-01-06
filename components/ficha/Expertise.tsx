@@ -2,11 +2,28 @@
 
 import { Box, Grid, Typography, useTheme } from '@mui/material';
 import { useState, type ReactElement } from 'react';
-import type { Expertise as ExpertiseType } from '@types';
+import type { Expertise as ExpertiseType, Expertises, Ficha } from '@types';
 import { blue, green, grey, purple, yellow } from '@mui/material/colors';
 import DiceRollModal from '@components/misc/DiceRollModal';
+import type { FormikContextType } from 'formik';
 
-export default function Expertise({ name, expertise, diceQuantity }: { name: string, expertise: ExpertiseType<any>, diceQuantity: number }): ReactElement {
+export default function Expertise({ 
+    name,
+    expertise,
+    diceQuantity,
+    edit,
+    formik
+}: { 
+    name: keyof Expertises,
+    expertise: ExpertiseType<any>,
+    diceQuantity: number,
+    formik?: FormikContextType<Ficha>,
+    edit?: {
+        isEditing: boolean,
+        value: number,
+        setEdit?: (param: typeof edit) => void
+    } 
+}): ReactElement {
     const theme = useTheme()
 
     const [ open, setOpen ] = useState<boolean>(false)
@@ -25,6 +42,39 @@ export default function Expertise({ name, expertise, diceQuantity }: { name: str
         }
     }
 
+    const onClick = (): void => {
+        if (!edit?.isEditing) {
+            setOpen(true)
+        } else {
+
+            edit.setEdit?.({ isEditing: false, value: 0 })
+
+            if (formik) {
+                if (
+                    (
+                        (formik.values.points.expertises > 0 && formik.values.expertises[name].value < 4) ||
+                        (formik.values.points.expertises >= 0 && edit.value < 0)
+                    ) &&
+                        formik.values.expertises[name].value + edit.value > -1
+                ) {
+                    formik.setFieldValue('expertises', {
+                        ...formik.values.expertises,
+                        [name]: {
+                            ...formik.values.expertises[name],
+                            value: expertise.value + edit.value
+                        }
+                    })    
+
+                    formik.setFieldValue(
+                        'points.expertises', 
+                        edit.value > 0 ? formik.values.points.expertises - 1 :
+                            formik.values.points.expertises + 1
+                    )
+                }
+            }
+        }
+    }
+
     return (
         <>
             <Grid
@@ -32,7 +82,7 @@ export default function Expertise({ name, expertise, diceQuantity }: { name: str
                 width='9.5rem'
                 key={name} 
                 item
-                onClick={() => { setOpen(true) }}
+                onClick={onClick}
                 sx={{ 
                     cursor: 'pointer',
                     transition: '.3s',
@@ -47,8 +97,10 @@ export default function Expertise({ name, expertise, diceQuantity }: { name: str
                     alignItems='center'
                     flexDirection='column' 
                     p={1} 
-                    border={`1px solid ${theme.palette.primary.main}75`} 
+                    border={`1px solid ${edit?.isEditing ? yellow[500] : theme.palette.primary.main}75`} 
+                    // bgcolor={edit?.isEditing ? theme.palette.primary.dark : 'transparent'}
                     borderRadius={1}
+                    sx={{ transition: '.3s' }}
                 >
                     <Box display='flex' alignItems='center' gap={1}>
                         <Typography fontSize='3rem' fontFamily='D20'>-</Typography>

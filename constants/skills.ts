@@ -2,7 +2,16 @@ import type { Skill } from '@types'
 
 export const skills: {
     lineage: Skill[]
-    class: Skill[]
+    class: {
+        'Marcial': Skill[]
+        'Explorador': Skill[]
+        'Feiticeiro': Skill[]
+        'Bruxo': Skill[]
+        'Monge': Skill[]
+        'Druida': Skill[]
+        'Arcano': Skill[]
+        'Ladino': Skill[]
+    }
     subclass: Skill[]
     bonus: Skill[]
     powers: Skill[]
@@ -129,7 +138,102 @@ export const skills: {
             type: 'Linhagem'
         }
     ],
-    class: [],
+    class: {
+        'Marcial': [
+            {
+                name: 'Duro na Queda',
+                description: 'Sempre que o cálculo de dano for maior que sua vida, ao invés de ficar inconsciente, você fica com 1 LP. Se outro dano for aplicado enquanto você estiver com 1 LP, você entra no estado inconsciente.',
+                origin: 'Marcial',
+                type: 'Classe',
+                level: 0
+            }
+        ],
+
+        'Explorador': [
+            {
+                name: 'Treinado',
+                description: 'Você pode gastar 5 MP uma vez por teste para rolar novamente um dos dados (ou o dado, no caso de um) e substituí-lo (ou não) pelo novo resultado.',
+                origin: 'Explorador',
+                type: 'Classe',
+                level: 0
+            }
+        ],
+
+        'Feiticeiro': [
+            {
+                name: 'Feitiçaria',
+                description: 'Você ganha +1d4 para todas as magias de ataque que você utilizar. Além disso, ao adquirir essa habilidade, escolha uma magia nível 1 e aprenda-a.',
+                origin: 'Feiticeiro',
+                type: 'Classe',
+                level: 0
+            }
+        ],
+
+        'Bruxo': [
+            {
+                name: 'Fazer Poções',
+                description: `Você possui a habilidade de criar poções. Qualquer tipo de matéria orgânica + algum recipiente vazio pode ser combinado para usar poções. Em primeira instância, elas são imprevisíveis, mas à medida que sua experiência for avançando, além de melhores resultados com melhores efeitos, você poderá saber como utilizá-las com maestria.
+                Os testes utilizados para criar poções podem variar entre Magia, Sobrevivência, Medicina, Competência, Destreza, Controle e Criatividade, dependendo do propósito e dos métodos utilizados para a criação da poção. Quando você quiser criar uma poção com uma finalidade específica, existe 50% de chance (resultado par em um d4) da poção resultar em algo diferente do que você planejava, o que pode ser bom, ou ruim. É necessário gastar 10 MP para cada poção feita. Para criar uma poção com sucesso é necessário no mínimo passar de uma DT 10. O tempo de fabricação da poção pode variar com o tipo e quantidade de materiais utilizados. Você pode escolher criar entre os seguintes tipos de poções:
+                Força: Aumenta a força em ataques com armas corpo-a-corpo e/ou aumenta a chance de acerto por 2 turnos ou somente para a cena, em caso de estar fora de batalha. A qualidade da poção varia com os pontos tirados no teste.
+                Cura: Recupera os LP de um alvo em dados proporcionais a quantidade de pontos tirados no teste.
+                Mana: Recupera os MP de um alvo em dados proporcionais a quantidade de pontos tirados no teste.
+                Antídoto: Livra o alvo de algum(ns) ou todos efeitos e estados ruins que possam estar lhe afligindo. EX: Envenenamento, queimadura, hemorragia, insanidade, medo etc.
+                Dano: Aplica uma quantidade x de dano ao alvo que foi atingido ou ingerir a poção. O dano é proporcional a quantidade de pontos tirados no teste.
+                Fortalecimento: Aumenta os AP de um alvo no número tirado em 1d10 por 2 turnos ou somente para a cena, em caso de estar fora de batalha.
+                Enfraquecimento: Diminui a força em ataques com armas corpo-a-corpo e/ou diminui a chance de acerto em 2 turnos ou somente para a cena, em caso de estar fora de batalha. A qualidade da poção varia com os pontos tirados no teste.
+                Inteligência: Dá pontos bônus de +2 em até 5 testes aleatórios (ou testes escolhidos por você, em caso de possuir a habilidade aprimorada), que variados pelos pontos tirados no teste. A vantagem dura por 2 turnos ou somente para a cena, em caso de estar fora de batalha.
+                `,
+                origin: 'Bruxo',
+                type: 'Classe',
+                level: 0
+            }
+        ],
+
+        'Monge': [
+            {
+                name: 'Autoconsciência',
+                description: `Você possui a habilidade de entrar em diferentes estados quando estiver em combate: Calma, Fúria e Divino.
+                No estado de Calma, quando qualquer ataque corpo-a-corpo for feito em você, você pode contra-atacar no mesmo momento com 100% de chance de acerto com uma arma leve de uma mão ou uma magia que possa ser executada com a mente ou com uma mão e que não seja do tipo conjurada, sustentada ou contínua. Apesar disso, no estado de calma, você não consegue andar. Para entrar no estado de calma, você deve conseguir se esquivar com sucesso de um ataque inimigo. Você entra no estado de calma no turno seguinte.
+                No estado de Fúria, qualquer ataque aplicado por você dá o dobro de dano e você adiciona o seu bônus de destreza em qualquer ataque. Mas tome cuidado! Ao utilizar este estado, você fica sujeito a receber 50% a mais de dano. Para entrar no estado de fúria, você deve rodar um dado crítico (20 pontos em um d20) ou eliminar uma criatura. Você entra no estado de fúria no turno seguinte.
+                No estado Divino, você dá o triplo de dano de qualquer ataque. Para entrar no estado divino, você precisa entrar em algum dos estados disponíveis três vezes. Você entra no estado divino no turno seguinte.
+                Todos os estados duram até o seu próximo turno.
+                `,
+                origin: 'Monge',
+                type: 'Classe',
+                level: 0
+            }
+        ],
+
+        'Druida': [
+            {
+                name: 'Retaguarda',
+                description: 'Toda vez que você fortalecer ou curar um aliado você invoca 3 tipos de orbes elementais diferentes aleatórios que causam 1d4 de dano cada. Você pode direcioná-los e atacá-los com uma ação livre a qualquer criatura. Entre os orbes que podem ser invocados estão: Fogo, Água, Ar e Terra (1d4 de possibilidades). Em caso de estar fora de combate você adiciona +2 na cura ou no fortalecimento feito ao alvo. Os orbes não são cumulativos.',
+                origin: 'Druida',
+                type: 'Classe',
+                level: 0
+            }
+        ],
+
+        'Arcano': [
+            {
+                name: 'Magia simbólica',
+                description: 'Você pode gastar 10 MP + O custo de mana de uma magia que você for utilizar para, como uma ação livre, para implantar símbolos mágicos que representam e ativam suas magias. Você pode usar essa habilidade para gravar suas magias em objetos ou superfícies, criando armadilhas, selos ou runas. Você também pode usar essa habilidade para desenhar seus símbolos no ar ou no chão, lançando suas magias de forma rápida e discreta. A Magia é ativada quando o inimigo encostar em seu símbolo ou quando ele entrar no alcance da magia (Se por exemplo sua magia alcançar 6m, enquanto a criatura estiver a 6m do seu símbolo, a magia ativará). A magia só se ativará no seu próximo turno.',
+                origin: 'Arcano',
+                type: 'Classe',
+                level: 0
+            }
+        ],
+
+        'Ladino': [
+            {
+                name: 'Disfarce',
+                description: 'Caso você entre em furtividade com sucesso em seu turno, você ganha uma ação padrão extra.',
+                origin: 'Ladino',
+                type: 'Classe',
+                level: 0
+            }
+        ]
+    },
     subclass: [],
     bonus: [],
     powers: []
