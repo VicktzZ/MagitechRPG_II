@@ -66,9 +66,6 @@ export default function CreateFichaModal(): ReactElement {
     const theme = useTheme()
     const matches = useMediaQuery(theme.breakpoints.down('md'))
 
-    console.log(theme.breakpoints.down('md'));
-    
-
     return (
         <>
             <Box 

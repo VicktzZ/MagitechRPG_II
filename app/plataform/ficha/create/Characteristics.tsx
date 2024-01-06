@@ -1,7 +1,10 @@
+/* eslint-disable @typescript-eslint/no-non-null-asserted-optional-chain */
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
+
 'use client';
 
-import { InputLabel, MenuItem, Select, useMediaQuery, type SelectChangeEvent, useTheme, Typography, Chip } from '@mui/material'
+import { InputLabel, MenuItem, Select, useMediaQuery, type SelectChangeEvent, useTheme, Typography } from '@mui/material'
 import { Box, FormControl, TextField } from '@mui/material'
 import { clickEffect } from '@public/sounds'
 import { classesModel } from '@constants/classes';
@@ -12,12 +15,75 @@ import { type fichaModel } from '@constants/ficha';
 import { green, red } from '@mui/material/colors';
 import { useAudio } from '@hooks';
 import { skills } from '@constants/skills';
+import type { Race } from '@types';
 
 export default function Characteristics({ formik }: { formik: any }): ReactElement {
     const classRef = useRef<any>(null)
+    const raceRef = useRef<Race['name'] | null>(null)
+    const attrRef = useRef<{ attr1: number, attr2: number }>({ attr1: 0, attr2: 0 })
+        
     const f: FormikContextType<typeof fichaModel> = formik
 
     const audio1 = useAudio(clickEffect)
+
+    const setRaceBonus = (
+        attr1: { name: 'mp' | 'lp' | 'ap', value: number },
+        attr2: { name: 'mp' | 'lp' | 'ap', value: number },
+        isRef?: boolean
+    ): void => {
+        if (!isRef) {
+            attrRef.current.attr1 = f.values.attributes?.[attr1.name]! <= 0 ? 0 : f.values.attributes?.[attr1.name]!
+            attrRef.current.attr2 = f.values.attributes?.[attr2.name]! <= 0 ? 0 : f.values.attributes?.[attr2.name]!
+
+            f.setFieldValue(`attributes.${attr1.name}`, (
+                (f.values.attributes?.[attr1.name] ?? 0) + attr1.value
+            ) as unknown as string)
+            f.setFieldValue(`attributes.${attr2.name}`, (
+                (f.values.attributes?.[attr2.name] ?? 0) - attr2.value
+            ) as unknown as string)
+        } else {
+            f.setFieldValue(`attributes.${attr1.name}`, attrRef.current.attr1)
+            f.setFieldValue(`attributes.${attr2.name}`, attrRef.current.attr2)
+
+            // f.setFieldValue(`attributes.${attr1.name}`, (
+            //     (f.values.attributes?.[attr1.name] ?? 0) + attr1.value
+            // ) as unknown as string)
+            // f.setFieldValue(`attributes.${attr2.name}`, (
+            //     (f.values.attributes?.[attr2.name] ?? 0) - attr2.value
+            // ) as unknown as string)
+        }
+
+        console.log(attrRef.current.attr1, attrRef.current.attr2);
+    }
+
+    const raceFunctions: Record<Race['name'], (isRef?: boolean) => void> = {            
+        'Humano': (isRef?: boolean): void => {
+            if (!isRef)
+                f.setFieldValue('points.attributes', (f.values.points?.attributes ?? 0) + 1)
+            else 
+                f.setFieldValue('points.attributes', (f.values.points?.attributes ?? 0) - 1)
+        },
+
+        'Autômato': (isRef?: boolean): void => {
+            setRaceBonus({ name: 'mp', value: 6 }, { name: 'ap', value: 1 }, isRef)
+        },
+
+        'Ciborgue': (isRef?: boolean): void => {
+            setRaceBonus({ name: 'ap', value: 1 }, { name: 'mp', value: 6 }, isRef)
+        },
+
+        'Humanoide': (isRef?: boolean): void => {
+            setRaceBonus({ name: 'lp', value: 3 }, { name: 'mp', value: -3 }, isRef)
+        },
+
+        'Mutante': (isRef?: boolean): void => {
+            setRaceBonus({ name: 'lp', value: 6 }, { name: 'mp', value: 6 }, isRef)
+        },
+
+        'Magia-viva': (isRef?: boolean): void => {
+            setRaceBonus({ name: 'mp', value: 8 }, { name: 'lp', value: 8 }, isRef)
+        }
+    }
 
     const setClass = (e: SelectChangeEvent<any>): void => {
         const classe: Classes = e.target.value
@@ -30,7 +96,8 @@ export default function Characteristics({ formik }: { formik: any }): ReactEleme
             ...f.values.attributes,
             ...classesModel[classe].attributes,
             lp: classesModel[classe].attributes.lp + (f.values.attributes?.vig ?? 1) * 3,
-            mp: classesModel[classe].attributes.mp + (f.values.attributes?.foc ?? 1) * 5
+            mp: classesModel[classe].attributes.mp + (f.values.attributes?.foc ?? 1) * 5,
+            ap: classesModel[classe].attributes.ap + 5
         })
 
         f.setFieldValue('points', {
@@ -57,6 +124,22 @@ export default function Characteristics({ formik }: { formik: any }): ReactEleme
         })
 
         audio1.play()
+    }
+
+    const setRace = (e: SelectChangeEvent<any>): void => {
+        const race: Race['name'] = e.target.value
+
+        if (raceRef.current) {
+            raceFunctions[raceRef.current](true)
+        }
+
+        f.handleChange(e)
+        f.setFieldValue('race', race)
+
+        raceFunctions[race](false)
+        
+        audio1.play()
+        raceRef.current = race
     }
 
     const theme = useTheme()
@@ -190,10 +273,7 @@ export default function Characteristics({ formik }: { formik: any }): ReactEleme
                         required
                         fullWidth
                         renderValue={selected => String(selected)}
-                        onChange={e => { 
-                            f.handleChange(e)
-                            audio1.play()
-                        }}
+                        onChange={setRace}
                     >
                         <MenuItem value='Humano'>
                             <Box>

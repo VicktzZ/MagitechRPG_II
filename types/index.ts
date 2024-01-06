@@ -8,6 +8,7 @@ import type {
     Expertises,
     Expertise,
     Skill,
+    Race,
     Trait
 } from './ficha';
 import type { Session, User } from './models';
@@ -24,5 +25,6 @@ export type {
     Skill,
     Expertises,
     Expertise,
+    Race,
     FinancialCondition
 }
