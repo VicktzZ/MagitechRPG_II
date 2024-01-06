@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { RadarChart } from '@components/misc'
 import { classesModel } from '@constants/classes'
 import { numberWithSpaces } from '@functions'
@@ -6,8 +7,8 @@ import { FormControl } from '@mui/material'
 import { Box } from '@mui/material'
 import { green } from '@mui/material/colors'
 import { type FormikContextType } from 'formik'
-import { type ReactElement, useState, useRef } from 'react'
-import type { Attributes as AttributesType, Classes, Ficha, FinancialCondition, Expertises } from '@types'
+import { type ReactElement, useState, useRef, useEffect } from 'react'
+import type { Attributes as AttributesType, Classes, Ficha, FinancialCondition, Expertises, Race } from '@types'
 import DiceRollModal from '@components/misc/DiceRollModal'
 import traits from '@constants/traits'
 
@@ -27,6 +28,7 @@ import {
 } from '@mui/material'
 import { useAudio } from '@hooks'
 import { selectEffect } from '@public/sounds'
+import { races } from '@constants/races'
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
@@ -169,6 +171,36 @@ export default function Attributes({ formik }: { formik: any }): ReactElement {
         audio.play()
         traitRef.current = e.target.value
     }
+
+    useEffect(() => {
+        const baseLP = 
+            (classesModel[f.values.class as Classes]?.attributes.lp ?? 0) +
+            f.values.attributes.vig * 3 +
+            (races[f.values.race as Race['name']]?.attributes.lp ?? 0)
+
+        const baseMP = 
+            (classesModel[f.values.class as Classes]?.attributes.mp ?? 0) +
+            f.values.attributes.foc * 5 +
+            (races[f.values.race as Race['name']]?.attributes.mp ?? 0)
+
+        const baseAP = 5 +
+            (classesModel[f.values.class as Classes]?.attributes.ap ?? 0) +
+            Math.floor(f.values.attributes.des * .5) +
+            (races[f.values.race as Race['name']]?.attributes.ap ?? 0)
+
+        f.setFieldValue('attributes', {
+            ...f.values.attributes,
+            lp: baseLP,
+            mp: baseMP,
+            ap: baseAP
+        })
+    }, [ 
+        f.values.class,
+        f.values.race,
+        f.values.attributes.vig,
+        f.values.attributes.des,
+        f.values.attributes.foc
+    ])
 
     return (
         <Box display='flex' flexDirection={matches ? 'column' : 'row'} width='100%' gap={matches ? 6 : 3}>

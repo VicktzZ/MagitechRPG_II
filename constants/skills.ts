@@ -102,7 +102,7 @@ export const skills: {
             type: 'Linhagem'
         },
         {
-            name: 'Cleptominia',
+            name: 'Cleptomania',
             description: 'Você consegue furtar qualquer coisa. Objetos furtados por você tem +2 pontos bônus no(s) principal(is) papel(is) que ela desempenha. Exemplo: Armas ganham +2 de dano e/ou chance de acerto (critério do mestre), Kits medicinais ganham +2 de cura ou bônus no teste de medicina (critério do mestre), veículos ganham +2 de agilidade etc.',
             origin: 'Trambiqueiro',
             type: 'Linhagem'

@@ -49,7 +49,7 @@ export interface Ficha {
 
 // Types
 
-export interface Class {
+export interface Clas1s {
     name: Classes
     description: string
 
