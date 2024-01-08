@@ -1,10 +1,9 @@
 'use client';
 
-import { Box, FormControl, InputLabel, Typography, useMediaQuery, useTheme } from '@mui/material'
-import { useState, type ReactElement, type ChangeEvent, MouseEventHandler, MouseEvent, useRef } from 'react'
+import { Box, FormControl, Typography, useMediaQuery, useTheme } from '@mui/material'
+import { useState, type ReactElement, type MouseEvent, useRef } from 'react'
 import type { Ficha, Skill } from '@types'
 import type { FormikContextType } from 'formik'
-import { skills } from '@constants/skills';
 
 export default function Skills({ formik }: { formik: any }): ReactElement {
     const f: FormikContextType<Ficha> = formik
@@ -48,6 +47,7 @@ export default function Skills({ formik }: { formik: any }): ReactElement {
                 gap={2}
                 p={2}
             >
+                {/* TODO: Adicionar filtros */}
                 {/* <Typography>Todos</Typography>
                 <Typography>Classe</Typography>
                 <Typography>Subclasse</Typography>

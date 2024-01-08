@@ -43,11 +43,13 @@ export default function Characteristics({ formik }: { formik: any }): ReactEleme
     }
 
     const setLineage = (e: SelectChangeEvent<any>): void => {
+        const lineage = e.target.value
+
         f.handleChange(e)
-        f.setFieldValue('lineage', e.target.value)
+        f.setFieldValue('lineage', lineage)
 
         skills.lineage?.forEach(skill => {
-            if (skill.origin === e.target.value)
+            if (skill.origin === lineage)
                 f.setFieldValue('skills.lineage', [ skill ])
         })
 
@@ -138,6 +140,7 @@ export default function Characteristics({ formik }: { formik: any }): ReactEleme
                                 <MenuItem value='Gangster'>Gangster</MenuItem>
                                 <MenuItem value='Hacker'>Hacker</MenuItem>
                                 <MenuItem value='Combatente'>Combatente</MenuItem>
+                                <MenuItem value='Clínico'>Clínico</MenuItem>
                                 <MenuItem value='Aventureiro'>Aventureiro</MenuItem>
                                 <MenuItem value='Trambiqueiro'>Trambiqueiro</MenuItem>
                                 <MenuItem value='Prodígio'>Prodígio</MenuItem>
@@ -179,6 +182,7 @@ export default function Characteristics({ formik }: { formik: any }): ReactEleme
                                 <MenuItem value='Cobaia'>Cobaia</MenuItem>
                                 <MenuItem value='Gangster'>Gangster</MenuItem>
                                 <MenuItem value='Hacker'>Hacker</MenuItem>
+                                <MenuItem value='Clínico'>Clínico</MenuItem>
                                 <MenuItem value='Combatente'>Combatente</MenuItem>
                                 <MenuItem value='Aventureiro'>Aventureiro</MenuItem>
                                 <MenuItem value='Trambiqueiro'>Trambiqueiro</MenuItem>

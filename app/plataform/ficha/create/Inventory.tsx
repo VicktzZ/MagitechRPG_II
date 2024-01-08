@@ -1,12 +1,59 @@
-import { Box, Grid, Typography, useTheme } from '@mui/material'
-import React, { type ReactElement } from 'react'
-import type { Ficha } from '@types'
+/* eslint-disable react-hooks/exhaustive-deps */
+import { Box, Grid, Typography, useMediaQuery, useTheme } from '@mui/material'
+import React, { useEffect, type ReactElement } from 'react'
+import type { Ficha, LineageNames } from '@types'
 import type { FormikContextType } from 'formik'
 import { Item } from '@components/ficha'
+import { lineageItems } from '@constants/lineageitems'
 
 export default function Inventory({ formik }: { formik: FormikContextType<Ficha> }): ReactElement {
     const theme = useTheme()
-    
+    const matches = useMediaQuery(theme.breakpoints.down('md'))
+
+    useEffect(() => {
+        const weaponsWeight = formik.values.inventory.weapons.map((weapon) => weapon.weight).reduce((a, b) => a + b, 0)
+        const armorsWeight = formik.values.inventory.armors.map((armor) => armor.weight).reduce((a, b) => a + b, 0)
+        const itemsWeight = formik.values.inventory.items.map((item) => {
+            if (item.kind !== 'Capacidade') {
+                return item.weight * (item?.quantity ?? 1)
+            } else return 0
+        }).reduce((a, b) => a + b, 0)
+
+        const maxCargo = formik.values.inventory.items.map((item) => {
+            if (item.kind === 'Capacidade') {
+                return item.weight
+            } else return 0
+        }).reduce((a, b) => a + b, 0)
+
+        const cargo = (weaponsWeight + armorsWeight + itemsWeight)?.toFixed(1)
+        
+        formik.setFieldValue('capacity.cargo', cargo)
+        formik.setFieldValue('capacity.max', (5 + (formik.values.attributes.vig * 2.5) + maxCargo).toFixed(1))
+    }, [ formik.values.inventory, formik.values.attributes.vig ])
+
+    useEffect(() => {
+        formik.values.inventory = formik.initialValues.inventory
+
+        const itemsOfLineage = lineageItems[formik.values.lineage as unknown as LineageNames]
+        const itemArr: any[] = []
+
+        itemsOfLineage?.forEach((item) => {
+            if (item.type === 'item') itemArr.push(item) 
+
+            if (item.type === 'weapon') {
+                formik.setFieldValue('inventory.weapons', [
+                    ...formik.initialValues.inventory.weapons,
+                    item
+                ])
+            } else {
+                formik.setFieldValue('inventory.items', [
+                    ...formik.initialValues.inventory.items,
+                    ...itemArr
+                ])
+            }
+        })
+    }, [ formik.values.lineage ])
+
     return (
         <Box
             display='flex'
@@ -20,48 +67,83 @@ export default function Inventory({ formik }: { formik: FormikContextType<Ficha>
         >
             <Box display='flex' flexDirection='column' gap={5}>
                 <Typography>Armas</Typography>
-                <Grid container spacing={2}>
+                <Grid container justifyContent={matches ? 'center' : 'inherit'} spacing={2}>
                     {formik.values.inventory.weapons.map((weapon) => (
-                        <Item
-                            as='weapon'
+                        <Grid 
+                            item
                             key={weapon.name}
-                            name={weapon.name}
-                            categ={weapon.categ}
-                            range={weapon.range}
-                            weight={weapon.weight}
-                            kind={weapon.kind}
-                            bonus={weapon.bonus}
-                            description={weapon.description}
-                            hit={weapon.hit}
-                            effect={{
-                                kind: weapon.effect.kind,
-                                effectType: weapon.effect.effectType,
-                                critValue: weapon.effect.critValue,
-                                critChance: weapon.effect.critChance,
-                                value: weapon.effect.value
-                            }}
-                        />
+                        >
+                            <Item
+                                as='weapon'
+                                name={weapon.name}
+                                ammo={weapon.ammo}
+                                categ={weapon.categ}
+                                range={weapon.range}
+                                weight={weapon.weight}
+                                accesories={weapon?.accesories}
+                                kind={weapon.kind}
+                                bonus={weapon.bonus}
+                                description={weapon.description}
+                                hit={weapon.hit}
+    
+                                bonusValue={[ formik.values.expertises[weapon.bonus].value ]}
+                                isDisadvantage={formik.values.attributes[weapon.hit] < 0}
+                                diceQuantity={Math.floor((formik.values.attributes[weapon.hit] / 2) ?? 0) + 1}
+    
+                                effect={{
+                                    kind: weapon.effect.kind,
+                                    effectType: weapon.effect.effectType,
+                                    critValue: weapon.effect.critValue,
+                                    critChance: weapon.effect.critChance,
+                                    value: weapon.effect.value
+                                }}
+                            />
+                        </Grid>
                     ))}
                 </Grid>
             </Box>
             <Box display='flex' flexDirection='column' gap={5}>
                 <Typography>Armaduras</Typography>
-                <Grid container spacing={2}>
-                    <Item 
-                        title='Item1'
-                        as='armor'
-
-                    />
+                <Grid container justifyContent={matches ? 'center' : 'inherit'} spacing={2}>
+                    {formik.values.inventory.armors.map((armor) => (
+                        <Grid 
+                            item
+                            key={armor.name}
+                        >
+                            <Item
+                                as='armor'
+                                name={armor.name}
+                                categ={armor.categ}
+                                weight={armor.weight}
+                                kind={armor.kind}
+                                displacementPenalty={armor.displacementPenalty}
+                                value={armor.value}
+                                description={armor.description}
+                            />
+                        </Grid>
+                    ))}
                 </Grid>
             </Box>
             <Box display='flex' flexDirection='column' gap={5}>
                 <Typography>Itens</Typography>
-                <Grid container spacing={2}>
-                    <Item 
-                        title='Item1'
-                        as='weapon'
-
-                    />
+                <Grid container justifyContent={matches ? 'center' : 'inherit'} spacing={2}>
+                    {formik.values.inventory.items.map((item) => (
+                        <Grid 
+                            item
+                            key={item.name}
+                        >
+                            <Item
+                                as='item'
+                                name={item.name}
+                                weight={item.weight}
+                                kind={item.kind}
+                                description={item.description}
+                                level={item?.level}
+                                quantity={item?.quantity ?? 1}
+                                effects={item?.effects}
+                            />
+                        </Grid>
+                    ))}
                 </Grid>
             </Box>
         </Box>    

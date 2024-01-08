@@ -4,11 +4,11 @@ export interface Ficha {
     name: string
     age: number
     class: Class | Classes
-    race: Race | string
-    lineage: Lineage | string
+    race: Race | Race['name']
+    lineage: Lineage
     inventory: Inventory
     displacement: number
-    capacity: number
+    totalCapacity: number
     magics: Magic[]
     gender: Gender
     elementalMastery: Element
@@ -17,6 +17,11 @@ export interface Ficha {
     financialCondition: FinancialCondition
     expertises: Expertises
     traits: Trait[]
+
+    capacity: {
+        cargo: number
+        max: number
+    }
 
     skills: {
         lineage: Skill[]
@@ -68,7 +73,7 @@ export interface Class {
 }
 
 export interface Lineage {
-    name: string
+    name: LineageNames
     description: string
     effects: number[]
     item: Item
@@ -147,22 +152,25 @@ export interface TradeOff {
 export interface Item {
     name: string
     description: string
+    quantity?: number
+    rarity?: RarityType
     kind: ItemType
     weight: number
-    effects?: number[]
+    effects?: number[] | string[]
     level?: number
 }
 
 export interface Weapon<T extends 'Leve' | 'Pesada'> {
     name: string
     description: string
+    rarity?: RarityType
     kind: WeaponType
     categ: WeaponCategory<T>
     range: RangeType
     weight: number
     hit: Attributes
-    ammo?: AmmoType
-    accesories?: WeaponAccesoriesType
+    ammo: AmmoType | 'Não consome'
+    accesories?: WeaponAccesoriesType[]
     bonus: 'Luta' | 'Agilidade' | 'Furtividade' | 'Pontaria' | 'Magia' | 'Tecnologia'
     effect: {
         value: string
@@ -176,6 +184,7 @@ export interface Weapon<T extends 'Leve' | 'Pesada'> {
 export interface Armor {
     name: string
     description: string
+    rarity?: RarityType
     kind: ArmorType
     categ: 'Leve' | 'Média' | 'Pesada'
     weight: number
@@ -213,9 +222,36 @@ export type Classes = 'Marcial' | 'Explorador' | 'Feiticeiro' | 'Bruxo' | 'Monge
 export type Attributes = 'des' | 'vig' | 'log' | 'sab' | 'foc' | 'car'
 export type UpperCaseAttributes = 'DES' | 'VIG' | 'LOG' | 'SAB' | 'FOC' | 'CAR'
 export type ItemType = 'Especial' | 'Utilidade' | 'Consumível' | 'Item Chave' | 'Munição' | 'Capacidade'
-export type WeaponType = 'Arremessável' | 'Duas mãos' | 'Padrão'
+export type RarityType = 'Comum' | 'Incomum' | 'Raro' | 'Épico' | 'Lendário' | 'Relíquia' | 'Radiante'
+export type WeaponType = `Arremessável (${ThrowableRangeType})` | 'Duas mãos' | 'Padrão'
 export type ArmorType = 'Padrão' | DamageType
 export type DamageType = 'Cortante' | 'Impactante' | 'Perfurante' | Element
+
+export type LineageNames = 
+    'Órfão' |
+    'Órfão' |
+    'Infiltrado' |
+    'Estrangeiro' |
+    'Camponês' |
+    'Burguês' |
+    'Artista' |
+    'Ginasta' |
+    'Herdeiro' |
+    'Cobaia' |
+    'Gangster' |
+    'Hacker' |
+    'Combatente' |
+    'Clínico' |
+    'Aventureiro' |
+    'Trambiqueiro' |
+    'Prodígio' |
+    'Novato' |
+    'Inventor' |
+    'Idólatra' |
+    'Cismático' |
+    'Pesquisador' |
+    'Exilado' |
+    'Investigador'
 
 export type AmmoType = 
     '9mm' |
@@ -237,6 +273,18 @@ export type RangeType =
     'Longo (30m)' |
     'Distante (60m)' |
     'Ampliado (90m)' |
+    'Visível' |
+    'Ilimitado'
+
+export type ThrowableRangeType = 
+    '3m' |
+    '6m' |
+    '9m' |
+    '12m' |
+    '18m' |
+    '30m' |
+    '60m' |
+    '90m' |
     'Visível' |
     'Ilimitado'
 

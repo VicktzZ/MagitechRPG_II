@@ -1,17 +1,16 @@
-import type { Classes, Ficha, Gender } from '@types';
+import type { Classes, Ficha, Gender, Lineage, Race } from '@types';
 
 export const fichaModel: Partial<Ficha> = {
     playerName: '',
     name: '',
     age: 0,
     class: '' as Classes,
-    race: '',
-    lineage: '',
+    race: '' as unknown as Race,
+    lineage: '' as unknown as Lineage,
     elementalMastery: undefined,
     gender: '' as Gender,
     financialCondition: undefined,
     traits: [],
-    capacity: 5,
     displacement: 9,
     level: 0,
     magics: [],
@@ -24,20 +23,27 @@ export const fichaModel: Partial<Ficha> = {
         subclass: []
     },
 
+    capacity: {
+        cargo: 1.0,
+        max: 5.0
+    },
+
     inventory: {
         items: [
             {
                 name: 'Celular',
                 description: 'Celular institucional dado a todos estudantes da UFEM.',
                 kind: 'Especial',
-                weight: 0.2
+                weight: 0.2,
+                effects: [ 'Celular multiúso da UFEM' ]
             },
             {
                 name: 'ORM',
                 description: 'Um ORM pode ser qualquer coisa desde que esteja embutido com um Zeptachip. Este dispositivo é necessário para manipular qualquer forma de magia.',
                 kind: 'Especial',
                 level: 1,
-                weight: 0.1
+                weight: 0.1,
+                effects: [ 'Dispositivo utilizado para manipulação de magículas e sequências mágicas' ]
             }
         ],
         weapons: [
@@ -49,6 +55,7 @@ export const fichaModel: Partial<Ficha> = {
                 kind: 'Padrão',
                 weight: 0.2,
                 hit: 'des',
+                ammo: 'Não consome',
                 bonus: 'Agilidade',
                 effect: {
                     value: '2d6',
@@ -72,6 +79,7 @@ export const fichaModel: Partial<Ficha> = {
         ],
         money: 0
     },
+    
     expertises: {
         'Agilidade': { value: 0, defaultAttribute: 'des' },
         'Argumentação': { value: 0, defaultAttribute: 'sab' },
@@ -106,7 +114,7 @@ export const fichaModel: Partial<Ficha> = {
     },
     
     points: {
-        attributes: 9,
+        attributes: 8,
         expertises: 0,
         diligence: 0,
         skills: 0,

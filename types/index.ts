@@ -8,9 +8,11 @@ import type {
     Expertises,
     Expertise,
     Skill,
+    Lineage,
     Weapon,
     Armor,
     Item,
+    LineageNames,
     Race,
     Trait
 } from './ficha';
@@ -27,8 +29,10 @@ export type {
     Weapon,
     Armor,
     Gender,
+    LineageNames,
     Trait,
     Skill,
+    Lineage,
     Expertises,
     Expertise,
     Race,

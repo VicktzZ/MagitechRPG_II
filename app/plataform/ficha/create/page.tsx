@@ -11,6 +11,7 @@ import Skills from './Skills';
 import type { ReactElement } from 'react'
 import type { Ficha } from '@types';
 import Inventory from './Inventory';
+import { yellow, red } from '@mui/material/colors';
 // import * as Yup from 'yup'
 
 // const validationSchema = Yup.object().shape({
@@ -48,7 +49,8 @@ import Inventory from './Inventory';
 //         magics: 0
 //     })
 // })
-export default function CreateFicha(): ReactElement {
+
+export default function FichaComponent({ disabled }: { disabled?: boolean }): ReactElement {
     const { data: session } = useSession()
 
     const initialValues: Ficha = { 
@@ -152,8 +154,18 @@ export default function CreateFicha(): ReactElement {
                         </Box>
                     </Box>
                     <Box display='flex' flexDirection='column' gap={5} width='100%'>
-                        <Box>
+                        <Box display='flex' gap={2}>
                             <Typography variant='h6'>Inventário</Typography>
+                            <Typography 
+                                fontWeight={900} 
+                                variant='h5'
+                                color={
+                                    formik.values.capacity.cargo / formik.values.capacity.max >= 1 ? red[500] :
+                                        formik.values.capacity.cargo / formik.values.capacity.max >= .75 ? yellow[500] : 'white'
+                                }
+                            >
+                                {formik.values.capacity.cargo}/{formik.values.capacity.max}
+                            </Typography>
                         </Box>
                         <Inventory
                             formik={formik}

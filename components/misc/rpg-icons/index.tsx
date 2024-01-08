@@ -1000,8 +1000,8 @@ export type IconType = keyof typeof icons
 
 export default function RPGIcon({ 
     icon,
-    height = '2rem',
-    width = '2rem',
+    height = '1.5rem',
+    width = '1.5rem',
     sx
 }: { 
     icon: IconType

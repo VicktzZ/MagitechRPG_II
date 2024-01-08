@@ -46,6 +46,7 @@ export default function Attributes({ formik }: { formik: any }): ReactElement {
     const f: FormikContextType<Ficha> = formik
 
     const traitRef = useRef<string | null>(null)
+    const raceRef = useRef<Race['name'] | null>(null)
 
     const theme = useTheme()
     const [ modalOpen, setModalOpen ] = useState(false)
@@ -201,6 +202,13 @@ export default function Attributes({ formik }: { formik: any }): ReactElement {
         f.values.attributes.des,
         f.values.attributes.foc
     ])
+
+    useEffect(() => {
+        if (raceRef.current === 'Humano') f.setFieldValue('points.attributes', f.values.points.attributes - 1)
+        if (f.values.race === 'Humano') f.setFieldValue('points.attributes', f.values.points.attributes + 1)
+        
+        raceRef.current = f.values.race as Race['name']
+    }, [ f.values.race ])
 
     return (
         <Box display='flex' flexDirection={matches ? 'column' : 'row'} width='100%' gap={matches ? 6 : 3}>

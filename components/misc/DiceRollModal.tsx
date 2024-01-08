@@ -49,8 +49,8 @@ export default function DiceRollModal({
 
         const expression: string = bonus && !sum ? sortedRolls[0] + ' + ' + bonus.join(' + ') :
             bonus && sum ? sortedRolls.join(' + ') + ' + ' + bonus.join(' + ') :
-                String(sortedRolls[0]) 
-        
+                !bonus && sum ? sortedRolls.join(' + ') :
+                    String(sortedRolls[0]) 
         if (sum) {
             rawResult = 0
            
@@ -191,14 +191,14 @@ export default function DiceRollModal({
                                 </Box>
                             </Box>
                             {visibleBaseAttribute && (
-                                <Box display='flex' gap={1} mt={visibleDices ? '-0.8rem' : 0} alignItems='center'>
+                                <Box display='flex' gap={1} alignItems='center'>
                                     <Typography variant='caption'>Atributo base:</Typography>
                                     <Chip
                                         sx={{
                                             height: '1.5rem',
                                             fontSize: '.8rem'
                                         }}
-                                        label={roll.attribute.toUpperCase()}
+                                        label={roll.attribute?.toUpperCase()}
                                     />
                                 </Box>
                             )}
