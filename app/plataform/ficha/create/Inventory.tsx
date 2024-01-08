@@ -21,11 +21,27 @@ export default function Inventory({ formik }: { formik: FormikContextType<Ficha>
             <Box display='flex' flexDirection='column' gap={5}>
                 <Typography>Armas</Typography>
                 <Grid container spacing={2}>
-                    <Item 
-                        title='Item1'
-                        as='weapon'
-
-                    />
+                    {formik.values.inventory.weapons.map((weapon) => (
+                        <Item
+                            as='weapon'
+                            key={weapon.name}
+                            name={weapon.name}
+                            categ={weapon.categ}
+                            range={weapon.range}
+                            weight={weapon.weight}
+                            kind={weapon.kind}
+                            bonus={weapon.bonus}
+                            description={weapon.description}
+                            hit={weapon.hit}
+                            effect={{
+                                kind: weapon.effect.kind,
+                                effectType: weapon.effect.effectType,
+                                critValue: weapon.effect.critValue,
+                                critChance: weapon.effect.critChance,
+                                value: weapon.effect.value
+                            }}
+                        />
+                    ))}
                 </Grid>
             </Box>
             <Box display='flex' flexDirection='column' gap={5}>
@@ -33,7 +49,7 @@ export default function Inventory({ formik }: { formik: FormikContextType<Ficha>
                 <Grid container spacing={2}>
                     <Item 
                         title='Item1'
-                        as='weapon'
+                        as='armor'
 
                     />
                 </Grid>

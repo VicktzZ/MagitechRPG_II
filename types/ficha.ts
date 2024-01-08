@@ -150,6 +150,7 @@ export interface Item {
     kind: ItemType
     weight: number
     effects?: number[]
+    level?: number
 }
 
 export interface Weapon<T extends 'Leve' | 'Pesada'> {
@@ -160,6 +161,8 @@ export interface Weapon<T extends 'Leve' | 'Pesada'> {
     range: RangeType
     weight: number
     hit: Attributes
+    ammo?: AmmoType
+    accesories?: WeaponAccesoriesType
     bonus: 'Luta' | 'Agilidade' | 'Furtividade' | 'Pontaria' | 'Magia' | 'Tecnologia'
     effect: {
         value: string
@@ -214,6 +217,16 @@ export type WeaponType = 'Arremessável' | 'Duas mãos' | 'Padrão'
 export type ArmorType = 'Padrão' | DamageType
 export type DamageType = 'Cortante' | 'Impactante' | 'Perfurante' | Element
 
+export type AmmoType = 
+    '9mm' |
+    'Calibre .50' |
+    'Calibre 12' |
+    'Calibre 22' | 
+    'Bateria de lítio' |
+    'Amplificador de partículas' |
+    'Cartucho de fusão' |
+    'Servomotor iônico'
+
 export type RangeType = 
     'Corpo-a-corpo' |
     'Curtíssimo (3m)' |
@@ -253,9 +266,7 @@ export type SubclassesNames =
     'Metafísico' |
     'Supernaturalista'
 
-export type ExpertisesNames = {
-    [key in keyof Expertises]: string
-}
+export type ExpertisesNames = keyof Expertises
 
 export type WeaponCategory<T extends 'Leve' | 'Pesada'> = 
     `Arma Branca (${T})` |
@@ -263,6 +274,36 @@ export type WeaponCategory<T extends 'Leve' | 'Pesada'> =
     `Arma de Fogo (${T})` |
     `Arma de Energia (${T})` |
     `Arma Mágica (${T})`
+
+export type WeaponAccesoriesType = WeaponScientificAccesoriesType | WeaponMagicalAccesoriesType
+
+export type WeaponScientificAccesoriesType = 
+    'Gravitron' |
+    'Nanomáquinas' |
+    'Electrochip' |
+    'Lasering' |
+    'Nióbio sônico' |
+    'Silenciador' |
+    'Pente estendido' |
+    'Mira' |
+    'Cano curto' |
+    'Ponta de tungstênio' |
+    'Munição explosiva' |
+    'Munição perfurante' |
+    'Ponta oca' | 
+    'Empunhadura' |
+    'Munição teleguiada' |
+    'Cabo de borracha' |
+    'Lanterna' 
+
+export type WeaponMagicalAccesoriesType = 
+    'Switch Elemental' |
+    'CNT' |
+    'Chip mágico' |
+    'Correntes mágicas' |
+    'Repetidor' |
+    'Paralisante' |
+    'Espaços adicionais'
 
 export type Element = 
     'Fogo' |

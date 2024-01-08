@@ -25,9 +25,51 @@ export const fichaModel: Partial<Ficha> = {
     },
 
     inventory: {
-        items: [],
-        weapons: [],
-        armors: [],
+        items: [
+            {
+                name: 'Celular',
+                description: 'Celular institucional dado a todos estudantes da UFEM.',
+                kind: 'Especial',
+                weight: 0.2
+            },
+            {
+                name: 'ORM',
+                description: 'Um ORM pode ser qualquer coisa desde que esteja embutido com um Zeptachip. Este dispositivo é necessário para manipular qualquer forma de magia.',
+                kind: 'Especial',
+                level: 1,
+                weight: 0.1
+            }
+        ],
+        weapons: [
+            {
+                name: 'Bastão Retrátil',
+                description: 'Um bastão retrátil dado a estudantes da UFEM como arma de defesa pessoal.',
+                categ: 'Arma Branca (Leve)',
+                range: 'Corpo-a-corpo',
+                kind: 'Padrão',
+                weight: 0.2,
+                hit: 'des',
+                bonus: 'Agilidade',
+                effect: {
+                    value: '2d6',
+                    critValue: '4d6',
+                    critChance: 20,
+                    kind: 'damage',
+                    effectType: 'Impactante'
+                }
+            }
+        ],
+        armors: [
+            {
+                name: 'Uniforme da UFEM',
+                description: 'Um uniforme escolar dado a todos estudantes da UFEM para identificação e segurança na instalação.',
+                categ: 'Leve',
+                kind: 'Padrão',
+                weight: 0.5,
+                value: 5,
+                displacementPenalty:0
+            }
+        ],
         money: 0
     },
     expertises: {
