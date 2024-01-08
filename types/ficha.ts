@@ -49,7 +49,7 @@ export interface Ficha {
 
 // Types
 
-export interface Clas1s {
+export interface Class {
     name: Classes
     description: string
 
@@ -155,7 +155,7 @@ export interface Item {
 export interface Weapon<T extends 'Leve' | 'Pesada'> {
     name: string
     description: string
-    kind?: WeaponType
+    kind: WeaponType
     categ: WeaponCategory<T>
     range: RangeType
     weight: number
@@ -173,6 +173,7 @@ export interface Weapon<T extends 'Leve' | 'Pesada'> {
 export interface Armor {
     name: string
     description: string
+    kind: ArmorType
     categ: 'Leve' | 'Média' | 'Pesada'
     weight: number
     value: number
@@ -209,7 +210,8 @@ export type Classes = 'Marcial' | 'Explorador' | 'Feiticeiro' | 'Bruxo' | 'Monge
 export type Attributes = 'des' | 'vig' | 'log' | 'sab' | 'foc' | 'car'
 export type UpperCaseAttributes = 'DES' | 'VIG' | 'LOG' | 'SAB' | 'FOC' | 'CAR'
 export type ItemType = 'Especial' | 'Utilidade' | 'Consumível' | 'Item Chave' | 'Munição' | 'Capacidade'
-export type WeaponType = 'Arremessável' | 'Duas mãos'
+export type WeaponType = 'Arremessável' | 'Duas mãos' | 'Padrão'
+export type ArmorType = 'Padrão' | DamageType
 export type DamageType = 'Cortante' | 'Impactante' | 'Perfurante' | Element
 
 export type RangeType = 

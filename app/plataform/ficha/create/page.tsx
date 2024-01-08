@@ -10,6 +10,7 @@ import Expertises from './Expertises';
 import Skills from './Skills';
 import type { ReactElement } from 'react'
 import type { Ficha } from '@types';
+import Inventory from './Inventory';
 // import * as Yup from 'yup'
 
 // const validationSchema = Yup.object().shape({
@@ -47,7 +48,7 @@ import type { Ficha } from '@types';
 //         magics: 0
 //     })
 // })
-export default function CreateFichaModal(): ReactElement {
+export default function CreateFicha(): ReactElement {
     const { data: session } = useSession()
 
     const initialValues: Ficha = { 
@@ -149,6 +150,14 @@ export default function CreateFichaModal(): ReactElement {
                                 />
                             </Box>
                         </Box>
+                    </Box>
+                    <Box display='flex' flexDirection='column' gap={5} width='100%'>
+                        <Box>
+                            <Typography variant='h6'>Inventário</Typography>
+                        </Box>
+                        <Inventory
+                            formik={formik}
+                        />
                     </Box>
                 </Box>
             </Box>

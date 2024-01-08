@@ -5,6 +5,7 @@ import RequireFicha from './RequireFicha'
 import { Parallax, Background as ParallaxBackground } from './Parallax'
 import Animate from './Animate'
 import RadarChart from './RadarChart'
+import RPGIcon from './rpg-icons'
 
 export {
     ParticleComponent,
@@ -12,6 +13,7 @@ export {
     Parallax,
     ParallaxBackground,
     Animate,
+    RPGIcon,
     RequireAuth,
     RequireFicha,
     RadarChart

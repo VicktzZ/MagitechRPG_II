@@ -87,7 +87,7 @@ export default function Characteristics({ formik }: { formik: any }): ReactEleme
                                 setClass(e)                              
                             }}
                             renderValue={(value) => (
-                                <Typography>{value}</Typography>
+                                <Typography>{value as string}</Typography>
                             )}
                         >
                             {Object.keys(classesModel).map(classe => (
@@ -100,7 +100,7 @@ export default function Characteristics({ formik }: { formik: any }): ReactEleme
                                             <Typography fontWeight={900} variant='caption' color={red[500]}>
                                                 LP: {classesModel[classe as keyof typeof classesModel].attributes.lp}
                                             </Typography>
-                                            <Typography fontWeight={900} variant='caption' color={blue[500]}>
+                                            <Typography fontWeight={900} variant='caption' color={blue[300]}>
                                                 MP: {classesModel[classe as keyof typeof classesModel].attributes.mp}
                                             </Typography>
                                             <Typography fontWeight={900} variant='caption' color={yellow[500]}>
