@@ -1,3 +1,4 @@
+/* eslint-disable max-len */
 import type { Skill } from '@types'
 
 export const skills: {
@@ -135,6 +136,18 @@ export const skills: {
             name: 'Desilusão',
             description: 'É melhor prevenir do que remediar. Você pode anular qualquer magia se pagar 25 MP. Limitado a 3 vezes por dia.',
             origin: 'Cismático',
+            type: 'Linhagem'
+        },
+        {
+            name: 'Decodificação Mágica',
+            description: 'Decodificadores são dispositivos que permitem que você leia e altere os códigos mágicos transmitidos pelos satélites. Você pode gastar 10 MP para rodar um teste de competência de DT 15 e decodificar uma magia que você tenha visto ou sentido, e assim, aprender a usá-la. Se o teste falhar, você recebe uma magia aleatória que pode ser útil ou não. O decodificador tem uma memória que armazena até 5 magias decodificadas, e você pode apagar ou substituir as magias armazenadas. Você pode usar as magias decodificadas como se fossem suas, mas elas consomem o dobro de MP. A critério do mestre, você também pode rodar um teste de competência e decodificar outras informações mágicas, como a localização, a intensidade, o tipo etc. Essa habilidade só pode ser utilizada se o usuário tiver um decodificador.',
+            origin: 'Pesquisador',
+            type: 'Linhagem'
+        },
+        {   
+            name: 'Rastreamento',
+            description: 'Graças à sua experiência, sua habilidade em seguir pistas e rastrear alvos é incomparável. Esta habilidade te permite gastar 20 MP em um teste: Você pode escolher um alvo que você tenha visto ou sentido, e saber a sua localização exata, a distância, a direção e o tempo que ele levou para chegar até lá. Você também pode saber se o alvo está sob efeito de alguma magia ou se ele tem algum ORM. Esta habilidade pode ser usada em combate ou fora dele.',
+            origin: 'Investigador',
             type: 'Linhagem'
         }
     ],

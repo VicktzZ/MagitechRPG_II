@@ -148,9 +148,7 @@ export default function Characteristics({ formik }: { formik: any }): ReactEleme
                                 <MenuItem value='Inventor'>Inventor</MenuItem>
                                 <MenuItem value='Idólatra'>Idólatra</MenuItem>
                                 <MenuItem value='Cismático'>Cismático</MenuItem>
-                                {/* Acresentar no sistema */}
                                 <MenuItem value='Pesquisador'>Pesquisador</MenuItem>
-                                <MenuItem value='Exilado'>Exilado</MenuItem>
                                 <MenuItem value='Investigador'>Investigador</MenuItem>
                             </Select>
                         </FormControl>
@@ -191,9 +189,7 @@ export default function Characteristics({ formik }: { formik: any }): ReactEleme
                                 <MenuItem value='Inventor'>Inventor</MenuItem>
                                 <MenuItem value='Idólatra'>Idólatra</MenuItem>
                                 <MenuItem value='Cismático'>Cismático</MenuItem>
-                                {/* Acresentar no sistema */}
                                 <MenuItem value='Pesquisador'>Pesquisador</MenuItem>
-                                <MenuItem value='Exilado'>Exilado</MenuItem>
                                 <MenuItem value='Investigador'>Investigador</MenuItem>
                             </Select>
                         </FormControl>

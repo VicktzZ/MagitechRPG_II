@@ -52,7 +52,7 @@ export default function Expertise({
             if (formik) {
                 if (
                     (
-                        (formik.values.points.expertises > 0 && formik.values.expertises[name].value < 4) ||
+                        (formik.values.points.expertises > 0 && formik.values.expertises[name].value < 2) ||
                         (formik.values.points.expertises >= 0 && edit.value < 0)
                     ) &&
                         formik.values.expertises[name].value + edit.value > -1

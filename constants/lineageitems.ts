@@ -1,5 +1,5 @@
 /* eslint-disable max-len */
-import type { Armor, Item, Lineage, Weapon } from '@types';
+import type { Item, Lineage, Weapon } from '@types';
 
 export const lineageItems: Record<Lineage['name'], Array<(Item | Weapon<'Leve' | 'Pesada'>) & { type: 'weapon' | 'armor' | 'item' }>> = {
     'Órfão': [
@@ -9,7 +9,7 @@ export const lineageItems: Record<Lineage['name'], Array<(Item | Weapon<'Leve' |
             kind: 'Especial',
             type: 'item',
             weight: 0,
-            effects: [ '+5 PM' ],
+            effects: [ '+5 MP adicionados.' ]
         }
     ],
     'Infiltrado': [
@@ -19,7 +19,7 @@ export const lineageItems: Record<Lineage['name'], Array<(Item | Weapon<'Leve' |
             kind: 'Utilidade',
             type: 'item',
             weight: 0.2,
-            effects: [ 'Pode enxergar alvos em até 90m' ]
+            effects: [ 'Pode enxergar alvos em até 90m.' ]
         },
         {
             name: 'Bomba de fumaça',
@@ -27,7 +27,7 @@ export const lineageItems: Record<Lineage['name'], Array<(Item | Weapon<'Leve' |
             kind: 'Utilidade',
             type: 'item',
             weight: 0.5,
-            effects: [ 'Levanta uma cortina de fumaça em uma área de 6m' ]
+            effects: [ 'Levanta uma cortina de fumaça em uma área de 6m.' ]
         }
     ],
     'Estrangeiro': [
@@ -36,7 +36,7 @@ export const lineageItems: Record<Lineage['name'], Array<(Item | Weapon<'Leve' |
             description: 'Com ele, como ação livre, você pode entender e falar todas as línguas, identificar magias, identificar criaturas e elementos e consegue passar por todas as provas da UFEM instantaneamente.\nObtido pela linhagem: Estrangeiro.',
             kind: 'Especial',
             type: 'item',
-            effects: [ 'Ação Livre' ],
+            effects: [ 'Você pode passar por todas as provas da UFEM como Ação Livre.' ],
             weight: 0.3
         }
     ],
@@ -47,7 +47,7 @@ export const lineageItems: Record<Lineage['name'], Array<(Item | Weapon<'Leve' |
             kind: 'Especial',
             type: 'item',
             weight: 0,
-            effects:  ['+25% de Desconto em qualquer compra' ],
+            effects:  [ '+25% de Desconto em qualquer compra.' ]
         }
     ],
     'Burguês': [
@@ -57,7 +57,7 @@ export const lineageItems: Record<Lineage['name'], Array<(Item | Weapon<'Leve' |
             kind: 'Consumível',
             type: 'item',
             weight: 0,
-            effects: [ '+¥200 000 ao utilizar' ],
+            effects: [ '+¥200 000 ao utilizar.' ]
         }
     ],
     'Artista': [
@@ -87,7 +87,7 @@ export const lineageItems: Record<Lineage['name'], Array<(Item | Weapon<'Leve' |
             description: 'Você ganha +3 LP e ataques corpo-a-corpo aumentam seu dano em +2.\nObtido pela linhagem: Ginasta',
             kind: 'Especial',
             type: 'item',
-            effects: [ '+3 LP', '+2 dano em ataques corpo-a-corpo' ],
+            effects: [ '+3 LP adicionados', '+2 dano em ataques corpo-a-corpo.' ],
             weight: 0
         }
     ],
@@ -97,7 +97,7 @@ export const lineageItems: Record<Lineage['name'], Array<(Item | Weapon<'Leve' |
             description: 'Você pode solicitá-los pelo seu celular a qualquer momento. Eles virão buscá-lo dependendo do local ao critério do Mestre.\nObtido pela linhagem: Herdeiro',
             kind: 'Especial',
             type: 'item',
-            effects: [ 'Receba uma limosine e um jatinho particular' ],
+            effects: [ 'Receba uma limosine e um jatinho particular.' ],
             weight: 0
         }
     ],
@@ -107,7 +107,7 @@ export const lineageItems: Record<Lineage['name'], Array<(Item | Weapon<'Leve' |
             description: 'Você aprende +2 magias no início do jogo.\nObtido pela linhagem: Cobaia',
             kind: 'Especial',
             type: 'item',
-            effects: [ '+2 magias' ],
+            effects: [ '+2 magias.' ],
             weight: 0
         }
     ],
@@ -139,7 +139,7 @@ export const lineageItems: Record<Lineage['name'], Array<(Item | Weapon<'Leve' |
             kind: 'Utilidade',
             type: 'item',
             weight: 0.1,
-            effects: [ 'Permite a comunicação à distância' ]
+            effects: [ 'Permite a comunicação à distância.' ]
         },
         {
             name: 'Controlador Wireless',
@@ -147,7 +147,7 @@ export const lineageItems: Record<Lineage['name'], Array<(Item | Weapon<'Leve' |
             kind: 'Utilidade',
             type: 'item',
             weight: 0.7,
-            effects: [ 'Permite o controle de dispositivos wireless remotamente' ]
+            effects: [ 'Permite o controle de dispositivos wireless remotamente.' ]
         }
     ],
     'Combatente': [
@@ -176,7 +176,7 @@ export const lineageItems: Record<Lineage['name'], Array<(Item | Weapon<'Leve' |
             kind: 'Munição',
             type: 'item',
             weight: 0.3,
-            effects: [ 'Recarrega armas leves de energia' ]
+            effects: [ 'Recarrega armas leves de energia.' ]
         }
     ],
     'Clínico': [
@@ -187,7 +187,7 @@ export const lineageItems: Record<Lineage['name'], Array<(Item | Weapon<'Leve' |
             type: 'item',
             weight: 0.5,
             quantity: 2,
-            effects: [ 'Cura o alvo em 3d6+2' ]
+            effects: [ 'Cura o alvo em 3d6+2.' ]
         }
     ],
     'Aventureiro': [
@@ -197,7 +197,7 @@ export const lineageItems: Record<Lineage['name'], Array<(Item | Weapon<'Leve' |
             kind: 'Utilidade',
             type: 'item',
             weight: 2,
-            effects: [ '20m' ]
+            effects: [ 'O gancho pode ser utilizado em distâncias de até 20m.' ]
         },
         {
             name: 'Mochila pequena',
@@ -205,7 +205,7 @@ export const lineageItems: Record<Lineage['name'], Array<(Item | Weapon<'Leve' |
             kind: 'Capacidade',
             type: 'item',
             weight: 2.5,
-            effects: [ '+2.5kg de capacidade de carga' ]
+            effects: [ '+2.5kg de capacidade de carga.' ]
         }
     ],
     'Trambiqueiro': [
@@ -214,7 +214,7 @@ export const lineageItems: Record<Lineage['name'], Array<(Item | Weapon<'Leve' |
             description: 'Você pode arrombar qualquer fechadura ou sistema eletrônico de tranca desde que passe em um teste de Competência de DT proporcional ao alvo. Peso: 0.0Kg (item permanente)\nObtido pela linhagem: Trambiqueiro',
             kind: 'Utilidade',
             type: 'item',
-            effects: [ 'Pode arrombar trancas eletrônicas ou não-eletrônicas' ],
+            effects: [ 'Pode arrombar trancas eletrônicas ou não-eletrônicas.' ],
             weight: 0
         }
     ],
@@ -225,7 +225,7 @@ export const lineageItems: Record<Lineage['name'], Array<(Item | Weapon<'Leve' |
             kind: 'Especial',
             type: 'item',
             weight: 0,
-            effects: [ '+1.1x de EXP e dinheiro' ]
+            effects: [ '+1.1x de EXP e dinheiro.' ]
         }
     ],
     'Novato': [
@@ -235,7 +235,7 @@ export const lineageItems: Record<Lineage['name'], Array<(Item | Weapon<'Leve' |
             kind: 'Consumível',
             type: 'item',
             weight: 0,
-            effects: [ '+¥30 000 ao utilizar' ]
+            effects: [ '+¥30 000 ao utilizar.' ]
         },
         {
             name: 'Mochila pequena',
@@ -243,7 +243,7 @@ export const lineageItems: Record<Lineage['name'], Array<(Item | Weapon<'Leve' |
             kind: 'Capacidade',
             type: 'item',
             weight: 2.5,
-            effects: [ '+2.5kg de capacidade de carga' ]
+            effects: [ '+2.5kg de capacidade de carga.' ]
         }
     ],
     'Inventor': [
@@ -274,7 +274,7 @@ export const lineageItems: Record<Lineage['name'], Array<(Item | Weapon<'Leve' |
             kind: 'Especial',
             type: 'item',
             weight: 0,
-            effects: [ '+2 MP', '+1 de ponto no efeito da magia' ],
+            effects: [ '+2 MP', '+1 de ponto no efeito da magia.' ],
             level: 1
         }
     ],
@@ -302,34 +302,22 @@ export const lineageItems: Record<Lineage['name'], Array<(Item | Weapon<'Leve' |
     ],
     'Pesquisador': [
         {
-            name: '',
-            description: 'Obtido pela linhagem: ',
-            kind: '',
+            name: 'Decodificador Mágico',
+            description: 'Você pode decodificar e usar magias com este decodificador.\nObtido pela linhagem: Pesquisador',
+            kind: 'Especial',
             type: 'item',
-            weight: 0,
-            effects: [],
-            level: 0
-        }
-    ],
-    'Exilado': [
-        {
-            name: '',
-            description: 'Obtido pela linhagem: ',
-            kind: '',
-            type: 'item',
-            weight: 0,
-            effects: [],
-            level: 0
+            weight: 0.2,
+            effects: [ 'O decodificador tem uma memória que armazena até 5 magias decodificadas.' ]
         }
     ],
     'Investigador': [
         {
-            name: '',
-            description: 'Obtido pela linhagem: ',
-            kind: '',
+            name: 'Lupa mágica',
+            description: 'Você recebe +2 em testes de Percepção para encontrar pistas ou evidências.\nObtido pela linhagem: Investigador',
+            kind: 'Especial',
             type: 'item',
             weight: 0,
-            effects: [],
+            effects: [ '+2 em testes de Percepção para encontrar pistas ou evidências.' ],
             level: 0
         }
     ]

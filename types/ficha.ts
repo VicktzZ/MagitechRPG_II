@@ -250,7 +250,6 @@ export type LineageNames =
     'Idólatra' |
     'Cismático' |
     'Pesquisador' |
-    'Exilado' |
     'Investigador'
 
 export type AmmoType = 
