@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-non-null-asserted-optional-chain */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
@@ -8,7 +9,7 @@ import { InputLabel, MenuItem, Select, useMediaQuery, type SelectChangeEvent, us
 import { Box, FormControl, TextField } from '@mui/material'
 import { clickEffect } from '@public/sounds'
 import { classesModel } from '@constants/classes';
-import React, { type ReactElement } from 'react'
+import React, { type ReactElement, useCallback, useMemo } from 'react'
 import type { Classes } from '@types';
 import { type FormikContextType } from 'formik';
 import { type fichaModel } from '@constants/ficha';
@@ -16,6 +17,7 @@ import { blue, green, red, yellow } from '@mui/material/colors';
 import { useAudio } from '@hooks';
 import { skills } from '@constants/skills';
 import type { Race } from '@types';
+import { type ExpertisesOverrided, lineageExpertises } from '@constants/lineageExpertises';
 
 export default function Characteristics({ formik }: { formik: any }): ReactElement {
     const f: FormikContextType<typeof fichaModel> = formik
@@ -65,6 +67,65 @@ export default function Characteristics({ formik }: { formik: any }): ReactEleme
         audio1.play()
     }
 
+    const lineagePoints = useCallback((expertises: ExpertisesOverrided): string => {
+        let pointsStr = ''
+        let testsStr = ''
+        let result = ''
+
+        if (expertises?.points) {
+            pointsStr = `+${expertises.points} Pontos de Perícia`
+        }
+
+        if (expertises?.tests) {
+            Object.entries(expertises.tests).forEach(([ key, value ]) => {
+                testsStr += `${key}: +${value}; `
+            })          
+        }
+
+        result = `${pointsStr}${pointsStr !== '' && testsStr !== '' ? '\n' : ''}${testsStr}`
+
+        return result
+    }, [])
+
+    const lineages = useMemo(() => {
+        return Object.entries(lineageExpertises).map(([ lineage, expertises ]) => (
+            <MenuItem 
+                key={lineage} 
+                value={lineage}
+            >
+                <Box>
+                    <Typography>{lineage}</Typography>
+                    <Typography noWrap whiteSpace='pre-wrap' color={green[500]} variant='caption'>
+                        {lineagePoints(expertises)}
+                    </Typography>
+                </Box>
+            </MenuItem>
+        ))
+    }, [])
+    
+    const classes = useMemo(() => {
+        return Object.keys(classesModel).map(classe => (
+            <MenuItem key={classe} value={classe}>
+                <Box>
+                    <Typography>
+                        {classesModel[classe as keyof typeof classesModel].name}
+                    </Typography>
+                    <Box display='flex' gap={2}>
+                        <Typography fontWeight={900} variant='caption' color={red[500]}>
+                            LP: {classesModel[classe as keyof typeof classesModel].attributes.lp}
+                        </Typography>
+                        <Typography fontWeight={900} variant='caption' color={blue[300]}>
+                            MP: {classesModel[classe as keyof typeof classesModel].attributes.mp}
+                        </Typography>
+                        <Typography fontWeight={900} variant='caption' color={yellow[500]}>
+                            AP: {classesModel[classe as keyof typeof classesModel].attributes.ap}
+                        </Typography>
+                    </Box>
+                </Box>
+            </MenuItem>
+        ))
+    }, [])
+
     return (
         <Box display='flex' gap={3} width='100%'>
             <Box display='flex' flexDirection='column' gap={2} width='65%'>
@@ -92,26 +153,7 @@ export default function Characteristics({ formik }: { formik: any }): ReactEleme
                                 <Typography>{value as string}</Typography>
                             )}
                         >
-                            {Object.keys(classesModel).map(classe => (
-                                <MenuItem key={classe} value={classe}>
-                                    <Box>
-                                        <Typography>
-                                            {classesModel[classe as keyof typeof classesModel].name}
-                                        </Typography>
-                                        <Box display='flex' gap={2}>
-                                            <Typography fontWeight={900} variant='caption' color={red[500]}>
-                                                LP: {classesModel[classe as keyof typeof classesModel].attributes.lp}
-                                            </Typography>
-                                            <Typography fontWeight={900} variant='caption' color={blue[300]}>
-                                                MP: {classesModel[classe as keyof typeof classesModel].attributes.mp}
-                                            </Typography>
-                                            <Typography fontWeight={900} variant='caption' color={yellow[500]}>
-                                                AP: {classesModel[classe as keyof typeof classesModel].attributes.ap}
-                                            </Typography>
-                                        </Box>
-                                    </Box>
-                                </MenuItem>
-                            ))}
+                            {classes}
                         </Select>
                     </FormControl>
                     {!matches && (
@@ -127,29 +169,11 @@ export default function Characteristics({ formik }: { formik: any }): ReactEleme
                                 MenuProps={{
                                     sx: { maxHeight: '60vh' }
                                 }}
+                                renderValue={value => (
+                                    <Typography>{value as unknown as string}</Typography>
+                                )}
                             >
-                                <MenuItem value='Órfão'>Órfão</MenuItem>
-                                <MenuItem value='Infiltrado'>Infiltrado</MenuItem>
-                                <MenuItem value='Estrangeiro'>Estrangeiro</MenuItem>
-                                <MenuItem value='Camponês'>Camponês</MenuItem>
-                                <MenuItem value='Burguês'>Burguês</MenuItem>
-                                <MenuItem value='Artista'>Artista</MenuItem>
-                                <MenuItem value='Ginasta'>Ginasta</MenuItem>
-                                <MenuItem value='Herdeiro'>Herdeiro</MenuItem>
-                                <MenuItem value='Cobaia'>Cobaia</MenuItem>
-                                <MenuItem value='Gangster'>Gangster</MenuItem>
-                                <MenuItem value='Hacker'>Hacker</MenuItem>
-                                <MenuItem value='Combatente'>Combatente</MenuItem>
-                                <MenuItem value='Clínico'>Clínico</MenuItem>
-                                <MenuItem value='Aventureiro'>Aventureiro</MenuItem>
-                                <MenuItem value='Trambiqueiro'>Trambiqueiro</MenuItem>
-                                <MenuItem value='Prodígio'>Prodígio</MenuItem>
-                                <MenuItem value='Novato'>Novato</MenuItem>
-                                <MenuItem value='Inventor'>Inventor</MenuItem>
-                                <MenuItem value='Idólatra'>Idólatra</MenuItem>
-                                <MenuItem value='Cismático'>Cismático</MenuItem>
-                                <MenuItem value='Pesquisador'>Pesquisador</MenuItem>
-                                <MenuItem value='Investigador'>Investigador</MenuItem>
+                                {lineages}
                             </Select>
                         </FormControl>
                     )}
@@ -168,29 +192,11 @@ export default function Characteristics({ formik }: { formik: any }): ReactEleme
                                 MenuProps={{
                                     sx: { maxHeight: '60vh' }
                                 }}
+                                renderValue={value => (
+                                    <Typography>{value as unknown as string}</Typography>
+                                )}
                             >
-                                <MenuItem value='Órfão'>Órfão</MenuItem>
-                                <MenuItem value='Infiltrado'>Infiltrado</MenuItem>
-                                <MenuItem value='Estrangeiro'>Estrangeiro</MenuItem>
-                                <MenuItem value='Camponês'>Camponês</MenuItem>
-                                <MenuItem value='Burguês'>Burguês</MenuItem>
-                                <MenuItem value='Artista'>Artista</MenuItem>
-                                <MenuItem value='Ginasta'>Ginasta</MenuItem>
-                                <MenuItem value='Herdeiro'>Herdeiro</MenuItem>
-                                <MenuItem value='Cobaia'>Cobaia</MenuItem>
-                                <MenuItem value='Gangster'>Gangster</MenuItem>
-                                <MenuItem value='Hacker'>Hacker</MenuItem>
-                                <MenuItem value='Clínico'>Clínico</MenuItem>
-                                <MenuItem value='Combatente'>Combatente</MenuItem>
-                                <MenuItem value='Aventureiro'>Aventureiro</MenuItem>
-                                <MenuItem value='Trambiqueiro'>Trambiqueiro</MenuItem>
-                                <MenuItem value='Prodígio'>Prodígio</MenuItem>
-                                <MenuItem value='Novato'>Novato</MenuItem>
-                                <MenuItem value='Inventor'>Inventor</MenuItem>
-                                <MenuItem value='Idólatra'>Idólatra</MenuItem>
-                                <MenuItem value='Cismático'>Cismático</MenuItem>
-                                <MenuItem value='Pesquisador'>Pesquisador</MenuItem>
-                                <MenuItem value='Investigador'>Investigador</MenuItem>
+                                {lineages}
                             </Select>
                         </FormControl>
                     </Box>

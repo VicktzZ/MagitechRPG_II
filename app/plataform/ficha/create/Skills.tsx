@@ -1,7 +1,8 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 'use client';
 
 import { Box, FormControl, Typography, useMediaQuery, useTheme } from '@mui/material'
-import { useState, type ReactElement, type MouseEvent, useRef } from 'react'
+import { useState, type ReactElement, type MouseEvent, useRef, useMemo, useCallback } from 'react'
 import type { Ficha, Skill } from '@types'
 import type { FormikContextType } from 'formik'
 
@@ -13,7 +14,7 @@ export default function Skills({ formik }: { formik: any }): ReactElement {
     const theme = useTheme()
     const matches = useMediaQuery(theme.breakpoints.down('md'))
 
-    const onClick = (event: MouseEvent<HTMLSpanElement>, skill: Skill): void => {
+    const onClick = useCallback((event: MouseEvent<HTMLSpanElement>, skill: Skill): void => {
         if (skillRef.current) {
             skillRef.current.style.backgroundColor = 'transparent'
         }
@@ -31,8 +32,24 @@ export default function Skills({ formik }: { formik: any }): ReactElement {
         setSelectedSkill(skill)
 
         skillRef.current = event.currentTarget
-    }
+    }, [])
     
+    const skills = useMemo(() => {
+        return Object.values(f.values.skills).map(item => item.map(skill => (
+            <Typography
+                key={skill.name}
+                noWrap
+                onClick={e => { onClick(e, skill) }}
+                sx={{
+                    cursor: 'pointer',
+                    p: 0.5
+                }}
+            >
+                {skill.name}
+            </Typography>
+        )))
+    }, [ f.values.skills, onClick ])
+
     return (
         <Box
             width='100%'
@@ -72,19 +89,7 @@ export default function Skills({ formik }: { formik: any }): ReactElement {
                         p: 2
                     }}
                 >
-                    {Object.values(f.values.skills).map(item => item.map(skill => (
-                        <Typography
-                            key={skill.name}
-                            noWrap
-                            onClick={e => { onClick(e, skill) }}
-                            sx={{
-                                cursor: 'pointer',
-                                p: 0.5
-                            }}
-                        >
-                            {skill.name}
-                        </Typography>
-                    )))}
+                    {skills}
                 </FormControl>
                 <Box
                     minHeight={matches ? '40rem' : '100%'}

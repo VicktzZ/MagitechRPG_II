@@ -1,7 +1,7 @@
 'use client';
 
 import { Box, Grid, Typography, useTheme } from '@mui/material';
-import { useState, type ReactElement } from 'react';
+import { useState, type ReactElement, useCallback } from 'react';
 import type { Expertise as ExpertiseType, Expertises, Ficha } from '@types';
 import { blue, green, grey, purple, yellow } from '@mui/material/colors';
 import DiceRollModal from '@components/misc/DiceRollModal';
@@ -42,7 +42,7 @@ export default function Expertise({
         }
     }
 
-    const onClick = (): void => {
+    const onClick = useCallback((): void => {
         if (!edit?.isEditing) {
             setOpen(true)
         } else {
@@ -73,7 +73,7 @@ export default function Expertise({
                 }
             }
         }
-    }
+    }, [ edit, formik, name, expertise ])
 
     return (
         <>

@@ -98,8 +98,8 @@ export default function DiceRollModal({
             }
         }
 
-        return (
-            resultRolls.map((item, index) => {
+        const result = useMemo(() => {
+            return resultRolls.map((item, index) => {
                 if (resultRolls.length < 2 && !bonus) {
                     return (
                         <Typography key={item} fontSize='3rem' fontFamily={`D${roll.dice}`}>{getLetter(item)}</Typography>
@@ -140,7 +140,9 @@ export default function DiceRollModal({
                     </>
                 )
             })
-        )
+        }, [ resultRolls ])
+
+        return result
     }
 
     return (

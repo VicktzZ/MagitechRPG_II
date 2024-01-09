@@ -1,16 +1,25 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { Expertise } from '@components/ficha';
 import { Box, Button, Grid,Typography, useTheme } from '@mui/material';
 import { blue, green, grey, purple, yellow } from '@mui/material/colors';
 import { type FormikContextType } from 'formik';
-import { useState, type ReactElement, useRef } from 'react';
-import { Edit } from '@mui/icons-material';
-import type { Ficha, Expertise as ExpertiseType, Attributes, Expertises as ExpertisesType } from '@types';
+import { useState, type ReactElement, useRef, useCallback, useMemo } from 'react';
+import { lineageExpertises } from '@constants/lineageExpertises';
+
+import type { 
+    Ficha,
+    Attributes,
+    Lineage,
+    Expertise as ExpertiseType,
+    Expertises as ExpertisesType
+} from '@types';
 
 export default function Expertises({ formik }: { formik: any }): ReactElement {
     const f: FormikContextType<Ficha> = formik
     const theme = useTheme()
 
     const buttonRef = useRef<'add' | 'sub' | null>()
+    const lineageRef = useRef<Lineage['name'] | null>()
 
     const [ edit, setEdit ] = useState({
         isEditing: false,
@@ -22,10 +31,10 @@ export default function Expertises({ formik }: { formik: any }): ReactElement {
         sub: 'outlined'
     })
 
-    function ExpertiseButton({ children, type }: { children: ReactElement | string, type: 'add' | 'sub' }): ReactElement {
+    function ExpertiseButton ({ children, type }: { children: ReactElement | string, type: 'add' | 'sub' }): ReactElement {
         const [ buttonClicked, setButtonClicked ] = useState(false)
 
-        const onClick = (): any => {
+        const onClick = useCallback((): any => {
             if (edit.isEditing) {
                 if (buttonRef.current === type) {
                     setButtonClicked(false)
@@ -41,7 +50,7 @@ export default function Expertises({ formik }: { formik: any }): ReactElement {
                 } else {
                     setButtonClicked(true)
                     setButtonStyle({
-                        [buttonRef.current]: 'outlined',
+                        [buttonRef.current as any]: 'outlined',
                         [type]: 'contained'
                     })
 
@@ -76,7 +85,7 @@ export default function Expertises({ formik }: { formik: any }): ReactElement {
             }
 
             buttonRef.current = type
-        }
+        }, [])
 
         return (
             <Button 
@@ -85,6 +94,53 @@ export default function Expertises({ formik }: { formik: any }): ReactElement {
             >{children}</Button>
         )
     }
+    
+    const tests = useMemo(() => {
+        const lineage: Lineage['name'] = f.values.lineage as unknown as Lineage['name']
+        const expertiseOfLineage = lineageExpertises[lineage] 
+        let expertiseOfLineageRef: typeof expertiseOfLineage
+
+        if (lineageRef.current) {
+            expertiseOfLineageRef = lineageExpertises[lineageRef.current]
+
+            if (expertiseOfLineageRef?.tests) {
+                Object.keys(expertiseOfLineageRef.tests).forEach((key: string) => {
+                    const k: keyof ExpertisesType = key as keyof ExpertisesType
+                    f.values.expertises[k].value -= expertiseOfLineageRef.tests?.[k] ?? 0
+                })
+            }
+    
+            if (expertiseOfLineageRef?.points) {
+                f.values.points.expertises -= expertiseOfLineageRef?.points ?? 0
+            }
+        }
+
+        if (expertiseOfLineage?.tests) {
+            Object.keys(expertiseOfLineage.tests).forEach((key: string) => {
+                const k: keyof ExpertisesType = key as keyof ExpertisesType
+                f.values.expertises[k].value += expertiseOfLineage.tests?.[k] ?? 0
+            })
+        }
+
+        if (expertiseOfLineage?.points) {
+            f.values.points.expertises += expertiseOfLineage?.points ?? 0
+        }
+
+        lineageRef.current = lineage
+
+        const expertisesNodeArr = Object.entries(f.values.expertises).map(([ name, expertise ]: [ name: keyof ExpertisesType | any, expertise: ExpertiseType<any> ]) => (
+            <Expertise 
+                key={name}
+                name={name}
+                expertise={expertise}
+                diceQuantity={f.values.attributes[expertise.defaultAttribute as Attributes]}
+                edit={edit}
+                formik={formik}
+            />
+        ))
+
+        return expertisesNodeArr
+    }, [ f.values.lineage, f.values.expertises, f.values.points.expertises, edit ])
 
     return (
         <>
@@ -102,16 +158,7 @@ export default function Expertises({ formik }: { formik: any }): ReactElement {
                     spacing={1.5} 
                     container
                 >
-                    {Object.entries(f.values.expertises).map(([ name, expertise ]: [ name: keyof ExpertisesType | any, expertise: ExpertiseType<any> ]) => (
-                        <Expertise 
-                            key={name}
-                            name={name}
-                            expertise={expertise}
-                            diceQuantity={f.values.attributes[expertise.defaultAttribute as Attributes]}
-                            edit={edit}
-                            formik={formik}
-                        />
-                    ))}
+                    {tests}
                 </Grid>
                 <Box display='flex' width='100%' gap={2} justifyContent='center'>
                     <Typography 

@@ -1,13 +1,12 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { RadarChart } from '@components/misc'
 import { classesModel } from '@constants/classes'
-import { numberWithSpaces } from '@functions'
 import { LinearProgressWithLabel } from '@layout'
 import { FormControl } from '@mui/material'
 import { Box } from '@mui/material'
 import { green } from '@mui/material/colors'
 import { type FormikContextType } from 'formik'
-import { type ReactElement, useState, useRef, useEffect } from 'react'
+import { type ReactElement, useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import type { Attributes as AttributesType, Classes, Ficha, FinancialCondition, Expertises, Race } from '@types'
 import DiceRollModal from '@components/misc/DiceRollModal'
 import traits from '@constants/traits'
@@ -29,6 +28,7 @@ import {
 import { useAudio } from '@hooks'
 import { selectEffect } from '@public/sounds'
 import { races } from '@constants/races'
+import useNumbersWithSpaces from '@hooks/useNumbersWithSpace'
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
@@ -49,11 +49,11 @@ export default function Attributes({ formik }: { formik: any }): ReactElement {
     const raceRef = useRef<Race['name'] | null>(null)
 
     const theme = useTheme()
+
     const [ modalOpen, setModalOpen ] = useState(false)
-
     const matches = useMediaQuery(theme.breakpoints.down('md'))
-
     const audio = useAudio(selectEffect)
+    const numberWithSpaces = useNumbersWithSpaces()
 
     const setDiligencePoints = (point: 'lp' | 'mp' | 'ap', action: 'add' | 'sub', value: number): void => {
         const classe = classesModel[f.values.class as Classes] || null
@@ -173,7 +173,25 @@ export default function Attributes({ formik }: { formik: any }): ReactElement {
         traitRef.current = e.target.value
     }
 
-    useEffect(() => {
+    const traitsArr = useMemo(() => {
+        return traits.map((trait) => (
+            <MenuItem
+                key={trait.name}
+                value={trait.name}
+            >
+                <Box>
+                    <Typography>
+                        {trait.name}
+                    </Typography>
+                    <Typography color={green[500]} variant='caption'>
+                        +{trait.value} {trait.target.name}
+                    </Typography>
+                </Box>
+            </MenuItem>
+        ))
+    }, [])
+
+    const baseAttrs = useMemo(() => {
         const baseLP = 
             (classesModel[f.values.class as Classes]?.attributes.lp ?? 0) +
             f.values.attributes.vig * 3 +
@@ -189,13 +207,12 @@ export default function Attributes({ formik }: { formik: any }): ReactElement {
             Math.floor(f.values.attributes.des * .5) +
             (races[f.values.race as Race['name']]?.attributes.ap ?? 0)
 
-        f.setFieldValue('attributes', {
-            ...f.values.attributes,
+        return {
             lp: baseLP,
             mp: baseMP,
             ap: baseAP
-        })
-    }, [ 
+        }
+    }, [
         f.values.class,
         f.values.race,
         f.values.attributes.vig,
@@ -203,12 +220,25 @@ export default function Attributes({ formik }: { formik: any }): ReactElement {
         f.values.attributes.foc
     ])
 
-    useEffect(() => {
+    const humanFn = useCallback(() => {
         if (raceRef.current === 'Humano') f.setFieldValue('points.attributes', f.values.points.attributes - 1)
         if (f.values.race === 'Humano') f.setFieldValue('points.attributes', f.values.points.attributes + 1)
         
         raceRef.current = f.values.race as Race['name']
     }, [ f.values.race ])
+
+    useEffect(() => {
+        const { ap, mp, lp } = baseAttrs
+
+        f.setFieldValue('attributes', {
+            ...f.values.attributes,
+            lp,
+            mp,
+            ap
+        })
+    }, [ baseAttrs ])
+
+    useEffect(humanFn, [ humanFn ])
 
     return (
         <Box display='flex' flexDirection={matches ? 'column' : 'row'} width='100%' gap={matches ? 6 : 3}>
@@ -473,21 +503,7 @@ export default function Attributes({ formik }: { formik: any }): ReactElement {
                                         </Box>
                                     )}
                                 >
-                                    {traits.map((trait) => (
-                                        <MenuItem
-                                            key={trait.name}
-                                            value={trait.name}
-                                        >
-                                            <Box>
-                                                <Typography>
-                                                    {trait.name}
-                                                </Typography>
-                                                <Typography color={green[500]} variant='caption'>
-                                                    +{trait.value} {trait.target.name}
-                                                </Typography>
-                                            </Box>
-                                        </MenuItem>
-                                    ))}
+                                    {traitsArr}
                                 </Select>
                             </FormControl>
                             <FormControl fullWidth>

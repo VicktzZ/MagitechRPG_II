@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { Box, Grid, Typography, useMediaQuery, useTheme } from '@mui/material'
-import React, { useEffect, type ReactElement } from 'react'
+import React, { useEffect, type ReactElement, useMemo } from 'react'
 import type { Ficha, LineageNames } from '@types'
 import type { FormikContextType } from 'formik'
 import { Item } from '@components/ficha'
@@ -10,7 +10,7 @@ export default function Inventory({ formik }: { formik: FormikContextType<Ficha>
     const theme = useTheme()
     const matches = useMediaQuery(theme.breakpoints.down('md'))
 
-    useEffect(() => {
+    const capacity = useMemo(() => {
         const weaponsWeight = formik.values.inventory.weapons.map((weapon) => weapon.weight).reduce((a, b) => a + b, 0)
         const armorsWeight = formik.values.inventory.armors.map((armor) => armor.weight).reduce((a, b) => a + b, 0)
         const itemsWeight = formik.values.inventory.items.map((item) => {
@@ -26,33 +26,51 @@ export default function Inventory({ formik }: { formik: FormikContextType<Ficha>
         }).reduce((a, b) => a + b, 0)
 
         const cargo = (weaponsWeight + armorsWeight + itemsWeight)?.toFixed(1)
+
+        return {
+            cargo,
+            maxCargo
+        }
+    }, [ formik.values.inventory, formik.values.attributes.vig ])
+
+    const itemsOfLineage = useMemo(() => {
+        formik.values.inventory = formik.initialValues.inventory
+
+        const items = lineageItems[formik.values.lineage as unknown as LineageNames]
+        const itemArr: any[] = []
+        const weaponArr: any[] = []
+
+        items?.forEach((item) => {
+            if (item.type === 'item') itemArr.push(item) 
+            if (item.type === 'weapon') weaponArr.push(item)
+        })
+
+        return {
+            itemArr,
+            weaponArr
+        }
+    }, [ formik.values.lineage ])
+
+    useEffect(() => {
+        const { cargo, maxCargo } = capacity
         
         formik.setFieldValue('capacity.cargo', cargo)
         formik.setFieldValue('capacity.max', (5 + (formik.values.attributes.vig * 2.5) + maxCargo).toFixed(1))
-    }, [ formik.values.inventory, formik.values.attributes.vig ])
-
+    }, [ capacity ])
+    
     useEffect(() => {
-        formik.values.inventory = formik.initialValues.inventory
+        const { weaponArr, itemArr } = itemsOfLineage
 
-        const itemsOfLineage = lineageItems[formik.values.lineage as unknown as LineageNames]
-        const itemArr: any[] = []
-
-        itemsOfLineage?.forEach((item) => {
-            if (item.type === 'item') itemArr.push(item) 
-
-            if (item.type === 'weapon') {
-                formik.setFieldValue('inventory.weapons', [
-                    ...formik.initialValues.inventory.weapons,
-                    item
-                ])
-            } else {
-                formik.setFieldValue('inventory.items', [
-                    ...formik.initialValues.inventory.items,
-                    ...itemArr
-                ])
-            }
-        })
-    }, [ formik.values.lineage ])
+        formik.setFieldValue('inventory.weapons', [
+            ...formik.initialValues.inventory.weapons,
+            ...weaponArr
+        ])
+        
+        formik.setFieldValue('inventory.items', [
+            ...formik.initialValues.inventory.items,
+            ...itemArr
+        ])
+    }, [ itemsOfLineage ])
 
     return (
         <Box

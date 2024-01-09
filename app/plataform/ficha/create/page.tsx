@@ -8,7 +8,7 @@ import Characteristics from './Characteristics';
 import Attributes from './Attributes';
 import Expertises from './Expertises';
 import Skills from './Skills';
-import type { ReactElement } from 'react'
+import { Suspense, type ReactElement } from 'react'
 import type { Ficha } from '@types';
 import Inventory from './Inventory';
 import { yellow, red } from '@mui/material/colors';
@@ -70,110 +70,107 @@ export default function FichaComponent({ disabled }: { disabled?: boolean }): Re
     const matches = useMediaQuery(theme.breakpoints.down('md'))
 
     return (
-        <>
-            <Box 
-                display='flex' 
-                height='100%' 
+        <Box 
+            display='flex' 
+            height='100%' 
+            width='100%'
+            borderRadius='10px'
+        >
+            <Box
+                display='flex'
+                minHeight='100vh'
                 width='100%'
-                borderRadius='10px'
+                flexDirection='column'
+                component='form'
+                onSubmit={formik.handleSubmit}
+                p={5} 
+                gap={5}
             >
-                <Box
-                    display='flex'
-                    minHeight='100vh'
-                    width='100%'
-                    flexDirection='column'
-                    component='form'
-                    onSubmit={formik.handleSubmit}
-                    p={5} 
-                    gap={5}
-                >
-                    <Box display='flex' flexDirection='column' gap={2.5}>
-                        <Box>
-                            <Typography variant='h5'>Criar ficha</Typography>
-                        </Box>
-                        <Box width='100%'>
-                            <Box
-                                sx={{
-                                    display: 'flex',
-                                    width: '100%',
-                                    flexDirection: 'column',
-                                    gap: 5
-                                }} 
-                            >
-                                <Characteristics 
-                                    formik={formik}
-                                />
-                            </Box>
-                        </Box>
+                <Box display='flex' flexDirection='column' gap={2.5}>
+                    <Box>
+                        <Typography variant='h5'>Criar ficha</Typography>
                     </Box>
-                    <Box
-                        sx={{
-                            display: 'flex',
-                            flexDirection: matches ? 'column' : 'row',
-                            width: '100%',
-                            gap: 8
-                        }} 
-                    >
-                        <Box 
-                            width='100%'
-                            display='flex'
-                            flexDirection='column'
-                            gap={8}
+                    <Box width='100%'>
+                        <Box
+                            sx={{
+                                display: 'flex',
+                                width: '100%',
+                                flexDirection: 'column',
+                                gap: 5
+                            }} 
                         >
-                            <Box>
-                                <Box>
-                                    <Typography variant='h6'>Atributos</Typography>
-                                </Box>
-                                <Attributes
-                                    formik={formik}
-                                />
-                            </Box>
-                            <Box>
-                                <Box>
-                                    <Typography variant='h6'>Habilidades</Typography>
-                                </Box>
-                                <Skills
-                                    formik={formik}
-                                />
-                            </Box>
+                            <Characteristics 
+                                formik={formik}
+                            />
                         </Box>
-                        <Box 
-                            width='100%'
-                            display='flex'
-                            flexDirection='column'
-                            gap={2.5}
-                        >
-                            <Box>
-                                <Typography variant='h6'>Perícias</Typography>
-                            </Box>
-                            <Box display='flex' width='100%' gap={3}>
-                                <Expertises 
-                                    formik={formik}
-                                />
-                            </Box>
-                        </Box>
-                    </Box>
-                    <Box display='flex' flexDirection='column' gap={5} width='100%'>
-                        <Box display='flex' gap={2}>
-                            <Typography variant='h6'>Inventário</Typography>
-                            <Typography 
-                                fontWeight={900} 
-                                variant='h5'
-                                color={
-                                    formik.values.capacity.cargo / formik.values.capacity.max >= 1 ? red[500] :
-                                        formik.values.capacity.cargo / formik.values.capacity.max >= .75 ? yellow[500] : 'white'
-                                }
-                            >
-                                {formik.values.capacity.cargo}/{formik.values.capacity.max}
-                            </Typography>
-                        </Box>
-                        <Inventory
-                            formik={formik}
-                        />
                     </Box>
                 </Box>
+                <Box
+                    sx={{
+                        display: 'flex',
+                        flexDirection: matches ? 'column' : 'row',
+                        width: '100%',
+                        gap: 8
+                    }} 
+                >
+                    <Box 
+                        width='100%'
+                        display='flex'
+                        flexDirection='column'
+                        gap={8}
+                    >
+                        <Box>
+                            <Box>
+                                <Typography variant='h6'>Atributos</Typography>
+                            </Box>
+                            <Attributes
+                                formik={formik}
+                            />
+                        </Box>
+                        <Box>
+                            <Box>
+                                <Typography variant='h6'>Habilidades</Typography>
+                            </Box>
+                            <Skills
+                                formik={formik}
+                            />
+                        </Box>
+                    </Box>
+                    <Box 
+                        width='100%'
+                        display='flex'
+                        flexDirection='column'
+                        gap={2.5}
+                    >
+                        <Box>
+                            <Typography variant='h6'>Perícias</Typography>
+                        </Box>
+                        <Box display='flex' width='100%' gap={3}>
+                            <Expertises 
+                                formik={formik}
+                            />
+                        </Box>
+                    </Box>
+                </Box>
+                {/* <Box display='flex' flexDirection='column' gap={5} width='100%'>
+                    <Box display='flex' gap={2}>
+                        <Typography variant='h6'>Inventário</Typography>
+                        <Typography 
+                            fontWeight={900} 
+                            variant='h5'
+                            color={
+                                formik.values.capacity.cargo / formik.values.capacity.max >= 1 ? red[500] :
+                                    formik.values.capacity.cargo / formik.values.capacity.max >= .75 ? yellow[500] : 'white'
+                            }
+                        >
+                            {formik.values.capacity.cargo}/{formik.values.capacity.max}
+                        </Typography>
+                    </Box>
+                    <Inventory
+                        formik={formik}
+                    />
+                </Box> */}
             </Box>
-            
-        </>
+        </Box>
     )
 }
