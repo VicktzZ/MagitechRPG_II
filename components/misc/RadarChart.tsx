@@ -1,4 +1,4 @@
-import React, { type CSSProperties, type ReactElement } from 'react';
+import React, { memo, type CSSProperties, type ReactElement } from 'react';
 import {
     Chart as ChartJS,
     RadialLinearScale,
@@ -34,7 +34,7 @@ type ChartOptions =
     DatasetChartOptions<'radar'> &
     ScaleChartOptions<'radar'>
 
-export default function RadarChart({
+const RadarChart = memo(({
     data,
     style,
     options 
@@ -42,6 +42,9 @@ export default function RadarChart({
     data: ChartData<'radar', Array<number | null>, unknown>,
     style?: CSSProperties
     options?: ChartOptions | any
-}): ReactElement {
+}): ReactElement => {
     return <Radar style={style} options={options} data={data} />;
-}
+})
+
+RadarChart.displayName = 'RadarChart'
+export default RadarChart

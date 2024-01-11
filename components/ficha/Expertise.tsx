@@ -5,19 +5,17 @@ import { useState, type ReactElement, useCallback } from 'react';
 import type { Expertise as ExpertiseType, Expertises, Ficha } from '@types';
 import { blue, green, grey, purple, yellow } from '@mui/material/colors';
 import DiceRollModal from '@components/misc/DiceRollModal';
-import type { FormikContextType } from 'formik';
+import { useFormikContext, type FormikContextType } from 'formik';
 
 export default function Expertise({ 
     name,
     expertise,
     diceQuantity,
-    edit,
-    formik
+    edit
 }: { 
     name: keyof Expertises,
     expertise: ExpertiseType<any>,
     diceQuantity: number,
-    formik?: FormikContextType<Ficha>,
     edit?: {
         isEditing: boolean,
         value: number,
@@ -27,6 +25,8 @@ export default function Expertise({
     const theme = useTheme()
 
     const [ open, setOpen ] = useState<boolean>(false)
+
+    const f: FormikContextType<Ficha> = useFormikContext()
 
     const determinateColor = (): string => {
         if (expertise.value < 2) {
@@ -49,31 +49,31 @@ export default function Expertise({
 
             edit.setEdit?.({ isEditing: false, value: 0 })
 
-            if (formik) {
+            if (f) {
                 if (
                     (
-                        (formik.values.points.expertises > 0 && formik.values.expertises[name].value < 2) ||
-                        (formik.values.points.expertises >= 0 && edit.value < 0)
+                        (f.values.points.expertises > 0 && f.values.expertises[name].value < 2) ||
+                        (f.values.points.expertises >= 0 && edit.value < 0)
                     ) &&
-                        formik.values.expertises[name].value + edit.value > -1
+                        f.values.expertises[name].value + edit.value > -1
                 ) {
-                    formik.setFieldValue('expertises', {
-                        ...formik.values.expertises,
+                    f.setFieldValue('expertises', {
+                        ...f.values.expertises,
                         [name]: {
-                            ...formik.values.expertises[name],
+                            ...f.values.expertises[name],
                             value: expertise.value + edit.value
                         }
                     })    
 
-                    formik.setFieldValue(
+                    f.setFieldValue(
                         'points.expertises', 
-                        edit.value > 0 ? formik.values.points.expertises - 1 :
-                            formik.values.points.expertises + 1
+                        edit.value > 0 ? f.values.points.expertises - 1 :
+                            f.values.points.expertises + 1
                     )
                 }
             }
         }
-    }, [ edit, formik, name, expertise ])
+    }, [ edit, f, name, expertise ])
 
     return (
         <>
@@ -98,7 +98,6 @@ export default function Expertise({
                     flexDirection='column' 
                     p={1} 
                     border={`1px solid ${edit?.isEditing ? yellow[500] : theme.palette.primary.main}75`} 
-                    // bgcolor={edit?.isEditing ? theme.palette.primary.dark : 'transparent'}
                     borderRadius={1}
                     sx={{ transition: '.3s' }}
                 >

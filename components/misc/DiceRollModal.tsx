@@ -2,12 +2,12 @@
 'use client';
 
 import { Box, Chip, Modal, Typography, useMediaQuery, useTheme } from '@mui/material'
-import { useMemo, type ReactElement, useEffect } from 'react'
+import { useMemo, type ReactElement, useEffect, memo } from 'react'
 import { Chance } from 'chance'
 import type { Attributes } from '@types';
 import { Animation } from 'react-animate-style';
 
-export default function DiceRollModal({
+const DiceRollModal = memo(({
     open,
     onClose,
     roll,
@@ -32,7 +32,7 @@ export default function DiceRollModal({
         name: string,
         attribute: Attributes
     }
-}): ReactElement {
+}): ReactElement => {
     const theme = useTheme()
     const matches = useMediaQuery(theme.breakpoints.down('md'))
 
@@ -216,4 +216,7 @@ export default function DiceRollModal({
             </Animation>
         </Modal>    
     )
-}
+})
+
+DiceRollModal.displayName = 'DiceRollModal'
+export default DiceRollModal

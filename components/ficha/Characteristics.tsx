@@ -11,7 +11,7 @@ import { clickEffect } from '@public/sounds'
 import { classesModel } from '@constants/classes';
 import React, { type ReactElement, useCallback, useMemo } from 'react'
 import type { Classes } from '@types';
-import { type FormikContextType } from 'formik';
+import { useFormikContext, type FormikContextType } from 'formik';
 import { type fichaModel } from '@constants/ficha';
 import { blue, green, red, yellow } from '@mui/material/colors';
 import { useAudio } from '@hooks';
@@ -19,8 +19,9 @@ import { skills } from '@constants/skills';
 import type { Race } from '@types';
 import { type ExpertisesOverrided, lineageExpertises } from '@constants/lineageExpertises';
 
-export default function Characteristics({ formik }: { formik: any }): ReactElement {
-    const f: FormikContextType<typeof fichaModel> = formik
+export default function Characteristics(): ReactElement {
+    const f: FormikContextType<typeof fichaModel> = useFormikContext()
+
     const theme = useTheme()
     const matches = useMediaQuery(theme.breakpoints.down('md'))
 
@@ -36,7 +37,8 @@ export default function Characteristics({ formik }: { formik: any }): ReactEleme
             ...f.values.points,
             ...classesModel[classe].points,
             diligence: classesModel[classe].points.diligence + (f.values.attributes?.log ?? 0),
-            expertises: !expertiseHasValue ? classesModel[classe].points.expertises : 0 
+            expertises: !expertiseHasValue ? classesModel[classe].points.expertises :
+                expertiseHasValue && f.values.lineage as unknown as string !== '' ? classesModel[classe].points.expertises : 0 
         })
 
         f.setFieldValue('skills.class', classesModel[classe].skills)
@@ -132,8 +134,7 @@ export default function Characteristics({ formik }: { formik: any }): ReactEleme
                 <TextField 
                     name='name'
                     label='Nome'
-                    value={f.values.name}
-                    onChange={f.handleChange}
+                    onBlur={f.handleChange}
                     required
                     fullWidth
                 />
@@ -261,8 +262,7 @@ export default function Characteristics({ formik }: { formik: any }): ReactEleme
                     <TextField 
                         name='age'
                         label='Idade'
-                        value={f.values.age}
-                        onChange={f.handleChange}
+                        onBlur={f.handleChange}
                         required
                         sx={{ width: !matches ? '50%' : '100%' }}
                     />
@@ -292,8 +292,7 @@ export default function Characteristics({ formik }: { formik: any }): ReactEleme
                         <Select 
                             name='gender'
                             label='Gênero'
-                            value={f.values.gender}
-                            onChange={f.handleChange}
+                            onBlur={f.handleChange}
                             required
                             fullWidth
                         >

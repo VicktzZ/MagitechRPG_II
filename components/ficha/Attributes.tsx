@@ -5,7 +5,7 @@ import { LinearProgressWithLabel } from '@layout'
 import { FormControl } from '@mui/material'
 import { Box } from '@mui/material'
 import { green } from '@mui/material/colors'
-import { type FormikContextType } from 'formik'
+import { useFormikContext, type FormikContextType } from 'formik'
 import { type ReactElement, useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import type { Attributes as AttributesType, Classes, Ficha, FinancialCondition, Expertises, Race } from '@types'
 import DiceRollModal from '@components/misc/DiceRollModal'
@@ -25,6 +25,7 @@ import {
     useMediaQuery,
     useTheme 
 } from '@mui/material'
+
 import { useAudio } from '@hooks'
 import { selectEffect } from '@public/sounds'
 import { races } from '@constants/races'
@@ -42,8 +43,8 @@ const MenuProps = {
     }
 };
 
-export default function Attributes({ formik }: { formik: any }): ReactElement {
-    const f: FormikContextType<Ficha> = formik
+export default function Attributes(): ReactElement {
+    const f: FormikContextType<Ficha> = useFormikContext()
 
     const traitRef = useRef<string | null>(null)
     const raceRef = useRef<Race['name'] | null>(null)
@@ -94,7 +95,7 @@ export default function Attributes({ formik }: { formik: any }): ReactElement {
                         f.setFieldValue(`attributes.${otherAttrs.attr}`, f.values.attributes[otherAttrs.attr] + otherAttrs.value)
                     } else {
                         f.setFieldValue(`points.${point}`, f.values.points[point] + (otherAttrs?.value ?? 0))
-                    }   
+                    }
                 }
             } else {
                 if (f.values.attributes[attribute] !== -1) {
@@ -121,7 +122,7 @@ export default function Attributes({ formik }: { formik: any }): ReactElement {
         )
     }
 
-    const setTraits = (e: SelectChangeEvent): void => {
+    const setTraits = useCallback((e: SelectChangeEvent): void => {
         f.setFieldValue('traits', [ e.target.value ])
 
         let trait
@@ -171,7 +172,7 @@ export default function Attributes({ formik }: { formik: any }): ReactElement {
 
         audio.play()
         traitRef.current = e.target.value
-    }
+    }, [ f.values.traits, f.values.attributes ])
 
     const traitsArr = useMemo(() => {
         return traits.map((trait) => (

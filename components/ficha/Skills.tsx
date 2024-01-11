@@ -4,10 +4,10 @@
 import { Box, FormControl, Typography, useMediaQuery, useTheme } from '@mui/material'
 import { useState, type ReactElement, type MouseEvent, useRef, useMemo, useCallback } from 'react'
 import type { Ficha, Skill } from '@types'
-import type { FormikContextType } from 'formik'
+import { useFormikContext, type FormikContextType } from 'formik'
 
-export default function Skills({ formik }: { formik: any }): ReactElement {
-    const f: FormikContextType<Ficha> = formik
+export default function Skills(): ReactElement {
+    const f: FormikContextType<Ficha> = useFormikContext()
     const skillRef = useRef<EventTarget & HTMLSpanElement | null>()
     const [ selectedSkill, setSelectedSkill ] = useState<Skill | null>(null)
     

@@ -2,7 +2,7 @@
 import { Expertise } from '@components/ficha';
 import { Box, Button, Grid,Typography, useTheme } from '@mui/material';
 import { blue, green, grey, purple, yellow } from '@mui/material/colors';
-import { type FormikContextType } from 'formik';
+import { useFormikContext, type FormikContextType } from 'formik';
 import { useState, type ReactElement, useRef, useCallback, useMemo } from 'react';
 import { lineageExpertises } from '@constants/lineageExpertises';
 
@@ -14,8 +14,8 @@ import type {
     Expertises as ExpertisesType
 } from '@types';
 
-export default function Expertises({ formik }: { formik: any }): ReactElement {
-    const f: FormikContextType<Ficha> = formik
+export default function Expertises(): ReactElement {
+    const f: FormikContextType<Ficha> = useFormikContext()
     const theme = useTheme()
 
     const buttonRef = useRef<'add' | 'sub' | null>()
@@ -135,12 +135,11 @@ export default function Expertises({ formik }: { formik: any }): ReactElement {
                 expertise={expertise}
                 diceQuantity={f.values.attributes[expertise.defaultAttribute as Attributes]}
                 edit={edit}
-                formik={formik}
             />
         ))
 
         return expertisesNodeArr
-    }, [ f.values.lineage, f.values.expertises, f.values.points.expertises, edit ])
+    }, [ f.values.lineage, f.values.expertises, f.values.points.expertises, edit, f.values.traits ])
 
     return (
         <>

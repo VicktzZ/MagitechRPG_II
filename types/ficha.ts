@@ -10,6 +10,7 @@ export interface Ficha {
     displacement: number
     totalCapacity: number
     magics: Magic[]
+    magicsSpace: number
     gender: Gender
     elementalMastery: Element
     level: number

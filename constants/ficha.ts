@@ -14,6 +14,7 @@ export const fichaModel: Partial<Ficha> = {
     displacement: 9,
     level: 0,
     magics: [],
+    magicsSpace: 0,
     subclass: '',
     skills: {
         lineage: [],
@@ -35,7 +36,7 @@ export const fichaModel: Partial<Ficha> = {
                 description: 'Celular institucional dado a todos estudantes da UFEM.',
                 kind: 'Especial',
                 weight: 0.2,
-                effects: [ 'Celular multiúso da UFEM' ]
+                effects: [ 'Celular multiúso da UFEM.' ]
             },
             {
                 name: 'ORM',
@@ -43,7 +44,7 @@ export const fichaModel: Partial<Ficha> = {
                 kind: 'Especial',
                 level: 1,
                 weight: 0.1,
-                effects: [ 'Dispositivo utilizado para manipulação de magículas e sequências mágicas' ]
+                effects: [ 'Dispositivo utilizado para manipulação de magículas e sequências mágicas.' ]
             }
         ],
         weapons: [
@@ -118,7 +119,7 @@ export const fichaModel: Partial<Ficha> = {
         expertises: 0,
         diligence: 0,
         skills: 0,
-        magics: 0  
+        magics: 1  
     },
 
     attributes: {

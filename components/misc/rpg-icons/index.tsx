@@ -1,5 +1,5 @@
 /* eslint-disable camelcase */
-import { type CSSProperties, type ReactElement } from 'react'
+import { memo, type CSSProperties, type ReactElement } from 'react'
 
 import acid from './acid.svg'
 import acorn from './acorn.svg'
@@ -998,7 +998,7 @@ const icons = {
 
 export type IconType = keyof typeof icons
 
-export default function RPGIcon({ 
+const RPGIcon = memo(({ 
     icon,
     height = '1.5rem',
     width = '1.5rem',
@@ -1008,7 +1008,7 @@ export default function RPGIcon({
     height?: CSSProperties['height'] 
     width?: CSSProperties['width'] 
     sx?: CSSProperties
-}): ReactElement {
+}): ReactElement => {
     return (
         <Image
             style={{
@@ -1021,4 +1021,7 @@ export default function RPGIcon({
             alt='icon'
         />
     )
-}
+})
+
+RPGIcon.displayName = 'RPGIcon'
+export default RPGIcon
