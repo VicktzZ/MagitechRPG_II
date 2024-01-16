@@ -10,13 +10,15 @@ import type {
     Skill,
     Lineage,
     Weapon,
+    Magic,
     Armor,
     Item,
     LineageNames,
     Race,
     Trait
 } from './ficha';
-import type { Session, User } from './models';
+
+import type { Session, User, Magia } from './models';
 
 export type { 
     User,
@@ -26,6 +28,7 @@ export type {
     Classes,
     Class,
     Item,
+    Magic,
     Weapon,
     Armor,
     Gender,
@@ -36,5 +39,6 @@ export type {
     Expertises,
     Expertise,
     Race,
+    Magia,
     FinancialCondition
 }

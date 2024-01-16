@@ -152,7 +152,7 @@ export const traits: Trait[] = [
     },
     
     {
-        name: 'Eloquênte',
+        name: 'Eloquente',
         description: '',
         value: 3,
         target: {

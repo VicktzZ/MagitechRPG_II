@@ -7,6 +7,7 @@ import Inventory from './Inventory';
 import Attributes from './Attributes';
 import Characteristics from './Characteristics';
 import Expertises from './Expertises';
+import Magic from './Magic';
 
 export {
     Expertise,
@@ -15,6 +16,7 @@ export {
     Characteristics,
     Expertises,
     Inventory,
+    Magic,
     Magics,
     Skills,
     MagicsModal

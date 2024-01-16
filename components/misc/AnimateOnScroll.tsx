@@ -55,7 +55,8 @@ export default function AnimateOnScroll({
     return (
         <Box visibility='hidden' ref={ref}>
             <Animation 
-                className={isVisible ? `animate__animated animate__${animation}` : ''} style={{ display: 'flex', ...style }}
+                className={isVisible ? `animate__animated animate__${animation}` : ''} 
+                style={{ display: 'flex', ...style }}
                 isVisible 
                 animationIn=''
                 animationInDuration={duration} 

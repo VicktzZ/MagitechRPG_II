@@ -172,7 +172,7 @@ export interface Weapon<T extends 'Leve' | 'Pesada'> {
     hit: Attributes
     ammo: AmmoType | 'Não consome'
     accesories?: WeaponAccesoriesType[]
-    bonus: 'Luta' | 'Agilidade' | 'Furtividade' | 'Pontaria' | 'Magia' | 'Tecnologia'
+    bonus: 'Luta' | 'Agilidade' | 'Furtividade' | 'Pontaria' | 'Magia' | 'Tecnologia' | 'Controle'
     effect: {
         value: string
         critValue: string

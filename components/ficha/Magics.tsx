@@ -1,9 +1,13 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
 /* eslint-disable react-hooks/exhaustive-deps */
+'use client';
+
 import { Edit } from '@mui/icons-material'
-import { Box, IconButton, Typography, useTheme } from '@mui/material'
+import { Box, Grid, IconButton, Typography, useTheme } from '@mui/material'
 import type { Ficha } from '@types'
 import { useFormikContext, type FormikContextType } from 'formik'
-import { memo, useCallback, useEffect, useState } from 'react'
+import { memo, useCallback, useEffect, useMemo, useState } from 'react'
+import { Magic } from '.';
 import MagicsModal from './MagicsModal'
 
 const Magics = memo(() => {
@@ -12,6 +16,26 @@ const Magics = memo(() => {
     const theme = useTheme()
 
     const [ open, setOpen ] = useState(false)
+
+    const magics = useMemo(() => {
+        return f.values.magics.map((magic: any) => (
+            <Magic 
+                key={magic?._id ?? ''}
+                id={magic?._id ?? ''}
+                magic={magic}
+                onIconClick={() => {
+                    const magicsArr: any[] = f.values.magics
+                    const m: number = f.values.magics.findIndex((mg: any) => mg._id === magic._id)
+
+                    magicsArr.splice(m, 1)
+
+                    f.setFieldValue('points.magics', f.values.points.magics + 1)
+                    f.setFieldValue('magicsSpace', f.values.magicsSpace + 1)
+                    f.setFieldValue('magics', magicsArr)
+                }}
+            />
+        ))
+    }, [ f.values ])
 
     const setMagicPoints = useCallback(() => {
         f.setFieldValue('points.magics', f.values.attributes.log + 2)
@@ -53,11 +77,15 @@ const Magics = memo(() => {
                     width='100%' 
                     borderRadius={2} 
                     flexDirection='column'
+                    justifyContent='center'
+                    alignItems='center'
                     border={`1px solid ${theme.palette.primary.main}`}
                     p={5}
                     gap={10}
                 >
-                    
+                    <Grid justifyContent='center' gap={5} container>
+                        {magics}
+                    </Grid>
                 </Box>
             </Box>
             <MagicsModal 

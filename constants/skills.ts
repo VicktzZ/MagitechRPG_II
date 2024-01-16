@@ -175,7 +175,7 @@ export const skills: {
         'Feiticeiro': [
             {
                 name: 'Feitiçaria',
-                description: 'Você ganha +1d4 para todas as magias de ataque que você utilizar. Além disso, ao adquirir essa habilidade, escolha uma magia nível 1 e aprenda-a.',
+                description: 'Você ganha +1 de dano para todas as magias de ataque que você utilizar. Além disso, ao adquirir essa habilidade, escolha uma magia nível 1 e aprenda-a.',
                 origin: 'Feiticeiro',
                 type: 'Classe',
                 level: 0
