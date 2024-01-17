@@ -9,20 +9,44 @@ export async function GET(req: NextRequest): Promise<Response> {
     try {
         await connectToDb()
         const query = req.nextUrl.searchParams.get('search')
+        const filter = req.nextUrl.searchParams.get('filter')
+        const sort = req.nextUrl.searchParams.get('sort')
+
+        console.log(query);
+        console.log(filter);
+        console.log(sort);
 
         const pipeline: PipelineStage[] = [ { $skip: 0 } ] 
         
         if (query) {
             pipeline.unshift({
                 $search: {
+                    index: 'magias_search',
                     text: {
                         query,
+                        fuzzy: {
+                            maxEdits: 1,
+                            prefixLength: 3,
+                            maxExpansions: 50
+                        },
                         path: {
                             wildcard: '*'
                         }
                     }
                 }
             })
+        }
+
+        if (filter) {
+            pipeline.push({
+                $match: {
+                    'elemento': filter
+                }
+            })
+        }
+
+        if (sort) {
+            pipeline.push({ $sort: { [sort.toLowerCase()]: 1 } })
         }
 
         const magias = await Magia.aggregate(pipeline)

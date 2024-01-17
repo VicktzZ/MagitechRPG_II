@@ -19,9 +19,12 @@ const fichaSchema = new Schema<FichaType>({
         required: [ true, 'Class is required!' ]
     },
     capacity: {
+        type: Object,
+        required: [ true, 'Capacity is required!' ]
+    },
+    ORMLevel: {
         type: Number,
-        required: [ true, 'Capacity is required!' ],
-        default: 5
+        default: 1
     },
     race: {
         type: String,
@@ -29,59 +32,69 @@ const fichaSchema = new Schema<FichaType>({
     },
     displacement: {
         type: Number,
-        required: [ true, 'Displacement is required!' ],
-        default: 9
+        required: [ true, 'Displacement is required!' ]
     },
     lineage: {
         type: String,
         required: [ true, 'Lineage is required!' ]
     },
     inventory: {
-        money: 0,
-        items: [
-            {
-                name: 'Celular',
-                description: 'Celular institucional dado a todos estudantes da UFEM.',
-                kind: 'Especial',
-                weight: 0.2
-            },
-            {
-                name: 'ORM',
-                description: 'Um ORM pode ser qualquer coisa desde que esteja embutido com um Zeptachip. Este dispositivo é necessário para manipular qualquer forma de magia.',
-                kind: 'Especial',
-                level: 1,
-                weight: 0.1
-            }
-        ],
-        weapons: [
-            {
-                name: 'Bastão Retrátil',
-                description: 'Um bastão retrátil dado a estudantes da UFEM como arma de defesa pessoal',
-                categ: 'Arma Branca (Leve)',
-                range: 'Corpo-a-corpo',
-                weight: 0.2,
-                hit: 'des',
-                bonus: 'Agilidade',
-                effect: {
-                    value: '2d6',
-                    critValue: '4d6',
-                    critChance: 20,
-                    kind: 'damage',
-                    effectType: 'Impactante'
+        money: {
+            type: Number,
+            default: 0
+        },
+        items: {
+            type: [ Object ],
+            default: [
+                {
+                    name: 'Celular',
+                    description: 'Celular institucional dado a todos estudantes da UFEM.',
+                    kind: 'Especial',
+                    weight: 0.2
+                },
+                {
+                    name: 'ORM',
+                    description: 'Um ORM pode ser qualquer coisa desde que esteja embutido com um Zeptachip. Este dispositivo é necessário para manipular qualquer forma de magia.',
+                    kind: 'Especial',
+                    level: 1,
+                    weight: 0.1
                 }
-            }
-        ],
-        armors: [
-            {
-                name: 'Uniforme da UFEM',
-                description: 'Um uniforme escolar dado a todos estudantes da UFEM para identificação e segurança na instalação.',
-                categ: 'Leve',
-                weight: 0.5,
-                value: 5,
-                displacementPenalty:0
-            }
-        ],
-        required: [ true, 'Inventory is required!' ]
+            ]
+        },
+        weapons: {
+            type: [ Object ],
+            default: [
+                {
+                    name: 'Bastão Retrátil',
+                    description: 'Um bastão retrátil dado a estudantes da UFEM como arma de defesa pessoal',
+                    categ: 'Arma Branca (Leve)',
+                    range: 'Corpo-a-corpo',
+                    weight: 0.2,
+                    hit: 'des',
+                    bonus: 'Agilidade',
+                    effect: {
+                        value: '2d6',
+                        critValue: '4d6',
+                        critChance: 20,
+                        kind: 'damage',
+                        effectType: 'Impactante'
+                    }
+                }
+            ]
+        },
+        armors: {
+            type: [ Object ],
+            default: [
+                {
+                    name: 'Uniforme da UFEM',
+                    description: 'Um uniforme escolar dado a todos estudantes da UFEM para identificação e segurança na instalação.',
+                    categ: 'Leve',
+                    weight: 0.5,
+                    value: 5,
+                    displacementPenalty:0
+                }
+            ]
+        }
     },
     magics: {
         type: [ Object ],
@@ -94,17 +107,14 @@ const fichaSchema = new Schema<FichaType>({
     },
     elementalMastery: {
         type: String,
-        required: [ true, 'Elemental affinities is required!' ]
+        default: null
     },
     level: {
         type: Number,
-        required: [ true, 'Level is required!' ],
         default: 0
     },
     subclass: {
-        type: String,
-        required: [ true, 'Subclass is required!' ],
-        default: ''
+        type: String
     },
     financialCondition: {
         type: String,
@@ -115,37 +125,36 @@ const fichaSchema = new Schema<FichaType>({
         required: [ true, 'Skills is required!' ]
     },
     expertises: {
-        'Atletismo': 0,
-        'RES Física': 0,
-        'RES Mental': 0,
-        'RES Mágica': 0,
-        'Ladinagem': 0,
-        'Agilidade': 0,
-        'Sobrevivência': 0,
-        'Competência': 0,
-        'Luta': 0,
-        'Conhecimento': 0,
-        'Criatividade': 0,
-        'Furtividade': 0,
-        'Pontaria': 0,
-        'Reflexos': 0,
-        'Controle': 0,
-        'Condução': 0,
-        'Sorte': 0,
-        'Enganação': 0,
-        'Tecnologia': 0,
-        'Magia': 0,
-        'Comunicação': 0,
-        'Medicina': 0,
-        'Percepção': 0,
-        'Intuição': 0,
-        'Investigação': 0,
-        'Argumentação': 0,
-        'Intimidação': 0,
-        'Persuasão': 0,
-        'Liderança': 0,
-        'Vontade': 0,
-        required: [ true, 'Expertises is required!' ]
+        'Atletismo': { type: Number, default: 0 },
+        'RES Física': { type: Number, default: 0 },
+        'RES Mental': { type: Number, default: 0 },
+        'RES Mágica': { type: Number, default: 0 },
+        'Ladinagem': { type: Number, default: 0 },
+        'Agilidade': { type: Number, default: 0 },
+        'Sobrevivência': { type: Number, default: 0 },
+        'Competência': { type: Number, default: 0 },
+        'Luta': { type: Number, default: 0 },
+        'Conhecimento': { type: Number, default: 0 },
+        'Criatividade': { type: Number, default: 0 },
+        'Furtividade': { type: Number, default: 0 },
+        'Pontaria': { type: Number, default: 0 },
+        'Reflexos': { type: Number, default: 0 },
+        'Controle': { type: Number, default: 0 },
+        'Condução': { type: Number, default: 0 },
+        'Sorte': { type: Number, default: 0 },
+        'Enganação': { type: Number, default: 0 },
+        'Tecnologia': { type: Number, default: 0 },
+        'Magia': { type: Number, default: 0 },
+        'Comunicação': { type: Number, default: 0 },
+        'Medicina': { type: Number, default: 0 },
+        'Percepção': { type: Number, default: 0 },
+        'Intuição': { type: Number, default: 0 },
+        'Investigação': { type: Number, default: 0 },
+        'Argumentação': { type: Number, default: 0 },
+        'Intimidação': { type: Number, default: 0 },
+        'Persuasão': { type: Number, default: 0 },
+        'Liderança': { type: Number, default: 0 },
+        'Vontade': { type: Number, default: 0 }
     },
     traits: {
         type: [ Object ],

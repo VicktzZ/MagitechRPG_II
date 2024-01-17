@@ -14,8 +14,8 @@ const BorderLinearProgress = styled(LinearProgress)(({ theme }) => ({
 
 export default function LinearProgressWithLabel(
     props: LinearProgressProps & {
-        minValue: number,
-        maxValue: number,
+        minvalue: number,
+        maxvalue: number,
         label: string,
         MoreComponents?: ReactElement 
     }
@@ -26,13 +26,13 @@ export default function LinearProgressWithLabel(
                 <Box display='flex' alignItems='center' gap={1}>
                     <Typography>{props.label}:</Typography>
                     <Typography variant="body2" color="text.secondary">
-                        {`${props.minValue}/${props.maxValue}`}
+                        {`${props.minvalue}/${props.maxvalue}`}
                     </Typography>
                     {props.MoreComponents}
                 </Box>
                 <BorderLinearProgress 
                     variant='determinate' 
-                    value={props.minValue < props.maxValue ? (props.minValue / props.maxValue) * 100 : 100} 
+                    value={props.minvalue < props.maxvalue ? (props.minvalue / props.maxvalue) * 100 : 100} 
                     {...props}
                 />
             </Box>

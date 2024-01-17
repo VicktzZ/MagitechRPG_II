@@ -312,8 +312,8 @@ export default function Attributes(): ReactElement {
                     </Box>
                     <LinearProgressWithLabel
                         label='LP'
-                        minValue={f.values.attributes.lp}
-                        maxValue={f.values.attributes.lp}
+                        minvalue={f.values.attributes.lp}
+                        maxvalue={f.values.attributes.lp}
                         color='error'
                         MoreComponents={
                             <Box ml={1} sx={{
@@ -336,8 +336,8 @@ export default function Attributes(): ReactElement {
                     />
                     <LinearProgressWithLabel
                         label='MP'
-                        minValue={f.values.attributes.mp}
-                        maxValue={f.values.attributes.mp}
+                        minvalue={f.values.attributes.mp}
+                        maxvalue={f.values.attributes.mp}
                         color='info'
                         MoreComponents={
                             <Box ml={1} sx={{
@@ -360,8 +360,8 @@ export default function Attributes(): ReactElement {
                     />
                     <LinearProgressWithLabel
                         label='AP'
-                        minValue={f.values.attributes.ap}
-                        maxValue={f.values.attributes.ap}
+                        minvalue={f.values.attributes.ap}
+                        maxvalue={f.values.attributes.ap}
                         color='warning'
                     />
                 </Box>
@@ -542,7 +542,7 @@ export default function Attributes(): ReactElement {
                                 </Select>
                             </FormControl>
                         </Box>
-                        <Button onClick={() => { setModalOpen(true); f.handleSubmit() }} variant='outlined' >Rolar dados</Button>
+                        <Button onClick={() => { setModalOpen(true) }} variant='outlined' >Rolar dados</Button>
                     </Box>
                     <Box display='flex' flexDirection='column' justifyContent='space-between' height='100%' gap={1}>
                         <Box display='flex' alignItems='center' gap={1}>
@@ -550,6 +550,13 @@ export default function Attributes(): ReactElement {
                             <Chip
                                 color='primary' 
                                 label={f.values.level}
+                            />
+                        </Box>
+                        <Box display='flex' alignItems='center' gap={1}>
+                            <Typography>Nível do ORM:</Typography>
+                            <Chip
+                                color='primary' 
+                                label={f.values.ORMLevel}
                             />
                         </Box>
                         <Box display='flex' alignItems='center' gap={1}>

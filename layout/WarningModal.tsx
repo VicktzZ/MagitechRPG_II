@@ -7,12 +7,14 @@ export default function WarningModal({
     text,
     open,
     onClose,
-    onConfirm
+    onConfirm,
+    title
 } : { 
     text: string,
     open: boolean,
     onClose: () => void,
-    onConfirm: () => void
+    onConfirm: () => void,
+    title: string
 }): ReactElement {
     const theme = useTheme()
     
@@ -40,7 +42,7 @@ export default function WarningModal({
                 }}
             >
                 <Box display='flex' flexDirection='column' gap={1}>
-                    <Typography variant='h6'>Tem certeza?</Typography>
+                    <Typography variant='h6'>{title || 'Tem certeza?'}</Typography>
                     <Typography variant='body2'>{text}</Typography>
                 </Box>
                 <Box display='flex' justifyContent='space-between'>

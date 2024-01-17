@@ -2,17 +2,20 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 'use client';
 
-import { Edit } from '@mui/icons-material'
+import { Close, Edit } from '@mui/icons-material'
 import { Box, Grid, IconButton, Typography, useTheme } from '@mui/material'
 import type { Ficha } from '@types'
 import { useFormikContext, type FormikContextType } from 'formik'
 import { memo, useCallback, useEffect, useMemo, useState } from 'react'
 import { Magic } from '.';
 import MagicsModal from './MagicsModal'
+import { useSnackbar } from 'notistack';
 
 const Magics = memo(() => {
     const f: FormikContextType<Ficha> = useFormikContext()
     
+    const { enqueueSnackbar, closeSnackbar } = useSnackbar()
+
     const theme = useTheme()
 
     const [ open, setOpen ] = useState(false)
@@ -32,6 +35,17 @@ const Magics = memo(() => {
                     f.setFieldValue('points.magics', f.values.points.magics + 1)
                     f.setFieldValue('magicsSpace', f.values.magicsSpace + 1)
                     f.setFieldValue('magics', magicsArr)
+
+                    enqueueSnackbar(
+                        `Magia ${magic.nome} removida!`,
+                        {
+                            variant: 'success',
+                            action: () => <Close sx={{ cursor: 'pointer' }} onClick={() => { closeSnackbar(magic.nome) }} />,
+                            preventDuplicate: true,
+                            key: magic.nome,
+                            autoHideDuration: 3000
+                        }
+                    )
                 }}
             />
         ))

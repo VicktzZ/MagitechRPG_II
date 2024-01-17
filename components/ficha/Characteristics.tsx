@@ -293,6 +293,7 @@ export default function Characteristics(): ReactElement {
                             name='gender'
                             label='Gênero'
                             onBlur={f.handleChange}
+                            defaultValue={f.values.gender}
                             required
                             fullWidth
                         >

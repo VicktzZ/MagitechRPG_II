@@ -1,9 +1,11 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable @typescript-eslint/dot-notation */
 
+'use client';
+
 import { CustomIconButton } from '@layout';
 import { Add, Close } from '@mui/icons-material';
-import { Box, Button, Typography, useTheme } from '@mui/material';
+import { Box, Button, Typography, useMediaQuery, useTheme } from '@mui/material';
 import { useState, type ReactElement, type MouseEvent } from 'react';
 import type { Magia } from '@types';
 import { amber, blue, blueGrey, brown, green, grey, indigo, pink, red } from '@mui/material/colors';
@@ -12,6 +14,7 @@ type magicStages = 'estágio 1' | 'estágio 2' | 'estágio 3' | 'maestria'
 
 export default function Magic({ magic, id, isAdding, onIconClick }: { magic: Magia, id: string, isAdding?: boolean, onIconClick?: () => void }): ReactElement {
     const theme = useTheme()
+    const matches = useMediaQuery(theme.breakpoints.down('md'))
 
     const [ description, setDescritpion ] = useState<string>(magic['estágio 1'])
     const [ buttonVariants, setButtonVariants ] = useState({
@@ -20,6 +23,8 @@ export default function Magic({ magic, id, isAdding, onIconClick }: { magic: Mag
         'estágio 3': 'text',
         'maestria': 'text'
     })
+
+    const [ extraManaCost, setExtraManaCost ] = useState<number>(0)
 
     const magicColor = {
         'FOGO': red[500],
@@ -39,6 +44,33 @@ export default function Magic({ magic, id, isAdding, onIconClick }: { magic: Mag
 
     const onClick = (e: MouseEvent<HTMLButtonElement>): void => {
         const buttonName: magicStages = e.currentTarget.innerText.toLowerCase() as magicStages
+
+        let extraCost: {
+            [key in magicStages]?: number
+        } = {}
+
+        if (Number(magic.nível) === 5) {
+            extraCost = {
+                'estágio 1': 0,
+                'estágio 2': 15,
+                'maestria': 25
+            }
+            
+        } else if (Number(magic.nível) >= 3) {
+            extraCost = {
+                'estágio 1': 0,
+                'estágio 2': 10,
+                'estágio 3': 15
+            }
+        } else {
+            extraCost = {
+                'estágio 1': 0,
+                'estágio 2': 5,
+                'estágio 3': 10
+            }
+        }
+
+        setExtraManaCost(extraCost[buttonName]!)
 
         setButtonVariants({
             'estágio 1': 'text',
@@ -90,7 +122,7 @@ export default function Magic({ magic, id, isAdding, onIconClick }: { magic: Mag
                     </Box>
                     <Box display='flex' gap={1}>
                         <Typography fontWeight={900} >CUSTO: </Typography>
-                        <Typography>{magic.custo}</Typography>
+                        <Typography>{Number(magic.custo) + extraManaCost} MP</Typography>
                     </Box>
                     <Box display='flex' gap={1}>
                         <Typography fontWeight={900} >TIPO: </Typography>
@@ -106,26 +138,30 @@ export default function Magic({ magic, id, isAdding, onIconClick }: { magic: Mag
                     </Box>
                 </Box>
                 <Typography height='100%' width='100%' variant='caption' noWrap whiteSpace='pre-wrap'>{description}</Typography>
-                <Box display='flex' width='100%' justifyContent='end'>
+                <Box display='flex' width='100%' gap={matches ? 2 : 0} justifyContent='end'>
                     <Box display='flex' gap={1} width='100%' justifyContent='start'>
                         <Button 
+                            sx={matches ? { p: 0 } : {}}
                             onClick={e => { onClick(e) }}
                             variant={buttonVariants['estágio 1'] as any} 
                         >Estágio 1</Button>
                         {magic['estágio 2'] && (
                             <Button 
+                                sx={matches ? { p: 0 } : {}}
                                 onClick={e => { onClick(e) }}
                                 variant={buttonVariants['estágio 2'] as any} 
                             >Estágio 2</Button>
                         )}
                         {magic['estágio 3'] && (
-                            <Button 
+                            <Button                         
+                                sx={matches ? { p: 0 } : {}}
                                 onClick={e => { onClick(e) }}
                                 variant={buttonVariants['estágio 3'] as any} 
                             >Estágio 3</Button>
                         )}
                         {magic['maestria'] && (
-                            <Button 
+                            <Button
+                                sx={matches ? { p: 0 } : {}}
                                 onClick={e => { onClick(e) }}
                                 variant={buttonVariants['maestria'] as any} 
                             >Maestria</Button>

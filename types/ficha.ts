@@ -6,6 +6,7 @@ export interface Ficha {
     class: Class | Classes
     race: Race | Race['name']
     lineage: Lineage
+    ORMLevel: number
     inventory: Inventory
     displacement: number
     totalCapacity: number
