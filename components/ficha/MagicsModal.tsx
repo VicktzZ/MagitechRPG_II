@@ -141,8 +141,6 @@ const MagicsModal = memo(({ open, onClose }: { open: boolean, onClose: () => voi
     }, [ fetchOptions.filter, fetchOptions.sort ])
 
     useEffect(() => {
-        if (fetchOptions.search) setIsLoadingRefetch(true)
-
         const fetchData = async (): Promise<void> => {
             setPage(0)
                 
@@ -157,7 +155,13 @@ const MagicsModal = memo(({ open, onClose }: { open: boolean, onClose: () => voi
         console.log(debouncedSearch);        
 
         if (debouncedSearch) fetchData()
-    }, [ fetchOptions.search, debouncedSearch ])
+    }, [ debouncedSearch ])
+
+    useEffect(() => {
+        if (fetchOptions.search) {
+            setIsLoadingRefetch(true)
+        }
+    }, [ fetchOptions.search ])
 
     useEffect(() => {
         (async () => {
