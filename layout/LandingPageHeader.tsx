@@ -74,8 +74,8 @@ export default function LandingPageHeader(): ReactElement {
                             }}>
                                 <Avatar sx={{ height: '3rem', width: '3rem' }}>
                                     <Image
-                                        height={0}
-                                        width={0} 
+                                        height={250}
+                                        width={250} 
                                         style={{ height: '100%', width: '100%' }} 
                                         src={session.user?.image ?? 'undefined'} 
                                         alt={session.user?.name ?? 'User Avatar'} 

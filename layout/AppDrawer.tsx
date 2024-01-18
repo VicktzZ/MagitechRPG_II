@@ -1,87 +1,110 @@
-import * as React from 'react';
-import Box from '@mui/material/Box';
-import Drawer from '@mui/material/Drawer';
-import List from '@mui/material/List';
-import Divider from '@mui/material/Divider';
-import ListItem from '@mui/material/ListItem';
-import ListItemButton from '@mui/material/ListItemButton';
-import ListItemIcon from '@mui/material/ListItemIcon';
-import ListItemText from '@mui/material/ListItemText';
-import InboxIcon from '@mui/icons-material/MoveToInbox';
-import MailIcon from '@mui/icons-material/Mail';
+import { Avatar, Box, Divider, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Typography } from '@mui/material';
+import { type KeyboardEvent, type MouseEvent, type ReactElement, type ReactNode, useState } from 'react';
+import { Article, Group, Home, Logout, Menu } from '@mui/icons-material';
+import { signOut, useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import CustomIconButton from './CustomIconButton';
-import { Menu } from '@mui/icons-material';
+import Image from 'next/image';
+import { useSnackbar } from 'notistack';
 
-type Anchor = 'top' | 'left' | 'bottom' | 'right';
-
-export default function TemporaryDrawer(): React.ReactElement {
-    const [ state, setState ] = React.useState({
-        top: false,
-        left: false,
-        bottom: false,
-        right: false
-    });
+export default function AppDrawer(): ReactElement {
+    const { data: session } = useSession();
+    const [ open, setOpen ] = useState<boolean>(false);
+    const { enqueueSnackbar } = useSnackbar()
+    const router = useRouter()
 
     const toggleDrawer =
-        (anchor: Anchor, open: boolean) =>
-            (event: React.KeyboardEvent | React.MouseEvent) => {
+        (openParam: boolean) =>
+            (event: KeyboardEvent | MouseEvent) => {
                 if (
                     event.type === 'keydown' &&
-                    ((event as React.KeyboardEvent).key === 'Tab' ||
-                    (event as React.KeyboardEvent).key === 'Shift')
+                    ((event as KeyboardEvent).key === 'Tab' ||
+                    (event as KeyboardEvent).key === 'Shift')
                 ) {
                     return;
                 }
 
-                setState({ ...state, [anchor]: open });
+                setOpen(openParam)
             };  
 
-    const list = (anchor: Anchor): React.ReactElement => (
+    const list = (): ReactNode => (
         <Box
-            sx={{ width: anchor === 'top' || anchor === 'bottom' ? 'auto' : 250 }}
+            display='flex'
+            flexDirection='column'
+            justifyContent='space-between'
+            p={1}
+            bgcolor='background.paper'
+            width='250px'
             role="presentation"
-            onClick={toggleDrawer(anchor, false)}
-            onKeyDown={toggleDrawer(anchor, false)}
+            height='100%'
+            onClick={toggleDrawer(false)}
+            onKeyDown={toggleDrawer(false)}
         >
-            <List>
-                {[ 'Inbox', 'Starred', 'Send email', 'Drafts' ].map((text, index) => (
-                    <ListItem key={text} disablePadding>
+            <Box>
+                <List>
+                    <ListItem disablePadding onClick={() => { router.push('/plataform') }}>
                         <ListItemButton>
                             <ListItemIcon>
-                                {index % 2 === 0 ? <InboxIcon /> : <MailIcon />}
+                                <Home />
                             </ListItemIcon>
-                            <ListItemText primary={text} />
+                            <ListItemText primary='Home' />
                         </ListItemButton>
                     </ListItem>
-                ))}
-            </List>
-            <Divider />
-            <List>
-                {[ 'All mail', 'Trash', 'Spam' ].map((text, index) => (
-                    <ListItem key={text} disablePadding>
-                        <ListItemButton>
+                </List>
+                <Divider />
+                <List>
+                    <ListItem disablePadding>
+                        <ListItemButton onClick={() => { enqueueSnackbar('Em desenvolvimento', { variant: 'warning' }) }}>
                             <ListItemIcon>
-                                {index % 2 === 0 ? <InboxIcon /> : <MailIcon />}
+                                <Group />
                             </ListItemIcon>
-                            <ListItemText primary={text} />
+                            <ListItemText primary='Sessão' />
                         </ListItemButton>
                     </ListItem>
-                ))}
-            </List>
+                    <ListItem disablePadding>
+                        <ListItemButton onClick={() => { router.push('/plataform/ficha/create') }}>
+                            <ListItemIcon>
+                                <Article />
+                            </ListItemIcon>
+                            <ListItemText primary='Criar Ficha' />
+                        </ListItemButton>
+                    </ListItem>
+                    <ListItem disablePadding>
+                        <ListItemButton onClick={() => { signOut({ callbackUrl: '/' }) }}>
+                            <ListItemIcon>
+                                <Logout />
+                            </ListItemIcon>
+                            <ListItemText primary='Logout' />
+                        </ListItemButton>
+                    </ListItem>
+                </List>
+            </Box>
+            <Box display='flex' p={2} alignItems='center' gap={2}>
+                <Avatar sx={{ height: '3rem', width: '3rem' }}>
+                    <Image
+                        height={250}
+                        width={250}
+                        style={{ height: '100%', width: '100%' }} 
+                        src={session?.user?.image ?? 'undefined'} 
+                        alt={session?.user?.name ?? 'User Avatar'} 
+                    />
+                </Avatar>
+                <Typography>{session?.user?.name}</Typography>
+            </Box>
         </Box>
     );
 
     return (
         <Box>
-            <CustomIconButton onClick={toggleDrawer('left', true)}>
+            <CustomIconButton onClick={toggleDrawer(true)}>
                 <Menu />
             </CustomIconButton>
             <Drawer
-                anchor={'left'}
-                open={state.left}
-                onClose={toggleDrawer('left', false)}
+                anchor='left'
+                open={open}
+                onClose={toggleDrawer(false)}
             >
-                {list('left')}
+                {list()}
             </Drawer>
         </Box>
     );
