@@ -10,8 +10,6 @@ export default function RequireAuth({ children }: { children: ReactElement | Rea
     const router = useRouter()
 
     useEffect(() => {
-        console.log(status);
-    
         if (status === 'unauthenticated') {
             router.push('/')
         } else if (!localStorage.getItem('user') && session?.user) {

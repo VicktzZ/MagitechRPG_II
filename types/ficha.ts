@@ -1,6 +1,7 @@
 export interface Ficha {
     _id?: string
     playerName: string
+    userId: string
     name: string
     age: number
     class: Class | Classes

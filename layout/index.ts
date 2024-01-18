@@ -5,11 +5,13 @@ import Logo from './Logo';
 import Footer from './Footer';
 import LinearProgressWithLabel from './LinearProgressWithLabel';
 import CustomIconButton from './CustomIconButton';
+import AppDrawer from './AppDrawer';
 
 export {
     LandingPageHeader,
     CustomMenu,
     WarningModal,
+    AppDrawer,
     Footer,
     CustomIconButton,
     LinearProgressWithLabel,

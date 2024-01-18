@@ -1,13 +1,17 @@
 import Ficha from '@models/ficha';
 import { type Ficha as FichaType } from '@types';
 import { connectToDb } from '@utils/database';
+import type { NextRequest } from 'next/server';
 
-export async function GET(): Promise<Response> {
+export async function GET(req: NextRequest): Promise<Response> {
     try {
         await connectToDb()
+        const userId = req.nextUrl.searchParams.get('user')
+
+        console.log(userId);
         
-        const fichas = await Ficha.find<FichaType>()
-        
+        const fichas = await Ficha.find<FichaType>(userId ? { userId } : {})
+
         return Response.json(fichas)
     } catch (error: any) {
         return Response.json({ message: 'NOT FOUND', error: error.message }, { status: 404 })

@@ -12,6 +12,7 @@ import { SnackbarProvider } from 'notistack';
 export default function ContextProvider({ children }: { children: ReactNode }): ReactElement {
     const [ ficha, setFicha ] = useState<Ficha>(fichaModel as Ficha);
     const [ user, setUser ] = useState(null);
+    // const [ drawerOpen, setDrawerOpen ] = useState<boolean>(false);
 
     return (
         <SnackbarProvider maxSnack={3}>

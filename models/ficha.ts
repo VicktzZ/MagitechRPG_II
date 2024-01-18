@@ -10,6 +10,10 @@ const fichaSchema = new Schema<FichaType>({
         type: String,
         required: [ true, 'Name is required!' ]
     },
+    userId: {
+        type: String,
+        required: [ true, 'userId is required!' ]
+    },
     age: {
         type: Number,
         required: [ true, 'Age is required!' ]

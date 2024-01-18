@@ -19,7 +19,7 @@ import { skills } from '@constants/skills';
 import type { Race } from '@types';
 import { type ExpertisesOverrided, lineageExpertises } from '@constants/lineageExpertises';
 
-export default function Characteristics(): ReactElement {
+export default function Characteristics({ disabled }: { disabled?: boolean }): ReactElement {
     const f: FormikContextType<typeof fichaModel> = useFormikContext()
 
     const theme = useTheme()
@@ -137,6 +137,7 @@ export default function Characteristics(): ReactElement {
                     onBlur={f.handleChange}
                     required
                     fullWidth
+                    disabled={disabled}
                 />
                 <Box display='flex' gap={3}>
                     <FormControl fullWidth>
@@ -147,6 +148,7 @@ export default function Characteristics(): ReactElement {
                             value={f.values.class}
                             required
                             fullWidth
+                            disabled={disabled}
                             onChange={e => { 
                                 setClass(e)                              
                             }}
@@ -167,6 +169,7 @@ export default function Characteristics(): ReactElement {
                                 required
                                 fullWidth
                                 onChange={setLineage}
+                                disabled={disabled}
                                 MenuProps={{
                                     sx: { maxHeight: '60vh' }
                                 }}
@@ -189,6 +192,7 @@ export default function Characteristics(): ReactElement {
                                 value={f.values.lineage}
                                 required
                                 fullWidth
+                                disabled={disabled}
                                 onChange={setLineage}
                                 MenuProps={{
                                     sx: { maxHeight: '60vh' }
@@ -212,6 +216,7 @@ export default function Characteristics(): ReactElement {
                         value={f.values.race}
                         required
                         fullWidth
+                        disabled={disabled}
                         renderValue={selected => String(selected)}
                         onChange={setRace}
                     >
@@ -263,6 +268,7 @@ export default function Characteristics(): ReactElement {
                         name='age'
                         label='Idade'
                         onBlur={f.handleChange}
+                        disabled={disabled}
                         required
                         sx={{ width: !matches ? '50%' : '100%' }}
                     />
@@ -274,6 +280,7 @@ export default function Characteristics(): ReactElement {
                                 label='Gênero'
                                 value={f.values.gender}
                                 onChange={f.handleChange}
+                                disabled={disabled}
                                 required
                                 fullWidth
                             >

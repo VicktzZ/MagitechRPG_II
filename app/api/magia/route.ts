@@ -12,10 +12,6 @@ export async function GET(req: NextRequest): Promise<Response> {
         const filter = req.nextUrl.searchParams.get('filter')
         const sort = req.nextUrl.searchParams.get('sort')
 
-        console.log(query);
-        console.log(filter);
-        console.log(sort);
-
         const pipeline: PipelineStage[] = [ { $skip: 0 } ] 
         
         if (query) {

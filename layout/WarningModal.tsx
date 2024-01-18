@@ -8,13 +8,17 @@ export default function WarningModal({
     open,
     onClose,
     onConfirm,
-    title
+    title,
+    confirmButtonLabel,
+    cancelButtonLabel
 } : { 
     text: string,
     open: boolean,
     onClose: () => void,
     onConfirm: () => void,
-    title: string
+    title?: string,
+    confirmButtonLabel?: string,
+    cancelButtonLabel?: string
 }): ReactElement {
     const theme = useTheme()
     
@@ -26,8 +30,8 @@ export default function WarningModal({
         >
             <Box 
                 borderRadius='10px'
-                p={2}
-                height='20vh'
+                p={3}
+                minHeight='20vh'
                 width='20vw'
                 boxShadow={theme.shadows[10]}
                 bgcolor='background.paper'
@@ -42,12 +46,12 @@ export default function WarningModal({
                 }}
             >
                 <Box display='flex' flexDirection='column' gap={1}>
-                    <Typography variant='h6'>{title || 'Tem certeza?'}</Typography>
+                    <Typography variant='h6'>{title ?? 'Tem certeza?'}</Typography>
                     <Typography variant='body2'>{text}</Typography>
                 </Box>
                 <Box display='flex' justifyContent='space-between'>
-                    <Button onClick={onConfirm} variant='contained'>Confirmar</Button>
-                    <Button onClick={onClose} variant='outlined'>Cancelar</Button>
+                    <Button onClick={onConfirm} variant='contained'>{confirmButtonLabel ?? 'Confirmar'}</Button>
+                    <Button onClick={onClose} variant='outlined'>{cancelButtonLabel ?? 'Cancelar'}</Button>
                 </Box>
             </Box>
         </Modal>
