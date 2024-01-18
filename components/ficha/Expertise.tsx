@@ -49,28 +49,26 @@ export default function Expertise({
 
             edit.setEdit?.({ isEditing: false, value: 0 })
 
-            if (f) {
-                if (
-                    (
-                        (f.values.points.expertises > 0 && f.values.expertises[name].value < 2) ||
-                        (f.values.points.expertises >= 0 && edit.value < 0)
-                    ) &&
-                        f.values.expertises[name].value + edit.value > -1
-                ) {
-                    f.setFieldValue('expertises', {
-                        ...f.values.expertises,
-                        [name]: {
-                            ...f.values.expertises[name],
-                            value: expertise.value + edit.value
-                        }
-                    })    
+            if (
+                (
+                    (f.values.points.expertises > 0 && f.values.expertises[name].value < 2) ||
+                    (f.values.points.expertises >= 0 && edit.value < 0)
+                ) &&
+                    f.values.expertises[name].value + edit.value > -1
+            ) {
+                f.setFieldValue('expertises', {
+                    ...f.values.expertises,
+                    [name]: {
+                        ...f.values.expertises[name],
+                        value: expertise.value + edit.value
+                    }
+                })    
 
-                    f.setFieldValue(
-                        'points.expertises', 
-                        edit.value > 0 ? f.values.points.expertises - 1 :
-                            f.values.points.expertises + 1
-                    )
-                }
+                f.setFieldValue(
+                    'points.expertises', 
+                    edit.value > 0 ? f.values.points.expertises - 1 :
+                        f.values.points.expertises + 1
+                )
             }
         }
     }, [ edit, f, name, expertise ])

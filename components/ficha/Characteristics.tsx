@@ -135,6 +135,7 @@ export default function Characteristics({ disabled }: { disabled?: boolean }): R
                     name='name'
                     label='Nome'
                     onBlur={f.handleChange}
+                    defaultValue={f.values.name}
                     required
                     fullWidth
                     disabled={disabled}
@@ -268,6 +269,7 @@ export default function Characteristics({ disabled }: { disabled?: boolean }): R
                         name='age'
                         label='Idade'
                         onBlur={f.handleChange}
+                        defaultValue={f.values.age}
                         disabled={disabled}
                         required
                         sx={{ width: !matches ? '50%' : '100%' }}
@@ -280,6 +282,7 @@ export default function Characteristics({ disabled }: { disabled?: boolean }): R
                                 label='Gênero'
                                 value={f.values.gender}
                                 onChange={f.handleChange}
+                                defaultValue={f.values.gender}
                                 disabled={disabled}
                                 required
                                 fullWidth
@@ -301,6 +304,7 @@ export default function Characteristics({ disabled }: { disabled?: boolean }): R
                             label='Gênero'
                             onBlur={f.handleChange}
                             defaultValue={f.values.gender}
+                            disabled={disabled}
                             required
                             fullWidth
                         >

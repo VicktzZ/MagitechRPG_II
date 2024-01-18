@@ -89,6 +89,7 @@ export default function Magic({ magic, id, isAdding, onIconClick }: { magic: Mag
             sx={{
                 height: '40rem',
                 width: '25rem',
+                minWidth: matches ? '25rem' : '',
                 display: 'flex',
                 p: 3,
                 bgcolor: 'background.paper',

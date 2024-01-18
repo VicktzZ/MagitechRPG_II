@@ -7,7 +7,7 @@ import { Item } from '@components/ficha'
 import { lineageItems } from '@constants/lineageitems'
 import { red, yellow } from '@mui/material/colors'
 
-const Inventory = memo((): ReactElement => {
+const Inventory = memo(({ disabled }: { disabled?: boolean }): ReactElement => {
     const f: FormikContextType<Ficha> = useFormikContext()
 
     const theme = useTheme()
@@ -37,16 +37,19 @@ const Inventory = memo((): ReactElement => {
     }, [ f.values.inventory, f.values.attributes.vig ])
 
     const itemsOfLineage = useMemo(() => {
-        f.values.inventory = f.initialValues.inventory
-
-        const items = lineageItems[f.values.lineage as unknown as LineageNames]
         const itemArr: any[] = []
         const weaponArr: any[] = []
 
-        items?.forEach((item) => {
-            if (item.type === 'item') itemArr.push(item) 
-            if (item.type === 'weapon') weaponArr.push(item)
-        })
+        if (!disabled) {
+            f.values.inventory = f.initialValues.inventory
+    
+            const items = lineageItems[f.values.lineage as unknown as LineageNames]
+    
+            items?.forEach((item) => {
+                if (item.type === 'item') itemArr.push(item) 
+                if (item.type === 'weapon') weaponArr.push(item)
+            })            
+        }
 
         return {
             itemArr,

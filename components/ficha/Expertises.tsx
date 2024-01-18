@@ -14,7 +14,7 @@ import type {
     Expertises as ExpertisesType
 } from '@types';
 
-export default function Expertises(): ReactElement {
+export default function Expertises({ disabled }: { disabled?: boolean }): ReactElement {
     const f: FormikContextType<Ficha> = useFormikContext()
     const theme = useTheme()
 
@@ -111,7 +111,9 @@ export default function Expertises(): ReactElement {
             }
     
             if (expertiseOfLineageRef?.points) {
-                f.values.points.expertises -= expertiseOfLineageRef?.points ?? 0
+                if (!disabled) {
+                    f.values.points.expertises -= expertiseOfLineageRef?.points ?? 0
+                }
             }
         }
 
@@ -123,7 +125,9 @@ export default function Expertises(): ReactElement {
         }
 
         if (expertiseOfLineage?.points) {
-            f.values.points.expertises += expertiseOfLineage?.points ?? 0
+            if (!disabled) {
+                f.values.points.expertises += expertiseOfLineage?.points ?? 0
+            }
         }
 
         lineageRef.current = lineage

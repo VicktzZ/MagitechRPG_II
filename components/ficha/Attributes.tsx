@@ -43,7 +43,7 @@ const MenuProps = {
     }
 };
 
-export default function Attributes(): ReactElement {
+export default function Attributes({ disabled }: { disabled?: boolean }): ReactElement {
     const f: FormikContextType<Ficha> = useFormikContext()
 
     const traitRef = useRef<string | null>(null)
@@ -58,7 +58,7 @@ export default function Attributes(): ReactElement {
 
     const setDiligencePoints = (point: 'lp' | 'mp' | 'ap', action: 'add' | 'sub', value: number): void => {
         const classe = classesModel[f.values.class as Classes] || null
-
+        
         if (action === 'add') {
             if (f.values.points.diligence > 0) {
                 f.setFieldValue('points.diligence', f.values.points.diligence - 1)
@@ -222,10 +222,12 @@ export default function Attributes(): ReactElement {
     ])
 
     const humanFn = useCallback(() => {
-        if (raceRef.current === 'Humano') f.setFieldValue('points.attributes', f.values.points.attributes - 1)
-        if (f.values.race === 'Humano') f.setFieldValue('points.attributes', f.values.points.attributes + 1)
-        
-        raceRef.current = f.values.race as Race['name']
+        if (!disabled) {
+            if (raceRef.current === 'Humano') f.setFieldValue('points.attributes', f.values.points.attributes - 1)
+            if (f.values.race === 'Humano') f.setFieldValue('points.attributes', f.values.points.attributes + 1)
+            
+            raceRef.current = f.values.race as Race['name']
+        }
     }, [ f.values.race ])
 
     useEffect(() => {
@@ -515,6 +517,7 @@ export default function Attributes(): ReactElement {
                                     value={f.values.financialCondition}
                                     required
                                     fullWidth
+                                    disabled={disabled}
                                     onChange={e => {
                                         const financialCondition = {
                                             'Miserável': 10_000,
@@ -542,7 +545,9 @@ export default function Attributes(): ReactElement {
                                 </Select>
                             </FormControl>
                         </Box>
-                        <Button onClick={() => { setModalOpen(true) }} variant='outlined' >Rolar dados</Button>
+                        {!disabled && (
+                            <Button onClick={() => { setModalOpen(true) }} variant='outlined' >Rolar dados</Button>
+                        )}
                     </Box>
                     <Box display='flex' flexDirection='column' justifyContent='space-between' height='100%' gap={1}>
                         <Box display='flex' alignItems='center' gap={1}>

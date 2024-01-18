@@ -125,40 +125,220 @@ const fichaSchema = new Schema<FichaType>({
         required: [ true, 'Financial condition is required!' ]
     },
     skills: {
-        type: [ Object ],
+        type: Object,
         required: [ true, 'Skills is required!' ]
     },
     expertises: {
-        'Atletismo': { type: Number, default: 0 },
-        'RES Física': { type: Number, default: 0 },
-        'RES Mental': { type: Number, default: 0 },
-        'RES Mágica': { type: Number, default: 0 },
-        'Ladinagem': { type: Number, default: 0 },
-        'Agilidade': { type: Number, default: 0 },
-        'Sobrevivência': { type: Number, default: 0 },
-        'Competência': { type: Number, default: 0 },
-        'Luta': { type: Number, default: 0 },
-        'Conhecimento': { type: Number, default: 0 },
-        'Criatividade': { type: Number, default: 0 },
-        'Furtividade': { type: Number, default: 0 },
-        'Pontaria': { type: Number, default: 0 },
-        'Reflexos': { type: Number, default: 0 },
-        'Controle': { type: Number, default: 0 },
-        'Condução': { type: Number, default: 0 },
-        'Sorte': { type: Number, default: 0 },
-        'Enganação': { type: Number, default: 0 },
-        'Tecnologia': { type: Number, default: 0 },
-        'Magia': { type: Number, default: 0 },
-        'Comunicação': { type: Number, default: 0 },
-        'Medicina': { type: Number, default: 0 },
-        'Percepção': { type: Number, default: 0 },
-        'Intuição': { type: Number, default: 0 },
-        'Investigação': { type: Number, default: 0 },
-        'Argumentação': { type: Number, default: 0 },
-        'Intimidação': { type: Number, default: 0 },
-        'Persuasão': { type: Number, default: 0 },
-        'Liderança': { type: Number, default: 0 },
-        'Vontade': { type: Number, default: 0 }
+        'Atletismo': {
+            type: Object,
+            default: {
+                value: 0,
+                defaultAttribute: 'vig'
+            }
+        },
+        'RES Física': {
+            type: Object,
+            default: {
+                value: 0,
+                defaultAttribute: 'vig'
+            }
+        },
+        'RES Mental': {
+            type: Object,
+            default: {
+                value: 0,
+                defaultAttribute: 'log'
+            }
+        },
+        'RES Mágica': {
+            type: Object,
+            default: {
+                value: 0,
+                defaultAttribute: 'foc'
+            }
+        },
+        'Ladinagem': {
+            type: Object,
+            default: {
+                value: 0,
+                defaultAttribute: 'des'
+            }
+        },
+        'Agilidade': {
+            type: Object,
+            default: {
+                value: 0,
+                defaultAttribute: 'des'
+            }
+        },
+        'Sobrevivência': {
+            type: Object,
+            default: {
+                value: 0,
+                defaultAttribute: 'sab'
+            }
+        },
+        'Competência': {
+            type: Object,
+            default: {
+                value: 0,
+                defaultAttribute: 'log'
+            }
+        },
+        'Luta': {
+            type: Object,
+            default: {
+                value: 0,
+                defaultAttribute: 'vig'
+            }
+        },
+        'Conhecimento': {
+            type: Object,
+            default: {
+                value: 0,
+                defaultAttribute: 'sab'
+            }
+        },
+        'Criatividade': {
+            type: Object,
+            default: {
+                value: 0,
+                defaultAttribute: 'log'
+            }
+        },
+        'Furtividade': {
+            type: Object,
+            default: {
+                value: 0,
+                defaultAttribute: 'des'
+            }
+        },
+        'Pontaria': {
+            type: Object,
+            default: {
+                value: 0,
+                defaultAttribute: 'des'
+            }
+        },
+        'Reflexos': {
+            type: Object,
+            default: {
+                value: 0,
+                defaultAttribute: 'foc'
+            }
+        },
+        'Controle': {
+            type: Object,
+            default: {
+                value: 0,
+                defaultAttribute: 'foc'
+            }
+        },
+        'Condução': {
+            type: Object,
+            default: {
+                value: 0,
+                defaultAttribute: 'des'
+            }
+        },
+        'Sorte': {
+            type: Object,
+            default: {
+                value: 0,
+                defaultAttribute: 'sab'
+            }
+        },
+        'Enganação': {
+            type: Object,
+            default: {
+                value: 0,
+                defaultAttribute: 'car'
+            }
+        },
+        'Tecnologia': {
+            type: Object,
+            default: {
+                value: 0,
+                defaultAttribute: 'log'
+            }
+        },
+        'Magia': {
+            type: Object,
+            default: {
+                value: 0,
+                defaultAttribute: 'foc'
+            }
+        },
+        'Comunicação': {
+            type: Object,
+            default: {
+                value: 0,
+                defaultAttribute: 'car'
+            }
+        },
+        'Medicina': {
+            type: Object,
+            default: {
+                value: 0,
+                defaultAttribute: 'sab'
+            }
+        },
+        'Percepção': {
+            type: Object,
+            default: {
+                value: 0,
+                defaultAttribute: 'foc'
+            }
+        },
+        'Intuição': {
+            type: Object,
+            default: {
+                value: 0,
+                defaultAttribute: 'log'
+            }
+        },
+        'Investigação': {
+            type: Object,
+            default: {
+                value: 0,
+                defaultAttribute: 'log'
+            }
+        },
+        'Argumentação': {
+            type: Object,
+            default: {
+                value: 0,
+                defaultAttribute: 'car'
+            }
+        },
+        'Intimidação': {
+            type: Object,
+            default: {
+                value: 0,
+                defaultAttribute: 'car'
+            }
+        },
+        'Persuasão': {
+            type: Object,
+            default: {
+                value: 0,
+                defaultAttribute: 'car'
+            }
+        },
+        'Liderança': {
+            type: Object,
+            default: {
+                value: 0,
+                defaultAttribute: 'car'
+            }
+        },
+        'Vontade': {
+            type: Object,
+            default: {
+                value: 0,
+                defaultAttribute: 'foc'
+            }
+        }
     },
     traits: {
         type: [ Object ],

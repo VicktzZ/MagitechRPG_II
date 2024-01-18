@@ -11,15 +11,13 @@ import { Magic } from '.';
 import MagicsModal from './MagicsModal'
 import { useSnackbar } from 'notistack';
 
-const Magics = memo(() => {
-    const f: FormikContextType<Ficha> = useFormikContext()
+const Magics = memo(({ disabled }: { disabled?: boolean }) => {
+    const [ open, setOpen ] = useState(false)    
     
+    const f: FormikContextType<Ficha> = useFormikContext()
     const { enqueueSnackbar, closeSnackbar } = useSnackbar()
-
     const theme = useTheme()
-
-    const [ open, setOpen ] = useState(false)
-
+    
     const magics = useMemo(() => {
         return f.values.magics.map((magic: any) => (
             <Magic 
@@ -52,14 +50,18 @@ const Magics = memo(() => {
     }, [ f.values ])
 
     const setMagicPoints = useCallback(() => {
-        f.setFieldValue('points.magics', f.values.attributes.log + 2)
+        if (!disabled) {
+            f.setFieldValue('points.magics', f.values.attributes.log + 2)
+        }
     }, [ f.values.attributes.log ])
 
     const setMagicsSpace = useCallback(() => {
-        let value = (f.values.attributes.foc * 2) + 2
-        if (value <= 0) value = 1
-
-        f.setFieldValue('magicsSpace', value)
+        if (!disabled) {
+            let value = (f.values.attributes.foc * 2) + 2
+            if (value <= 0) value = 1
+    
+            f.setFieldValue('magicsSpace', value)
+        }
     }, [ f.values.attributes.foc ])
 
     useEffect(setMagicPoints, [ setMagicPoints ])
