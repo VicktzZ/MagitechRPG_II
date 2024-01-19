@@ -11,6 +11,7 @@ export default function AppDrawer(): ReactElement {
     const { data: session } = useSession();
     const [ open, setOpen ] = useState<boolean>(false);
     const { enqueueSnackbar } = useSnackbar()
+    
     const router = useRouter()
 
     const toggleDrawer =
@@ -26,6 +27,8 @@ export default function AppDrawer(): ReactElement {
 
                 setOpen(openParam)
             };  
+    
+    console.log(session);
 
     const list = (): ReactNode => (
         <Box
@@ -80,14 +83,18 @@ export default function AppDrawer(): ReactElement {
                 </List>
             </Box>
             <Box display='flex' p={2} alignItems='center' gap={2}>
-                <Avatar sx={{ height: '3rem', width: '3rem' }}>
-                    <Image
-                        height={250}
-                        width={250}
-                        style={{ height: '100%', width: '100%' }} 
-                        src={session?.user?.image ?? 'undefined'} 
-                        alt={session?.user?.name ?? 'User Avatar'} 
-                    />
+                <Avatar sx={{ height: '3rem', width: '3rem', color: 'white', bgcolor: 'primary.main' }}>
+                    {
+                        session?.user?.image !== 'undefined' ? (
+                            <Image
+                                height={250}
+                                width={250}
+                                style={{ height: '100%', width: '100%' }} 
+                                src={session?.user?.image ?? 'undefined'} 
+                                alt={session?.user?.name ?? 'User Avatar'} 
+                            />
+                        ) : session?.user?.name?.charAt(0).toUpperCase()
+                    }
                 </Avatar>
                 <Typography>{session?.user?.name}</Typography>
             </Box>
