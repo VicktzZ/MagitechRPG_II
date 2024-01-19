@@ -3,7 +3,7 @@
 
 import { useEffect, type ReactElement, useState } from 'react';
 import { Box, Card, Grid, Skeleton, Typography, useMediaQuery, useTheme } from '@mui/material';
-import { Add, ArrowRight } from '@mui/icons-material';
+import { Add } from '@mui/icons-material';
 import { CustomIconButton } from '@layout';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
