@@ -80,12 +80,12 @@ const Magics = memo(({ disabled }: { disabled?: boolean }) => {
                         </Box>
                         <Box display='flex' gap={1} alignItems='center'>
                             <Typography>Limite de magias:</Typography>
-                            <Typography color='primary' fontWeight='900'>{f.values.magicsSpace}</Typography>
+                            <Typography color='primary' fontWeight='900'>{disabled ? f.initialValues.magicsSpace : f.values.magicsSpace}</Typography>
                         </Box>
                     </Box>
                     <Box display='flex' gap={1} alignItems='center'>
                         <Typography>Pontos de Magia:</Typography>
-                        <Typography color='primary' fontWeight='900'>{f.values.points.magics}</Typography>
+                        <Typography color='primary' fontWeight='900'>{disabled ? f.initialValues.points.magics : f.values.points.magics}</Typography>
                     </Box>
                 </Box>
                 <Box
