@@ -51,16 +51,16 @@ const Magics = memo(({ disabled }: { disabled?: boolean }) => {
 
     const setMagicPoints = useCallback(() => {
         // if (!disabled) {
-            f.setFieldValue('points.magics', f.values.attributes.log + 2)
+        f.setFieldValue('points.magics', f.values.attributes.log + 2)
         // }
     }, [ f.values.attributes.log ])
 
     const setMagicsSpace = useCallback(() => {
         // if (!disabled) {
-            let value = (f.values.attributes.foc * 2) + 2
-            if (value <= 0) value = 1
+        let value = (f.values.attributes.foc * 2) + 2
+        if (value <= 0) value = 1
     
-            f.setFieldValue('magicsSpace', value)
+        f.setFieldValue('magicsSpace', value)
         // }
     }, [ f.values.attributes.foc ])
 
