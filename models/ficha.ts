@@ -124,6 +124,9 @@ const fichaSchema = new Schema<FichaType>({
         type: String,
         required: [ true, 'Financial condition is required!' ]
     },
+    magicsSpace: {
+        type: Number
+    },
     skills: {
         type: Object,
         required: [ true, 'Skills is required!' ]

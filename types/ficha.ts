@@ -10,7 +10,6 @@ export interface Ficha {
     ORMLevel: number
     inventory: Inventory
     displacement: number
-    totalCapacity: number
     magics: Magic[]
     magicsSpace: number
     gender: Gender
