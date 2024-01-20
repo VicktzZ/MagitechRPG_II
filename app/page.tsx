@@ -276,7 +276,7 @@ export default function LandingPage(): ReactElement {
                                                 sx={{ width: '33%' }} 
                                                 variant='contained' 
                                                 color={'terciary' as any}
-                                                onClick={() => { window.open(BLOB_API_URL + 'mlr.pdf') }}
+                                                onClick={() => { window.open(BLOB_API_URL + 'Magitech RPG - Livro de Regras.pdf') }}
                                             >
                                                 Baixe agora
                                             </Button>

@@ -1,6 +1,6 @@
 'use client';
 
-import { Box, Grid, Typography, useTheme } from '@mui/material';
+import { Box, Grid, Typography, useMediaQuery, useTheme } from '@mui/material';
 import { useState, type ReactElement, useCallback } from 'react';
 import type { Expertise as ExpertiseType, Expertises, Ficha } from '@types';
 import { blue, green, grey, purple, yellow } from '@mui/material/colors';
@@ -23,6 +23,7 @@ export default function Expertise({
     } 
 }): ReactElement {
     const theme = useTheme()
+    const matches = useMediaQuery(theme.breakpoints.down('md'))
 
     const [ open, setOpen ] = useState<boolean>(false)
 
@@ -76,8 +77,8 @@ export default function Expertise({
     return (
         <>
             <Grid
-                height='10rem'
-                width='9.5rem'
+                height={!matches ? '10rem' : '9rem'}
+                width={!matches ? '9.5rem' : '8.25rem'}
                 key={name} 
                 item
                 onClick={onClick}
@@ -104,7 +105,7 @@ export default function Expertise({
                         <Typography>+</Typography>
                         <Typography>{expertise.value}</Typography>
                     </Box>
-                    <Typography fontWeight={900} color={determinateColor}>{name}</Typography>
+                    <Typography fontSize={matches ? '.8rem' : ''} fontWeight={900} color={determinateColor}>{name}</Typography>
                 </Box>
             </Grid>
             <DiceRollModal 

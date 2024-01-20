@@ -2,14 +2,18 @@
 'use client';
 
 import React, { useEffect, type ReactElement, useState } from 'react';
-import { Avatar, Box, IconButton, MenuItem, Typography } from '@mui/material';
+import { Avatar, Box, IconButton, MenuItem, Typography, useMediaQuery } from '@mui/material';
 import { getProviders, useSession, signIn, signOut } from 'next-auth/react';
 import { CustomMenu, Logo } from '@layout';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import googleIcon from '@public/icons/google_icon.svg';
 import discordIcon from '@public/icons/discord_icon.svg';
+import { useTheme } from '@mui/material';
 export default function LandingPageHeader(): ReactElement {
+    const theme = useTheme()
+    const matches = useMediaQuery(theme.breakpoints.down('md'))
+
     const { data: session } = useSession()
     const [ providers, setProviders ] = useState<any>(null);
     const [ anchorEl, setAnchorEl ] = useState<EventTarget & HTMLButtonElement | null>(null)
@@ -54,6 +58,7 @@ export default function LandingPageHeader(): ReactElement {
                 </Box>
                 <Box
                     display='flex'
+                    flexDirection={!matches ? 'row' : 'column'}
                     gap={2.5}
                 >
                     {(!session && providers) && Object.values(providers).map((provider: any) => (

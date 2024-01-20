@@ -27,7 +27,6 @@ const handler = NextAuth({
             session.user.email = String(sessionUser?.email)
             session.user.name = String(sessionUser?.name)
             session.user.image = String(sessionUser?.image)
-            session.user.fichas = String(sessionUser?.fichas)
     
             return session
         },
@@ -37,6 +36,8 @@ const handler = NextAuth({
                 await connectToDb()
 
                 const p: any = profile
+
+                console.log(p);
     
                 const userExists = await User.findOne({
                     email: profile?.email
@@ -46,7 +47,7 @@ const handler = NextAuth({
                     await User.create({
                         email: profile?.email?.toLowerCase(),
                         name: profile?.name?.replace(' ', '').toLowerCase() ?? p?.username?.replace(' ', '').toLowerCase(),
-                        image: profile?.image ?? p?.image_url
+                        image: p?.picture ?? p?.image_url
                     })
                 }
     
