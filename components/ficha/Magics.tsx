@@ -50,18 +50,18 @@ const Magics = memo(({ disabled }: { disabled?: boolean }) => {
     }, [ f.values ])
 
     const setMagicPoints = useCallback(() => {
-        if (!disabled) {
+        // if (!disabled) {
             f.setFieldValue('points.magics', f.values.attributes.log + 2)
-        }
+        // }
     }, [ f.values.attributes.log ])
 
     const setMagicsSpace = useCallback(() => {
-        if (!disabled) {
+        // if (!disabled) {
             let value = (f.values.attributes.foc * 2) + 2
             if (value <= 0) value = 1
     
             f.setFieldValue('magicsSpace', value)
-        }
+        // }
     }, [ f.values.attributes.foc ])
 
     useEffect(setMagicPoints, [ setMagicPoints ])
