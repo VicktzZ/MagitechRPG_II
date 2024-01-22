@@ -314,8 +314,8 @@ export default function Attributes({ disabled }: { disabled?: boolean }): ReactE
                     </Box>
                     <LinearProgressWithLabel
                         label='LP'
-                        minvalue={f.initialValues.attributes.lp}
-                        maxvalue={f.initialValues.attributes.lp}
+                        minvalue={!disabled ? f.values.attributes.lp : f.initialValues.attributes.lp}
+                        maxvalue={!disabled ? f.values.attributes.lp : f.initialValues.attributes.lp}
                         color='error'
                         MoreComponents={
                             <Box ml={1} sx={{
@@ -338,8 +338,8 @@ export default function Attributes({ disabled }: { disabled?: boolean }): ReactE
                     />
                     <LinearProgressWithLabel
                         label='MP'
-                        minvalue={f.initialValues.attributes.mp}
-                        maxvalue={f.initialValues.attributes.mp}
+                        minvalue={!disabled ? f.values.attributes.mp : f.initialValues.attributes.mp}
+                        maxvalue={!disabled ? f.values.attributes.mp : f.initialValues.attributes.mp}
                         color='info'
                         MoreComponents={
                             <Box ml={1} sx={{
@@ -362,8 +362,8 @@ export default function Attributes({ disabled }: { disabled?: boolean }): ReactE
                     />
                     <LinearProgressWithLabel
                         label='AP'
-                        minvalue={f.initialValues.attributes.ap}
-                        maxvalue={f.initialValues.attributes.ap}
+                        minvalue={!disabled ? f.values.attributes.ap : f.initialValues.attributes.ap}
+                        maxvalue={!disabled ? f.values.attributes.ap : f.initialValues.attributes.ap}
                         color='warning'
                     />
                 </Box>
