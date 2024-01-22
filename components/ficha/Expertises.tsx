@@ -96,41 +96,43 @@ export default function Expertises({ disabled }: { disabled?: boolean }): ReactE
     }
     
     const tests = useMemo(() => {
-        const lineage: Lineage['name'] = f.values.lineage as unknown as Lineage['name']
-        const expertiseOfLineage = lineageExpertises[lineage] 
-        let expertiseOfLineageRef: typeof expertiseOfLineage
-
-        if (lineageRef.current) {
-            expertiseOfLineageRef = lineageExpertises[lineageRef.current]
-
-            if (expertiseOfLineageRef?.tests) {
-                Object.keys(expertiseOfLineageRef.tests).forEach((key: string) => {
+        if (!disabled) {
+            const lineage: Lineage['name'] = f.values.lineage as unknown as Lineage['name']
+            const expertiseOfLineage = lineageExpertises[lineage] 
+            let expertiseOfLineageRef: typeof expertiseOfLineage
+    
+            if (lineageRef.current) {
+                expertiseOfLineageRef = lineageExpertises[lineageRef.current]
+    
+                if (expertiseOfLineageRef?.tests) {
+                    Object.keys(expertiseOfLineageRef.tests).forEach((key: string) => {
+                        const k: keyof ExpertisesType = key as keyof ExpertisesType
+                        f.values.expertises[k].value -= expertiseOfLineageRef.tests?.[k] ?? 0
+                    })
+                }
+        
+                if (expertiseOfLineageRef?.points) {
+                    if (!disabled) {
+                        f.values.points.expertises -= expertiseOfLineageRef?.points ?? 0
+                    }
+                }
+            }
+    
+            if (expertiseOfLineage?.tests) {
+                Object.keys(expertiseOfLineage.tests).forEach((key: string) => {
                     const k: keyof ExpertisesType = key as keyof ExpertisesType
-                    f.values.expertises[k].value -= expertiseOfLineageRef.tests?.[k] ?? 0
+                    f.values.expertises[k].value += expertiseOfLineage.tests?.[k] ?? 0
                 })
             }
     
-            if (expertiseOfLineageRef?.points) {
+            if (expertiseOfLineage?.points) {
                 if (!disabled) {
-                    f.values.points.expertises -= expertiseOfLineageRef?.points ?? 0
+                    f.values.points.expertises += expertiseOfLineage?.points ?? 0
                 }
             }
+    
+            lineageRef.current = lineage
         }
-
-        if (expertiseOfLineage?.tests) {
-            Object.keys(expertiseOfLineage.tests).forEach((key: string) => {
-                const k: keyof ExpertisesType = key as keyof ExpertisesType
-                f.values.expertises[k].value += expertiseOfLineage.tests?.[k] ?? 0
-            })
-        }
-
-        if (expertiseOfLineage?.points) {
-            if (!disabled) {
-                f.values.points.expertises += expertiseOfLineage?.points ?? 0
-            }
-        }
-
-        lineageRef.current = lineage
 
         const expertisesNodeArr = Object.entries(f.values.expertises).map(([ name, expertise ]: [ name: keyof ExpertisesType | any, expertise: ExpertiseType<any> ]) => (
             <Expertise 

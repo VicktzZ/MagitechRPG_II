@@ -30,41 +30,72 @@ export default function FichaComponent({ disabled, ficha }: { disabled?: boolean
     const submitForm = (values: typeof initialValues): void => {
         enqueueSnackbar('Aguarde...', { variant: 'info', key: 'loadingFetch', autoHideDuration: 6000 })
 
-        setTimeout(() => {
-            (async () => {
-                try {
-                    // const expertisesValues: Partial<ExpertisesType> = {}
+        if (disabled) {
+            setTimeout(() => {
+                (async () => {
+                    try {
+                        const response = await fetch(`/api/ficha/${values._id}`, {
+                            method: 'PATCH',
+                            body: JSON.stringify({
+                                // TODO: CONSERTAR BUG DE SOBRESCREVER ATRIBUTOS
+                                ...values,
+                                attributes: {
+                                    ...values.attributes,
+                                    ap: initialValues.attributes.ap,
+                                    lp: initialValues.attributes.lp,
+                                    mp: initialValues.attributes.mp
+                                }
+                            })
+                        }).then(async r => await r.json())
+        
+                        closeSnackbar('loadingFetch')
 
-                    // for (const expertise in values.expertises) {
-                    //     const value = values.expertises[expertise as keyof ExpertisesType].value
-                    //     expertisesValues[expertise as keyof ExpertisesType] = value as any
-                    // }
-
-                    console.log(values);
-
-                    const response = await fetch('/api/ficha', {
-                        method: 'POST',
-                        body: JSON.stringify({
-                            ...values
-                        })
-                    }).then(async r => await r.json())
+                        console.log(response);
+                        
+                        enqueueSnackbar('Ficha salva com sucesso!', { variant: 'success' })
+                    } catch (error: any) {
+                        closeSnackbar('loadingFetch')
+                        enqueueSnackbar(`Algo deu errado: ${error.message}`, { variant: 'error' })
+                    }
+                })()
+            }, 1000);
+        } else {
+            setTimeout(() => {
+                (async () => {
+                    try {
+                        // const expertisesValues: Partial<ExpertisesType> = {}
     
-                    closeSnackbar('loadingFetch')
-                    console.log(response);
-                    
-                    enqueueSnackbar('Ficha criada com sucesso!', { variant: 'success' })
+                        // for (const expertise in values.expertises) {
+                        //     const value = values.expertises[expertise as keyof ExpertisesType].value
+                        //     expertisesValues[expertise as keyof ExpertisesType] = value as any
+                        // }
     
-                    setIsLoading(true)
-
-                    setTimeout(() => {
-                        router.push('/plataform/ficha/' + response._id)
-                    }, 500);
-                } catch (error: any) {
-                    closeSnackbar('loadingFetch')
-                    enqueueSnackbar(`Algo deu errado: ${error.message}`, { variant: 'error' })
-                }
-            })()
-        }, 1000);
+                        console.log(values);
+    
+                        const response = await fetch('/api/ficha', {
+                            method: 'POST',
+                            body: JSON.stringify({
+                                ...values
+                            })
+                        }).then(async r => await r.json())
+        
+                        closeSnackbar('loadingFetch')
+                        console.log(response);
+                        
+                        enqueueSnackbar('Ficha criada com sucesso!', { variant: 'success' })
+        
+                        setIsLoading(true)
+    
+                        setTimeout(() => {
+                            router.push('/plataform/ficha/' + response._id)
+                        }, 500);
+                    } catch (error: any) {
+                        closeSnackbar('loadingFetch')
+                        enqueueSnackbar(`Algo deu errado: ${error.message}`, { variant: 'error' })
+                    }
+                })()
+            }, 1000);
+        }
     }
 
     const theme = useTheme()
@@ -97,16 +128,15 @@ export default function FichaComponent({ disabled, ficha }: { disabled?: boolean
                                     gap={5}
                                 >
                                     <Box display='flex' flexDirection='column' gap={2.5}>
-                                        {!disabled && (
-                                            <Box justifyContent='space-between' display='flex' width='100%'>
-                                                <Typography variant='h5'>Criar ficha</Typography>
-                                                <Button 
-                                                    variant='contained' 
-                                                    color={'terciary' as any}
-                                                    type='submit'
-                                                >Enviar</Button>
-                                            </Box>
-                                        )}
+                                        <Box justifyContent='space-between' display='flex' width='100%'>
+                                            <Typography variant='h5'>{!disabled ? 'Criar ficha' : 'Ficha de ' + values.name}</Typography>
+                                            <Button 
+                                                variant='contained' 
+                                                color={'terciary' as any}
+                                                type={!disabled ? 'submit' : 'button'}
+                                                onClick={disabled ? () => { submitForm(values) } : () => {}}
+                                            >{!disabled ? 'Enviar' : 'Salvar Mudanças'}</Button>
+                                        </Box>
                                         <Box width='100%'>
                                             <Box
                                                 sx={{

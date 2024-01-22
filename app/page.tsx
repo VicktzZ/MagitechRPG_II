@@ -249,7 +249,7 @@ export default function LandingPage(): ReactElement {
                                         src={magitechCapa}
                                         alt="Magitech Capa"
                                         onClick={() => {
-                                            window.open(BLOB_API_URL + 'mlr.pdf')
+                                            window.open(BLOB_API_URL + 'Magitech RPG - Livro de Regras.pdf')
                                         }}
                                         onMouseOver={e => {
                                             e.currentTarget.style.transform = 'scale(1.1)'
@@ -335,7 +335,7 @@ export default function LandingPage(): ReactElement {
                                         src={magitechCapaGrimorio}
                                         alt="Magitech Capa Grimório"
                                         onClick={() => {
-                                            window.open(BLOB_API_URL + 'mlr.pdf')
+                                            window.open(BLOB_API_URL + 'Magitech RPG - Grimório.pdf')
 
                                         }}
                                         onMouseOver={e => {
