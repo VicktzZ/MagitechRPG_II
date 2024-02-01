@@ -13,6 +13,11 @@ declare global {
             NEXTAUTH_SECRET: string
             NEXTAUTH_URL: string
             NEXTAUTH_URL_INTERNAL: string
+            SOCKET_SERVER_PORT: string
+            PUSHER_APP_ID: string
+            PUSHER_SECRET: string
+            PUSHER_KEY: string
+            PUSHER_CLUSTER: string
             NODE_ENV: 'development' | 'production'
         }
     }

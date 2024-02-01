@@ -362,7 +362,7 @@ export default function LandingPage(): ReactElement {
                         <Box p={5} width='100%'>  
                             <Typography variant='h3' fontFamily='WBZ' textAlign='center'>Sinopse</Typography>
                         </Box>
-                        <AnimateOnScroll animateOnce animation='fadeInUp'>
+                        <AnimateOnScroll animateOnce animation='fadeInUp'>  
                             
                             <Box
                                 display='flex'

@@ -1,7 +1,8 @@
 import { type ReactElement } from 'react'
+import SessionComponent from '../SessionComponent'
 
-export default function Session(): ReactElement {
+export default function Session({ params }: { params: { id: string } }): ReactElement {
     return (
-        <div>Session</div>
+        <SessionComponent roomId={params.id} />
     )
 }
