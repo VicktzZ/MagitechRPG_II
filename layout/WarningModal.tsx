@@ -50,8 +50,8 @@ export default function WarningModal({
                     <Typography variant='body2'>{text}</Typography>
                 </Box>
                 <Box display='flex' justifyContent='space-between'>
-                    <Button onClick={onConfirm} variant='contained'>{confirmButtonLabel ?? 'Confirmar'}</Button>
                     <Button onClick={onClose} variant='outlined'>{cancelButtonLabel ?? 'Cancelar'}</Button>
+                    <Button onClick={onConfirm} variant='contained'>{confirmButtonLabel ?? 'Confirmar'}</Button>
                 </Box>
             </Box>
         </Modal>
