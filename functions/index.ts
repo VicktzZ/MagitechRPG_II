@@ -1,5 +1,5 @@
-import generateSessionId from './generateSessionId'
+import generateSessionCode from './generateSessionCode'
 
 export {
-    generateSessionId
+    generateSessionCode
 }
