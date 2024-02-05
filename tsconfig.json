@@ -24,6 +24,6 @@
       "@*": ["./*"]
     }
   },
-  "include": ["*.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "public/index.js", "components/misc/rpg-icons/index.js"],
+  "include": ["*.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "public/index.js", "components/misc/rpg-icons/index.js", "app/api/socket/route.ts", "app/api/pusher/auth/route.ts"],
   "exclude": ["node_modules"]
 }

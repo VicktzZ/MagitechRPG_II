@@ -27,6 +27,7 @@
     "axios": "^1.6.2",
     "chance": "^1.1.11",
     "chart.js": "^4.4.1",
+    "clipboard-copy": "^4.0.1",
     "eslint-config-standard-with-typescript": "^43.0.0",
     "eslint-plugin-unicorn": "^50.0.1",
     "formik": "^2.4.5",
@@ -43,6 +44,8 @@
     "react-dom": "^18",
     "react-parallax": "^3.5.1",
     "sharp": "^0.32.6",
+    "socket.io": "^4.7.4",
+    "socket.io-client": "^4.7.4",
     "yup": "^1.3.3"
   },
   "devDependencies": {

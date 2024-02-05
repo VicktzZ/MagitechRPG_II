@@ -1,3 +1,5 @@
+import type { Ficha } from './ficha'
+
 export interface User {
     _id?: string
     name: string
@@ -9,6 +11,14 @@ export interface User {
 export interface Session {
     user: User
     token: string
+}
+
+export interface Member {
+    name: string,
+    email: string,
+    image: string,
+    _id: string,
+    currentFicha: Ficha
 }
 
 export interface Magia {

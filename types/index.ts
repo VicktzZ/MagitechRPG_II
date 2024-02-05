@@ -18,7 +18,7 @@ import type {
     Trait
 } from './ficha';
 
-import type { Session, User, Magia } from './models';
+import type { Session, User, Magia, Member } from './models';
 
 export type { 
     User,
@@ -28,6 +28,7 @@ export type {
     Classes,
     Class,
     Item,
+    Member,
     Magic,
     Weapon,
     Armor,

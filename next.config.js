@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
     experimental: {
-      serverComponentsExternalPackages: ["mongoose"],
+      serverComponentsExternalPackages: ["mongoose"]
     },
     images: {
       domains: ['lh3.googleusercontent.com', 'cdn.discordapp.com'],

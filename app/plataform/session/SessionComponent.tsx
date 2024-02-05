@@ -1,52 +1,68 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-misused-promises */
 
 'use client';
 
-import { Box, Button, TextField } from '@mui/material';
-import { type ReactElement, useEffect, useState } from 'react'
-import { pusherClient } from '@utils/pusher'
+import copy from 'clipboard-copy'
+import { useChannel } from '@contexts/channelContext';
+import { Box, Button, Tooltip, Typography } from '@mui/material';
+import { useSnackbar } from 'notistack';
+import { type ReactElement, useState, useEffect } from 'react'
+import type { Member } from '@types';
+import type { Members } from 'pusher-js';
 
-export default function SessionComponent({ roomId }: { roomId: string }): ReactElement {
-    const [ data, setData ] = useState<string>('')
-    const [ message, setMessage ] = useState<string>('')
-
-    const sendMessage = async (): Promise<void> => {
-        const res = await fetch(`/api/session/${roomId}`, {
-            method: 'POST',
-            body: JSON.stringify({
-                message
-            })
-        }).then(async r => await r.json())
-
-        console.log(res)
-    }
+export default function SessionComponent({ sessionCode }: { sessionCode: string }): ReactElement {
+    const [ members, setMembers ] = useState<Members>()
+    const [ openTooltip, setOpenTooltip ] = useState(false);
+    const { enqueueSnackbar } = useSnackbar()
+    const { channel } = useChannel()
 
     useEffect(() => {
+        setMembers(channel.members)
+        enqueueSnackbar('Você entrou na sessão!', { autoHideDuration: 3000, variant: 'success', preventDuplicate: true })
 
-        pusherClient.subscribe(roomId)
-
-        pusherClient.bind('my-event', (dataParam: string) => {
-            // setData(dataParam)
-            console.log(dataParam);
+        channel.bind('pusher:member_added', (member: { id: string, info: Member }) => {
+            enqueueSnackbar(`${member.info.name} entrou na sessão!`, { autoHideDuration: 3000, preventDuplicate: true })
+            setMembers(channel.members)
         })
 
-        return () => {
-            pusherClient.unsubscribe(roomId)
-        }
-    }, [ ])
+        channel.bind('pusher:member_removed', (member: { id: string, info: Member }) => {
+            enqueueSnackbar(`${member.info.name} saiu da sessão!`, { autoHideDuration: 3000, preventDuplicate: true })
+            setMembers(channel.members)
+        })
+    }, [])
 
     return (
-        <Box>
-            <div>ROOM: {roomId}</div>
-            <TextField 
-                label='Type your message...'
-                onChange={(e) => { setMessage(e.target.value) }}
-                value={message}
-            />
-            <Button onClick={sendMessage}>
-                SEND
-            </Button>
-            <div>MESSAGES: {data}</div>
+        <Box p={2}>
+            <Box display='flex' alignItems='center' gap={1}>
+                <Typography variant='h6'>Código da Sessão:</Typography>
+                <Tooltip
+                    onClose={() => { setOpenTooltip(false) }}
+                    open={openTooltip}
+                    disableFocusListener
+                    disableHoverListener
+                    disableTouchListener
+                    title="Link copiado!"
+                    PopperProps={{
+                        disablePortal: true
+                    }}
+                >
+                    <Button onClick={async () => {
+                        try {
+                            await copy(window.location.href)
+                            setOpenTooltip(true)
+                            setTimeout(() => {
+                                setOpenTooltip(false)
+                            }, 1000);
+                        } catch (error:any) {
+                            console.log(error.message)
+                        }
+                    }}>{sessionCode}</Button>
+                </Tooltip>
+            </Box>
+            <Box>
+                <Typography variant='h6'>Membros: {members?.count}</Typography>
+            </Box>
         </Box>
     )
 }
