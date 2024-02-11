@@ -24,10 +24,19 @@ export default function Session({ params }: { params: { code: string } }): React
     })
 
     useEffect(() => {
-        document.title = 'Session - ' + params.code
-        setChannel(pusherClient.subscribe(sessionName) as PresenceChannel)
+        (async () => {
+            document.title = 'Session - ' + params.code
+    
+            const response = await fetch(`/api/session?code=${params.code}`).then(async res => await res.json())
 
-        setLoading(false)
+            if (!response) {
+                setLoading(false)
+                return
+            }
+
+            setChannel(pusherClient.subscribe(sessionName) as PresenceChannel)
+            setLoading(false)
+        })()
 
         return () => {
             pusherClient.unsubscribe(sessionName)

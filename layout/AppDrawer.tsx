@@ -118,10 +118,19 @@ export default function AppDrawer(): ReactElement {
         </Box>
     );
 
-    const joinSession = (): void => {
+    const joinSession = async (): Promise<void> => {
         if (sessionCodeText) {
-            setModalOpen(false)
-            router.push(`/plataform/session/${sessionCodeText}`)
+            setIsLoading(true)
+            const response = await fetch(`/api/session?code=${sessionCodeText}`).then(async res => await res.json())
+
+            if (response) {
+                setModalOpen(false)
+                router.push(`/plataform/session/${sessionCodeText}`)
+            } else {
+                enqueueSnackbar('Código da sessão inválido ou inexistente!', { variant: 'error' })
+            }
+
+            setIsLoading(false)
         } else {
             enqueueSnackbar('Insira o código da sessão!', { variant: 'error' })
         }
@@ -133,6 +142,7 @@ export default function AppDrawer(): ReactElement {
         try {
             setModalOpen(false)
             setIsLoading(true)
+
             await fetch('/api/session', {
                 method: 'POST',
                 body: JSON.stringify({
@@ -216,7 +226,7 @@ export default function AppDrawer(): ReactElement {
                     </Box>
                 </Box>
             </Modal>
-            <Backdrop open={isLoading}>
+            <Backdrop sx={{ zIndex: 999 }} open={isLoading}>
                 <CircularProgress />
             </Backdrop>
         </>

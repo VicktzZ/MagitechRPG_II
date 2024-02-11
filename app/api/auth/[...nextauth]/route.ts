@@ -3,8 +3,9 @@ import GoogleProvider from 'next-auth/providers/google';
 import DiscordProvider from 'next-auth/providers/discord';
 
 import { connectToDb } from '@utils/database';
-import { type User as UserType } from '@types';
 import User from '@models/user';
+import type { Session } from 'next-auth';
+import { type User as UserType } from '@types';
 
 const handler = NextAuth({
     providers: [
@@ -20,7 +21,7 @@ const handler = NextAuth({
     ],
 
     callbacks: {
-        session: async ({ session }: { session: any }) => {
+        session: async ({ session }: { session: Session }) => {
             const sessionUser = await User.findOne<UserType>({ email: session?.user?.email })
 
             session.user._id = String(sessionUser?._id)

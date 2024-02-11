@@ -12,7 +12,7 @@ import { FichaCard } from '@components/ficha';
 
 export default function Plataform(): ReactElement {
     const router = useRouter()
-    const { data: session }: any = useSession()
+    const { data: session } = useSession()
 
     const theme = useTheme()
     const matches = useMediaQuery(theme.breakpoints.down('md'))

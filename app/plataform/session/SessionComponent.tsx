@@ -22,6 +22,8 @@ export default function SessionComponent({ sessionCode }: { sessionCode: string 
     const forceUpdate = useForceUpdate()
 
     useEffect(() => {
+        if (!channel) return
+        
         channel.bind('pusher:subscription_succeeded', () => {
             enqueueSnackbar('Você entrou na sessão!', { autoHideDuration: 3000, variant: 'success', preventDuplicate: true })
             forceUpdate()
@@ -46,72 +48,82 @@ export default function SessionComponent({ sessionCode }: { sessionCode: string 
 
     useEffect(() => {
         forceUpdate()
-    }, [ channel.members ])
+    }, [ channel?.members ])
 
     return (
-        <Box p={2}>
-            <Box display='flex' alignItems='center' gap={1}>
-                <Typography variant='h6'>Código da Sessão:</Typography>
-                <Tooltip
-                    onClose={() => { setOpenTooltip(false) }}
-                    open={openTooltip}
-                    disableFocusListener
-                    disableHoverListener
-                    disableTouchListener
-                    title="Link copiado!"
-                    PopperProps={{
-                        disablePortal: true
-                    }}
-                >
-                    <Button onClick={async () => {
-                        try {
-                            await copy(window.location.href)
-                            setOpenTooltip(true)
-                            setTimeout(() => {
-                                setOpenTooltip(false)
-                            }, 1000);
-                        } catch (error:any) {
-                            console.log(error.message)
-                        }
-                    }}>{sessionCode}</Button>
-                </Tooltip>
-            </Box>
-            <Box>
-                {
-                    members?.members ?
-                        Object?.values<Member>(members?.members as Record<string, Member>).map((member: Member) => (
-                            <Box
-                                display='flex'
-                                key={member._id}
-                                m={'20px 0'}
-                                gap={2}
-                                alignItems='center'
+        <>
+            {
+                !channel ? (
+                    <Box display='flex' justifyContent='center' alignItems='center'>
+                        <Typography variant='h4'>Esta sessão não existe ou foi fechada.</Typography>
+                    </Box>
+                ) : (
+                    <Box p={2}>
+                        <Box display='flex' alignItems='center' gap={1}>
+                            <Typography variant='h6'>Código da Sessão:</Typography>
+                            <Tooltip
+                                onClose={() => { setOpenTooltip(false) }}
+                                open={openTooltip}
+                                disableFocusListener
+                                disableHoverListener
+                                disableTouchListener
+                                title="Link copiado!"
+                                PopperProps={{
+                                    disablePortal: true
+                                }}
                             >
-                                <Avatar
-                                    // sx={{
-                                    //     border: '2px solid yellow'
-                                    // }}
-                                >
-                                    {
-                                        member.image ? (
-                                            <Image
-                                                height={250}
-                                                width={250}
-                                                style={{ height: '100%', width: '100%' }} 
-                                                src={member.image}
-                                                alt={member.name.charAt(0).toUpperCase()}
-                                            />
-                                        ) : (
-                                            member.name.charAt(0).toUpperCase()
-                                        )
+                                <Button onClick={async () => {
+                                    try {
+                                        await copy(window.location.href)
+                                        setOpenTooltip(true)
+                                        setTimeout(() => {
+                                            setOpenTooltip(false)
+                                        }, 1000);
+                                    } catch (error:any) {
+                                        console.log(error.message)
                                     }
-                                </Avatar>
-                                <Typography>{member.name}</Typography>
-                            </Box>
-                        ))
-                        : 'Carregando...'
-                }
-            </Box>
-        </Box>
+                                }}>{sessionCode}</Button>
+                            </Tooltip>
+                        </Box>
+                        <Box>
+                            {
+                                members?.members ?
+                                    Object?.values<Member>(members?.members as Record<string, Member>).map((member: Member) => (
+                                        <Box
+                                            display='flex'
+                                            key={member._id}
+                                            m={'20px 0'}
+                                            gap={2}
+                                            alignItems='center'
+                                        >
+                                            <Avatar
+                                                // sx={{
+                                                //     border: '2px solid yellow'
+                                                // }}
+                                            >
+                                                {
+                                                    member.image ? (
+                                                        <Image
+                                                            height={250}
+                                                            width={250}
+                                                            style={{ height: '100%', width: '100%' }} 
+                                                            src={member.image}
+                                                            alt={member.name.charAt(0).toUpperCase()}
+                                                        />
+                                                    ) : (
+                                                        member.name.charAt(0).toUpperCase()
+                                                    )
+                                                }
+                                            </Avatar>
+                                            <Typography>{member.name}</Typography>
+                                        </Box>
+                                    ))
+                                    : 'Carregando...'
+                            }
+                        </Box>
+                    </Box>
+                )
+            }
+        </>
     )
 }

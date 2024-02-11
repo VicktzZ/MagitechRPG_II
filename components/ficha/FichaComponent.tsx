@@ -12,7 +12,7 @@ import { WarningModal } from '@layout';
 import { fichaModel } from '@constants/ficha';
 
 export default function FichaComponent({ disabled, ficha }: { disabled?: boolean, ficha: Ficha }): ReactElement {
-    const { data: session }: any = useSession()
+    const { data: session } = useSession()
     const { enqueueSnackbar, closeSnackbar } = useSnackbar()
 
     const router = useRouter()
