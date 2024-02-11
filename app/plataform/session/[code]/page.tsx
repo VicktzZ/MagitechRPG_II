@@ -1,19 +1,19 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 'use client';
 
-import PusherClient from 'pusher-js'
+import PusherClient, { type PresenceChannel } from 'pusher-js'
 import { useEffect, type ReactElement, useState } from 'react'
 import SessionComponent from '../SessionComponent'
 import { PUSHER_KEY } from '@constants';
 import { useSession } from 'next-auth/react';
 import { useChannel } from '@contexts/channelContext';
-import type { Ficha } from '@types';
 import { Box, Modal } from '@mui/material';
+import type { Ficha } from '@types';
 
 export default function Session({ params }: { params: { code: string } }): ReactElement {
     const sessionName = 'presence-' + params.code
     const [ loading, setLoading ] = useState<boolean>(true)
-    const [ ficha, setFicha ] = useState<Ficha>()
+    const [ ficha, , ] = useState<Ficha>()
     const { data: session } = useSession()
     const { setChannel } = useChannel()
 
@@ -25,7 +25,7 @@ export default function Session({ params }: { params: { code: string } }): React
 
     useEffect(() => {
         document.title = 'Session - ' + params.code
-        setChannel(pusherClient.subscribe(sessionName))
+        setChannel(pusherClient.subscribe(sessionName) as PresenceChannel)
 
         setLoading(false)
 

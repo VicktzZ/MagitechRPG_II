@@ -18,7 +18,7 @@ export async function POST(req: NextRequest): Promise<Response> {
 
         const channelAuthResponse = pusherServer.authorizeChannel(socketId, channelName, {
             user_id: socketId,
-            user_info: sessionParams
+            user_info: { ...sessionParams, socketId }
         })
 
         return Response.json(channelAuthResponse)
