@@ -33,7 +33,7 @@ export default function SessionMembers({ members }: { members: PresenceChannel['
 
     useEffect(() => {
         forceUpdate()
-    }, [ members.members, members ])
+    }, [ members.members, members, membersArray ])
 
     return (
         <Box
