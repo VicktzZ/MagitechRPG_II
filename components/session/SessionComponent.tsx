@@ -17,7 +17,7 @@ export default function SessionComponent({ sessionCode }: { sessionCode: string 
     const [ openTooltip, setOpenTooltip ] = useState(false);
     const { enqueueSnackbar } = useSnackbar()
     const { channel } = useChannel()
-    const [ , setMembers ] = useState<Members>()
+    const [ members, setMembers ] = useState<Members>()
 
     const forceUpdate = useForceUpdate()
 

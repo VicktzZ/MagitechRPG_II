@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { Avatar, Box, Divider, Typography, useTheme } from '@mui/material'
 import Image from 'next/image'
-import React, { useMemo, type ReactElement, useEffect } from 'react'
+import React, { useMemo, type ReactElement, useEffect, useState } from 'react'
 import type { Member } from '@types'
 import type { PresenceChannel } from 'pusher-js'
 import { useGameMasterContext } from '@contexts/gameMasterContext'
@@ -10,30 +10,33 @@ import useForceUpdate from '@hooks/useForceUpdate'
 export default function SessionMembers({ members }: { members: PresenceChannel['members'] }): ReactElement {
     const theme = useTheme()
     const { gameMasterId } = useGameMasterContext()
+    const [ membersArr, setMembersArr ] = useState<Member[]>([])
     const forceUpdate = useForceUpdate()
 
-    const membersArray = useMemo(() => {
-        const myId: string = members?.me?.info._id
-        const arr = Object?.values<Member>(members?.members as Record<string, Member>)
-        
-        const sortedArr = arr.sort((a, b) => {
-            if (gameMasterId.includes(a._id)) {
-                return -1
-            } else if (gameMasterId.includes(b._id)) {
-                return 1
-            } else if (a._id === myId || b._id === myId) {
-                return -1
-            } else {
-                return 0
-            }
-        })
-
-        return sortedArr
-    }, [ members.me, gameMasterId, members?.me ])
-
     useEffect(() => {
-        forceUpdate()
-    }, [ members.members, members, membersArray ])
+        const membersArray = (): Member[] => {
+            forceUpdate()
+
+            const myId: string = members?.me?.info._id
+            const arr = Object?.values<Member>(members?.members as Record<string, Member>)
+            
+            const sortedArr = arr.sort((a, b) => {
+                if (gameMasterId.includes(a._id)) {
+                    return -1
+                } else if (gameMasterId.includes(b._id)) {
+                    return 1
+                } else if (a._id === myId || b._id === myId) {
+                    return -1
+                } else {
+                    return 0
+                }
+            })
+    
+            return sortedArr
+        }
+
+        setMembersArr(membersArray())
+    }, [ members.members, members, membersArr ])
 
     return (
         <Box
@@ -44,8 +47,8 @@ export default function SessionMembers({ members }: { members: PresenceChannel['
             borderRadius={2}
         >
             {
-                membersArray ?
-                    membersArray.map((member: Member) => {
+                membersArr ?
+                    membersArr.map((member: Member) => {
                         if (gameMasterId.includes(member._id)) {
                             return (
                                 <Box key={member._id}>
