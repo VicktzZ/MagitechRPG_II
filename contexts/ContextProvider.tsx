@@ -1,13 +1,13 @@
 'use client';
 
 import { CssBaseline, ThemeProvider } from '@mui/material';
-import { type ReactNode, type ReactElement, useState } from 'react';
+import { type ReactNode, type ReactElement, useState, type Dispatch, type SetStateAction } from 'react';
 import { SessionProvider } from 'next-auth/react';
 import { fichaContext, userContext, channelContext } from '@contexts';
 import { fichaModel } from '@constants/ficha';
 import { SnackbarProvider } from 'notistack';
 import type { Ficha } from '@types';
-import type { Channel } from 'pusher-js';
+import type { Channel, PresenceChannel } from 'pusher-js';
 import theme from '@themes/defaultTheme'
 
 export default function ContextProvider({ children }: { children: ReactNode }): ReactElement {
@@ -18,7 +18,7 @@ export default function ContextProvider({ children }: { children: ReactNode }): 
 
     return (
         <SnackbarProvider maxSnack={3}>
-            <channelContext.Provider value={{ channel, setChannel }}>
+            <channelContext.Provider value={{ channel: channel as PresenceChannel, setChannel: setChannel as Dispatch<SetStateAction<PresenceChannel | null>> }}>
                 <userContext.Provider value={{ user, setUser }}>
                     <fichaContext.Provider value={{ ficha, setFicha }}>
                         <ThemeProvider theme={theme}>
