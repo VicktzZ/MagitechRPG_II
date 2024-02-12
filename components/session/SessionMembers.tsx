@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { Avatar, Box, Divider, Typography, useTheme } from '@mui/material'
 import Image from 'next/image'
-import React, { type ReactElement } from 'react'
+import React, { useMemo, type ReactElement, useEffect } from 'react'
 import type { Member } from '@types'
 import type { PresenceChannel } from 'pusher-js'
 import { useGameMasterContext } from '@contexts/gameMasterContext'
@@ -12,9 +12,7 @@ export default function SessionMembers({ members }: { members: PresenceChannel['
     const { gameMasterId } = useGameMasterContext()
     const forceUpdate = useForceUpdate()
 
-    const membersArray = ((): Member[] => {
-        forceUpdate()
-
+    const membersArray = useMemo(() => {
         const myId: string = members?.me?.info._id
         const arr = Object?.values<Member>(members?.members as Record<string, Member>)
         
@@ -31,7 +29,11 @@ export default function SessionMembers({ members }: { members: PresenceChannel['
         })
 
         return sortedArr
-    })()
+    }, [ members.me, gameMasterId, members?.me ])
+
+    useEffect(() => {
+        forceUpdate()
+    }, [ members.members, members ])
 
     return (
         <Box
