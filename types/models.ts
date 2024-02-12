@@ -8,7 +8,7 @@ export interface User {
     fichas: string[]
 }
 
-export interface Session {
+export interface SessionNextAuth {
     user: User
     token: string
 }
@@ -19,6 +19,11 @@ export interface Member {
     image: string,
     _id: string,
     currentFicha: Ficha
+}
+
+export interface SessionModel {
+    sessionCode: string
+    admin: string[]
 }
 
 export interface Magia {

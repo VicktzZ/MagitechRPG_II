@@ -5,19 +5,19 @@
 
 import copy from 'clipboard-copy'
 import { useChannel } from '@contexts/channelContext';
-import { Avatar, Box, Button, Tooltip, Typography } from '@mui/material';
+import { Box, Button, Tooltip, Typography } from '@mui/material';
 import { useSnackbar } from 'notistack';
 import { type ReactElement, useState, useEffect } from 'react'
 import type { Member } from '@types';
 import type { Members } from 'pusher-js';
 import useForceUpdate from '@hooks/useForceUpdate';
-import Image from 'next/image';
+import { CustomChat, SessionMembers } from '@components/session';
 
 export default function SessionComponent({ sessionCode }: { sessionCode: string }): ReactElement {
     const [ openTooltip, setOpenTooltip ] = useState(false);
     const { enqueueSnackbar } = useSnackbar()
     const { channel } = useChannel()
-    const [ members, setMembers ] = useState<Members>()
+    const [ , setMembers ] = useState<Members>()
 
     const forceUpdate = useForceUpdate()
 
@@ -48,7 +48,7 @@ export default function SessionComponent({ sessionCode }: { sessionCode: string 
 
     useEffect(() => {
         forceUpdate()
-    }, [ channel?.members ])
+    }, [ channel ])
 
     return (
         <>
@@ -75,7 +75,7 @@ export default function SessionComponent({ sessionCode }: { sessionCode: string 
                                 <Button onClick={async () => {
                                     try {
                                         await copy(window.location.href)
-                                        setOpenTooltip(true)
+                                        setOpenTooltip( true)
                                         setTimeout(() => {
                                             setOpenTooltip(false)
                                         }, 1000);
@@ -85,41 +85,9 @@ export default function SessionComponent({ sessionCode }: { sessionCode: string 
                                 }}>{sessionCode}</Button>
                             </Tooltip>
                         </Box>
-                        <Box>
-                            {
-                                members?.members ?
-                                    Object?.values<Member>(members?.members as Record<string, Member>).map((member: Member) => (
-                                        <Box
-                                            display='flex'
-                                            key={member._id}
-                                            m={'20px 0'}
-                                            gap={2}
-                                            alignItems='center'
-                                        >
-                                            <Avatar
-                                                // sx={{
-                                                //     border: '2px solid yellow'
-                                                // }}
-                                            >
-                                                {
-                                                    member.image ? (
-                                                        <Image
-                                                            height={250}
-                                                            width={250}
-                                                            style={{ height: '100%', width: '100%' }} 
-                                                            src={member.image}
-                                                            alt={member.name.charAt(0).toUpperCase()}
-                                                        />
-                                                    ) : (
-                                                        member.name.charAt(0).toUpperCase()
-                                                    )
-                                                }
-                                            </Avatar>
-                                            <Typography>{member.name}</Typography>
-                                        </Box>
-                                    ))
-                                    : 'Carregando...'
-                            }
+                        <Box height='80vh' mt={2} display='flex' gap={10}>
+                            <SessionMembers members={channel.members} />
+                            <CustomChat />
                         </Box>
                     </Box>
                 )

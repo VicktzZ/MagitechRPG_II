@@ -3,17 +3,19 @@
 
 import PusherClient, { type PresenceChannel } from 'pusher-js'
 import { useEffect, type ReactElement, useState } from 'react'
-import SessionComponent from '../SessionComponent'
 import { PUSHER_KEY } from '@constants';
 import { useSession } from 'next-auth/react';
 import { useChannel } from '@contexts/channelContext';
 import { Box, Modal } from '@mui/material';
-import type { Ficha } from '@types';
+import { SessionComponent } from '@components/session';
+import { gameMasterContext } from '@contexts';
+import type { Ficha, SessionModel } from '@types';
 
 export default function Session({ params }: { params: { code: string } }): ReactElement {
     const sessionName = 'presence-' + params.code
     const [ loading, setLoading ] = useState<boolean>(true)
     const [ ficha, , ] = useState<Ficha>()
+    const [ gameMasterId, setGameMasterId ] = useState<string[]>([])
     const { data: session } = useSession()
     const { setChannel } = useChannel()
 
@@ -27,12 +29,14 @@ export default function Session({ params }: { params: { code: string } }): React
         (async () => {
             document.title = 'Session - ' + params.code
     
-            const response = await fetch(`/api/session?code=${params.code}`).then(async res => await res.json())
+            const sessionResponse: SessionModel = await fetch(`/api/session?code=${params.code}`).then(async res => await res.json())
 
-            if (!response) {
+            if (!sessionResponse) {
                 setLoading(false)
                 return
             }
+
+            setGameMasterId(sessionResponse?.admin)
 
             setChannel(pusherClient.subscribe(sessionName) as PresenceChannel)
             setLoading(false)
@@ -65,7 +69,9 @@ export default function Session({ params }: { params: { code: string } }): React
                         <Box></Box>
                     </Modal>
                 ) : (
-                    <SessionComponent sessionCode={params.code} />
+                    <gameMasterContext.Provider value={{ gameMasterId }}>
+                        <SessionComponent sessionCode={params.code} />
+                    </gameMasterContext.Provider>
                 )
             }
         </>

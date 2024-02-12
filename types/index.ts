@@ -18,11 +18,12 @@ import type {
     Trait
 } from './ficha';
 
-import type { Session, User, Magia, Member } from './models';
+import type { SessionNextAuth, SessionModel, User, Magia, Member } from './models';
 
 export type { 
     User,
-    Session,
+    SessionNextAuth,
+    SessionModel,
     Ficha,
     Attributes,
     Classes,
