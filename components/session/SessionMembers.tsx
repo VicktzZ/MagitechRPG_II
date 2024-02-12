@@ -31,7 +31,7 @@ export default function SessionMembers({ members }: { members: PresenceChannel['
         })
 
         return sortedArr
-    }, [ members, gameMasterId, members?.me ])
+    }, [ members.members, gameMasterId, members?.me ])
 
     return (
         <Box
