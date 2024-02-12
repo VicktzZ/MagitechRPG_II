@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { Avatar, Box, Divider, Typography, useTheme } from '@mui/material'
 import Image from 'next/image'
-import React, { useMemo, type ReactElement, useEffect, useState } from 'react'
+import React, { type ReactElement, useEffect, useState } from 'react'
 import type { Member } from '@types'
 import type { PresenceChannel } from 'pusher-js'
 import { useGameMasterContext } from '@contexts/gameMasterContext'
