@@ -5,12 +5,16 @@ import React, { useMemo, type ReactElement } from 'react'
 import type { Member } from '@types'
 import type { PresenceChannel } from 'pusher-js'
 import { useGameMasterContext } from '@contexts/gameMasterContext'
+import useForceUpdate from '@hooks/useForceUpdate'
 
 export default function SessionMembers({ members }: { members: PresenceChannel['members'] }): ReactElement {
     const theme = useTheme()
     const { gameMasterId } = useGameMasterContext()
+    const forceUpdate = useForceUpdate()
 
     const membersArray = useMemo(() => {
+        forceUpdate()
+
         const myId: string = members?.me?.info._id
         const arr = Object?.values<Member>(members?.members as Record<string, Member>)
         
