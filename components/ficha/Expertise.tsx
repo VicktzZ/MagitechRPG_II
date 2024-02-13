@@ -11,11 +11,13 @@ export default function Expertise({
     name,
     expertise,
     diceQuantity,
+    disabled,
     edit
 }: { 
     name: keyof Expertises,
     expertise: ExpertiseType<any>,
     diceQuantity: number,
+    disabled: boolean
     edit?: {
         isEditing: boolean,
         value: number,
@@ -52,7 +54,7 @@ export default function Expertise({
 
             if (
                 (
-                    (f.values.points.expertises > 0 && f.values.expertises[name].value < 2) ||
+                    (f.values.points.expertises > 0 && (f.values.expertises[name].value < 2 || disabled)) ||
                     (f.values.points.expertises >= 0 && edit.value < 0)
                 ) &&
                     f.values.expertises[name].value + edit.value > -1

@@ -140,6 +140,7 @@ export default function Expertises({ disabled }: { disabled?: boolean }): ReactE
                 name={name}
                 expertise={expertise}
                 diceQuantity={f.values.attributes[expertise.defaultAttribute as Attributes]}
+                disabled={disabled ?? false}
                 edit={edit}
             />
         ))
