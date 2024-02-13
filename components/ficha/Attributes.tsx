@@ -84,7 +84,7 @@ export default function Attributes({ disabled }: { disabled?: boolean }): ReactE
                 otherAttrs?.attr === 'pd' ? 'diligence' : 'expertises'
 
             if (action === 'add') {
-                if (f.values.points.attributes !== 0 && f.values.attributes[attribute] < 3) {
+                if ((f.values.points.attributes !== 0 && f.values.attributes[attribute] < 3) || disabled) {
                     f.setFieldValue('points.attributes', f.values.points.attributes - 1)
                     f.setFieldValue(`attributes.${attribute}`, f.values.attributes[attribute] + 1)
 

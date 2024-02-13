@@ -5,7 +5,7 @@ import React, { type ReactElement, useEffect, useState } from 'react'
 import type { Member } from '@types'
 import type { PresenceChannel } from 'pusher-js'
 import { useGameMasterContext } from '@contexts/gameMasterContext'
-import useForceUpdate from '@hooks/useForceUpdate'
+import { useForceUpdate } from '@mantine/hooks'
 
 export default function SessionMembers({ members }: { members: PresenceChannel['members'] }): ReactElement {
     const theme = useTheme()

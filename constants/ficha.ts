@@ -90,7 +90,7 @@ export const fichaModel: Partial<Ficha> = {
         'Comunicação': { value: 0, defaultAttribute: 'car' },
         'Condução': { value: 0, defaultAttribute: 'des' },
         'Conhecimento': { value: 0, defaultAttribute: 'sab' },
-        'Controle': { value: 0, defaultAttribute: 'foc' },
+        'Controle': { value: 0, defaultAttribute: 'vig' },
         'Criatividade': { value: 0, defaultAttribute: 'log' },
         'Enganação': { value: 0, defaultAttribute: 'car' },
         'Furtividade': { value: 0, defaultAttribute: 'des' },

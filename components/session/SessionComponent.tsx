@@ -10,8 +10,8 @@ import { useSnackbar } from 'notistack';
 import { type ReactElement, useState, useEffect } from 'react'
 import type { Member } from '@types';
 import type { Members } from 'pusher-js';
-import useForceUpdate from '@hooks/useForceUpdate';
 import { CustomChat, SessionMembers } from '@components/session';
+import { useForceUpdate } from '@mantine/hooks';
 
 export default function SessionComponent({ sessionCode }: { sessionCode: string }): ReactElement {
     const [ openTooltip, setOpenTooltip ] = useState(false);
@@ -45,11 +45,7 @@ export default function SessionComponent({ sessionCode }: { sessionCode: string 
             channel.unbind('pusher:member_added')
         }
     }, [ ])
-
-    useEffect(() => {
-        forceUpdate()
-    }, [ channel ])
-
+    
     return (
         <>
             {

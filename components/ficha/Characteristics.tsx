@@ -234,18 +234,18 @@ export default function Characteristics({ disabled }: { disabled?: boolean }): R
                                 <Typography variant='caption' color={red[500]}>-6 MP</Typography>
                             </Box>
                         </MenuItem>
-                        <MenuItem value='Autômato'>
-                            <Box display='flex' flexDirection='column'>
-                                <Typography>Autômato</Typography>
-                                <Typography variant='caption' color={green[500]}>+6 MP</Typography>
-                                <Typography variant='caption' color={red[500]}>-1 AP</Typography>
-                            </Box>
-                        </MenuItem>
                         <MenuItem value='Humanoide'>
                             <Box display='flex' flexDirection='column'>
                                 <Typography>Humanóide</Typography>
                                 <Typography variant='caption' color={green[500]}>+3 LP</Typography>
                                 <Typography variant='caption' color={green[500]}>+3 MP</Typography>
+                            </Box>
+                        </MenuItem>
+                        <MenuItem value='Autômato'>
+                            <Box display='flex' flexDirection='column'>
+                                <Typography>Autômato</Typography>
+                                <Typography variant='caption' color={green[500]}>+6 MP</Typography>
+                                <Typography variant='caption' color={red[500]}>-1 AP</Typography>
                             </Box>
                         </MenuItem>
                         <MenuItem value='Mutante'>

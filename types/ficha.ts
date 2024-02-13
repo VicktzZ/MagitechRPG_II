@@ -102,7 +102,7 @@ export interface Expertises {
     'Comunicação': Expertise<'car'>
     'Condução': Expertise<'des'>
     'Conhecimento': Expertise<'sab'>
-    'Controle': Expertise<'foc'>
+    'Controle': Expertise<'vig'>
     'Criatividade': Expertise<'log'>
     'Enganação': Expertise<'car'>
     'Furtividade': Expertise<'des'>
