@@ -19,7 +19,7 @@ export default function Message({ message, by }: { message: string, by: { name: 
                 bgcolor='background.paper'
                 p={1.5}
             >{message}</Typography>
-            <Avatar sx={{ ml: 1 }} src={by.image} alt={by.name.charAt(0).toUpperCase()}/>
+            <Avatar sx={{ ml: 1 }} src={by.image} alt={by?.name?.charAt(0).toUpperCase()}/>
         </Box>
     )
 }
