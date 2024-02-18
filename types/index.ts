@@ -27,7 +27,8 @@ import type {
 } from './models';
 
 import type { 
-    Message
+    Message,
+    EventData
 } from './misc';
 
 export type { 
@@ -48,6 +49,7 @@ export type {
     LineageNames,
     Trait,
     Skill,
+    EventData,
     Lineage,
     Expertises,
     Expertise,

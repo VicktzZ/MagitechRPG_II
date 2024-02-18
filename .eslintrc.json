@@ -41,6 +41,9 @@
       "prettier/prettier": [
           "off"
       ],
+      "@typescript-eslint/no-misused-promises": [
+          "off"
+      ],
       "no-use-before-define": "off",
       "@typescript-eslint/no-floating-promises": [
           "off"
