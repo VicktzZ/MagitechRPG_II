@@ -172,6 +172,7 @@ export interface Weapon<T extends 'Leve' | 'Pesada'> {
     weight: number
     hit: Attributes
     ammo: AmmoType | 'Não consome'
+    quantity?: number
     accesories?: WeaponAccesoriesType[]
     bonus: 'Luta' | 'Agilidade' | 'Furtividade' | 'Pontaria' | 'Magia' | 'Tecnologia' | 'Controle'
     effect: {

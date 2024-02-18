@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { Avatar, Box, Divider, Typography, useTheme } from '@mui/material'
 import Image from 'next/image'
-import React, { type ReactElement, useEffect, useState } from 'react'
+import React, { type ReactElement, useEffect, useState, useMemo } from 'react'
 import type { Member } from '@types'
 import type { PresenceChannel } from 'pusher-js'
 import { useGameMasterContext } from '@contexts/gameMasterContext'
@@ -13,30 +13,30 @@ export default function SessionMembers({ members }: { members: PresenceChannel['
     const [ membersArr, setMembersArr ] = useState<Member[]>([])
     const forceUpdate = useForceUpdate()
 
+    const membersArray = useMemo((): Member[] => {
+        forceUpdate()
+
+        const myId: string = members?.me?.info._id
+        const arr = Object?.values<Member>(members?.members as Record<string, Member>)
+        
+        const sortedArr = arr.sort((a, b) => {
+            if (gameMasterId.includes(a._id)) {
+                return -1
+            } else if (gameMasterId.includes(b._id)) {
+                return 1
+            } else if (a._id === myId || b._id === myId) {
+                return -1
+            } else {
+                return 0
+            }
+        })
+
+        return sortedArr
+    }, [ members?.members, members?.me?.info._id, gameMasterId, forceUpdate ])
+
     useEffect(() => {
-        const membersArray = (): Member[] => {
-            forceUpdate()
-
-            const myId: string = members?.me?.info._id
-            const arr = Object?.values<Member>(members?.members as Record<string, Member>)
-            
-            const sortedArr = arr.sort((a, b) => {
-                if (gameMasterId.includes(a._id)) {
-                    return -1
-                } else if (gameMasterId.includes(b._id)) {
-                    return 1
-                } else if (a._id === myId || b._id === myId) {
-                    return -1
-                } else {
-                    return 0
-                }
-            })
-    
-            return sortedArr
-        }
-
-        setMembersArr(membersArray())
-    }, [ members.members, members, membersArr ])
+        setMembersArr(membersArray)
+    }, [ members.members, members, membersArray ])
 
     return (
         <Box

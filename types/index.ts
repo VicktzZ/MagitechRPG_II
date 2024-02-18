@@ -18,7 +18,17 @@ import type {
     Trait
 } from './ficha';
 
-import type { SessionNextAuth, SessionModel, User, Magia, Member } from './models';
+import type { 
+    SessionNextAuth,
+    SessionModel,
+    User,
+    Magia,
+    Member 
+} from './models';
+
+import type { 
+    Message
+} from './misc';
 
 export type { 
     User,
@@ -27,6 +37,7 @@ export type {
     Ficha,
     Attributes,
     Classes,
+    Message,
     Class,
     Item,
     Member,

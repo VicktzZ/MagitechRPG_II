@@ -159,6 +159,13 @@ export const skills: {
                 origin: 'Marcial',
                 type: 'Classe',
                 level: 0
+            },
+            {
+                name: 'Reflexos Aumentados',
+                description: 'Você ganha +1 dado em testes de agilidade (incluindo iniciativa).',
+                origin: 'Marcial',
+                type: 'Classe',
+                level: 5
             }
         ],
 
@@ -169,6 +176,13 @@ export const skills: {
                 origin: 'Explorador',
                 type: 'Classe',
                 level: 0
+            },
+            {
+                name: 'Esforço',
+                description: 'Você pode pagar 2 MP para adicionar +2 Pontos bônus em qualquer teste, exceto esquiva, cálculo de dano ou bloqueio de ataque.',
+                origin: 'Explorador',
+                type: 'Classe',
+                level: 5
             }
         ],
 
@@ -214,6 +228,13 @@ export const skills: {
                 origin: 'Monge',
                 type: 'Classe',
                 level: 0
+            },
+            {
+                name: 'Reflexos',
+                description: 'Você pode gastar 10 MP para, como ação livre, ganhar +2 em Agilidade. Caso você esteja no estado de "calma", você ganha +5 pontos em Agilidade além de prolongar seu estado até o turno seguinte.',
+                origin: 'Monge',
+                type: 'Classe',
+                level: 5
             }
         ],
 
@@ -234,6 +255,13 @@ export const skills: {
                 origin: 'Arcano',
                 type: 'Classe',
                 level: 0
+            },
+            {
+                name: 'Concentração',
+                description: 'Uma vez por cena, você pode entrar em um estado de concentração, onde você recupera 1d20+LOG de LP. Caso você esteja em combate esta habilidade gastará uma Ação Completa.',
+                origin: 'Arcano',
+                type: 'Classe',
+                level: 5
             }
         ],
 
