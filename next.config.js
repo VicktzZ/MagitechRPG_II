@@ -3,6 +3,11 @@ const nextConfig = {
     experimental: {
       serverComponentsExternalPackages: ["mongoose"]
     },
+    logging: {
+      fetches: {
+        fullUrl: true
+      }
+    },
     images: {
       domains: ['lh3.googleusercontent.com', 'cdn.discordapp.com'],
       remotePatterns: [

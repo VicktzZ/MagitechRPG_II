@@ -117,7 +117,7 @@ export default function SessionMembers({ members }: { members: PresenceChannel['
                                         }
                                     </Avatar>
                                     <Box display='flex' gap={0.1} flexDirection='column'>
-                                        <Typography noWrap>{member.name}</Typography>
+                                        <Typography noWrap>{member.currentFicha.name}</Typography>
                                         <Typography color='text.secondary' variant='caption' noWrap>{member.name}</Typography>
                                     </Box>
                                 </Box>
@@ -135,11 +135,7 @@ export default function SessionMembers({ members }: { members: PresenceChannel['
                                             gap={2}
                                             alignItems='center'
                                         >
-                                            <Avatar
-                                                // sx={{
-                                                //     border: '2px solid yellow'
-                                                // }}
-                                            >
+                                            <Avatar>
                                                 {
                                                     member.image ? (
                                                         <Image
@@ -155,7 +151,7 @@ export default function SessionMembers({ members }: { members: PresenceChannel['
                                                 }
                                             </Avatar>
                                             <Box display='flex' gap={0.1} flexDirection='column'>
-                                                <Typography noWrap>{member.name}</Typography>
+                                                <Typography noWrap>{member.currentFicha.name}</Typography>
                                                 <Typography color='text.secondary' variant='caption' noWrap>{member.name}</Typography>
                                             </Box>
                                         </Box>

@@ -9,7 +9,6 @@ import { Box, Button, Tooltip, Typography } from '@mui/material';
 import { useSnackbar } from 'notistack';
 import { type ReactElement, useState, useEffect } from 'react'
 import type { Member } from '@types';
-import type { Members } from 'pusher-js';
 import { CustomChat, SessionMembers } from '@components/session';
 import { useForceUpdate } from '@mantine/hooks';
 
@@ -17,7 +16,6 @@ export default function SessionComponent({ sessionCode }: { sessionCode: string 
     const [ openTooltip, setOpenTooltip ] = useState(false);
     const { enqueueSnackbar } = useSnackbar()
     const { channel } = useChannel()
-    const [ , setMembers ] = useState<Members>()
 
     const forceUpdate = useForceUpdate()
 
@@ -39,7 +37,8 @@ export default function SessionComponent({ sessionCode }: { sessionCode: string 
             forceUpdate()
         })
 
-        setMembers(channel.members)
+        console.log(channel.members);
+        
 
         return () => {
             channel.unbind('pusher:member_added')
@@ -84,6 +83,13 @@ export default function SessionComponent({ sessionCode }: { sessionCode: string 
                         <Box height='80vh' mt={2} display='flex' gap={10}>
                             <SessionMembers members={channel.members} />
                             <CustomChat />
+                            <Box>
+                                {/* {channel.members.members.map((member: Member) => {
+                                    console.log(member);
+                                    
+                                    return ''
+                                })} */}
+                            </Box>
                         </Box>
                     </Box>
                 )

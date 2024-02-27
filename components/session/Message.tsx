@@ -11,14 +11,25 @@ export default function Message({ message, by }: { message: string, by: { name: 
             width='100%'
             justifyContent={by.id === session?.user._id ? 'flex-end' : 'flex-start'}
         >
-            <Typography 
-                textOverflow='revert-layer' 
-                textAlign='justify' 
+            <Box 
+                display='flex'
+                flexDirection='column'
                 maxWidth='60%'
-                borderRadius={2} 
                 bgcolor='background.paper'
                 p={1.5}
-            >{message}</Typography>
+                borderRadius={2}                    
+            >
+                <Box display='flex' width='100%' justifyContent='end'>
+                    <Typography 
+                        textOverflow='revert-layer' 
+                        textAlign='justify' 
+                    >{message}</Typography>
+                </Box>
+                <Box display='flex' gap={1}>
+                    <Typography color='text.secondary' variant='caption'>23:37</Typography>
+                    <Typography color='text.secondary' variant='caption'>_lordVython</Typography>
+                </Box>
+            </Box>
             <Avatar sx={{ ml: 1 }} src={by.image} alt={by?.name?.charAt(0).toUpperCase()}/>
         </Box>
     )

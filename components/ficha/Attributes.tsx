@@ -1,8 +1,8 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { RadarChart } from '@components/misc'
 import { classesModel } from '@constants/classes'
-import { LinearProgressWithLabel } from '@layout'
-import { FormControl } from '@mui/material'
+import { CustomIconButton, LinearProgressWithLabel } from '@layout'
+import { FormControl, TextField } from '@mui/material'
 import { Box } from '@mui/material'
 import { green } from '@mui/material/colors'
 import { useFormikContext, type FormikContextType } from 'formik'
@@ -30,6 +30,7 @@ import { useAudio } from '@hooks'
 import { selectEffect } from '@public/sounds'
 import { races } from '@constants/races'
 import useNumbersWithSpaces from '@hooks/useNumbersWithSpace'
+import { Check, Edit } from '@mui/icons-material'
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
@@ -52,6 +53,9 @@ export default function Attributes({ disabled }: { disabled?: boolean }): ReactE
     const theme = useTheme()
 
     const [ modalOpen, setModalOpen ] = useState(false)
+    const [ money, setMoney ] = useState<number>(f.values.inventory.money)
+    const [ editMoney, setEditMoney ] = useState<boolean>(false)
+
     const matches = useMediaQuery(theme.breakpoints.down('md'))
     const audio = useAudio(selectEffect)
     const numberWithSpaces = useNumbersWithSpaces()
@@ -63,6 +67,9 @@ export default function Attributes({ disabled }: { disabled?: boolean }): ReactE
             if (f.values.points.diligence > 0) {
                 f.setFieldValue('points.diligence', f.values.points.diligence - 1)
                 f.setFieldValue(`attributes.${point}`, f.values.attributes[point] + value)
+                if (disabled) {
+                    f.initialValues.attributes[point] += value
+                }
             }
         } else {
             if (
@@ -71,6 +78,9 @@ export default function Attributes({ disabled }: { disabled?: boolean }): ReactE
             ) {
                 f.setFieldValue('points.diligence', f.values.points.diligence + 1)
                 f.setFieldValue(`attributes.${point}`, f.values.attributes[point] - value)
+                if (disabled) {
+                    f.initialValues.attributes[point] -= value
+                }
             }
         }
     }
@@ -83,10 +93,37 @@ export default function Attributes({ disabled }: { disabled?: boolean }): ReactE
             const point = 
                 otherAttrs?.attr === 'pd' ? 'diligence' : 'expertises'
 
+            const attributesValues = (op: 'add' | 'sub'): Record<typeof attribute, () => void> => {
+
+                const num = (value: number): number => {
+                    if (op === 'add') return value
+                    else return value * -1
+                }
+
+                return {
+                    vig: () => { f.initialValues.attributes.lp += num(3) },
+                    des: () => { f.initialValues.attributes.ap += num(0.5) },
+                    sab: () => { f.initialValues.points.expertises += num(1) },
+                    car: () => { f.values.inventory.money += num(20000) },
+                    foc: () => { 
+                        f.initialValues.attributes.mp += num(5)
+                        f.initialValues.magicsSpace += num(2) 
+                    },
+                    log: () => {
+                        f.initialValues.points.diligence += num(1)
+                        f.initialValues.points.magics += num(1)
+                    }
+                }
+            }
+
             if (action === 'add') {
-                if ((f.values.points.attributes !== 0 && f.values.attributes[attribute] < 3) || disabled) {
+                if ((f.values.points.attributes > 0 && f.values.attributes[attribute] < 3) || (disabled && f.values.points.attributes > 0)) {
                     f.setFieldValue('points.attributes', f.values.points.attributes - 1)
                     f.setFieldValue(`attributes.${attribute}`, f.values.attributes[attribute] + 1)
+
+                    if (disabled) {
+                        attributesValues('add')[attribute]()
+                    }
 
                     if (
                         otherAttrs && otherAttrs.attr !== 'pd' &&
@@ -101,6 +138,10 @@ export default function Attributes({ disabled }: { disabled?: boolean }): ReactE
                 if (f.values.attributes[attribute] !== -1) {
                     f.setFieldValue('points.attributes', f.values.points.attributes + 1)
                     f.setFieldValue(`attributes.${attribute}`, f.values.attributes[attribute] - 1)
+
+                    if (disabled) {
+                        attributesValues('sub')[attribute]()
+                    }
 
                     if (
                         otherAttrs && otherAttrs.attr !== 'pd' &&
@@ -575,8 +616,37 @@ export default function Attributes({ disabled }: { disabled?: boolean }): ReactE
                             <Typography>Dinheiro:</Typography>
                             <Chip
                                 color='primary' 
-                                label={'¥' + numberWithSpaces(f.values.inventory.money)}
+                                label={
+                                    <Box display='flex'>
+                                        <p>¥</p>
+                                        <p id='money' contentEditable='true'>
+                                            {numberWithSpaces(f.values.inventory.money)}
+                                        </p>
+                                    </Box>
+                                }
                             />
+                            {disabled && (
+                                <Box display='flex' gap={3} alignItems='center'>
+                                    <CustomIconButton onClick={() => { setEditMoney(prevState => !prevState) }} sx={{ height: 35, width: 35 }}>
+                                        <Edit sx={{ height: 20, width: 20 }} />
+                                    </CustomIconButton>
+                                    {editMoney && (
+                                        <Box action='#' component='form' display='flex' alignItems='center' gap={1}>
+                                            <TextField 
+                                                defaultValue={f.values.inventory.money}
+                                                onChange={e => { setMoney(Number(e.target.value)) }}
+                                                type='number'
+                                            />
+                                            <CustomIconButton type='submit' onClick={() => {
+                                                setEditMoney(false)
+                                                f.values.inventory.money = money
+                                            }} sx={{ height: 35, width: 35 }}>
+                                                <Check sx={{ height: 20, width: 20 }} />
+                                            </CustomIconButton>
+                                        </Box>
+                                    )}
+                                </Box>
+                            )}
                         </Box>
                     </Box>
                 </Box>

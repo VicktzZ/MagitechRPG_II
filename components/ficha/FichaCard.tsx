@@ -8,7 +8,7 @@ import { useRouter } from 'next/navigation'
 import { useSnackbar } from 'notistack';
 import { useState, type ReactElement } from 'react'
 
-export default function FichaCard({ ficha }: { ficha: Ficha }): ReactElement {
+export default function FichaCard({ ficha, onClick, disableDeleteButton }: { ficha: Ficha, onClick?: () => void, disableDeleteButton?: boolean }): ReactElement {
     const theme = useTheme()
     const router = useRouter()
     const matches = useMediaQuery(theme.breakpoints.down('md'))
@@ -40,7 +40,7 @@ export default function FichaCard({ ficha }: { ficha: Ficha }): ReactElement {
     return (
         <>
             <Card
-                onClick={() => { router.push(`/plataform/ficha/${ficha._id}`) }}
+                onClick={onClick ?? (() => { router.push(`/plataform/ficha/${ficha._id}`) })}
                 key={ficha._id}
                 sx={{
                     display: 'flex',
@@ -75,13 +75,15 @@ export default function FichaCard({ ficha }: { ficha: Ficha }): ReactElement {
                             <ArrowRight />
                         </CustomIconButton>
                     </Box>
-                    <Box pr={3} display='flex' justifyContent='right'>
-                        <Button 
-                            onClick={e => { e.stopPropagation(); setOpenModal(true) } } 
-                            variant='contained' 
-                            color={'terciary' as any}
-                        >Deletar</Button>
-                    </Box>
+                    {!disableDeleteButton && (
+                        <Box pr={3} display='flex' justifyContent='right'>
+                            <Button 
+                                onClick={e => { e.stopPropagation(); setOpenModal(true) } } 
+                                variant='contained' 
+                                color={'terciary' as any}
+                            >Deletar</Button>
+                        </Box>
+                    )}
                 </Box>
             </Card>
             <WarningModal 
