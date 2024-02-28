@@ -14,7 +14,8 @@ export default function CustomChat(): ReactElement {
         message: '',
         by: { 
             id: session?.user._id as unknown as string,
-            image: session?.user.image as unknown as string 
+            image: session?.user.image as unknown as string,
+            name: session?.user.name as unknown as string
         }
     })
     
@@ -112,7 +113,7 @@ export default function CustomChat(): ReactElement {
                     }
                 }}
             >
-                { messages.map(msg => <Message key={msg.message} message={msg.message} by={message.by} />) }
+                { messages.map(msg => <Message key={msg.message} message={msg.message} by={msg.by} />) }
             </Box>
         </Box>    
     )

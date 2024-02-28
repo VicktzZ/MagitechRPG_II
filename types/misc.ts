@@ -3,6 +3,7 @@ interface Message {
     by: {
         id: string
         image: string
+        name: string
     }
 }
 
