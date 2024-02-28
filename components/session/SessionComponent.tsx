@@ -39,7 +39,6 @@ export default function SessionComponent({ sessionCode }: { sessionCode: string 
 
         console.log(channel.members);
         
-
         return () => {
             channel.unbind('pusher:member_added')
         }
