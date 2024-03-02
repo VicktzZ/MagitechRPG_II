@@ -403,8 +403,8 @@ export default function Attributes({ disabled }: { disabled?: boolean }): ReactE
                     />
                     <LinearProgressWithLabel
                         label='AP'
-                        minvalue={!disabled ? f.values.attributes.ap : f.initialValues.attributes.ap}
-                        maxvalue={!disabled ? f.values.attributes.ap : f.initialValues.attributes.ap}
+                        minvalue={Math.floor(!disabled ? f.values.attributes.ap : f.initialValues.attributes.ap)}
+                        maxvalue={Math.floor(!disabled ? f.values.attributes.ap : f.initialValues.attributes.ap)}
                         color='warning'
                     />
                 </Box>

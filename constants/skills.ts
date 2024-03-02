@@ -166,6 +166,20 @@ export const skills: {
                 origin: 'Marcial',
                 type: 'Classe',
                 level: 5
+            },
+            {
+                name: 'Bom de Briga',
+                description: 'Aumenta o dano do ataque em 1d8+Bônus de Luta se você estiver atacando em um alcance de corpo a corpo (1 quadrado ou 1,5 metro).',
+                origin: 'Marcial',
+                type: 'Classe',
+                level: 10
+            },
+            {
+                name: 'Regeneração Furiosa',
+                description: 'Quando seus LP ficarem abaixo de 50%, você regenera 1d6 por turno até atingir 50% de seus LP novamente.',
+                origin: 'Marcial',
+                type: 'Classe',
+                level: 15
             }
         ],
 
@@ -183,6 +197,20 @@ export const skills: {
                 origin: 'Explorador',
                 type: 'Classe',
                 level: 5
+            },
+            {
+                name: 'Desequilibrar',
+                description: 'Você pode pagar 12 MP e escolher um alvo para sofrer -2 em todos os testes contra você por 3 turnos.',
+                origin: 'Explorador',
+                type: 'Classe',
+                level: 10
+            },
+            {
+                name: 'Perspectiva',
+                description: 'Em combate, você pode gastar 15 MP para diminuir a margem de crítico em 1 pontos (ao invés de 20, serão necessários 19 pontos no dado para contabilizar um ataque crítico.) por 3 turnos para qualquer ataque físico ou mágico.',
+                origin: 'Explorador',
+                type: 'Classe',
+                level: 15
             }
         ],
 
@@ -235,6 +263,21 @@ export const skills: {
                 origin: 'Monge',
                 type: 'Classe',
                 level: 5
+            
+            },
+            {
+                name: 'Cura Interior',
+                description: 'Você pode pagar 20 MP para se curar em 3d8 como ação livre. Só pode ser utilizada uma vez por combate.',
+                origin: 'Monge',
+                type: 'Classe',
+                level: 10
+            },
+            {
+                name: 'Meditação',
+                description: 'Sem gastar nada, você pode, três vezes por combate, entrar no estado de meditação. Neste estado, você recupera 2d4 de LP e 3d4 de MP a cada turno. Entretanto, enquanto estiver neste estado, você não consegue se mover ou atacar. Exige uma ação completa.',
+                origin: 'Monge',
+                type: 'Classe',
+                level: 15
             }
         ],
 
@@ -262,6 +305,20 @@ export const skills: {
                 origin: 'Arcano',
                 type: 'Classe',
                 level: 5
+            },
+            {
+                name: 'Magia Furtiva',
+                description: 'Conjurar magias por meio do Poder de Classe “Magia Simbólica” dá um adicional de 3d6 de dano ou cura extra.',
+                origin: 'Arcano',
+                type: 'Classe',
+                level: 10
+            },
+            {
+                name: 'Aprendizado Crucial',
+                description: 'Você pode conjurar magias de nível 1 como uma Ação Livre. Só é possível conjurar uma magia por turno desse jeito, exceto se você for conjurar outra magia que já tenha como execução Ação Livre. Neste caso, poderá ser executas duas magias, uma de Ação Livre, e outra de uma outra ação qualquer (mas também executada como Ação Livre).',
+                origin: 'Arcano',
+                type: 'Classe',
+                level: 15
             }
         ],
 

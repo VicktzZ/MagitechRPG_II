@@ -13,7 +13,7 @@ import { CircularProgress } from '@mui/material';
 export default function AppDrawer(): ReactElement {
     const { data: session } = useSession();
     const s: any = session
-
+    
     const [ isLoading, setIsLoading ] = useState<boolean>(false);
     const [ drawerOpen, setDrawerOpen ] = useState<boolean>(false);
     const [ modalOpen, setModalOpen ] = useState<boolean>(false);
