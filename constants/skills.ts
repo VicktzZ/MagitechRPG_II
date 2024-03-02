@@ -221,6 +221,34 @@ export const skills: {
                 origin: 'Feiticeiro',
                 type: 'Classe',
                 level: 0
+            },
+            {
+                name: 'Prevenção Mágica',
+                description: 'Magias que dão dano em área agora afetam somente a inimigos. Além disso, não é possível você se ferir com uma magia conjurada por você mesmo.',
+                origin: 'Feiticeiro',
+                type: 'Classe',
+                level: 5
+            },
+            {
+                name: 'Magia Guiada',
+                description: 'Caso você acerte um mesmo inimigo com uma mesma magia duas vezes ou mais, você ganha +1d4 para cada acerto, sucessivamente. A partir do terceiro acerto você recomeça a contagem, desta vez com +1d6. Não cumulativo.',
+                origin: 'Feiticeiro',
+                type: 'Classe',
+                level: 10
+            },
+            {
+                name: 'Mimetismo',
+                description: 'Você pode gastar 15 MP para copiar uma magia que foi desferida em você na cena atual.',
+                origin: 'Feiticeiro',
+                type: 'Classe',
+                level: 15
+            },
+            {
+                name: 'Fixação Mágica',
+                description: 'Você pode escolher uma magia específica que você sabe e colocar um fixador mágico nela: A magia pula um estágio à frente e adiciona +1d10 em testes desta magia. Caso a magia esteja em seu último estágio, o dano é dobrado. Além disso, você é invulnerável a está magia, caso alguém o ataque com ela. Só é possível colocar um marcador por vez e quando colocado você não pode remover até o final do dia.',
+                origin: 'Feiticeiro',
+                type: 'Classe',
+                level: 20
             }
         ],
 
