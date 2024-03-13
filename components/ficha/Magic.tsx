@@ -53,14 +53,14 @@ export default function Magic({ magic, id, isAdding, onIconClick }: { magic: Mag
             extraCost = {
                 'estágio 1': 0,
                 'estágio 2': 15,
-                'maestria': 25
+                'maestria': 30
             }
             
         } else if (Number(magic.nível) >= 3) {
             extraCost = {
                 'estágio 1': 0,
                 'estágio 2': 10,
-                'estágio 3': 15
+                'estágio 3': 20
             }
         } else {
             extraCost = {
