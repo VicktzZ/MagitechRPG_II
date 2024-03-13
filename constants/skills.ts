@@ -180,6 +180,20 @@ export const skills: {
                 origin: 'Marcial',
                 type: 'Classe',
                 level: 15
+            },
+            {
+                name: 'Muralha',
+                description: 'Quando você fica com 10% ou menos de LP, seu ataque aumenta em 50% até você atingir 50% da sua vida novamente. Para calcular os 50% de dano, primeiro role o(s) dado(s) de dano e faça o cálculo normalmente, depois, multiplique o resultado por 1.5x. Em caso de número decimal, sempre arredonde para menor.',
+                origin: 'Marcial',
+                type: 'Classe',
+                level: 20
+            },
+            {
+                name: 'Amplitude Física',
+                description: 'Em testes de Luta, Atletismo ou vigor puro, se o resultado do dado for menor que a sua quantidade de Luta ou Atletismo, você pode usar sua força + seu respectivo bônus para substituir o dado, além de ganhar +1 dado em testes que usam vigor. Além disso, você pode adicionar o seu bônus de Luta em ataques corpo-a-corpo.',
+                origin: 'Marcial',
+                type: 'Classe',
+                level: 25
             }
         ],
 
@@ -211,6 +225,20 @@ export const skills: {
                 origin: 'Explorador',
                 type: 'Classe',
                 level: 15
+            },
+            {
+                name: 'Providência',
+                description: 'Quando utilizar a habilidade Esforço, você pode gastar 5 MP adicionais para aumentar o teste em +3 pontos bônus. Além disso, você pode rolar quantos dados você quiser com um custo adicional de 2 MP por dado para a habilidade Treinado.',
+                origin: 'Explorador',
+                type: 'Classe',
+                level: 20
+            },
+            {
+                name: 'Preferência',
+                description: 'Você pode escolher magias de um tipo elemental específico e armas de uma categoria específica para serem adicionadas +3 pontos em testes que você as utilize (dano, cura, chance de acerto, fortalecimento, etc.). Após utilizar essa habilidade, não será possível utilizá-la novamente até completar 2 dias.',
+                origin: 'Explorador',
+                type: 'Classe',
+                level: 25
             }
         ],
 
@@ -306,6 +334,20 @@ export const skills: {
                 origin: 'Monge',
                 type: 'Classe',
                 level: 15
+            },
+            {
+                name: 'Aura Efêmera',
+                description: 'Você pode pagar 15 para gerar uma aura de dentro de você que cobre um raio de 5 metros. Ela cura você e aliados a cada 2 turnos em 3d4 além de aumentar a chance de acerto em +3. Se você estiver no estado de fúria enquanto está habilidade estiver ativa, quem estiver na área ganha +5 em chance de acerto e +3d4 para qualquer ataque. Você pode prolongar esta habilidade, mas terá que pagar +15 MP para cada 2 turnos.',
+                origin: 'Monge',
+                type: 'Classe',
+                level: 20
+            },
+            {
+                name: 'Força Vital',
+                description: 'Você pode pagar 20 MP e executar como uma ação livre esta habilidade: Para o seu próximo ataque corpo-a-corpo, caso você acerte o alvo, o dano será aumentado em 1d8 + seus LP atuais. Ou seja, quanto mais vida você estiver no momento, maior será a força do ataque.',
+                origin: 'Monge',
+                type: 'Classe',
+                level: 25
             }
         ],
 
@@ -316,6 +358,41 @@ export const skills: {
                 origin: 'Druida',
                 type: 'Classe',
                 level: 0
+            },
+            {
+                name: 'Cura Reveladora',
+                description: 'Toda vez que você realizar uma cura em um aliado, você pode gastar 10 MP para adicionar +4d6 pontos de cura juntamente de um bônus de chance de acerto de +3.',
+                origin: 'Druida',
+                type: 'Classe',
+                level: 5
+            },
+            {
+                name: 'Encantamento Druídico',
+                description: 'Gastando 15 MP, como ação de movimento, você pode adicionar +3d6 de dano elemental extra de qualquer elemento que você tenha afinidade elemento em qualquer arma (incluindo a sua) por 3 turnos.',
+                origin: 'Druida',
+                type: 'Classe',
+                level: 10
+            },
+            {
+                name: 'Plano de Recuperação',
+                description: 'Em uma pequena área de um quadrado de 6m, você conjura um plano que quem estiver nele, é curado por 2d6 por rodada, além de não poder ser afetado por nenhum estado negativo como queimadura ou hemorragia. Inimigos que entrarem no campo recebem 2d4 de dano enquanto permaneceram por lá. O plano dura 3 turnos.',
+                origin: 'Druida',
+                type: 'Classe',
+                level: 15
+            },
+            {
+                name: 'Vínculo Druídico',
+                description: 'Você pode inserir uma marca de luz em qualquer ser por toque gastando 15 MP: Toda vez que você ou o ser sofrer algum tipo de dano, o dano é dividido igualmente entre vocês. Toda vez que isto acontecer, você recupera +3 MP.',
+                origin: 'Druida',
+                type: 'Classe',
+                level: 20
+            },
+            {
+                name: 'Peripécia',
+                description: 'Você pode gastar 25 MP para criar uma área de um raio de 9m por 2 rodadas onde você e seus aliados ganham +10 MP para cada teste passado com sucesso para cada um que estiver presente na área.',
+                origin: 'Druida',
+                type: 'Classe',
+                level: 25
             }
         ],
 
@@ -347,6 +424,20 @@ export const skills: {
                 origin: 'Arcano',
                 type: 'Classe',
                 level: 15
+            },
+            {
+                name: 'Defesa Arcana',
+                description: 'No início de cada combate você recebe 2d10+LOG/2 de vida adicional.',
+                origin: 'Arcano',
+                type: 'Classe',
+                level: 20
+            },
+            {
+                name: 'Adiar Magia',
+                description: 'Você pode gastar 10 MP extras para utilizar uma magia do tipo “conjurada” (magias que ativam depois de 1 ou X turnos) no mesmo turno.',
+                origin: 'Arcano',
+                type: 'Classe',
+                level: 25
             }
         ],
 
@@ -357,6 +448,41 @@ export const skills: {
                 origin: 'Ladino',
                 type: 'Classe',
                 level: 0
+            },
+            {
+                name: 'Cautela',
+                description: 'Caso você ataque um alvo desprevenido, seu dano é dobrado.',
+                origin: 'Ladino',
+                type: 'Classe',
+                level: 5
+            },
+            {
+                name: 'Fobia',
+                description: 'Você pode pagar 15 MP para aplicar 2d8 de dano, deixar o alvo no estado de medo e inibir seus ataques até seu turno seguinte. Se você estiver em furtividade o dano é aumentado para 6d8.',
+                origin: 'ladino',
+                type: 'Classe',
+                level: 10
+            },
+            {
+                name: 'Expurgo',
+                description: 'Caso o inimigo esteja com 10% ou menos de vida, seu próximo ataque o mata instantaneamente.',
+                origin: 'ladino',
+                type: 'Classe',
+                level: 15
+            },
+            {
+                name: 'Sempre Distante',
+                description: 'Armas de fogo ou de longa distância dão +1 dados do mesmo tipo de dano.',
+                origin: 'ladino',
+                type: 'Classe',
+                level: 20
+            },
+            {
+                name: 'Ataque Duplo',
+                description: 'Você pode atacar duas vezes no mesmo turno caso erre um ataque. Você não possuirá duas ações padrões por turno, somente duas oportunidades de ataque.',
+                origin: 'ladino',
+                type: 'Classe',
+                level: 25
             }
         ]
     },

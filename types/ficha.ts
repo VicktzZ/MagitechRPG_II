@@ -219,6 +219,14 @@ export interface Subclass {
     skills: Skill[]
 }
 
+export interface MagicPower {
+    elemento: Element
+    nome: string
+    'descrição': string
+    maestria: string
+    'pré-requisito'?: string
+}
+
 export type FinancialCondition = 'Miserável' | 'Pobre' | 'Estável' | 'Rico'
 export type Gender = 'Masculino' | 'Feminino' | 'Não-binário' | 'Outro' | 'Não definido'
 export type Classes = 'Marcial' | 'Explorador' | 'Feiticeiro' | 'Bruxo' | 'Monge' | 'Druida' | 'Arcano' | 'Ladino'

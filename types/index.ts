@@ -15,6 +15,7 @@ import type {
     Item,
     LineageNames,
     Race,
+    MagicPower,
     Trait
 } from './ficha';
 
@@ -48,6 +49,7 @@ export type {
     Gender,
     LineageNames,
     Trait,
+    MagicPower,
     Skill,
     EventData,
     Lineage,

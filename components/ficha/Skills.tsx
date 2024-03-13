@@ -1,17 +1,37 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 'use client';
 
-import { Box, FormControl, Typography, useMediaQuery, useTheme } from '@mui/material'
+import { Box, FormControl, type SxProps, Typography, useMediaQuery, useTheme, Chip } from '@mui/material'
 import { useState, type ReactElement, type MouseEvent, useRef, useMemo, useCallback } from 'react'
-import type { Ficha, Skill } from '@types'
+import type { Classes, Ficha, Skill } from '@types'
 import { useFormikContext, type FormikContextType } from 'formik'
+import { skills } from '@constants/skills';
+
+type skillsFilterType = 'all' | 'class' | 'subclass' | 'lineage' | 'powers' | 'bonus'
 
 export default function Skills(): ReactElement {
     const f: FormikContextType<Ficha> = useFormikContext()
     const skillRef = useRef<EventTarget & HTMLSpanElement | null>()
     const [ selectedSkill, setSelectedSkill ] = useState<Skill | null>(null)
+    const [ skillsFilter, setSkillsFilter ] = useState<skillsFilterType>('all')
     
     const theme = useTheme()
+
+    const filterBtnStyle: SxProps = {
+        [ theme.breakpoints.down('md') ]: {
+            height: 30,
+            width: 70,
+            fontSize: '0.6rem'
+        },
+        '&': {
+            transition: '.1s ease-in-out',
+            cursor: 'pointer',
+            ':hover': {
+                filter: 'brightness(0.75)'
+            }
+        }
+    }
+
     const matches = useMediaQuery(theme.breakpoints.down('md'))
 
     const onClick = useCallback((event: MouseEvent<HTMLSpanElement>, skill: Skill): void => {
@@ -33,22 +53,45 @@ export default function Skills(): ReactElement {
 
         skillRef.current = event.currentTarget
     }, [])
-    
-    const skills = useMemo(() => {
-        return Object.values(f.values.skills).map(item => item.map(skill => (
-            <Typography
-                key={skill.name}
-                noWrap
-                onClick={e => { onClick(e, skill) }}
-                sx={{
-                    cursor: 'pointer',
-                    p: 0.5
-                }}
-            >
-                {skill.name}
-            </Typography>
-        )))
-    }, [ f.values.skills, onClick ])
+
+    const skillsRender = useMemo(() => {
+        console.log(f.values.skills);
+
+        const classSkillsByLevel = Object.values(skills.class[f.values.class as Classes]).filter(sk => sk.level as unknown as number <= f.values.level)
+
+        f.values.skills.class = classSkillsByLevel
+
+        if (skillsFilter === 'all') {
+            return Object.values(f.values.skills).map(item => item.map(skill => (
+                <Typography
+                    key={skill.name}
+                    noWrap
+                    onClick={e => { onClick(e, skill) }}
+                    sx={{
+                        cursor: 'pointer',
+                        p: 0.5
+                    }}
+                >
+                    {skill.name}
+                </Typography>
+            )))
+        } else {
+            return f.values.skills[skillsFilter].map(skill => (
+                <Typography
+                    key={skill.name}
+                    noWrap
+                    onClick={e => { onClick(e, skill) }}
+                    sx={{
+                        cursor: 'pointer',
+                        p: 0.5
+                    }}
+                >
+                    {skill.name}
+                </Typography>
+            ))
+        }
+
+    }, [ f.values.skills, onClick, skillsFilter ])
 
     return (
         <Box
@@ -61,16 +104,15 @@ export default function Skills(): ReactElement {
                 display='flex'
                 justifyContent='center'
                 alignItems='center'
-                gap={2}
+                gap={1}
                 p={2}
             >
-                {/* TODO: Adicionar filtros */}
-                {/* <Typography>Todos</Typography>
-                <Typography>Classe</Typography>
-                <Typography>Subclasse</Typography>
-                <Typography>Linhagem</Typography>
-                <Typography>Poderes</Typography>
-                <Typography>Bõnus</Typography> */}
+                <Chip onClick={() => { setSkillsFilter('all') }} sx={filterBtnStyle} label='Todos' />
+                <Chip onClick={() => { setSkillsFilter('class') }} sx={filterBtnStyle} label='Classe' />
+                <Chip onClick={() => { setSkillsFilter('subclass') }} sx={filterBtnStyle} label='Subclasse' />
+                <Chip onClick={() => { setSkillsFilter('lineage') }} sx={filterBtnStyle} label='Linhagem' />
+                <Chip onClick={() => { setSkillsFilter('powers') }} sx={filterBtnStyle} label='Poderes' />
+                <Chip onClick={() => { setSkillsFilter('bonus') }} sx={filterBtnStyle} label='Bônus' />
             </Box>
             <Box
                 display='flex'
@@ -89,7 +131,7 @@ export default function Skills(): ReactElement {
                         p: 2
                     }}
                 >
-                    {skills}
+                    {skillsRender}
                 </FormControl>
                 <Box
                     minHeight={matches ? '40rem' : '100%'}

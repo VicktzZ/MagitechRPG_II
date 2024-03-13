@@ -136,7 +136,7 @@ const Inventory = memo(({ disabled }: { disabled?: boolean }): ReactElement => {
         const { cargo, maxCargo } = capacity
         
         f.setFieldValue('capacity.cargo', cargo)
-        f.setFieldValue('capacity.max', (5 + (f.values.attributes.vig * 2.5) + maxCargo).toFixed(1))
+        f.setFieldValue('capacity.max', (5 + (f.values.attributes.vig * 2 + maxCargo).toFixed(1)))
     }, [ capacity ])
     
     useEffect(() => {
