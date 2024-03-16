@@ -55,8 +55,6 @@ export default function Skills(): ReactElement {
     }, [])
 
     const skillsRender = useMemo(() => {
-        console.log(f.values.skills);
-
         const classSkillsByLevel = Object.values(skills.class[f.values.class as Classes]).filter(sk => sk.level as unknown as number <= f.values.level)
 
         f.values.skills.class = classSkillsByLevel
@@ -90,8 +88,7 @@ export default function Skills(): ReactElement {
                 </Typography>
             ))
         }
-
-    }, [ f.values.skills, onClick, skillsFilter ])
+    }, [ f, onClick, skillsFilter ])
 
     return (
         <Box
@@ -123,7 +120,7 @@ export default function Skills(): ReactElement {
             >
                 <FormControl
                     sx={{
-                        minHeight: '100%',
+                        height: '550px',
                         width: matches ? '100%' : '20%',
                         bgcolor: 'background.paper3',
                         borderRadius: 2,

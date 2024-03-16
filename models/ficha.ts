@@ -113,6 +113,10 @@ const fichaSchema = new Schema<FichaType>({
         type: String,
         default: null
     },
+    anotacoes: {
+        type: String,
+        default: null
+    },
     level: {
         type: Number,
         default: 0

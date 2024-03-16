@@ -65,6 +65,7 @@ const MagicsModal = memo(({ open, onClose }: { open: boolean, onClose: () => voi
     const magics = useMemo(() => {
         return magicsArr?.map((magic) => (
             <Magic
+                as='magic-spell'
                 id={magic?._id ?? ''}
                 key={magic?._id ?? ''}
                 magic={magic}

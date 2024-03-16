@@ -10,6 +10,7 @@ import Expertises from './Expertises';
 import Magic from './Magic';
 import FichaComponent from './FichaComponent';
 import FichaCard from './FichaCard';
+import SkillsModal from './SkillsModal';
 
 export {
     Expertise,
@@ -19,6 +20,7 @@ export {
     Characteristics,
     Expertises,
     Inventory,
+    SkillsModal,
     FichaComponent,
     Magic,
     Magics,

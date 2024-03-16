@@ -5,11 +5,12 @@ import { Formik  } from 'formik'
 import { useSession } from 'next-auth/react';
 import { useState, type ReactElement } from 'react'
 import type { Ficha } from '@types';
-import { Attributes, Characteristics, Expertises, Inventory, Magics, Skills } from '@components/ficha';
+import { Attributes, Characteristics, Expertises, Inventory, Magics, Skills, SkillsModal } from '@components/ficha';
 import { useSnackbar } from 'notistack';
 import { useRouter } from 'next/navigation';
-import { WarningModal } from '@layout';
+import { CustomIconButton, WarningModal } from '@layout';
 import { fichaModel } from '@constants/ficha';
+import { Edit } from '@mui/icons-material';
 
 export default function FichaComponent({ disabled, ficha }: { disabled?: boolean, ficha: Ficha }): ReactElement {
     const { data: session } = useSession()
@@ -19,6 +20,8 @@ export default function FichaComponent({ disabled, ficha }: { disabled?: boolean
 
     const [ openModal, setOpenModal ] = useState<boolean>(false)
     const [ isLoading, setIsLoading ] = useState<boolean>(false)
+
+    const [ openSkillsModal, setOpenSkillsModal ] = useState<boolean>(false)
 
     const initialValues: Ficha = {
         ...fichaModel,
@@ -37,7 +40,6 @@ export default function FichaComponent({ disabled, ficha }: { disabled?: boolean
                         const response = await fetch(`/api/ficha/${values._id}`, {
                             method: 'PATCH',
                             body: JSON.stringify({
-                                // TODO: CONSERTAR BUG DE SOBRESCREVER ATRIBUTOS
                                 ...values,
                                 attributes: {
                                     ...values.attributes,
@@ -171,8 +173,11 @@ export default function FichaComponent({ disabled, ficha }: { disabled?: boolean
                                                 <Attributes disabled={disabled} />
                                             </Box>
                                             <Box>
-                                                <Box>
+                                                <Box display='flex' alignItems='center' gap={2}>
                                                     <Typography variant='h6'>Habilidades</Typography>
+                                                    <CustomIconButton onClick={() => { setOpenSkillsModal(true) }}>
+                                                        <Edit />
+                                                    </CustomIconButton>
                                                 </Box>
                                                 <Skills />
                                             </Box>
@@ -197,6 +202,28 @@ export default function FichaComponent({ disabled, ficha }: { disabled?: boolean
                                     <Box display='flex' flexDirection='column' gap={5} width='100%'>
                                         <Magics disabled={disabled} />
                                     </Box>
+                                    <Box display='flex' flexDirection='column' gap={2}>
+                                        <Typography variant='h6'>Anotações</Typography>
+                                        <Box
+                                            component='textarea'
+                                            width='100%'
+                                            p={2}
+                                            height='30rem'
+                                            color='white'
+                                            fontSize='1.1rem'
+                                            bgcolor='background.paper'
+                                            onChange={e => { values.anotacoes = e.target.value }}
+                                            defaultValue={values.anotacoes}
+                                            placeholder='Clique aqui e insira suas anotações!'
+                                            sx={{
+                                                resize: 'none',
+                                                borderRadius: 1,
+                                                '&:focus': {
+                                                    outline: 'none'
+                                                }
+                                            }}
+                                        />
+                                    </Box>
                                 </Box>
                                 <WarningModal 
                                     open={openModal}
@@ -208,6 +235,10 @@ export default function FichaComponent({ disabled, ficha }: { disabled?: boolean
                                 <Backdrop open={isLoading}>
                                     <CircularProgress />
                                 </Backdrop>
+                                <SkillsModal 
+                                    open={openSkillsModal}
+                                    onClose={() => { setOpenSkillsModal(false) }}
+                                />
                             </>
                         )}
                     </Formik>

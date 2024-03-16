@@ -20,9 +20,10 @@ const Magics = memo(({ disabled }: { disabled?: boolean }) => {
     
     const magics = useMemo(() => {
         return f.values.magics.map((magic: any) => (
-            <Magic 
-                key={magic?._id ?? ''}
+            <Magic
+                as='magic-spell'
                 id={magic?._id ?? ''}
+                key={magic?._id ?? ''}
                 magic={magic}
                 onIconClick={() => {
                     const magicsArr: any[] = f.values.magics

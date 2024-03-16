@@ -74,7 +74,7 @@ export default function Expertise({
                 )
             }
         }
-    }, [ edit, f, name, expertise ])
+    }, [ edit, f, name, expertise, disabled ])
 
     return (
         <>

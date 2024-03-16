@@ -13,6 +13,7 @@ export const fichaModel: Partial<Ficha> = {
     traits: [],
     displacement: 9,
     level: 0,
+    anotacoes: '',
     ORMLevel: 1,
     magics: [],
     magicsSpace: 0,

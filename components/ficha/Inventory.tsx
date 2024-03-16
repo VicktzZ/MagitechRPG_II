@@ -6,6 +6,8 @@ import { useFormikContext, type FormikContextType } from 'formik'
 import { Item } from '@components/ficha'
 import { lineageItems } from '@constants/lineageitems'
 import { red, yellow } from '@mui/material/colors'
+import { CustomIconButton } from '@layout'
+import { Edit } from '@mui/icons-material'
 
 const Inventory = memo(({ disabled }: { disabled?: boolean }): ReactElement => {
     const f: FormikContextType<Ficha> = useFormikContext()
@@ -155,7 +157,7 @@ const Inventory = memo(({ disabled }: { disabled?: boolean }): ReactElement => {
 
     return (
         <Box display='flex' flexDirection='column' gap={2}>
-            <Box display='flex' gap={2}>
+            <Box display='flex' alignItems='center' gap={2}>
                 <Typography variant='h6'>Inventário</Typography>
                 <Typography 
                     fontWeight={900} 
@@ -167,6 +169,9 @@ const Inventory = memo(({ disabled }: { disabled?: boolean }): ReactElement => {
                 >
                     {f.values.capacity.cargo}/{f.values.capacity.max}
                 </Typography>
+                <CustomIconButton>
+                    <Edit />
+                </CustomIconButton>
             </Box>
             <Box
                 display='flex'

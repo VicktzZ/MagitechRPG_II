@@ -11,6 +11,7 @@ export interface Ficha {
     inventory: Inventory
     displacement: number
     magics: Magic[]
+    anotacoes?: string
     magicsSpace: number
     gender: Gender
     elementalMastery: Element
@@ -220,6 +221,7 @@ export interface Subclass {
 }
 
 export interface MagicPower {
+    _id: string,
     elemento: Element
     nome: string
     'descrição': string
