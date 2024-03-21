@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { Box, Grid, Typography, useMediaQuery, useTheme, Modal, Button, TextField } from '@mui/material'
+import { Box, Grid, Typography, useMediaQuery, useTheme, Modal, Button, TextField, FormControl, InputLabel, Select, MenuItem } from '@mui/material'
 import React, { useEffect, type ReactElement, useMemo, memo, useState } from 'react'
 import { useFormikContext, type FormikContextType } from 'formik'
 import { lineageItems } from '@constants/lineageitems'
@@ -7,7 +7,7 @@ import { red, yellow } from '@mui/material/colors'
 import { CustomIconButton } from '@layout'
 import { Edit } from '@mui/icons-material'
 import { Item } from '@components/ficha'
-import type { Ficha, LineageNames } from '@types'
+import type { Ficha, LineageNames, Weapon, Armor, Item } from '@types'
 
 type ItemName = 'weapon' | 'item' | 'armor'
 
@@ -16,6 +16,10 @@ const Inventory = memo(({ disabled }: { disabled?: boolean }): ReactElement => {
 
     const theme = useTheme()
     const matches = useMediaQuery(theme.breakpoints.down('md'))
+
+    const [ weapon, setWeapon ] = useState<Partial<Weapon>>({})
+    const [ armor, setArmor ] = useState<Partial<Armor>>({})
+    const [ item, setItem ] = useState<Partial<Item>>({})
 
     const [ modalOpen, setModalOpen ] = useState<boolean>(false)
     const [ modalContent, setModalContent ] = useState<ReactElement>(<></>)
@@ -41,6 +45,25 @@ const Inventory = memo(({ disabled }: { disabled?: boolean }): ReactElement => {
                 <TextField 
                     label="Descrição"
                 />
+                <FormControl fullWidth>
+                  <InputLabel id="rarity">Raridade</InputLabel>
+                  <Select
+                    labelId="rarity"
+                    id="raritySelect"
+                    value={weapon.rarity ?? "Nenhuma"}
+                    label="Raridade"
+                    onChange={e => { setWeapon(state => ({ ...state, rarity: e.target.value })) }}
+                  >
+                    <MenuItem value='Nenhuma'>Nenhuma</MenuItem>
+                    <MenuItem value='Comum'>Comum</MenuItem>
+                    <MenuItem value='Incomum'>Incomum</MenuItem>
+                    <MenuItem value='Raro'>Raro</MenuItem>
+                    <MenuItem value='Épico'>Épico</MenuItem>
+                    <MenuItem value='Lendário'>Lendário</MenuItem>
+                    <MenuItem value='Relíquia'>Relíquia</MenuItem>
+                    <MenuItem value='Mágico'>Mágico</MenuItem>
+                  </Select>
+                </FormControl>
             </>,
             
             armor: <>
@@ -50,6 +73,25 @@ const Inventory = memo(({ disabled }: { disabled?: boolean }): ReactElement => {
                 <TextField 
                     label="Descrição"
                 />
+                <FormControl fullWidth>
+                  <InputLabel id="rarity">Raridade</InputLabel>
+                  <Select
+                    labelId="rarity"
+                    id="raritySelect"
+                    value={weapon.rarity ?? "Nenhuma"}
+                    label="Raridade"
+                    onChange={e => { setArmor(state => ({ ...state, rarity: e.target.value })) }}
+                  >
+                    <MenuItem value='Nenhuma'>Nenhuma</MenuItem>
+                    <MenuItem value='Comum'>Comum</MenuItem>
+                    <MenuItem value='Incomum'>Incomum</MenuItem>
+                    <MenuItem value='Raro'>Raro</MenuItem>
+                    <MenuItem value='Épico'>Épico</MenuItem>
+                    <MenuItem value='Lendário'>Lendário</MenuItem>
+                    <MenuItem value='Relíquia'>Relíquia</MenuItem>
+                    <MenuItem value='Mágico'>Mágico</MenuItem>
+                  </Select>
+                </FormControl>
             </>,
             
             item: <>
@@ -59,6 +101,25 @@ const Inventory = memo(({ disabled }: { disabled?: boolean }): ReactElement => {
                 <TextField 
                     label="Descrição"
                 />
+                <FormControl fullWidth>
+                  <InputLabel id="rarity">Raridade</InputLabel>
+                  <Select
+                    labelId="rarity"
+                    id="raritySelect"
+                    value={weapon.rarity ?? "Nenhuma"}
+                    label="Raridade"
+                    onChange={e => { setItem(state => ({ ...state, rarity: e.target.value })) }}
+                  >
+                    <MenuItem value='Nenhuma'>Nenhuma</MenuItem>
+                    <MenuItem value='Comum'>Comum</MenuItem>
+                    <MenuItem value='Incomum'>Incomum</MenuItem>
+                    <MenuItem value='Raro'>Raro</MenuItem>
+                    <MenuItem value='Épico'>Épico</MenuItem>
+                    <MenuItem value='Lendário'>Lendário</MenuItem>
+                    <MenuItem value='Relíquia'>Relíquia</MenuItem>
+                    <MenuItem value='Mágico'>Mágico</MenuItem>
+                  </Select>
+                </FormControl>
             </>
         }
 
