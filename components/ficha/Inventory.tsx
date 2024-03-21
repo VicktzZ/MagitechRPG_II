@@ -1,13 +1,15 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { Box, Grid, Typography, useMediaQuery, useTheme } from '@mui/material'
-import React, { useEffect, type ReactElement, useMemo, memo } from 'react'
-import type { Ficha, LineageNames } from '@types'
+import { Box, Grid, Typography, useMediaQuery, useTheme, Modal, Button, TextField } from '@mui/material'
+import React, { useEffect, type ReactElement, useMemo, memo, useState } from 'react'
 import { useFormikContext, type FormikContextType } from 'formik'
-import { Item } from '@components/ficha'
 import { lineageItems } from '@constants/lineageitems'
 import { red, yellow } from '@mui/material/colors'
 import { CustomIconButton } from '@layout'
 import { Edit } from '@mui/icons-material'
+import { Item } from '@components/ficha'
+import type { Ficha, LineageNames } from '@types'
+
+type ItemName = 'weapon' | 'item' | 'armor'
 
 const Inventory = memo(({ disabled }: { disabled?: boolean }): ReactElement => {
     const f: FormikContextType<Ficha> = useFormikContext()
@@ -15,6 +17,54 @@ const Inventory = memo(({ disabled }: { disabled?: boolean }): ReactElement => {
     const theme = useTheme()
     const matches = useMediaQuery(theme.breakpoints.down('md'))
 
+    const [ modalOpen, setModalOpen ] = useState<boolean>(false)
+    const [ modalContent, setModalContent ] = useState<ReactElement>(<></>)
+    const [ addButtonsStyle, setAddButtonsStyle ] = useState<Record<ItemName, 'outlined' | 'contained'>>({
+        weapon: 'contained',
+        armor: 'outlined',
+        item: 'outlined'
+    })
+
+    const changeModalContent = (itemName: ItemName): void => {
+        setAddButtonsStyle({
+            weapon: 'outlined',
+            armor: 'outlined',
+            item: 'outlined',
+            [itemName]: 'contained'
+        })
+
+        const content: Record<ItemName, ReactElement> = {
+            weapon: <>
+                <TextField 
+                    label="Nome"
+                />
+                <TextField 
+                    label="Descrição"
+                />
+            </>,
+            
+            armor: <>
+                <TextField 
+                    label="Nome"
+                />
+                <TextField 
+                    label="Descrição"
+                />
+            </>,
+            
+            item: <>
+                <TextField 
+                    label="Nome"
+                />
+                <TextField 
+                    label="Descrição"
+                />
+            </>
+        }
+
+        setModalContent(content[itemName])
+    }
+    
     const capacity = useMemo(() => {
         const weaponsWeight = f.values.inventory.weapons.map((weapon) => weapon.weight).reduce((a, b) => a + b, 0)
         const armorsWeight = f.values.inventory.armors.map((armor) => armor.weight).reduce((a, b) => a + b, 0)
@@ -156,52 +206,86 @@ const Inventory = memo(({ disabled }: { disabled?: boolean }): ReactElement => {
     }, [ itemsOfLineage ])
 
     return (
-        <Box display='flex' flexDirection='column' gap={2}>
-            <Box display='flex' alignItems='center' gap={2}>
-                <Typography variant='h6'>Inventário</Typography>
-                <Typography 
-                    fontWeight={900} 
-                    variant='h5'
-                    color={
-                        f.values.capacity.cargo / f.values.capacity.max >= 1 ? red[500] :
-                            f.values.capacity.cargo / f.values.capacity.max >= .75 ? yellow[500] : 'white'
-                    }
+        <>
+            <Box display='flex' flexDirection='column' gap={2}>
+                <Box display='flex' alignItems='center' gap={2}>
+                    <Typography variant='h6'>Inventário</Typography>
+                    <Typography 
+                        fontWeight={900} 
+                        variant='h5'
+                        color={
+                            f.values.capacity.cargo / f.values.capacity.max >= 1 ? red[500] :
+                                f.values.capacity.cargo / f.values.capacity.max >= .75 ? yellow[500] : 'white'
+                        }
+                    >
+                        {f.values.capacity.cargo}/{f.values.capacity.max}
+                    </Typography>
+                    <CustomIconButton>
+                        <Edit />
+                    </CustomIconButton>
+                </Box>
+                <Box
+                    display='flex'
+                    width='100%' 
+                    borderRadius={2} 
+                    flexDirection='column'
+                    border={`1px solid ${theme.palette.primary.main}`}
+                    p={5}
+                    gap={10}
                 >
-                    {f.values.capacity.cargo}/{f.values.capacity.max}
-                </Typography>
-                <CustomIconButton>
-                    <Edit />
-                </CustomIconButton>
+                    <Box display='flex' flexDirection='column' gap={5}>
+                        <Typography>Armas</Typography>
+                        <Grid container justifyContent={matches ? 'center' : 'inherit'} spacing={2}>
+                            {weapons}
+                        </Grid>
+                    </Box>
+                    <Box display='flex' flexDirection='column' gap={5}>
+                        <Typography>Armaduras</Typography>
+                        <Grid container justifyContent={matches ? 'center' : 'inherit'} spacing={2}>
+                            {armors}
+                        </Grid>
+                    </Box>
+                    <Box display='flex' flexDirection='column' gap={5}>
+                        <Typography>Itens</Typography>
+                        <Grid container justifyContent={matches ? 'center' : 'inherit'} spacing={2}>
+                            {items}
+                        </Grid>
+                    </Box>
+                </Box>    
             </Box>
-            <Box
-                display='flex'
-                width='100%' 
-                borderRadius={2} 
-                flexDirection='column'
-                border={`1px solid ${theme.palette.primary.main}`}
-                p={5}
-                gap={10}
+            <Modal
+                open={modalOpen}
+                onClose={e => { setModalOpen(false) }}
+                sx={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    height: '100vh',
+                    width: '100vw'
+                }}
             >
-                <Box display='flex' flexDirection='column' gap={5}>
-                    <Typography>Armas</Typography>
-                    <Grid container justifyContent={matches ? 'center' : 'inherit'} spacing={2}>
-                        {weapons}
-                    </Grid>
+                <Box
+                    display='flex'
+                    flexDirection='column'
+                    height='75%'
+                    width='75%'
+                    gap={2}
+                    p={2}
+                >
+                    <Box>
+                        <Typography variant='h6'>Adicionar Item</Typography>
+                    </Box>
+                    <Box display='flex' gap={2}>
+                        <Button onClick={() => { changeModalContent('weapon') }} variant={addButtonStyles.weapon}>Arma</Button>
+                        <Button onClick={() => { changeModalContent('armor') }} variant={addModalContent.armor}>Armadura</Button>
+                        <Button onClick={() => { changeModalContent('item') }} variant={addBModaContentitem}>Item</Button>
+                    </Box>
+                    <Box display='flex' gap={2}>
+                        {modalContent}
+                    </Box>
                 </Box>
-                <Box display='flex' flexDirection='column' gap={5}>
-                    <Typography>Armaduras</Typography>
-                    <Grid container justifyContent={matches ? 'center' : 'inherit'} spacing={2}>
-                        {armors}
-                    </Grid>
-                </Box>
-                <Box display='flex' flexDirection='column' gap={5}>
-                    <Typography>Itens</Typography>
-                    <Grid container justifyContent={matches ? 'center' : 'inherit'} spacing={2}>
-                        {items}
-                    </Grid>
-                </Box>
-            </Box>    
-        </Box>
+            </Modal>
+        </>
     )
 })
 
