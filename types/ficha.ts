@@ -196,6 +196,32 @@ export interface Armor {
     displacementPenalty: number
 }
 
+export interface MergedItems<T extends 'Leve' | 'Pesada'> {
+    name: string
+    description: string
+    rarity?: RarityType
+    kind: WeaponType
+    categ: WeaponCategory<T> | ('Leve' | 'Média' | 'Pesada')
+    range: RangeType
+    weight: number
+    value: number
+    displacementPenalty: number
+    hit: Attributes
+    ammo: AmmoType | 'Não consome'
+    quantity?: number
+    accesories?: WeaponAccesoriesType[]
+    effects?: number[] | string[]
+    level?: number
+    bonus: 'Luta' | 'Agilidade' | 'Furtividade' | 'Pontaria' | 'Magia' | 'Tecnologia' | 'Controle'
+    effect: {
+        value: string
+        critValue: string
+        critChance: number
+        kind: 'damage' | 'heal'
+        effectType: DamageType | 'Cura'
+    }
+}
+
 export interface Magic {
     name: string
     description: string
@@ -354,7 +380,9 @@ export type WeaponScientificAccesoriesType =
     'Empunhadura' |
     'Munição teleguiada' |
     'Cabo de borracha' |
-    'Lanterna' 
+    'Lanterna' |
+    'Espinhos/Lâmina de Tungstênio' |
+    'Cano/Lâmina Estriada' 
 
 export type WeaponMagicalAccesoriesType = 
     'Switch Elemental' |
@@ -364,6 +392,25 @@ export type WeaponMagicalAccesoriesType =
     'Repetidor' |
     'Paralisante' |
     'Espaços adicionais'
+
+export type ArmorScientificAccesoriesType = 
+    'Revestimento de Tungstênio' |
+    'Polímero de Estireno' |
+    'Exoesqueleto mecânico' |
+    'DCA' |
+    'Sistema de Temperamento' |
+    'Compartimentos Extras' |
+    'Visão noturna' |
+    'Sistema de Auto-Reparo' |
+    'SSC'
+
+export type ArmorMagicalAccesoriesType = 
+    'Switch Elemental' |
+    'Espaços Adicionais' |
+    'Restauração Mágica' |
+    'DSD' |
+    'Reservatório de Mana' |
+    'SAM'
 
 export type Element = 
     'Fogo' |

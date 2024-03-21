@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { Box, Grid, Typography, useMediaQuery, useTheme } from '@mui/material'
-import React, { useEffect, type ReactElement, useMemo, memo } from 'react'
+import { Box, Grid, Modal, Typography, useMediaQuery, useTheme } from '@mui/material'
+import React, { useEffect, type ReactElement, useMemo, memo, useState } from 'react'
 import type { Ficha, LineageNames } from '@types'
 import { useFormikContext, type FormikContextType } from 'formik'
 import { Item } from '@components/ficha'
@@ -14,6 +14,8 @@ const Inventory = memo(({ disabled }: { disabled?: boolean }): ReactElement => {
 
     const theme = useTheme()
     const matches = useMediaQuery(theme.breakpoints.down('md'))
+
+    const [ openModal, setOpenModal ] = useState<boolean>(false)
 
     const capacity = useMemo(() => {
         const weaponsWeight = f.values.inventory.weapons.map((weapon) => weapon.weight).reduce((a, b) => a + b, 0)
@@ -156,52 +158,78 @@ const Inventory = memo(({ disabled }: { disabled?: boolean }): ReactElement => {
     }, [ itemsOfLineage ])
 
     return (
-        <Box display='flex' flexDirection='column' gap={2}>
-            <Box display='flex' alignItems='center' gap={2}>
-                <Typography variant='h6'>Inventário</Typography>
-                <Typography 
-                    fontWeight={900} 
-                    variant='h5'
-                    color={
-                        f.values.capacity.cargo / f.values.capacity.max >= 1 ? red[500] :
-                            f.values.capacity.cargo / f.values.capacity.max >= .75 ? yellow[500] : 'white'
-                    }
+        <>
+            <Box display='flex' flexDirection='column' gap={2}>
+                <Box display='flex' alignItems='center' gap={2}>
+                    <Typography variant='h6'>Inventário</Typography>
+                    <Typography 
+                        fontWeight={900} 
+                        variant='h5'
+                        color={
+                            f.values.capacity.cargo / f.values.capacity.max >= 1 ? red[500] :
+                                f.values.capacity.cargo / f.values.capacity.max >= .75 ? yellow[500] : 'white'
+                        }
+                    >
+                        {f.values.capacity.cargo}/{f.values.capacity.max}
+                    </Typography>
+                    <CustomIconButton onClick={() => { setOpenModal(true) }}>
+                        <Edit />
+                    </CustomIconButton>
+                </Box>
+                <Box
+                    display='flex'
+                    width='100%' 
+                    borderRadius={2} 
+                    flexDirection='column'
+                    border={`1px solid ${theme.palette.primary.main}`}
+                    p={5}
+                    gap={10}
                 >
-                    {f.values.capacity.cargo}/{f.values.capacity.max}
-                </Typography>
-                <CustomIconButton>
-                    <Edit />
-                </CustomIconButton>
+                    <Box display='flex' flexDirection='column' gap={5}>
+                        <Typography>Armas</Typography>
+                        <Grid container justifyContent={matches ? 'center' : 'inherit'} spacing={2}>
+                            {weapons}
+                        </Grid>
+                    </Box>
+                    <Box display='flex' flexDirection='column' gap={5}>
+                        <Typography>Armaduras</Typography>
+                        <Grid container justifyContent={matches ? 'center' : 'inherit'} spacing={2}>
+                            {armors}
+                        </Grid>
+                    </Box>
+                    <Box display='flex' flexDirection='column' gap={5}>
+                        <Typography>Itens</Typography>
+                        <Grid container justifyContent={matches ? 'center' : 'inherit'} spacing={2}>
+                            {items}
+                        </Grid>
+                    </Box>
+                </Box>    
             </Box>
-            <Box
-                display='flex'
-                width='100%' 
-                borderRadius={2} 
-                flexDirection='column'
-                border={`1px solid ${theme.palette.primary.main}`}
-                p={5}
-                gap={10}
+            <Modal
+                open={openModal}
+                onClose={() => { setOpenModal(false) }}
+                sx={{
+                    height: '100vh',
+                    width: '100vw',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                }}
             >
-                <Box display='flex' flexDirection='column' gap={5}>
-                    <Typography>Armas</Typography>
-                    <Grid container justifyContent={matches ? 'center' : 'inherit'} spacing={2}>
-                        {weapons}
-                    </Grid>
+                <Box
+                    display='flex'
+                    flexDirection='column'
+                    height='90%'
+                    width='90%'
+                    bgcolor='background.paper3'
+                    borderRadius={2}
+                    p={2}
+                    gap={2}
+                >
+
                 </Box>
-                <Box display='flex' flexDirection='column' gap={5}>
-                    <Typography>Armaduras</Typography>
-                    <Grid container justifyContent={matches ? 'center' : 'inherit'} spacing={2}>
-                        {armors}
-                    </Grid>
-                </Box>
-                <Box display='flex' flexDirection='column' gap={5}>
-                    <Typography>Itens</Typography>
-                    <Grid container justifyContent={matches ? 'center' : 'inherit'} spacing={2}>
-                        {items}
-                    </Grid>
-                </Box>
-            </Box>    
-        </Box>
+            </Modal>
+        </>
     )
 })
 
