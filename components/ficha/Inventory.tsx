@@ -249,7 +249,7 @@ const Inventory = memo(({ disabled }: { disabled?: boolean }): ReactElement => {
         const { cargo, maxCargo } = capacity
         
         f.setFieldValue('capacity.cargo', cargo)
-        f.setFieldValue('capacity.max', Number(Number(f.values.attributes.vig * 2 + maxCargo + 5)).toFixed(1))
+        f.setFieldValue('capacity.max', Number(Number(f.values.attributes.vig * 1.5 + maxCargo + 5)).toFixed(1))
     }, [ capacity ])
     
     useEffect(() => {
@@ -337,9 +337,9 @@ const Inventory = memo(({ disabled }: { disabled?: boolean }): ReactElement => {
                         <Typography variant='h6'>Adicionar Item</Typography>
                     </Box>
                     <Box display='flex' gap={2}>
-                        <Button onClick={() => { changeModalContent('weapon') }} variant={addButtonStyles.weapon}>Arma</Button>
-                        <Button onClick={() => { changeModalContent('armor') }} variant={addModalContent.armor}>Armadura</Button>
-                        <Button onClick={() => { changeModalContent('item') }} variant={addBModaContentitem}>Item</Button>
+                        <Button onClick={() => { changeModalContent('weapon') }} variant={addButtonsStyle.weapon}>Arma</Button>
+                        <Button onClick={() => { changeModalContent('armor') }} variant={addButtonsStyle.armor}>Armadura</Button>
+                        <Button onClick={() => { changeModalContent('item') }} variant={addButtonsStyle.item}>Item</Button>
                     </Box>
                     <Box display='flex' gap={2}>
                         {modalContent}
