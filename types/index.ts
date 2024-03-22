@@ -9,6 +9,8 @@ import type {
     Expertise,
     Skill,
     Lineage,
+    DamageType,
+    RangeType,
     Weapon,
     Magic,
     Armor,
@@ -17,7 +19,8 @@ import type {
     LineageNames,
     Race,
     MagicPower,
-    Trait
+    Trait,
+    RarityType
 } from './ficha';
 
 import type { 
@@ -38,10 +41,13 @@ export type {
     SessionNextAuth,
     SessionModel,
     Ficha,
+    DamageType,
+    RangeType,
     Attributes,
     Classes,
     Message,
     MergedItems,
+    RarityType,
     Class,
     Item,
     Member,

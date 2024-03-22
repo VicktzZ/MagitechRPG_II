@@ -270,7 +270,7 @@ function ItemWrapper({
     const itemType: 'weapon' | 'armor' | 'item' =
         item.ammo ? 'weapon' :
             item.displacementPenalty >= 0 ? 'armor' :
-                'item '
+                'item'
 
     return (
         <>

@@ -116,7 +116,7 @@ export default function FichaComponent({ disabled, ficha }: { disabled?: boolean
                         initialValues={initialValues}
                         onSubmit={() => { setOpenModal(true) }}
                     >
-                        {({ handleSubmit, values, errors }) => (
+                        {({ handleSubmit, values }) => (
                             <>
                                 <Box
                                     display='flex'
