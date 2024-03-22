@@ -6,10 +6,12 @@ import { Avatar, Box, IconButton, MenuItem, Typography, useMediaQuery } from '@m
 import { getProviders, useSession, signIn, signOut } from 'next-auth/react';
 import { CustomMenu, Logo } from '@layout';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
+import { useTheme } from '@mui/material';
+
 import googleIcon from '@public/icons/google_icon.svg';
 import discordIcon from '@public/icons/discord_icon.svg';
-import { useTheme } from '@mui/material';
+import magitechIcon from '@public/magitech_logo.png'
+import Image from 'next/image';
 export default function LandingPageHeader(): ReactElement {
     const theme = useTheme()
     const matches = useMediaQuery(theme.breakpoints.down('md'))
@@ -25,7 +27,8 @@ export default function LandingPageHeader(): ReactElement {
 
     const providersIcons: Record<string, any> = {
         google: googleIcon,
-        discord: discordIcon
+        discord: discordIcon,
+        credentials: magitechIcon
     }
 
     useEffect(() => {

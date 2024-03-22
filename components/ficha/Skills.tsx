@@ -55,7 +55,7 @@ export default function Skills(): ReactElement {
     }, [])
 
     const skillsRender = useMemo(() => {
-        const classSkillsByLevel = Object.values(skills.class[f.values.class as Classes]).filter(sk => sk.level as unknown as number <= f.values.level)
+        const classSkillsByLevel = Object.values(skills.class[f.values.class as Classes] ?? {}).filter(sk => sk.level as unknown as number <= f.values.level)
 
         f.values.skills.class = classSkillsByLevel
 

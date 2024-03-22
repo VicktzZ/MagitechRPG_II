@@ -102,7 +102,7 @@ export default function AppDrawer(): ReactElement {
             <Box display='flex' p={2} alignItems='center' gap={2}>
                 <Avatar sx={{ height: '3rem', width: '3rem', color: 'white', bgcolor: 'primary.main' }}>
                     {
-                        session?.user?.image !== 'undefined' ? (
+                        (session?.user?.image !== 'undefined') && session?.user?.image ? (
                             <Image
                                 height={250}
                                 width={250}
