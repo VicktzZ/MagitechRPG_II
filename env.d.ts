@@ -19,6 +19,7 @@ declare global {
             PUSHER_KEY: string
             PUSHER_CLUSTER: string
             NODE_ENV: 'development' | 'production'
+            ADMIN_PASSWORD: string
         }
     }
 }
