@@ -1,13 +1,16 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { Box, Grid, Modal, Typography, useMediaQuery, useTheme } from '@mui/material'
+import { Box, Grid, Typography, useMediaQuery, useTheme, Modal, Button } from '@mui/material'
 import React, { useEffect, type ReactElement, useMemo, memo, useState } from 'react'
-import type { Ficha, LineageNames } from '@types'
 import { useFormikContext, type FormikContextType } from 'formik'
-import { Item } from '@components/ficha'
+import { Item, ItemModal } from '@components/ficha'
 import { lineageItems } from '@constants/lineageitems'
 import { red, yellow } from '@mui/material/colors'
 import { CustomIconButton } from '@layout'
 import { Edit } from '@mui/icons-material'
+import type { Ficha, LineageNames, Weapon, Armor, Item as ItemType, MergedItems } from '@types'
+
+type ItemName = 'weapon' | 'item' | 'armor'
+type StateAction = React.Dispatch<React.SetStateAction<Partial<MergedItems<'Leve' | 'Pesada'>>>>
 
 const Inventory = memo(({ disabled }: { disabled?: boolean }): ReactElement => {
     const f: FormikContextType<Ficha> = useFormikContext()
@@ -15,7 +18,61 @@ const Inventory = memo(({ disabled }: { disabled?: boolean }): ReactElement => {
     const theme = useTheme()
     const matches = useMediaQuery(theme.breakpoints.down('md'))
 
-    const [ openModal, setOpenModal ] = useState<boolean>(false)
+    const [ weaponObj, setWeaponObj ] = useState<Partial<Weapon<'Leve' | 'Pesada'>>>({})
+    const [ armorObj, setArmorObj ] = useState<Partial<Armor>>({})
+    const [ itemObj, setItemObj ] = useState<Partial<ItemType>>({})
+
+    const [ modalOpen, setModalOpen ] = useState<boolean>(false)
+    
+    const [ modalContent, setModalContent ] = useState<ReactElement>(
+        <ItemModal 
+            item={weaponObj} 
+            setItem={setWeaponObj as StateAction} 
+            itemType={'weapon'} 
+        />
+    )
+    
+    const [ addButtonsStyle, setAddButtonsStyle ] = useState<Record<ItemName, 'outlined' | 'contained'>>({
+        weapon: 'contained',
+        armor: 'outlined',
+        item: 'outlined'
+    })
+
+    const changeModalContent = (itemName: ItemName): void => {
+        setAddButtonsStyle({
+            weapon: 'outlined',
+            armor: 'outlined',
+            item: 'outlined',
+            [itemName]: 'contained'
+        })
+
+        if (itemName === 'weapon') {
+            setModalContent(
+                <ItemModal 
+                    item={weaponObj}
+                    setItem={setWeaponObj as StateAction}
+                    itemType={itemName}
+                />
+            )
+        } else if (itemName === 'armor') {
+            setModalContent(
+                <ItemModal
+                    item={armorObj as any}
+                    setItem={setArmorObj as StateAction}
+                    itemType={itemName}
+                />
+            )
+        } else {
+            setModalContent(
+                <ItemModal
+                    item={itemObj as any}
+                    setItem={setItemObj as StateAction}
+                    itemType={itemName}
+                />
+            )
+        }
+
+    }
 
     const capacity = useMemo(() => {
         const weaponsWeight = f.values.inventory.weapons.map((weapon) => weapon.weight).reduce((a, b) => a + b, 0)
@@ -172,7 +229,7 @@ const Inventory = memo(({ disabled }: { disabled?: boolean }): ReactElement => {
                     >
                         {f.values.capacity.cargo}/{f.values.capacity.max}
                     </Typography>
-                    <CustomIconButton onClick={() => { setOpenModal(true) }}>
+                    <CustomIconButton onClick={() => { setModalOpen(true) }}>
                         <Edit />
                     </CustomIconButton>
                 </Box>
@@ -206,27 +263,37 @@ const Inventory = memo(({ disabled }: { disabled?: boolean }): ReactElement => {
                 </Box>    
             </Box>
             <Modal
-                open={openModal}
-                onClose={() => { setOpenModal(false) }}
+                open={modalOpen}
+                onClose={e => { setModalOpen(false) }}
                 sx={{
-                    height: '100vh',
-                    width: '100vw',
                     display: 'flex',
+                    justifyContent: 'center',
                     alignItems: 'center',
-                    justifyContent: 'center'
+                    height: '100vh',
+                    width: '100vw'
                 }}
             >
                 <Box
                     display='flex'
                     flexDirection='column'
-                    height='90%'
-                    width='90%'
+                    height='80%'
+                    width='80%'
                     bgcolor='background.paper3'
                     borderRadius={2}
-                    p={2}
                     gap={2}
+                    p={2}
                 >
-
+                    <Box>
+                        <Typography variant='h6'>Adicionar Item</Typography>
+                    </Box>
+                    <Box display='flex' gap={2}>
+                        <Button onClick={() => { changeModalContent('weapon') }} variant={addButtonsStyle.weapon}>Arma</Button>
+                        <Button onClick={() => { changeModalContent('armor') }} variant={addButtonsStyle.armor}>Armadura</Button>
+                        <Button onClick={() => { changeModalContent('item') }} variant={addButtonsStyle.item}>Item</Button>
+                    </Box>
+                    <Box width='100%'>
+                        {modalContent}
+                    </Box>
                 </Box>
             </Modal>
         </>
