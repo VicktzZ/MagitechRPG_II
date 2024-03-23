@@ -28,7 +28,8 @@ const Inventory = memo(({ disabled }: { disabled?: boolean }): ReactElement => {
         <ItemModal 
             item={weaponObj} 
             setItem={setWeaponObj as StateAction} 
-            itemType={'weapon'} 
+            itemType={'weapon'}
+            onClose={() => { setModalOpen(false) }}
         />
     )
     
@@ -52,6 +53,7 @@ const Inventory = memo(({ disabled }: { disabled?: boolean }): ReactElement => {
                     item={weaponObj}
                     setItem={setWeaponObj as StateAction}
                     itemType={itemName}
+                    onClose={() => { setModalOpen(false) }}
                 />
             )
         } else if (itemName === 'armor') {
@@ -60,6 +62,7 @@ const Inventory = memo(({ disabled }: { disabled?: boolean }): ReactElement => {
                     item={armorObj as any}
                     setItem={setArmorObj as StateAction}
                     itemType={itemName}
+                    onClose={() => { setModalOpen(false) }}
                 />
             )
         } else {
@@ -68,6 +71,7 @@ const Inventory = memo(({ disabled }: { disabled?: boolean }): ReactElement => {
                     item={itemObj as any}
                     setItem={setItemObj as StateAction}
                     itemType={itemName}
+                    onClose={() => { setModalOpen(false) }}
                 />
             )
         }
@@ -131,7 +135,7 @@ const Inventory = memo(({ disabled }: { disabled?: boolean }): ReactElement => {
                     categ={weapon.categ}
                     range={weapon.range}
                     weight={weapon.weight}
-                    accesories={weapon?.accesories}
+                    accessories={weapon?.accessories}
                     kind={weapon.kind}
                     bonus={weapon.bonus}
                     description={weapon.description}
@@ -276,7 +280,7 @@ const Inventory = memo(({ disabled }: { disabled?: boolean }): ReactElement => {
                 <Box
                     display='flex'
                     flexDirection='column'
-                    height='80%'
+                    height='50%'
                     width='80%'
                     bgcolor='background.paper3'
                     borderRadius={2}

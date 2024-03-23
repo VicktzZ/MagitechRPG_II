@@ -1,16 +1,15 @@
 import NextAuth from 'next-auth/next';
 import GoogleProvider from 'next-auth/providers/google';
 import DiscordProvider from 'next-auth/providers/discord';
-import CredentialsProvider from 'next-auth/providers/credentials';
+// import CredentialsProvider from 'next-auth/providers/credentials';
 
 import { connectToDb } from '@utils/database';
 import type { Session } from 'next-auth';
 import { type User as UserType } from '@types';
-import { NODE_ENV } from '@constants';
 import User from '@models/user';
 
 const handler = NextAuth({
-    providers: NODE_ENV !== 'development' ? [
+    providers: [
         GoogleProvider({
             clientId: process.env.GOOGLE_CLIENT_ID,
             clientSecret: process.env.GOOGLE_CLIENT_SECRET
@@ -20,40 +19,43 @@ const handler = NextAuth({
             clientId: process.env.DISCORD_CLIENT_ID,
             clientSecret: process.env.DISCORD_CLIENT_SECRET
         })
-    ] : [
-        CredentialsProvider({
-            name: 'Admin',
-            credentials: {
-                username: {
-                    label: 'Email',
-                    type: 'email',
-                    placeholder: 'admin'
-                },
-                password: { label: 'Password', type: 'password' }
-            },
-            async authorize(credentials, req) {
-                await connectToDb()
-                let user
-
-                if (
-                    credentials?.username === process.env.ADMIN_EMAIL &&
-                    credentials.password === process.env.ADMIN_PASSWORD
-                ) {
-                    user = await User.findOne<UserType>({ email: credentials?.username })
-                }
-
-                if (user) {
-                    return {
-                        _id: user._id,
-                        id: user._id,
-                        email: user.email,
-                        image: user.image,
-                        name: user.name
-                    }
-                } else return null
-            }
-        })
     ],
+    // [
+    //     CredentialsProvider({
+    //         name: 'Admin',
+    //         credentials: {
+    //             username: {
+    //                 label: 'Email',
+    //                 type: 'email',
+    //                 placeholder: 'admin'
+    //             },
+    //             password: { label: 'Password', type: 'password' }
+    //         },
+    //         async authorize(credentials, req) {
+    //             await connectToDb()
+    //             console.log(NODE_ENV);
+                
+    //             let user
+
+    //             if (
+    //                 credentials?.username === process.env.ADMIN_EMAIL &&
+    //                 credentials.password === process.env.ADMIN_PASSWORD
+    //             ) {
+    //                 user = await User.findOne<UserType>({ email: credentials?.username })
+    //             }
+
+    //             if (user) {
+    //                 return {
+    //                     _id: user._id,
+    //                     id: user._id,
+    //                     email: user.email,
+    //                     image: user.image,
+    //                     name: user.name
+    //                 }
+    //             } else return null
+    //         }
+    //     })
+    // ],
 
     callbacks: {
         redirect: ({ url, baseUrl }) => {
@@ -103,7 +105,7 @@ const handler = NextAuth({
 
                 return false;
             }
-        },
+        }
     }
 });
 

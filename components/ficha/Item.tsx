@@ -110,7 +110,7 @@ function Weapon(props: ItemTyping<'weapon'>): ReactElement {
                     </Box>
                     <Box display='flex' alignItems='center' gap={2}>
                         <RPGIcon icon='wrench' />
-                        <Typography fontSize='.8rem'>{String(props?.accesories ?? 'Não possui acessórios')}</Typography>
+                        <Typography fontSize='.8rem'>{String(props?.accessories ?? 'Não possui acessórios')}</Typography>
                     </Box>
                     <Box display='flex' alignItems='center' gap={2}>
                         <RPGIcon icon='archery_target' />
@@ -327,7 +327,7 @@ function ItemWrapper({
                                     />
                                     <TextField 
                                         label='Acessórios'
-                                        value={item.accesories ?? 'Nenhum'}
+                                        value={item.accessories ?? 'Nenhum'}
                                     />
                                     <TextField 
                                         label='Alcance'

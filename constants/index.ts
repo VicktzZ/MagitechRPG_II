@@ -18,5 +18,5 @@ export const landingPageGrimoire = 'agia artificial é uma tecnologia que permit
 export const BLOB_API_URL = 'https://magitechblob.blob.core.windows.net/files/'
 export const HOST = 'http://localhost:3000'
 export const PUSHER_KEY = 'e058916b3ab024829e9c'
-export const NODE_ENV = process.env.NODE_ENV
+export const NODE_ENV: 'production' | 'devlopment' = 'production' // process.env.NODE_ENV
 export const ADMIN_EMAIL = process.env.ADMIN_EMAIL

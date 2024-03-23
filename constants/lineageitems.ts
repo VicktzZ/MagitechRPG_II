@@ -287,7 +287,7 @@ export const lineageItems: Record<Lineage['name'], Array<(Item | Weapon<'Leve' |
             range: 'Corpo-a-corpo',
             ammo: 'Não consome',
             bonus: 'Furtividade',
-            accesories: [ 'Chip mágico' ],
+            accessories: [ 'Chip mágico' ],
             hit: 'des',
             type: 'weapon',
             weight: 0,

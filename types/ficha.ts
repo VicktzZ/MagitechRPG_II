@@ -174,7 +174,7 @@ export interface Weapon<T extends 'Leve' | 'Pesada'> {
     hit: Attributes
     ammo: AmmoType | 'Não consome'
     quantity?: number
-    accesories?: WeaponAccesoriesType[]
+    accessories?: WeaponAccesoriesType[]
     bonus: 'Luta' | 'Agilidade' | 'Furtividade' | 'Pontaria' | 'Magia' | 'Tecnologia' | 'Controle'
     effect: {
         value: string
@@ -209,7 +209,7 @@ export interface MergedItems<T extends 'Leve' | 'Pesada'> {
     hit: Attributes
     ammo: AmmoType | 'Não consome'
     quantity?: number
-    accesories?: WeaponAccesoriesType[]
+    accessories?: WeaponAccesoriesType[]
     effects?: number[] | string[]
     level?: number
     bonus: 'Luta' | 'Agilidade' | 'Furtividade' | 'Pontaria' | 'Magia' | 'Tecnologia' | 'Controle'
@@ -362,6 +362,7 @@ export type WeaponCategory<T extends 'Leve' | 'Pesada'> =
     `Arma Mágica (${T})`
 
 export type WeaponAccesoriesType = WeaponScientificAccesoriesType | WeaponMagicalAccesoriesType
+export type ArmorAccessoriesType = ArmorScientificAccesoriesType | ArmorMagicalAccesoriesType
 
 export type WeaponScientificAccesoriesType = 
     'Gravitron' |
@@ -414,7 +415,7 @@ export type ArmorMagicalAccesoriesType =
 
 export type Element = 
     'Fogo' |
-    'Agua' |
+    'Água' |
     'Terra' |
     'Ar' |
     'Planta' |
@@ -422,6 +423,7 @@ export type Element =
     'Gelo' |
     'Metal' |
     'Trevas' |
+    'Psíquico' |
     'Luz' |
     'Toxina' |
     'Não-elemental'
