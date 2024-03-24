@@ -1,6 +1,6 @@
-import { InputLabel, MenuItem, Select, TextField, Box, FormControl, Typography, Grid, type ComponentsProps, ListSubheader, useMediaQuery, Button } from '@mui/material'
-import { type ReactElement } from 'react'
-import type { Armor, Ficha, Item, MergedItems, Weapon } from '@types'
+import { InputLabel, MenuItem, Select, TextField, Box, FormControl, Typography, Grid, type ComponentsProps, ListSubheader, useMediaQuery, Button, Chip } from '@mui/material'
+import { useEffect, type ReactElement, useState } from 'react'
+import type { Armor, DamageType, Ficha, Item, MergedItems, Weapon } from '@types'
 import { useTheme } from '@mui/material'
 import { type FormikContextType, useFormikContext } from 'formik'
 import { 
@@ -16,18 +16,29 @@ import {
     weaponScientificAccessories,
     weaponMagicalAccessories,
     weaponBonuses,
-    weaponDamageType 
+    weaponDamageType, 
+    armorScientificAccessories,
+    armorMagicalAccessories
 } from '@constants/dataTypes'
 import { useSnackbar } from 'notistack'
+import { OutlinedInput } from '@mui/material'
+
+const ITEM_HEIGHT = 48;
+const ITEM_PADDING_TOP = 8;
+
+const MenuProps = {
+    PaperProps: {
+        style: {
+            maxHeight: ITEM_HEIGHT * 4.5 + ITEM_PADDING_TOP,
+            width: 250
+        }
+    }
+};
 
 export default function ItemModal({ 
-    item,
-    setItem,
     itemType,
     onClose
 }: {
-    item: Partial<MergedItems<'Leve' | 'Pesada'>>,
-    setItem: React.Dispatch<React.SetStateAction<Partial<MergedItems<'Leve' | 'Pesada'>>>>
     itemType: 'weapon' | 'armor' | 'item',
     onClose: () => void
 }): ReactElement {
@@ -35,21 +46,50 @@ export default function ItemModal({
     const matches = useMediaQuery(theme.breakpoints.down('md'))
     const f: FormikContextType<Ficha> = useFormikContext()
 
+    const [ item, setItem ] = useState<Partial<MergedItems<'Leve' | 'Pesada'>>>({
+        name: '',
+        description: '',
+        rarity: 'Comum',
+        weight: 0,
+        quantity: 1
+    })
+    
+    const [ weaponCategParam, setWeaponCategParam ] = useState<'Leve' | 'Pesada'>()
+    const [ effectType, setEffectType ] = useState<DamageType>()
+
+    const [ closed, setClosed ] = useState<boolean>(false)
+
     const { enqueueSnackbar } = useSnackbar()
 
+    useEffect(() => {
+        setItem({})
+        setWeaponCategParam(undefined)
+        setEffectType(undefined)
+        setClosed(false)
+    }, [ closed ])
+
+    useEffect(() => {
+        setItem({})
+    }, [ itemType ])
+
     function SelectForm(props: ComponentsProps['MuiSelect'] & {
-        prop: keyof MergedItems<'Leve' | 'Pesada'>,
-        label: string,
+        prop?: keyof MergedItems<'Leve' | 'Pesada'>,
+        label?: string,
         noLabel?: boolean
     }): ReactElement {
         return (
             <FormControl sx={props?.sx}>
                 <InputLabel id={props.prop}>{!props.noLabel && props.label}</InputLabel>
                 <Select
-                    labelId={props.prop}
-                    id={props.prop + 'Select'}
-                    value={item[props.prop] ?? props.value}
-                    onChange={props?.onChange ?? (e => { setItem(state => ({ ...state, [props.prop]: e.target.value as any })) })}
+                    labelId={props.prop ?? props.id}
+                    id={(props.prop ?? props.id) + 'Select'}
+                    value={(item[props.prop!] ?? props.value) || ''}
+                    defaultValue={props?.defaultValue ?? ''}
+                    onChange={props?.onChange ?? (e => { setItem(state => ({ ...state, [props.prop!]: e.target.value as any })) })}
+                    input={props.input}
+                    multiple={props.multiple}
+                    renderValue={props.renderValue as any}
+                    MenuProps={props.MenuProps}
                 >
                     {props.children}
                 </Select>
@@ -58,24 +98,74 @@ export default function ItemModal({
     }
 
     function createItem(): void {
-        try {    
-            if (itemType === 'weapon') {
-                f.initialValues.inventory.weapons = [ ...f.initialValues.inventory.weapons, item as Weapon<'Leve' | 'Pesada'> ]
-            }
+        const isDefaultFieldsFilledIn = !!(
+            item.name && item.description &&
+            item.rarity && item.kind &&
+            item.weight && item.quantity
+        )
 
-            if (itemType === 'armor') {
-                f.initialValues.inventory.armors = [ ...f.initialValues.inventory.armors, item as unknown as Armor ]
+        console.log(item, isDefaultFieldsFilledIn);
+        
+        try { 
+            if (itemType === 'weapon') {
+                setItem(state => ({ ...state, effect: { ...state.effect, effectType } as any }))
+
+                const regex = /^(\d+d\d+)(\+\d+d\d+|\+\d+)*$/
+                
+                const isAllWeaponFieldsFilledIn = !!(
+                    isDefaultFieldsFilledIn && item.range && item.categ &&
+                    item.hit && item.ammo && item.accessories &&
+                    item.bonus && item.effect?.value &&
+                    item.effect?.critChance && item.effect?.critValue &&
+                    item.effect?.kind && item.effect?.effectType
+                )
+
+                if (!regex.test(item.effect?.value ?? '') ?? !regex.test(item.effect?.critValue ?? '')) {
+                    enqueueSnackbar('O dano da arma precisa começar com um dado! EX: 2d4', { variant: 'error', autoHideDuration: 3000 })
+                } else {
+                    if (!isAllWeaponFieldsFilledIn) {
+                        item.categ += ` (${weaponCategParam})` as any
+    
+                        f.values.inventory.weapons = [ ...f.values.inventory.weapons, item as Weapon<'Leve' | 'Pesada'> ]
+                        enqueueSnackbar(`${item.name} criado com sucesso!`, { variant: 'success', autoHideDuration: 3000 })
+                        setClosed(true)
+                        onClose()
+                    } else {
+                        enqueueSnackbar('Preencha todos os campos!', { variant: 'error', autoHideDuration: 3000 })
+                    }
+                }
+            } else if (itemType === 'armor') {
+                const isAllArmorFieldsFilledIn = !!(
+                    isDefaultFieldsFilledIn && item.categ &&
+                    item.displacementPenalty && item.value
+                )
+                
+                if (isAllArmorFieldsFilledIn) {
+                    f.values.inventory.armors = [ ...f.values.inventory.armors, item as Armor ]
+                    enqueueSnackbar(`${item.name} criado com sucesso!`, { variant: 'success', autoHideDuration: 3000 })
+                    setClosed(true)
+                    onClose()
+                }
             } else {
-                f.initialValues.inventory.items = [ ...f.initialValues.inventory.items, item as unknown as Item ]
+                if (isDefaultFieldsFilledIn) {
+                    f.values.inventory.items = [ ...f.values.inventory.items, item as unknown as Item ]
+                    enqueueSnackbar(`${item.name} criado com sucesso!`, { variant: 'success', autoHideDuration: 3000 })
+                    setClosed(true)
+                    onClose()
+                } else {
+                    enqueueSnackbar('Preencha todos os campos!', { variant: 'error', autoHideDuration: 3000 })
+                }
             }
             
-            enqueueSnackbar(`${item.name} criado com sucesso!`, { variant: 'success', autoHideDuration: 3000 })
-            onClose()
+            console.log(item)
         } catch (error: any) {
             enqueueSnackbar(`ERRO: ${error.message}`, { variant: 'error', autoHideDuration: 3000 })
-            onClose()
         }
     }
+
+    useEffect(() => {
+        console.log(item);
+    }, [ item ])
 
     return (
         <Box
@@ -87,11 +177,13 @@ export default function ItemModal({
             <Box
                 display='flex'
                 gap={2}
+                component='form'
+                onSubmit={e => { e.preventDefault(); createItem() }}
             >
                 <TextField
                     label="Nome"
-                    value={item.name}
-                    onChange={e => { setItem(state => ({ ...state, name: e.target.value })) }}
+                    defaultValue={item.name}
+                    onBlur={e => { setItem(state => ({ ...state, name: e.target.value })) }}
                     sx={{
                         width: '30%'
                     }}
@@ -99,6 +191,7 @@ export default function ItemModal({
                 <SelectForm
                     label='Raridade'
                     prop="rarity"
+                    defaultValue='Comum'
                     sx={{
                         width: '20%'
                     }}
@@ -109,8 +202,8 @@ export default function ItemModal({
                 </SelectForm>
                 <TextField 
                     label="Descrição"
-                    value={item.description}
-                    onChange={e => { setItem(state => ({ ...state, description: e.target.value })) }}
+                    defaultValue={item.description}
+                    onBlur={e => { setItem(state => ({ ...state, description: e.target.value })) }}
                     fullWidth
                 />
             </Box>
@@ -135,25 +228,28 @@ export default function ItemModal({
                         <MenuItem key={kind} value={kind}>{kind}</MenuItem>
                     ))}
                 </SelectForm>
-                <SelectForm
-                    label='Categoria'
-                    prop="categ"
-                    sx={{
-                        width: '16%'
-                    }}
-                >
-                    {itemType === 'weapon' ? weaponCateg.map(categ => (
-                        <MenuItem key={categ} value={categ}>{categ}</MenuItem>
-                    )) : armorKind.map(kind => (
-                        <MenuItem key={kind} value={kind}>{kind}</MenuItem>
-                    ))}
-                </SelectForm>
+                {itemType !== 'item' && (
+                    <SelectForm
+                        label='Categoria'
+                        prop="categ"
+                        sx={{
+                            width: '16%'
+                        }}
+                    >
+                        {itemType === 'weapon' ? weaponCateg.map(categ => (
+                            <MenuItem key={categ} value={categ}>{categ}</MenuItem>
+                        )) : armorKind.map(kind => (
+                            <MenuItem key={kind} value={kind}>{kind}</MenuItem>
+                        ))}
+                    </SelectForm>
+                )}
                 {itemType === 'weapon' && (
                     <>
                         <SelectForm
-                            label='Arma'
-                            prop="kind"
                             noLabel
+                            id="weaponCategParam"
+                            value={weaponCategParam}
+                            onChange={e => { setWeaponCategParam(e.target.value as 'Leve' | 'Pesada') }}
                             sx={{
                                 width: '10%',
                                 ml: -1
@@ -174,7 +270,7 @@ export default function ItemModal({
                             ))}
                         </SelectForm>
                         <SelectForm
-                            label='Atributo base'
+                            label='Teste de Acerto'
                             prop="hit"
                             sx={{
                                 width: '10%'
@@ -207,12 +303,28 @@ export default function ItemModal({
                         <SelectForm
                             label='Acessórios'
                             prop="accessories"
+                            defaultValue='Não possui acessórios'
+                            MenuProps={MenuProps}
+                            value={[ item.accessories ?? 'Não possui acessórios' ]}
                             multiple
                             sx={{
-                                width: '20%'
+                                minWidth: '20%'
                             }}
+                            input={<OutlinedInput id="select-multiple-chip" label="Chip" />}
+                            renderValue={(selected) => {
+                                const s: string[] = selected as string[]
+                                
+                                return (
+                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                        {s.map((value) => (
+                                            <Chip key={value} label={value} />
+                                        ))}
+                                    </Box>
+                                )
+                            }}
+
                         >   
-                            <MenuItem value=''>Nenhum</MenuItem>
+                            <MenuItem value='Não possui acessórios'>Não possui acessórios</MenuItem>
                             <ListSubheader>Científicos</ListSubheader>
                             {weaponScientificAccessories.map(acc => (
                                 <MenuItem key={acc} value={acc}>{acc}</MenuItem>
@@ -234,32 +346,32 @@ export default function ItemModal({
                             ))}
                         </SelectForm>
                         <TextField
-                            value={item.effect?.value}
+                            defaultValue={item.effect?.value}
                             label="Dano"
                             placeholder='EX: 2d4'
-                            onChange={e => { setItem((state: any) => ({ ...state, effect: { ...state.effect, value: e.target.value } })) }}
+                            onBlur={e => { setItem((state: any) => ({ ...state, effect: { ...state.effect, value: e.target.value } })) }}
                             sx={{ width: '10%' }}
                         />
                         <TextField
-                            value={item.effect?.critValue}
+                            defaultValue={item.effect?.critValue}
                             label="Dano Crítico"
                             placeholder='EX: 4d4'
-                            onChange={e => { setItem((state: any) => ({ ...state, effect: { ...state.effect, critValue: e.target.value } })) }}
+                            onBlur={e => { setItem((state: any) => ({ ...state, effect: { ...state.effect, critValue: e.target.value } })) }}
                             sx={{ width: '10%' }}
                         />
                         <TextField
-                            value={item.effect?.value}
+                            defaultValue={item.effect?.value}
                             label="Chance crítica"
                             type='number'
+                            InputProps={{ inputProps: { min: 1, max: 20 } }}
                             placeholder='EX: 18'
-                            onChange={e => { setItem((state: any) => ({ ...state, effect: { ...state.effect, critChance: e.target.value } })) }}
+                            onBlur={e => { setItem((state: any) => ({ ...state, effect: { ...state.effect, critChance: e.target.value } })) }}
                             sx={{ width: '10%' }}
                         />
                         <SelectForm
                             label='Tipo de Dano'
-                            prop="effect"
-                            value={item.effect?.effectType}
-                            onChange={e => { setItem((state: any) => ({ ...state, effect: { ...state.effect, effectType: e.target.value } })) }}
+                            value={effectType}
+                            onChange={e => { setEffectType(e.target.value as DamageType) } }
                             sx={{
                                 width: '29.5%'
                             }}
@@ -268,6 +380,56 @@ export default function ItemModal({
                                 <MenuItem key={damageType} value={damageType}>{damageType}</MenuItem>
                             ))}
                         </SelectForm>
+                    </>
+                )}
+                {itemType === 'armor' && (
+                    <>
+                        <SelectForm
+                            label='Acessórios'
+                            prop="accessories"
+                            defaultValue='Não possui acessórios'
+                            MenuProps={MenuProps}
+                            value={[ item.accessories ?? 'Não possui acessórios' ]}
+                            multiple
+                            sx={{
+                                minWidth: '20%'
+                            }}
+                            input={<OutlinedInput id="select-multiple-chip" label="Chip" />}
+                            renderValue={(selected) => {
+                                const s: string[] = selected as string[]
+                                
+                                return (
+                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                        {s.map((value) => (
+                                            <Chip key={value} label={value} />
+                                        ))}
+                                    </Box>
+                                )
+                            }}
+
+                        >   
+                            <MenuItem value='Não possui acessórios'>Não possui acessórios</MenuItem>
+                            <ListSubheader>Científicos</ListSubheader>
+                            {armorScientificAccessories.map(acc => (
+                                <MenuItem key={acc} value={acc}>{acc}</MenuItem>
+                            ))}
+                            <ListSubheader>Mágicos</ListSubheader>
+                            {armorMagicalAccessories.map(acc => (
+                                <MenuItem key={acc} value={acc}>{acc}</MenuItem>
+                            ))}
+                        </SelectForm>
+                        <TextField 
+                            label='Valor de AP'
+                            type='number'
+                            defaultValue={item.value ?? 0}
+                            onBlur={e => { setItem(state => ({ ...state, value: Number(e.target.value) })) }}
+                        />
+                        <TextField 
+                            label='Penalidade de Deslocamento'
+                            type='number'
+                            defaultValue={item.displacementPenalty ?? 0}
+                            onBlur={e => { setItem(state => ({ ...state, displacementPenalty: Number(e.target.value) })) }}
+                        />
                     </>
                 )}
             </Grid>
@@ -279,8 +441,7 @@ export default function ItemModal({
             >
                 <TextField
                     label="Quantidade"
-                    value={item.quantity}
-                    defaultValue={1}
+                    defaultValue={item.quantity ?? 1}
                     type='number'
                     onChange={e => { setItem(state => ({ ...state, quantity: Number(e.target.value) })) }}
                 />
@@ -290,12 +451,14 @@ export default function ItemModal({
                         type='number'
                         value={item.weight}
                         defaultValue={0}
-                        onChange={e => { setItem(state => ({ ...state, weight: Number(e.target.value) })) }}
+                        onBlur={e => { setItem(state => ({ ...state, weight: Number(e.target.value) })) }}
                     />
                     <Typography variant='h6'>KG</Typography>
+                    <Typography variant='h6'>x</Typography>
+                    <Typography variant='h6'>{item.quantity ?? 1}</Typography>
                 </Box>
                 <Box width='100%' display='flex' justifyContent='flex-end' alignItems='flex-end'>
-                    <Button onClick={createItem} variant='contained' color={'terciary' as any}>Criar Item</Button>
+                    <Button type='submit' onClick={createItem} variant='contained' color={'terciary' as any}>Criar Item</Button>
                 </Box>
             </Box>
         </Box>

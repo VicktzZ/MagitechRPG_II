@@ -7,10 +7,9 @@ import { lineageItems } from '@constants/lineageitems'
 import { red, yellow } from '@mui/material/colors'
 import { CustomIconButton } from '@layout'
 import { Edit } from '@mui/icons-material'
-import type { Ficha, LineageNames, Weapon, Armor, Item as ItemType, MergedItems } from '@types'
+import type { Ficha, LineageNames } from '@types'
 
 type ItemName = 'weapon' | 'item' | 'armor'
-type StateAction = React.Dispatch<React.SetStateAction<Partial<MergedItems<'Leve' | 'Pesada'>>>>
 
 const Inventory = memo(({ disabled }: { disabled?: boolean }): ReactElement => {
     const f: FormikContextType<Ficha> = useFormikContext()
@@ -18,16 +17,9 @@ const Inventory = memo(({ disabled }: { disabled?: boolean }): ReactElement => {
     const theme = useTheme()
     const matches = useMediaQuery(theme.breakpoints.down('md'))
 
-    const [ weaponObj, setWeaponObj ] = useState<Partial<Weapon<'Leve' | 'Pesada'>>>({})
-    const [ armorObj, setArmorObj ] = useState<Partial<Armor>>({})
-    const [ itemObj, setItemObj ] = useState<Partial<ItemType>>({})
-
     const [ modalOpen, setModalOpen ] = useState<boolean>(false)
-    
     const [ modalContent, setModalContent ] = useState<ReactElement>(
         <ItemModal 
-            item={weaponObj} 
-            setItem={setWeaponObj as StateAction} 
             itemType={'weapon'}
             onClose={() => { setModalOpen(false) }}
         />
@@ -47,35 +39,12 @@ const Inventory = memo(({ disabled }: { disabled?: boolean }): ReactElement => {
             [itemName]: 'contained'
         })
 
-        if (itemName === 'weapon') {
-            setModalContent(
-                <ItemModal 
-                    item={weaponObj}
-                    setItem={setWeaponObj as StateAction}
-                    itemType={itemName}
-                    onClose={() => { setModalOpen(false) }}
-                />
-            )
-        } else if (itemName === 'armor') {
-            setModalContent(
-                <ItemModal
-                    item={armorObj as any}
-                    setItem={setArmorObj as StateAction}
-                    itemType={itemName}
-                    onClose={() => { setModalOpen(false) }}
-                />
-            )
-        } else {
-            setModalContent(
-                <ItemModal
-                    item={itemObj as any}
-                    setItem={setItemObj as StateAction}
-                    itemType={itemName}
-                    onClose={() => { setModalOpen(false) }}
-                />
-            )
-        }
-
+        setModalContent(
+            <ItemModal 
+                itemType={itemName}
+                onClose={() => { setModalOpen(false) }}
+            />
+        )
     }
 
     const capacity = useMemo(() => {
@@ -280,7 +249,7 @@ const Inventory = memo(({ disabled }: { disabled?: boolean }): ReactElement => {
                 <Box
                     display='flex'
                     flexDirection='column'
-                    height='50%'
+                    minHeight='50%'
                     width='80%'
                     bgcolor='background.paper3'
                     borderRadius={2}

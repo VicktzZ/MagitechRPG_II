@@ -185,12 +185,22 @@ export interface Weapon<T extends 'Leve' | 'Pesada'> {
     }
 }
 
+/*
+    item.name
+    item.description
+    item.rarity
+    item.kind
+    item.weight
+    item.quantity
+*/
+
 export interface Armor {
     name: string
     description: string
     rarity?: RarityType
     kind: ArmorType
     categ: 'Leve' | 'Média' | 'Pesada'
+    quantity?: number
     weight: number
     value: number
     displacementPenalty: number
