@@ -114,12 +114,13 @@ export default function Skills(): ReactElement {
             <Box
                 display='flex'
                 minHeight={matches ? '40rem' : '25rem'}
+                maxHeight={matches ? '60rem' : '35rem'}
                 gap={4}
                 flexDirection={matches ? 'column' : 'row'}
             >
                 <FormControl
                     sx={{
-                        height: '550px',
+                        height: '35rem',
                         width: matches ? '100%' : '20%',
                         bgcolor: 'background.paper3',
                         borderRadius: 2,
