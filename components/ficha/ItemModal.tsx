@@ -42,17 +42,44 @@ export default function ItemModal({
     itemType: 'weapon' | 'armor' | 'item',
     onClose: () => void
 }): ReactElement {
-    const theme = useTheme()
-    const matches = useMediaQuery(theme.breakpoints.down('md'))
-    const f: FormikContextType<Ficha> = useFormikContext()
-
-    const [ item, setItem ] = useState<Partial<MergedItems<'Leve' | 'Pesada'>>>({
+    const defaultItem: Partial<MergedItems<'Leve' | 'Pesada'>> = {
         name: '',
         description: '',
         rarity: 'Comum',
         weight: 0,
         quantity: 1
-    })
+    }
+
+    const theme = useTheme()
+    const matches = useMediaQuery(theme.breakpoints.down('md'))
+    const f: FormikContextType<Ficha> = useFormikContext()
+
+    const [ item, setItem ] = useState<Partial<MergedItems<'Leve' | 'Pesada'>>>(
+        itemType === 'weapon' ? {
+            ...defaultItem,
+            kind: 'Padrão',
+            accessories: undefined,
+            ammo: undefined,            
+            bonus: undefined,
+            categ: undefined,
+            hit: undefined,
+            range: undefined,
+            effect: {
+                value: '',
+                critChance: 20,
+                critValue: '',
+                kind: 'damage',
+                effectType: 'Cortante'
+            }
+
+        } : itemType === 'armor' ? {
+            kind: 'Padrão',
+            accessories: undefined,
+            categ: undefined,
+            displacementPenalty: 0,
+            value: 0
+        } : defaultItem
+    )
     
     const [ weaponCategParam, setWeaponCategParam ] = useState<'Leve' | 'Pesada'>()
     const [ effectType, setEffectType ] = useState<DamageType>()
@@ -135,26 +162,26 @@ export default function ItemModal({
                     }
                 }
             } else if (itemType === 'armor') {
-                const isAllArmorFieldsFilledIn = !!(
-                    isDefaultFieldsFilledIn && item.categ &&
-                    item.displacementPenalty && item.value
-                )
+                // const isAllArmorFieldsFilledIn = !!(
+                //     isDefaultFieldsFilledIn && item.categ &&
+                //     item.displacementPenalty && item.value
+                // )
                 
-                if (isAllArmorFieldsFilledIn) {
-                    f.values.inventory.armors = [ ...f.values.inventory.armors, item as Armor ]
-                    enqueueSnackbar(`${item.name} criado com sucesso!`, { variant: 'success', autoHideDuration: 3000 })
-                    setClosed(true)
-                    onClose()
-                }
+                // if (isAllArmorFieldsFilledIn) {
+                f.values.inventory.armors = [ ...f.values.inventory.armors, item as Armor ]
+                enqueueSnackbar(`${item.name} criado com sucesso!`, { variant: 'success', autoHideDuration: 3000 })
+                setClosed(true)
+                onClose()
+                // }
             } else {
-                if (isDefaultFieldsFilledIn) {
-                    f.values.inventory.items = [ ...f.values.inventory.items, item as unknown as Item ]
-                    enqueueSnackbar(`${item.name} criado com sucesso!`, { variant: 'success', autoHideDuration: 3000 })
-                    setClosed(true)
-                    onClose()
-                } else {
-                    enqueueSnackbar('Preencha todos os campos!', { variant: 'error', autoHideDuration: 3000 })
-                }
+                // if (isDefaultFieldsFilledIn) {
+                f.values.inventory.items = [ ...f.values.inventory.items, item as unknown as Item ]
+                enqueueSnackbar(`${item.name} criado com sucesso!`, { variant: 'success', autoHideDuration: 3000 })
+                setClosed(true)
+                onClose()
+                // } else {
+                // enqueueSnackbar('Preencha todos os campos!', { variant: 'error', autoHideDuration: 3000 })
+                // }
             }
             
             console.log(item)
@@ -335,7 +362,7 @@ export default function ItemModal({
                             ))}
                         </SelectForm>
                         <SelectForm
-                            label='Bônus ou Modificador'
+                            label='Bônus para Acerto'
                             prop="bonus"
                             sx={{
                                 width: '15%'

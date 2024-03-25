@@ -114,7 +114,6 @@ export default function Skills(): ReactElement {
             <Box
                 display='flex'
                 minHeight={matches ? '40rem' : '25rem'}
-                maxHeight={matches ? '60rem' : '35rem'}
                 gap={4}
                 flexDirection={matches ? 'column' : 'row'}
             >

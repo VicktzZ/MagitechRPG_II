@@ -17,6 +17,7 @@ import type {
     Item,
     AmmoType,
     MergedItems,
+    Inventory,
     WeaponAccesoriesType,
     ArmorAccessoriesType,
     LineageNames,
@@ -42,6 +43,7 @@ import type {
 export type { 
     User,
     SessionNextAuth,
+    Inventory,
     AmmoType,
     SessionModel,
     Ficha,

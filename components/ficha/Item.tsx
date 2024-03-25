@@ -7,8 +7,13 @@ import type {
     Item as ItemProps, 
     Weapon as WeaponProps,
     Armor as ArmorProps,
-    MergedItems
+    MergedItems,
+    Ficha
 } from '@types'
+import { WarningModal } from '@layout'
+import { useSnackbar } from 'notistack'
+import { type FormikContextType, useFormikContext } from 'formik'
+import type { Inventory } from '@types'
 
 // eslint-disable-next-line max-len
 type ItemTyping<C> = 
@@ -264,13 +269,32 @@ function ItemWrapper({
     item: MergedItems<'Leve' | 'Pesada'>
 }): ReactElement {
     const theme = useTheme()
+    const f: FormikContextType<Ficha> = useFormikContext()
     
     const [ open, setOpen ] = useState(false)
+    const [ confirmModalOpen, setConfirmModalOpen ] = useState(false)
+
+    const { enqueueSnackbar } = useSnackbar()
 
     const itemType: 'weapon' | 'armor' | 'item' =
         item.ammo ? 'weapon' :
             item.displacementPenalty >= 0 ? 'armor' :
                 'item'
+
+    const onConfirm = async (): Promise<void> => {
+        // const itemNames = Object.values(f.values.inventory)
+        //     .filter(i => typeof i !== 'number')
+        //     .map((i: Array<MergedItems<any>>) => i.map(j => j.name))
+        //     .flat()
+
+        f.values.inventory[(itemType + 's') as keyof Inventory] = 
+            (f.values.inventory[(itemType + 's') as keyof Inventory] as any)
+                .filter((i: any) => i.name !== item.name)
+                
+        setConfirmModalOpen(false)
+        setOpen(false)
+        enqueueSnackbar(`${item.name} excluído(a) com sucesso!`, { variant: 'success' })
+    }
 
     return (
         <>
@@ -310,9 +334,18 @@ function ItemWrapper({
                 onClose={() => { setOpen(false) }}
             >
                 <>
-                    <Box>
-                        <Typography variant='h5'>{item.name}</Typography>
-                        <Typography variant='caption'>{item.description}</Typography>
+                    <Box display='flex' justifyContent='space-between' alignItems='center'>
+                        <Box>
+                            <Typography variant='h5'>{item.name}</Typography>
+                            <Typography variant='caption'>{item.description}</Typography>
+                        </Box>
+                        <Box>
+                            <Button 
+                                onClick={() => { setConfirmModalOpen(true) }} 
+                                variant='contained' 
+                                color={'terciary' as any}
+                            >Excluir item</Button>
+                        </Box>
                     </Box>
                     <Box
                         display='flex'
@@ -348,6 +381,14 @@ function ItemWrapper({
                                     <TextField 
                                         label='Peso'
                                         value={item.weight}
+                                    />
+                                    <TextField 
+                                        label='Dano base'
+                                        value={item.effect.value}
+                                    />
+                                    <TextField 
+                                        label='Dano crítico'
+                                        value={item.effect.critValue}
                                     />
                                 </Box>
                             ) : itemType === 'armor' ? (
@@ -397,6 +438,13 @@ function ItemWrapper({
                     </Box>
                 </>
             </ItemModal>
+            <WarningModal 
+                open={confirmModalOpen}
+                onClose={() => { setConfirmModalOpen(false) }}
+                title='Excluir item'
+                text='Tem certeza que deseja excluir este item?'
+                onConfirm={onConfirm}
+            />
         </>
     )
 }
