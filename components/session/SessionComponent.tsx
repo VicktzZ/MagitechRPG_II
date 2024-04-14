@@ -10,31 +10,25 @@ import { useSnackbar } from 'notistack';
 import { type ReactElement, useState, useEffect } from 'react'
 import type { Member } from '@types';
 import { CustomChat, SessionMembers } from '@components/session';
-import { useForceUpdate } from '@mantine/hooks';
 
 export default function SessionComponent({ sessionCode }: { sessionCode: string }): ReactElement {
     const [ openTooltip, setOpenTooltip ] = useState(false);
     const { enqueueSnackbar } = useSnackbar()
     const { channel } = useChannel()
 
-    const forceUpdate = useForceUpdate()
-
     useEffect(() => {
         if (!channel) return
         
         channel.bind('pusher:subscription_succeeded', () => {
             enqueueSnackbar('Você entrou na sessão!', { autoHideDuration: 3000, variant: 'success', preventDuplicate: true })
-            forceUpdate()
         })
 
         channel.bind('pusher:member_added', (member: { id: string, info: Member }) => {
             enqueueSnackbar(`${member.info.name} entrou na sessão!`, { autoHideDuration: 3000, preventDuplicate: true })
-            forceUpdate()
         })
 
         channel.bind('pusher:member_removed', (member: { id: string, info: Member }) => {
             enqueueSnackbar(`${member.info.name} saiu da sessão!`, { autoHideDuration: 3000, preventDuplicate: true })
-            forceUpdate()
         })
 
         console.log(channel.members);
@@ -69,7 +63,7 @@ export default function SessionComponent({ sessionCode }: { sessionCode: string 
                                 <Button onClick={async () => {
                                     try {
                                         await copy(window.location.href)
-                                        setOpenTooltip( true)
+                                        setOpenTooltip(true)
                                         setTimeout(() => {
                                             setOpenTooltip(false)
                                         }, 1000);

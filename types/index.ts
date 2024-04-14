@@ -31,7 +31,11 @@ import type {
     SessionNextAuth,
     SessionModel,
     User,
+    Campaign,
     Magia,
+    Player,
+    PlayerInfo,
+    PusherMemberParam,
     Member 
 } from './models';
 
@@ -44,7 +48,9 @@ export type {
     User,
     SessionNextAuth,
     Inventory,
+    PlayerInfo,
     AmmoType,
+    Player,
     SessionModel,
     Ficha,
     DamageType,
@@ -53,8 +59,10 @@ export type {
     RangeType,
     Attributes,
     Classes,
+    PusherMemberParam,
     Message,
     MergedItems,
+    Campaign,
     RarityType,
     Class,
     Item,

@@ -54,7 +54,7 @@ export default function LandingPageHeader(): ReactElement {
                 display='flex'
                 justifyContent='space-between'
                 alignItems='center'
-                p={2.5}    
+                p={2.5}   
             >
                 <Box mr={2}>
                     <Logo />

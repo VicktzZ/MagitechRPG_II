@@ -163,7 +163,7 @@ export interface Item {
     level?: number
 }
 
-export interface Weapon<T extends 'Leve' | 'Pesada'> {
+export interface Weapon<T extends 'Leve' | 'Pesada' = any> {
     name: string
     description: string
     rarity?: RarityType

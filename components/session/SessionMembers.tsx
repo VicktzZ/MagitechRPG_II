@@ -14,8 +14,6 @@ export default function SessionMembers({ members }: { members: PresenceChannel['
     const forceUpdate = useForceUpdate()
 
     const membersArray = useMemo((): Member[] => {
-        forceUpdate()
-
         const myId: string = members?.me?.info._id
         const arr = Object?.values<Member>(members?.members as Record<string, Member>)
         
@@ -32,9 +30,10 @@ export default function SessionMembers({ members }: { members: PresenceChannel['
         })
 
         return sortedArr
-    }, [ members?.members, members?.me?.info._id, gameMasterId, forceUpdate ])
+    }, [ members?.members, members?.me?.info._id, gameMasterId ])
 
     useEffect(() => {
+        forceUpdate()
         setMembersArr(membersArray)
     }, [ members.members, members, membersArray ])
 

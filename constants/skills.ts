@@ -13,7 +13,47 @@ export const skills: {
         'Arcano': Skill[]
         'Ladino': Skill[]
     }
-    subclass: Skill[]
+    subclass: {
+        // Marcial
+        'Armipotente'?: Skill[],
+        'Polimorfo'?: Skill[],
+        'Comandante'?: Skill[],
+
+        // Explorador
+        'Harmonizador'?: Skill[],
+        'Numeromante'?: Skill[],
+        'Transcendentalista'?: Skill[],
+
+        // Feiticeiro
+        'Conjurador'?: Skill[],
+        'Elementalista'?: Skill[],
+        'Alquimista'?: Skill[],
+
+        // Bruxo
+        'Necromante'?: Skill[],
+        'Pocionista'?: Skill[],
+        'Espiritista'?: Skill[],
+
+        // Monge
+        'Guardião das Energias'?: Skill[],
+        'Protetor da Alma'?: Skill[],
+        'Andarilho'?: Skill[],
+
+        // Druida
+        'Shapeshifter'?: Skill[],
+        'Animante'?: Skill[],
+        'Naturomante'?: Skill[],
+
+        // Arcano
+        'Arquimago'?: Skill[],
+        'Dimensionalista'?: Skill[],
+        'Metamágico'?: Skill[],
+
+        // Ladino
+        'Espectro'?: Skill[],
+        'Supernaturalista'?: Skill[],
+        'Metafísico'?: Skill[]
+    },
     bonus: Skill[]
     powers: Skill[]
 } = {
@@ -194,6 +234,20 @@ export const skills: {
                 origin: 'Marcial',
                 type: 'Classe',
                 level: 25
+            },
+            {
+                name: 'Armado',
+                description: 'Armas corpo-a-corpo dão +2 dados do mesmo tipo de dano.',
+                origin: 'Marcial',
+                type: 'Classe',
+                level: 30
+            },
+            {
+                name: 'Não-Elementalista',
+                description: 'Magias não-elementais tem +1 dado respectivo para cálculo de dano, cálculo de cura, chance de acerto etc.',
+                origin: 'Marcial',
+                type: 'Classe',
+                level: 35
             }
         ],
 
@@ -239,6 +293,29 @@ export const skills: {
                 origin: 'Explorador',
                 type: 'Classe',
                 level: 25
+            },
+            {
+                name: 'Afluência',
+                description: `Você pode escolher uma das seguintes opções (que sejam compatíveis com seu nível):
+                +1 Habilidade de qualquer classe ou subclasse (incluindo o poder de classe);
+                +3 Poderes mágicos;
+                +1 Magia Nível 5.
+                `,
+                origin: 'Explorador',
+                type: 'Classe',
+                level: 30
+            },
+            {
+                name: 'Polivalência',
+                description: `Você pode pagar 25 MP para rolar 2d20 e utilizar a média aritmética do resultado (2d20/2) para algum dos efeitos:
+                Caso o valor do resultado seja igual ou maior que 10, este resultado é adicionado em seus AP até a próxima tentativa de acerto, e diminui o dano recebido nos pontos do resultado do próximo ataque em que você for atingido. Caso o dano for menor do que o resultado da habilidade, você usa a diferença do cálculo e cura LP ou MP, caso você estiver com a saúde em 100%. 
+                Caso o valor do resultado seja igual ou menor que 10, você pode adicionar estes pontos em seus PRÓXIMOS DOIS testes, incluindo cálculo de dano e chance de acerto. Não funciona para esquiva ou bloqueio de ataques.
+                Em suma, em caso de combate, resultados maiores significam oportunidades de defesa, e resultados menores significam oportunidades de ataque.
+                Caso o resultado seja 10, o jogador poderá escolher entre um dos efeitos citados acima.
+                `,
+                origin: 'Explorador',
+                type: 'Classe',
+                level: 35
             }
         ],
 
@@ -348,6 +425,20 @@ export const skills: {
                 origin: 'Monge',
                 type: 'Classe',
                 level: 25
+            },
+            {
+                name: 'Projeção',
+                description: 'Você pode gastar 20 MP para projetar sua consciência em outro lugar ou outro ser, deixando seu corpo em um estado de transe. Você pode usar isto para explorar lugares distantes, se comunicar com outras pessoas, invadir sistemas de segurança, se disfarçar e/ou se passar por outras pessoas entre outros. Você pode usá-la por no máximo 20 minutos (5m na realidade).',
+                origin: 'Monge',
+                type: 'Classe',
+                level: 30
+            },
+            {
+                name: 'Transferência de Emoções',
+                description: 'Você pode pagar 20 MP para transferir seu estado atual para um alvo próximo (Toque). Quando você o fizer, você recebe metade do dano no próximo ataque. Você precisa estar no estado de Calma, Fúria ou Divino para usar esta habilidade. Você volta para o estado normal automaticamente após a transferência.',
+                origin: 'Monge',
+                type: 'Classe',
+                level: 35
             }
         ],
 
@@ -393,6 +484,20 @@ export const skills: {
                 origin: 'Druida',
                 type: 'Classe',
                 level: 25
+            },
+            {
+                name: 'Vanguarda',
+                description: 'Os orbes agora dão 1d6+1 de dano além de você invocar 5 entre as seguintes possibilidades: Fogo, Água, Ar, Terra, Eletricidade, Gelo. Você pode escolher os tipos elementais dos orbes gerados.',
+                origin: 'Druida',
+                type: 'Classe',
+                level: 30
+            },
+            {
+                name: 'Domo Protetor',
+                description: 'Você pode gastar 20 MP para criar uma barreira mágica de 6m por 3 turnos que inibe qualquer ataque vindo de fora. Você e seus aliados conseguem atacar de dentro para fora, mas não de fora para dentro. Além disso, quem estiver dentro da barreira ganha +5 em chance de acerto.',
+                origin: 'Druida',
+                type: 'Classe',
+                level: 35
             }
         ],
 
@@ -438,6 +543,20 @@ export const skills: {
                 origin: 'Arcano',
                 type: 'Classe',
                 level: 25
+            },
+            {
+                name: 'Teletransporte Arcano',
+                description: 'Uma vez por cena, por 20 MP, você pode teletransportar quaisquer objetos ou pessoas que estejam se segurando em você para um lugar que você já passou ou já vivenciou. Caso você tente teletransportar o algo ou alguém contra sua vontade, ele faz um teste de Resistência Mágica. Se ele passar, o teletransporta falha e não será possível teletransportar o alvo novamente até o dia seguinte. Além disso, uma vez por combate quando te acertarem um ataque, você pode pagar 10 MP para se esquivar e se afastar 9m do alvo, automaticamente.',
+                origin: 'Arcano',
+                type: 'Classe',
+                level: 30
+            },
+            {
+                name: 'Intelecto Superior',
+                description: 'Você adiciona sua LOG ao dano e cura de suas magias.',
+                origin: 'Arcano',
+                type: 'Classe',
+                level: 35
             }
         ],
 
@@ -459,34 +578,153 @@ export const skills: {
             {
                 name: 'Fobia',
                 description: 'Você pode pagar 15 MP para aplicar 2d8 de dano, deixar o alvo no estado de medo e inibir seus ataques até seu turno seguinte. Se você estiver em furtividade o dano é aumentado para 6d8.',
-                origin: 'ladino',
+                origin: 'Ladino',
                 type: 'Classe',
                 level: 10
             },
             {
                 name: 'Expurgo',
                 description: 'Caso o inimigo esteja com 10% ou menos de vida, seu próximo ataque o mata instantaneamente.',
-                origin: 'ladino',
+                origin: 'Ladino',
                 type: 'Classe',
                 level: 15
             },
             {
                 name: 'Sempre Distante',
                 description: 'Armas de fogo ou de longa distância dão +1 dados do mesmo tipo de dano.',
-                origin: 'ladino',
+                origin: 'Ladino',
                 type: 'Classe',
                 level: 20
             },
             {
                 name: 'Ataque Duplo',
                 description: 'Você pode atacar duas vezes no mesmo turno caso erre um ataque. Você não possuirá duas ações padrões por turno, somente duas oportunidades de ataque.',
-                origin: 'ladino',
+                origin: 'Ladino',
                 type: 'Classe',
                 level: 25
+            },
+            {
+                name: 'Dano Transmissível',
+                description: 'Caso você ataque com sucesso um alvo, você pode pagar 15 MP para aplicar um destes estados ao alvo e 3 oponentes próximos por 2 turnos: Queimadura (5d6 de dano de fogo), Envenenamento (5d6 de dano de toxina), Eletrizado (Qualquer dano aplicado ao alvo também se aplica a seres próximos em um raio de 6m e dobra dano de água), Congelado (O alvo não consegue se mexer ou fazer ataques físicos e dobra dano de fogo). Você só pode utilizar esta habilidade uma vez por combate.',
+                origin: 'Ladino',
+                type: 'Classe',
+                level: 30
+            },
+            {
+                name: 'Abscondido',
+                description: 'Quando você está furtivo você consegue enxergar no escuro, ouvir sons mais altos, ver mais longe e consegue identificar algo ou alguém que está furtivo. Além disso, você ganha +10 LP, +10 MP, +2 AP e +5 de dano extra em qualquer ataque enquanto estiver furtivo.',
+                origin: 'Ladino',
+                type: 'Classe',
+                level: 35
             }
         ]
     },
-    subclass: [],
+    subclass: {
+        Transcendentalista: [
+            {
+                name: 'Esquiva Dimensional',
+                description: 'Com seus poderes transcendentais, você consegue acessar outra dimensão por tempo limitado, o vazio. Uilizando a energia do cosmos e a magia artifical como intermédio, como ação de reação (quando te atacarem) você pode usar a esquiva dimensional. A esquiva dimensional te garante a esquiva do ataque e você fica em outra dimensão por 1 rodada (no seu turno seguite, você volta). Quando o mago voltar da outra dimensão, ele pode escoolher em qual lugar ele irá reaparecer em um raio de 3m de onde ele usou a habilidade. A habilidade tem 1 rodada de tempo de recarga e não pode usar consecutivamente.',
+                origin: 'Transcendentalista',
+                type: 'Subclasse'
+            },
+            {
+                name: 'Metacriação Sublime',
+                description: 'Um Mago Explorador Transcendentalista que se preze, gosta de criar coisas novas a partir dos poderes dos cosmos. Com estas habilidades, você possui a habilidade de criar coisas novas como nunca visto antes. (Você adquire os poderes mágicos "Fazer Poções" e "Alquimia" em seu estágio final, isto é, na maestria, mesmo não possuindo maestria elemental com o elemento. Além disso, armas criadas com o poder mágico "Alquimia" serão adciionadas em seu dano +3 dados do mesmo grau e +10 de pontos bônus em poções).',
+                origin: 'Transcendentalista',
+                type: 'Subclasse'
+            },
+            {
+                name: 'Sabedoria Transcendental',
+                description: 'Sua sabedoria transcende todos os limites humanos. Você adquire conhecimento de todo o cosmos e sabe de quase todo fenômeno que nele ocorre (Você ganha +5 pontos de teste e +3 de sabedoria).',
+                origin: 'Transcendentalista',
+                type: 'Subclasse'
+            }
+        ],
+
+        Andarilho: [
+            {
+                name: 'Passo Divino',
+                description: 'Você ganha +4 em todos os testes que envolvem destreza, +2 em reflexos e aumenta seu deslocamento base para 27m.',
+                origin: 'Andarilho',
+                type: 'Subclasse'
+            },
+            {
+                name: 'Pressa Fádica',
+                description: 'A sua velocidade ultrapassa os limites humanos, fazendo com que tudo ao seu redor fique mais lento. Você pode gastar sua ação de movimento completa (isto é, gastar todo seu deslocamento) para diminuir o tempo do jogo pela metade em suas ações. Caso esteja em combate, automaticamente você sai como primeiro na iniciativa e ganha 2 ações padrões extras que podem ser gastas enquanto você permanecer naquele combate. Além disso você ganha +2 de agilidade.',
+                origin: 'Andarilho',
+                type: 'Subclasse'
+            },
+            {
+                name: 'Movimentação Astral',
+                description: 'Seus pés não se locomovem mais neste plano. Seu corpo atinge um incrível patamar de suavidade, fazendo com que seus pés se locomovam em outro plano astral (Você não faz barulhos ao andar ou correr, fica invisível ao correr, pode entrar e sair de furitividade a hora que quiser e aumenta o deslocamento em +12).',
+                origin: 'Andarilho',
+                type: 'Subclasse'
+            }
+        ],
+
+        Arquimago: [
+            {
+                name: 'Arquimagia',
+                description: 'Como arquimago, você estuda a magia profundamente, sabendo todas suas raizes e ramificações. (Você ganha +4 todos testes que envolvem foco e +2 de lógica).',
+                origin: 'Arquimago',
+                type: 'Subclasse'
+            },
+            {
+                name: 'Aprimoramento Mágico',
+                description: 'Você atinge um patamar requintado da magia, liberando prorpriedades nunca vistas antes. Todas suas magias causam dano em área equivalente a +3m de raio (ou aumenta o alcance em mais +3m) e não causam danos a aliados. Além disso, elas recebem +2 dados do mesmo grau para complemento do ataque. Ademais, magias de nível 1 até o estágio 2 não custam mana.',
+                origin: 'Arquimago',
+                type: 'Subclasse'
+            },
+            {
+                name: 'Subsequência Arcana',
+                description: 'Suas magias ficam mais forte do que nunca, e com isso, você aprende-as usar em uma sequência perfeita. Caso você utilize uma mesma magia mais de uma vez no combate, seu dano é incrementado em +5 e seu custo é diminuído em -1 MP para cada vez que você utilizá-la, tendo um limite de 5 vezes. Se você usar outra magia diferente da mesma, você perde a bonificação, tendo que repetir o processo novamente. Além disso você adquirie visão verdadeira e prolonga suas magias contínuas em +2 turnos.',
+                origin: 'Arquimago',
+                type: 'Subclasse'
+            }
+        ],
+
+        Espectro: [
+            {
+                name: 'Ocultismo',
+                description: 'O Espectro pode se mover através das sombras como se fossem água. Como ação livre, você pode se teletransportar para qualquer ponto dentro de 15 metros de uma sombra que você possa ver.',
+                origin: 'Espectro',
+                type: 'Subclasse'
+            },
+            {
+                name: 'Abstruso',
+                description: 'Suas habilidades em camuflagem beiram o obscuro completo. Enquanto estiver furtivo, você ganha +8 em todos testes que envolvem destreza. Além disso, você ganha +2 de destreza.',
+                origin: 'Espectro',
+                type: 'Subclasse'
+            },
+            {
+                name: 'Escureza Lúgubre',
+                description: 'Enquanto estiver em furitivdade, todos seus ataques causam necrose fatal (5d12 de dano das trevas por 5 turnos).',
+                origin: 'Espectro',
+                type: 'Subclasse'
+            }
+        ],
+
+        Polimorfo: [
+            {
+                name: 'Morfo Superior',
+                description: 'Seu corpo adquire uma forma de defesa insuperável. você ganha +5 em testes que usam vigor e ganha +30 LP Permanentes.',
+                origin: 'Polimorfo',
+                type: 'Subclasse'
+            },
+            {
+                name: 'Polimorfismo',
+                description: 'Seu corpo é moldável ao seu favor. Seu corpo se adapta ao combate, fazendo com que ganhe +2 de Vigor e adquira a habilidade de moldar qualquer parte do seu corpo como ação livre ao critério do mestre.',
+                origin: 'Polimorfo',
+                type: 'Subclasse'
+            },
+            {
+                name: 'Corpo de Ferro',
+                description: 'Os membros do seu corpo podem se moldar em objetos de metal. Além disso, você pode gastar 50 LP para ficar imortal durante 2 rodadas como ação padrão, você pode usar esta habildiade 1 vez por combate.', 
+                origin: 'Polimorfo',
+                type: 'Subclasse'
+            }
+        ]
+    },
     bonus: [],
     powers: []
 }

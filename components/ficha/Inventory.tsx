@@ -6,7 +6,7 @@ import { Item, ItemModal } from '@components/ficha'
 import { lineageItems } from '@constants/lineageitems'
 import { red, yellow } from '@mui/material/colors'
 import { CustomIconButton } from '@layout'
-import { Edit } from '@mui/icons-material'
+import { Add } from '@mui/icons-material'
 import type { Ficha, LineageNames } from '@types'
 
 type ItemName = 'weapon' | 'item' | 'armor'
@@ -203,7 +203,7 @@ const Inventory = memo(({ disabled }: { disabled?: boolean }): ReactElement => {
                         {f.values.capacity.cargo}/{f.values.capacity.max}
                     </Typography>
                     <CustomIconButton onClick={() => { setModalOpen(true) }}>
-                        <Edit />
+                        <Add />
                     </CustomIconButton>
                 </Box>
                 <Box
