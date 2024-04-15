@@ -9,7 +9,7 @@ import { useForceUpdate } from '@mantine/hooks'
 
 export default function SessionMembers({ members }: { members: PresenceChannel['members'] }): ReactElement {
     const theme = useTheme()
-    const { gameMasterId } = useGameMasterContext()
+    const { allGameMasters } = useGameMasterContext()
     const [ membersArr, setMembersArr ] = useState<Member[]>([])
     const forceUpdate = useForceUpdate()
 
@@ -18,9 +18,9 @@ export default function SessionMembers({ members }: { members: PresenceChannel['
         const arr = Object?.values<Member>(members?.members as Record<string, Member>)
         
         const sortedArr = arr.sort((a, b) => {
-            if (gameMasterId.includes(a._id)) {
+            if (allGameMasters.includes(a._id)) {
                 return -1
-            } else if (gameMasterId.includes(b._id)) {
+            } else if (allGameMasters.includes(b._id)) {
                 return 1
             } else if (a._id === myId || b._id === myId) {
                 return -1
@@ -30,7 +30,7 @@ export default function SessionMembers({ members }: { members: PresenceChannel['
         })
 
         return sortedArr
-    }, [ members?.members, members?.me?.info._id, gameMasterId ])
+    }, [ members?.members, members?.me?.info._id, allGameMasters ])
 
     useEffect(() => {
         forceUpdate()
@@ -48,7 +48,7 @@ export default function SessionMembers({ members }: { members: PresenceChannel['
             {
                 membersArr ?
                     membersArr.map((member: Member) => {
-                        if (gameMasterId.includes(member._id)) {
+                        if (allGameMasters.includes(member._id)) {
                             return (
                                 <Box key={member._id}>
                                     <Box
@@ -87,7 +87,7 @@ export default function SessionMembers({ members }: { members: PresenceChannel['
                             )
                         }
 
-                        if (member._id === members.me.info._id && !gameMasterId.includes(member._id)) {
+                        if (member._id === members.me.info._id && !allGameMasters.includes(member._id)) {
                             return (
                                 <Box
                                     display='flex'
@@ -126,7 +126,7 @@ export default function SessionMembers({ members }: { members: PresenceChannel['
                         return (
                             <>
                                 {
-                                    member._id !== members.me.info._id && !gameMasterId.includes(member._id) && (
+                                    member._id !== members.me.info._id && !allGameMasters.includes(member._id) && (
                                         <Box
                                             display='flex'
                                             key={member._id}
