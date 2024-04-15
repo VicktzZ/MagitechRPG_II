@@ -3,7 +3,7 @@
 import { useChannel } from '@contexts/channelContext'
 import { Box } from '@mui/material'
 import { useEffect, type ReactElement } from 'react'
-import { CampaignDashboardHeader, CampaignPlayerDashboard } from '.';
+import { CampaignDashboard, CampaignDashboardHeader } from '.';
 import { useSnackbar } from 'notistack';
 import type { PusherMemberParam } from '@types';
 
@@ -41,7 +41,7 @@ export default function CampaignComponent(): ReactElement {
     return (
         <Box>
             <CampaignDashboardHeader />
-            <CampaignPlayerDashboard />
+            <CampaignDashboard />
         </Box>
     )
 }

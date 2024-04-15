@@ -5,7 +5,7 @@ import copy from 'clipboard-copy'
 import { PlayerAvatar } from '@components/campaign';
 import { useCampaignContext } from '@contexts/campaignContext';
 import { useChannel } from '@contexts/channelContext';
-import { Tooltip } from '@mui/material';
+import { Grid, Tooltip, useMediaQuery, useTheme } from '@mui/material';
 import { Box, Button, Skeleton, Typography } from '@mui/material';
 import type { PlayerInfo } from '@types';
 import { useEffect, useState, type ReactElement } from 'react';
@@ -15,6 +15,9 @@ export default function CampaignDashboardHeader(): ReactElement {
     const { channel } = useChannel()
     const [ loading, setLoading ] = useState<boolean>(true)
     const [ openTooltip, setOpenTooltip ] = useState<boolean>(false)
+
+    const theme = useTheme()
+    const matches = useMediaQuery(theme.breakpoints.down('md'))
 
     const campaign = useCampaignContext()
 
@@ -44,7 +47,7 @@ export default function CampaignDashboardHeader(): ReactElement {
                     <Typography fontFamily='WBZ' variant='h3' textAlign='center'>
                         {campaign?.title}
                     </Typography>
-                    <Typography fontFamily='Times New Roman' textAlign='center'>{campaign?.description}</Typography>
+                    <Typography textAlign='center'>{campaign?.description}</Typography>
                 </Box>
                 <Box display='flex' alignItems='center' gap={1} justifyContent='center'>
                     <Typography>Código:</Typography>
@@ -66,21 +69,33 @@ export default function CampaignDashboardHeader(): ReactElement {
                                 setTimeout(() => {
                                     setOpenTooltip(false)
                                 }, 1000);
-                            } catch (error:any) {
+                            } catch (error: any) {
                                 console.log(error.message)
                             }
                         }}>{campaign?.campaignCode}</Button>
                     </Tooltip>
                 </Box>
             </Box>
-            <Box
-                display='flex'
+            <Grid
+                container
                 gap={2}
                 justifyContent='space-evenly' 
                 width='100%' 
                 p={2}
             >
-                {loading ? <Skeleton variant='rectangular' height={250} width={350} /> : playersInfo.length > 0 && playersInfo?.map(p => (
+                {loading ? [ 0, 1, 2, 3 ].map(() => (
+                    <Box key={Math.random()} display='flex' alignItems='center' gap={!matches ? 2 : 1}>
+                        <Skeleton 
+                            variant='circular' 
+                            height={!matches ? '4.5rem' : '4rem'} 
+                            width={!matches ? '4.5rem' : '4rem'} 
+                        />
+                        <Box display='flex' flexDirection='column' alignItems='center'>
+                            <Skeleton variant='text' width={!matches ? '10rem' : '6.5rem'} />
+                            <Skeleton variant='text' width={!matches ? '10rem' : '6.5rem'} />
+                        </Box>
+                    </Box>
+                )) : playersInfo.length > 0 && playersInfo?.map(p => (
                     <PlayerAvatar
                         key={Math.random()}
                         image={p.image}
@@ -88,7 +103,7 @@ export default function CampaignDashboardHeader(): ReactElement {
                         charname={p.charname}
                     />
                 ))}
-            </Box>
+            </Grid>
         </Box>
     )
 }

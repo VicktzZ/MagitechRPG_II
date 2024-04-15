@@ -1,7 +1,7 @@
 import CampaignOptionsModal from './CampaignOptionsModal'
 import CampaingCard from './CampaingCard'
 import CampaignComponent from './CampaignComponent'
-import CampaignPlayerDashboard from './CampaignPlayerDashboard'
+import CampaignDashboard from './CampaignDashboard'
 import PlayerAvatar from './PlayerAvatar'
 import CampaignDashboardHeader from './CampaignDashboardHeader'
 
@@ -10,6 +10,6 @@ export {
     CampaingCard,
     CampaignDashboardHeader,
     CampaignComponent,
-    CampaignPlayerDashboard,
+    CampaignDashboard,
     PlayerAvatar
 }
