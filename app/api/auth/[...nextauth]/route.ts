@@ -60,7 +60,7 @@ const handler = NextAuth({
     callbacks: {
         redirect: ({ url, baseUrl }) => {
             if(url.startsWith(baseUrl)) {
-                return url
+                return url;
             } else if(url.startsWith('/')) {
                 return new URL(url, baseUrl).toString();
             }

@@ -1,6 +1,6 @@
-import type { Metadata } from 'next'
+import type { Metadata } from 'next';
 
-import '@public/global.css'
+import '@public/global.css';
 
 import { type ReactElement } from 'react';
 import ContextProvider from '@contexts/ContextProvider';
@@ -8,7 +8,7 @@ import ContextProvider from '@contexts/ContextProvider';
 export const metadata: Metadata = {
     title: 'Magitech RPG',
     description: 'A RPG created by Vitor Santos'
-}
+};
 
 export default function RootLayout({
     children
@@ -33,5 +33,5 @@ export default function RootLayout({
                 </ContextProvider>
             </body>
         </html>
-    )
+    );
 }

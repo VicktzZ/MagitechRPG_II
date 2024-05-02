@@ -1,41 +1,41 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { Avatar, Box, Divider, Typography, useTheme } from '@mui/material'
-import Image from 'next/image'
-import React, { type ReactElement, useEffect, useState, useMemo } from 'react'
-import type { Member } from '@types'
-import type { PresenceChannel } from 'pusher-js'
-import { useGameMasterContext } from '@contexts/gameMasterContext'
-import { useForceUpdate } from '@mantine/hooks'
+import { Avatar, Box, Divider, Typography, useTheme } from '@mui/material';
+import Image from 'next/image';
+import React, { type ReactElement, useEffect, useState, useMemo } from 'react';
+import type { Member } from '@types';
+import type { PresenceChannel } from 'pusher-js';
+import { useGameMasterContext } from '@contexts/gameMasterContext';
+import { useForceUpdate } from '@mantine/hooks';
 
 export default function SessionMembers({ members }: { members: PresenceChannel['members'] }): ReactElement {
-    const theme = useTheme()
-    const { allGameMasters } = useGameMasterContext()
-    const [ membersArr, setMembersArr ] = useState<Member[]>([])
-    const forceUpdate = useForceUpdate()
+    const theme = useTheme();
+    const { allGameMasters } = useGameMasterContext();
+    const [ membersArr, setMembersArr ] = useState<Member[]>([]);
+    const forceUpdate = useForceUpdate();
 
     const membersArray = useMemo((): Member[] => {
-        const myId: string = members?.me?.info._id
-        const arr = Object?.values<Member>(members?.members as Record<string, Member>)
+        const myId: string = members?.me?.info._id;
+        const arr = Object?.values<Member>(members?.members as Record<string, Member>);
         
         const sortedArr = arr.sort((a, b) => {
             if (allGameMasters.includes(a._id)) {
-                return -1
+                return -1;
             } else if (allGameMasters.includes(b._id)) {
-                return 1
+                return 1;
             } else if (a._id === myId || b._id === myId) {
-                return -1
+                return -1;
             } else {
-                return 0
+                return 0;
             }
-        })
+        });
 
-        return sortedArr
-    }, [ members?.members, members?.me?.info._id, allGameMasters ])
+        return sortedArr;
+    }, [ members?.members, members?.me?.info._id, allGameMasters ]);
 
     useEffect(() => {
-        forceUpdate()
-        setMembersArr(membersArray)
-    }, [ members.members, members, membersArray ])
+        forceUpdate();
+        setMembersArr(membersArray);
+    }, [ members.members, members, membersArray ]);
 
     return (
         <Box
@@ -84,7 +84,7 @@ export default function SessionMembers({ members }: { members: PresenceChannel['
                                     </Box>
                                     <Divider />
                                 </Box>
-                            )
+                            );
                         }
 
                         if (member._id === members.me.info._id && !allGameMasters.includes(member._id)) {
@@ -120,7 +120,7 @@ export default function SessionMembers({ members }: { members: PresenceChannel['
                                         <Typography color='text.secondary' variant='caption' noWrap>{member.name}</Typography>
                                     </Box>
                                 </Box>
-                            )
+                            );
                         }
 
                         return (
@@ -157,9 +157,9 @@ export default function SessionMembers({ members }: { members: PresenceChannel['
                                     )
                                 }
                             </>
-                        )
+                        );
                     }) : 'Carregando...'
             }
         </Box>
-    )
+    );
 }

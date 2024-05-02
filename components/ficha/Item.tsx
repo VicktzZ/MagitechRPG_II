@@ -1,19 +1,19 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import { Box, Button, IconButton, Modal, type SxProps, Tooltip, Typography, useTheme, TextField } from '@mui/material'
-import { useState, type ReactElement } from 'react'
-import { Edit } from '@mui/icons-material'
-import { DiceRollModal, RPGIcon } from '@components/misc'
+import { Box, Button, IconButton, Modal, type SxProps, Tooltip, Typography, useTheme, TextField } from '@mui/material';
+import { useState, type ReactElement } from 'react';
+import { Edit } from '@mui/icons-material';
+import { DiceRollModal, RPGIcon } from '@components/misc';
 import type {
     Item as ItemProps, 
     Weapon as WeaponProps,
     Armor as ArmorProps,
     MergedItems,
     Ficha
-} from '@types'
-import { WarningModal } from '@layout'
-import { useSnackbar } from 'notistack'
-import { type FormikContextType, useFormikContext } from 'formik'
-import type { Inventory } from '@types'
+} from '@types';
+import { WarningModal } from '@layout';
+import { useSnackbar } from 'notistack';
+import { type FormikContextType, useFormikContext } from 'formik';
+import type { Inventory } from '@types';
 
 // eslint-disable-next-line max-len
 type ItemTyping<C> = 
@@ -56,11 +56,11 @@ function ItemModal({
                 {children}
             </Box>
         </Modal>
-    )
+    );
 }
 
 function Weapon(props: ItemTyping<'weapon'>): ReactElement {
-    const [ open, setOpen ] = useState(false)
+    const [ open, setOpen ] = useState(false);
     const [ rollState, setRollState ] = useState<{
         name: string
         dice: number
@@ -77,7 +77,7 @@ function Weapon(props: ItemTyping<'weapon'>): ReactElement {
         visibleBaseAttribute: true,
         bonus: props.bonusValue,
         sum: false
-    })
+    });
 
     const damageRoll = ({ name, crit }: { name: string, crit?: boolean }): void => {
         if (!crit) {
@@ -89,7 +89,7 @@ function Weapon(props: ItemTyping<'weapon'>): ReactElement {
                 visibleBaseAttribute: false,
                 bonus: undefined,
                 sum: true
-            })
+            });
         } else {
             setRollState({
                 name,
@@ -99,11 +99,11 @@ function Weapon(props: ItemTyping<'weapon'>): ReactElement {
                 visibleBaseAttribute: false,
                 bonus: undefined,
                 sum: true
-            })
+            });
         }
 
-        setOpen(true)
-    }
+        setOpen(true);
+    };
 
     return (
         <>
@@ -151,9 +151,9 @@ function Weapon(props: ItemTyping<'weapon'>): ReactElement {
                                 visibleBaseAttribute: true,
                                 bonus: props.bonusValue,
                                 sum: false
-                            })
+                            });
 
-                            setOpen(true)
+                            setOpen(true);
                         }}
                     >
                         {props.hit?.toUpperCase()} + {props.bonus} ({props.effect?.critChance})
@@ -163,21 +163,21 @@ function Weapon(props: ItemTyping<'weapon'>): ReactElement {
                             fullWidth 
                             variant='outlined'
                             sx={{ textTransform: 'lowercase' }}
-                            onClick={() => { damageRoll({ name: 'Dano' }) }}
+                            onClick={() => { damageRoll({ name: 'Dano' }); }}
                         >{props.effect?.value}</Button>
                         <Button 
                             fullWidth 
                             sx={{ textTransform: 'lowercase' }} 
                             variant='outlined' 
                             color='error'
-                            onClick={() => { damageRoll({ name: 'Crítico', crit: true }) }}
+                            onClick={() => { damageRoll({ name: 'Crítico', crit: true }); }}
                         >{props.effect?.critValue}</Button>
                     </Box>
                 </Box>
             </Box>
             <DiceRollModal
                 open={open}
-                onClose={() => { setOpen(false) }}
+                onClose={() => { setOpen(false); }}
                 visibleDices={rollState.visibleDices}
                 visibleBaseAttribute={rollState.visibleBaseAttribute}
                 bonus={rollState?.bonus as any}
@@ -191,7 +191,7 @@ function Weapon(props: ItemTyping<'weapon'>): ReactElement {
                 }}
             />
         </>
-    )
+    );
 }
 
 function Armor(props: ItemTyping<'armor'>): ReactElement {
@@ -221,7 +221,7 @@ function Armor(props: ItemTyping<'armor'>): ReactElement {
             </Box>
             <Box />
         </Box>
-    )
+    );
 }
 
 function ItemComponent(props: ItemTyping<'item'>): ReactElement {
@@ -254,7 +254,7 @@ function ItemComponent(props: ItemTyping<'item'>): ReactElement {
             </Box>
             <Box />
         </Box>
-    )
+    );
 }
 
 function ItemWrapper({ 
@@ -268,18 +268,18 @@ function ItemWrapper({
     description: string,
     item: MergedItems<'Leve' | 'Pesada'>
 }): ReactElement {
-    const theme = useTheme()
-    const f: FormikContextType<Ficha> = useFormikContext()
+    const theme = useTheme();
+    const f: FormikContextType<Ficha> = useFormikContext();
     
-    const [ open, setOpen ] = useState(false)
-    const [ confirmModalOpen, setConfirmModalOpen ] = useState(false)
+    const [ open, setOpen ] = useState(false);
+    const [ confirmModalOpen, setConfirmModalOpen ] = useState(false);
 
-    const { enqueueSnackbar } = useSnackbar()
+    const { enqueueSnackbar } = useSnackbar();
 
     const itemType: 'weapon' | 'armor' | 'item' =
         item.ammo ? 'weapon' :
             item.displacementPenalty >= 0 ? 'armor' :
-                'item'
+                'item';
 
     const onConfirm = async (): Promise<void> => {
         // const itemNames = Object.values(f.values.inventory)
@@ -289,12 +289,12 @@ function ItemWrapper({
 
         f.values.inventory[(itemType + 's') as keyof Inventory] = 
             (f.values.inventory[(itemType + 's') as keyof Inventory] as any)
-                .filter((i: any) => i.name !== item.name)
+                .filter((i: any) => i.name !== item.name);
                 
-        setConfirmModalOpen(false)
-        setOpen(false)
-        enqueueSnackbar(`${item.name} excluído(a) com sucesso!`, { variant: 'success' })
-    }
+        setConfirmModalOpen(false);
+        setOpen(false);
+        enqueueSnackbar(`${item.name} excluído(a) com sucesso!`, { variant: 'success' });
+    };
 
     return (
         <>
@@ -320,7 +320,7 @@ function ItemWrapper({
                 >
                     <Box display='flex' alignItems='center' justifyContent='center'>
                         <Typography width='100%' noWrap textAlign='center'>{title}</Typography>
-                        <IconButton onClick={() => { setOpen(true) }} sx={{ border: `1px solid ${theme.palette.primary.main}50`, p: 1.25 }}>
+                        <IconButton onClick={() => { setOpen(true); }} sx={{ border: `1px solid ${theme.palette.primary.main}50`, p: 1.25 }}>
                             <Edit />
                         </IconButton>
                     </Box>
@@ -331,7 +331,7 @@ function ItemWrapper({
             </Tooltip>
             <ItemModal
                 open={open}
-                onClose={() => { setOpen(false) }}
+                onClose={() => { setOpen(false); }}
             >
                 <>
                     <Box display='flex' justifyContent='space-between' alignItems='center'>
@@ -341,7 +341,7 @@ function ItemWrapper({
                         </Box>
                         <Box>
                             <Button 
-                                onClick={() => { setConfirmModalOpen(true) }} 
+                                onClick={() => { setConfirmModalOpen(true); }} 
                                 variant='contained' 
                                 color={'terciary' as any}
                             >Excluir item</Button>
@@ -440,13 +440,13 @@ function ItemWrapper({
             </ItemModal>
             <WarningModal 
                 open={confirmModalOpen}
-                onClose={() => { setConfirmModalOpen(false) }}
+                onClose={() => { setConfirmModalOpen(false); }}
                 title='Excluir item'
                 text='Tem certeza que deseja excluir este item?'
                 onConfirm={onConfirm}
             />
         </>
-    )
+    );
 }
 
 export default function Item<C extends 'weapon' | 'armor' | 'item'>({
@@ -458,7 +458,7 @@ export default function Item<C extends 'weapon' | 'armor' | 'item'>({
     name: string,
     as?: C,
 } & ItemTyping<C>): ReactElement {
-    const Component = as === 'weapon' ? Weapon : as === 'armor' ? Armor : ItemComponent
+    const Component = as === 'weapon' ? Weapon : as === 'armor' ? Armor : ItemComponent;
 
     return (
         <ItemWrapper
@@ -468,5 +468,5 @@ export default function Item<C extends 'weapon' | 'armor' | 'item'>({
         >
             <Component {...props as any} />
         </ItemWrapper>
-    )
+    );
 }

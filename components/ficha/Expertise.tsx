@@ -24,33 +24,33 @@ export default function Expertise({
         setEdit?: (param: typeof edit) => void
     } 
 }): ReactElement {
-    const theme = useTheme()
-    const matches = useMediaQuery(theme.breakpoints.down('md'))
+    const theme = useTheme();
+    const matches = useMediaQuery(theme.breakpoints.down('md'));
 
-    const [ open, setOpen ] = useState<boolean>(false)
+    const [ open, setOpen ] = useState<boolean>(false);
 
-    const f: FormikContextType<Ficha> = useFormikContext()
+    const f: FormikContextType<Ficha> = useFormikContext();
 
     const determinateColor = (): string => {
         if (expertise.value < 2) {
-            return grey[500]
+            return grey[500];
         } else if (expertise.value < 5) {
-            return green[500]
+            return green[500];
         } else if (expertise.value < 10) {
-            return blue[500]
+            return blue[500];
         } else if (expertise.value < 15) {
-            return purple[500]
+            return purple[500];
         } else {
-            return yellow[500]
+            return yellow[500];
         }
-    }
+    };
 
     const onClick = useCallback((): void => {
         if (!edit?.isEditing) {
-            setOpen(true)
+            setOpen(true);
         } else {
 
-            edit.setEdit?.({ isEditing: false, value: 0 })
+            edit.setEdit?.({ isEditing: false, value: 0 });
 
             if (
                 (
@@ -65,16 +65,16 @@ export default function Expertise({
                         ...f.values.expertises[name],
                         value: expertise.value + edit.value
                     }
-                })    
+                });    
 
                 f.setFieldValue(
                     'points.expertises', 
                     edit.value > 0 ? f.values.points.expertises - 1 :
                         f.values.points.expertises + 1
-                )
+                );
             }
         }
-    }, [ edit, f, name, expertise, disabled ])
+    }, [ edit, f, name, expertise, disabled ]);
 
     return (
         <>
@@ -112,7 +112,7 @@ export default function Expertise({
             </Grid>
             <DiceRollModal 
                 open={open}
-                onClose={() => { setOpen(false) }}
+                onClose={() => { setOpen(false); }}
                 bonus={[ expertise.value ]}
                 isDisadvantage={expertise.value < 0 || diceQuantity < 0}
                 visibleBaseAttribute
@@ -125,5 +125,5 @@ export default function Expertise({
                 }}
             />
         </>
-    )
+    );
 }

@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 'use client';
 
-import copy from 'clipboard-copy'
+import copy from 'clipboard-copy';
 import { PlayerAvatar } from '@components/campaign';
 import { useCampaignContext } from '@contexts/campaignContext';
 import { useChannel } from '@contexts/channelContext';
@@ -11,22 +11,22 @@ import type { PlayerInfo } from '@types';
 import { useEffect, useState, type ReactElement } from 'react';
 
 export default function CampaignDashboardHeader(): ReactElement {
-    const [ playersInfo, setPlayersInfo ] = useState<PlayerInfo[]>([])
-    const { channel } = useChannel()
-    const [ loading, setLoading ] = useState<boolean>(true)
-    const [ openTooltip, setOpenTooltip ] = useState<boolean>(false)
+    const [ playersInfo, setPlayersInfo ] = useState<PlayerInfo[]>([]);
+    const { channel } = useChannel();
+    const [ loading, setLoading ] = useState<boolean>(true);
+    const [ openTooltip, setOpenTooltip ] = useState<boolean>(false);
 
-    const theme = useTheme()
-    const matches = useMediaQuery(theme.breakpoints.down('md'))
+    const theme = useTheme();
+    const matches = useMediaQuery(theme.breakpoints.down('md'));
 
-    const campaign = useCampaignContext()
+    const campaign = useCampaignContext();
 
-    const code = location.href.split('/')[5]
+    const code = location.href.split('/')[5];
 
     useEffect(() => {
         (async () => {
-            const playersInfoResponse: PlayerInfo[] = await fetch(`/api/campaign/playersinfo?code=${code}`).then(async res => await res.json())
-            setPlayersInfo(playersInfoResponse)
+            const playersInfoResponse: PlayerInfo[] = await fetch(`/api/campaign/playersinfo?code=${code}`).then(async res => await res.json());
+            setPlayersInfo(playersInfoResponse);
 
             // channel.bind('pusher:member_added', async (user: PlayerInfo) => {
             //     setPlayersInfo(await fetch(`/api/campaign/playersinfo?code=${code}`).then(async res => await res.json() as PlayerInfo[]))
@@ -36,9 +36,9 @@ export default function CampaignDashboardHeader(): ReactElement {
             //     setPlayersInfo(await fetch(`/api/campaign/playersinfo?code=${code}`).then(async res => await res.json() as PlayerInfo[]))
             // })
 
-            setLoading(false)
-        })()
-    }, [ code, channel ])
+            setLoading(false);
+        })();
+    }, [ code, channel ]);
 
     return (
         <Box display='flex' gap={5} flexDirection='column'>
@@ -52,7 +52,7 @@ export default function CampaignDashboardHeader(): ReactElement {
                 <Box display='flex' alignItems='center' gap={1} justifyContent='center'>
                     <Typography>Código:</Typography>
                     <Tooltip
-                        onClose={() => { setOpenTooltip(false) }}
+                        onClose={() => { setOpenTooltip(false); }}
                         open={openTooltip}
                         disableFocusListener
                         disableHoverListener
@@ -64,13 +64,13 @@ export default function CampaignDashboardHeader(): ReactElement {
                     >
                         <Button variant='outlined' onClick={async () => {
                             try {
-                                await copy(window.location.href)
-                                setOpenTooltip(true)
+                                await copy(window.location.href);
+                                setOpenTooltip(true);
                                 setTimeout(() => {
-                                    setOpenTooltip(false)
+                                    setOpenTooltip(false);
                                 }, 1000);
                             } catch (error: any) {
-                                console.log(error.message)
+                                console.log(error.message);
                             }
                         }}>{campaign?.campaignCode}</Button>
                     </Tooltip>
@@ -105,5 +105,5 @@ export default function CampaignDashboardHeader(): ReactElement {
                 ))}
             </Grid>
         </Box>
-    )
+    );
 }

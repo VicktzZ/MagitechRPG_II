@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-'use client'
+'use client';
 
 import { useEffect, type ReactElement, useState } from 'react';
 import { Box, Card, Grid, Skeleton, Typography, useMediaQuery, useTheme } from '@mui/material';
@@ -12,35 +12,35 @@ import { FichaCard } from '@components/ficha';
 import { ADMIN_EMAIL } from '@constants';
 
 export default function Plataform(): ReactElement {
-    const router = useRouter()
-    const { data: session } = useSession()
+    const router = useRouter();
+    const { data: session } = useSession();
 
-    const theme = useTheme()
-    const matches = useMediaQuery(theme.breakpoints.down('md'))
+    const theme = useTheme();
+    const matches = useMediaQuery(theme.breakpoints.down('md'));
 
-    const [ isLoading, setIsLoading ] = useState<boolean>(false)
-    const [ fichas, setFichas ] = useState<Ficha[]>([])
+    const [ isLoading, setIsLoading ] = useState<boolean>(false);
+    const [ fichas, setFichas ] = useState<Ficha[]>([]);
 
     const fetchFichas = async (): Promise<Ficha[]> => {
-        let response
+        let response;
         
-        setIsLoading(true)
+        setIsLoading(true);
         if (session?.user.email === ADMIN_EMAIL) {
-            response = await fetch('/api/ficha').then(async r => await r.json())
+            response = await fetch('/api/ficha').then(async r => await r.json());
         } else {
-            response = await fetch(`/api/ficha?user=${session?.user?._id}`).then(async r => await r.json())
+            response = await fetch(`/api/ficha?user=${session?.user?._id}`).then(async r => await r.json());
         }
-        setIsLoading(false)
+        setIsLoading(false);
 
-        return response
-    }
+        return response;
+    };
 
     useEffect(() => {
         (async () => {
-            const fichasData = await fetchFichas()
-            setFichas(fichasData)
-        })()
-    }, [])
+            const fichasData = await fetchFichas();
+            setFichas(fichasData);
+        })();
+    }, []);
 
     return (
         <Box display='flex' height='100vh' alignItems='center' pt={3} justifyContent='center'>
@@ -70,7 +70,7 @@ export default function Plataform(): ReactElement {
                                 transform: 'scale(1.05)'
                             }
                         }}
-                        onClick={() => { router.push('/plataform/ficha/create') }}
+                        onClick={() => { router.push('/plataform/ficha/create'); }}
                     >
                         <Box alignItems='center' justifyContent='center' width='100%' display='flex' gap={2}>
                             <Typography variant='h6'>Criar Ficha</Typography>
@@ -82,5 +82,5 @@ export default function Plataform(): ReactElement {
                 </Grid>
             </Box>
         </Box>
-    )
+    );
 }

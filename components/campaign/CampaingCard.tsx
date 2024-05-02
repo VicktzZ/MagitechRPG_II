@@ -16,11 +16,15 @@ export default function CampaingCard({
     playersQtd: number;
     code: string;
 }): ReactElement {
-    const { data: session } = useSession()
-    const userIsGM = gameMaster.includes(session?.user._id ?? '')
+    const { data: session } = useSession();
+    const a = { a: 1 };
 
-    const router = useRouter()
+    console.log(a);
+    
+    const userIsGM = gameMaster.includes(session?.user._id ?? '');
 
+    const router = useRouter();
+    
     return (
         <Card
             sx={{
@@ -37,7 +41,7 @@ export default function CampaingCard({
                     backgroundColor: 'background.paper2'
                 }
             }}
-            onClick={() => { router.push(`/plataform/campaign/${code}`) }}
+            onClick={() => { router.push(`/plataform/campaign/${code}`); }}
         >
             <Typography textAlign="center" variant="h6">
                 {title}

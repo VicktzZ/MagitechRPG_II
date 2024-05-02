@@ -44,7 +44,7 @@ const RadarChart = memo(({
     options?: ChartOptions | any
 }): ReactElement => {
     return <Radar style={style} options={options} data={data} />;
-})
+});
 
-RadarChart.displayName = 'RadarChart'
-export default RadarChart
+RadarChart.displayName = 'RadarChart';
+export default RadarChart;

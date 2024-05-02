@@ -1,46 +1,46 @@
 'use client';
 
-import { CustomIconButton, WarningModal } from '@layout'
-import { ArrowRight } from '@mui/icons-material'
-import { Box, Button, Card, Typography, useMediaQuery, useTheme } from '@mui/material'
-import type { Ficha } from '@types'
-import { useRouter } from 'next/navigation'
+import { CustomIconButton, WarningModal } from '@layout';
+import { ArrowRight } from '@mui/icons-material';
+import { Box, Button, Card, Typography, useMediaQuery, useTheme } from '@mui/material';
+import type { Ficha } from '@types';
+import { useRouter } from 'next/navigation';
 import { useSnackbar } from 'notistack';
-import { useState, type ReactElement } from 'react'
+import { useState, type ReactElement } from 'react';
 
 export default function FichaCard({ ficha, onClick, disableDeleteButton }: { ficha: Ficha, onClick?: () => void, disableDeleteButton?: boolean }): ReactElement {
-    const theme = useTheme()
-    const router = useRouter()
-    const matches = useMediaQuery(theme.breakpoints.down('md'))
-    const { enqueueSnackbar, closeSnackbar } = useSnackbar()
+    const theme = useTheme();
+    const router = useRouter();
+    const matches = useMediaQuery(theme.breakpoints.down('md'));
+    const { enqueueSnackbar, closeSnackbar } = useSnackbar();
 
-    const [ openModal, setOpenModal ] = useState<boolean>(false)
+    const [ openModal, setOpenModal ] = useState<boolean>(false);
 
     const deleteFicha = (): void => {
         (async () => {
-            setOpenModal(false) 
-            enqueueSnackbar('Aguarde...', { variant: 'info', key: 'loadingDelete', autoHideDuration: 6000 })
+            setOpenModal(false); 
+            enqueueSnackbar('Aguarde...', { variant: 'info', key: 'loadingDelete', autoHideDuration: 6000 });
 
             try {
                 await fetch(`/api/ficha/${ficha._id}`, {
                     method: 'DELETE'
-                })
+                });
 
                 setTimeout(() => {
-                    closeSnackbar('loadingDelete')
-                    enqueueSnackbar(`Ficha ${ficha.name} deletada!`, { variant: 'success' })
-                    window.location.reload()
+                    closeSnackbar('loadingDelete');
+                    enqueueSnackbar(`Ficha ${ficha.name} deletada!`, { variant: 'success' });
+                    window.location.reload();
                 }, 500);
             } catch (error: any) {
-                enqueueSnackbar(`Algo deu errado: ${error.message}`, { variant: 'error' })
+                enqueueSnackbar(`Algo deu errado: ${error.message}`, { variant: 'error' });
             }
-        })()
-    }
+        })();
+    };
 
     return (
         <>
             <Card
-                onClick={onClick ?? (() => { router.push(`/plataform/ficha/${ficha._id}`) })}
+                onClick={onClick ?? (() => { router.push(`/plataform/ficha/${ficha._id}`); })}
                 key={ficha._id}
                 sx={{
                     display: 'flex',
@@ -78,7 +78,7 @@ export default function FichaCard({ ficha, onClick, disableDeleteButton }: { fic
                     {!disableDeleteButton && (
                         <Box pr={3} display='flex' justifyContent='right'>
                             <Button 
-                                onClick={e => { e.stopPropagation(); setOpenModal(true) } } 
+                                onClick={e => { e.stopPropagation(); setOpenModal(true); } } 
                                 variant='contained' 
                                 color={'terciary' as any}
                             >Deletar</Button>
@@ -88,11 +88,11 @@ export default function FichaCard({ ficha, onClick, disableDeleteButton }: { fic
             </Card>
             <WarningModal 
                 open={openModal}
-                onClose={() => { setOpenModal(false) }}
+                onClose={() => { setOpenModal(false); }}
                 onConfirm={deleteFicha}
                 title='Tem certeza que deseja deletar essa ficha?'
                 text='Esta ação é irreversível!'
             />
         </>
-    )
+    );
 }

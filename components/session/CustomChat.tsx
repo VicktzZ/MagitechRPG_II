@@ -1,15 +1,15 @@
-import { Box, TextField, useTheme } from '@mui/material'
-import { type FormEvent, useState, type ReactElement, useEffect } from 'react'
-import type { EventData, Message as MessageType } from '@types'
-import { Message } from '.'
-import { useChannel } from '@contexts/channelContext'
-import { useSession } from 'next-auth/react'
+import { Box, TextField, useTheme } from '@mui/material';
+import { type FormEvent, useState, type ReactElement, useEffect } from 'react';
+import type { EventData, Message as MessageType } from '@types';
+import { Message } from '.';
+import { useChannel } from '@contexts/channelContext';
+import { useSession } from 'next-auth/react';
 
 export default function CustomChat(): ReactElement {
-    const theme = useTheme()
-    const { channel } = useChannel()
-    const { data: session } = useSession()
-    const [ messages, setMessages ] = useState<MessageType[]>([])
+    const theme = useTheme();
+    const { channel } = useChannel();
+    const { data: session } = useSession();
+    const [ messages, setMessages ] = useState<MessageType[]>([]);
     const [ message, setMessage ] = useState<MessageType>({
         message: '',
         by: { 
@@ -17,17 +17,17 @@ export default function CustomChat(): ReactElement {
             image: session?.user.image as unknown as string,
             name: session?.user.name as unknown as string
         }
-    })
+    });
     
     const submitForm = async (e: FormEvent): Promise<void> => {
-        e.preventDefault()
-        const rollMatches = message.message.match(/^[1-9]\d*d[1-9]\d*$/)
+        e.preventDefault();
+        const rollMatches = message.message.match(/^[1-9]\d*d[1-9]\d*$/);
 
         if (rollMatches) {
             console.log(message);
         }
 
-        setMessage({ ...message, message: '' })
+        setMessage({ ...message, message: '' });
 
         const requestData: EventData = {
             channelName: channel.name,
@@ -38,7 +38,7 @@ export default function CustomChat(): ReactElement {
                 _id: channel.members.me.info._id,
                 socketId: channel.members.me.id
             }
-        }
+        };
 
         try {
             await fetch('/api/pusher/events', {
@@ -47,20 +47,20 @@ export default function CustomChat(): ReactElement {
                 headers: {
                     'Content-Type': 'application/json'
                 }
-            })
+            });
         } catch (error: any) {
             console.log(error.message);            
         }
 
-    }
+    };
 
     useEffect(() => {
         channel.bind('server-message', (msg: EventData<MessageType>['data']) => {
-            setMessages([ ...messages, msg ])
+            setMessages([ ...messages, msg ]);
             console.log(msg);
             console.log('Message sended by: ' + msg.by.id);
-        })
-    }, [ channel, messages ])	
+        });
+    }, [ channel, messages ]);	
 
     return (
         <Box
@@ -82,7 +82,7 @@ export default function CustomChat(): ReactElement {
                     label='Chat'
                     required
                     value={message.message}
-                    onChange={e => { setMessage({ ...message, message: e.target.value }) }}
+                    onChange={e => { setMessage({ ...message, message: e.target.value }); }}
                     placeholder='Exemplo: 2d6'
                     autoComplete='off'
                 />
@@ -116,5 +116,5 @@ export default function CustomChat(): ReactElement {
                 { messages.map(msg => <Message key={msg.message} message={msg.message} by={msg.by} />) }
             </Box>
         </Box>    
-    )
+    );
 }

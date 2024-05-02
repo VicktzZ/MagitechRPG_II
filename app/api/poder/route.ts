@@ -7,13 +7,13 @@ import type { NextRequest } from 'next/server';
 export async function GET(req: NextRequest): Promise<Response> {
     
     try {
-        await connectToDb()
+        await connectToDb();
         
-        const query = req.nextUrl.searchParams.get('search')
-        const filter = req.nextUrl.searchParams.get('filter')
-        const sort = req.nextUrl.searchParams.get('sort')
+        const query = req.nextUrl.searchParams.get('search');
+        const filter = req.nextUrl.searchParams.get('filter');
+        const sort = req.nextUrl.searchParams.get('sort');
 
-        const pipeline: PipelineStage[] = [ { $skip: 0 } ] 
+        const pipeline: PipelineStage[] = [ { $skip: 0 } ]; 
         
         if (query) {
             pipeline.unshift({
@@ -31,7 +31,7 @@ export async function GET(req: NextRequest): Promise<Response> {
                         }
                     }
                 }
-            })
+            });
         }
 
         if (filter) {
@@ -39,30 +39,30 @@ export async function GET(req: NextRequest): Promise<Response> {
                 $match: {
                     'elemento': filter
                 }
-            })
+            });
         }
 
         if (sort) {
-            pipeline.push({ $sort: { [sort.toLowerCase()]: 1 } })
+            pipeline.push({ $sort: { [sort.toLowerCase()]: 1 } });
         }
 
-        const poderes = await Poder.aggregate(pipeline)
+        const poderes = await Poder.aggregate(pipeline);
 
-        return Response.json(poderes)
+        return Response.json(poderes);
     } catch (error: any) {
-        return Response.json({ message: 'NOT FOUND', error: error.message }, { status: 404 })
+        return Response.json({ message: 'NOT FOUND', error: error.message }, { status: 404 });
     }
 }
 
 export async function POST(req: Request): Promise<Response> {
     try {
-        await connectToDb()
+        await connectToDb();
         
-        const body: MagicPower = await req.json()
-        const poder = await Poder.create(body)
+        const body: MagicPower = await req.json();
+        const poder = await Poder.create(body);
 
-        return Response.json(poder)
+        return Response.json(poder);
     } catch (error: any) {
-        return Response.json({ message: 'BAD REQUEST', error: error.message }, { status: 400 })
+        return Response.json({ message: 'BAD REQUEST', error: error.message }, { status: 400 });
     }
 }   

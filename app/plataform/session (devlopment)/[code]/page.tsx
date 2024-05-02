@@ -1,8 +1,8 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 'use client';
 
-import PusherClient, { type PresenceChannel } from 'pusher-js'
-import { useEffect, type ReactElement, useState } from 'react'
+import PusherClient, { type PresenceChannel } from 'pusher-js';
+import { useEffect, type ReactElement, useState } from 'react';
 import { PUSHER_KEY } from '@constants';
 import { useSession } from 'next-auth/react';
 import { useChannel } from '@contexts/channelContext';
@@ -14,61 +14,61 @@ import type { Ficha, SessionModel } from '@types';
 import { FichaCard } from '@components/ficha';
 
 export default function Session({ params }: { params: { code: string } }): ReactElement {
-    const sessionName = 'presence-' + params.code
-    const router = useRouter()
+    const sessionName = 'presence-' + params.code;
+    const router = useRouter();
 
     // const [ pusherClient, setPusherClient ] = useState<PusherClient | null>(null)
-    let pusherClient: PusherClient | null
+    let pusherClient: PusherClient | null;
 
-    const [ loading, setLoading ] = useState<boolean>(true)
-    const [ isFichaLoading, setIsFichaLoading ] = useState<boolean>(true)
-    const [ userFichas, setUserFichas ] = useState<Ficha[]>([])
+    const [ loading, setLoading ] = useState<boolean>(true);
+    const [ isFichaLoading, setIsFichaLoading ] = useState<boolean>(true);
+    const [ userFichas, setUserFichas ] = useState<Ficha[]>([]);
 
-    const [ ficha, setFicha ] = useState<Ficha>()
-    const [ gameMasterId, setGameMasterId ] = useState<string[]>([])
+    const [ ficha, setFicha ] = useState<Ficha>();
+    const [ gameMasterId, setGameMasterId ] = useState<string[]>([]);
 
-    const { data: session } = useSession()
-    const { setChannel } = useChannel()
+    const { data: session } = useSession();
+    const { setChannel } = useChannel();
 
     useEffect(() => {
         (async () => {
-            document.title = 'Session - ' + params.code
+            document.title = 'Session - ' + params.code;
     
-            const sessionResponse: SessionModel = await fetch(`/api/session?code=${params.code}`).then(async res => await res.json())
+            const sessionResponse: SessionModel = await fetch(`/api/session?code=${params.code}`).then(async res => await res.json());
 
             if (!sessionResponse) {
-                setLoading(false)
-                return
+                setLoading(false);
+                return;
             }
 
-            setGameMasterId(sessionResponse?.admin)
+            setGameMasterId(sessionResponse?.admin);
             
             if (sessionResponse.admin.includes(session?.user?._id as unknown as string)) {
                 pusherClient = new PusherClient(PUSHER_KEY, {
                     cluster: 'sa1',
                     authEndpoint: `/api/pusher/auth?session=${JSON.stringify(session)}`,
                     forceTLS: true
-                })
+                });
 
-                setIsFichaLoading(false)
-                setLoading(true)
+                setIsFichaLoading(false);
+                setLoading(true);
 
-                setChannel(pusherClient?.subscribe(sessionName) as PresenceChannel)
-                setLoading(false)
+                setChannel(pusherClient?.subscribe(sessionName) as PresenceChannel);
+                setLoading(false);
             }
 
             if (isFichaLoading) {
-                const fichaResponse: Ficha[] = await fetch(`/api/ficha?user=${session?.user?._id}`).then(async res => await res.json())
+                const fichaResponse: Ficha[] = await fetch(`/api/ficha?user=${session?.user?._id}`).then(async res => await res.json());
 
-                setUserFichas(fichaResponse)
-                setIsFichaLoading(false)
+                setUserFichas(fichaResponse);
+                setIsFichaLoading(false);
             }
-        })()
+        })();
 
         return () => {
-            pusherClient?.unsubscribe(sessionName)
-        }
-    }, [])
+            pusherClient?.unsubscribe(sessionName);
+        };
+    }, []);
     
     return (
         <>
@@ -76,7 +76,7 @@ export default function Session({ params }: { params: { code: string } }): React
                 loading ? (
                     <Modal
                         open={loading}
-                        onClose={() => { router.push('/plataform') }}
+                        onClose={() => { router.push('/plataform'); }}
                         disableAutoFocus
                         disableEnforceFocus
                         disableRestoreFocus
@@ -113,16 +113,16 @@ export default function Session({ params }: { params: { code: string } }): React
                                         ficha={f}
                                         disableDeleteButton
                                         onClick={() => {
-                                            setFicha(f)
-                                            setLoading(false)
+                                            setFicha(f);
+                                            setLoading(false);
 
                                             pusherClient = new PusherClient(PUSHER_KEY, {
                                                 cluster: 'sa1',
                                                 authEndpoint: `/api/pusher/auth?session=${JSON.stringify(session)}&ficha=${JSON.stringify(f)}`,
                                                 forceTLS: true
-                                            })
+                                            });
 
-                                            setChannel(pusherClient?.subscribe(sessionName) as PresenceChannel)
+                                            setChannel(pusherClient?.subscribe(sessionName) as PresenceChannel);
                                         }}
                                     />
                                 ))}
@@ -142,5 +142,5 @@ export default function Session({ params }: { params: { code: string } }): React
                 )
             }
         </>
-    )
+    );
 }

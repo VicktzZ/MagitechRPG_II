@@ -1,13 +1,13 @@
-import { type ComponentsProps, Select, Box, useTheme, Grid, Chip, OutlinedInput, ListSubheader, Button } from '@mui/material'
-import { useMediaQuery } from '@mui/material'
-import { MenuItem } from '@mui/material'
-import { TextField } from '@mui/material'
-import { FormControl, InputLabel } from '@mui/material'
-import type { MergedItems } from '@types'
-import { type Dispatch, type SetStateAction, type ReactElement, useState } from 'react'
-import { type SubmitHandler, useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
+import { type ComponentsProps, Select, Box, useTheme, Grid, Chip, OutlinedInput, ListSubheader, Button } from '@mui/material';
+import { useMediaQuery } from '@mui/material';
+import { MenuItem } from '@mui/material';
+import { TextField } from '@mui/material';
+import { FormControl, InputLabel } from '@mui/material';
+import type { MergedItems } from '@types';
+import { type Dispatch, type SetStateAction, type ReactElement, useState } from 'react';
+import { type SubmitHandler, useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 
 import { 
     ballisticWeaponAmmo,
@@ -21,8 +21,8 @@ import {
     weaponKind,
     weaponMagicalAccessories,
     weaponScientificAccessories 
-} from '@constants/dataTypes'
-import { Typography } from '@mui/material'
+} from '@constants/dataTypes';
+import { Typography } from '@mui/material';
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
@@ -61,7 +61,7 @@ function SelectFormComponent(props: ComponentsProps['MuiSelect'] & {
                 {props.children}
             </Select>
         </FormControl>
-    )
+    );
 }
 
 function WeaponModal(): ReactElement {
@@ -85,14 +85,14 @@ function WeaponModal(): ReactElement {
             critChance: z.string(),
             value: z.string()
         })
-    })
+    });
 
     type WeaponFormFields = z.infer<typeof validationSchema>
 
-    const theme = useTheme()
-    const matches = useMediaQuery(theme.breakpoints.down('md'))
+    const theme = useTheme();
+    const matches = useMediaQuery(theme.breakpoints.down('md'));
 
-    const [ weaponCategParam, setWeaponCategParam ] = useState<'Leve' | 'Pesada'>()
+    const [ weaponCategParam, setWeaponCategParam ] = useState<'Leve' | 'Pesada'>();
 
     const { register, handleSubmit, formState: { errors }, getValues } = useForm<WeaponFormFields>({
         defaultValues: {
@@ -103,11 +103,11 @@ function WeaponModal(): ReactElement {
             accessories: [ 'Não possui acessórios' ]
         },
         resolver: zodResolver(validationSchema)
-    })
+    });
 
     const onSubmit: SubmitHandler<WeaponFormFields> = (data): void => {
-        console.log(data)
-    }
+        console.log(data);
+    };
 
     return (
         <>
@@ -180,7 +180,7 @@ function WeaponModal(): ReactElement {
                     noLabel
                     id="weaponCategParam"
                     value={weaponCategParam}
-                    onChange={e => { setWeaponCategParam(e.target.value as 'Leve' | 'Pesada') }}
+                    onChange={e => { setWeaponCategParam(e.target.value as 'Leve' | 'Pesada'); }}
                     sx={{
                         width: '10%',
                         ml: -1
@@ -245,7 +245,7 @@ function WeaponModal(): ReactElement {
                     }}
                     input={<OutlinedInput id="select-multiple-chip" label="Chip" />}
                     renderValue={(selected) => {
-                        const s: string[] = selected as string[]
+                        const s: string[] = selected as string[];
                         
                         return (
                             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
@@ -253,7 +253,7 @@ function WeaponModal(): ReactElement {
                                     <Chip key={value} label={value} />
                                 ))}
                             </Box>
-                        )
+                        );
                     }}
 
                 >   
@@ -390,21 +390,21 @@ function WeaponModal(): ReactElement {
                     >Criar Item</Button>
                 </Box>
             </Box>
-            <pre>{JSON.stringify(getValues(), null, 2)}</pre>
+            {/* <pre>{JSON.stringify(getValues(), null, 2)}</pre> */}
         </>
-    )
+    );
 }
 
 function ArmorModal(): ReactElement {
     return (
         <></>
-    )
+    );
 }
 
 function ItemModal(): ReactElement {
     return (
         <></>
-    )
+    );
 }
 
-export { WeaponModal, ArmorModal, ItemModal }
+export { WeaponModal, ArmorModal, ItemModal };
