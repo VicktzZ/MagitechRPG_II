@@ -650,13 +650,19 @@ export const skills: {
             },
             {
                 name: 'Pressa Fádica',
-                description: '|',
+                description: 'A sua velocidade ultrapassa os limites humanos, fazendo com que tudo ao seu redor fique mais lento. Você pode gastar sua ação de movimento completa (isto é, gastar todo seu deslocamento) para diminuir o tempo do jogo pela metade em suas ações. Caso esteja em combate, automaticamente você sai como primeiro na iniciativa e ganha 2 ações padrões extras que podem ser gastas enquanto você permanecer naquele combate. Além disso, você ganha +2 de Agilidade.',
                 origin: 'Andarilho',
                 type: 'Subclasse'
             },
             {
                 name: 'Movimentação Astral',
                 description: 'Seus pés não se locomovem mais neste plano. Seu corpo atinge um incrível patamar de suavidade, fazendo com que seus pés se locomovam em outro plano astral (Você não faz barulhos ao andar ou correr, fica invisível ao correr, pode entrar e sair de furitividade a hora que quiser e aumenta o deslocamento em +12).',
+                origin: 'Andarilho',
+                type: 'Subclasse'
+            },
+            {
+                name: 'Embsocada Planar',
+                description: 'Você consegue atravessar paredes e objetos físicos não tão espessos se movendo em outro plano astral. Além disso, com esta habilidade, você pode atacar inimigos de forma despercebida (desde que eles não tenham de visto antes ou caso você esteja furtivo), sempre sendo um ataque desprevinido, causando o dobro de dano com um bônus de dano adicional igual ao seu deslocamento (Somente em ataques corpo-a-corpo). ',
                 origin: 'Andarilho',
                 type: 'Subclasse'
             }
