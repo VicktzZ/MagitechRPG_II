@@ -114,14 +114,6 @@
           2,
           "always"
       ],
-      "semi": [
-          "error",
-          "always"
-      ],
-      "semi-style": [
-          "error",
-          "last"
-      ],
       "space-infix-ops": "error",
       "camelcase": "error",
       "arrow-spacing": "error",
