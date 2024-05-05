@@ -439,6 +439,22 @@ export const skills: {
                 origin: 'Monge',
                 type: 'Classe',
                 level: 35
+            },
+            {
+                name: 'Autoconsciência',
+                description: `Agora você ganha +5 de Agilidade, Destreza e Resistência Mágica ao entrar no estado de Calma. Além disso, você não está mais sujeito a receber 50% a mais de dano no estado de Fúria e sim o dano normal.
+Estado Divino agora dura dois de seus turnos (ou duas rodadas).
+`,
+                origin: 'Monge',
+                type: 'Classe',
+                level: 40
+            },
+            {
+                name: 'Ponto de Pressão',
+                description: 'Você pode gastar 25 MP para atingir um ponto vital no seu próximo alvo armado com qualquer arma. O dano é considerado crítico e aplica um efeito negativo do qual você escolherá, entre: Sangramento, Paralisia, Cegueira, Envenenamento ou Confusão',
+                origin: 'Monge',
+                type: 'Classe',
+                level: 45
             }
         ],
 

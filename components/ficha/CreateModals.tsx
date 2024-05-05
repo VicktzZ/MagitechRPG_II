@@ -1,4 +1,4 @@
-import { type ComponentsProps, Select, Box, useTheme, Grid, Chip, OutlinedInput, ListSubheader, Button } from '@mui/material';
+import { type ComponentsProps, Select, Box, useTheme, Grid, Chip, OutlinedInput, ListSubheader, Button, type SxProps } from '@mui/material';
 import { useMediaQuery } from '@mui/material';
 import { MenuItem } from '@mui/material';
 import { TextField } from '@mui/material';
@@ -42,12 +42,14 @@ function SelectFormComponent(props: ComponentsProps['MuiSelect'] & {
     noLabel?: boolean,
     item?: MergedItems<any>
     setItem?: Dispatch<SetStateAction<MergedItems<any>>>
+    selectStyle?: SxProps
 }): ReactElement {
     return (
         <FormControl sx={props?.sx}>
             <InputLabel id={props.prop}>{!props.noLabel && props.label}</InputLabel>
             <Select
                 {...props}
+                sx={props.selectStyle}
                 // labelId={props.prop ?? props.id}
                 // id={(props.prop ?? props.id) + 'Select'}
                 // value={(props.item[props.prop!] ?? props.value) || ''}
@@ -107,6 +109,7 @@ function WeaponModal(): ReactElement {
 
     const onSubmit: SubmitHandler<WeaponFormFields> = (data): void => {
         console.log(data);
+        console.log(errors);
     };
 
     return (
