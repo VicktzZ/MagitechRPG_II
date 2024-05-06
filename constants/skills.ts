@@ -13,7 +13,7 @@ export const skills: {
         'Arcano': Skill[]
         'Ladino': Skill[]
     }
-    subclass: Skill[]
+    subclass: Record<string, Skill[]>
     bonus: Skill[]
     powers: Skill[]
 } = {
