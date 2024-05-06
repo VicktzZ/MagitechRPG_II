@@ -110,7 +110,7 @@ const Inventory = memo(({ disabled }: { disabled?: boolean }): ReactElement => {
                     description={weapon.description}
                     hit={weapon.hit}
 
-                    bonusValue={[ f.values.expertises[weapon.bonus].value ]}
+                    bonusValue={[ f.values.expertises[weapon.bonus]?.value ]}
                     isDisadvantage={f.values.attributes[weapon.hit] < 0}
                     diceQuantity={Math.floor((f.values.attributes[weapon.hit] / 2) ?? 0) + 1}
 

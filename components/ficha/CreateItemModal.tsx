@@ -94,7 +94,7 @@ export default function CreateItemModal({
                     item.effect?.kind && item.effect?.effectType
                 );
 
-                if (!regex.test(item.effect?.value ?? '') ?? !regex.test(item.effect?.critValue ?? '')) {
+                if (!(!regex.test(item.effect?.value ?? '') ?? !regex.test(item.effect?.critValue ?? ''))) {
                     enqueueSnackbar('O dano da arma precisa começar com um dado! EX: 2d4', { variant: 'error', autoHideDuration: 3000 });
                 } else {
                     if (!isAllWeaponFieldsFilledIn) {
@@ -146,7 +146,7 @@ export default function CreateItemModal({
             {...createItem}
         >
             { 
-                itemType === 'weapon' ? <WeaponModal /> :
+                itemType === 'weapon' ? <WeaponModal create={createItem} /> :
                     itemType === 'armor' ? <ArmorModal /> :
                         <ItemModal />
             }

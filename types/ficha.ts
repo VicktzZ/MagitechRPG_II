@@ -204,6 +204,7 @@ export interface Armor {
     weight: number
     value: number
     displacementPenalty: number
+    accessories?: ArmorAccessoriesType[]
 }
 
 export interface MergedItems<T extends 'Leve' | 'Pesada'> {
