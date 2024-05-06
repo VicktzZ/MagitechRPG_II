@@ -14,8 +14,10 @@ export default function SessionMembers({ members }: { members: PresenceChannel['
     const forceUpdate = useForceUpdate();
 
     const membersArray = useMemo((): Member[] => {
-        const myId: string = members?.me?.info._id;
-        const arr = Object?.values<Member>(members?.members as Record<string, Member>);
+        forceUpdate()
+
+        const myId: string = members?.me?.info._id
+        const arr = Object?.values<Member>(members?.members as Record<string, Member>)
         
         const sortedArr = arr.sort((a, b) => {
             if (allGameMasters.includes(a._id)) {
@@ -29,13 +31,12 @@ export default function SessionMembers({ members }: { members: PresenceChannel['
             }
         });
 
-        return sortedArr;
-    }, [ members?.members, members?.me?.info._id, allGameMasters ]);
+        return sortedArr
+    }, [ members?.members, members?.me?.info._id, gameMasterId, forceUpdate ])
 
     useEffect(() => {
-        forceUpdate();
-        setMembersArr(membersArray);
-    }, [ members.members, members, membersArray ]);
+        setMembersArr(membersArray)
+    }, [ members.members, members, membersArray ])
 
     return (
         <Box

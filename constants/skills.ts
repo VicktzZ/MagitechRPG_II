@@ -13,47 +13,7 @@ export const skills: {
         'Arcano': Skill[]
         'Ladino': Skill[]
     }
-    subclass: {
-        // Marcial
-        'Armipotente'?: Skill[],
-        'Polimorfo'?: Skill[],
-        'Comandante'?: Skill[],
-
-        // Explorador
-        'Harmonizador'?: Skill[],
-        'Numeromante'?: Skill[],
-        'Transcendentalista'?: Skill[],
-
-        // Feiticeiro
-        'Conjurador'?: Skill[],
-        'Elementalista'?: Skill[],
-        'Alquimista'?: Skill[],
-
-        // Bruxo
-        'Necromante'?: Skill[],
-        'Pocionista'?: Skill[],
-        'Espiritista'?: Skill[],
-
-        // Monge
-        'Guardião das Energias'?: Skill[],
-        'Protetor da Alma'?: Skill[],
-        'Andarilho'?: Skill[],
-
-        // Druida
-        'Shapeshifter'?: Skill[],
-        'Animante'?: Skill[],
-        'Naturomante'?: Skill[],
-
-        // Arcano
-        'Arquimago'?: Skill[],
-        'Dimensionalista'?: Skill[],
-        'Metamágico'?: Skill[],
-
-        // Ladino
-        'Espectro'?: Skill[],
-        'Supernaturalista'?: Skill[],
-        'Metafísico'?: Skill[]
-    },
+    subclass: Skill[]
     bonus: Skill[]
     powers: Skill[]
 } = {
@@ -234,20 +194,6 @@ export const skills: {
                 origin: 'Marcial',
                 type: 'Classe',
                 level: 25
-            },
-            {
-                name: 'Armado',
-                description: 'Armas corpo-a-corpo dão +2 dados do mesmo tipo de dano.',
-                origin: 'Marcial',
-                type: 'Classe',
-                level: 30
-            },
-            {
-                name: 'Não-Elementalista',
-                description: 'Magias não-elementais tem +1 dado respectivo para cálculo de dano, cálculo de cura, chance de acerto etc.',
-                origin: 'Marcial',
-                type: 'Classe',
-                level: 35
             }
         ],
 
@@ -293,29 +239,6 @@ export const skills: {
                 origin: 'Explorador',
                 type: 'Classe',
                 level: 25
-            },
-            {
-                name: 'Afluência',
-                description: `Você pode escolher uma das seguintes opções (que sejam compatíveis com seu nível):
-                +1 Habilidade de qualquer classe ou subclasse (incluindo o poder de classe);
-                +3 Poderes mágicos;
-                +1 Magia Nível 5.
-                `,
-                origin: 'Explorador',
-                type: 'Classe',
-                level: 30
-            },
-            {
-                name: 'Polivalência',
-                description: `Você pode pagar 25 MP para rolar 2d20 e utilizar a média aritmética do resultado (2d20/2) para algum dos efeitos:
-                Caso o valor do resultado seja igual ou maior que 10, este resultado é adicionado em seus AP até a próxima tentativa de acerto, e diminui o dano recebido nos pontos do resultado do próximo ataque em que você for atingido. Caso o dano for menor do que o resultado da habilidade, você usa a diferença do cálculo e cura LP ou MP, caso você estiver com a saúde em 100%. 
-                Caso o valor do resultado seja igual ou menor que 10, você pode adicionar estes pontos em seus PRÓXIMOS DOIS testes, incluindo cálculo de dano e chance de acerto. Não funciona para esquiva ou bloqueio de ataques.
-                Em suma, em caso de combate, resultados maiores significam oportunidades de defesa, e resultados menores significam oportunidades de ataque.
-                Caso o resultado seja 10, o jogador poderá escolher entre um dos efeitos citados acima.
-                `,
-                origin: 'Explorador',
-                type: 'Classe',
-                level: 35
             }
         ],
 
@@ -500,20 +423,6 @@ Estado Divino agora dura dois de seus turnos (ou duas rodadas).
                 origin: 'Druida',
                 type: 'Classe',
                 level: 25
-            },
-            {
-                name: 'Vanguarda',
-                description: 'Os orbes agora dão 1d6+1 de dano além de você invocar 5 entre as seguintes possibilidades: Fogo, Água, Ar, Terra, Eletricidade, Gelo. Você pode escolher os tipos elementais dos orbes gerados.',
-                origin: 'Druida',
-                type: 'Classe',
-                level: 30
-            },
-            {
-                name: 'Domo Protetor',
-                description: 'Você pode gastar 20 MP para criar uma barreira mágica de 6m por 3 turnos que inibe qualquer ataque vindo de fora. Você e seus aliados conseguem atacar de dentro para fora, mas não de fora para dentro. Além disso, quem estiver dentro da barreira ganha +5 em chance de acerto.',
-                origin: 'Druida',
-                type: 'Classe',
-                level: 35
             }
         ],
 
@@ -559,20 +468,6 @@ Estado Divino agora dura dois de seus turnos (ou duas rodadas).
                 origin: 'Arcano',
                 type: 'Classe',
                 level: 25
-            },
-            {
-                name: 'Teletransporte Arcano',
-                description: 'Uma vez por cena, por 20 MP, você pode teletransportar quaisquer objetos ou pessoas que estejam se segurando em você para um lugar que você já passou ou já vivenciou. Caso você tente teletransportar o algo ou alguém contra sua vontade, ele faz um teste de Resistência Mágica. Se ele passar, o teletransporta falha e não será possível teletransportar o alvo novamente até o dia seguinte. Além disso, uma vez por combate quando te acertarem um ataque, você pode pagar 10 MP para se esquivar e se afastar 9m do alvo, automaticamente.',
-                origin: 'Arcano',
-                type: 'Classe',
-                level: 30
-            },
-            {
-                name: 'Intelecto Superior',
-                description: 'Você adiciona sua LOG ao dano e cura de suas magias.',
-                origin: 'Arcano',
-                type: 'Classe',
-                level: 35
             }
         ],
 
@@ -594,28 +489,28 @@ Estado Divino agora dura dois de seus turnos (ou duas rodadas).
             {
                 name: 'Fobia',
                 description: 'Você pode pagar 15 MP para aplicar 2d8 de dano, deixar o alvo no estado de medo e inibir seus ataques até seu turno seguinte. Se você estiver em furtividade o dano é aumentado para 6d8.',
-                origin: 'Ladino',
+                origin: 'ladino',
                 type: 'Classe',
                 level: 10
             },
             {
                 name: 'Expurgo',
                 description: 'Caso o inimigo esteja com 10% ou menos de vida, seu próximo ataque o mata instantaneamente.',
-                origin: 'Ladino',
+                origin: 'ladino',
                 type: 'Classe',
                 level: 15
             },
             {
                 name: 'Sempre Distante',
                 description: 'Armas de fogo ou de longa distância dão +1 dados do mesmo tipo de dano.',
-                origin: 'Ladino',
+                origin: 'ladino',
                 type: 'Classe',
                 level: 20
             },
             {
                 name: 'Ataque Duplo',
                 description: 'Você pode atacar duas vezes no mesmo turno caso erre um ataque. Você não possuirá duas ações padrões por turno, somente duas oportunidades de ataque.',
-                origin: 'Ladino',
+                origin: 'ladino',
                 type: 'Classe',
                 level: 25
             },

@@ -41,38 +41,6 @@ export interface Magia {
     'maestria'?: string
 }
 
-export interface Campaign {
-    _id?: string
-    admin: string[]
-    campaignCode: string
-    title: string
-    description: string
-    players: Player[]
-}
-
-export interface Player {
-    userId: string,
-    fichaId: string
-}
-
-export interface PlayerInfo {
-    username: string
-    image: string
-    charname: string
-}
-
-export interface PusherMemberParam {
-    id: string,
-    info: {
-        name: string
-        email: string
-        image: string
-        _id: string
-        currentFicha: Ficha,
-        socketId: string
-    }
-}
-
 type Elemento = 
     'FOGO' |
     'ÁGUA' |
