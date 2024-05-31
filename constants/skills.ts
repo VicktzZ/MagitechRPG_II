@@ -681,6 +681,12 @@ Estado Divino agora dura dois de seus turnos (ou duas rodadas).
                 description: 'Você consegue atravessar paredes e objetos físicos não tão espessos se movendo em outro plano astral. Além disso, com esta habilidade, você pode atacar inimigos de forma despercebida (desde que eles não tenham de visto antes ou caso você esteja furtivo), sempre sendo um ataque desprevinido, causando o dobro de dano com um bônus de dano adicional igual ao seu deslocamento (Não é possível se mover após desferir um ataque com esta habilidade. Somente em ataques corpo-a-corpo).',
                 origin: 'Andarilho',
                 type: 'Subclasse'
+            },
+            {
+                name: 'Golpe Fantasma',
+                description: 'Ao realizar um ataque surpresa, seu golpe atravessa armaduras e defesas naturais, ignorando qualquer tipo de resistência física do alvo e adicionando +20 ao dano do ataque. Além disso você ganha +15m no seu descolamento base.',
+                origin: 'Andarilho',
+                type: 'Subclasse'
             }
         ],
 
