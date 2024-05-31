@@ -1,13 +1,13 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { Box, Grid, Typography, useMediaQuery, useTheme, Modal, Button } from '@mui/material';
-import React, { useEffect, type ReactElement, useMemo, memo, useState } from 'react';
-import { useFormikContext, type FormikContextType } from 'formik';
-import { Item, ItemModal } from '@components/ficha';
-import { lineageItems } from '@constants/lineageitems';
-import { red, yellow } from '@mui/material/colors';
-import { CustomIconButton } from '@layout';
-import { Add } from '@mui/icons-material';
-import type { Ficha, LineageNames } from '@types';
+import { Box, Grid, Typography, useMediaQuery, useTheme, Modal, Button } from '@mui/material'
+import React, { useEffect, type ReactElement, useMemo, memo, useState } from 'react'
+import { useFormikContext, type FormikContextType } from 'formik'
+import { Item, ItemModal } from '@components/ficha'
+import { lineageItems } from '@constants/lineageitems'
+import { red, yellow } from '@mui/material/colors'
+import { CustomIconButton } from '@layout'
+import { Edit } from '@mui/icons-material'
+import type { Ficha, LineageNames } from '@types'
 
 type ItemName = 'weapon' | 'item' | 'armor'
 
@@ -202,8 +202,8 @@ const Inventory = memo(({ disabled }: { disabled?: boolean }): ReactElement => {
                     >
                         {f.values.capacity.cargo}/{f.values.capacity.max}
                     </Typography>
-                    <CustomIconButton onClick={() => { setModalOpen(true); }}>
-                        <Add />
+                    <CustomIconButton onClick={() => { setModalOpen(true) }}>
+                        <Edit />
                     </CustomIconButton>
                 </Box>
                 <Box

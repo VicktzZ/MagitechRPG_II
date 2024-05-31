@@ -1,62 +1,59 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 'use client';
 
-import { useEffect, type ReactElement, useState } from 'react';
-import { useSession } from 'next-auth/react';
-import { Backdrop, Box, CircularProgress, Grid, Modal, Skeleton, Typography } from '@mui/material';
-import { useRouter } from 'next/navigation';
-import { CampaignComponent } from '@components/campaign';
-import { FichaCard } from '@components/ficha';
-import { useChannel } from '@contexts/channelContext';
-import { gameMasterContext, campaignContext } from '@contexts';
-import { PUSHER_KEY } from '@constants';
-import type { Ficha, Campaign as CampaignType } from '@types';
 import PusherClient, { type PresenceChannel } from 'pusher-js';
+import { useEffect, type ReactElement, useState } from 'react';
+import { PUSHER_KEY } from '@constants';
+import { useSession } from 'next-auth/react';
+import { useChannel } from '@contexts/channelContext';
+import { Backdrop, Box, CircularProgress, Grid, Modal, Skeleton, Typography } from '@mui/material';
+import { SessionComponent } from '@components/session';
+import { gameMasterContext } from '@contexts';
+import { useRouter } from 'next/navigation';
+import type { Ficha, SessionModel } from '@types';
+import { FichaCard } from '@components/ficha';
 
-export default function Campaign({ params }: { params: { code: string } }): ReactElement {
+export default function Session({ params }: { params: { code: string } }): ReactElement {
+    const sessionName = 'presence-' + params.code;
     const router = useRouter();
-    const campaignName = 'presence-' + params.code;
+
+    // const [ pusherClient, setPusherClient ] = useState<PusherClient | null>(null)
+    let pusherClient: PusherClient | null;
 
     const [ loading, setLoading ] = useState<boolean>(true);
     const [ isFichaLoading, setIsFichaLoading ] = useState<boolean>(true);
     const [ userFichas, setUserFichas ] = useState<Ficha[]>([]);
 
     const [ ficha, setFicha ] = useState<Ficha>();
+    const [ gameMasterId, setGameMasterId ] = useState<string[]>([]);
+
     const { data: session } = useSession();
-
     const { setChannel } = useChannel();
-
-    let pusherClient: PusherClient | null;
-
-    const [ allGameMastersId, setAllGameMastersId ] = useState<string[]>([]);
-    const [ userIsGM, setUserIsGM ] = useState<boolean>(false);
-
-    const [ campaign, setCampaign ] = useState<CampaignType>();
-
-    pusherClient = new PusherClient(PUSHER_KEY, {
-        cluster: 'sa1',
-        authEndpoint: `/api/pusher/auth?session=${JSON.stringify(session)}`,
-        forceTLS: true
-    });
 
     useEffect(() => {
         (async () => {
-            document.title = 'Campaign - ' + params.code;
+            document.title = 'Session - ' + params.code;
     
-            const campaignResponse: CampaignType = await fetch(`/api/campaign?code=${params.code}`).then(async res => await res.json());
+            const sessionResponse: SessionModel = await fetch(`/api/session?code=${params.code}`).then(async res => await res.json());
 
-            if (!campaignResponse) {
+            if (!sessionResponse) {
                 setLoading(false);
                 return;
             }
+
+            setGameMasterId(sessionResponse?.admin);
             
-            if (campaignResponse.admin.includes(session?.user?._id ?? '')) {
+            if (sessionResponse.admin.includes(session?.user?._id as unknown as string)) {
+                pusherClient = new PusherClient(PUSHER_KEY, {
+                    cluster: 'sa1',
+                    authEndpoint: `/api/pusher/auth?session=${JSON.stringify(session)}`,
+                    forceTLS: true
+                });
+
                 setIsFichaLoading(false);
                 setLoading(true);
 
-                setUserIsGM(true);
-
-                setChannel(pusherClient?.subscribe(campaignName) as PresenceChannel);
+                setChannel(pusherClient?.subscribe(sessionName) as PresenceChannel);
                 setLoading(false);
             }
 
@@ -66,13 +63,10 @@ export default function Campaign({ params }: { params: { code: string } }): Reac
                 setUserFichas(fichaResponse);
                 setIsFichaLoading(false);
             }
-            
-            setCampaign(campaignResponse ?? { 'null': null });
-            setAllGameMastersId(campaignResponse.admin);
         })();
 
         return () => {
-            pusherClient?.unsubscribe(campaignName);
+            pusherClient?.unsubscribe(sessionName);
         };
     }, []);
     
@@ -109,7 +103,7 @@ export default function Campaign({ params }: { params: { code: string } }): Reac
                                 <Typography variant='h6'>Escolha uma Ficha para ingressar</Typography>
                             </Box>
                             <Grid minHeight='100%' overflow='auto' gap={2} container>
-                                {isFichaLoading ? [ 0, 1, 2, 4, 5 ].map(() => (
+                                {isFichaLoading ? [ 0, 1, 2 ].map(() => (
                                     <Skeleton
                                         variant='rectangular' key={Math.random()} width='20rem' height='15rem' 
                                     />
@@ -118,31 +112,17 @@ export default function Campaign({ params }: { params: { code: string } }): Reac
                                         key={f._id}
                                         ficha={f}
                                         disableDeleteButton
-                                        onClick={async () => {
+                                        onClick={() => {
                                             setFicha(f);
+                                            setLoading(false);
 
-                                            await fetch('/api/campaign/join', {
-                                                method: 'POST',
-                                                headers: {
-                                                    'Content-Type': 'application/json'
-                                                },
-                                                body: JSON.stringify({
-                                                    code: params.code,
-                                                    player: {
-                                                        userId: session?.user._id,
-                                                        fichaId: f._id 
-                                                    }
-                                                })
-                                            });
-                                            
                                             pusherClient = new PusherClient(PUSHER_KEY, {
                                                 cluster: 'sa1',
                                                 authEndpoint: `/api/pusher/auth?session=${JSON.stringify(session)}&ficha=${JSON.stringify(f)}`,
                                                 forceTLS: true
                                             });
-                                            
-                                            setChannel(pusherClient?.subscribe(campaignName) as PresenceChannel);
-                                            setLoading(false);
+
+                                            setChannel(pusherClient?.subscribe(sessionName) as PresenceChannel);
                                         }}
                                     />
                                 ))}
@@ -150,11 +130,9 @@ export default function Campaign({ params }: { params: { code: string } }): Reac
                         </Box>
                     </Modal>
                 ) : !loading ? (
-                    <campaignContext.Provider value={campaign!}>
-                        <gameMasterContext.Provider value={{ allGameMasters: allGameMastersId, userIsGM }}>
-                            <CampaignComponent />
-                        </gameMasterContext.Provider>
-                    </campaignContext.Provider>
+                    <gameMasterContext.Provider value={{ gameMasterId }}>
+                        <SessionComponent sessionCode={params.code} />
+                    </gameMasterContext.Provider>
                 ) : ficha && (
                     <Backdrop
                         open={loading}
