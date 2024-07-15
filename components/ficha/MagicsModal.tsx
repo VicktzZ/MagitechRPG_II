@@ -5,7 +5,7 @@
 import { Backdrop, Box, CircularProgress, Grid, IconButton, MenuItem, Modal, TextField, Typography, useMediaQuery, useTheme } from '@mui/material';
 import { type MouseEvent, type ReactElement, memo, useEffect, useMemo, useState } from 'react';
 import { type Ficha, type Magia as MagicType } from '@types';
-import { useIntersection } from '@mantine/hooks';
+import { useIntersection } from '@mantine/hooks'
 import { ArrowDropDown, ArrowDropUp, Close } from '@mui/icons-material';
 import { useFormikContext } from 'formik';
 import Magic from './Magic';
@@ -14,53 +14,53 @@ import { CustomMenu } from '@layout';
 import useDebounce from '@hooks/useDebounce';
 
 const MagicsModal = memo(({ open, onClose }: { open: boolean, onClose: () => void}) => {
-    const f = useFormikContext<Ficha>();
-    const theme = useTheme();
-    const matches = useMediaQuery(theme.breakpoints.down('md'));
+    const f = useFormikContext<Ficha>()
+    const theme = useTheme()
+    const matches = useMediaQuery(theme.breakpoints.down('md'))
 
-    const { enqueueSnackbar, closeSnackbar } = useSnackbar();
+    const { enqueueSnackbar, closeSnackbar } = useSnackbar()
 
-    const [ isLoading, setIsLoading ] = useState<boolean>(true);
-    const [ isLoadingRefetch, setIsLoadingRefetch ] = useState<boolean>(false);
-    const [ magicsArr, setMagicsArr ] = useState<MagicType[]>([] as MagicType[]);
-    const [ page, setPage ] = useState<number>(1);
-    const [ isInlimit, setIsInLimit ] = useState<boolean>(false);
+    const [ isLoading, setIsLoading ] = useState<boolean>(true)
+    const [ isLoadingRefetch, setIsLoadingRefetch ] = useState<boolean>(false)
+    const [ magicsArr, setMagicsArr ] = useState<MagicType[]>([] as MagicType[])
+    const [ page, setPage ] = useState<number>(1)
+    const [ isInlimit, setIsInLimit ] = useState<boolean>(false)
 
-    const [ anchorEl, setAnchorEl ] = useState<EventTarget & HTMLDivElement | null>(null);
-    const [ menuOpen, setMenuOpen ] = useState<boolean>(false);
-    const [ menuContent, setMenuContent ] = useState<ReactElement[]>([]);
+    const [ anchorEl, setAnchorEl ] = useState<EventTarget & HTMLDivElement | null>(null)
+    const [ menuOpen, setMenuOpen ] = useState<boolean>(false)
+    const [ menuContent, setMenuContent ] = useState<ReactElement[]>([])
 
     const [ fetchOptions, setFetchOptions ] = useState({
         search: '',
         filter: '',
         sort: 'Nível'
-    });
+    })
     
-    const debouncedSearch = useDebounce(fetchOptions.search, 500);
+    const debouncedSearch = useDebounce(fetchOptions.search, 500)
 
-    const { ref, entry } = useIntersection({ threshold: 1 });
+    const { ref, entry } = useIntersection({ threshold: 1 })
 
     const fetchMagics = async (): Promise<MagicType[]> => {
-        const url = `/api/magia?${fetchOptions ? Object.keys(fetchOptions).map((key) => `${key}=${fetchOptions[key as keyof typeof fetchOptions]}`).join('&') : ''}`;
+        const url = `/api/magia?${fetchOptions ? Object.keys(fetchOptions).map((key) => `${key}=${fetchOptions[key as keyof typeof fetchOptions]}`).join('&') : ''}`
 
         console.log(url);
 
-        const data: MagicType[] = await fetch(url).then(async r => await r.json());
-        console.log(data);
+        const data: MagicType[] = await fetch(url).then(async r => await r.json())
+        console.log(data)
 
-        let result = data.slice((page - 1) * 20, page * 20);
+        let result = data.slice((page - 1) * 20, page * 20)
 
-        setIsLoading(false);
+        setIsLoading(false)
 
         console.log(result);
         
         if (magicsArr.length >= data.length) {
-            setIsInLimit(true);
-            result = [];
+            setIsInLimit(true)
+            result = []
         }
         
-        return result;
-    };
+        return result
+    }
 
     const magics = useMemo(() => {
         return magicsArr?.map((magic) => (
@@ -73,107 +73,107 @@ const MagicsModal = memo(({ open, onClose }: { open: boolean, onClose: () => voi
                 onIconClick={() => {
                     if (f.values.ORMLevel >= Number(magic.nível)) {
                         if (f.values.points.magics > 0 && f.values.magicsSpace > 0) {
-                            f.setFieldValue('magics', [ ...f.values.magics, magic ]);
-                            f.setFieldValue('points.magics', f.values.points.magics - 1);
-                            f.setFieldValue('magicsSpace', f.values.magicsSpace - 1);
+                            f.setFieldValue('magics', [ ...f.values.magics, magic ])
+                            f.setFieldValue('points.magics', f.values.points.magics - 1)
+                            f.setFieldValue('magicsSpace', f.values.magicsSpace - 1)
     
                             enqueueSnackbar(
                                 `Magia ${magic?.nome} adicionada!`,
                                 {
                                     variant: 'success',
-                                    action: () => <Close sx={{ cursor: 'pointer' }} onClick={() => { closeSnackbar(magic?.nome); }} />,
+                                    action: () => <Close sx={{ cursor: 'pointer' }} onClick={() => { closeSnackbar(magic?.nome) }} />,
                                     key: magic?.nome,
                                     autoHideDuration: 3000
                                 }
-                            );
+                            )
                         } else {
                             enqueueSnackbar(
                                 'Você não possui pontos ou espaços de magia suficientes!',
                                 {
                                     variant: 'error',
-                                    action: () => <Close sx={{ cursor: 'pointer' }} onClick={() => { closeSnackbar('insufficientPointsError'); }} />,
+                                    action: () => <Close sx={{ cursor: 'pointer' }} onClick={() => { closeSnackbar('insufficientPointsError') }} />,
                                     preventDuplicate: true,
                                     key: 'insufficientPointsError',
                                     autoHideDuration: 3000
                                 }
-                            );
+                            )
                         }
                     } else {
                         enqueueSnackbar(
                             'Seu nível de ORM não é suficiente!',
                             {
                                 variant: 'error',
-                                action: () => <Close sx={{ cursor: 'pointer' }} onClick={() => { closeSnackbar('ORMLevelError'); }} />,
+                                action: () => <Close sx={{ cursor: 'pointer' }} onClick={() => { closeSnackbar('ORMLevelError') }} />,
                                 preventDuplicate: true,
                                 key: 'ORMLevelError',
                                 autoHideDuration: 3000
                             }
-                        );
+                        )
                     }
                 }}
             />
-        ));
-    }, [ magicsArr, f.values.magics ]);
+        ))
+    }, [ magicsArr, f.values.magics ])
 
     useEffect(() => {
         if (open) {
             (async () => {
-                setPage(1);
+                setPage(1)
                 
-                setIsLoading(true);
+                setIsLoading(true)
                 
-                const m = await fetchMagics();
+                const m = await fetchMagics()
     
-                setMagicsArr(m);
-                setPage(prevPage => prevPage + 1);
-            })();
+                setMagicsArr(m)
+                setPage(prevPage => prevPage + 1)
+            })()
         }
-    }, [ open ]);
+    }, [ open ])
 
     useEffect(() => {
         (async () => {
-            if (!fetchOptions.filter && !fetchOptions.search) return;
-            const url = `/api/magia?${fetchOptions ? Object.keys(fetchOptions).map((key) => `${key}=${fetchOptions[key as keyof typeof fetchOptions]}`).join('&') : ''}`;
-            const data: MagicType[] = await fetch(url).then(async r => await r.json());
+            if (!fetchOptions.filter && !fetchOptions.search) return
+            const url = `/api/magia?${fetchOptions ? Object.keys(fetchOptions).map((key) => `${key}=${fetchOptions[key as keyof typeof fetchOptions]}`).join('&') : ''}`
+            const data: MagicType[] = await fetch(url).then(async r => await r.json())
 
-            setMagicsArr(data);
-            setIsLoadingRefetch(false);
-        })();
-    }, [ fetchOptions.filter, fetchOptions.sort ]);
+            setMagicsArr(data)
+            setIsLoadingRefetch(false)
+        })()
+    }, [ fetchOptions.filter, fetchOptions.sort ])
 
     useEffect(() => {
         const fetchData = async (): Promise<void> => {
-            setPage(0);
+            setPage(0)
                 
-            const url = `/api/magia?${fetchOptions ? Object.keys(fetchOptions).map((key) => `${key}=${fetchOptions[key as keyof typeof fetchOptions]}`).join('&') : ''}`;
-            const data: MagicType[] = await fetch(url).then(async r => await r.json());
+            const url = `/api/magia?${fetchOptions ? Object.keys(fetchOptions).map((key) => `${key}=${fetchOptions[key as keyof typeof fetchOptions]}`).join('&') : ''}`
+            const data: MagicType[] = await fetch(url).then(async r => await r.json())
 
-            setMagicsArr(data);
-            setPage(prevPage => prevPage + 1);
-            setIsLoadingRefetch(false);
-        };
+            setMagicsArr(data)
+            setPage(prevPage => prevPage + 1)
+            setIsLoadingRefetch(false)
+        }
 
         console.log(debouncedSearch);        
 
-        if (debouncedSearch) fetchData();
-    }, [ debouncedSearch ]);
+        if (debouncedSearch) fetchData()
+    }, [ debouncedSearch ])
 
     useEffect(() => {
         if (fetchOptions.search) {
-            setIsLoadingRefetch(true);
+            setIsLoadingRefetch(true)
         }
-    }, [ fetchOptions.search ]);
+    }, [ fetchOptions.search ])
 
     useEffect(() => {
         (async () => {
             if (entry?.isIntersecting) {
-                const m = await fetchMagics();
+                const m = await fetchMagics()
         
-                setMagicsArr(prevMagics => [ ...prevMagics, ...m ]);
-                setPage(prevPage => prevPage + 1);
+                setMagicsArr(prevMagics => [ ...prevMagics, ...m ])
+                setPage(prevPage => prevPage + 1)
             }
-        })();
-    }, [ entry?.isIntersecting ]);
+        })()
+    }, [ entry?.isIntersecting ])
 
     return (
         <>
@@ -241,7 +241,7 @@ const MagicsModal = memo(({ open, onClose }: { open: boolean, onClose: () => voi
                                     fullWidth
                                     value={fetchOptions.search}
                                     onChange={e => {
-                                        setFetchOptions({ ...fetchOptions, search: e.target.value });
+                                        setFetchOptions({ ...fetchOptions, search: e.target.value })
                                     }}
                                 />
                             </Box>
@@ -258,11 +258,11 @@ const MagicsModal = memo(({ open, onClose }: { open: boolean, onClose: () => voi
                                             setFetchOptions({
                                                 ...fetchOptions,
                                                 filter: ev.target.innerText
-                                            });
+                                            })
                                             
-                                            setMenuOpen(false);
-                                            setIsLoadingRefetch(true);
-                                        };
+                                            setMenuOpen(false)
+                                            setIsLoadingRefetch(true)
+                                        }
 
                                         setMenuContent([
                                             <MenuItem onClick={menuItemOnClick} key='FOGO_FILTER' value='FOGO'>FOGO</MenuItem>,
@@ -280,16 +280,16 @@ const MagicsModal = memo(({ open, onClose }: { open: boolean, onClose: () => voi
                                             <MenuItem onClick={menuItemOnClick} key='NÃO-ELEMENTAL_FILTER' value='NÃO-ELEMENTAL'>NÃO-ELEMENTAL</MenuItem>,
                                             <MenuItem 
                                                 onClick={() => { 
-                                                    setMenuOpen(false);
+                                                    setMenuOpen(false)
                                                     setFetchOptions({ ...fetchOptions, filter: '' });
-                                                    setIsLoadingRefetch(true);
+                                                    setIsLoadingRefetch(true)
                                                 }} 
                                                 key='NENHUM_FILTER' 
                                                 value=''
                                             >Nenhum</MenuItem>
-                                        ]);
-                                        setAnchorEl(e.currentTarget);
-                                        setMenuOpen(true);
+                                        ])
+                                        setAnchorEl(e.currentTarget)
+                                        setMenuOpen(true)
                                     }}
                                 >
                                     <Typography>Filtro: </Typography>
@@ -312,11 +312,11 @@ const MagicsModal = memo(({ open, onClose }: { open: boolean, onClose: () => voi
                                             setFetchOptions({
                                                 ...fetchOptions,
                                                 sort: ev.target.innerText
-                                            });
+                                            })
 
-                                            setMenuOpen(false);
-                                            setIsLoadingRefetch(true);
-                                        };
+                                            setMenuOpen(false)
+                                            setIsLoadingRefetch(true)
+                                        }
 
                                         setMenuContent([
                                             <MenuItem onClick={menuItemOnClick} key='Nível_SORT' value='Nível'>Nível</MenuItem>,
@@ -324,16 +324,16 @@ const MagicsModal = memo(({ open, onClose }: { open: boolean, onClose: () => voi
                                             <MenuItem onClick={menuItemOnClick} key='Alfabéticao_SORT' value='Alfabéticao'>Alfabética</MenuItem>,
                                             <MenuItem
                                                 onClick={() => { 
-                                                    setMenuOpen(false);
+                                                    setMenuOpen(false)
                                                     setFetchOptions({ ...fetchOptions, sort: '' });
-                                                    setIsLoadingRefetch(true);
+                                                    setIsLoadingRefetch(true)
                                                 }} 
                                                 key='NENHUM_SORT' 
                                                 value=''
                                             >Nenhum</MenuItem>
-                                        ]);
-                                        setAnchorEl(e.currentTarget);
-                                        setMenuOpen(true);
+                                        ])
+                                        setAnchorEl(e.currentTarget)
+                                        setMenuOpen(true)
                                     }}
                                 >
                                     <Typography>Organização: </Typography>
@@ -384,13 +384,13 @@ const MagicsModal = memo(({ open, onClose }: { open: boolean, onClose: () => voi
             <CustomMenu 
                 anchorEl={anchorEl}
                 open={menuOpen}
-                onClose={() => { setMenuOpen(false); }}
+                onClose={() => { setMenuOpen(false) }}
             >
                 {menuContent}
             </CustomMenu>
         </>
-    );
-});
+    )
+})
 
-MagicsModal.displayName = 'MagicsModal';
-export default MagicsModal;
+MagicsModal.displayName = 'MagicsModal'
+export default MagicsModal

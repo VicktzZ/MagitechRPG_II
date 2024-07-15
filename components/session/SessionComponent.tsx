@@ -3,11 +3,11 @@
 
 'use client';
 
-import copy from 'clipboard-copy';
+import copy from 'clipboard-copy'
 import { useChannel } from '@contexts/channelContext';
 import { Box, Button, Tooltip, Typography } from '@mui/material';
 import { useSnackbar } from 'notistack';
-import { type ReactElement, useState, useEffect } from 'react';
+import { type ReactElement, useState, useEffect } from 'react'
 import type { Member } from '@types';
 import { CustomChat, SessionMembers } from '@components/session';
 import { useForceUpdate } from '@mantine/hooks';
@@ -17,32 +17,27 @@ export default function SessionComponent({ sessionCode }: { sessionCode: string 
     const { enqueueSnackbar } = useSnackbar()
     const { channel } = useChannel()
 
-    const forceUpdate = useForceUpdate()
-
     useEffect(() => {
-        if (!channel) return;
+        if (!channel) return
         
         channel.bind('pusher:subscription_succeeded', () => {
             enqueueSnackbar('Você entrou na sessão!', { autoHideDuration: 3000, variant: 'success', preventDuplicate: true })
-            forceUpdate()
         })
 
         channel.bind('pusher:member_added', (member: { id: string, info: Member }) => {
             enqueueSnackbar(`${member.info.name} entrou na sessão!`, { autoHideDuration: 3000, preventDuplicate: true })
-            forceUpdate()
         })
 
         channel.bind('pusher:member_removed', (member: { id: string, info: Member }) => {
             enqueueSnackbar(`${member.info.name} saiu da sessão!`, { autoHideDuration: 3000, preventDuplicate: true })
-            forceUpdate()
         })
 
         console.log(channel.members);
         
         return () => {
-            channel.unbind('pusher:member_added');
-        };
-    }, [ ]);
+            channel.unbind('pusher:member_added')
+        }
+    }, [ ])
     
     return (
         <>
@@ -56,7 +51,7 @@ export default function SessionComponent({ sessionCode }: { sessionCode: string 
                         <Box display='flex' alignItems='center' gap={1}>
                             <Typography variant='h6'>Código da Sessão:</Typography>
                             <Tooltip
-                                onClose={() => { setOpenTooltip(false); }}
+                                onClose={() => { setOpenTooltip(false) }}
                                 open={openTooltip}
                                 disableFocusListener
                                 disableHoverListener
@@ -69,12 +64,12 @@ export default function SessionComponent({ sessionCode }: { sessionCode: string 
                                 <Button onClick={async () => {
                                     try {
                                         await copy(window.location.href)
-                                        setOpenTooltip( true)
+                                        setOpenTooltip(true)
                                         setTimeout(() => {
-                                            setOpenTooltip(false);
+                                            setOpenTooltip(false)
                                         }, 1000);
                                     } catch (error:any) {
-                                        console.log(error.message);
+                                        console.log(error.message)
                                     }
                                 }}>{sessionCode}</Button>
                             </Tooltip>
@@ -94,5 +89,5 @@ export default function SessionComponent({ sessionCode }: { sessionCode: string 
                 )
             }
         </>
-    );
+    )
 }

@@ -1,9 +1,9 @@
 'use client';
 
-import { Backdrop, Box, Button, CircularProgress, Typography, useMediaQuery, useTheme } from '@mui/material';
-import { Formik  } from 'formik';
+import { Backdrop, Box, Button, CircularProgress, Typography, useMediaQuery, useTheme } from '@mui/material'
+import { Formik  } from 'formik'
 import { useSession } from 'next-auth/react';
-import { useState, type ReactElement } from 'react';
+import { useState, type ReactElement } from 'react'
 import type { Ficha } from '@types';
 import { Attributes, Characteristics, Expertises, Inventory, Magics, Skills, SkillsModal } from '@components/ficha';
 import { useSnackbar } from 'notistack';
@@ -13,25 +13,25 @@ import { fichaModel } from '@constants/ficha';
 import { Edit } from '@mui/icons-material';
 
 export default function FichaComponent({ disabled, ficha }: { disabled?: boolean, ficha: Ficha }): ReactElement {
-    const { data: session } = useSession();
-    const { enqueueSnackbar, closeSnackbar } = useSnackbar();
+    const { data: session } = useSession()
+    const { enqueueSnackbar, closeSnackbar } = useSnackbar()
 
-    const router = useRouter();
+    const router = useRouter()
 
-    const [ openModal, setOpenModal ] = useState<boolean>(false);
-    const [ isLoading, setIsLoading ] = useState<boolean>(false);
+    const [ openModal, setOpenModal ] = useState<boolean>(false)
+    const [ isLoading, setIsLoading ] = useState<boolean>(false)
 
-    const [ openSkillsModal, setOpenSkillsModal ] = useState<boolean>(false);
+    const [ openSkillsModal, setOpenSkillsModal ] = useState<boolean>(false)
 
     const initialValues: Ficha = {
         ...fichaModel,
         ...ficha,
         playerName: session?.user?.name ?? 'undefined',
         userId: session?.user?._id ?? 'undefined'
-    };
+    }
 
     const submitForm = (values: typeof initialValues): void => {
-        enqueueSnackbar('Aguarde...', { variant: 'info', key: 'loadingFetch', autoHideDuration: 6000 });
+        enqueueSnackbar('Aguarde...', { variant: 'info', key: 'loadingFetch', autoHideDuration: 6000 })
 
         if (disabled) {
             setTimeout(() => {
@@ -48,18 +48,18 @@ export default function FichaComponent({ disabled, ficha }: { disabled?: boolean
                                     mp: initialValues.attributes.mp
                                 }
                             })
-                        }).then(async r => await r.json());
+                        }).then(async r => await r.json())
         
-                        closeSnackbar('loadingFetch');
+                        closeSnackbar('loadingFetch')
 
                         console.log(response);
                         
-                        enqueueSnackbar('Ficha salva com sucesso!', { variant: 'success' });
+                        enqueueSnackbar('Ficha salva com sucesso!', { variant: 'success' })
                     } catch (error: any) {
-                        closeSnackbar('loadingFetch');
-                        enqueueSnackbar(`Algo deu errado: ${error.message}`, { variant: 'error' });
+                        closeSnackbar('loadingFetch')
+                        enqueueSnackbar(`Algo deu errado: ${error.message}`, { variant: 'error' })
                     }
-                })();
+                })()
             }, 1000);
         } else {
             setTimeout(() => {
@@ -79,29 +79,29 @@ export default function FichaComponent({ disabled, ficha }: { disabled?: boolean
                             body: JSON.stringify({
                                 ...values
                             })
-                        }).then(async r => await r.json());
+                        }).then(async r => await r.json())
         
-                        closeSnackbar('loadingFetch');
+                        closeSnackbar('loadingFetch')
                         console.log(response);
                         
-                        enqueueSnackbar('Ficha criada com sucesso!', { variant: 'success' });
+                        enqueueSnackbar('Ficha criada com sucesso!', { variant: 'success' })
         
-                        setIsLoading(true);
+                        setIsLoading(true)
     
                         setTimeout(() => {
-                            router.push('/plataform/ficha/' + response._id);
+                            router.push('/plataform/ficha/' + response._id)
                         }, 500);
                     } catch (error: any) {
-                        closeSnackbar('loadingFetch');
-                        enqueueSnackbar(`Algo deu errado: ${error.message}`, { variant: 'error' });
+                        closeSnackbar('loadingFetch')
+                        enqueueSnackbar(`Algo deu errado: ${error.message}`, { variant: 'error' })
                     }
-                })();
+                })()
             }, 1000);
         }
-    };
+    }
 
-    const theme = useTheme();
-    const matches = useMediaQuery(theme.breakpoints.down('md'));
+    const theme = useTheme()
+    const matches = useMediaQuery(theme.breakpoints.down('md'))
     
     return (
         <>
@@ -114,7 +114,7 @@ export default function FichaComponent({ disabled, ficha }: { disabled?: boolean
                 >
                     <Formik
                         initialValues={initialValues}
-                        onSubmit={() => { setOpenModal(true); }}
+                        onSubmit={() => { setOpenModal(true) }}
                     >
                         {({ handleSubmit, values }) => (
                             <>
@@ -136,7 +136,7 @@ export default function FichaComponent({ disabled, ficha }: { disabled?: boolean
                                                 variant='contained' 
                                                 color={'terciary' as any}
                                                 type={!disabled ? 'submit' : 'button'}
-                                                onClick={disabled ? () => { submitForm(values); } : () => {}}
+                                                onClick={disabled ? () => { submitForm(values) } : () => {}}
                                             >{!disabled ? 'Enviar' : 'Salvar Mudanças'}</Button>
                                         </Box>
                                         <Box width='100%'>
@@ -175,7 +175,7 @@ export default function FichaComponent({ disabled, ficha }: { disabled?: boolean
                                             <Box>
                                                 <Box display='flex' alignItems='center' gap={2}>
                                                     <Typography variant='h6'>Habilidades</Typography>
-                                                    <CustomIconButton onClick={() => { setOpenSkillsModal(true); }}>
+                                                    <CustomIconButton onClick={() => { setOpenSkillsModal(true) }}>
                                                         <Edit />
                                                     </CustomIconButton>
                                                 </Box>
@@ -212,7 +212,7 @@ export default function FichaComponent({ disabled, ficha }: { disabled?: boolean
                                             color='white'
                                             fontSize='1.1rem'
                                             bgcolor='background.paper'
-                                            onChange={e => { values.anotacoes = e.target.value; }}
+                                            onChange={e => { values.anotacoes = e.target.value }}
                                             defaultValue={values.anotacoes}
                                             placeholder='Clique aqui e insira suas anotações!'
                                             sx={{
@@ -227,8 +227,8 @@ export default function FichaComponent({ disabled, ficha }: { disabled?: boolean
                                 </Box>
                                 <WarningModal 
                                     open={openModal}
-                                    onClose={() => { setOpenModal(false); }}
-                                    onConfirm={() => { submitForm(values); setOpenModal(false); }}
+                                    onClose={() => { setOpenModal(false) }}
+                                    onConfirm={() => { submitForm(values); setOpenModal(false) }}
                                     text='Não serão possíveis algumas alterações depois de criada. Tem certeza que deseja criar esta ficha?'
                                     title='Cuidado!'
                                 />
@@ -237,7 +237,7 @@ export default function FichaComponent({ disabled, ficha }: { disabled?: boolean
                                 </Backdrop>
                                 <SkillsModal 
                                     open={openSkillsModal}
-                                    onClose={() => { setOpenSkillsModal(false); }}
+                                    onClose={() => { setOpenSkillsModal(false) }}
                                 />
                             </>
                         )}
@@ -245,5 +245,5 @@ export default function FichaComponent({ disabled, ficha }: { disabled?: boolean
                 </Box>
             )}
         </>
-    );
+    )
 }

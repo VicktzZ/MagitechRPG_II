@@ -11,128 +11,128 @@ import { type FormikContextType, useFormikContext } from 'formik';
 import { Magic } from '.';
 
 export default function SkillsModal({ open, onClose }: { open: boolean, onClose: () => void }): ReactElement {
-    const f: FormikContextType<Ficha> = useFormikContext();
+    const f: FormikContextType<Ficha> = useFormikContext()
 
-    const theme = useTheme();
+    const theme = useTheme()
     // const matches = useMediaQuery(theme.breakpoints.down('md'))
 
     const [ buttonSelected, setButtonSelected ] = useState({
         adicionar: true,
         criar: false,
         remover: false
-    });
+    })
 
     const [ fetchOptions, setFetchOptions ] = useState({
         search: '',
         filter: '',
         sort: 'Nível'
-    });
+    })
 
-    const debouncedSearch = useDebounce(fetchOptions.search, 500);
-    const { ref, entry } = useIntersection({ threshold: 1 });
+    const debouncedSearch = useDebounce(fetchOptions.search, 500)
+    const { ref, entry } = useIntersection({ threshold: 1 })
 
-    const { enqueueSnackbar, closeSnackbar } = useSnackbar();
+    const { enqueueSnackbar, closeSnackbar } = useSnackbar()
 
-    const [ isLoading, setIsLoading ] = useState<boolean>(true);
-    const [ isLoadingRefetch, setIsLoadingRefetch ] = useState<boolean>(false);
-    const [ magicPowerArr, setMagicPowerArr ] = useState<MagicPower[]>([] as MagicPower[]);
-    const [ page, setPage ] = useState<number>(1);
-    const [ isInlimit, setIsInLimit ] = useState<boolean>(false);
+    const [ isLoading, setIsLoading ] = useState<boolean>(true)
+    const [ isLoadingRefetch, setIsLoadingRefetch ] = useState<boolean>(false)
+    const [ magicPowerArr, setMagicPowerArr ] = useState<MagicPower[]>([] as MagicPower[])
+    const [ page, setPage ] = useState<number>(1)
+    const [ isInlimit, setIsInLimit ] = useState<boolean>(false)
 
-    const [ anchorEl, setAnchorEl ] = useState<EventTarget & HTMLDivElement | null>(null);
-    const [ menuOpen, setMenuOpen ] = useState<boolean>(false);
-    const [ menuContent, setMenuContent ] = useState<ReactElement[]>([]);
+    const [ anchorEl, setAnchorEl ] = useState<EventTarget & HTMLDivElement | null>(null)
+    const [ menuOpen, setMenuOpen ] = useState<boolean>(false)
+    const [ menuContent, setMenuContent ] = useState<ReactElement[]>([])
 
     const btnClick = (ev: MouseEvent<HTMLButtonElement>): void => {
-        const btnName = ev.currentTarget.innerText.toLowerCase() as keyof typeof buttonSelected;
+        const btnName = ev.currentTarget.innerText.toLowerCase() as keyof typeof buttonSelected
         setButtonSelected({
             adicionar: false,
             criar: false,
             remover: false,
             [btnName]: true
-        });
-    };
+        })
+    }
     const fetchMagicPowers = async (): Promise<MagicPower[]> => {
-        const url = `/api/poder?${fetchOptions ? Object.keys(fetchOptions).map((key) => `${key}=${fetchOptions[key as keyof typeof fetchOptions]}`).join('&') : ''}`;
+        const url = `/api/poder?${fetchOptions ? Object.keys(fetchOptions).map((key) => `${key}=${fetchOptions[key as keyof typeof fetchOptions]}`).join('&') : ''}`
 
         console.log(url);
 
-        const data: MagicPower[] = await fetch(url).then(async r => await r.json());
-        console.log(data);
+        const data: MagicPower[] = await fetch(url).then(async r => await r.json())
+        console.log(data)
 
-        let result = data.slice((page - 1) * 20, page * 20);
+        let result = data.slice((page - 1) * 20, page * 20)
 
-        setIsLoading(false);
+        setIsLoading(false)
 
         console.log(result);
         
         if (magicPowerArr.length >= data.length) {
-            setIsInLimit(true);
-            result = [];
+            setIsInLimit(true)
+            result = []
         }
         
-        return result;
-    };
+        return result
+    }
 
     useEffect(() => {
         if (open) {
             (async () => {
-                setPage(1);
+                setPage(1)
                 
-                setIsLoading(true);
+                setIsLoading(true)
                 
-                const m = await fetchMagicPowers();
+                const m = await fetchMagicPowers()
     
-                setMagicPowerArr(m);
-                setPage(prevPage => prevPage + 1);
-            })();
+                setMagicPowerArr(m)
+                setPage(prevPage => prevPage + 1)
+            })()
         }
-    }, [ open ]);
+    }, [ open ])
 
     useEffect(() => {
         (async () => {
-            if (!fetchOptions.filter && !fetchOptions.search) return;
-            const url = `/api/poder?${fetchOptions ? Object.keys(fetchOptions).map((key) => `${key}=${fetchOptions[key as keyof typeof fetchOptions]}`).join('&') : ''}`;
-            const data: MagicPower[] = await fetch(url).then(async r => await r.json());
+            if (!fetchOptions.filter && !fetchOptions.search) return
+            const url = `/api/poder?${fetchOptions ? Object.keys(fetchOptions).map((key) => `${key}=${fetchOptions[key as keyof typeof fetchOptions]}`).join('&') : ''}`
+            const data: MagicPower[] = await fetch(url).then(async r => await r.json())
 
-            setMagicPowerArr(data);
-            setIsLoadingRefetch(false);
-        })();
-    }, [ fetchOptions.filter, fetchOptions.sort ]);
+            setMagicPowerArr(data)
+            setIsLoadingRefetch(false)
+        })()
+    }, [ fetchOptions.filter, fetchOptions.sort ])
 
     useEffect(() => {
         const fetchData = async (): Promise<void> => {
-            setPage(0);
+            setPage(0)
                 
-            const url = `/api/poder?${fetchOptions ? Object.keys(fetchOptions).map((key) => `${key}=${fetchOptions[key as keyof typeof fetchOptions]}`).join('&') : ''}`;
-            const data: MagicPower[] = await fetch(url).then(async r => await r.json());
+            const url = `/api/poder?${fetchOptions ? Object.keys(fetchOptions).map((key) => `${key}=${fetchOptions[key as keyof typeof fetchOptions]}`).join('&') : ''}`
+            const data: MagicPower[] = await fetch(url).then(async r => await r.json())
 
-            setMagicPowerArr(data);
-            setPage(prevPage => prevPage + 1);
-            setIsLoadingRefetch(false);
-        };
+            setMagicPowerArr(data)
+            setPage(prevPage => prevPage + 1)
+            setIsLoadingRefetch(false)
+        }
 
         console.log(debouncedSearch);        
 
-        if (debouncedSearch) fetchData();
-    }, [ debouncedSearch ]);
+        if (debouncedSearch) fetchData()
+    }, [ debouncedSearch ])
 
     useEffect(() => {
         if (fetchOptions.search) {
-            setIsLoadingRefetch(true);
+            setIsLoadingRefetch(true)
         }
-    }, [ fetchOptions.search ]);
+    }, [ fetchOptions.search ])
 
     useEffect(() => {
         (async () => {
             if (entry?.isIntersecting) {
-                const m = await fetchMagicPowers();
+                const m = await fetchMagicPowers()
         
-                setMagicPowerArr(prevMagics => [ ...prevMagics, ...m ]);
-                setPage(prevPage => prevPage + 1);
+                setMagicPowerArr(prevMagics => [ ...prevMagics, ...m ])
+                setPage(prevPage => prevPage + 1)
             }
-        })();
-    }, [ entry?.isIntersecting ]);
+        })()
+    }, [ entry?.isIntersecting ])
 
     const magicPowers = useMemo(() => {
         return magicPowerArr?.map((magicPower) => (
@@ -151,33 +151,33 @@ export default function SkillsModal({ open, onClose }: { open: boolean, onClose:
                                 description: `${magicPower.descrição}\n\nPré-requisitos: ${magicPower['pré-requisito'] ?? 'Nenhum'}`,
                                 type: 'Poder Mágico'
                             }
-                        ];
+                        ]
                         
                         enqueueSnackbar(
                             `Poder Mágico ${magicPower?.nome} adicionado!`,
                             {
                                 variant: 'success',
-                                action: () => <Close sx={{ cursor: 'pointer' }} onClick={() => { closeSnackbar(magicPower?.nome); }} />,
+                                action: () => <Close sx={{ cursor: 'pointer' }} onClick={() => { closeSnackbar(magicPower?.nome) }} />,
                                 key: magicPower?.nome,
                                 autoHideDuration: 3000
                             }
-                        );
+                        )
                     } else {
                         enqueueSnackbar(
                             'Seu nível de ORM não é suficiente!',
                             {
                                 variant: 'error',
-                                action: () => <Close sx={{ cursor: 'pointer' }} onClick={() => { closeSnackbar('ORMLevelError'); }} />,
+                                action: () => <Close sx={{ cursor: 'pointer' }} onClick={() => { closeSnackbar('ORMLevelError') }} />,
                                 preventDuplicate: true,
                                 key: 'ORMLevelError',
                                 autoHideDuration: 3000
                             }
-                        );
+                        )
                     }
                 }}
             />
-        ));
-    }, [ magicPowerArr, f.values.magics ]);
+        ))
+    }, [ magicPowerArr, f.values.magics ])
 
     return (
         <>
@@ -230,7 +230,7 @@ export default function SkillsModal({ open, onClose }: { open: boolean, onClose:
                                                 fullWidth
                                                 value={fetchOptions.search}
                                                 onChange={e => {
-                                                    setFetchOptions({ ...fetchOptions, search: e.target.value });
+                                                    setFetchOptions({ ...fetchOptions, search: e.target.value })
                                                 }}
                                             />
                                         </Box>
@@ -247,11 +247,11 @@ export default function SkillsModal({ open, onClose }: { open: boolean, onClose:
                                                         setFetchOptions({
                                                             ...fetchOptions,
                                                             filter: ev.target.innerText
-                                                        });
+                                                        })
                                                         
-                                                        setMenuOpen(false);
-                                                        setIsLoadingRefetch(true);
-                                                    };
+                                                        setMenuOpen(false)
+                                                        setIsLoadingRefetch(true)
+                                                    }
 
                                                     setMenuContent([
                                                         <MenuItem onClick={menuItemOnClick} key='FOGO_FILTER' value='FOGO'>FOGO</MenuItem>,
@@ -269,16 +269,16 @@ export default function SkillsModal({ open, onClose }: { open: boolean, onClose:
                                                         <MenuItem onClick={menuItemOnClick} key='NÃO-ELEMENTAL_FILTER' value='NÃO-ELEMENTAL'>NÃO-ELEMENTAL</MenuItem>,
                                                         <MenuItem 
                                                             onClick={() => { 
-                                                                setMenuOpen(false);
+                                                                setMenuOpen(false)
                                                                 setFetchOptions({ ...fetchOptions, filter: '' });
-                                                                setIsLoadingRefetch(true);
+                                                                setIsLoadingRefetch(true)
                                                             }} 
                                                             key='NENHUM_FILTER' 
                                                             value=''
                                                         >Nenhum</MenuItem>
-                                                    ]);
-                                                    setAnchorEl(e.currentTarget);
-                                                    setMenuOpen(true);
+                                                    ])
+                                                    setAnchorEl(e.currentTarget)
+                                                    setMenuOpen(true)
                                                 }}
                                             >
                                                 <Typography>Filtro: </Typography>
@@ -301,27 +301,27 @@ export default function SkillsModal({ open, onClose }: { open: boolean, onClose:
                                                         setFetchOptions({
                                                             ...fetchOptions,
                                                             sort: ev.target.innerText
-                                                        });
+                                                        })
 
-                                                        setMenuOpen(false);
-                                                        setIsLoadingRefetch(true);
-                                                    };
+                                                        setMenuOpen(false)
+                                                        setIsLoadingRefetch(true)
+                                                    }
 
                                                     setMenuContent([
                                                         <MenuItem onClick={menuItemOnClick} key='Nível_SORT' value='Nível'>Nível</MenuItem>,
                                                         <MenuItem onClick={menuItemOnClick} key='Alfabéticao_SORT' value='Alfabéticao'>Alfabética</MenuItem>,
                                                         <MenuItem
                                                             onClick={() => { 
-                                                                setMenuOpen(false);
+                                                                setMenuOpen(false)
                                                                 setFetchOptions({ ...fetchOptions, sort: '' });
-                                                                setIsLoadingRefetch(true);
+                                                                setIsLoadingRefetch(true)
                                                             }} 
                                                             key='NENHUM_SORT' 
                                                             value=''
                                                         >Nenhum</MenuItem>
-                                                    ]);
-                                                    setAnchorEl(e.currentTarget);
-                                                    setMenuOpen(true);
+                                                    ])
+                                                    setAnchorEl(e.currentTarget)
+                                                    setMenuOpen(true)
                                                 }}
                                             >
                                                 <Typography>Organização: </Typography>
@@ -367,7 +367,7 @@ export default function SkillsModal({ open, onClose }: { open: boolean, onClose:
                                                 <Typography>{skill[index]?.name}</Typography>
                                                 <Typography>{skill[index]?.type}</Typography>
                                             </Box>
-                                        );
+                                        )
                                     })}
                                 </Box>
                             )
@@ -375,7 +375,7 @@ export default function SkillsModal({ open, onClose }: { open: boolean, onClose:
                         <CustomMenu
                             anchorEl={anchorEl}
                             open={menuOpen}
-                            onClose={() => { setMenuOpen(false); }}
+                            onClose={() => { setMenuOpen(false) }}
                         >
                             {menuContent}
                         </CustomMenu>
@@ -386,5 +386,5 @@ export default function SkillsModal({ open, onClose }: { open: boolean, onClose:
                 <CircularProgress />
             </Backdrop>
         </>
-    );
+    )
 }

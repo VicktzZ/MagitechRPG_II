@@ -1,9 +1,9 @@
 /* eslint-disable no-eval */
 'use client';
 
-import { Box, Chip, Modal, Typography, useMediaQuery, useTheme } from '@mui/material';
-import { useMemo, type ReactElement, useEffect, memo } from 'react';
-import { Chance } from 'chance';
+import { Box, Chip, Modal, Typography, useMediaQuery, useTheme } from '@mui/material'
+import { useMemo, type ReactElement, useEffect, memo } from 'react'
+import { Chance } from 'chance'
 import type { Attributes } from '@types';
 import { Animation } from 'react-animate-style';
 
@@ -33,68 +33,68 @@ const DiceRollModal = memo(({
         attribute: Attributes
     }
 }): ReactElement => {
-    const theme = useTheme();
-    const matches = useMediaQuery(theme.breakpoints.down('md'));
+    const theme = useTheme()
+    const matches = useMediaQuery(theme.breakpoints.down('md'))
 
     const chanceRoll = useMemo(() => {
-        const chance = new Chance();
-        const rolls: number[] = chance.rpg(`${roll.quantity === 0 ? 1 : roll.quantity}d${roll.dice}`);
+        const chance = new Chance()
+        const rolls: number[] = chance.rpg(`${roll.quantity === 0 ? 1 : roll.quantity}d${roll.dice}`)
         const sortedRolls: number[] = isDisadvantage ?
-            rolls.slice().sort((a, b) => a - b) : rolls.slice().sort((a, b) => b - a);
+            rolls.slice().sort((a, b) => a - b) : rolls.slice().sort((a, b) => b - a)
 
-        const rollsFormatted = `[ ${rolls.join(', ')} ]`;
-        let result: string | string[] = String(sortedRolls[0]);
-        let rawResult = Number(result);
-        let rawBonus = 0;
+        const rollsFormatted = `[ ${rolls.join(', ')} ]`
+        let result: string | string[] = String(sortedRolls[0])
+        let rawResult = Number(result)
+        let rawBonus = 0
 
         const expression: string = bonus && !sum ? sortedRolls[0] + ' + ' + bonus.join(' + ') :
             bonus && sum ? sortedRolls.join(' + ') + ' + ' + bonus.join(' + ') :
                 !bonus && sum ? sortedRolls.join(' + ') :
-                    String(sortedRolls[0]); 
+                    String(sortedRolls[0]) 
         if (sum) {
-            rawResult = 0;
+            rawResult = 0
            
             for (const num of sortedRolls) {
-                rawResult += num;
+                rawResult += num
             }
         }
         
         if (bonus) {
             for (const numBonus of bonus) {
-                rawBonus += numBonus;
+                rawBonus += numBonus
             }
         }
 
-        rawResult += rawBonus;
-        result = expression + ' = ' + eval(expression);
+        rawResult += rawBonus
+        result = expression + ' = ' + eval(expression)
 
         return {
             rolls: rollsFormatted,
             rawRolls: rolls,
             rawResult,
             result
-        };
-    }, [ roll, sum, isDisadvantage, bonus ]);
+        }
+    }, [ roll, sum, isDisadvantage, bonus ])
 
     useEffect(() => {
         if (setResult && open) {
-            setResult(chanceRoll.rawResult);
+            setResult(chanceRoll.rawResult)
         }
-    }, [ setResult, chanceRoll.rawResult, open ]);
+    }, [ setResult, chanceRoll.rawResult, open ])
 
     function Result(): ReactElement[] {
-        let resultRolls = chanceRoll.rawRolls.sort((a, b) => b - a);
+        let resultRolls = chanceRoll.rawRolls.sort((a, b) => b - a)
 
         const getLetter = (num: number): string => {
             const letter = String.fromCharCode(num + 64);
             return letter;
-        };
+        }
 
         if (bonus && roll.quantity > 1 && !sum) {
             if (isDisadvantage) {
-                resultRolls = [ Number(resultRolls.slice().sort(((a, b) => a - b))[0]) ];
+                resultRolls = [ Number(resultRolls.slice().sort(((a, b) => a - b))[0]) ]
             } else {
-                resultRolls = [ Number(resultRolls[0]) ];
+                resultRolls = [ Number(resultRolls[0]) ]
             }
         }
 
@@ -103,13 +103,13 @@ const DiceRollModal = memo(({
                 if (resultRolls.length < 2 && !bonus) {
                     return (
                         <Typography key={item} fontSize='3rem' fontFamily={`D${roll.dice}`}>{getLetter(item)}</Typography>
-                    );
+                    )
                 }
 
                 if (bonus && resultRolls.length > 1 && index === 0) {
                     return (
                         <Typography key={item} fontSize='3rem' fontFamily={`D${roll.dice}`}>{getLetter(item)}</Typography>
-                    );
+                    )
                 }
 
                 if (index === resultRolls.length - 1) {
@@ -121,7 +121,7 @@ const DiceRollModal = memo(({
                                 <Typography whiteSpace='pre-wrap' key={item}> =  </Typography>
                                 <Typography whiteSpace='pre-wrap' key={item}>{chanceRoll.rawResult}</Typography>
                             </>
-                        );    
+                        )    
                     }
                     
                     return (
@@ -130,7 +130,7 @@ const DiceRollModal = memo(({
                             <Typography whiteSpace='pre-wrap' key={item}> =  </Typography>
                             <Typography whiteSpace='pre-wrap' key={item}>{chanceRoll.rawResult}</Typography>
                         </>
-                    ); 
+                    ) 
                 }
 
                 return (
@@ -138,11 +138,11 @@ const DiceRollModal = memo(({
                         <Typography key={item} fontSize='3rem' fontFamily={`D${roll.dice}`}>{getLetter(item)}</Typography>
                         <Typography whiteSpace='pre-wrap' key={item}> +  </Typography>
                     </>
-                );
-            });
-        }, [ resultRolls ]);
+                )
+            })
+        }, [ resultRolls ])
 
-        return result;
+        return result
     }
 
     return (
@@ -215,8 +215,8 @@ const DiceRollModal = memo(({
                 </Box>
             </Animation>
         </Modal>    
-    );
-});
+    )
+})
 
-DiceRollModal.displayName = 'DiceRollModal';
-export default DiceRollModal;
+DiceRollModal.displayName = 'DiceRollModal'
+export default DiceRollModal

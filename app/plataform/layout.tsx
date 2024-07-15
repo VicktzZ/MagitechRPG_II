@@ -1,6 +1,6 @@
 'use client';
 
-import '@public/fonts/fonts.css';
+import '@public/fonts/fonts.css'
 import { type ReactElement } from 'react';
 import { RequireAuth } from '@components/misc';
 import { Box } from '@mui/material';
@@ -11,7 +11,7 @@ export default function RootLayout({
 }: {
   children: ReactElement
 }): ReactElement<any, any> {
-    const NODE_ENV = 'production'; // process.env.NODE_ENV
+    const NODE_ENV = 'production' // process.env.NODE_ENV
 
     return NODE_ENV === 'production' ? (
         <RequireAuth>
@@ -22,5 +22,5 @@ export default function RootLayout({
         </RequireAuth>
     ) : (
         <>{children}</>
-    );
+    )
 }

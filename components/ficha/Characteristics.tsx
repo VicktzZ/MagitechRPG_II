@@ -5,11 +5,11 @@
 
 'use client';
 
-import { InputLabel, MenuItem, Select, useMediaQuery, type SelectChangeEvent, useTheme, Typography } from '@mui/material';
-import { Box, FormControl, TextField } from '@mui/material';
-import { clickEffect } from '@public/sounds';
+import { InputLabel, MenuItem, Select, useMediaQuery, type SelectChangeEvent, useTheme, Typography } from '@mui/material'
+import { Box, FormControl, TextField } from '@mui/material'
+import { clickEffect } from '@public/sounds'
 import { classesModel } from '@constants/classes';
-import React, { type ReactElement, useCallback, useMemo } from 'react';
+import React, { type ReactElement, useCallback, useMemo } from 'react'
 import type { Classes } from '@types';
 import { useFormikContext, type FormikContextType } from 'formik';
 import { type fichaModel } from '@constants/ficha';
@@ -20,18 +20,18 @@ import type { Race } from '@types';
 import { type ExpertisesOverrided, lineageExpertises } from '@constants/lineageExpertises';
 
 export default function Characteristics({ disabled }: { disabled?: boolean }): ReactElement {
-    const f: FormikContextType<typeof fichaModel> = useFormikContext();
+    const f: FormikContextType<typeof fichaModel> = useFormikContext()
 
-    const theme = useTheme();
-    const matches = useMediaQuery(theme.breakpoints.down('md'));
+    const theme = useTheme()
+    const matches = useMediaQuery(theme.breakpoints.down('md'))
 
-    const audio1 = useAudio(clickEffect);
+    const audio1 = useAudio(clickEffect)
 
     const setClass = (e: SelectChangeEvent<any>): void => {
-        const classe: Classes = e.target.value;
-        const expertiseHasValue = Object.values(f.values.expertises as any).some((expertise: any) => expertise.value > 1);
+        const classe: Classes = e.target.value
+        const expertiseHasValue = Object.values(f.values.expertises as any).some((expertise: any) => expertise.value > 1)
 
-        f.handleChange(e);
+        f.handleChange(e)
 
         f.setFieldValue('points', {
             ...f.values.points,
@@ -39,55 +39,55 @@ export default function Characteristics({ disabled }: { disabled?: boolean }): R
             diligence: classesModel[classe].points.diligence + (f.values.attributes?.log ?? 0),
             expertises: !expertiseHasValue ? classesModel[classe].points.expertises :
                 expertiseHasValue && f.values.lineage as unknown as string !== '' ? classesModel[classe].points.expertises : 0 
-        });
+        })
 
-        f.setFieldValue('skills.class', classesModel[classe].skills);
+        f.setFieldValue('skills.class', classesModel[classe].skills)
         
-        audio1.play();
-    };
+        audio1.play()
+    }
 
     const setLineage = (e: SelectChangeEvent<any>): void => {
-        const lineage = e.target.value;
+        const lineage = e.target.value
 
-        f.handleChange(e);
-        f.setFieldValue('lineage', lineage);
+        f.handleChange(e)
+        f.setFieldValue('lineage', lineage)
 
         skills.lineage?.forEach(skill => {
             if (skill.origin === lineage)
-                f.setFieldValue('skills.lineage', [ skill ]);
-        });
+                f.setFieldValue('skills.lineage', [ skill ])
+        })
 
-        audio1.play();
-    };
+        audio1.play()
+    }
 
     const setRace = (e: SelectChangeEvent<any>): void => {
-        const race: Race['name'] = e.target.value;
+        const race: Race['name'] = e.target.value
 
-        f.handleChange(e);
-        f.setFieldValue('race', race);
+        f.handleChange(e)
+        f.setFieldValue('race', race)
 
-        audio1.play();
-    };
+        audio1.play()
+    }
 
     const lineagePoints = useCallback((expertises: ExpertisesOverrided): string => {
-        let pointsStr = '';
-        let testsStr = '';
-        let result = '';
+        let pointsStr = ''
+        let testsStr = ''
+        let result = ''
 
         if (expertises?.points) {
-            pointsStr = `+${expertises.points} Pontos de Perícia`;
+            pointsStr = `+${expertises.points} Pontos de Perícia`
         }
 
         if (expertises?.tests) {
             Object.entries(expertises.tests).forEach(([ key, value ]) => {
-                testsStr += `${key}: +${value}; `;
-            });          
+                testsStr += `${key}: +${value}; `
+            })          
         }
 
-        result = `${pointsStr}${pointsStr !== '' && testsStr !== '' ? '\n' : ''}${testsStr}`;
+        result = `${pointsStr}${pointsStr !== '' && testsStr !== '' ? '\n' : ''}${testsStr}`
 
-        return result;
-    }, []);
+        return result
+    }, [])
 
     const lineages = useMemo(() => {
         return Object.entries(lineageExpertises).map(([ lineage, expertises ]) => (
@@ -102,8 +102,8 @@ export default function Characteristics({ disabled }: { disabled?: boolean }): R
                     </Typography>
                 </Box>
             </MenuItem>
-        ));
-    }, []);
+        ))
+    }, [])
     
     const classes = useMemo(() => {
         return Object.keys(classesModel).map(classe => (
@@ -125,8 +125,8 @@ export default function Characteristics({ disabled }: { disabled?: boolean }): R
                     </Box>
                 </Box>
             </MenuItem>
-        ));
-    }, []);
+        ))
+    }, [])
 
     return (
         <Box display='flex' gap={3} width='100%'>
@@ -151,7 +151,7 @@ export default function Characteristics({ disabled }: { disabled?: boolean }): R
                             fullWidth
                             disabled={disabled}
                             onChange={e => { 
-                                setClass(e);                              
+                                setClass(e)                              
                             }}
                             renderValue={(value) => (
                                 <Typography>{value as string}</Typography>
@@ -318,5 +318,5 @@ export default function Characteristics({ disabled }: { disabled?: boolean }): R
                 )}
             </Box>
         </Box>
-    );
+    )
 }

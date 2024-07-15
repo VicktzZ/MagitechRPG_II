@@ -4,29 +4,29 @@ import type { Member, Ficha } from '@types';
 
 export async function POST(req: NextRequest): Promise<Response> {
     try {
-        const body = await req.text();
-        const sessionParams: Member = JSON.parse(req.nextUrl.searchParams.get('session') ?? '{}')?.user;
-        const fichaParams: Ficha = JSON.parse(req.nextUrl.searchParams.get('ficha') ?? '{}');
+        const body = await req.text()
+        const sessionParams: Member = JSON.parse(req.nextUrl.searchParams.get('session') ?? '{}')?.user
+        const fichaParams: Ficha = JSON.parse(req.nextUrl.searchParams.get('ficha') ?? '{}')
 
         console.log(sessionParams);
         console.log(fichaParams);
 
-        const socketId = body.split('=')[1].split('&')[0];
-        const channelName = body?.split('&')[1]?.split('=')[1];
+        const socketId = body.split('=')[1].split('&')[0]
+        const channelName = body?.split('&')[1]?.split('=')[1]
 
         pusherServer.authenticateUser(socketId, {
             id: socketId
-        });
+        })
 
         const channelAuthResponse = pusherServer.authorizeChannel(socketId, channelName, {
             user_id: socketId,
             user_info: { ...sessionParams, socketId, currentFicha: fichaParams }
-        });
+        })
 
-        return Response.json(channelAuthResponse);
+        return Response.json(channelAuthResponse)
     } catch (error: any) {
         console.log(error.message);
-        return Response.json({ message: 'ERROR', error: error.message }, { status: 400 });
+        return Response.json({ message: 'ERROR', error: error.message }, { status: 400 })
     }
     
 } 

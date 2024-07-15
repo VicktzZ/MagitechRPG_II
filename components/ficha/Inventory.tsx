@@ -6,30 +6,30 @@ import { Item, ItemModal } from '@components/ficha'
 import { lineageItems } from '@constants/lineageitems'
 import { red, yellow } from '@mui/material/colors'
 import { CustomIconButton } from '@layout'
-import { Edit } from '@mui/icons-material'
+import { Add } from '@mui/icons-material'
 import type { Ficha, LineageNames } from '@types'
 
 type ItemName = 'weapon' | 'item' | 'armor'
 
 const Inventory = memo(({ disabled }: { disabled?: boolean }): ReactElement => {
-    const f: FormikContextType<Ficha> = useFormikContext();
+    const f: FormikContextType<Ficha> = useFormikContext()
 
-    const theme = useTheme();
-    const matches = useMediaQuery(theme.breakpoints.down('md'));
+    const theme = useTheme()
+    const matches = useMediaQuery(theme.breakpoints.down('md'))
 
-    const [ modalOpen, setModalOpen ] = useState<boolean>(false);
+    const [ modalOpen, setModalOpen ] = useState<boolean>(false)
     const [ modalContent, setModalContent ] = useState<ReactElement>(
         <ItemModal 
             itemType={'weapon'}
-            onClose={() => { setModalOpen(false); }}
+            onClose={() => { setModalOpen(false) }}
         />
-    );
+    )
     
     const [ addButtonsStyle, setAddButtonsStyle ] = useState<Record<ItemName, 'outlined' | 'contained'>>({
         weapon: 'contained',
         armor: 'outlined',
         item: 'outlined'
-    });
+    })
 
     const changeModalContent = (itemName: ItemName): void => {
         setAddButtonsStyle({
@@ -37,59 +37,59 @@ const Inventory = memo(({ disabled }: { disabled?: boolean }): ReactElement => {
             armor: 'outlined',
             item: 'outlined',
             [itemName]: 'contained'
-        });
+        })
 
         setModalContent(
             <ItemModal 
                 itemType={itemName}
-                onClose={() => { setModalOpen(false); }}
+                onClose={() => { setModalOpen(false) }}
             />
-        );
-    };
+        )
+    }
 
     const capacity = useMemo(() => {
-        const weaponsWeight = f.values.inventory.weapons.map((weapon) => weapon.weight).reduce((a, b) => a + b, 0);
-        const armorsWeight = f.values.inventory.armors.map((armor) => armor.weight).reduce((a, b) => a + b, 0);
+        const weaponsWeight = f.values.inventory.weapons.map((weapon) => weapon.weight).reduce((a, b) => a + b, 0)
+        const armorsWeight = f.values.inventory.armors.map((armor) => armor.weight).reduce((a, b) => a + b, 0)
         const itemsWeight = f.values.inventory.items.map((item) => {
             if (item.kind !== 'Capacidade') {
-                return item.weight * (item?.quantity ?? 1);
-            } else return 0;
-        }).reduce((a, b) => a + b, 0);
+                return item.weight * (item?.quantity ?? 1)
+            } else return 0
+        }).reduce((a, b) => a + b, 0)
 
         const maxCargo = f.values.inventory.items.map((item) => {
             if (item.kind === 'Capacidade') {
-                return item.weight;
-            } else return 0;
-        }).reduce((a, b) => a + b, 0);
+                return item.weight
+            } else return 0
+        }).reduce((a, b) => a + b, 0)
 
-        const cargo = (weaponsWeight + armorsWeight + itemsWeight)?.toFixed(1);
+        const cargo = (weaponsWeight + armorsWeight + itemsWeight)?.toFixed(1)
 
         return {
             cargo,
             maxCargo
-        };
-    }, [ f.values.inventory, f.values.attributes.vig ]);
+        }
+    }, [ f.values.inventory, f.values.attributes.vig ])
 
     const itemsOfLineage = useMemo(() => {
-        const itemArr: any[] = [];
-        const weaponArr: any[] = [];
+        const itemArr: any[] = []
+        const weaponArr: any[] = []
 
         if (!disabled) {
-            f.values.inventory = f.initialValues.inventory;
+            f.values.inventory = f.initialValues.inventory
     
-            const items = lineageItems[f.values.lineage as unknown as LineageNames];
+            const items = lineageItems[f.values.lineage as unknown as LineageNames]
     
             items?.forEach((item) => {
-                if (item.type === 'item') itemArr.push(item); 
-                if (item.type === 'weapon') weaponArr.push(item);
-            });            
+                if (item.type === 'item') itemArr.push(item) 
+                if (item.type === 'weapon') weaponArr.push(item)
+            })            
         }
 
         return {
             itemArr,
             weaponArr
-        };
-    }, [ f.values.lineage ]);
+        }
+    }, [ f.values.lineage ])
 
     const weapons = useMemo(() => {
         return f.values.inventory.weapons.map((weapon) => (
@@ -123,8 +123,8 @@ const Inventory = memo(({ disabled }: { disabled?: boolean }): ReactElement => {
                     }}
                 />
             </Grid>
-        ));
-    }, [ f.values.inventory.weapons ]);
+        ))
+    }, [ f.values.inventory.weapons ])
 
     const armors = useMemo(() => {
         return f.values.inventory.armors.map((armor) => (
@@ -143,8 +143,8 @@ const Inventory = memo(({ disabled }: { disabled?: boolean }): ReactElement => {
                     description={armor.description}
                 />
             </Grid>
-        ));
-    }, [ f.values.inventory.armors ]);
+        ))
+    }, [ f.values.inventory.armors ])
 
     const items = useMemo(() => {
         return f.values.inventory.items.map((item) => (
@@ -163,29 +163,29 @@ const Inventory = memo(({ disabled }: { disabled?: boolean }): ReactElement => {
                     effects={item?.effects}
                 />
             </Grid>
-        ));
-    }, [ f.values.inventory.items ]);
+        ))
+    }, [ f.values.inventory.items ])
 
     useEffect(() => {
-        const { cargo, maxCargo } = capacity;
+        const { cargo, maxCargo } = capacity
         
-        f.setFieldValue('capacity.cargo', cargo);
-        f.setFieldValue('capacity.max', Number(Number(f.values.attributes.vig * 1.5 + maxCargo + 5)).toFixed(1));
-    }, [ capacity ]);
+        f.setFieldValue('capacity.cargo', cargo)
+        f.setFieldValue('capacity.max', Number(Number(f.values.attributes.vig * 1.5 + maxCargo + 5)).toFixed(1))
+    }, [ capacity ])
     
     useEffect(() => {
-        const { weaponArr, itemArr } = itemsOfLineage;
+        const { weaponArr, itemArr } = itemsOfLineage
 
         f.setFieldValue('inventory.weapons', [
             ...f.initialValues.inventory.weapons,
             ...weaponArr
-        ]);
+        ])
         
         f.setFieldValue('inventory.items', [
             ...f.initialValues.inventory.items,
             ...itemArr
-        ]);
-    }, [ itemsOfLineage ]);
+        ])
+    }, [ itemsOfLineage ])
 
     return (
         <>
@@ -203,7 +203,7 @@ const Inventory = memo(({ disabled }: { disabled?: boolean }): ReactElement => {
                         {f.values.capacity.cargo}/{f.values.capacity.max}
                     </Typography>
                     <CustomIconButton onClick={() => { setModalOpen(true) }}>
-                        <Edit />
+                        <Add />
                     </CustomIconButton>
                 </Box>
                 <Box
@@ -237,7 +237,7 @@ const Inventory = memo(({ disabled }: { disabled?: boolean }): ReactElement => {
             </Box>
             <Modal
                 open={modalOpen}
-                onClose={e => { setModalOpen(false); }}
+                onClose={e => { setModalOpen(false) }}
                 sx={{
                     display: 'flex',
                     justifyContent: 'center',
@@ -260,9 +260,9 @@ const Inventory = memo(({ disabled }: { disabled?: boolean }): ReactElement => {
                         <Typography variant='h6'>Adicionar Item</Typography>
                     </Box>
                     <Box display='flex' gap={2}>
-                        <Button onClick={() => { changeModalContent('weapon'); }} variant={addButtonsStyle.weapon}>Arma</Button>
-                        <Button onClick={() => { changeModalContent('armor'); }} variant={addButtonsStyle.armor}>Armadura</Button>
-                        <Button onClick={() => { changeModalContent('item'); }} variant={addButtonsStyle.item}>Item</Button>
+                        <Button onClick={() => { changeModalContent('weapon') }} variant={addButtonsStyle.weapon}>Arma</Button>
+                        <Button onClick={() => { changeModalContent('armor') }} variant={addButtonsStyle.armor}>Armadura</Button>
+                        <Button onClick={() => { changeModalContent('item') }} variant={addButtonsStyle.item}>Item</Button>
                     </Box>
                     <Box width='100%'>
                         {modalContent}
@@ -270,8 +270,8 @@ const Inventory = memo(({ disabled }: { disabled?: boolean }): ReactElement => {
                 </Box>
             </Modal>
         </>
-    );
-});
+    )
+})
 
-Inventory.displayName = 'Inventory';
-export default Inventory;
+Inventory.displayName = 'Inventory'
+export default Inventory

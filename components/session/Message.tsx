@@ -1,9 +1,9 @@
-import { Avatar, Box, Typography } from '@mui/material';
-import { useSession } from 'next-auth/react';
-import { type ReactElement } from 'react';
+import { Avatar, Box, Typography } from '@mui/material'
+import { useSession } from 'next-auth/react'
+import { type ReactElement } from 'react'
 
 export default function Message({ message, by }: { message: string, by: { name: string, id: string, image: string } }): ReactElement {
-    const { data: session } = useSession();
+    const { data: session } = useSession()
 
     return (
         <Box 
@@ -32,5 +32,5 @@ export default function Message({ message, by }: { message: string, by: { name: 
             </Box>
             <Avatar sx={{ ml: 1 }} src={by.image} alt={by?.name?.charAt(0).toUpperCase()}/>
         </Box>
-    );
+    )
 }

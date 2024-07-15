@@ -8,4 +8,4 @@ export {
     SessionMembers,
     Message,
     SessionComponent
-};
+}

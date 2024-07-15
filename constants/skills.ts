@@ -561,7 +561,7 @@ Estado Divino agora dura dois de seus turnos (ou duas rodadas).
             },
             {
                 name: 'Pressa Fádica',
-                description: 'A sua velocidade ultrapassa os limites humanos, fazendo com que tudo ao seu redor fique mais lento. Você pode gastar sua ação de movimento completa (isto é, gastar todo seu deslocamento) para diminuir o tempo do jogo pela metade em suas ações. Caso esteja em combate, automaticamente você sai como primeiro na iniciativa e ganha 2 ações padrões extras que podem ser gastas enquanto você permanecer naquele combate. Além disso, você ganha +2 de Agilidade.',
+                description: 'A sua velocidade ultrapassa os limites humanos, fazendo com que tudo ao seu redor fique mais lento. Você pode gastar sua ação de movimento completa (isto é, gastar todo seu deslocamento) para diminuir o tempo do jogo pela metade em suas ações. Caso esteja em combate, automaticamente você sai como primeiro na iniciativa e ganha 2 ações padrões extras que podem ser gastas enquanto você permanecer naquele combate. Além disso você ganha +2 de agilidade.',
                 origin: 'Andarilho',
                 type: 'Subclasse'
             },

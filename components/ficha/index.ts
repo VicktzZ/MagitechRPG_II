@@ -28,4 +28,4 @@ export {
     Magics,
     Skills,
     MagicsModal
-};
+}

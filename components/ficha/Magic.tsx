@@ -41,7 +41,7 @@ const magicColor = {
     'TREVAS': blueGrey[400],
     'PSÍQUICO': pink[500],
     'NÃO-ELEMENTAL': grey[100]
-};
+}
 
 function MagicPower({ 
     magicPower,
@@ -54,27 +54,27 @@ function MagicPower({
     isAdding?: boolean,
     onIconClick?: () => void 
 }): ReactElement {
-    const theme = useTheme();
-    const matches = useMediaQuery(theme.breakpoints.down('md'));
+    const theme = useTheme()
+    const matches = useMediaQuery(theme.breakpoints.down('md'))
 
-    const [ description, setDescritpion ] = useState<string>(magicPower['descrição']);
+    const [ description, setDescritpion ] = useState<string>(magicPower['descrição'])
 
     const [ buttonVariants, setButtonVariants ] = useState({
         'descrição': 'outlined',
         'maestria': 'text'
-    });
+    })
 
     const onClick = (e: MouseEvent<HTMLButtonElement>): void => {
-        const buttonName = e.currentTarget.innerText.toLowerCase() as 'descrição' | 'maestria';
+        const buttonName = e.currentTarget.innerText.toLowerCase() as 'descrição' | 'maestria'
 
         setButtonVariants({
             'descrição': 'text',
             'maestria': 'text',
             [buttonName]: 'outlined'
-        });
+        })
 
-        setDescritpion(magicPower[buttonName]!);
-    };
+        setDescritpion(magicPower[buttonName]!)
+    }
 
     return (
         <Box
@@ -120,12 +120,12 @@ function MagicPower({
                     <Box display='flex' gap={1} width='100%' justifyContent='start'>
                         <Button 
                             sx={matches ? { p: 0 } : {}}
-                            onClick={e => { onClick(e); }}
+                            onClick={e => { onClick(e) }}
                             variant={buttonVariants['descrição'] as any} 
                         >Descrição</Button>
                         <Button
                             sx={matches ? { p: 0 } : {}}
-                            onClick={e => { onClick(e); }}
+                            onClick={e => { onClick(e) }}
                             variant={buttonVariants['maestria'] as any} 
                         >Maestria</Button>
                     </Box>
@@ -141,7 +141,7 @@ function MagicPower({
                 </Box>
             </Box>
         </Box>
-    );
+    )
 }
 
 function MagicSpell({
@@ -150,48 +150,48 @@ function MagicSpell({
     isAdding,
     onIconClick 
 }: MagicTyping<'magic-spell'>): ReactElement {
-    const theme = useTheme();
-    const matches = useMediaQuery(theme.breakpoints.down('md'));
+    const theme = useTheme()
+    const matches = useMediaQuery(theme.breakpoints.down('md'))
 
-    const [ description, setDescritpion ] = useState<string>(magic['estágio 1']);
+    const [ description, setDescritpion ] = useState<string>(magic['estágio 1'])
     const [ buttonVariants, setButtonVariants ] = useState({
         'estágio 1': 'outlined',
         'estágio 2': 'text',
         'estágio 3': 'text',
         'maestria': 'text'
-    });
+    })
 
-    const [ extraManaCost, setExtraManaCost ] = useState<number>(0);
+    const [ extraManaCost, setExtraManaCost ] = useState<number>(0)
 
     const onClick = (e: MouseEvent<HTMLButtonElement>): void => {
-        const buttonName: magicStages = e.currentTarget.innerText.toLowerCase() as magicStages;
+        const buttonName: magicStages = e.currentTarget.innerText.toLowerCase() as magicStages
 
         let extraCost: {
             [key in magicStages]?: number
-        } = {};
+        } = {}
 
         if (Number(magic.nível) === 5) {
             extraCost = {
                 'estágio 1': 0,
                 'estágio 2': 15,
                 'maestria': 30
-            };
+            }
             
         } else if (Number(magic.nível) >= 3) {
             extraCost = {
                 'estágio 1': 0,
                 'estágio 2': 10,
                 'estágio 3': 20
-            };
+            }
         } else {
             extraCost = {
                 'estágio 1': 0,
                 'estágio 2': 5,
                 'estágio 3': 10
-            };
+            }
         }
 
-        setExtraManaCost(extraCost[buttonName]!);
+        setExtraManaCost(extraCost[buttonName]!)
 
         setButtonVariants({
             'estágio 1': 'text',
@@ -199,10 +199,10 @@ function MagicSpell({
             'estágio 3': 'text',
             'maestria': 'text',
             [buttonName]: 'outlined'
-        });
+        })
 
-        setDescritpion(magic[buttonName]!);
-    };
+        setDescritpion(magic[buttonName]!)
+    }
 
     return (
         <Box
@@ -264,27 +264,27 @@ function MagicSpell({
                     <Box display='flex' gap={1} width='100%' justifyContent='start'>
                         <Button 
                             sx={matches ? { p: 0 } : {}}
-                            onClick={e => { onClick(e); }}
+                            onClick={e => { onClick(e) }}
                             variant={buttonVariants['estágio 1'] as any} 
                         >Estágio 1</Button>
                         {magic['estágio 2'] && (
                             <Button 
                                 sx={matches ? { p: 0 } : {}}
-                                onClick={e => { onClick(e); }}
+                                onClick={e => { onClick(e) }}
                                 variant={buttonVariants['estágio 2'] as any} 
                             >Estágio 2</Button>
                         )}
                         {magic['estágio 3'] && (
                             <Button                         
                                 sx={matches ? { p: 0 } : {}}
-                                onClick={e => { onClick(e); }}
+                                onClick={e => { onClick(e) }}
                                 variant={buttonVariants['estágio 3'] as any} 
                             >Estágio 3</Button>
                         )}
                         {magic['maestria'] && (
                             <Button
                                 sx={matches ? { p: 0 } : {}}
-                                onClick={e => { onClick(e); }}
+                                onClick={e => { onClick(e) }}
                                 variant={buttonVariants['maestria'] as any} 
                             >Maestria</Button>
                         )}
@@ -301,7 +301,7 @@ function MagicSpell({
                 </Box>
             </Box>
         </Box>
-    );
+    )
 }
 
 export default function Magic<C extends 'magic-spell' | 'magic-power'>({
@@ -310,9 +310,9 @@ export default function Magic<C extends 'magic-spell' | 'magic-power'>({
 }: {
     as?: C
 } & MagicTyping<C>): ReactElement {
-    const Component = as === 'magic-power' ? MagicPower : as === 'magic-spell' ? MagicSpell : MagicSpell;
+    const Component = as === 'magic-power' ? MagicPower : as === 'magic-spell' ? MagicSpell : MagicSpell
     
     return (
         <Component {...props as any} />
-    );
+    )
 }
