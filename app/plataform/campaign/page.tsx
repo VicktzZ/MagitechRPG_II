@@ -7,24 +7,24 @@ import { useEffect, useState, type ReactElement } from 'react';
 import type { Campaign } from '@types';
 
 export default function CampaignPage(): ReactElement {
-    const { data: session } = useSession()
-    const [ contentType, setContentType ] = useState<'create' | 'join'>('create')
-    const [ open, setOpen ] = useState(false)
-    const [ isLoading, setIsLoading ] = useState(false)
-    const [ campaigns, setCampaigns ] = useState<Campaign[]>([])
+    const { data: session } = useSession();
+    const [ contentType, setContentType ] = useState<'create' | 'join'>('create');
+    const [ open, setOpen ] = useState(false);
+    const [ isLoading, setIsLoading ] = useState(false);
+    const [ campaigns, setCampaigns ] = useState<Campaign[]>([]);
 
     useEffect(() => {
         (async () => {
-            setIsLoading(true)
+            setIsLoading(true);
 
             const camps: Campaign[] = await fetch('/api/campaign?userId=' + session?.user?._id ?? '', {
                 method: 'GET'
-            }).then(async r => await r.json())
+            }).then(async r => await r.json());
 
-            setCampaigns(camps)
-            setIsLoading(false)
-        })()
-    }, [ session?.user?._id ])
+            setCampaigns(camps);
+            setIsLoading(false);
+        })();
+    }, [ session?.user?._id ]);
 
     return (
         <Box display='flex' flexDirection='column' gap={3} p={2}>
@@ -59,11 +59,11 @@ export default function CampaignPage(): ReactElement {
             <Box>
                 <Box display='flex' gap={2}>
                     <Button 
-                        onClick={() => { setOpen(true); setContentType('join') }}
+                        onClick={() => { setOpen(true); setContentType('join'); }}
                         variant='contained'
                     >Ingressar</Button>
                     <Button 
-                        onClick={() => { setOpen(true); setContentType('create') }}
+                        onClick={() => { setOpen(true); setContentType('create'); }}
                         variant='contained'
                     >Criar</Button>
                 </Box>
@@ -74,5 +74,5 @@ export default function CampaignPage(): ReactElement {
                 />
             </Box>
         </Box>
-    )
+    );
 }

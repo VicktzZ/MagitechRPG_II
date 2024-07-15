@@ -130,7 +130,7 @@ export default function Session({ params }: { params: { code: string } }): React
                         </Box>
                     </Modal>
                 ) : !loading ? (
-                    <gameMasterContext.Provider value={{ gameMasterId }}>
+                    <gameMasterContext.Provider value={{ allGameMasters: gameMasterId, userIsGM: false }}>
                         <SessionComponent sessionCode={params.code} />
                     </gameMasterContext.Provider>
                 ) : ficha && (

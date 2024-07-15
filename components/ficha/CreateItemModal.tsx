@@ -1,11 +1,11 @@
 // import { MenuItem, TextField, Box, Typography, Grid, ListSubheader, useMediaQuery, Button, Chip } from '@mui/material'
-import { Box } from '@mui/material'
-import { useEffect, type ReactElement, useState } from 'react'
-import type { Armor, DamageType, Ficha, Item, MergedItems, Weapon } from '@types'
+import { Box } from '@mui/material';
+import { useEffect, type ReactElement, useState } from 'react';
+import type { Armor, DamageType, Ficha, Item, MergedItems, Weapon } from '@types';
 // import { useTheme } from '@mui/material'
-import { type FormikContextType, useFormikContext } from 'formik'
-import { useSnackbar } from 'notistack'
-import { ArmorModal, ItemModal, WeaponModal } from './CreateModals'
+import { type FormikContextType, useFormikContext } from 'formik';
+import { useSnackbar } from 'notistack';
+import { ArmorModal, ItemModal, WeaponModal } from './CreateModals';
 
 export default function CreateItemModal({ 
     itemType,
@@ -20,11 +20,11 @@ export default function CreateItemModal({
         rarity: 'Comum',
         weight: 0,
         quantity: 1
-    }
+    };
 
     // const theme = useTheme()
     // const matches = useMediaQuery(theme.breakpoints.down('md'))
-    const f: FormikContextType<Ficha> = useFormikContext()
+    const f: FormikContextType<Ficha> = useFormikContext();
 
     const [ item, setItem ] = useState<Partial<MergedItems<'Leve' | 'Pesada'>>>(
         itemType === 'weapon' ? {
@@ -51,40 +51,40 @@ export default function CreateItemModal({
             displacementPenalty: 0,
             value: 0
         } : defaultItem
-    )
+    );
     
-    const [ weaponCategParam, setWeaponCategParam ] = useState<'Leve' | 'Pesada'>()
-    const [ effectType, setEffectType ] = useState<DamageType>()
+    const [ weaponCategParam, setWeaponCategParam ] = useState<'Leve' | 'Pesada'>();
+    const [ effectType, setEffectType ] = useState<DamageType>();
 
-    const [ closed, setClosed ] = useState<boolean>(false)
+    const [ closed, setClosed ] = useState<boolean>(false);
 
-    const { enqueueSnackbar } = useSnackbar()
-
-    useEffect(() => {
-        setItem({})
-        setWeaponCategParam(undefined)
-        setEffectType(undefined)
-        setClosed(false)
-    }, [ closed ])
+    const { enqueueSnackbar } = useSnackbar();
 
     useEffect(() => {
-        setItem({})
-    }, [ itemType ])
+        setItem({});
+        setWeaponCategParam(undefined);
+        setEffectType(undefined);
+        setClosed(false);
+    }, [ closed ]);
+
+    useEffect(() => {
+        setItem({});
+    }, [ itemType ]);
 
     function createItem(): void {
         const isDefaultFieldsFilledIn = !!(
             item.name && item.description &&
             item.rarity && item.kind &&
             item.weight && item.quantity
-        )
+        );
 
         console.log(item, isDefaultFieldsFilledIn);
         
         try { 
             if (itemType === 'weapon') {
-                setItem(state => ({ ...state, effect: { ...state.effect, effectType } as any }))
+                setItem(state => ({ ...state, effect: { ...state.effect, effectType } as any }));
 
-                const regex = /^(\d+d\d+)(\+\d+d\d+|\+\d+)*$/
+                const regex = /^(\d+d\d+)(\+\d+d\d+|\+\d+)*$/;
                 
                 const isAllWeaponFieldsFilledIn = !!(
                     isDefaultFieldsFilledIn && item.range && item.categ &&
@@ -92,20 +92,20 @@ export default function CreateItemModal({
                     item.bonus && item.effect?.value &&
                     item.effect?.critChance && item.effect?.critValue &&
                     item.effect?.kind && item.effect?.effectType
-                )
+                );
 
-                if (!regex.test(item.effect?.value ?? '') ?? !regex.test(item.effect?.critValue ?? '')) {
-                    enqueueSnackbar('O dano da arma precisa começar com um dado! EX: 2d4', { variant: 'error', autoHideDuration: 3000 })
+                if (!(!regex.test(item.effect?.value ?? '') ?? !regex.test(item.effect?.critValue ?? ''))) {
+                    enqueueSnackbar('O dano da arma precisa começar com um dado! EX: 2d4', { variant: 'error', autoHideDuration: 3000 });
                 } else {
                     if (!isAllWeaponFieldsFilledIn) {
-                        item.categ += ` (${weaponCategParam})` as any
+                        item.categ += ` (${weaponCategParam})` as any;
     
-                        f.values.inventory.weapons = [ ...f.values.inventory.weapons, item as Weapon<'Leve' | 'Pesada'> ]
-                        enqueueSnackbar(`${item.name} criado com sucesso!`, { variant: 'success', autoHideDuration: 3000 })
-                        setClosed(true)
-                        onClose()
+                        f.values.inventory.weapons = [ ...f.values.inventory.weapons, item as Weapon<'Leve' | 'Pesada'> ];
+                        enqueueSnackbar(`${item.name} criado com sucesso!`, { variant: 'success', autoHideDuration: 3000 });
+                        setClosed(true);
+                        onClose();
                     } else {
-                        enqueueSnackbar('Preencha todos os campos!', { variant: 'error', autoHideDuration: 3000 })
+                        enqueueSnackbar('Preencha todos os campos!', { variant: 'error', autoHideDuration: 3000 });
                     }
                 }
             } else if (itemType === 'armor') {
@@ -115,25 +115,25 @@ export default function CreateItemModal({
                 // )
                 
                 // if (isAllArmorFieldsFilledIn) {
-                f.values.inventory.armors = [ ...f.values.inventory.armors, item as Armor ]
-                enqueueSnackbar(`${item.name} criado com sucesso!`, { variant: 'success', autoHideDuration: 3000 })
-                setClosed(true)
-                onClose()
+                f.values.inventory.armors = [ ...f.values.inventory.armors, item as Armor ];
+                enqueueSnackbar(`${item.name} criado com sucesso!`, { variant: 'success', autoHideDuration: 3000 });
+                setClosed(true);
+                onClose();
                 // }
             } else {
                 // if (isDefaultFieldsFilledIn) {
-                f.values.inventory.items = [ ...f.values.inventory.items, item as unknown as Item ]
-                enqueueSnackbar(`${item.name} criado com sucesso!`, { variant: 'success', autoHideDuration: 3000 })
-                setClosed(true)
-                onClose()
+                f.values.inventory.items = [ ...f.values.inventory.items, item as unknown as Item ];
+                enqueueSnackbar(`${item.name} criado com sucesso!`, { variant: 'success', autoHideDuration: 3000 });
+                setClosed(true);
+                onClose();
                 // } else {
                 // enqueueSnackbar('Preencha todos os campos!', { variant: 'error', autoHideDuration: 3000 })
                 // }
             }
             
-            console.log(item)
+            console.log(item);
         } catch (error: any) {
-            enqueueSnackbar(`ERRO: ${error.message}`, { variant: 'error', autoHideDuration: 3000 })
+            enqueueSnackbar(`ERRO: ${error.message}`, { variant: 'error', autoHideDuration: 3000 });
         }
     }
 
@@ -146,10 +146,10 @@ export default function CreateItemModal({
             {...createItem}
         >
             { 
-                itemType === 'weapon' ? <WeaponModal /> :
+                itemType === 'weapon' ? <WeaponModal create={createItem} /> :
                     itemType === 'armor' ? <ArmorModal /> :
                         <ItemModal />
             }
         </Box>
-    )
+    );
 }

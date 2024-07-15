@@ -1,6 +1,6 @@
-import { Avatar, Box, IconButton, Typography, useMediaQuery, useTheme } from '@mui/material'
-import Image from 'next/image'
-import { type ReactElement } from 'react'
+import { Avatar, Box, IconButton, Typography, useMediaQuery, useTheme } from '@mui/material';
+import Image from 'next/image';
+import { type ReactElement } from 'react';
 
 export default function PlayerAvatar({
     userIsGM,
@@ -13,8 +13,8 @@ export default function PlayerAvatar({
     username: string,
     charname: string
 }): ReactElement {
-    const theme = useTheme()
-    const matches = useMediaQuery(theme.breakpoints.down('md'))
+    const theme = useTheme();
+    const matches = useMediaQuery(theme.breakpoints.down('md'));
 
     return (
         <Box display='flex' gap={!matches ? 2 : 1} alignItems='center'>
@@ -43,5 +43,5 @@ export default function PlayerAvatar({
                 <Typography variant='caption' color='text.secondary'>{username}</Typography>
             </Box>
         </Box>
-    )
+    );
 }

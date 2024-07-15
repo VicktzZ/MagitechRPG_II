@@ -1,11 +1,11 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 'use client';
 
-import { Backdrop, CircularProgress, TextField, useTheme } from '@mui/material'
-import { Typography } from '@mui/material'
-import { Box, Modal } from '@mui/material'
+import { Backdrop, CircularProgress, TextField, useTheme } from '@mui/material';
+import { Typography } from '@mui/material';
+import { Box, Modal } from '@mui/material';
 import { generateEntryCode } from '@functions';
-import { useState, type ReactElement } from 'react'
+import { useState, type ReactElement } from 'react';
 import { useSnackbar } from 'notistack';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
@@ -24,42 +24,42 @@ export default function CampaignOptionsModal({
     const { data: session } = useSession();
 
     const [ isLoading, setIsLoading ] = useState<boolean>(false);
-    const [ campaignCode, setCampaignCode ] = useState<string>('')
+    const [ campaignCode, setCampaignCode ] = useState<string>('');
     const [ campaignProps, setCampaignProps ] = useState<Partial<Campaign>>({
         title: '',
         description: ''
-    })
+    });
 
-    const { enqueueSnackbar } = useSnackbar()
+    const { enqueueSnackbar } = useSnackbar();
     
-    const theme = useTheme()
-    const router = useRouter()
+    const theme = useTheme();
+    const router = useRouter();
 
     const joinCampaign = async (): Promise<void> => {
         if (campaignCode) {
-            setIsLoading(true)
+            setIsLoading(true);
 
-            const response: Campaign = await fetch(`/api/campaign?code=${campaignCode}`).then(async res => await res.json())
+            const response: Campaign = await fetch(`/api/campaign?code=${campaignCode}`).then(async res => await res.json());
 
             if (response) {
-                setOpen(false)
-                router.push(`/plataform/campaign/${campaignCode}`)
+                setOpen(false);
+                router.push(`/plataform/campaign/${campaignCode}`);
             } else {
-                enqueueSnackbar('Código da sessão inválido ou inexistente!', { variant: 'error' })
+                enqueueSnackbar('Código da sessão inválido ou inexistente!', { variant: 'error' });
             }
 
-            setIsLoading(false)
+            setIsLoading(false);
         } else {
-            enqueueSnackbar('Insira o código da sessão!', { variant: 'error' })
+            enqueueSnackbar('Insira o código da sessão!', { variant: 'error' });
         }
-    }
+    };
 
     const createCampaign = async (): Promise<void> => {
-        const campaignCodeGen = generateEntryCode()
+        const campaignCodeGen = generateEntryCode();
 
         try {
-            setOpen(false)
-            setIsLoading(true)
+            setOpen(false);
+            setIsLoading(true);
 
             await fetch('/api/campaign', {
                 method: 'POST',
@@ -70,25 +70,25 @@ export default function CampaignOptionsModal({
                     description: campaignProps.description,
                     players: [ ]
                 })
-            })
+            });
 
-            setIsLoading(false)
-            enqueueSnackbar('Campanha criada com sucesso!', { variant: 'success' })
+            setIsLoading(false);
+            enqueueSnackbar('Campanha criada com sucesso!', { variant: 'success' });
 
             setTimeout(() => {
-                router.push(`/plataform/campaign/${campaignCodeGen}`)
+                router.push(`/plataform/campaign/${campaignCodeGen}`);
             }, 1000);
         } catch (error: any) {
-            setIsLoading(false)
-            enqueueSnackbar('Erro ao criar sessão: ' + error.message, { variant: 'error' })
+            setIsLoading(false);
+            enqueueSnackbar('Erro ao criar sessão: ' + error.message, { variant: 'error' });
         }
-    }
+    };
 
     return (
         <>
             <Modal
                 open={open}
-                onClose={() => { setOpen(false) }}
+                onClose={() => { setOpen(false); }}
                 sx={{
                     display: 'flex',
                     justifyContent: 'center',
@@ -103,7 +103,7 @@ export default function CampaignOptionsModal({
                     bgcolor='background.paper'
                     borderRadius={2}
                     component='form'
-                    onSubmit={(e) => { e.preventDefault(); contentType === 'join' ? joinCampaign() : createCampaign() }}
+                    onSubmit={(e) => { e.preventDefault(); contentType === 'join' ? joinCampaign() : createCampaign(); }}
                     p={2.5}
                     sx={{
                         [theme.breakpoints.down('md')]: {
@@ -123,7 +123,7 @@ export default function CampaignOptionsModal({
                                         label='Código'
                                         placeholder='Código da campanha'
                                         value={campaignCode}
-                                        onChange={(e) => { setCampaignCode(e.target.value) }}
+                                        onChange={(e) => { setCampaignCode(e.target.value); }}
                                     />
                                 ) : (
                                     <>
@@ -132,20 +132,20 @@ export default function CampaignOptionsModal({
                                             label='Título'
                                             placeholder='Nome da campanha'
                                             value={campaignProps.title}
-                                            onChange={(e) => { setCampaignProps(state => ({ ...state, title: e.target.value })) }}
+                                            onChange={(e) => { setCampaignProps(state => ({ ...state, title: e.target.value })); }}
                                         />
                                         <TextField
                                             fullWidth 
                                             label='Descrição'
                                             placeholder='Descrição da campanha'
                                             value={campaignProps.description}
-                                            onChange={(e) => { setCampaignProps(state => ({ ...state, description: e.target.value })) }}
+                                            onChange={(e) => { setCampaignProps(state => ({ ...state, description: e.target.value })); }}
                                         />
                                     </>
                                 )}
                             </Box>
                             <Box display='flex' gap={2} justifyContent='space-between' width='100%'>
-                                <Button onClick={() => { setOpen(false) }} variant='outlined'>Cancelar</Button>
+                                <Button onClick={() => { setOpen(false); }} variant='outlined'>Cancelar</Button>
                                 <Box display='flex'alignItems='center' gap={1.5}>
                                     <Button 
                                         onClick={contentType === 'join' ? joinCampaign : createCampaign} 
@@ -162,5 +162,5 @@ export default function CampaignOptionsModal({
                 <CircularProgress />
             </Backdrop>
         </>
-    )
+    );
 }

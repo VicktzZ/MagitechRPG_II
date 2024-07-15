@@ -11,14 +11,14 @@ import Magic from './Magic';
 import FichaComponent from './FichaComponent';
 import FichaCard from './FichaCard';
 import SkillsModal from './SkillsModal';
-import ItemModal from './ItemModal';
+import CreateItemModal from './CreateItemModal';
 
 export {
     Expertise,
     Item,
     Attributes,
     FichaCard,
-    ItemModal,
+    CreateItemModal as ItemModal,
     Characteristics,
     Expertises,
     Inventory,
