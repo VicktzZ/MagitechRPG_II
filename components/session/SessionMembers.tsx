@@ -48,7 +48,7 @@ export default function SessionMembers({ members }: { members: PresenceChannel['
             {
                 membersArr ?
                     membersArr.map((member: Member) => {
-                        if (gameMasterId.includes(member._id)) {
+                        if (allGameMasters.includes(member._id)) {
                             return (
                                 <Box key={member._id}>
                                     <Box
@@ -87,7 +87,7 @@ export default function SessionMembers({ members }: { members: PresenceChannel['
                             )
                         }
 
-                        if (member._id === members.me.info._id && !gameMasterId.includes(member._id)) {
+                        if (member._id === members.me.info._id && !allGameMasters.includes(member._id)) {
                             return (
                                 <Box
                                     display='flex'
@@ -126,7 +126,7 @@ export default function SessionMembers({ members }: { members: PresenceChannel['
                         return (
                             <>
                                 {
-                                    member._id !== members.me.info._id && !gameMasterId.includes(member._id) && (
+                                    member._id !== members.me.info._id && !allGameMasters.includes(member._id) && (
                                         <Box
                                             display='flex'
                                             key={member._id}
