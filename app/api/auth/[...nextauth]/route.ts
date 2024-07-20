@@ -1,26 +1,26 @@
 import NextAuth from 'next-auth/next';
-// import GoogleProvider from 'next-auth/providers/google';
-// import DiscordProvider from 'next-auth/providers/discord';
+import GoogleProvider from 'next-auth/providers/google';
+import DiscordProvider from 'next-auth/providers/discord';
 
 import { connectToDb } from '@utils/database';
 import type { Session } from 'next-auth';
 import { type User as UserType } from '@types';
 import User from '@models/user';
-import { AdminProvider } from './adminProvider';
+// import { AdminProvider } from './adminProvider';
 
 const handler = NextAuth({
     providers:
     [
-        // GoogleProvider({
-        //     clientId: process.env.GOOGLE_CLIENT_ID,
-        //     clientSecret: process.env.GOOGLE_CLIENT_SECRET
-        // }),
+        GoogleProvider({
+            clientId: process.env.GOOGLE_CLIENT_ID,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET
+        }),
 
-        // DiscordProvider({
-        //     clientId: process.env.DISCORD_CLIENT_ID,
-        //     clientSecret: process.env.DISCORD_CLIENT_SECRET
-        // })
-        AdminProvider
+        DiscordProvider({
+            clientId: process.env.DISCORD_CLIENT_ID,
+            clientSecret: process.env.DISCORD_CLIENT_SECRET
+        })
+        // AdminProvider
     ],
 
     callbacks: {
