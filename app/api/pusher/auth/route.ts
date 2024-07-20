@@ -5,11 +5,8 @@ import type { Member, Ficha } from '@types';
 export async function POST(req: NextRequest): Promise<Response> {
     try {
         const body = await req.text()
-        const sessionParams: Member = JSON.parse(req.nextUrl.searchParams.get('session') ?? '{}')?.user
-        const fichaParams: Ficha = JSON.parse(req.nextUrl.searchParams.get('ficha') ?? '{}')
-
-        console.log(sessionParams);
-        console.log(fichaParams);
+        const sessionParam: Member = JSON.parse(req.nextUrl.searchParams.get('session') ?? '{}')?.user
+        const fichaParam: Ficha = JSON.parse(req.nextUrl.searchParams.get('ficha') ?? '{}')
 
         const socketId = body.split('=')[1].split('&')[0]
         const channelName = body?.split('&')[1]?.split('=')[1]
@@ -20,7 +17,7 @@ export async function POST(req: NextRequest): Promise<Response> {
 
         const channelAuthResponse = pusherServer.authorizeChannel(socketId, channelName, {
             user_id: socketId,
-            user_info: { ...sessionParams, socketId, currentFicha: fichaParams }
+            user_info: { ...sessionParam, socketId, currentFicha: fichaParam }
         })
 
         return Response.json(channelAuthResponse)

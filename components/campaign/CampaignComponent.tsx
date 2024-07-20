@@ -1,4 +1,4 @@
-'use client';
+// 'use client';
 
 import { useChannel } from '@contexts/channelContext';
 import { Box } from '@mui/material';
@@ -30,7 +30,7 @@ export default function CampaignComponent(): ReactElement {
         });
 
         channel.bind('pusher:member_removed', (user: PusherMemberParam) => {
-            enqueueSnackbar(`${user.info.name} saiu da campanha!`, { 
+            enqueueSnackbar(`${user.info.name} saiu da sessão!`, { 
                 autoHideDuration: 3000,
                 preventDuplicate: true,
                 key: 'exitFromChannel'

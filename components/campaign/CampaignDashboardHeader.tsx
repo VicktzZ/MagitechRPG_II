@@ -7,14 +7,16 @@ import { useCampaignContext } from '@contexts/campaignContext';
 import { useChannel } from '@contexts/channelContext';
 import { Grid, Tooltip, useMediaQuery, useTheme } from '@mui/material';
 import { Box, Button, Skeleton, Typography } from '@mui/material';
-import type { PlayerInfo } from '@types';
+import type { PlayerInfo, PusherMemberParam } from '@types';
 import { useEffect, useState, type ReactElement } from 'react';
+import { green, red } from '@mui/material/colors';
 
 export default function CampaignDashboardHeader(): ReactElement {
     const [ playersInfo, setPlayersInfo ] = useState<PlayerInfo[]>([]);
     const { channel } = useChannel();
     const [ loading, setLoading ] = useState<boolean>(true);
     const [ openTooltip, setOpenTooltip ] = useState<boolean>(false);
+    const [ usernames, setUsernames ] = useState<string[]>([])
 
     const theme = useTheme();
     const matches = useMediaQuery(theme.breakpoints.down('md'));
@@ -27,6 +29,13 @@ export default function CampaignDashboardHeader(): ReactElement {
         (async () => {
             const playersInfoResponse: PlayerInfo[] = await fetch(`/api/campaign/playersinfo?code=${code}`).then(async res => await res.json());
             setPlayersInfo(playersInfoResponse);
+
+            channel.members.each((member: PusherMemberParam) => {
+                if (!usernames.includes(member.info.name))
+                    setUsernames(state => [ ...state, member.info.name ])
+            })
+
+            console.log(usernames)
 
             // channel.bind('pusher:member_added', async (user: PlayerInfo) => {
             //     setPlayersInfo(await fetch(`/api/campaign/playersinfo?code=${code}`).then(async res => await res.json() as PlayerInfo[]))
@@ -96,12 +105,31 @@ export default function CampaignDashboardHeader(): ReactElement {
                         </Box>
                     </Box>
                 )) : playersInfo.length > 0 && playersInfo?.map(p => (
-                    <PlayerAvatar
-                        key={Math.random()}
-                        image={p.image}
-                        username={p.username}
-                        charname={p.charname}
-                    />
+                    <Box
+                        key={p.username + '_' + p.charname}
+                        position='relative'
+                    >
+                        <Box 
+                            position='relative'
+                            width='15px'
+                            height='15px'
+                            left='48px'
+                            top='22px'
+                            zIndex={100}
+                            borderRadius='100%'
+                            bgcolor={usernames.includes(p.username) ? green[500] : red[500]}
+                        >
+                        </Box>
+                        <Box
+                            sx={{ filter: !usernames.includes(p.username) ? 'grayscale(100%)' : '' }}
+                        >
+                            <PlayerAvatar
+                                image={p.image}
+                                username={p.username}
+                                charname={p.charname}
+                            />
+                        </Box>
+                    </Box>
                 ))}
             </Grid>
         </Box>

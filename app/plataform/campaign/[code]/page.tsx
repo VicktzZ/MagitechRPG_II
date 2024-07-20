@@ -53,9 +53,7 @@ export default function Campaign({ params }: { params: { code: string } }): Reac
             if (campaignResponse.admin.includes(session?.user?._id ?? '')) {
                 setIsFichaLoading(false);
                 setLoading(true);
-
                 setUserIsGM(true);
-
                 setChannel(pusherClient?.subscribe(campaignName) as PresenceChannel);
                 setLoading(false);
             }

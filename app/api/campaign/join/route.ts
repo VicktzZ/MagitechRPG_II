@@ -7,12 +7,6 @@ export async function POST(req: Request): Promise<Response> {
 
     const isUserFichaAlreadyInCampaign = await Campaign.findOne({ campaignCode, 'players.fichaId': player.fichaId });
 
-    console.log({
-        campaignCode,
-        player,
-        isUserFichaAlreadyInCampaign
-    });
-
     if (!isUserFichaAlreadyInCampaign) {
         response = await Campaign.findOneAndUpdate({ campaignCode }, {
             $push: {
