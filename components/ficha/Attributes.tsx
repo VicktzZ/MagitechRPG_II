@@ -101,13 +101,13 @@ export default function Attributes({ disabled }: { disabled?: boolean }): ReactE
                 }
 
                 return {
-                    vig: () => { f.initialValues.attributes.lp += num(3) },
+                    vig: () => { f.initialValues.attributes.lp += num(2) },
                     des: () => { f.initialValues.attributes.ap += num(0.5) },
                     sab: () => { f.initialValues.points.expertises += num(1) },
                     car: () => { f.values.inventory.money += num(20000) },
                     foc: () => { 
-                        f.initialValues.attributes.mp += num(5)
-                        f.initialValues.magicsSpace += num(2) 
+                        f.initialValues.attributes.mp += num(1)
+                        f.initialValues.magicsSpace += num(1) 
                     },
                     log: () => {
                         f.initialValues.points.diligence += num(1)
@@ -241,7 +241,7 @@ export default function Attributes({ disabled }: { disabled?: boolean }): ReactE
 
         const baseMP = 
             (classesModel[f.values.class as Classes]?.attributes.mp ?? 0) +
-            f.values.attributes.foc * 5 +
+            f.values.attributes.foc * 2 +
             (races[f.values.race as Race['name']]?.attributes.mp ?? 0)
 
         const baseAP = 5 +
@@ -322,7 +322,7 @@ export default function Attributes({ disabled }: { disabled?: boolean }): ReactE
                         scales: {
                             r: {
                                 suggestedMin: -1,
-                                suggestedMax: 10,
+                                suggestedMax: 5,
                                 angleLines: {
                                     color: '#f4f4f4'
                                 },
@@ -391,11 +391,11 @@ export default function Attributes({ disabled }: { disabled?: boolean }): ReactE
                                 height: '30px'
                             }}>
                                 <Button 
-                                    onClick={() => { setDiligencePoints('mp', 'add', 3) }}  
+                                    onClick={() => { setDiligencePoints('mp', 'add', 1) }}  
                                     variant='outlined'
                                 >+1</Button>
                                 <Button
-                                    onClick={() => { setDiligencePoints('mp', 'sub', 3) }} 
+                                    onClick={() => { setDiligencePoints('mp', 'sub', 1) }} 
                                     variant='outlined'
                                 >-1</Button>
                             </Box>
@@ -437,7 +437,7 @@ export default function Attributes({ disabled }: { disabled?: boolean }): ReactE
                                     label={f.values.attributes.vig}
                                 /> 
                             </Box>
-                            {attributePoints('vig', { attr: 'lp', value: 3 })}
+                            {attributePoints('vig', { attr: 'lp', value: 2 })}
                         </Box>
                         <Box 
                             display='flex'
@@ -471,7 +471,7 @@ export default function Attributes({ disabled }: { disabled?: boolean }): ReactE
                                     label={f.values.attributes.foc}
                                 /> 
                             </Box>
-                            {attributePoints('foc', { attr: 'mp', value: 5 })}
+                            {attributePoints('foc', { attr: 'mp', value: 1 })}
                         </Box>
                         <Box 
                             display='flex'
@@ -575,13 +575,13 @@ export default function Attributes({ disabled }: { disabled?: boolean }): ReactE
                                         audio.play()
                                     }}
                                 >
-                                    <ListSubheader>{'< 8'}</ListSubheader>
+                                    <ListSubheader>{'< 6'}</ListSubheader>
                                     <MenuItem value='Miserável'>Miserável</MenuItem>
-                                    <ListSubheader>8 - 14</ListSubheader>
+                                    <ListSubheader>6 - 12</ListSubheader>
                                     <MenuItem value='Pobre'>Pobre</MenuItem>
-                                    <ListSubheader>15 - 20</ListSubheader>
+                                    <ListSubheader>12 - 17</ListSubheader>
                                     <MenuItem value='Estável'>Estável</MenuItem>
-                                    <ListSubheader>20+</ListSubheader>
+                                    <ListSubheader>{'> 17'}</ListSubheader>
                                     <MenuItem value='Rico'>Rico</MenuItem>
                                 </Select>
                             </FormControl>
@@ -654,7 +654,7 @@ export default function Attributes({ disabled }: { disabled?: boolean }): ReactE
             <DiceRollModal
                 open={modalOpen}
                 onClose={() => { setModalOpen(false) }}
-                bonus={[ f.values.attributes.car * 2 ]}
+                bonus={[ f.values.attributes.car ]}
                 isDisadvantage={f.values.attributes.car < 0}
                 visibleDices
                 visibleBaseAttribute

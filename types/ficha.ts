@@ -1,6 +1,7 @@
 export interface Ficha {
     _id?: string
     playerName: string
+    mode: "Apocalypse" | "Classic"
     userId: string
     name: string
     age: number

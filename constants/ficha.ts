@@ -117,7 +117,7 @@ export const fichaModel: Partial<Ficha> = {
     },
     
     points: {
-        attributes: 8,
+        attributes: 6,
         expertises: 0,
         diligence: 0,
         skills: 0,

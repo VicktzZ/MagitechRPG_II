@@ -43,6 +43,11 @@
     src: url(Inter-Regular.ttf);
 }
 
+@font-face {
+    font-family: Apocalypse;
+    src: url(Apocalypse-grunge.ttf)
+}
+
 /* RPG Assets */
 
 @font-face {

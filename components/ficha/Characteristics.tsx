@@ -18,13 +18,13 @@ import { useAudio } from '@hooks';
 import { skills } from '@constants/skills';
 import type { Race } from '@types';
 import { type ExpertisesOverrided, lineageExpertises } from '@constants/lineageExpertises';
+import { races } from '@constants/races';
 
 export default function Characteristics({ disabled }: { disabled?: boolean }): ReactElement {
     const f: FormikContextType<typeof fichaModel> = useFormikContext()
 
     const theme = useTheme()
     const matches = useMediaQuery(theme.breakpoints.down('md'))
-
     const audio1 = useAudio(clickEffect)
 
     const setClass = (e: SelectChangeEvent<any>): void => {
@@ -230,36 +230,36 @@ export default function Characteristics({ disabled }: { disabled?: boolean }): R
                         <MenuItem value='Ciborgue'>
                             <Box display='flex' flexDirection='column'>
                                 <Typography>Ciborgue</Typography>
-                                <Typography variant='caption' color={green[500]}>+1 AP</Typography>
-                                <Typography variant='caption' color={red[500]}>-6 MP</Typography>
+                                <Typography variant='caption' color={green[500]}>+{races.Ciborgue.attributes.ap} AP</Typography>
+                                <Typography variant='caption' color={red[500]}>{races.Ciborgue.attributes.mp} MP</Typography>
                             </Box>
                         </MenuItem>
                         <MenuItem value='Humanoide'>
                             <Box display='flex' flexDirection='column'>
                                 <Typography>Humanóide</Typography>
-                                <Typography variant='caption' color={green[500]}>+3 LP</Typography>
-                                <Typography variant='caption' color={green[500]}>+3 MP</Typography>
+                                <Typography variant='caption' color={green[500]}>+{races.Humanoide.attributes.lp} LP</Typography>
+                                <Typography variant='caption' color={green[500]}>+{races.Humanoide.attributes.mp} MP</Typography>
                             </Box>
                         </MenuItem>
                         <MenuItem value='Autômato'>
                             <Box display='flex' flexDirection='column'>
                                 <Typography>Autômato</Typography>
-                                <Typography variant='caption' color={green[500]}>+6 MP</Typography>
-                                <Typography variant='caption' color={red[500]}>-1 AP</Typography>
+                                <Typography variant='caption' color={green[500]}>+{races['Autômato'].attributes.mp} MP</Typography>
+                                <Typography variant='caption' color={red[500]}>{races['Autômato'].attributes.ap} AP</Typography>
                             </Box>
                         </MenuItem>
                         <MenuItem value='Mutante'>
                             <Box display='flex' flexDirection='column'>
                                 <Typography>Mutante</Typography>
-                                <Typography variant='caption' color={green[500]}>+6 LP</Typography>
-                                <Typography variant='caption' color={red[500]}>-6 MP</Typography>
+                                <Typography variant='caption' color={green[500]}>+{races.Mutante.attributes.lp} LP</Typography>
+                                <Typography variant='caption' color={red[500]}>{races.Mutante.attributes.mp} MP</Typography>
                             </Box>
                         </MenuItem>
                         <MenuItem value='Magia-viva'>
                             <Box display='flex' flexDirection='column'>
                                 <Typography>Magia-viva</Typography>
-                                <Typography variant='caption' color={green[500]}>+8 MP</Typography>
-                                <Typography variant='caption' color={red[500]}>-8 LP</Typography>
+                                <Typography variant='caption' color={green[500]}>+{races['Magia-viva'].attributes.mp} MP</Typography>
+                                <Typography variant='caption' color={red[500]}>{races['Magia-viva'].attributes.lp} LP</Typography>
                             </Box>
                         </MenuItem>
                     </Select>

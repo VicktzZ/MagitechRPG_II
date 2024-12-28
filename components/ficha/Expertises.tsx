@@ -181,17 +181,17 @@ export default function Expertises({ disabled }: { disabled?: boolean }): ReactE
                         variant='caption'
                         fontWeight={900}
                         color={blue[500]}
-                    >Competente: {'< 10'}</Typography>
+                    >Competente: {'< 7'}</Typography>
                     <Typography 
                         variant='caption'
                         fontWeight={900}
                         color={purple[500]}
-                    >Experiente: {'< 15'}</Typography>
+                    >Experiente: {'< 9'}</Typography>
                     <Typography 
                         variant='caption'
                         fontWeight={900}
                         color={yellow[500]}
-                    >Especialista: {'15+'}</Typography>
+                    >Especialista: {'10+'}</Typography>
                 </Box>
             </Box>
         </>

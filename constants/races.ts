@@ -18,7 +18,7 @@ export const races = {
     'Ciborgue': {
         attributes: {
             lp: 0,
-            mp: -6,
+            mp: -5,
             ap: 1
         }
     },
@@ -34,14 +34,14 @@ export const races = {
     'Mutante': {
         attributes: {
             lp: 6,
-            mp: -6,
+            mp: -3,
             ap: 0
         }
     },
 
     'Magia-viva': {
         attributes: {
-            lp: -8,
+            lp: -4,
             mp: 8,
             ap: 0
         }

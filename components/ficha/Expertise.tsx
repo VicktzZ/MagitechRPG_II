@@ -36,9 +36,9 @@ export default function Expertise({
             return grey[500]
         } else if (expertise.value < 5) {
             return green[500]
-        } else if (expertise.value < 10) {
+        } else if (expertise.value < 7) {
             return blue[500]
-        } else if (expertise.value < 15) {
+        } else if (expertise.value < 9) {
             return purple[500]
         } else {
             return yellow[500]
