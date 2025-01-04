@@ -3,8 +3,8 @@ import { skills } from './skills';
 
 const { 
     class: { 
-        Marcial: marcialSkills,
-        Explorador: exploradorSkills,
+        Lutador: LutadorSkills,
+        Especialista: EspecialistaSkills,
         Feiticeiro: feiticeiroSkills,
         Bruxo: bruxoSkills,
         Monge: mongeSkills,
@@ -15,8 +15,8 @@ const {
 } = skills
 
 export const classesModel: Record<Classes, Class> = {
-    'Marcial': {
-        name: 'Marcial',
+    'Lutador': {
+        name: 'Lutador',
         description: 'A classe de mago com habilidades de combate e defesa. O seu poder de ataque e de defesa aumentam com o nível da classe.',
         attributes: {
             lp: 18,
@@ -29,11 +29,11 @@ export const classesModel: Record<Classes, Class> = {
             expertises: 4
         },
 
-        skills: marcialSkills
+        skills: LutadorSkills
     },
 
-    'Explorador': {
-        name: 'Explorador',
+    'Especialista': {
+        name: 'Especialista',
         description: 'A classe de mago com habilidades de combate e defesa. O seu poder de ataque e de defesa aumentam com o nível da classe.',
         attributes: {
             lp: 14,
@@ -46,7 +46,7 @@ export const classesModel: Record<Classes, Class> = {
             expertises: 10
         },
 
-        skills: exploradorSkills
+        skills: EspecialistaSkills
     },
 
     'Feiticeiro': {

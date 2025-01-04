@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { useEffect, useRef } from 'react'
 
 const useAudio = (audio: string): HTMLAudioElement => {

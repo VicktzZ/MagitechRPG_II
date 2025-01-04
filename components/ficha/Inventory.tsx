@@ -3,10 +3,10 @@ import { Box, Grid, Typography, useMediaQuery, useTheme, Modal, Button } from '@
 import React, { useEffect, type ReactElement, useMemo, memo, useState } from 'react';
 import { useFormikContext, type FormikContextType } from 'formik';
 import { Item, ItemModal } from '@components/ficha';
-import { lineageItems } from '@constants/lineageitems';
+import { lineageItems, occupationItems } from '@constants/lineageitems';
 import { red, yellow } from '@mui/material/colors';
 import { CustomIconButton } from '@layout';
-import { Add } from '@mui/icons-material';
+import { Add, Dashboard } from '@mui/icons-material';
 import type { Ficha, LineageNames } from '@types';
 
 type ItemName = 'weapon' | 'item' | 'armor'
@@ -48,9 +48,9 @@ const Inventory = memo(({ disabled }: { disabled?: boolean }): ReactElement => {
     }
 
     const capacity = useMemo(() => {
-        const weaponsWeight = f.values.inventory.weapons.map((weapon) => weapon.weight).reduce((a, b) => a + b, 0)
-        const armorsWeight = f.values.inventory.armors.map((armor) => armor.weight).reduce((a, b) => a + b, 0)
-        const itemsWeight = f.values.inventory.items.map((item) => {
+        const weaponsWeight = f.values.inventory.weapons?.map((weapon) => weapon.weight).reduce((a, b) => a + b, 0)
+        const armorsWeight = f.values.inventory.armors?.map((armor) => armor.weight).reduce((a, b) => a + b, 0)
+        const itemsWeight = f.values.inventory.items?.map((item) => {
             if (item.kind !== 'Capacidade') {
                 return item.weight * (item?.quantity ?? 1)
             } else return 0
@@ -65,8 +65,8 @@ const Inventory = memo(({ disabled }: { disabled?: boolean }): ReactElement => {
         const cargo = (weaponsWeight + armorsWeight + itemsWeight)?.toFixed(1)
 
         return {
-            cargo,
-            maxCargo
+            cargo: cargo || 0,
+            maxCargo: maxCargo || 0
         }
     }, [ f.values.inventory, f.values.attributes.vig ])
 
@@ -75,9 +75,16 @@ const Inventory = memo(({ disabled }: { disabled?: boolean }): ReactElement => {
         const weaponArr: any[] = []
 
         if (!disabled) {
-            f.values.inventory = f.initialValues.inventory
+            f.values.inventory = f.values.mode === 'Classic' ? f.initialValues.inventory : {
+                items: [],
+                weapons: [],
+                armors: [],
+                money: 0
+            }
+
+            const lineageOrOccupationItems = f.values.mode === 'Classic' ? lineageItems : occupationItems
     
-            const items = lineageItems[f.values.lineage as unknown as LineageNames]
+            const items = lineageOrOccupationItems[f.values.lineage as unknown as keyof typeof lineageOrOccupationItems]
     
             items?.forEach((item) => {
                 if (item.type === 'item') itemArr.push(item) 
@@ -92,8 +99,8 @@ const Inventory = memo(({ disabled }: { disabled?: boolean }): ReactElement => {
     }, [ f.values.lineage ])
 
     const weapons = useMemo(() => {
-        return f.values.inventory.weapons.map((weapon) => (
-            <Grid 
+        return f.values.inventory.weapons && f.values.inventory.weapons?.map((weapon) => (
+             <Grid 
                 item
                 key={weapon.name}
             >
@@ -112,7 +119,7 @@ const Inventory = memo(({ disabled }: { disabled?: boolean }): ReactElement => {
 
                     bonusValue={[ f.values.expertises[weapon.bonus]?.value ]}
                     isDisadvantage={f.values.attributes[weapon.hit] < 0}
-                    diceQuantity={Math.floor((f.values.attributes[weapon.hit] / 2) ?? 0) + 1}
+                    diceQuantity={Math.floor((f.values.attributes[weapon.hit] / 2) || 0) + 1}
 
                     effect={{
                         kind: weapon.effect.kind,
@@ -123,11 +130,11 @@ const Inventory = memo(({ disabled }: { disabled?: boolean }): ReactElement => {
                     }}
                 />
             </Grid>
-        ))
+        )) || 'Vazio'
     }, [ f.values.inventory.weapons ])
 
     const armors = useMemo(() => {
-        return f.values.inventory.armors.map((armor) => (
+        return f.values.inventory.armors?.map((armor) => (
             <Grid 
                 item
                 key={armor.name}
@@ -143,11 +150,11 @@ const Inventory = memo(({ disabled }: { disabled?: boolean }): ReactElement => {
                     description={armor.description}
                 />
             </Grid>
-        ))
+        )) || 'Vazio'
     }, [ f.values.inventory.armors ])
 
     const items = useMemo(() => {
-        return f.values.inventory.items.map((item) => (
+        return f.values.inventory.items?.map((item) => (
             <Grid 
                 item
                 key={item.name}
@@ -163,28 +170,34 @@ const Inventory = memo(({ disabled }: { disabled?: boolean }): ReactElement => {
                     effects={item?.effects}
                 />
             </Grid>
-        ))
+        )) || 'Vazio'
     }, [ f.values.inventory.items ])
 
     useEffect(() => {
         const { cargo, maxCargo } = capacity
-        
-        f.setFieldValue('capacity.cargo', cargo)
+
+
+        f.setFieldValue('capacity.cargo', Number(cargo === 'NaN' ? 0 : cargo).toFixed(1))
         f.setFieldValue('capacity.max', Number(Number(f.values.attributes.vig * 1.5 + maxCargo + 5)).toFixed(1))
     }, [ capacity ])
     
     useEffect(() => {
         const { weaponArr, itemArr } = itemsOfLineage
 
-        f.setFieldValue('inventory.weapons', [
-            ...f.initialValues.inventory.weapons,
-            ...weaponArr
-        ])
-        
-        f.setFieldValue('inventory.items', [
-            ...f.initialValues.inventory.items,
-            ...itemArr
-        ])
+        if (f.values.mode !== 'Apocalypse') {
+            f.setFieldValue('inventory.weapons', [
+                ...f.initialValues.inventory.weapons,
+                ...weaponArr
+            ])
+            
+            f.setFieldValue('inventory.items', [
+                ...f.initialValues.inventory.items,
+                ...itemArr
+            ])
+        } else {
+            f.setFieldValue('inventory.weapons', weaponArr)
+            f.setFieldValue('inventory.items', itemArr)
+        }
     }, [ itemsOfLineage ])
 
     return (

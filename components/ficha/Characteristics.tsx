@@ -5,20 +5,19 @@
 
 'use client';
 
-import { InputLabel, MenuItem, Select, useMediaQuery, type SelectChangeEvent, useTheme, Typography } from '@mui/material'
+import { type ReactElement, useCallback, useMemo } from 'react'
+import { InputLabel, MenuItem, Select, useMediaQuery, type SelectChangeEvent, useTheme, Typography, Button } from '@mui/material'
 import { Box, FormControl, TextField } from '@mui/material'
 import { clickEffect } from '@public/sounds'
 import { classesModel } from '@constants/classes';
-import React, { type ReactElement, useCallback, useMemo } from 'react'
-import type { Classes } from '@types';
 import { useFormikContext, type FormikContextType } from 'formik';
-import { type fichaModel } from '@constants/ficha';
+import { expertisesDefaultValue, fichaModel } from '@constants/ficha';
 import { blue, green, red, yellow } from '@mui/material/colors';
 import { useAudio } from '@hooks';
 import { skills } from '@constants/skills';
-import type { Race } from '@types';
-import { type ExpertisesOverrided, lineageExpertises } from '@constants/lineageExpertises';
 import { races } from '@constants/races';
+import { type ExpertisesOverrided, lineageExpertises, occupationsExpertises } from '@constants/lineageExpertises';
+import type { Classes, Race } from '@types';
 
 export default function Characteristics({ disabled }: { disabled?: boolean }): ReactElement {
     const f: FormikContextType<typeof fichaModel> = useFormikContext()
@@ -26,6 +25,22 @@ export default function Characteristics({ disabled }: { disabled?: boolean }): R
     const theme = useTheme()
     const matches = useMediaQuery(theme.breakpoints.down('md'))
     const audio1 = useAudio(clickEffect)
+
+    const changeGameMode = (): void => {
+        f.resetForm()
+        f.setFieldValue('expertises', expertisesDefaultValue()) // TODO: Bug in "expertises" at changing game mode
+
+        if (f.values.mode === 'Classic') {
+            f.setFieldValue('inventory', {
+                items: [],
+                weapons: [],
+                armors: [],
+                money: 0            
+            })
+        }
+
+        f.setFieldValue('mode', f.values.mode === 'Classic' ? 'Apocalypse' : 'Classic')
+    }
 
     const setClass = (e: SelectChangeEvent<any>): void => {
         const classe: Classes = e.target.value
@@ -38,23 +53,24 @@ export default function Characteristics({ disabled }: { disabled?: boolean }): R
             ...classesModel[classe].points,
             diligence: classesModel[classe].points.diligence + (f.values.attributes?.log ?? 0),
             expertises: !expertiseHasValue ? classesModel[classe].points.expertises :
-                expertiseHasValue && f.values.lineage as unknown as string !== '' ? classesModel[classe].points.expertises : 0 
+                expertiseHasValue && f.values.lineage as unknown as string !== '' ? classesModel[classe].points.expertises : 0
         })
 
         f.setFieldValue('skills.class', classesModel[classe].skills)
-        
+
         audio1.play()
     }
 
     const setLineage = (e: SelectChangeEvent<any>): void => {
         const lineage = e.target.value
+        const skillType = f.values.mode === 'Classic' ? 'lineage' : 'occupation'
 
         f.handleChange(e)
         f.setFieldValue('lineage', lineage)
 
-        skills.lineage?.forEach(skill => {
+        skills[skillType]?.forEach(skill => {
             if (skill.origin === lineage)
-                f.setFieldValue('skills.lineage', [ skill ])
+                f.setFieldValue('skills.lineage', [skill])
         })
 
         audio1.play()
@@ -79,9 +95,9 @@ export default function Characteristics({ disabled }: { disabled?: boolean }): R
         }
 
         if (expertises?.tests) {
-            Object.entries(expertises.tests).forEach(([ key, value ]) => {
+            Object.entries(expertises.tests).forEach(([key, value]) => {
                 testsStr += `${key}: +${value}; `
-            })          
+            })
         }
 
         result = `${pointsStr}${pointsStr !== '' && testsStr !== '' ? '\n' : ''}${testsStr}`
@@ -90,9 +106,10 @@ export default function Characteristics({ disabled }: { disabled?: boolean }): R
     }, [])
 
     const lineages = useMemo(() => {
-        return Object.entries(lineageExpertises).map(([ lineage, expertises ]) => (
-            <MenuItem 
-                key={lineage} 
+        console.log(f.values.mode)
+        return Object.entries(f.values.mode === 'Classic' ? lineageExpertises : occupationsExpertises).map(([lineage, expertises]) => (
+            <MenuItem
+                key={lineage}
                 value={lineage}
             >
                 <Box>
@@ -103,8 +120,8 @@ export default function Characteristics({ disabled }: { disabled?: boolean }): R
                 </Box>
             </MenuItem>
         ))
-    }, [])
-    
+    }, [f.values.mode])
+
     const classes = useMemo(() => {
         return Object.keys(classesModel).map(classe => (
             <MenuItem key={classe} value={classe}>
@@ -130,8 +147,23 @@ export default function Characteristics({ disabled }: { disabled?: boolean }): R
 
     return (
         <Box display='flex' gap={3} width='100%'>
+            {!disabled && (
+                <Button
+                    variant='contained'
+                    color={'terciary' as any}
+                    type='button'
+                    onClick={changeGameMode}
+                    sx={{
+                        position: 'absolute',
+                        top: 30,
+                        right: 32,
+                    }}
+                >
+                    Modo de jogo: {f.values.mode}
+                </Button>
+            )}
             <Box display='flex' flexDirection='column' gap={2} width='65%'>
-                <TextField 
+                <TextField
                     name='name'
                     label='Nome'
                     onBlur={f.handleChange}
@@ -150,8 +182,8 @@ export default function Characteristics({ disabled }: { disabled?: boolean }): R
                             required
                             fullWidth
                             disabled={disabled}
-                            onChange={e => { 
-                                setClass(e)                              
+                            onChange={e => {
+                                setClass(e)
                             }}
                             renderValue={(value) => (
                                 <Typography>{value as string}</Typography>
@@ -162,7 +194,7 @@ export default function Characteristics({ disabled }: { disabled?: boolean }): R
                     </FormControl>
                     {!matches && (
                         <FormControl sx={{ width: '50%' }}>
-                            <InputLabel>Linhagem *</InputLabel>
+                            <InputLabel>{f.values.mode === 'Classic' ? 'Linhagem' : 'Profissão'} *</InputLabel>
                             <Select
                                 name='lineage'
                                 label='Linhagem'
@@ -186,7 +218,7 @@ export default function Characteristics({ disabled }: { disabled?: boolean }): R
                 {matches && (
                     <Box>
                         <FormControl sx={{ width: '100%' }}>
-                            <InputLabel>Linhagem *</InputLabel>
+                            <InputLabel>{f.values.mode === 'Classic' ? 'Linhagem' : 'Profissão'} *</InputLabel>
                             <Select
                                 name='lineage'
                                 label='Linhagem'
@@ -211,7 +243,7 @@ export default function Characteristics({ disabled }: { disabled?: boolean }): R
             <Box display='flex' flexDirection='column' gap={2} width='35%'>
                 <FormControl>
                     <InputLabel>Raça *</InputLabel>
-                    <Select 
+                    <Select
                         name='race'
                         label='Raça'
                         value={f.values.race}
@@ -265,7 +297,7 @@ export default function Characteristics({ disabled }: { disabled?: boolean }): R
                     </Select>
                 </FormControl>
                 <Box display='flex' gap={3}>
-                    <TextField 
+                    <TextField
                         name='age'
                         label='Idade'
                         onBlur={f.handleChange}
@@ -277,7 +309,7 @@ export default function Characteristics({ disabled }: { disabled?: boolean }): R
                     {!matches && (
                         <FormControl sx={{ width: '50%' }}>
                             <InputLabel>Gênero</InputLabel>
-                            <Select 
+                            <Select
                                 name='gender'
                                 label='Gênero'
                                 value={f.values.gender}
@@ -299,7 +331,7 @@ export default function Characteristics({ disabled }: { disabled?: boolean }): R
                 {matches && (
                     <FormControl sx={{ width: '100%' }}>
                         <InputLabel>Gênero</InputLabel>
-                        <Select 
+                        <Select
                             name='gender'
                             label='Gênero'
                             onBlur={f.handleChange}

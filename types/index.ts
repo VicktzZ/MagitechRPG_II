@@ -24,7 +24,8 @@ import type {
     Race,
     MagicPower,
     Trait,
-    RarityType
+    RarityType,
+    Occupation
 } from './ficha';
 
 import type { 
@@ -61,6 +62,7 @@ export type {
     Classes,
     PusherMemberParam,
     Message,
+    Occupation,
     MergedItems,
     Campaign,
     RarityType,

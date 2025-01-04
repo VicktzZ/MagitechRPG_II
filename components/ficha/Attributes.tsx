@@ -117,7 +117,7 @@ export default function Attributes({ disabled }: { disabled?: boolean }): ReactE
             }
 
             if (action === 'add') {
-                if ((f.values.points.attributes > 0 && f.values.attributes[attribute] < 3) || (disabled && f.values.points.attributes > 0)) {
+                if ((f.values.points.attributes > 0 && f.values.attributes[attribute] < 2) || (disabled && f.values.points.attributes > 0)) {
                     f.setFieldValue('points.attributes', f.values.points.attributes - 1)
                     f.setFieldValue(`attributes.${attribute}`, f.values.attributes[attribute] + 1)
 

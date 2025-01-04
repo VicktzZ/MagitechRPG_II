@@ -121,7 +121,7 @@ export default function Expertise({
                     name,
                     dice: 20,
                     attribute: expertise.defaultAttribute,
-                    quantity: Math.floor((diceQuantity / 2) ?? 0) + 1
+                    quantity: diceQuantity || 0 + 1
                 }}
             />
         </>

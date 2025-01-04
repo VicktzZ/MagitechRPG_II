@@ -83,6 +83,13 @@ export interface Lineage {
     item: Item
 }
 
+export interface Occupation {
+    name: OccupationNames
+    description: string
+    effects: number[]
+    item: Item
+}
+
 export interface Race {
     name: 'Humano' | 'Ciborgue' | 'Autômato' | 'Humanoide' | 'Mutante' | 'Magia-viva'
     description: string
@@ -246,7 +253,7 @@ export interface Magic {
 export interface Skill {
     name: string
     description: string
-    type: 'Poder Mágico' | 'Classe' | 'Linhagem' | 'Subclasse' | 'Bônus'
+    type: 'Poder Mágico' | 'Classe' | 'Linhagem' | 'Subclasse' | 'Bônus' | "Profissão"
     origin?: string
     effects?: number[]
     level?: number
@@ -269,7 +276,7 @@ export interface MagicPower {
 
 export type FinancialCondition = 'Miserável' | 'Pobre' | 'Estável' | 'Rico'
 export type Gender = 'Masculino' | 'Feminino' | 'Não-binário' | 'Outro' | 'Não definido'
-export type Classes = 'Marcial' | 'Explorador' | 'Feiticeiro' | 'Bruxo' | 'Monge' | 'Druida' | 'Arcano' | 'Ladino'
+export type Classes = 'Lutador' | 'Especialista' | 'Feiticeiro' | 'Bruxo' | 'Monge' | 'Druida' | 'Arcano' | 'Ladino'
 export type Attributes = 'des' | 'vig' | 'log' | 'sab' | 'foc' | 'car'
 export type UpperCaseAttributes = 'DES' | 'VIG' | 'LOG' | 'SAB' | 'FOC' | 'CAR'
 export type ItemType = 'Especial' | 'Utilidade' | 'Consumível' | 'Item Chave' | 'Munição' | 'Capacidade'
@@ -303,6 +310,31 @@ export type LineageNames =
     'Pesquisador' |
     'Investigador'
 
+export type OccupationNames =
+    'Artista' |
+    'Médico' |
+    'Militar' |
+    'Mafioso' |
+    'Cozinheiro' |
+    'Inventor' |
+    'Jardineiro' |
+    'Programador' |
+    'Cientista' |
+    'Pesquisador' |
+    'Empresário' |
+    'Professor' |
+    'Político' | 
+    'Criminoso' |
+    'Engenheiro' |
+    'Mecânico' | 
+    'Autônomo' |
+    'Atleta' | 
+    'Detetive' |
+    'Sucateiro' |
+    'Caçador' |
+    'Clérigo' |
+    'Desempregado'
+
 export type AmmoType = 
     '9mm' |
     'Calibre .50' |
@@ -311,29 +343,24 @@ export type AmmoType =
     'Bateria de lítio' |
     'Amplificador de partículas' |
     'Cartucho de fusão' |
-    'Servomotor iônico'
+    'Servomotor iônico' |
+    'Flecha'
 
 export type RangeType = 
     'Corpo-a-corpo' |
-    'Curtíssimo (3m)' |
-    'Curto (6m)' |
-    'Reduzido (9m)' |
-    'Normal (12m)' |
+    'Curto (3m)' |
+    'Padrão (9m)' |
     'Médio (18m)' |
     'Longo (30m)' |
-    'Distante (60m)' |
     'Ampliado (90m)' |
     'Visível' |
     'Ilimitado'
 
 export type ThrowableRangeType = 
     '3m' |
-    '6m' |
     '9m' |
-    '12m' |
     '18m' |
     '30m' |
-    '60m' |
     '90m' |
     'Visível' |
     'Ilimitado'
@@ -430,12 +457,8 @@ export type Element =
     'Água' |
     'Terra' |
     'Ar' |
-    'Planta' |
     'Eletricidade' |
-    'Gelo' |
-    'Metal' |
     'Trevas' |
     'Psíquico' |
     'Luz' |
-    'Toxina' |
     'Não-elemental'
