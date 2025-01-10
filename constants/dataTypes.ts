@@ -19,13 +19,9 @@ const damages: DamageType[] = [
     'Água',
     'Terra',
     'Ar',
-    'Planta',
     'Eletricidade',
-    'Gelo',
-    'Metal',
     'Trevas',
     'Luz',
-    'Toxina',
     'Não-elemental'
 ]
 
@@ -61,13 +57,10 @@ const rarities: RarityType[] = [
 
 const ranges: RangeType[] = [
     'Corpo-a-corpo',
-    'Curtíssimo (3m)',
-    'Curto (6m)',
-    'Reduzido (9m)',
-    'Normal (12m)',
+    'Curto (3m)',
+    'Padrão (9m)',
     'Médio (18m)',
     'Longo (30m)',
-    'Distante (60m)',
     'Ampliado (90m)',
     'Visível',
     'Ilimitado'
@@ -182,14 +175,10 @@ const weaponDamageType: DamageType[] = [
     'Água',
     'Ar',
     'Terra',
-    'Planta',
     'Eletricidade',
-    'Gelo',
-    'Metal',
     'Luz',
     'Trevas',
     'Psíquico',
-    'Toxina',
     'Não-elemental'
 ]
 

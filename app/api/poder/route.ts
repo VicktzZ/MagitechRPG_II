@@ -5,14 +5,13 @@ import type { PipelineStage } from 'mongoose';
 import type { NextRequest } from 'next/server';
 
 export async function GET(req: NextRequest): Promise<Response> {
-    
     try {
         await connectToDb()
         
         const query = req.nextUrl.searchParams.get('search')
+        const order = req.nextUrl.searchParams.get('order')
         const filter = req.nextUrl.searchParams.get('filter')
         const sort = req.nextUrl.searchParams.get('sort')
-
         const pipeline: PipelineStage[] = [ { $skip: 0 } ] 
         
         if (query) {
@@ -34,7 +33,7 @@ export async function GET(req: NextRequest): Promise<Response> {
             })
         }
 
-        if (filter) {
+        if (filter && filter !== 'Nenhum') {
             pipeline.push({
                 $match: {
                     'elemento': filter
@@ -42,9 +41,17 @@ export async function GET(req: NextRequest): Promise<Response> {
             })
         }
 
-        if (sort) {
-            pipeline.push({ $sort: { [sort.toLowerCase()]: 1 } })
+        if (sort && sort !== 'Nenhum') {
+            const orderBy = order === 'ASC' ? 1 : -1
+            
+            if (sort === 'Alfabética') {
+                pipeline.push({ $sort: { 'nome': orderBy } })
+            } else if (sort === 'Nivel') {
+                // pipeline.push({ $sort: { 'lvl': -1 } })
+            }
         }
+
+        console.log(pipeline);
 
         const poderes = await Poder.aggregate(pipeline)
 

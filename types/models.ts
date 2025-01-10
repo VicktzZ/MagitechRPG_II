@@ -30,8 +30,8 @@ export interface Magia {
     _id?: string
     'elemento': Elemento
     'nome': string
-    'nível': string
-    'custo': string
+    'nível': number
+    'custo': number
     'tipo': string
     'execução': string
     'alcance': string
@@ -78,12 +78,7 @@ type Elemento =
     'ÁGUA' |
     'AR' |
     'TERRA' |
-    'PLANTA' |
     'ELETRICIDADE' |
-    'GELO' |
-    'METAL' |
     'TREVAS' |
-    'PSÍQUICO' |
-    'TOXINA' |
     'LUZ' |
     'NÃO-ELEMENTAL'

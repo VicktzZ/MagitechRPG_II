@@ -12,12 +12,14 @@ const magiaSchema = new Schema<MagiaType>({
         required: [ true, 'Name is required!' ]
     },
     custo: {
-        type: String,
-        required: [ true, 'Custo is required!' ]
+        type: Number,
+        required: [ true, 'Custo is required!' ],
+        default: 1
     },
     'nível': {
-        type: String,
-        required: [ true, 'Nível is required!' ]
+        type: Number,
+        required: [ true, 'Nível is required!' ],
+        default: 1
     },
     tipo: {
         type: String,

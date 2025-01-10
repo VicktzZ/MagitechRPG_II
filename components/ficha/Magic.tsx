@@ -9,6 +9,7 @@ import { Box, Button, Typography, useMediaQuery, useTheme } from '@mui/material'
 import { useState, type ReactElement, type MouseEvent } from 'react';
 import type { Magia as MagiaType, MagicPower as MagicPowerType } from '@types';
 import { amber, blue, blueGrey, brown, green, grey, indigo, pink, red } from '@mui/material/colors';
+import { elementColor } from '@constants';
 
 type magicStages = 'estágio 1' | 'estágio 2' | 'estágio 3' | 'maestria'
 type MagicTyping<C extends 'magic-spell' | 'magic-power'> = 
@@ -27,22 +28,6 @@ type MagicTyping<C extends 'magic-spell' | 'magic-power'> =
             onIconClick?: () => void 
         } 
 
-const magicColor = {
-    'FOGO': red[500],
-    'ÁGUA': blue[600],
-    'AR': grey[300],
-    'TERRA': brown[400],
-    'PLANTA': green[200],
-    'ELETRICIDADE': indigo[300],
-    'GELO': blue[300],
-    'METAL': grey[500],
-    'LUZ': amber[400],
-    'TOXINA': green[600],
-    'TREVAS': blueGrey[400],
-    'PSÍQUICO': pink[500],
-    'NÃO-ELEMENTAL': grey[100]
-}
-
 function MagicPower({ 
     magicPower,
     id,
@@ -60,7 +45,7 @@ function MagicPower({
     const [ description, setDescritpion ] = useState<string>(magicPower['descrição'])
 
     const [ buttonVariants, setButtonVariants ] = useState({
-        'descrição': 'outlined',
+        'descrição': 'contained',
         'maestria': 'text'
     })
 
@@ -70,7 +55,7 @@ function MagicPower({
         setButtonVariants({
             'descrição': 'text',
             'maestria': 'text',
-            [buttonName]: 'outlined'
+            [buttonName]: 'contained'
         })
 
         setDescritpion(magicPower[buttonName]!)
@@ -102,8 +87,8 @@ function MagicPower({
                     <Typography
                         textAlign='center'
                         minWidth='100px'
-                        color={magicColor[magicPower.elemento.toUpperCase() as keyof typeof magicColor]} 
-                        border={`1px solid ${magicColor[magicPower.elemento.toUpperCase() as keyof typeof magicColor]}`}
+                        color={elementColor[magicPower.elemento.toUpperCase() as keyof typeof elementColor]} 
+                        border={`1px solid ${elementColor[magicPower.elemento.toUpperCase() as keyof typeof elementColor]}`}
                         p={1}
                         borderRadius={1}
                     >{magicPower.elemento}</Typography>
@@ -154,8 +139,8 @@ function MagicSpell({
     const matches = useMediaQuery(theme.breakpoints.down('md'))
 
     const [ description, setDescritpion ] = useState<string>(magic['estágio 1'])
-    const [ buttonVariants, setButtonVariants ] = useState({
-        'estágio 1': 'outlined',
+    const [ buttonVariants, setButtonVariants ] = useState<Record<magicStages, string>>({
+        'estágio 1': 'contained',
         'estágio 2': 'text',
         'estágio 3': 'text',
         'maestria': 'text'
@@ -166,28 +151,32 @@ function MagicSpell({
     const onClick = (e: MouseEvent<HTMLButtonElement>): void => {
         const buttonName: magicStages = e.currentTarget.innerText.toLowerCase() as magicStages
 
-        let extraCost: {
-            [key in magicStages]?: number
-        } = {}
+        let extraCost: Partial<Record<magicStages, number>> = {}
 
-        if (Number(magic.nível) === 5) {
+        if (Number(magic.nível) === 4) {
             extraCost = {
                 'estágio 1': 0,
-                'estágio 2': 15,
-                'maestria': 30
+                'estágio 2': 4,
+                'maestria': 9
             }
             
-        } else if (Number(magic.nível) >= 3) {
+        } else if (Number(magic.nível) === 3) {
             extraCost = {
                 'estágio 1': 0,
-                'estágio 2': 10,
-                'estágio 3': 20
+                'estágio 2': 2,
+                'estágio 3': 5
+            }
+        } else if (Number(magic.nível) === 2) {
+            extraCost = {
+                'estágio 1': 0,
+                'estágio 2': 2,
+                'estágio 3': 4
             }
         } else {
             extraCost = {
                 'estágio 1': 0,
-                'estágio 2': 5,
-                'estágio 3': 10
+                'estágio 2': 1,
+                'estágio 3': 2
             }
         }
 
@@ -198,7 +187,7 @@ function MagicSpell({
             'estágio 2': 'text',
             'estágio 3': 'text',
             'maestria': 'text',
-            [buttonName]: 'outlined'
+            [buttonName]: 'contained'
         })
 
         setDescritpion(magic[buttonName]!)
@@ -230,8 +219,8 @@ function MagicSpell({
                     <Typography
                         textAlign='center'
                         minWidth='100px'
-                        color={magicColor[magic.elemento]} 
-                        border={`1px solid ${magicColor[magic.elemento]}`}
+                        color={elementColor[magic.elemento]} 
+                        border={`1px solid ${elementColor[magic.elemento]}`}
                         p={1}
                         borderRadius={1}
                     >{magic.elemento}</Typography>
