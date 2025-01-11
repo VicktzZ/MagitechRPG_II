@@ -34,7 +34,7 @@ const MagicsModal = memo(({ open, onClose }: { open: boolean, onClose: () => voi
         search: '',
         filter: '',
         sort: {
-            value: 'Nivel',
+            value: 'Nível',
             order: 'ASC'
         }
     })
@@ -199,7 +199,6 @@ const MagicsModal = memo(({ open, onClose }: { open: boolean, onClose: () => voi
 
     const menuItemOnClick = (ev: MouseEvent<HTMLLIElement> & { target: { innerText: string } }, filterType: 'filter' | 'sort' | 'sort-order'): void => {
         let value: any = ev.target.innerText
-        value = value === 'Nível' ? 'Nivel' : value
 
         if (filterType === 'sort-order') {
             value = {
@@ -344,7 +343,7 @@ const MagicsModal = memo(({ open, onClose }: { open: boolean, onClose: () => voi
                                         const onClick = (ev: MouseEvent<HTMLLIElement> & { target: { innerText: string } }) => menuItemOnClick(ev, 'sort')
 
                                         setMenuContent([
-                                            <MenuItem onClick={onClick} key='Nível_SORT' value='Nivel'>Nivel</MenuItem>,
+                                            <MenuItem onClick={onClick} key='Nível_SORT' value='Nível'>Nível</MenuItem>,
                                             <MenuItem onClick={onClick} key='Custo_SORT' value='Custo'>Custo</MenuItem>,
                                             <MenuItem onClick={onClick} key='Alfabética_SORT' value='Alfabética'>Alfabética</MenuItem>,
                                             <MenuItem onClick={onClick} key='Nenhum_SORT' value=''>Nenhum</MenuItem>

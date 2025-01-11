@@ -48,6 +48,11 @@
     src: url(Apocalypse-grunge.ttf)
 }
 
+@font-face {
+    font-family: Sakana;
+    src: url(Sakana.ttf)
+}
+
 /* RPG Assets */
 
 @font-face {

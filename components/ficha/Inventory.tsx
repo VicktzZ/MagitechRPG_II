@@ -204,7 +204,7 @@ const Inventory = memo(({ disabled }: { disabled?: boolean }): ReactElement => {
         <>
             <Box display='flex' flexDirection='column' gap={2}>
                 <Box display='flex' alignItems='center' gap={2}>
-                    <Typography variant='h6'>Inventário</Typography>
+                    <Typography fontFamily='Sakana' variant='h5'>Inventário</Typography>
                     <Typography 
                         fontWeight={900} 
                         variant='h5'

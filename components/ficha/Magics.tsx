@@ -80,7 +80,7 @@ const Magics = memo(({ disabled }: { disabled?: boolean }) => {
                 <Box display='flex' justifyContent='space-between' gap={2}>
                     <Box display='flex' alignItems='center' gap={3}>
                         <Box display='flex' alignItems='center' gap={1}>
-                            <Typography variant='h6'>Magias</Typography>
+                            <Typography fontFamily='Sakana' variant='h5'>Magias</Typography>
                             <IconButton onClick={() => { setOpen(true) }} sx={{ border: `1px solid ${theme.palette.primary.main}50`, p: 1.25 }}>
                                 <Edit />
                             </IconButton>

@@ -5,7 +5,7 @@ import { CustomIconButton, LinearProgressWithLabel } from '@layout'
 import { FormControl, TextField } from '@mui/material'
 import { Box } from '@mui/material'
 import { green } from '@mui/material/colors'
-import { useFormikContext, type FormikContextType } from 'formik'
+import { useFormikContext } from 'formik'
 import { type ReactElement, useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import type { Attributes as AttributesType, Classes, Ficha, FinancialCondition, Expertises, Race } from '@types'
 import DiceRollModal from '@components/misc/DiceRollModal'
@@ -31,6 +31,8 @@ import { selectEffect } from '@public/sounds'
 import { races } from '@constants/races'
 import useNumbersWithSpaces from '@hooks/useNumbersWithSpace'
 import { Check, Edit } from '@mui/icons-material'
+import Attribute from './Attribute'
+import LevelProgress from './LevelProgress'
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
@@ -45,7 +47,7 @@ const MenuProps = {
 };
 
 export default function Attributes({ disabled }: { disabled?: boolean }): ReactElement {
-    const f: FormikContextType<Ficha> = useFormikContext()
+    const f = useFormikContext<Ficha>()
 
     const traitRef = useRef<string | null>(null)
     const raceRef = useRef<Race['name'] | null>(null)
@@ -83,84 +85,6 @@ export default function Attributes({ disabled }: { disabled?: boolean }): ReactE
                 }
             }
         }
-    }
-
-    const attributePoints = (
-        attribute: 'vig' | 'des' | 'foc' | 'log' | 'sab' | 'car',
-        otherAttrs?: { attr: 'lp' | 'mp' | 'pd' | 'pt', value: number }
-    ): ReactElement => {
-        const onClick = (action: 'add' | 'sub'): void => {
-            const point = 
-                otherAttrs?.attr === 'pd' ? 'diligence' : 'expertises'
-
-            const attributesValues = (op: 'add' | 'sub'): Record<typeof attribute, () => void> => {
-
-                const num = (value: number): number => {
-                    if (op === 'add') return value
-                    else return value * -1
-                }
-
-                return {
-                    vig: () => { f.initialValues.attributes.lp += num(2) },
-                    des: () => { f.initialValues.attributes.ap += num(0.5) },
-                    sab: () => { f.initialValues.points.expertises += num(1) },
-                    car: () => { f.values.inventory.money += num(20000) },
-                    foc: () => { 
-                        f.initialValues.attributes.mp += num(1)
-                        f.initialValues.magicsSpace += num(1) 
-                    },
-                    log: () => {
-                        f.initialValues.points.diligence += num(1)
-                        f.initialValues.points.magics += num(1)
-                    }
-                }
-            }
-
-            if (action === 'add') {
-                if ((f.values.points.attributes > 0 && f.values.attributes[attribute] < 2) || (disabled && f.values.points.attributes > 0)) {
-                    f.setFieldValue('points.attributes', f.values.points.attributes - 1)
-                    f.setFieldValue(`attributes.${attribute}`, f.values.attributes[attribute] + 1)
-
-                    if (disabled) {
-                        attributesValues('add')[attribute]()
-                    }
-
-                    if (
-                        otherAttrs && otherAttrs.attr !== 'pd' &&
-                        otherAttrs.attr !== 'pt'
-                    ) {
-                        f.setFieldValue(`attributes.${otherAttrs.attr}`, f.values.attributes[otherAttrs.attr] + otherAttrs.value)
-                    } else {
-                        f.setFieldValue(`points.${point}`, f.values.points[point] + (otherAttrs?.value ?? 0))
-                    }
-                }
-            } else {
-                if (f.values.attributes[attribute] !== -1) {
-                    f.setFieldValue('points.attributes', f.values.points.attributes + 1)
-                    f.setFieldValue(`attributes.${attribute}`, f.values.attributes[attribute] - 1)
-
-                    if (disabled) {
-                        attributesValues('sub')[attribute]()
-                    }
-
-                    if (
-                        otherAttrs && otherAttrs.attr !== 'pd' &&
-                        otherAttrs.attr !== 'pt'
-                    ) {
-                        f.setFieldValue(`attributes.${otherAttrs.attr}`, f.values.attributes[otherAttrs.attr] - otherAttrs.value)
-                    } else {
-                        f.setFieldValue(`points.${point}`, f.values.points[point] - (otherAttrs?.value ?? 0))
-                    }
-                }
-            }
-        }
-
-        return (
-            <Box display='flex' gap={1}>
-                <Button onClick={() => { onClick('add') }} variant='outlined'>+1</Button>
-                <Button onClick={() => { onClick('sub') }} variant='outlined'>-1</Button>
-            </Box>
-        )
     }
 
     const setTraits = useCallback((e: SelectChangeEvent): void => {
@@ -233,6 +157,46 @@ export default function Attributes({ disabled }: { disabled?: boolean }): ReactE
         ))
     }, [])
 
+    const attributePoints = (
+        attribute: 'vig' | 'des' | 'foc' | 'log' | 'sab' | 'car',
+        otherAttrs?: { attr: 'pd' | 'pt', value: number }
+    ): ReactElement => {
+        const onClick = (action: 'add' | 'sub'): void => {
+            const point = otherAttrs?.attr === 'pd' ? 'diligence' : 'expertises'
+
+            if (action === 'add') {
+                if ((f.values.points.attributes > 0 && f.values.attributes[attribute] < 2) || (disabled && f.values.points.attributes > 0)) {
+                    if (f.values.attributes[attribute] < 5) {
+                        f.setFieldValue('points.attributes', f.values.points.attributes - 1)
+                        f.setFieldValue(`attributes.${attribute}`, f.values.attributes[attribute] + 1)
+    
+                        if (otherAttrs && otherAttrs.attr !== 'pd' && otherAttrs.attr !== 'pt')
+                            f.setFieldValue(`attributes.${otherAttrs.attr}`, f.values.attributes[otherAttrs.attr] + otherAttrs.value)
+                        else
+                            f.setFieldValue(`points.${point}`, f.values.points[point] + (otherAttrs?.value ?? 0))
+                    }
+                }
+            } else {
+                if (f.values.attributes[attribute] !== 0) {
+                    f.setFieldValue('points.attributes', f.values.points.attributes + 1)
+                    f.setFieldValue(`attributes.${attribute}`, f.values.attributes[attribute] - 1)
+
+                    if (otherAttrs && otherAttrs.attr !== 'pd' && otherAttrs.attr !== 'pt')
+                        f.setFieldValue(`attributes.${otherAttrs.attr}`, f.values.attributes[otherAttrs.attr] - otherAttrs.value)
+                    else
+                        f.setFieldValue(`points.${point}`, f.values.points[point] - (otherAttrs?.value ?? 0))
+                }
+            }
+        }
+
+        return (
+            <>
+                <Button onClick={() => { onClick('add') }} variant='outlined'>+1</Button>
+                <Button onClick={() => { onClick('sub') }} variant='outlined'>-1</Button>
+            </>
+        )
+    }
+
     const baseAttrs = useMemo(() => {
         const baseLP = 
             (classesModel[f.values.class as Classes]?.attributes.lp ?? 0) +
@@ -246,7 +210,7 @@ export default function Attributes({ disabled }: { disabled?: boolean }): ReactE
 
         const baseAP = 5 +
             (classesModel[f.values.class as Classes]?.attributes.ap ?? 0) +
-            Math.floor(f.values.attributes.des * .5) +
+            Math.floor(f.values.attributes.des * 1) +
             (races[f.values.race as Race['name']]?.attributes.ap ?? 0)
 
         return {
@@ -422,108 +386,36 @@ export default function Attributes({ disabled }: { disabled?: boolean }): ReactE
                 >
                     <Typography>Pontos de atributo: <b style={{ color: theme.palette.primary.main }}>{f.values.points.attributes}</b></Typography>
                     <Box display='flex' flexDirection='column' gap={1}>
-                        <Box 
-                            display='flex'
-                            justifyContent='space-between'
-                            alignItems='center'
-                        >
-                            <Box 
-                                display='flex'
-                                alignItems='center' 
-                                gap={1}
-                            >
-                                <Typography>Vigor:</Typography>
-                                <Chip
-                                    label={f.values.attributes.vig}
-                                /> 
-                            </Box>
-                            {attributePoints('vig', { attr: 'lp', value: 2 })}
-                        </Box>
-                        <Box 
-                            display='flex'
-                            justifyContent='space-between'
-                            alignItems='center'
-                        >
-                            <Box 
-                                display='flex'
-                                alignItems='center' 
-                                gap={1}
-                            >
-                                <Typography>Destreza:</Typography>
-                                <Chip 
-                                    label={f.values.attributes.des}
-                                /> 
-                            </Box>
-                            {attributePoints('des')}
-                        </Box>
-                        <Box 
-                            display='flex'
-                            justifyContent='space-between'
-                            alignItems='center'
-                        >
-                            <Box 
-                                display='flex'
-                                alignItems='center' 
-                                gap={1}
-                            >
-                                <Typography>Foco:</Typography>
-                                <Chip 
-                                    label={f.values.attributes.foc}
-                                /> 
-                            </Box>
-                            {attributePoints('foc', { attr: 'mp', value: 1 })}
-                        </Box>
-                        <Box 
-                            display='flex'
-                            justifyContent='space-between'
-                            alignItems='center'
-                        >
-                            <Box 
-                                display='flex'
-                                alignItems='center' 
-                                gap={1}
-                            >
-                                <Typography>Lógica:</Typography>
-                                <Chip 
-                                    label={f.values.attributes.log}
-                                /> 
-                            </Box>
-                            {attributePoints('log', { attr: 'pd', value: 1 })}
-                        </Box>
-                        <Box 
-                            display='flex'
-                            justifyContent='space-between'
-                            alignItems='center'
-                        >
-                            <Box 
-                                display='flex'
-                                alignItems='center' 
-                                gap={1}
-                            >
-                                <Typography>Sabedoria:</Typography>
-                                <Chip 
-                                    label={f.values.attributes.sab}
-                                /> 
-                            </Box>
-                            {attributePoints('sab', { attr: 'pt', value: 1 })}
-                        </Box>
-                        <Box 
-                            display='flex'
-                            justifyContent='space-between'
-                            alignItems='center'
-                        >
-                            <Box 
-                                display='flex'
-                                alignItems='center' 
-                                gap={1}
-                            >
-                                <Typography>Carisma:</Typography>
-                                <Chip 
-                                    label={f.values.attributes.car}
-                                /> 
-                            </Box>
-                            {attributePoints('car')}
-                        </Box>
+                        <Attribute 
+                            setAtrribute={attributePoints('vig')} 
+                            attributeName='vig' 
+                            attributeValue={f.values.attributes.vig} 
+                            />
+                        <Attribute 
+                            setAtrribute={attributePoints('foc')} 
+                            attributeName='foc' 
+                            attributeValue={f.values.attributes.foc} 
+                            />
+                        <Attribute 
+                            setAtrribute={attributePoints('des')} 
+                            attributeName='des' 
+                            attributeValue={f.values.attributes.des} 
+                            />
+                        <Attribute 
+                            setAtrribute={attributePoints('log', { attr: 'pd', value: 1 })} 
+                            attributeName='log' 
+                            attributeValue={f.values.attributes.log} 
+                            />
+                        <Attribute 
+                            setAtrribute={attributePoints('sab', { attr: 'pt', value: 1 })} 
+                            attributeName='sab' 
+                            attributeValue={f.values.attributes.sab} 
+                            />
+                        <Attribute 
+                            setAtrribute={attributePoints('car')} 
+                            attributeName='car' 
+                            attributeValue={f.values.attributes.car} 
+                        />
                     </Box>
                 </Box>
                 <Box 
@@ -531,6 +423,57 @@ export default function Attributes({ disabled }: { disabled?: boolean }): ReactE
                     flexDirection='column'
                     gap={3}
                 >
+                    <Box display='flex' flexDirection='column' justifyContent='space-between' height='100%' gap={4}>
+                        <Box display='flex' flexDirection='column' gap={4}>
+                            <LevelProgress amount={10} title='Nível' level={f.values.level} />
+                            <LevelProgress barWidth='6.65rem' amount={4} title='Nível do ORM' level={f.values.ORMLevel} />
+                        </Box>
+                        <Box>
+                            <Box display='flex' alignItems='center' gap={1}>
+                                <Typography>Deslocamento:</Typography>
+                                <Chip
+                                    color='primary' 
+                                    label={f.values.displacement + 'm'}
+                                />
+                            </Box>
+                            <Box display='flex' alignItems='center' gap={1}>
+                                <Typography>Dinheiro:</Typography>
+                                <Chip
+                                    color='primary' 
+                                    label={
+                                        <Box display='flex'>
+                                            <p>{f.values.mode === 'Classic' ? '¥' : '¢'}</p>
+                                            <p id='money'>
+                                                {numberWithSpaces(f.values.inventory.money)}
+                                            </p>
+                                        </Box>
+                                    }
+                                />
+                                {disabled && (
+                                    <Box display='flex' gap={3} alignItems='center'>
+                                        <CustomIconButton onClick={() => { setEditMoney(prevState => !prevState) }} sx={{ height: 35, width: 35 }}>
+                                            <Edit sx={{ height: 20, width: 20 }} />
+                                        </CustomIconButton>
+                                        {editMoney && (
+                                            <Box action='#' component='form' display='flex' alignItems='center' gap={1}>
+                                                <TextField 
+                                                    defaultValue={f.values.inventory.money}
+                                                    onChange={e => { setMoney(Number(e.target.value)) }}
+                                                    type='number'
+                                                />
+                                                <CustomIconButton type='submit' onClick={() => {
+                                                    setEditMoney(false)
+                                                    f.values.inventory.money = money
+                                                }} sx={{ height: 35, width: 35 }}>
+                                                    <Check sx={{ height: 20, width: 20 }} />
+                                                </CustomIconButton>
+                                            </Box>
+                                        )}
+                                    </Box>
+                                )}
+                            </Box>
+                        </Box>
+                    </Box>
                     <Box display='flex' flexDirection='column' gap={1}>
                         <Box display='flex' flexDirection='column' gap={2.5}>
                             <FormControl fullWidth>
@@ -557,8 +500,8 @@ export default function Attributes({ disabled }: { disabled?: boolean }): ReactE
                                     label='Condição financeira'
                                     value={f.values.financialCondition}
                                     required
-                                    fullWidth
                                     disabled={disabled}
+                                    fullWidth
                                     onChange={e => {
                                         const financialCondition = {
                                             'Miserável': 10_000,
@@ -570,7 +513,7 @@ export default function Attributes({ disabled }: { disabled?: boolean }): ReactE
                                         const value = e.target.value as FinancialCondition
 
                                         f.handleChange(e)
-                                        f.setFieldValue('inventory.money', financialCondition[value])
+                                        f.setFieldValue('inventory.money', f.values.mode === 'Classic' ? financialCondition[value] : financialCondition[value] / 1000)
 
                                         audio.play()
                                     }}
@@ -590,77 +533,18 @@ export default function Attributes({ disabled }: { disabled?: boolean }): ReactE
                             <Button onClick={() => { setModalOpen(true) }} variant='outlined' >Rolar dados</Button>
                         )}
                     </Box>
-                    <Box display='flex' flexDirection='column' justifyContent='space-between' height='100%' gap={1}>
-                        <Box display='flex' alignItems='center' gap={1}>
-                            <Typography>Nível:</Typography>
-                            <Chip
-                                color='primary' 
-                                label={f.values.level}
-                            />
-                        </Box>
-                        <Box display='flex' alignItems='center' gap={1}>
-                            <Typography>Nível do ORM:</Typography>
-                            <Chip
-                                color='primary' 
-                                label={f.values.ORMLevel}
-                            />
-                        </Box>
-                        <Box display='flex' alignItems='center' gap={1}>
-                            <Typography>Deslocamento:</Typography>
-                            <Chip
-                                color='primary' 
-                                label={f.values.displacement + 'm'}
-                            />
-                        </Box>
-                        <Box display='flex' alignItems='center' gap={1}>
-                            <Typography>Dinheiro:</Typography>
-                            <Chip
-                                color='primary' 
-                                label={
-                                    <Box display='flex'>
-                                        <p>¥</p>
-                                        <p id='money' contentEditable='true'>
-                                            {numberWithSpaces(f.values.inventory.money)}
-                                        </p>
-                                    </Box>
-                                }
-                            />
-                            {disabled && (
-                                <Box display='flex' gap={3} alignItems='center'>
-                                    <CustomIconButton onClick={() => { setEditMoney(prevState => !prevState) }} sx={{ height: 35, width: 35 }}>
-                                        <Edit sx={{ height: 20, width: 20 }} />
-                                    </CustomIconButton>
-                                    {editMoney && (
-                                        <Box action='#' component='form' display='flex' alignItems='center' gap={1}>
-                                            <TextField 
-                                                defaultValue={f.values.inventory.money}
-                                                onChange={e => { setMoney(Number(e.target.value)) }}
-                                                type='number'
-                                            />
-                                            <CustomIconButton type='submit' onClick={() => {
-                                                setEditMoney(false)
-                                                f.values.inventory.money = money
-                                            }} sx={{ height: 35, width: 35 }}>
-                                                <Check sx={{ height: 20, width: 20 }} />
-                                            </CustomIconButton>
-                                        </Box>
-                                    )}
-                                </Box>
-                            )}
-                        </Box>
-                    </Box>
                 </Box>
             </Box>
             <DiceRollModal
                 open={modalOpen}
                 onClose={() => { setModalOpen(false) }}
                 bonus={[ f.values.attributes.car ]}
-                isDisadvantage={f.values.attributes.car < 0}
+                isDisadvantage={f.values.attributes.car === 0}
                 visibleDices
                 visibleBaseAttribute
                 roll={{
                     dice: 20,
-                    quantity: Math.floor((f.values.attributes.car < 0 ? 2 : f.values.attributes.car) / 2) + 1,
+                    quantity: f.values.attributes.car || 1,
                     name: 'Condição Financeira',
                     attribute: 'car'
                 }}

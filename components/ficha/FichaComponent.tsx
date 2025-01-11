@@ -130,7 +130,7 @@ export default function FichaComponent({ disabled, ficha }: { disabled?: boolean
                             <Box display='flex' flexDirection='column' gap={2.5}>
                                 <Box justifyContent='space-between' display='flex' width='100%'>
                                     <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-                                        <Typography variant='h5'>{!disabled ? 'Criar ficha' : 'Ficha de ' + values.name}</Typography>
+                                        <Typography fontFamily='Sakana' variant='h4'>{!disabled ? 'Criar ficha' : 'Ficha de ' + values.name}</Typography>
                                     </Box>
                                     <Button
                                         variant='contained'
@@ -168,13 +168,13 @@ export default function FichaComponent({ disabled, ficha }: { disabled?: boolean
                                 >
                                     <Box>
                                         <Box>
-                                            <Typography variant='h6'>Atributos</Typography>
+                                            <Typography fontFamily='Sakana' variant='h5'>Atributos</Typography>
                                         </Box>
                                         <Attributes disabled={disabled} />
                                     </Box>
                                     <Box>
                                         <Box display='flex' alignItems='center' gap={2}>
-                                            <Typography variant='h6'>Habilidades</Typography>
+                                            <Typography fontFamily='Sakana' variant='h5'>Habilidades</Typography>
                                             <CustomIconButton onClick={() => { setOpenSkillsModal(true) }}>
                                                 <Edit />
                                             </CustomIconButton>
@@ -189,7 +189,7 @@ export default function FichaComponent({ disabled, ficha }: { disabled?: boolean
                                     gap={2.5}
                                 >
                                     <Box>
-                                        <Typography variant='h6'>Perícias</Typography>
+                                        <Typography fontFamily='Sakana' variant='h5'>Perícias</Typography>
                                     </Box>
                                     <Box display='flex' width='100%' gap={3}>
                                         <Expertises disabled={disabled} />
@@ -203,7 +203,7 @@ export default function FichaComponent({ disabled, ficha }: { disabled?: boolean
                                 <Magics disabled={disabled} />
                             </Box>
                             <Box display='flex' flexDirection='column' gap={2}>
-                                <Typography variant='h6'>Anotações</Typography>
+                                <Typography fontFamily='Sakana' variant='h6'>Anotações</Typography>
                                 <Box
                                     component='textarea'
                                     width='100%'

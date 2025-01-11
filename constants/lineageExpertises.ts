@@ -190,14 +190,16 @@ export const lineageExpertises: Record<Lineage['name'], ExpertisesOverrided> = {
 export const occupationsExpertises: Record<Occupation['name'], ExpertisesOverrided> = {
     'Artista': {
         tests: {
-            'Criatividade': 4
-        }
+            'Criatividade': 2
+        },
+
+        points: 1
     },
 
     'Médico': {
         tests: {
-            Medicina: 2,
-            Intuição: 2
+            'Medicina': 2,
+            'Intuição': 2
         }
     },
 
