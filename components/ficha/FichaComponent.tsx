@@ -6,7 +6,7 @@ import { useSession } from 'next-auth/react';
 import { useState, type ReactElement } from 'react'
 import { Attributes, Characteristics, Expertises, Inventory, Magics, Skills, SkillsModal } from '@components/ficha';
 import { useSnackbar } from 'notistack';
-import { useRouter } from 'next/navigation';
+// import { useRouter } from 'next/navigation';
 import { CustomIconButton, WarningModal } from '@layout';
 import { fichaModel } from '@constants/ficha';
 import { Edit } from '@mui/icons-material';
@@ -16,7 +16,7 @@ export default function FichaComponent({ disabled, ficha }: { disabled?: boolean
     const { data: session } = useSession()
     const { enqueueSnackbar, closeSnackbar } = useSnackbar()
 
-    const router = useRouter()
+    // const router = useRouter()
 
     const [ openModal, setOpenModal ] = useState<boolean>(false)
     const [ isLoading, setIsLoading ] = useState<boolean>(false)
