@@ -115,9 +115,13 @@ function ItemModalForm({
 }): ReactElement {
     const { register, handleSubmit, formState: { errors }, getValues } = form;
 
+    const theme = useTheme()
+    const matches = useMediaQuery(theme.breakpoints.down('md'))
+
+    // TODO: Arrumar fomulário no celular
     return (
         <>
-            <Box display='flex' gap={2} component='form' noValidate onSubmit={handleSubmit(action)}>
+            <Box overflow={matches && 'visible'} display={!matches ? 'flex' : 'column'} gap={2} component='form' noValidate onSubmit={handleSubmit(action)}>
                 <TextField
                     label='Nome'
                     {...register('name')}

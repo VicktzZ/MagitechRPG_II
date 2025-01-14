@@ -35,6 +35,7 @@ import useNumbersWithSpaces from '@hooks/useNumbersWithSpace'
 import { Check, Edit } from '@mui/icons-material'
 import Attribute from './Attribute'
 import LevelProgress from './LevelProgress'
+import { enqueueSnackbar } from '@node_modules/notistack'
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
@@ -59,6 +60,7 @@ export default function Attributes({ disabled }: { disabled?: boolean }): ReactE
     const [ modalOpen, setModalOpen ] = useState(false)
     const [ money, setMoney ] = useState<number>(f.values.inventory.money)
     const [ editMoney, setEditMoney ] = useState<boolean>(false)
+    const [ canChangeTrait, setCanChangeTrait ] = useState<boolean>(true)
 
     const matches = useMediaQuery(theme.breakpoints.down('md'))
     const audio = useAudio(selectEffect)
@@ -90,10 +92,10 @@ export default function Attributes({ disabled }: { disabled?: boolean }): ReactE
     }
 
     const setTraits = useCallback((e: SelectChangeEvent): void => {
-        f.setFieldValue('traits', [ e.target.value ])
-
+        // TODO: Corrigir bug de traços
         let trait
         let prevTrait
+        setCanChangeTrait(true)
 
         for (const item of traits) {
             if (item.name === e.target.value) {
@@ -105,28 +107,36 @@ export default function Attributes({ disabled }: { disabled?: boolean }): ReactE
             }
         }
 
-        if (traitRef.current) {
-            if (prevTrait?.target.kind === 'attribute') {
-                f.setFieldValue(
-                    `attributes.${prevTrait?.target.name.toLowerCase()}`, 
-                    f.values.attributes[prevTrait?.target.name.toLowerCase() as AttributesType] - prevTrait.value
-                )
-            } else {
-                f.values.expertises = { 
-                    ...f.values.expertises,
-                    [(prevTrait?.target.name ?? '') as keyof Expertises]: {
-                        ...f.values.expertises[(prevTrait?.target.name ?? '') as keyof Expertises],
-                        value: f.values.expertises[(prevTrait?.target.name ?? '') as keyof Expertises].value - (prevTrait?.value ?? 0)
+        if (canChangeTrait) {
+            if (traitRef.current) {
+                if (prevTrait?.target.kind === 'attribute') {
+                    f.setFieldValue(
+                        `attributes.${prevTrait?.target.name.toLowerCase()}`, 
+                        f.values.attributes[prevTrait?.target.name.toLowerCase() as AttributesType] - prevTrait.value
+                    )
+                } else {
+                    f.values.expertises = { 
+                        ...f.values.expertises,
+                        [(prevTrait?.target.name ?? '') as keyof Expertises]: {
+                            ...f.values.expertises[(prevTrait?.target.name ?? '') as keyof Expertises],
+                            value: f.values.expertises[(prevTrait?.target.name ?? '') as keyof Expertises].value - (prevTrait?.value ?? 0)
+                        }
                     }
                 }
             }
         }
 
         if (trait?.target.kind === 'attribute') {
-            f.setFieldValue(
-                `attributes.${trait?.target.name.toLowerCase()}`, 
-                f.values.attributes[trait?.target.name.toLowerCase() as AttributesType] + trait?.value
-            )
+            if (!disabled && f.values.attributes[trait.target.name.toLowerCase() as AttributesType] !== 3) {
+                f.setFieldValue(
+                    `attributes.${trait?.target.name.toLowerCase()}`, 
+                    f.values.attributes[trait?.target.name.toLowerCase() as AttributesType] + trait?.value
+                )
+            } else {
+                setCanChangeTrait(false)
+                enqueueSnackbar('Você não pode adicionar este traço pois ele excede o limite máximo do atributo determinado!', { autoHideDuration: 3000, variant: 'error' })
+                return;
+            }
         } else {
             f.setFieldValue('expertises', {
                 ...f.values.expertises,
@@ -137,8 +147,12 @@ export default function Attributes({ disabled }: { disabled?: boolean }): ReactE
             })
         }
 
-        audio.play()
-        traitRef.current = e.target.value
+        if (canChangeTrait) {
+            audio.play()
+    
+            f.setFieldValue('traits', [ e.target.value ])
+            traitRef.current = e.target.value
+        }
     }, [ f.values.traits, f.values.attributes ])
 
     const traitsArr = useMemo(() => {
