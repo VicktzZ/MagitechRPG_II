@@ -6,7 +6,7 @@ import { Close, Edit } from '@mui/icons-material'
 import { Box, Grid, IconButton, Typography, useTheme } from '@mui/material'
 import type { Ficha } from '@types'
 import { useFormikContext, type FormikContextType } from 'formik'
-import { memo, useCallback, useEffect, useMemo, useState } from 'react'
+import { memo, useEffect, useMemo, useState } from 'react'
 import { Magic } from '.';
 import MagicsModal from './MagicsModal'
 import { useSnackbar } from 'notistack';
@@ -50,27 +50,6 @@ const Magics = memo(({ disabled }: { disabled?: boolean }) => {
             />
         ))
     }, [ f.values ])
-
-    const setMagicPoints = useCallback(() => {
-        if (!disabled) {
-            f.setFieldValue('points.magics', f.values.attributes.foc + 1)
-        } else {
-            f.initialValues.points.magics = f.initialValues.attributes.foc + 1
-        }
-    }, [ !disabled ? f.values.attributes.foc : f.initialValues.attributes.foc ])
-
-    const setMagicsSpace = useCallback(() => {
-        // if (!disabled) {
-        let value = ((!disabled ? f.values.attributes.log : f.initialValues.attributes.log) * 2) + 2
-        if (value <= 0) value = 1
-    
-        if (!disabled) {
-            f.setFieldValue('magicsSpace', value)
-        } else {
-            f.initialValues.magicsSpace = value
-        }
-        // }
-    }, [ !disabled ? f.values.attributes.foc : f.initialValues.attributes.foc ])
 
     useEffect(() => {
         // Magic Spaces

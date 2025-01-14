@@ -10,7 +10,7 @@ import { useEffect, useState, type ReactElement } from 'react'
 function CampaignPlayerDashboard(): ReactElement {
     const { channel } = useChannel()
     const [ ficha, , ] = useState<Ficha>(channel.members.me?.info.currentFicha as Ficha)
-    const [ attrPointsMultiplyer, setAttrPointsMultiplyer ] = useState(1)
+    const [ attrPointsMultiplyer ] = useState(1)
     
     const [ attributesPoints, setAttributesPoints ] = useState({
         lp: ficha?.attributes.lp ?? 0,

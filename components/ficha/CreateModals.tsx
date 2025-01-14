@@ -596,7 +596,7 @@ function ItemModal({ formik, closeModal }: ModalProps): ReactElement {
     const { register, formState: { errors } } = form
 
     const create = async (data: ItemFormFields): Promise<void> => {
-        data.effects = [data.effects as unknown as string];
+        data.effects = [ data.effects as unknown as string ];
         formik.setFieldValue('inventory.items', [ ...formik.values.inventory.items, data ]);
 
         enqueueSnackbar(`${data.name} criado com sucesso!`, { variant: 'success', autoHideDuration: 3000 });

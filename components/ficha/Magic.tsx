@@ -8,7 +8,6 @@ import { Add, Close } from '@mui/icons-material';
 import { Box, Button, Typography, useMediaQuery, useTheme } from '@mui/material';
 import { useState, type ReactElement, type MouseEvent } from 'react';
 import type { Magia as MagiaType, MagicPower as MagicPowerType } from '@types';
-import { amber, blue, blueGrey, brown, green, grey, indigo, pink, red } from '@mui/material/colors';
 import { elementColor } from '@constants';
 
 type magicStages = 'estágio 1' | 'estágio 2' | 'estágio 3' | 'maestria'

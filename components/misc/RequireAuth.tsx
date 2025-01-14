@@ -3,7 +3,7 @@
 import { Backdrop, CircularProgress } from '@mui/material';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import React, { JSXElementConstructor, type ReactElement, useEffect } from 'react'
+import React, { type ReactElement, useEffect } from 'react'
 
 export default function RequireAuth({ children }: { children: ReactElement | ReactElement[]}): any {
     const { data: session, status } = useSession()

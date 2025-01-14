@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/restrict-template-expressions */
+/* eslint-disable @typescript-eslint/no-base-to-string */
 /* eslint-disable react-hooks/exhaustive-deps */
 import useDebounce from '@hooks/useDebounce';
 import { useIntersection } from '@mantine/hooks';
@@ -282,7 +284,12 @@ export default function SkillsModal({ open, onClose }: { open: boolean, onClose:
                                                 }}
                                             />
                                         </Box>
-                                        <Box sx={{ display: 'flex', gap: matches ? 1 : 2, width: matches ? '100%' : 'auto', ...( matches && { overflowX: 'auto', '&::-webkit-scrollbar': { display: 'none' } } ) }}>
+                                        <Box sx={{
+                                            display: 'flex',
+                                            gap: matches ? 1 : 2,
+                                            width: matches ? '100%' : 'auto',
+                                            ...( matches && { overflowX: 'auto', '&::-webkit-scrollbar': { display: 'none' } } )
+                                        }}>
                                             <Box
                                                 display='flex'
                                                 border={`solid 1px ${theme.palette.primary.main}`}

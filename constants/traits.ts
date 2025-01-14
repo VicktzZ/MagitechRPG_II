@@ -1,3 +1,4 @@
+/* eslint-disable max-len */
 import type { Trait } from '@types';
 
 export const traits: Trait[] = [

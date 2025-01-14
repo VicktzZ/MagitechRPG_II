@@ -6,9 +6,7 @@ declare module '@mui/material' {
       card?: string
     },
 
-    brand?: {
-      [key: string | number]: string
-    }
+    brand?: Record<string | number, string>
 
   }
 

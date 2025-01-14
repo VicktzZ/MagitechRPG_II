@@ -6,7 +6,7 @@ import { connectToDb } from '@utils/database';
 import type { Session } from 'next-auth';
 import { type User as UserType } from '@types';
 import User from '@models/user';
-import { AdminProvider } from './adminProvider';
+// import { AdminProvider } from './adminProvider';
 
 const handler = NextAuth({
     providers:

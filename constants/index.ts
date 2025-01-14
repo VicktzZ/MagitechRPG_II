@@ -1,5 +1,5 @@
-import { amber, blue, blueGrey, brown, cyan, deepPurple, green, grey, indigo, orange, pink, red } from "@node_modules/@mui/material/colors"
-import { RarityType } from "@types"
+import { amber, blue, blueGrey, brown, cyan, deepPurple, green, grey, indigo, orange, pink, red } from '@node_modules/@mui/material/colors'
+import { type RarityType } from '@types'
 
 /* eslint-disable max-len */
 export const intro = `agia. Algo que só era possível em contos de fadas agora é possível no final do século XXI graças a tecnologia. Depois da drástica queda de temperatura que o mundo sofreu em 2025, a fome subiu e a economia mundial quebrou, quando em 2030, a terceira guerra mundial eclodiu, como consequência dos atos anteriores. A guerra termonuclear reduziu a população mundial para 3 bilhões, além de deixar muitas partes do mundo inabitadas com uma radiação que só se dissiparia depois de séculos.

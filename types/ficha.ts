@@ -1,7 +1,7 @@
 export interface Ficha {
     _id?: string
     playerName: string
-    mode: "Apocalypse" | "Classic"
+    mode: 'Apocalypse' | 'Classic'
     userId: string
     name: string
     age: number
@@ -244,7 +244,7 @@ export interface Magic {
 export interface Skill {
     name: string
     description: string
-    type: 'Poder Mágico' | 'Classe' | 'Linhagem' | 'Subclasse' | 'Bônus' | "Profissão"
+    type: 'Poder Mágico' | 'Classe' | 'Linhagem' | 'Subclasse' | 'Bônus' | 'Profissão'
     origin?: string
     effects?: number[]
     level?: number

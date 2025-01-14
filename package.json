@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "eslint": "eslint src --ext .ts,.tsx"
+    "eslint": "eslint --ext .ts,.tsx --ignore-path .gitignore .",
+    "eslint:fix": "eslint --ext .ts,.tsx --ignore-path .gitignore . --fix"
   },
   "engines": {
     "node": ">=18.17.0"

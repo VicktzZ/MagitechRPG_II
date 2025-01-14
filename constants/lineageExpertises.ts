@@ -1,5 +1,5 @@
 import type { Lineage } from '@types';
-import { Occupation } from '@types/ficha';
+import { type Occupation } from '@types/ficha';
 
 export interface ExpertisesOverrided {
     points?: number,
@@ -247,7 +247,7 @@ export const occupationsExpertises: Record<Occupation['name'], ExpertisesOverrid
 
     'Cientista': {
         tests: {
-            'Conhecimento': 2,
+            'Conhecimento': 2
         },
 
         points: 1
@@ -267,7 +267,7 @@ export const occupationsExpertises: Record<Occupation['name'], ExpertisesOverrid
         }
     },
 
-    "Professor": {
+    'Professor': {
         tests: {
             'Conhecimento': 2,
             'Comunicação': 2

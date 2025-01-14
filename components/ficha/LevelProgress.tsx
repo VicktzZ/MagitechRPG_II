@@ -16,7 +16,7 @@ export default function LevelProgress({ title, level, amount, barWidth }: Props)
         const [ filled ] = useState<boolean>(amount >= 10 ? level / 2 > id : level > id)
 
         return <Box sx={{
-            width: barWidth || '2.5rem',
+            width: barWidth ?? '2.5rem',
             height: '0.75rem',
             border: '1px solid',
             borderColor: theme.palette.primary.main,

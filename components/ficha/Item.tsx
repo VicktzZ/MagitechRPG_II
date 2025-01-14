@@ -9,7 +9,6 @@ import type {
     Armor as ArmorProps,
     MergedItems,
     Ficha,
-    RarityType,
     Roll
 } from '@types'
 import { WarningModal } from '@layout'

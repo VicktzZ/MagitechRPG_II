@@ -2,7 +2,7 @@ import { RPGIcon } from '@components/misc'
 import { type IconType } from '@components/misc/rpg-icons'
 import { useMediaQuery } from '@mui/material'
 import { Box, useTheme } from '@mui/material'
-import { blue, deepPurple, green, grey, orange, red, teal, yellow } from '@node_modules/@mui/material/colors'
+import { blue, deepPurple, green, orange, red, teal } from '@node_modules/@mui/material/colors'
 import { type ReactElement, useMemo, useState } from 'react'
 
 type MainAttributes = 'vig' | 'des' | 'foc' | 'log' | 'sab' | 'car'
