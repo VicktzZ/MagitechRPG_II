@@ -26,6 +26,11 @@ export async function POST(req: Request): Promise<Response> {
 
         const ficha = await Ficha.create(body)
 
+        console.log({
+            body,
+            ficha
+        })
+
         return Response.json(ficha)
     } catch (error: any) {
         return Response.json({ message: 'BAD REQUEST', error: error.message }, { status: 400 })
