@@ -2,9 +2,9 @@
 
 import '@public/fonts/fonts.css'
 import { type ReactElement } from 'react';
-import { RequireAuth } from '@components/misc';
 import { Box } from '@mui/material';
 import { AppDrawer } from '@layout';
+// import { RequireAuth } from '@components/misc';
 
 export default function RootLayout({
     children
@@ -14,12 +14,12 @@ export default function RootLayout({
     const NODE_ENV = 'production' // process.env.NODE_ENV
 
     return NODE_ENV === 'production' ? (
-        <RequireAuth>
-            <Box p={3}>
-                <AppDrawer />
-                {children}
-            </Box>
-        </RequireAuth>
+        // <RequireAuth>
+        <Box p={3}>
+            <AppDrawer />
+            {children}
+        </Box>
+        // </RequireAuth>
     ) : (
         <>{children}</>
     )

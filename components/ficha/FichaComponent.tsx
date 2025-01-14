@@ -75,22 +75,22 @@ export default function FichaComponent({ disabled, ficha }: { disabled?: boolean
     
                             console.log(values);
     
-                            const response = await fetch('/api/ficha', {
-                                method: 'POST',
-                                body: JSON.stringify({
-                                    ...values
-                                })
-                            }).then(async r => await r.json())
+                            // const response = await fetch('/api/ficha', {
+                            //     method: 'POST',
+                            //     body: JSON.stringify({
+                            //         ...values
+                            //     })
+                            // }).then(async r => await r.json())
     
                             closeSnackbar('loadingFetch')
-                            console.log(response);
+                            // console.log(response);
     
                             enqueueSnackbar('Ficha criada com sucesso!', { variant: 'success' })
     
                             setIsLoading(true)
     
                             setTimeout(() => {
-                                router.push('/plataform/ficha/' + response._id)
+                                // router.push('/plataform/ficha/' + response._id)
                             }, 500);
                         } else {
                             enqueueSnackbar('Você deve gastar seus pontos de atributos!', { variant: 'error', autoHideDuration: 3000 })
