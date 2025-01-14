@@ -1,3 +1,6 @@
+import { amber, blue, blueGrey, brown, cyan, deepPurple, green, grey, indigo, orange, pink, red } from '@node_modules/@mui/material/colors'
+import { type RarityType } from '@types'
+
 /* eslint-disable max-len */
 export const intro = `agia. Algo que só era possível em contos de fadas agora é possível no final do século XXI graças a tecnologia. Depois da drástica queda de temperatura que o mundo sofreu em 2025, a fome subiu e a economia mundial quebrou, quando em 2030, a terceira guerra mundial eclodiu, como consequência dos atos anteriores. A guerra termonuclear reduziu a população mundial para 3 bilhões, além de deixar muitas partes do mundo inabitadas com uma radiação que só se dissiparia depois de séculos.
 
@@ -20,3 +23,30 @@ export const HOST = ''
 export const PUSHER_KEY = 'e058916b3ab024829e9c'
 export const NODE_ENV: 'production' | 'devlopment' = 'production' // process.env.NODE_ENV
 export const ADMIN_EMAIL = process.env.ADMIN_EMAIL
+
+export const elementColor = {
+    'FOGO': red[500],
+    'ÁGUA': blue[600],
+    'AR': grey[300],
+    'TERRA': brown[400],
+    'PLANTA': green[200],
+    'ELETRICIDADE': indigo[300],
+    'GELO': blue[300],
+    'METAL': grey[500],
+    'LUZ': amber[400],
+    'TOXINA': green[600],
+    'TREVAS': blueGrey[400],
+    'PSÍQUICO': pink[500],
+    'NÃO-ELEMENTAL': grey[100]
+}
+
+export const rarityColor: Record<RarityType, string> = {
+    'Comum': grey[400],
+    'Incomum': green[400],
+    'Raro': blue[400],
+    'Épico': deepPurple[400],
+    'Lendário': orange[400],
+    'Relíquia': red[400],
+    'Mágico': cyan[400],
+    'Especial': indigo[400]
+}

@@ -62,12 +62,13 @@ export default function FichaCard({ ficha, onClick, disableDeleteButton }: { fic
                                 <Box display='flex' width='100%' flexDirection='column'>
                                     <Typography variant='caption'>{ficha.gender}</Typography>
                                     <Typography variant='caption'>Nível: {ficha.level}</Typography>
+                                    <Typography variant='caption'>Modo de Jogo: {ficha.mode}</Typography>
                                 </Box>
                                 <Box display='flex' flexDirection='column'>
                                     <Typography variant='caption'>{ficha.class as string}</Typography>
                                     <Typography variant='caption'>{ficha.lineage as unknown as string}</Typography>
                                     <Typography variant='caption'>{ficha.race as string}</Typography>
-                                    <Typography variant='caption'>¥{ficha.inventory.money}</Typography>
+                                    <Typography variant='caption'>{ficha.mode === 'Classic' ? '¥' : '¢'}{ficha.inventory.money}</Typography>
                                 </Box>
                             </Box>
                         </Box>

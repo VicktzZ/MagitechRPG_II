@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/dot-notation */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import {
     type ComponentsProps,
@@ -9,34 +10,39 @@ import {
     OutlinedInput,
     ListSubheader,
     Button,
-    type SxProps
+    type SxProps,
+    FormHelperText
 } from '@mui/material';
 import { useMediaQuery } from '@mui/material';
 import { MenuItem } from '@mui/material';
 import { TextField } from '@mui/material';
 import { FormControl, InputLabel } from '@mui/material';
-import type { MergedItems } from '@types';
+import type { Ficha, MergedItems } from '@types';
 import { type Dispatch, type SetStateAction, type ReactElement, useState } from 'react';
-import { type SubmitHandler, useForm, type UseFormRegister, type FieldErrors, type UseFormGetValues } from 'react-hook-form';
+import { type SubmitHandler, useForm, type UseFormRegister, type FieldErrors, type UseFormGetValues, UseFormProps, type UseFormReturn } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 
 import {
+    armorKind,
     armorMagicalAccessories,
     armorScientificAccessories,
     ballisticWeaponAmmo,
+    damages,
     energyWeaponAmmo,
     ranges,
     rarities,
     weaponBonuses,
     weaponCateg,
-    weaponDamageType,
     weaponHit,
     weaponKind,
     weaponMagicalAccessories,
     weaponScientificAccessories
 } from '@constants/dataTypes';
+
 import { Typography } from '@mui/material';
+import { type FormikContextType } from '@node_modules/formik/dist';
+import { useSnackbar } from '@node_modules/notistack';
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
@@ -50,6 +56,20 @@ const MenuProps = {
     }
 };
 
+const defaultValidationSchema = {
+    name: z.string().min(3, { message: 'O nome deve ter pelo menos 3 caracteres' }),
+    rarity: z.string().min(1, { message: 'Raridade é obrigatória' }).default('Comum'),
+    description: z.string().min(3, { message: 'A descrição deve ter pelo menos 3 caracteres' }),
+    weight: z.coerce.number().min(0, { message: 'Peso é obrigatório' }),
+    kind: z.string().min(1, { message: 'Tipo é obrigatório' }).default('Padrão'),
+    quantity: z.coerce.number().min(1, { message: 'Quantidade deve ser maior que 0' })
+};
+
+interface ModalProps { 
+    closeModal: () => void
+    formik: FormikContextType<Ficha>;
+}
+
 function SelectFormComponent(
     props: ComponentsProps['MuiSelect'] & {
         prop?: keyof MergedItems<'Leve' | 'Pesada'>;
@@ -58,49 +78,49 @@ function SelectFormComponent(
         item?: MergedItems<any>;
         setItem?: Dispatch<SetStateAction<MergedItems<any>>>;
         selectStyle?: SxProps;
+        helperText?: string;
     }
 ): ReactElement {
     return (
         <FormControl sx={props?.sx}>
-            <InputLabel id={props.prop}>{!props.noLabel && props.label}</InputLabel>
+            <InputLabel sx={{ color: props.error ? 'error.main' : '' }} id={props.prop}>{!props.noLabel && props.label}</InputLabel>
             <Select
                 {...props}
                 sx={props.selectStyle}
-                // labelId={props.prop ?? props.id}
-                // id={(props.prop ?? props.id) + 'Select'}
-                // value={(props.item[props.prop!] ?? props.value) || ''}
-                // defaultValue={props?.defaultValue ?? ''}
-                // onChange={props?.onChange ?? (e => { props.setItem(state => ({ ...state, [props.prop!]: e.target.value as any })) })}
-                // input={props.input}
-                // multiple={props.multiple}
-                // renderValue={props.renderValue as any}
-                // MenuProps={props.MenuProps}
+                labelId={props.prop ?? props.id}
+                id={(props.prop ?? props.id) + 'Select'}
+                // value={(props.item?.[props.prop!] ?? props.value) || ''}
+                defaultValue={props?.defaultValue ?? ''}
+                onChange={props?.onChange ?? (e => { props.setItem?.(state => ({ ...state, [props.prop!]: e.target.value as any })) })}
+                input={props.input}
+                multiple={props.multiple}
+                renderValue={props.renderValue as any}
+                MenuProps={props.MenuProps}
             >
                 {props.children}
             </Select>
+            { props.helperText && <FormHelperText sx={{ color: props.error ? 'error.main' : '' }}>{props.helperText}</FormHelperText>}
         </FormControl>
     );
 }
 
 function ItemModalForm({
-    register,
-    handleSubmit,
-    errors,
-    getValues,
+    form,
+    action,
     children
 }: {
-    register: UseFormRegister<any>;
-    handleSubmit: (onValid: any) => any;
-    errors: FieldErrors<any>;
-    children: ReactElement;
-    getValues: UseFormGetValues<any>;
+    form: UseFormReturn<any, any>;
+    action: (data: z.infer<any>) => void;
+    children: ReactElement
 }): ReactElement {
+    const { register, handleSubmit, formState: { errors }, getValues } = form;
+
     return (
         <>
-            <Box display='flex' gap={2} component='form' onSubmit={handleSubmit}>
+            <Box display='flex' gap={2} component='form' noValidate onSubmit={handleSubmit(action)}>
                 <TextField
                     label='Nome'
-                    inputProps={register('name')}
+                    {...register('name')}
                     error={errors?.['name'] && true}
                     helperText={errors?.['name']?.message?.toString()}
                     sx={{
@@ -109,8 +129,10 @@ function ItemModalForm({
                 />
                 <SelectFormComponent
                     label='Raridade'
-                    inputProps={register('rarity')}
+                    {...register('rarity')}
                     defaultValue='Comum'
+                    error={errors?.['rarity'] && true}
+                    helperText={errors?.['rarity']?.message?.toString()}
                     sx={{
                         width: '20%'
                     }}>
@@ -120,23 +142,42 @@ function ItemModalForm({
                         </MenuItem>
                     ))}
                 </SelectFormComponent>
-                <TextField label='Descrição' inputProps={register('description')} fullWidth />
+                <TextField 
+                    label='Descrição' 
+                    {...register('description')} 
+                    error={errors?.['description'] && true}
+                    helperText={errors?.['description']?.message?.toString()}
+                    fullWidth
+                />
             </Box>
             {children}
             <Box display='flex' alignItems='center' gap={2} mt={3}>
-                <TextField label='Quantidade' type='number' inputProps={register('quantity')} />
+                <TextField 
+                    label='Quantidade' 
+                    type='number' 
+                    {...register('quantity')}
+                    error={errors?.['quantity'] && true}
+                    helperText={errors?.['quantity']?.message?.toString()}
+                />
                 <Box display='flex' alignItems='center' gap={1}>
-                    <TextField label='Peso' type='number' inputProps={register('weight')} />
+                    <TextField 
+                        label='Peso' 
+                        type='number' 
+                        {...register('weight')}
+                        error={errors?.['weight'] && true}
+                        helperText={errors?.['weight']?.message?.toString()}
+                    />
                     <Typography variant='h6'>KG</Typography>
                     <Typography variant='h6'>x</Typography>
                     <Typography variant='h6'>{getValues('quantity')}</Typography>
                 </Box>
                 <Box width='100%' display='flex' justifyContent='flex-end' alignItems='flex-end'>
                     <Button
+                        onClick={handleSubmit(action)}
                         type='submit'
-                        onClick={handleSubmit}
                         variant='contained'
-                        color={'terciary' as any}>
+                        color={'terciary' as any}
+                    >
                         Criar Item
                     </Button>
                 </Box>
@@ -145,26 +186,27 @@ function ItemModalForm({
     );
 }
 
-function WeaponModal({ create }: { create: () => void }): ReactElement {
+function WeaponModal({ closeModal, formik }: ModalProps): ReactElement {
+    const { enqueueSnackbar } = useSnackbar()
     const validationSchema = z.object({
-        name: z.string({ required_error: 'Este campo é obrigatório' }),
-        rarity: z.string(),
-        description: z.string(),
-        ammo: z.string(),
-        kind: z.string(),
-        bonus: z.string(),
-        categ: z.string(),
-        hit: z.string(),
-        range: z.string(),
-        weight: z.number(),
-        quantity: z.number(),
+        ...defaultValidationSchema,
+        ammo: z.string().min(1, { message: 'Munição é obrigatória' }).default('Não consome'),
+        categ: z.string().min(1, { message: 'Categoria de arma é obrigatória' }),
+        bonus: z.string().min(1, { message: 'Bonus de arma é obrigatória' }),
+        hit: z.string().min(1, { message: 'Dano de arma é obrigatório' }),
+        range: z.string().min(1, { message: 'Alcance é obrigatório' }),
         accessories: z.string({ required_error: 'Este campo é obrigatório' }).array(),
         effect: z.object({
-            kind: z.string(),
-            effectType: z.string(),
-            critValue: z.string(),
-            critChance: z.string(),
+            effectType: z.string().min(1, { message: 'Tipo de dano é obrigatório' }),
+            critChance: z.coerce.number()
+                .min(0, { message: 'Chance crítica deve ser maior ou igual a 0' })
+                .max(20, { message: 'Chance crítica deve ser menor ou igual a 20' }),
+            critValue: z.string()
+                .min(1, { message: 'Dano crítico é obrigatório' })
+                .regex(/^(?:\d+d(?:\d+)(?:[-+]\d+)?)$/i, { message: 'Formato de dano deve ser XdY(+/-Z)' }),
             value: z.string()
+                .min(1, { message: 'Dano é obrigatório' })
+                .regex(/^(?:\d+d(?:\d+)(?:[-+]\d+)?)$/i, { message: 'Formato de dano deve ser XdY(+/-Z)' })
         })
     });
 
@@ -175,39 +217,40 @@ function WeaponModal({ create }: { create: () => void }): ReactElement {
 
     const [ weaponCategParam, setWeaponCategParam ] = useState<'Leve' | 'Pesada'>();
 
-    const {
-        register,
-        handleSubmit,
-        formState: { errors },
-        getValues
-    } = useForm<WeaponFormFields>({
+    const form = useForm<WeaponFormFields>({
         defaultValues: {
             name: '',
             description: '',
+            rarity: 'Comum',
             weight: 0,
             quantity: 1,
-            accessories: [ 'Não possui acessórios ' ]
-        }
-        // resolver: zodResolver(validationSchema)
+            accessories: [ 'Não possui acessórios' ],
+            ammo: 'Não consome'
+        },
+        resolver: zodResolver(validationSchema)
     });
 
-    const onSubmit: SubmitHandler<WeaponFormFields> = (data): void => {
-        console.log(data);
-        console.log(errors);
+    const { register, formState: { errors, touchedFields } } = form;
+
+    const create = (data: WeaponFormFields) => {
+        formik.setFieldValue('inventory.weapons', [ ...formik.values.inventory.weapons, data ]);
+        enqueueSnackbar(`${data.name} criado com sucesso!`, { variant: 'success', autoHideDuration: 3000 });
+        closeModal();
     };
 
     return (
         <ItemModalForm
-            register={register}
-            errors={errors}
-            getValues={getValues}
-            handleSubmit={handleSubmit(create)}
+            form={form}
+            action={create}
         >
             <Grid container display='flex' flexDirection={matches ? 'column' : 'row'} gap={2}>
                 <SelectFormComponent
                     label='Tipo'
                     prop='kind'
-                    inputProps={register('effect.kind')}
+                    defaultValue='Padrão'
+                    {...register('kind')}
+                    error={errors?.['kind'] && true}
+                    helperText={errors?.['kind']?.message?.toString()}
                     sx={{
                         width: '12%'
                     }}>
@@ -220,6 +263,9 @@ function WeaponModal({ create }: { create: () => void }): ReactElement {
                 <SelectFormComponent
                     label='Categoria'
                     prop='categ'
+                    {...register('categ')}
+                    error={errors?.['categ'] && true}
+                    helperText={errors?.['categ']?.message?.toString()}
                     sx={{
                         width: '16%'
                     }}>
@@ -233,6 +279,8 @@ function WeaponModal({ create }: { create: () => void }): ReactElement {
                     noLabel
                     id='weaponCategParam'
                     value={weaponCategParam}
+                    error={(touchedFields.categ && !weaponCategParam) && true}
+                    helperText={(touchedFields.categ && !weaponCategParam) ? 'Tipo é obrigatório' : ''}
                     onChange={e => {
                         setWeaponCategParam(e.target.value as 'Leve' | 'Pesada');
                     }}
@@ -246,6 +294,9 @@ function WeaponModal({ create }: { create: () => void }): ReactElement {
                 <SelectFormComponent
                     label='Alcance'
                     prop='range'
+                    {...register('range')}
+                    error={errors?.['range'] && true}
+                    helperText={errors?.['range']?.message?.toString()}
                     sx={{
                         width: '15%'
                     }}>
@@ -258,6 +309,9 @@ function WeaponModal({ create }: { create: () => void }): ReactElement {
                 <SelectFormComponent
                     label='Teste de Acerto'
                     prop='hit'
+                    {...register('hit')}
+                    error={errors?.['hit'] && true}
+                    helperText={errors?.['hit']?.message?.toString()}
                     sx={{
                         width: '10%'
                     }}>
@@ -270,6 +324,10 @@ function WeaponModal({ create }: { create: () => void }): ReactElement {
                 <SelectFormComponent
                     label='Municão'
                     prop='ammo'
+                    {...register('ammo')}
+                    error={errors?.['ammo'] && true}
+                    helperText={errors?.['ammo']?.message?.toString()}
+                    defaultValue='Não consome'
                     sx={{
                         width: '32%'
                     }}>
@@ -296,21 +354,21 @@ function WeaponModal({ create }: { create: () => void }): ReactElement {
                     defaultValue={[ 'Não possui acessórios' ]}
                     MenuProps={MenuProps}
                     multiple
+                    {...register('accessories')}
+                    error={errors?.['accessories'] && true}
+                    helperText={errors?.['accessories']?.message?.toString()}
                     sx={{
                         minWidth: '20%'
                     }}
                     input={<OutlinedInput id='select-multiple-chip' label='Chip' />}
-                    renderValue={selected => {
-                        const s: string[] = selected as string[];
-
-                        return (
-                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                                {s.map(value => (
-                                    <Chip key={value} label={value} />
-                                ))}
-                            </Box>
-                        );
-                    }}>
+                    renderValue={(selected) =>
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                            {(selected as string[]).map(value => (
+                                <Chip key={value} label={value} />
+                            ))}
+                        </Box>
+                    }
+                >
                     <MenuItem value='Não possui acessórios'>Não possui acessórios</MenuItem>
                     <ListSubheader>Científicos</ListSubheader>
                     {weaponScientificAccessories.map(acc => (
@@ -328,7 +386,9 @@ function WeaponModal({ create }: { create: () => void }): ReactElement {
                 <SelectFormComponent
                     label='Bônus para Acerto'
                     prop='bonus'
-                    inputProps={register('hit')}
+                    {...register('bonus')}
+                    error={errors?.['bonus'] && true}
+                    helperText={errors?.['bonus']?.message?.toString()}
                     sx={{
                         width: '15%'
                     }}>
@@ -340,30 +400,38 @@ function WeaponModal({ create }: { create: () => void }): ReactElement {
                 </SelectFormComponent>
                 <TextField
                     label='Dano'
-                    inputProps={register('effect.value')}
+                    {...register('effect.value')}
+                    error={errors?.effect?.value && true}
+                    helperText={errors?.effect?.value?.message?.toString()}
                     placeholder='EX: 2d4'
                     sx={{ width: '10%' }}
                 />
                 <TextField
                     label='Dano Crítico'
-                    inputProps={register('effect.critValue')}
+                    {...register('effect.critValue')}
+                    error={errors?.effect?.critValue && true}
+                    helperText={errors?.effect?.critValue?.message?.toString()}
                     placeholder='EX: 4d4'
                     sx={{ width: '10%' }}
                 />
                 <TextField
                     label='Chance crítica'
                     type='number'
-                    inputProps={register('effect.critChance')}
+                    {...register('effect.critChance')}
+                    error={errors?.effect?.critChance && true}
+                    helperText={errors?.effect?.critChance?.message?.toString()}
                     placeholder='EX: 18'
                     sx={{ width: '10%' }}
                 />
                 <SelectFormComponent
                     label='Tipo de Dano'
-                    inputProps={register('effect.effectType')}
+                    {...register('effect.effectType')}
+                    error={errors?.effect?.effectType && true}
+                    helperText={errors?.effect?.effectType?.message?.toString()}
                     sx={{
                         width: '29.5%'
                     }}>
-                    {weaponDamageType.map(damageType => (
+                    {damages.map(damageType => (
                         <MenuItem key={damageType} value={damageType}>
                             {damageType}
                         </MenuItem>
@@ -374,57 +442,83 @@ function WeaponModal({ create }: { create: () => void }): ReactElement {
     );
 }
 
-function ArmorModal(): ReactElement {
+function ArmorModal({ closeModal, formik }: ModalProps): ReactElement {
+    const theme = useTheme();
+    const matches = useMediaQuery(theme.breakpoints.down('md'));
+    const { enqueueSnackbar } = useSnackbar();
+
     const validationSchema = z.object({
-        name: z.string({ required_error: 'Este campo é obrigatório' }),
-        rarity: z.string(),
-        description: z.string(),
-        kind: z.string(),
-        categ: z.string(),
-        weight: z.number(),
-        quantity: z.number(),
-        value: z.number(),
-        displacementPenalty: z.number(),
-        accessories: z.string({ required_error: 'Este campo é obrigatório' }).array()
+        ...defaultValidationSchema,
+        categ: z.string().min(1, { message: 'Categoria é obrigatória' }),
+        value: z.coerce.number().min(1, { message: 'Valor de AP é obrigatório' }).max(100, { message: 'Valor deve ser menor ou igual a 100' }),
+        displacementPenalty: z.coerce.number().min(1, { message: 'Penalidade de Deslocamento é obrigatório' }).max(100, { message: 'Penalidade deve ser menor ou igual a 100' }),
+        accessories: z.string().min(1, { message: 'Acessórios é obrigatório' }).array()
     });
 
     type ArmorFormFields = z.infer<typeof validationSchema>;
 
-    const theme = useTheme();
-    const matches = useMediaQuery(theme.breakpoints.down('md'));
-
-    const [ ArmorCategParam, setArmorCategParam ] = useState<'Leve' | 'Pesada'>();
-
-    const {
-        register,
-        handleSubmit,
-        formState: { errors },
-        getValues
-    } = useForm<ArmorFormFields>({
+    const form = useForm<ArmorFormFields>({
         defaultValues: {
             name: '',
             description: '',
             weight: 0,
             quantity: 1,
             accessories: [ 'Não possui acessórios' ]
-        }
-        // resolver: zodResolver(validationSchema)
+        },
+        resolver: zodResolver(validationSchema)
     });
 
-    const onSubmit: SubmitHandler<ArmorFormFields> = (data): void => {
-        console.log(data);
-        console.log(errors);
-    };
+    const { register, formState: { errors } } = form
+
+    const create = (data: ArmorFormFields) => {
+        formik.setFieldValue('inventory.armors', [ ...formik.values.inventory.armors, data ]);
+        enqueueSnackbar(`${data.name} criado com sucesso!`, { variant: 'success', autoHideDuration: 3000 });
+        closeModal();
+    }
 
     return (
-        <ItemModalForm register={register} handleSubmit={handleSubmit(onSubmit)} errors={errors} getValues={getValues}>
+        <ItemModalForm
+            form={form}
+            action={create}
+        >
             <Grid container display='flex' flexDirection={matches ? 'column' : 'row'} gap={2}>
+                <SelectFormComponent
+                    label='Tipo'
+                    prop='kind'
+                    defaultValue='Padrão'
+                    {...register('kind')}
+                    error={errors?.['kind'] && true}
+                    helperText={errors?.['kind']?.message?.toString()}
+                    sx={{
+                        width: '12%'
+                    }}>
+                    {armorKind.map(kind => (
+                        <MenuItem key={kind} value={kind}>
+                            {kind}
+                        </MenuItem>
+                    ))}
+                </SelectFormComponent>
+                <SelectFormComponent
+                    label='Categoria'
+                    id='armorCategParam'
+                    {...register('categ')}
+                    error={errors?.['categ'] && true}
+                    helperText={errors?.['categ']?.message?.toString()}
+                    sx={{
+                        width: '10%',
+                        ml: -1
+                    }}>
+                    <MenuItem value='Leve'>Leve</MenuItem>
+                    <MenuItem value='Pesada'>Pesada</MenuItem>
+                </SelectFormComponent>
                 <SelectFormComponent
                     label='Acessórios'
                     prop='accessories'
-                    defaultValue='Não possui acessórios'
+                    defaultValue={[ 'Não possui acessórios' ]}
                     MenuProps={MenuProps}
-                    inputProps={register('accessories')}
+                    {...register('accessories')}
+                    error={errors?.['accessories'] && true}
+                    helperText={errors?.['accessories']?.message?.toString()}
                     multiple
                     sx={{
                         minWidth: '20%'
@@ -455,53 +549,81 @@ function ArmorModal(): ReactElement {
                         </MenuItem>
                     ))}
                 </SelectFormComponent>
-                <TextField label='Valor de AP' type='number' inputProps={register('value')} />
-                <TextField label='Penalidade de Deslocamento' type='number' inputProps={register('displacementPenalty')} />
+                <TextField 
+                    label='Valor de AP' 
+                    type='number' 
+                    {...register('value')}
+                    error={errors?.['value'] && true}
+                    helperText={errors?.['value']?.message?.toString()}
+                />
+                <TextField
+                    label='Penalidade de Deslocamento' 
+                    type='number' 
+                    {...register('displacementPenalty')}
+                    error={errors?.['displacementPenalty'] && true}
+                    helperText={errors?.['displacementPenalty']?.message?.toString()}
+                />
             </Grid>
         </ItemModalForm>
     );
 }
 
-function ItemModal(): ReactElement {
-    const validationSchema = z.object({
-        name: z.string({ required_error: 'Este campo é obrigatório' }),
-        rarity: z.string(),
-        description: z.string(),
-        kind: z.string(),
-        categ: z.string(),
-        weight: z.number(),
-        quantity: z.number(),
-        effects: z.string({ required_error: 'Este campo é obrigatório' }).array(),
-        level: z.number()
-    });
-
-    type ArmorFormFields = z.infer<typeof validationSchema>;
-
+function ItemModal({ formik, closeModal }: ModalProps): ReactElement {
     const theme = useTheme();
     const matches = useMediaQuery(theme.breakpoints.down('md'));
+    const { enqueueSnackbar } = useSnackbar();
 
-    const [ ArmorCategParam, setArmorCategParam ] = useState<'Leve' | 'Pesada'>();
+    const validationSchema = z.object({
+        ...defaultValidationSchema,
+        effects: z.coerce.string()
+            .min(1, { message: 'Efeitos/Descrição é obrigatório' })
+            .default(''),
+        level: z.coerce.number().optional()
+    });
 
-    const {
-        register,
-        handleSubmit,
-        formState: { errors },
-        getValues
-    } = useForm<ArmorFormFields>({
+    type ItemFormFields = z.infer<typeof validationSchema>;
+
+    const form = useForm<ItemFormFields>({
         defaultValues: {
             name: '',
             description: '',
             weight: 0,
             quantity: 1
-        }
-        // resolver: zodResolver(validationSchema)
+        },
+        resolver: zodResolver(validationSchema)
     });
 
+    const { register, formState: { errors } } = form
+
+    const create = async (data: ItemFormFields): Promise<void> => {
+        data.effects = [ data.effects ] as unknown as string;
+        formik.setFieldValue('inventory.items', [ ...formik.values.inventory.items, data ]);
+
+        enqueueSnackbar(`${data.name} criado com sucesso!`, { variant: 'success', autoHideDuration: 3000 });
+
+        closeModal();
+    }
+
     return (
-        <ItemModalForm register={register} handleSubmit={handleSubmit} errors={errors} getValues={getValues}>
+        <ItemModalForm
+            form={form}
+            action={create}
+        >
             <Grid container display='flex' flexDirection={matches ? 'column' : 'row'} gap={2}>
-                <TextField label='Nível' type='number' inputProps={register('level')} />
-                <TextField label='Efeitos' type='text' inputProps={register('effects')} />
+                <TextField 
+                    label='Nível' 
+                    type='number' 
+                    {...register('level')}
+                    error={errors?.['level'] && true}
+                    helperText={errors?.['level']?.message?.toString()}
+                />
+                <TextField 
+                    label='Efeitos/Descrição' 
+                    type='text' 
+                    {...register('effects')}
+                    error={errors?.['effects'] && true}
+                    helperText={errors?.['effects']?.message?.toString()}
+                />
             </Grid>            
         </ItemModalForm>
     );

@@ -36,9 +36,9 @@ export default function Expertise({
             return grey[500]
         } else if (expertise.value < 5) {
             return green[500]
-        } else if (expertise.value < 10) {
+        } else if (expertise.value < 7) {
             return blue[500]
-        } else if (expertise.value < 15) {
+        } else if (expertise.value < 9) {
             return purple[500]
         } else {
             return yellow[500]
@@ -79,8 +79,8 @@ export default function Expertise({
     return (
         <>
             <Grid
-                height={!matches ? '10rem' : '9rem'}
-                width={!matches ? '9.5rem' : '8.25rem'}
+                height={!matches ? '11rem' : '10rem'}
+                width={!matches ? '9.75rem' : '8.5rem'}
                 key={name} 
                 item
                 onClick={onClick}
@@ -97,7 +97,7 @@ export default function Expertise({
                     justifyContent={'center'}
                     alignItems='center'
                     flexDirection='column' 
-                    p={1} 
+                    p={matches ? 1 : 2} 
                     border={`1px solid ${edit?.isEditing ? yellow[500] : theme.palette.primary.main}75`} 
                     borderRadius={1}
                     sx={{ transition: '.3s' }}
@@ -107,23 +107,36 @@ export default function Expertise({
                         <Typography>+</Typography>
                         <Typography>{expertise.value}</Typography>
                     </Box>
-                    <Typography fontSize={matches ? '.8rem' : ''} fontWeight={900} color={determinateColor}>{name}</Typography>
+                    <Typography 
+                        fontSize={matches ? '.8rem' : ''} 
+                        fontWeight={900} 
+                        color={determinateColor} 
+                        sx={{ 
+                            borderRadius: 1,
+                            backgroundColor: `${determinateColor()}30`,
+                            p: 1,
+                            minWidth: '80%',
+                            textAlign: 'center'
+                        }}
+                    >{name}</Typography>
                 </Box>
             </Grid>
-            <DiceRollModal 
-                open={open}
-                onClose={() => { setOpen(false) }}
-                bonus={[ expertise.value ]}
-                isDisadvantage={expertise.value < 0 || diceQuantity < 0}
-                visibleBaseAttribute
-                visibleDices
-                roll={{
-                    name,
-                    dice: 20,
-                    attribute: expertise.defaultAttribute,
-                    quantity: Math.floor((diceQuantity / 2) ?? 0) + 1
-                }}
-            />
+            { open && (
+                <DiceRollModal 
+                    open={open}
+                    onClose={() => { setOpen(false) }}
+                    bonus={[ expertise.value ]}
+                    isDisadvantage={expertise.value < 0 || diceQuantity < 0}
+                    visibleBaseAttribute
+                    visibleDices
+                    roll={{
+                        name,
+                        dice: 20,
+                        attribute: expertise.defaultAttribute,
+                        quantity: diceQuantity || 0 + 1
+                    }}
+                />
+            )}
         </>
     )
 }

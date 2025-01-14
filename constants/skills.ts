@@ -2,10 +2,11 @@
 import type { Skill } from '@types'
 
 export const skills: {
-    lineage: Skill[]
+    lineage: Skill[],
+    occupation: Skill[],
     class: {
-        'Marcial': Skill[]
-        'Explorador': Skill[]
+        'Lutador': Skill[]
+        'Especialista': Skill[]
         'Feiticeiro': Skill[]
         'Bruxo': Skill[]
         'Monge': Skill[]
@@ -14,48 +15,39 @@ export const skills: {
         'Ladino': Skill[]
     }
     subclass: {
-        // Marcial
-        'Armipotente'?: Skill[],
+        // Lutador
         'Polimorfo'?: Skill[],
         'Comandante'?: Skill[],
 
-        // Explorador
-        'Harmonizador'?: Skill[],
-        'Numeromante'?: Skill[],
-        'Transcendentalista'?: Skill[],
+        // Especialista
+        'Forasteiro'?: Skill[],
+        'Errante'?: Skill[],
 
         // Feiticeiro
         'Conjurador'?: Skill[],
         'Elementalista'?: Skill[],
-        'Alquimista'?: Skill[],
 
         // Bruxo
         'Necromante'?: Skill[],
-        'Pocionista'?: Skill[],
         'Espiritista'?: Skill[],
 
         // Monge
-        'Guardião das Energias'?: Skill[],
+        'Discípulo da Fúria'?: Skill[],
         'Protetor da Alma'?: Skill[],
-        'Andarilho'?: Skill[],
 
         // Druida
-        'Shapeshifter'?: Skill[],
         'Animante'?: Skill[],
         'Naturomante'?: Skill[],
 
         // Arcano
         'Arquimago'?: Skill[],
-        'Dimensionalista'?: Skill[],
         'Metamágico'?: Skill[],
 
         // Ladino
         'Espectro'?: Skill[],
-        'Supernaturalista'?: Skill[],
-        'Metafísico'?: Skill[]
+        'Estrategista'?: Skill[]
     },
     bonus: Skill[]
-    powers: Skill[]
 } = {
     lineage: [
         {
@@ -184,7 +176,7 @@ export const skills: {
             origin: 'Pesquisador',
             type: 'Linhagem'
         },
-        {   
+        {
             name: 'Rastreamento',
             description: 'Graças à sua experiência, sua habilidade em seguir pistas e rastrear alvos é incomparável. Esta habilidade te permite gastar 20 MP em um teste: Você pode escolher um alvo que você tenha visto ou sentido, e saber a sua localização exata, a distância, a direção e o tempo que ele levou para chegar até lá. Você também pode saber se o alvo está sob efeito de alguma magia ou se ele tem algum ORM. Esta habilidade pode ser usada em combate ou fora dele.',
             origin: 'Investigador',
@@ -192,567 +184,893 @@ export const skills: {
         }
     ],
     class: {
-        'Marcial': [
+        'Lutador': [
             {
-                name: 'Duro na Queda',
-                description: 'Sempre que o cálculo de dano for maior que sua vida, ao invés de ficar inconsciente, você fica com 1 LP. Se outro dano for aplicado enquanto você estiver com 1 LP, você entra no estado inconsciente.',
-                origin: 'Marcial',
-                type: 'Classe',
-                level: 0
+                'name': 'Bom de Briga',
+                'description': 'Você pode adicionar seu bônus de Luta para dano em ataques corpo-a-corpo.',
+                'origin': 'Lutador',
+                'type': 'Classe',
+                'level': 0
             },
             {
-                name: 'Reflexos Aumentados',
-                description: 'Você ganha +1 dado em testes de agilidade (incluindo iniciativa).',
-                origin: 'Marcial',
-                type: 'Classe',
-                level: 5
+                'name': 'Reflexos Aumentados',
+                'description': 'Você ganha +1 dado em testes de agilidade (incluindo iniciativa).',
+                'origin': 'Lutador',
+                'type': 'Classe',
+                'level': 1
             },
             {
-                name: 'Bom de Briga',
-                description: 'Aumenta o dano do ataque em 1d8+Bônus de Luta se você estiver atacando em um alcance de corpo a corpo (1 quadrado ou 1,5 metro).',
-                origin: 'Marcial',
-                type: 'Classe',
-                level: 10
+                'name': 'Regeneração Furiosa',
+                'description': 'Quando seus LP ficarem abaixo de 50%, você regenera 1d6 por turno até atingir 50% de seus LP novamente.',
+                'origin': 'Lutador',
+                'type': 'Classe',
+                'level': 5
             },
             {
-                name: 'Regeneração Furiosa',
-                description: 'Quando seus LP ficarem abaixo de 50%, você regenera 1d6 por turno até atingir 50% de seus LP novamente.',
-                origin: 'Marcial',
-                type: 'Classe',
-                level: 15
+                'name': 'Armado',
+                'description': 'Armas corpo-a-corpo dão +1 dados do mesmo tipo de dano.',
+                'origin': 'Lutador',
+                'type': 'Classe',
+                'level': 10
             },
             {
-                name: 'Muralha',
-                description: 'Quando você fica com 10% ou menos de LP, seu ataque aumenta em 50% até você atingir 50% da sua vida novamente. Para calcular os 50% de dano, primeiro role o(s) dado(s) de dano e faça o cálculo normalmente, depois, multiplique o resultado por 1.5x. Em caso de número decimal, sempre arredonde para menor.',
-                origin: 'Marcial',
-                type: 'Classe',
-                level: 20
+                'name': 'Não-Elementalista',
+                'description': 'Magias não-elementais têm +1 dado respectivo para cálculo de dano, cálculo de cura, chance de acerto, etc.',
+                'origin': 'Lutador',
+                'type': 'Classe',
+                'level': 15
             },
             {
-                name: 'Amplitude Física',
-                description: 'Em testes de Luta, Atletismo ou vigor puro, se o resultado do dado for menor que a sua quantidade de Luta ou Atletismo, você pode usar sua força + seu respectivo bônus para substituir o dado, além de ganhar +1 dado em testes que usam vigor. Além disso, você pode adicionar o seu bônus de Luta em ataques corpo-a-corpo.',
-                origin: 'Marcial',
-                type: 'Classe',
-                level: 25
-            },
-            {
-                name: 'Armado',
-                description: 'Armas corpo-a-corpo dão +2 dados do mesmo tipo de dano.',
-                origin: 'Marcial',
-                type: 'Classe',
-                level: 30
-            },
-            {
-                name: 'Não-Elementalista',
-                description: 'Magias não-elementais tem +1 dado respectivo para cálculo de dano, cálculo de cura, chance de acerto etc.',
-                origin: 'Marcial',
-                type: 'Classe',
-                level: 35
+                'name': 'Muralha',
+                'description': 'Quando você fica com 10% ou menos de LP, seu ataque aumenta em 50% até você atingir 50% da sua vida novamente.',
+                'origin': 'Lutador',
+                'type': 'Classe',
+                'level': 20
             }
         ],
 
-        'Explorador': [
+        'Especialista': [
             {
-                name: 'Treinado',
-                description: 'Você pode gastar 5 MP uma vez por teste para rolar novamente um dos dados (ou o dado, no caso de um) e substituí-lo (ou não) pelo novo resultado.',
-                origin: 'Explorador',
-                type: 'Classe',
-                level: 0
+                'name': 'Treinado',
+                'description': 'Uma vez por cena, você pode pagar 1 MP para rolar novamente um dos dados (ou o dado, no caso de um) e substituí-lo (ou não) pelo novo resultado. Limitado a 3 vezes ao dia.',
+                'origin': 'Especialista',
+                'type': 'Classe',
+                'level': 0
             },
             {
-                name: 'Esforço',
-                description: 'Você pode pagar 2 MP para adicionar +2 Pontos bônus em qualquer teste, exceto esquiva, cálculo de dano ou bloqueio de ataque.',
-                origin: 'Explorador',
-                type: 'Classe',
-                level: 5
+                'name': 'Esforço',
+                'description': 'Você pode pagar 2 MP para adicionar +2 Pontos bônus em qualquer teste, exceto esquiva, cálculo de dano ou bloqueio de ataque.',
+                'origin': 'Especialista',
+                'type': 'Classe',
+                'level': 1
             },
             {
-                name: 'Desequilibrar',
-                description: 'Você pode pagar 12 MP e escolher um alvo para sofrer -2 em todos os testes contra você por 3 turnos.',
-                origin: 'Explorador',
-                type: 'Classe',
-                level: 10
+                'name': 'Perspectiva',
+                'description': 'Uma vez por combate, você pode diminuir a margem de crítico em 1 ponto (ao invés de 20, serão necessários 19 pontos no dado para contabilizar um ataque crítico) para a próxima habilidade, magia ou ataque.',
+                'origin': 'Especialista',
+                'type': 'Classe',
+                'level': 5
             },
             {
-                name: 'Perspectiva',
-                description: 'Em combate, você pode gastar 15 MP para diminuir a margem de crítico em 1 pontos (ao invés de 20, serão necessários 19 pontos no dado para contabilizar um ataque crítico.) por 3 turnos para qualquer ataque físico ou mágico.',
-                origin: 'Explorador',
-                type: 'Classe',
-                level: 15
+                'name': 'Afluência',
+                'description': 'Você pode escolher uma das seguintes opções (que sejam compatíveis com seu nível): +1 Habilidade de qualquer classe ou subclasse (equivalente a seu nível), +3 Poderes mágicos, +1 Magia Nível 4.',
+                'origin': 'Especialista',
+                'type': 'Classe',
+                'level': 10
             },
             {
-                name: 'Providência',
-                description: 'Quando utilizar a habilidade Esforço, você pode gastar 5 MP adicionais para aumentar o teste em +3 pontos bônus. Além disso, você pode rolar quantos dados você quiser com um custo adicional de 2 MP por dado para a habilidade Treinado.',
-                origin: 'Explorador',
-                type: 'Classe',
-                level: 20
+                'name': 'Preferência',
+                'description': 'Você pode escolher magias de um tipo elemental específico e armas de uma categoria específica para serem adicionadas +3 pontos em testes que você as utilize. Após utilizar essa habilidade, não será possível utilizá-la novamente até completar 2 dias. Melhora a habilidade \'Esforço\' de +2 pontos bônus para +3 pontos bônus.',
+                'origin': 'Especialista',
+                'type': 'Classe',
+                'level': 15
             },
             {
-                name: 'Preferência',
-                description: 'Você pode escolher magias de um tipo elemental específico e armas de uma categoria específica para serem adicionadas +3 pontos em testes que você as utilize (dano, cura, chance de acerto, fortalecimento, etc.). Após utilizar essa habilidade, não será possível utilizá-la novamente até completar 2 dias.',
-                origin: 'Explorador',
-                type: 'Classe',
-                level: 25
-            },
-            {
-                name: 'Afluência',
-                description: `Você pode escolher uma das seguintes opções (que sejam compatíveis com seu nível):
-                +1 Habilidade de qualquer classe ou subclasse (incluindo o poder de classe);
-                +3 Poderes mágicos;
-                +1 Magia Nível 5.
-                `,
-                origin: 'Explorador',
-                type: 'Classe',
-                level: 30
-            },
-            {
-                name: 'Polivalência',
-                description: `Você pode pagar 25 MP para rolar 2d20 e utilizar a média aritmética do resultado (2d20/2) para algum dos efeitos:
-                Caso o valor do resultado seja igual ou maior que 10, este resultado é adicionado em seus AP até a próxima tentativa de acerto, e diminui o dano recebido nos pontos do resultado do próximo ataque em que você for atingido. Caso o dano for menor do que o resultado da habilidade, você usa a diferença do cálculo e cura LP ou MP, caso você estiver com a saúde em 100%. 
-                Caso o valor do resultado seja igual ou menor que 10, você pode adicionar estes pontos em seus PRÓXIMOS DOIS testes, incluindo cálculo de dano e chance de acerto. Não funciona para esquiva ou bloqueio de ataques.
-                Em suma, em caso de combate, resultados maiores significam oportunidades de defesa, e resultados menores significam oportunidades de ataque.
-                Caso o resultado seja 10, o jogador poderá escolher entre um dos efeitos citados acima.
-                `,
-                origin: 'Explorador',
-                type: 'Classe',
-                level: 35
+                'name': 'Sucessão',
+                'description': 'Em caso de passar com sucesso em 3 testes consecutivos, você tem sua vida e mana regeneradas em +5 pontos e o próximo ataque aumentado é em +10 pontos também, além de +2 pontos bônus no próximo teste.',
+                'origin': 'Especialista',
+                'type': 'Classe',
+                'level': 20
             }
         ],
 
         'Feiticeiro': [
             {
-                name: 'Feitiçaria',
-                description: 'Você ganha +1 de dano para todas as magias de ataque que você utilizar. Além disso, ao adquirir essa habilidade, escolha uma magia nível 1 e aprenda-a.',
-                origin: 'Feiticeiro',
-                type: 'Classe',
-                level: 0
+                'name': 'Feitiçaria',
+                'description': 'Você ganha +1 de dano para todas as magias de ataque que você utilizar. Além disso, ao adquirir essa habilidade, escolha uma magia nível 1 e aprenda-a.',
+                'origin': 'Feiticeiro',
+                'type': 'Classe',
+                'level': 0
             },
             {
-                name: 'Prevenção Mágica',
-                description: 'Magias que dão dano em área agora afetam somente a inimigos. Além disso, não é possível você se ferir com uma magia conjurada por você mesmo.',
-                origin: 'Feiticeiro',
-                type: 'Classe',
-                level: 5
+                'name': 'Prevenção Mágica',
+                'description': 'Magias que dão dano em área agora afetam somente a inimigos. Além disso, não é possível você se ferir com uma magia conjurada por você mesmo.',
+                'origin': 'Feiticeiro',
+                'type': 'Classe',
+                'level': 1
             },
             {
-                name: 'Magia Guiada',
-                description: 'Caso você acerte um mesmo inimigo com uma mesma magia duas vezes ou mais, você ganha +1d4 para cada acerto, sucessivamente. A partir do terceiro acerto você recomeça a contagem, desta vez com +1d6. Não cumulativo.',
-                origin: 'Feiticeiro',
-                type: 'Classe',
-                level: 10
+                'name': 'Magia Guiada',
+                'description': 'Caso você acerte um mesmo inimigo com uma mesma magia duas vezes ou mais, você ganha +1d4 para cada acerto, sucessivamente. Não é cumulativo e o limite é de três acertos consecutivos. Esta habilidade reseta caso você tome dano ou ataque outra criatura com uma magia diferente ou arma.',
+                'origin': 'Feiticeiro',
+                'type': 'Classe',
+                'level': 5
             },
             {
-                name: 'Mimetismo',
-                description: 'Você pode gastar 15 MP para copiar uma magia que foi desferida em você na cena atual.',
-                origin: 'Feiticeiro',
-                type: 'Classe',
-                level: 15
+                'name': 'Fixação Mágica',
+                'description': 'Você pode escolher uma magia específica que você sabe e colocar um fixador mágico nela: A magia pula um estágio à frente e adiciona +1d6 em testes desta magia. Caso a magia esteja no estágio máximo, adiciona +5 ao dano. Você é invulnerável a esta magia caso alguém o ataque com ela.',
+                'origin': 'Feiticeiro',
+                'type': 'Classe',
+                'level': 10
             },
             {
-                name: 'Fixação Mágica',
-                description: 'Você pode escolher uma magia específica que você sabe e colocar um fixador mágico nela: A magia pula um estágio à frente e adiciona +1d10 em testes desta magia. Caso a magia esteja em seu último estágio, o dano é dobrado. Além disso, você é invulnerável a está magia, caso alguém o ataque com ela. Só é possível colocar um marcador por vez e quando colocado você não pode remover até o final do dia.',
-                origin: 'Feiticeiro',
-                type: 'Classe',
-                level: 20
+                'name': 'Imunidade Mágica',
+                'description': 'Você é invulnerável a qualquer magia da sua maestria elemental.',
+                'origin': 'Feiticeiro',
+                'type': 'Classe',
+                'level': 15
+            },
+            {
+                'name': 'Magismo Total',
+                'description': 'Diminui o custo de conjuração de magia em -1 MP. Além disso, você não gasta MP extras ao utilizar magias de nível 4 no estágio \'MAESTRIA\'.',
+                'origin': 'Feiticeiro',
+                'type': 'Classe',
+                'level': 20
             }
         ],
 
         'Bruxo': [
             {
-                name: 'Fazer Poções',
-                description: `Você possui a habilidade de criar poções. Qualquer tipo de matéria orgânica + algum recipiente vazio pode ser combinado para usar poções. Em primeira instância, elas são imprevisíveis, mas à medida que sua experiência for avançando, além de melhores resultados com melhores efeitos, você poderá saber como utilizá-las com maestria.
-                Os testes utilizados para criar poções podem variar entre Magia, Sobrevivência, Medicina, Competência, Destreza, Controle e Criatividade, dependendo do propósito e dos métodos utilizados para a criação da poção. Quando você quiser criar uma poção com uma finalidade específica, existe 50% de chance (resultado par em um d4) da poção resultar em algo diferente do que você planejava, o que pode ser bom, ou ruim. É necessário gastar 10 MP para cada poção feita. Para criar uma poção com sucesso é necessário no mínimo passar de uma DT 10. O tempo de fabricação da poção pode variar com o tipo e quantidade de materiais utilizados. Você pode escolher criar entre os seguintes tipos de poções:
-                Força: Aumenta a força em ataques com armas corpo-a-corpo e/ou aumenta a chance de acerto por 2 turnos ou somente para a cena, em caso de estar fora de batalha. A qualidade da poção varia com os pontos tirados no teste.
-                Cura: Recupera os LP de um alvo em dados proporcionais a quantidade de pontos tirados no teste.
-                Mana: Recupera os MP de um alvo em dados proporcionais a quantidade de pontos tirados no teste.
-                Antídoto: Livra o alvo de algum(ns) ou todos efeitos e estados ruins que possam estar lhe afligindo. EX: Envenenamento, queimadura, hemorragia, insanidade, medo etc.
-                Dano: Aplica uma quantidade x de dano ao alvo que foi atingido ou ingerir a poção. O dano é proporcional a quantidade de pontos tirados no teste.
-                Fortalecimento: Aumenta os AP de um alvo no número tirado em 1d10 por 2 turnos ou somente para a cena, em caso de estar fora de batalha.
-                Enfraquecimento: Diminui a força em ataques com armas corpo-a-corpo e/ou diminui a chance de acerto em 2 turnos ou somente para a cena, em caso de estar fora de batalha. A qualidade da poção varia com os pontos tirados no teste.
-                Inteligência: Dá pontos bônus de +2 em até 5 testes aleatórios (ou testes escolhidos por você, em caso de possuir a habilidade aprimorada), que variados pelos pontos tirados no teste. A vantagem dura por 2 turnos ou somente para a cena, em caso de estar fora de batalha.
-                `,
-                origin: 'Bruxo',
-                type: 'Classe',
-                level: 0
+                'name': 'Fazer Poção',
+                'description': 'Você possui a habilidade de criar poções. Utilize matéria orgânica e recipientes vazios para criar poções com variados efeitos como força, cura, mana e outros. Requer testes com DT mínima de 15 e consome 1 MP por poção.',
+                'origin': 'Bruxo',
+                'type': 'Classe',
+                'level': 0
+            },
+            {
+                'name': 'Inverter Polaridades',
+                'description': 'Uma vez por dia, inverta a energia vital de uma criatura. Cura se torna dano, e dano se torna cura. Dura 5 turnos, uma rodada ou uma hora.',
+                'origin': 'Bruxo',
+                'type': 'Classe',
+                'level': 1
+            },
+            {
+                'name': 'Maldição',
+                'description': 'Por 3 MP, amaldiçoe um alvo para que todo dano aplicado a ele receba um adicional de até +3d4. Quando o feitiço termina, você e aliados recuperam LP e MP. Reaplicável em novo alvo ao cair do primeiro.',
+                'origin': 'Bruxo',
+                'type': 'Classe',
+                'level': 5
+            },
+            {
+                'name': 'Recobro Maldito',
+                'description': 'Três vezes ao dia, marque até 3 criaturas. Quem causar dano a elas recupera 2d10+5 LP. Dura uma rodada.',
+                'origin': 'Bruxo',
+                'type': 'Classe',
+                'level': 10
+            },
+            {
+                'name': 'Anátema Elemental',
+                'description': 'Cinco vezes ao dia, amaldiçoe um alvo com desvantagem a um elemento escolhido. O alvo sofre dano dobrado do elemento e cura o atacante ao usá-lo.',
+                'origin': 'Bruxo',
+                'type': 'Classe',
+                'level': 15
+            },
+            {
+                'name': 'Contato Astral',
+                'description': 'Entre em contato com entidades místicas como bestas, demônios ou deuses. Exige teste de Resistência Mental. Sucesso forma pacto temporário; falha resulta em 8d8 de dano psíquico.',
+                'origin': 'Bruxo',
+                'type': 'Classe',
+                'level': 20
             }
         ],
 
         'Monge': [
             {
-                name: 'Autoconsciência',
-                description: `Você possui a habilidade de entrar em diferentes estados quando estiver em combate: Calma, Fúria e Divino.
-                No estado de Calma, quando qualquer ataque corpo-a-corpo for feito em você, você pode contra-atacar no mesmo momento com 100% de chance de acerto com uma arma leve de uma mão ou uma magia que possa ser executada com a mente ou com uma mão e que não seja do tipo conjurada, sustentada ou contínua. Apesar disso, no estado de calma, você não consegue andar. Para entrar no estado de calma, você deve conseguir se esquivar com sucesso de um ataque inimigo. Você entra no estado de calma no turno seguinte.
-                No estado de Fúria, qualquer ataque aplicado por você dá o dobro de dano e você adiciona o seu bônus de destreza em qualquer ataque. Mas tome cuidado! Ao utilizar este estado, você fica sujeito a receber 50% a mais de dano. Para entrar no estado de fúria, você deve rodar um dado crítico (20 pontos em um d20) ou eliminar uma criatura. Você entra no estado de fúria no turno seguinte.
-                No estado Divino, você dá o triplo de dano de qualquer ataque. Para entrar no estado divino, você precisa entrar em algum dos estados disponíveis três vezes. Você entra no estado divino no turno seguinte.
-                Todos os estados duram até o seu próximo turno.
-                `,
-                origin: 'Monge',
-                type: 'Classe',
-                level: 0
+                'name': 'Autoconsciência',
+                'description': 'Você possui a habilidade de entrar em diferentes estados quando estiver em combate: Calma, Fúria e Divino. Cada estado confere benefícios únicos e dura até o próximo turno ou uma rodada (Veja o livro de regras).',
+                'origin': 'Monge',
+                'type': 'Classe',
+                'level': 0
             },
             {
-                name: 'Reflexos',
-                description: 'Você pode gastar 10 MP para, como ação livre, ganhar +2 em Agilidade. Caso você esteja no estado de "calma", você ganha +5 pontos em Agilidade além de prolongar seu estado até o turno seguinte.',
-                origin: 'Monge',
-                type: 'Classe',
-                level: 5
-            
+                'name': 'Cura Interior',
+                'description': 'Você pode, três vezes ao dia, se curar em 2d6 como ação livre. Só pode ser utilizada uma vez por combate.',
+                'origin': 'Monge',
+                'type': 'Classe',
+                'level': 1
             },
             {
-                name: 'Cura Interior',
-                description: 'Você pode pagar 20 MP para se curar em 3d8 como ação livre. Só pode ser utilizada uma vez por combate.',
-                origin: 'Monge',
-                type: 'Classe',
-                level: 10
+                'name': 'Reflexos',
+                'description': 'Você pode, como ação livre, ganhar +2 em Agilidade. Caso você esteja no estado de calma, você ganha +5 pontos em Agilidade além de prolongar seu estado até o turno seguinte.',
+                'origin': 'Monge',
+                'type': 'Classe',
+                'level': 5
             },
             {
-                name: 'Meditação',
-                description: 'Sem gastar nada, você pode, três vezes por combate, entrar no estado de meditação. Neste estado, você recupera 2d4 de LP e 3d4 de MP a cada turno. Entretanto, enquanto estiver neste estado, você não consegue se mover ou atacar. Exige uma ação completa.',
-                origin: 'Monge',
-                type: 'Classe',
-                level: 15
+                'name': 'Meditação',
+                'description': 'Você pode, uma vez por combate, entrar no estado de meditação. Recupera 2d4 de LP e 1d4 de MP por turno por 3 turnos, mas você não pode se mover ou atacar. Pode transferir seus estados (calma, fúria e divino) a uma criatura tocada.',
+                'origin': 'Monge',
+                'type': 'Classe',
+                'level': 10
             },
             {
-                name: 'Aura Efêmera',
-                description: 'Você pode pagar 15 para gerar uma aura de dentro de você que cobre um raio de 5 metros. Ela cura você e aliados a cada 2 turnos em 3d4 além de aumentar a chance de acerto em +3. Se você estiver no estado de fúria enquanto está habilidade estiver ativa, quem estiver na área ganha +5 em chance de acerto e +3d4 para qualquer ataque. Você pode prolongar esta habilidade, mas terá que pagar +15 MP para cada 2 turnos.',
-                origin: 'Monge',
-                type: 'Classe',
-                level: 20
+                'name': 'Força Vital',
+                'description': 'Caso você possua 20 LP ou menos, adicione os LP restantes em seus ataques até se recuperar.',
+                'origin': 'Monge',
+                'type': 'Classe',
+                'level': 15
             },
             {
-                name: 'Força Vital',
-                description: 'Você pode pagar 20 MP e executar como uma ação livre esta habilidade: Para o seu próximo ataque corpo-a-corpo, caso você acerte o alvo, o dano será aumentado em 1d8 + seus LP atuais. Ou seja, quanto mais vida você estiver no momento, maior será a força do ataque.',
-                origin: 'Monge',
-                type: 'Classe',
-                level: 25
-            },
-            {
-                name: 'Projeção',
-                description: 'Você pode gastar 20 MP para projetar sua consciência em outro lugar ou outro ser, deixando seu corpo em um estado de transe. Você pode usar isto para explorar lugares distantes, se comunicar com outras pessoas, invadir sistemas de segurança, se disfarçar e/ou se passar por outras pessoas entre outros. Você pode usá-la por no máximo 20 minutos (5m na realidade).',
-                origin: 'Monge',
-                type: 'Classe',
-                level: 30
-            },
-            {
-                name: 'Transferência de Emoções',
-                description: 'Você pode pagar 20 MP para transferir seu estado atual para um alvo próximo (Toque). Quando você o fizer, você recebe metade do dano no próximo ataque. Você precisa estar no estado de Calma, Fúria ou Divino para usar esta habilidade. Você volta para o estado normal automaticamente após a transferência.',
-                origin: 'Monge',
-                type: 'Classe',
-                level: 35
-            },
-            {
-                name: 'Autoconsciência',
-                description: `Agora você ganha +5 de Agilidade, Destreza e Resistência Mágica ao entrar no estado de Calma. Além disso, você não está mais sujeito a receber 50% a mais de dano no estado de Fúria e sim o dano normal.
-Estado Divino agora dura dois de seus turnos (ou duas rodadas).
-`,
-                origin: 'Monge',
-                type: 'Classe',
-                level: 40
-            },
-            {
-                name: 'Ponto de Pressão',
-                description: 'Você pode gastar 25 MP para atingir um ponto vital no seu próximo alvo armado com qualquer arma. O dano é considerado crítico e aplica um efeito negativo do qual você escolherá, entre: Sangramento, Paralisia, Cegueira, Envenenamento ou Confusão',
-                origin: 'Monge',
-                type: 'Classe',
-                level: 45
+                'name': 'Aura Efêmera',
+                'description': 'Uma vez por dia, gera uma aura de 5 metros que cura você e aliados em 3d4 por rodada e aumenta chance de acerto em +3. No estado de fúria, aliados ganham +5 em chance de acerto e +3d4 para qualquer ataque. Mantém a aura ativa gastando 2 LP por turno.',
+                'origin': 'Monge',
+                'type': 'Classe',
+                'level': 20
             }
         ],
 
         'Druida': [
             {
-                name: 'Retaguarda',
-                description: 'Toda vez que você fortalecer ou curar um aliado você invoca 3 tipos de orbes elementais diferentes aleatórios que causam 1d4 de dano cada. Você pode direcioná-los e atacá-los com uma ação livre a qualquer criatura. Entre os orbes que podem ser invocados estão: Fogo, Água, Ar e Terra (1d4 de possibilidades). Em caso de estar fora de combate você adiciona +2 na cura ou no fortalecimento feito ao alvo. Os orbes não são cumulativos.',
-                origin: 'Druida',
-                type: 'Classe',
-                level: 0
+                'name': 'Retaguarda',
+                'description': 'Uma vez por combate, para cada aliado que você fortalecer ou curar, invoca 3 orbes elementais diferentes que causam 1d4 de dano cada. Direcionáveis como ação livre.',
+                'origin': 'Druida',
+                'type': 'Classe',
+                'level': 0
             },
             {
-                name: 'Cura Reveladora',
-                description: 'Toda vez que você realizar uma cura em um aliado, você pode gastar 10 MP para adicionar +4d6 pontos de cura juntamente de um bônus de chance de acerto de +3.',
-                origin: 'Druida',
-                type: 'Classe',
-                level: 5
+                'name': 'Cura Reveladora',
+                'description': 'Curar diretamente um aliado confere +2 de chance de acerto no próximo ataque. Não cumulativo.',
+                'origin': 'Druida',
+                'type': 'Classe',
+                'level': 1
             },
             {
-                name: 'Encantamento Druídico',
-                description: 'Gastando 15 MP, como ação de movimento, você pode adicionar +3d6 de dano elemental extra de qualquer elemento que você tenha afinidade elemento em qualquer arma (incluindo a sua) por 3 turnos.',
-                origin: 'Druida',
-                type: 'Classe',
-                level: 10
+                'name': 'Plano de Recuperação',
+                'description': 'Cria uma área de 3m que cura aliados em 2d4 por turno e impede estados negativos. Inimigos sofrem 2d4 de dano ao entrar. Dura 3 turnos. Usável 3 vezes ao dia.',
+                'origin': 'Druida',
+                'type': 'Classe',
+                'level': 5
             },
             {
-                name: 'Plano de Recuperação',
-                description: 'Em uma pequena área de um quadrado de 6m, você conjura um plano que quem estiver nele, é curado por 2d6 por rodada, além de não poder ser afetado por nenhum estado negativo como queimadura ou hemorragia. Inimigos que entrarem no campo recebem 2d4 de dano enquanto permaneceram por lá. O plano dura 3 turnos.',
-                origin: 'Druida',
-                type: 'Classe',
-                level: 15
+                'name': 'Vínculo Druídico',
+                'description': 'Marca até três criaturas tocadas. Você absorve até 10 pontos de dano sofrido por elas e recupera 1 MP por ocorrência.',
+                'origin': 'Druida',
+                'type': 'Classe',
+                'level': 10
             },
             {
-                name: 'Vínculo Druídico',
-                description: 'Você pode inserir uma marca de luz em qualquer ser por toque gastando 15 MP: Toda vez que você ou o ser sofrer algum tipo de dano, o dano é dividido igualmente entre vocês. Toda vez que isto acontecer, você recupera +3 MP.',
-                origin: 'Druida',
-                type: 'Classe',
-                level: 20
+                'name': 'Peripécia',
+                'description': 'Aumenta o raio do Plano de Recuperação para 9m e dura 5 turnos. Você e aliados ganham +2 MP para cada teste bem-sucedido dentro da área.',
+                'origin': 'Druida',
+                'type': 'Classe',
+                'level': 15
             },
             {
-                name: 'Peripécia',
-                description: 'Você pode gastar 25 MP para criar uma área de um raio de 9m por 2 rodadas onde você e seus aliados ganham +10 MP para cada teste passado com sucesso para cada um que estiver presente na área.',
-                origin: 'Druida',
-                type: 'Classe',
-                level: 25
-            },
-            {
-                name: 'Vanguarda',
-                description: 'Os orbes agora dão 1d6+1 de dano além de você invocar 5 entre as seguintes possibilidades: Fogo, Água, Ar, Terra, Eletricidade, Gelo. Você pode escolher os tipos elementais dos orbes gerados.',
-                origin: 'Druida',
-                type: 'Classe',
-                level: 30
-            },
-            {
-                name: 'Domo Protetor',
-                description: 'Você pode gastar 20 MP para criar uma barreira mágica de 6m por 3 turnos que inibe qualquer ataque vindo de fora. Você e seus aliados conseguem atacar de dentro para fora, mas não de fora para dentro. Além disso, quem estiver dentro da barreira ganha +5 em chance de acerto.',
-                origin: 'Druida',
-                type: 'Classe',
-                level: 35
+                'name': 'Fraternidade',
+                'description': 'Três vezes ao dia, vincula os corações dos aliados em batalha. Ao sofrerem ataque, ganham +2 LP, +1 MP e +1 de dano por duas rodadas.',
+                'origin': 'Druida',
+                'type': 'Classe',
+                'level': 20
             }
         ],
 
         'Arcano': [
             {
-                name: 'Magia simbólica',
-                description: 'Você pode gastar 10 MP + O custo de mana de uma magia que você for utilizar para, como uma ação livre, para implantar símbolos mágicos que representam e ativam suas magias. Você pode usar essa habilidade para gravar suas magias em objetos ou superfícies, criando armadilhas, selos ou runas. Você também pode usar essa habilidade para desenhar seus símbolos no ar ou no chão, lançando suas magias de forma rápida e discreta. A Magia é ativada quando o inimigo encostar em seu símbolo ou quando ele entrar no alcance da magia (Se por exemplo sua magia alcançar 6m, enquanto a criatura estiver a 6m do seu símbolo, a magia ativará). A magia só se ativará no seu próximo turno.',
-                origin: 'Arcano',
-                type: 'Classe',
-                level: 0
+                'name': 'Magia Simbólica',
+                'description': 'Você pode gastar 2 MP mais o custo de uma magia para criar símbolos mágicos que representam e ativam suas magias como armadilhas ou runas.',
+                'origin': 'Arcano',
+                'type': 'Classe',
+                'level': 0
             },
             {
-                name: 'Concentração',
-                description: 'Uma vez por cena, você pode entrar em um estado de concentração, onde você recupera 1d20+LOG de LP. Caso você esteja em combate esta habilidade gastará uma Ação Completa.',
-                origin: 'Arcano',
-                type: 'Classe',
-                level: 5
+                'name': 'Concentração',
+                'description': 'Uma vez por cena, entra em estado de concentração e recupera 2d6 + FOC de LP. Em combate, consome uma ação completa.',
+                'origin': 'Arcano',
+                'type': 'Classe',
+                'level': 1
             },
             {
-                name: 'Magia Furtiva',
-                description: 'Conjurar magias por meio do Poder de Classe “Magia Simbólica” dá um adicional de 3d6 de dano ou cura extra.',
-                origin: 'Arcano',
-                type: 'Classe',
-                level: 10
+                'name': 'Magia Furtiva',
+                'description': 'Conjurar magias via Magia Simbólica adiciona +2d4+1 de dano ou cura extra.',
+                'origin': 'Arcano',
+                'type': 'Classe',
+                'level': 5
             },
             {
-                name: 'Aprendizado Crucial',
-                description: 'Você pode conjurar magias de nível 1 como uma Ação Livre. Só é possível conjurar uma magia por turno desse jeito, exceto se você for conjurar outra magia que já tenha como execução Ação Livre. Neste caso, poderá ser executas duas magias, uma de Ação Livre, e outra de uma outra ação qualquer (mas também executada como Ação Livre).',
-                origin: 'Arcano',
-                type: 'Classe',
-                level: 15
+                'name': 'Magia Resiliente',
+                'description': 'Ao resistirem a sua magia, gaste 3 MP para forçar novo teste com desvantagem. Adiciona FOC ao dano e cura de magias.',
+                'origin': 'Arcano',
+                'type': 'Classe',
+                'level': 10
             },
             {
-                name: 'Defesa Arcana',
-                description: 'No início de cada combate você recebe 2d10+LOG/2 de vida adicional.',
-                origin: 'Arcano',
-                type: 'Classe',
-                level: 20
+                'name': 'Adiar Magia',
+                'description': 'Por 5 MP extras, magias conjuradas ativam no mesmo turno.',
+                'origin': 'Arcano',
+                'type': 'Classe',
+                'level': 15
             },
             {
-                name: 'Adiar Magia',
-                description: 'Você pode gastar 10 MP extras para utilizar uma magia do tipo “conjurada” (magias que ativam depois de 1 ou X turnos) no mesmo turno.',
-                origin: 'Arcano',
-                type: 'Classe',
-                level: 25
-            },
-            {
-                name: 'Teletransporte Arcano',
-                description: 'Uma vez por cena, por 20 MP, você pode teletransportar quaisquer objetos ou pessoas que estejam se segurando em você para um lugar que você já passou ou já vivenciou. Caso você tente teletransportar o algo ou alguém contra sua vontade, ele faz um teste de Resistência Mágica. Se ele passar, o teletransporta falha e não será possível teletransportar o alvo novamente até o dia seguinte. Além disso, uma vez por combate quando te acertarem um ataque, você pode pagar 10 MP para se esquivar e se afastar 9m do alvo, automaticamente.',
-                origin: 'Arcano',
-                type: 'Classe',
-                level: 30
-            },
-            {
-                name: 'Intelecto Superior',
-                description: 'Você adiciona sua LOG ao dano e cura de suas magias.',
-                origin: 'Arcano',
-                type: 'Classe',
-                level: 35
+                'name': 'Ascensão Arcana',
+                'description': 'Margem de crítico de magias reduzida para 19. Sofre metade do dano de ataques mágicos.',
+                'origin': 'Arcano',
+                'type': 'Classe',
+                'level': 20
             }
         ],
 
         'Ladino': [
             {
-                name: 'Disfarce',
-                description: 'Caso você entre em furtividade com sucesso em seu turno, você ganha uma ação padrão extra.',
-                origin: 'Ladino',
-                type: 'Classe',
-                level: 0
+                'name': 'Disfarce',
+                'description': 'Caso você entre em furtividade com sucesso em seu turno, você ganha uma ação padrão extra.',
+                'origin': 'Ladino',
+                'type': 'Classe',
+                'level': 0
             },
             {
-                name: 'Cautela',
-                description: 'Caso você ataque um alvo desprevenido, seu dano é dobrado.',
-                origin: 'Ladino',
-                type: 'Classe',
-                level: 5
+                'name': 'Ligeireza',
+                'description': 'Caso esteja furtivo, você ganha duas ações de movimento no começo do turno. Andar ou correr não alerta criaturas próximas.',
+                'origin': 'Ladino',
+                'type': 'Classe',
+                'level': 1
             },
             {
-                name: 'Fobia',
-                description: 'Você pode pagar 15 MP para aplicar 2d8 de dano, deixar o alvo no estado de medo e inibir seus ataques até seu turno seguinte. Se você estiver em furtividade o dano é aumentado para 6d8.',
-                origin: 'Ladino',
-                type: 'Classe',
-                level: 10
+                'name': 'Ataque Duplo',
+                'description': 'Você pode atacar duas vezes no mesmo turno caso erre um ataque. Todos os ataques são silenciosos.',
+                'origin': 'Ladino',
+                'type': 'Classe',
+                'level': 5
             },
             {
-                name: 'Expurgo',
-                description: 'Caso o inimigo esteja com 10% ou menos de vida, seu próximo ataque o mata instantaneamente.',
-                origin: 'Ladino',
-                type: 'Classe',
-                level: 15
+                'name': 'Sempre Distante',
+                'description': 'Armas de fogo ou longa distância ganham +1 dado de dano. Caso esteja furtivo, ganham +2 dados adicionais do mesmo tipo de dano.',
+                'origin': 'Ladino',
+                'type': 'Classe',
+                'level': 10
             },
             {
-                name: 'Sempre Distante',
-                description: 'Armas de fogo ou de longa distância dão +1 dados do mesmo tipo de dano.',
-                origin: 'Ladino',
-                type: 'Classe',
-                level: 20
+                'name': 'Abscondido',
+                'description': 'Quando furtivo, você enxerga no escuro, ouve sons mais altos, vê mais longe e identifica criaturas escondidas. Ganha +2 AP, regenera +1 MP/turno e adiciona +10 de dano a ataques.',
+                'origin': 'Ladino',
+                'type': 'Classe',
+                'level': 15
             },
             {
-                name: 'Ataque Duplo',
-                description: 'Você pode atacar duas vezes no mesmo turno caso erre um ataque. Você não possuirá duas ações padrões por turno, somente duas oportunidades de ataque.',
-                origin: 'Ladino',
-                type: 'Classe',
-                level: 25
-            },
-            {
-                name: 'Dano Transmissível',
-                description: 'Caso você ataque com sucesso um alvo, você pode pagar 15 MP para aplicar um destes estados ao alvo e 3 oponentes próximos por 2 turnos: Queimadura (5d6 de dano de fogo), Envenenamento (5d6 de dano de toxina), Eletrizado (Qualquer dano aplicado ao alvo também se aplica a seres próximos em um raio de 6m e dobra dano de água), Congelado (O alvo não consegue se mexer ou fazer ataques físicos e dobra dano de fogo). Você só pode utilizar esta habilidade uma vez por combate.',
-                origin: 'Ladino',
-                type: 'Classe',
-                level: 30
-            },
-            {
-                name: 'Abscondido',
-                description: 'Quando você está furtivo você consegue enxergar no escuro, ouvir sons mais altos, ver mais longe e consegue identificar algo ou alguém que está furtivo. Além disso, você ganha +10 LP, +10 MP, +2 AP e +5 de dano extra em qualquer ataque enquanto estiver furtivo.',
-                origin: 'Ladino',
-                type: 'Classe',
-                level: 35
+                'name': 'Prejuízo',
+                'description': 'Se o alvo estiver em estado negativo, seus ataques acima de 15 na rolagem são críticos. Furtivo, dano crítico é multiplicado por 3.',
+                'origin': 'Ladino',
+                'type': 'Classe',
+                'level': 20
             }
         ]
     },
     subclass: {
-        Transcendentalista: [
+        // LUTADOR
+        'Polimorfo': [
             {
-                name: 'Esquiva Dimensional',
-                description: 'Com seus poderes transcendentais, você consegue acessar outra dimensão por tempo limitado, o vazio. Uilizando a energia do cosmos e a magia artifical como intermédio, como ação de reação (quando te atacarem) você pode usar a esquiva dimensional. A esquiva dimensional te garante a esquiva do ataque e você fica em outra dimensão por 1 rodada (no seu turno seguite, você volta). Quando o mago voltar da outra dimensão, ele pode escoolher em qual lugar ele irá reaparecer em um raio de 3m de onde ele usou a habilidade. A habilidade tem 1 rodada de tempo de recarga e não pode usar consecutivamente.',
-                origin: 'Transcendentalista',
-                type: 'Subclasse'
+                'name': 'Metamorfose Adaptativa',
+                'description': 'Sempre que você sofre dano, pode gastar 3 MP para reduzir esse dano em 50%. Esta habilidade pode ser ativada até 3 vezes por combate.',
+                'origin': 'Polimorfo',
+                'type': 'Subclasse',
+                'level': 10
             },
             {
-                name: 'Metacriação Sublime',
-                description: 'Um Mago Explorador Transcendentalista que se preze, gosta de criar coisas novas a partir dos poderes dos cosmos. Com estas habilidades, você possui a habilidade de criar coisas novas como nunca visto antes. (Você adquire os poderes mágicos "Fazer Poções" e "Alquimia" em seu estágio final, isto é, na maestria, mesmo não possuindo maestria elemental com o elemento. Além disso, armas criadas com o poder mágico "Alquimia" serão adciionadas em seu dano +3 dados do mesmo grau e +10 de pontos bônus em poções).',
-                origin: 'Transcendentalista',
-                type: 'Subclasse'
+                'name': 'Pele Resistente',
+                'description': 'Sua constituição se adapta automaticamente ao ambiente. Você ganha +2 AP permanente e é imune a condições climáticas extremas (calor, frio, radiação) e a efeitos negativos (queimadura, congelamento, necrose).',
+                'origin': 'Polimorfo',
+                'type': 'Subclasse',
+                'level': 15
             },
             {
-                name: 'Sabedoria Transcendental',
-                description: 'Sua sabedoria transcende todos os limites humanos. Você adquire conhecimento de todo o cosmos e sabe de quase todo fenômeno que nele ocorre (Você ganha +5 pontos de teste e +3 de sabedoria).',
-                origin: 'Transcendentalista',
-                type: 'Subclasse'
+                'name': 'Forma Primordial',
+                'description': 'Ao gastar todos seus MPs, você pode entrar no estado de \'Brutamonte\', onde ignora pontos de AP e diminui a margem de crítico em 2 pontos. Uma vez por dia. Dura até o fim do combate.',
+                'origin': 'Polimorfo',
+                'type': 'Subclasse',
+                'level': 20
+            }
+        ],
+        'Comandante': [
+            {
+                'name': 'Liderar',
+                'description': 'Sempre que um aliado atacar um inimigo que você atacou no turno anterior, o aliado ganha +2 no teste de acerto e +2d8 de dano, liderando seu ataque.',
+                'origin': 'Comandante',
+                'type': 'Subclasse',
+                'level': 10
+            },
+            {
+                'name': 'Postura Defensiva',
+                'description': 'Ao gastar 5 MP, você pode adotar uma postura defensiva por 2 turnos, concedendo +3 AP e +3 de Agilidade a si mesmo e todos os aliados próximos (raio de 6 metros). Durante esse período, seus ataques causam -1d8 de dano. Três vezes ao dia. Dura até o fim do combate ou até você cancelar.',
+                'origin': 'Comandante',
+                'type': 'Subclasse',
+                'level': 15
+            },
+            {
+                'name': 'Chamado à Glória',
+                'description': 'Três vezes ao dia, uma vez por combate, você pode gastar 12 MP para inspirar todos os aliados dentro de 15 metros. Eles ganham vantagem +2 (jogam +1d20+2) em todos os testes de ataque e resistência até o final do combate. Além disso, no final do turno de cada um, se curam em +1d6 LP e regeneram +1d4 MP.',
+                'origin': 'Comandante',
+                'type': 'Subclasse',
+                'level': 20
             }
         ],
 
-        Andarilho: [
+        // ESPECIALISTA
+        'Forasteiro': [
             {
-                name: 'Passo Divino',
-                description: 'Você ganha +4 em todos os testes que envolvem destreza, +2 em reflexos e aumenta seu deslocamento base para 27m.',
-                origin: 'Andarilho',
-                type: 'Subclasse'
+                'name': 'Perspicácia',
+                'description': 'Você tem +3 em todos os testes de Percepção em terrenos naturais. Marca automaticamente criaturas atacadas com \'Rastro da Presa\', permitindo saber sua localização até a morte em um raio de 10km. Descubra recursos ocultos com 50% de chance em testes de Percepção em ambientes naturais.',
+                'origin': 'Forasteiro',
+                'type': 'Subclasse',
+                'level': 10
             },
             {
-                name: 'Pressa Fádica',
-                description: 'A sua velocidade ultrapassa os limites humanos, fazendo com que tudo ao seu redor fique mais lento. Você pode gastar sua ação de movimento completa (isto é, gastar todo seu deslocamento) para diminuir o tempo do jogo pela metade em suas ações. Caso esteja em combate, automaticamente você sai como primeiro na iniciativa e ganha 2 ações padrões extras que podem ser gastas enquanto você permanecer naquele combate. Além disso você ganha +2 de agilidade.',
-                origin: 'Andarilho',
-                type: 'Subclasse'
+                'name': 'Espírito da Caçada',
+                'description': 'Aumenta seu dano em +4d6 ao identificar fraquezas de inimigos em terrenos naturais. Torna inimigos vulneráveis a ataques subsequentes por 1 rodada. Detecta criaturas em um raio de 30 metros, concedendo +3 em Furtividade ou Percepção contra aproximações inimigas.',
+                'origin': 'Forasteiro',
+                'type': 'Subclasse',
+                'level': 15
             },
             {
-                name: 'Movimentação Astral',
-                description: 'Seus pés não se locomovem mais neste plano. Seu corpo atinge um incrível patamar de suavidade, fazendo com que seus pés se locomovam em outro plano astral (Você não faz barulhos ao andar ou correr, fica invisível ao correr, pode entrar e sair de furitividade a hora que quiser e aumenta o deslocamento em +12).',
-                origin: 'Andarilho',
-                type: 'Subclasse'
+                'name': 'Caminho do Ermo',
+                'description': 'Por 3 rodadas, você se torna imune a danos ambientais, recebe +3 em testes de Sobrevivência e +2 em Percepção. Pode consumir recursos naturais para restaurar 2d6 LP ou MP por rodada. Afeta aliados próximos, aumentando resistência ambiental.',
+                'origin': 'Forasteiro',
+                'type': 'Subclasse',
+                'level': 20
+            }
+        ],
+        'Errante': [
+            {
+                'name': 'Trilheiro',
+                'description': 'Ignora penalidades de terreno difícil e permite aliados próximos fazerem o mesmo. Recebe +3 em testes de Sobrevivência e Percepção.',
+                'origin': 'Errante',
+                'type': 'Subclasse',
+                'level': 10
             },
             {
-                name: 'Embsocada Planar',
-                description: 'Você consegue atravessar paredes e objetos físicos não tão espessos se movendo em outro plano astral. Além disso, com esta habilidade, você pode atacar inimigos de forma despercebida (desde que eles não tenham de visto antes ou caso você esteja furtivo), sempre sendo um ataque desprevinido, causando o dobro de dano com um bônus de dano adicional igual ao seu deslocamento (Não é possível se mover após desferir um ataque com esta habilidade. Somente em ataques corpo-a-corpo).',
-                origin: 'Andarilho',
-                type: 'Subclasse'
+                'name': 'Resiliência Inata',
+                'description': 'Diminui todo dano recebido em -1d8+1.',
+                'origin': 'Errante',
+                'type': 'Subclasse',
+                'level': 15
             },
             {
-                name: 'Golpe Fantasma',
-                description: 'Ao realizar um ataque surpresa, seu golpe atravessa armaduras e defesas naturais, ignorando qualquer tipo de resistência física do alvo e adicionando +20 ao dano do ataque. Além disso você ganha +15m no seu descolamento base.',
-                origin: 'Andarilho',
-                type: 'Subclasse'
+                'name': 'Trilha da Fortuna',
+                'description': 'Uma vez por combate, ative um estado supremo por uma rodada para você e aliados: testes são automaticamente bem-sucedidos e adicionam +2d4 a qualquer dano ou cura realizada.',
+                'origin': 'Errante',
+                'type': 'Subclasse',
+                'level': 20
             }
         ],
 
-        Arquimago: [
+        // FEITICEIRO
+        'Conjurador': [
             {
-                name: 'Arquimagia',
-                description: 'Como arquimago, você estuda a magia profundamente, sabendo todas suas raizes e ramificações. (Você ganha +4 todos testes que envolvem foco e +2 de lógica).',
-                origin: 'Arquimago',
-                type: 'Subclasse'
+                'name': 'Conjuração',
+                'description': 'Magias do tipo conjurada causam +3d8 de dano adicional e ignoram 3 pontos de resistência mágica. Tempo de conjuração aumenta em +1 turno.',
+                'origin': 'Conjurador',
+                'type': 'Subclasse',
+                'level': 10
             },
             {
-                name: 'Aprimoramento Mágico',
-                description: 'Você atinge um patamar requintado da magia, liberando prorpriedades nunca vistas antes. Todas suas magias causam dano em área equivalente a +3m de raio (ou aumenta o alcance em mais +3m) e não causam danos a aliados. Além disso, elas recebem +2 dados do mesmo grau para complemento do ataque. Ademais, magias de nível 1 até o estágio 2 não custam mana.',
-                origin: 'Arquimago',
-                type: 'Subclasse'
+                'name': 'Sequela Perfeita',
+                'description': 'Ao lançar uma magia de dano com custo maior que 10 MP, escolha um inimigo atingido para ficar vulnerável a dano mágico (+50% de dano recebido) até o final do seu próximo turno.',
+                'origin': 'Conjurador',
+                'type': 'Subclasse',
+                'level': 15
             },
             {
-                name: 'Subsequência Arcana',
-                description: 'Suas magias ficam mais forte do que nunca, e com isso, você aprende-as usar em uma sequência perfeita. Caso você utilize uma mesma magia mais de uma vez no combate, seu dano é incrementado em +5 e seu custo é diminuído em -1 MP para cada vez que você utilizá-la, tendo um limite de 5 vezes. Se você usar outra magia diferente da mesma, você perde a bonificação, tendo que repetir o processo novamente. Além disso você adquirie visão verdadeira e prolonga suas magias contínuas em +2 turnos.',
-                origin: 'Arquimago',
-                type: 'Subclasse'
+                'name': 'Carga Rúnica',
+                'description': 'Magias conjuradas deixam uma runa explosiva no local ou objeto atingido. A runa detona em até 3 turnos, causando 4d8 de dano em inimigos num raio de 10 metros.',
+                'origin': 'Conjurador',
+                'type': 'Subclasse',
+                'level': 20
+            }
+        ],
+        'Elementalista': [
+            {
+                'name': 'Domínio Elemental',
+                'description': 'Escolha um elemento (fogo, água, ar, terra, eletricidade, luz, trevas ou não-elemental). Todas as suas magias desse elemento causam +2d6 de dano e têm +2 de chance de acerto. Você pode trocar o elemento escolhido durante um descanso longo.',
+                'origin': 'Elementalista',
+                'type': 'Subclasse',
+                'level': 10
+            },
+            {
+                'name': 'Fúria Elemental',
+                'description': 'Sempre que atingir um inimigo com uma magia, você pode escolher um efeito adicional:\n\n- **Fogo**: O inimigo recebe queimadura simples (1d6 de dano de fogo por 2 turnos).\n- **Água**: Reduz o deslocamento do inimigo em 6.\n- **Terra**: Atordoa o inimigo por 1 turno (Resistência Física para negar).\n- **Ar**: Derruba o inimigo (teste de Reflexos para evitar).',
+                'origin': 'Elementalista',
+                'type': 'Subclasse',
+                'level': 15
+            },
+            {
+                'name': 'Manifestação Elemental',
+                'description': 'Uma vez por combate, três vezes no dia, você pode invocar uma forma elemental durante duas rodadas. Escolha um elemento:\n\n- **Fogo**: Cria uma aura flamejante que causa 3d6 de dano a todos os inimigos próximos no início de cada turno. Seus ataques causam +1d12 de dano adicional.\n- **Água**: Você ganha resistência a ataques físicos e cura 1d8 LP por turno. Seus ataques causam 2d8 de dano e reduzem a velocidade dos inimigos.\n- **Terra**: Você ganha +5 AP e imunidade a atordoamento. Seus ataques causam 3d8 de dano e empurram inimigos em linha reta por 5 metros.\n- **Ar**: Sua velocidade dobra, você ganha vantagem em todos os testes que envolvem destreza e seus ataques causam 2d10 de dano adicional.',
+                'origin': 'Elementalista',
+                'type': 'Subclasse',
+                'level': 20
             }
         ],
 
-        Espectro: [
+        // MONGE
+        'Discípulo da Fúria': [
             {
-                name: 'Ocultismo',
-                description: 'O Espectro pode se mover através das sombras como se fossem água. Como ação livre, você pode se teletransportar para qualquer ponto dentro de 15 metros de uma sombra que você possa ver.',
-                origin: 'Espectro',
-                type: 'Subclasse'
+                'name': 'Ecos de Raiva',
+                'description': 'Sempre que você for alvo de um ataque crítico ou perder 50% ou mais de seus LPs, entre automaticamente no estado de Fúria no próximo turno. Além disso, ao perder LP pela primeira vez em combate, entre em fúria.',
+                'origin': 'Discípulo da Fúria',
+                'type': 'Subclasse',
+                'level': 10
             },
             {
-                name: 'Abstruso',
-                description: 'Suas habilidades em camuflagem beiram o obscuro completo. Enquanto estiver furtivo, você ganha +8 em todos testes que envolvem destreza. Além disso, você ganha +2 de destreza.',
-                origin: 'Espectro',
-                type: 'Subclasse'
+                'name': 'Impacto Devastador',
+                'description': 'Ataques no estado de Fúria ignoram 2 de AP do alvo. Ao entrar em Fúria, o primeiro ataque corpo a corpo no turno causa +1d20 de dano adicional.',
+                'origin': 'Discípulo da Fúria',
+                'type': 'Subclasse',
+                'level': 15
             },
             {
-                name: 'Escureza Lúgubre',
-                description: 'Enquanto estiver em furitivdade, todos seus ataques causam necrose fatal (5d12 de dano das trevas por 5 turnos).',
-                origin: 'Espectro',
-                type: 'Subclasse'
+                'name': 'Fúria Implacável',
+                'description': 'Ganha +2 em todos os testes que envolvem Vigor e Destreza enquanto estiver no estado de Fúria. Caso seus LPs estejam abaixo de 50%, fique em Fúria por tempo ilimitado até se curar ou morrer. Se derrotar um inimigo nesse estado, permaneça em Fúria por mais um turno sem custo adicional.',
+                'origin': 'Discípulo da Fúria',
+                'type': 'Subclasse',
+                'level': 20
+            }
+        ],
+        'Protetor da Alma': [
+            {
+                'name': 'Presença Tranquilizante',
+                'description': 'Ao entrar no estado de Calma, restaura 2d6 LP para você e aliados em um raio de 5 metros no início do turno. Inimigos na área têm desvantagem em ataques e sofrem -2 em testes de resistência enquanto aliados ganham +2 em testes de Agilidade e curam 1d4 LP ao final de cada turno.',
+                'origin': 'Protetor da Alma',
+                'type': 'Subclasse',
+                'level': 10
+            },
+            {
+                'name': 'Aura Serena',
+                'description': 'Aliados em um raio de 10 metros ganham +2 em testes de resistência mental e curam +1 LP por turno enquanto você estiver vivo.',
+                'origin': 'Protetor da Alma',
+                'type': 'Subclasse',
+                'level': 15
+            },
+            {
+                'name': 'Harmonia',
+                'description': 'Ao entrar em calma 3 vezes consecutivas, você entra no estado de Harmonia: aliados próximos ganham imunidade a dano mágico, +3 em testes envolvendo Destreza e curas feitas por você ou aliados têm +2d8 de bônus. Ao final, cure todos em 3d8 e remova condições debilitantes. Dura até seu próximo turno.',
+                'origin': 'Protetor da Alma',
+                'type': 'Subclasse',
+                'level': 20
             }
         ],
 
-        Polimorfo: [
+        // BRUXO
+        'Necromante': [
             {
-                name: 'Morfo Superior',
-                description: 'Seu corpo adquire uma forma de defesa insuperável. você ganha +5 em testes que usam vigor e ganha +30 LP Permanentes.',
-                origin: 'Polimorfo',
-                type: 'Subclasse'
+                'name': 'Aura Decadente',
+                'description': 'Seus ataques e magias sombrias causam +1d6 de dano adicional. Inimigos caídos a 0 LP por suas magias não podem ser ressuscitados ou curados. Inimigos em um raio de 5 metros sofrem -2 em testes de resistência física e recebem 1d4 de dano por turno.',
+                'origin': 'Necromante',
+                'type': 'Subclasse',
+                'level': 10
             },
             {
-                name: 'Polimorfismo',
-                description: 'Seu corpo é moldável ao seu favor. Seu corpo se adapta ao combate, fazendo com que ganhe +2 de Vigor e adquira a habilidade de moldar qualquer parte do seu corpo como ação livre ao critério do mestre.',
-                origin: 'Polimorfo',
-                type: 'Subclasse'
+                'name': 'Legião Profana',
+                'description': 'Gaste 10 MP para conjurar até 6 mortos-vivos como lacaios, que duram 3 turnos ou até serem derrotados. Cada lacaio causa 1d10 de dano e possui 15 LP. Ao término, recupere 1d6 MP por lacaio restante.',
+                'origin': 'Necromante',
+                'type': 'Subclasse',
+                'level': 15
             },
             {
-                name: 'Corpo de Ferro',
-                description: 'Os membros do seu corpo podem se moldar em objetos de metal. Além disso, você pode gastar 50 LP para ficar imortal durante 2 rodadas como ação padrão, você pode usar esta habildiade 1 vez por combate.', 
-                origin: 'Polimorfo',
-                type: 'Subclasse'
+                'name': 'Vínculo Obscuro',
+                'description': 'Transfira 1d6 LP de aliados ou lacaios para si ou outro aliado em um raio de 10 metros. Mortos-vivos temporariamente criados por você voltam com +2d6 de ataque e +2 AP, mas perdem 10 LP por turno.',
+                'origin': 'Necromante',
+                'type': 'Subclasse',
+                'level': 20
+            }
+        ],
+        'Espiritista': [
+            {
+                'name': 'Aliança Espectral',
+                'description': 'Invoque um espírito aliado no início de cada combate como ação livre. Espíritos disponíveis: Espírito de Cura (+1d4 LP por turno a um aliado) ou Espírito de Ataque (2d8 de dano em inimigos em um raio de 5m). Ambos possuem 20 LP e são atingidos apenas por ataques mágicos.',
+                'origin': 'Espiritista',
+                'type': 'Subclasse',
+                'level': 10
+            },
+            {
+                'name': 'Sustento Espiritual',
+                'description': 'Recupere 2 MP sempre que um espírito curar um aliado ou causar dano a um inimigo.',
+                'origin': 'Espiritista',
+                'type': 'Subclasse',
+                'level': 15
+            },
+            {
+                'name': 'Chamado dos Ancestrais',
+                'description': 'Adicione +3 espíritos ao seu deck espiritual: Espírito Protetor (+2 AP a um aliado), Espírito Guerreiro (4d10 de dano a um inimigo) e Espírito da Morte (necrose mortal de 3d6 de dano das trevas, custando 2 LP por turno). Controle dois espíritos simultaneamente.',
+                'origin': 'Espiritista',
+                'type': 'Subclasse',
+                'level': 20
+            }
+        ],
+
+        // DRUIDA
+
+        'Animante': [
+            {
+                'name': 'Ciclo Vital',
+                'description': 'Sempre que um aliado cair a 0 LP, você pode gastar 10 MP para estabilizá-lo automaticamente e curar 3d6 LP. Disponível uma vez para cada aliado por combate.',
+                'origin': 'Animante',
+                'type': 'Subclasse',
+                'level': 10
+            },
+            {
+                'name': 'Fraternidade',
+                'description': 'Três vezes por dia, uma vez por combate, você vincula os corações de todos os aliados que estão em batalha com você. Cada vez que eles sofrerem um ataque, todos ganham +3 LP, +2 MP e +1 de dano. Dura duas rodadas. Você pode compartilhar até 25 LP com um aliado em um raio de 3 metros, doando energia vital. Disponível uma vez para cada aliado por combate.',
+                'origin': 'Animante',
+                'type': 'Subclasse',
+                'level': 15
+            },
+            {
+                'name': 'Animação',
+                'description': 'Ao pagar 15 MP, você pode criar suas próprias magias-vivas. Todas elas duram por 2 rodadas e possuem 25 LP e 15 AP. Escolha entre os seguintes tipos de magias-vivas: Inteligente (+5 em testes), Protetora (+3 AP em raio de 3 metros), Lutadora (dá 4d4 de dano, ataca duas vezes por turno), Curadora (cura 1d4 por turno), Guardiã (reanima aliados caídos com 100% LP e MP), ou Espiritual (causa ou cura baseado no número de turnos que ficou viva).',
+                'origin': 'Animante',
+                'type': 'Subclasse',
+                'level': 20
+            }
+        ],
+        'Naturomante': [
+            {
+                'name': 'Vanguarda',
+                'description': 'Uma vez por combate, para cada aliado que você fortalecer ou curar, você invoca 5 orbes elementais diferentes aleatórios que causam 1d8 de dano cada. Além disso, aliados fortalecidos ou curados durante o turno ganham +1d4 para utilizar em seu próximo ataque ou teste.',
+                'origin': 'Naturomante',
+                'type': 'Subclasse',
+                'level': 10
+            },
+            {
+                'name': 'Vínculo Florido',
+                'description': 'Você pode transferir 1d6 LP de si mesmo para aliados em um raio de 10 metros. Sempre que um aliado cair a 0 LP, pode revivê-lo temporariamente com 50% de LP por 1 turno, durante o qual ele tem +2 de AP e ataques causam dano de luz. Após esse turno, o aliado permanece consciente com 1 LP.',
+                'origin': 'Naturomante',
+                'type': 'Subclasse',
+                'level': 15
+            },
+            {
+                'name': 'Força da Vida',
+                'description': 'Uma vez por combate, gaste 10 MP para manifestar energia vital em todo o campo de batalha por uma rodada. Todos os aliados recuperam 2d8 LP no início de cada turno, aliados invocados ganham +2d8 de dano, inimigos sofrem 1d12 de dano por turno e têm desvantagem em ataques. Ao final, aliados em um raio de 15 metros recebem +10 MP e +10 LP.',
+                'origin': 'Naturomante',
+                'type': 'Subclasse',
+                'level': 20
+            }
+        ],
+
+        // ARCANO
+
+        'Arquimago': [
+            {
+                'name': 'Teia da Realidade',
+                'description': 'Você pode lançar duas magias simultaneamente, desde que ambas sejam de nível 2 ou inferior. O custo de MP para cada magia é aumentado em +1.',
+                'origin': 'Arquimago',
+                'type': 'Subclasse',
+                'level': 10
+            },
+            {
+                'name': 'Anulação Mágica',
+                'description': 'Gastando 8 MP, você pode cancelar uma magia de até nível 4 conjurada por um inimigo, desde que esteja dentro de 10 metros. Essa habilidade exige um teste de FOC contra a RES Mágica do inimigo.',
+                'origin': 'Arquimago',
+                'type': 'Subclasse',
+                'level': 15
+            },
+            {
+                'name': 'Manipulação Elemental',
+                'description': 'Suas magias elementais podem ser alteradas para qualquer elemento (fogo, água, terra ou ar) antes de serem lançadas, adaptando-as às fraquezas dos inimigos. Além disso, todas suas magias causam um adicional de +1d8 de dano ou de cura.',
+                'origin': 'Arquimago',
+                'type': 'Subclasse',
+                'level': 20
+            }
+        ],
+        'Metamágico': [
+            {
+                'name': 'Intensificação Mágica',
+                'description': 'Ao conjurar uma magia, você pode gastar 2 MP adicionais para aumentar o dano ou a cura em +2d8. Esse efeito pode ser aplicado a qualquer magia que você lançar.',
+                'origin': 'Metamágico',
+                'type': 'Subclasse',
+                'level': 10
+            },
+            {
+                'name': 'Conjuração Rápida',
+                'description': 'Você pode lançar magias de nível 1 como ação bônus uma vez por turno.',
+                'origin': 'Metamágico',
+                'type': 'Subclasse',
+                'level': 15
+            },
+            {
+                'name': 'Estágio Quatro',
+                'description': 'Você consegue utilizar o \'estágio 4\' de magias nível 1, 2 e 3 pagando um adicional de 12 MP, obtendo efeitos aprimorados como dano aumentado em +3d10, área dobrada, margem de crítico reduzida para 18 e duração de magias sustentadas aumentada. Para magias de nível 4, o custo é 20 MP.',
+                'origin': 'Metamágico',
+                'type': 'Subclasse',
+                'level': 20
+            }
+        ],
+
+        // LADINO
+
+        'Espectro': [
+            {
+                'name': 'Desvanecer',
+                'description': 'Gastando 6 MP, você pode se tornar invisível por 2 turnos. Durante esse período, ataques contra você têm desvantagem, e ataques feitos por você furtivamente causam +1d10 de dano adicional. Fora de combate dura 15 minutos.',
+                'origin': 'Espectro',
+                'type': 'Subclasse',
+                'level': 10
+            },
+            {
+                'name': 'Sombras Penetrantes',
+                'description': 'Enquanto estiver furtivo, caso ataque um inimigo, ele sofre desvantagem em testes de resistência física, mágica e mental contra você. Além disso, você causa +2d6 de dano extra (enquanto estiver furtivo), mesmo que erre o ataque.',
+                'origin': 'Espectro',
+                'type': 'Subclasse',
+                'level': 15
+            },
+            {
+                'name': 'Assassino Etéreo',
+                'description': 'Sempre que atacar furtivamente, você pode gastar 8 MP para transformar o dano do ataque em dano mágico, ignorando completamente a armadura do inimigo.',
+                'origin': 'Espectro',
+                'type': 'Subclasse',
+                'level': 20
+            }
+        ],
+        'Estrategista': [
+            {
+                'name': 'Ataque Calculado',
+                'description': 'Sempre que você atacar um inimigo que ainda não tenha agido no combate, você adiciona +3d8 de dano ao ataque.',
+                'origin': 'Estrategista',
+                'type': 'Subclasse',
+                'level': 10
+            },
+            {
+                'name': 'Reflexos Táticos',
+                'description': 'Você pode se esquivar de um primeiro ataque uma vez por combate e contra-atacar. Além disso, ganhe uma Retaliação contra a criatura que realizou o ataque.',
+                'origin': 'Estrategista',
+                'type': 'Subclasse',
+                'level': 15
+            },
+            {
+                'name': 'Ritmo da Batalha',
+                'description': 'Uma vez por combate, você pode gastar 10 MP para entrar em um estado de domínio total por duas rodadas: realize dois ataques como parte de uma única ação padrão, todos os ataques ganham +2 em chance de acerto e ignoram 2 pontos de armadura. Inimigos atacados por você têm desvantagem em seus ataques no turno seguinte.',
+                'origin': 'Estrategista',
+                'type': 'Subclasse',
+                'level': 20
             }
         ]
     },
     bonus: [],
-    powers: []
+    occupation: [
+        {
+            'name': 'Memorável',
+            'description': 'Seu carisma convence o público. Testes que usam CAR podem ser somados a +1d10 além de jogar com vantagem (adiciona +1d20 para o teste) se forem pagos 2 MP.',
+            'type': 'Profissão',
+            'origin': 'Artista'
+        },
+        {
+            'name': 'Salvador de Vidas',
+            'description': 'Pode estabilizar um aliado caído (com 0 PV) como ação livre, restaurando 1d10 + Medicina. Pode ser usado 1 vez por combate ou cena.',
+            'type': 'Profissão',
+            'origin': 'Médico'
+        },
+        {
+            'name': 'Disciplina de Combate',
+            'description': 'Pode rolar novamente qualquer teste de Reflexos ou Liderança uma vez por combate.',
+            'type': 'Profissão',
+            'origin': 'Militar'
+        },
+        {
+            'name': 'Golpe Sorrateiro',
+            'description': 'Quando atacar um inimigo pelas costas ou em emboscadas, adicione 1d10 ao dano causado.',
+            'type': 'Profissão',
+            'origin': 'Mafioso'
+        },
+        {
+            'name': 'Refogado Revigorante',
+            'description': 'Como uma ação, pode preparar uma refeição simples que restaura 1d8+1 PV para até 3 aliados (uma vez por cena).',
+            'type': 'Profissão',
+            'origin': 'Cozinheiro'
+        },
+        {
+            'name': 'Improvisação',
+            'description': 'Pode gastar 1d4 turnos para construir um dispositivo, bugiganga, aparato ou armadilha que pode dar vantagem em um teste específico, dano, cura, entre outros (critério do Mestre).',
+            'type': 'Profissão',
+            'origin': 'Inventor'
+        },
+        {
+            'name': 'Cultivador',
+            'description': 'Pode criar um pequeno jardim que gera suprimentos básicos após 1d4 dias (critério do Mestre).',
+            'type': 'Profissão',
+            'origin': 'Jardineiro'
+        },
+        {
+            'name': 'Hacker',
+            'description': 'Pode invadir sistemas eletrônicos ou robôs, ganhando controle temporário por 1d6 turnos.',
+            'type': 'Profissão',
+            'origin': 'Programador'
+        },
+        {
+            'name': 'Análise Rápida',
+            'description': 'Pode identificar fraquezas de inimigos, concedendo vantagem a aliados por 2 turnos.',
+            'type': 'Profissão',
+            'origin': 'Cientista'
+        },
+        {
+            'name': 'Descoberta',
+            'description': 'Uma vez por cena, pode realizar um teste de Conhecimento com vantagem para encontrar informações úteis ou resolver enigmas.',
+            'type': 'Profissão',
+            'origin': 'Pesquisador'
+        },
+        {
+            'name': 'Planejamento',
+            'description': 'Concede +1d8 a testes de um aliado próximo por dois turnos (uma vez por cena).',
+            'type': 'Profissão',
+            'origin': 'Empresário'
+        },
+        {
+            'name': 'Mentoria',
+            'description': 'Pode ensinar um aliado, concedendo vantagem em um teste de sua escolha (uma vez por cena).',
+            'type': 'Profissão',
+            'origin': 'Professor'
+        },
+        {
+            'name': 'Palavras que Movem',
+            'description': 'Pode convencer NPCs a realizar uma ação específica, rolando Argumentação com vantagem.',
+            'type': 'Profissão',
+            'origin': 'Político'
+        },
+        {
+            'name': 'Mestre do Crime',
+            'description': 'Pode realizar um teste de Furtividade ou Ladinagem com vantagem uma vez por cena.',
+            'type': 'Profissão',
+            'origin': 'Criminoso'
+        },
+        {
+            'name': 'Construtor',
+            'description': 'Pode improvisar uma barreira ou dispositivo funcional com materiais disponíveis (critério do Mestre).',
+            'type': 'Profissão',
+            'origin': 'Engenheiro'
+        },
+        {
+            'name': 'Manutenção Rápida',
+            'description': 'Pode restaurar temporariamente um veículo ou equipamento quebrado em 1d4 turnos.',
+            'type': 'Profissão',
+            'origin': 'Mecânico'
+        },
+        {
+            'name': 'Versatilidade',
+            'description': 'Pode escolher uma habilidade de outra profissão por uma cena (uma vez por dia).',
+            'type': 'Profissão',
+            'origin': 'Autônomo'
+        },
+        {
+            'name': 'Explosão de Energia',
+            'description': 'Pode adicionar +1d10 a um teste de Atletismo ou Reflexos (uma vez por cena).',
+            'type': 'Profissão',
+            'origin': 'Atleta'
+        },
+        {
+            'name': 'Olhos de Águia',
+            'description': 'Pode identificar detalhes cruciais em uma cena, concedendo vantagem a testes de Percepção.',
+            'type': 'Profissão',
+            'origin': 'Detetive'
+        },
+        {
+            'name': 'Caminho Seguro',
+            'description': 'Reduz pela metade o tempo necessário para viajar ou explorar uma área, evitando armadilhas e perigos ocultos.',
+            'type': 'Profissão',
+            'origin': 'Sucateiro'
+        },
+        {
+            'name': 'Caçada Precisa',
+            'description': 'Pode rolar novamente um teste de Pontaria contra um alvo.',
+            'type': 'Profissão',
+            'origin': 'Caçador'
+        },
+        {
+            'name': 'Proteção Divina',
+            'description': 'Pode conceder +1d6 em testes de RES Mental ou RES Física para um aliado (uma vez por cena).',
+            'type': 'Profissão',
+            'origin': 'Clérigo'
+        },
+        {
+            'name': 'Resiliente',
+            'description': 'Pode evitar a morte uma vez por cena, ficando com 1 PV em vez de cair.',
+            'type': 'Profissão',
+            'origin': 'Desempregado'
+        }
+    ]
 }

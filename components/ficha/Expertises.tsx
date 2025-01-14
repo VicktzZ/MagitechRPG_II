@@ -4,7 +4,7 @@ import { Box, Button, Grid,Typography, useTheme } from '@mui/material';
 import { blue, green, grey, purple, yellow } from '@mui/material/colors';
 import { useFormikContext, type FormikContextType } from 'formik';
 import { useState, type ReactElement, useRef, useCallback, useMemo } from 'react';
-import { lineageExpertises } from '@constants/lineageExpertises';
+import { lineageExpertises, occupationsExpertises } from '@constants/lineageExpertises';
 
 import type { 
     Ficha,
@@ -97,16 +97,17 @@ export default function Expertises({ disabled }: { disabled?: boolean }): ReactE
     
     const tests = useMemo(() => {
         if (!disabled) {
+            const lineageOrOccupationExpertises: typeof lineageExpertises = (f.values.mode === 'Classic' ? lineageExpertises : occupationsExpertises) as any
             const lineage: Lineage['name'] = f.values.lineage as unknown as Lineage['name']
-            const expertiseOfLineage = lineageExpertises[lineage] 
+            const expertiseOfLineage = lineageOrOccupationExpertises[lineage] 
             let expertiseOfLineageRef: typeof expertiseOfLineage
     
             if (lineageRef.current) {
-                expertiseOfLineageRef = lineageExpertises[lineageRef.current]
+                expertiseOfLineageRef = lineageOrOccupationExpertises[lineageRef.current]
     
                 if (expertiseOfLineageRef?.tests) {
                     Object.keys(expertiseOfLineageRef.tests).forEach((key: string) => {
-                        const k: keyof ExpertisesType = key as keyof ExpertisesType
+                        const k = key as keyof ExpertisesType
                         f.values.expertises[k].value -= expertiseOfLineageRef.tests?.[k] ?? 0
                     })
                 }
@@ -181,17 +182,17 @@ export default function Expertises({ disabled }: { disabled?: boolean }): ReactE
                         variant='caption'
                         fontWeight={900}
                         color={blue[500]}
-                    >Competente: {'< 10'}</Typography>
+                    >Competente: {'< 7'}</Typography>
                     <Typography 
                         variant='caption'
                         fontWeight={900}
                         color={purple[500]}
-                    >Experiente: {'< 15'}</Typography>
+                    >Experiente: {'< 9'}</Typography>
                     <Typography 
                         variant='caption'
                         fontWeight={900}
                         color={yellow[500]}
-                    >Especialista: {'15+'}</Typography>
+                    >Especialista: {'10+'}</Typography>
                 </Box>
             </Box>
         </>

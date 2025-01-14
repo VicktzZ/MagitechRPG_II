@@ -1,7 +1,15 @@
 /* eslint-disable max-len */
-import type { Item, Lineage, Weapon } from '@types';
+import type { Lineage, MergedItems, Occupation } from '@types';
 
-export const lineageItems: Record<Lineage['name'], Array<(Item | Weapon<'Leve' | 'Pesada'>) & { type: 'weapon' | 'armor' | 'item' }>> = {
+export const lineageItems: 
+Record<
+    Lineage['name'],
+    Array<
+        Partial<
+            MergedItems<any>
+        >
+    >
+> = {
     'Órfão': [
         {
             name: 'Pelúcia mágica',
@@ -319,6 +327,339 @@ export const lineageItems: Record<Lineage['name'], Array<(Item | Weapon<'Leve' |
             weight: 0,
             effects: [ '+2 em testes de Percepção para encontrar pistas ou evidências.' ],
             level: 0
+        }
+    ]
+}
+
+export const occupationItems: 
+Record<
+    Occupation['name'],
+    Array<
+        Partial<
+            MergedItems<any>
+        >
+    >
+> = {
+    'Artista': [
+        {
+            name: 'Instrumento Musical',
+            description: 'Um instrumento a sua escolha: Você pode tocá-lo como ação livre para tirar um alvo (1 vez por combate ou cena) de um dos seguintes estados: medo, controle mental, estresse ou descontrole, inconsciente ou coma, confuso e insano.\nObtido pela profissão: Artista',
+            kind: 'Utilidade',
+            type: 'item',
+            weight: 0.5,
+            effects: [ 'Um instrumento musical a sua escolha.' ],
+            rarity: 'Especial'
+        }
+    ],
+
+    'Médico': [
+        {
+            name: 'Kit médico',
+            description: 'Kit Médico: Um conjunto de ferramentas básicas de primeiros socorros. Permite realizar um teste de Medicina para remover veneno, doença, ou efeitos debilitantes como cegueira ou paralisia.\nObtido pela profissão: Médico',
+            kind: 'Utilidade',
+            type: 'item',
+            weight: 1.5,
+            quantity: 1,
+            effects: [ 'Cura o alvo em 3d6+2.' ],
+            rarity: 'Especial'
+        }
+    ],
+
+    'Militar': [
+        {
+            name: 'Arma de Serviço',
+            description: 'Arma de Serviço: Escolha uma arma leve entre pistola, revólver, pistola tática e faca para adicionar em seu inventário. Esta arma tem +2 no dano em suas mãos.\nObtido pela profissão: Militar',
+            kind: 'Utilidade',
+            type: 'item',
+            weight: 0,
+            quantity: 1,
+            effects: [ 'Uma arma leve entre pistola, revólver, pistola tática.' ],
+            rarity: 'Especial'
+        }
+    ],
+
+    'Mafioso': [
+        {
+            name: 'Canivete Disfarçado',
+            description: 'Canivete Disfarçado: Uma arma pequena e discreta que ignora 2 pontos de armadura.\nObtido pela profissão: Mafioso',
+            categ: 'Arma Branca (Leve)',
+            type: 'weapon',
+            range: 'Corpo-a-corpo',
+            hit: 'des',
+            ammo: 'Não consome',
+            bonus: 'Agilidade',
+            weight: 0.3,
+            kind: 'Padrão',
+            effect: {
+                value: '1d6',
+                critValue: '2d6',
+                critChance: 20,
+                kind: 'damage',
+                effectType: 'Perfurante'
+            },
+            rarity: 'Especial'
+        }
+    ],
+
+    'Cozinheiro': [
+        {
+            name: 'Faca de Cozinha',
+            description: 'Faca de Cozinha: Uma arma improvisada que pode ser usada em combate.\nObtido pela profissão: Cozinheiro',
+            categ: 'Arma Branca (Leve)',
+            type: 'weapon',
+            range: 'Corpo-a-corpo',
+            hit: 'des',
+            ammo: 'Não consome',
+            bonus: 'Luta',
+            weight: 0.5,
+            kind: 'Padrão',
+            effect: {
+                value: '1d12',
+                critValue: '2d12',
+                critChance: 20,
+                kind: 'damage',
+                effectType: 'Cortante'
+            },
+            rarity: 'Especial'
+        }
+    ],
+
+    'Inventor': [
+        {
+            name: 'Kit de Ferramentas',
+            description: 'Kit de Ferramentas: Necessário para criar ou consertar dispositivos. Reduz a DT de Tecnologia em -1.\nObtido pela profissão: Inventor',
+            kind: 'Utilidade',
+            type: 'item',
+            weight: 2,
+            quantity: 1,
+            effects: [ 'Necessário para criar ou consertar dispositivos. Reduz a DT de Tecnologia em -1.' ],
+            rarity: 'Especial'
+        }
+    ],
+
+    'Jardineiro': [
+        {
+            name: 'Ferramenta de Jardinagem',
+            description: 'Ferramenta de Jardinagem: Uma pá ou enxada que também pode ser usada como arma improvisada (+1 de dano).\nObtido pela profissão: Jardineiro',
+            type: 'item',
+            weight: 2,
+            kind: 'Utilidade',
+            effects: [ 'Uma pá ou enxada que também pode ser usada como arma improvisada.' ],
+            rarity: 'Especial'
+        }
+    ],
+
+    'Programador': [
+        {
+            name: 'Notebook',
+            description: 'Notebook: Permite realizar testes de Tecnologia com vantagem em sistemas eletrônicos.\nObtido pela profissão: Programador',
+            type: 'item',
+            weight: 1.5,
+            kind: 'Utilidade',
+            effects: [ 'Permite realizar testes de Tecnologia com vantagem em sistemas eletrônicos.' ],
+            rarity: 'Especial'
+        }
+    ],
+
+    'Cientista': [
+        {
+            name: 'Kit de Análise',
+            description: 'Kit de Análise: Permite realizar testes de Investigação para identificar substâncias ou objetos desconhecidos.\nObtido pela profissão: Cientista',
+            type: 'item',
+            weight: 0.8,
+            kind: 'Utilidade',
+            effects: [ 'Permite realizar testes de Investigação para identificar substâncias ou objetos desconhecidos.' ],
+            rarity: 'Especial'
+        }
+    ],
+
+    'Pesquisador': [
+        {
+            name: 'Caderno de Anotações',
+            description: 'Caderno de Anotações: Permite lembrar ou registrar informações importantes, concedendo +3 em testes de Investigação ou Conhecimento.',
+            type: 'item',
+            weight: 0.3,
+            kind: 'Utilidade',
+            effects: [ 'Permite lembrar ou registrar informações importantes, concedendo +3 em testes de Investigação ou Conhecimento.' ],
+            rarity: 'Especial'
+        }
+    ],
+
+    'Empresário': [
+        {
+            name: 'Relógio de Luxo',
+            description: 'Relógio de Luxo: Um item que impressiona, concedendo +1d8 em testes de Persuasão quando exibido.\nObtido pela profissão: Empresário',
+            type: 'item',
+            weight: 0.2,
+            kind: 'Utilidade',
+            effects: [ 'Um item que impressiona, concedendo +1d8 em testes de Persuasão quando exibido.' ],
+            rarity: 'Especial'
+        }
+    ],
+
+    'Professor': [
+        {
+            name: 'Manual Didático',
+            description: 'Manual Didático: Um livro ou guia prático que concede +2 em testes de Conhecimento relacionados a um tema específico.\nObtido pela profissão: Professor',
+            type: 'item',
+            weight: 0.8,
+            kind: 'Utilidade',
+            effects: [ 'Um livro ou guia prático que concede +2 em testes de Conhecimento relacionados a um tema específico.' ],
+            rarity: 'Especial'
+        }
+    ],
+    
+    'Político': [
+        {
+            name: 'Broche de Autoridade',
+            description: 'Broche de Autoridade: Um acessório que reforça sua credibilidade, concedendo +1d10 em testes de Liderança ou Persuasão.\nObtido pela profissão: Político',
+            type: 'item',
+            weight: 0.1,
+            kind: 'Utilidade',
+            effects: [ 'Um acessório que reforça sua credibilidade, concedendo +1d10 em testes de Liderança ou Persuasão.' ],
+            rarity: 'Especial'
+        }
+    ],
+
+    'Criminoso': [
+        {
+            name: 'Kit de Arrombamento',
+            description: 'Kit de Arrombamento: Ferramentas simples que facilitam testes de Ladinagem para abrir fechaduras (Diminui a DT em -1).\nObtido pela profissão: Criminoso',
+            type: 'item',
+            weight: 0.6,
+            kind: 'Utilidade',
+            effects: [ 'Ferramentas simples que facilitam testes de Ladinagem para abrir fechaduras (Diminui a DT em -1).' ],
+            rarity: 'Especial'
+        }
+    ],
+
+    'Engenheiro': [
+        {
+            name: 'Chave Inglesa',
+            description: 'Chave Inglesa: Ferramenta robusta que também pode ser usada como arma improvisada (+1 de dano).\nObtido pela profissão: Engenheiro',
+            categ: 'Arma Branca (Leve)',
+            type: 'weapon',
+            range: 'Corpo-a-corpo',
+            hit: 'vig',
+            ammo: 'Não consome',
+            bonus: 'Luta',
+            weight: 2,
+            kind: 'Padrão',
+            effect: {
+                value: '2d6+1',
+                critValue: '4d6+2',
+                critChance: 20,
+                kind: 'damage',
+                effectType: 'Impactante'
+            },
+            rarity: 'Especial'
+        }
+    ],
+
+    'Mecânico': [
+        {
+            name: 'Caixa de Ferramentas',
+            description: 'Caixa de Ferramentas: Reduz a dificuldade de testes de Tecnologia relacionados a reparos (-1 na DT).\nObtido pela profissão: Mecânico',
+            type: 'item',
+            weight: 2,
+            kind: 'Utilidade',
+            effects: [ 'Reduz a dificuldade de testes de Tecnologia relacionados a reparos (-1 na DT).' ],
+            rarity: 'Especial'
+        }
+    ],
+
+    'Autônomo': [
+        {
+            name: 'Ferramenta Multifuncional',
+            description: 'Ferramenta Multifuncional: Uma ferramenta versátil que pode ser usada para reparos simples ou improvisações.\nObtido pela profissão: Autônomo',
+            type: 'item',
+            weight: 1,
+            kind: 'Utilidade',
+            effects: [ 'Uma ferramenta versátil que pode ser usada para reparos simples ou improvisações.' ],
+            rarity: 'Especial'
+        }
+    ],
+
+    'Atleta': [
+        {
+            name: 'Tênis de Alta Performance',
+            description: 'Tênis de Alta Performance: Reduz o gasto de movimento em terrenos difíceis. (Você não sofre penalidades ao estar em terrenos acidentados)\nObtido pela profissão: Atleta',
+            type: 'item',
+            weight: 0.4,
+            kind: 'Utilidade',
+            effects: [ 'Reduz o gasto de movimento em terrenos difíceis. ( Vocé não sofre penalidades ao estar em terrenos acidentados).' ],
+            rarity: 'Especial'
+        }
+    ],
+
+    'Detetive': [
+        {
+            name: 'Caderno de Investigação',
+            description: 'Caderno de Investigação: Auxilia na organização de pistas, concedendo +1d8 em testes de Investigação.\nObtido pela profissão: Detetive',
+            type: 'item',
+            weight: 0.2,
+            kind: 'Utilidade',
+            effects: [ 'Auxilia na organização de pistas, concedendo +1d8 em testes de Investigação.' ],
+            rarity: 'Especial'
+        }
+    ],
+
+    'Sucateiro': [
+        {
+            name: 'Binóculos',
+            description: 'Binóculos: Permite enxergar detalhes em longa distância, concedendo vantagem em testes de Percepção para localizar algo.\nObtido pela profissão: Sucateiro',
+            type: 'item',
+            weight: 0.2,
+            kind: 'Utilidade',
+            effects: [ 'Permite enxergar detalhes em longa distância, concedendo vantagem em testes de Percepção para localizar algo.' ],
+            rarity: 'Especial'
+        }
+    ],
+
+    'Caçador': [
+        {
+            name: 'Arco curto',
+            description: 'Arco curto: Uma arma simples a longa distância.\nObtido pela profissão: Caçador',
+            categ: 'Arma Branca (Leve)',
+            type: 'weapon',
+            range: 'Médio (18m)',
+            hit: 'des',
+            ammo: 'Flecha',
+            bonus: 'Pontaria',
+            weight: 1,
+            kind: 'Padrão',
+            effect: {
+                value: '1d10',
+                critValue: '2d10',
+                critChance: 20,
+                kind: 'damage',
+                effectType: 'Perfurante'
+            },
+            rarity: 'Especial'
+        }
+    ],
+
+    'Clérigo': [
+        {
+            name: 'Relíquia Sagrada',
+            description: 'Relíquia Sagrada: Um artefato que causa dano extra (1d6) contra criaturas de Trevas.\nObtido pela profissão: Clérigo',
+            type: 'item',
+            weight: 1,
+            kind: 'Utilidade',
+            effects: [ 'Um artefato que causa dano extra (1d6) contra criaturas de Trevas.' ],
+            rarity: 'Especial'
+        }
+    ],
+
+    'Desempregado': [
+        {
+            name: 'Amuleto da Sorte',
+            description: 'Amuleto da Sorte: Permite rolar novamente um teste falhado uma vez por dia.\nObtido pela profissão: Desempregado',
+            type: 'item',
+            weight: 0.2,
+            kind: 'Utilidade',
+            effects: [ 'Permite rolar novamente um teste falhado uma vez por dia.' ],
+            rarity: 'Especial'
         }
     ]
 }

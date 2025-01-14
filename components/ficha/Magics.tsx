@@ -6,12 +6,13 @@ import { Close, Edit } from '@mui/icons-material'
 import { Box, Grid, IconButton, Typography, useTheme } from '@mui/material'
 import type { Ficha } from '@types'
 import { useFormikContext, type FormikContextType } from 'formik'
-import { memo, useCallback, useEffect, useMemo, useState } from 'react'
+import { memo, useEffect, useMemo, useState } from 'react'
 import { Magic } from '.';
 import MagicsModal from './MagicsModal'
 import { useSnackbar } from 'notistack';
 
 const Magics = memo(({ disabled }: { disabled?: boolean }) => {
+    const formikValues = !disabled ? 'values' : 'initialValues'
     const [ open, setOpen ] = useState(false)    
     
     const f: FormikContextType<Ficha> = useFormikContext()
@@ -50,29 +51,22 @@ const Magics = memo(({ disabled }: { disabled?: boolean }) => {
         ))
     }, [ f.values ])
 
-    const setMagicPoints = useCallback(() => {
-        if (!disabled) {
-            f.setFieldValue('points.magics', f.values.attributes.log + 2)
-        } else {
-            f.initialValues.points.magics = f.initialValues.attributes.log + 2
-        }
-    }, [ !disabled ? f.values.attributes.log : f.initialValues.attributes.log ])
+    useEffect(() => {
+        // Magic Spaces
+        let magicSpaceValue = f[formikValues].attributes.log * 2 + 2
+        if (magicSpaceValue <= 0) magicSpaceValue = 1
+        !disabled ?
+            f.setFieldValue('magicsSpace', magicSpaceValue)
+            : f.initialValues.magicsSpace = magicSpaceValue
+            
+        // Magic Points
+        let magicPointsValue = f[formikValues].attributes.foc + 1
+        if (magicPointsValue <= 0) magicPointsValue = 1
 
-    const setMagicsSpace = useCallback(() => {
-        // if (!disabled) {
-        let value = ((!disabled ? f.values.attributes.foc : f.initialValues.attributes.foc) * 2) + 2
-        if (value <= 0) value = 1
-    
-        if (!disabled) {
-            f.setFieldValue('magicsSpace', value)
-        } else {
-            f.initialValues.magicsSpace = value
-        }
-        // }
-    }, [ !disabled ? f.values.attributes.foc : f.initialValues.attributes.foc ])
-
-    useEffect(setMagicPoints, [ setMagicPoints ])
-    useEffect(setMagicsSpace, [ setMagicsSpace ])
+        !disabled ?
+            f.setFieldValue('points.magics', magicPointsValue)
+            : f.initialValues.points.magics = magicPointsValue
+    }, [ f[formikValues].attributes.foc, f[formikValues].attributes.log ])
 
     return (
         <>
@@ -80,7 +74,7 @@ const Magics = memo(({ disabled }: { disabled?: boolean }) => {
                 <Box display='flex' justifyContent='space-between' gap={2}>
                     <Box display='flex' alignItems='center' gap={3}>
                         <Box display='flex' alignItems='center' gap={1}>
-                            <Typography variant='h6'>Magias</Typography>
+                            <Typography fontFamily='Sakana' variant='h5'>Magias</Typography>
                             <IconButton onClick={() => { setOpen(true) }} sx={{ border: `1px solid ${theme.palette.primary.main}50`, p: 1.25 }}>
                                 <Edit />
                             </IconButton>
@@ -111,10 +105,12 @@ const Magics = memo(({ disabled }: { disabled?: boolean }) => {
                     </Grid>
                 </Box>
             </Box>
-            <MagicsModal 
-                open={open}
-                onClose={() => { setOpen(false) }}
-            />
+            {open && (
+                <MagicsModal 
+                    open={open}
+                    onClose={() => { setOpen(false) }}
+                />
+            )}
         </>
     )
 })

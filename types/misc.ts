@@ -20,7 +20,18 @@ interface EventData<T = Record<string, any>> {
     triggeredBy: TriggredByUser
 }
 
+interface Roll {
+    name: string
+    dice: number
+    diceQuantity: number
+    visibleDices: boolean
+    visibleBaseAttribute: boolean
+    bonus?: number[]
+    sum?: boolean
+}
+
 export type {
     Message,
-    EventData
+    EventData,
+    Roll
 }

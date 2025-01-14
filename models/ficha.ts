@@ -6,6 +6,10 @@ const fichaSchema = new Schema<FichaType>({
         type: String,
         required: [ true, 'Player name is required!' ]
     },
+    mode: {
+        type: String,
+        required: [ true, 'Mode is required!' ]
+    },
     name: {
         type: String,
         required: [ true, 'Name is required!' ]

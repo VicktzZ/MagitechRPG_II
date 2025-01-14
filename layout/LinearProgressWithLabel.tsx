@@ -17,7 +17,7 @@ export default function LinearProgressWithLabel(
         minvalue: number,
         maxvalue: number,
         label: string,
-        MoreComponents?: ReactElement 
+        morecomponents?: ReactElement 
     }
 ): ReactElement {
     return (
@@ -28,7 +28,7 @@ export default function LinearProgressWithLabel(
                     <Typography variant="body2" color="text.secondary">
                         {`${props.minvalue}/${props.maxvalue}`}
                     </Typography>
-                    {props.MoreComponents}
+                    {props.morecomponents}
                 </Box>
                 <BorderLinearProgress 
                     variant='determinate' 

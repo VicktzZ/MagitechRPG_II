@@ -8,12 +8,15 @@ import type {
     Weapon as WeaponProps,
     Armor as ArmorProps,
     MergedItems,
-    Ficha
+    Ficha,
+    Roll
 } from '@types'
 import { WarningModal } from '@layout'
 import { useSnackbar } from 'notistack'
 import { type FormikContextType, useFormikContext } from 'formik'
 import type { Inventory } from '@types'
+import { rarityColor } from '@constants'
+import { rarityArmorBonuses, rarityWeaponBonuses } from '@constants/dataTypes'
 
 // eslint-disable-next-line max-len
 type ItemTyping<C> = 
@@ -61,15 +64,7 @@ function ItemModal({
 
 function Weapon(props: ItemTyping<'weapon'>): ReactElement {
     const [ open, setOpen ] = useState(false)
-    const [ rollState, setRollState ] = useState<{
-        name: string
-        dice: number
-        diceQuantity: number
-        visibleDices: boolean
-        visibleBaseAttribute: boolean
-        bonus?: number[]
-        sum?: boolean
-    }>({
+    const [ rollState, setRollState ] = useState<Roll>({
         name: 'Acerto',
         dice: 20,
         diceQuantity: props.diceQuantity,
@@ -80,27 +75,26 @@ function Weapon(props: ItemTyping<'weapon'>): ReactElement {
     })
 
     const damageRoll = ({ name, crit }: { name: string, crit?: boolean }): void => {
-        if (!crit) {
-            setRollState({
-                name,
-                dice: Number(props.effect?.value?.split('d')[1]),
-                diceQuantity: Number(props.effect?.value?.split('d')[0]),
-                visibleDices: false,
-                visibleBaseAttribute: false,
-                bonus: undefined,
-                sum: true
-            })
-        } else {
-            setRollState({
-                name,
-                dice: Number(props.effect?.critValue?.split('d')[1]),
-                diceQuantity: Number(props.effect?.critValue?.split('d')[0]),
-                visibleDices: false,
-                visibleBaseAttribute: false,
-                bonus: undefined,
-                sum: true
-            })
-        }
+        const critOrBase = crit ? 'critValue' : 'value'
+
+        const effectParts = props.effect?.[critOrBase]?.match(/(\d+)d(\d+)(\+\d+)?/);
+        const quantity = effectParts ? Number(effectParts[1]) : 1;
+        const dice = effectParts ? Number(effectParts[2]) : 0;
+        const bonusValue = effectParts?.[3] ? Number(effectParts[3]) : 0;
+        const rarityBonus = rarityWeaponBonuses[props.rarity]
+        
+        setRollState({
+            name,
+            dice,
+            diceQuantity: quantity,
+            visibleDices: false,
+            visibleBaseAttribute: false,
+            bonus: [ 
+                bonusValue,
+                critOrBase === 'critValue' ? rarityBonus * 2 : rarityBonus 
+            ],
+            sum: true
+        })
 
         setOpen(true)
     }
@@ -164,32 +158,34 @@ function Weapon(props: ItemTyping<'weapon'>): ReactElement {
                             variant='outlined'
                             sx={{ textTransform: 'lowercase' }}
                             onClick={() => { damageRoll({ name: 'Dano' }) }}
-                        >{props.effect?.value}</Button>
+                        >{props.effect?.value} {props.rarity !== 'Comum' && `+ (${rarityWeaponBonuses[props.rarity]})`}</Button>
                         <Button 
                             fullWidth 
                             sx={{ textTransform: 'lowercase' }} 
                             variant='outlined' 
                             color='error'
                             onClick={() => { damageRoll({ name: 'Crítico', crit: true }) }}
-                        >{props.effect?.critValue}</Button>
+                        >{props.effect?.critValue} {props.rarity !== 'Comum' && `+ (${rarityWeaponBonuses[props.rarity] * 2})`}</Button>
                     </Box>
                 </Box>
             </Box>
-            <DiceRollModal
-                open={open}
-                onClose={() => { setOpen(false) }}
-                visibleDices={rollState.visibleDices}
-                visibleBaseAttribute={rollState.visibleBaseAttribute}
-                bonus={rollState?.bonus as any}
-                isDisadvantage={props.isDisadvantage}
-                sum={rollState.sum}
-                roll={{
-                    name: rollState.name,
-                    quantity: rollState.diceQuantity,
-                    dice: rollState.dice,
-                    attribute: props.hit
-                }}
-            />
+            { open && (
+                <DiceRollModal
+                    open={open}
+                    onClose={() => { setOpen(false) }}
+                    visibleDices={rollState.visibleDices}
+                    visibleBaseAttribute={rollState.visibleBaseAttribute}
+                    bonus={rollState?.bonus as any}
+                    isDisadvantage={props.isDisadvantage}
+                    sum={rollState.sum}
+                    roll={{
+                        name: rollState.name,
+                        quantity: rollState.diceQuantity,
+                        dice: rollState.dice,
+                        attribute: props.hit
+                    }}
+                />
+            )}
         </>
     )
 }
@@ -204,7 +200,7 @@ function Armor(props: ItemTyping<'armor'>): ReactElement {
                 </Box>
                 <Box display='flex' alignItems='center' gap={2}>
                     <RPGIcon icon='aura' />
-                    <Typography fontSize='.8rem'>{props.value}</Typography>
+                    <Typography fontSize='.8rem'>{props.value} {props.rarity !== 'Comum' && `+ (${rarityArmorBonuses[props.rarity]})`}</Typography>
                 </Box>
                 <Box display='flex' alignItems='center' gap={2}>
                     <RPGIcon icon='tower' />
@@ -308,6 +304,7 @@ function ItemWrapper({
                     width='18rem'
                     boxShadow={theme.shadows[10]}
                     bgcolor='background.paper3'
+                    border={`3px solid ${rarityColor[item.rarity]}50`}
                     borderRadius={3}
                     p={2}
                     gap={3}
@@ -318,8 +315,17 @@ function ItemWrapper({
                         }
                     }}
                 >
+                    <Typography 
+                        fontFamily='Sakana' 
+                        width='100%' 
+                        noWrap pt={1} 
+                        textAlign='center'
+                        color={rarityColor[item.rarity]}
+                    >
+                        {item.rarity?.toUpperCase()}
+                    </Typography>
                     <Box display='flex' alignItems='center' justifyContent='center'>
-                        <Typography width='100%' noWrap textAlign='center'>{title}</Typography>
+                        <Typography width='80%' noWrap textAlign='left'>{title}</Typography>
                         <IconButton onClick={() => { setOpen(true) }} sx={{ border: `1px solid ${theme.palette.primary.main}50`, p: 1.25 }}>
                             <Edit />
                         </IconButton>
@@ -329,122 +335,126 @@ function ItemWrapper({
                     </Box>
                 </Box>
             </Tooltip>
-            <ItemModal
-                open={open}
-                onClose={() => { setOpen(false) }}
-            >
-                <>
-                    <Box display='flex' justifyContent='space-between' alignItems='center'>
-                        <Box>
-                            <Typography variant='h5'>{item.name}</Typography>
-                            <Typography variant='caption'>{item.description}</Typography>
+            { open && (
+                <ItemModal
+                    open={open}
+                    onClose={() => { setOpen(false) }}
+                >
+                    <>
+                        <Box display='flex' justifyContent='space-between' alignItems='center'>
+                            <Box>
+                                <Typography variant='h5'>{item.name}</Typography>
+                                <Typography variant='caption'>{item.description}</Typography>
+                            </Box>
+                            <Box>
+                                <Button 
+                                    onClick={() => { setConfirmModalOpen(true) }} 
+                                    variant='contained' 
+                                    color={'terciary' as any}
+                                >Excluir item</Button>
+                            </Box>
                         </Box>
-                        <Box>
-                            <Button 
-                                onClick={() => { setConfirmModalOpen(true) }} 
-                                variant='contained' 
-                                color={'terciary' as any}
-                            >Excluir item</Button>
+                        <Box
+                            display='flex'
+                            mt={4}
+                        >
+                            {
+                                itemType === 'weapon' ? (
+                                    <Box display='flex' gap={2}>
+                                        <TextField 
+                                            label='Categoria'
+                                            value={item.categ}
+                                        />
+                                        <TextField 
+                                            label='Acessórios'
+                                            value={item.accessories ?? 'Nenhum'}
+                                        />
+                                        <TextField 
+                                            label='Alcance'
+                                            value={item.range}
+                                        />
+                                        <TextField 
+                                            label='Tipo de dano'
+                                            value={item.effect.effectType}
+                                        />
+                                        <TextField 
+                                            label='Tipo de arma'
+                                            value={item.kind}
+                                        />
+                                        <TextField 
+                                            label='Munição'
+                                            value={item.ammo}
+                                        />
+                                        <TextField 
+                                            label='Peso'
+                                            value={item.weight}
+                                        />
+                                        <TextField 
+                                            label='Dano base'
+                                            value={item.effect.value}
+                                        />
+                                        <TextField 
+                                            label='Dano crítico'
+                                            value={item.effect.critValue}
+                                        />
+                                    </Box>
+                                ) : itemType === 'armor' ? (
+                                    <Box display='flex' gap={2}>
+                                        <TextField 
+                                            label='Categoria'
+                                            value={item.categ}
+                                        />
+                                        <TextField 
+                                            label='Pontos de Armadura'
+                                            value={item.value ?? 'Nenhum'}
+                                        />
+                                        <TextField 
+                                            label='Tipo de defesa'
+                                            value={item.kind}
+                                        />
+                                        <TextField 
+                                            label='Penalidade de deslocamento'
+                                            value={item.displacementPenalty}
+                                        />
+                                        <TextField 
+                                            label='Peso'
+                                            value={item.weight}
+                                        />
+                                    </Box>
+                                ) : (
+                                    <Box display='flex' gap={2}>
+                                        <TextField 
+                                            label='Quantidade'
+                                            value={item.quantity ?? 'Nenhum'}
+                                        />
+                                        <TextField 
+                                            label='Raridade'
+                                            value={item.rarity ?? 'Nenhum'}
+                                        />
+                                        <TextField 
+                                            label='Descrição'
+                                            value={item.effects ?? 'Nenhum'}
+                                        />
+                                        <TextField 
+                                            label='Peso'
+                                            value={item.weight}
+                                        />
+                                    </Box>
+                                )
+                            }
                         </Box>
-                    </Box>
-                    <Box
-                        display='flex'
-                        mt={4}
-                    >
-                        {
-                            itemType === 'weapon' ? (
-                                <Box display='flex' gap={2}>
-                                    <TextField 
-                                        label='Categoria'
-                                        value={item.categ}
-                                    />
-                                    <TextField 
-                                        label='Acessórios'
-                                        value={item.accessories ?? 'Nenhum'}
-                                    />
-                                    <TextField 
-                                        label='Alcance'
-                                        value={item.range}
-                                    />
-                                    <TextField 
-                                        label='Tipo de dano'
-                                        value={item.effect.effectType}
-                                    />
-                                    <TextField 
-                                        label='Tipo de arma'
-                                        value={item.kind}
-                                    />
-                                    <TextField 
-                                        label='Munição'
-                                        value={item.ammo}
-                                    />
-                                    <TextField 
-                                        label='Peso'
-                                        value={item.weight}
-                                    />
-                                    <TextField 
-                                        label='Dano base'
-                                        value={item.effect.value}
-                                    />
-                                    <TextField 
-                                        label='Dano crítico'
-                                        value={item.effect.critValue}
-                                    />
-                                </Box>
-                            ) : itemType === 'armor' ? (
-                                <Box display='flex' gap={2}>
-                                    <TextField 
-                                        label='Categoria'
-                                        value={item.categ}
-                                    />
-                                    <TextField 
-                                        label='Pontos de Armadura'
-                                        value={item.value ?? 'Nenhum'}
-                                    />
-                                    <TextField 
-                                        label='Tipo de defesa'
-                                        value={item.kind}
-                                    />
-                                    <TextField 
-                                        label='Penalidade de deslocamento'
-                                        value={item.displacementPenalty}
-                                    />
-                                    <TextField 
-                                        label='Peso'
-                                        value={item.weight}
-                                    />
-                                </Box>
-                            ) : (
-                                <Box display='flex' gap={2}>
-                                    <TextField 
-                                        label='Quantidade'
-                                        value={item.quantity ?? 'Nenhum'}
-                                    />
-                                    <TextField 
-                                        label='Raridade'
-                                        value={item.rarity ?? 'Nenhum'}
-                                    />
-                                    <TextField 
-                                        label='Descrição'
-                                        value={item.effects ?? 'Nenhum'}
-                                    />
-                                    <TextField 
-                                        label='Peso'
-                                        value={item.weight}
-                                    />
-                                </Box>
-                            )
-                        }
-                    </Box>
-                </>
-            </ItemModal>
-            <WarningModal 
-                open={confirmModalOpen}
-                onClose={() => { setConfirmModalOpen(false) }}
-                title='Excluir item'
-                text='Tem certeza que deseja excluir este item?'
-                onConfirm={onConfirm}
-            />
+                    </>
+                </ItemModal>
+            )}
+            { confirmModalOpen && (
+                <WarningModal 
+                    open={confirmModalOpen}
+                    onClose={() => { setConfirmModalOpen(false) }}
+                    title='Excluir item'
+                    text='Tem certeza que deseja excluir este item?'
+                    onConfirm={onConfirm}
+                />
+            )}
         </>
     )
 }

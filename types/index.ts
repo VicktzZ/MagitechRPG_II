@@ -24,7 +24,8 @@ import type {
     Race,
     MagicPower,
     Trait,
-    RarityType
+    RarityType,
+    Occupation
 } from './ficha';
 
 import type { 
@@ -41,7 +42,8 @@ import type {
 
 import type { 
     Message,
-    EventData
+    EventData,
+    Roll
 } from './misc';
 
 export type { 
@@ -50,6 +52,7 @@ export type {
     Inventory,
     PlayerInfo,
     AmmoType,
+    Roll,
     Player,
     SessionModel,
     Ficha,
@@ -61,6 +64,7 @@ export type {
     Classes,
     PusherMemberParam,
     Message,
+    Occupation,
     MergedItems,
     Campaign,
     RarityType,

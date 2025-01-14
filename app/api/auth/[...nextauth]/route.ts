@@ -6,7 +6,7 @@ import { connectToDb } from '@utils/database';
 import type { Session } from 'next-auth';
 import { type User as UserType } from '@types';
 import User from '@models/user';
-import { AdminProvider } from './adminProvider';
+// import { AdminProvider } from './adminProvider';
 
 const handler = NextAuth({
     providers:
@@ -19,8 +19,8 @@ const handler = NextAuth({
         DiscordProvider({
             clientId: process.env.DISCORD_CLIENT_ID,
             clientSecret: process.env.DISCORD_CLIENT_SECRET
-        }),
-        AdminProvider
+        })
+        // AdminProvider
     ],
 
     callbacks: {
@@ -54,6 +54,14 @@ const handler = NextAuth({
                 const userExists = await User.findOne({
                     email: profile?.email
                 });
+
+                if (userExists) {
+                    if (userExists.image !== p?.picture && userExists.image !== p?.image_url) {
+                        await userExists.updateOne({
+                            image: p?.picture ?? p?.image_url
+                        });
+                    }
+                }
 
                 if (!userExists && !user) {
                     await User.create({

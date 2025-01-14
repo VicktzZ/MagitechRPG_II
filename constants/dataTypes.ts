@@ -17,15 +17,11 @@ const damages: DamageType[] = [
     'Perfurante',
     'Fogo',
     'Água',
-    'Terra',
     'Ar',
-    'Planta',
+    'Terra',
     'Eletricidade',
-    'Gelo',
-    'Metal',
     'Trevas',
     'Luz',
-    'Toxina',
     'Não-elemental'
 ]
 
@@ -41,6 +37,7 @@ const armorKind: Array<Armor['kind']> = [
 ]
 
 const itemKind: Array<Item['kind']> = [
+    'Padrão',
     'Especial',
     'Utilidade',
     'Consumível',
@@ -61,13 +58,10 @@ const rarities: RarityType[] = [
 
 const ranges: RangeType[] = [
     'Corpo-a-corpo',
-    'Curtíssimo (3m)',
-    'Curto (6m)',
-    'Reduzido (9m)',
-    'Normal (12m)',
+    'Curto (3m)',
+    'Padrão (9m)',
     'Médio (18m)',
     'Longo (30m)',
-    'Distante (60m)',
     'Ampliado (90m)',
     'Visível',
     'Ilimitado'
@@ -174,24 +168,27 @@ const weaponBonuses: Array<Weapon<'Leve' | 'Pesada'>['bonus']> = [
     'Tecnologia'
 ]
 
-const weaponDamageType: DamageType[] = [
-    'Cortante',
-    'Impactante',
-    'Perfurante',
-    'Fogo',
-    'Água',
-    'Ar',
-    'Terra',
-    'Planta',
-    'Eletricidade',
-    'Gelo',
-    'Metal',
-    'Luz',
-    'Trevas',
-    'Psíquico',
-    'Toxina',
-    'Não-elemental'
-]
+const rarityWeaponBonuses: Record<RarityType, number> = {
+    'Comum': 0,
+    'Incomum': 1,
+    'Raro': 2,
+    'Épico': 3,
+    'Lendário': 4,
+    'Relíquia': 5,
+    'Mágico': 5,
+    'Especial': 0
+}
+
+const rarityArmorBonuses: Record<RarityType, number> = {
+    'Comum': 0,
+    'Incomum': 1,
+    'Raro': 1,
+    'Épico': 2,
+    'Lendário': 2,
+    'Relíquia': 3,
+    'Mágico': 3,
+    'Especial': 0
+}
 
 export {
     damages,
@@ -207,8 +204,9 @@ export {
     armorScientificAccessories,
     weaponMagicalAccessories,
     weaponBonuses,
-    weaponDamageType,
     weaponScientificAccessories,
     armorCateg,
-    rarities
+    rarities,
+    rarityWeaponBonuses,
+    rarityArmorBonuses
 }
