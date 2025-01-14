@@ -6,7 +6,7 @@ import { useSession } from 'next-auth/react';
 import { useState, type ReactElement } from 'react'
 import { Attributes, Characteristics, Expertises, Inventory, Magics, Skills, SkillsModal } from '@components/ficha';
 import { useSnackbar } from 'notistack';
-// import { useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { CustomIconButton, WarningModal } from '@layout';
 import { fichaModel } from '@constants/ficha';
 import { Edit } from '@mui/icons-material';
@@ -16,7 +16,7 @@ export default function FichaComponent({ disabled, ficha }: { disabled?: boolean
     const { data: session } = useSession()
     const { enqueueSnackbar, closeSnackbar } = useSnackbar()
 
-    // const router = useRouter()
+    const router = useRouter()
 
     const [ openModal, setOpenModal ] = useState<boolean>(false)
     const [ isLoading, setIsLoading ] = useState<boolean>(false)
@@ -75,22 +75,22 @@ export default function FichaComponent({ disabled, ficha }: { disabled?: boolean
     
                             console.log(values);
     
-                            // const response = await fetch('/api/ficha', {
-                            //     method: 'POST',
-                            //     body: JSON.stringify({
-                            //         ...values
-                            //     })
-                            // }).then(async r => await r.json())
+                            const response = await fetch('/api/ficha', {
+                                method: 'POST',
+                                body: JSON.stringify({
+                                    ...values
+                                })
+                            }).then(async r => await r.json())
     
                             closeSnackbar('loadingFetch')
-                            // console.log(response);
+                            console.log(response);
     
                             enqueueSnackbar('Ficha criada com sucesso!', { variant: 'success' })
     
                             setIsLoading(true)
     
                             setTimeout(() => {
-                                // router.push('/plataform/ficha/' + response._id)
+                                router.push('/plataform/ficha/' + response._id)
                             }, 500);
                         } else {
                             enqueueSnackbar('Você deve gastar seus pontos de atributos!', { variant: 'error', autoHideDuration: 3000 })
