@@ -17,13 +17,13 @@ const DiceRollModal = memo(({
     setResult,
     visibleDices,
     visibleBaseAttribute
-}: Roll & {
+}: Partial<Roll> & {
     open: boolean
     onClose: () => void
     isDisadvantage?: boolean
     setResult?: (result: number | number[]) => void
     roll: { 
-        dice: string,
+        dice: number,
         quantity: number
         name: string,
         attribute: Attributes
