@@ -121,7 +121,7 @@ function ItemModalForm({
     // TODO: Arrumar fomulário no celular
     return (
         <>
-            <Box overflow={matches && 'visible'} display={!matches ? 'flex' : 'column'} gap={2} component='form' noValidate onSubmit={handleSubmit(action)}>
+            <Box display={!matches ? 'flex' : 'column'} gap={2} component='form' noValidate onSubmit={handleSubmit(action)}>
                 <TextField
                     label='Nome'
                     {...register('name')}
