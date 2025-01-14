@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/restrict-plus-operands */
+/* eslint-disable @typescript-eslint/restrict-template-expressions */
 /* eslint-disable react-hooks/exhaustive-deps */
 import { RadarChart } from '@components/misc'
 import { classesModel } from '@constants/classes'
@@ -165,19 +167,19 @@ export default function Attributes({ disabled }: { disabled?: boolean }): ReactE
             const point = otherAttrs?.attr === 'pd' ? 'diligence' : 'expertises'
 
             if (action === 'add') {
-                if ((f.values.points.attributes > 0 && f.values.attributes[attribute] < 2) || (disabled && f.values.points.attributes > 0)) {
+                if ((f.values.points.attributes > 0 && f.values.attributes[attribute] < 3) || (disabled && f.values.points.attributes > 0)) {
                     if (f.values.attributes[attribute] < 5) {
                         f.setFieldValue('points.attributes', f.values.points.attributes - 1)
                         f.setFieldValue(`attributes.${attribute}`, f.values.attributes[attribute] + 1)
     
                         if (otherAttrs && otherAttrs.attr !== 'pd' && otherAttrs.attr !== 'pt')
-                            f.setFieldValue(`attributes.${otherAttrs.attr}`, f.values.attributes[otherAttrs.attr] + otherAttrs.value)
+                            f.setFieldValue(`attributes.${otherAttrs?.attr}`, f.values.attributes[otherAttrs.attr] + otherAttrs.value)
                         else
                             f.setFieldValue(`points.${point}`, f.values.points[point] + (otherAttrs?.value ?? 0))
                     }
                 }
             } else {
-                if (f.values.attributes[attribute] !== 0) {
+                if (f.values.attributes[attribute] !== -1) {
                     f.setFieldValue('points.attributes', f.values.points.attributes + 1)
                     f.setFieldValue(`attributes.${attribute}`, f.values.attributes[attribute] - 1)
 
@@ -390,27 +392,27 @@ export default function Attributes({ disabled }: { disabled?: boolean }): ReactE
                             setAtrribute={attributePoints('vig')} 
                             attributeName='vig' 
                             attributeValue={f.values.attributes.vig} 
-                            />
+                        />
                         <Attribute 
                             setAtrribute={attributePoints('foc')} 
                             attributeName='foc' 
                             attributeValue={f.values.attributes.foc} 
-                            />
+                        />
                         <Attribute 
                             setAtrribute={attributePoints('des')} 
                             attributeName='des' 
                             attributeValue={f.values.attributes.des} 
-                            />
+                        />
                         <Attribute 
                             setAtrribute={attributePoints('log', { attr: 'pd', value: 1 })} 
                             attributeName='log' 
                             attributeValue={f.values.attributes.log} 
-                            />
+                        />
                         <Attribute 
                             setAtrribute={attributePoints('sab', { attr: 'pt', value: 1 })} 
                             attributeName='sab' 
                             attributeValue={f.values.attributes.sab} 
-                            />
+                        />
                         <Attribute 
                             setAtrribute={attributePoints('car')} 
                             attributeName='car' 
@@ -535,20 +537,22 @@ export default function Attributes({ disabled }: { disabled?: boolean }): ReactE
                     </Box>
                 </Box>
             </Box>
-            <DiceRollModal
-                open={modalOpen}
-                onClose={() => { setModalOpen(false) }}
-                bonus={[ f.values.attributes.car ]}
-                isDisadvantage={f.values.attributes.car === 0}
-                visibleDices
-                visibleBaseAttribute
-                roll={{
-                    dice: 20,
-                    quantity: f.values.attributes.car || 1,
-                    name: 'Condição Financeira',
-                    attribute: 'car'
-                }}
-            />
+            {modalOpen && (
+                <DiceRollModal
+                    open={modalOpen}
+                    onClose={() => { setModalOpen(false) }}
+                    bonus={[ f.values.attributes.car ]}
+                    isDisadvantage={f.values.attributes.car === 0}
+                    visibleDices
+                    visibleBaseAttribute
+                    roll={{
+                        dice: 20,
+                        quantity: f.values.attributes.car || 1,
+                        name: 'Condição Financeira',
+                        attribute: 'car'
+                    }}
+                />
+            )}
         </Box>      
     )
 }

@@ -111,10 +111,12 @@ const Magics = memo(({ disabled }: { disabled?: boolean }) => {
                     </Grid>
                 </Box>
             </Box>
-            <MagicsModal 
-                open={open}
-                onClose={() => { setOpen(false) }}
-            />
+            {open && (
+                <MagicsModal 
+                    open={open}
+                    onClose={() => { setOpen(false) }}
+                />
+            )}
         </>
     )
 })

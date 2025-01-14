@@ -11,7 +11,7 @@ import { Box, FormControl, TextField } from '@mui/material'
 import { clickEffect } from '@public/sounds'
 import { classesModel } from '@constants/classes';
 import { useFormikContext, type FormikContextType } from 'formik';
-import { expertisesDefaultValue, fichaModel } from '@constants/ficha';
+import { expertisesDefaultValue, type fichaModel } from '@constants/ficha';
 import { blue, green, red, yellow } from '@mui/material/colors';
 import { useAudio } from '@hooks';
 import { skills } from '@constants/skills';
@@ -70,7 +70,7 @@ export default function Characteristics({ disabled }: { disabled?: boolean }): R
 
         skills[skillType]?.forEach(skill => {
             if (skill.origin === lineage)
-                f.setFieldValue('skills.lineage', [skill])
+                f.setFieldValue('skills.lineage', [ skill ])
         })
 
         audio1.play()
@@ -95,7 +95,7 @@ export default function Characteristics({ disabled }: { disabled?: boolean }): R
         }
 
         if (expertises?.tests) {
-            Object.entries(expertises.tests).forEach(([key, value]) => {
+            Object.entries(expertises.tests).forEach(([ key, value ]) => {
                 testsStr += `${key}: +${value}; `
             })
         }
@@ -107,7 +107,7 @@ export default function Characteristics({ disabled }: { disabled?: boolean }): R
 
     const lineages = useMemo(() => {
         console.log(f.values.mode)
-        return Object.entries(f.values.mode === 'Classic' ? lineageExpertises : occupationsExpertises).map(([lineage, expertises]) => (
+        return Object.entries(f.values.mode === 'Classic' ? lineageExpertises : occupationsExpertises).map(([ lineage, expertises ]) => (
             <MenuItem
                 key={lineage}
                 value={lineage}
@@ -120,7 +120,7 @@ export default function Characteristics({ disabled }: { disabled?: boolean }): R
                 </Box>
             </MenuItem>
         ))
-    }, [f.values.mode])
+    }, [ f.values.mode ])
 
     const classes = useMemo(() => {
         return Object.keys(classesModel).map(classe => (
@@ -156,7 +156,7 @@ export default function Characteristics({ disabled }: { disabled?: boolean }): R
                     sx={{
                         position: 'absolute',
                         top: 30,
-                        right: 32,
+                        right: 32
                     }}
                 >
                     Modo de jogo: {f.values.mode}

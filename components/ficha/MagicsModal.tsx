@@ -207,7 +207,7 @@ const MagicsModal = memo(({ open, onClose }: { open: boolean, onClose: () => voi
             }
         } else if (filterType === 'sort') {
             value = {
-                value: value,
+                value,
                 order: fetchOptions.sort.order
             }
         }
@@ -298,7 +298,7 @@ const MagicsModal = memo(({ open, onClose }: { open: boolean, onClose: () => voi
                                     }}
                                 />
                             </Box>
-                            <Box sx={{ display: 'flex', gap: matches ? 1 : 2, width: matches ? '100%' : 'auto', ...( matches && {overflowX: 'auto', '&::-webkit-scrollbar': { display: 'none' }} ) }}>
+                            <Box sx={{ display: 'flex', gap: matches ? 1 : 2, width: matches ? '100%' : 'auto', ...( matches && { overflowX: 'auto', '&::-webkit-scrollbar': { display: 'none' } } ) }}>
                                 <Box 
                                     display='flex' 
                                     border={`solid 1px ${theme.palette.primary.main}`} 
@@ -307,7 +307,7 @@ const MagicsModal = memo(({ open, onClose }: { open: boolean, onClose: () => voi
                                     gap={1}
                                     sx={{ cursor: 'pointer' }}
                                     onClick={e => {
-                                        const onClick = (ev: MouseEvent<HTMLLIElement> & { target: { innerText: string } }) => menuItemOnClick(ev, 'filter')
+                                        const onClick = (ev: MouseEvent<HTMLLIElement> & { target: { innerText: string } }) => { menuItemOnClick(ev, 'filter'); }
 
                                         setMenuContent([
                                             <MenuItem onClick={onClick} key='FOGO_FILTER' value='FOGO'>FOGO</MenuItem>,
@@ -340,7 +340,7 @@ const MagicsModal = memo(({ open, onClose }: { open: boolean, onClose: () => voi
                                     gap={1}
                                     sx={{ cursor: 'pointer' }}
                                     onClick={e => {
-                                        const onClick = (ev: MouseEvent<HTMLLIElement> & { target: { innerText: string } }) => menuItemOnClick(ev, 'sort')
+                                        const onClick = (ev: MouseEvent<HTMLLIElement> & { target: { innerText: string } }) => { menuItemOnClick(ev, 'sort'); }
 
                                         setMenuContent([
                                             <MenuItem onClick={onClick} key='Nível_SORT' value='Nível'>Nível</MenuItem>,
@@ -366,11 +366,11 @@ const MagicsModal = memo(({ open, onClose }: { open: boolean, onClose: () => voi
                                         gap={1}
                                         sx={{ cursor: 'pointer' }}
                                         onClick={e => {
-                                            const onClick = (ev: MouseEvent<HTMLLIElement> & { target: { innerText: string } }) => menuItemOnClick(ev, 'sort-order')
+                                            const onClick = (ev: MouseEvent<HTMLLIElement> & { target: { innerText: string } }) => { menuItemOnClick(ev, 'sort-order'); }
 
                                             setMenuContent([
                                                 <MenuItem onClick={onClick} key='ASC_SORT-ORDER' value='ASC'>ASC</MenuItem>,
-                                                <MenuItem onClick={onClick} key='DESC_SORT-ORDER' value='DESC'>DESC</MenuItem>,
+                                                <MenuItem onClick={onClick} key='DESC_SORT-ORDER' value='DESC'>DESC</MenuItem>
                                             ])
                                             setAnchorEl(e.currentTarget)
                                             setMenuOpen(true)

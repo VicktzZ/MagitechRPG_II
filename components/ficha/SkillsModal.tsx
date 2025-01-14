@@ -17,27 +17,27 @@ export default function SkillsModal({ open, onClose }: { open: boolean, onClose:
 
     const { enqueueSnackbar, closeSnackbar } = useSnackbar()
 
-    const [isLoading, setIsLoading] = useState<boolean>(true)
-    const [isLoadingRefetch, setIsLoadingRefetch] = useState<boolean>(false)
-    const [magicPowerArr, setMagicPowerArr] = useState<MagicPower[]>([] as MagicPower[])
-    const [page, setPage] = useState<number>(1)
-    const [isInlimit, setIsInLimit] = useState<boolean>(false)
+    const [ isLoading, setIsLoading ] = useState<boolean>(true)
+    const [ isLoadingRefetch, setIsLoadingRefetch ] = useState<boolean>(false)
+    const [ magicPowerArr, setMagicPowerArr ] = useState<MagicPower[]>([] as MagicPower[])
+    const [ page, setPage ] = useState<number>(1)
+    const [ isInlimit, setIsInLimit ] = useState<boolean>(false)
 
-    const [anchorEl, setAnchorEl] = useState<EventTarget & HTMLDivElement | null>(null)
-    const [menuOpen, setMenuOpen] = useState<boolean>(false)
-    const [menuContent, setMenuContent] = useState<ReactElement[]>([])
+    const [ anchorEl, setAnchorEl ] = useState<EventTarget & HTMLDivElement | null>(null)
+    const [ menuOpen, setMenuOpen ] = useState<boolean>(false)
+    const [ menuContent, setMenuContent ] = useState<ReactElement[]>([])
 
-    const [buttonSelected, setButtonSelected] = useState({
+    const [ buttonSelected, setButtonSelected ] = useState({
         adicionar: true,
         criar: false,
         remover: false
     })
 
-    const [fetchOptions, setFetchOptions] = useState({
+    const [ fetchOptions, setFetchOptions ] = useState({
         search: '',
         filter: '',
         sort: {
-            value: "Nivel",
+            value: 'Nivel',
             order: 'ASC'
         }
     })
@@ -96,7 +96,7 @@ export default function SkillsModal({ open, onClose }: { open: boolean, onClose:
                 setPage(prevPage => prevPage + 1)
             })()
         }
-    }, [open])
+    }, [ open ])
 
     useEffect(() => {
         (async () => {
@@ -115,7 +115,7 @@ export default function SkillsModal({ open, onClose }: { open: boolean, onClose:
             setMagicPowerArr(data)
             setIsLoadingRefetch(false)
         })()
-    }, [fetchOptions.filter, fetchOptions.sort, fetchOptions.search, open])
+    }, [ fetchOptions.filter, fetchOptions.sort, fetchOptions.search, open ])
 
     useEffect(() => {
         const fetchData = async (): Promise<void> => {
@@ -132,24 +132,24 @@ export default function SkillsModal({ open, onClose }: { open: boolean, onClose:
         console.log(debouncedSearch);
 
         if (debouncedSearch) fetchData()
-    }, [debouncedSearch])
+    }, [ debouncedSearch ])
 
     useEffect(() => {
         if (fetchOptions.search) {
             setIsLoadingRefetch(true)
         }
-    }, [fetchOptions.search])
+    }, [ fetchOptions.search ])
 
     useEffect(() => {
         (async () => {
             if (entry?.isIntersecting) {
                 const m = await fetchMagicPowers()
 
-                setMagicPowerArr(prevMagics => [...prevMagics, ...m])
+                setMagicPowerArr(prevMagics => [ ...prevMagics, ...m ])
                 setPage(prevPage => prevPage + 1)
             }
         })()
-    }, [entry?.isIntersecting])
+    }, [ entry?.isIntersecting ])
 
     const magicPowers = useMemo(() => {
         return magicPowerArr?.map((magicPower) => (
@@ -194,7 +194,7 @@ export default function SkillsModal({ open, onClose }: { open: boolean, onClose:
                 }}
             />
         ))
-    }, [magicPowerArr, f.values.magics])
+    }, [ magicPowerArr, f.values.magics ])
 
     const menuItemOnClick = (ev: MouseEvent<HTMLLIElement> & { target: { innerText: string } }, filterType: 'filter' | 'sort' | 'sort-order'): void => {
         let value: any = ev.target.innerText
@@ -206,7 +206,7 @@ export default function SkillsModal({ open, onClose }: { open: boolean, onClose:
             }
         } else if (filterType === 'sort') {
             value = {
-                value: value,
+                value,
                 order: fetchOptions.sort.order
             }
         }
@@ -226,7 +226,6 @@ export default function SkillsModal({ open, onClose }: { open: boolean, onClose:
         setMenuOpen(false)
         setIsLoadingRefetch(true)
     }
-
 
     return (
         <>
@@ -283,7 +282,7 @@ export default function SkillsModal({ open, onClose }: { open: boolean, onClose:
                                                 }}
                                             />
                                         </Box>
-                                        <Box sx={{ display: 'flex', gap: matches ? 1 : 2, width: matches ? '100%' : 'auto', ...( matches && {overflowX: 'auto', '&::-webkit-scrollbar': { display: 'none' }} ) }}>
+                                        <Box sx={{ display: 'flex', gap: matches ? 1 : 2, width: matches ? '100%' : 'auto', ...( matches && { overflowX: 'auto', '&::-webkit-scrollbar': { display: 'none' } } ) }}>
                                             <Box
                                                 display='flex'
                                                 border={`solid 1px ${theme.palette.primary.main}`}
@@ -292,7 +291,7 @@ export default function SkillsModal({ open, onClose }: { open: boolean, onClose:
                                                 gap={1}
                                                 sx={{ cursor: 'pointer' }}
                                                 onClick={e => {
-                                                    const onClick = (ev: MouseEvent<HTMLLIElement> & { target: { innerText: string } }) => menuItemOnClick(ev, 'filter')
+                                                    const onClick = (ev: MouseEvent<HTMLLIElement> & { target: { innerText: string } }) => { menuItemOnClick(ev, 'filter'); }
 
                                                     setMenuContent([
                                                         <MenuItem onClick={onClick} key='FOGO_FILTER' value='FOGO'>FOGO</MenuItem>,
@@ -325,7 +324,7 @@ export default function SkillsModal({ open, onClose }: { open: boolean, onClose:
                                                 gap={1}
                                                 sx={{ cursor: 'pointer' }}
                                                 onClick={e => {
-                                                    const onClick = (ev: MouseEvent<HTMLLIElement> & { target: { innerText: string } }) => menuItemOnClick(ev, 'sort')
+                                                    const onClick = (ev: MouseEvent<HTMLLIElement> & { target: { innerText: string } }) => { menuItemOnClick(ev, 'sort'); }
 
                                                     setMenuContent([
                                                         <MenuItem onClick={onClick} key='Nível_SORT' value='Nível'>Nível</MenuItem>,
@@ -349,11 +348,11 @@ export default function SkillsModal({ open, onClose }: { open: boolean, onClose:
                                                     gap={1}
                                                     sx={{ cursor: 'pointer' }}
                                                     onClick={e => {
-                                                        const onClick = (ev: MouseEvent<HTMLLIElement> & { target: { innerText: string } }) => menuItemOnClick(ev, 'sort-order')
+                                                        const onClick = (ev: MouseEvent<HTMLLIElement> & { target: { innerText: string } }) => { menuItemOnClick(ev, 'sort-order'); }
 
                                                         setMenuContent([
                                                             <MenuItem onClick={onClick} key='ASC_SORT-ORDER' value='ASC'>ASC</MenuItem>,
-                                                            <MenuItem onClick={onClick} key='DESC_SORT-ORDER' value='DESC'>DESC</MenuItem>,
+                                                            <MenuItem onClick={onClick} key='DESC_SORT-ORDER' value='DESC'>DESC</MenuItem>
                                                         ])
                                                         setAnchorEl(e.currentTarget)
                                                         setMenuOpen(true)

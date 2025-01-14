@@ -19,7 +19,7 @@ const handler = NextAuth({
         DiscordProvider({
             clientId: process.env.DISCORD_CLIENT_ID,
             clientSecret: process.env.DISCORD_CLIENT_SECRET
-        }),
+        })
         // AdminProvider
     ],
 
@@ -54,6 +54,14 @@ const handler = NextAuth({
                 const userExists = await User.findOne({
                     email: profile?.email
                 });
+
+                if (userExists) {
+                    if (userExists.image !== p?.picture && userExists.image !== p?.image_url) {
+                        await userExists.updateOne({
+                            image: p?.picture ?? p?.image_url
+                        });
+                    }
+                }
 
                 if (!userExists && !user) {
                     await User.create({

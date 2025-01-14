@@ -164,7 +164,7 @@ export interface Item {
     name: string
     description: string
     quantity?: number
-    rarity?: RarityType
+    rarity: RarityType
     kind: ItemType
     weight: number
     effects?: number[] | string[]
@@ -174,7 +174,7 @@ export interface Item {
 export interface Weapon<T extends 'Leve' | 'Pesada' = any> {
     name: string
     description: string
-    rarity?: RarityType
+    rarity: RarityType
     kind: WeaponType
     categ: WeaponCategory<T>
     range: RangeType
@@ -188,24 +188,14 @@ export interface Weapon<T extends 'Leve' | 'Pesada' = any> {
         value: string
         critValue: string
         critChance: number
-        kind: 'damage' | 'heal'
-        effectType: DamageType | 'Cura'
+        effectType: DamageType
     }
 }
-
-/*
-    item.name
-    item.description
-    item.rarity
-    item.kind
-    item.weight
-    item.quantity
-*/
 
 export interface Armor {
     name: string
     description: string
-    rarity?: RarityType
+    rarity: RarityType
     kind: ArmorType
     categ: 'Leve' | 'Média' | 'Pesada'
     quantity?: number
@@ -218,7 +208,7 @@ export interface Armor {
 export interface MergedItems<T extends 'Leve' | 'Pesada'> {
     name: string
     description: string
-    rarity?: RarityType
+    rarity: RarityType
     kind: WeaponType
     categ: WeaponCategory<T> | ('Leve' | 'Média' | 'Pesada')
     range: RangeType
@@ -279,8 +269,8 @@ export type Gender = 'Masculino' | 'Feminino' | 'Não-binário' | 'Outro' | 'Nã
 export type Classes = 'Lutador' | 'Especialista' | 'Feiticeiro' | 'Bruxo' | 'Monge' | 'Druida' | 'Arcano' | 'Ladino'
 export type Attributes = 'des' | 'vig' | 'log' | 'sab' | 'foc' | 'car'
 export type UpperCaseAttributes = 'DES' | 'VIG' | 'LOG' | 'SAB' | 'FOC' | 'CAR'
-export type ItemType = 'Especial' | 'Utilidade' | 'Consumível' | 'Item Chave' | 'Munição' | 'Capacidade'
-export type RarityType = 'Comum' | 'Incomum' | 'Raro' | 'Épico' | 'Lendário' | 'Relíquia' | 'Mágico'
+export type ItemType = 'Especial' | 'Utilidade' | 'Consumível' | 'Item Chave' | 'Munição' | 'Capacidade' | 'Padrão'
+export type RarityType = 'Comum' | 'Incomum' | 'Raro' | 'Épico' | 'Lendário' | 'Relíquia' | 'Mágico' | 'Especial'
 export type WeaponType = `Arremessável (${ThrowableRangeType})` | 'Duas mãos' | 'Padrão'
 export type ArmorType = 'Padrão' | DamageType
 export type DamageType = 'Cortante' | 'Impactante' | 'Perfurante' | Element

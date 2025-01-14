@@ -6,8 +6,9 @@ import { Item, ItemModal } from '@components/ficha';
 import { lineageItems, occupationItems } from '@constants/lineageitems';
 import { red, yellow } from '@mui/material/colors';
 import { CustomIconButton } from '@layout';
-import { Add, Dashboard } from '@mui/icons-material';
-import type { Ficha, LineageNames } from '@types';
+import { Add } from '@mui/icons-material';
+import type { Ficha } from '@types';
+import { RPGIcon } from '@components/misc';
 
 type ItemName = 'weapon' | 'item' | 'armor'
 
@@ -62,7 +63,7 @@ const Inventory = memo(({ disabled }: { disabled?: boolean }): ReactElement => {
             } else return 0
         }).reduce((a, b) => a + b, 0)
 
-        const cargo = (weaponsWeight + armorsWeight + itemsWeight)?.toFixed(1)
+        const cargo = (Number(weaponsWeight) + Number(armorsWeight) + Number(itemsWeight))?.toFixed(1)
 
         return {
             cargo: cargo || 0,
@@ -99,8 +100,8 @@ const Inventory = memo(({ disabled }: { disabled?: boolean }): ReactElement => {
     }, [ f.values.lineage ])
 
     const weapons = useMemo(() => {
-        return f.values.inventory.weapons && f.values.inventory.weapons?.map((weapon) => (
-             <Grid 
+        return f.values.inventory.weapons?.map((weapon) => (
+            <Grid 
                 item
                 key={weapon.name}
             >
@@ -108,6 +109,7 @@ const Inventory = memo(({ disabled }: { disabled?: boolean }): ReactElement => {
                     as='weapon'
                     name={weapon.name}
                     ammo={weapon.ammo}
+                    rarity={weapon.rarity}
                     categ={weapon.categ}
                     range={weapon.range}
                     weight={weapon.weight}
@@ -122,11 +124,10 @@ const Inventory = memo(({ disabled }: { disabled?: boolean }): ReactElement => {
                     diceQuantity={Math.floor((f.values.attributes[weapon.hit] / 2) || 0) + 1}
 
                     effect={{
-                        kind: weapon.effect.kind,
-                        effectType: weapon.effect.effectType,
-                        critValue: weapon.effect.critValue,
-                        critChance: weapon.effect.critChance,
-                        value: weapon.effect.value
+                        effectType: weapon?.effect?.effectType,
+                        critValue: weapon?.effect?.critValue,
+                        critChance: weapon?.effect?.critChance,
+                        value: weapon?.effect?.value
                     }}
                 />
             </Grid>
@@ -144,6 +145,7 @@ const Inventory = memo(({ disabled }: { disabled?: boolean }): ReactElement => {
                     name={armor.name}
                     categ={armor.categ}
                     weight={armor.weight}
+                    rarity={armor.rarity}
                     kind={armor.kind}
                     displacementPenalty={armor.displacementPenalty}
                     value={armor.value}
@@ -164,6 +166,7 @@ const Inventory = memo(({ disabled }: { disabled?: boolean }): ReactElement => {
                     name={item.name}
                     weight={item.weight}
                     kind={item.kind}
+                    rarity={item.rarity}
                     description={item.description}
                     level={item?.level}
                     quantity={item?.quantity ?? 1}
@@ -175,7 +178,6 @@ const Inventory = memo(({ disabled }: { disabled?: boolean }): ReactElement => {
 
     useEffect(() => {
         const { cargo, maxCargo } = capacity
-
 
         f.setFieldValue('capacity.cargo', Number(cargo === 'NaN' ? 0 : cargo).toFixed(1))
         f.setFieldValue('capacity.max', Number(Number(f.values.attributes.vig * 1.5 + maxCargo + 5)).toFixed(1))
@@ -229,19 +231,28 @@ const Inventory = memo(({ disabled }: { disabled?: boolean }): ReactElement => {
                     gap={10}
                 >
                     <Box display='flex' flexDirection='column' gap={5}>
-                        <Typography>Armas</Typography>
+                        <Box display='flex' gap={2}>
+                            <Typography>Armas</Typography>
+                            <RPGIcon icon='crossbow' />
+                        </Box>
                         <Grid container justifyContent={matches ? 'center' : 'inherit'} spacing={2}>
                             {weapons}
                         </Grid>
                     </Box>
                     <Box display='flex' flexDirection='column' gap={5}>
-                        <Typography>Armaduras</Typography>
+                        <Box display='flex' gap={2}>
+                            <Typography>Armaduras</Typography>
+                            <RPGIcon icon='shield' />
+                        </Box>
                         <Grid container justifyContent={matches ? 'center' : 'inherit'} spacing={2}>
                             {armors}
                         </Grid>
                     </Box>
                     <Box display='flex' flexDirection='column' gap={5}>
-                        <Typography>Itens</Typography>
+                        <Box display='flex' gap={2}>
+                            <Typography>Itens</Typography>
+                            <RPGIcon icon='potion' />
+                        </Box>
                         <Grid container justifyContent={matches ? 'center' : 'inherit'} spacing={2}>
                             {items}
                         </Grid>

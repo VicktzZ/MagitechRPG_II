@@ -1,9 +1,9 @@
 import { RPGIcon } from '@components/misc'
-import { IconType } from '@components/misc/rpg-icons'
+import { type IconType } from '@components/misc/rpg-icons'
 import { useMediaQuery } from '@mui/material'
 import { Box, useTheme } from '@mui/material'
 import { blue, deepPurple, green, grey, orange, red, teal, yellow } from '@node_modules/@mui/material/colors'
-import { ReactElement, useMemo, useState } from 'react'
+import { type ReactElement, useMemo, useState } from 'react'
 
 type MainAttributes = 'vig' | 'des' | 'foc' | 'log' | 'sab' | 'car'
 
@@ -58,20 +58,20 @@ export default function Attribute({
         return <Box sx={{
             width: '1.5rem',
             height: '2rem',
-            border: `1px solid`,
+            border: '1px solid',
             borderColor: theme.palette.primary.main,
-            bgcolor: filled ? green[500] : 'transparent',
+            bgcolor: (id === 1 && attributeValue === -1) ? red[500] : filled ? green[500] : 'transparent',
             borderRadius: 1
         }} />
     }
 
     const attributeBars = useMemo(() => {
         const bars = [
-            <Bar id={1} />,
-            <Bar id={2} />,
-            <Bar id={3} />,
-            <Bar id={4} />,
-            <Bar id={5} />,
+            <Bar key={1} id={1} />,
+            <Bar key={2} id={2} />,
+            <Bar key={3} id={3} />,
+            <Bar key={4} id={4} />,
+            <Bar key={5} id={5} />
         ]
 
         return bars
@@ -85,7 +85,7 @@ export default function Attribute({
             width='100%'
         >
             <Box width='100%' display='flex' flexDirection='column' gap={1} justifyContent='space-between'>
-                <Box width='90%' display='flex' gap={2} alignItems='center' justifyContent='space-between'>
+                <Box width='18rem' maxWidth='18rem' display='flex' gap={2} alignItems='center' justifyContent='space-between'>
                     <Box width='100%' display='flex' gap={1} alignItems='center' justifyContent='space-evenly' letterSpacing={matches ? 3 : 5}>
                         <Box>
                             {attributeName.toUpperCase()}

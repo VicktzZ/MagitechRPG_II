@@ -17,8 +17,8 @@ const damages: DamageType[] = [
     'Perfurante',
     'Fogo',
     'Água',
-    'Terra',
     'Ar',
+    'Terra',
     'Eletricidade',
     'Trevas',
     'Luz',
@@ -37,6 +37,7 @@ const armorKind: Array<Armor['kind']> = [
 ]
 
 const itemKind: Array<Item['kind']> = [
+    'Padrão',
     'Especial',
     'Utilidade',
     'Consumível',
@@ -167,21 +168,6 @@ const weaponBonuses: Array<Weapon<'Leve' | 'Pesada'>['bonus']> = [
     'Tecnologia'
 ]
 
-const weaponDamageType: DamageType[] = [
-    'Cortante',
-    'Impactante',
-    'Perfurante',
-    'Fogo',
-    'Água',
-    'Ar',
-    'Terra',
-    'Eletricidade',
-    'Luz',
-    'Trevas',
-    'Psíquico',
-    'Não-elemental'
-]
-
 export {
     damages,
     weaponKind,
@@ -196,7 +182,6 @@ export {
     armorScientificAccessories,
     weaponMagicalAccessories,
     weaponBonuses,
-    weaponDamageType,
     weaponScientificAccessories,
     armorCateg,
     rarities

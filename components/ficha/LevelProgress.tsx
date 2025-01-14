@@ -2,7 +2,7 @@ import { Box, Typography, useTheme } from '@mui/material'
 import { amber } from '@node_modules/@mui/material/colors'
 import React, { useState } from 'react'
 
-type Props = {
+interface Props {
     title: string,
     level: number,
     amount: number,
@@ -18,7 +18,7 @@ export default function LevelProgress({ title, level, amount, barWidth }: Props)
         return <Box sx={{
             width: barWidth || '2.5rem',
             height: '0.75rem',
-            border: `1px solid`,
+            border: '1px solid',
             borderColor: theme.palette.primary.main,
             bgcolor: filled ? amber[700] : 'transparent',
             borderRadius: 1

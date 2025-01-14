@@ -71,16 +71,18 @@ export const fichaModel: Partial<Ficha> = {
                 name: 'Celular',
                 description: 'Celular institucional dado a todos estudantes da UFEM.',
                 kind: 'Especial',
+                rarity: 'Comum',
                 weight: 0.2,
-                effects: ['Celular multiúso da UFEM.']
+                effects: [ 'Celular multiúso da UFEM.' ]
             },
             {
                 name: 'ORM',
                 description: 'Um ORM pode ser qualquer coisa desde que esteja embutido com um Zeptachip. Este dispositivo é necessário para manipular qualquer forma de magia.',
                 kind: 'Especial',
+                rarity: 'Especial',
                 level: 1,
                 weight: 0.1,
-                effects: ['Dispositivo utilizado para manipulação de magículas e sequências mágicas.']
+                effects: [ 'Dispositivo utilizado para manipulação de magículas e sequências mágicas.' ]
             }
         ],
         weapons: [
@@ -90,6 +92,7 @@ export const fichaModel: Partial<Ficha> = {
                 categ: 'Arma Branca (Leve)',
                 range: 'Corpo-a-corpo',
                 kind: 'Padrão',
+                rarity: 'Comum',
                 weight: 0.2,
                 hit: 'des',
                 ammo: 'Não consome',
@@ -98,7 +101,6 @@ export const fichaModel: Partial<Ficha> = {
                     value: '2d6',
                     critValue: '4d6',
                     critChance: 20,
-                    kind: 'damage',
                     effectType: 'Impactante'
                 }
             }
@@ -109,6 +111,7 @@ export const fichaModel: Partial<Ficha> = {
                 description: 'Um uniforme escolar dado a todos estudantes da UFEM para identificação e segurança na instalação.',
                 categ: 'Leve',
                 kind: 'Padrão',
+                rarity: 'Comum',
                 weight: 0.5,
                 value: 5,
                 displacementPenalty: 0

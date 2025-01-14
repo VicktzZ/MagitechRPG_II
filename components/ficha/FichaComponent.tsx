@@ -18,10 +18,10 @@ export default function FichaComponent({ disabled, ficha }: { disabled?: boolean
 
     const router = useRouter()
 
-    const [openModal, setOpenModal] = useState<boolean>(false)
-    const [isLoading, setIsLoading] = useState<boolean>(false)
+    const [ openModal, setOpenModal ] = useState<boolean>(false)
+    const [ isLoading, setIsLoading ] = useState<boolean>(false)
 
-    const [openSkillsModal, setOpenSkillsModal] = useState<boolean>(false)
+    const [ openSkillsModal, setOpenSkillsModal ] = useState<boolean>(false)
 
     const initialValues: Ficha = {
         ...fichaModel,
@@ -29,6 +29,7 @@ export default function FichaComponent({ disabled, ficha }: { disabled?: boolean
         playerName: session?.user?.name ?? 'undefined',
         userId: session?.user?._id ?? 'undefined'
     }
+    
 
     const submitForm = (values: typeof initialValues): void => {
         enqueueSnackbar('Aguarde...', { variant: 'info', key: 'loadingFetch', autoHideDuration: 6000 })
@@ -235,10 +236,12 @@ export default function FichaComponent({ disabled, ficha }: { disabled?: boolean
                         <Backdrop open={isLoading}>
                             <CircularProgress />
                         </Backdrop>
-                        <SkillsModal
-                            open={openSkillsModal}
-                            onClose={() => { setOpenSkillsModal(false) }}
-                        />
+                        {openSkillsModal && (
+                            <SkillsModal
+                                open={openSkillsModal}
+                                onClose={() => { setOpenSkillsModal(false) }}
+                            />
+                        )}
                     </>
                 )}
             </Formik>

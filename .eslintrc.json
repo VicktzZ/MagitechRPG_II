@@ -42,14 +42,17 @@
           "off"
       ],
       "@typescript-eslint/no-misused-promises": [
-          "off"
+          "off",
+          {}
       ],
       "no-use-before-define": "off",
       "@typescript-eslint/no-floating-promises": [
-          "off"
+          "off",
+          {}
       ],
       "@typescript-eslint/no-use-before-define": [
-          "error"
+          "error",
+          {}
       ],
       "react/react-in-jsx-scope": "off",
       "react/jsx-filename-extension": [
@@ -64,13 +67,15 @@
       ],
       "no-shadow": "off",
       "@typescript-eslint/no-shadow": [
-          "error"
+          "error",
+          {}
       ],
       "@typescript-eslint/strict-boolean-expressions": [
-          "off"
+          "off",
+          {}
       ],
       "@typescript-eslint/explicit-function-return-type": [
-          "error",
+          "off",
           {
               "allowExpressions": true
           }
@@ -78,12 +83,12 @@
       "max-len": [
           "warn",
           {
-              "code": 180
+              "code": 200
           }
       ],
       "@typescript-eslint/no-non-null-assertion": "off",
       "react-hooks/rules-of-hooks": "error",
-      "react-hooks/exhaustive-deps": "warn",
+      "react-hooks/exhaustive-deps": "off",
       "react/function-component-definition": [
           "error",
           {

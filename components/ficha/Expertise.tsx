@@ -117,24 +117,26 @@ export default function Expertise({
                             p: 1,
                             minWidth: '80%',
                             textAlign: 'center'
-                         }}
+                        }}
                     >{name}</Typography>
                 </Box>
             </Grid>
-            <DiceRollModal 
-                open={open}
-                onClose={() => { setOpen(false) }}
-                bonus={[ expertise.value ]}
-                isDisadvantage={expertise.value < 0 || diceQuantity < 0}
-                visibleBaseAttribute
-                visibleDices
-                roll={{
-                    name,
-                    dice: 20,
-                    attribute: expertise.defaultAttribute,
-                    quantity: diceQuantity || 0 + 1
-                }}
-            />
+            { open && (
+                <DiceRollModal 
+                    open={open}
+                    onClose={() => { setOpen(false) }}
+                    bonus={[ expertise.value ]}
+                    isDisadvantage={expertise.value < 0 || diceQuantity < 0}
+                    visibleBaseAttribute
+                    visibleDices
+                    roll={{
+                        name,
+                        dice: 20,
+                        attribute: expertise.defaultAttribute,
+                        quantity: diceQuantity || 0 + 1
+                    }}
+                />
+            )}
         </>
     )
 }
