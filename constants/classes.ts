@@ -26,7 +26,7 @@ export const classesModel: Record<Classes, Class> = {
 
         points: {
             diligence: 3,
-            expertises: 4
+            expertises: 5
         },
 
         skills: LutadorSkills
@@ -42,7 +42,7 @@ export const classesModel: Record<Classes, Class> = {
         },
 
         points: {
-            diligence: 4,
+            diligence: 3,
             expertises: 10
         },
 
@@ -59,7 +59,7 @@ export const classesModel: Record<Classes, Class> = {
         },
 
         points: {
-            diligence: 3,
+            diligence: 4,
             expertises: 6
         },
 
@@ -128,7 +128,7 @@ export const classesModel: Record<Classes, Class> = {
 
         points: {
             diligence: 6,
-            expertises: 5
+            expertises: 6
         },
 
         skills: arcanoSkills

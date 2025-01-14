@@ -12,6 +12,7 @@ import MagicsModal from './MagicsModal'
 import { useSnackbar } from 'notistack';
 
 const Magics = memo(({ disabled }: { disabled?: boolean }) => {
+    const formikValues = !disabled ? 'values' : 'initialValues'
     const [ open, setOpen ] = useState(false)    
     
     const f: FormikContextType<Ficha> = useFormikContext()
@@ -52,15 +53,15 @@ const Magics = memo(({ disabled }: { disabled?: boolean }) => {
 
     const setMagicPoints = useCallback(() => {
         if (!disabled) {
-            f.setFieldValue('points.magics', f.values.attributes.log + 2)
+            f.setFieldValue('points.magics', f.values.attributes.foc + 1)
         } else {
-            f.initialValues.points.magics = f.initialValues.attributes.log + 2
+            f.initialValues.points.magics = f.initialValues.attributes.foc + 1
         }
-    }, [ !disabled ? f.values.attributes.log : f.initialValues.attributes.log ])
+    }, [ !disabled ? f.values.attributes.foc : f.initialValues.attributes.foc ])
 
     const setMagicsSpace = useCallback(() => {
         // if (!disabled) {
-        let value = ((!disabled ? f.values.attributes.foc : f.initialValues.attributes.foc) * 2) + 2
+        let value = ((!disabled ? f.values.attributes.log : f.initialValues.attributes.log) * 2) + 2
         if (value <= 0) value = 1
     
         if (!disabled) {
@@ -71,8 +72,22 @@ const Magics = memo(({ disabled }: { disabled?: boolean }) => {
         // }
     }, [ !disabled ? f.values.attributes.foc : f.initialValues.attributes.foc ])
 
-    useEffect(setMagicPoints, [ setMagicPoints ])
-    useEffect(setMagicsSpace, [ setMagicsSpace ])
+    useEffect(() => {
+        // Magic Spaces
+        let magicSpaceValue = f[formikValues].attributes.log * 2 + 2
+        if (magicSpaceValue <= 0) magicSpaceValue = 1
+        !disabled ?
+            f.setFieldValue('magicsSpace', magicSpaceValue)
+            : f.initialValues.magicsSpace = magicSpaceValue
+            
+        // Magic Points
+        let magicPointsValue = f[formikValues].attributes.foc + 1
+        if (magicPointsValue <= 0) magicPointsValue = 1
+
+        !disabled ?
+            f.setFieldValue('points.magics', magicPointsValue)
+            : f.initialValues.points.magics = magicPointsValue
+    }, [ f[formikValues].attributes.foc, f[formikValues].attributes.log ])
 
     return (
         <>

@@ -9,6 +9,7 @@ import { CustomIconButton } from '@layout';
 import { Add } from '@mui/icons-material';
 import type { Ficha } from '@types';
 import { RPGIcon } from '@components/misc';
+import { rarityArmorBonuses } from '@constants/dataTypes';
 
 type ItemName = 'weapon' | 'item' | 'armor'
 
@@ -72,8 +73,8 @@ const Inventory = memo(({ disabled }: { disabled?: boolean }): ReactElement => {
     }, [ f.values.inventory, f.values.attributes.vig ])
 
     const itemsOfLineage = useMemo(() => {
-        const itemArr: any[] = []
-        const weaponArr: any[] = []
+        let itemArr: any[] = []
+        let weaponArr: any[] = []
 
         if (!disabled) {
             f.values.inventory = f.values.mode === 'Classic' ? f.initialValues.inventory : {
@@ -91,6 +92,9 @@ const Inventory = memo(({ disabled }: { disabled?: boolean }): ReactElement => {
                 if (item.type === 'item') itemArr.push(item) 
                 if (item.type === 'weapon') weaponArr.push(item)
             })            
+        } else {
+            itemArr = f.initialValues.inventory.items || []
+            weaponArr = f.initialValues.inventory.weapons || []
         }
 
         return {
@@ -100,6 +104,8 @@ const Inventory = memo(({ disabled }: { disabled?: boolean }): ReactElement => {
     }, [ f.values.lineage ])
 
     const weapons = useMemo(() => {
+        console.log(f.values)
+
         return f.values.inventory.weapons?.map((weapon) => (
             <Grid 
                 item
@@ -148,7 +154,7 @@ const Inventory = memo(({ disabled }: { disabled?: boolean }): ReactElement => {
                     rarity={armor.rarity}
                     kind={armor.kind}
                     displacementPenalty={armor.displacementPenalty}
-                    value={armor.value}
+                    value={armor.value + rarityArmorBonuses[armor.rarity]}
                     description={armor.description}
                 />
             </Grid>

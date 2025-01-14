@@ -50,7 +50,7 @@ export const fichaModel: Partial<Ficha> = {
     anotacoes: '',
     ORMLevel: 1,
     magics: [],
-    magicsSpace: 0,
+    magicsSpace: 1,
     subclass: '',
     skills: {
         lineage: [],
@@ -123,7 +123,7 @@ export const fichaModel: Partial<Ficha> = {
     expertises: expertisesDefaultValue(),
 
     points: {
-        attributes: 6,
+        attributes: 5,
         expertises: 0,
         diligence: 0,
         skills: 0,

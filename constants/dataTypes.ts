@@ -168,6 +168,28 @@ const weaponBonuses: Array<Weapon<'Leve' | 'Pesada'>['bonus']> = [
     'Tecnologia'
 ]
 
+const rarityWeaponBonuses: Record<RarityType, number> = {
+    'Comum': 0,
+    'Incomum': 1,
+    'Raro': 2,
+    'Épico': 3,
+    'Lendário': 4,
+    'Relíquia': 5,
+    'Mágico': 5,
+    'Especial': 0
+}
+
+const rarityArmorBonuses: Record<RarityType, number> = {
+    'Comum': 0,
+    'Incomum': 1,
+    'Raro': 1,
+    'Épico': 2,
+    'Lendário': 2,
+    'Relíquia': 3,
+    'Mágico': 3,
+    'Especial': 0
+}
+
 export {
     damages,
     weaponKind,
@@ -184,5 +206,7 @@ export {
     weaponBonuses,
     weaponScientificAccessories,
     armorCateg,
-    rarities
+    rarities,
+    rarityWeaponBonuses,
+    rarityArmorBonuses
 }

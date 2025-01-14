@@ -209,7 +209,8 @@ export interface MergedItems<T extends 'Leve' | 'Pesada'> {
     name: string
     description: string
     rarity: RarityType
-    kind: WeaponType
+    kind: WeaponType | ArmorType | ItemType
+    type?: 'weapon' | 'armor' | 'item'
     categ: WeaponCategory<T> | ('Leve' | 'Média' | 'Pesada')
     range: RangeType
     weight: number

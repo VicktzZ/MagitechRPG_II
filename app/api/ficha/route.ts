@@ -23,6 +23,7 @@ export async function POST(req: Request): Promise<Response> {
         await connectToDb()
         
         const body: FichaType = await req.json()
+
         const ficha = await Ficha.create(body)
 
         return Response.json(ficha)

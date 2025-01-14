@@ -42,7 +42,8 @@ import type {
 
 import type { 
     Message,
-    EventData
+    EventData,
+    Roll
 } from './misc';
 
 export type { 
@@ -51,6 +52,7 @@ export type {
     Inventory,
     PlayerInfo,
     AmmoType,
+    Roll,
     Player,
     SessionModel,
     Ficha,

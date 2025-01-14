@@ -514,7 +514,7 @@ function ArmorModal({ closeModal, formik }: ModalProps): ReactElement {
                 <SelectFormComponent
                     label='Acessórios'
                     prop='accessories'
-                    defaultValue={['Não possui acessórios']}
+                    defaultValue={[ 'Não possui acessórios' ]}
                     MenuProps={MenuProps}
                     {...register('accessories')}
                     error={errors?.['accessories'] && true}
@@ -526,8 +526,6 @@ function ArmorModal({ closeModal, formik }: ModalProps): ReactElement {
                     input={<OutlinedInput id='select-multiple-chip' label='Chip' />}
                     renderValue={selected => {
                         const s: string[] = selected as string[];
-
-                        console.log(s)
 
                         return (
                             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>

@@ -1,7 +1,15 @@
 /* eslint-disable max-len */
-import type { Item, Lineage, Occupation, Weapon } from '@types';
+import type { Lineage, MergedItems, Occupation } from '@types';
 
-export const lineageItems: Record<Lineage['name'], Array<(Item | Weapon<'Leve' | 'Pesada'>) & { type: 'weapon' | 'armor' | 'item' }>> = {
+export const lineageItems: 
+Record<
+    Lineage['name'],
+    Array<
+        Partial<
+            MergedItems<any>
+        >
+    >
+> = {
     'Órfão': [
         {
             name: 'Pelúcia mágica',
@@ -323,7 +331,15 @@ export const lineageItems: Record<Lineage['name'], Array<(Item | Weapon<'Leve' |
     ]
 }
 
-export const occupationItems: Record<Occupation['name'], Array<(Item | Weapon<'Leve' | 'Pesada'>) & { type: 'weapon' | 'armor' | 'item' }>> = {
+export const occupationItems: 
+Record<
+    Occupation['name'],
+    Array<
+        Partial<
+            MergedItems<any>
+        >
+    >
+> = {
     'Artista': [
         {
             name: 'Instrumento Musical',
@@ -331,8 +347,9 @@ export const occupationItems: Record<Occupation['name'], Array<(Item | Weapon<'L
             kind: 'Utilidade',
             type: 'item',
             weight: 0.5,
-            effects: [ 'Um instrumento musical a sua escolha.' ]
-        },
+            effects: [ 'Um instrumento musical a sua escolha.' ],
+            rarity: 'Especial'
+        }
     ],
 
     'Médico': [
@@ -343,7 +360,8 @@ export const occupationItems: Record<Occupation['name'], Array<(Item | Weapon<'L
             type: 'item',
             weight: 1.5,
             quantity: 1,
-            effects: [ 'Cura o alvo em 3d6+2.' ]
+            effects: [ 'Cura o alvo em 3d6+2.' ],
+            rarity: 'Especial'
         }
     ],
 
@@ -355,7 +373,8 @@ export const occupationItems: Record<Occupation['name'], Array<(Item | Weapon<'L
             type: 'item',
             weight: 0,
             quantity: 1,
-            effects: [ 'Uma arma leve entre pistola, revólver, pistola tática.' ]
+            effects: [ 'Uma arma leve entre pistola, revólver, pistola tática.' ],
+            rarity: 'Especial'
         }
     ],
 
@@ -377,7 +396,8 @@ export const occupationItems: Record<Occupation['name'], Array<(Item | Weapon<'L
                 critChance: 20,
                 kind: 'damage',
                 effectType: 'Perfurante'
-            }
+            },
+            rarity: 'Especial'
         }
     ],
 
@@ -399,7 +419,8 @@ export const occupationItems: Record<Occupation['name'], Array<(Item | Weapon<'L
                 critChance: 20,
                 kind: 'damage',
                 effectType: 'Cortante'
-            }
+            },
+            rarity: 'Especial'
         }
     ],
 
@@ -411,7 +432,8 @@ export const occupationItems: Record<Occupation['name'], Array<(Item | Weapon<'L
             type: 'item',
             weight: 2,
             quantity: 1,
-            effects: [ 'Necessário para criar ou consertar dispositivos. Reduz a DT de Tecnologia em -1.' ]
+            effects: [ 'Necessário para criar ou consertar dispositivos. Reduz a DT de Tecnologia em -1.' ],
+            rarity: 'Especial'
         }
     ],
 
@@ -422,7 +444,8 @@ export const occupationItems: Record<Occupation['name'], Array<(Item | Weapon<'L
             type: 'item',
             weight: 2,
             kind: 'Utilidade',
-            effects: [ 'Uma pá ou enxada que também pode ser usada como arma improvisada.' ]
+            effects: [ 'Uma pá ou enxada que também pode ser usada como arma improvisada.' ],
+            rarity: 'Especial'
         }
     ],
 
@@ -433,7 +456,8 @@ export const occupationItems: Record<Occupation['name'], Array<(Item | Weapon<'L
             type: 'item',
             weight: 1.5,
             kind: 'Utilidade',
-            effects: [ 'Permite realizar testes de Tecnologia com vantagem em sistemas eletrônicos.' ]
+            effects: [ 'Permite realizar testes de Tecnologia com vantagem em sistemas eletrônicos.' ],
+            rarity: 'Especial'
         }
     ],
 
@@ -444,7 +468,8 @@ export const occupationItems: Record<Occupation['name'], Array<(Item | Weapon<'L
             type: 'item',
             weight: 0.8,
             kind: 'Utilidade',
-            effects: [ 'Permite realizar testes de Investigação para identificar substâncias ou objetos desconhecidos.' ]
+            effects: [ 'Permite realizar testes de Investigação para identificar substâncias ou objetos desconhecidos.' ],
+            rarity: 'Especial'
         }
     ],
 
@@ -455,7 +480,8 @@ export const occupationItems: Record<Occupation['name'], Array<(Item | Weapon<'L
             type: 'item',
             weight: 0.3,
             kind: 'Utilidade',
-            effects: [ 'Permite lembrar ou registrar informações importantes, concedendo +3 em testes de Investigação ou Conhecimento.' ]
+            effects: [ 'Permite lembrar ou registrar informações importantes, concedendo +3 em testes de Investigação ou Conhecimento.' ],
+            rarity: 'Especial'
         }
     ],
 
@@ -466,7 +492,8 @@ export const occupationItems: Record<Occupation['name'], Array<(Item | Weapon<'L
             type: 'item',
             weight: 0.2,
             kind: 'Utilidade',
-            effects: [ 'Um item que impressiona, concedendo +1d8 em testes de Persuasão quando exibido.' ]
+            effects: [ 'Um item que impressiona, concedendo +1d8 em testes de Persuasão quando exibido.' ],
+            rarity: 'Especial'
         }
     ],
 
@@ -477,7 +504,8 @@ export const occupationItems: Record<Occupation['name'], Array<(Item | Weapon<'L
             type: 'item',
             weight: 0.8,
             kind: 'Utilidade',
-            effects: [ 'Um livro ou guia prático que concede +2 em testes de Conhecimento relacionados a um tema específico.' ]
+            effects: [ 'Um livro ou guia prático que concede +2 em testes de Conhecimento relacionados a um tema específico.' ],
+            rarity: 'Especial'
         }
     ],
     
@@ -488,7 +516,8 @@ export const occupationItems: Record<Occupation['name'], Array<(Item | Weapon<'L
             type: 'item',
             weight: 0.1,
             kind: 'Utilidade',
-            effects: [ 'Um acessório que reforça sua credibilidade, concedendo +1d10 em testes de Liderança ou Persuasão.' ]
+            effects: [ 'Um acessório que reforça sua credibilidade, concedendo +1d10 em testes de Liderança ou Persuasão.' ],
+            rarity: 'Especial'
         }
     ],
 
@@ -499,7 +528,8 @@ export const occupationItems: Record<Occupation['name'], Array<(Item | Weapon<'L
             type: 'item',
             weight: 0.6,
             kind: 'Utilidade',
-            effects: [ 'Ferramentas simples que facilitam testes de Ladinagem para abrir fechaduras (Diminui a DT em -1).' ]
+            effects: [ 'Ferramentas simples que facilitam testes de Ladinagem para abrir fechaduras (Diminui a DT em -1).' ],
+            rarity: 'Especial'
         }
     ],
 
@@ -521,7 +551,8 @@ export const occupationItems: Record<Occupation['name'], Array<(Item | Weapon<'L
                 critChance: 20,
                 kind: 'damage',
                 effectType: 'Impactante'
-            }
+            },
+            rarity: 'Especial'
         }
     ],
 
@@ -532,7 +563,8 @@ export const occupationItems: Record<Occupation['name'], Array<(Item | Weapon<'L
             type: 'item',
             weight: 2,
             kind: 'Utilidade',
-            effects: [ 'Reduz a dificuldade de testes de Tecnologia relacionados a reparos (-1 na DT).' ]
+            effects: [ 'Reduz a dificuldade de testes de Tecnologia relacionados a reparos (-1 na DT).' ],
+            rarity: 'Especial'
         }
     ],
 
@@ -543,7 +575,8 @@ export const occupationItems: Record<Occupation['name'], Array<(Item | Weapon<'L
             type: 'item',
             weight: 1,
             kind: 'Utilidade',
-            effects: [ 'Uma ferramenta versátil que pode ser usada para reparos simples ou improvisações.' ]
+            effects: [ 'Uma ferramenta versátil que pode ser usada para reparos simples ou improvisações.' ],
+            rarity: 'Especial'
         }
     ],
 
@@ -554,7 +587,8 @@ export const occupationItems: Record<Occupation['name'], Array<(Item | Weapon<'L
             type: 'item',
             weight: 0.4,
             kind: 'Utilidade',
-            effects: [ 'Reduz o gasto de movimento em terrenos difíceis. ( Vocé não sofre penalidades ao estar em terrenos acidentados).' ]
+            effects: [ 'Reduz o gasto de movimento em terrenos difíceis. ( Vocé não sofre penalidades ao estar em terrenos acidentados).' ],
+            rarity: 'Especial'
         }
     ],
 
@@ -565,7 +599,8 @@ export const occupationItems: Record<Occupation['name'], Array<(Item | Weapon<'L
             type: 'item',
             weight: 0.2,
             kind: 'Utilidade',
-            effects: [ 'Auxilia na organização de pistas, concedendo +1d8 em testes de Investigação.' ]
+            effects: [ 'Auxilia na organização de pistas, concedendo +1d8 em testes de Investigação.' ],
+            rarity: 'Especial'
         }
     ],
 
@@ -576,7 +611,8 @@ export const occupationItems: Record<Occupation['name'], Array<(Item | Weapon<'L
             type: 'item',
             weight: 0.2,
             kind: 'Utilidade',
-            effects: [ 'Permite enxergar detalhes em longa distância, concedendo vantagem em testes de Percepção para localizar algo.' ]
+            effects: [ 'Permite enxergar detalhes em longa distância, concedendo vantagem em testes de Percepção para localizar algo.' ],
+            rarity: 'Especial'
         }
     ],
 
@@ -598,7 +634,8 @@ export const occupationItems: Record<Occupation['name'], Array<(Item | Weapon<'L
                 critChance: 20,
                 kind: 'damage',
                 effectType: 'Perfurante'
-            }
+            },
+            rarity: 'Especial'
         }
     ],
 
@@ -609,7 +646,8 @@ export const occupationItems: Record<Occupation['name'], Array<(Item | Weapon<'L
             type: 'item',
             weight: 1,
             kind: 'Utilidade',
-            effects: [ 'Um artefato que causa dano extra (1d6) contra criaturas de Trevas.' ]
+            effects: [ 'Um artefato que causa dano extra (1d6) contra criaturas de Trevas.' ],
+            rarity: 'Especial'
         }
     ],
 
@@ -620,7 +658,8 @@ export const occupationItems: Record<Occupation['name'], Array<(Item | Weapon<'L
             type: 'item',
             weight: 0.2,
             kind: 'Utilidade',
-            effects: [ 'Permite rolar novamente um teste falhado uma vez por dia.' ]
+            effects: [ 'Permite rolar novamente um teste falhado uma vez por dia.' ],
+            rarity: 'Especial'
         }
     ]
 }

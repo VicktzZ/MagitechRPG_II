@@ -9,13 +9,15 @@ import type {
     Armor as ArmorProps,
     MergedItems,
     Ficha,
-    RarityType
+    RarityType,
+    Roll
 } from '@types'
 import { WarningModal } from '@layout'
 import { useSnackbar } from 'notistack'
 import { type FormikContextType, useFormikContext } from 'formik'
 import type { Inventory } from '@types'
 import { rarityColor } from '@constants'
+import { rarityArmorBonuses, rarityWeaponBonuses } from '@constants/dataTypes'
 
 // eslint-disable-next-line max-len
 type ItemTyping<C> = 
@@ -63,15 +65,7 @@ function ItemModal({
 
 function Weapon(props: ItemTyping<'weapon'>): ReactElement {
     const [ open, setOpen ] = useState(false)
-    const [ rollState, setRollState ] = useState<{
-        name: string
-        dice: number
-        diceQuantity: number
-        visibleDices: boolean
-        visibleBaseAttribute: boolean
-        bonus?: number[]
-        sum?: boolean
-    }>({
+    const [ rollState, setRollState ] = useState<Roll>({
         name: 'Acerto',
         dice: 20,
         diceQuantity: props.diceQuantity,
@@ -84,13 +78,22 @@ function Weapon(props: ItemTyping<'weapon'>): ReactElement {
     const damageRoll = ({ name, crit }: { name: string, crit?: boolean }): void => {
         const critOrBase = crit ? 'critValue' : 'value'
 
+        const effectParts = props.effect?.[critOrBase]?.match(/(\d+)d(\d+)(\+\d+)?/);
+        const quantity = effectParts ? Number(effectParts[1]) : 1;
+        const dice = effectParts ? Number(effectParts[2]) : 0;
+        const bonusValue = effectParts?.[3] ? Number(effectParts[3]) : 0;
+        const rarityBonus = rarityWeaponBonuses[props.rarity]
+        
         setRollState({
             name,
-            dice: Number(props.effect?.[critOrBase]?.split('d')[1]),
-            diceQuantity: Number(props.effect?.[critOrBase]?.split('d')[0]),
+            dice,
+            diceQuantity: quantity,
             visibleDices: false,
             visibleBaseAttribute: false,
-            bonus: undefined,
+            bonus: [ 
+                bonusValue,
+                critOrBase === 'critValue' ? rarityBonus * 2 : rarityBonus 
+            ],
             sum: true
         })
 
@@ -156,14 +159,14 @@ function Weapon(props: ItemTyping<'weapon'>): ReactElement {
                             variant='outlined'
                             sx={{ textTransform: 'lowercase' }}
                             onClick={() => { damageRoll({ name: 'Dano' }) }}
-                        >{props.effect?.value}</Button>
+                        >{props.effect?.value} {props.rarity !== 'Comum' && `+ (${rarityWeaponBonuses[props.rarity]})`}</Button>
                         <Button 
                             fullWidth 
                             sx={{ textTransform: 'lowercase' }} 
                             variant='outlined' 
                             color='error'
                             onClick={() => { damageRoll({ name: 'Crítico', crit: true }) }}
-                        >{props.effect?.critValue}</Button>
+                        >{props.effect?.critValue} {props.rarity !== 'Comum' && `+ (${rarityWeaponBonuses[props.rarity] * 2})`}</Button>
                     </Box>
                 </Box>
             </Box>
@@ -198,7 +201,7 @@ function Armor(props: ItemTyping<'armor'>): ReactElement {
                 </Box>
                 <Box display='flex' alignItems='center' gap={2}>
                     <RPGIcon icon='aura' />
-                    <Typography fontSize='.8rem'>{props.value}</Typography>
+                    <Typography fontSize='.8rem'>{props.value} {props.rarity !== 'Comum' && `+ (${rarityArmorBonuses[props.rarity]})`}</Typography>
                 </Box>
                 <Box display='flex' alignItems='center' gap={2}>
                     <RPGIcon icon='tower' />

@@ -54,13 +54,9 @@ const MagicsModal = memo(({ open, onClose }: { open: boolean, onClose: () => voi
         const url = `/api/magia?${params ? Object.keys(params).map((key) => `${key}=${params[key as keyof typeof params]}`).join('&') : ''}`
 
         const data: MagicType[] = await fetch(url).then(async r => await r.json())
-        console.log(data)
-
         let result = data.slice((page - 1) * 20, page * 20)
 
         setIsLoading(false)
-
-        console.log(result);
         
         if (magicsArr.length >= data.length) {
             setIsInLimit(true)

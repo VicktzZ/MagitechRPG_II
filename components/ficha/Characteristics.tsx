@@ -308,7 +308,7 @@ export default function Characteristics({ disabled }: { disabled?: boolean }): R
                     />
                     {!matches && (
                         <FormControl sx={{ width: '50%' }}>
-                            <InputLabel>Gênero</InputLabel>
+                            <InputLabel>Gênero *</InputLabel>
                             <Select
                                 name='gender'
                                 label='Gênero'

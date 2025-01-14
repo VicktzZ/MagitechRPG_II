@@ -4,7 +4,7 @@
 import { Box, Chip, Modal, Typography, useMediaQuery, useTheme } from '@mui/material'
 import { useMemo, type ReactElement, useEffect, memo } from 'react'
 import { Chance } from 'chance'
-import type { Attributes } from '@types';
+import type { Attributes, Roll } from '@types';
 import { Animation } from 'react-animate-style';
 
 const DiceRollModal = memo(({
@@ -17,18 +17,14 @@ const DiceRollModal = memo(({
     setResult,
     visibleDices,
     visibleBaseAttribute
-}: {
+}: Roll & {
     open: boolean
     onClose: () => void
-    sum?: boolean
     isDisadvantage?: boolean
-    bonus?: number[]
     setResult?: (result: number | number[]) => void
-    visibleDices?: boolean
-    visibleBaseAttribute?: boolean
     roll: { 
-        dice: number,
-        quantity: number,
+        dice: string,
+        quantity: number
         name: string,
         attribute: Attributes
     }

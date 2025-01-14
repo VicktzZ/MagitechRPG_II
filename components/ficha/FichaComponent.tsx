@@ -29,7 +29,6 @@ export default function FichaComponent({ disabled, ficha }: { disabled?: boolean
         playerName: session?.user?.name ?? 'undefined',
         userId: session?.user?._id ?? 'undefined'
     }
-    
 
     const submitForm = (values: typeof initialValues): void => {
         enqueueSnackbar('Aguarde...', { variant: 'info', key: 'loadingFetch', autoHideDuration: 6000 })
@@ -66,32 +65,36 @@ export default function FichaComponent({ disabled, ficha }: { disabled?: boolean
             setTimeout(() => {
                 (async () => {
                     try {
-                        // const expertisesValues: Partial<ExpertisesType> = {}
-
-                        // for (const expertise in values.expertises) {
-                        //     const value = values.expertises[expertise as keyof ExpertisesType].value
-                        //     expertisesValues[expertise as keyof ExpertisesType] = value as any
-                        // }
-
-                        console.log(values);
-
-                        const response = await fetch('/api/ficha', {
-                            method: 'POST',
-                            body: JSON.stringify({
-                                ...values
-                            })
-                        }).then(async r => await r.json())
-
-                        closeSnackbar('loadingFetch')
-                        console.log(response);
-
-                        enqueueSnackbar('Ficha criada com sucesso!', { variant: 'success' })
-
-                        setIsLoading(true)
-
-                        setTimeout(() => {
-                            router.push('/plataform/ficha/' + response._id)
-                        }, 500);
+                        if (values.points.attributes === 0) {
+                            // const expertisesValues: Partial<ExpertisesType> = {}
+    
+                            // for (const expertise in values.expertises) {
+                            //     const value = values.expertises[expertise as keyof ExpertisesType].value
+                            //     expertisesValues[expertise as keyof ExpertisesType] = value as any
+                            // }
+    
+                            console.log(values);
+    
+                            const response = await fetch('/api/ficha', {
+                                method: 'POST',
+                                body: JSON.stringify({
+                                    ...values
+                                })
+                            }).then(async r => await r.json())
+    
+                            closeSnackbar('loadingFetch')
+                            console.log(response);
+    
+                            enqueueSnackbar('Ficha criada com sucesso!', { variant: 'success' })
+    
+                            setIsLoading(true)
+    
+                            setTimeout(() => {
+                                router.push('/plataform/ficha/' + response._id)
+                            }, 500);
+                        } else {
+                            enqueueSnackbar('Você deve gastar seus pontos de atributos!', { variant: 'error', autoHideDuration: 3000 })
+                        }
                     } catch (error: any) {
                         closeSnackbar('loadingFetch')
                         enqueueSnackbar(`Algo deu errado: ${error.message}`, { variant: 'error' })
@@ -111,7 +114,7 @@ export default function FichaComponent({ disabled, ficha }: { disabled?: boolean
             width='100%'
             borderRadius='10px'
         >
-            <Formik
+            <Formik  
                 initialValues={initialValues}
                 onSubmit={() => { setOpenModal(true) }}
             >

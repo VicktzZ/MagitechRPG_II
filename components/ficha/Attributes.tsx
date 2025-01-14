@@ -324,7 +324,7 @@ export default function Attributes({ disabled }: { disabled?: boolean }): ReactE
                         minvalue={!disabled ? f.values.attributes.lp : f.initialValues.attributes.lp}
                         maxvalue={!disabled ? f.values.attributes.lp : f.initialValues.attributes.lp}
                         color='error'
-                        MoreComponents={
+                        morecomponents={
                             <Box ml={1} sx={{
                                 display: 'flex',
                                 width: '100%',
@@ -348,7 +348,7 @@ export default function Attributes({ disabled }: { disabled?: boolean }): ReactE
                         minvalue={!disabled ? f.values.attributes.mp : f.initialValues.attributes.mp}
                         maxvalue={!disabled ? f.values.attributes.mp : f.initialValues.attributes.mp}
                         color='info'
-                        MoreComponents={
+                        morecomponents={
                             <Box ml={1} sx={{
                                 display: 'flex',
                                 gap: 1,
@@ -400,7 +400,7 @@ export default function Attributes({ disabled }: { disabled?: boolean }): ReactE
                         />
                         <Attribute 
                             setAtrribute={attributePoints('des')} 
-                            attributeName='des' 
+                            attributeName='des'
                             attributeValue={f.values.attributes.des} 
                         />
                         <Attribute 
@@ -430,7 +430,7 @@ export default function Attributes({ disabled }: { disabled?: boolean }): ReactE
                             <LevelProgress amount={10} title='Nível' level={f.values.level} />
                             <LevelProgress barWidth='6.65rem' amount={4} title='Nível do ORM' level={f.values.ORMLevel} />
                         </Box>
-                        <Box>
+                        <Box display='flex' flexDirection='column' gap={1}>
                             <Box display='flex' alignItems='center' gap={1}>
                                 <Typography>Deslocamento:</Typography>
                                 <Chip
