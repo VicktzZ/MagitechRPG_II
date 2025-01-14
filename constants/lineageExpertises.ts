@@ -1,5 +1,4 @@
-import type { Lineage } from '@types';
-import { type Occupation } from '@types/ficha';
+import type { Lineage, Occupation } from '@types';
 
 export interface ExpertisesOverrided {
     points?: number,
