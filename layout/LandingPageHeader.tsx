@@ -4,13 +4,13 @@
 import React, { useEffect, type ReactElement, useState } from 'react';
 import { Avatar, Box, IconButton, MenuItem, Typography, useMediaQuery } from '@mui/material';
 import { getProviders, useSession, signIn, signOut } from 'next-auth/react';
-import { CustomMenu, Logo } from '@layout';
+import { CustomMenu } from '@layout';
 import { useRouter } from 'next/navigation';
 import { useTheme } from '@mui/material';
 
 import googleIcon from '@public/icons/google_icon.svg';
 import discordIcon from '@public/icons/discord_icon.svg';
-import magitechIcon from '@public/magitech_logo.png'
+import magitechIcon from '@public/assets/magitech_logo.png'
 import Image from 'next/image';
 export default function LandingPageHeader(): ReactElement {
     const theme = useTheme()
@@ -57,7 +57,7 @@ export default function LandingPageHeader(): ReactElement {
                 p={2.5}   
             >
                 <Box mr={2}>
-                    <Logo />
+                    {/* <Logo /> */}
                 </Box>
                 <Box
                     display='flex'

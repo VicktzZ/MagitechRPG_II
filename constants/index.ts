@@ -18,11 +18,15 @@ export const about = 'Magitech RPG é um sistema de RPG de mesa feito por Vitor 
 export const landingPageBg = 'https://cdn.leonardo.ai/users/09bf7b68-cc31-4280-b643-f788807fe7cd/generations/c793f097-4dd2-4508-ba53-9de8a93d5f50/AlbedoBase_XL_an_epic_battle_between_a_man_with_a_school_unifo_0.jpg'
 export const landingPageSynopse = 'm um mundo devastado por uma guerra nuclear, a humanidade descobre a magia artificial, uma tecnologia que permite manipular a matéria e a energia com códigos transmitidos por satélite. Agora, os países disputam pelo controle da magia, formando esquadrões de magos, soldados que usam objetos receptores de magia para criar sequências mágicas. Você é um estudante da UFEM, a mais renomada escola de magia do mundo, onde você aprende a usar a magia para ajudar o estado, seja para fins militares, governamentais ou científicos. Você também enfrenta os perigos e os mistérios da sequela de um mundo pós-apocalíptico, onde a magia é a maior arma e a maior esperança.'
 export const landingPageGrimoire = 'agia artificial é uma tecnologia que permite manipular a matéria e a energia com códigos transmitidos por satélite. Esses códigos são processados por objetos receptores de magia, chamados de ORM, que podem ser qualquer coisa que tenha um chip microscópico chamado Zeptachip. Os magos usam esses objetos para criar sequências mágicas, que são combinações de códigos que geram efeitos variados, como fogo, luz, sombra, etc. A magia artificial é a maior descoberta da humanidade, que revolucionou o mundo após o Apocalipse, uma guerra nuclear que devastou o planeta. A magia artificial é a maior arma e a maior esperança da humanidade, mas também é a fonte de muitos conflitos, mistérios e perigos.'
-export const BLOB_API_URL = 'https://magitechblob.blob.core.windows.net/files/'
 export const HOST = ''
 export const PUSHER_KEY = 'e058916b3ab024829e9c'
 export const NODE_ENV: 'production' | 'devlopment' = 'production' // process.env.NODE_ENV
 export const ADMIN_EMAIL = process.env.ADMIN_EMAIL
+export const BLOB_API = {
+    URL: 'https://zkvifowcyxqxducz.public.blob.vercel-storage.com',
+    GRIMORIO: 'https://zkvifowcyxqxducz.public.blob.vercel-storage.com/Magitech%20RPG%20-%20Grim%C3%B3rio-P1B4VVuiflC90GXkixdkfLmw1tzFNL.pdf',
+    GUIA: 'https://zkvifowcyxqxducz.public.blob.vercel-storage.com/Magitech%20RPG%20-%20Livro%20de%20Regras-CpOsZwZaRDN490YSBCWRQjdgAfpITR.pdf'
+}
 
 export const elementColor = {
     'FOGO': red[500],

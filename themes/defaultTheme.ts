@@ -18,16 +18,17 @@ const theme = createTheme({
 
         background: {
             light: '#f4f4f4',
-            dark: '#101621',
-            paper: '#363b45',
-            paper2: '#393940',
-            paper3: '#1b1f2b'
+            dark: '#0d0e1b',
+            paper: '#2f2f41',
+            paper2: '#38384d',
+            paper3: '#1f1f2e',
+            paper4: '#07070f'
         },
 
         primary: {
-            main: '#8da9d6',
-            light: '#3d69b3',
-            dark: '#4d668f'
+            main: '#6d8dc6',
+            light: '#34435f',
+            dark: '#263145'
         },
 
         secondary: {
