@@ -48,6 +48,7 @@ export interface Campaign {
     title: string
     description: string
     players: Player[]
+    session?: Player[]
 }
 
 export interface Player {

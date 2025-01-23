@@ -68,7 +68,8 @@ export default function CampaignOptionsModal({
                     campaignCode: campaignCodeGen,
                     title: campaignProps.title,
                     description: campaignProps.description,
-                    players: [ ]
+                    players: [ ],
+                    session: [ ]
                 })
             });
 

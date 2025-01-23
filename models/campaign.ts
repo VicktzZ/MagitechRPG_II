@@ -26,6 +26,12 @@ const campaignSchema = new Schema<CampaignType>({
         type: [ Object ],
         required: [ true, 'Players is required!' ],
         default: []
+    },
+
+    session: {
+        type: [ Object ],
+        required: [ true, 'Session is required!' ],
+        default: []
     }
 })
 

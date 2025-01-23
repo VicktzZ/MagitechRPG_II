@@ -71,6 +71,13 @@ export default function Campaign({ params }: { params: { code: string } }): Reac
 
         return () => {
             pusherClient?.unsubscribe(campaignName);
+            fetch('/api/campaign/session', { 
+                method: 'PATCH',
+                body: JSON.stringify({
+                    campaignCode: params.code,
+                    playerId: session?.user?._id
+                })
+            }).then(async r => { console.log(await r.json()) });
         };
     }, []);
     
@@ -119,7 +126,7 @@ export default function Campaign({ params }: { params: { code: string } }): Reac
                                         onClick={async () => {
                                             setFicha(f);
 
-                                            await fetch('/api/campaign/join', {
+                                            await fetch('/api/campaign/session', {
                                                 method: 'POST',
                                                 headers: {
                                                     'Content-Type': 'application/json'
@@ -135,7 +142,7 @@ export default function Campaign({ params }: { params: { code: string } }): Reac
                                             
                                             pusherClient = new PusherClient(PUSHER_KEY, {
                                                 cluster: 'sa1',
-                                                authEndpoint: `/api/pusher/auth?session=${JSON.stringify(session)}&ficha=${JSON.stringify(f)}`,
+                                                authEndpoint: `/api/pusher/auth?session=${JSON.stringify(session)}&ficha=${JSON.stringify(f._id)}`,
                                                 forceTLS: true
                                             });
                                             

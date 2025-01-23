@@ -33,6 +33,8 @@ export default function FichaComponent({ disabled, ficha }: { disabled?: boolean
     const submitForm = (values: typeof initialValues): void => {
         enqueueSnackbar('Aguarde...', { variant: 'info', key: 'loadingFetch', autoHideDuration: 6000 })
 
+        console.log(values)
+
         if (disabled) {
             setTimeout(() => {
                 (async () => {

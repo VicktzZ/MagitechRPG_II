@@ -18,9 +18,7 @@ export async function GET(req: NextRequest): Promise<Response> {
             const campaignAsGM = await Campaign.find({ admin: userId });
             
             response = [ ...campaignAsPlayer, ...campaignAsGM ];
-            
         } else {
-            
             response = await Campaign.find();
         }
         

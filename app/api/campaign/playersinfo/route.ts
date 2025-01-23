@@ -30,9 +30,9 @@ export async function GET(req: NextRequest): Promise<Response> {
         });
     }
 
-    if (playersInfo.length > 0) {
-        return Response.json(playersInfo);
+    if (playersInfo.length < 0) {
+        return Response.json({});
     }
-
-    return Response.json({});
+    
+    return Response.json(playersInfo);
 }

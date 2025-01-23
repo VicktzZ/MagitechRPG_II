@@ -37,27 +37,15 @@ export default function CampaignDashboardHeader(): ReactElement {
 
             console.log(usernames)
 
-            // channel.bind('pusher:member_added', async (user: PlayerInfo) => {
-            //     setPlayersInfo(await fetch(`/api/campaign/playersinfo?code=${code}`).then(async res => await res.json() as PlayerInfo[]))
-            // })
-
-            // channel.bind('pusher:member_removed', async (user: PlayerInfo) => {
-            //     setPlayersInfo(await fetch(`/api/campaign/playersinfo?code=${code}`).then(async res => await res.json() as PlayerInfo[]))
-            // })
-
             setLoading(false);
+
+            console.log(playersInfo)
         })();
     }, [ code, channel ]);
 
     return (
         <Box display='flex' gap={5} flexDirection='column'>
             <Box display='flex' gap={2} flexDirection='column'>
-                <Box display='flex' gap={1} flexDirection={'column'}>
-                    <Typography fontFamily='WBZ' variant='h3' textAlign='center'>
-                        {campaign?.title}
-                    </Typography>
-                    <Typography textAlign='center'>{campaign?.description}</Typography>
-                </Box>
                 <Box display='flex' alignItems='center' gap={1} justifyContent='center'>
                     <Typography>Código:</Typography>
                     <Tooltip

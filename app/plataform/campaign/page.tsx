@@ -17,7 +17,7 @@ export default function CampaignPage(): ReactElement {
         (async () => {
             setIsLoading(true);
 
-            const camps: Campaign[] = await fetch('/api/campaign?userId=' + session?.user?._id ?? '', {
+            const camps: Campaign[] = await fetch('/api/campaign?userId=' + session?.user?._id || '', {
                 method: 'GET'
             }).then(async r => await r.json());
 
