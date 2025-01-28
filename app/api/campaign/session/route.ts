@@ -16,7 +16,6 @@ export async function POST(req: Request): Promise<Response> {
                 }
             });
     
-            console.log({ response })
             return Response.json({ response }, { status: 200 });
         }
     }

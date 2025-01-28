@@ -3,20 +3,19 @@
 import { useChannel } from '@contexts/channelContext';
 import { Box } from '@mui/material';
 import { useEffect, type ReactElement } from 'react';
-import { CampaignDashboard, CampaignDashboardHeader } from '.';
+import { CampaignDashboard } from '.';
 import { useSnackbar } from 'notistack';
 import type { PusherMemberParam } from '@types';
 import { useSession } from '@node_modules/next-auth/react';
+import { useCampaignContext } from '@contexts/campaignContext';
 
 export default function CampaignComponent(): ReactElement {
     const { channel } = useChannel();
     const { data: session } = useSession();
     const { enqueueSnackbar } = useSnackbar();
-    const campaignCode = window.location.pathname.slice(-8);
+    const { campaignCode } = useCampaignContext();
 
     useEffect(() => {
-        console.log({ TESTE: 'textando' })
-
         channel.bind('pusher:subscription_succeeded', async () => {
             console.log({
                 message: 'subscription_succeeded',
@@ -26,7 +25,7 @@ export default function CampaignComponent(): ReactElement {
                     fichaId: channel.members.me.info.currentFicha
                 }
             });
-            
+
             await fetch('/api/campaign/session', {
                 method: 'POST',
                 body: JSON.stringify({
@@ -65,7 +64,6 @@ export default function CampaignComponent(): ReactElement {
 
     return (
         <Box>
-            <CampaignDashboardHeader />
             <CampaignDashboard />
         </Box>
     );
