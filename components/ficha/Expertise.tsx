@@ -60,7 +60,7 @@ export default function Expertise({
                 ) &&
                     f.values.expertises[name].value + edit.value > -1
             ) {
-                if (disabled && (f.values.expertises[name].value + edit.value >= f.initialValues.expertises[name].value)) {
+                if (!disabled && (f.values.expertises[name].value + edit.value >= f.initialValues.expertises[name].value)) {
                     f.setFieldValue('expertises', {
                         ...f.values.expertises,
                         [name]: {

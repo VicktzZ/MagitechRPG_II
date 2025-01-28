@@ -87,11 +87,8 @@ const DiceRollModal = memo(({
         }
 
         if (bonus && roll.quantity > 1 && !sum) {
-            if (isDisadvantage) {
-                resultRolls = [ Number(resultRolls.slice().sort(((a, b) => a - b))[0]) ]
-            } else {
-                resultRolls = [ Number(resultRolls[0]) ]
-            }
+            if (isDisadvantage) resultRolls = [ Number(resultRolls.slice().sort(((a, b) => a - b))[0]) ]
+            else resultRolls = [ Number(resultRolls[0]) ]
         }
 
         const result = useMemo(() => {
