@@ -3,7 +3,7 @@
 
 import { useEffect, type ReactElement, useState } from 'react';
 import { useSession } from 'next-auth/react';
-import { Backdrop, Box, CircularProgress, Grid, Modal, Skeleton, Typography } from '@mui/material';
+import { Box, Grid, Modal, Skeleton, Typography } from '@mui/material';
 import { useRouter } from 'next/navigation';
 import { CampaignComponent } from '@components/campaign';
 import { FichaCard } from '@components/ficha';
@@ -21,19 +21,17 @@ export default function Campaign({ params }: { params: { code: string } }): Reac
     const [ isFichaLoading, setIsFichaLoading ] = useState<boolean>(true);
     const [ userFichas, setUserFichas ] = useState<Ficha[]>([]);
 
-    const [ ficha, setFicha ] = useState<Ficha>();
+    const [ , setFicha ] = useState<Ficha>();
     const { data: session } = useSession();
 
     const { setChannel } = useChannel();
-
-    let pusherClient: PusherClient | null;
 
     const [ allGameMastersId, setAllGameMastersId ] = useState<string[]>([]);
     const [ userIsGM, setUserIsGM ] = useState<boolean>(false);
 
     const [ campaign, setCampaign ] = useState<CampaignType>();
 
-    pusherClient = new PusherClient(PUSHER_KEY, {
+    const pusherClient = new PusherClient(PUSHER_KEY, {
         cluster: 'sa1',
         authEndpoint: `/api/pusher/auth?session=${JSON.stringify(session)}`,
         forceTLS: true
@@ -41,43 +39,49 @@ export default function Campaign({ params }: { params: { code: string } }): Reac
 
     useEffect(() => {
         (async () => {
+            setLoading(true)
             document.title = 'Campaign - ' + params.code;
     
             const campaignResponse: CampaignType = await fetch(`/api/campaign?code=${params.code}`).then(async res => await res.json());
 
             if (!campaignResponse) {
                 setLoading(false);
+                setIsFichaLoading(false);
                 return;
             }
             
-            if (campaignResponse.admin.includes(session?.user?._id ?? '')) {
-                setIsFichaLoading(false);
-                setLoading(true);
+            if (campaignResponse.admin.includes(session?.user?._id ?? '')) 
                 setUserIsGM(true);
-                setChannel(pusherClient?.subscribe(campaignName) as PresenceChannel);
-                setLoading(false);
-            }
 
-            if (isFichaLoading) {
+            if (isFichaLoading && !userIsGM) {
                 const fichaResponse: Ficha[] = await fetch(`/api/ficha?user=${session?.user?._id}`).then(async res => await res.json());
-
                 setUserFichas(fichaResponse);
-                setIsFichaLoading(false);
             }
             
-            setCampaign(campaignResponse ?? { 'null': null });
             setAllGameMastersId(campaignResponse.admin);
+
+            setCampaign(campaignResponse ?? { 'null' : null });
+            setChannel(pusherClient?.subscribe(campaignName) as PresenceChannel);
+
+            setLoading(false)
         })();
 
         return () => {
             pusherClient?.unsubscribe(campaignName);
+            fetch('/api/campaign/session', { 
+                method: 'PATCH',
+                body: JSON.stringify({
+                    campaignCode: params.code,
+                    playerId: session?.user?._id
+                })
+            }).then(async r => { console.log(await r.json()) });
         };
     }, []);
     
     return (
         <>
             {
-                loading ? (
+                isFichaLoading && !userIsGM ? (
                     <Modal
                         open={loading}
                         onClose={() => { router.push('/plataform'); }}
@@ -119,7 +123,7 @@ export default function Campaign({ params }: { params: { code: string } }): Reac
                                         onClick={async () => {
                                             setFicha(f);
 
-                                            await fetch('/api/campaign/join', {
+                                            await fetch('/api/campaign/session', {
                                                 method: 'POST',
                                                 headers: {
                                                     'Content-Type': 'application/json'
@@ -133,32 +137,19 @@ export default function Campaign({ params }: { params: { code: string } }): Reac
                                                 })
                                             });
                                             
-                                            pusherClient = new PusherClient(PUSHER_KEY, {
-                                                cluster: 'sa1',
-                                                authEndpoint: `/api/pusher/auth?session=${JSON.stringify(session)}&ficha=${JSON.stringify(f)}`,
-                                                forceTLS: true
-                                            });
-                                            
-                                            setChannel(pusherClient?.subscribe(campaignName) as PresenceChannel);
-                                            setLoading(false);
+                                            setIsFichaLoading(false);
                                         }}
                                     />
                                 ))}
                             </Grid>
                         </Box>
                     </Modal>
-                ) : !loading ? (
+                ) : !loading && (
                     <campaignContext.Provider value={campaign!}>
                         <gameMasterContext.Provider value={{ allGameMasters: allGameMastersId, userIsGM }}>
                             <CampaignComponent />
                         </gameMasterContext.Provider>
                     </campaignContext.Provider>
-                ) : ficha && (
-                    <Backdrop
-                        open={loading}
-                    >
-                        <CircularProgress />
-                    </Backdrop>
                 )
             }
         </>

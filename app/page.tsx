@@ -431,7 +431,7 @@ export default function LandingPage(): ReactElement {
                             </Box>
                         </AnimateOnScroll>
                     </Box>
-                    <BgTopPatternLayer sx={{ top: !matches ? '55rem' : '132rem' }} />
+                    <BgTopPatternLayer sx={{ bottom: 0, top: !matches ? '93vh' : '132rem' }} />
                 </Box>
                 <Footer />
             </Box>
