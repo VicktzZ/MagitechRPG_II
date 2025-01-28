@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { Box, Grid, Typography, useMediaQuery, useTheme, Modal, Button } from '@mui/material';
-import React, { useEffect, type ReactElement, useMemo, memo, useState } from 'react';
+import React, { useEffect, type ReactElement, useMemo, useState } from 'react';
 import { useFormikContext, type FormikContextType } from 'formik';
 import { Item, ItemModal } from '@components/ficha';
 import { lineageItems, occupationItems } from '@constants/lineageitems';
@@ -13,7 +13,7 @@ import { rarityArmorBonuses } from '@constants/dataTypes';
 
 type ItemName = 'weapon' | 'item' | 'armor'
 
-const Inventory = memo(({ disabled }: { disabled?: boolean }): ReactElement => {
+export default function Inventory ({ disabled }: { disabled?: boolean }): ReactElement {
     const f: FormikContextType<Ficha> = useFormikContext()
 
     const theme = useTheme()
@@ -301,7 +301,4 @@ const Inventory = memo(({ disabled }: { disabled?: boolean }): ReactElement => {
             </Modal>
         </>
     )
-})
-
-Inventory.displayName = 'Inventory'
-export default Inventory
+}

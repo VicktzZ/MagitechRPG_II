@@ -7,22 +7,19 @@ import React, { type ReactElement, useEffect, useState } from 'react'
 
 export default function RequireAuth({ children }: { children: ReactElement | ReactElement[]}): any {
     const { data: session, status } = useSession()
+    const [ isLoading, setIsLoading ] = useState(true)
     const router = useRouter()
-    const [ isLoading, setIsLoading ] = useState(false)
 
     useEffect(() => {
-        if (status === 'loading') setIsLoading(true)
-        
-        if (status !== 'loading') {
-            if (!localStorage.getItem('user') && session?.user) {
-                localStorage.setItem('user', JSON.stringify(session?.user))
-            }
-        }
-            
-        if (status === 'unauthenticated') {
-            router.push('/')
-        }
-    }, [ status, router, isLoading, session?.user ])
+        if (!localStorage.getItem('user') && session?.user) localStorage.setItem('user', JSON.stringify(session?.user))
+        if (status === 'unauthenticated') router.push('/')
+        if (status !== 'loading' && isLoading) setIsLoading(false)
+
+        console.log({
+            session,
+            status
+        })
+    }, [ status ])
 
     return status === 'authenticated' ? children : (
         <Backdrop open={true}>
