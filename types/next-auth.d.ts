@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { JWT } from '@node_modules/next-auth/jwt'
+import type { JWT } from '@node_modules/next-auth/jwt'
 import _ from 'next-auth'
 
 declare module 'next-auth' {
@@ -10,6 +10,8 @@ declare module 'next-auth' {
         email: string
         image: string
     }
+
     accessToken: string
     token: JWT
+  }
 }
