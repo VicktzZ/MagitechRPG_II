@@ -39,7 +39,6 @@ const handler = NextAuth({
             const sessionUser = await User.findOne<UserType>({
                 email: session?.user?.email 
             });
-
             console.log(token);
 
             if (sessionUser !== null) {
