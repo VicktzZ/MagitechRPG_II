@@ -6,7 +6,7 @@ import type { Expertise as ExpertiseType, Expertises, Ficha } from '@types';
 import { blue, green, grey, purple, yellow } from '@mui/material/colors';
 import DiceRollModal from '@components/misc/DiceRollModal';
 import { useFormikContext, type FormikContextType } from 'formik';
-import { useSnackbar } from '@node_modules/notistack';
+// import { useSnackbar } from '@node_modules/notistack';
 
 export default function Expertise({ 
     name,
@@ -27,7 +27,7 @@ export default function Expertise({
 }): ReactElement {
     const theme = useTheme()
     const matches = useMediaQuery(theme.breakpoints.down('md'))
-    const { enqueueSnackbar } = useSnackbar()
+    // const { enqueueSnackbar } = useSnackbar()
 
     const [ open, setOpen ] = useState<boolean>(false)
 
@@ -60,23 +60,23 @@ export default function Expertise({
                 ) &&
                     f.values.expertises[name].value + edit.value > -1
             ) {
-                if (!disabled && (f.values.expertises[name].value + edit.value >= f.initialValues.expertises[name].value)) {
-                    f.setFieldValue('expertises', {
-                        ...f.values.expertises,
-                        [name]: {
-                            ...f.values.expertises[name],
-                            value: expertise.value + edit.value
-                        }
-                    })    
-    
-                    f.setFieldValue(
-                        'points.expertises', 
-                        edit.value > 0 ? f.values.points.expertises - 1 :
-                            f.values.points.expertises + 1
-                    )
-                } else {
-                    enqueueSnackbar('Não é possível diminuir uma perícia para um valor menor que o inicial', { variant: 'warning', preventDuplicate: true })
-                }
+                // if (disabled && (f.values.expertises[name].value + edit.value >= f.initialValues.expertises[name].value)) {
+                f.setFieldValue('expertises', {
+                    ...f.values.expertises,
+                    [name]: {
+                        ...f.values.expertises[name],
+                        value: expertise.value + edit.value
+                    }
+                })    
+
+                f.setFieldValue(
+                    'points.expertises', 
+                    edit.value > 0 ? f.values.points.expertises - 1 :
+                        f.values.points.expertises + 1
+                )
+                // } else {
+                //     enqueueSnackbar('Não é possível diminuir uma perícia para um valor menor que o inicial', { variant: 'warning', preventDuplicate: true })
+                // }
             }
         }
     }, [ edit, f, name, expertise, disabled ])
