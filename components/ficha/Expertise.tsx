@@ -60,23 +60,23 @@ export default function Expertise({
                 ) &&
                     f.values.expertises[name].value + edit.value > -1
             ) {
-                if (!disabled && (f.values.expertises[name].value + edit.value >= f.initialValues.expertises[name].value)) {
-                    f.setFieldValue('expertises', {
-                        ...f.values.expertises,
-                        [name]: {
-                            ...f.values.expertises[name],
-                            value: expertise.value + edit.value
-                        }
-                    })    
-    
-                    f.setFieldValue(
-                        'points.expertises', 
-                        edit.value > 0 ? f.values.points.expertises - 1 :
-                            f.values.points.expertises + 1
-                    )
-                } else {
-                    enqueueSnackbar('Não é possível diminuir uma perícia para um valor menor que o inicial', { variant: 'warning', preventDuplicate: true })
-                }
+                // if (disabled && (f.values.expertises[name].value + edit.value >= f.initialValues.expertises[name].value)) {
+                f.setFieldValue('expertises', {
+                    ...f.values.expertises,
+                    [name]: {
+                        ...f.values.expertises[name],
+                        value: expertise.value + edit.value
+                    }
+                })    
+
+                f.setFieldValue(
+                    'points.expertises', 
+                    edit.value > 0 ? f.values.points.expertises - 1 :
+                        f.values.points.expertises + 1
+                )
+                // } else {
+                //     enqueueSnackbar('Não é possível diminuir uma perícia para um valor menor que o inicial', { variant: 'warning', preventDuplicate: true })
+                // }
             }
         }
     }, [ edit, f, name, expertise, disabled ])
