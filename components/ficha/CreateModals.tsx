@@ -628,7 +628,7 @@ function ItemModal({ formik, closeModal }: ModalProps): ReactElement {
                     {...register('kind')}
                     error={errors?.['kind'] && true}
                     helperText={errors?.['kind']?.message?.toString()}
-                    sx={{ width: '12%'}}
+                    sx={{ width: '12%' }}
                 >
                     {itemKind.map(kind => (
                         <MenuItem key={kind} value={kind}>
