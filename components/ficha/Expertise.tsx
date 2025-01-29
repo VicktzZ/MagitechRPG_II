@@ -6,7 +6,7 @@ import type { Expertise as ExpertiseType, Expertises, Ficha } from '@types';
 import { blue, green, grey, purple, yellow } from '@mui/material/colors';
 import DiceRollModal from '@components/misc/DiceRollModal';
 import { useFormikContext, type FormikContextType } from 'formik';
-import { useSnackbar } from '@node_modules/notistack';
+// import { useSnackbar } from '@node_modules/notistack';
 
 export default function Expertise({ 
     name,
@@ -27,7 +27,7 @@ export default function Expertise({
 }): ReactElement {
     const theme = useTheme()
     const matches = useMediaQuery(theme.breakpoints.down('md'))
-    const { enqueueSnackbar } = useSnackbar()
+    // const { enqueueSnackbar } = useSnackbar()
 
     const [ open, setOpen ] = useState<boolean>(false)
 
