@@ -14,11 +14,6 @@ export default function RequireAuth({ children }: { children: ReactElement | Rea
         if (!localStorage.getItem('user') && session?.user) localStorage.setItem('user', JSON.stringify(session?.user))
         if (status === 'unauthenticated') router.push('/')
         if (status !== 'loading' && isLoading) setIsLoading(false)
-
-        console.log({
-            session,
-            status
-        })
     }, [ status ])
 
     return status === 'authenticated' ? children : (

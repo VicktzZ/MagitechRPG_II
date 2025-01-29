@@ -30,6 +30,7 @@ import {
     ballisticWeaponAmmo,
     damages,
     energyWeaponAmmo,
+    itemKind,
     ranges,
     rarities,
     weaponBonuses,
@@ -621,6 +622,19 @@ function ItemModal({ formik, closeModal }: ModalProps): ReactElement {
                     error={errors?.['level'] && true}
                     helperText={errors?.['level']?.message?.toString()}
                 />
+                <SelectFormComponent
+                    label='Tipo'
+                    id='itemKindParam'
+                    {...register('kind')}
+                    error={errors?.['kind'] && true}
+                    helperText={errors?.['kind']?.message?.toString()}
+                >
+                    {itemKind.map(kind => (
+                        <MenuItem key={kind} value={kind}>
+                            {kind}
+                        </MenuItem>
+                    ))}
+                </SelectFormComponent>
                 <TextField 
                     label='Efeitos/Descrição' 
                     type='text' 
