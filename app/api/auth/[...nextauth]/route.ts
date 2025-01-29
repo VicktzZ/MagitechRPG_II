@@ -2,9 +2,10 @@ import NextAuth from 'next-auth/next';
 import GoogleProvider from 'next-auth/providers/google';
 import DiscordProvider from 'next-auth/providers/discord';
 
-import { connectToDb } from '@utils/database';
 import type { Session } from 'next-auth';
-import { type User as UserType } from '@types';
+import type { JWT } from '@node_modules/next-auth/jwt';
+import type { User as UserType } from '@types';
+import { connectToDb } from '@utils/database';
 import User from '@models/user';
 // import { AdminProvider } from './adminProvider';
 
@@ -33,15 +34,31 @@ const handler = NextAuth({
             return baseUrl;
         },
 
-        session: async ({ session }: { session: Session }) => {
+        session: async ({ session, token }: { session: Session, token: JWT }) => {
+            session.accessToken = token['accessToken'] as string;
             const sessionUser = await User.findOne<UserType>({
                 email: session?.user?.email 
             });
 
-            session.user._id = String(sessionUser?._id);
-            session.user.email = String(sessionUser?.email);
-            session.user.name = String(sessionUser?.name);
-            session.user.image = String(sessionUser?.image);
+            console.log(token);
+
+            if (sessionUser !== null) {
+                session.user = {
+                    _id: String(sessionUser?._id),
+                    email: String(sessionUser?.email),
+                    name: String(sessionUser?.name),
+                    image: String(sessionUser?.image)
+                };
+            } else if (typeof token !== typeof undefined) {
+                session.token = token;
+            }
+            
+            console.log(session);
+
+            // session.user._id = String(sessionUser?._id);
+            // session.user.email = String(sessionUser?.email);
+            // session.user.name = String(sessionUser?.name);
+            // session.user.image = String(sessionUser?.image);
 
             return session;
         },
@@ -76,9 +93,16 @@ const handler = NextAuth({
                 return true;
             } catch (error) {
                 console.log(error);
-
                 return false;
             }
+        },
+
+        async jwt({ token, user }) {
+            console.log('JWT Token User');
+            console.log(token['user']);
+
+            if (typeof user !== typeof undefined) token['user'] = user;
+            return token;
         }
     }
 });

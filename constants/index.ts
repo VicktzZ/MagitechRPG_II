@@ -24,7 +24,7 @@ export const NODE_ENV: 'production' | 'devlopment' = 'production' // process.env
 export const ADMIN_EMAIL = process.env.ADMIN_EMAIL
 export const BLOB_API = {
     URL: 'https://zkvifowcyxqxducz.public.blob.vercel-storage.com',
-    GRIMORIO: 'https://zkvifowcyxqxducz.public.blob.vercel-storage.com/Magitech%20RPG%20-%20Grim%C3%B3rio-P1B4VVuiflC90GXkixdkfLmw1tzFNL.pdf',
+    GRIMORIO: 'https://zkvifowcyxqxducz.public.blob.vercel-storage.com/Magitech%20RPG%20-%20Grim%C3%B3rio-8G38Chjn7dKT5mj61FCDt5qdbZi1qI.pdf',
     GUIA: 'https://zkvifowcyxqxducz.public.blob.vercel-storage.com/Magitech%20RPG%20-%20Livro%20de%20Regras-CpOsZwZaRDN490YSBCWRQjdgAfpITR.pdf'
 }
 
