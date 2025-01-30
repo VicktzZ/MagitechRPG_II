@@ -35,30 +35,27 @@ const handler = NextAuth({
         },
 
         session: async ({ session, token }: { session: Session, token: JWT }) => {
-            session.accessToken = token['accessToken'] as string;
+            session.token = token;
+
             const sessionUser = await User.findOne<UserType>({
                 email: session?.user?.email 
             });
-            console.log(token);
 
-            if (sessionUser !== null) {
+            if (sessionUser) {
                 session.user = {
                     _id: String(sessionUser?._id),
                     email: String(sessionUser?.email),
                     name: String(sessionUser?.name),
                     image: String(sessionUser?.image)
                 };
-            } else if (typeof token !== typeof undefined) {
+            } else {
                 session.token = token;
             }
-            
-            console.log(session);
 
-            // session.user._id = String(sessionUser?._id);
-            // session.user.email = String(sessionUser?.email);
-            // session.user.name = String(sessionUser?.name);
-            // session.user.image = String(sessionUser?.image);
-
+            console.log({
+                session, token
+            });
+        
             return session;
         },
 
@@ -79,7 +76,7 @@ const handler = NextAuth({
                     }
                 }
 
-                if (!userExists && !user) {
+                if (!userExists) {
                     await User.create({
                         email: profile?.email?.toLowerCase(),
                         name:
@@ -98,7 +95,6 @@ const handler = NextAuth({
 
         async jwt({ token, user }) {
             console.log('JWT Token User');
-            console.log(token['user']);
 
             if (typeof user !== typeof undefined) token['user'] = user;
             return token;
