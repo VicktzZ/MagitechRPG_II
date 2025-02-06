@@ -51,10 +51,6 @@ const handler = NextAuth({
             } else {
                 session.token = token;
             }
-
-            console.log({
-                session, token
-            });
         
             return session;
         },
@@ -94,8 +90,6 @@ const handler = NextAuth({
         },
 
         async jwt({ token, user }) {
-            console.log('JWT Token User');
-
             if (typeof user !== typeof undefined) token['user'] = user;
             return token;
         }

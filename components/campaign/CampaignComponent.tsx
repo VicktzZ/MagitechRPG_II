@@ -28,11 +28,11 @@ export default function CampaignComponent(): ReactElement {
         });
         
         channel.bind('pusher:member_added', (user: PusherMemberParam) => {
-            enqueueSnackbar(`${user.info.name} entrou na sessão!`, toastDefault('enteredToChannel', 'success'));
+            enqueueSnackbar(`${user.info.name} entrou na sessão!`, toastDefault('enteredToChannel'));
         });
 
         channel.bind('pusher:member_removed', (user: PusherMemberParam) => {
-            enqueueSnackbar(`${user.info.name} saiu da sessão!`, toastDefault('exitFromChannel', 'success'));
+            enqueueSnackbar(`${user.info.name} saiu da sessão!`, toastDefault('exitFromChannel'));
         });
 
         channel.bind('pusher:connection_state_changed', (e: { current: string }) => {
