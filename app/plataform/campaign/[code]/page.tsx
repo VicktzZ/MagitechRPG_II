@@ -12,7 +12,8 @@ import { gameMasterContext, campaignContext } from '@contexts';
 import { PUSHER_KEY } from '@constants';
 import type { Ficha, Campaign as CampaignType } from '@types';
 import PusherClient, { type PresenceChannel } from 'pusher-js';
-import { useCampaignContext } from '@contexts/campaignContext';
+import { campaignService, fichaService, sessionService } from '@services';
+// import { useCampaignContext } from '@contexts/campaignContext';
 
 export default function Campaign({ params }: { params: { code: string } }): ReactElement {
     const campaignName = 'presence-' + params.code;
@@ -32,13 +33,14 @@ export default function Campaign({ params }: { params: { code: string } }): Reac
 
     useEffect(() => {
         const fetchCampaign = async () => {
-            const campaignResponse: CampaignType = await fetch(`/api/campaign?code=${params.code}`).then(async res => await res.json());
+            const campaignResponse = await campaignService.getById(params.code);
             setCampaign(campaignResponse);
 
             if (campaignResponse) {
                 if (campaignResponse.admin.includes(session?.user?._id ?? '')) setIsUserGM(true);
                 else {
-                    const fichaResponse: Ficha[] = await fetch(`/api/ficha?user=${session?.user?._id}`).then(async res => await res.json());
+                    const fichaResponse = await fichaService.fetch({ user: session?.user?._id ?? '' });
+
                     setUserFichas(fichaResponse);
                     setIsLoadingFichas(false);
                     setOpenFichaModal(true);
@@ -53,7 +55,7 @@ export default function Campaign({ params }: { params: { code: string } }): Reac
 
     useEffect(() => {
         let pusherClient: PusherClient | null = null;
-        let channel: PresenceChannel | null = null;
+        let chn: PresenceChannel | null = null;
 
         if (campaign && ((!isLoading && isUserGM) || (!isLoading && ficha))) {
             pusherClient = new PusherClient(PUSHER_KEY, {
@@ -62,20 +64,17 @@ export default function Campaign({ params }: { params: { code: string } }): Reac
                 forceTLS: true
             });
 
-            channel = pusherClient.subscribe(campaignName) as PresenceChannel;
-            setChannel(channel);
+            chn = pusherClient.subscribe(campaignName) as PresenceChannel;
+            setChannel(chn);
         }
 
         return () => {
             pusherClient?.unsubscribe(campaignName);
-            
-            fetch('/api/campaign/session', { 
-                method: 'PATCH',
-                body: JSON.stringify({
-                    campaignCode: params.code,
-                    playerId: session?.user?._id
-                })
-            }).then(async r => { console.log(await r.json()) });
+            channel?.unsubscribe();
+            setChannel(null);
+
+            sessionService.disconnect(params.code, session?.user?._id ?? '')
+                .then((data) => { console.log(data); })
         };
     }, [ campaign, isLoading, ficha, isUserGM ]);                
 
@@ -140,22 +139,7 @@ export default function Campaign({ params }: { params: { code: string } }): Reac
                                     key={f._id}
                                     ficha={f}
                                     disableDeleteButton
-                                    onClick={async () => {
-                                        await fetch('/api/campaign/session', {
-                                            method: 'POST',
-                                            headers: {
-                                                'Content-Type': 'application/json'
-                                            },
-                                            body: JSON.stringify({
-                                                campaignCode: params.code,
-                                                player: {
-                                                    userId: session?.user._id,
-                                                    fichaId: f._id 
-                                                }
-                                                
-                                            })
-                                        }).then(async r => { console.log(await r.json()) });
-
+                                    onClick={() => {
                                         setFicha(f);
                                         setCampaign(state =>  ({ ...state!, myFicha: f }));
                                         setOpenFichaModal(false);

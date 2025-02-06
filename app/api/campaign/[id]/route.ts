@@ -24,13 +24,13 @@ export async function DELETE(_req: Request, { params: { id } }: { params: id }):
     try {
         await connectToDb();
         
-        const ficha = await Campaign.findByIdAndDelete(id);
+        const campaign = await Campaign.findByIdAndDelete(id);
 
-        if (!ficha) {
+        if (!campaign) {
             return Response.json({ message: 'NOT FOUND' }, { status: 404 });
         }
 
-        return Response.json({ deletedFicha: ficha, message: 'SUCCESS' });
+        return Response.json({ deletedCampaign: campaign, message: 'SUCCESS' });
     } catch (error: any) {
         return Response.json({ message: 'BAD REQUEST', error: error.message }, { status: 400 });
     }
@@ -41,13 +41,13 @@ export async function PATCH(req: Request, { params: { id } }: { params: id }): P
         await connectToDb();
         
         const body: CampaignType = await req.json();
-        const ficha = await Campaign.findByIdAndUpdate<CampaignType>(id, body);
+        const campaign = await Campaign.findByIdAndUpdate<CampaignType>(id, body);
 
-        if (!ficha) {
+        if (!campaign) {
             return Response.json({ message: 'NOT FOUND' }, { status: 404 });
         }
 
-        return Response.json({ updatedFicha: ficha, message: 'SUCCESS' });
+        return Response.json({ updatedCampaign: campaign, message: 'SUCCESS' });
     } catch (error: any) {
         return Response.json({ message: 'NOT FOUND', error: error.message }, { status: 404 });
     }

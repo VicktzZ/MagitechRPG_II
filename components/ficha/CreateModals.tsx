@@ -44,6 +44,7 @@ import {
 import { Typography } from '@mui/material';
 import { type FormikContextType } from '@node_modules/formik/dist';
 import { useSnackbar } from '@node_modules/notistack';
+import { toastDefault } from '@constants';
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
@@ -239,7 +240,7 @@ function WeaponModal({ closeModal, formik }: ModalProps): ReactElement {
 
     const create = (data: WeaponFormFields) => {
         formik.setFieldValue('inventory.weapons', [ ...formik.values.inventory.weapons, data ]);
-        enqueueSnackbar(`${data.name} criado com sucesso!`, { variant: 'success', autoHideDuration: 3000 });
+        enqueueSnackbar(`${data.name} criado com sucesso!`, toastDefault('itemCreated', 'success'));
         closeModal();
     };
 
@@ -477,7 +478,7 @@ function ArmorModal({ closeModal, formik }: ModalProps): ReactElement {
 
     const create = (data: ArmorFormFields) => {
         formik.setFieldValue('inventory.armors', [ ...formik.values.inventory.armors, data ]);
-        enqueueSnackbar(`${data.name} criado com sucesso!`, { variant: 'success', autoHideDuration: 3000 });
+        enqueueSnackbar(`${data.name} criado com sucesso!`, toastDefault('itemCreated', 'success'));
         closeModal();
     }
 
@@ -604,7 +605,7 @@ function ItemModal({ formik, closeModal }: ModalProps): ReactElement {
         data.effects = [ data.effects ] as unknown as string;
         formik.setFieldValue('inventory.items', [ ...formik.values.inventory.items, data ]);
 
-        enqueueSnackbar(`${data.name} criado com sucesso!`, { variant: 'success', autoHideDuration: 3000 });
+        enqueueSnackbar(`${data.name} criado com sucesso!`, toastDefault(data.name, 'success'));
 
         closeModal();
     }

@@ -1,8 +1,10 @@
 'use client';
 
+import { toastDefault } from '@constants';
 import { CustomIconButton, WarningModal } from '@layout'
 import { ArrowRight } from '@mui/icons-material'
 import { Box, Button, Card, Typography, useMediaQuery, useTheme } from '@mui/material'
+import { fichaService } from '@services';
 import type { Ficha } from '@types'
 import { useRouter } from 'next/navigation'
 import { useSnackbar } from 'notistack';
@@ -19,20 +21,17 @@ export default function FichaCard({ ficha, onClick, disableDeleteButton }: { fic
     const deleteFicha = (): void => {
         (async () => {
             setOpenModal(false) 
-            enqueueSnackbar('Aguarde...', { variant: 'info', key: 'loadingDelete', autoHideDuration: 6000 })
+            enqueueSnackbar('Aguarde...', toastDefault('loadingDelete', 'info'))
 
             try {
-                await fetch(`/api/ficha/${ficha._id}`, {
-                    method: 'DELETE'
-                })
-
+                await fichaService.deleteById(ficha._id ?? '')
                 setTimeout(() => {
                     closeSnackbar('loadingDelete')
-                    enqueueSnackbar(`Ficha ${ficha.name} deletada!`, { variant: 'success' })
+                    enqueueSnackbar(`Ficha ${ficha.name} deletada!`, toastDefault('itemDeleted', 'success'))
                     window.location.reload()
                 }, 500);
             } catch (error: any) {
-                enqueueSnackbar(`Algo deu errado: ${error.message}`, { variant: 'error' })
+                enqueueSnackbar(`Algo deu errado: ${error.message}`, toastDefault('error', 'error'))
             }
         })()
     }

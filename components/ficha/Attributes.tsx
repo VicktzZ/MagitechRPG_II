@@ -36,6 +36,7 @@ import { Check, Edit } from '@mui/icons-material'
 import Attribute from './Attribute'
 import LevelProgress from './LevelProgress'
 import { enqueueSnackbar } from '@node_modules/notistack'
+import { toastDefault } from '@constants'
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
@@ -134,7 +135,7 @@ export default function Attributes({ disabled }: { disabled?: boolean }): ReactE
                 )
             } else {
                 setCanChangeTrait(false)
-                enqueueSnackbar('Você não pode adicionar este traço pois ele excede o limite máximo do atributo determinado!', { autoHideDuration: 3000, variant: 'error' })
+                enqueueSnackbar('Você não pode adicionar este traço pois ele excede o limite máximo do atributo determinado!', toastDefault('cannotAddTrait', 'warning'))
                 return;
             }
         } else {

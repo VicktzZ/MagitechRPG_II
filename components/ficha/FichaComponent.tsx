@@ -11,6 +11,8 @@ import { CustomIconButton, WarningModal } from '@layout';
 import { fichaModel } from '@constants/ficha';
 import { Edit } from '@mui/icons-material';
 import type { Ficha } from '@types';
+import { toastDefault } from '@constants';
+import { fichaService } from '@services';
 
 export default function FichaComponent({ disabled, ficha }: { disabled?: boolean, ficha: Ficha }): ReactElement {
     const { data: session } = useSession()
@@ -30,8 +32,8 @@ export default function FichaComponent({ disabled, ficha }: { disabled?: boolean
         userId: session?.user?._id ?? 'undefined'
     }
 
-    const submitForm = (values: typeof initialValues): void => {
-        enqueueSnackbar('Aguarde...', { variant: 'info', key: 'loadingFetch', autoHideDuration: 6000 })
+    const submitForm = (values: Ficha): void => {
+        enqueueSnackbar('Aguarde...', toastDefault('loadingFetch', 'info'))
 
         console.log(values)
 
@@ -39,27 +41,24 @@ export default function FichaComponent({ disabled, ficha }: { disabled?: boolean
             setTimeout(() => {
                 (async () => {
                     try {
-                        const response = await fetch(`/api/ficha/${values._id}`, {
-                            method: 'PATCH',
-                            body: JSON.stringify({
-                                ...values,
-                                attributes: {
-                                    ...values.attributes,
-                                    ap: initialValues.attributes.ap,
-                                    lp: initialValues.attributes.lp,
-                                    mp: initialValues.attributes.mp
-                                }
-                            })
-                        }).then(async r => await r.json())
+                        const response = await fichaService.updateById(values._id!, {
+                            ...values,
+                            attributes: {
+                                ...values.attributes,
+                                ap: initialValues.attributes.ap,
+                                lp: initialValues.attributes.lp,
+                                mp: initialValues.attributes.mp
+                            }
+                        })
 
                         closeSnackbar('loadingFetch')
 
                         console.log(response);
 
-                        enqueueSnackbar('Ficha salva com sucesso!', { variant: 'success' })
+                        enqueueSnackbar('Ficha salva com sucesso!', toastDefault('success', 'success'))
                     } catch (error: any) {
                         closeSnackbar('loadingFetch')
-                        enqueueSnackbar(`Algo deu errado: ${error.message}`, { variant: 'error' })
+                        enqueueSnackbar(`Algo deu errado: ${error.message}`, toastDefault('error', 'error'))
                     }
                 })()
             }, 1000);
@@ -76,30 +75,22 @@ export default function FichaComponent({ disabled, ficha }: { disabled?: boolean
                             // }
     
                             console.log(values);
-    
-                            const response = await fetch('/api/ficha', {
-                                method: 'POST',
-                                body: JSON.stringify({
-                                    ...values
-                                })
-                            }).then(async r => await r.json())
-    
-                            closeSnackbar('loadingFetch')
+                            const response = await fichaService.create(values)
+                                                
                             console.log(response);
     
-                            enqueueSnackbar('Ficha criada com sucesso!', { variant: 'success' })
-    
+                            closeSnackbar('loadingFetch')
+                            enqueueSnackbar('Ficha criada com sucesso!', toastDefault('itemCreated', 'success'))
                             setIsLoading(true)
-    
                             setTimeout(() => {
                                 router.push('/plataform/ficha/' + response._id)
                             }, 500);
                         } else {
-                            enqueueSnackbar('Você deve gastar seus pontos de atributos!', { variant: 'error', autoHideDuration: 3000 })
+                            enqueueSnackbar('Você deve gastar seus pontos de atributos!', toastDefault('error', 'error'))
                         }
                     } catch (error: any) {
                         closeSnackbar('loadingFetch')
-                        enqueueSnackbar(`Algo deu errado: ${error.message}`, { variant: 'error' })
+                        enqueueSnackbar(`Algo deu errado: ${error.message}`, toastDefault('error', 'error'))
                     }
                 })()
             }, 1000);

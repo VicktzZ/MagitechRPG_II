@@ -49,7 +49,7 @@ export interface Campaign {
     description: string
     players: Player[]
     session: Player[]
-    myFicha: Ficha | null
+    myFicha?: Ficha | null
 }
 
 export interface Player {
@@ -70,7 +70,7 @@ export interface PusherMemberParam {
         email: string
         image: string
         _id: string
-        currentFicha: Ficha,
+        currentFicha: string,
         socketId: string
     }
 }

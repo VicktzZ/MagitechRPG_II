@@ -11,6 +11,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@mui/material';
 import type { Campaign } from '@types';
+import { campaignService } from '@services';
 
 export default function CampaignOptionsModal({
     open,
@@ -39,7 +40,7 @@ export default function CampaignOptionsModal({
         if (campaignCode) {
             setIsLoading(true);
 
-            const response: Campaign = await fetch(`/api/campaign?code=${campaignCode}`).then(async res => await res.json());
+            const response = await campaignService.fetch({ code: campaignCode })
 
             if (response) {
                 setOpen(false);
@@ -61,17 +62,14 @@ export default function CampaignOptionsModal({
             setOpen(false);
             setIsLoading(true);
 
-            await fetch('/api/campaign', {
-                method: 'POST',
-                body: JSON.stringify({
-                    admin: [ session?.user?._id ?? '' ],
-                    campaignCode: campaignCodeGen,
-                    title: campaignProps.title,
-                    description: campaignProps.description,
-                    players: [ ],
-                    session: [ ]
-                })
-            });
+            await campaignService.create({
+                admin: [ session?.user?._id ?? '' ],
+                campaignCode: campaignCodeGen,
+                title: campaignProps.title ?? '',
+                description: campaignProps.description ?? '',
+                players: [ ],
+                session: [ ]
+            })
 
             setIsLoading(false);
             enqueueSnackbar('Campanha criada com sucesso!', { variant: 'success' });

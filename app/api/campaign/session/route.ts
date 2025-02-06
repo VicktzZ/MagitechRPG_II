@@ -48,7 +48,7 @@ export async function POST(req: Request): Promise<Response> {
     return Response.json({ message: 'User joined successfully!', response });
 }
 
-export async function PATCH(req: Request): Promise<Response> {
+export async function DELETE(req: Request): Promise<Response> {
     const { campaignCode, playerId }: { campaignCode: string, playerId: string } = await req.json();
     const response = await Campaign.findOneAndUpdate({ campaignCode }, {
         $pull: {
@@ -67,15 +67,4 @@ export async function PATCH(req: Request): Promise<Response> {
     }
 
     return Response.json({ message: 'User left from session!', response });
-}
-
-export async function DELETE(req: Request): Promise<Response> {
-    const { campaignCode }: { campaignCode: string } = await req.json();
-    const response = await Campaign.findOneAndDelete({ campaignCode });
-
-    if (!campaignCode) { 
-        return Response.json({ message: 'BAD REQUEST' }, { status: 400 });
-    }
-
-    return Response.json({ message: 'User left successfully!', response });
 }

@@ -5,60 +5,34 @@ import { Box } from '@mui/material';
 import { useEffect, type ReactElement } from 'react';
 import { CampaignDashboard } from '.';
 import { useSnackbar } from 'notistack';
-import type { PusherMemberParam } from '@types';
 import { useSession } from '@node_modules/next-auth/react';
 import { useCampaignContext } from '@contexts/campaignContext';
+import { sessionService } from '@services';
+import { toastDefault } from '@constants';
+import type { PusherMemberParam } from '@types';
 
 export default function CampaignComponent(): ReactElement {
     const { channel } = useChannel();
     const { data: session } = useSession();
     const { enqueueSnackbar } = useSnackbar();
-    const { campaignCode } = useCampaignContext();
+    const { campaignCode, myFicha } = useCampaignContext();
 
     useEffect(() => {
         channel.bind('pusher:subscription_succeeded', async () => {
-            console.log({
-                message: 'subscription_succeeded',
-                campaignCode,
-                player: {
-                    userId: session?.user._id,
-                    fichaId: channel.members.me.info.currentFicha
-                }
+            await sessionService.connect(campaignCode, {
+                userId: session?.user._id ?? '',
+                fichaId: myFicha?._id ?? ''
             });
 
-            await fetch('/api/campaign/session', {
-                method: 'POST',
-                body: JSON.stringify({
-                    campaignCode,
-                    player: {
-                        userId: session?.user._id,
-                        fichaId: channel.members.me.info.currentFicha
-                    }
-                })
-            });
-
-            enqueueSnackbar('Você entrou na sessão!', { 
-                variant: 'success',
-                autoHideDuration: 3000,
-                preventDuplicate: true,
-                key: 'subscriptionToChannel' 
-            });
+            enqueueSnackbar('Você entrou na sessão!', toastDefault('subscriptionToChannel', 'success'));
         });
         
         channel.bind('pusher:member_added', (user: PusherMemberParam) => {
-            enqueueSnackbar(`${user.info.name} entrou na sessão!`, { 
-                autoHideDuration: 3000,
-                preventDuplicate: true,
-                key: 'enteredToChannel'
-            });
+            enqueueSnackbar(`${user.info.name} entrou na sessão!`, toastDefault('enteredToChannel', 'success'));
         });
 
         channel.bind('pusher:member_removed', (user: PusherMemberParam) => {
-            enqueueSnackbar(`${user.info.name} saiu da sessão!`, { 
-                autoHideDuration: 3000,
-                preventDuplicate: true,
-                key: 'exitFromChannel'
-            });
+            enqueueSnackbar(`${user.info.name} saiu da sessão!`, toastDefault('exitFromChannel', 'success'));
         });
 
         channel.bind('pusher:connection_state_changed', (e: { current: string }) => {

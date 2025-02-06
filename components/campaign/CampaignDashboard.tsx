@@ -6,6 +6,7 @@ import { Box, Button } from '@mui/material'
 import { useSession } from 'next-auth/react'
 import type { Ficha } from '@types'
 import { useEffect, useState, type ReactElement } from 'react'
+import { fichaService } from '@services'
 
 function CampaignPlayerDashboard(): ReactElement {
     const { channel } = useChannel()
@@ -49,22 +50,22 @@ function CampaignPlayerDashboard(): ReactElement {
 }
 
 function CampaignGMDashboard(): ReactElement {
-    const { channel } = useChannel()
+    // const { channel } = useChannel()
     const [ isLoading, setIsLoading ] = useState<boolean>(false)
     const [ playersFicha, setPlayersFicha ] = useState<Ficha[]>([])
     const campaign = useCampaignContext()
 
     async function updateFicha() {
-        await fetch(`/api/ficha/${playersFicha[0]._id}`, {
-            method: 'PATCH',
-            body: JSON.stringify(playersFicha[0])
-        }).then(async r => {
-            const response = await r.json()
-            setPlayersFicha([ ...playersFicha, response ])
-            channel.trigger('client-ficha_updated', {
-                ficha: response.updatedFicha
-            })
-        })
+        // await fetch(`/api/ficha/${playersFicha[0]._id}`, {
+        //     method: 'PATCH',
+        //     body: JSON.stringify(playersFicha[0])
+        // }).then(async r => {
+        //     const response = await r.json()
+        //     setPlayersFicha([ ...playersFicha, response ])
+        //     channel.trigger('client-ficha_updated', {
+        //         ficha: response.updatedFicha
+        //     })
+        // })
     }
 
     useEffect(() => {
@@ -72,7 +73,7 @@ function CampaignGMDashboard(): ReactElement {
             setIsLoading(true)
 
             campaign.players.map(async player => {
-                const response: Ficha = await fetch(`/api/ficha/${player.fichaId}`).then(async r => await r.json())
+                const response = await fichaService.getById(player.fichaId)
                 setPlayersFicha([ ...playersFicha, response ])
             })
 
