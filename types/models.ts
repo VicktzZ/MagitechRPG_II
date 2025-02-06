@@ -49,6 +49,7 @@ export interface Campaign {
     description: string
     players: Player[]
     session: Player[]
+    myFicha: Ficha | null
 }
 
 export interface Player {

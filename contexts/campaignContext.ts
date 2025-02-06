@@ -8,7 +8,8 @@ export const campaignContext = createContext<Campaign>({
     title: '',
     description: '',
     players: [],
-    session: []
+    session: [],
+    myFicha: null
 })
 
 export const useCampaignContext = (): Campaign => useContext(campaignContext)

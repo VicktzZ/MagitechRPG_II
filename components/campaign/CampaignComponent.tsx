@@ -60,6 +60,10 @@ export default function CampaignComponent(): ReactElement {
                 key: 'exitFromChannel'
             });
         });
+
+        channel.bind('pusher:connection_state_changed', (e: { current: string }) => {
+            console.log(e)
+        })
     }, [ channel, session?.user._id ]);    
 
     return (

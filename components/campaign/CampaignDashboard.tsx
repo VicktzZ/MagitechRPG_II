@@ -9,93 +9,43 @@ import { useEffect, useState, type ReactElement } from 'react'
 
 function CampaignPlayerDashboard(): ReactElement {
     const { channel } = useChannel()
-    const [ , setFicha ] = useState<Ficha>()
-    const [ isLoading, setIsLoading ] = useState<boolean>(false)
+    const { myFicha } = useCampaignContext()
+
+    const [ ficha, setFicha ] = useState<Ficha>(myFicha!);
 
     useEffect(() => {
-        channel.bind('pusher:subscription_succeeded', async () => {
-            setIsLoading(true)
-            const response: Ficha = await fetch(`/api/ficha/${channel.members.me?.info.currentFicha}`).then(async r => await r.json())
-            setFicha(response)
-            setIsLoading(false)
-        })
+        setFicha(myFicha!)
 
         channel.bind('client-ficha_updated', (data: { ficha: Ficha }) => {
             console.log(data)
             setFicha(data.ficha)
         })
+
+        console.log(ficha)
     }, [])
 
-    if (!isLoading) {
-        return (
-            <></>
-            // <Box>
-            //     <Box display='flex' gap={5}>
-            //         <Box
-            //             display='flex'
-            //             flexDirection='column'
-            //             width='30%'
-            //             gap={2}
-            //         >
-            //             <Box
-            //                 display='flex'
-            //                 flexDirection='column'
-            //                 width='100%'
-            //                 gap={1}
-            //             >
-            //                 <LinearProgressWithLabel
-            //                     label='LP'
-            //                     minvalue={ficha?.attributes?.lp}
-            //                     maxvalue={ficha?.attributes?.lp}
-            //                     value={ficha?.attributes?.lp}
-            //                 />
-            //                 <Box display='flex' justifyContent='space-between' width='100%'>
-            //                     <Box display='flex' gap={2}>
-            //                         <Button onClick={() => {
-            //                         }} variant='outlined' color='primary'>-{attrPointsMultiplyer}</Button>
-            //                         <Button onClick={() => {
-            //                         }} variant='outlined' color='primary'>+{attrPointsMultiplyer}</Button>
-            //                     </Box>
-            //                     <Box>
-            //                         <Button variant='outlined' color='secondary'>x5</Button>
-            //                     </Box>
-            //                 </Box>
-            //             </Box>
-            //             <Box
-            //                 display='flex'
-            //                 flexDirection='column'
-            //                 gap={1}
-            //             >
-            //                 <LinearProgressWithLabel
-            //                     label='MP'
-            //                     minvalue={ficha?.attributes?.mp}
-            //                     maxvalue={ficha?.attributes?.mp}
-            //                     value={ficha?.attributes?.mp}
-            //                 />
-            //             </Box>
-            //             <Box
-            //                 display='flex'
-            //                 flexDirection='column'
-            //                 gap={1}
-            //             >
-            //                 <LinearProgressWithLabel
-            //                     label='AP'
-            //                     minvalue={ficha?.attributes?.ap}
-            //                     maxvalue={ficha?.attributes?.ap}
-            //                     value={ficha?.attributes?.ap}
-            //                 />
-            //             </Box>
-            //         </Box>
-            //     </Box>
-            // </Box>
-        )
-    } else {
-        return (
-            <Box>
-                Carregando...
-            </Box>
-        )
-    }
+    return (
+        <Box>
+            <LinearProgressWithLabel
+                label='LP'
+                minvalue={ficha.attributes?.lp}
+                maxvalue={ficha.attributes?.lp}
+                value={ficha.attributes?.lp}
+            />
+            <LinearProgressWithLabel
+                label='MP'
+                minvalue={ficha.attributes?.mp}
+                maxvalue={ficha.attributes?.mp}
+                value={ficha.attributes?.mp}
+            />
+            <LinearProgressWithLabel
+                label='AP'
+                minvalue={ficha.attributes?.ap}
+                maxvalue={ficha.attributes?.ap}
+                value={ficha.attributes?.ap}
+            />
+        </Box>
+    )
 }
 
 function CampaignGMDashboard(): ReactElement {
@@ -103,19 +53,6 @@ function CampaignGMDashboard(): ReactElement {
     const [ isLoading, setIsLoading ] = useState<boolean>(false)
     const [ playersFicha, setPlayersFicha ] = useState<Ficha[]>([])
     const campaign = useCampaignContext()
-
-    useEffect(() => {
-        (async () => {
-            setIsLoading(true)
-
-            campaign.players.map(async player => {
-                const response: Ficha = await fetch(`/api/ficha/${player.fichaId}`).then(async r => await r.json())
-                setPlayersFicha([ ...playersFicha, response ])
-            })
-
-            setIsLoading(false)
-        })()
-    }, [ campaign ])
 
     async function updateFicha() {
         await fetch(`/api/ficha/${playersFicha[0]._id}`, {
@@ -129,6 +66,19 @@ function CampaignGMDashboard(): ReactElement {
             })
         })
     }
+
+    useEffect(() => {
+        (async () => {
+            setIsLoading(true)
+
+            campaign.players.map(async player => {
+                const response: Ficha = await fetch(`/api/ficha/${player.fichaId}`).then(async r => await r.json())
+                setPlayersFicha([ ...playersFicha, response ])
+            })
+
+            setIsLoading(false)
+        })()
+    }, [ campaign ])
 
     if (!isLoading) {
         return (
