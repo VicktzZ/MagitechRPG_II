@@ -2,7 +2,7 @@
 import { useCampaignContext } from '@contexts/campaignContext'
 import { useChannel } from '@contexts/channelContext'
 import { LinearProgressWithLabel } from '@layout'
-import { Box, Button } from '@mui/material'
+import { Box, Typography } from '@mui/material'
 import { useSession } from 'next-auth/react'
 import type { Ficha } from '@types'
 import { useEffect, useState, type ReactElement } from 'react'
@@ -10,7 +10,7 @@ import { fichaService } from '@services'
 
 function CampaignPlayerDashboard(): ReactElement {
     const { channel } = useChannel()
-    const { myFicha } = useCampaignContext()
+    const { campaign: { myFicha } } = useCampaignContext()
 
     const [ ficha, setFicha ] = useState<Ficha>(myFicha!);
 
@@ -21,8 +21,6 @@ function CampaignPlayerDashboard(): ReactElement {
             console.log(data)
             setFicha(data.ficha)
         })
-
-        console.log(ficha)
     }, [])
 
     return (
@@ -53,7 +51,7 @@ function CampaignGMDashboard(): ReactElement {
     // const { channel } = useChannel()
     const [ isLoading, setIsLoading ] = useState<boolean>(false)
     const [ playersFicha, setPlayersFicha ] = useState<Ficha[]>([])
-    const campaign = useCampaignContext()
+    const { campaign } = useCampaignContext()
 
     async function updateFicha() {
         // await fetch(`/api/ficha/${playersFicha[0]._id}`, {
@@ -69,7 +67,7 @@ function CampaignGMDashboard(): ReactElement {
     }
 
     useEffect(() => {
-        (async () => {
+        const fetchFichas = async () => {
             setIsLoading(true)
 
             campaign.players.map(async player => {
@@ -78,76 +76,25 @@ function CampaignGMDashboard(): ReactElement {
             })
 
             setIsLoading(false)
-        })()
+        }
+
+        fetchFichas()
     }, [ campaign ])
 
-    if (!isLoading) {
+    if (isLoading) {
         return (
-            <Box display='flex' flexDirection='column' gap={5}>
-                {playersFicha.map(ficha => {
-                    return (
-                        <Box
-                            key={ficha._id}
-                            display='flex'
-                            flexDirection='column'
-                            width='30%'
-                            gap={2}
-                        >
-                            <Box
-                                display='flex'
-                                flexDirection='column'
-                                width='100%'
-                                gap={1}
-                            >
-                                <Button onClick={updateFicha}>Alterar Ficha</Button>
-                                <LinearProgressWithLabel
-                                    label='LP'
-                                    minvalue={ficha.attributes?.lp}
-                                    maxvalue={ficha.attributes?.lp}
-                                    value={ficha.attributes?.lp}
-                                />
-                            </Box>
-                            <Box
-                                display='flex'
-                                flexDirection='column'
-                                gap={1}
-                            >
-                                <LinearProgressWithLabel
-                                    label='MP'
-                                    minvalue={ficha.attributes?.mp}
-                                    maxvalue={ficha.attributes?.mp}
-                                    value={ficha.attributes?.mp}
-                                />
-                            </Box>
-                            <Box
-                                display='flex'
-                                flexDirection='column'
-                                gap={1}
-                            >
-                                <LinearProgressWithLabel
-                                    label='AP'
-                                    minvalue={ficha.attributes?.ap}
-                                    maxvalue={ficha.attributes?.ap}
-                                    value={ficha.attributes?.ap}
-                                />
-                            </Box>
-                        </Box>
-                    )
-                })}
-            </Box>
+            <Typography>Carregando...</Typography>
         )
     } else {
         return (
-            <Box>
-                Carregando...
-            </Box>
+            <></>
         )
     }
 }
 
 export default function CampaignDashboard(): ReactElement {
     const { data: session } = useSession()
-    const campaign = useCampaignContext()
+    const { campaign } = useCampaignContext()
 
     return campaign?.admin.includes(session?.user._id ?? '') ? <CampaignGMDashboard /> : <CampaignPlayerDashboard />
 }

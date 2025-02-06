@@ -27,9 +27,28 @@ export default function Campaign({ params }: { params: { code: string } }): Reac
     const [ userFichas, setUserFichas ] = useState<Ficha[]>([]);
     const [ allGameMastersId, setAllGameMastersId ] = useState<string[]>([]);
     const [ isUserGM, setIsUserGM ] = useState<boolean>(false);
-    const [ campaign, setCampaign ] = useState<CampaignType>();
+    const [ campaign, setCampaign ] = useState<CampaignType>({} as CampaignType);
     const [ openFichaModal, setOpenFichaModal ] = useState<boolean>(false);
     const [ ficha, setFicha ] = useState<Ficha>();
+    const [ pusherClient, setPusherClient ] = useState<PusherClient | null>(null);
+
+    useEffect(() => {
+        let pusherClient: PusherClient | null = null;
+        let chn: PresenceChannel | null = null;
+
+        if (campaign && ((!isLoading && isUserGM) || (!isLoading && ficha))) {
+            pusherClient = new PusherClient(PUSHER_KEY, {
+                cluster: 'sa1',
+                authEndpoint: `/api/pusher/auth?session=${JSON.stringify(session)}`,
+                forceTLS: true
+            });
+
+            chn = pusherClient.subscribe(campaignName) as PresenceChannel;
+
+            setPusherClient(pusherClient);
+            setChannel(chn);
+        }
+    }, [ campaign, isLoading, ficha, isUserGM ]);  
 
     useEffect(() => {
         const fetchCampaign = async () => {
@@ -51,32 +70,19 @@ export default function Campaign({ params }: { params: { code: string } }): Reac
         }
 
         fetchCampaign();
-    }, [ ]);
-
-    useEffect(() => {
-        let pusherClient: PusherClient | null = null;
-        let chn: PresenceChannel | null = null;
-
-        if (campaign && ((!isLoading && isUserGM) || (!isLoading && ficha))) {
-            pusherClient = new PusherClient(PUSHER_KEY, {
-                cluster: 'sa1',
-                authEndpoint: `/api/pusher/auth?session=${JSON.stringify(session)}`,
-                forceTLS: true
-            });
-
-            chn = pusherClient.subscribe(campaignName) as PresenceChannel;
-            setChannel(chn);
-        }
 
         return () => {
+            console.log('asdasdasda')
             pusherClient?.unsubscribe(campaignName);
             channel?.unsubscribe();
             setChannel(null);
 
+            pusherClient?.disconnect();
+
             sessionService.disconnect(params.code, session?.user?._id ?? '')
-                .then((data) => { console.log(data); })
+                .then((data) => console.log(data))
         };
-    }, [ campaign, isLoading, ficha, isUserGM ]);                
+    }, [ ]);              
 
     return (
         <>
@@ -152,11 +158,13 @@ export default function Campaign({ params }: { params: { code: string } }): Reac
             )}
 
             {campaign && channel && ((!isLoading && isUserGM) || (!isLoading && ficha)) && (
-                <campaignContext.Provider value={campaign}>
-                    <gameMasterContext.Provider value={{ allGameMastersId, isUserGM }}>
-                        <CampaignComponent />
-                    </gameMasterContext.Provider>
-                </campaignContext.Provider>
+                <>
+                    <campaignContext.Provider value={{ campaign, setCampaign }}>
+                        <gameMasterContext.Provider value={{ allGameMastersId, isUserGM }}>
+                            <CampaignComponent />
+                        </gameMasterContext.Provider>
+                    </campaignContext.Provider>
+                </>
             )}
         </>
     );

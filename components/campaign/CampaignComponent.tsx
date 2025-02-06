@@ -9,36 +9,37 @@ import { useSession } from '@node_modules/next-auth/react';
 import { useCampaignContext } from '@contexts/campaignContext';
 import { sessionService } from '@services';
 import { toastDefault } from '@constants';
-import type { PusherMemberParam } from '@types';
+import type { Campaign, PusherMemberParam } from '@types';
 
 export default function CampaignComponent(): ReactElement {
     const { channel } = useChannel();
     const { data: session } = useSession();
     const { enqueueSnackbar } = useSnackbar();
-    const { campaignCode, myFicha } = useCampaignContext();
+    const { campaign, setCampaign } = useCampaignContext();
 
     useEffect(() => {
         channel.bind('pusher:subscription_succeeded', async () => {
-            await sessionService.connect(campaignCode, {
+            await sessionService.connect(campaign.campaignCode, {
                 userId: session?.user._id ?? '',
-                fichaId: myFicha?._id ?? ''
+                fichaId: campaign.myFicha?._id ?? ''
             });
 
             enqueueSnackbar('Você entrou na sessão!', toastDefault('subscriptionToChannel', 'success'));
         });
         
-        channel.bind('pusher:member_added', (user: PusherMemberParam) => {
+        channel.bind('pusher:member_added', async (user: PusherMemberParam) => {
             enqueueSnackbar(`${user.info.name} entrou na sessão!`, toastDefault('enteredToChannel'));
         });
 
-        channel.bind('pusher:member_removed', (user: PusherMemberParam) => {
+        channel.bind('pusher:member_removed', async (user: PusherMemberParam) => {
             enqueueSnackbar(`${user.info.name} saiu da sessão!`, toastDefault('exitFromChannel'));
         });
 
-        channel.bind('pusher:connection_state_changed', (e: { current: string }) => {
-            console.log(e)
+        channel.bind('update-campaign', async (data: Campaign) => {
+            console.log(data)
+            setCampaign(data)
         })
-    }, [ channel, session?.user._id ]);    
+    }, [ ]);
 
     return (
         <Box>
