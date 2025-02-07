@@ -1,5 +1,5 @@
 import type { Campaign } from '@types'
-import { createContext, Dispatch, SetStateAction, useContext } from 'react'
+import { createContext, type Dispatch, type SetStateAction, useContext } from 'react'
 
 export const campaignContext = createContext<{ campaign: Campaign, setCampaign: Dispatch<SetStateAction<Campaign>> }>({
     campaign: {

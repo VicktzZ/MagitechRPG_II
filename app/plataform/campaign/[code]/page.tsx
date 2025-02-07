@@ -1,19 +1,19 @@
+/* eslint-disable @typescript-eslint/consistent-type-assertions */
 /* eslint-disable react-hooks/exhaustive-deps */
 'use client';
 
 import { useEffect, type ReactElement, useState } from 'react';
 import { useSession } from 'next-auth/react';
-import { Backdrop, Box, CircularProgress, Grid, Modal, Skeleton, Typography } from '@mui/material';
+import {Backdrop, Box, Button, CircularProgress, Grid, Modal, Skeleton, Tooltip, Typography } from '@mui/material';
 import { useRouter } from 'next/navigation';
-import { CampaignComponent } from '@components/campaign';
+import { CampaignComponent, CampaignHeader } from '@components/campaign';
 import { FichaCard } from '@components/ficha';
 import { useChannel } from '@contexts/channelContext';
 import { gameMasterContext, campaignContext } from '@contexts';
 import { PUSHER_KEY } from '@constants';
-import type { Ficha, Campaign as CampaignType } from '@types';
+import type { Ficha, Campaign as CampaignType, User } from '@types';
 import PusherClient, { type PresenceChannel } from 'pusher-js';
-import { campaignService, fichaService, sessionService } from '@services';
-// import { useCampaignContext } from '@contexts/campaignContext';
+import { campaignService, fichaService, sessionService, userService } from '@services';
 
 export default function Campaign({ params }: { params: { code: string } }): ReactElement {
     const campaignName = 'presence-' + params.code;
@@ -31,21 +31,25 @@ export default function Campaign({ params }: { params: { code: string } }): Reac
     const [ openFichaModal, setOpenFichaModal ] = useState<boolean>(false);
     const [ ficha, setFicha ] = useState<Ficha>();
     const [ pusherClient, setPusherClient ] = useState<PusherClient | null>(null);
+    const [ copiedCode, setCopiedCode ] = useState<boolean>(false);
+    const [ campaignUsers, setCampaignUsers ] = useState<Record<'players' | 'admins', User[]>>({
+        players: [],
+        admins: []
+    })
 
     useEffect(() => {
-        let pusherClient: PusherClient | null = null;
         let chn: PresenceChannel | null = null;
 
         if (campaign && ((!isLoading && isUserGM) || (!isLoading && ficha))) {
-            pusherClient = new PusherClient(PUSHER_KEY, {
+            const pusher = new PusherClient(PUSHER_KEY, {
                 cluster: 'sa1',
                 authEndpoint: `/api/pusher/auth?session=${JSON.stringify(session)}`,
                 forceTLS: true
             });
 
-            chn = pusherClient.subscribe(campaignName) as PresenceChannel;
+            chn = pusher.subscribe(campaignName) as PresenceChannel;
 
-            setPusherClient(pusherClient);
+            setPusherClient(pusher);
             setChannel(chn);
         }
     }, [ campaign, isLoading, ficha, isUserGM ]);  
@@ -56,6 +60,16 @@ export default function Campaign({ params }: { params: { code: string } }): Reac
             setCampaign(campaignResponse);
 
             if (campaignResponse) {
+                campaignResponse.players.map(async player => {
+                    const user = await userService.getById(player.userId)
+                    setCampaignUsers(state => ({ ...state, players: [ ...state.players, user ] }))
+                });
+
+                campaignResponse.admin.map(async gm => {
+                    const user = await userService.getById(gm)
+                    setCampaignUsers(state => ({ ...state, admins: [ ...state.admins, user ] }))
+                });
+
                 if (campaignResponse.admin.includes(session?.user?._id ?? '')) setIsUserGM(true);
                 else {
                     const fichaResponse = await fichaService.fetch({ user: session?.user?._id ?? '' });
@@ -80,7 +94,7 @@ export default function Campaign({ params }: { params: { code: string } }): Reac
             pusherClient?.disconnect();
 
             sessionService.disconnect(params.code, session?.user?._id ?? '')
-                .then((data) => console.log(data))
+                .then((data) => { console.log(data) })
         };
     }, [ ]);              
 
@@ -147,7 +161,7 @@ export default function Campaign({ params }: { params: { code: string } }): Reac
                                     disableDeleteButton
                                     onClick={() => {
                                         setFicha(f);
-                                        setCampaign(state =>  ({ ...state!, myFicha: f }));
+                                        setCampaign(state =>  ({ ...state, myFicha: f }));
                                         setOpenFichaModal(false);
                                     }}
                                 />
@@ -158,13 +172,38 @@ export default function Campaign({ params }: { params: { code: string } }): Reac
             )}
 
             {campaign && channel && ((!isLoading && isUserGM) || (!isLoading && ficha)) && (
-                <>
-                    <campaignContext.Provider value={{ campaign, setCampaign }}>
-                        <gameMasterContext.Provider value={{ allGameMastersId, isUserGM }}>
-                            <CampaignComponent />
-                        </gameMasterContext.Provider>
-                    </campaignContext.Provider>
-                </>
+                <campaignContext.Provider value={{ campaign, setCampaign }}>
+                    <gameMasterContext.Provider value={{ allGameMastersId, isUserGM }}>
+                        <Box display='flex' flexDirection='column' gap={3} p={2} minHeight='90vh'>
+                            <Box display='flex' flexDirection='column' gap={2} width='50%'>
+                                <Typography variant='h6'>{campaign.title}</Typography>
+                                <Box width='25%'>
+                                    <Tooltip
+                                        open={copiedCode}
+                                        title='Copiado!'
+                                        placement='top'
+                                    >
+                                        <Box display='flex' alignItems='center' gap={1}>
+                                            Código: 
+                                            <Button onClick={() => {
+                                                navigator.clipboard.writeText(params.code);
+                                                setCopiedCode(true);
+                                                setTimeout(() => { setCopiedCode(false) }, 1000);
+                                            }} variant='outlined'>{params.code}</Button>
+                                        </Box>
+                                    </Tooltip>
+                                </Box>
+                            </Box>
+                            <Box height='100%' width='25%' display='flex' gap={2}>
+                                <CampaignHeader 
+                                    admins={campaignUsers.admins}
+                                    players={campaignUsers.players}
+                                />
+                                <CampaignComponent />
+                            </Box>
+                        </Box>
+                    </gameMasterContext.Provider>
+                </campaignContext.Provider>
             )}
         </>
     );

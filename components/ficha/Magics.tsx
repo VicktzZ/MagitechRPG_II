@@ -39,7 +39,7 @@ const Magics = memo(({ disabled }: { disabled?: boolean }) => {
 
                     enqueueSnackbar(`Magia ${magic.nome} removida!`, {
                         ...toastDefault('itemDeleted', 'success'),
-                        action: () => <Close sx={{ cursor: 'pointer' }} onClick={() => { closeSnackbar(magic.nome) }} />,
+                        action: () => <Close sx={{ cursor: 'pointer' }} onClick={() => { closeSnackbar(magic.nome) }} />
                     })
                 }}
             />

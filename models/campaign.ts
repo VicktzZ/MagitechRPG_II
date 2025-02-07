@@ -29,9 +29,22 @@ const campaignSchema = new Schema<CampaignType>({
     },
 
     session: {
-        type: [ Object ],
+        type: new Schema({
+            admins: {
+                type: [ String ],
+                default: []
+            },
+            players: {
+                type: [ String ],
+                default: []
+            },
+            messages: {
+                type: [ String ],
+                default: []
+            }
+        }),
         required: [ true, 'Session is required!' ],
-        default: []
+        default: () => ({ players: [], messages: [], admins: [] })
     }
 })
 

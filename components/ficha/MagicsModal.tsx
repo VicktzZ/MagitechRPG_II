@@ -88,13 +88,13 @@ const MagicsModal = memo(({ open, onClose }: { open: boolean, onClose: () => voi
                         } else {
                             enqueueSnackbar('Você não possui pontos ou espaços de magia suficientes!', {
                                 ...toastDefault('insufficientPoints', 'error'),
-                                action: () => <Close sx={{ cursor: 'pointer' }} onClick={() => { closeSnackbar('insufficientPointsError') }} />,
+                                action: () => <Close sx={{ cursor: 'pointer' }} onClick={() => { closeSnackbar('insufficientPointsError') }} />
                             })
                         }
                     } else {
                         enqueueSnackbar('Seu nível de ORM não é suficiente!', {
                             ...toastDefault('ORMLevelError', 'error'),
-                            action: () => <Close sx={{ cursor: 'pointer' }} onClick={() => { closeSnackbar('ORMLevelError') }} />,
+                            action: () => <Close sx={{ cursor: 'pointer' }} onClick={() => { closeSnackbar('ORMLevelError') }} />
                         })
                     }
                 }}

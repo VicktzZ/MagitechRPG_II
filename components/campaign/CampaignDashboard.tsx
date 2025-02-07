@@ -53,18 +53,18 @@ function CampaignGMDashboard(): ReactElement {
     const [ playersFicha, setPlayersFicha ] = useState<Ficha[]>([])
     const { campaign } = useCampaignContext()
 
-    async function updateFicha() {
-        // await fetch(`/api/ficha/${playersFicha[0]._id}`, {
-        //     method: 'PATCH',
-        //     body: JSON.stringify(playersFicha[0])
-        // }).then(async r => {
-        //     const response = await r.json()
-        //     setPlayersFicha([ ...playersFicha, response ])
-        //     channel.trigger('client-ficha_updated', {
-        //         ficha: response.updatedFicha
-        //     })
-        // })
-    }
+    // async function updateFicha() {
+    //     await fetch(`/api/ficha/${playersFicha[0]._id}`, {
+    //         method: 'PATCH',
+    //         body: JSON.stringify(playersFicha[0])
+    //     }).then(async r => {
+    //         const response = await r.json()
+    //         setPlayersFicha([ ...playersFicha, response ])
+    //         channel.trigger('client-ficha_updated', {
+    //             ficha: response.updatedFicha
+    //         })
+    //     })
+    // }
 
     useEffect(() => {
         const fetchFichas = async () => {

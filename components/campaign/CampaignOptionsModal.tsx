@@ -67,8 +67,12 @@ export default function CampaignOptionsModal({
                 campaignCode: campaignCodeGen,
                 title: campaignProps.title ?? '',
                 description: campaignProps.description ?? '',
-                players: [ ],
-                session: [ ]
+                players: [],
+                session: {
+                    players: [],
+                    admins: [],
+                    messages: []
+                }
             })
 
             setIsLoading(false);

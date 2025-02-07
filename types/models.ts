@@ -48,8 +48,21 @@ export interface Campaign {
     title: string
     description: string
     players: Player[]
-    session: Player[]
     myFicha?: Ficha | null
+    session: {
+        players: string[]
+        admins: string[]
+        messages: Message[]
+    }
+}
+
+export interface Message {
+    text: string
+    by: {
+        id: string
+        image: string
+        name: string
+    }
 }
 
 export interface Player {

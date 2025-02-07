@@ -3,7 +3,7 @@
 import { useChannel } from '@contexts/channelContext';
 import { Box } from '@mui/material';
 import { useEffect, type ReactElement } from 'react';
-import { CampaignDashboard } from '.';
+import { CampaignDashboard, SessionChat } from '.';
 import { useSnackbar } from 'notistack';
 import { useSession } from '@node_modules/next-auth/react';
 import { useCampaignContext } from '@contexts/campaignContext';
@@ -22,7 +22,7 @@ export default function CampaignComponent(): ReactElement {
             await sessionService.connect(campaign.campaignCode, {
                 userId: session?.user._id ?? '',
                 fichaId: campaign.myFicha?._id ?? ''
-            });
+            }, campaign.admin.includes(session?.user._id ?? ''));
 
             enqueueSnackbar('Você entrou na sessão!', toastDefault('subscriptionToChannel', 'success'));
         });
@@ -43,6 +43,7 @@ export default function CampaignComponent(): ReactElement {
 
     return (
         <Box>
+            <SessionChat />
             <CampaignDashboard />
         </Box>
     );
