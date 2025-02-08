@@ -49,11 +49,12 @@ export interface Campaign {
     description: string
     players: Player[]
     myFicha?: Ficha | null
-    session: {
-        players: string[]
-        admins: string[]
-        messages: Message[]
-    }
+    session: Session
+}
+
+export interface Session {
+    users: string[]
+    messages: Message[]
 }
 
 export interface Message {

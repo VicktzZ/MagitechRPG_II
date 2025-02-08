@@ -12,7 +12,7 @@ export async function POST(req: Request): Promise<Response> {
     }
 
     if (isGM) {
-        if (!campaign.session.admins.includes(playerId)) {
+        if (!campaign.session.admins?.includes(playerId)) {
             response = await Campaign.findOneAndUpdate({ campaignCode }, {
                 $push: {
                     'session.admins': playerId
@@ -20,7 +20,7 @@ export async function POST(req: Request): Promise<Response> {
             });
         } else response = campaign
     } else {
-        if (!campaign.session.players.includes(playerId)) {
+        if (!campaign.session.players?.includes(playerId)) {
             response = await Campaign.findOneAndUpdate({ campaignCode }, {
                 $push: {
                     'session.players': playerId
@@ -32,8 +32,6 @@ export async function POST(req: Request): Promise<Response> {
     console.log({ message: 'User joined successfully!', response })
 
     response = !response ? campaign : response;
-
-    console.log(response)
     
     await pusherServer.trigger('presence-' + campaignCode, 'update-campaign', response);
     return Response.json(response, { status: 200 });

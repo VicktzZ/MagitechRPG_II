@@ -1,10 +1,20 @@
-import type { Campaign, Player } from '@types'
+import type { Campaign } from '@types'
 
 export const sessionService = {
-    async connect(campaignCode: string, player: Player, isGm: boolean): Promise<Campaign> {
+    async connect({
+        campaignCode,
+        playerId,
+        isGM
+    }: {
+        campaignCode: string
+        playerId: string
+        isGM: boolean
+    }): Promise<Campaign> {
+        console.log({ campaignCode, playerId, isGM })
+
         const response = await fetch('/api/campaign/session', {
             method: 'POST',
-            body: JSON.stringify({ campaignCode, player, isGm })
+            body: JSON.stringify({ campaignCode, playerId, isGM })
         }).then(async r => await r.json())
         return response
     },

@@ -19,10 +19,11 @@ export default function CampaignComponent(): ReactElement {
 
     useEffect(() => {
         channel.bind('pusher:subscription_succeeded', async () => {
-            await sessionService.connect(campaign.campaignCode, {
-                userId: session?.user._id ?? '',
-                fichaId: campaign.myFicha?._id ?? ''
-            }, campaign.admin.includes(session?.user._id ?? ''));
+            await sessionService.connect({
+                campaignCode: campaign.campaignCode,
+                isGM: campaign.admin.includes(session?.user._id ?? ''),
+                playerId: session?.user._id ?? ''
+            });
 
             enqueueSnackbar('Você entrou na sessão!', toastDefault('subscriptionToChannel', 'success'));
         });
