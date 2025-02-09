@@ -9,6 +9,7 @@ import { useSession } from '@node_modules/next-auth/react';
 import { useCampaignContext } from '@contexts/campaignContext';
 import { sessionService } from '@services';
 import { toastDefault } from '@constants';
+import { PusherEvent } from '@enums';
 import type { Campaign, PusherMemberParam } from '@types';
 
 export default function CampaignComponent(): ReactElement {
@@ -18,7 +19,7 @@ export default function CampaignComponent(): ReactElement {
     const { campaign, setCampaign } = useCampaignContext();
 
     useEffect(() => {
-        channel.bind('pusher:subscription_succeeded', async () => {
+        channel.bind(PusherEvent.SUBSCRIPTION, async () => {
             await sessionService.connect({
                 campaignCode: campaign.campaignCode,
                 isGM: campaign.admin.includes(session?.user._id ?? ''),
@@ -28,15 +29,15 @@ export default function CampaignComponent(): ReactElement {
             enqueueSnackbar('Você entrou na sessão!', toastDefault('subscriptionToChannel', 'success'));
         });
         
-        channel.bind('pusher:member_added', async (user: PusherMemberParam) => {
+        channel.bind(PusherEvent.MEMBER_ADDED, async (user: PusherMemberParam) => {
             enqueueSnackbar(`${user.info.name} entrou na sessão!`, toastDefault('enteredToChannel'));
         });
 
-        channel.bind('pusher:member_removed', async (user: PusherMemberParam) => {
+        channel.bind(PusherEvent.MEMBER_REMOVED, async (user: PusherMemberParam) => {
             enqueueSnackbar(`${user.info.name} saiu da sessão!`, toastDefault('exitFromChannel'));
         });
 
-        channel.bind('update-campaign', async (data: Campaign) => {
+        channel.bind(PusherEvent.UPDATE_CAMPAIGN, async (data: Campaign) => {
             console.log(data)
             setCampaign(data)
         })

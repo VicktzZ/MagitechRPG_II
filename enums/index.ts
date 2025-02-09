@@ -13,7 +13,9 @@ export enum SearchOptions {
 }
 
 export enum PusherEvent {
-    CONNECTION = 'connection',
-    DISCONNECTION = 'disconnection',
-    UPDATE_CAMPAIGN = 'update-campaign'
+    SUBSCRIPTION = 'pusher:subscription_succeeded',
+    MEMBER_ADDED = 'pusher:member_added',
+    MEMBER_REMOVED = 'pusher:member_removed',
+    UPDATE_CAMPAIGN = 'update-campaign',
+    FICHA_UPDATED = 'client-ficha-updated'
 }

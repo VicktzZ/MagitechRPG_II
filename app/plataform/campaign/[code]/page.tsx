@@ -86,7 +86,6 @@ export default function Campaign({ params }: { params: { code: string } }): Reac
         fetchCampaign();
 
         return () => {
-            console.log('asdasdasda')
             pusherClient?.unsubscribe(campaignName);
             channel?.unsubscribe();
             setChannel(null);

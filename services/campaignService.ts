@@ -3,7 +3,7 @@ import { apiRequest } from '@utils/apiRequest';
 
 const { get, post, patch, delete: del } = apiRequest<Campaign>('campaign');
 
-export const campaignService: Service<Campaign, 'code'> = {
+export const campaignService: Service<Campaign, 'code' | 'userId'> = {
     async fetch(queryParams) { return await get({ queryParams }) as unknown as Campaign[]; },
     async getById(code) { return await get({ queryParams: { code } }); },
     async create(campaign) { return await post(campaign); },

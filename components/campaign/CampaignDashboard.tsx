@@ -7,6 +7,7 @@ import { useSession } from 'next-auth/react'
 import type { Ficha } from '@types'
 import { useEffect, useState, type ReactElement } from 'react'
 import { fichaService } from '@services'
+import { PusherEvent } from '@enums'
 
 function CampaignPlayerDashboard(): ReactElement {
     const { channel } = useChannel()
@@ -17,7 +18,7 @@ function CampaignPlayerDashboard(): ReactElement {
     useEffect(() => {
         setFicha(myFicha!)
 
-        channel.bind('client-ficha_updated', (data: { ficha: Ficha }) => {
+        channel.bind(PusherEvent.FICHA_UPDATED, (data: { ficha: Ficha }) => {
             console.log(data)
             setFicha(data.ficha)
         })

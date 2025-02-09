@@ -59,7 +59,7 @@ const campaignSchema = new Schema<CampaignType>({
                 type: [ messageSchema ],
                 default: []
             }
-        }),
+        }, { _id: false }),
         required: [ true, 'Session is required!' ],
         default: () => ({
             users: [],
@@ -67,6 +67,10 @@ const campaignSchema = new Schema<CampaignType>({
         })
     }
 });
+
+campaignSchema.methods['clearMessagesIfLimitReached'] = function(limit: number) {
+    this['session'].messages = this['session'].messages.slice(-limit);
+}
 
 const Campaign = models['Campaign'] || model('Campaign', campaignSchema);
 
