@@ -1,47 +1,13 @@
-import { type Magia } from '@types'
+import { apiRequest } from '@utils/apiRequest';
+import type { Magia, Service } from '@types';
+import type { SearchOptions } from '@enums';
 
-export const magiaService = {
-    async fetch(queryParams?: Record<'search' | 'filter' | 'sort' | 'order', string>): Promise<Magia[]> {
-        let response
+const { get, post, patch, delete: del } = apiRequest<Magia>('magia');
 
-        if (queryParams) {
-            response = await fetch(
-                `/api/magia?${Object.keys(queryParams)
-                    .map(key => `${key}=${queryParams[key as keyof typeof queryParams]}`)
-                    .join('&')}`
-            ).then(async r => await r.json())
-        } else {
-            response = await fetch('/api/magia').then(async r => await r.json())
-        }
-
-        return response
-    },
-
-    async getById(id: string): Promise<Magia> {
-        const response = await fetch(`/api/magia/${id}`).then(async r => await r.json())
-        return response
-    },
-
-    async create(magia: Magia): Promise<Magia> {
-        const response = await fetch('/api/magia', {
-            method: 'POST',
-            body: JSON.stringify(magia)
-        }).then(async r => await r.json())
-        return response
-    },
-
-    async updateById(id: string, magia: Magia): Promise<Magia> {
-        const response = await fetch(`/api/magia/${id}`, {
-            method: 'PUT',
-            body: JSON.stringify(magia)
-        }).then(async r => await r.json())
-        return response
-    },
-
-    async deleteById(id: string): Promise<Magia> {
-        const response = await fetch(`/api/magia/${id}`, {
-            method: 'DELETE'
-        }).then(async r => await r.json())
-        return response
-    }
+export const magiaService: Service<Magia, SearchOptions> = {
+    async fetch(queryParams) { return await get({ queryParams }) as unknown as Magia[]; },
+    async getById(id) { return await get({ param: id }); },
+    async create(magia) { return await post(magia); },
+    async updateById(body) { return await patch(body.id, body.data); },
+    async deleteById(id) { return await del(id); }
 }

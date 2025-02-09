@@ -4,7 +4,7 @@
 
 import { useEffect, type ReactElement, useState } from 'react';
 import { useSession } from 'next-auth/react';
-import {Backdrop, Box, Button, CircularProgress, Grid, Modal, Skeleton, Tooltip, Typography } from '@mui/material';
+import { Backdrop, Box, Button, CircularProgress, Grid, Modal, Skeleton, Tooltip, Typography } from '@mui/material';
 import { useRouter } from 'next/navigation';
 import { CampaignComponent, CampaignHeader } from '@components/campaign';
 import { FichaCard } from '@components/ficha';
@@ -72,7 +72,7 @@ export default function Campaign({ params }: { params: { code: string } }): Reac
 
                 if (campaignResponse.admin.includes(session?.user?._id ?? '')) setIsUserGM(true);
                 else {
-                    const fichaResponse = await fichaService.fetch({ user: session?.user?._id ?? '' });
+                    const fichaResponse = await fichaService.fetch({ userId: session?.user?._id ?? '' });
 
                     setUserFichas(fichaResponse);
                     setIsLoadingFichas(false);
@@ -93,8 +93,10 @@ export default function Campaign({ params }: { params: { code: string } }): Reac
 
             pusherClient?.disconnect();
 
-            sessionService.disconnect(params.code, session?.user?._id ?? '')
-                .then((data) => { console.log(data) })
+            sessionService.disconnect({ 
+                campaignCode: params.code,
+                playerId: session?.user?._id ?? ''
+            }).then((data) => { console.log(data) })
         };
     }, [ ]);              
 

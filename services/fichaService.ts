@@ -1,47 +1,12 @@
-import { type Ficha } from '@types'
+import type { Ficha, Service } from '@types';
+import { apiRequest } from '@utils/apiRequest';
 
-export const fichaService = {
-    async fetch(queryParams?: Record<'user', string>): Promise<Ficha[]> {
-        let response
+const { get, post, patch, delete: del } = apiRequest<Ficha>('ficha');
 
-        if (queryParams) {
-            response = await fetch(
-                `/api/ficha?${Object.keys(queryParams)
-                    .map(key => `${key}=${queryParams[key as keyof typeof queryParams]}`)
-                    .join('&')}`
-            ).then(async r => await r.json())
-        } else {
-            response = await fetch('/api/ficha').then(async r => await r.json())
-        }
-
-        return response
-    },
-
-    async getById(id: string): Promise<Ficha> {
-        const response = await fetch(`/api/ficha/${id}`).then(async r => await r.json())
-        return response
-    },
-
-    async create(ficha: Ficha): Promise<Ficha> {
-        const response = await fetch('/api/ficha', {
-            method: 'POST',
-            body: JSON.stringify(ficha)
-        }).then(async r => await r.json())
-        return response
-    },
-
-    async updateById(id: string, ficha: Ficha): Promise<Ficha> {
-        const response = await fetch(`/api/ficha/${id}`, {
-            method: 'PATCH',
-            body: JSON.stringify(ficha)
-        }).then(async r => await r.json())
-        return response
-    },
-
-    async deleteById(id: string): Promise<Ficha> {
-        const response = await fetch(`/api/ficha/${id}`, {
-            method: 'DELETE'
-        }).then(async r => await r.json())
-        return response
-    }
+export const fichaService: Service<Ficha, 'userId'> = {
+    async fetch(queryParams) { return await get({ queryParams }) as unknown as Ficha[] },
+    async getById(id) { return await get({ param: id }); },
+    async create(ficha) { return await post(ficha); },
+    async updateById(body) { return await patch(body.id, body.data); },
+    async deleteById(id) { return await del(id); }
 }

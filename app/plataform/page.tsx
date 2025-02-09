@@ -30,7 +30,7 @@ export default function Plataform(): ReactElement {
             if (session?.user.email === ADMIN_EMAIL) {
                 response = await fichaService.fetch()
             } else {
-                response = await fichaService.fetch({ user: session?.user?._id ?? '' })
+                response = await fichaService.fetch({ userId: session?.user?._id })
             }
             setIsLoading(false)
             setFichas(response)

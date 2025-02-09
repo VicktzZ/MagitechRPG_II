@@ -24,43 +24,43 @@ const messageSchema = new Schema({
 
 const campaignSchema = new Schema<CampaignType>({
     admin: {
-        type: [String],
-        required: [true, 'Admin is required!']
+        type: [ String ],
+        required: [ true, 'Admin is required!' ]
     },
 
     campaignCode: {
         type: String,
-        required: [true, 'Campaign ID is required!']
+        required: [ true, 'Campaign ID is required!' ]
     },
     
     title: {
         type: String,
-        required: [true, 'Campaign title is required!']
+        required: [ true, 'Campaign title is required!' ]
     },
 
     description: {
         type: String,
-        required: [true, 'Campaign description is required!']
+        required: [ true, 'Campaign description is required!' ]
     },
 
     players: {
-        type: [Object],
-        required: [true, 'Players is required!'],
+        type: [ Object ],
+        required: [ true, 'Players is required!' ],
         default: []
     },
 
     session: {
         type: new Schema({
             users: {
-                type: [String],
+                type: [ String ],
                 default: []
             },
             messages: {
-                type: [messageSchema],
+                type: [ messageSchema ],
                 default: []
             }
         }),
-        required: [true, 'Session is required!'],
+        required: [ true, 'Session is required!' ],
         default: () => ({
             users: [],
             messages: []

@@ -1,47 +1,13 @@
-import { type MagicPower } from '@types'
+import { apiRequest } from '@utils/apiRequest'
+import type { MagicPower, Service } from '@types'
+import type { SearchOptions } from '@enums'
 
-export const poderService = {
-    async fetch(queryParams?: Record<'search' | 'filter' | 'sort' | 'order', string>): Promise<MagicPower[]> {
-        let response
+const { get, post, delete: del, patch } = apiRequest<MagicPower>('poder')
 
-        if (queryParams) {
-            response = await fetch(
-                `/api/poder?${Object.keys(queryParams)
-                    .map(key => `${key}=${queryParams[key as keyof typeof queryParams]}`)
-                    .join('&')}`
-            ).then(async r => await r.json())
-        } else {
-            response = await fetch('/api/poder').then(async r => await r.json())
-        }
-
-        return response
-    },
-
-    async getById(id: string): Promise<MagicPower> {
-        const response = await fetch(`/api/poder/${id}`).then(async r => await r.json())
-        return response
-    },
-
-    async create(poder: MagicPower): Promise<MagicPower> {
-        const response = await fetch('/api/poder', {
-            method: 'POST',
-            body: JSON.stringify(poder)
-        }).then(async r => await r.json())
-        return response
-    },
-
-    async updateById(id: string, poder: MagicPower): Promise<MagicPower> {
-        const response = await fetch(`/api/poder/${id}`, {
-            method: 'PUT',
-            body: JSON.stringify(poder)
-        }).then(async r => await r.json())
-        return response
-    },
-
-    async deleteById(id: string): Promise<MagicPower> {
-        const response = await fetch(`/api/poder/${id}`, {
-            method: 'DELETE'
-        }).then(async r => await r.json())
-        return response
-    }
+export const poderService: Service<MagicPower, SearchOptions> = {
+    async fetch(queryParams) { return await get({ queryParams }) as unknown as MagicPower[] },
+    async getById(id) { return await get({ param: id }) },
+    async create(poder) { return await post({ body: poder }) },
+    async updateById(body) { return await patch(body.id, body.data) },
+    async deleteById(id) { return await del(id) }
 }

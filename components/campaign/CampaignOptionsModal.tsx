@@ -40,7 +40,7 @@ export default function CampaignOptionsModal({
         if (campaignCode) {
             setIsLoading(true);
 
-            const response = await campaignService.fetch({ code: campaignCode })
+            const response = await campaignService.getById(campaignCode)
 
             if (response) {
                 setOpen(false);
@@ -69,8 +69,7 @@ export default function CampaignOptionsModal({
                 description: campaignProps.description ?? '',
                 players: [],
                 session: {
-                    players: [],
-                    admins: [],
+                    users: [],
                     messages: []
                 }
             })
