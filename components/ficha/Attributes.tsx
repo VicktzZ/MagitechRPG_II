@@ -10,8 +10,8 @@ import { green } from '@mui/material/colors'
 import { useFormikContext } from 'formik'
 import { type ReactElement, useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import type { Attributes as AttributesType, Classes, Ficha, FinancialCondition, Expertises, Race } from '@types'
+import { positiveTraits } from '@constants/traits'
 import DiceRollModal from '@components/misc/DiceRollModal'
-import traits from '@constants/traits'
 
 import { 
     type SelectChangeEvent,
@@ -98,7 +98,7 @@ export default function Attributes({ disabled }: { disabled?: boolean }): ReactE
         let prevTrait
         setCanChangeTrait(true)
 
-        for (const item of traits) {
+        for (const item of positiveTraits) {
             if (item.name === e.target.value) {
                 trait = item
             }
@@ -157,7 +157,7 @@ export default function Attributes({ disabled }: { disabled?: boolean }): ReactE
     }, [ f.values.traits, f.values.attributes ])
 
     const traitsArr = useMemo(() => {
-        return traits.map((trait) => (
+        return positiveTraits.map((trait) => (
             <MenuItem
                 key={trait.name}
                 value={trait.name}

@@ -2,7 +2,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 'use client';
 
-import { useEffect, type ReactElement, useState } from 'react';
+import { useEffect, type ReactElement, useState, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { Backdrop, Box, Button, CircularProgress, Grid, Modal, Skeleton, Tooltip, Typography } from '@mui/material';
 import { useRouter } from 'next/navigation';
@@ -13,7 +13,7 @@ import { gameMasterContext, campaignContext } from '@contexts';
 import { PUSHER_KEY } from '@constants';
 import type { Ficha, Campaign as CampaignType, User } from '@types';
 import PusherClient, { type PresenceChannel } from 'pusher-js';
-import { campaignService, fichaService, sessionService, userService } from '@services';
+import { campaignService, fichaService, sessionService } from '@services';
 
 export default function Campaign({ params }: { params: { code: string } }): ReactElement {
     const campaignName = 'presence-' + params.code;
@@ -22,7 +22,7 @@ export default function Campaign({ params }: { params: { code: string } }): Reac
     const router = useRouter();
     const { data: session } = useSession();
     const { channel, setChannel } = useChannel();
-    const [ isLoading, setIsLoading ] = useState<boolean>(true);
+    const [ isLoading, setIsLoading ] = useState<    boolean>(true);
     const [ isLoadingFichas, setIsLoadingFichas ] = useState<boolean>(true);
     const [ userFichas, setUserFichas ] = useState<Ficha[]>([]);
     const [ allGameMastersId, setAllGameMastersId ] = useState<string[]>([]);
@@ -30,29 +30,37 @@ export default function Campaign({ params }: { params: { code: string } }): Reac
     const [ campaign, setCampaign ] = useState<CampaignType>({} as CampaignType);
     const [ openFichaModal, setOpenFichaModal ] = useState<boolean>(false);
     const [ ficha, setFicha ] = useState<Ficha>();
-    const [ pusherClient, setPusherClient ] = useState<PusherClient | null>(null);
     const [ copiedCode, setCopiedCode ] = useState<boolean>(false);
-    const [ campaignUsers, setCampaignUsers ] = useState<Record<'players' | 'admins', User[]>>({
-        players: [],
-        admins: []
-    })
+    const [ campaignUsers, setCampaignUsers ] = useState<User[]>([]);
+    const pusherClientRef = useRef<PusherClient | null>(null);
+    const channelRef = useRef<PresenceChannel | null>(null);
 
     useEffect(() => {
-        let chn: PresenceChannel | null = null;
-
-        if (campaign && ((!isLoading && isUserGM) || (!isLoading && ficha))) {
+        if (!pusherClientRef.current) {
             const pusher = new PusherClient(PUSHER_KEY, {
                 cluster: 'sa1',
                 authEndpoint: `/api/pusher/auth?session=${JSON.stringify(session)}`,
                 forceTLS: true
             });
+            pusherClientRef.current = pusher;
+        }
+    }, [  ]);
 
-            chn = pusher.subscribe(campaignName) as PresenceChannel;
-
-            setPusherClient(pusher);
+    useEffect(() => {
+        if (pusherClientRef.current && !channelRef.current && (isUserGM || ficha)) {
+            const chn = pusherClientRef.current.subscribe(campaignName) as PresenceChannel;
+            channelRef.current = chn;
             setChannel(chn);
         }
-    }, [ campaign, isLoading, ficha, isUserGM ]);  
+
+        return () => {
+            if (channelRef.current) {
+                channelRef.current.unsubscribe();
+                setChannel(null);
+                channelRef.current = null;
+            }
+        };
+    }, [ campaignName, isUserGM, ficha ]);
 
     useEffect(() => {
         const fetchCampaign = async () => {
@@ -60,15 +68,8 @@ export default function Campaign({ params }: { params: { code: string } }): Reac
             setCampaign(campaignResponse);
 
             if (campaignResponse) {
-                campaignResponse.players.map(async player => {
-                    const user = await userService.getById(player.userId)
-                    setCampaignUsers(state => ({ ...state, players: [ ...state.players, user ] }))
-                });
-
-                campaignResponse.admin.map(async gm => {
-                    const user = await userService.getById(gm)
-                    setCampaignUsers(state => ({ ...state, admins: [ ...state.admins, user ] }))
-                });
+                const usersResponse = await campaignService.getCampaignUsers(params.code)
+                setCampaignUsers(usersResponse);
 
                 if (campaignResponse.admin.includes(session?.user?._id ?? '')) setIsUserGM(true);
                 else {
@@ -86,18 +87,13 @@ export default function Campaign({ params }: { params: { code: string } }): Reac
         fetchCampaign();
 
         return () => {
-            pusherClient?.unsubscribe(campaignName);
-            channel?.unsubscribe();
-            setChannel(null);
-
-            pusherClient?.disconnect();
-
+            pusherClientRef.current?.disconnect();
             sessionService.disconnect({ 
                 campaignCode: params.code,
-                playerId: session?.user?._id ?? ''
+                userId: session?.user?._id ?? ''
             }).then((data) => { console.log(data) })
         };
-    }, [ ]);              
+    }, [ params.code ]);
 
     return (
         <>
@@ -197,8 +193,7 @@ export default function Campaign({ params }: { params: { code: string } }): Reac
                             </Box>
                             <Box height='100%' width='25%' display='flex' gap={2}>
                                 <CampaignHeader 
-                                    admins={campaignUsers.admins}
-                                    players={campaignUsers.players}
+                                    users={campaignUsers}
                                 />
                                 <CampaignComponent />
                             </Box>

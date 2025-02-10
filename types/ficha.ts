@@ -143,7 +143,6 @@ export interface Expertise<T extends Attributes | null> {
 
 export interface Trait {
     name: string
-    description: string
     value: number
     target: {
         kind: 'attribute',

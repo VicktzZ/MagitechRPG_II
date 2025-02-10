@@ -8,13 +8,13 @@ export async function GET(_req: Request, { params: { id } }: { params: id }): Pr
     try {
         await connectToDb();
 
-        const ficha = await Campaign.findById(id);
+        const campaign = await Campaign.findById(id);
 
-        if (!ficha) {
+        if (!campaign) {
             return Response.json({ message: 'NOT FOUND' }, { status: 404 });
         }
 
-        return Response.json(ficha);
+        return Response.json(campaign);
     } catch (error: any) {
         return Response.json({ message: 'FORBIDDEN', error: error.message }, { status: 403 });
     }

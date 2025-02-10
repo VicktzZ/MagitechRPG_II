@@ -5,13 +5,13 @@ export interface UpdateByIdDto<T> {
 
 export interface ConnectSessionDto {
     campaignCode: string;
-    playerId: string;
+    userId: string;
     isGM: boolean;
 }
 
 export interface DisconnectSessionDto {
     campaignCode: string;
-    playerId: string;
+    userId: string;
 }
 
 export type QueryParamsDto<T extends string> = Partial<Record<T, string>>;

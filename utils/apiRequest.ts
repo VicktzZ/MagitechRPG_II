@@ -1,8 +1,8 @@
 import { ApiMethod } from '@enums'
 import type { ApiRequest, QueryParamsDto } from '@types'
 
-export function apiRequest<T>(url: string): ApiRequest<T> {
-    url = '/api/' + url
+export function apiRequest<T>(baseUrl: string): ApiRequest<T> {
+    const url = '/api/' + baseUrl
 
     return {
         get: async <K extends string = ''>(params?: { queryParams?: QueryParamsDto<K>, param?: string }) => {
@@ -44,7 +44,7 @@ export function apiRequest<T>(url: string): ApiRequest<T> {
         },
 
         url: (address: string) => {
-            return apiRequest<T>(url + '/' + address)
+            return apiRequest<T>(baseUrl + '/' + address)
         }
     }
 }

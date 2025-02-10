@@ -23,21 +23,23 @@ export default function CampaignComponent(): ReactElement {
             await sessionService.connect({
                 campaignCode: campaign.campaignCode,
                 isGM: campaign.admin.includes(session?.user._id ?? ''),
-                playerId: session?.user._id ?? ''
+                userId: session?.user._id ?? ''
             });
 
             enqueueSnackbar('Você entrou na sessão!', toastDefault('subscriptionToChannel', 'success'));
         });
         
         channel.bind(PusherEvent.MEMBER_ADDED, async (user: PusherMemberParam) => {
+            channel.trigger('client-session_updated', { user: user.info._id, session: 'entered' })
             enqueueSnackbar(`${user.info.name} entrou na sessão!`, toastDefault('enteredToChannel'));
         });
 
         channel.bind(PusherEvent.MEMBER_REMOVED, async (user: PusherMemberParam) => {
+            channel.trigger('client-session_updated', { user: user.info._id, session: 'exit' })
             enqueueSnackbar(`${user.info.name} saiu da sessão!`, toastDefault('exitFromChannel'));
         });
 
-        channel.bind(PusherEvent.UPDATE_CAMPAIGN, async (data: Campaign) => {
+        channel.bind(PusherEvent.UPDATE_CAMPAIGN, (data: Campaign) => {
             console.log(data)
             setCampaign(data)
         })

@@ -5,23 +5,28 @@ import Image from 'next/image'
 import { useEffect, useState } from 'react'
 import { fichaService } from '@services'
 import { useCampaignContext } from '@contexts/campaignContext'
+import { useGameMasterContext } from '@contexts/gameMasterContext'
+import { useChannel } from '@contexts/channelContext'
 
-export default function CampaignHeader({
-    admins,
-    players
-}: {
-    admins: User[]
-    players: User[]
-}) {
+export default function CampaignHeader({ users }: { users: User[] }) {
     const [ fichas, setFichas ] = useState<Ficha[]>([]);
     const [ isLoading, setIsLoading ] = useState<boolean>(true);
-    const { campaign } = useCampaignContext()
+    const { campaign, setCampaign } = useCampaignContext()
+    const { channel } = useChannel()
+    const { allGameMastersId } = useGameMasterContext()
 
     const theme = useTheme()
     const matches = useMediaQuery(theme.breakpoints.down('md'))
 
+    const campUsers = {
+        admin: users.filter(u => allGameMastersId.includes(u._id ?? '')),
+        player: users.filter(u => !allGameMastersId.includes(u._id ?? ''))
+    }
+
+    console.log(campUsers)
+
     useEffect(() => {
-        const fetchFichas = async (): Promise<void> => {
+        const fetchPlayersFicha = async (): Promise<void> => {
             setIsLoading(true)
 
             const fichaResponse = await Promise.all(campaign.players.map(async player => {
@@ -29,18 +34,20 @@ export default function CampaignHeader({
             }))
             
             setFichas([ ...fichas, ...fichaResponse ])
- 
-            setIsLoading(false)
             setFichas(fichaResponse)
 
-            console.log({
-                fichas,
-                admins,
-                players
-            })
+            setIsLoading(false)
         }
 
-        fetchFichas()
+        fetchPlayersFicha()
+    }, [])
+
+    useEffect(() => {
+        channel.bind('client-session_updated', (data: { userId: string, session: 'entered' | 'exit' }) => {
+            if (data.session === 'entered' && !campaign.players.map(player => player.userId).includes(data.userId)) {
+                setCampaign({ ...campaign, players: [ ...campaign.players, { userId: data.userId, fichaId: '' } ] })
+            }
+        })
     }, [])
 
     return (
@@ -61,23 +68,27 @@ export default function CampaignHeader({
                 gap={2}
             >
                 <Box display="flex" flexDirection="column" alignItems={matches ? 'center' : 'flex-start'} justifyContent='center' gap={3}>
-                    {admins.map(admin => (
-                        <Box display="flex" gap={2} key={admin._id}>
+                    {campUsers.admin.map(user => (
+                        <Box display="flex" gap={2} key={user._id}>
                             <Box position='absolute'></Box>
                             <Avatar sx={{ height: '3rem', width: '3rem' }}>
                                 <Image
                                     height={250}
                                     width={250}
-                                    style={{ height: '100%', width: '100%' }}
-                                    src={admin.image ?? 'undefined'}
-                                    alt={admin.name ?? 'User Avatar'}
+                                    src={user.image ?? 'undefined'}
+                                    alt={user.name ?? 'User Avatar'}
+                                    style={{ 
+                                        height: '100%',
+                                        width: '100%',
+                                        filter: campaign.session.users.includes(user._id!) ? 'none' : 'grayscale(100%)' 
+                                    }}
                                 />
                             </Avatar>
                             {!matches && (
                                 <Box>
                                     <Typography>Game Master</Typography>
                                     <Typography color={grey[500]} variant="caption">
-                                        {admin.name}
+                                        {user.name}
                                     </Typography>
                                 </Box>
                             )}
@@ -88,8 +99,8 @@ export default function CampaignHeader({
                 <Divider />
             
                 <Box display="flex" flexDirection="column" alignItems={matches ? 'center' : 'flex-start'} justifyContent='center' gap={3}>
-                    {players.map(player => (
-                        <Box display="flex" flexDirection='column' gap={2} key={player._id}>
+                    {campUsers.player.map(user => (
+                        <Box display="flex" flexDirection='column' gap={2} key={user._id}>
                             {isLoading && !matches ? (
                                 <Box display='flex' alignItems='center' gap={2}>
                                     <Skeleton variant="circular" width={45} height={45} />
@@ -104,16 +115,20 @@ export default function CampaignHeader({
                                         <Image
                                             height={250}
                                             width={250}
-                                            style={{ height: '100%', width: '100%' }}
-                                            src={player.image ?? 'undefined'}
-                                            alt={player.name ?? 'User Avatar'}
+                                            src={user.image ?? 'undefined'}
+                                            alt={user.name ?? 'User Avatar'}
+                                            style={{ 
+                                                height: '100%',
+                                                width: '100%',
+                                                filter: campaign.session.users.includes(user._id!) ? 'none' : 'grayscale(100%)' 
+                                            }}
                                         />
                                     </Avatar>
                                     {!matches && (
                                         <Box>
-                                            <Typography>{player.name}</Typography>
+                                            <Typography>{user.name}</Typography>
                                             <Typography color={grey[500]} variant="caption">
-                                                {fichas.find(ficha => ficha.userId === player._id)?.name}
+                                                {fichas.find(ficha => ficha.userId === user._id)?.name}
                                             </Typography>
                                         </Box>
                                     )}

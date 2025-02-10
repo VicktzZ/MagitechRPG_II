@@ -1,10 +1,9 @@
 /* eslint-disable max-len */
 import type { Trait } from '@types';
 
-export const traits: Trait[] = [
+export const positiveTraits: Trait[] = [
     {
         name: 'Saúde de Ferro',
-        description: 'você se recupera rapidamente de ferimentos, doenças ou efeitos nocivos. Você pode curar uma quantidade de pontos de vida igual ao seu VIG por hora, e tem vantagem em testes de resistência contra venenos, doenças ou efeitos similares.',
         value: 1,
         target: {
             kind: 'attribute',
@@ -14,7 +13,6 @@ export const traits: Trait[] = [
 
     {
         name: 'Reflexos de Gato',
-        description: 'você tem reflexos tão rápidos que pode reagir a situações perigosas ou inesperadas. Você tem vantagem em testes de iniciativa, e pode se esquivar de ataques surpresa, armadilhas ou efeitos que exijam um teste de DES para evitar.',
         value: 1,
         target: {
             kind: 'attribute',
@@ -24,7 +22,6 @@ export const traits: Trait[] = [
 
     {
         name: 'Foco Absoluto',
-        description: 'você tem uma experiência vasta, que te permite sobreviver, se adaptar ou se aprimorar em situações adversas. Você tem vantagem em testes de sobrevivência, e pode usar um ponto de sabedoria para obter uma vantagem, uma oportunidade ou uma melhoria em algo.',
         value: 1,
         target: {
             kind: 'attribute',
@@ -34,7 +31,6 @@ export const traits: Trait[] = [
 
     {
         name: 'Genial',
-        description: 'você tem uma inteligência superior, que te permite resolver problemas, aprender e otimizar. Você tem vantagem em testes de lógica, e pode usar um número de pontos de lógica por dia igual ao seu LOG para obter um sucesso automático em qualquer teste que envolva inteligência.',
         value: 1,
         target: {
             kind: 'attribute',
@@ -44,7 +40,6 @@ export const traits: Trait[] = [
 
     {
         name: 'Veterano',
-        description: 'Você tem uma experiência vasta, que te permite sobreviver, se adaptar ou se aprimorar em situações adversas. Você tem vantagem em testes de sobrevivência, e pode usar um ponto de sabedoria para obter uma vantagem, uma oportunidade ou uma melhoria em algo.',
         value: 1,
         target: {
             kind: 'attribute',
@@ -54,7 +49,6 @@ export const traits: Trait[] = [
 
     {
         name: 'Lider',
-        description: 'Você tem uma capacidade de influenciar, motivar ou inspirar outras pessoas, seja por meio de ordens, conselhos, exemplos, etc. Você tem vantagem em testes de liderança, e pode usar um ponto de carisma para obter uma ajuda, uma lealdade ou uma admiração de alguém.',
         value: 1,
         target: {
             kind: 'attribute',
@@ -64,7 +58,6 @@ export const traits: Trait[] = [
 
     {
         name: 'Perspicaz',
-        description: '',
         value: 3,
         target: {
             kind: 'expertise',
@@ -74,7 +67,6 @@ export const traits: Trait[] = [
 
     {
         name: 'Valente',
-        description: '',
         value: 3,
         target: {
             kind: 'expertise',
@@ -84,7 +76,6 @@ export const traits: Trait[] = [
 
     {
         name: 'Concentrado',
-        description: '',
         value: 3,
         target: {
             kind: 'expertise',
@@ -94,7 +85,6 @@ export const traits: Trait[] = [
 
     {
         name: 'Perfeccionista',
-        description: '',
         value: 3,
         target: {
             kind: 'expertise',
@@ -104,7 +94,6 @@ export const traits: Trait[] = [
 
     {
         name: 'Moderado',
-        description: '',
         value: 3,
         target: {
             kind: 'expertise',
@@ -114,7 +103,6 @@ export const traits: Trait[] = [
 
     {
         name: 'Diligente',
-        description: '',
         value: 3,
         target: {
             kind: 'expertise',
@@ -124,7 +112,6 @@ export const traits: Trait[] = [
 
     {
         name: 'Atraente',
-        description: '',
         value: 3,
         target: {
             kind: 'expertise',
@@ -134,7 +121,6 @@ export const traits: Trait[] = [
 
     {
         name: 'Sagaz',
-        description: '',
         value: 3,
         target: {
             kind: 'expertise',
@@ -144,7 +130,6 @@ export const traits: Trait[] = [
     
     {
         name: 'Oportunista',
-        description: '',
         value: 3,
         target: {
             kind: 'expertise',
@@ -154,7 +139,6 @@ export const traits: Trait[] = [
     
     {
         name: 'Eloquente',
-        description: '',
         value: 3,
         target: {
             kind: 'expertise',
@@ -164,7 +148,6 @@ export const traits: Trait[] = [
 
     {
         name: 'Hipertrofia',
-        description: '',
         value: 3,
         target: {
             kind: 'expertise',
@@ -174,7 +157,6 @@ export const traits: Trait[] = [
 
     {
         name: 'Racional',
-        description: '',
         value: 3,
         target: {
             kind: 'expertise',
@@ -184,7 +166,6 @@ export const traits: Trait[] = [
 
     {
         name: 'Observador',
-        description: '',
         value: 3,
         target: {
             kind: 'expertise',
@@ -194,7 +175,6 @@ export const traits: Trait[] = [
 
     {
         name: 'Preciso',
-        description: '',
         value: 3,
         target: {
             kind: 'expertise',
@@ -204,7 +184,6 @@ export const traits: Trait[] = [
 
     {
         name: 'Engenhoso',
-        description: '',
         value: 3,
         target: {
             kind: 'expertise',
@@ -214,7 +193,6 @@ export const traits: Trait[] = [
 
     {
         name: 'Fugaz',
-        description: '',
         value: 3,
         target: {
             kind: 'expertise',
@@ -224,7 +202,6 @@ export const traits: Trait[] = [
 
     {
         name: 'Diplomata',
-        description: '',
         value: 3,
         target: {
             kind: 'expertise',
@@ -234,7 +211,6 @@ export const traits: Trait[] = [
 
     {
         name: 'Destapado',
-        description: '',
         value: 3,
         target: {
             kind: 'expertise',
@@ -244,7 +220,6 @@ export const traits: Trait[] = [
 
     {
         name: 'Robusto',
-        description: '',
         value: 3,
         target: {
             kind: 'expertise',
@@ -254,7 +229,6 @@ export const traits: Trait[] = [
 
     {
         name: 'Sarado',
-        description: '',
         value: 3,
         target: {
             kind: 'expertise',
@@ -264,7 +238,6 @@ export const traits: Trait[] = [
 
     {
         name: 'Convincente',
-        description: '',
         value: 3,
         target: {
             kind: 'expertise',
@@ -274,7 +247,6 @@ export const traits: Trait[] = [
 
     {
         name: 'Metódico',
-        description: '',
         value: 3,
         target: {
             kind: 'expertise',
@@ -284,7 +256,6 @@ export const traits: Trait[] = [
 
     {
         name: 'Eficiente',
-        description: '',
         value: 3,
         target: {
             kind: 'expertise',
@@ -293,4 +264,274 @@ export const traits: Trait[] = [
     }
 ]
 
-export default traits
+export const negativeTraits: Trait[] = [
+    {
+        name: 'Saúde Frágil',
+        value: -1,
+        target: {
+            kind: 'attribute',
+            name: 'VIG'
+        }
+    },
+
+    {
+        name: 'Desajeitado',
+        value: -1,
+        target: {
+            kind: 'attribute',
+            name: 'DES'
+        }
+    },
+
+    {
+        name: 'Distraído',
+        value: -1,
+        target: {
+            kind: 'attribute',
+            name: 'FOC'
+        }
+    },
+
+    {
+        name: 'Confuso',
+        value: -1,
+        target: {
+            kind: 'attribute',
+            name: 'LOG'
+        }
+    },
+
+    {
+        name: 'Inexperiente',
+        value: -1,
+        target: {
+            kind: 'attribute',
+            name: 'SAB'
+        }
+    },
+
+    {
+        name: 'Antissocial',
+        value: -1,
+        target: {
+            kind: 'attribute',
+            name: 'CAR'
+        }
+    },
+
+    {
+        name: 'Desatento',
+        value: -3,
+        target: {
+            kind: 'expertise',
+            name: 'Percepção'
+        }
+    },
+
+    {
+        name: 'Medroso',
+        value: -3,
+        target: {
+            kind: 'expertise',
+            name: 'RES Mental'
+        }
+    },
+
+    {
+        name: 'Lento',
+        value: -3,
+        target: {
+            kind: 'expertise',
+            name: 'Reflexos'
+        }
+    },
+
+    {
+        name: 'Preguiçoso',
+        value: -3,
+        target: {
+            kind: 'expertise',
+            name: 'Sobrevivência'
+        }
+    },
+
+    {
+        name: 'Improdutivo',
+        value: -3,
+        target: {
+            kind: 'expertise',
+            name: 'Criatividade'
+        }
+    },
+
+    {
+        name: 'Tapado',
+        value: -3,
+        target: {
+            kind: 'expertise',
+            name: 'Competência'
+        }
+    },
+
+    {
+        name: 'Teimoso',
+        value: -3,
+        target: {
+            kind: 'expertise',
+            name: 'Argumentação'
+        }
+    },
+
+    {
+        name: 'Instável',
+        value: -3,
+        target: {
+            kind: 'expertise',
+            name: 'Controle'
+        }
+    },
+
+    {
+        name: 'Ignorante',
+        value: -3,
+        target: {
+            kind: 'expertise',
+            name: 'Conhecimento'
+        }
+    },
+
+    {
+        name: 'Moroso',
+        value: -3,
+        target: {
+            kind: 'expertise',
+            name: 'Atletismo'
+        }
+    },
+
+    {
+        name: 'Barulhento',
+        value: -3,
+        target: {
+            kind: 'expertise',
+            name: 'Furtividade'
+        }
+    },
+
+    {
+        name: 'Reservado',
+        value: -3,
+        target: {
+            kind: 'expertise',
+            name: 'Comunicação'
+        }
+    },
+
+    {
+        name: 'Fraco',
+        value: -3,
+        target: {
+            kind: 'expertise',
+            name: 'Luta'
+        }
+    },
+
+    {
+        name: 'Frágil',
+        value: -3,
+        target: {
+            kind: 'expertise',
+            name: 'RES Física'
+        }
+    },
+
+    {
+        name: 'Ingênuo',
+        value: -3,
+        target: {
+            kind: 'expertise',
+            name: 'Enganação'
+        }
+    },
+
+    {
+        name: 'Azarado',
+        value: -3,
+        target: {
+            kind: 'expertise',
+            name: 'Sorte'
+        }
+    },
+
+    {
+        name: 'Impulsivo',
+        value: -3,
+        target: {
+            kind: 'expertise',
+            name: 'Intuição'
+        }
+    },
+
+    {
+        name: 'Impreciso',
+        value: -3,
+        target: {
+            kind: 'expertise',
+            name: 'Pontaria'
+        }
+    },
+
+    {
+        name: 'Descuidado',
+        value: -3,
+        target: {
+            kind: 'expertise',
+            name: 'Investigação'
+        }
+    },
+
+    {
+        name: 'Lerdo',
+        value: -3,
+        target: {
+            kind: 'expertise',
+            name: 'Agilidade'
+        }
+    },
+
+    {
+        name: 'Desconexo',
+        value: -3,
+        target: {
+            kind: 'expertise',
+            name: 'Persuasão'
+        }
+    },
+
+    {
+        name: 'Imprudente',
+        value: -3,
+        target: {
+            kind: 'expertise',
+            name: 'Medicina'
+        }
+    },
+
+    {
+        name: 'Desinformado',
+        value: -3,
+        target: {
+            kind: 'expertise',
+            name: 'Tecnologia'
+        }
+    },
+
+    {
+        name: 'Apático',
+        value: -3,
+        target: {
+            kind: 'expertise',
+            name: 'Liderança'
+        }
+    }
+]

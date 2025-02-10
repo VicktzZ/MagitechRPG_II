@@ -54,7 +54,7 @@ export interface Campaign {
 
 export interface Session {
     users: string[]
-    messages: Message[]
+    messages?: Message[]
 }
 
 export interface Message {
