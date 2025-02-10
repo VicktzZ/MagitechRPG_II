@@ -64,6 +64,7 @@ export interface Message {
         image: string
         name: string
     }
+    timestamp?: Date
 }
 
 export interface Player {

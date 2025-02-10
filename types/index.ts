@@ -37,11 +37,11 @@ import type {
     Player,
     PlayerInfo,
     PusherMemberParam,
-    Member 
+    Member,
+    Message
 } from './models';
 
 import type { 
-    Message,
     EventData,
     Roll
 } from './misc';

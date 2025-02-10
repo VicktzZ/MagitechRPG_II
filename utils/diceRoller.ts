@@ -1,4 +1,5 @@
 import Chance from 'chance'
+import type { Message } from '@types'
 
 const chance = new Chance()
 
@@ -10,15 +11,6 @@ export interface DiceResult {
     operator2: { type: string; value: number } | null
     subtotal: number
     error?: string
-}
-
-interface DiceMessage {
-    text: string
-    by: {
-        id: string
-        image: string
-        name: string
-    }
 }
 
 export const rollDice = (diceNotation: string): DiceResult | null => {
@@ -137,14 +129,15 @@ export const rollDice = (diceNotation: string): DiceResult | null => {
 export const createDiceMessage = (
     diceResult: DiceResult | null,
     user: { id: string; image: string; name: string }
-): DiceMessage | null => {
+): Message | null => {
     if (!diceResult) return null
 
     // Se houver erro, retorna a mensagem de erro
     if (diceResult.error) {
         return {
             text: `❌ Erro ao rolar ${diceResult.notation}: ${diceResult.error}`,
-            by: user
+            by: user,
+            timestamp: new Date()
         }
     }
 
@@ -166,14 +159,15 @@ export const createDiceMessage = (
 
     return {
         text: `🎲 Rolou ${diceResult.notation}: ${resultText}`,
-        by: user
+        by: user,
+        timestamp: new Date()
     }
 }
 
 export const rollSeparateDice = (
     diceNotation: string,
     user: { id: string; image: string; name: string }
-): DiceMessage[] | null => {
+): Message[] | null => {
     const cleanNotation = diceNotation.substring(1).trim() // Remove o # e espaços
     const diceResult = rollDice(cleanNotation)
 
@@ -183,7 +177,8 @@ export const rollSeparateDice = (
             return [
                 {
                     text: `❌ Erro ao rolar ${diceResult.notation}: ${diceResult.error}`,
-                    by: user
+                    by: user,
+                    timestamp: new Date()
                 }
             ]
         }

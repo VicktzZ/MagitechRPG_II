@@ -126,9 +126,11 @@ export default function CampaignHeader({ users }: { users: User[] }) {
                                     </Avatar>
                                     {!matches && (
                                         <Box>
-                                            <Typography>{user.name}</Typography>
-                                            <Typography color={grey[500]} variant="caption">
+                                            <Typography>
                                                 {fichas.find(ficha => ficha.userId === user._id)?.name}
+                                            </Typography>
+                                            <Typography color={grey[500]} variant="caption">
+                                                {user.name}
                                             </Typography>
                                         </Box>
                                     )}

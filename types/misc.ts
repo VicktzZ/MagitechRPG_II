@@ -1,12 +1,3 @@
-interface Message {
-    message: string
-    by: {
-        id: string
-        image: string
-        name: string
-    }
-}
-
 interface TriggredByUser {
     name: string
     socketId: string
@@ -31,7 +22,6 @@ interface Roll {
 }
 
 export type {
-    Message,
     EventData,
     Roll
 }

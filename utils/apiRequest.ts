@@ -17,20 +17,29 @@ export function apiRequest<T>(baseUrl: string): ApiRequest<T> {
             }
 
             return await fetch(apiUrl, {
-                method: ApiMethod.GET
+                method: ApiMethod.GET,
+                headers: {
+                    'Content-Type': 'application/json'
+                }
             }).then(async r => await r.json());
         },
 
         post: async <K = T>(body: K) => {
             return await fetch(url, {
                 method: ApiMethod.POST,
-                body: JSON.stringify(body)
+                body: JSON.stringify(body),
+                headers: {
+                    'Content-Type': 'application/json'
+                }
             }).then(async r => await r.json())
         },
 
         delete: async (id: string) => {
             const response = await fetch(`${url}/${id}`, {
-                method: ApiMethod.DELETE
+                method: ApiMethod.DELETE,
+                headers: {
+                    'Content-Type': 'application/json'
+                }
             }).then(async r => await r.json())
             return response
         },
@@ -38,7 +47,10 @@ export function apiRequest<T>(baseUrl: string): ApiRequest<T> {
         patch: async <K = T>(id: string, body: K) => {
             const response = await fetch(`${url}/${id}`, {
                 method: ApiMethod.PATCH,
-                body: JSON.stringify(body)
+                body: JSON.stringify(body),
+                headers: {
+                    'Content-Type': 'application/json'
+                }
             }).then(async r => await r.json())
             return response
         },

@@ -40,8 +40,14 @@ export default function CampaignComponent(): ReactElement {
         });
 
         channel.bind(PusherEvent.UPDATE_CAMPAIGN, (data: Campaign) => {
-            console.log(data)
-            setCampaign(data)
+            console.log(PusherEvent.UPDATE_CAMPAIGN);
+            setCampaign(prev => ({
+                ...data,
+                session: {
+                    ...data.session,
+                    messages: prev?.session?.messages ?? data.session.messages
+                }
+            }));
         })
     }, [ ]);
 
