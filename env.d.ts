@@ -21,6 +21,7 @@ declare global {
             NODE_ENV: 'development' | 'production'
             ADMIN_PASSWORD: string
             ADMIN_EMAIL: string
+            PUSHER_KEY: string
         }
     }
 }
