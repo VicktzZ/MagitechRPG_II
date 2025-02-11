@@ -13,7 +13,7 @@ export default function CampaignHeader({ users }: { users: User[] }) {
     const [ fichas, setFichas ] = useState<Ficha[]>([]);
     const [ isLoading, setIsLoading ] = useState<boolean>(true);
     const [ sessionUsers, setSessionUsers ] = useState<string[]>([]);
-    const { campaign, setCampaign } = useCampaignContext();
+    const { campaign } = useCampaignContext();
     const { channel } = useChannel();
     const { allGameMastersId } = useGameMasterContext();
 

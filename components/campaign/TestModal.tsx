@@ -17,7 +17,7 @@ import {
     ListItem,
     ListItemText,
     ListItemAvatar,
-    Avatar,
+    Avatar
 } from '@mui/material';
 import { useState } from 'react';
 import type { Campaign } from '@types';
@@ -37,10 +37,10 @@ export interface TestData {
 }
 
 export default function TestModal({ open, onClose, onConfirm, campaign }: TestModalProps) {
-    const [dt, setDt] = useState('');
-    const [isGroupTest, setIsGroupTest] = useState(true);
-    const [isVisible, setIsVisible] = useState(true);
-    const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
+    const [ dt, setDt ] = useState('');
+    const [ isGroupTest, setIsGroupTest ] = useState(true);
+    const [ isVisible, setIsVisible ] = useState(true);
+    const [ selectedPlayers, setSelectedPlayers ] = useState<string[]>([]);
 
     // Filtra apenas os jogadores online que não são admin
     const availablePlayers = campaign.session.users
@@ -77,7 +77,7 @@ export default function TestModal({ open, onClose, onConfirm, campaign }: TestMo
             if (prev.includes(playerId)) {
                 return prev.filter(id => id !== playerId);
             } else {
-                return [...prev, playerId];
+                return [ ...prev, playerId ];
             }
         });
     };
@@ -104,7 +104,7 @@ export default function TestModal({ open, onClose, onConfirm, campaign }: TestMo
                     <FormControl>
                         <RadioGroup
                             value={isGroupTest ? 'group' : 'player'}
-                            onChange={(e) => setIsGroupTest(e.target.value === 'group')}
+                            onChange={(e) => { setIsGroupTest(e.target.value === 'group'); }}
                         >
                             <FormControlLabel 
                                 value="group" 
@@ -123,7 +123,7 @@ export default function TestModal({ open, onClose, onConfirm, campaign }: TestMo
                         control={
                             <Switch
                                 checked={isVisible}
-                                onChange={(e) => setIsVisible(e.target.checked)}
+                                onChange={(e) => { setIsVisible(e.target.checked); }}
                             />
                         }
                         label="Mensagem visível"
@@ -144,7 +144,7 @@ export default function TestModal({ open, onClose, onConfirm, campaign }: TestMo
                                     <ListItem
                                         key={playerId}
                                         button
-                                        onClick={() => handlePlayerToggle(playerId)}
+                                        onClick={() => { handlePlayerToggle(playerId); }}
                                         selected={selectedPlayers.includes(playerId)}
                                     >
                                         <ListItemAvatar>

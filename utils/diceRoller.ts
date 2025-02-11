@@ -204,11 +204,11 @@ export const rollSeparateDice = (
     if (numberOfDiceMatch) {
         const numberOfDice = parseInt(numberOfDiceMatch[1]);
         if (numberOfDice > 99) {
-            return [{
+            return [ {
                 text: `❌ Erro ao rolar ${cleanNotation}: Máximo de 99 dados em sequência permitido.`,
                 by: user,
                 timestamp: new Date()
-            }];
+            } ];
         }
     }
     
@@ -217,11 +217,11 @@ export const rollSeparateDice = (
     if (diceResult) {
         // Se houver erro, retorna apenas a mensagem de erro
         if (diceResult.error) {
-            return [{
+            return [ {
                 text: `❌ Erro ao rolar ${diceResult.notation}: ${diceResult.error}`,
                 by: user,
                 timestamp: new Date()
-            }];
+            } ];
         }
 
         // Remove espaços antes de fazer o split

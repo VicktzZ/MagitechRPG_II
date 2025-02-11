@@ -4,7 +4,7 @@ interface DiceMessageProps {
     text: string;
 }
 
-export const DiceMessage = ({ text }: DiceMessageProps) => {
+export function DiceMessage({ text }: DiceMessageProps) {
     // Verifica se é uma mensagem de dados
     if (!text.startsWith('🎲 Rolou')) {
         return <Typography>{text}</Typography>;
@@ -49,4 +49,4 @@ export const DiceMessage = ({ text }: DiceMessageProps) => {
     }
 
     return <Typography>{parts}</Typography>;
-};
+}

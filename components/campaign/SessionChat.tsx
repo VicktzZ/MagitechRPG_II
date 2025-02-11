@@ -11,7 +11,7 @@ import type { Message } from '@types';
 import { PusherEvent } from '@enums';
 import { DiceMessage } from '@components/misc';
 import { messageService } from '@services';
-import TestModal, { TestData } from './TestModal';
+import TestModal, { type TestData } from './TestModal';
 import TestDialog from './TestDialog';
 
 interface TempMessage extends Message {
@@ -334,7 +334,7 @@ export default function SessionChat() {
                             <Button
                                 variant="contained"
                                 size="small"
-                                onClick={() => setIsTestModalOpen(true)}
+                                onClick={() => { setIsTestModalOpen(true); }}
                             >
                                 Teste
                             </Button>
@@ -446,7 +446,7 @@ export default function SessionChat() {
             {/* Modais e Snackbar */}
             <TestModal
                 open={isTestModalOpen}
-                onClose={() => setIsTestModalOpen(false)}
+                onClose={() => { setIsTestModalOpen(false); }}
                 onConfirm={handleTestConfirm}
                 campaign={campaign}
             />
@@ -464,11 +464,11 @@ export default function SessionChat() {
             <Snackbar
                 open={snackbarOpen}
                 autoHideDuration={6000}
-                onClose={() => setSnackbarOpen(false)}
+                onClose={() => { setSnackbarOpen(false); }}
                 anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
             >
                 <Alert
-                    onClose={() => setSnackbarOpen(false)}
+                    onClose={() => { setSnackbarOpen(false); }}
                     severity={snackbarSeverity}
                     sx={{ width: '100%' }}
                 >
