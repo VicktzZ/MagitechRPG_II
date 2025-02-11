@@ -41,13 +41,16 @@ export default function FichaComponent({ disabled, ficha }: { disabled?: boolean
             setTimeout(() => {
                 (async () => {
                     try {
-                        const response = await fichaService.updateById(values._id!, {
-                            ...values,
-                            attributes: {
-                                ...values.attributes,
-                                ap: initialValues.attributes.ap,
-                                lp: initialValues.attributes.lp,
-                                mp: initialValues.attributes.mp
+                        const response = await fichaService.updateById({
+                            id: values._id!,
+                            data: {
+                                ...values,
+                                attributes: {
+                                    ...values.attributes,
+                                    ap: initialValues.attributes.ap,
+                                    lp: initialValues.attributes.lp,
+                                    mp: initialValues.attributes.mp
+                                }
                             }
                         })
 
