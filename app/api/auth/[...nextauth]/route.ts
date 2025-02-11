@@ -1,62 +1,86 @@
 import NextAuth from 'next-auth/next';
 import GoogleProvider from 'next-auth/providers/google';
 import DiscordProvider from 'next-auth/providers/discord';
-
 import type { Session } from 'next-auth';
 import type { JWT } from '@node_modules/next-auth/jwt';
 import type { User as UserType } from '@types';
 import { connectToDb } from '@utils/database';
 import User from '@models/user';
-// import { AdminProvider } from './adminProvider';
 
 const handler = NextAuth({
-    providers:
-    [
+    providers: [
         GoogleProvider({
             clientId: process.env.GOOGLE_CLIENT_ID,
             clientSecret: process.env.GOOGLE_CLIENT_SECRET
         }),
-
         DiscordProvider({
             clientId: process.env.DISCORD_CLIENT_ID,
             clientSecret: process.env.DISCORD_CLIENT_SECRET
         })
-        // AdminProvider
+        // CredentialsProvider({
+        //     name: 'Credentials',
+        //     credentials: {},
+        //     async authorize(credentials) {
+        //         try {
+        //             const user = JSON.parse(credentials?.user as string);
+        //             if (!user?.email) return null;
+
+        //             await connectToDb();
+        //             const dbUser = await User.findOne({ email: user.email });
+        //             if (!dbUser) return null;
+
+        //             return {
+        //                 id: String(dbUser._id),
+        //                 email: dbUser.email,
+        //                 name: dbUser.name,
+        //                 image: dbUser.image
+        //             };
+        //         } catch (error) {
+        //             console.error('Erro na autorização:', error);
+        //             return null;
+        //         }
+        //     }
+        // })
     ],
+
+    session: {
+        strategy: 'jwt',
+        maxAge: 30 * 24 * 60 * 60, // 30 dias
+        updateAge: 24 * 60 * 60 // 24 horas
+    },
 
     callbacks: {
         redirect: ({ url, baseUrl }) => {
-            if(url.startsWith(baseUrl)) {
-                return url
-            } else if(url.startsWith('/')) {
+            if (url.startsWith(baseUrl)) {
+                return url;
+            } else if (url.startsWith('/')) {
                 return new URL(url, baseUrl).toString();
             }
             return baseUrl;
         },
 
         session: async ({ session, token }: { session: Session, token: JWT }) => {
-            session.token = token;
+            try {
+                await connectToDb();
+                const sessionUser = await User.findOne<UserType>({
+                    email: session?.user?.email 
+                });
 
-            const sessionUser = await User.findOne<UserType>({
-                email: session?.user?.email 
-            });
+                if (sessionUser) {
+                    session.user = {
+                        _id: String(sessionUser._id),
+                        email: String(sessionUser.email),
+                        name: String(sessionUser.name),
+                        image: String(sessionUser.image)
+                    };
+                }
 
-            if (sessionUser) {
-                session.user = {
-                    _id: String(sessionUser?._id),
-                    email: String(sessionUser?.email),
-                    name: String(sessionUser?.name),
-                    image: String(sessionUser?.image)
-                };
-            } else {
                 session.token = token;
+                return session;
+            } catch (error) {
+                console.error('Erro ao atualizar sessão:', error);
+                return session;
             }
-
-            console.log({
-                session, token
-            });
-        
-            return session;
         },
 
         signIn: async ({ profile, user }) => {
@@ -65,7 +89,7 @@ const handler = NextAuth({
                 const p: any = profile ?? user;
 
                 const userExists = await User.findOne({
-                    email: profile?.email
+                    email: p?.email
                 });
 
                 if (userExists) {
@@ -74,29 +98,26 @@ const handler = NextAuth({
                             image: p?.picture ?? p?.image_url
                         });
                     }
+                    return true;
                 }
 
-                if (!userExists) {
-                    await User.create({
-                        email: profile?.email?.toLowerCase(),
-                        name:
-                        profile?.name?.replace(' ', '').toLowerCase() ??
-                        p?.username?.replace(' ', '').toLowerCase(),
-                        image: p?.picture ?? p?.image_url
-                    });
-                }
+                await User.create({
+                    email: p?.email?.toLowerCase(),
+                    name: p?.name?.replace(' ', '').toLowerCase() ?? p?.username?.replace(' ', '').toLowerCase(),
+                    image: p?.picture ?? p?.image_url
+                });
 
                 return true;
             } catch (error) {
-                console.log(error);
+                console.error('Erro no signIn:', error);
                 return false;
             }
         },
 
-        async jwt({ token, user }) {
-            console.log('JWT Token User');
-
-            if (typeof user !== typeof undefined) token['user'] = user;
+        jwt: async ({ token, user }) => {
+            if (user) {
+                token['user'] = user;
+            }
             return token;
         }
     }

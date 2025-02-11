@@ -48,7 +48,24 @@ export interface Campaign {
     title: string
     description: string
     players: Player[]
-    session: Player[]
+    myFicha?: Ficha | null
+    session: Session
+}
+
+export interface Session {
+    users: string[]
+    messages?: Message[]
+}
+
+export interface Message {
+    text: string
+    by: {
+        id: string
+        image: string
+        name: string
+        isBot?: boolean
+    }
+    timestamp?: Date
 }
 
 export interface Player {
@@ -69,7 +86,7 @@ export interface PusherMemberParam {
         email: string
         image: string
         _id: string
-        currentFicha: Ficha,
+        currentFicha: string,
         socketId: string
     }
 }

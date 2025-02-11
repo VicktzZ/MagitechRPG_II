@@ -37,14 +37,26 @@ import type {
     Player,
     PlayerInfo,
     PusherMemberParam,
-    Member 
+    Member,
+    Message
 } from './models';
 
 import type { 
-    Message,
     EventData,
     Roll
 } from './misc';
+
+import type {
+    QueryParamsDto,
+    UpdateByIdDto,
+    ConnectSessionDto,
+    DisconnectSessionDto
+} from './dto';
+
+import type {
+    ApiRequest,
+    Service
+} from './api';
 
 export type { 
     User,
@@ -85,5 +97,12 @@ export type {
     Expertise,
     Race,
     Magia,
-    FinancialCondition
+    FinancialCondition,
+    ApiRequest,
+    Service,
+
+    QueryParamsDto,
+    UpdateByIdDto,
+    ConnectSessionDto,
+    DisconnectSessionDto
 }

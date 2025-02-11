@@ -15,7 +15,7 @@ import { WarningModal } from '@layout'
 import { useSnackbar } from 'notistack'
 import { type FormikContextType, useFormikContext } from 'formik'
 import type { Inventory } from '@types'
-import { rarityColor } from '@constants'
+import { rarityColor, toastDefault } from '@constants'
 import { rarityArmorBonuses, rarityWeaponBonuses } from '@constants/dataTypes'
 
 // eslint-disable-next-line max-len
@@ -289,7 +289,7 @@ function ItemWrapper({
                 
         setConfirmModalOpen(false)
         setOpen(false)
-        enqueueSnackbar(`${item.name} excluído(a) com sucesso!`, { variant: 'success' })
+        enqueueSnackbar(`${item.name} excluído(a) com sucesso!`, toastDefault('itemDeleted', 'success'))
     }
 
     return (

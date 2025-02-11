@@ -17,12 +17,7 @@ export default function CampaingCard({
     code: string;
 }): ReactElement {
     const { data: session } = useSession();
-    const a = { a: 1 };
-
-    console.log(a);
-    
     const userIsGM = gameMaster.includes(session?.user._id ?? '');
-
     const router = useRouter();
     
     return (

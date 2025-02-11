@@ -10,6 +10,7 @@ import { memo, useEffect, useMemo, useState } from 'react'
 import { Magic } from '.';
 import MagicsModal from './MagicsModal'
 import { useSnackbar } from 'notistack';
+import { toastDefault } from '@constants';
 
 const Magics = memo(({ disabled }: { disabled?: boolean }) => {
     const formikValues = !disabled ? 'values' : 'initialValues'
@@ -36,16 +37,10 @@ const Magics = memo(({ disabled }: { disabled?: boolean }) => {
                     f.setFieldValue('magicsSpace', f.values.magicsSpace + 1)
                     f.setFieldValue('magics', magicsArr)
 
-                    enqueueSnackbar(
-                        `Magia ${magic.nome} removida!`,
-                        {
-                            variant: 'success',
-                            action: () => <Close sx={{ cursor: 'pointer' }} onClick={() => { closeSnackbar(magic.nome) }} />,
-                            preventDuplicate: true,
-                            key: magic.nome,
-                            autoHideDuration: 3000
-                        }
-                    )
+                    enqueueSnackbar(`Magia ${magic.nome} removida!`, {
+                        ...toastDefault('itemDeleted', 'success'),
+                        action: () => <Close sx={{ cursor: 'pointer' }} onClick={() => { closeSnackbar(magic.nome) }} />
+                    })
                 }}
             />
         ))

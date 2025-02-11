@@ -11,6 +11,8 @@ import { ArrowDropDown, ArrowDropUp, Close } from '@mui/icons-material';
 import { CustomMenu } from '@layout';
 import { type FormikContextType, useFormikContext } from 'formik';
 import { Magic } from '.';
+import { poderService } from '@services';
+import { toastDefault } from '@constants';
 
 export default function SkillsModal({ open, onClose }: { open: boolean, onClose: () => void }): ReactElement {
     const f: FormikContextType<Ficha> = useFormikContext()
@@ -30,9 +32,9 @@ export default function SkillsModal({ open, onClose }: { open: boolean, onClose:
     const [ menuContent, setMenuContent ] = useState<ReactElement[]>([])
 
     const [ buttonSelected, setButtonSelected ] = useState({
-        adicionar: true,
-        criar: false,
-        remover: false
+        add: true,
+        create: false,
+        remove: false
     })
 
     const [ fetchOptions, setFetchOptions ] = useState({
@@ -51,9 +53,9 @@ export default function SkillsModal({ open, onClose }: { open: boolean, onClose:
     const btnClick = (ev: MouseEvent<HTMLButtonElement>): void => {
         const btnName = ev.currentTarget.innerText.toLowerCase() as keyof typeof buttonSelected
         setButtonSelected({
-            adicionar: false,
-            criar: false,
-            remover: false,
+            add: false,
+            create: false,
+            remove: false,
             [btnName]: true
         })
     }
@@ -66,9 +68,7 @@ export default function SkillsModal({ open, onClose }: { open: boolean, onClose:
             order: fetchOptions.sort.order
         }
 
-        const url = `/api/poder?${params ? Object.keys(params).map((key) => `${key}=${params[key as keyof typeof params]}`).join('&') : ''}`
-
-        const data: MagicPower[] = await fetch(url).then(async r => await r.json())
+        const data = await poderService.fetch(params)
         console.log(data)
 
         let result = data.slice((page - 1) * 20, page * 20)
@@ -111,8 +111,7 @@ export default function SkillsModal({ open, onClose }: { open: boolean, onClose:
                 order: fetchOptions.sort.order
             }
 
-            const url = `/api/poder?${params ? Object.keys(params).map((key) => `${key}=${params[key as keyof typeof params]}`).join('&') : ''}`
-            const data: MagicPower[] = await fetch(url).then(async r => await r.json())
+            const data = await poderService.fetch(params)
 
             setMagicPowerArr(data)
             setIsLoadingRefetch(false)
@@ -123,8 +122,14 @@ export default function SkillsModal({ open, onClose }: { open: boolean, onClose:
         const fetchData = async (): Promise<void> => {
             setPage(0)
 
-            const url = `/api/poder?${fetchOptions ? Object.keys(fetchOptions).map((key) => `${key}=${fetchOptions[key as keyof typeof fetchOptions]}`).join('&') : ''}`
-            const data: MagicPower[] = await fetch(url).then(async r => await r.json())
+            const params = {
+                search: fetchOptions.search,
+                filter: fetchOptions.filter,
+                sort: fetchOptions.sort.value,
+                order: fetchOptions.sort.order
+            }
+
+            const data = await poderService.fetch(params)
 
             setMagicPowerArr(data)
             setPage(prevPage => prevPage + 1)
@@ -172,26 +177,15 @@ export default function SkillsModal({ open, onClose }: { open: boolean, onClose:
                             }
                         ]
 
-                        enqueueSnackbar(
-                            `Poder Mágico ${magicPower?.nome} adicionado!`,
-                            {
-                                variant: 'success',
-                                action: () => <Close sx={{ cursor: 'pointer' }} onClick={() => { closeSnackbar(magicPower?.nome) }} />,
-                                key: magicPower?.nome,
-                                autoHideDuration: 3000
-                            }
-                        )
+                        enqueueSnackbar(`Poder Mágico ${magicPower?.nome} adicionado!`,{
+                            ...toastDefault(magicPower?.nome, 'success'),
+                            action: () => <Close sx={{ cursor: 'pointer' }} onClick={() => { closeSnackbar(magicPower?.nome) }} />
+                        })
                     } else {
-                        enqueueSnackbar(
-                            'Seu nível de ORM não é suficiente!',
-                            {
-                                variant: 'error',
-                                action: () => <Close sx={{ cursor: 'pointer' }} onClick={() => { closeSnackbar('ORMLevelError') }} />,
-                                preventDuplicate: true,
-                                key: 'ORMLevelError',
-                                autoHideDuration: 3000
-                            }
-                        )
+                        enqueueSnackbar('Seu nível de ORM não é suficiente!', {
+                            ...toastDefault('ORMLevelError', 'error'),
+                            action: () => <Close sx={{ cursor: 'pointer' }} onClick={() => { closeSnackbar('ORMLevelError') }} />
+                        })
                     }
                 }}
             />
@@ -257,14 +251,14 @@ export default function SkillsModal({ open, onClose }: { open: boolean, onClose:
                             <Typography variant='h6'>Habilidades</Typography>
                         </Box>
                         <Box display='flex' gap={2}>
-                            <Button onClick={btnClick} variant={buttonSelected.adicionar ? 'contained' : 'outlined'}>Adicionar</Button>
-                            <Button onClick={btnClick} variant={buttonSelected.criar ? 'contained' : 'outlined'}>Criar</Button>
-                            <Button onClick={btnClick} variant={buttonSelected.remover ? 'contained' : 'outlined'}>Remover</Button>
+                            <Button onClick={btnClick} variant={buttonSelected.add ? 'contained' : 'outlined'}>Adicionar</Button>
+                            <Button onClick={btnClick} variant={buttonSelected.create ? 'contained' : 'outlined'}>Criar</Button>
+                            <Button onClick={btnClick} variant={buttonSelected.remove ? 'contained' : 'outlined'}>Remover</Button>
                         </Box>
                     </Box>
                     <Box>
                         {
-                            buttonSelected.adicionar ? (
+                            buttonSelected.add ? (
                                 <Box
                                     display='flex'
                                     width='100%'
@@ -395,7 +389,7 @@ export default function SkillsModal({ open, onClose }: { open: boolean, onClose:
                                         }
                                     </Grid>
                                 </Box>
-                            ) : buttonSelected.criar ? (
+                            ) : buttonSelected.create ? (
                                 <Box>
                                     <TextField />
                                 </Box>

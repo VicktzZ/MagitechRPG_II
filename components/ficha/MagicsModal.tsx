@@ -12,6 +12,8 @@ import Magic from './Magic';
 import { useSnackbar } from 'notistack';
 import { CustomMenu } from '@layout';
 import useDebounce from '@hooks/useDebounce';
+import { magiaService } from '@services';
+import { toastDefault } from '@constants'
 
 const MagicsModal = memo(({ open, onClose }: { open: boolean, onClose: () => void}) => {
     const f = useFormikContext<Ficha>()
@@ -51,9 +53,7 @@ const MagicsModal = memo(({ open, onClose }: { open: boolean, onClose: () => voi
             order: fetchOptions.sort.order
         }
 
-        const url = `/api/magia?${params ? Object.keys(params).map((key) => `${key}=${params[key as keyof typeof params]}`).join('&') : ''}`
-
-        const data: MagicType[] = await fetch(url).then(async r => await r.json())
+        const data = await magiaService.fetch(params)
         let result = data.slice((page - 1) * 20, page * 20)
 
         setIsLoading(false)
@@ -81,38 +81,21 @@ const MagicsModal = memo(({ open, onClose }: { open: boolean, onClose: () => voi
                             f.setFieldValue('points.magics', f.values.points.magics - 1)
                             f.setFieldValue('magicsSpace', f.values.magicsSpace - 1)
     
-                            enqueueSnackbar(
-                                `Magia ${magic?.nome} adicionada!`,
-                                {
-                                    variant: 'success',
-                                    action: () => <Close sx={{ cursor: 'pointer' }} onClick={() => { closeSnackbar(magic?.nome) }} />,
-                                    key: magic?.nome,
-                                    autoHideDuration: 3000
-                                }
-                            )
+                            enqueueSnackbar(`Magia ${magic?.nome} adicionada!`, {
+                                ...toastDefault(magic?.nome, 'success'),
+                                action: () => <Close sx={{ cursor: 'pointer' }} onClick={() => { closeSnackbar(magic?.nome) }} />
+                            })
                         } else {
-                            enqueueSnackbar(
-                                'Você não possui pontos ou espaços de magia suficientes!',
-                                {
-                                    variant: 'error',
-                                    action: () => <Close sx={{ cursor: 'pointer' }} onClick={() => { closeSnackbar('insufficientPointsError') }} />,
-                                    preventDuplicate: true,
-                                    key: 'insufficientPointsError',
-                                    autoHideDuration: 3000
-                                }
-                            )
+                            enqueueSnackbar('Você não possui pontos ou espaços de magia suficientes!', {
+                                ...toastDefault('insufficientPoints', 'error'),
+                                action: () => <Close sx={{ cursor: 'pointer' }} onClick={() => { closeSnackbar('insufficientPointsError') }} />
+                            })
                         }
                     } else {
-                        enqueueSnackbar(
-                            'Seu nível de ORM não é suficiente!',
-                            {
-                                variant: 'error',
-                                action: () => <Close sx={{ cursor: 'pointer' }} onClick={() => { closeSnackbar('ORMLevelError') }} />,
-                                preventDuplicate: true,
-                                key: 'ORMLevelError',
-                                autoHideDuration: 3000
-                            }
-                        )
+                        enqueueSnackbar('Seu nível de ORM não é suficiente!', {
+                            ...toastDefault('ORMLevelError', 'error'),
+                            action: () => <Close sx={{ cursor: 'pointer' }} onClick={() => { closeSnackbar('ORMLevelError') }} />
+                        })
                     }
                 }}
             />
@@ -143,9 +126,8 @@ const MagicsModal = memo(({ open, onClose }: { open: boolean, onClose: () => voi
                 sort: fetchOptions.sort.value,
                 order: fetchOptions.sort.order
             }
-            
-            const url = `/api/magia?${params ? Object.keys(params).map((key) => `${key}=${params[key as keyof typeof params]}`).join('&') : ''}`
-            const data: MagicType[] = await fetch(url).then(async r => await r.json())
+
+            const data = await magiaService.fetch(params)
 
             setMagicsArr(data)
             setIsLoadingRefetch(false)
@@ -163,8 +145,7 @@ const MagicsModal = memo(({ open, onClose }: { open: boolean, onClose: () => voi
         const fetchData = async (): Promise<void> => {
             setPage(0)
                 
-            const url = `/api/magia?${params ? Object.keys(params).map((key) => `${key}=${params[key as keyof typeof params]}`).join('&') : ''}`
-            const data: MagicType[] = await fetch(url).then(async r => await r.json())
+            const data = await magiaService.fetch(params)
 
             setMagicsArr(data)
             setPage(prevPage => prevPage + 1)

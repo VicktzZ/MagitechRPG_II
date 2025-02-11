@@ -1,157 +1,206 @@
+/* eslint-disable @typescript-eslint/consistent-type-assertions */
 /* eslint-disable react-hooks/exhaustive-deps */
 'use client';
 
-import { useEffect, type ReactElement, useState } from 'react';
+import { useEffect, type ReactElement, useState, useRef } from 'react';
 import { useSession } from 'next-auth/react';
-import { Box, Grid, Modal, Skeleton, Typography } from '@mui/material';
+import { Backdrop, Box, Button, CircularProgress, Grid, Modal, Skeleton, Tooltip, Typography } from '@mui/material';
 import { useRouter } from 'next/navigation';
-import { CampaignComponent } from '@components/campaign';
+import { CampaignComponent, CampaignHeader } from '@components/campaign';
 import { FichaCard } from '@components/ficha';
 import { useChannel } from '@contexts/channelContext';
 import { gameMasterContext, campaignContext } from '@contexts';
 import { PUSHER_KEY } from '@constants';
-import type { Ficha, Campaign as CampaignType } from '@types';
+import type { Ficha, Campaign as CampaignType, User } from '@types';
 import PusherClient, { type PresenceChannel } from 'pusher-js';
+import { campaignService, fichaService, sessionService } from '@services';
 
 export default function Campaign({ params }: { params: { code: string } }): ReactElement {
-    const router = useRouter();
     const campaignName = 'presence-' + params.code;
-
-    const [ loading, setLoading ] = useState<boolean>(true);
-    const [ isFichaLoading, setIsFichaLoading ] = useState<boolean>(true);
-    const [ userFichas, setUserFichas ] = useState<Ficha[]>([]);
-
-    const [ , setFicha ] = useState<Ficha>();
+    document.title = 'Campaign - ' + params.code;
+    
+    const router = useRouter();
     const { data: session } = useSession();
-
-    const { setChannel } = useChannel();
-
+    const { channel, setChannel } = useChannel();
+    const [ isLoading, setIsLoading ] = useState<    boolean>(true);
+    const [ isLoadingFichas, setIsLoadingFichas ] = useState<boolean>(true);
+    const [ userFichas, setUserFichas ] = useState<Ficha[]>([]);
     const [ allGameMastersId, setAllGameMastersId ] = useState<string[]>([]);
-    const [ userIsGM, setUserIsGM ] = useState<boolean>(false);
-
-    const [ campaign, setCampaign ] = useState<CampaignType>();
-
-    const pusherClient = new PusherClient(PUSHER_KEY, {
-        cluster: 'sa1',
-        authEndpoint: `/api/pusher/auth?session=${JSON.stringify(session)}`,
-        forceTLS: true
-    });
+    const [ isUserGM, setIsUserGM ] = useState<boolean>(false);
+    const [ campaign, setCampaign ] = useState<CampaignType>({} as CampaignType);
+    const [ openFichaModal, setOpenFichaModal ] = useState<boolean>(false);
+    const [ ficha, setFicha ] = useState<Ficha>();
+    const [ copiedCode, setCopiedCode ] = useState<boolean>(false);
+    const [ campaignUsers, setCampaignUsers ] = useState<User[]>([]);
+    const pusherClientRef = useRef<PusherClient | null>(null);
+    const channelRef = useRef<PresenceChannel | null>(null);
 
     useEffect(() => {
-        (async () => {
-            setLoading(true)
-            document.title = 'Campaign - ' + params.code;
-    
-            const campaignResponse: CampaignType = await fetch(`/api/campaign?code=${params.code}`).then(async res => await res.json());
+        if (!pusherClientRef.current) {
+            const pusher = new PusherClient(PUSHER_KEY, {
+                cluster: 'sa1',
+                authEndpoint: `/api/pusher/auth?session=${JSON.stringify(session)}`,
+                forceTLS: true
+            });
+            pusherClientRef.current = pusher;
+        }
+    }, [  ]);
 
-            if (!campaignResponse) {
-                setLoading(false);
-                setIsFichaLoading(false);
-                return;
-            }
-            
-            if (campaignResponse.admin.includes(session?.user?._id ?? '')) 
-                setUserIsGM(true);
-
-            if (isFichaLoading && !userIsGM) {
-                const fichaResponse: Ficha[] = await fetch(`/api/ficha?user=${session?.user?._id}`).then(async res => await res.json());
-                setUserFichas(fichaResponse);
-            }
-            
-            setAllGameMastersId(campaignResponse.admin);
-
-            setCampaign(campaignResponse ?? { 'null' : null });
-            setChannel(pusherClient?.subscribe(campaignName) as PresenceChannel);
-
-            setLoading(false)
-        })();
+    useEffect(() => {
+        if (pusherClientRef.current && !channelRef.current && (isUserGM || ficha)) {
+            const chn = pusherClientRef.current.subscribe(campaignName) as PresenceChannel;
+            channelRef.current = chn;
+            setChannel(chn);
+        }
 
         return () => {
-            pusherClient?.unsubscribe(campaignName);
-            fetch('/api/campaign/session', { 
-                method: 'PATCH',
-                body: JSON.stringify({
-                    campaignCode: params.code,
-                    playerId: session?.user?._id
-                })
-            }).then(async r => { console.log(await r.json()) });
+            if (channelRef.current) {
+                channelRef.current.unsubscribe();
+                setChannel(null);
+                channelRef.current = null;
+            }
         };
-    }, []);
-    
+    }, [ campaignName, isUserGM, ficha ]);
+
+    useEffect(() => {
+        const fetchCampaign = async () => {
+            const campaignResponse = await campaignService.getById(params.code);
+            setCampaign(campaignResponse);
+
+            if (campaignResponse) {
+                const usersResponse = await campaignService.getCampaignUsers(params.code)
+                setCampaignUsers(usersResponse);
+
+                if (campaignResponse.admin.includes(session?.user?._id ?? '')) setIsUserGM(true);
+                else {
+                    const fichaResponse = await fichaService.fetch({ userId: session?.user?._id ?? '' });
+
+                    setUserFichas(fichaResponse);
+                    setIsLoadingFichas(false);
+                    setOpenFichaModal(true);
+                }
+                setAllGameMastersId(campaignResponse.admin);
+            }
+            setIsLoading(false)
+        }
+
+        fetchCampaign();
+
+        return () => {
+            pusherClientRef.current?.disconnect();
+            sessionService.disconnect({ 
+                campaignCode: params.code,
+                userId: session?.user?._id ?? ''
+            }).then((data) => { console.log(data) })
+        };
+    }, [ params.code ]);
+
     return (
         <>
-            {
-                isFichaLoading && !userIsGM ? (
-                    <Modal
-                        open={loading}
-                        onClose={() => { router.push('/plataform'); }}
-                        disableAutoFocus
-                        disableEnforceFocus
-                        disableRestoreFocus
-                        disablePortal
-                        sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            height: '100vh',
-                            width: '100vw'
-                        }}
-                    >
-                        <Box
-                            display='flex'
-                            height='50%'
-                            width='61%'
-                            bgcolor='background.paper'
-                            borderRadius={1}
-                            flexDirection='column'
-                            p={2}
-                            gap={2}
-                        >
-                            <Box>
-                                <Typography variant='h6'>Escolha uma Ficha para ingressar</Typography>
-                            </Box>
-                            <Grid minHeight='100%' overflow='auto' gap={2} container>
-                                {isFichaLoading ? [ 0, 1, 2, 4, 5 ].map(() => (
-                                    <Skeleton
-                                        variant='rectangular' key={Math.random()} width='20rem' height='15rem' 
-                                    />
-                                )) : userFichas.map((f) => (
-                                    <FichaCard 
-                                        key={f._id}
-                                        ficha={f}
-                                        disableDeleteButton
-                                        onClick={async () => {
-                                            setFicha(f);
+            {isLoading && (
+                <Backdrop open={true}>
+                    <CircularProgress />
+                </Backdrop>
+            )}
 
-                                            await fetch('/api/campaign/session', {
-                                                method: 'POST',
-                                                headers: {
-                                                    'Content-Type': 'application/json'
-                                                },
-                                                body: JSON.stringify({
-                                                    code: params.code,
-                                                    player: {
-                                                        userId: session?.user._id,
-                                                        fichaId: f._id 
-                                                    }
-                                                })
-                                            });
-                                            
-                                            setIsFichaLoading(false);
-                                        }}
-                                    />
-                                ))}
-                            </Grid>
+            {!isLoading && !campaign && (
+                <Box
+                    sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        height: '100vh',
+                        width: '100vw'
+                    }}
+                >
+                    <Typography variant='h5'>Campanha não encontrada</Typography>
+                </Box>
+            )}
+
+            {!isLoading && !isUserGM && (
+                <Modal
+                    open={openFichaModal}
+                    onClose={() => { router.push('/plataform'); }}
+                    disableAutoFocus
+                    disableEnforceFocus
+                    disableRestoreFocus
+                    disablePortal
+                    sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        height: '100vh',
+                        width: '100vw'
+                    }}
+                >
+                    <Box
+                        display='flex'
+                        height='50%'
+                        width='61%'
+                        bgcolor='background.paper'
+                        borderRadius={1}
+                        flexDirection='column'
+                        p={2}
+                        gap={2}
+                    >
+                        <Box>
+                            <Typography variant='h6'>Escolha uma Ficha para ingressar</Typography>
                         </Box>
-                    </Modal>
-                ) : !loading && (
-                    <campaignContext.Provider value={campaign!}>
-                        <gameMasterContext.Provider value={{ allGameMasters: allGameMastersId, userIsGM }}>
-                            <CampaignComponent />
-                        </gameMasterContext.Provider>
-                    </campaignContext.Provider>
-                )
-            }
+                        <Grid minHeight='100%' overflow='auto' gap={2} container>
+                            {isLoadingFichas ? [ 0, 1, 2, 4, 5 ].map(() => (
+                                <Skeleton
+                                    variant='rectangular' key={Math.random()} width='20rem' height='15rem' 
+                                />
+                            )) : userFichas.map((f) => (
+                                <FichaCard 
+                                    key={f._id}
+                                    ficha={f}
+                                    disableDeleteButton
+                                    onClick={() => {
+                                        setFicha(f);
+                                        setCampaign(state =>  ({ ...state, myFicha: f }));
+                                        setOpenFichaModal(false);
+                                    }}
+                                />
+                            ))}
+                        </Grid>
+                    </Box>
+                </Modal>
+            )}
+
+            {campaign && channel && ((!isLoading && isUserGM) || (!isLoading && ficha)) && (
+                <campaignContext.Provider value={{ campaign, setCampaign }}>
+                    <gameMasterContext.Provider value={{ allGameMastersId, isUserGM }}>
+                        <Box display='flex' flexDirection='column' gap={3} p={2} minHeight='90vh'>
+                            <Box display='flex' flexDirection='column' gap={2} width='50%'>
+                                <Typography variant='h6'>{campaign.title}</Typography>
+                                <Box width='25%'>
+                                    <Tooltip
+                                        open={copiedCode}
+                                        title='Copiado!'
+                                        placement='top'
+                                    >
+                                        <Box display='flex' alignItems='center' gap={1}>
+                                            Código: 
+                                            <Button onClick={() => {
+                                                navigator.clipboard.writeText(params.code);
+                                                setCopiedCode(true);
+                                                setTimeout(() => { setCopiedCode(false) }, 1000);
+                                            }} variant='outlined'>{params.code}</Button>
+                                        </Box>
+                                    </Tooltip>
+                                </Box>
+                            </Box>
+                            <Box height='100%' width='25%' display='flex' gap={2}>
+                                <CampaignHeader 
+                                    users={campaignUsers}
+                                />
+                                <CampaignComponent />
+                            </Box>
+                        </Box>
+                    </gameMasterContext.Provider>
+                </campaignContext.Provider>
+            )}
         </>
     );
 }

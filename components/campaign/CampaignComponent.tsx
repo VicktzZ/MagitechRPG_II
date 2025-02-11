@@ -3,67 +3,57 @@
 import { useChannel } from '@contexts/channelContext';
 import { Box } from '@mui/material';
 import { useEffect, type ReactElement } from 'react';
-import { CampaignDashboard } from '.';
+import { CampaignDashboard, SessionChat } from '.';
 import { useSnackbar } from 'notistack';
-import type { PusherMemberParam } from '@types';
 import { useSession } from '@node_modules/next-auth/react';
 import { useCampaignContext } from '@contexts/campaignContext';
+import { sessionService } from '@services';
+import { toastDefault } from '@constants';
+import { PusherEvent } from '@enums';
+import type { Campaign, PusherMemberParam } from '@types';
 
 export default function CampaignComponent(): ReactElement {
     const { channel } = useChannel();
     const { data: session } = useSession();
     const { enqueueSnackbar } = useSnackbar();
-    const { campaignCode } = useCampaignContext();
+    const { campaign, setCampaign } = useCampaignContext();
 
     useEffect(() => {
-        channel.bind('pusher:subscription_succeeded', async () => {
-            console.log({
-                message: 'subscription_succeeded',
-                campaignCode,
-                player: {
-                    userId: session?.user._id,
-                    fichaId: channel.members.me.info.currentFicha
-                }
+        channel.bind(PusherEvent.SUBSCRIPTION, async () => {
+            await sessionService.connect({
+                campaignCode: campaign.campaignCode,
+                isGM: campaign.admin.includes(session?.user._id ?? ''),
+                userId: session?.user._id ?? ''
             });
 
-            await fetch('/api/campaign/session', {
-                method: 'POST',
-                body: JSON.stringify({
-                    campaignCode,
-                    player: {
-                        userId: session?.user._id,
-                        fichaId: channel.members.me.info.currentFicha
-                    }
-                })
-            });
-
-            enqueueSnackbar('Você entrou na sessão!', { 
-                variant: 'success',
-                autoHideDuration: 3000,
-                preventDuplicate: true,
-                key: 'subscriptionToChannel' 
-            });
+            enqueueSnackbar('Você entrou na sessão!', toastDefault('subscriptionToChannel', 'success'));
         });
         
-        channel.bind('pusher:member_added', (user: PusherMemberParam) => {
-            enqueueSnackbar(`${user.info.name} entrou na sessão!`, { 
-                autoHideDuration: 3000,
-                preventDuplicate: true,
-                key: 'enteredToChannel'
-            });
+        channel.bind(PusherEvent.MEMBER_ADDED, async (user: PusherMemberParam) => {
+            channel.trigger('client-session_updated', { user: user.info._id, session: 'entered' })
+            enqueueSnackbar(`${user.info.name} entrou na sessão!`, toastDefault('enteredToChannel'));
         });
 
-        channel.bind('pusher:member_removed', (user: PusherMemberParam) => {
-            enqueueSnackbar(`${user.info.name} saiu da sessão!`, { 
-                autoHideDuration: 3000,
-                preventDuplicate: true,
-                key: 'exitFromChannel'
-            });
+        channel.bind(PusherEvent.MEMBER_REMOVED, async (user: PusherMemberParam) => {
+            channel.trigger('client-session_updated', { user: user.info._id, session: 'exit' })
+            enqueueSnackbar(`${user.info.name} saiu da sessão!`, toastDefault('exitFromChannel'));
         });
-    }, [ channel, session?.user._id ]);    
+
+        channel.bind(PusherEvent.UPDATE_CAMPAIGN, (data: Campaign) => {
+            console.log(PusherEvent.UPDATE_CAMPAIGN);
+            setCampaign(prev => ({
+                ...data,
+                session: {
+                    ...data.session,
+                    messages: prev?.session?.messages ?? data.session.messages
+                }
+            }));
+        })
+    }, [ ]);
 
     return (
         <Box>
+            <SessionChat />
             <CampaignDashboard />
         </Box>
     );

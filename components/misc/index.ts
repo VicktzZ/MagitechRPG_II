@@ -7,6 +7,7 @@ import Animate from './Animate'
 import RadarChart from './RadarChart'
 import RPGIcon from './rpg-icons'
 import DiceRollModal from './DiceRollModal'
+import { DiceMessage } from './DiceMessage'
 
 export {
     ParticleComponent,
@@ -14,6 +15,7 @@ export {
     Parallax,
     ParallaxBackground,
     DiceRollModal,
+    DiceMessage,
     Animate,
     RPGIcon,
     RequireAuth,

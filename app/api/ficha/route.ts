@@ -6,11 +6,11 @@ import type { NextRequest } from 'next/server';
 export async function GET(req: NextRequest): Promise<Response> {
     try {
         await connectToDb()
-        const userId = req.nextUrl.searchParams.get('user')
+        const userId = req.nextUrl.searchParams.get('userId')
 
         console.log(userId);
         
-        const fichas = await Ficha.find<FichaType>(userId ? { userId } : {})
+        const fichas = await Ficha.find<FichaType>({ userId })
 
         return Response.json(fichas)
     } catch (error: any) {

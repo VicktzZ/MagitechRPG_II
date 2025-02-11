@@ -28,6 +28,13 @@ export const BLOB_API = {
     GUIA: 'https://zkvifowcyxqxducz.public.blob.vercel-storage.com/Magitech%20RPG%20-%20Livro%20de%20Regras-CpOsZwZaRDN490YSBCWRQjdgAfpITR.pdf'
 }
 
+export const toastDefault = (key: string, variant?: 'default' | 'error' | 'success' | 'info' | 'warning') => ({
+    autoHideDuration: 3000,
+    preventDuplicate: true,
+    variant,
+    key
+})
+
 export const elementColor = {
     'FOGO': red[500],
     'ÁGUA': blue[600],

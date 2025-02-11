@@ -10,8 +10,8 @@ import { green } from '@mui/material/colors'
 import { useFormikContext } from 'formik'
 import { type ReactElement, useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import type { Attributes as AttributesType, Classes, Ficha, FinancialCondition, Expertises, Race } from '@types'
+import { positiveTraits } from '@constants/traits'
 import DiceRollModal from '@components/misc/DiceRollModal'
-import traits from '@constants/traits'
 
 import { 
     type SelectChangeEvent,
@@ -36,6 +36,7 @@ import { Check, Edit } from '@mui/icons-material'
 import Attribute from './Attribute'
 import LevelProgress from './LevelProgress'
 import { enqueueSnackbar } from '@node_modules/notistack'
+import { toastDefault } from '@constants'
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
@@ -97,7 +98,7 @@ export default function Attributes({ disabled }: { disabled?: boolean }): ReactE
         let prevTrait
         setCanChangeTrait(true)
 
-        for (const item of traits) {
+        for (const item of positiveTraits) {
             if (item.name === e.target.value) {
                 trait = item
             }
@@ -134,7 +135,7 @@ export default function Attributes({ disabled }: { disabled?: boolean }): ReactE
                 )
             } else {
                 setCanChangeTrait(false)
-                enqueueSnackbar('Você não pode adicionar este traço pois ele excede o limite máximo do atributo determinado!', { autoHideDuration: 3000, variant: 'error' })
+                enqueueSnackbar('Você não pode adicionar este traço pois ele excede o limite máximo do atributo determinado!', toastDefault('cannotAddTrait', 'warning'))
                 return;
             }
         } else {
@@ -156,7 +157,7 @@ export default function Attributes({ disabled }: { disabled?: boolean }): ReactE
     }, [ f.values.traits, f.values.attributes ])
 
     const traitsArr = useMemo(() => {
-        return traits.map((trait) => (
+        return positiveTraits.map((trait) => (
             <MenuItem
                 key={trait.name}
                 value={trait.name}

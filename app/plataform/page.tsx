@@ -10,6 +10,7 @@ import { useSession } from 'next-auth/react';
 import type { Ficha } from '@types';
 import { FichaCard } from '@components/ficha';
 import { ADMIN_EMAIL } from '@constants';
+import { fichaService } from '@services';
 
 export default function Plataform(): ReactElement {
     const router = useRouter()
@@ -21,25 +22,21 @@ export default function Plataform(): ReactElement {
     const [ isLoading, setIsLoading ] = useState<boolean>(false)
     const [ fichas, setFichas ] = useState<Ficha[]>([])
 
-    const fetchFichas = async (): Promise<Ficha[]> => {
-        let response
-        
-        setIsLoading(true)
-        if (session?.user.email === ADMIN_EMAIL) {
-            response = await fetch('/api/ficha').then(async r => await r.json())
-        } else {
-            response = await fetch(`/api/ficha?user=${session?.user?._id}`).then(async r => await r.json())
-        }
-        setIsLoading(false)
-
-        return response
-    }
-
     useEffect(() => {
-        (async () => {
-            const fichasData = await fetchFichas()
-            setFichas(fichasData)
-        })()
+        const fetchFichas = async (): Promise<void> => {
+            let response
+        
+            setIsLoading(true)
+            if (session?.user.email === ADMIN_EMAIL) {
+                response = await fichaService.fetch()
+            } else {
+                response = await fichaService.fetch({ userId: session?.user?._id })
+            }
+            setIsLoading(false)
+            setFichas(response)
+        }
+
+        fetchFichas()
     }, [])
 
     return (
