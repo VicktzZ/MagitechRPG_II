@@ -9,7 +9,10 @@ export const campaignContext = createContext<{ campaign: Campaign, setCampaign: 
         title: '',
         description: '',
         players: [],
-        session: [],
+        session: {
+            users: [],
+            messages: []
+        },
         myFicha: null
     },
     setCampaign: () => {}
