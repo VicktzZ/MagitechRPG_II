@@ -55,10 +55,15 @@ export async function POST(req: Request): Promise<Response> {
         }
 
         // Notifica sobre novo usuário
+        const userInfo = campaign?.players.find(p => p.userId === userId);
         await pusherServer.trigger(
             'presence-' + campaignCode,
             'client-user-enter',
-            { userId }
+            {
+                userId,
+                userName: userInfo?.userId ?? 'Unknown',
+                timestamp: new Date()
+            }
         );
 
         // Notifica sobre atualização da campanha
