@@ -74,8 +74,10 @@ const campaignSchema = new Schema<CampaignType>({
 });
 
 campaignSchema.methods['clearMessagesIfLimitReached'] = function(limit: number) {
-    this['session'].messages = this['session'].messages.slice(-limit);
-}
+    if (this['session'].messages.length > limit) {
+        this['session'].messages = this['session'].messages.slice(-limit);
+    }
+};
 
 const Campaign = models['Campaign'] || model('Campaign', campaignSchema);
 

@@ -6,16 +6,21 @@ import { useEffect, useState, useRef } from 'react';
 import { useCampaignContext } from '@contexts/campaignContext';
 import { useSession } from 'next-auth/react';
 import { rollDice, rollSeparateDice, createDiceMessage } from '@utils/diceRoller';
-import { PusherEvent } from '@enums';
 import { useChannel } from '@contexts/channelContext';
 import type { Message } from '@types';
+import { PusherEvent } from '@enums';
+
+interface TempMessage extends Message {
+    isPending?: boolean;
+    tempId?: string;
+}
 
 export default function SessionChat() {
     const { campaign } = useCampaignContext();
     const { channel } = useChannel();
     const [ message, setMessage ] = useState('');
     const { data: session } = useSession();
-    const [ messages, setMessages ] = useState<Message[]>([]);
+    const [ messages, setMessages ] = useState<TempMessage[]>([]);
     const [ isLoading, setIsLoading ] = useState(true);
     const [ shouldAutoScroll, setShouldAutoScroll ] = useState(true);
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -35,11 +40,28 @@ export default function SessionChat() {
         }
     };
 
+    const addTempMessage = (newMessage: TempMessage) => {
+        const tempMessage = {
+            ...newMessage,
+            isPending: true,
+            tempId: Math.random().toString(36).substring(7)
+        };
+        setMessages(prev => [ ...prev, tempMessage ]);
+        setTimeout(scrollToBottom, 100);
+        return tempMessage;
+    };
+
+    const removeTempMessage = (tempId: string) => {
+        setMessages(prev => prev.filter(m => m.tempId !== tempId));
+    };
+
     const sendMessage = async (newMessage: Message) => {
         const messageWithTimestamp = {
             ...newMessage,
             timestamp: new Date()
         };
+
+        const tempMessage = addTempMessage(messageWithTimestamp);
 
         try {
             const response = await fetch(`/api/campaign/${campaign.campaignCode}/messages`, {
@@ -52,13 +74,14 @@ export default function SessionChat() {
 
             if (!response.ok) {
                 console.error('Erro ao enviar mensagem');
+                removeTempMessage(tempMessage.tempId);
                 return false;
             }
 
-            // Removemos o setMessages daqui pois a mensagem virá pelo Pusher
             return true;
         } catch (error) {
             console.error('Erro ao enviar mensagem:', error);
+            removeTempMessage(tempMessage.tempId);
             return false;
         }
     };
@@ -72,12 +95,13 @@ export default function SessionChat() {
             name: session?.user?.name ?? 'Usuário'
         };
 
+        setMessage(''); // Limpa a mensagem imediatamente
+
         let success = true;
 
         if (message.startsWith('#')) {
             const separateResults = rollSeparateDice(message.trim(), user);
             if (separateResults) {
-                // Envia as mensagens sequencialmente
                 for (const diceMessage of separateResults) {
                     success = await sendMessage(diceMessage);
                     if (!success) break;
@@ -98,10 +122,6 @@ export default function SessionChat() {
                 success = await sendMessage(newMessage);
             }
         }
-
-        if (success) {
-            setMessage('');
-        }
     };
 
     const handleKeyPress = async (e: React.KeyboardEvent) => {
@@ -121,6 +141,8 @@ export default function SessionChat() {
                 if (response.ok) {
                     const data = await response.json();
                     setMessages(data);
+                    // Força o scroll para a última mensagem após carregar
+                    setTimeout(scrollToBottom, 100);
                 }
             } catch (error) {
                 console.error('Erro ao carregar mensagens:', error);
@@ -138,19 +160,25 @@ export default function SessionChat() {
 
         const handleNewMessage = (data: Message) => {
             setMessages(prev => {
-                // Verifica se a mensagem já existe para evitar duplicação
-                const messageExists = prev.some(
+                // Procura uma mensagem temporária correspondente
+                const tempMessage = prev.find(
                     m => m.timestamp && data.timestamp && 
                     new Date(m.timestamp).getTime() === new Date(data.timestamp).getTime() &&
                     m.by.id === data.by.id &&
-                    m.text === data.text
+                    m.text === data.text &&
+                    m.isPending
                 );
 
-                if (messageExists) {
-                    return prev;
+                if (tempMessage) {
+                    // Atualiza a mensagem temporária para não pendente
+                    return prev.map(m => 
+                        m.tempId === tempMessage.tempId
+                            ? { ...m, isPending: false }
+                            : m
+                    );
                 }
 
-                // Força o scroll após adicionar a mensagem
+                // Se não encontrou mensagem temporária, adiciona a nova
                 setTimeout(scrollToBottom, 100);
                 return [ ...prev, data ];
             });
@@ -161,7 +189,7 @@ export default function SessionChat() {
         return () => {
             channel.unbind(PusherEvent.NEW_MESSAGE, handleNewMessage);
         };
-    }, [ channel ]);
+    }, [ channel, session?.user?._id ]);
 
     if (isLoading) {
         return (
@@ -233,12 +261,14 @@ export default function SessionChat() {
                     })
                     .map((msg, index) => (
                         <Paper
-                            key={index}
+                            key={msg.tempId ?? index}
                             sx={{
                                 p: 1,
                                 bgcolor: 'background.paper2',
                                 maxWidth: '80%',
-                                alignSelf: msg.by.id === session?.user?._id ? 'flex-end' : 'flex-start'
+                                alignSelf: msg.by.id === session?.user?._id ? 'flex-end' : 'flex-start',
+                                opacity: msg.isPending ? 0.5 : 1,
+                                transition: 'opacity 0.2s ease-in-out'
                             }}
                         >
                             <Stack direction="row" spacing={1} alignItems="center" mb={0.5}>
