@@ -19,5 +19,7 @@ export enum PusherEvent {
     UPDATE_CAMPAIGN = 'update-campaign',
     FICHA_UPDATED = 'client-ficha-updated',
     NEW_MESSAGE = 'new-message',
-    SERVER_MESSAGE = 'server-message'
+    SERVER_MESSAGE = 'server-message',
+    USER_ENTER = 'client-user-enter',
+    USER_EXIT = 'client-user-exit'
 }

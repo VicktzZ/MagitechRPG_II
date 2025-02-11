@@ -2,53 +2,119 @@ import { Avatar, Box, Divider, Skeleton, Typography, useMediaQuery, useTheme } f
 import type { Ficha, User } from '@types'
 import { grey } from '@mui/material/colors'
 import Image from 'next/image'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { fichaService } from '@services'
 import { useCampaignContext } from '@contexts/campaignContext'
 import { useGameMasterContext } from '@contexts/gameMasterContext'
 import { useChannel } from '@contexts/channelContext'
+import { PusherEvent } from '@enums'
 
 export default function CampaignHeader({ users }: { users: User[] }) {
     const [ fichas, setFichas ] = useState<Ficha[]>([]);
     const [ isLoading, setIsLoading ] = useState<boolean>(true);
-    const { campaign, setCampaign } = useCampaignContext()
-    const { channel } = useChannel()
-    const { allGameMastersId } = useGameMasterContext()
+    const [ sessionUsers, setSessionUsers ] = useState<string[]>([]);
+    const { campaign, setCampaign } = useCampaignContext();
+    const { channel } = useChannel();
+    const { allGameMastersId } = useGameMasterContext();
 
-    const theme = useTheme()
-    const matches = useMediaQuery(theme.breakpoints.down('md'))
+    const theme = useTheme();
+    const matches = useMediaQuery(theme.breakpoints.down('md'));
 
-    const campUsers = {
+    // Filtra usuários com base nos players da campanha e GMs
+    const campUsers = useMemo(() => ({
         admin: users.filter(u => allGameMastersId.includes(u._id ?? '')),
-        player: users.filter(u => !allGameMastersId.includes(u._id ?? ''))
-    }
+        player: users.filter(u => {
+            const isPlayer = campaign.players.some(p => p.userId === u._id);
+            const isGM = allGameMastersId.includes(u._id ?? '');
+            return isPlayer && !isGM;
+        })
+    }), [ users, allGameMastersId, campaign.players ]);
 
-    console.log(campUsers)
+    // Atualiza a lista de usuários da sessão quando a campanha mudar
+    useEffect(() => {
+        setSessionUsers(campaign.session.users);
+    }, [ campaign.session.users ]);
 
     useEffect(() => {
         const fetchPlayersFicha = async (): Promise<void> => {
-            setIsLoading(true)
-
-            const fichaResponse = await Promise.all(campaign.players.map(async player => {
-                return await fichaService.getById(player.fichaId)
-            }))
+            if (!campaign.players.length) return;
             
-            setFichas([ ...fichas, ...fichaResponse ])
-            setFichas(fichaResponse)
+            setIsLoading(true);
+            try {
+                const fichaResponse = await Promise.all(
+                    campaign.players.map(async player => await fichaService.getById(player.fichaId))
+                );
+                
+                setFichas(fichaResponse.filter(Boolean));
+            } catch (error) {
+                console.error('Erro ao buscar fichas:', error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
 
-            setIsLoading(false)
-        }
-
-        fetchPlayersFicha()
-    }, [])
+        fetchPlayersFicha();
+    }, [ campaign.players ]);
 
     useEffect(() => {
-        channel.bind('client-session_updated', (data: { userId: string, session: 'entered' | 'exit' }) => {
-            if (data.session === 'entered' && !campaign.players.map(player => player.userId).includes(data.userId)) {
-                setCampaign({ ...campaign, players: [ ...campaign.players, { userId: data.userId, fichaId: '' } ] })
+        if (!channel) return;
+
+        // Atualiza quando um usuário entra na sessão
+        const handleUserEnter = (data: { userId: string }) => {
+            setSessionUsers(prev => [ ...prev, data.userId ]);
+        };
+
+        // Atualiza quando um usuário sai da sessão
+        const handleUserExit = (data: { userId: string }) => {
+            setSessionUsers(prev => prev.filter(id => id !== data.userId));
+        };
+
+        // Atualiza quando a campanha é modificada
+        const handleCampaignUpdate = (data: any) => {
+            if (data?.session?.users) {
+                setSessionUsers(data.session.users);
             }
-        })
-    }, [])
+        };
+
+        channel.bind(PusherEvent.USER_ENTER, handleUserEnter);
+        channel.bind(PusherEvent.USER_EXIT, handleUserExit);
+        channel.bind(PusherEvent.UPDATE_CAMPAIGN, handleCampaignUpdate);
+
+        return () => {
+            channel.unbind(PusherEvent.USER_ENTER, handleUserEnter);
+            channel.unbind(PusherEvent.USER_EXIT, handleUserExit);
+            channel.unbind(PusherEvent.UPDATE_CAMPAIGN, handleCampaignUpdate);
+        };
+    }, [ channel ]);
+
+    const renderUserAvatar = (user: User, isAdmin: boolean = false) => (
+        <Box display="flex" gap={2} key={user._id}>
+            <Avatar sx={{ height: '3rem', width: '3rem' }}>
+                <Image
+                    height={250}
+                    width={250}
+                    src={user.image ?? 'undefined'}
+                    alt={user.name ?? 'User Avatar'}
+                    style={{ 
+                        height: '100%',
+                        width: '100%',
+                        filter: sessionUsers.includes(user._id!) ? 'none' : 'grayscale(100%)',
+                        transition: 'filter 0.3s ease-in-out'
+                    }}
+                />
+            </Avatar>
+            {!matches && (
+                <Box>
+                    <Typography>
+                        {isAdmin ? 'Game Master' : fichas.find(ficha => ficha.userId === user._id)?.name}
+                    </Typography>
+                    <Typography color={grey[500]} variant="caption">
+                        {user.name}
+                    </Typography>
+                </Box>
+            )}
+        </Box>
+    );
 
     return (
         <Box
@@ -68,32 +134,7 @@ export default function CampaignHeader({ users }: { users: User[] }) {
                 gap={2}
             >
                 <Box display="flex" flexDirection="column" alignItems={matches ? 'center' : 'flex-start'} justifyContent='center' gap={3}>
-                    {campUsers.admin.map(user => (
-                        <Box display="flex" gap={2} key={user._id}>
-                            <Box position='absolute'></Box>
-                            <Avatar sx={{ height: '3rem', width: '3rem' }}>
-                                <Image
-                                    height={250}
-                                    width={250}
-                                    src={user.image ?? 'undefined'}
-                                    alt={user.name ?? 'User Avatar'}
-                                    style={{ 
-                                        height: '100%',
-                                        width: '100%',
-                                        filter: campaign.session.users.includes(user._id!) ? 'none' : 'grayscale(100%)' 
-                                    }}
-                                />
-                            </Avatar>
-                            {!matches && (
-                                <Box>
-                                    <Typography>Game Master</Typography>
-                                    <Typography color={grey[500]} variant="caption">
-                                        {user.name}
-                                    </Typography>
-                                </Box>
-                            )}
-                        </Box>
-                    ))}
+                    {campUsers.admin.map(user => renderUserAvatar(user, true))}
                 </Box>
 
                 <Divider />
@@ -109,37 +150,11 @@ export default function CampaignHeader({ users }: { users: User[] }) {
                                         <Skeleton variant="text" width={80} height={20} />
                                     </Box>
                                 </Box>
-                            ) : (
-                                <Box display='flex' alignItems='center' gap={2}>
-                                    <Avatar sx={{ height: '3rem', width: '3rem' }}>
-                                        <Image
-                                            height={250}
-                                            width={250}
-                                            src={user.image ?? 'undefined'}
-                                            alt={user.name ?? 'User Avatar'}
-                                            style={{ 
-                                                height: '100%',
-                                                width: '100%',
-                                                filter: campaign.session.users.includes(user._id!) ? 'none' : 'grayscale(100%)' 
-                                            }}
-                                        />
-                                    </Avatar>
-                                    {!matches && (
-                                        <Box>
-                                            <Typography>
-                                                {fichas.find(ficha => ficha.userId === user._id)?.name}
-                                            </Typography>
-                                            <Typography color={grey[500]} variant="caption">
-                                                {user.name}
-                                            </Typography>
-                                        </Box>
-                                    )}
-                                </Box>
-                            )}
+                            ) : renderUserAvatar(user)}
                         </Box>
                     ))}
                 </Box>
             </Box>
         </Box>
-    )
+    );
 }
