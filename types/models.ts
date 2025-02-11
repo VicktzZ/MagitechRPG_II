@@ -63,6 +63,7 @@ export interface Message {
         id: string
         image: string
         name: string
+        isBot?: boolean
     }
     timestamp?: Date
 }
