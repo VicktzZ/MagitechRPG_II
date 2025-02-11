@@ -3,7 +3,7 @@
 
 import { Footer, LandingPageHeader } from '@layout';
 import { Avatar, Box, Button, Card, Container, type SxProps, Typography, useMediaQuery } from '@mui/material';
-import { useState, type ReactElement } from 'react';
+import { useState, type ReactElement, useEffect } from 'react';
 import { Animate, AnimateOnScroll, Parallax } from '@components/misc';
 import { intro, landingPageGrimoire, landingPageSynopse, BLOB_API } from '@constants';
 import { useTheme } from '@mui/material';
@@ -14,12 +14,22 @@ import magitechCapaGrimorio from '@public/assets/magitech_capa_grimorio.png'
 import profilePhoto from '@public/assets/profile_photo.jpg'
 import Image from 'next/image';
 
-export default function LandingPage(): ReactElement {
+export default function LandingPage(): ReactElement | null {
     const theme = useTheme()
     const matches = useMediaQuery(theme.breakpoints.down('md'))
     const [ bgIndex ] = useState(1)
 
     const router = useRouter()
+
+    const [ isClient, setIsClient ] = useState(false)
+    
+    useEffect(() => {
+        setIsClient(true)
+    }, [])
+
+    if (!isClient) {
+        return null 
+    }
 
     return (
         <>

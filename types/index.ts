@@ -38,7 +38,8 @@ import type {
     PlayerInfo,
     PusherMemberParam,
     Member,
-    Message
+    Message,
+    TestData
 } from './models';
 
 import type { 
@@ -100,6 +101,7 @@ export type {
     FinancialCondition,
     ApiRequest,
     Service,
+    TestData,
 
     QueryParamsDto,
     UpdateByIdDto,

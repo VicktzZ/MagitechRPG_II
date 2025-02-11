@@ -91,6 +91,14 @@ export interface PusherMemberParam {
     }
 }
 
+export interface TestData {
+    dt: number;
+    isGroupTest: boolean;
+    isVisible: boolean;
+    showResult: boolean;
+    selectedPlayers: string[];
+}
+
 type Elemento = 
     'FOGO' |
     'ÁGUA' |

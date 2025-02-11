@@ -20,7 +20,7 @@ import {
     Avatar
 } from '@mui/material';
 import { useState } from 'react';
-import type { Campaign } from '@types';
+import type { Campaign, TestData } from '@types';
 
 interface TestModalProps {
     open: boolean;
@@ -29,17 +29,11 @@ interface TestModalProps {
     campaign: Campaign;
 }
 
-export interface TestData {
-    dt: number;
-    isGroupTest: boolean;
-    isVisible: boolean;
-    selectedPlayers: string[];
-}
-
 export default function TestModal({ open, onClose, onConfirm, campaign }: TestModalProps) {
     const [ dt, setDt ] = useState('');
     const [ isGroupTest, setIsGroupTest ] = useState(true);
     const [ isVisible, setIsVisible ] = useState(true);
+    const [ showResult, setShowResult ] = useState(true);
     const [ selectedPlayers, setSelectedPlayers ] = useState<string[]>([]);
 
     // Filtra apenas os jogadores online que não são admin
@@ -61,6 +55,7 @@ export default function TestModal({ open, onClose, onConfirm, campaign }: TestMo
             dt: numericDt,
             isGroupTest,
             isVisible,
+            showResult,
             selectedPlayers: isGroupTest ? availablePlayers : selectedPlayers
         });
 
@@ -68,6 +63,7 @@ export default function TestModal({ open, onClose, onConfirm, campaign }: TestMo
         setDt('');
         setIsGroupTest(true);
         setIsVisible(true);
+        setShowResult(true);
         setSelectedPlayers([]);
         onClose();
     };
@@ -127,6 +123,16 @@ export default function TestModal({ open, onClose, onConfirm, campaign }: TestMo
                             />
                         }
                         label="Mensagem visível"
+                    />
+
+                    <FormControlLabel
+                        control={
+                            <Switch
+                                checked={showResult}
+                                onChange={(e) => { setShowResult(e.target.checked); }}
+                            />
+                        }
+                        label="Mostrar Resultado"
                     />
 
                     {!isGroupTest && availablePlayers.length > 0 && (
