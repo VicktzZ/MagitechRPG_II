@@ -343,88 +343,50 @@ export default function SessionChat() {
 
     if (isLoading) {
         return (
-            <Box
-                sx={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    height: {
-                        xs: '100%',  
-                        md: '100vh'  
-                    },
-                    width: {
-                        xs: '100%',  
-                        md: '400px'  
-                    },
-                    position: {
-                        xs: 'relative',
-                        md: 'fixed'  
-                    },
-                    right: {
-                        md: '20px'  
-                    },
-                    bottom: {
-                        md: '0'  
-                    },
-                    bgcolor: 'background.paper',
-                    borderRadius: 2,
-                    overflow: 'hidden'  
-                }}
-            >
+            <Box sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                height: '100%',
+                width: '100%',
+                bgcolor: 'background.paper',
+                position: 'relative'
+            }}>
+                <Typography
+                    variant="h6"
+                    sx={{
+                        p: 2,
+                        borderBottom: '1px solid',
+                        borderColor: 'divider',
+                        bgcolor: 'background.paper'
+                    }}
+                >
+                    Chat da Sessão
+                </Typography>
                 <Typography>Carregando mensagens...</Typography>
             </Box>
         );
     }
 
     return (
-        <Box
-            sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                height: {
-                    xs: '100%',  
-                    md: '100vh'  
-                },
-                width: {
-                    xs: '100%',  
-                    md: '400px'  
-                },
-                position: {
-                    xs: 'relative',
-                    md: 'fixed'  
-                },
-                right: {
-                    md: '20px'  
-                },
-                bottom: {
-                    md: '0'  
-                },
-                bgcolor: 'background.paper',
-                borderRadius: 2,
-                overflow: 'hidden'  
-            }}
-        >
-            <Box
+        <Box sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            height: '100%',
+            width: '100%',
+            bgcolor: 'background.paper',
+            position: 'relative'
+        }}>
+            <Typography
+                variant="h6"
                 sx={{
                     p: 2,
-                    borderBottom: 1,
+                    borderBottom: '1px solid',
                     borderColor: 'divider',
-                    bgcolor: 'background.paper2',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between'
+                    bgcolor: 'background.paper'
                 }}
             >
-                <Typography variant="h6">Chat da Sessão</Typography>
-                {isAdmin && (
-                    <Button
-                        variant="contained"
-                        size="small"
-                        onClick={() => { setIsTestModalOpen(true); }}
-                    >
-                        Teste
-                    </Button>
-                )}
-            </Box>
+                Chat da Sessão
+            </Typography>
 
             <Box
                 ref={chatBoxRef}
@@ -435,11 +397,7 @@ export default function SessionChat() {
                     p: 2,
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: 1,
-                    height: {
-                        xs: 'calc(100vh - 200px)',  
-                        md: 'calc(100vh - 140px)'   
-                    }
+                    gap: 1
                 }}
             >
                 {messages
@@ -453,7 +411,7 @@ export default function SessionChat() {
                             key={msg.tempId ?? index}
                             sx={{
                                 p: 1,
-                                bgcolor: 'background.paper2',
+                                bgcolor: 'background.paper',
                                 maxWidth: '80%',
                                 alignSelf: msg.by.id === session?.user?._id ? 'flex-end' : 'flex-start',
                                 opacity: msg.isPending ? 0.5 : 1,
@@ -500,28 +458,23 @@ export default function SessionChat() {
                 <div ref={messagesEndRef} />
             </Box>
 
-            <Stack
-                direction="row"
-                sx={{
-                    p: 2,
-                    borderTop: 1,
-                    borderColor: 'divider',
-                    bgcolor: 'background.paper2',
-                    display: 'flex',
-                    gap: 1
-                }}
-            >
+            <Box sx={{
+                p: 2,
+                borderTop: '1px solid',
+                borderColor: 'divider',
+                bgcolor: 'background.paper'
+            }}>
                 <TextField
                     fullWidth
-                    variant="outlined"
-                    size="small"
+                    multiline
+                    rows={2}
                     placeholder="Digite sua mensagem, XdY para dados, ou #XdY para dados separados..."
                     value={message}
                     onChange={(e) => { setMessage(e.target.value) }}
                     onKeyPress={handleKeyPress}
                     sx={{
                         '& .MuiOutlinedInput-root': {
-                            bgcolor: 'background.paper2'
+                            bgcolor: 'background.paper'
                         }
                     }}
                 />
@@ -533,8 +486,8 @@ export default function SessionChat() {
                 >
                     <SendIcon />
                 </IconButton>
-            </Stack>
-            
+            </Box>
+
             {/* Modais e Snackbar */}
             <TestModal
                 open={isTestModalOpen}

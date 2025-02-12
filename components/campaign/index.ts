@@ -1,7 +1,7 @@
 import CampaignOptionsModal from './CampaignOptionsModal';
 import CampaingCard from './CampaingCard';
 import CampaignComponent from './CampaignComponent';
-import CampaignDashboard from './CampaignDashboard';
+import CampaignUserDashboard from './CampaignUserDashboard';
 import PlayerAvatar from './PlayerAvatar';
 import CampaignHeader from './CampaignHeader';
 import SessionChat from './SessionChat';
@@ -11,7 +11,7 @@ export {
     CampaingCard,
     CampaignHeader,
     CampaignComponent,
-    CampaignDashboard,
+    CampaignUserDashboard as CampaignDashboard,
     SessionChat,
     PlayerAvatar
 };

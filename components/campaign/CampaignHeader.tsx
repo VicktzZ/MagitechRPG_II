@@ -67,12 +67,12 @@ export default function CampaignHeader() {
 
         channel.bind(PusherEvent.USER_ENTER, handleUserEnter);
         channel.bind(PusherEvent.USER_EXIT, handleUserExit);
-        channel.bind(PusherEvent.UPDATE_CAMPAIGN, handleCampaignUpdate);
+        channel.bind(PusherEvent.CAMPAIGN_UPDATED, handleCampaignUpdate);
 
         return () => {
             channel.unbind(PusherEvent.USER_ENTER, handleUserEnter);
             channel.unbind(PusherEvent.USER_EXIT, handleUserExit);
-            channel.unbind(PusherEvent.UPDATE_CAMPAIGN, handleCampaignUpdate);
+            channel.unbind(PusherEvent.CAMPAIGN_UPDATED, handleCampaignUpdate);
         };
     }, [ channel ]);
 
@@ -109,7 +109,7 @@ export default function CampaignHeader() {
         <Box
             display="flex"
             flexDirection="column"
-            minWidth="50%"
+            minWidth="5%"
             borderRadius={1}
             gap={2}
         >
@@ -117,6 +117,7 @@ export default function CampaignHeader() {
                 display="flex"
                 flexDirection="column"
                 minWidth="40%"
+                minHeight="70vh"
                 bgcolor="background.paper"
                 borderRadius={1}
                 p={3}

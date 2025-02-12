@@ -200,7 +200,7 @@ export default function Campaign({ params }: { params: { code: string } }): Reac
                                     </Tooltip>
                                 </Box>
                             </Box>
-                            <Box height='100%' width='25%' display='flex' gap={2}>
+                            <Box height='100%' width='95%' display='flex' gap={2}>
                                 <CampaignHeader />
                                 <CampaignComponent />
                             </Box>

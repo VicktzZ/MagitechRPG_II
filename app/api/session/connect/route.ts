@@ -69,7 +69,7 @@ export async function POST(req: Request): Promise<Response> {
         // Notifica sobre atualização da campanha
         await pusherServer.trigger(
             'presence-' + campaignCode,
-            PusherEvent.UPDATE_CAMPAIGN,
+            PusherEvent.CAMPAIGN_UPDATED,
             campaign
         );
 
