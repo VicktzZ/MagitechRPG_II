@@ -9,26 +9,15 @@ import { useGameMasterContext } from '@contexts/gameMasterContext'
 import { useChannel } from '@contexts/channelContext'
 import { PusherEvent } from '@enums'
 
-export default function CampaignHeader({ users }: { users: User[] }) {
+export default function CampaignHeader() {
     const [ fichas, setFichas ] = useState<Ficha[]>([]);
     const [ isLoading, setIsLoading ] = useState<boolean>(true);
     const [ sessionUsers, setSessionUsers ] = useState<string[]>([]);
-    const { campaign } = useCampaignContext();
+    const { campaign, campUsers } = useCampaignContext();
     const { channel } = useChannel();
-    const { allGameMastersId } = useGameMasterContext();
 
     const theme = useTheme();
     const matches = useMediaQuery(theme.breakpoints.down('md'));
-
-    // Filtra usuários com base nos players da campanha e GMs
-    const campUsers = useMemo(() => ({
-        admin: users.filter(u => allGameMastersId.includes(u._id ?? '')),
-        player: users.filter(u => {
-            const isPlayer = campaign.players.some(p => p.userId === u._id);
-            const isGM = allGameMastersId.includes(u._id ?? '');
-            return isPlayer && !isGM;
-        })
-    }), [ users, allGameMastersId, campaign.players ]);
 
     // Atualiza a lista de usuários da sessão quando a campanha mudar
     useEffect(() => {

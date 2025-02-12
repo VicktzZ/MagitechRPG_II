@@ -21,6 +21,7 @@ import {
 } from '@mui/material';
 import { useState } from 'react';
 import type { Campaign, TestData } from '@types';
+import { useCampaignContext } from '@contexts/campaignContext';
 
 interface TestModalProps {
     open: boolean;
@@ -32,9 +33,10 @@ interface TestModalProps {
 export default function TestModal({ open, onClose, onConfirm, campaign }: TestModalProps) {
     const [ dt, setDt ] = useState('');
     const [ isGroupTest, setIsGroupTest ] = useState(true);
-    const [ isVisible, setIsVisible ] = useState(true);
+    const [ showSucess, setShowSucess ] = useState(true);
     const [ showResult, setShowResult ] = useState(true);
     const [ selectedPlayers, setSelectedPlayers ] = useState<string[]>([]);
+    const { campUsers } = useCampaignContext();
 
     // Filtra apenas os jogadores online que não são admin
     const availablePlayers = campaign.session.users
@@ -54,15 +56,15 @@ export default function TestModal({ open, onClose, onConfirm, campaign }: TestMo
         onConfirm({
             dt: numericDt,
             isGroupTest,
-            isVisible,
             showResult,
+            isVisible: showSucess,
             selectedPlayers: isGroupTest ? availablePlayers : selectedPlayers
         });
 
         // Limpa o estado
         setDt('');
         setIsGroupTest(true);
-        setIsVisible(true);
+        setShowSucess(true);
         setShowResult(true);
         setSelectedPlayers([]);
         onClose();
@@ -105,12 +107,12 @@ export default function TestModal({ open, onClose, onConfirm, campaign }: TestMo
                             <FormControlLabel 
                                 value="group" 
                                 control={<Radio />} 
-                                label="Teste para Grupo" 
+                                label="Teste -> Geral" 
                             />
                             <FormControlLabel 
                                 value="player" 
                                 control={<Radio />} 
-                                label="Teste para Jogador" 
+                                label="Teste -> Jogador" 
                             />
                         </RadioGroup>
                     </FormControl>
@@ -118,11 +120,11 @@ export default function TestModal({ open, onClose, onConfirm, campaign }: TestMo
                     <FormControlLabel
                         control={
                             <Switch
-                                checked={isVisible}
-                                onChange={(e) => { setIsVisible(e.target.checked); }}
+                                checked={showSucess}
+                                onChange={(e) => { setShowSucess(e.target.checked); }}
                             />
                         }
-                        label="Mensagem visível"
+                        label="Público"
                     />
 
                     <FormControlLabel
@@ -132,33 +134,31 @@ export default function TestModal({ open, onClose, onConfirm, campaign }: TestMo
                                 onChange={(e) => { setShowResult(e.target.checked); }}
                             />
                         }
-                        label="Mostrar Resultado"
+                        label="Exibir resultado"
                     />
 
-                    {!isGroupTest && availablePlayers.length > 0 && (
+                    {!isGroupTest && campUsers.player.length > 0 && (
                         <List sx={{ 
                             maxHeight: 200, 
                             overflow: 'auto',
                             bgcolor: 'background.paper2',
                             borderRadius: 1
                         }}>
-                            {availablePlayers.map(playerId => {
-                                const player = campaign.players.find(p => p.userId === playerId);
-                                if (!player) return null;
-
+                            {campUsers.player.map(player => {
                                 return (
                                     <ListItem
-                                        key={playerId}
+                                        key={player._id}
                                         button
-                                        onClick={() => { handlePlayerToggle(playerId); }}
-                                        selected={selectedPlayers.includes(playerId)}
+                                        onClick={() => { handlePlayerToggle(player._id!); }}
+                                        selected={selectedPlayers.includes(player._id!)}
                                     >
                                         <ListItemAvatar>
-                                            <Avatar>
-                                                {player.userId.charAt(0).toUpperCase()}
-                                            </Avatar>
+                                            <Avatar 
+                                                src={player.image ?? '/assets/default-avatar.png'} 
+                                                alt={player.name ?? 'Avatar'}
+                                            />
                                         </ListItemAvatar>
-                                        <ListItemText primary={player.userId} />
+                                        <ListItemText primary={player.name ?? 'Jogador Desconhecido'} />
                                     </ListItem>
                                 );
                             })}

@@ -68,6 +68,22 @@ export interface Message {
     timestamp?: Date
 }
 
+export interface TempMessage extends Message {
+    isPending?: boolean;
+    tempId?: string;
+}
+
+export interface TestRequest {
+    dt: number;
+    isGroupTest: boolean;
+    isVisible: boolean;
+    selectedPlayers: string[];
+    requestedBy: {
+        id: string;
+        name: string;
+    };
+}
+
 export interface Player {
     userId: string,
     fichaId: string

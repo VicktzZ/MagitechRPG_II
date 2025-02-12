@@ -24,6 +24,6 @@ export enum PusherEvent {
     USER_EXIT = 'client-user-exit',
     USER_CONNECTED = 'user-connected',
     USER_DISCONNECTED = 'user-disconnected',
-    REQUEST_TEST = 'request-test',
-    TEST_RESULT = 'test-result'
+    TEST_REQUEST = 'client-test-request',
+    TEST_RESULT = 'client-test-result'
 }

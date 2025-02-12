@@ -39,7 +39,9 @@ import type {
     PusherMemberParam,
     Member,
     Message,
-    TestData
+    TestData,
+    TestRequest,
+    TempMessage
 } from './models';
 
 import type { 
@@ -102,6 +104,8 @@ export type {
     ApiRequest,
     Service,
     TestData,
+    TestRequest,
+    TempMessage,
 
     QueryParamsDto,
     UpdateByIdDto,

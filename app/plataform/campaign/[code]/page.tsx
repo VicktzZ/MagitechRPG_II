@@ -2,7 +2,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 'use client';
 
-import { useEffect, type ReactElement, useState, useRef } from 'react';
+import { useEffect, type ReactElement, useState, useRef, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
 import { Backdrop, Box, Button, CircularProgress, Grid, Modal, Skeleton, Tooltip, Typography } from '@mui/material';
 import { useRouter } from 'next/navigation';
@@ -95,6 +95,15 @@ export default function Campaign({ params }: { params: { code: string } }): Reac
         };
     }, [ params.code ]);
 
+    const campUsers = useMemo(() => ({
+        admin: campaignUsers.filter(u => allGameMastersId.includes(u._id ?? '')),
+        player: campaignUsers.filter(u => {
+            const isPlayer = campaign.players.some(p => p.userId === u._id);
+            const isGM = allGameMastersId.includes(u._id ?? '');
+            return isPlayer && !isGM;
+        })
+    }), [ campaignUsers, allGameMastersId, campaign.players ]);
+
     return (
         <>
             {isLoading && (
@@ -169,7 +178,7 @@ export default function Campaign({ params }: { params: { code: string } }): Reac
             )}
 
             {campaign && channel && ((!isLoading && isUserGM) || (!isLoading && ficha)) && (
-                <campaignContext.Provider value={{ campaign, setCampaign }}>
+                <campaignContext.Provider value={{ campaign, setCampaign, campUsers }}>
                     <gameMasterContext.Provider value={{ allGameMastersId, isUserGM }}>
                         <Box display='flex' flexDirection='column' gap={3} p={2} minHeight='90vh'>
                             <Box display='flex' flexDirection='column' gap={2} width='50%'>
@@ -192,9 +201,7 @@ export default function Campaign({ params }: { params: { code: string } }): Reac
                                 </Box>
                             </Box>
                             <Box height='100%' width='25%' display='flex' gap={2}>
-                                <CampaignHeader 
-                                    users={campaignUsers}
-                                />
+                                <CampaignHeader />
                                 <CampaignComponent />
                             </Box>
                         </Box>

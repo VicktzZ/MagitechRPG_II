@@ -7,28 +7,12 @@ import { useCampaignContext } from '@contexts/campaignContext';
 import { useSession } from 'next-auth/react';
 import { rollDice, rollSeparateDice, createDiceMessage } from '@utils/diceRoller';
 import { useChannel } from '@contexts/channelContext';
-import type { Message } from '@types';
+import type { Message, TempMessage, TestData, TestRequest } from '@types';
 import { PusherEvent } from '@enums';
 import { DiceMessage } from '@components/misc';
 import { messageService } from '@services';
-import TestModal, { type TestData } from './TestModal';
+import TestModal from './TestModal';
 import TestDialog from './TestDialog';
-
-interface TempMessage extends Message {
-    isPending?: boolean;
-    tempId?: string;
-}
-
-interface TestRequest {
-    dt: number;
-    isGroupTest: boolean;
-    isVisible: boolean;
-    selectedPlayers: string[];
-    requestedBy: {
-        id: string;
-        name: string;
-    };
-}
 
 export default function SessionChat() {
     const { campaign } = useCampaignContext();
@@ -47,7 +31,7 @@ export default function SessionChat() {
     const [ currentTest, setCurrentTest ] = useState<TestRequest | null>(null);
     const [ snackbarMessage, setSnackbarMessage ] = useState('');
     const [ snackbarOpen, setSnackbarOpen ] = useState(false);
-    const [ snackbarSeverity, setSnackbarSeverity ] = useState<'success' | 'error'>('success');
+    const [ snackbarSeverity, setSnackbarSeverity ] = useState<'success' | 'error' | 'info'>('success');
 
     const isAdmin = session?.user && campaign.admin.includes(session.user._id);
 
@@ -114,7 +98,7 @@ export default function SessionChat() {
             name: session?.user?.name ?? 'Usuário'
         };
 
-        setMessage(''); // Limpa a mensagem imediatamente
+        setMessage('');
 
         let success = true;
 
@@ -162,7 +146,7 @@ export default function SessionChat() {
             }
         };
 
-        channel?.trigger('client-request-test', testRequest);
+        channel?.trigger(PusherEvent.TEST_REQUEST, testRequest);
 
         // Se o teste não for visível, mostra apenas para os admins
         if (!data.isVisible) {
@@ -172,6 +156,82 @@ export default function SessionChat() {
         }
     };
 
+    const handleTestRollComplete = async (success: boolean, roll: { dice: string, result: number[] }) => {
+        setIsTestDialogOpen(false);
+
+        if (!currentTest || !session?.user) return;
+
+        // Cria a mensagem do resultado da rolagem
+        const rollMessage: Message = {
+            id: crypto.randomUUID(),
+            text: `🎲 Rolou ${roll.dice}: [${roll.result.join(', ')}] = ${roll.result.reduce((a, b) => a + b, 0)}`,
+            by: {
+                id: session.user._id,
+                name: session.user.name,
+                image: session.user.image ?? '/assets/default-avatar.png'
+            },
+            timestamp: new Date()
+        };
+
+        // Cria a mensagem do resultado do teste (apenas se showResult estiver ativo)
+        const resultMessage: Message = currentTest.showResult ? {
+            id: crypto.randomUUID(),
+            text: `${success ? '✅' : '❌'} ${session.user.name} ${success ? 'passou' : 'não passou'} no teste!`,
+            by: {
+                id: 'dice-roller-bot',
+                image: '/assets/dice-roller-bot.jpg',
+                name: 'Dice Roller',
+                isBot: true
+            },
+            timestamp: new Date()
+        } : null;
+
+        if (currentTest.isVisible) {
+            // Se o teste é visível, envia a rolagem para o chat
+            await sendMessage(rollMessage);
+            // Se showResult está ativo, envia o resultado também
+            if (resultMessage) {
+                await sendMessage(resultMessage);
+            }
+        } else {
+            // Se o teste é privado
+            // Mostra apenas a rolagem em toast para o jogador
+            setSnackbarMessage(rollMessage.text);
+            setSnackbarSeverity('info');
+            setSnackbarOpen(true);
+
+            // Envia a rolagem e o resultado (se showResult ativo) para os mestres via Pusher
+            channel?.trigger(PusherEvent.TEST_RESULT, {
+                success,
+                playerName: session.user.name,
+                roll: {
+                    dice: roll.dice,
+                    result: roll.result
+                },
+                showResult: currentTest.showResult
+            });
+        }
+    };
+
+    const handleTestResult = (data: { 
+        success: boolean, 
+        playerName: string, 
+        roll: { dice: string, result: number[] },
+        showResult: boolean 
+    }) => {
+        // Só mostra o resultado para os mestres
+        if (!isAdmin) return;
+
+        const rollText = `🎲 ${data.playerName} rolou ${data.roll.dice}: [${data.roll.result.join(', ')}] = ${data.roll.result.reduce((a, b) => a + b, 0)}`;
+        const resultText = data.showResult ? 
+            `\n${data.success ? '✅' : '❌'} ${data.playerName} ${data.success ? 'passou' : 'não passou'} no teste!` : 
+            '';
+
+        setSnackbarMessage(rollText + resultText);
+        setSnackbarSeverity(data.showResult ? (data.success ? 'success' : 'error') : 'info');
+        setSnackbarOpen(true);
+    };
+
     const handleTestComplete = async (success: boolean) => {
         if (!currentTest || !session?.user) return;
 
@@ -179,7 +239,7 @@ export default function SessionChat() {
             text: `${success ? '✅' : '❌'} ${session.user.name} ${success ? 'passou' : 'não passou'} no teste!`,
             by: {
                 id: 'dice-roller-bot',
-                image: '/assets/diceResult.jpg',
+                image: '/assets/dice-roller-bot.jpg',
                 name: 'Dice Roller',
                 isBot: true
             }
@@ -189,7 +249,7 @@ export default function SessionChat() {
             await sendMessage(resultMessage);
         } else {
             // Envia o resultado apenas para os admins via Pusher
-            channel?.trigger('client-test-result', {
+            channel?.trigger(PusherEvent.TEST_RESULT, {
                 success,
                 playerName: session.user.name
             });
@@ -261,188 +321,220 @@ export default function SessionChat() {
             }
         };
 
-        const handleTestResult = (data: { success: boolean; playerName: string }) => {
-            // Apenas admins recebem este evento
-            if (campaign.admin.includes(session.user._id)) {
-                setSnackbarMessage(
-                    `${data.playerName} ${data.success ? 'passou' : 'não passou'} no teste!`
-                );
-                setSnackbarSeverity(data.success ? 'success' : 'error');
-                setSnackbarOpen(true);
-            }
+        const handleTestResultPusher = (data: { 
+            success: boolean, 
+            playerName: string, 
+            roll: { dice: string, result: number[] },
+            showResult: boolean 
+        }) => {
+            handleTestResult(data);
         };
 
         channel.bind(PusherEvent.NEW_MESSAGE, handleNewMessage);
-        channel.bind('client-request-test', handleTestRequest);
-        channel.bind('client-test-result', handleTestResult);
+        channel.bind(PusherEvent.TEST_REQUEST, handleTestRequest);
+        channel.bind(PusherEvent.TEST_RESULT, handleTestResultPusher);
 
         return () => {
             channel.unbind(PusherEvent.NEW_MESSAGE, handleNewMessage);
-            channel.unbind('client-request-test', handleTestRequest);
-            channel.unbind('client-test-result', handleTestResult);
+            channel.unbind(PusherEvent.TEST_REQUEST, handleTestRequest);
+            channel.unbind(PusherEvent.TEST_RESULT, handleTestResultPusher);
         };
     }, [ channel, session?.user?._id ]);
 
     if (isLoading) {
         return (
-            <Paper
+            <Box
                 sx={{
-                    position: 'fixed',
-                    right: 20,
-                    bottom: 20,
-                    width: 350,
-                    height: 500,
                     display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
+                    flexDirection: 'column',
+                    height: {
+                        xs: '100%',  
+                        md: '100vh'  
+                    },
+                    width: {
+                        xs: '100%',  
+                        md: '400px'  
+                    },
+                    position: {
+                        xs: 'relative',
+                        md: 'fixed'  
+                    },
+                    right: {
+                        md: '20px'  
+                    },
+                    bottom: {
+                        md: '0'  
+                    },
+                    bgcolor: 'background.paper',
+                    borderRadius: 2,
+                    overflow: 'hidden'  
                 }}
             >
                 <Typography>Carregando mensagens...</Typography>
-            </Paper>
+            </Box>
         );
     }
 
     return (
-        <>
-            <Paper
+        <Box
+            sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                height: {
+                    xs: '100%',  
+                    md: '100vh'  
+                },
+                width: {
+                    xs: '100%',  
+                    md: '400px'  
+                },
+                position: {
+                    xs: 'relative',
+                    md: 'fixed'  
+                },
+                right: {
+                    md: '20px'  
+                },
+                bottom: {
+                    md: '0'  
+                },
+                bgcolor: 'background.paper',
+                borderRadius: 2,
+                overflow: 'hidden'  
+            }}
+        >
+            <Box
                 sx={{
-                    position: 'fixed',
-                    right: 20,
-                    bottom: 20,
-                    width: 350,
-                    height: 500,
+                    p: 2,
+                    borderBottom: 1,
+                    borderColor: 'divider',
+                    bgcolor: 'background.paper2',
                     display: 'flex',
-                    flexDirection: 'column',
-                    bgcolor: 'background.paper3',
-                    borderRadius: 2,
-                    boxShadow: 3
+                    alignItems: 'center',
+                    justifyContent: 'space-between'
                 }}
             >
-                <Box
-                    sx={{
-                        p: 2,
-                        borderBottom: 1,
-                        borderColor: 'background.paper2',
-                        bgcolor: 'background.paper4'
-                    }}
-                >
-                    <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
-                        <Typography variant="h6" color="primary">
-                            Chat da Sessão
-                        </Typography>
-                        {isAdmin && (
-                            <Button
-                                variant="contained"
-                                size="small"
-                                onClick={() => { setIsTestModalOpen(true); }}
-                            >
-                                Teste
-                            </Button>
-                        )}
-                    </Stack>
-                    <Typography variant="caption" color="text.secondary">
-                        Digite XdY para rolar dados (ex: 3d6*2, 2d20+1/2) ou #XdY para rolar separadamente
-                    </Typography>
-                </Box>
-
-                <Box
-                    ref={chatBoxRef}
-                    onScroll={handleScroll}
-                    sx={{
-                        flex: 1,
-                        overflowY: 'auto',
-                        p: 2,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: 1
-                    }}
-                >
-                    {messages
-                        .sort((a, b) => {
-                            const timeA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
-                            const timeB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
-                            return timeA - timeB;
-                        })
-                        .map((msg, index) => (
-                            <Paper
-                                key={msg.tempId ?? index}
-                                sx={{
-                                    p: 1,
-                                    bgcolor: 'background.paper2',
-                                    maxWidth: '80%',
-                                    alignSelf: msg.by.id === session?.user?._id ? 'flex-end' : 'flex-start',
-                                    opacity: msg.isPending ? 0.5 : 1,
-                                    transition: 'opacity 0.2s ease-in-out'
-                                }}
-                            >
-                                <Stack direction="row" spacing={1} alignItems="center" mb={0.5}>
-                                    <Avatar
-                                        src={msg.by.image}
-                                        alt={msg.by.name}
-                                        sx={{ width: 24, height: 24 }}
-                                    />
-                                    <Typography variant="caption" color="primary.main">
-                                        {msg.by.name}
-                                    </Typography>
-                                    {(campaign.admin.includes(msg.by.id) || msg.by.isBot) && (
-                                        <Typography 
-                                            variant="caption" 
-                                            color={msg.by.isBot ? 'success.main' : 'primary.main'}
-                                            sx={{ opacity: 0.7, mx: 0.5 }}
-                                        >
-                                            {msg.by.isBot ? '(BOT)' : '(GM)'}
-                                        </Typography>
-                                    )}
-                                    {msg.timestamp && (
-                                        <Typography 
-                                            variant="caption" 
-                                            color="text.secondary"
-                                            sx={{ ml: 'auto' }}
-                                        >
-                                            {new Date(msg.timestamp).toLocaleTimeString()}
-                                        </Typography>
-                                    )}
-                                </Stack>
-                                <DiceMessage text={msg.text} />
-                            </Paper>
-                        ))}
-                    <div ref={messagesEndRef} />
-                </Box>
-
-                <Stack
-                    direction="row"
-                    sx={{
-                        p: 2,
-                        borderTop: 1,
-                        borderColor: 'background.paper2',
-                        bgcolor: 'background.paper4'
-                    }}
-                >
-                    <TextField
-                        fullWidth
-                        variant="outlined"
+                <Typography variant="h6">Chat da Sessão</Typography>
+                {isAdmin && (
+                    <Button
+                        variant="contained"
                         size="small"
-                        placeholder="Digite sua mensagem, XdY para dados, ou #XdY para dados separados..."
-                        value={message}
-                        onChange={(e) => { setMessage(e.target.value) }}
-                        onKeyPress={handleKeyPress}
-                        sx={{
-                            '& .MuiOutlinedInput-root': {
-                                bgcolor: 'background.paper2'
-                            }
-                        }}
-                    />
-                    <IconButton
-                        color="primary"
-                        onClick={handleSendMessage}
-                        disabled={!message.trim()}
-                        sx={{ ml: 1 }}
+                        onClick={() => { setIsTestModalOpen(true); }}
                     >
-                        <SendIcon />
-                    </IconButton>
-                </Stack>
-            </Paper>
+                        Teste
+                    </Button>
+                )}
+            </Box>
 
+            <Box
+                ref={chatBoxRef}
+                onScroll={handleScroll}
+                sx={{
+                    flex: 1,
+                    overflowY: 'auto',
+                    p: 2,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 1,
+                    height: {
+                        xs: 'calc(100vh - 200px)',  
+                        md: 'calc(100vh - 140px)'   
+                    }
+                }}
+            >
+                {messages
+                    .sort((a, b) => {
+                        const timeA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+                        const timeB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+                        return timeA - timeB;
+                    })
+                    .map((msg, index) => (
+                        <Paper
+                            key={msg.tempId ?? index}
+                            sx={{
+                                p: 1,
+                                bgcolor: 'background.paper2',
+                                maxWidth: '80%',
+                                alignSelf: msg.by.id === session?.user?._id ? 'flex-end' : 'flex-start',
+                                opacity: msg.isPending ? 0.5 : 1,
+                                transition: 'opacity 0.2s ease-in-out'
+                            }}
+                        >
+                            <Stack direction="row" spacing={1} alignItems="center" mb={0.5}>
+                                <Avatar
+                                    src={msg.by.image}
+                                    alt={msg.by.name}
+                                    sx={{ width: 24, height: 24 }}
+                                />
+                                <Typography variant="caption" color="primary.main">
+                                    {msg.by.name}
+                                </Typography>
+                                {(campaign.admin.includes(msg.by.id) || msg.by.isBot) && (
+                                    <Typography 
+                                        variant="caption" 
+                                        color={msg.by.isBot ? 'success.main' : 'primary.main'}
+                                        sx={{ opacity: 0.7, mx: 0.5 }}
+                                    >
+                                        {msg.by.isBot ? '(BOT)' : '(GM)'}
+                                    </Typography>
+                                )}
+                                {msg.timestamp && (
+                                    <Typography 
+                                        variant="caption" 
+                                        color="text.secondary"
+                                        sx={{ ml: 'auto' }}
+                                    >
+                                        {new Date(msg.timestamp).toLocaleString('pt-BR', {
+                                            day: '2-digit',
+                                            month: '2-digit',
+                                            year: 'numeric',
+                                            hour: '2-digit',
+                                            minute: '2-digit'
+                                        })}
+                                    </Typography>
+                                )}
+                            </Stack>
+                            <DiceMessage text={msg.text} />
+                        </Paper>
+                    ))}
+                <div ref={messagesEndRef} />
+            </Box>
+
+            <Stack
+                direction="row"
+                sx={{
+                    p: 2,
+                    borderTop: 1,
+                    borderColor: 'divider',
+                    bgcolor: 'background.paper2',
+                    display: 'flex',
+                    gap: 1
+                }}
+            >
+                <TextField
+                    fullWidth
+                    variant="outlined"
+                    size="small"
+                    placeholder="Digite sua mensagem, XdY para dados, ou #XdY para dados separados..."
+                    value={message}
+                    onChange={(e) => { setMessage(e.target.value) }}
+                    onKeyPress={handleKeyPress}
+                    sx={{
+                        '& .MuiOutlinedInput-root': {
+                            bgcolor: 'background.paper2'
+                        }
+                    }}
+                />
+                <IconButton
+                    color="primary"
+                    onClick={handleSendMessage}
+                    disabled={!message.trim()}
+                    sx={{ ml: 1 }}
+                >
+                    <SendIcon />
+                </IconButton>
+            </Stack>
+            
             {/* Modais e Snackbar */}
             <TestModal
                 open={isTestModalOpen}
@@ -458,7 +550,7 @@ export default function SessionChat() {
                     setCurrentTest(null);
                 }}
                 dt={currentTest?.dt ?? 0}
-                onRollComplete={handleTestComplete}
+                onRollComplete={handleTestRollComplete}
             />
 
             <Snackbar
@@ -475,6 +567,6 @@ export default function SessionChat() {
                     {snackbarMessage}
                 </Alert>
             </Snackbar>
-        </>
+        </Box>
     );
 }
