@@ -1,6 +1,6 @@
 'use client';
 
-import { Box, Paper, TextField, IconButton, Typography, Stack, Avatar, Button, Snackbar, Alert } from '@mui/material';
+import { Box, Paper, TextField, IconButton, Typography, Stack, Avatar, Snackbar, Alert } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import { useEffect, useState, useRef } from 'react';
 import { useCampaignContext } from '@contexts/campaignContext';
@@ -232,32 +232,32 @@ export default function SessionChat() {
         setSnackbarOpen(true);
     };
 
-    const handleTestComplete = async (success: boolean) => {
-        if (!currentTest || !session?.user) return;
+    // const handleTestComplete = async (success: boolean) => {
+    //     if (!currentTest || !session?.user) return;
 
-        const resultMessage = {
-            text: `${success ? '✅' : '❌'} ${session.user.name} ${success ? 'passou' : 'não passou'} no teste!`,
-            by: {
-                id: 'dice-roller-bot',
-                image: '/assets/dice-roller-bot.jpg',
-                name: 'Dice Roller',
-                isBot: true
-            }
-        };
+    //     const resultMessage = {
+    //         text: `${success ? '✅' : '❌'} ${session.user.name} ${success ? 'passou' : 'não passou'} no teste!`,
+    //         by: {
+    //             id: 'dice-roller-bot',
+    //             image: '/assets/dice-roller-bot.jpg',
+    //             name: 'Dice Roller',
+    //             isBot: true
+    //         }
+    //     };
 
-        if (currentTest.isVisible) {
-            await sendMessage(resultMessage);
-        } else {
-            // Envia o resultado apenas para os admins via Pusher
-            channel?.trigger(PusherEvent.TEST_RESULT, {
-                success,
-                playerName: session.user.name
-            });
-        }
+    //     if (currentTest.isVisible) {
+    //         await sendMessage(resultMessage);
+    //     } else {
+    //         // Envia o resultado apenas para os admins via Pusher
+    //         channel?.trigger(PusherEvent.TEST_RESULT, {
+    //             success,
+    //             playerName: session.user.name
+    //         });
+    //     }
 
-        setIsTestDialogOpen(false);
-        setCurrentTest(null);
-    };
+    //     setIsTestDialogOpen(false);
+    //     setCurrentTest(null);
+    // };
 
     // Carrega mensagens iniciais
     useEffect(() => {

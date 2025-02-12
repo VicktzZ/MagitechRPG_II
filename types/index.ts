@@ -112,3 +112,9 @@ export type {
     ConnectSessionDto,
     DisconnectSessionDto
 }
+
+export interface AmmoControl {
+    type: AmmoType;
+    current: number;
+    max: number;
+}
