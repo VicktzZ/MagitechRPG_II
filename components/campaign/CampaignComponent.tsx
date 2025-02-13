@@ -112,12 +112,13 @@ export default function CampaignComponent(): ReactElement {
                     onClick={() => setIsChatOpen(!isChatOpen)}
                     sx={{
                         position: 'absolute',
-                        left: -20,
+                        left: -25,
                         top: '50%',
                         transform: 'translateY(-50%)',
                         bgcolor: 'background.paper',
                         border: '1px solid',
                         borderColor: 'divider',
+                        zIndex: 1200,
                         '&:hover': {
                             bgcolor: 'action.hover'
                         }

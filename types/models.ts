@@ -13,6 +13,12 @@ export interface SessionNextAuth {
     token: string
 }
 
+export interface AmmoControl {
+    type: string;
+    current: number;
+    max: number;
+}
+
 export interface Member {
     name: string,
     email: string,
@@ -58,6 +64,7 @@ export interface Session {
 }
 
 export interface Message {
+    id?: string
     text: string
     by: {
         id: string

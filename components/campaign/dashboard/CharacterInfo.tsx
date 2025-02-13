@@ -2,9 +2,10 @@
 
 import { type ReactElement } from 'react';
 import { Box, Typography, Paper, Avatar, LinearProgress, Grid, Chip, Divider } from '@mui/material';
+import type { Ficha } from '@types';
 
 interface CharacterInfoProps {
-    ficha: any;
+    ficha: Ficha;
     avatar: string;
 }
 
@@ -103,7 +104,7 @@ export default function CharacterInfo({ ficha, avatar }: CharacterInfoProps): Re
 
             {/* Atributos e Traços */}
             <Grid item xs={12} md={6}>
-                <Paper sx={{ p: 2, bgcolor: 'background.paper2', borderRadius: 2 }}>
+                <Paper sx={{ p: 2, bgcolor: 'background.paper2', borderRadius: 2, minHeight: '100%' }}>
                     <Typography variant="h6" gutterBottom>
                         Atributos
                     </Typography>

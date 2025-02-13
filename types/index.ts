@@ -41,7 +41,8 @@ import type {
     Message,
     TestData,
     TestRequest,
-    TempMessage
+    TempMessage,
+    AmmoControl
 } from './models';
 
 import type { 
@@ -68,6 +69,7 @@ export type {
     PlayerInfo,
     AmmoType,
     Roll,
+    AmmoControl,
     Player,
     SessionModel,
     Ficha,
@@ -111,10 +113,4 @@ export type {
     UpdateByIdDto,
     ConnectSessionDto,
     DisconnectSessionDto
-}
-
-export interface AmmoControl {
-    type: AmmoType;
-    current: number;
-    max: number;
 }

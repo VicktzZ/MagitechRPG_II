@@ -175,7 +175,7 @@ export default function SessionChat() {
         };
 
         // Cria a mensagem do resultado do teste (apenas se showResult estiver ativo)
-        const resultMessage: Message = currentTest.showResult ? {
+        const resultMessage: Message | null = currentTest.showResult ? {
             id: crypto.randomUUID(),
             text: `${success ? '✅' : '❌'} ${session.user.name} ${success ? 'passou' : 'não passou'} no teste!`,
             by: {
@@ -232,33 +232,6 @@ export default function SessionChat() {
         setSnackbarSeverity(data.showResult ? (data.success ? 'success' : 'error') : 'info');
         setSnackbarOpen(true);
     };
-
-    // const handleTestComplete = async (success: boolean) => {
-    //     if (!currentTest || !session?.user) return;
-
-    //     const resultMessage = {
-    //         text: `${success ? '✅' : '❌'} ${session.user.name} ${success ? 'passou' : 'não passou'} no teste!`,
-    //         by: {
-    //             id: 'dice-roller-bot',
-    //             image: '/assets/dice-roller-bot.jpg',
-    //             name: 'Dice Roller',
-    //             isBot: true
-    //         }
-    //     };
-
-    //     if (currentTest.isVisible) {
-    //         await sendMessage(resultMessage);
-    //     } else {
-    //         // Envia o resultado apenas para os admins via Pusher
-    //         channel?.trigger(PusherEvent.TEST_RESULT, {
-    //             success,
-    //             playerName: session.user.name
-    //         });
-    //     }
-
-    //     setIsTestDialogOpen(false);
-    //     setCurrentTest(null);
-    // };
 
     // Carrega mensagens iniciais
     useEffect(() => {

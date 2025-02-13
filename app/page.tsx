@@ -13,11 +13,15 @@ import magitechCapa from '@public/assets/magitech_capa.png'
 import magitechCapaGrimorio from '@public/assets/magitech_capa_grimorio.png'
 import profilePhoto from '@public/assets/profile_photo.jpg'
 import Image from 'next/image';
+import { useSession } from 'next-auth/react';
 
 export default function LandingPage(): ReactElement | null {
     const theme = useTheme()
     const matches = useMediaQuery(theme.breakpoints.down('md'))
     const [ bgIndex ] = useState(1)
+
+    const { data: session } = useSession()
+    console.log(session);
 
     const router = useRouter()
 

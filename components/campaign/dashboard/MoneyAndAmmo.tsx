@@ -4,10 +4,10 @@ import { type ReactElement, useState } from 'react';
 import { Box, Typography, Paper, Grid, LinearProgress, IconButton, TextField, Select, MenuItem, Button, Divider } from '@mui/material';
 import { Add as AddIcon, Remove as RemoveIcon } from '@mui/icons-material';
 import { AmmoType } from '@enums';
-import type { AmmoControl } from '@types';
+import type { AmmoControl, Ficha } from '@types';
 
 interface MoneyAndAmmoProps {
-    ficha: any;
+    ficha: Ficha;
 }
 
 export default function MoneyAndAmmo({ ficha }: MoneyAndAmmoProps): ReactElement {
@@ -136,7 +136,7 @@ export default function MoneyAndAmmo({ ficha }: MoneyAndAmmoProps): ReactElement
                                     borderRadius: 5,
                                     bgcolor: 'background.paper3',
                                     '& .MuiLinearProgress-bar': {
-                                        bgcolor: getAmmoColor(ammo.type)
+                                        bgcolor: getAmmoColor(ammo.type as AmmoType)
                                     }
                                 }}
                             />

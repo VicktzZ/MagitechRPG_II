@@ -19,21 +19,21 @@ function SpellStage({ stage, description, magic }: SpellStageProps): ReactElemen
         'estágio 3': 2
     }
 
-    if (Number(magic.nível) === 4)
+    if (Number(magic['nível']) === 4)
         extraCost = {
             'estágio 1': 0,
             'estágio 2': 4,
             'maestria': 9
         }
         
-    if (Number(magic.nível) === 3)
+    if (Number(magic['nível']) === 3)
         extraCost = {
             'estágio 1': 0,
             'estágio 2': 2,
             'estágio 3': 5
         }
 
-    if (Number(magic.nível) === 2)
+    if (Number(magic['nível']) === 2)
         extraCost = {
             'estágio 1': 0,
             'estágio 2': 2,

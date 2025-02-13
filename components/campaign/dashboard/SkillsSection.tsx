@@ -40,7 +40,7 @@ export default function SkillsSection({ ficha, selectedSkillType, setSelectedSki
 
     return (
         <Grid item xs={12} md={6}>
-            <Paper sx={{ p: 2, bgcolor: 'background.paper2', borderRadius: 2 }}>
+            <Paper sx={{ p: 2, bgcolor: 'background.paper2', borderRadius: 2, minHeight: '100%' }}>
                 <Typography variant="h6" gutterBottom>
                     Habilidades
                 </Typography>
