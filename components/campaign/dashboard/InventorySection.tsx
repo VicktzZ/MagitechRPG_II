@@ -14,12 +14,12 @@ export default function InventorySection({ ficha }: InventorySectionProps): Reac
     const renderInventoryItem = (item: any, type: 'weapon' | 'armor' | 'item') => {
         const getItemDetails = () => {
             switch (type) {
-                case 'weapon':
-                    return `Dano: ${item.effect.value} | Tipo: ${item.type}`;
-                case 'armor':
-                    return `Defesa: ${item.defense} | Tipo: ${item.type}`;
-                case 'item':
-                    return item.description;
+            case 'weapon':
+                return `Dano: ${item.effect.value} | Tipo: ${item.type}`;
+            case 'armor':
+                return `Defesa: ${item.defense} | Tipo: ${item.type}`;
+            case 'item':
+                return item.description;
             }
         };
 

@@ -30,7 +30,6 @@ export default function Campaign({ params }: { params: { code: string } }): Reac
     const [ campaign, setCampaign ] = useState<CampaignType>({} as CampaignType);
     const [ openFichaModal, setOpenFichaModal ] = useState<boolean>(false);
     const [ ficha, setFicha ] = useState<Ficha>();
-    const [ copiedCode, setCopiedCode ] = useState<boolean>(false);
     const [ campaignUsers, setCampaignUsers ] = useState<User[]>([]);
     const pusherClientRef = useRef<PusherClient | null>(null);
     const channelRef = useRef<PresenceChannel | null>(null);
@@ -181,25 +180,6 @@ export default function Campaign({ params }: { params: { code: string } }): Reac
                 <campaignContext.Provider value={{ campaign, setCampaign, campUsers }}>
                     <gameMasterContext.Provider value={{ allGameMastersId, isUserGM }}>
                         <Box display='flex' flexDirection='column' gap={3} p={2} minHeight='90vh'>
-                            <Box display='flex' flexDirection='column' gap={2} width='50%'>
-                                <Typography variant='h6'>{campaign.title}</Typography>
-                                <Box width='25%'>
-                                    <Tooltip
-                                        open={copiedCode}
-                                        title='Copiado!'
-                                        placement='top'
-                                    >
-                                        <Box display='flex' alignItems='center' gap={1}>
-                                            Código: 
-                                            <Button onClick={() => {
-                                                navigator.clipboard.writeText(params.code);
-                                                setCopiedCode(true);
-                                                setTimeout(() => { setCopiedCode(false) }, 1000);
-                                            }} variant='outlined'>{params.code}</Button>
-                                        </Box>
-                                    </Tooltip>
-                                </Box>
-                            </Box>
                             <Box height='100%' width='95%' display='flex' gap={2}>
                                 <CampaignHeader />
                                 <CampaignComponent />
