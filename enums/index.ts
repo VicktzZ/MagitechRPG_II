@@ -20,6 +20,7 @@ export enum PusherEvent {
     MESSAGE_SENT = 'client-message_sent',
     CAMPAIGN_UPDATED = 'client-campaign_updated',
     TEST_RESULT = 'client-test_result',
+    TEST_REQUEST = 'client-test_request',
     SESSION_USERS_UPDATED = 'client-session_users_updated'
 }
 
@@ -37,4 +38,12 @@ export enum AmmoType {
     ARROW = 'arrow',
     ENERGY = 'energy',
     SPECIAL = 'special'
+}
+
+export enum SpellType {
+    ATTACK = 'attack',
+    DEFENSE = 'defense',
+    SUPPORT = 'support',
+    HEALING = 'healing',
+    UTILITY = 'utility'
 }

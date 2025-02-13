@@ -1,3 +1,5 @@
+import { type Magia } from './models'
+
 export interface Ficha {
     _id?: string
     playerName: string
@@ -11,7 +13,7 @@ export interface Ficha {
     ORMLevel: number
     inventory: Inventory
     displacement: number
-    magics: Magic[]
+    magics: Magia[]
     anotacoes?: string
     magicsSpace: number
     gender: Gender

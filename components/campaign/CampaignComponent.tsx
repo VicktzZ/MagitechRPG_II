@@ -87,8 +87,7 @@ export default function CampaignComponent(): ReactElement {
             position: 'relative',
             gap: 2,
             width: '100%',
-            height: '100%',
-            p: 2
+            height: '100%'
         }}>
             <Box sx={{
                 width: '100%'

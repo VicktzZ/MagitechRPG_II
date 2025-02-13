@@ -13,6 +13,7 @@ import { DiceMessage } from '@components/misc';
 import { messageService } from '@services';
 import TestModal from './TestModal';
 import TestDialog from './TestDialog';
+import { Button } from '@mui/material';
 
 export default function SessionChat() {
     const { campaign } = useCampaignContext();
@@ -387,6 +388,16 @@ export default function SessionChat() {
             >
                 Chat da Sessão
             </Typography>
+            {campaign.admin.includes(session?.user?._id ?? '') && (
+                <Button 
+                    variant="contained" 
+                    color="primary" 
+                    onClick={() => setIsTestModalOpen(true)}
+                    sx={{ m: 2 }}
+                >
+                    Teste
+                </Button>
+            )}
 
             <Box
                 ref={chatBoxRef}

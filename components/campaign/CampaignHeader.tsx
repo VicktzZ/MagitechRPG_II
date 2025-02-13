@@ -51,7 +51,7 @@ export default function CampaignHeader(): ReactElement {
         }, 10000); // Atualiza a cada 10 segundos
 
         return () => clearInterval(interval);
-    }, [channel, session]);
+    }, [ channel, session ]);
 
     // Escuta atualizações de status dos usuários
     useEffect(() => {
@@ -64,12 +64,12 @@ export default function CampaignHeader(): ReactElement {
 
                 if (userIndex >= 0) {
                     // Atualiza usuário existente
-                    const updatedUsers = [...prev];
+                    const updatedUsers = [ ...prev ];
                     updatedUsers[userIndex] = newUser;
                     return updatedUsers;
                 } else {
                     // Adiciona novo usuário
-                    return [...prev, newUser];
+                    return [ ...prev, newUser ];
                 }
             });
         };
@@ -89,7 +89,7 @@ export default function CampaignHeader(): ReactElement {
             channel.unbind(PusherEvent.SESSION_USERS_UPDATED, handleSessionUsersUpdate);
             channel.unbind(PusherEvent.SUBSCRIPTION);
         };
-    }, [channel, session]);
+    }, [ channel, session ]);
 
     // Limpa usuários inativos periodicamente
     useEffect(() => {
@@ -102,7 +102,7 @@ export default function CampaignHeader(): ReactElement {
 
     useEffect(() => {
         setSessionUsers(campaign.session.users);
-    }, [campaign.session.users]);
+    }, [ campaign.session.users ]);
 
     useEffect(() => {
         const fetchPlayersFicha = async (): Promise<void> => {
@@ -123,7 +123,7 @@ export default function CampaignHeader(): ReactElement {
         };
 
         fetchPlayersFicha();
-    }, [campaign.players]);
+    }, [ campaign.players ]);
 
     const renderUserAvatar = (user: User, isAdmin: boolean = false) => (
         <Box display="flex" gap={2} key={user._id}>

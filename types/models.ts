@@ -77,6 +77,7 @@ export interface TestRequest {
     dt: number;
     isGroupTest: boolean;
     isVisible: boolean;
+    showResult: boolean;
     selectedPlayers: string[];
     requestedBy: {
         id: string;
