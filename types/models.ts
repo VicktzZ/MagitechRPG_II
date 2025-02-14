@@ -1,3 +1,4 @@
+import { MessageType } from '@enums'
 import type { Ficha } from './ficha'
 
 export interface User {
@@ -65,6 +66,8 @@ export interface Session {
 
 export interface Message {
     id?: string
+    timestamp?: Date
+    type?: MessageType
     text: string
     by: {
         id: string
@@ -72,7 +75,6 @@ export interface Message {
         name: string
         isBot?: boolean
     }
-    timestamp?: Date
 }
 
 export interface TempMessage extends Message {

@@ -47,3 +47,9 @@ export enum SpellType {
     HEALING = 'healing',
     UTILITY = 'utility'
 }
+
+export enum MessageType {
+    TEXT = 'text',
+    ROLL = 'roll',
+    SYSTEM = 'system'
+}
