@@ -2,7 +2,7 @@
 
 import { type ReactElement } from 'react'
 import { Box, Typography, Paper, Grid, Button, Chip } from '@mui/material'
-import type { Expertise, Ficha } from '@types'
+import type { Expertise, Expertises, Ficha } from '@types'
 import { grey, blue, green, purple, yellow } from '@mui/material/colors'
 import { useChatContext } from '@contexts/chatContext'
 import { MessageType } from '@enums'
@@ -14,7 +14,7 @@ interface ExpertiseSectionProps {
 
 export default function ExpertiseSection({ ficha }: ExpertiseSectionProps): ReactElement {
     const expertises = ficha.expertises
-    const { handleSendMessage, setIsChatOpen, chatOpen } = useChatContext()
+    const { handleSendMessage, setIsChatOpen, isChatOpen } = useChatContext()
     const { data: session } = useSession()
 
     // Divide as perícias em duas colunas
@@ -77,7 +77,7 @@ export default function ExpertiseSection({ ficha }: ExpertiseSectionProps): Reac
             `${rolls.join(', ')}: ${roll}` : 
             `${roll}`
 
-        const text = `🎲 ${expertiseName.toUpperCase()} - ${numDice}d20${expertiseValue >= 0 ? '+' : ''}${expertiseValue}: [${rollPart}] = ${total}`
+        const text = `🎲 ${(expertiseName as string).toUpperCase()} - ${numDice}d20${expertiseValue >= 0 ? '+' : ''}${expertiseValue}: [${rollPart}] = ${total}`
         
         // Envia a mensagem diretamente
         if (session?.user) {
@@ -94,7 +94,7 @@ export default function ExpertiseSection({ ficha }: ExpertiseSectionProps): Reac
             })
         }
 
-        if (!chatOpen) {
+        if (!isChatOpen) {
             setIsChatOpen(true)
         }
     }
@@ -105,7 +105,7 @@ export default function ExpertiseSection({ ficha }: ExpertiseSectionProps): Reac
                 <Button
                     key={nome}
                     fullWidth
-                    onClick={() => handleExpertiseClick(nome)}
+                    onClick={async () => await handleExpertiseClick(nome as keyof Expertises)}
                     sx={{
                         mb: 1,
                         p: 2,

@@ -1,3 +1,4 @@
+/* eslint-disable max-len */
 'use client'
 
 import { Box, Paper, IconButton, Typography, Stack, Avatar, Snackbar, Alert, TextField } from '@mui/material'
@@ -6,7 +7,7 @@ import { useEffect, useState, useRef, type ReactElement, memo } from 'react'
 import { useCampaignContext } from '@contexts/campaignContext'
 import { useSession } from 'next-auth/react'
 import { useChannel } from '@contexts/channelContext'
-import type { Message, TempMessage } from '@types'
+import type { Attributes, Message, TempMessage, Expertises } from '@types'
 import { MessageType, PusherEvent } from '@enums'
 import TestModal from './TestModal'
 import TestDialog from './TestDialog'
@@ -199,10 +200,10 @@ export default function SessionChat() {
                 try {
                     const ficha = await fichaService.getById(player.fichaId)
                     if (ficha) {
-                        const expertise = ficha.expertises[currentTest.expertise]
+                        const expertise = ficha.expertises[currentTest.expertise as keyof Expertises]
                         expertiseBonus = expertise.value
                         baseAttribute = expertise.defaultAttribute?.toLowerCase()
-                        baseAttributeValue = ficha.attributes[baseAttribute]
+                        baseAttributeValue = ficha.attributes[baseAttribute as Attributes]
 
                         console.log({
                             currentTest,
@@ -269,6 +270,7 @@ export default function SessionChat() {
         const resultMessage: Message | null = currentTest.showResult ? {
             id: crypto.randomUUID(),
             text: `${success ? '✅' : '❌'} ${session.user.name} ${success ? 'passou' : 'não passou'} no teste!`,
+            type: MessageType.ROLL,
             by: {
                 id: 'dice-roller-bot',
                 image: '/assets/dice-roller-bot.jpg',

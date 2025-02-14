@@ -1,5 +1,4 @@
 import { Typography } from '@mui/material'
-import type { Message } from '@types'
 import { MessageType } from '@enums'
 
 interface DiceMessageProps {
@@ -19,7 +18,7 @@ export function DiceMessage({ text, type }: DiceMessageProps) {
     // Se for mensagem de perícia
     if (type === MessageType.EXPERTISE) {
         // Tenta primeiro o formato completo com nome da perícia
-        let match = messageText.match(/(.+?)\s+-\s+(\d*d\d+)([+-]\d+)?:\s+\[([^\]]+)\]\s*=\s*(\d+)/i)
+        let match: any = messageText.match(/(.+?)\s+-\s+(\d*d\d+)([+-]\d+)?:\s+\[([^\]]+)\]\s*=\s*(\d+)/i)
         
         // Se não encontrar, tenta o formato simples
         if (!match) {
@@ -27,11 +26,11 @@ export function DiceMessage({ text, type }: DiceMessageProps) {
             if (!match) return <Typography>{text}</Typography>
 
             // Reorganiza o match para ter o mesmo formato
-            const [, dice, bonus, roll, total] = match
-            match = [null, '', dice, bonus, roll, total]
+            const [ , dice, bonus, roll, total ] = match
+            match = [ null, '', dice, bonus, roll, total ]
         }
 
-        const [, expertiseName, dice, bonus, rollPart, total] = match
+        const [ , expertiseName, dice, bonus, rollPart, total ] = match
         
         // Extrai os rolls e o resultado final
         let rolls: number[] = []
@@ -39,13 +38,13 @@ export function DiceMessage({ text, type }: DiceMessageProps) {
         
         if (rollPart.includes(':')) {
             // Caso de múltiplos dados
-            const [allRolls, final] = rollPart.split(':').map(s => s.trim())
-            rolls = allRolls.split(',').map(r => parseInt(r.trim()))
+            const [ allRolls, final ] = rollPart.split(':').map((s: string) => s.trim())
+            rolls = allRolls.split(',').map((r: string) => parseInt(r.trim()))
             finalRoll = parseInt(final)
         } else {
             // Caso de um único dado
             finalRoll = parseInt(rollPart)
-            rolls = [finalRoll]
+            rolls = [ finalRoll ]
         }
 
         // Determina a cor baseada no valor do bônus
@@ -66,8 +65,8 @@ export function DiceMessage({ text, type }: DiceMessageProps) {
         const formattedRolls = rolls.map((roll, index) => (
             <span key={index} style={{ 
                 color: roll === 1 ? '#f44336' : 
-                       roll === 20 ? '#4CAF50' : 
-                       'inherit'
+                    roll === 20 ? '#4CAF50' : 
+                        'inherit'
             }}>
                 {roll}{index < rolls.length - 1 ? ', ' : ''}
             </span>
@@ -105,8 +104,8 @@ export function DiceMessage({ text, type }: DiceMessageProps) {
             {notationMatch[1]}{notationMatch[2] || ''}: {' '}
             <span style={{ 
                 color: roll === 20 ? '#4CAF50' : 
-                       roll === 1 ? '#f44336' : 
-                       'inherit'
+                    roll === 1 ? '#f44336' : 
+                        'inherit'
             }}>
                 [{roll}]
             </span>

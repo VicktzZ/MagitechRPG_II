@@ -4,7 +4,7 @@ import { useState, type ReactElement } from 'react';
 import { Box, Grid } from '@mui/material';
 import { useCampaignContext } from '@contexts/campaignContext';
 import { useGameMasterContext } from '@contexts/gameMasterContext';
-import { SkillType, SpellType } from '@enums';
+import { SkillType } from '@enums';
 import CharacterInfo from './dashboard/CharacterInfo';
 import SkillsSection from './dashboard/SkillsSection';
 import MoneyAndAmmo from './dashboard/MoneyAndAmmo';

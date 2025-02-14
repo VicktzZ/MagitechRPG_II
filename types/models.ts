@@ -69,6 +69,7 @@ export interface Message {
     timestamp?: Date
     type: MessageType
     text: string
+    isHTML?: boolean
     by: {
         id: string
         image: string

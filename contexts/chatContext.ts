@@ -1,13 +1,13 @@
-import { createContext, useContext } from 'react'
+import { createContext, type Dispatch, type SetStateAction, useContext } from 'react'
 import type { Message, TempMessage } from '@types'
-import { MessageType } from '@enums'
+import { type MessageType } from '@enums'
 
 interface ChatContextData {
     messages: TempMessage[]
-    setMessages: (messages: TempMessage[]) => void
+    setMessages: Dispatch<SetStateAction<TempMessage[]>>
     isChatOpen: boolean
     setIsChatOpen: (open: boolean) => void
-    sendMessage: (message: Message) => Promise<boolean>
+    sendMessage: (message: Message, scrollToBottom?: () => void) => Promise<boolean>
     handleSendMessage: (textOrMessage: string | Message, type?: MessageType) => Promise<void>
 }
 
