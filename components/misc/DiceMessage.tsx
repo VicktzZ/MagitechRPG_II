@@ -50,7 +50,7 @@ export function DiceMessage({ text, type }: DiceMessageProps) {
 
         // Determina a cor baseada no valor do bônus
         let expertiseColor = '#9e9e9e' // grey[500]
-        const bonusValue = bonus ? parseInt(bonus) : 0
+        const bonusValue = bonus ? parseInt(bonus.replace(/[+]/, '')) : 0
         
         if (bonusValue >= 9) {
             expertiseColor = '#ffeb3b' // yellow[500]
@@ -91,7 +91,7 @@ export function DiceMessage({ text, type }: DiceMessageProps) {
     }
 
     // Para outras mensagens de dados (não perícia)
-    const notationMatch = messageText.match(/(?:Rolou\s+)?(\d*d\d+)([+-]\d+)?/i)
+    const notationMatch = messageText.match(/(\d*d\d+)([+-]\d+)?/i)
     if (!notationMatch) return <Typography>{text}</Typography>
 
     const resultMatch = messageText.match(/\[(\d+)\]\s*=\s*(\d+)/)

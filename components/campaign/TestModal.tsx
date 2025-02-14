@@ -17,10 +17,13 @@ import {
     ListItem,
     ListItemText,
     ListItemAvatar,
-    Avatar
+    Avatar,
+    Select,
+    MenuItem,
+    InputLabel
 } from '@mui/material';
 import { useState } from 'react';
-import type { Campaign, TestData } from '@types';
+import type { Campaign, TestData, Expertises } from '@types';
 import { useCampaignContext } from '@contexts/campaignContext';
 
 interface TestModalProps {
@@ -30,8 +33,18 @@ interface TestModalProps {
     campaign: Campaign;
 }
 
+const expertisesList: Array<keyof Expertises> = [
+    'Agilidade', 'Argumentação', 'Atletismo', 'Competência', 'Comunicação',
+    'Condução', 'Conhecimento', 'Controle', 'Criatividade', 'Enganação',
+    'Furtividade', 'Intimidação', 'Intuição', 'Investigação', 'Ladinagem',
+    'Liderança', 'Luta', 'Magia', 'Medicina', 'Percepção',
+    'Persuasão', 'Pontaria', 'Reflexos', 'RES Física', 'RES Mágica',
+    'RES Mental', 'Sorte', 'Sobrevivência', 'Tecnologia', 'Vontade'
+];
+
 export default function TestModal({ open, onClose, onConfirm, campaign }: TestModalProps) {
     const [ dt, setDt ] = useState('');
+    const [ expertise, setExpertise ] = useState<keyof Expertises | ''>('');
     const [ isGroupTest, setIsGroupTest ] = useState(true);
     const [ showSucess, setShowSucess ] = useState(true);
     const [ showResult, setShowResult ] = useState(true);
@@ -55,6 +68,7 @@ export default function TestModal({ open, onClose, onConfirm, campaign }: TestMo
 
         onConfirm({
             dt: numericDt,
+            expertise: expertise || undefined,
             isGroupTest,
             showResult,
             isVisible: showSucess,
@@ -63,6 +77,7 @@ export default function TestModal({ open, onClose, onConfirm, campaign }: TestMo
 
         // Limpa o estado
         setDt('');
+        setExpertise('');
         setIsGroupTest(true);
         setShowSucess(true);
         setShowResult(true);
@@ -98,6 +113,24 @@ export default function TestModal({ open, onClose, onConfirm, campaign }: TestMo
                         inputProps={{ min: 1, max: 99 }}
                         fullWidth
                     />
+
+                    <FormControl fullWidth>
+                        <InputLabel>Perícia</InputLabel>
+                        <Select
+                            value={expertise}
+                            onChange={(e) => setExpertise(e.target.value as keyof Expertises)}
+                            label="Perícia"
+                        >
+                            <MenuItem value="">
+                                <em>Nenhuma</em>
+                            </MenuItem>
+                            {expertisesList.map((exp) => (
+                                <MenuItem key={exp} value={exp}>
+                                    {exp}
+                                </MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
 
                     <FormControl>
                         <RadioGroup

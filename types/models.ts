@@ -83,15 +83,16 @@ export interface TempMessage extends Message {
 }
 
 export interface TestRequest {
-    dt: number;
-    isGroupTest: boolean;
-    isVisible: boolean;
-    showResult: boolean;
-    selectedPlayers: string[];
+    dt: number
+    expertise?: keyof Expertises
+    isGroupTest: boolean
+    isVisible: boolean
+    showResult: boolean
+    selectedPlayers: string[]
     requestedBy: {
-        id: string;
-        name: string;
-    };
+        id: string
+        name: string
+    }
 }
 
 export interface Player {
@@ -119,9 +120,10 @@ export interface PusherMemberParam {
 
 export interface TestData {
     dt: number;
-    isGroupTest: boolean;
-    isVisible: boolean;
-    showResult: boolean;
+    expertise?: keyof Expertises
+    isGroupTest: boolean
+    isVisible: boolean
+    showResult: boolean
     selectedPlayers: string[];
 }
 

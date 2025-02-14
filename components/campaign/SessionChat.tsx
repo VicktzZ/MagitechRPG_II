@@ -12,7 +12,7 @@ import TestModal from './TestModal'
 import TestDialog from './TestDialog'
 import { Button } from '@mui/material'
 import { ChevronLeft, ChevronRight } from '@mui/icons-material'
-import { messageService } from '@services'
+import { messageService, fichaService } from '@services'
 import { DiceMessage } from '@components/misc'
 import { useChatContext } from '@contexts/chatContext'
 
@@ -187,17 +187,82 @@ export default function SessionChat() {
 
         if (!currentTest || !session?.user) return
 
+        // Se for um teste de perícia, busca o bônus da perícia na ficha do jogador
+        let expertiseBonus = 0
+        let expertiseResult = null
+        let baseAttribute = null
+        let baseAttributeValue = 0
+
+        if (currentTest.expertise) {
+            const player = campaign.players.find(p => p.userId === session.user._id)
+            if (player) {
+                try {
+                    const ficha = await fichaService.getById(player.fichaId)
+                    if (ficha) {
+                        const expertise = ficha.expertises[currentTest.expertise]
+                        expertiseBonus = expertise.value
+                        baseAttribute = expertise.defaultAttribute?.toLowerCase()
+                        baseAttributeValue = ficha.attributes[baseAttribute]
+
+                        console.log({
+                            currentTest,
+                            ficha,
+                            expertise,
+                            expertiseBonus,
+                            baseAttribute,
+                            baseAttributeValue
+                        })
+
+                        // Determina quantos d20s rolar baseado no valor do atributo base
+                        let numDice = 1
+                        let useWorst = false
+
+                        if (baseAttributeValue === -1) {
+                            numDice = 2
+                            useWorst = true
+                        } else if (baseAttributeValue === 3) {
+                            numDice = 2
+                        } else if (baseAttributeValue === 5) {
+                            numDice = 3
+                        }
+
+                        // Rola os dados
+                        const rolls: number[] = []
+                        for (let i = 0; i < numDice; i++) {
+                            rolls.push(Math.floor(Math.random() * 20) + 1)
+                        }
+
+                        // Determina qual resultado usar
+                        let finalRoll = rolls[0]
+                        if (numDice > 1) {
+                            finalRoll = useWorst ? Math.min(...rolls) : Math.max(...rolls)
+                        }
+
+                        expertiseResult = {
+                            rolls,
+                            finalRoll,
+                            total: finalRoll + expertiseBonus
+                        }
+                    }
+                } catch (error) {
+                    console.error('Erro ao buscar ficha:', error)
+                }
+            }
+        }
+
         // Cria a mensagem do resultado da rolagem
         const rollMessage: Message = {
             id: crypto.randomUUID(),
-            text: `🎲 Rolou ${roll.dice}: [${roll.result.join(', ')}] = ${roll.result.reduce((a, b) => a + b, 0)}`,
+            text: expertiseResult ? 
+                `🎲 ${currentTest.expertise.toUpperCase()} - 1d20${expertiseBonus >= 0 ? '+' : ''}${expertiseBonus}: [${expertiseResult.rolls.join(', ')}${expertiseResult.rolls.length > 1 ? ': ' + expertiseResult.finalRoll : ''}] = ${expertiseResult.total}` :
+                `🎲 ${roll.dice}: [${roll.result.join(', ')}] = ${roll.result.reduce((a, b) => a + b, 0)}`,
             by: {
                 id: session.user._id,
                 name: session.user.name,
                 image: session.user.image ?? '/assets/default-avatar.png'
             },
             timestamp: new Date(),
-            type: MessageType.ROLL
+            type: expertiseResult ? MessageType.EXPERTISE : MessageType.ROLL
         }
 
         // Cria a mensagem do resultado do teste (apenas se showResult estiver ativo)
