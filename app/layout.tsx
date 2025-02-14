@@ -7,7 +7,8 @@ import ContextProvider from '@contexts/ContextProvider';
 
 export const metadata: Metadata = {
     title: 'Magitech RPG',
-    description: 'A RPG created by Vitor Santos'
+    description: 'A RPG created by Vitor Santos',
+    manifest: '/manifest.json'
 }
 
 export default function RootLayout({

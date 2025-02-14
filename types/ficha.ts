@@ -23,6 +23,7 @@ export interface Ficha {
     financialCondition: FinancialCondition
     expertises: Expertises
     traits: Trait[]
+    session?: SessionInfo[]
 
     capacity: {
         cargo: number
@@ -98,6 +99,17 @@ export interface Race {
     effect: number
     skill?: Skill
 }
+
+export interface SessionAttributes {
+    maxLp: number
+    maxMp: number
+}
+
+export interface SessionInfo {
+    campaignCode: string
+    attributes: SessionAttributes
+}
+
 export interface Inventory {
     items: Item[]
     weapons: Array<Weapon<'Leve' | 'Pesada'>>

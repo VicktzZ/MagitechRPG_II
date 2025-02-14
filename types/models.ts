@@ -1,5 +1,5 @@
 import type { MessageType } from '@enums'
-import type { Ficha } from './ficha'
+import type { Expertises, Ficha } from './ficha'
 
 export interface User {
     _id?: string

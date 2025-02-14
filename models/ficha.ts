@@ -356,7 +356,16 @@ const fichaSchema = new Schema<FichaType>({
         required: [ true, 'Traits is required!' ],
         default: []
     },
-
+    session: {
+        type: [ {
+            campaignCode: String,
+            attributes: {
+                maxLp: Number,
+                maxMp: Number
+            }
+        } ],
+        default: []
+    },
     points: {
         attributes: {
             type: Number,

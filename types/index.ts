@@ -25,7 +25,9 @@ import type {
     MagicPower,
     Trait,
     RarityType,
-    Occupation
+    Occupation,
+    SessionAttributes,
+    SessionInfo
 } from './ficha';
 
 import type { 
@@ -69,6 +71,8 @@ export type {
     PlayerInfo,
     AmmoType,
     Roll,
+    SessionAttributes,
+    SessionInfo,
     AmmoControl,
     Player,
     SessionModel,

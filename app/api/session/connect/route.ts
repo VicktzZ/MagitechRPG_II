@@ -1,6 +1,6 @@
 import Campaign from '@models/campaign';
 import Ficha from '@models/ficha';
-import type { Campaign as CampaignType, Ficha as FichaType } from '@types';
+import type { Campaign as CampaignType, Ficha as FichaType, SessionInfo } from '@types';
 import { pusherServer } from '@utils/pusher';
 import { PusherEvent } from '@enums';
 
@@ -49,36 +49,56 @@ export async function POST(req: Request): Promise<Response> {
                 );
 
                 if (!campaign) {
-                    return Response.json({ message: 'Falha ao atualizar jogadores' }, { status: 400 });
+                    return Response.json({ message: 'Erro ao adicionar jogador' }, { status: 500 });
                 }
+
+                // Adiciona SessionInfo na ficha se ainda não existir para esta campanha
+                const sessionInfo: SessionInfo = {
+                    campaignCode,
+                    attributes: {
+                        maxLp: userFicha.attributes.lp,
+                        maxMp: userFicha.attributes.mp
+                    }
+                }
+
+                if (!userFicha.session) {
+                    await Ficha.findByIdAndUpdate(
+                        fichaId,
+                        { $set: { session: [ sessionInfo ] } }
+                    );
+                } else {
+                    // Verifica se já existe uma sessão para esta campanha
+                    const hasSession = userFicha.session?.some(s => s.campaignCode === campaignCode) ?? false
+    
+                    if (!hasSession) {
+                        await Ficha.findByIdAndUpdate(
+                            fichaId,
+                            {
+                                $push: {
+                                    session: sessionInfo
+                                }
+                            }
+                        )
+                    }
+                }
+
+                // Notifica os outros usuários
+                await pusherServer.trigger(
+                    campaignCode,
+                    PusherEvent.USER_ENTER,
+                    {
+                        userId,
+                        name: userFicha.name,
+                        _id: fichaId,
+                        currentFicha: userFicha
+                    }
+                );
             }
         }
 
-        // Notifica sobre novo usuário
-        const userInfo = campaign?.players.find(p => p.userId === userId);
-        await pusherServer.trigger(
-            'presence-' + campaignCode,
-            'client-user-enter',
-            {
-                userId,
-                userName: userInfo?.userId ?? 'Unknown',
-                timestamp: new Date()
-            }
-        );
-
-        // Notifica sobre atualização da campanha
-        await pusherServer.trigger(
-            'presence-' + campaignCode,
-            PusherEvent.CAMPAIGN_UPDATED,
-            campaign
-        );
-
-        return Response.json(campaign, { status: 200 });
+        return Response.json({ campaign });
     } catch (error) {
-        console.error('Erro ao conectar usuário:', error);
-        return Response.json(
-            { message: 'Erro interno ao processar conexão' },
-            { status: 500 }
-        );
+        console.error('Erro ao conectar à sessão:', error);
+        return Response.json({ message: 'Erro ao conectar à sessão' }, { status: 500 });
     }
 }
