@@ -14,15 +14,15 @@ export default function CampaignPage(): ReactElement {
     const [ isLoading, setIsLoading ] = useState(false);
     const [ campaigns, setCampaigns ] = useState<Campaign[]>([]);
 
+    const fetchCampaigns = async (): Promise<void> => {
+        setIsLoading(true);
+        const camps = await campaignService.fetch({ userId: session?.user?._id });
+        setCampaigns(camps);
+        setIsLoading(false);
+    };
+
     useEffect(() => {
-        (async () => {
-            setIsLoading(true);
-
-            const camps = await campaignService.fetch({ userId: session?.user?._id });
-
-            setCampaigns(camps);
-            setIsLoading(false);
-        })();
+        void fetchCampaigns();
     }, [ session?.user?._id ]);
 
     return (
@@ -45,11 +45,13 @@ export default function CampaignPage(): ReactElement {
                         ) : campaigns.map(camp => (
                             <CampaingCard 
                                 key={camp._id}
+                                id={camp._id}
                                 title={camp.title}
                                 description={camp.description}
                                 gameMaster={camp.admin}
                                 playersQtd={camp.players.length}
                                 code={camp.campaignCode}
+                                onDelete={fetchCampaigns}
                             />
                         ))}
                     </Grid>

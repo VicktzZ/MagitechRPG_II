@@ -1,9 +1,9 @@
 // 'use client';
 
 import { useChannel } from '@contexts/channelContext';
-import { Box } from '@mui/material';
-import { useEffect, type ReactElement } from 'react';
-import { CampaignDashboard, SessionChat } from '.';
+import { Box, Backdrop, CircularProgress } from '@mui/material';
+import { useEffect, useState, type ReactElement } from 'react';
+import { CampaignPlayerDashboard, SessionChat } from '.';
 import { useSnackbar } from 'notistack';
 import { useSession } from '@node_modules/next-auth/react';
 import { useCampaignContext } from '@contexts/campaignContext';
@@ -17,9 +17,12 @@ export default function CampaignComponent(): ReactElement {
     const { data: session } = useSession();
     const { enqueueSnackbar } = useSnackbar();
     const { campaign, setCampaign } = useCampaignContext();
+    const [ isSubscribed, setIsSubscribed ] = useState(false);
 
     useEffect(() => {
-        channel.bind(PusherEvent.SUBSCRIPTION, async () => {
+        if (!channel) return;
+
+        const handleSubscription = async () => {
             await sessionService.connect({
                 campaignCode: campaign.campaignCode,
                 isGM: campaign.admin.includes(session?.user._id ?? ''),
@@ -27,8 +30,11 @@ export default function CampaignComponent(): ReactElement {
             });
 
             enqueueSnackbar('Você entrou na sessão!', toastDefault('subscriptionToChannel', 'success'));
-        });
-        
+            setIsSubscribed(true);
+        };
+
+        channel.bind(PusherEvent.SUBSCRIPTION, handleSubscription);
+
         channel.bind(PusherEvent.MEMBER_ADDED, async (user: PusherMemberParam) => {
             channel.trigger('client-session_updated', { user: user.info._id, session: 'entered' })
             enqueueSnackbar(`${user.info.name} entrou na sessão!`, toastDefault('enteredToChannel'));
@@ -39,8 +45,8 @@ export default function CampaignComponent(): ReactElement {
             enqueueSnackbar(`${user.info.name} saiu da sessão!`, toastDefault('exitFromChannel'));
         });
 
-        channel.bind(PusherEvent.UPDATE_CAMPAIGN, (data: Campaign) => {
-            console.log(PusherEvent.UPDATE_CAMPAIGN);
+        channel.bind(PusherEvent.CAMPAIGN_UPDATED, (data: Campaign) => {
+            console.log(PusherEvent.CAMPAIGN_UPDATED);
             setCampaign(prev => ({
                 ...data,
                 session: {
@@ -49,12 +55,55 @@ export default function CampaignComponent(): ReactElement {
                 }
             }));
         })
+
+        channel.bind(PusherEvent.CAMPAIGN_UPDATED, () => {
+            console.log('Campaign updated');
+        });
+
+        return () => {
+            channel.unbind(PusherEvent.CAMPAIGN_UPDATED);
+        };
     }, [ ]);
 
+    // const handleExpertiseRoll = (result: number, expertiseName: string, bonus: number) => {
+    //     const message = `Rolou ${expertiseName} (1d20 + ${bonus}) = ${result}`
+    //     addMessage({
+    //         type: 'roll',
+    //         content: message,
+    //         sender: ficha.nome
+    //     })
+    // }
+
+    if (!isSubscribed) {
+        return (
+            <Backdrop
+                open={true}
+                sx={{
+                    zIndex: theme => theme.zIndex.drawer + 1,
+                    backgroundColor: 'background.default'
+                }}
+            >
+                <CircularProgress color="primary" />
+            </Backdrop>
+        );
+    }
+
     return (
-        <Box>
+        <>
+            <Box sx={{
+                display: 'flex',
+                position: 'relative',
+                gap: 2,
+                width: '100%',
+                height: '100%'
+            }}>
+                <Box sx={{
+                    width: '100%'
+                }}>
+                    <CampaignPlayerDashboard />
+                </Box>
+            </Box>
             <SessionChat />
-            <CampaignDashboard />
-        </Box>
+        </>
     );
 }

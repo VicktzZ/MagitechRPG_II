@@ -25,7 +25,9 @@ import type {
     MagicPower,
     Trait,
     RarityType,
-    Occupation
+    Occupation,
+    SessionAttributes,
+    SessionInfo
 } from './ficha';
 
 import type { 
@@ -38,7 +40,11 @@ import type {
     PlayerInfo,
     PusherMemberParam,
     Member,
-    Message
+    Message,
+    TestData,
+    TestRequest,
+    TempMessage,
+    AmmoControl
 } from './models';
 
 import type { 
@@ -65,6 +71,9 @@ export type {
     PlayerInfo,
     AmmoType,
     Roll,
+    SessionAttributes,
+    SessionInfo,
+    AmmoControl,
     Player,
     SessionModel,
     Ficha,
@@ -100,6 +109,9 @@ export type {
     FinancialCondition,
     ApiRequest,
     Service,
+    TestData,
+    TestRequest,
+    TempMessage,
 
     QueryParamsDto,
     UpdateByIdDto,

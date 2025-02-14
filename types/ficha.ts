@@ -1,3 +1,5 @@
+import { type Magia } from './models'
+
 export interface Ficha {
     _id?: string
     playerName: string
@@ -11,7 +13,7 @@ export interface Ficha {
     ORMLevel: number
     inventory: Inventory
     displacement: number
-    magics: Magic[]
+    magics: Magia[]
     anotacoes?: string
     magicsSpace: number
     gender: Gender
@@ -21,6 +23,7 @@ export interface Ficha {
     financialCondition: FinancialCondition
     expertises: Expertises
     traits: Trait[]
+    session?: SessionInfo[]
 
     capacity: {
         cargo: number
@@ -96,6 +99,17 @@ export interface Race {
     effect: number
     skill?: Skill
 }
+
+export interface SessionAttributes {
+    maxLp: number
+    maxMp: number
+}
+
+export interface SessionInfo {
+    campaignCode: string
+    attributes: SessionAttributes
+}
+
 export interface Inventory {
     items: Item[]
     weapons: Array<Weapon<'Leve' | 'Pesada'>>

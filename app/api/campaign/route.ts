@@ -17,7 +17,13 @@ export async function GET(req: NextRequest): Promise<Response> {
             const campaignAsPlayer = await Campaign.find({ 'players.userId': userId });
             const campaignAsGM = await Campaign.find({ admin: userId });
             
-            response = [ ...campaignAsPlayer, ...campaignAsGM ];
+            // Remove duplicatas usando Set e o ID da campanha como chave
+            const uniqueCampaigns = new Map();
+            [ ...campaignAsPlayer, ...campaignAsGM ].forEach(camp => {
+                uniqueCampaigns.set(camp._id.toString(), camp);
+            });
+            
+            response = Array.from(uniqueCampaigns.values());
         } else {
             response = await Campaign.find();
         }

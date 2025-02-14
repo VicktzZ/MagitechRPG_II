@@ -17,10 +17,14 @@ import {
     ListItem,
     ListItemText,
     ListItemAvatar,
-    Avatar
+    Avatar,
+    Select,
+    MenuItem,
+    InputLabel
 } from '@mui/material';
 import { useState } from 'react';
-import type { Campaign } from '@types';
+import type { Campaign, TestData, Expertises } from '@types';
+import { useCampaignContext } from '@contexts/campaignContext';
 
 interface TestModalProps {
     open: boolean;
@@ -29,18 +33,23 @@ interface TestModalProps {
     campaign: Campaign;
 }
 
-export interface TestData {
-    dt: number;
-    isGroupTest: boolean;
-    isVisible: boolean;
-    selectedPlayers: string[];
-}
+const expertisesList: Array<keyof Expertises> = [
+    'Agilidade', 'Argumentação', 'Atletismo', 'Competência', 'Comunicação',
+    'Condução', 'Conhecimento', 'Controle', 'Criatividade', 'Enganação',
+    'Furtividade', 'Intimidação', 'Intuição', 'Investigação', 'Ladinagem',
+    'Liderança', 'Luta', 'Magia', 'Medicina', 'Percepção',
+    'Persuasão', 'Pontaria', 'Reflexos', 'RES Física', 'RES Mágica',
+    'RES Mental', 'Sorte', 'Sobrevivência', 'Tecnologia', 'Vontade'
+];
 
 export default function TestModal({ open, onClose, onConfirm, campaign }: TestModalProps) {
     const [ dt, setDt ] = useState('');
+    const [ expertise, setExpertise ] = useState<keyof Expertises | ''>('');
     const [ isGroupTest, setIsGroupTest ] = useState(true);
-    const [ isVisible, setIsVisible ] = useState(true);
+    const [ showSucess, setShowSucess ] = useState(true);
+    const [ showResult, setShowResult ] = useState(true);
     const [ selectedPlayers, setSelectedPlayers ] = useState<string[]>([]);
+    const { campUsers } = useCampaignContext();
 
     // Filtra apenas os jogadores online que não são admin
     const availablePlayers = campaign.session.users
@@ -59,15 +68,19 @@ export default function TestModal({ open, onClose, onConfirm, campaign }: TestMo
 
         onConfirm({
             dt: numericDt,
+            expertise: expertise || undefined,
             isGroupTest,
-            isVisible,
+            showResult,
+            isVisible: showSucess,
             selectedPlayers: isGroupTest ? availablePlayers : selectedPlayers
         });
 
         // Limpa o estado
         setDt('');
+        setExpertise('');
         setIsGroupTest(true);
-        setIsVisible(true);
+        setShowSucess(true);
+        setShowResult(true);
         setSelectedPlayers([]);
         onClose();
     };
@@ -101,6 +114,24 @@ export default function TestModal({ open, onClose, onConfirm, campaign }: TestMo
                         fullWidth
                     />
 
+                    <FormControl fullWidth>
+                        <InputLabel>Perícia</InputLabel>
+                        <Select
+                            value={expertise}
+                            onChange={(e) => setExpertise(e.target.value as keyof Expertises)}
+                            label="Perícia"
+                        >
+                            <MenuItem value="">
+                                <em>Nenhuma</em>
+                            </MenuItem>
+                            {expertisesList.map((exp) => (
+                                <MenuItem key={exp} value={exp}>
+                                    {exp}
+                                </MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
+
                     <FormControl>
                         <RadioGroup
                             value={isGroupTest ? 'group' : 'player'}
@@ -109,12 +140,12 @@ export default function TestModal({ open, onClose, onConfirm, campaign }: TestMo
                             <FormControlLabel 
                                 value="group" 
                                 control={<Radio />} 
-                                label="Teste para Grupo" 
+                                label="Teste -> Geral" 
                             />
                             <FormControlLabel 
                                 value="player" 
                                 control={<Radio />} 
-                                label="Teste para Jogador" 
+                                label="Teste -> Jogador" 
                             />
                         </RadioGroup>
                     </FormControl>
@@ -122,37 +153,45 @@ export default function TestModal({ open, onClose, onConfirm, campaign }: TestMo
                     <FormControlLabel
                         control={
                             <Switch
-                                checked={isVisible}
-                                onChange={(e) => { setIsVisible(e.target.checked); }}
+                                checked={showSucess}
+                                onChange={(e) => { setShowSucess(e.target.checked); }}
                             />
                         }
-                        label="Mensagem visível"
+                        label="Público"
                     />
 
-                    {!isGroupTest && availablePlayers.length > 0 && (
+                    <FormControlLabel
+                        control={
+                            <Switch
+                                checked={showResult}
+                                onChange={(e) => { setShowResult(e.target.checked); }}
+                            />
+                        }
+                        label="Exibir resultado"
+                    />
+
+                    {!isGroupTest && campUsers.player.length > 0 && (
                         <List sx={{ 
                             maxHeight: 200, 
                             overflow: 'auto',
                             bgcolor: 'background.paper2',
                             borderRadius: 1
                         }}>
-                            {availablePlayers.map(playerId => {
-                                const player = campaign.players.find(p => p.userId === playerId);
-                                if (!player) return null;
-
+                            {campUsers.player.map(player => {
                                 return (
                                     <ListItem
-                                        key={playerId}
+                                        key={player._id}
                                         button
-                                        onClick={() => { handlePlayerToggle(playerId); }}
-                                        selected={selectedPlayers.includes(playerId)}
+                                        onClick={() => { handlePlayerToggle(player._id!); }}
+                                        selected={selectedPlayers.includes(player._id!)}
                                     >
                                         <ListItemAvatar>
-                                            <Avatar>
-                                                {player.userId.charAt(0).toUpperCase()}
-                                            </Avatar>
+                                            <Avatar 
+                                                src={player.image ?? '/assets/default-avatar.png'} 
+                                                alt={player.name ?? 'Avatar'}
+                                            />
                                         </ListItemAvatar>
-                                        <ListItemText primary={player.userId} />
+                                        <ListItemText primary={player.name ?? 'Jogador Desconhecido'} />
                                     </ListItem>
                                 );
                             })}

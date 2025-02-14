@@ -16,14 +16,43 @@ export enum PusherEvent {
     SUBSCRIPTION = 'pusher:subscription_succeeded',
     MEMBER_ADDED = 'pusher:member_added',
     MEMBER_REMOVED = 'pusher:member_removed',
-    UPDATE_CAMPAIGN = 'update-campaign',
-    FICHA_UPDATED = 'client-ficha-updated',
-    NEW_MESSAGE = 'new-message',
-    SERVER_MESSAGE = 'server-message',
-    USER_ENTER = 'client-user-enter',
-    USER_EXIT = 'client-user-exit',
-    USER_CONNECTED = 'user-connected',
-    USER_DISCONNECTED = 'user-disconnected',
-    REQUEST_TEST = 'request-test',
-    TEST_RESULT = 'test-result'
+    NEW_MESSAGE = 'client-new_message',
+    MESSAGE_SENT = 'client-message_sent',
+    CAMPAIGN_UPDATED = 'client-campaign_updated',
+    TEST_RESULT = 'client-test_result',
+    TEST_REQUEST = 'client-test_request',
+    SESSION_USERS_UPDATED = 'client-session_users_updated',
+    USER_ENTER = 'client-user_enter'
+}
+
+export enum SkillType {
+    ALL = 'all',
+    CLASS = 'class',
+    SUBCLASS = 'subclass',
+    LINEAGE = 'lineage',
+    POWERS = 'powers',
+    BONUS = 'bonus'
+}
+
+export enum AmmoType {
+    BULLET = 'bullet',
+    ARROW = 'arrow',
+    ENERGY = 'energy',
+    SPECIAL = 'special'
+}
+
+export enum SpellType {
+    ATTACK = 'attack',
+    DEFENSE = 'defense',
+    SUPPORT = 'support',
+    HEALING = 'healing',
+    UTILITY = 'utility'
+}
+
+export enum MessageType {
+    TEXT = 'text',
+    ROLL = 'roll',
+    ERROR = 'error',
+    SYSTEM = 'system',
+    EXPERTISE = 'expertise'
 }

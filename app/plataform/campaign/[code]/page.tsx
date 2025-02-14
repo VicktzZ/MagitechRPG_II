@@ -2,9 +2,9 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 'use client';
 
-import { useEffect, type ReactElement, useState, useRef } from 'react';
+import { useEffect, type ReactElement, useState, useRef, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
-import { Backdrop, Box, Button, CircularProgress, Grid, Modal, Skeleton, Tooltip, Typography } from '@mui/material';
+import { Backdrop, Box, CircularProgress, Grid, Modal, Skeleton, type Theme, Typography, useMediaQuery } from '@mui/material';
 import { useRouter } from 'next/navigation';
 import { CampaignComponent, CampaignHeader } from '@components/campaign';
 import { FichaCard } from '@components/ficha';
@@ -14,6 +14,7 @@ import { PUSHER_KEY } from '@constants';
 import type { Ficha, Campaign as CampaignType, User } from '@types';
 import PusherClient, { type PresenceChannel } from 'pusher-js';
 import { campaignService, fichaService, sessionService } from '@services';
+import { ChatProvider } from '@contexts/ChatProvider';
 
 export default function Campaign({ params }: { params: { code: string } }): ReactElement {
     const campaignName = 'presence-' + params.code;
@@ -30,10 +31,11 @@ export default function Campaign({ params }: { params: { code: string } }): Reac
     const [ campaign, setCampaign ] = useState<CampaignType>({} as CampaignType);
     const [ openFichaModal, setOpenFichaModal ] = useState<boolean>(false);
     const [ ficha, setFicha ] = useState<Ficha>();
-    const [ copiedCode, setCopiedCode ] = useState<boolean>(false);
     const [ campaignUsers, setCampaignUsers ] = useState<User[]>([]);
     const pusherClientRef = useRef<PusherClient | null>(null);
     const channelRef = useRef<PresenceChannel | null>(null);
+
+    const isMobile = useMediaQuery((theme: Theme) => theme.breakpoints.down('sm'));
 
     useEffect(() => {
         if (!pusherClientRef.current) {
@@ -94,6 +96,15 @@ export default function Campaign({ params }: { params: { code: string } }): Reac
             }).then((data) => { console.log(data) })
         };
     }, [ params.code ]);
+
+    const campUsers = useMemo(() => ({
+        admin: campaignUsers.filter(u => allGameMastersId.includes(u._id ?? '')),
+        player: campaignUsers.filter(u => {
+            const isPlayer = campaign.players.some(p => p.userId === u._id);
+            const isGM = allGameMastersId.includes(u._id ?? '');
+            return isPlayer && !isGM;
+        })
+    }), [ campaignUsers, allGameMastersId, campaign.players ]);
 
     return (
         <>
@@ -169,35 +180,16 @@ export default function Campaign({ params }: { params: { code: string } }): Reac
             )}
 
             {campaign && channel && ((!isLoading && isUserGM) || (!isLoading && ficha)) && (
-                <campaignContext.Provider value={{ campaign, setCampaign }}>
+                <campaignContext.Provider value={{ campaign, setCampaign, campUsers }}>
                     <gameMasterContext.Provider value={{ allGameMastersId, isUserGM }}>
-                        <Box display='flex' flexDirection='column' gap={3} p={2} minHeight='90vh'>
-                            <Box display='flex' flexDirection='column' gap={2} width='50%'>
-                                <Typography variant='h6'>{campaign.title}</Typography>
-                                <Box width='25%'>
-                                    <Tooltip
-                                        open={copiedCode}
-                                        title='Copiado!'
-                                        placement='top'
-                                    >
-                                        <Box display='flex' alignItems='center' gap={1}>
-                                            Código: 
-                                            <Button onClick={() => {
-                                                navigator.clipboard.writeText(params.code);
-                                                setCopiedCode(true);
-                                                setTimeout(() => { setCopiedCode(false) }, 1000);
-                                            }} variant='outlined'>{params.code}</Button>
-                                        </Box>
-                                    </Tooltip>
+                        <ChatProvider>
+                            <Box display='flex' flexDirection='column' gap={3} p={2} minHeight='90vh'>
+                                <Box height='100%' width='100%' display={!isMobile ? 'flex' : 'column'} gap={2}>
+                                    <CampaignHeader />
+                                    <CampaignComponent />
                                 </Box>
                             </Box>
-                            <Box height='100%' width='25%' display='flex' gap={2}>
-                                <CampaignHeader 
-                                    users={campaignUsers}
-                                />
-                                <CampaignComponent />
-                            </Box>
-                        </Box>
+                        </ChatProvider>
                     </gameMasterContext.Provider>
                 </campaignContext.Provider>
             )}

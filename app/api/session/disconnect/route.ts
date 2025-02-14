@@ -1,13 +1,16 @@
-import Campaign from '@models/campaign';
-import { pusherServer } from '@utils/pusher';
 import { PusherEvent } from '@enums';
+import Campaign from '@models/campaign';
+import type { Campaign as CampaignType } from '@types';
+import { connectToDb } from '@utils/database';
+import { pusherServer } from '@utils/pusher';
 
 export async function POST(req: Request): Promise<Response> {
     try {
+        await connectToDb();
+
         const { campaignCode, userId }: { campaignCode: string; userId: string } = await req.json();
 
-        // Primeiro remove o usuário da sessão
-        const updatedCampaign = await Campaign.findOneAndUpdate(
+        const updatedCampaign: CampaignType | null = await Campaign.findOneAndUpdate(
             { campaignCode },
             {
                 $pull: {
@@ -24,17 +27,22 @@ export async function POST(req: Request): Promise<Response> {
             );
         }
 
-        // Notifica outros usuários sobre a saída
+        // Envia apenas os dados necessários via Pusher
+        const userInfo = updatedCampaign.players.find(p => p.userId === userId);
         await pusherServer.trigger(
             'presence-' + campaignCode,
             PusherEvent.USER_EXIT,
-            { userId }
+            {
+                userId,
+                userName: userInfo?.userId ?? 'Unknown',
+                timestamp: new Date()
+            }
         );
 
         // Notifica sobre a atualização da campanha
         await pusherServer.trigger(
             'presence-' + campaignCode,
-            PusherEvent.UPDATE_CAMPAIGN,
+            PusherEvent.CAMPAIGN_UPDATED,
             updatedCampaign
         );
 

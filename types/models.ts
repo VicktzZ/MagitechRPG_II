@@ -1,4 +1,5 @@
-import type { Ficha } from './ficha'
+import type { MessageType } from '@enums'
+import type { Expertises, Ficha } from './ficha'
 
 export interface User {
     _id?: string
@@ -11,6 +12,12 @@ export interface User {
 export interface SessionNextAuth {
     user: User
     token: string
+}
+
+export interface AmmoControl {
+    type: string;
+    current: number;
+    max: number;
 }
 
 export interface Member {
@@ -58,14 +65,35 @@ export interface Session {
 }
 
 export interface Message {
+    id?: string
+    timestamp?: Date
+    type: MessageType
     text: string
+    isHTML?: boolean
     by: {
         id: string
         image: string
         name: string
         isBot?: boolean
     }
-    timestamp?: Date
+}
+
+export interface TempMessage extends Message {
+    isPending?: boolean;
+    tempId?: string;
+}
+
+export interface TestRequest {
+    dt: number
+    expertise?: keyof Expertises
+    isGroupTest: boolean
+    isVisible: boolean
+    showResult: boolean
+    selectedPlayers: string[]
+    requestedBy: {
+        id: string
+        name: string
+    }
 }
 
 export interface Player {
@@ -89,6 +117,15 @@ export interface PusherMemberParam {
         currentFicha: string,
         socketId: string
     }
+}
+
+export interface TestData {
+    dt: number;
+    expertise?: keyof Expertises
+    isGroupTest: boolean
+    isVisible: boolean
+    showResult: boolean
+    selectedPlayers: string[];
 }
 
 type Elemento = 

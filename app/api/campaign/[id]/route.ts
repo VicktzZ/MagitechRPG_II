@@ -20,11 +20,17 @@ export async function GET(_req: Request, { params: { id } }: { params: id }): Pr
     }
 }
 
-export async function DELETE(_req: Request, { params: { id } }: { params: id }): Promise<Response> {
+export async function DELETE(_req: Request, { params }: { params: id }): Promise<Response> {
     try {
         await connectToDb();
-        
-        const campaign = await Campaign.findByIdAndDelete(id);
+        let code;
+
+        const { id } = params;
+        if (id.length === 8) code = id;
+
+        const campaign = await Campaign.findOneAndDelete(
+            code ? { campaignCode: code } : { _id: id }
+        );
 
         if (!campaign) {
             return Response.json({ message: 'NOT FOUND' }, { status: 404 });
@@ -36,12 +42,21 @@ export async function DELETE(_req: Request, { params: { id } }: { params: id }):
     }
 }
 
-export async function PATCH(req: Request, { params: { id } }: { params: id }): Promise<Response> {
+export async function PATCH(req: Request, { params }: { params: id }): Promise<Response> {
     try {
         await connectToDb();
         
+        let code;
+
+        const { id } = params;
+        if (id.length === 8) code = id;
+
         const body: CampaignType = await req.json();
-        const campaign = await Campaign.findByIdAndUpdate<CampaignType>(id, body);
+        const campaign = await Campaign.findOneAndUpdate<CampaignType>(
+            code ? { campaignCode: code } : { _id: id },
+            body,
+            { new: true }
+        );
 
         if (!campaign) {
             return Response.json({ message: 'NOT FOUND' }, { status: 404 });
