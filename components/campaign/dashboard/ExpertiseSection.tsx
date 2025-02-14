@@ -3,15 +3,19 @@
 import { type ReactElement } from 'react'
 import { Box, Typography, Paper, Grid, Button, Chip } from '@mui/material'
 import type { Expertise, Ficha } from '@types'
-import { blue, green, grey, purple, yellow } from '@mui/material/colors'
+import { grey, blue, green, purple, yellow } from '@mui/material/colors'
+import { useChatContext } from '@contexts/chatContext'
+import { MessageType } from '@enums'
+import { useSession } from 'next-auth/react'
 
 interface ExpertiseSectionProps {
     ficha: Ficha
-    onRollTest?: (result: number, expertiseName: string, bonus: number) => void
 }
 
-export default function ExpertiseSection({ ficha, onRollTest }: ExpertiseSectionProps): ReactElement {
+export default function ExpertiseSection({ ficha }: ExpertiseSectionProps): ReactElement {
     const expertises = ficha.expertises
+    const { handleSendMessage, setIsChatOpen, chatOpen } = useChatContext()
+    const { data: session } = useSession()
 
     // Divide as perícias em duas colunas
     const expertiseEntries = Object.entries(expertises)
@@ -19,7 +23,7 @@ export default function ExpertiseSection({ ficha, onRollTest }: ExpertiseSection
     const leftColumnExpertises = expertiseEntries.slice(0, midPoint)
     const rightColumnExpertises = expertiseEntries.slice(midPoint)
 
-    const determinateColor = (value: number): string => {
+    const determinateExpertiseColor = (value: number): string => {
         if (value < 2) {
             return grey[500]
         } else if (value < 5) {
@@ -33,23 +37,75 @@ export default function ExpertiseSection({ ficha, onRollTest }: ExpertiseSection
         }
     }
 
-    const handleRollTest = (expertiseName: string, bonus: number) => {
-        // Rola 1d20 + bônus da perícia
-        const roll = Math.floor(Math.random() * 20) + 1
-        const total = roll + bonus
+    const handleExpertiseClick = async (expertiseName: keyof Expertises) => {
+        const expertise = ficha.expertises[expertiseName]
+        const expertiseValue = expertise.value
 
-        if (onRollTest) {
-            onRollTest(total, expertiseName, bonus)
+        // Pega o atributo base da expertise
+        const baseAttribute = expertise.defaultAttribute?.toLowerCase() as keyof typeof ficha.attributes
+        const baseAttributeValue = ficha.attributes[baseAttribute]
+
+        // Determina quantos d20s rolar baseado no valor do atributo base
+        let numDice = 1
+        let useWorst = false
+
+        if (baseAttributeValue === -1) {
+            numDice = 2
+            useWorst = true
+        } else if (baseAttributeValue === 3) {
+            numDice = 2
+        } else if (baseAttributeValue === 5) {
+            numDice = 3
+        }
+
+        // Rola os dados
+        const rolls: number[] = []
+        for (let i = 0; i < numDice; i++) {
+            rolls.push(Math.floor(Math.random() * 20) + 1)
+        }
+
+        // Determina qual resultado usar
+        let roll = rolls[0]
+        if (numDice > 1) {
+            roll = useWorst ? Math.min(...rolls) : Math.max(...rolls)
+        }
+
+        const total = roll + expertiseValue
+
+        // Formata os rolls para exibição de uma forma que possamos reconhecer depois
+        const rollPart = rolls.length > 1 ? 
+            `${rolls.join(', ')}: ${roll}` : 
+            `${roll}`
+
+        const text = `🎲 ${expertiseName.toUpperCase()} - ${numDice}d20${expertiseValue >= 0 ? '+' : ''}${expertiseValue}: [${rollPart}] = ${total}`
+        
+        // Envia a mensagem diretamente
+        if (session?.user) {
+            await handleSendMessage({
+                text,
+                type: MessageType.EXPERTISE,
+                by: {
+                    id: session.user._id ?? '',
+                    name: session.user.name ?? '',
+                    image: session.user.image ?? ''
+                },
+                timestamp: new Date(),
+                isHTML: true
+            })
+        }
+
+        if (!chatOpen) {
+            setIsChatOpen(true)
         }
     }
 
-    const renderExpertiseButton = (entries: [string, Expertise<any>][]) => (
+    const renderExpertiseButton = (entries: Array<[string, Expertise<any>]>) => (
         <Grid item xs={12} md={6}>
             {entries.map(([ nome, expertise ]) => (
                 <Button
                     key={nome}
                     fullWidth
-                    onClick={() => handleRollTest(nome, expertise.value)}
+                    onClick={() => handleExpertiseClick(nome)}
                     sx={{
                         mb: 1,
                         p: 2,
@@ -69,7 +125,7 @@ export default function ExpertiseSection({ ficha, onRollTest }: ExpertiseSection
                                 label={`${expertise.value >= 0 ? '+' : ''}${expertise.value}`}
                                 size="small"
                                 sx={{
-                                    bgcolor: determinateColor(expertise.value)
+                                    bgcolor: determinateExpertiseColor(expertise.value)
                                 }}
                             />
                             <Chip 

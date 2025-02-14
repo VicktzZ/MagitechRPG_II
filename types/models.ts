@@ -1,4 +1,4 @@
-import { MessageType } from '@enums'
+import type { MessageType } from '@enums'
 import type { Ficha } from './ficha'
 
 export interface User {
@@ -67,7 +67,7 @@ export interface Session {
 export interface Message {
     id?: string
     timestamp?: Date
-    type?: MessageType
+    type: MessageType
     text: string
     by: {
         id: string

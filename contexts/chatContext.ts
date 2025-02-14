@@ -1,13 +1,14 @@
-import { createContext, Dispatch, SetStateAction, useContext } from 'react'
+import { createContext, useContext } from 'react'
 import type { Message, TempMessage } from '@types'
+import { MessageType } from '@enums'
 
 interface ChatContextData {
     messages: TempMessage[]
-    setMessages: Dispatch<SetStateAction<TempMessage[]>>
+    setMessages: (messages: TempMessage[]) => void
     isChatOpen: boolean
-    setIsChatOpen: (isOpen: boolean) => void
-    sendMessage: (text: Message, scrollToBottom: () => void) => Promise<boolean>
-    handleSendMessage: (text: string) => Promise<void>
+    setIsChatOpen: (open: boolean) => void
+    sendMessage: (message: Message) => Promise<boolean>
+    handleSendMessage: (textOrMessage: string | Message, type?: MessageType) => Promise<void>
 }
 
 // eslint-disable-next-line @typescript-eslint/consistent-type-assertions

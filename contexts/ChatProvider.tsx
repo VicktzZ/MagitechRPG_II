@@ -49,8 +49,23 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         }
     }
 
-    const handleSendMessage = async (text: string) => {
-        if (!text.trim()) return
+    const handleSendMessage = async (textOrMessage: string | Message, type?: MessageType) => {
+        if (!textOrMessage) return
+
+        let success = true
+
+        // Se for uma mensagem completa, envia diretamente
+        if (typeof textOrMessage === 'object') {
+            success = await sendMessage(textOrMessage)
+            if (!success) {
+                enqueueSnackbar('Erro ao enviar mensagem', { variant: 'error' })
+            }
+            return
+        }
+
+        // Se for uma string, processa normalmente
+        const text = textOrMessage.trim()
+        if (!text) return
 
         const user = {
             id: session?.user?._id ?? '',
@@ -58,34 +73,32 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
             image: session?.user?.image ?? ''
         }
 
-        let success = true
-
         if (text.startsWith('#')) {
-            const separateResults = rollSeparateDice(text.trim(), user)
+            const separateResults = rollSeparateDice(text, user)
             if (separateResults) {
                 for (const diceMessage of separateResults) {
                     success = await sendMessage({
                         ...diceMessage,
-                        type: MessageType.ROLL
+                        type: type ?? MessageType.ROLL
                     })
 
                     if (!success) break
                 }
             }
         } else {
-            const diceResult = rollDice(text.trim())
+            const diceResult = rollDice(text)
             if (diceResult) {
                 const diceMessage = createDiceMessage(diceResult, user)
                 if (diceMessage) {
                     success = await sendMessage({
                         ...diceMessage,
-                        type: MessageType.ROLL
+                        type: type ?? MessageType.ROLL
                     })
                 }
             } else {
                 success = await sendMessage({
                     text,
-                    type: MessageType.TEXT,
+                    type: type ?? MessageType.TEXT,
                     by: user
                 })
             }

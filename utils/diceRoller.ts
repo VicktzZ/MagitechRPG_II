@@ -1,5 +1,6 @@
 import Chance from 'chance';
 import type { Message } from '@types';
+import { MessageType } from '@enums';
 
 const chance = new Chance();
 
@@ -164,6 +165,7 @@ export const createDiceMessage = (
     if (diceResult.error) {
         return {
             text: `❌ Erro ao rolar ${diceResult.notation}: ${diceResult.error}`,
+            type: MessageType.ERROR,
             by: user,
             timestamp: new Date()
         };
@@ -186,7 +188,8 @@ export const createDiceMessage = (
     }
 
     return {
-        text: `🎲 Rolou ${diceResult.notation}: ${resultText}`,
+        text: `🎲 ${diceResult.notation}: ${resultText}`,
+        type: MessageType.ROLL,
         by: user,
         timestamp: new Date(),
         isHTML: true
@@ -206,6 +209,7 @@ export const rollSeparateDice = (
         if (numberOfDice > 99) {
             return [ {
                 text: `❌ Erro ao rolar ${cleanNotation}: Máximo de 99 dados em sequência permitido.`,
+                type: MessageType.ERROR,
                 by: user,
                 timestamp: new Date()
             } ];
@@ -219,6 +223,7 @@ export const rollSeparateDice = (
         if (diceResult.error) {
             return [ {
                 text: `❌ Erro ao rolar ${diceResult.notation}: ${diceResult.error}`,
+                type: MessageType.ERROR,
                 by: user,
                 timestamp: new Date()
             } ];

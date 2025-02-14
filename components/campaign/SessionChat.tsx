@@ -479,7 +479,7 @@ export default function SessionChat() {
                                             </Typography>
                                         )}
                                     </Stack>
-                                    <DiceMessage text={msg.text} />
+                                    <DiceMessage text={msg.text} type={msg.type} />
                                 </Paper>
                             ))}
                         <div ref={messagesEndRef} />

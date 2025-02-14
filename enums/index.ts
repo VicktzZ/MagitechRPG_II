@@ -51,5 +51,7 @@ export enum SpellType {
 export enum MessageType {
     TEXT = 'text',
     ROLL = 'roll',
-    SYSTEM = 'system'
+    ERROR = 'error',
+    SYSTEM = 'system',
+    EXPERTISE = 'expertise'
 }
