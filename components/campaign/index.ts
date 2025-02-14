@@ -11,7 +11,7 @@ export {
     CampaingCard,
     CampaignHeader,
     CampaignComponent,
-    CampaignPlayerDashboard as CampaignDashboard,
+    CampaignPlayerDashboard,
     SessionChat,
     PlayerAvatar
 };

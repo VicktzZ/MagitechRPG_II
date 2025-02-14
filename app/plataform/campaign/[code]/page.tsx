@@ -4,7 +4,7 @@
 
 import { useEffect, type ReactElement, useState, useRef, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
-import { Backdrop, Box, Button, CircularProgress, Grid, Modal, Skeleton, Tooltip, Typography } from '@mui/material';
+import { Backdrop, Box, CircularProgress, Grid, Modal, Skeleton, type Theme, Typography, useMediaQuery } from '@mui/material';
 import { useRouter } from 'next/navigation';
 import { CampaignComponent, CampaignHeader } from '@components/campaign';
 import { FichaCard } from '@components/ficha';
@@ -33,6 +33,8 @@ export default function Campaign({ params }: { params: { code: string } }): Reac
     const [ campaignUsers, setCampaignUsers ] = useState<User[]>([]);
     const pusherClientRef = useRef<PusherClient | null>(null);
     const channelRef = useRef<PresenceChannel | null>(null);
+
+    const isMobile = useMediaQuery((theme: Theme) => theme.breakpoints.down('sm'));
 
     useEffect(() => {
         if (!pusherClientRef.current) {
@@ -180,7 +182,7 @@ export default function Campaign({ params }: { params: { code: string } }): Reac
                 <campaignContext.Provider value={{ campaign, setCampaign, campUsers }}>
                     <gameMasterContext.Provider value={{ allGameMastersId, isUserGM }}>
                         <Box display='flex' flexDirection='column' gap={3} p={2} minHeight='90vh'>
-                            <Box height='100%' width='95%' display='flex' gap={2}>
+                            <Box height='100%' width='100%' display={!isMobile ? 'flex' : 'column'} gap={2}>
                                 <CampaignHeader />
                                 <CampaignComponent />
                             </Box>

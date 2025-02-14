@@ -1,16 +1,16 @@
 'use client'
 
 import { type ReactElement } from 'react'
-import { Box, Typography, Paper, Grid, Accordion, AccordionSummary, AccordionDetails, Chip } from '@mui/material'
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
+import { Box, Typography, Paper, Grid, Button, Chip } from '@mui/material'
 import type { Expertise, Ficha } from '@types'
 import { blue, green, grey, purple, yellow } from '@mui/material/colors'
 
 interface ExpertiseSectionProps {
     ficha: Ficha
+    onRollTest?: (result: number, expertiseName: string, bonus: number) => void
 }
 
-export default function ExpertiseSection({ ficha }: ExpertiseSectionProps): ReactElement {
+export default function ExpertiseSection({ ficha, onRollTest }: ExpertiseSectionProps): ReactElement {
     const expertises = ficha.expertises
 
     // Divide as perícias em duas colunas
@@ -33,33 +33,38 @@ export default function ExpertiseSection({ ficha }: ExpertiseSectionProps): Reac
         }
     }
 
-    const renderExpertiseColumn = (entries: [string, Expertise<any>][]) => (
+    const handleRollTest = (expertiseName: string, bonus: number) => {
+        // Rola 1d20 + bônus da perícia
+        const roll = Math.floor(Math.random() * 20) + 1
+        const total = roll + bonus
+
+        if (onRollTest) {
+            onRollTest(total, expertiseName, bonus)
+        }
+    }
+
+    const renderExpertiseButton = (entries: [string, Expertise<any>][]) => (
         <Grid item xs={12} md={6}>
-            {entries.map(([nome, expertise]) => (
-                <Accordion
+            {entries.map(([ nome, expertise ]) => (
+                <Button
                     key={nome}
+                    fullWidth
+                    onClick={() => handleRollTest(nome, expertise.value)}
                     sx={{
                         mb: 1,
+                        p: 2,
                         bgcolor: 'background.paper3',
-                        '&:before': { display: 'none' },
-                        boxShadow: 'none',
+                        color: 'white',
+                        justifyContent: 'flex-start',
+                        textAlign: 'left',
                         '&:hover': {
                             bgcolor: 'action.hover'
                         }
                     }}
                 >
-                    <AccordionSummary
-                        expandIcon={<ExpandMoreIcon />}
-                        sx={{
-                            minHeight: 48,
-                            '& .MuiAccordionSummary-content': {
-                                alignItems: 'center',
-                                gap: 1
-                            }
-                        }}
-                    >
+                    <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
                         <Typography variant="subtitle1">{nome}</Typography>
-                        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', ml: 'auto', mr: 2 }}>
+                        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', ml: 'auto' }}>
                             <Chip 
                                 label={`${expertise.value >= 0 ? '+' : ''}${expertise.value}`}
                                 size="small"
@@ -74,15 +79,8 @@ export default function ExpertiseSection({ ficha }: ExpertiseSectionProps): Reac
                                 color="primary"
                             />
                         </Box>
-                    </AccordionSummary>
-                    <AccordionDetails>
-                        <Box>
-                            <Typography variant="body2" sx={{ mb: 1 }}>
-                                {'Esta é uma descrição de teste'}
-                            </Typography>    
-                        </Box>
-                    </AccordionDetails>
-                </Accordion>
+                    </Box>
+                </Button>
             ))}
         </Grid>
     )
@@ -95,8 +93,8 @@ export default function ExpertiseSection({ ficha }: ExpertiseSectionProps): Reac
                 </Typography>
 
                 <Grid container spacing={2}>
-                    {renderExpertiseColumn(leftColumnExpertises)}
-                    {renderExpertiseColumn(rightColumnExpertises)}
+                    {renderExpertiseButton(leftColumnExpertises)}
+                    {renderExpertiseButton(rightColumnExpertises)}
                 </Grid>
             </Paper>
         </Grid>

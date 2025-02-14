@@ -71,53 +71,56 @@ export default function SpellsSection({ ficha }: SpellsSectionProps): ReactEleme
     const allSpells = ficha.magics
 
     return (
-        <Grid item xs={12} md={6}>
-            <Paper sx={{ p: 2, bgcolor: 'background.paper2', borderRadius: 2 }}>
+        <Grid item xs={12} md={12} sx={{ height: '100%' }}>
+            <Paper sx={{ p: 2, bgcolor: 'background.paper2', borderRadius: 2, height: '100%' }}>
                 <Typography variant="h6" gutterBottom>
                     Magias
                 </Typography>
 
                 <Box sx={{ mt: 2 }}>
-                    {allSpells.map((magic: Magia) => (
-                        <Accordion
-                            key={magic.nome}
-                            expanded={expandedSpell === magic.nome}
-                            onChange={handleSpellExpand(magic.nome)}
-                            sx={{
-                                mb: 1,
-                                bgcolor: 'background.paper3',
-                                '&:before': { display: 'none' },
-                                boxShadow: 'none',
-                                '&:hover': {
-                                    bgcolor: 'action.hover'
-                                }
-                            }}
-                        >
-                            <AccordionSummary
-                                expandIcon={<ExpandMoreIcon />}
-                                sx={{
-                                    minHeight: 48,
-                                    '& .MuiAccordionSummary-content': {
-                                        alignItems: 'center',
-                                        gap: 1
-                                    }
-                                }}
-                            >
-                                <Typography variant="subtitle1">{magic.nome}</Typography>
-                                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', ml: 'auto', mr: 2 }}>
-                                    <Chip label={`Nível ${magic['nível']}`} size="small" variant="outlined" />
-                                    <Chip label={magic.alcance} size="small" variant="outlined" color="secondary" />
-                                    <Chip label={magic.tipo} size="small" variant="outlined" color="error" />
-                                </Box>
-                            </AccordionSummary>
-                            <AccordionDetails>
-                                {magic['estágio 1'] && <SpellStage magic={magic} stage={1} description={magic['estágio 1']} />}
-                                {magic['estágio 2'] && <SpellStage magic={magic} stage={2} description={magic['estágio 2']} />}
-                                {magic['estágio 3'] && <SpellStage magic={magic} stage={3} description={magic['estágio 3']} />}
-                                {magic.maestria && <SpellStage magic={magic} stage={4} description={magic.maestria} />}
-                            </AccordionDetails>
-                        </Accordion>
-                    ))}
+                    <Grid container spacing={2}>
+                        {allSpells.map((magic: Magia) => (
+                            <Grid item xs={12} md={6} key={magic.nome}>
+                                <Accordion
+                                    expanded={expandedSpell === magic.nome}
+                                    onChange={handleSpellExpand(magic.nome)}
+                                    sx={{
+                                        mb: 1,
+                                        bgcolor: 'background.paper3',
+                                        '&:before': { display: 'none' },
+                                        boxShadow: 'none',
+                                        '&:hover': {
+                                            bgcolor: 'action.hover'
+                                        }
+                                    }}
+                                >
+                                    <AccordionSummary
+                                        expandIcon={<ExpandMoreIcon />}
+                                        sx={{
+                                            minHeight: 48,
+                                            '& .MuiAccordionSummary-content': {
+                                                alignItems: 'center',
+                                                gap: 1
+                                            }
+                                        }}
+                                    >
+                                        <Typography variant="subtitle1">{magic.nome}</Typography>
+                                        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', ml: 'auto', mr: 2 }}>
+                                            <Chip label={`Nível ${magic['nível']}`} size="small" variant="outlined" />
+                                            <Chip label={magic.alcance} size="small" variant="outlined" color="secondary" />
+                                            <Chip label={magic.tipo} size="small" variant="outlined" color="error" />
+                                        </Box>
+                                    </AccordionSummary>
+                                    <AccordionDetails>
+                                        {magic['estágio 1'] && <SpellStage magic={magic} stage={1} description={magic['estágio 1']} />}
+                                        {magic['estágio 2'] && <SpellStage magic={magic} stage={2} description={magic['estágio 2']} />}
+                                        {magic['estágio 3'] && <SpellStage magic={magic} stage={3} description={magic['estágio 3']} />}
+                                        {magic.maestria && <SpellStage magic={magic} stage={4} description={magic.maestria} />}
+                                    </AccordionDetails>
+                                </Accordion>
+                            </Grid>
+                        ))}
+                    </Grid>
                 </Box>
             </Paper>
         </Grid>

@@ -1,10 +1,9 @@
 // 'use client';
 
 import { useChannel } from '@contexts/channelContext';
-import { Box, IconButton, Backdrop, CircularProgress } from '@mui/material';
-import { ChevronRight, ChevronLeft } from '@mui/icons-material';
+import { Box, Backdrop, CircularProgress } from '@mui/material';
 import { useEffect, useState, type ReactElement } from 'react';
-import { CampaignDashboard, SessionChat } from '.';
+import { CampaignPlayerDashboard, SessionChat } from '.';
 import { useSnackbar } from 'notistack';
 import { useSession } from '@node_modules/next-auth/react';
 import { useCampaignContext } from '@contexts/campaignContext';
@@ -18,7 +17,6 @@ export default function CampaignComponent(): ReactElement {
     const { data: session } = useSession();
     const { enqueueSnackbar } = useSnackbar();
     const { campaign, setCampaign } = useCampaignContext();
-    const [ isChatOpen, setIsChatOpen ] = useState(true);
     const [ isSubscribed, setIsSubscribed ] = useState(false);
 
     useEffect(() => {
@@ -67,6 +65,15 @@ export default function CampaignComponent(): ReactElement {
         };
     }, [ ]);
 
+    // const handleExpertiseRoll = (result: number, expertiseName: string, bonus: number) => {
+    //     const message = `Rolou ${expertiseName} (1d20 + ${bonus}) = ${result}`
+    //     addMessage({
+    //         type: 'roll',
+    //         content: message,
+    //         sender: ficha.nome
+    //     })
+    // }
+
     if (!isSubscribed) {
         return (
             <Backdrop
@@ -82,52 +89,21 @@ export default function CampaignComponent(): ReactElement {
     }
 
     return (
-        <Box sx={{
-            display: 'flex',
-            position: 'relative',
-            gap: 2,
-            width: '100%',
-            height: '100%'
-        }}>
+        <>
             <Box sx={{
-                width: '100%'
+                display: 'flex',
+                position: 'relative',
+                gap: 2,
+                width: '100%',
+                height: '100%'
             }}>
-                <CampaignDashboard />
+                <Box sx={{
+                    width: '100%'
+                }}>
+                    <CampaignPlayerDashboard />
+                </Box>
             </Box>
-
-            <Box sx={{
-                position: 'fixed',
-                right: isChatOpen ? 0 : -300,
-                top: 0,
-                height: '100vh',
-                width: '300px',
-                bgcolor: 'background.paper',
-                transition: 'right 0.3s ease-in-out',
-                borderLeft: '1px solid',
-                borderColor: 'divider',
-                zIndex: 1200,
-                display: 'flex'
-            }}>
-                <IconButton
-                    onClick={() => setIsChatOpen(!isChatOpen)}
-                    sx={{
-                        position: 'absolute',
-                        left: -25,
-                        top: '50%',
-                        transform: 'translateY(-50%)',
-                        bgcolor: 'background.paper',
-                        border: '1px solid',
-                        borderColor: 'divider',
-                        zIndex: 1200,
-                        '&:hover': {
-                            bgcolor: 'action.hover'
-                        }
-                    }}
-                >
-                    {isChatOpen ? <ChevronRight /> : <ChevronLeft />}
-                </IconButton>
-                <SessionChat />
-            </Box>
-        </Box>
+            <SessionChat />
+        </>
     );
 }

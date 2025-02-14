@@ -1,3 +1,4 @@
+/* eslint-disable max-len */
 'use client';
 
 import { type ReactElement } from 'react';
@@ -15,11 +16,11 @@ export default function InventorySection({ ficha }: InventorySectionProps): Reac
         const getItemDetails = () => {
             switch (type) {
             case 'weapon':
-                return `Dano: ${item.effect.value} | Tipo: ${item.type}`;
+                return `Dano: ${item.effect.value}\nDano Crítico: ${item.effect.critValue}\nChance Crítica: ${item.effect.critChance}\nTipo: ${item.kind}\nCategoria: ${item.categ}\nAlcance: ${item.range}\nPeso: ${item.weight} Kg\n\nAcessórios: ${item.accessories?.join(', ')}`;
             case 'armor':
-                return `Defesa: ${item.defense} | Tipo: ${item.type}`;
+                return `Defesa: ${item.value} AP\nTipo: ${item.kind}\nCategoria: ${item.categ}\nPenalidade de Deslocamento: ${item.displacementPenalty}m\nPeso: ${item.weight} Kg\n\nAcessórios: ${item.accessories?.join(', ')}`;
             case 'item':
-                return item.description;
+                return `Tipo: ${item.kind}\nPeso: ${item.weight} Kg\nQuantidade: x${item.quantity ?? 1}`;
             }
         };
 
@@ -64,7 +65,7 @@ export default function InventorySection({ ficha }: InventorySectionProps): Reac
                             )}
                             {type === 'armor' && (
                                 <Chip
-                                    label={`${item.defense} defesa`}
+                                    label={`+${item.value} AP`}
                                     size="small"
                                     variant="outlined"
                                     color="info"
@@ -73,8 +74,8 @@ export default function InventorySection({ ficha }: InventorySectionProps): Reac
                         </Box>
                     </AccordionSummary>
                     <AccordionDetails>
-                        <Typography variant="body2">
-                            {type !== 'item' && getItemDetails()}
+                        <Typography whiteSpace='pre-wrap' variant="body2">
+                            {getItemDetails()}
                         </Typography>
                         {item.description && (
                             <Box sx={{ mt: 1 }}>
@@ -96,7 +97,7 @@ export default function InventorySection({ ficha }: InventorySectionProps): Reac
         <Grid item xs={12} md={6}>
             <Paper sx={{ p: 2, bgcolor: 'background.paper2', borderRadius: 2 }}>
                 <Typography variant="h6" gutterBottom>
-                    Inventário
+                    Inventário ({ficha.capacity.cargo}/{ficha.capacity.max} kg)
                 </Typography>
 
                 {/* Armas */}
@@ -104,9 +105,17 @@ export default function InventorySection({ ficha }: InventorySectionProps): Reac
                     <Typography variant="subtitle1" gutterBottom color="primary">
                         Armas
                     </Typography>
-                    <Grid container spacing={1}>
-                        {ficha.inventory.weapons.map((weapon) => renderInventoryItem(weapon, 'weapon'))}
-                    </Grid>
+                    <Box sx={{ 
+                        maxHeight: '200px', 
+                        overflowY: 'auto',
+                        bgcolor: 'background.paper3',
+                        borderRadius: 1,
+                        p: 1
+                    }}>
+                        <Grid container spacing={1}>
+                            {ficha.inventory.weapons.map((weapon) => renderInventoryItem(weapon, 'weapon'))}
+                        </Grid>
+                    </Box>
                 </Box>
 
                 {/* Armaduras */}
@@ -114,9 +123,17 @@ export default function InventorySection({ ficha }: InventorySectionProps): Reac
                     <Typography variant="subtitle1" gutterBottom color="primary">
                         Armaduras
                     </Typography>
-                    <Grid container spacing={1}>
-                        {ficha.inventory.armors.map((armor) => renderInventoryItem(armor, 'armor'))}
-                    </Grid>
+                    <Box sx={{ 
+                        maxHeight: '200px', 
+                        overflowY: 'auto',
+                        bgcolor: 'background.paper3',
+                        borderRadius: 1,
+                        p: 1
+                    }}>
+                        <Grid container spacing={1}>
+                            {ficha.inventory.armors.map((armor) => renderInventoryItem(armor, 'armor'))}
+                        </Grid>
+                    </Box>
                 </Box>
 
                 {/* Itens */}

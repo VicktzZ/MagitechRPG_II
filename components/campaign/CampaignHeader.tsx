@@ -12,16 +12,17 @@ import {
     useMediaQuery,
     Divider,
     Skeleton,
-    Button
+    Button,
+    type Theme
 } from '@mui/material'
 import { useSession } from 'next-auth/react'
 import { useChannel } from '@contexts/channelContext'
 import { useCampaignContext } from '@contexts/campaignContext'
 import { PusherEvent } from '@enums'
-import type { User } from '@types'
 import { grey } from '@mui/material/colors'
-import Image from 'next/image'
 import { fichaService } from '@services'
+import type { User } from '@types'
+import Image from 'next/image'
 
 interface OnlineUser extends User {
     lastSeen: Date
@@ -35,10 +36,8 @@ export default function CampaignHeader(): ReactElement {
     const [ fichas, setFichas ] = useState<any[]>([])
     const [ isLoading, setIsLoading ] = useState<boolean>(true)
     const [ sessionUsers, setSessionUsers ] = useState<string[]>([])
-    const theme = useTheme()
-    const matches = useMediaQuery(theme.breakpoints.down('md'))
-    const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
     const [ copiedCode, setCopiedCode ] = useState<boolean>(false)
+    const isMobile = useMediaQuery((theme: Theme) => theme.breakpoints.down('sm'))
 
     // Função para atualizar o status online dos usuários
     const updateOnlineUsers = (users: OnlineUser[]) => {
@@ -155,16 +154,14 @@ export default function CampaignHeader(): ReactElement {
                     }}
                 />
             </Avatar>
-            {!matches && (
-                <Box>
-                    <Typography>
-                        {isAdmin ? 'Game Master' : fichas.find(ficha => ficha.userId === user._id)?.name}
-                    </Typography>
-                    <Typography color={grey[500]} variant="caption">
-                        {user.name}
-                    </Typography>
-                </Box>
-            )}
+            <Box>
+                <Typography>
+                    {isAdmin ? 'Game Master' : fichas.find(ficha => ficha.userId === user._id)?.name}
+                </Typography>
+                <Typography color={grey[500]} variant="caption">
+                    {user.name}
+                </Typography>
+            </Box>
         </Box>
     )
 
@@ -173,7 +170,6 @@ export default function CampaignHeader(): ReactElement {
             <Paper
                 sx={{
                     p: { xs: 1, sm: 2 },
-                    mb: { xs: 1, sm: 2 },
                     bgcolor: 'background.paper2',
                     borderRadius: 2
                 }}
@@ -270,16 +266,17 @@ export default function CampaignHeader(): ReactElement {
                 display="flex"
                 flexDirection="column"
                 minWidth="40%"
-                minHeight="70vh"
+                minHeight={!isMobile ? '70vh' : '10vh'}
                 bgcolor="background.paper"
                 borderRadius={1}
-                p={3}
+                p={2}
+                mb={6}
                 gap={2}
             >
                 <Box
                     display="flex"
                     flexDirection="column"
-                    alignItems={matches ? 'center' : 'flex-start'}
+                    alignItems={'flex-start'}
                     justifyContent="center"
                     gap={3}
                 >
@@ -291,13 +288,13 @@ export default function CampaignHeader(): ReactElement {
                 <Box
                     display="flex"
                     flexDirection="column"
-                    alignItems={matches ? 'center' : 'flex-start'}
+                    alignItems={'flex-start'}
                     justifyContent="center"
                     gap={3}
                 >
                     {campUsers.player.map(user => (
                         <Box display="flex" flexDirection="column" gap={2} key={user._id}>
-                            {isLoading && !matches ? (
+                            {isLoading && isMobile ? (
                                 <Box display="flex" alignItems="center" gap={2}>
                                     <Skeleton variant="circular" width={45} height={45} />
                                     <Box>
