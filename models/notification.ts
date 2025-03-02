@@ -1,9 +1,9 @@
 import { Schema, model, models } from 'mongoose';
 
 const notificationSchema = new Schema({
-    destination: {
+    userId: {
         type: String,
-        required: [ true, 'Destination is required!' ]
+        required: [ true, 'UserId is required!' ]
     },
     content: {
         type: String,

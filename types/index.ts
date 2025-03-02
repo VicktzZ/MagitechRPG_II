@@ -44,7 +44,8 @@ import type {
     TestData,
     TestRequest,
     TempMessage,
-    AmmoControl
+    AmmoControl,
+    Notification
 } from './models';
 
 import type { 
@@ -89,6 +90,7 @@ export type {
     MergedItems,
     Campaign,
     RarityType,
+    Notification,
     Class,
     Item,
     Member,

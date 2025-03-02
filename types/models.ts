@@ -9,6 +9,14 @@ export interface User {
     fichas: string[]
 }
 
+export interface Notification {
+    _id?: string
+    userId: string
+    content: string
+    timestamp: Date
+    link?: string
+}
+
 export interface SessionNextAuth {
     user: User
     token: string
