@@ -22,7 +22,7 @@ export enum PusherEvent {
     TEST_RESULT = 'client-test_result',
     TEST_REQUEST = 'client-test_request',
     SESSION_USERS_UPDATED = 'client-session_users_updated',
-    USER_ENTER = 'client-user_enter'
+    USER_ENTER = 'client-user_enter',
 }
 
 export enum SkillType {

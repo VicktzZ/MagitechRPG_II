@@ -1,10 +1,11 @@
 'use client';
 
 import '@public/fonts/fonts.css'
-import { type ReactElement } from 'react';
+
 import { Box } from '@mui/material';
-import { AppDrawer } from '@layout';
+import { AppDrawer, Notifications } from '@layout';
 import { RequireAuth } from '@components/misc';
+import type { ReactElement } from 'react';
 
 export default function RootLayout({
     children
@@ -16,8 +17,13 @@ export default function RootLayout({
     return NODE_ENV === 'production' ? (
         <RequireAuth>
             <Box p={3}>
-                <AppDrawer />
-                {children}
+                <Box display='flex' width='100%' alignItems='center' justifyContent='space-between'>
+                    <AppDrawer />
+                    <Notifications />
+                </Box>
+                <Box>
+                    {children}
+                </Box>
             </Box>
         </RequireAuth>
     ) : (
