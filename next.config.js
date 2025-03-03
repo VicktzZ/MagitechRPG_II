@@ -10,7 +10,7 @@ const nextConfig = {
         ignoreBuildErrors: true
     },
     experimental: {
-        serverComponentsExternalPackages: ['mongoose']
+        serverComponentsExternalPackages: [ 'mongoose' ]
     },
     logging: {
         fetches: {
@@ -18,7 +18,7 @@ const nextConfig = {
         }
     },
     images: {
-        domains: ['lh3.googleusercontent.com', 'cdn.discordapp.com'],
+        domains: [ 'lh3.googleusercontent.com', 'cdn.discordapp.com' ],
         remotePatterns: [
             {
                 protocol: 'https',
@@ -28,33 +28,33 @@ const nextConfig = {
             }
         ]
     },
-    async headers() {
-        return [
-            {
-                source: '/api/:path*',
-                headers: [
-                    {
-                        key: 'Access-Control-Allow-Origin',
-                        value: process.env.NODE_ENV === 'production' 
-                            ? 'https://magitechrpg.vercel.app'
-                            : '*'
-                    },
-                    {
-                        key: 'Access-Control-Allow-Methods',
-                        value: 'GET, POST, PUT, DELETE, OPTIONS'
-                    },
-                    {
-                        key: 'Access-Control-Allow-Headers',
-                        value: 'Content-Type, Authorization'
-                    },
-                    {
-                        key: 'Access-Control-Allow-Credentials',
-                        value: 'true'
-                    }
-                ]
-            }
-        ]
-    },
+    // async headers() {
+    //     return [
+    //         {
+    //             source: '/api/:path*',
+    //             headers: [
+    //                 {
+    //                     key: 'Access-Control-Allow-Origin',
+    //                     value: process.env.NODE_ENV === 'production' 
+    //                         ? 'https://magitechrpg.vercel.app'
+    //                         : '*'
+    //                 },
+    //                 {
+    //                     key: 'Access-Control-Allow-Methods',
+    //                     value: 'GET, POST, PUT, DELETE, OPTIONS'
+    //                 },
+    //                 {
+    //                     key: 'Access-Control-Allow-Headers',
+    //                     value: 'Content-Type, Authorization'
+    //                 },
+    //                 {
+    //                     key: 'Access-Control-Allow-Credentials',
+    //                     value: 'true'
+    //                 }
+    //             ]
+    //         }
+    //     ]
+    // },
     webpack(config) {
         config.experiments = {
             ...config.experiments,

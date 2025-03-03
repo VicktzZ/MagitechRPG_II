@@ -19,22 +19,15 @@ import {
     ListItemText,
     ListItemSecondaryAction,
     Menu,
-    MenuItem
+    MenuItem,
+    CircularProgress
 } from '@mui/material'
 import { useCampaignContext } from '@contexts/campaignContext'
 import { useGameMasterContext } from '@contexts/gameMasterContext'
+import { fichaService } from '@services'
 import AddIcon from '@mui/icons-material/Add'
 import EditIcon from '@mui/icons-material/Edit'
 import type { Status } from '@types'
-
-// interface PlayerStatus {
-//     id: string
-//     name: string
-//     avatar: string
-//     initiative: number
-//     status: Status[]
-//     ficha: Ficha
-// }
 
 export default function CampaignGMDashboard(): ReactElement | null {
     const { campaign, campUsers } = useCampaignContext()
@@ -42,8 +35,8 @@ export default function CampaignGMDashboard(): ReactElement | null {
     const [ levelUpDialogOpen, setLevelUpDialogOpen ] = useState(false)
     const [ selectedPlayers, setSelectedPlayers ] = useState<string[]>([])
     const [ playerAnchorEl, setPlayerAnchorEl ] = useState<null | HTMLElement>(null)
-    // const [ selectedPlayerId, setSelectedPlayerId ] = useState<string | null>(null)
     const [ statusAnchorEl, setStatusAnchorEl ] = useState<null | HTMLElement>(null)
+    const [ isLevelingUp, setIsLevelingUp ] = useState(false)
 
     // Se não for GM, não renderiza nada
     if (!isUserGM) return null
@@ -57,32 +50,36 @@ export default function CampaignGMDashboard(): ReactElement | null {
         ficha: campaign.players.find(p => p.userId === player._id)?.fichaId
     }))
 
-    const handleLevelUp = () => {
-        // Implementar lógica de level up
-        setLevelUpDialogOpen(false)
-    }
+    const handleLevelUp = async () => {
+        try {
+            setIsLevelingUp(true)
 
-    // const handlePlayerClick = (event: React.MouseEvent<HTMLElement>, playerId: string) => {
-    //     setSelectedPlayerId(playerId)
-    //     setPlayerAnchorEl(event.currentTarget)
-    // }
+            // Evolui cada jogador selecionado
+            await Promise.all(
+                selectedPlayers.map(async (playerId) => {
+                    const player = players.find(p => p.id === playerId)
+                    if (player?.ficha) {
+                        await fichaService.levelUp(player.ficha._id)
+                    }
+                })
+            )
+
+            setLevelUpDialogOpen(false)
+            setSelectedPlayers([])
+        } catch (error) {
+            console.error('Erro ao evoluir jogadores:', error)
+        } finally {
+            setIsLevelingUp(false)
+        }
+    }
 
     const handleStatusClick = (event: React.MouseEvent<HTMLElement>) => {
         setStatusAnchorEl(event.currentTarget)
     }
 
     const handleAddStatus = (status: Status) => {
-        
         setStatusAnchorEl(null)
     }
-
-    // const handleRemoveStatus = (playerId: string, statusIndex: number) => {
-    //     // Implementar remoção de status
-    // }
-
-    // const handleInitiativeChange = (playerId: string, value: number) => {
-    //     // Implementar mudança de iniciativa
-    // }
 
     return (
         <Box sx={{ width: '100%' }}>
@@ -112,21 +109,12 @@ export default function CampaignGMDashboard(): ReactElement | null {
                                             primary={player.name}
                                             secondary={
                                                 <Box sx={{ display: 'flex', gap: 1 }}>
-                                                    {/* {player.ficha.status?.map((status, index) => (
-                                                        <Chip
-                                                            key={index}
-                                                            label={status.name}
-                                                            color={status.type === 'buff' ? 'success' : status.type === 'debuff' ? 'error' : 'default'}
-                                                            onDelete={() => handleRemoveStatus(player.id, index)}
-                                                            size="small"
-                                                        />
-                                                    ))} */}
+                                                    {/* Status chips */}
                                                 </Box>
                                             }
                                         />
                                         <ListItemSecondaryAction>
                                             <IconButton
-                                                // onClick={(e) => handlePlayerClick(e, player.id)}
                                                 size="small"
                                             >
                                                 <EditIcon />
@@ -152,7 +140,7 @@ export default function CampaignGMDashboard(): ReactElement | null {
             </Grid>
 
             {/* Dialog de Level Up */}
-            <Dialog open={levelUpDialogOpen} onClose={() => setLevelUpDialogOpen(false)}>
+            <Dialog open={levelUpDialogOpen} onClose={() => !isLevelingUp && setLevelUpDialogOpen(false)}>
                 <DialogTitle>Selecione os jogadores para evoluir</DialogTitle>
                 <DialogContent>
                     <List>
@@ -161,12 +149,14 @@ export default function CampaignGMDashboard(): ReactElement | null {
                                 key={player.id}
                                 button
                                 onClick={() => {
-                                    const newSelected = selectedPlayers.includes(player?.id ?? '')
+                                    if (isLevelingUp) return
+                                    const newSelected = selectedPlayers.includes(player.id)
                                         ? selectedPlayers.filter(id => id !== player.id)
-                                        : [ ...selectedPlayers, player.id ] as any[]
+                                        : [ ...selectedPlayers, player.id ]
                                     setSelectedPlayers(newSelected)
                                 }}
-                                selected={selectedPlayers.includes(player.id ?? '')}
+                                selected={selectedPlayers.includes(player.id)}
+                                disabled={isLevelingUp}
                             >
                                 <ListItemAvatar>
                                     <Avatar src={player.avatar} />
@@ -177,9 +167,20 @@ export default function CampaignGMDashboard(): ReactElement | null {
                     </List>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setLevelUpDialogOpen(false)}>Cancelar</Button>
-                    <Button onClick={handleLevelUp} variant="contained" color="primary">
-                        Confirmar
+                    <Button 
+                        onClick={() => setLevelUpDialogOpen(false)}
+                        disabled={isLevelingUp}
+                    >
+                        Cancelar
+                    </Button>
+                    <Button 
+                        onClick={handleLevelUp} 
+                        variant="contained" 
+                        color="primary"
+                        disabled={selectedPlayers.length === 0 || isLevelingUp}
+                        startIcon={isLevelingUp ? <CircularProgress size={20} /> : null}
+                    >
+                        {isLevelingUp ? 'Evoluindo...' : 'Confirmar'}
                     </Button>
                 </DialogActions>
             </Dialog>
@@ -194,7 +195,6 @@ export default function CampaignGMDashboard(): ReactElement | null {
                     Adicionar Status
                 </MenuItem>
                 <MenuItem onClick={() => {
-                    // Implementar visualização detalhada
                     setPlayerAnchorEl(null)
                 }}>
                     Ver Detalhes
