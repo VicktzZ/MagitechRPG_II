@@ -17,7 +17,7 @@ import { fichaService } from '@services';
 
 export default function CampaignPlayerDashboard(): ReactElement | null {
     const { isUserGM } = useGameMasterContext();
-    const { campaign, campUsers, setCampaign } = useCampaignContext();
+    const { campaign, campUsers } = useCampaignContext();
     const [ selectedSkillType, setSelectedSkillType ] = useState<SkillType>(SkillType.ALL);
     const [ updatedNotes, setUpdatedNotes ] = useState<string | null>(null);
     const [ isSaving, setIsSaving ] = useState(false);
@@ -46,10 +46,10 @@ export default function CampaignPlayerDashboard(): ReactElement | null {
             });
             
             if (updatedFicha) {
-                setCampaign(prev => ({
-                    ...prev,
-                    myFicha: updatedFicha
-                }));
+                // setCampaign(prev => ({
+                //     ...prev,
+                //     myFicha: updatedFicha
+                // }));
                 setUpdatedNotes(null); // Reseta o estado após salvar com sucesso
             }
         } catch (error) {

@@ -1,7 +1,7 @@
 'use client';
 
-import { type ReactElement } from 'react';
-import { Box, Typography, Paper, Avatar, LinearProgress, Grid, Chip, Divider } from '@mui/material';
+import { useState, type ReactElement } from 'react';
+import { Box, Typography, Paper, Avatar, LinearProgress, Grid, Chip, Divider, Button } from '@mui/material';
 import type { Ficha } from '@types';
 
 interface CharacterInfoProps {
@@ -10,9 +10,15 @@ interface CharacterInfoProps {
 }
 
 export default function CharacterInfo({ ficha, avatar }: CharacterInfoProps): ReactElement {
-    const lpPercent = (ficha.attributes.lp / ficha.attributes.lp) * 100;
-    const mpPercent = (ficha.attributes.mp / ficha.attributes.mp) * 100;
-    const apPercent = (ficha.attributes.ap / ficha.attributes.ap) * 100;
+    const [ currentAttributes, setCurrentAttributes ] = useState({
+        lp: ficha.attributes.lp,
+        mp: ficha.attributes.mp,
+        ap: ficha.attributes.ap
+    });
+
+    const lpPercent = (currentAttributes.lp / ficha.maxLp) * 100;
+    const mpPercent = (currentAttributes.mp / ficha.maxMp) * 100;
+    const apPercent = (currentAttributes.ap / ficha.maxAp) * 100;
     const attributes = Object.entries(ficha.attributes).filter(([ key ]) => ![ 'lp', 'mp', 'ap' ].includes(key));
 
     return (
@@ -45,58 +51,76 @@ export default function CharacterInfo({ ficha, avatar }: CharacterInfoProps): Re
                     {/* Barras de Status */}
                     <Grid container spacing={2} sx={{ mt: 2 }}>
                         <Grid item xs={12} md={4}>
-                            <Typography variant="subtitle2" gutterBottom>LP</Typography>
-                            <LinearProgress
-                                variant="determinate"
-                                value={lpPercent}
-                                sx={{
-                                    height: 10,
-                                    borderRadius: 5,
-                                    bgcolor: 'background.paper3',
-                                    '& .MuiLinearProgress-bar': {
-                                        bgcolor: 'error.main'
-                                    }
-                                }}
-                            />
-                            <Typography variant="caption">
-                                {ficha.attributes.lp}/{ficha.attributes.lp}
-                            </Typography>
+                            <Box>
+                                <Typography variant="subtitle2" gutterBottom>LP</Typography>
+                                <LinearProgress
+                                    variant="determinate"
+                                    value={lpPercent}
+                                    sx={{
+                                        height: 10,
+                                        borderRadius: 5,
+                                        bgcolor: 'background.paper3',
+                                        '& .MuiLinearProgress-bar': {
+                                            bgcolor: 'error.main'
+                                        }
+                                    }}
+                                />
+                                <Typography variant="caption">
+                                    {currentAttributes.lp}/{ficha.maxLp}
+                                </Typography>
+                            </Box>
+                            <Box display='flex' alignItems='center' gap={1}>
+                                <Button variant="contained" size="small" onClick={() => setCurrentAttributes(prev => ({ ...prev, lp: prev.lp + 1 }))}>+1</Button>
+                                <Button variant="contained" size="small" onClick={() => setCurrentAttributes(prev => ({ ...prev, lp: prev.lp - 1 }))}>-1</Button>
+                            </Box>
                         </Grid>
                         <Grid item xs={12} md={4}>
-                            <Typography variant="subtitle2" gutterBottom>MP</Typography>
-                            <LinearProgress
-                                variant="determinate"
-                                value={mpPercent}
-                                sx={{
-                                    height: 10,
-                                    borderRadius: 5,
-                                    bgcolor: 'background.paper3',
-                                    '& .MuiLinearProgress-bar': {
-                                        bgcolor: 'primary.main'
-                                    }
-                                }}
-                            />
-                            <Typography variant="caption">
-                                {ficha.attributes.mp}/{ficha.attributes.mp}
-                            </Typography>
+                            <Box>
+                                <Typography variant="subtitle2" gutterBottom>MP</Typography>
+                                <LinearProgress
+                                    variant="determinate"
+                                    value={mpPercent}
+                                    sx={{
+                                        height: 10,
+                                        borderRadius: 5,
+                                        bgcolor: 'background.paper3',
+                                        '& .MuiLinearProgress-bar': {
+                                            bgcolor: 'primary.main'
+                                        }
+                                    }}
+                                />
+                                <Typography variant="caption">
+                                    {currentAttributes.mp}/{ficha.maxMp}
+                                </Typography>
+                            </Box>
+                            <Box display='flex' alignItems='center' gap={1}>
+                                <Button variant="contained" size="small" onClick={() => setCurrentAttributes(prev => ({ ...prev, mp: prev.mp + 1 }))}>+1</Button>
+                                <Button variant="contained" size="small" onClick={() => setCurrentAttributes(prev => ({ ...prev, mp: prev.mp - 1 }))}>-1</Button>
+                            </Box>
                         </Grid>
                         <Grid item xs={12} md={4}>
-                            <Typography variant="subtitle2" gutterBottom>AP</Typography>
-                            <LinearProgress
-                                variant="determinate"
-                                value={apPercent}
-                                sx={{
-                                    height: 10,
-                                    borderRadius: 5,
-                                    bgcolor: 'background.paper3',
-                                    '& .MuiLinearProgress-bar': {
-                                        bgcolor: 'warning.main'
-                                    }
-                                }}
-                            />
-                            <Typography variant="caption">
-                                {ficha.attributes.ap}/{ficha.attributes.ap}
-                            </Typography>
+                            <Box>
+                                <Typography variant="subtitle2" gutterBottom>AP</Typography>
+                                <LinearProgress
+                                    variant="determinate"
+                                    value={apPercent}
+                                    sx={{
+                                        height: 10,
+                                        borderRadius: 5,
+                                        bgcolor: 'background.paper3',
+                                        '& .MuiLinearProgress-bar': {
+                                            bgcolor: 'warning.main'
+                                        }
+                                    }}
+                                />
+                                <Typography variant="caption">
+                                    {currentAttributes.ap}/{ficha.maxAp}
+                                </Typography>
+                            </Box>
+                            {/* <Box display='flex' alignItems='center' gap={1}>
+                                <Button variant="contained" size="small" onClick={() => setCurrentAttributes(prev => ({ ...prev, ap: prev.ap + 1 }))}>+1</Button>
+                                <Button variant="contained" size="small" onClick={() => setCurrentAttributes(prev => ({ ...prev, ap: prev.ap - 1 }))}>-1</Button>
+                            </Box> */}
                         </Grid>
                     </Grid>
                 </Paper>

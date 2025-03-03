@@ -57,6 +57,14 @@ export interface Ficha {
         foc: number
         car: number
     }
+
+    maxLp: number
+    maxMp: number
+    maxAp: number
+    ammoCounter: {
+        current: number
+        max: number
+    }
 }
 
 // Types

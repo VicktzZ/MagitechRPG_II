@@ -52,6 +52,10 @@ export const fichaModel: Partial<Ficha> = {
     magics: [],
     magicsSpace: 1,
     subclass: '',
+    maxLp: 0,
+    maxMp: 0,
+    maxAp: 0,
+    ammoCounter: 0,
     skills: {
         lineage: [],
         bonus: [],
