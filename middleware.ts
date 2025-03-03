@@ -8,7 +8,7 @@ export function middleware(request: NextRequest) {
         if (origin === 'https://magitechrpg.vercel.app') {
             return NextResponse.next({
                 headers: {
-                    'Access-Control-Allow-Origin': origin,
+                    'Access-Control-Allow-Origin': 'https://magitechrpg.vercel.app',
                     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
                     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
                     'Access-Control-Allow-Credentials': 'true'

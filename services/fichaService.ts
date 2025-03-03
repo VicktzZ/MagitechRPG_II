@@ -3,7 +3,10 @@ import { apiRequest } from '@utils/apiRequest';
 
 const { get, post, patch, delete: del, put } = apiRequest<Ficha>('ficha');
 
-export const fichaService: Service<Ficha, 'userId'> & { updateStatus: (id: string, status: Status[]) => Promise<Ficha>} = {
+export const fichaService: Service<Ficha, 'userId'> & { 
+    updateStatus: (id: string, status: Status[]) => Promise<Ficha>,
+    levelUp: (fichaId: string) => Promise<Ficha>
+} = {
     async fetch(queryParams) { return await get({ queryParams }) as unknown as Ficha[] },
     async getById(id) { return await get({ param: id }); },
     async create(ficha) { return await post(ficha); },
@@ -11,5 +14,8 @@ export const fichaService: Service<Ficha, 'userId'> & { updateStatus: (id: strin
     async deleteById(id) { return await del(id); },
     async updateStatus(id: string, status: Status[]) {
         return await put(`${id}/status`, { status })
+    },
+    async levelUp(fichaId: string) {
+        return await post('levelup', { fichaId })
     }
 }
