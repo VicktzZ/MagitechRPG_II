@@ -35,9 +35,7 @@ const nextConfig = {
                 headers: [
                     {
                         key: 'Access-Control-Allow-Origin',
-                        value: process.env.NODE_ENV === 'production' 
-                            ? 'https://magitechrpg.vercel.app'
-                            : '*'
+                        value: '*'
                     },
                     {
                         key: 'Access-Control-Allow-Methods',
