@@ -2,7 +2,8 @@ export enum ApiMethod {
     GET = 'GET',
     POST = 'POST',
     DELETE = 'DELETE',
-    PATCH = 'PATCH'
+    PATCH = 'PATCH',
+    PUT = 'PUT'
 }
 
 export enum SearchOptions {

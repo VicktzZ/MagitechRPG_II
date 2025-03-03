@@ -45,6 +45,16 @@ export default function CharacterInfo({ ficha, avatar }: CharacterInfoProps): Re
                                     <Chip label={`Maestria: ${ficha.elementalMastery}`} color="secondary" />
                                 )}
                             </Box>
+                            <Box display="flex" gap={1} mt={1}>
+                                {ficha.status?.map((status, index) => (
+                                    <Chip
+                                        key={index}
+                                        label={status.name}
+                                        color={status.type === 'buff' ? 'success' : status.type === 'debuff' ? 'error' : 'default'}
+                                        size="small"
+                                    />
+                                ))}
+                            </Box>
                         </Box>
                     </Box>
 

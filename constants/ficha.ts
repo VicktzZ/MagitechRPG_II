@@ -55,7 +55,10 @@ export const fichaModel: Partial<Ficha> = {
     maxLp: 0,
     maxMp: 0,
     maxAp: 0,
-    ammoCounter: 0,
+    ammoCounter: {
+        current: 0,
+        max: 0
+    },
     skills: {
         lineage: [],
         bonus: [],

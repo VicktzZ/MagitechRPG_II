@@ -3,7 +3,7 @@
 import { useChannel } from '@contexts/channelContext';
 import { Box, Backdrop, CircularProgress } from '@mui/material';
 import { useEffect, useState, type ReactElement } from 'react';
-import { CampaignPlayerDashboard, SessionChat } from '.';
+import { CampaignGMDashboard, CampaignPlayerDashboard, SessionChat } from '.';
 import { useSnackbar } from 'notistack';
 import { useSession } from '@node_modules/next-auth/react';
 import { useCampaignContext } from '@contexts/campaignContext';
@@ -84,7 +84,10 @@ export default function CampaignComponent(): ReactElement {
                 <Box sx={{
                     width: '100%'
                 }}>
-                    <CampaignPlayerDashboard />
+                    {campaign.admin.includes(session?.user?._id ?? '') ? 
+                        <CampaignGMDashboard /> :
+                        <CampaignPlayerDashboard />
+                    }
                 </Box>
             </Box>
             <SessionChat />

@@ -11,6 +11,12 @@ export async function POST() {
                         maxLp: '$attributes.lp',
                         maxMp: '$attributes.mp',
                         maxAp: '$attributes.ap',
+                        status: [
+                            {
+                                name: 'Normal',
+                                type: 'normal'
+                            }
+                        ],
                         ammoCounter: {
                             current: 0,
                             max: 30

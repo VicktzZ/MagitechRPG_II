@@ -24,6 +24,7 @@ export interface Ficha {
     expertises: Expertises
     traits: Trait[]
     session?: SessionInfo[]
+    status: Status[]
 
     capacity: {
         cargo: number
@@ -284,6 +285,11 @@ export interface MagicPower {
     'descrição': string
     maestria: string
     'pré-requisito'?: string
+}
+
+export interface Status {
+    name: string
+    type: 'buff' | 'debuff' | 'normal'
 }
 
 export type FinancialCondition = 'Miserável' | 'Pobre' | 'Estável' | 'Rico'

@@ -27,7 +27,8 @@ import type {
     RarityType,
     Occupation,
     SessionAttributes,
-    SessionInfo
+    SessionInfo,
+    Status
 } from './ficha';
 
 import type { 
@@ -93,6 +94,7 @@ export type {
     Notification,
     Class,
     Item,
+    Status,
     Member,
     Magic,
     Weapon,
