@@ -152,7 +152,7 @@ export default function CampaignGMDashboard(): ReactElement | null {
                                     if (isLevelingUp) return
                                     const newSelected = selectedPlayers.includes(player.id)
                                         ? selectedPlayers.filter(id => id !== player.id)
-                                        : [...selectedPlayers, player.id]
+                                        : [ ...selectedPlayers, player.id ]
                                     setSelectedPlayers(newSelected)
                                 }}
                                 selected={selectedPlayers.includes(player.id)}

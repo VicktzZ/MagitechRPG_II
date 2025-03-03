@@ -55,7 +55,7 @@ export async function POST(req: Request) {
                 $set: {
                     level: newLevel,
                     'attributes.maxLp': ficha.attributes.maxLp + lpBonus,
-                    'attributes.maxMp': ficha.attributes.maxMp + mpBonus,
+                    'attributes.maxMp': ficha.attributes.maxMp + mpBonus
                 },
                 $push: {
                     'skills.class': { $each: newSkills }

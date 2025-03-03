@@ -10,7 +10,7 @@ const nextConfig = {
         ignoreBuildErrors: true
     },
     experimental: {
-        serverComponentsExternalPackages: ['mongoose']
+        serverComponentsExternalPackages: [ 'mongoose' ]
     },
     logging: {
         fetches: {
@@ -18,7 +18,7 @@ const nextConfig = {
         }
     },
     images: {
-        domains: ['lh3.googleusercontent.com', 'cdn.discordapp.com'],
+        domains: [ 'lh3.googleusercontent.com', 'cdn.discordapp.com' ],
         remotePatterns: [
             {
                 protocol: 'https',
