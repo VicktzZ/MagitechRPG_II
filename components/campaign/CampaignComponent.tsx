@@ -3,7 +3,7 @@
 import { useChannel } from '@contexts/channelContext';
 import { Box, Backdrop, CircularProgress } from '@mui/material';
 import { useEffect, useState, type ReactElement } from 'react';
-import { CampaignPlayerDashboard, SessionChat } from '.';
+import { CampaignGMDashboard, CampaignPlayerDashboard, SessionChat } from '.';
 import { useSnackbar } from 'notistack';
 import { useSession } from '@node_modules/next-auth/react';
 import { useCampaignContext } from '@contexts/campaignContext';
@@ -35,13 +35,11 @@ export default function CampaignComponent(): ReactElement {
 
         channel.bind(PusherEvent.SUBSCRIPTION, handleSubscription);
 
-        channel.bind(PusherEvent.MEMBER_ADDED, async (user: PusherMemberParam) => {
-            channel.trigger('client-session_updated', { user: user.info._id, session: 'entered' })
+        channel.bind(PusherEvent.MEMBER_ADDED, (user: PusherMemberParam) => {
             enqueueSnackbar(`${user.info.name} entrou na sessão!`, toastDefault('enteredToChannel'));
         });
 
-        channel.bind(PusherEvent.MEMBER_REMOVED, async (user: PusherMemberParam) => {
-            channel.trigger('client-session_updated', { user: user.info._id, session: 'exit' })
+        channel.bind(PusherEvent.MEMBER_REMOVED, (user: PusherMemberParam) => {
             enqueueSnackbar(`${user.info.name} saiu da sessão!`, toastDefault('exitFromChannel'));
         });
 
@@ -56,31 +54,17 @@ export default function CampaignComponent(): ReactElement {
             }));
         })
 
-        channel.bind(PusherEvent.CAMPAIGN_UPDATED, () => {
-            console.log('Campaign updated');
-        });
-
         return () => {
             channel.unbind(PusherEvent.CAMPAIGN_UPDATED);
         };
     }, [ ]);
-
-    // const handleExpertiseRoll = (result: number, expertiseName: string, bonus: number) => {
-    //     const message = `Rolou ${expertiseName} (1d20 + ${bonus}) = ${result}`
-    //     addMessage({
-    //         type: 'roll',
-    //         content: message,
-    //         sender: ficha.nome
-    //     })
-    // }
 
     if (!isSubscribed) {
         return (
             <Backdrop
                 open={true}
                 sx={{
-                    zIndex: theme => theme.zIndex.drawer + 1,
-                    backgroundColor: 'background.default'
+                    zIndex: theme => theme.zIndex.drawer + 1
                 }}
             >
                 <CircularProgress color="primary" />
@@ -100,7 +84,10 @@ export default function CampaignComponent(): ReactElement {
                 <Box sx={{
                     width: '100%'
                 }}>
-                    <CampaignPlayerDashboard />
+                    {campaign.admin.includes(session?.user?._id ?? '') ? 
+                        <CampaignGMDashboard /> :
+                        <CampaignPlayerDashboard />
+                    }
                 </Box>
             </Box>
             <SessionChat />

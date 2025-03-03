@@ -13,8 +13,8 @@ interface MoneyAndAmmoProps {
 export default function MoneyAndAmmo({ ficha }: MoneyAndAmmoProps): ReactElement {
     const [ ammo, setAmmo ] = useState<AmmoControl>({
         type: AmmoType.BULLET,
-        current: 0,
-        max: 30
+        current: ficha.ammoCounter.current,
+        max: ficha.ammoCounter.max
     });
 
     const ammoPercent = (ammo.current / ammo.max) * 100;

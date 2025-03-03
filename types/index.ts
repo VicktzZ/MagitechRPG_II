@@ -27,7 +27,8 @@ import type {
     RarityType,
     Occupation,
     SessionAttributes,
-    SessionInfo
+    SessionInfo,
+    Status
 } from './ficha';
 
 import type { 
@@ -44,7 +45,8 @@ import type {
     TestData,
     TestRequest,
     TempMessage,
-    AmmoControl
+    AmmoControl,
+    Notification
 } from './models';
 
 import type { 
@@ -89,8 +91,10 @@ export type {
     MergedItems,
     Campaign,
     RarityType,
+    Notification,
     Class,
     Item,
+    Status,
     Member,
     Magic,
     Weapon,

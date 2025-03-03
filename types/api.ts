@@ -5,6 +5,8 @@ export interface ApiRequest<T> {
     post: <K = T>(body: K) => Promise<T>
     delete: (id: string) => Promise<T>
     patch: <K = T>(id: string, body: K) => Promise<T>
+    put: <K = T>(id: string, body: K) => Promise<T>
+
     url: (address: string) => ApiRequest<T>
 }
 

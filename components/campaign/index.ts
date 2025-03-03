@@ -5,6 +5,7 @@ import CampaignPlayerDashboard from './CampaignPlayerDashboard';
 import PlayerAvatar from './PlayerAvatar';
 import CampaignHeader from './CampaignHeader';
 import SessionChat from './SessionChat';
+import CampaignGMDashboard from './CampaignGMDashboard';
 
 export {
     CampaignOptionsModal,
@@ -12,6 +13,7 @@ export {
     CampaignHeader,
     CampaignComponent,
     CampaignPlayerDashboard,
+    CampaignGMDashboard,
     SessionChat,
     PlayerAvatar
 };

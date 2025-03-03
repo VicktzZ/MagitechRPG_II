@@ -55,6 +55,17 @@ export function apiRequest<T>(baseUrl: string): ApiRequest<T> {
             return response
         },
 
+        put: async <K = T>(id: string, body: K) => {
+            const response = await fetch(`${url}/${id}`, {
+                method: ApiMethod.PUT,
+                body: JSON.stringify(body),
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            }).then(async r => await r.json())
+            return response
+        },
+
         url: (address: string) => {
             return apiRequest<T>(baseUrl + '/' + address)
         }
