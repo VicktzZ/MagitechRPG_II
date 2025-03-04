@@ -14,7 +14,7 @@ export const fichaService: Service<Ficha, 'userId'> & {
     async deleteById(id) { return await del(id); },
     async updateStatus(id: string, status: Status[]) {
         return await put(`${id}/status`, { status })
-    },
+    }
     // async levelUp(fichaId: string) {
     //     return await post('levelup', { fichaId })
     // }
