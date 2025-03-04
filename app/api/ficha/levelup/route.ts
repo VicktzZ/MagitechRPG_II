@@ -1,9 +1,6 @@
 import { connectToDb } from '@utils/database'
-import { pusherServer } from '@utils/pusher'
-import { PusherEvent } from '@enums'
 import Ficha from '@models/ficha'
 import { skills } from '@constants/skills'
-import { notificationService } from '@services'
 import type { Skill } from '@types'
 
 export async function POST(req: Request) {
@@ -62,21 +59,6 @@ export async function POST(req: Request) {
                 }
             },
             { new: true }
-        )
-
-        // Cria notificação para o jogador
-        await notificationService.create({
-            userId: ficha.userId,
-            title: 'Level Up!',
-            message: `Seu personagem subiu para o nível ${newLevel}! ${newSkills.length > 0 ? `\nNovas habilidades desbloqueadas: ${newSkills.map(s => s.name).join(', ')}` : ''}`,
-            type: 'success'
-        })
-
-        // Notifica os clientes sobre a atualização
-        await pusherServer.trigger(
-            `presence-${ficha.userId}`,
-            PusherEvent.FICHA_UPDATED,
-            updatedFicha
         )
 
         return Response.json(updatedFicha)

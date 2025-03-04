@@ -46,7 +46,8 @@ import type {
     TestRequest,
     TempMessage,
     AmmoControl,
-    Notification
+    Notification,
+    Note
 } from './models';
 
 import type { 
@@ -106,6 +107,7 @@ export type {
     Skill,
     EventData,
     Lineage,
+    Note,
     Expertises,
     Expertise,
     Race,

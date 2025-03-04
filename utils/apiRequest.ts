@@ -5,7 +5,7 @@ export function apiRequest<T>(baseUrl: string): ApiRequest<T> {
     const url = '/api/' + baseUrl
 
     return {
-        get: async <K extends string = ''>(params?: { queryParams?: QueryParamsDto<K>, param?: string }) => {
+        get: async <K extends string = '', L = T>(params?: { queryParams?: QueryParamsDto<K>, param?: string, body?: L }) => {
             let apiUrl = url;
 
             if (params?.param) {
@@ -25,7 +25,7 @@ export function apiRequest<T>(baseUrl: string): ApiRequest<T> {
         },
 
         post: async <K = T>(body: K) => {
-            return await fetch(url, {
+            return await fetch(url, {   
                 method: ApiMethod.POST,
                 body: JSON.stringify(body),
                 headers: {
@@ -34,9 +34,10 @@ export function apiRequest<T>(baseUrl: string): ApiRequest<T> {
             }).then(async r => await r.json())
         },
 
-        delete: async (id: string) => {
+        delete: async <K = T>(id: string, body?: K) => {
             const response = await fetch(`${url}/${id}`, {
                 method: ApiMethod.DELETE,
+                body: JSON.stringify(body),
                 headers: {
                     'Content-Type': 'application/json'
                 }
