@@ -18,7 +18,6 @@ import { useChannel } from '@contexts/channelContext'
 import { useCampaignContext } from '@contexts/campaignContext'
 import { PusherEvent } from '@enums'
 import { grey } from '@mui/material/colors'
-import { fichaService } from '@services'
 import type { User } from '@types'
 import Image from 'next/image'
 
@@ -29,10 +28,8 @@ interface OnlineUser extends User {
 export default function CampaignHeader(): ReactElement {
     const { data: session } = useSession()
     const { channel } = useChannel()
-    const { campaign, campUsers } = useCampaignContext()
+    const { campaign, campUsers, playerFichas } = useCampaignContext()
     const [ onlineUsers, setOnlineUsers ] = useState<OnlineUser[]>([])
-    const [ fichas, setFichas ] = useState<any[]>([])
-    const [ isLoading, setIsLoading ] = useState<boolean>(true)
     const [ sessionUsers, setSessionUsers ] = useState<string[]>([])
     const [ copiedCode, setCopiedCode ] = useState<boolean>(false)
     const isMobile = useMediaQuery((theme: Theme) => theme.breakpoints.down('sm'))
@@ -58,7 +55,7 @@ export default function CampaignHeader(): ReactElement {
             channel.trigger(PusherEvent.SESSION_USERS_UPDATED, {
                 user: session.user,
                 lastSeen: new Date()
-            })
+            }) 
         }, 10000) // Atualiza a cada 10 segundos
 
         return () => clearInterval(interval)
@@ -115,27 +112,6 @@ export default function CampaignHeader(): ReactElement {
         setSessionUsers(campaign.session.users)
     }, [ campaign.session.users ])
 
-    useEffect(() => {
-        const fetchPlayersFicha = async (): Promise<void> => {
-            if (!campaign.players.length) return
-
-            setIsLoading(true)
-            try {
-                const fichaResponse = await Promise.all(
-                    campaign.players.map(async player => await fichaService.getById(player.fichaId))
-                )
-
-                setFichas(fichaResponse.filter(Boolean))
-            } catch (error) {
-                console.error('Erro ao buscar fichas:', error)
-            } finally {
-                setIsLoading(false)
-            }
-        }
-
-        fetchPlayersFicha()
-    }, [ campaign.players ])
-
     const renderUserAvatar = (user: User, isAdmin: boolean = false) => (
         <Box display="flex" gap={2} key={user._id}>
             <Avatar sx={{ height: '3rem', width: '3rem' }}>
@@ -154,7 +130,7 @@ export default function CampaignHeader(): ReactElement {
             </Avatar>
             <Box>
                 <Typography>
-                    {isAdmin ? 'Game Master' : fichas.find(ficha => ficha.userId === user._id)?.name}
+                    {isAdmin ? 'Game Master' : playerFichas.find(ficha => ficha.userId === user._id)?.name}
                 </Typography>
                 <Typography color={grey[500]} variant="caption">
                     {user.name}
@@ -292,7 +268,7 @@ export default function CampaignHeader(): ReactElement {
                 >
                     {campUsers.player.map(user => (
                         <Box display="flex" flexDirection="column" gap={2} key={user._id}>
-                            {isLoading && isMobile ? (
+                            {isMobile ? (
                                 <Box display="flex" alignItems="center" gap={2}>
                                     <Skeleton variant="circular" width={45} height={45} />
                                     <Box>

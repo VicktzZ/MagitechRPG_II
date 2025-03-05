@@ -1,36 +1,38 @@
-'use client'
+'use client';
 
-import { useState, type ReactElement } from 'react'
 import {
     Box,
     Grid,
     Paper,
-    Typography,
     Avatar,
     Button,
     Dialog,
     DialogTitle,
     DialogContent,
     DialogActions,
-    IconButton,
     List,
     ListItem,
     ListItemAvatar,
     ListItemText,
-    ListItemSecondaryAction,
     Menu,
     MenuItem,
     CircularProgress,
     TextField,
-    Snackbar
+    Snackbar,
+    Typography
 } from '@mui/material'
 import { useCampaignContext } from '@contexts/campaignContext'
 import { useGameMasterContext } from '@contexts/gameMasterContext'
-import { fichaService } from '@services'
 import AddIcon from '@mui/icons-material/Add'
-import EditIcon from '@mui/icons-material/Edit'
+import FavoriteIcon from '@mui/icons-material/Favorite'
+import BoltIcon from '@mui/icons-material/Bolt'
+import ShieldIcon from '@mui/icons-material/Shield'
+import MonetizationOnIcon from '@mui/icons-material/MonetizationOn'
+import LocalPoliceIcon from '@mui/icons-material/LocalPolice'
 import type { Status } from '@types'
 import { useSnackbar } from 'notistack'
+import { type ReactElement, useState } from 'react';
+import { fichaService } from '@services';
 
 export default function CampaignGMDashboard(): ReactElement | null {
     const { campUsers, playerFichas } = useCampaignContext()
@@ -104,47 +106,92 @@ export default function CampaignGMDashboard(): ReactElement | null {
     }
 
     return (
-        <Box sx={{ width: '100%' }}>
+        <Box>
             <Grid container spacing={2}>
-                {/* Painel de Iniciativa e Status */}
                 <Grid item xs={12}>
-                    <Paper sx={{ p: 2 }}>
+                    <Paper sx={{ p: 2, bgcolor: 'background.paper2' }}>
                         <Typography variant="h6" gutterBottom>
-                            Ordem de Iniciativa
+                            Jogadores
                         </Typography>
-                        <List>
-                            {players
-                                .sort((a, b) => b.initiative - a.initiative)
-                                .map((player) => (
-                                    <ListItem
-                                        key={player.id}
-                                        sx={{
-                                            mb: 1,
+                        <Grid container spacing={2}>
+                            {playerFichas.map((ficha, index) => (
+                                <Grid item xs={12} md={6} key={ficha._id}>
+                                    <Paper 
+                                        sx={{ 
+                                            p: 2,
                                             bgcolor: 'background.paper',
-                                            borderRadius: 1
+                                            borderRadius: 1,
+                                            height: '100%',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            alignItems: 'center'
                                         }}
                                     >
-                                        <ListItemAvatar>
-                                            <Avatar src={player.avatar} />
-                                        </ListItemAvatar>
-                                        <ListItemText
-                                            primary={player.name}
-                                            secondary={
-                                                <Box sx={{ display: 'flex', gap: 1 }}>
-                                                    {/* Status chips */}
-                                                </Box>
-                                            }
-                                        />
-                                        <ListItemSecondaryAction>
-                                            <IconButton
-                                                size="small"
-                                            >
-                                                <EditIcon />
-                                            </IconButton>
-                                        </ListItemSecondaryAction>
-                                    </ListItem>
-                                ))}
-                        </List>
+                                        {/* Nome e Informações do Personagem */}
+                                        <Box textAlign="center" mb={2}>
+                                            <Typography variant="subtitle1" fontWeight="bold">
+                                                {ficha.name}
+                                            </Typography>
+                                            <Typography variant="body2" color="text.secondary">
+                                                Nv. {ficha.level} • {ficha.class as string} • {ficha.lineage as unknown as string}
+                                            </Typography>
+                                        </Box>
+
+                                        {/* Status com Ícones */}
+                                        <Box 
+                                            display="flex" 
+                                            gap={2}
+                                            flexWrap="wrap"
+                                            justifyContent="center"
+                                            sx={{
+                                                '& .stat': {
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: 0.5,
+                                                    minWidth: '80px',
+                                                    justifyContent: 'center'
+                                                }
+                                            }}
+                                        >
+                                            <Box className="stat">
+                                                <FavoriteIcon color="error" sx={{ fontSize: 16 }} />
+                                                <Typography variant="body2">
+                                                    {ficha.attributes.lp}/{ficha.maxLp}
+                                                </Typography>
+                                            </Box>
+
+                                            <Box className="stat">
+                                                <BoltIcon color="info" sx={{ fontSize: 16 }} />
+                                                <Typography variant="body2">
+                                                    {ficha.attributes.mp}/{ficha.maxMp}
+                                                </Typography>
+                                            </Box>
+
+                                            <Box className="stat">
+                                                <ShieldIcon color="success" sx={{ fontSize: 16 }} />
+                                                <Typography variant="body2">
+                                                    {ficha.attributes.ap}/{ficha.maxAp}
+                                                </Typography>
+                                            </Box>
+
+                                            <Box className="stat">
+                                                <MonetizationOnIcon sx={{ fontSize: 16, color: 'gold' }} />
+                                                <Typography variant="body2">
+                                                    {ficha.inventory.money}
+                                                </Typography>
+                                            </Box>
+
+                                            <Box className="stat">
+                                                <LocalPoliceIcon sx={{ fontSize: 16, color: 'orange' }} />
+                                                <Typography variant="body2">
+                                                    {ficha.ammoCounter.current}/{ficha.ammoCounter.max}
+                                                </Typography>
+                                            </Box>
+                                        </Box>
+                                    </Paper>
+                                </Grid>
+                            ))}
+                        </Grid>
                     </Paper>
                 </Grid>
 
