@@ -15,6 +15,7 @@ const damages: DamageType[] = [
     'Cortante',
     'Impactante',
     'Perfurante',
+    'Explosivo',
     'Fogo',
     'Água',
     'Ar',
@@ -28,7 +29,9 @@ const damages: DamageType[] = [
 const weaponKind = [
     'Arremessável',
     'Duas mãos',
-    'Padrão'
+    'Padrão',
+    'Automática',
+    'Semi-automática'
 ] 
 
 const armorKind: Array<Armor['kind']> = [
@@ -102,6 +105,14 @@ const energyWeaponAmmo: AmmoType[] = [
     'Amplificador de partículas',
     'Cartucho de fusão',
     'Servomotor iônico'
+]
+
+const otherWeaponAmmo: AmmoType[] = [
+    'Foguete',
+    'Serra de metal',
+    'Combustível',
+    'Bateria de Cádmio com Óxido de Grafeno',
+    'Granada'    
 ]
 
 const weaponScientificAccessories: WeaponAccesoriesType [] = [
@@ -200,6 +211,7 @@ export {
     weaponCateg,
     energyWeaponAmmo,
     ballisticWeaponAmmo,
+    otherWeaponAmmo,
     armorMagicalAccessories,
     armorScientificAccessories,
     weaponMagicalAccessories,

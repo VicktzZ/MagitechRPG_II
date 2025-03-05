@@ -12,8 +12,11 @@ export interface User {
 export interface Notification {
     _id?: string
     userId: string
+    title: string
     content: string
     timestamp: Date
+    read: boolean
+    type: 'levelUp' | 'newMessage' | 'newPlayer' | 'other'
     link?: string
 }
 
@@ -63,8 +66,15 @@ export interface Campaign {
     title: string
     description: string
     players: Player[]
+    notes: Note[]
     myFicha?: Ficha | null
     session: Session
+}
+
+export interface Note {
+    _id?: string
+    content: string
+    timestamp: Date
 }
 
 export interface Session {

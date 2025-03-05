@@ -1,9 +1,9 @@
 import type { QueryParamsDto, UpdateByIdDto } from './dto'
 
 export interface ApiRequest<T> {
-    get: <K extends string = ''>(params?: { queryParams?: QueryParamsDto<K>, param?: string }) => Promise<T> 
+    get: <K extends string = '', L = T>(params?: { queryParams?: QueryParamsDto<K>, param?: string, body?: L }) => Promise<T> 
     post: <K = T>(body: K) => Promise<T>
-    delete: (id: string) => Promise<T>
+    delete: <K = T>(id: string, body?: K) => Promise<T>
     patch: <K = T>(id: string, body: K) => Promise<T>
     put: <K = T>(id: string, body: K) => Promise<T>
 

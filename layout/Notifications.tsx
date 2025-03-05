@@ -1,77 +1,157 @@
-import { Badge, Box, Menu, MenuItem, Typography } from '@mui/material';
-import { useEffect, useState } from 'react';
-import CustomIconButton from './CustomIconButton';
-import NotificationIcon from '@mui/icons-material/Notifications';
-import type { Notification } from '@types';
-import { notificationService } from '@services';
-import { useSession } from 'next-auth/react';
+'use client'
+
+import { useState, useEffect } from 'react'
+import { IconButton, Badge, Menu, MenuItem, Typography, Box } from '@mui/material'
+import { Notifications as NotificationsIcon } from '@mui/icons-material'
+import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
+import type { Notification } from '@types'
 
 export default function Notifications() {
-    const [ anchorEl, setAnchorEl ] = useState<null | HTMLElement>(null);
+    const { data: session } = useSession()
+    const router = useRouter()
+    const [ anchorEl, setAnchorEl ] = useState<null | HTMLElement>(null)
     const [ notifications, setNotifications ] = useState<Notification[]>([])
-    const { data: session } = useSession() 
-    const open = Boolean(anchorEl);
 
-    const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-        setAnchorEl(event.currentTarget);
-    };
+    // Busca notificações ao montar o componente
+    useEffect(() => {
+        const fetchNotifications = async () => {
+            if (!session?.user?._id) return
+
+            try {
+                const response = await fetch(`/api/notifications/${session.user._id}`)
+                if (!response.ok) {
+                    throw new Error('Erro ao buscar notificações')
+                }
+                
+                const data = await response.json()
+                
+                // Verifica se data é um array
+                if (Array.isArray(data)) {
+                    setNotifications(data)
+                } else {
+                    console.error('Resposta inválida:', data)
+                    setNotifications([])
+                }
+            } catch (error) {
+                console.error('Erro ao buscar notificações:', error)
+                setNotifications([])
+            }
+        }
+
+        fetchNotifications()
+    }, [ session?.user?._id ])
+
+    const handleClick = (event: React.MouseEvent<HTMLElement>) => {
+        setAnchorEl(event.currentTarget)
+    }
 
     const handleClose = () => {
-        setAnchorEl(null);
-    };
-
-    useEffect(() => {
-        notificationService
-            .getUserNotifications(session?.user._id ?? '')
-            .then(data => setNotifications(data))
-    }, [])
-
-    function NotificationComponent({ notification }: { notification: Notification }) {
-        return (
-            <MenuItem onClick={handleClose}>
-                <Box>
-                    <Typography>{notification.content}</Typography>
-                    <Typography variant='caption' color='text.secondary'>
-                        {new Intl.DateTimeFormat('pt-BR', {
-                            year: 'numeric',
-                            month: '2-digit',
-                            day: '2-digit',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                        }).format(new Date(notification.timestamp))}
-                    </Typography>
-                </Box>
-            </MenuItem>
-        )
+        setAnchorEl(null)
     }
-    
+
+    const handleNotificationClick = async (notification: Notification) => {
+        if (!notification._id) return
+
+        try {
+            const response = await fetch(`/api/notifications/${notification._id}`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ read: true })
+            })
+
+            if (!response.ok) {
+                throw new Error('Erro ao marcar notificação como lida')
+            }
+
+            // Atualiza estado local
+            setNotifications(prev => 
+                prev.map(n => 
+                    n._id === notification._id 
+                        ? { ...n, read: true }
+                        : n
+                )
+            )
+
+            // Fecha menu e navega para o link se existir
+            handleClose()
+            if (notification.link) {
+                router.push(notification.link)
+            }
+        } catch (error) {
+            console.error('Erro ao marcar notificação como lida:', error)
+        }
+    }
+
+    // Conta apenas notificações não lidas
+    const unreadCount = notifications.filter(n => !n.read).length
+
     return (
         <Box>
-            <Badge badgeContent={notifications.length} color="error">
-                <CustomIconButton onClick={handleClick}>
-                    <NotificationIcon />
-                </CustomIconButton>
-            </Badge>
+            <IconButton
+                size="large"
+                color="inherit"
+                onClick={handleClick}
+            >
+                <Badge badgeContent={unreadCount} color="error">
+                    <NotificationsIcon />
+                </Badge>
+            </IconButton>
+
             <Menu
-                id="basic-menu"
                 anchorEl={anchorEl}
-                open={open}
+                open={Boolean(anchorEl)}
                 onClose={handleClose}
-                MenuListProps={{
-                    'aria-labelledby': 'basic-button'
+                PaperProps={{
+                    style: {
+                        maxHeight: '80vh',
+                        width: '300px'
+                    }
                 }}
             >
-                {notifications.length > 0 && notifications.map(notification => (
-                    <NotificationComponent key={notification._id} notification={notification} />
-                ))}
-                {notifications.length === 0 && (
-                    <MenuItem onClick={handleClose}>
-                        <Box>
-                            <Typography>Você não possui notificações.</Typography>
-                        </Box>
+                {notifications.length === 0 ? (
+                    <MenuItem disabled>
+                        <Typography>Nenhuma notificação</Typography>
                     </MenuItem>
+                ) : (
+                    notifications.map(notification => (
+                        <MenuItem 
+                            key={notification._id} 
+                            onClick={async () => await handleNotificationClick(notification)}
+                            sx={{
+                                backgroundColor: notification.read ? 'transparent' : 'action.hover',
+                                '&:hover': {
+                                    backgroundColor: notification.read ? 'action.hover' : 'action.selected'
+                                }
+                            }}
+                        >
+                            <Box display='flex' flexDirection='column' gap={1} width="100%">
+                                <Typography fontWeight={notification.read ? 'normal' : 'bold'}>
+                                    {notification.title}
+                                </Typography>
+                                <Typography 
+                                    variant='body2' 
+                                    whiteSpace='pre-wrap'
+                                    color={notification.read ? 'text.secondary' : 'text.primary'}
+                                >
+                                    {notification.content}
+                                </Typography>
+                                <Typography variant='caption' color='text.secondary'>
+                                    {new Intl.DateTimeFormat('pt-BR', {
+                                        year: 'numeric',
+                                        month: 'numeric',
+                                        day: 'numeric',
+                                        hour: 'numeric',
+                                        minute: 'numeric'
+                                    }).format(new Date(notification.timestamp))}
+                                </Typography>
+                            </Box>
+                        </MenuItem>
+                    ))
                 )}
             </Menu>
         </Box>
-    );
+    )
 }

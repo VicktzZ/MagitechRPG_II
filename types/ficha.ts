@@ -197,12 +197,13 @@ export interface Weapon<T extends 'Leve' | 'Pesada' = any> {
     name: string
     description: string
     rarity: RarityType
-    kind: WeaponType
+    kind: WeaponType | WeaponType[]
     categ: WeaponCategory<T>
     range: RangeType
     weight: number
     hit: Attributes
     ammo: AmmoType | 'Não consome'
+    magazineSize?: number
     quantity?: number
     accessories?: WeaponAccesoriesType[]
     bonus: 'Luta' | 'Agilidade' | 'Furtividade' | 'Pontaria' | 'Magia' | 'Tecnologia' | 'Controle'
@@ -299,9 +300,9 @@ export type Attributes = 'des' | 'vig' | 'log' | 'sab' | 'foc' | 'car'
 export type UpperCaseAttributes = 'DES' | 'VIG' | 'LOG' | 'SAB' | 'FOC' | 'CAR'
 export type ItemType = 'Especial' | 'Utilidade' | 'Consumível' | 'Item Chave' | 'Munição' | 'Capacidade' | 'Padrão'
 export type RarityType = 'Comum' | 'Incomum' | 'Raro' | 'Épico' | 'Lendário' | 'Relíquia' | 'Mágico' | 'Especial'
-export type WeaponType = `Arremessável (${ThrowableRangeType})` | 'Duas mãos' | 'Padrão'
+export type WeaponType = `Arremessável (${ThrowableRangeType})` | 'Duas mãos' | 'Padrão' | 'Automática' | 'Semi-automática'
 export type ArmorType = 'Padrão' | DamageType
-export type DamageType = 'Cortante' | 'Impactante' | 'Perfurante' | Element
+export type DamageType = 'Cortante' | 'Impactante' | 'Perfurante' | 'Explosivo' | Element
 
 export type LineageNames = 
     'Órfão' |
@@ -362,7 +363,12 @@ export type AmmoType =
     'Amplificador de partículas' |
     'Cartucho de fusão' |
     'Servomotor iônico' |
-    'Flecha'
+    'Flecha' |
+    'Combustível' | 
+    'Foguete' | 
+    'Granada' |
+    'Serra de metal' |
+    'Bateria de Cádmio com Óxido de Grafeno'
 
 export type RangeType = 
     'Corpo-a-corpo' |
@@ -416,7 +422,8 @@ export type WeaponCategory<T extends 'Leve' | 'Pesada'> =
     `Arma de Longo Alcance (${T})` |
     `Arma de Fogo (${T})` |
     `Arma de Energia (${T})` |
-    `Arma Mágica (${T})`
+    `Arma Mágica (${T})` |
+    `Arma Especial (${T})`
 
 export type WeaponAccesoriesType = WeaponScientificAccesoriesType | WeaponMagicalAccesoriesType
 export type ArmorAccessoriesType = ArmorScientificAccesoriesType | ArmorMagicalAccesoriesType
@@ -477,6 +484,5 @@ export type Element =
     'Ar' |
     'Eletricidade' |
     'Trevas' |
-    'Psíquico' |
     'Luz' |
     'Não-elemental'

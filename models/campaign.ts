@@ -25,7 +25,19 @@ const messageSchema = new Schema({
         required: true,
         default: Date.now
     }
-}, { _id: false });
+});
+
+const noteSchema = new Schema({
+    content: {
+        type: String,
+        required: true
+    },
+    timestamp: {
+        type: Date,
+        required: true,
+        default: Date.now
+    }
+});
 
 const campaignSchema = new Schema<CampaignType>({
     admin: {
@@ -54,6 +66,11 @@ const campaignSchema = new Schema<CampaignType>({
         default: []
     },
 
+    notes: {
+        type: [ noteSchema ],
+        default: []
+    },
+    
     session: {
         type: new Schema({
             users: {
