@@ -1,30 +1,35 @@
-import { Schema, model, models } from 'mongoose';
+import mongoose from 'mongoose'
 
-const notificationSchema = new Schema({
+const notificationSchema = new mongoose.Schema({
     userId: {
         type: String,
-        required: [ true, 'UserId is required!' ]
+        required: [ true, 'User ID is required!' ]
+    },
+    title: {
+        type: String,
+        required: [ true, 'Title is required!' ]
     },
     content: {
         type: String,
         required: [ true, 'Content is required!' ]
     },
+    read: {
+        type: Boolean,
+        default: false
+    },
+    type: {
+        type: String,
+        required: [ true, 'Type is required!' ],
+        enum: [ 'levelUp', 'newMessage', 'newPlayer', 'other' ],
+        default: 'other'
+    },
     timestamp: {
         type: Date,
         required: [ true, 'Timestamp is required!' ],
         default: Date.now
-    },
-    link: {
-        type: String
     }
 })
 
-notificationSchema.methods['clearNotificationsIfLimitReached'] = function(limit: number) {
-    if (this['notifications'].length > limit) {
-        this['notifications'] = this['notifications'].slice(-limit);
-    }
-};
-
-const Notification = models['Notification'] || model('Notification', notificationSchema)
+const Notification = mongoose.models['Notification'] || mongoose.model('Notification', notificationSchema)
 
 export default Notification

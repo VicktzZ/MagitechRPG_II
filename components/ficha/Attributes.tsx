@@ -343,7 +343,7 @@ export default function Attributes({ disabled }: { disabled?: boolean }): ReactE
                     <LinearProgressWithLabel
                         label='LP'
                         minvalue={!disabled ? f.values.attributes.lp : f.initialValues.attributes.lp}
-                        maxvalue={!disabled ? f.values.maxLp : f.initialValues.maxLp}
+                        maxvalue={!disabled ? f.values.attributes.lp : f.initialValues.maxLp}
                         color='error'
                         morecomponents={
                             <Box ml={1} sx={{
@@ -367,7 +367,7 @@ export default function Attributes({ disabled }: { disabled?: boolean }): ReactE
                     <LinearProgressWithLabel
                         label='MP'
                         minvalue={!disabled ? f.values.attributes.mp : f.initialValues.attributes.mp}
-                        maxvalue={!disabled ? f.values.maxMp : f.initialValues.maxMp}
+                        maxvalue={!disabled ? f.values.attributes.mp : f.initialValues.maxMp}
                         color='info'
                         morecomponents={
                             <Box ml={1} sx={{
@@ -391,7 +391,7 @@ export default function Attributes({ disabled }: { disabled?: boolean }): ReactE
                     <LinearProgressWithLabel
                         label='AP'
                         minvalue={Math.floor(!disabled ? f.values.attributes.ap : f.initialValues.attributes.ap)}
-                        maxvalue={Math.floor(!disabled ? f.values.maxAp : f.initialValues.maxAp)}
+                        maxvalue={Math.floor(!disabled ? f.values.attributes.ap : f.initialValues.maxAp)}
                         color='warning'
                     />
                 </Box>

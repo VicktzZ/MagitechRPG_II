@@ -68,7 +68,7 @@ export default function MoneyAndAmmo({ ficha }: MoneyAndAmmoProps): ReactElement
 
     return (
         <Grid item xs={12} md={6}>
-            <Paper sx={{ p: 2, bgcolor: 'background.paper2', borderRadius: 2 }}>
+            <Paper sx={{ p: 2, bgcolor: 'background.paper2', borderRadius: 2, minHeight: '100%' }}>
                 <Box sx={{ mb: 3 }}>
                     <Typography variant="h6" gutterBottom>
                         Dinheiro

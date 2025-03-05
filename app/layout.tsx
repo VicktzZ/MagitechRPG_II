@@ -4,6 +4,12 @@ import '@public/global.css'
 
 import { type ReactElement } from 'react';
 import ContextProvider from '@contexts/ContextProvider';
+import { startJobs } from '@jobs'
+
+// Inicia os jobs apenas no servidor
+if (typeof window === 'undefined') {
+    startJobs()
+}
 
 export const metadata: Metadata = {
     title: 'Magitech RPG',

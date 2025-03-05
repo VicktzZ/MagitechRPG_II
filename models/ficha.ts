@@ -440,6 +440,39 @@ const fichaSchema = new Schema<FichaType>({
             required: [ true, 'Car is required!' ],
             default: 0
         }
+    },
+    maxLp: {
+        type: Number,
+        required: [ true, 'Max LP is required!' ],
+        default: function() {
+            return this.attributes.lp;
+        }
+    },
+    maxMp: {
+        type: Number,
+        required: [ true, 'Max MP is required!' ],
+        default: function() {
+            return this.attributes.mp;
+        }
+    },
+    maxAp: {
+        type: Number,
+        required: [ true, 'Max AP is required!' ],
+        default: function() {
+            return this.attributes.ap;
+        }
+    },
+    ammoCounter: {
+        current: {
+            type: Number,
+            required: [ true, 'Current ammo is required!' ],
+            default: 0
+        },
+        max: {
+            type: Number,
+            required: [ true, 'Max ammo is required!' ],
+            default: 30
+        }
     }
 })
 

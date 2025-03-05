@@ -1,7 +1,18 @@
-import type { Campaign, User } from '@types'
+import type { Campaign, Ficha, User } from '@types'
 import { createContext, type Dispatch, type SetStateAction, useContext } from 'react'
 
-export const campaignContext = createContext<{ campaign: Campaign, setCampaign: Dispatch<SetStateAction<Campaign>>, campUsers: { admin: User[], player: User[] } }>({
+interface CampaignContextType {
+    campaign: Campaign
+    setCampaign: Dispatch<SetStateAction<Campaign>>
+    campUsers: {
+        admin: User[]
+        player: User[]
+    }
+
+    playerFichas: Ficha[]
+}
+
+export const campaignContext = createContext<CampaignContextType>({
     campaign: {
         _id: '',
         admin: [],
@@ -13,13 +24,15 @@ export const campaignContext = createContext<{ campaign: Campaign, setCampaign: 
             users: [],
             messages: []
         },
-        myFicha: null
+        myFicha: null,
+        notes: []
     },
     campUsers: {
         admin: [],
         player: []
     },
+    playerFichas: [],
     setCampaign: () => {}
 })
 
-export const useCampaignContext = (): { campaign: Campaign, setCampaign: Dispatch<SetStateAction<Campaign>>, campUsers: { admin: User[], player: User[] } } => useContext(campaignContext)
+export const useCampaignContext = (): CampaignContextType => useContext(campaignContext)

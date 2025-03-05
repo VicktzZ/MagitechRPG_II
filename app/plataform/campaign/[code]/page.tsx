@@ -32,6 +32,7 @@ export default function Campaign({ params }: { params: { code: string } }): Reac
     const [ openFichaModal, setOpenFichaModal ] = useState<boolean>(false);
     const [ ficha, setFicha ] = useState<Ficha>();
     const [ campaignUsers, setCampaignUsers ] = useState<User[]>([]);
+    const [ playerFichas, setPlayerFichas ] = useState<Ficha[]>([]);
     const pusherClientRef = useRef<PusherClient | null>(null);
     const channelRef = useRef<PresenceChannel | null>(null);
 
@@ -82,7 +83,17 @@ export default function Campaign({ params }: { params: { code: string } }): Reac
                     setOpenFichaModal(true);
                 }
                 setAllGameMastersId(campaignResponse.admin);
+
+                // Busca as fichas dos jogadores
+                const playerFichasPromise = Promise.all(campaignResponse.players.map(async (player) => {
+                    const playerFicha = await fichaService.getById(player.fichaId);
+                    return playerFicha;
+                }));
+    
+                const playerFichasResponse = await playerFichasPromise;
+                setPlayerFichas(playerFichasResponse);
             }
+
             setIsLoading(false)
         }
 
@@ -180,7 +191,7 @@ export default function Campaign({ params }: { params: { code: string } }): Reac
             )}
 
             {campaign && channel && ((!isLoading && isUserGM) || (!isLoading && ficha)) && (
-                <campaignContext.Provider value={{ campaign, setCampaign, campUsers }}>
+                <campaignContext.Provider value={{ campaign, setCampaign, campUsers, playerFichas }}>
                     <gameMasterContext.Provider value={{ allGameMastersId, isUserGM }}>
                         <ChatProvider>
                             <Box display='flex' flexDirection='column' gap={3} p={2} minHeight='90vh'>

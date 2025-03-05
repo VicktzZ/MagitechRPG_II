@@ -20,7 +20,9 @@ import {
     ListItemSecondaryAction,
     Menu,
     MenuItem,
-    CircularProgress
+    CircularProgress,
+    TextField,
+    Snackbar
 } from '@mui/material'
 import { useCampaignContext } from '@contexts/campaignContext'
 import { useGameMasterContext } from '@contexts/gameMasterContext'
@@ -28,46 +30,66 @@ import { fichaService } from '@services'
 import AddIcon from '@mui/icons-material/Add'
 import EditIcon from '@mui/icons-material/Edit'
 import type { Status } from '@types'
+import { useSnackbar } from 'notistack'
 
 export default function CampaignGMDashboard(): ReactElement | null {
-    const { campaign, campUsers } = useCampaignContext()
+    const { campUsers, playerFichas } = useCampaignContext()
     const { isUserGM } = useGameMasterContext()
     const [ levelUpDialogOpen, setLevelUpDialogOpen ] = useState(false)
     const [ selectedPlayers, setSelectedPlayers ] = useState<string[]>([])
     const [ playerAnchorEl, setPlayerAnchorEl ] = useState<null | HTMLElement>(null)
     const [ statusAnchorEl, setStatusAnchorEl ] = useState<null | HTMLElement>(null)
     const [ isLevelingUp, setIsLevelingUp ] = useState(false)
+    const [ levelsToAdd, setLevelsToAdd ] = useState<number>(1)
+    const { enqueueSnackbar } = useSnackbar()
 
     // Se não for GM, não renderiza nada
     if (!isUserGM) return null
 
-    const players = campUsers.player.map(player => ({
-        id: player._id,
-        name: player.name,
-        avatar: player.image ?? '/assets/default-avatar.jpg',
-        initiative: 0, // Valor inicial
-        status: [], // Array de status
-        ficha: campaign.players.find(p => p.userId === player._id)?.fichaId
-    }))
+    const players = campUsers.player.map(player => {
+        const playerFicha = playerFichas.find(f => f.userId === player._id)
+
+        return {
+            id: player._id,
+            name: player.name,
+            avatar: player.image ?? '/assets/default-avatar.jpg',
+            initiative: 0,
+            status: [],
+            ficha: playerFicha!
+        }
+    })
 
     const handleLevelUp = async () => {
         try {
             setIsLevelingUp(true)
 
-            // Evolui cada jogador selecionado
+            // Processa cada jogador individualmente para poder mostrar mensagens específicas
             await Promise.all(
                 selectedPlayers.map(async (playerId) => {
                     const player = players.find(p => p.id === playerId)
-                    if (player?.ficha) {
-                        await fichaService.levelUp(player.ficha._id)
+                    if (player?.ficha._id) {
+                        try {
+                            const updatedFicha = await fichaService.increaseLevel(player.ficha._id, levelsToAdd)
+                            enqueueSnackbar(
+                                `Ficha ${player.ficha.name} foi para o nível ${updatedFicha.level}!`, 
+                                { variant: 'success' }
+                            )
+                        } catch (error) {
+                            console.error(`Erro ao evoluir ficha ${player.ficha.name}:`, error)
+                            enqueueSnackbar(
+                                `Não foi possível evoluir a ficha ${player.ficha.name}!`,
+                                { variant: 'error' }
+                            )
+                        }
                     }
                 })
             )
 
             setLevelUpDialogOpen(false)
+            setLevelsToAdd(1)
             setSelectedPlayers([])
         } catch (error) {
-            console.error('Erro ao evoluir jogadores:', error)
+            console.error('Erro ao aumentar nível:', error)
         } finally {
             setIsLevelingUp(false)
         }
@@ -150,21 +172,39 @@ export default function CampaignGMDashboard(): ReactElement | null {
                                 button
                                 onClick={() => {
                                     if (isLevelingUp) return
-                                    const newSelected = selectedPlayers.includes(player.id)
+                                    const newSelected = selectedPlayers.includes(player.id!)
                                         ? selectedPlayers.filter(id => id !== player.id)
                                         : [ ...selectedPlayers, player.id ]
-                                    setSelectedPlayers(newSelected)
+                                    setSelectedPlayers(newSelected as string[])
                                 }}
-                                selected={selectedPlayers.includes(player.id)}
+                                selected={selectedPlayers.includes(player.id!)}
                                 disabled={isLevelingUp}
                             >
                                 <ListItemAvatar>
                                     <Avatar src={player.avatar} />
                                 </ListItemAvatar>
-                                <ListItemText primary={player.name} />
+                                <ListItemText 
+                                    primary={player.ficha.name}
+                                    secondary={`Nível Atual: ${player.ficha.level ?? 'N/A'}`}
+                                />
                             </ListItem>
                         ))}
                     </List>
+                    <Box sx={{ mt: 2 }}>
+                        <TextField
+                            label="Quantidade de Níveis"
+                            type="number"
+                            value={levelsToAdd}
+                            onChange={(e) => {
+                                const value = parseInt(e.target.value)
+                                if (value > 0) {
+                                    setLevelsToAdd(value)
+                                }
+                            }}
+                            inputProps={{ min: 1 }}
+                            fullWidth
+                        />
+                    </Box>
                 </DialogContent>
                 <DialogActions>
                     <Button 
@@ -220,6 +260,7 @@ export default function CampaignGMDashboard(): ReactElement | null {
                     Fortalecido
                 </MenuItem>
             </Menu>
+            <Snackbar />
         </Box>
     )
 }

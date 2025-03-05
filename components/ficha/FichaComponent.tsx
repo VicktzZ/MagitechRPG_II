@@ -51,9 +51,9 @@ export default function FichaComponent({ disabled, ficha }: { disabled?: boolean
                                     lp: initialValues.attributes.lp,
                                     mp: initialValues.attributes.mp
                                 },
-                                maxLp: initialValues.maxLp,
-                                maxMp: initialValues.maxMp,
-                                maxAp: initialValues.maxAp
+                                maxLp: initialValues.attributes.lp,
+                                maxMp: initialValues.attributes.mp,
+                                maxAp: initialValues.attributes.ap
                             }
                         })
 

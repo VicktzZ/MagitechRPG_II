@@ -12,8 +12,11 @@ export interface User {
 export interface Notification {
     _id?: string
     userId: string
+    title: string
     content: string
     timestamp: Date
+    read: boolean
+    type: 'levelUp' | 'newMessage' | 'newPlayer' | 'other'
     link?: string
 }
 
