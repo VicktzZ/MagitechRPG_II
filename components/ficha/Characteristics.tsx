@@ -167,7 +167,7 @@ export default function Characteristics({ disabled }: { disabled?: boolean }): R
                     name='name'
                     label='Nome'
                     onBlur={f.handleChange}
-                    defaultValue={f.values.name}
+                    defaultValue={f.values.name?.trim()}
                     required
                     fullWidth
                     disabled={disabled}
