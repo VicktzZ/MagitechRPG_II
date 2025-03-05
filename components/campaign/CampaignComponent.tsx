@@ -35,8 +35,8 @@ export default function CampaignComponent(): ReactElement {
 
                 setIsSubscribed(true);
                 enqueueSnackbar('Você entrou na sessão!', toastDefault('subscriptionToChannel', 'success'));
-            } catch (error) {
-                console.error('Erro ao conectar na sessão:', error);
+            } catch (err) {
+                console.error('Erro ao conectar na sessão:', err);
                 setError('Erro ao entrar na sessão. Tente recarregar a página.');
                 enqueueSnackbar('Erro ao entrar na sessão. Tente novamente.', toastDefault('subscriptionToChannel', 'error'));
             }
