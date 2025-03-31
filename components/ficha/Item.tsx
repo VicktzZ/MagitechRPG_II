@@ -158,14 +158,14 @@ function Weapon(props: ItemTyping<'weapon'>): ReactElement {
                             variant='outlined'
                             sx={{ textTransform: 'lowercase' }}
                             onClick={() => { damageRoll({ name: 'Dano' }) }}
-                        >{props.effect?.value} {props.rarity !== 'Comum' && `+ (${rarityWeaponBonuses[props.rarity]})`}</Button>
+                        >{props.effect?.value} {props.rarity !== 'Comum' && props.rarity !== 'Amaldiçoado' && `+ (${rarityWeaponBonuses[props.rarity]})`}</Button>
                         <Button 
                             fullWidth 
                             sx={{ textTransform: 'lowercase' }} 
                             variant='outlined' 
                             color='error'
                             onClick={() => { damageRoll({ name: 'Crítico', crit: true }) }}
-                        >{props.effect?.critValue} {props.rarity !== 'Comum' && `+ (${rarityWeaponBonuses[props.rarity] * 2})`}</Button>
+                        >{props.effect?.critValue} {props.rarity !== 'Comum' && props.rarity !== 'Amaldiçoado' && `+ (${rarityWeaponBonuses[props.rarity] * 2})`}</Button>
                     </Box>
                 </Box>
             </Box>
@@ -200,7 +200,7 @@ function Armor(props: ItemTyping<'armor'>): ReactElement {
                 </Box>
                 <Box display='flex' alignItems='center' gap={2}>
                     <RPGIcon icon='aura' />
-                    <Typography fontSize='.8rem'>{props.value} {props.rarity !== 'Comum' && `+ (${rarityArmorBonuses[props.rarity]})`}</Typography>
+                    <Typography fontSize='.8rem'>{props.value} {props.rarity !== 'Comum' && props.rarity !== 'Amaldiçoado' && `+ (${rarityArmorBonuses[props.rarity]})`}</Typography>
                 </Box>
                 <Box display='flex' alignItems='center' gap={2}>
                     <RPGIcon icon='tower' />
@@ -241,7 +241,6 @@ function ItemComponent(props: ItemTyping<'item'>): ReactElement {
                         <RPGIcon icon='level_two_advanced' />
                         <Typography fontSize='.8rem'>{props?.level ?? 'Não possui'}</Typography>
                     </Box>
-
                 )}
                 <Box display='flex' alignItems='center' gap={2}>
                     <RPGIcon icon='help' />
@@ -278,10 +277,6 @@ function ItemWrapper({
                 'item'
 
     const onConfirm = async (): Promise<void> => {
-        // const itemNames = Object.values(f.values.inventory)
-        //     .filter(i => typeof i !== 'number')
-        //     .map((i: Array<MergedItems<any>>) => i.map(j => j.name))
-        //     .flat()
 
         f.values.inventory[(itemType + 's') as keyof Inventory] = 
             (f.values.inventory[(itemType + 's') as keyof Inventory] as any)

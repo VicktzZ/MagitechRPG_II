@@ -50,8 +50,10 @@ export default function InventorySection({ ficha }: InventorySectionProps): Reac
                                     label={item.rarity}
                                     size="small"
                                     sx={{
-                                        bgcolor: rarityColor[item.rarity as RarityType],
-                                        color: 'white'
+                                        bgcolor: item.rarity === 'Amaldiçoado' ? 'black' : rarityColor[item.rarity as RarityType],
+                                        color: item.rarity === 'Amaldiçoado' ? rarityColor[item.rarity as RarityType] : 'white',
+                                        border: '1px solid',
+                                        borderColor: item.rarity === 'Amaldiçoado' ? rarityColor[item.rarity as RarityType] : 'transparent'
                                     }}
                                 />
                             )}

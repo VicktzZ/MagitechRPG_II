@@ -1,9 +1,14 @@
 import { useChannel } from '@contexts/channelContext'
 import { PusherEvent } from '@enums'
 import { WarningModal } from '@layout'
-import { Add, Block, Bolt, Favorite, Info, LocalPolice, MonetizationOn, MoreVert, Shield } from '@mui/icons-material'
+import { Add, Block, Bolt, ChatBubbleOutline, Favorite, Info, LocalPolice, MonetizationOn, MoreVert, Shield } from '@mui/icons-material'
 import {
     Box,
+    Button,
+    DialogActions,
+    Dialog,
+    DialogContent,
+    DialogTitle,
     Divider,
     Grid,
     IconButton,
@@ -16,19 +21,24 @@ import {
     Typography
 } from '@mui/material'
 import { red } from '@mui/material/colors'
-import { campaignService, fichaService } from '@services'
+import { campaignService, fichaService, notificationService } from '@services'
 import type { Ficha, Item, Weapon } from '@types'
 import { enqueueSnackbar } from 'notistack'
 import { useState } from 'react'
 import { useCampaignContext } from '@contexts/campaignContext'
 import AddItemModal from './AddItemModal'
+import { TextField } from '@mui/material'
 
 export default function PlayerCard({ ficha }: { ficha: Required<Ficha> }) {
     const { channel } = useChannel()
     const { campaign, playerFichas } = useCampaignContext()
     const [ playerAnchorEl, setPlayerAnchorEl ] = useState<null | HTMLElement>(null)
     const [ addItemModalOpen, setAddItemModalOpen ] = useState(false)
-    const [ banUserDialogOpen, setBanUserDialogOpen ] = useState(false)
+    const [ removeUserDialogOpen, setRemoveUserDialogOpen ] = useState(false)
+
+    const [ notificationDialogOpen, setNotificationDialogOpen ] = useState(false)
+    const [ notificationTitle, setNotificationTitle ] = useState('')
+    const [ notificationContent, setNotificationContent ] = useState('')
 
     const handlePlayerMenuClick = (event: React.MouseEvent<HTMLElement>) => {
         setPlayerAnchorEl(event.currentTarget)
@@ -76,23 +86,42 @@ export default function PlayerCard({ ficha }: { ficha: Required<Ficha> }) {
         }
     }
 
+    const handleSendNotification = async () => {
+        try {
+            await notificationService.sendNotification(ficha.userId, {
+                title: notificationTitle,
+                content: notificationContent,
+                userId: ficha.userId,
+                timestamp: new Date(),
+                read: false,
+                type: 'other'
+            })
+
+            enqueueSnackbar('Notificação enviada com sucesso!', { variant: 'success' })
+        } catch (error: any) {
+            enqueueSnackbar(`Erro ao enviar notificação: ${error.message}`, { variant: 'error' })
+        }
+        
+        setNotificationDialogOpen(false)
+    }
+
     const viewFichaDetails = () => {
         console.log(playerFichas.find(f => f._id === ficha._id))
     }
 
-    const handleBanUser = async () => {
+    const handleRemoveUser = async () => {
         try {
             if (!ficha._id) return
 
-            await campaignService.banUser(campaign._id!, ficha.userId)
+            await campaignService.removeUser(campaign._id!, ficha.userId)
 
-            enqueueSnackbar('Usuário banido com sucesso!', { variant: 'success' })
-        } catch (error) {
-            console.error('Erro ao banir usuário:', error)
-            enqueueSnackbar('Erro ao banir usuário!', { variant: 'error' })
+            enqueueSnackbar('Usuário removido com sucesso!', { variant: 'success' })
+        } catch (error: any) {
+            console.error('Erro ao remover usuário:', error)
+            enqueueSnackbar(`Erro ao remover usuário: ${error.message}`, { variant: 'error' })
         }
 
-        setBanUserDialogOpen(false)
+        setRemoveUserDialogOpen(false)
     }
 
     return (
@@ -190,6 +219,12 @@ export default function PlayerCard({ ficha }: { ficha: Required<Ficha> }) {
                             </ListItemIcon>
                             <ListItemText>Adicionar Item</ListItemText>
                         </MenuItem>
+                        <MenuItem onClick={() => setNotificationDialogOpen(true)}>
+                            <ListItemIcon>
+                                <ChatBubbleOutline fontSize="small" />
+                            </ListItemIcon>
+                            <ListItemText>Enviar Notificação</ListItemText>
+                        </MenuItem>
                         <MenuItem onClick={viewFichaDetails}>
                             <ListItemIcon>
                                 <Info />
@@ -197,7 +232,7 @@ export default function PlayerCard({ ficha }: { ficha: Required<Ficha> }) {
                             <ListItemText>Ver detalhes</ListItemText>
                         </MenuItem>
                         <Divider />
-                        <MenuItem onClick={() => setBanUserDialogOpen(true)}>
+                        <MenuItem onClick={() => setRemoveUserDialogOpen(true)}>
                             <ListItemIcon>
                                 <Block sx={{ color: red[500] }} />
                             </ListItemIcon>
@@ -214,14 +249,48 @@ export default function PlayerCard({ ficha }: { ficha: Required<Ficha> }) {
                 onConfirm={handleAddItem}
             />
 
+            {/* Modal de Notificação */}
+            <Dialog open={notificationDialogOpen} onClose={() => setNotificationDialogOpen(false)}>
+                <DialogTitle>Enviar Notificação</DialogTitle>
+                <DialogContent>
+                    <TextField
+                        autoFocus
+                        margin="dense"
+                        id="notification-title"
+                        label="Título"
+                        type="text"
+                        fullWidth
+                        variant="outlined"
+                        value={notificationTitle}
+                        onChange={(e) => setNotificationTitle(e.target.value)}
+                    />
+                    <TextField
+                        margin="dense"
+                        id="notification-content"
+                        label="Conteúdo"
+                        type="text"
+                        fullWidth
+                        variant="outlined"
+                        multiline
+                        rows={4}
+                        value={notificationContent}
+                        onChange={(e) => setNotificationContent(e.target.value)}
+                    />
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setNotificationDialogOpen(false)}>Cancelar</Button>
+                    <Button onClick={handleSendNotification}>Enviar</Button>
+                </DialogActions>
+            </Dialog>
+
             {/* Modal de aviso */}
             <WarningModal
                 text={`Você tem certeza que deseja banir usuário ${playerFichas.find(
                     userFicha => userFicha._id === ficha._id
                 )?.name} da campanha?`}
-                open={banUserDialogOpen}
-                onClose={() => setBanUserDialogOpen(false)}
-                onConfirm={handleBanUser}
+                open={removeUserDialogOpen}
+                onClose={() => setRemoveUserDialogOpen(false)}
+                onConfirm={handleRemoveUser}
             />
         </>
     )

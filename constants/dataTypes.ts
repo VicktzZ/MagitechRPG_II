@@ -187,7 +187,8 @@ const rarityWeaponBonuses: Record<RarityType, number> = {
     'Lendário': 4,
     'Relíquia': 5,
     'Mágico': 5,
-    'Especial': 0
+    'Especial': 0,
+    'Amaldiçoado': 0
 }
 
 const rarityArmorBonuses: Record<RarityType, number> = {
@@ -198,7 +199,8 @@ const rarityArmorBonuses: Record<RarityType, number> = {
     'Lendário': 2,
     'Relíquia': 3,
     'Mágico': 3,
-    'Especial': 0
+    'Especial': 0,
+    'Amaldiçoado': 0
 }
 
 export {
