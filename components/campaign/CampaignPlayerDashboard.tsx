@@ -1,23 +1,24 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 'use client';
 
-import { useCallback, useState, type ReactElement } from 'react';
-import { Box, Button, Grid } from '@mui/material';
 import { useCampaignContext } from '@contexts/campaignContext';
 import { useGameMasterContext } from '@contexts/gameMasterContext';
 import { SkillType } from '@enums';
-import CharacterInfo from './dashboard/CharacterInfo';
-import SkillsSection from './dashboard/SkillsSection';
-import MoneyAndAmmo from './dashboard/MoneyAndAmmo';
-import InventorySection from './dashboard/InventorySection';
-import SpellsSection from './dashboard/SpellsSection';
-import ExpertiseSection from './dashboard/ExpertiseSection';
-import NotesSection from './dashboard/NotesSection';
+import { Box, Button, Grid } from '@mui/material';
 import { fichaService } from '@services';
+import { useCallback, useState, type ReactElement } from 'react';
+
+import CharacterInfo from './playerDashboard/CharacterInfo';
+import ExpertiseSection from './playerDashboard/ExpertiseSection';
+import InventorySection from './playerDashboard/InventorySection';
+import MoneyAndAmmo from './playerDashboard/MoneyAndAmmo';
+import NotesSection from './playerDashboard/NotesSection';
+import SkillsSection from './playerDashboard/SkillsSection';
+import SpellsSection from './playerDashboard/SpellsSection';
 
 export default function CampaignPlayerDashboard(): ReactElement | null {
     const { isUserGM } = useGameMasterContext();
-    const { campaign, campUsers } = useCampaignContext();
+    const { campaign, campUsers, setCampaign } = useCampaignContext();
     const [ selectedSkillType, setSelectedSkillType ] = useState<SkillType>(SkillType.ALL);
     const [ updatedNotes, setUpdatedNotes ] = useState<string | null>(null);
     const [ isSaving, setIsSaving ] = useState(false);
@@ -46,10 +47,10 @@ export default function CampaignPlayerDashboard(): ReactElement | null {
             });
             
             if (updatedFicha) {
-                // setCampaign(prev => ({
-                //     ...prev,
-                //     myFicha: updatedFicha
-                // }));
+                setCampaign(prev => ({
+                    ...prev,
+                    myFicha: updatedFicha
+                }));
                 setUpdatedNotes(null); // Reseta o estado após salvar com sucesso
             }
         } catch (error) {

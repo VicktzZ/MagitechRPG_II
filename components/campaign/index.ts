@@ -5,7 +5,7 @@ import CampaignPlayerDashboard from './CampaignPlayerDashboard';
 import PlayerAvatar from './PlayerAvatar';
 import CampaignHeader from './CampaignHeader';
 import SessionChat from './SessionChat';
-import CampaignGMDashboard from './CampaignGMDashboard';
+import CampaignGMDashboard from './gmDashboard/CampaignGMDashboard';
 import CampaignNotes from './CampaignNotes';
 
 export {
