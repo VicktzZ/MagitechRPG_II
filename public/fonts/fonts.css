@@ -84,3 +84,8 @@
     font-family: D20;
     src: url(rpg/D20.ttf);
 }
+
+@font-face {
+    font-family: Runes;
+    src: url(rpg/magics.ttf);
+}
