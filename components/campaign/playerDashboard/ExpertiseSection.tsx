@@ -2,7 +2,7 @@
 
 import { type ReactElement } from 'react'
 import { Box, Typography, Paper, Grid, Button, Chip } from '@mui/material'
-import type { Expertise, Expertises, Ficha } from '@types'
+import type { Expertises, Ficha } from '@types'
 import { grey, blue, green, purple, yellow } from '@mui/material/colors'
 import { useChatContext } from '@contexts/chatContext'
 import { MessageType } from '@enums'
@@ -17,11 +17,14 @@ export default function ExpertiseSection({ ficha }: ExpertiseSectionProps): Reac
     const { handleSendMessage, setIsChatOpen, isChatOpen } = useChatContext()
     const { data: session } = useSession()
 
-    // Divide as perícias em duas colunas
-    const expertiseEntries = Object.entries(expertises)
-    const midPoint = Math.ceil(expertiseEntries.length / 2)
-    const leftColumnExpertises = expertiseEntries.slice(0, midPoint)
-    const rightColumnExpertises = expertiseEntries.slice(midPoint)
+    // Ordena as perícias em ordem alfabética e divide em 3 colunas
+    const expertiseEntries = Object.entries(expertises).sort((a, b) => a[0].localeCompare(b[0]))
+    const columnSize = Math.ceil(expertiseEntries.length / 3)
+    const columns = [
+        expertiseEntries.slice(0, columnSize),
+        expertiseEntries.slice(columnSize, columnSize * 2),
+        expertiseEntries.slice(columnSize * 2)
+    ]
 
     const determinateExpertiseColor = (value: number): string => {
         if (value < 2) {
@@ -99,48 +102,6 @@ export default function ExpertiseSection({ ficha }: ExpertiseSectionProps): Reac
         }
     }
 
-    const renderExpertiseButton = (entries: Array<[string, Expertise<any>]>) => (
-        <Grid item xs={12} md={6}>
-            {entries.map(([ nome, expertise ]) => (
-                <Button
-                    key={nome}
-                    fullWidth
-                    onClick={async () => await handleExpertiseClick(nome as keyof Expertises)}
-                    sx={{
-                        mb: 1,
-                        p: 2,
-                        bgcolor: 'background.paper3',
-                        color: 'white',
-                        justifyContent: 'flex-start',
-                        textAlign: 'left',
-                        '&:hover': {
-                            bgcolor: 'action.hover'
-                        }
-                    }}
-                >
-                    <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-                        <Typography variant="subtitle1">{nome}</Typography>
-                        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', ml: 'auto' }}>
-                            <Chip 
-                                label={`${expertise.value >= 0 ? '+' : ''}${expertise.value}`}
-                                size="small"
-                                sx={{
-                                    bgcolor: determinateExpertiseColor(expertise.value)
-                                }}
-                            />
-                            <Chip 
-                                label={expertise.defaultAttribute.toUpperCase()}
-                                size="small"
-                                variant="outlined"
-                                color="primary"
-                            />
-                        </Box>
-                    </Box>
-                </Button>
-            ))}
-        </Grid>
-    )
-
     return (
         <Grid item xs={12}>
             <Paper sx={{ p: 2, bgcolor: 'background.paper2', borderRadius: 2 }}>
@@ -149,8 +110,47 @@ export default function ExpertiseSection({ ficha }: ExpertiseSectionProps): Reac
                 </Typography>
 
                 <Grid container spacing={2}>
-                    {renderExpertiseButton(leftColumnExpertises)}
-                    {renderExpertiseButton(rightColumnExpertises)}
+                    {columns.map((column, index) => (
+                        <Grid item xs={12} sm={6} md={4} key={index}>
+                            {column.map(([ nome, expertise ]) => (
+                                <Button
+                                    key={nome}
+                                    fullWidth
+                                    onClick={async () => await handleExpertiseClick(nome as keyof Expertises)}
+                                    sx={{
+                                        mb: 1,
+                                        p: 2,
+                                        bgcolor: 'background.paper3',
+                                        color: 'white',
+                                        justifyContent: 'flex-start',
+                                        textAlign: 'left',
+                                        '&:hover': {
+                                            bgcolor: 'action.hover'
+                                        }
+                                    }}
+                                >
+                                    <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', flexWrap: 'wrap', gap: 1 }}>
+                                        <Typography variant="subtitle1" sx={{ minWidth: '40%' }}>{nome}</Typography>
+                                        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', ml: 'auto' }}>
+                                            <Chip 
+                                                label={`${expertise.value >= 0 ? '+' : ''}${expertise.value}`}
+                                                size="small"
+                                                sx={{
+                                                    bgcolor: determinateExpertiseColor(expertise.value)
+                                                }}
+                                            />
+                                            <Chip 
+                                                label={expertise.defaultAttribute.toUpperCase()}
+                                                size="small"
+                                                variant="outlined"
+                                                color="primary"
+                                            />
+                                        </Box>
+                                    </Box>
+                                </Button>
+                            ))}
+                        </Grid>
+                    ))}
                 </Grid>
             </Paper>
         </Grid>

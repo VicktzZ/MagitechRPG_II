@@ -5,13 +5,12 @@
 import { Backdrop, Box, CircularProgress, Grid, IconButton, MenuItem, Modal, TextField, Typography, useMediaQuery, useTheme } from '@mui/material';
 import { type MouseEvent, type ReactElement, memo, useEffect, useMemo, useState } from 'react';
 import { type Ficha, type Magia as MagicType } from '@types';
-import { useIntersection } from '@mantine/hooks'
+import { useIntersection, useDebouncedCallback } from '@mantine/hooks'
 import { ArrowDropDown, ArrowDropUp, Close } from '@mui/icons-material';
 import { useFormikContext } from 'formik';
 import Magic from './Magic';
 import { useSnackbar } from 'notistack';
 import { CustomMenu } from '@layout';
-import useDebounce from '@hooks/useDebounce';
 import { magiaService } from '@services';
 import { toastDefault } from '@constants'
 
@@ -41,7 +40,7 @@ const MagicsModal = memo(({ open, onClose }: { open: boolean, onClose: () => voi
         }
     })
     
-    const debouncedSearch = useDebounce(fetchOptions.search, 500)
+    const debouncedSearch = useDebouncedCallback(() => fetchOptions.search, 500)
 
     const { ref, entry } = useIntersection({ threshold: 1 })
 

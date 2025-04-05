@@ -1,8 +1,7 @@
 /* eslint-disable @typescript-eslint/restrict-template-expressions */
 /* eslint-disable @typescript-eslint/no-base-to-string */
 /* eslint-disable react-hooks/exhaustive-deps */
-import useDebounce from '@hooks/useDebounce';
-import { useIntersection } from '@mantine/hooks';
+import { useIntersection, useDebouncedCallback } from '@mantine/hooks';
 import { Backdrop, Box, Button, CircularProgress, Grid, MenuItem, Modal, TextField, Typography, useMediaQuery, useTheme } from '@mui/material';
 import { useState, type ReactElement, type MouseEvent, useMemo, useEffect } from 'react';
 import type { Ficha, MagicPower } from '@types';
@@ -46,7 +45,7 @@ export default function SkillsModal({ open, onClose }: { open: boolean, onClose:
         }
     })
 
-    const debouncedSearch = useDebounce(fetchOptions.search, 500)
+    const debouncedSearch = useDebouncedCallback(() => fetchOptions.search, 500)
 
     const { ref, entry } = useIntersection({ threshold: 1 })
 

@@ -1,8 +1,10 @@
 'use client';
 
-import { type ReactElement } from 'react';
-import { Box, Typography, Paper, Chip, Grid } from '@mui/material';
+import { useState, type ReactElement } from 'react';
+import { Box, Typography, Paper, Chip, Grid, Button } from '@mui/material';
 import { SkillType } from '@enums';
+import SkillsTreeDialog from '@components/ficha/SkillsTreeDialog';
+import Masonry from '@mui/lab/Masonry';
 
 interface SkillFilterChipProps {
     label: string;
@@ -38,12 +40,19 @@ export default function SkillsSection({ ficha, selectedSkillType, setSelectedSki
         ? Object.values(ficha.skills).flat()
         : ficha.skills[selectedSkillType] || [];
 
+    const [ treeModalOpen, setTreeModalOpen ] = useState(false)
+
     return (
         <Grid item xs={12} md={6}>
             <Paper sx={{ p: 2, bgcolor: 'background.paper2', borderRadius: 2, minHeight: '100%' }}>
-                <Typography variant="h6" gutterBottom>
-                    Habilidades
-                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                    <Typography variant="h6">
+                        Habilidades
+                    </Typography>
+                    <Button variant="contained" color="primary" onClick={() => setTreeModalOpen(true)}>
+                        Árvore de Habilidades
+                    </Button>
+                </Box>
 
                 <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
                     <SkillFilterChip
@@ -78,20 +87,39 @@ export default function SkillsSection({ ficha, selectedSkillType, setSelectedSki
                     />
                 </Box>
 
-                <Grid container spacing={2}>
+                <Masonry columns={{ xs: 1, sm: 2 }} spacing={2}>
                     {filteredSkills.map((skill: any) => (
-                        <Grid item xs={12} sm={6} key={skill.name}>
-                            <Paper sx={{ p: 1.5, bgcolor: 'background.paper3' }}>
-                                <Typography variant="subtitle2">
-                                    {skill.name}
-                                </Typography>
-                                <Typography variant="body2" color="text.secondary">
-                                    {skill.description}
-                                </Typography>
-                            </Paper>
-                        </Grid>
+                        <Paper 
+                            key={skill.name}
+                            sx={{ 
+                                p: 1.5, 
+                                bgcolor: 'background.paper3',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: 0.5,
+                                borderRadius: 2,
+                                transition: 'all 0.2s',
+                                '&:hover': {
+                                    transform: 'translateY(-2px)',
+                                    boxShadow: (theme) => theme.shadows[4]
+                                }
+                            }}
+                        >
+                            <Typography variant="subtitle2" fontWeight="bold">
+                                {skill.name}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                                {skill.description}
+                            </Typography>
+                        </Paper>
                     ))}
-                </Grid>
+                </Masonry>
+
+                <SkillsTreeDialog
+                    open={treeModalOpen}
+                    onClose={() => setTreeModalOpen(false)}
+                    ficha={ficha}
+                />
             </Paper>
         </Grid>
     );

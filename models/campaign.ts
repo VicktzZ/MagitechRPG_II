@@ -70,6 +70,28 @@ const campaignSchema = new Schema<CampaignType>({
         type: [ noteSchema ],
         default: []
     },
+
+    custom: {
+        type: new Schema({
+            items: {
+                type: [ Object ],
+                default: []
+            },
+            magias: {
+                type: [ Object ],
+                default: []
+            },
+            creatures: {
+                type: [ Object ],
+                default: []
+            }
+        }, { _id: false }),
+        default: () => ({
+            items: [],
+            magias: [],
+            creatures: []
+        })
+    },
     
     session: {
         type: new Schema({

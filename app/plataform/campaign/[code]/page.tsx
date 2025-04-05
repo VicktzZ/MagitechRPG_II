@@ -191,7 +191,7 @@ export default function Campaign({ params }: { params: { code: string } }): Reac
             )}
 
             {campaign && channel && ((!isLoading && isUserGM) || (!isLoading && ficha)) && (
-                <campaignContext.Provider value={{ campaign, setCampaign, campUsers, playerFichas }}>
+                <campaignContext.Provider value={{ campaign, setCampaign, campUsers, playerFichas, setPlayerFichas }}>
                     <gameMasterContext.Provider value={{ allGameMastersId, isUserGM }}>
                         <ChatProvider>
                             <Box display='flex' flexDirection='column' gap={3} p={2} minHeight='90vh'>

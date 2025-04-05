@@ -59,5 +59,6 @@ export const rarityColor: Record<RarityType, string> = {
     'Lendário': orange[400],
     'Relíquia': red[400],
     'Mágico': cyan[400],
-    'Especial': indigo[400]
+    'Especial': indigo[400],
+    'Amaldiçoado': pink[400]
 }

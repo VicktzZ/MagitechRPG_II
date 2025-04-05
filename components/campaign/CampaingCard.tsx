@@ -67,7 +67,7 @@ export default function CampaingCard({
                     {userIsGM && (
                         <Button
                             variant="contained"
-                            color="terciary"
+                            color={'terciary' as any}
                             size="small"
                             onClick={() => { setIsDeleteModalOpen(true); }}
                         >

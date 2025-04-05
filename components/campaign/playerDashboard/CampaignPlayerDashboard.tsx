@@ -1,23 +1,24 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 'use client';
 
-import { useCallback, useState, type ReactElement } from 'react';
-import { Box, Button, Grid } from '@mui/material';
 import { useCampaignContext } from '@contexts/campaignContext';
 import { useGameMasterContext } from '@contexts/gameMasterContext';
 import { SkillType } from '@enums';
-import CharacterInfo from './dashboard/CharacterInfo';
-import SkillsSection from './dashboard/SkillsSection';
-import MoneyAndAmmo from './dashboard/MoneyAndAmmo';
-import InventorySection from './dashboard/InventorySection';
-import SpellsSection from './dashboard/SpellsSection';
-import ExpertiseSection from './dashboard/ExpertiseSection';
-import NotesSection from './dashboard/NotesSection';
+import { Box, Button, Grid } from '@mui/material';
 import { fichaService } from '@services';
+import { useCallback, useEffect, useState, type ReactElement } from 'react';
+
+import CharacterInfo from './CharacterInfo';
+import ExpertiseSection from './ExpertiseSection';
+import InventorySection from './InventorySection';
+import MoneyAndAmmo from './MoneyAndAmmo';
+import NotesSection from './NotesSection';
+import SkillsSection from './SkillsSection';
+import SpellsSection from './SpellsSection';
 
 export default function CampaignPlayerDashboard(): ReactElement | null {
     const { isUserGM } = useGameMasterContext();
-    const { campaign, campUsers } = useCampaignContext();
+    const { campaign, campUsers, setCampaign } = useCampaignContext();
     const [ selectedSkillType, setSelectedSkillType ] = useState<SkillType>(SkillType.ALL);
     const [ updatedNotes, setUpdatedNotes ] = useState<string | null>(null);
     const [ isSaving, setIsSaving ] = useState(false);
@@ -46,10 +47,10 @@ export default function CampaignPlayerDashboard(): ReactElement | null {
             });
             
             if (updatedFicha) {
-                // setCampaign(prev => ({
-                //     ...prev,
-                //     myFicha: updatedFicha
-                // }));
+                setCampaign(prev => ({
+                    ...prev,
+                    myFicha: updatedFicha
+                }));
                 setUpdatedNotes(null); // Reseta o estado após salvar com sucesso
             }
         } catch (error) {
@@ -58,6 +59,14 @@ export default function CampaignPlayerDashboard(): ReactElement | null {
             setIsSaving(false);
         }
     };
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            handleSave();
+        }, 60000); // 60000 milliseconds = 1 minute
+        
+        return () => clearInterval(interval);
+    }, []);
 
     return (
         <Box sx={{ width: '100%', pb: 8, position: 'relative' }}>
