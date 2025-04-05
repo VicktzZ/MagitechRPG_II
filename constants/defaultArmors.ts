@@ -1,7 +1,7 @@
 import type { Armor } from '@types'
 
 export const deafultArmors: Record<'leve' | 'pesada', Armor[]> = {
-    'leve': [{
+    'leve': [ {
         name: '',
         description: '',
         rarity: 'Comum',
@@ -15,8 +15,8 @@ export const deafultArmors: Record<'leve' | 'pesada', Armor[]> = {
             mag: 0,
             mov: 0
         }
-    }],
-    'pesada': [{
+    } ],
+    'pesada': [ {
         name: '',
         description: '',
         rarity: 'Comum',
@@ -30,5 +30,5 @@ export const deafultArmors: Record<'leve' | 'pesada', Armor[]> = {
             mag: 0,
             mov: 0
         }
-    }]
+    } ]
 }

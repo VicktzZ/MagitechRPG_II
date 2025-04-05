@@ -267,7 +267,7 @@ export interface Magic {
 export interface Skill {
     name: string
     description: string
-    type: 'Poder Mágico' | 'Classe' | 'Linhagem' | 'Subclasse' | 'Bônus' | 'Profissão'
+    type: 'Poder Mágico' | 'Classe' | 'Linhagem' | 'Subclasse' | 'Bônus' | 'Profissão' | 'Exclusivo'
     origin?: string
     effects?: number[]
     level?: number
