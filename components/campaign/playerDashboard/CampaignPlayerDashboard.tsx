@@ -6,15 +6,15 @@ import { useGameMasterContext } from '@contexts/gameMasterContext';
 import { SkillType } from '@enums';
 import { Box, Button, Grid } from '@mui/material';
 import { fichaService } from '@services';
-import { useCallback, useState, type ReactElement } from 'react';
+import { useCallback, useEffect, useState, type ReactElement } from 'react';
 
-import CharacterInfo from './playerDashboard/CharacterInfo';
-import ExpertiseSection from './playerDashboard/ExpertiseSection';
-import InventorySection from './playerDashboard/InventorySection';
-import MoneyAndAmmo from './playerDashboard/MoneyAndAmmo';
-import NotesSection from './playerDashboard/NotesSection';
-import SkillsSection from './playerDashboard/SkillsSection';
-import SpellsSection from './playerDashboard/SpellsSection';
+import CharacterInfo from './CharacterInfo';
+import ExpertiseSection from './ExpertiseSection';
+import InventorySection from './InventorySection';
+import MoneyAndAmmo from './MoneyAndAmmo';
+import NotesSection from './NotesSection';
+import SkillsSection from './SkillsSection';
+import SpellsSection from './SpellsSection';
 
 export default function CampaignPlayerDashboard(): ReactElement | null {
     const { isUserGM } = useGameMasterContext();
@@ -59,6 +59,14 @@ export default function CampaignPlayerDashboard(): ReactElement | null {
             setIsSaving(false);
         }
     };
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            handleSave();
+        }, 60000); // 60000 milliseconds = 1 minute
+        
+        return () => clearInterval(interval);
+    }, []);
 
     return (
         <Box sx={{ width: '100%', pb: 8, position: 'relative' }}>

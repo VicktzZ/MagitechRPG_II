@@ -10,6 +10,7 @@ interface CampaignContextType {
     }
 
     playerFichas: Ficha[]
+    setPlayerFichas: Dispatch<SetStateAction<Ficha[]>>
 }
 
 export const campaignContext = createContext<CampaignContextType>({
@@ -24,6 +25,11 @@ export const campaignContext = createContext<CampaignContextType>({
             users: [],
             messages: []
         },
+        custom: {
+            items: [],
+            magias: [],
+            creatures: []
+        },
         myFicha: null,
         notes: []
     },
@@ -32,6 +38,7 @@ export const campaignContext = createContext<CampaignContextType>({
         player: []
     },
     playerFichas: [],
+    setPlayerFichas: () => {},
     setCampaign: () => {}
 })
 

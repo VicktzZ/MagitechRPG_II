@@ -2,7 +2,7 @@
 
 import { type ReactElement } from 'react'
 import { Box, Typography, Paper, Grid, Button, Chip } from '@mui/material'
-import type { Expertise, Expertises, Ficha } from '@types'
+import type { Expertises, Ficha } from '@types'
 import { grey, blue, green, purple, yellow } from '@mui/material/colors'
 import { useChatContext } from '@contexts/chatContext'
 import { MessageType } from '@enums'
