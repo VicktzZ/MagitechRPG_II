@@ -4,6 +4,7 @@
 import { type ReactElement } from 'react';
 import { Box, Typography, Paper, Grid, Accordion, AccordionSummary, AccordionDetails, Chip } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import { Masonry } from '@mui/lab';
 import { rarityColor } from '@constants';
 import type { Ficha, RarityType } from '@types';
 
@@ -25,73 +26,73 @@ export default function InventorySection({ ficha }: InventorySectionProps): Reac
         };
 
         return (
-            <Grid item xs={12} sm={6} key={item.name}>
-                <Accordion
+            <Accordion
+                key={item.name}
+                sx={{
+                    bgcolor: 'background.paper3',
+                    '&:before': { display: 'none' },
+                    boxShadow: 'none',
+                    width: '100%'
+                }}
+            >
+                <AccordionSummary
+                    expandIcon={<ExpandMoreIcon />}
                     sx={{
-                        bgcolor: 'background.paper3',
-                        '&:before': { display: 'none' },
-                        boxShadow: 'none'
+                        minHeight: 48,
+                        '& .MuiAccordionSummary-content': {
+                            alignItems: 'center',
+                            gap: 1
+                        }
                     }}
                 >
-                    <AccordionSummary
-                        expandIcon={<ExpandMoreIcon />}
-                        sx={{
-                            minHeight: 48,
-                            '& .MuiAccordionSummary-content': {
-                                alignItems: 'center',
-                                gap: 1
-                            }
-                        }}
-                    >
-                        <Typography variant="subtitle1">{item.name}</Typography>
-                        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', ml: 'auto', mr: 2 }}>
-                            {item.rarity && (
-                                <Chip
-                                    label={item.rarity}
-                                    size="small"
-                                    sx={{
-                                        bgcolor: item.rarity === 'Amaldiçoado' ? 'black' : rarityColor[item.rarity as RarityType],
-                                        color: item.rarity === 'Amaldiçoado' ? rarityColor[item.rarity as RarityType] : 'white',
-                                        border: '1px solid',
-                                        borderColor: item.rarity === 'Amaldiçoado' ? rarityColor[item.rarity as RarityType] : 'transparent'
-                                    }}
-                                />
-                            )}
-                            {type === 'weapon' && (
-                                <Chip
-                                    label={`${item.effect.value} dano`}
-                                    size="small"
-                                    variant="outlined"
-                                    color="error"
-                                />
-                            )}
-                            {type === 'armor' && (
-                                <Chip
-                                    label={`+${item.value} AP`}
-                                    size="small"
-                                    variant="outlined"
-                                    color="info"
-                                />
-                            )}
-                        </Box>
-                    </AccordionSummary>
-                    <AccordionDetails>
-                        <Typography whiteSpace='pre-wrap' variant="body2">
-                            {getItemDetails()}
-                        </Typography>
-                        {item.description && (
-                            <Box sx={{ mt: 1 }}>
-                                <Typography variant="subtitle2" color="primary" gutterBottom>
-                                    Descrição
-                                </Typography>
-                                <Typography variant="body2">
-                                    {item.description}
-                                </Typography>
-                            </Box>
+                    <Typography variant="subtitle1">{item.name}</Typography>
+                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', ml: 'auto', mr: 2 }}>
+                        {item.rarity && (
+                            <Chip
+                                label={item.rarity}
+                                size="small"
+                                sx={{
+                                    bgcolor: item.rarity === 'Amaldiçoado' ? 'black' : rarityColor[item.rarity as RarityType],
+                                    color: item.rarity === 'Amaldiçoado' ? rarityColor[item.rarity as RarityType] : 'white',
+                                    border: '1px solid',
+                                    borderColor: item.rarity === 'Amaldiçoado' ? rarityColor[item.rarity as RarityType] : 'transparent'
+                                }}
+                            />
                         )}
-                    </AccordionDetails>
-                </Accordion>
-            </Grid>
+                        {type === 'weapon' && (
+                            <Chip
+                                label={`${item.effect.value} dano`}
+                                size="small"
+                                variant="outlined"
+                                color="error"
+                            />
+                        )}
+                        {type === 'armor' && (
+                            <Chip
+                                label={`+${item.value} AP`}
+                                size="small"
+                                variant="outlined"
+                                color="info"
+                            />
+                        )}
+                    </Box>
+                </AccordionSummary>
+                <AccordionDetails>
+                    <Typography whiteSpace='pre-wrap' variant="body2">
+                        {getItemDetails()}
+                    </Typography>
+                    {item.description && (
+                        <Box sx={{ mt: 1 }}>
+                            <Typography variant="subtitle2" color="primary" gutterBottom>
+                                Descrição
+                            </Typography>
+                            <Typography variant="body2">
+                                {item.description}
+                            </Typography>
+                        </Box>
+                    )}
+                </AccordionDetails>
+            </Accordion>
         );
     };
 
@@ -114,9 +115,9 @@ export default function InventorySection({ ficha }: InventorySectionProps): Reac
                         borderRadius: 1,
                         p: 1
                     }}>
-                        <Grid container spacing={1}>
+                        <Masonry columns={{ xs: 1, sm: 2 }} spacing={1}>
                             {ficha.inventory.weapons.map((weapon) => renderInventoryItem(weapon, 'weapon'))}
-                        </Grid>
+                        </Masonry>
                     </Box>
                 </Box>
 
@@ -132,9 +133,9 @@ export default function InventorySection({ ficha }: InventorySectionProps): Reac
                         borderRadius: 1,
                         p: 1
                     }}>
-                        <Grid container spacing={1}>
+                        <Masonry columns={{ xs: 1, sm: 2 }} spacing={1}>
                             {ficha.inventory.armors.map((armor) => renderInventoryItem(armor, 'armor'))}
-                        </Grid>
+                        </Masonry>
                     </Box>
                 </Box>
 
@@ -150,9 +151,9 @@ export default function InventorySection({ ficha }: InventorySectionProps): Reac
                         borderRadius: 1,
                         p: 1
                     }}>
-                        <Grid container spacing={1}>
+                        <Masonry columns={{ xs: 1, sm: 2 }} spacing={1}>
                             {ficha.inventory.items.map((item) => renderInventoryItem(item, 'item'))}
-                        </Grid>
+                        </Masonry>
                     </Box>
                 </Box>
             </Paper>

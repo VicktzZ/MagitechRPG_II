@@ -1,7 +1,7 @@
 import { useChannel } from '@contexts/channelContext'
 import { PusherEvent } from '@enums'
 import { WarningModal } from '@layout'
-import { Add, Block, Bolt, ChatBubbleOutline, Favorite, Info, LocalPolice, MonetizationOn, MoreVert, Shield } from '@mui/icons-material'
+import { Add, Backpack, Block, Bolt, ChatBubbleOutline, Favorite, Info, LocalPolice, MonetizationOn, MoreVert, Shield } from '@mui/icons-material'
 import {
     Box,
     Button,
@@ -27,6 +27,7 @@ import { enqueueSnackbar } from 'notistack'
 import { useState } from 'react'
 import { useCampaignContext } from '@contexts/campaignContext'
 import AddItemModal from './AddItemModal'
+import FichaDetailsModal from './FichaDetailsModal'
 import { TextField } from '@mui/material'
 
 export default function PlayerCard({ ficha }: { ficha: Required<Ficha> }) {
@@ -35,6 +36,7 @@ export default function PlayerCard({ ficha }: { ficha: Required<Ficha> }) {
     const [ playerAnchorEl, setPlayerAnchorEl ] = useState<null | HTMLElement>(null)
     const [ addItemModalOpen, setAddItemModalOpen ] = useState(false)
     const [ removeUserDialogOpen, setRemoveUserDialogOpen ] = useState(false)
+    const [ fichaDetailsOpen, setFichaDetailsOpen ] = useState(false)
 
     const [ notificationDialogOpen, setNotificationDialogOpen ] = useState(false)
     const [ notificationTitle, setNotificationTitle ] = useState('')
@@ -106,7 +108,8 @@ export default function PlayerCard({ ficha }: { ficha: Required<Ficha> }) {
     }
 
     const viewFichaDetails = () => {
-        console.log(playerFichas.find(f => f._id === ficha._id))
+        setFichaDetailsOpen(true);
+        handlePlayerMenuClose();
     }
 
     const handleRemoveUser = async () => {
@@ -205,6 +208,13 @@ export default function PlayerCard({ ficha }: { ficha: Required<Ficha> }) {
                                 {ficha.ammoCounter.current}/{ficha.ammoCounter.max}
                             </Typography>
                         </Box>
+
+                        <Box className="stat">
+                            <Backpack sx={{ fontSize: 16, color: 'gray' }} />
+                            <Typography variant="body2">
+                                {ficha.capacity.cargo}/{ficha.capacity.max} kg
+                            </Typography>
+                        </Box>
                     </Box>
                 </Paper>
             </Grid>
@@ -291,6 +301,13 @@ export default function PlayerCard({ ficha }: { ficha: Required<Ficha> }) {
                 open={removeUserDialogOpen}
                 onClose={() => setRemoveUserDialogOpen(false)}
                 onConfirm={handleRemoveUser}
+            />
+
+            {/* Modal de Detalhes da Ficha */}
+            <FichaDetailsModal 
+                open={fichaDetailsOpen}
+                onClose={() => setFichaDetailsOpen(false)}
+                ficha={ficha}
             />
         </>
     )
