@@ -6,6 +6,7 @@ import type { JWT } from '@node_modules/next-auth/jwt';
 import type { User as UserType } from '@types';
 import { connectToDb } from '@utils/database';
 import User from '@models/user';
+import { AdminProvider } from './adminProvider';
 
 const handler = NextAuth({
     providers: [
@@ -16,31 +17,10 @@ const handler = NextAuth({
         DiscordProvider({
             clientId: process.env.DISCORD_CLIENT_ID,
             clientSecret: process.env.DISCORD_CLIENT_SECRET
-        })
-        // CredentialsProvider({
-        //     name: 'Credentials',
-        //     credentials: {},
-        //     async authorize(credentials) {
-        //         try {
-        //             const user = JSON.parse(credentials?.user as string);
-        //             if (!user?.email) return null;
-
-        //             await connectToDb();
-        //             const dbUser = await User.findOne({ email: user.email });
-        //             if (!dbUser) return null;
-
-        //             return {
-        //                 id: String(dbUser._id),
-        //                 email: dbUser.email,
-        //                 name: dbUser.name,
-        //                 image: dbUser.image
-        //             };
-        //         } catch (error) {
-        //             console.error('Erro na autorização:', error);
-        //             return null;
-        //         }
-        //     }
-        // })
+        }),
+        // Adiciona o AdminProvider apenas em ambiente de desenvolvimento
+        ...(process.env.NODE_ENV === 'development' ? [ AdminProvider ] : [])
+       
     ],
 
     session: {
