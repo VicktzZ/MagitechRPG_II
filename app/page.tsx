@@ -69,6 +69,7 @@ export default function LandingPage(): ReactElement | null {
         <>
             <LandingPageHeader />
             <Animate style={{ userSelect: 'none' }} isVisible animationIn="fadeIn">
+                <div id="inicio" />
                 <Parallax
                     style={{ overflow: 'hidden', userSelect: 'none' }}
                     bgImage={`/assets/background/background_parallax_${bgIndex}.jpg`}
@@ -161,7 +162,7 @@ export default function LandingPage(): ReactElement | null {
                 />
                 <Box height="8rem" />
                 <Container sx={{ p: 5, gap: 3 }}>
-                    <Box mb={!matches ? 30 : 20}>
+                    <Box id="sobre" mb={!matches ? 30 : 20}>
                         <Typography variant="h3" fontFamily="WBZ" textAlign="center" p={5} width="100%">
                             Sobre
                         </Typography>
@@ -250,7 +251,7 @@ export default function LandingPage(): ReactElement | null {
                         </AnimateOnScroll>
                     </Box>
 
-                    <Box mb={!matches ? 30 : 20}>
+                    <Box id="quem-somos" mb={!matches ? 30 : 20}>
                         <Box>
                             <Box width="100%">
                                 <Typography variant="h3" fontFamily="WBZ" textAlign="center" p={5} width="100%">
@@ -297,7 +298,7 @@ export default function LandingPage(): ReactElement | null {
                         </AnimateOnScroll>
                     </Box>
 
-                    <Box mb={!matches ? 30 : 20}>
+                    <Box id="guia" mb={!matches ? 30 : 20}>
                         <Box p={5} width="100%">
                             <Typography variant="h3" fontFamily="WBZ" textAlign="center">
                                 Obtenha o Guia de Regras
