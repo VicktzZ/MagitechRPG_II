@@ -10,6 +10,7 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import MenuIcon from '@mui/icons-material/Menu';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
 import PersonIcon from '@mui/icons-material/Person';
+import VolunteerActivismIcon from '@mui/icons-material/VolunteerActivism';
 import {
     AppBar,
     Avatar,
@@ -103,7 +104,8 @@ export default function LandingPageHeader(): ReactElement {
         { label: 'Início', icon: <HomeIcon />, action: () => scrollToSection('inicio') },
         { label: 'Sobre', icon: <InfoIcon />, action: () => scrollToSection('sobre') },
         { label: 'Quem Somos', icon: <PersonIcon />, action: () => scrollToSection('quem-somos') },
-        { label: 'Guia', icon: <MenuBookIcon />, action: () => scrollToSection('guia') }
+        { label: 'Guia', icon: <MenuBookIcon />, action: () => scrollToSection('guia') },
+        { label: 'Doação', icon: <VolunteerActivismIcon />, action: () => scrollToSection('doacao') }
     ];
 
     const renderMobileMenu = (

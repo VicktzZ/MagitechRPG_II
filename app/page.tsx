@@ -5,6 +5,7 @@ import { Footer, LandingPageHeader } from '@layout'
 import { Avatar, Box, Button, Card, Container, type SxProps, Typography, useMediaQuery } from '@mui/material'
 import { useState, type ReactElement, useEffect, useRef } from 'react'
 import { Animate, AnimateOnScroll, Parallax } from '@components/misc'
+import VolunteerActivismIcon from '@mui/icons-material/VolunteerActivism'
 import { intro, landingPageGrimoire, landingPageSynopse, BLOB_API } from '@constants'
 import { useTheme } from '@mui/material'
 import { useRouter } from 'next/navigation'
@@ -867,6 +868,133 @@ export default function LandingPage(): ReactElement | null {
                                             transition: 'ease-in-out .3s'
                                         }}
                                     />
+                                </Box>
+                            </Box>
+                        </AnimateOnScroll>
+                    </Box>
+                    <Box id="doacao" mb={!matches ? 30 : 20}>
+                        <Box p={5} width="100%">
+                            <Typography variant="h3" fontFamily="WBZ" textAlign="center">
+                                Apoie o Projeto
+                            </Typography>
+                        </Box>
+                        <AnimateOnScroll animateOnce animation="fadeInRight">
+                            <Box
+                                display="flex"
+                                flexDirection="column"
+                                alignItems="center"
+                                justifyContent="center"
+                                width="100%"
+                                border={`1px solid ${theme.palette.secondary.light}`}
+                                borderRadius={2}
+                                p={!matches ? 10 : 3}
+                                gap={5}
+                                sx={{
+                                    background: 'rgba(156, 39, 176, 0.05)',
+                                    backdropFilter: 'blur(10px)'
+                                }}
+                            >
+                                <Box
+                                    display="flex"
+                                    flexDirection={!matches ? 'row' : 'column'}
+                                    alignItems="center"
+                                    justifyContent="center"
+                                    width="100%"
+                                    gap={5}
+                                >
+                                    <Box
+                                        sx={{
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            width: !matches ? '40%' : '100%',
+                                            gap: 2
+                                        }}
+                                    >
+                                        <VolunteerActivismIcon 
+                                            color="secondary" 
+                                            sx={{ 
+                                                fontSize: '5rem',
+                                                animation: 'pulse 2s infinite',
+                                                '@keyframes pulse': {
+                                                    '0%': {
+                                                        transform: 'scale(1)'
+                                                    },
+                                                    '50%': {
+                                                        transform: 'scale(1.1)'
+                                                    },
+                                                    '100%': {
+                                                        transform: 'scale(1)'
+                                                    }
+                                                }
+                                            }} 
+                                        />
+                                        <Typography variant="h4" fontWeight={600} color="secondary" textAlign="center">
+                                            Contribua com o MagitechRPG
+                                        </Typography>
+                                    </Box>
+                                    <Box 
+                                        width={!matches ? '60%' : '100%'}
+                                        display="flex"
+                                        flexDirection="column"
+                                        gap={3}
+                                    >
+                                        <Typography>
+                                            O MagitechRPG é um projeto desenvolvido com paixão e dedicação, totalmente gratuito para todos os jogadores. 
+                                            Sua contribuição nos ajuda a manter os servidores online, desenvolver novas funcionalidades e melhorar a experiência do jogo para toda a comunidade.
+                                        </Typography>
+                                        <Typography>
+                                            Qualquer valor é bem-vindo! Além de apoiar financeiramente, você também pode contribuir com o projeto divulgando para seus amigos, 
+                                            participando da comunidade ou até mesmo sugerindo melhorias.
+                                        </Typography>
+                                        <Box 
+                                            display="flex" 
+                                            flexDirection={!matches ? 'row' : 'column'} 
+                                            justifyContent="center"
+                                            gap={3}
+                                            mt={2}
+                                        >
+                                            <Button
+                                                variant="contained"
+                                                color="secondary"
+                                                size="large"
+                                                sx={{
+                                                    py: 1.5,
+                                                    px: 3,
+                                                    borderRadius: 2,
+                                                    boxShadow: theme.shadows[5],
+                                                    transition: 'all 0.3s ease',
+                                                    '&:hover': {
+                                                        transform: 'translateY(-5px)',
+                                                        boxShadow: theme.shadows[10]
+                                                    }
+                                                }}
+                                                onClick={() => window.open('https://www.paypal.com/donate/?hosted_button_id=ABCDEFGH12345', '_blank')}
+                                            >
+                                                Doar com PayPal
+                                            </Button>
+                                            <Button
+                                                variant="contained"
+                                                color={'terciary' as any}
+                                                size="large"
+                                                sx={{
+                                                    py: 1.5,
+                                                    px: 3,
+                                                    borderRadius: 2,
+                                                    boxShadow: theme.shadows[5],
+                                                    transition: 'all 0.3s ease',
+                                                    '&:hover': {
+                                                        transform: 'translateY(-5px)',
+                                                        boxShadow: theme.shadows[10]
+                                                    }
+                                                }}
+                                                onClick={() => window.open('https://www.patreon.com/magitechrpg', '_blank')}
+                                            >
+                                                Apoiar no Patreon
+                                            </Button>
+                                        </Box>
+                                    </Box>
                                 </Box>
                             </Box>
                         </AnimateOnScroll>
