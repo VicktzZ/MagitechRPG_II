@@ -15,6 +15,7 @@ import MoneyAndAmmo from './MoneyAndAmmo';
 import NotesSection from './NotesSection';
 import SkillsSection from './SkillsSection';
 import SpellsSection from './SpellsSection';
+import { useSaveFichaChanges } from '@hooks';
 
 export default function CampaignPlayerDashboard(): ReactElement | null {
     const { isUserGM } = useGameMasterContext();
@@ -25,6 +26,8 @@ export default function CampaignPlayerDashboard(): ReactElement | null {
 
     const ficha = campaign.myFicha;
     if (isUserGM || !ficha) return null;
+    
+    useSaveFichaChanges() // Save users ficha changes globally
 
     const fichaUser = campUsers.player.find(player => player._id === ficha.userId);
     const avatar = fichaUser?.image ?? '/assets/default-avatar.jpg';
@@ -63,7 +66,7 @@ export default function CampaignPlayerDashboard(): ReactElement | null {
     useEffect(() => {
         const interval = setInterval(() => {
             handleSave();
-        }, 60000); // 60000 milliseconds = 1 minute
+        }, 60000);
         
         return () => clearInterval(interval);
     }, []);
@@ -71,13 +74,13 @@ export default function CampaignPlayerDashboard(): ReactElement | null {
     return (
         <Box sx={{ width: '100%', pb: 8, position: 'relative' }}>
             <Grid container spacing={2}>
-                <CharacterInfo ficha={ficha} avatar={avatar} />
-                <MoneyAndAmmo ficha={ficha} />
-                <SkillsSection ficha={ficha} selectedSkillType={selectedSkillType} setSelectedSkillType={setSelectedSkillType} />
-                <InventorySection ficha={ficha} />
-                <SpellsSection ficha={ficha} />
-                <ExpertiseSection ficha={ficha} />
-                <NotesSection ficha={ficha} onNotesChange={handleNotesChange} />
+                <CharacterInfo avatar={avatar} />
+                <MoneyAndAmmo />
+                <SkillsSection selectedSkillType={selectedSkillType} setSelectedSkillType={setSelectedSkillType} />
+                <InventorySection />
+                <SpellsSection />
+                <ExpertiseSection />
+                <NotesSection onNotesChange={handleNotesChange} />
             </Grid>
             <Box 
                 position="fixed" 

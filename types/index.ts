@@ -28,6 +28,8 @@ import type {
     Occupation,
     SessionAttributes,
     SessionInfo,
+    Subclasses,
+    Subclass,
     Status
 } from './ficha';
 
@@ -89,6 +91,8 @@ export type {
     PusherMemberParam,
     Message,
     Occupation,
+    Subclasses,
+    Subclass,
     MergedItems,
     Campaign,
     RarityType,

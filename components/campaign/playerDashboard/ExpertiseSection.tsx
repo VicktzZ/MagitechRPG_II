@@ -1,18 +1,19 @@
+/* eslint-disable react-hooks/rules-of-hooks */
 'use client'
 
-import { type ReactElement } from 'react'
-import { Box, Typography, Paper, Grid, Button, Chip } from '@mui/material'
-import type { Expertises, Ficha } from '@types'
-import { grey, blue, green, purple, yellow } from '@mui/material/colors'
+import { useCampaignContext } from '@contexts/campaignContext'
 import { useChatContext } from '@contexts/chatContext'
 import { MessageType } from '@enums'
+import { Box, Button, Chip, Grid, Paper, Typography } from '@mui/material'
+import { blue, green, grey, purple, yellow } from '@mui/material/colors'
+import type { Expertises } from '@types'
 import { useSession } from 'next-auth/react'
+import { type ReactElement } from 'react'
 
-interface ExpertiseSectionProps {
-    ficha: Ficha
-}
+export default function ExpertiseSection(): ReactElement {
+    const { campaign: { myFicha: ficha } } = useCampaignContext()
+    if (!ficha) return <></>;
 
-export default function ExpertiseSection({ ficha }: ExpertiseSectionProps): ReactElement {
     const expertises = ficha.expertises
     const { handleSendMessage, setIsChatOpen, isChatOpen } = useChatContext()
     const { data: session } = useSession()

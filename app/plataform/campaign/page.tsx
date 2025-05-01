@@ -45,7 +45,7 @@ export default function CampaignPage(): ReactElement {
                         ) : campaigns.map(camp => (
                             <CampaingCard 
                                 key={camp._id}
-                                id={camp._id}
+                                id={camp._id!}
                                 title={camp.title}
                                 description={camp.description}
                                 gameMaster={camp.admin}

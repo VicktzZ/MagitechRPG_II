@@ -1,18 +1,18 @@
 /* eslint-disable max-len */
 'use client';
 
-import { type ReactElement } from 'react';
-import { Box, Typography, Paper, Grid, Accordion, AccordionSummary, AccordionDetails, Chip } from '@mui/material';
+import { rarityColor } from '@constants';
+import { useCampaignContext } from '@contexts/campaignContext';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { Masonry } from '@mui/lab';
-import { rarityColor } from '@constants';
-import type { Ficha, RarityType } from '@types';
+import { Accordion, AccordionDetails, AccordionSummary, Box, Chip, Grid, Paper, Typography } from '@mui/material';
+import type { RarityType } from '@types';
+import { type ReactElement } from 'react';
 
-interface InventorySectionProps {
-    ficha: Ficha;
-}
+export default function InventorySection(): ReactElement {
+    const { campaign: { myFicha: ficha } } = useCampaignContext()
+    if (!ficha) return <></>;
 
-export default function InventorySection({ ficha }: InventorySectionProps): ReactElement {
     const renderInventoryItem = (item: any, type: 'weapon' | 'armor' | 'item') => {
         const getItemDetails = () => {
             switch (type) {

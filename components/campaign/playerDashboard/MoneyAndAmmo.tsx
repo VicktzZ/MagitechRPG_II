@@ -1,16 +1,17 @@
+/* eslint-disable react-hooks/rules-of-hooks */
 'use client';
 
-import { type ReactElement, useState } from 'react';
-import { Box, Typography, Paper, Grid, LinearProgress, IconButton, TextField, Select, MenuItem, Button, Divider } from '@mui/material';
-import { Add as AddIcon, Remove as RemoveIcon } from '@mui/icons-material';
+import { useCampaignContext } from '@contexts/campaignContext';
 import { AmmoType } from '@enums';
-import type { AmmoControl, Ficha } from '@types';
+import { Add as AddIcon, Remove as RemoveIcon } from '@mui/icons-material';
+import { Box, Button, Divider, Grid, IconButton, LinearProgress, MenuItem, Paper, Select, TextField, Typography } from '@mui/material';
+import type { AmmoControl } from '@types';
+import { type ReactElement, useState } from 'react';
 
-interface MoneyAndAmmoProps {
-    ficha: Ficha;
-}
-
-export default function MoneyAndAmmo({ ficha }: MoneyAndAmmoProps): ReactElement {
+export default function MoneyAndAmmo(): ReactElement {
+    const { campaign: { myFicha: ficha }, setFichaUpdated } = useCampaignContext()
+    if (!ficha) return <></>;
+    
     const [ ammo, setAmmo ] = useState<AmmoControl>({
         type: AmmoType.BULLET,
         current: ficha.ammoCounter.current,
@@ -20,21 +21,37 @@ export default function MoneyAndAmmo({ ficha }: MoneyAndAmmoProps): ReactElement
     const ammoPercent = (ammo.current / ammo.max) * 100;
 
     const handleAmmoChange = (type: 'increment' | 'decrement') => {
-        setAmmo(prev => ({
-            ...prev,
-            current: type === 'increment' 
+        setAmmo(prev => {
+            const current = type === 'increment' 
                 ? Math.min(prev.current + 1, prev.max)
-                : Math.max(prev.current - 1, 0)
-        }));
+                : Math.max(prev.current - 1, 0);
+                
+            ficha.ammoCounter.current = current;
+
+            return {
+                ...prev,
+                current
+            }
+        });
+
+        setFichaUpdated(true);
     };
 
     const handleMaxAmmoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const newMax = Math.max(1, parseInt(event.target.value) || 1);
-        setAmmo(prev => ({
-            ...prev,
-            max: newMax,
-            current: Math.min(prev.current, newMax)
-        }));
+        setAmmo(prev => {
+            const current = Math.min(prev.current, newMax);
+            ficha.ammoCounter.max = newMax;
+            ficha.ammoCounter.current = current;
+
+            return {
+                ...prev,
+                max: newMax,
+                current
+            }
+        });
+
+        setFichaUpdated(true);
     };
 
     const handleAmmoTypeChange = (event: any) => {
@@ -45,10 +62,16 @@ export default function MoneyAndAmmo({ ficha }: MoneyAndAmmoProps): ReactElement
     };
 
     const handleReload = () => {
-        setAmmo(prev => ({
-            ...prev,
-            current: prev.max
-        }));
+        setAmmo(prev => {
+            ficha.ammoCounter.current = prev.max;
+
+            return {
+                ...prev,
+                current: prev.max
+            }
+        });
+
+        setFichaUpdated(true)
     };
 
     const getAmmoColor = (type: AmmoType): string => {

@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/rules-of-hooks */
 'use client';
 
 import { useState, type ReactElement } from 'react';
@@ -5,6 +6,8 @@ import { Box, Typography, Paper, Chip, Grid, Button } from '@mui/material';
 import { SkillType } from '@enums';
 import SkillsTreeDialog from '@components/ficha/SkillsTreeDialog';
 import Masonry from '@mui/lab/Masonry';
+import { useCampaignContext } from '@contexts/campaignContext';
+import { type Ficha } from '@types';
 
 interface SkillFilterChipProps {
     label: string;
@@ -30,12 +33,14 @@ function SkillFilterChip({ label, type, selected, onClick }: SkillFilterChipProp
 }
 
 interface SkillsSectionProps {
-    ficha: any;
     selectedSkillType: SkillType;
     setSelectedSkillType: (type: SkillType) => void;
 }
 
-export default function SkillsSection({ ficha, selectedSkillType, setSelectedSkillType }: SkillsSectionProps): ReactElement {
+export default function SkillsSection({ selectedSkillType, setSelectedSkillType }: SkillsSectionProps): ReactElement {
+    const { campaign: { myFicha: ficha } } = useCampaignContext()
+    if (!ficha) return <></>;
+    
     const filteredSkills = selectedSkillType === SkillType.ALL
         ? Object.values(ficha.skills).flat()
         : ficha.skills[selectedSkillType] || [];
@@ -118,7 +123,7 @@ export default function SkillsSection({ ficha, selectedSkillType, setSelectedSki
                 <SkillsTreeDialog
                     open={treeModalOpen}
                     onClose={() => setTreeModalOpen(false)}
-                    ficha={ficha}
+                    ficha={ficha as Required<Ficha>}
                 />
             </Paper>
         </Grid>

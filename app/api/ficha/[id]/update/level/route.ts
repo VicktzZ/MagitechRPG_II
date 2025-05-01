@@ -21,6 +21,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
         const oldLevel = ficha.level
         const newLevel = oldLevel + level
         const classRewards = levelDefaultRewards[ficha.class as Classes]
+        let newORMLevel = Math.min(4, Math.floor(newLevel / 5))
 
         // Inicializa as recompensas
         let lpMpRewards = 0
@@ -35,6 +36,17 @@ export async function POST(req: Request, { params }: { params: { id: string } })
         
         // Verifica cada nível individualmente para aplicar as recompensas
         for (let currentLevel = oldLevel + 1; currentLevel <= newLevel; currentLevel++) {
+            if (currentLevel === 1) {
+                newORMLevel = 1
+                rewardsList.push(`+ ORM nível ${newORMLevel} Atingido!`)
+            }
+
+            // No nível 20: Ponto de Atributo extra
+            if (currentLevel === 20) {
+                attributePoints++
+                rewardsList.push('+1 ponto de atributo (bônus nível 20)')
+            }
+
             // A cada 2 níveis: LP, MP e Pontos de Perícia
             if (currentLevel % 2 === 0) {
                 lpMpRewards++
@@ -47,24 +59,19 @@ export async function POST(req: Request, { params }: { params: { id: string } })
                 rewardsList.push('+1 ponto de atributo')
             }
 
-            // No nível 20: Ponto de Atributo extra
-            if (currentLevel === 20) {
-                attributePoints++
-                rewardsList.push('+1 ponto de atributo (bônus nível 20)')
-            }
-
             // A cada 4 níveis: Pontos de Diligência
             if (currentLevel % 4 === 0) {
                 diligencePoints++
                 rewardsList.push('+1 ponto de diligência')
             }
 
-            // A cada 5 níveis: Pontos de Poder Mágico e Magias
+            // A cada 5 níveis: Pontos de Poder Mágico, Magias e Aumento de nível ORM
             if (currentLevel % 5 === 0) {
                 magicPowerPoints++
                 spellsPoints++
                 rewardsList.push('+1 ponto de poder mágico')
                 rewardsList.push('+1 ponto de magia')
+                rewardsList.push(`ORM nível ${newORMLevel} Atingido!`)
             }
         }
 
@@ -83,7 +90,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
 
         // Busca novas habilidades
         const newSkills: Skill[] = []
-        const classSkills = skills.class[ficha.class as keyof typeof skills.class]
+        const classSkills = skills.class[ficha.class as Classes]
 
         // Verifica se há novas habilidades para o nível atual
         classSkills.forEach(skill => {
@@ -107,7 +114,6 @@ export async function POST(req: Request, { params }: { params: { id: string } })
         }
 
         // Calcula novo nível de ORM (máximo 4)
-        const newORMLevel = Math.min(4, Math.floor(newLevel / 5))
 
         // Aplica as recompensas
         const updates = {

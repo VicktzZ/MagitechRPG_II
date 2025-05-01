@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/rules-of-hooks */
 'use client'
 
 import { useCampaignContext } from '@contexts/campaignContext'
@@ -24,12 +25,15 @@ import {
 } from '@mui/material'
 import { fichaService } from '@services'
 import { useSnackbar } from 'notistack'
-import { type ReactElement, useState } from 'react'
+import { type ReactElement, useEffect, useState } from 'react'
 import PlayerCard from './PlayerCard'
 import type { Ficha } from '@types'
+import { useChannel } from '@contexts/channelContext'
+import { PusherEvent } from '@enums'
 
 export default function CampaignGMDashboard(): ReactElement | null {
-    const { campUsers, playerFichas } = useCampaignContext()
+    const { campUsers, playerFichas, setPlayerFichas } = useCampaignContext()
+    const { channel } = useChannel()
     const { isUserGM } = useGameMasterContext()
     const { enqueueSnackbar } = useSnackbar()
     
@@ -38,8 +42,15 @@ export default function CampaignGMDashboard(): ReactElement | null {
     const [ isLevelingUp, setIsLevelingUp ] = useState(false)
     const [ levelsToAdd, setLevelsToAdd ] = useState<number>(1)
 
-    // Se não for GM, não renderiza nada
     if (!isUserGM) return null
+
+    useEffect(() => {
+        channel.bind(PusherEvent.FICHA_UPDATED, (ficha: Ficha) => {
+            setPlayerFichas(prev => {
+                return prev.map(f => f._id === ficha._id ? ficha : f)
+            })
+        })        
+    }, [ channel ])
 
     const players = campUsers.player.map(player => {
         const playerFicha = playerFichas.find(f => f.userId === player._id)
