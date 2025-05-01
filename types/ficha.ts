@@ -274,7 +274,7 @@ export interface Skill {
 }
 
 export interface Subclass {
-    name: SubclassesNames
+    name: Subclasses
     description: string
     skills: Skill[]
 }
@@ -295,7 +295,6 @@ export interface Status {
 
 export type FinancialCondition = 'Miserável' | 'Pobre' | 'Estável' | 'Rico'
 export type Gender = 'Masculino' | 'Feminino' | 'Não-binário' | 'Outro' | 'Não definido'
-export type Classes = 'Lutador' | 'Especialista' | 'Feiticeiro' | 'Bruxo' | 'Monge' | 'Druida' | 'Arcano' | 'Ladino'
 export type Attributes = 'des' | 'vig' | 'log' | 'sab' | 'foc' | 'car'
 export type UpperCaseAttributes = 'DES' | 'VIG' | 'LOG' | 'SAB' | 'FOC' | 'CAR'
 export type ItemType = 'Especial' | 'Utilidade' | 'Consumível' | 'Item Chave' | 'Munição' | 'Capacidade' | 'Padrão'
@@ -303,7 +302,34 @@ export type RarityType = 'Comum' | 'Incomum' | 'Raro' | 'Épico' | 'Lendário' |
 export type WeaponType = `Arremessável (${ThrowableRangeType})` | 'Duas mãos' | 'Padrão' | 'Automática' | 'Semi-automática'
 export type ArmorType = 'Padrão' | DamageType
 export type DamageType = 'Cortante' | 'Impactante' | 'Perfurante' | 'Explosivo' | Element
+export type Classes =
+    'Lutador' |
+    'Especialista' |
+    'Feiticeiro' |
+    'Bruxo' |
+    'Monge' |
+    'Druida' |
+    'Arcano' |
+    'Ladino' 
 
+export type Subclasses = 
+    'Polimorfo' |
+    'Comandante' |
+    'Forasteiro' |
+    'Errante' |
+    'Conjurador' |
+    'Elementalista' |
+    'Necromante' |
+    'Espiritista' |
+    'Discípulo da Fúria' |
+    'Protetor da Alma' |
+    'Animante' |
+    'Naturomante' |
+    'Arquimago' |
+    'Metamágico' |
+    'Espectro' |
+    'Estrategista'
+    
 export type LineageNames = 
     'Órfão' |
     'Órfão' |
@@ -388,32 +414,6 @@ export type ThrowableRangeType =
     '90m' |
     'Visível' |
     'Ilimitado'
-
-export type SubclassesNames = 
-    'Armipotente' |
-    'Polimorfo' |
-    'Comandante' |
-    'Harmonizador' |
-    'Numeromante' |
-    'Transcendentalista' |
-    'Conjurador' |
-    'Elementalista' |
-    'Alquimista' |
-    'Necromante' |
-    'Espiritista' |
-    'Pocionista' |
-    'Guardião das Energias' |
-    'Protetor da Alma' |
-    'Andarilho' |
-    'Animante' |
-    'Naturomante' |
-    'Shapeshifter' |
-    'Dimensionalista' |
-    'Arquimago' |
-    'Metamágico' |
-    'Espectro' |
-    'Metafísico' |
-    'Supernaturalista'
 
 export type ExpertisesNames = keyof Expertises
 

@@ -1,52 +1,11 @@
 /* eslint-disable max-len */
-import type { Skill } from '@types'
+import type { Classes, Skill, Subclasses } from '@types'
 
 export const skills: {
     lineage: Skill[],
     occupation: Skill[],
-    class: {
-        'Lutador': Skill[]
-        'Especialista': Skill[]
-        'Feiticeiro': Skill[]
-        'Bruxo': Skill[]
-        'Monge': Skill[]
-        'Druida': Skill[]
-        'Arcano': Skill[]
-        'Ladino': Skill[]
-    }
-    subclass: {
-        // Lutador
-        'Polimorfo'?: Skill[],
-        'Comandante'?: Skill[],
-
-        // Especialista
-        'Forasteiro'?: Skill[],
-        'Errante'?: Skill[],
-
-        // Feiticeiro
-        'Conjurador'?: Skill[],
-        'Elementalista'?: Skill[],
-
-        // Bruxo
-        'Necromante'?: Skill[],
-        'Espiritista'?: Skill[],
-
-        // Monge
-        'Discípulo da Fúria'?: Skill[],
-        'Protetor da Alma'?: Skill[],
-
-        // Druida
-        'Animante'?: Skill[],
-        'Naturomante'?: Skill[],
-
-        // Arcano
-        'Arquimago'?: Skill[],
-        'Metamágico'?: Skill[],
-
-        // Ladino
-        'Espectro'?: Skill[],
-        'Estrategista'?: Skill[]
-    },
+    class: Record<Classes, Skill[]>,
+    subclass: Record<Subclasses, Skill[]>,
     bonus: Skill[]
 } = {
     lineage: [

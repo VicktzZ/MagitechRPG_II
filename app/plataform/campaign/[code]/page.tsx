@@ -33,6 +33,7 @@ export default function Campaign({ params }: { params: { code: string } }): Reac
     const [ ficha, setFicha ] = useState<Ficha>();
     const [ campaignUsers, setCampaignUsers ] = useState<User[]>([]);
     const [ playerFichas, setPlayerFichas ] = useState<Ficha[]>([]);
+    const [ fichaUpdated, setFichaUpdated ] = useState<boolean>(false);
     const pusherClientRef = useRef<PusherClient | null>(null);
     const channelRef = useRef<PresenceChannel | null>(null);
 
@@ -191,7 +192,15 @@ export default function Campaign({ params }: { params: { code: string } }): Reac
             )}
 
             {campaign && channel && ((!isLoading && isUserGM) || (!isLoading && ficha)) && (
-                <campaignContext.Provider value={{ campaign, setCampaign, campUsers, playerFichas, setPlayerFichas }}>
+                <campaignContext.Provider value={{
+                    campaign,
+                    setCampaign,
+                    campUsers,
+                    playerFichas,
+                    setPlayerFichas,
+                    fichaUpdated,
+                    setFichaUpdated
+                }}>
                     <gameMasterContext.Provider value={{ allGameMastersId, isUserGM }}>
                         <ChatProvider>
                             <Box display='flex' flexDirection='column' gap={3} p={2} minHeight='90vh'>

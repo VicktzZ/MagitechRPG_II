@@ -1,18 +1,20 @@
+/* eslint-disable react-hooks/rules-of-hooks */
 'use client';
 
+import { useCampaignContext } from '@contexts/campaignContext';
 import { Grid, Paper, TextField, Typography } from '@mui/material';
-import type { Ficha } from '@types';
 import { useCallback, useEffect, useState, type ReactElement } from 'react';
 
 interface NotesSectionProps {
-    ficha: Ficha;
     onNotesChange: (notes: string) => void;
 }
 
-export default function NotesSection({ ficha, onNotesChange }: NotesSectionProps): ReactElement {
+export default function NotesSection({ onNotesChange }: NotesSectionProps): ReactElement {
+    const { campaign: { myFicha: ficha } } = useCampaignContext()
+    if (!ficha) return <></>;
+
     const [ notes, setNotes ] = useState(ficha.anotacoes ?? '');
 
-    // Atualiza o estado local quando a ficha mudar
     useEffect(() => {
         setNotes(ficha.anotacoes ?? '');
     }, [ ficha.anotacoes ]);

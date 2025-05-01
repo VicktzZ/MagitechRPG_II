@@ -1,9 +1,11 @@
+/* eslint-disable react-hooks/rules-of-hooks */
 'use client'
 
 import { type ReactElement, useState } from 'react'
 import { Box, Typography, Paper, Grid, Accordion, AccordionSummary, AccordionDetails, Chip } from '@mui/material'
 import type { Magia } from '@types'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
+import { useCampaignContext } from '@contexts/campaignContext'
 
 interface SpellStageProps {
     stage: number
@@ -57,11 +59,10 @@ function SpellStage({ stage, description, magic }: SpellStageProps): ReactElemen
     )
 }
 
-interface SpellsSectionProps {
-    ficha: any
-}
+export default function SpellsSection(): ReactElement {
+    const { campaign: { myFicha: ficha } } = useCampaignContext()
+    if (!ficha) return <></>;
 
-export default function SpellsSection({ ficha }: SpellsSectionProps): ReactElement {
     const [ expandedSpell, setExpandedSpell ] = useState<string | false>(false)
 
     const handleSpellExpand = (spellName: string) => (event: React.SyntheticEvent, isExpanded: boolean) => {

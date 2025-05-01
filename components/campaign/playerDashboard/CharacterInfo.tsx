@@ -1,10 +1,11 @@
+/* eslint-disable react-hooks/rules-of-hooks */
 'use client';
 
-import { useState, type ReactElement } from 'react';
-import { Box, Typography, Paper, Avatar, LinearProgress, Grid, Chip, Button } from '@mui/material';
 import { RPGIcon } from '@components/misc';
+import { useCampaignContext } from '@contexts/campaignContext';
+import { Avatar, Box, Button, Chip, Grid, LinearProgress, Paper, Typography } from '@mui/material';
 import { blue, deepPurple, green, orange, red, teal } from '@mui/material/colors';
-import type { Ficha } from '@types';
+import { useState, type ReactElement } from 'react';
 
 const attributeIcons = {
     vig: {
@@ -40,16 +41,31 @@ const attributeIcons = {
 } as const;
 
 interface CharacterInfoProps {
-    ficha: Ficha;
     avatar: string;
 }
 
-export default function CharacterInfo({ ficha, avatar }: CharacterInfoProps): ReactElement {
+export default function CharacterInfo({ avatar }: CharacterInfoProps): ReactElement {    
+    const { campaign: { myFicha: ficha }, setFichaUpdated } = useCampaignContext()
+    if (!ficha) return <></>;
+
     const [ currentAttributes, setCurrentAttributes ] = useState({
         lp: ficha.attributes.lp,
         mp: ficha.attributes.mp,
         ap: ficha.attributes.ap
     });
+
+    const setAttribute = (attr: 'lp' | 'mp' | 'ap', num: number) => {
+        setCurrentAttributes(prev => {
+            ficha.attributes[attr] = prev[attr] + num;
+            
+            return {
+                ...prev,
+                [attr]: prev[attr] + num
+            }
+        });
+
+        setFichaUpdated(true);
+    }
 
     const lpPercent = (currentAttributes.lp / ficha.maxLp) * 100;
     const mpPercent = (currentAttributes.mp / ficha.maxMp) * 100;
@@ -136,8 +152,8 @@ export default function CharacterInfo({ ficha, avatar }: CharacterInfoProps): Re
                                 </Typography>
                             </Box>
                             <Box display='flex' alignItems='center' gap={1}>
-                                <Button variant="contained" size="small" onClick={() => setCurrentAttributes(prev => ({ ...prev, lp: prev.lp + 1 }))}>+1</Button>
-                                <Button variant="contained" size="small" onClick={() => setCurrentAttributes(prev => ({ ...prev, lp: prev.lp - 1 }))}>-1</Button>
+                                <Button variant="contained" size="small" onClick={() => setAttribute('lp', 1)}>+1</Button>
+                                <Button variant="contained" size="small" onClick={() => setAttribute('lp', -1)}>-1</Button>
                             </Box>
                         </Grid>
                         <Grid item xs={12} md={4}>
@@ -160,8 +176,8 @@ export default function CharacterInfo({ ficha, avatar }: CharacterInfoProps): Re
                                 </Typography>
                             </Box>
                             <Box display='flex' alignItems='center' gap={1}>
-                                <Button variant="contained" size="small" onClick={() => setCurrentAttributes(prev => ({ ...prev, mp: prev.mp + 1 }))}>+1</Button>
-                                <Button variant="contained" size="small" onClick={() => setCurrentAttributes(prev => ({ ...prev, mp: prev.mp - 1 }))}>-1</Button>
+                                <Button variant="contained" size="small" onClick={() => setAttribute('mp', 1)}>+1</Button>
+                                <Button variant="contained" size="small" onClick={() => setAttribute('mp', -1)}>-1</Button>
                             </Box>
                         </Grid>
                         <Grid item xs={12} md={4}>
@@ -182,6 +198,10 @@ export default function CharacterInfo({ ficha, avatar }: CharacterInfoProps): Re
                                 <Typography variant="caption">
                                     {currentAttributes.ap}/{ficha.maxAp}
                                 </Typography>
+                                <Box display='flex' alignItems='center' gap={1}>
+                                    <Button variant="contained" size="small" onClick={() => setAttribute('ap', 1)}>+1</Button>
+                                    <Button variant="contained" size="small" onClick={() => setAttribute('ap', -1)}>-1</Button>
+                                </Box>
                             </Box>
                         </Grid>
                     </Grid>

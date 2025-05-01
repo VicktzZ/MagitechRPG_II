@@ -10,7 +10,9 @@ interface CampaignContextType {
     }
 
     playerFichas: Ficha[]
-    setPlayerFichas: Dispatch<SetStateAction<Ficha[]>>
+    setPlayerFichas: Dispatch<SetStateAction<Ficha[]>>,
+    fichaUpdated: boolean,
+    setFichaUpdated: Dispatch<SetStateAction<boolean>>
 }
 
 export const campaignContext = createContext<CampaignContextType>({
@@ -39,7 +41,9 @@ export const campaignContext = createContext<CampaignContextType>({
     },
     playerFichas: [],
     setPlayerFichas: () => {},
-    setCampaign: () => {}
+    setCampaign: () => {},
+    fichaUpdated: false,
+    setFichaUpdated: () => {}
 })
 
 export const useCampaignContext = (): CampaignContextType => useContext(campaignContext)
