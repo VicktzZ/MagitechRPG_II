@@ -5,6 +5,8 @@ import { drawerContext } from './drawerContext';
 import { channelContext } from './channelContext';
 import { gameMasterContext } from './gameMasterContext';
 import { chatContext } from './chatContext';
+import { savingSpinnerContext, useSavingSpinner } from './savingSpinnerContext';
+import { useCampaignContext } from './campaignContext';
 
 export {
     fichaContext,
@@ -13,5 +15,8 @@ export {
     channelContext,
     gameMasterContext,
     chatContext,
-    campaignContext
+    campaignContext,
+    savingSpinnerContext,
+    useSavingSpinner,
+    useCampaignContext
 }

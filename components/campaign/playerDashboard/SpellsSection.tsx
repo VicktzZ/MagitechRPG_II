@@ -5,7 +5,8 @@ import { type ReactElement, useState } from 'react'
 import { Box, Typography, Paper, Grid, Accordion, AccordionSummary, AccordionDetails, Chip } from '@mui/material'
 import type { Magia } from '@types'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
-import { useCampaignContext } from '@contexts/campaignContext'
+import { useCampaignContext } from '@contexts';
+import { elementColor } from '@constants'
 
 interface SpellStageProps {
     stage: number
@@ -105,10 +106,14 @@ export default function SpellsSection(): ReactElement {
                                             }
                                         }}
                                     >
-                                        <Typography variant="subtitle1">{magic.nome}</Typography>
+                                        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', ml: 'auto', mr: 2, alignItems: 'center' }}>
+                                            <Typography variant="subtitle1">{magic.nome}</Typography>
+                                            <Chip label={magic.elemento} size="small" variant="filled" sx={{ bgcolor: elementColor[magic.elemento] }} />
+                                        </Box>
                                         <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', ml: 'auto', mr: 2 }}>
                                             <Chip label={`Nível ${magic['nível']}`} size="small" variant="outlined" />
                                             <Chip label={magic.alcance} size="small" variant="outlined" color="secondary" />
+                                            <Chip label={magic.execução} size="small" variant="outlined" color="primary" />
                                             <Chip label={magic.tipo} size="small" variant="outlined" color="error" />
                                         </Box>
                                     </AccordionSummary>

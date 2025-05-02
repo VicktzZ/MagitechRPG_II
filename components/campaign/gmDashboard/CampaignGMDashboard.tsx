@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 'use client'
 
-import { useCampaignContext } from '@contexts/campaignContext'
+import { useCampaignContext } from '@contexts';
 import { useGameMasterContext } from '@contexts/gameMasterContext'
 import AddIcon from '@mui/icons-material/Add'
 import {
@@ -45,7 +45,7 @@ export default function CampaignGMDashboard(): ReactElement | null {
     if (!isUserGM) return null
 
     useEffect(() => {
-        channel.bind(PusherEvent.FICHA_UPDATED, (ficha: Ficha) => {
+        channel?.bind(PusherEvent.FICHA_UPDATED, (ficha: Ficha) => {
             setPlayerFichas(prev => {
                 return prev.map(f => f._id === ficha._id ? ficha : f)
             })

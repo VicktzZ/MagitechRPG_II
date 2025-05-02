@@ -15,7 +15,7 @@ import {
 } from '@mui/material'
 import { useSession } from 'next-auth/react'
 import { useChannel } from '@contexts/channelContext'
-import { useCampaignContext } from '@contexts/campaignContext'
+import { useCampaignContext } from '@contexts';
 import { PusherEvent } from '@enums'
 import { grey } from '@mui/material/colors'
 import type { User } from '@types'
@@ -65,24 +65,6 @@ export default function CampaignHeader(): ReactElement {
     useEffect(() => {
         if (!channel) return
 
-        const handleSessionUsersUpdate = (data: { user: User; lastSeen: string }) => {
-            setOnlineUsers(prev => {
-                const userIndex = prev.findIndex(u => u._id === data.user._id)
-                const newUser = { ...data.user, lastSeen: new Date(data.lastSeen) }
-
-                if (userIndex >= 0) {
-                    // Atualiza usuário existente
-                    const updatedUsers = [ ...prev ]
-                    updatedUsers[userIndex] = newUser
-                    return updatedUsers
-                } else {
-                    // Adiciona novo usuário
-                    return [ ...prev, newUser ]
-                }
-            })
-        }
-
-        channel.bind(PusherEvent.SESSION_USERS_UPDATED, handleSessionUsersUpdate)
         channel.bind(PusherEvent.SUBSCRIPTION, () => {
             // Quando se conecta, envia status imediatamente
             if (session?.user) {
@@ -94,7 +76,6 @@ export default function CampaignHeader(): ReactElement {
         })
 
         return () => {
-            channel.unbind(PusherEvent.SESSION_USERS_UPDATED, handleSessionUsersUpdate)
             channel.unbind(PusherEvent.SUBSCRIPTION)
         }
     }, [ channel, session ])

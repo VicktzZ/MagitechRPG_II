@@ -18,7 +18,7 @@ import {
 } from '@mui/material'
 import { useSnackbar } from 'notistack'
 import { campaignService } from '@services'
-import { useCampaignContext } from '@contexts/campaignContext'
+import { useCampaignContext } from '@contexts';
 import { useGameMasterContext } from '@contexts/gameMasterContext'
 import { useChannel } from '@contexts/channelContext'
 import { PusherEvent } from '@enums'

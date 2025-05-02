@@ -4,7 +4,7 @@
 import { Box, Paper, IconButton, Typography, Stack, Avatar, Snackbar, Alert, TextField } from '@mui/material'
 import SendIcon from '@mui/icons-material/Send'
 import { useEffect, useState, useRef, type ReactElement, memo } from 'react'
-import { useCampaignContext } from '@contexts/campaignContext'
+import { useCampaignContext } from '@contexts';
 import { useSession } from 'next-auth/react'
 import { useChannel } from '@contexts/channelContext'
 import type { Attributes, Message, TempMessage, Expertises } from '@types'

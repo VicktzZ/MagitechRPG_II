@@ -25,7 +25,7 @@ import { campaignService, fichaService, notificationService } from '@services'
 import type { Ficha, Item, Weapon } from '@types'
 import { enqueueSnackbar } from 'notistack'
 import { useState } from 'react'
-import { useCampaignContext } from '@contexts/campaignContext'
+import { useCampaignContext } from '@contexts';
 import AddItemModal from './AddItemModal'
 import FichaDetailsModal from './FichaDetailsModal'
 import { TextField } from '@mui/material'
