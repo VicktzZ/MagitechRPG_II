@@ -28,3 +28,29 @@ export async function GET(_req: NextRequest, { params }: { params: id }): Promis
         return Response.json({ message: 'FORBIDDEN', error: error.message }, { status: 403 });
     }
 }
+
+export async function DELETE(req: NextRequest, { params }: { params: id }): Promise<Response> {
+    try {
+        await connectToDb();
+        let code;
+
+        const { id } = params;
+        if (id.length === 8) code = id;
+
+        const { userId } = await req.json();
+        
+        const campaign = await Campaign.findOneAndUpdate(
+            code ? { campaignCode: code } : { _id: id },
+            { $pull: { players: { userId }, 'session.users': userId } },
+            { new: true }
+        );
+
+        if (!campaign) {
+            return Response.json({ message: 'CAMPAIGN NOT FOUND' }, { status: 404 });
+        }
+
+        return Response.json({ message: 'USER REMOVED FROM CAMPAIGN', campaign });
+    } catch (error: any) {
+        return Response.json({ message: 'FORBIDDEN', error: error.message }, { status: 403 });
+    }
+}
