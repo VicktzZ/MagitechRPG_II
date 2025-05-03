@@ -2,7 +2,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 'use client';
 
-import { useEffect, type ReactElement, useState, useRef, useMemo } from 'react';
+import { useEffect, type ReactElement, useState, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
 import { Backdrop, Box, CircularProgress, Grid, Modal, Skeleton, type Theme, Typography, useMediaQuery } from '@mui/material';
 import { useRouter } from 'next/navigation';
@@ -10,11 +10,10 @@ import { CampaignComponent, CampaignHeader } from '@components/campaign';
 import { FichaCard } from '@components/ficha';
 import { useChannel } from '@contexts/channelContext';
 import { gameMasterContext, campaignContext } from '@contexts';
-import { PUSHER_KEY } from '@constants';
 import type { Ficha, Campaign as CampaignType, User } from '@types';
-import PusherClient, { type PresenceChannel } from 'pusher-js';
 import { campaignService, fichaService, sessionService } from '@services';
 import { ChatProvider } from '@contexts/ChatProvider';
+import { usePusher } from '@hooks/usePusher';
 
 export default function Campaign({ params }: { params: { code: string } }): ReactElement {
     const campaignName = 'presence-' + params.code;
@@ -22,7 +21,6 @@ export default function Campaign({ params }: { params: { code: string } }): Reac
     
     const router = useRouter();
     const { data: session } = useSession();
-    const { channel, setChannel } = useChannel();
     const [ isLoading, setIsLoading ] = useState<    boolean>(true);
     const [ isLoadingFichas, setIsLoadingFichas ] = useState<boolean>(true);
     const [ userFichas, setUserFichas ] = useState<Ficha[]>([]);
@@ -34,37 +32,10 @@ export default function Campaign({ params }: { params: { code: string } }): Reac
     const [ campaignUsers, setCampaignUsers ] = useState<User[]>([]);
     const [ playerFichas, setPlayerFichas ] = useState<Ficha[]>([]);
     const [ fichaUpdated, setFichaUpdated ] = useState<boolean>(false);
-    const pusherClientRef = useRef<PusherClient | null>(null);
-    const channelRef = useRef<PresenceChannel | null>(null);
-
     const isMobile = useMediaQuery((theme: Theme) => theme.breakpoints.down('sm'));
 
-    useEffect(() => {
-        if (!pusherClientRef.current) {
-            const pusher = new PusherClient(PUSHER_KEY, {
-                cluster: 'sa1',
-                authEndpoint: `/api/pusher/auth?session=${JSON.stringify(session)}`,
-                forceTLS: true
-            });
-            pusherClientRef.current = pusher;
-        }
-    }, [  ]);
-
-    useEffect(() => {
-        if (pusherClientRef.current && !channelRef.current && (isUserGM || ficha)) {
-            const chn = pusherClientRef.current.subscribe(campaignName) as PresenceChannel;
-            channelRef.current = chn;
-            setChannel(chn);
-        }
-
-        return () => {
-            if (channelRef.current) {
-                channelRef.current.unsubscribe();
-                setChannel(null);
-                channelRef.current = null;
-            }
-        };
-    }, [ campaignName, isUserGM, ficha ]);
+    usePusher(campaignName, isUserGM, ficha, session);
+    const { channel } = useChannel();
 
     useEffect(() => {
         const fetchCampaign = async () => {
@@ -85,7 +56,6 @@ export default function Campaign({ params }: { params: { code: string } }): Reac
                 }
                 setAllGameMastersId(campaignResponse.admin);
 
-                // Busca as fichas dos jogadores
                 const playerFichasPromise = Promise.all(campaignResponse.players.map(async (player) => {
                     const playerFicha = await fichaService.getById(player.fichaId);
                     return playerFicha;
@@ -101,7 +71,7 @@ export default function Campaign({ params }: { params: { code: string } }): Reac
         fetchCampaign();
 
         return () => {
-            pusherClientRef.current?.disconnect();
+            channel?.disconnect();
             sessionService.disconnect({ 
                 campaignCode: params.code,
                 userId: session?.user?._id ?? ''

@@ -6,8 +6,8 @@ import { Box, Typography, Paper, Chip, Grid, Button } from '@mui/material';
 import { SkillType } from '@enums';
 import SkillsTreeDialog from '@components/ficha/SkillsTreeDialog';
 import Masonry from '@mui/lab/Masonry';
-import { useCampaignContext } from '@contexts/campaignContext';
-import { type Ficha } from '@types';
+import { useCampaignContext } from '@contexts';
+import type { Skill, Ficha } from '@types';
 
 interface SkillFilterChipProps {
     label: string;
@@ -46,6 +46,7 @@ export default function SkillsSection({ selectedSkillType, setSelectedSkillType 
         : ficha.skills[selectedSkillType] || [];
 
     const [ treeModalOpen, setTreeModalOpen ] = useState(false)
+    const [ expandedSkill, setExpandedSkill ] = useState<string | false>(false)
 
     return (
         <Grid item xs={12} md={6}>
@@ -93,7 +94,7 @@ export default function SkillsSection({ selectedSkillType, setSelectedSkillType 
                 </Box>
 
                 <Masonry columns={{ xs: 1, sm: 2 }} spacing={2}>
-                    {filteredSkills.map((skill: any) => (
+                    {filteredSkills.map((skill: Skill) => (
                         <Paper 
                             key={skill.name}
                             sx={{ 
@@ -114,7 +115,28 @@ export default function SkillsSection({ selectedSkillType, setSelectedSkillType 
                                 {skill.name}
                             </Typography>
                             <Typography variant="body2" color="text.secondary">
-                                {skill.description}
+                                {skill.description.length > 200 ? (
+                                    <>
+                                        <Box sx={{ position: 'relative' }}>
+                                            {expandedSkill === skill.name ? skill.description : `${skill.description.substring(0, 200)}...`}
+                                            <Button 
+                                                size="small" 
+                                                onClick={() => {
+                                                    setExpandedSkill(expandedSkill === skill.name ? false : skill.name);
+                                                }}
+                                                sx={{ 
+                                                    minWidth: 'auto', 
+                                                    p: 0.5, 
+                                                    position: 'relative',
+                                                    display: 'block',
+                                                    ml: 'auto'
+                                                }}
+                                            >
+                                                {expandedSkill === skill.name ? '▲' : '▼'}
+                                            </Button>
+                                        </Box>
+                                    </>
+                                ) : skill.description}
                             </Typography>
                         </Paper>
                     ))}

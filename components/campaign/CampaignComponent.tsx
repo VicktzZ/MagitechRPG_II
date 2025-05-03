@@ -6,7 +6,7 @@ import { useEffect, useState, type ReactElement } from 'react';
 import { CampaignGMDashboard, CampaignNotes, CampaignPlayerDashboard, SessionChat } from '.';
 import { useSnackbar } from 'notistack';
 import { useSession } from '@node_modules/next-auth/react';
-import { useCampaignContext } from '@contexts/campaignContext';
+import { useCampaignContext } from '@contexts';
 import { sessionService } from '@services';
 import { toastDefault } from '@constants';
 import { PusherEvent } from '@enums';

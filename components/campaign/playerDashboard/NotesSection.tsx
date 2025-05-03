@@ -1,16 +1,12 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 'use client';
 
-import { useCampaignContext } from '@contexts/campaignContext';
+import { useCampaignContext } from '@contexts';
 import { Grid, Paper, TextField, Typography } from '@mui/material';
 import { useCallback, useEffect, useState, type ReactElement } from 'react';
 
-interface NotesSectionProps {
-    onNotesChange: (notes: string) => void;
-}
-
-export default function NotesSection({ onNotesChange }: NotesSectionProps): ReactElement {
-    const { campaign: { myFicha: ficha } } = useCampaignContext()
+export default function NotesSection(): ReactElement {
+    const { campaign: { myFicha: ficha }, setFichaUpdated } = useCampaignContext()
     if (!ficha) return <></>;
 
     const [ notes, setNotes ] = useState(ficha.anotacoes ?? '');
@@ -19,18 +15,15 @@ export default function NotesSection({ onNotesChange }: NotesSectionProps): Reac
         setNotes(ficha.anotacoes ?? '');
     }, [ ficha.anotacoes ]);
 
-    // Debounce para evitar chamadas excessivas ao componente pai
-    const debouncedOnChange = useCallback((value: string) => {
-        const timeoutId = setTimeout(() => {
-            onNotesChange(value);
-        }, 500);
-        return () => clearTimeout(timeoutId);
-    }, [ onNotesChange ]);
+    const onChange = useCallback((value: string) => {
+        ficha.anotacoes = value;
+        setFichaUpdated(true);
+    }, [ ficha, setFichaUpdated ]);
 
     const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>): void => {
         const newValue = e.target.value;
         setNotes(newValue);
-        debouncedOnChange(newValue);
+        onChange(newValue);
     };
 
     return (

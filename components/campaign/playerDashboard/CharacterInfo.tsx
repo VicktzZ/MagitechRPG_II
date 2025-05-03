@@ -2,7 +2,7 @@
 'use client';
 
 import { RPGIcon } from '@components/misc';
-import { useCampaignContext } from '@contexts/campaignContext';
+import { useCampaignContext } from '@contexts';
 import { Avatar, Box, Button, Chip, Grid, LinearProgress, Paper, Typography } from '@mui/material';
 import { blue, deepPurple, green, orange, red, teal } from '@mui/material/colors';
 import { useState, type ReactElement } from 'react';
@@ -54,13 +54,15 @@ export default function CharacterInfo({ avatar }: CharacterInfoProps): ReactElem
         ap: ficha.attributes.ap
     });
 
-    const setAttribute = (attr: 'lp' | 'mp' | 'ap', num: number) => {
+    const setAttribute = (attr: 'lp' | 'mp' | 'ap', num: number, max?: number) => {
         setCurrentAttributes(prev => {
             ficha.attributes[attr] = prev[attr] + num;
+            console.log(max)
+            if (max) ficha.attributes[attr] = max;
             
             return {
                 ...prev,
-                [attr]: prev[attr] + num
+                [attr]: ficha.attributes[attr]
             }
         });
 
@@ -154,6 +156,7 @@ export default function CharacterInfo({ avatar }: CharacterInfoProps): ReactElem
                             <Box display='flex' alignItems='center' gap={1}>
                                 <Button variant="contained" size="small" onClick={() => setAttribute('lp', 1)}>+1</Button>
                                 <Button variant="contained" size="small" onClick={() => setAttribute('lp', -1)}>-1</Button>
+                                <Button variant="contained" size="small" onClick={() => setAttribute('lp', 0, ficha.maxLp)}>MAX</Button>
                             </Box>
                         </Grid>
                         <Grid item xs={12} md={4}>
@@ -178,6 +181,7 @@ export default function CharacterInfo({ avatar }: CharacterInfoProps): ReactElem
                             <Box display='flex' alignItems='center' gap={1}>
                                 <Button variant="contained" size="small" onClick={() => setAttribute('mp', 1)}>+1</Button>
                                 <Button variant="contained" size="small" onClick={() => setAttribute('mp', -1)}>-1</Button>
+                                <Button variant="contained" size="small" onClick={() => setAttribute('mp', 0, ficha.maxMp)}>MAX</Button>
                             </Box>
                         </Grid>
                         <Grid item xs={12} md={4}>
@@ -201,6 +205,7 @@ export default function CharacterInfo({ avatar }: CharacterInfoProps): ReactElem
                                 <Box display='flex' alignItems='center' gap={1}>
                                     <Button variant="contained" size="small" onClick={() => setAttribute('ap', 1)}>+1</Button>
                                     <Button variant="contained" size="small" onClick={() => setAttribute('ap', -1)}>-1</Button>
+                                    <Button variant="contained" size="small" onClick={() => setAttribute('ap', 0, ficha.maxAp)}>MAX</Button>
                                 </Box>
                             </Box>
                         </Grid>

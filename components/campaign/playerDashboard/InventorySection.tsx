@@ -2,7 +2,7 @@
 'use client';
 
 import { rarityColor } from '@constants';
-import { useCampaignContext } from '@contexts/campaignContext';
+import { useCampaignContext } from '@contexts';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { Masonry } from '@mui/lab';
 import { Accordion, AccordionDetails, AccordionSummary, Box, Chip, Grid, Paper, Typography } from '@mui/material';

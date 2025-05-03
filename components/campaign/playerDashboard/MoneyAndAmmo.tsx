@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 'use client';
 
-import { useCampaignContext } from '@contexts/campaignContext';
+import { useCampaignContext } from '@contexts';
 import { AmmoType } from '@enums';
 import { Add as AddIcon, Remove as RemoveIcon } from '@mui/icons-material';
 import { Box, Button, Divider, Grid, IconButton, LinearProgress, MenuItem, Paper, Select, TextField, Typography } from '@mui/material';
@@ -92,13 +92,33 @@ export default function MoneyAndAmmo(): ReactElement {
     return (
         <Grid item xs={12} md={6}>
             <Paper sx={{ p: 2, bgcolor: 'background.paper2', borderRadius: 2, minHeight: '100%' }}>
-                <Box sx={{ mb: 3 }}>
-                    <Typography variant="h6" gutterBottom>
-                        Dinheiro
+                <Box sx={{ mb: 3, p: 2, bgcolor: 'background.paper3', borderRadius: 2, boxShadow: 1 }}>
+                    <Typography variant="h6" gutterBottom sx={{ color: 'primary.main', fontWeight: 'bold' }}>
+                        {ficha.mode === 'Classic' ? '¥ ' : '¢ '}Dinheiro
                     </Typography>
-                    <Typography variant="h5" color="primary">
-                        {ficha.inventory.money}
-                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <TextField
+                            defaultValue={ficha.inventory.money}
+                            onChange={(e) => {
+                                const value = parseFloat(e.target.value) || 0;
+                                
+                                const debounced = setTimeout(() => {
+                                    ficha.inventory.money = value;
+                                    setFichaUpdated(true);
+                                }, 500);
+                                
+                                return () => clearTimeout(debounced);
+                            }}
+                            type="number"
+                            variant="outlined"
+                            size="small"
+                            inputProps={{ min: 0, step: 0.1 }}
+                            sx={{ width: '150px' }}
+                        />
+                        <Typography variant="body1" color="text.secondary">
+                            Créditos
+                        </Typography>
+                    </Box>
                 </Box>
 
                 <Divider sx={{ my: 2 }} />

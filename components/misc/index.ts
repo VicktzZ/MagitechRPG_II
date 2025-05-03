@@ -8,6 +8,7 @@ import RadarChart from './RadarChart'
 import RPGIcon from './rpg-icons'
 import DiceRollModal from './DiceRollModal'
 import { DiceMessage } from './DiceMessage'
+import { SavingSpinner } from './SavingSpinner'
 
 export {
     ParticleComponent,
@@ -20,5 +21,6 @@ export {
     RPGIcon,
     RequireAuth,
     RequireFicha,
-    RadarChart
+    RadarChart,
+    SavingSpinner
 }

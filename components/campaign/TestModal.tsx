@@ -24,7 +24,7 @@ import {
 } from '@mui/material';
 import { useState } from 'react';
 import type { Campaign, TestData, Expertises } from '@types';
-import { useCampaignContext } from '@contexts/campaignContext';
+import { useCampaignContext } from '@contexts';
 
 interface TestModalProps {
     open: boolean;
