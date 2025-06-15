@@ -8,6 +8,16 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import { useCampaignContext } from '@contexts';
 import { elementColor } from '@constants'
 
+function getMagicColor(magic: Magia): string {
+    switch (magic.elemento) {
+    case 'AR':
+    case 'LUZ':
+    case 'NÃO-ELEMENTAL':
+        return 'black'
+    default:
+        return 'white'
+    }
+}
 interface SpellStageProps {
     stage: number
     description: string
@@ -108,7 +118,7 @@ export default function SpellsSection(): ReactElement {
                                     >
                                         <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', ml: 'auto', mr: 2, alignItems: 'center' }}>
                                             <Typography variant="subtitle1">{magic.nome}</Typography>
-                                            <Chip label={magic.elemento} size="small" variant="filled" sx={{ bgcolor: elementColor[magic.elemento] }} />
+                                            <Chip label={magic.elemento} size="small" variant="filled" sx={{ bgcolor: elementColor[magic.elemento], color: getMagicColor(magic) }} />
                                         </Box>
                                         <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', ml: 'auto', mr: 2 }}>
                                             <Chip label={`Nível ${magic['nível']}`} size="small" variant="outlined" />

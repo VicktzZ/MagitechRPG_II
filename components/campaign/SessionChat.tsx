@@ -221,9 +221,9 @@ export default function SessionChat() {
                         if (baseAttributeValue === -1) {
                             numDice = 2
                             useWorst = true
-                        } else if (baseAttributeValue === 3) {
+                        } else if (baseAttributeValue >= 3) {
                             numDice = 2
-                        } else if (baseAttributeValue === 5) {
+                        } else if (baseAttributeValue >= 5) {
                             numDice = 3
                         }
 
