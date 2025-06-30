@@ -71,7 +71,10 @@ export async function POST(req: Request, { params }: { params: { id: string } })
                 spellsPoints++
                 rewardsList.push('+1 ponto de poder mágico')
                 rewardsList.push('+1 ponto de magia')
-                rewardsList.push(`ORM nível ${newORMLevel} Atingido!`)
+                if (currentLevel !== 20) {
+                    newORMLevel++
+                    rewardsList.push(`ORM nível ${newORMLevel} Atingido!`)
+                }
             }
         }
 
@@ -112,8 +115,6 @@ export async function POST(req: Request, { params }: { params: { id: string } })
                 })
             }
         }
-
-        // Calcula novo nível de ORM (máximo 4)
 
         // Aplica as recompensas
         const updates = {
