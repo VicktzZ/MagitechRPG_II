@@ -3,6 +3,6 @@ import { type Ficha } from '@types';
 import { type Dispatch, type SetStateAction, createContext } from 'react';
 
 export const fichaContext = createContext<{ ficha: Ficha, setFicha: Dispatch<SetStateAction<Ficha>> }>({
-    ficha: fichaModel as Ficha,
+    ficha: fichaModel ,
     setFicha: () => {}
 })

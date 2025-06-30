@@ -1,3 +1,4 @@
+import type { ApiParams } from './api';
 import type { MagicPower } from './ficha';
 
 export interface UseSkillsOptions {
@@ -36,6 +37,19 @@ export interface UseSkills {
     loadMore: () => void;
 }
 
+export interface UseResourceListParams {
+    queryParams: {
+        search: string;
+        filter: string;
+        sort: string;
+        order: 'ASC' | 'DESC';
+        page: number;
+        limit: number;
+    },
+    params?: any,
+    body?: any
+}
+
 export interface UseResourceListOptions<T> {
     initialSearch?: string;
     initialFilter?: string;
@@ -45,7 +59,7 @@ export interface UseResourceListOptions<T> {
     };
     pageSize?: number;
     queryKey: string;
-    fetchFunction: (params: any) => Promise<T[]>;
+    fetchFunction: (params: ApiParams<string, T>) => Promise<T[]>;
     addFunction?: (item: T) => void;
     validateAdd?: (item: T, currentData: any) => { isValid: boolean; errorMessage?: string };
     successMessage?: (item: T) => string;

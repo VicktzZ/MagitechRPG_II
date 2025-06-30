@@ -230,7 +230,7 @@ function MagicSpell({
                 minWidth: matches ? '25rem' : '',
                 display: 'flex',
                 p: 3,
-                bgcolor: 'background.paper',
+                bgcolor: 'background.paper2',
                 boxShadow: theme.shadows[10],
                 borderRadius: 3
             }}

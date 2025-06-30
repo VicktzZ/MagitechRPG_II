@@ -30,7 +30,7 @@ export default function CampaingCard({
     
     const handleCardClick = (e: React.MouseEvent): void => {
         if (e.target instanceof HTMLButtonElement) return;
-        router.push(`/plataform/campaign/${code}`);
+        router.push(`/app/campaign/${code}`);
     };
     
     return (

@@ -12,7 +12,10 @@ export async function GET(req: NextRequest): Promise<Response> {
         const order = req.nextUrl.searchParams.get('order')
         const filter = req.nextUrl.searchParams.get('filter')
         const sort = req.nextUrl.searchParams.get('sort')
-        const pipeline: PipelineStage[] = [ { $skip: 0 } ] 
+        const page = req.nextUrl.searchParams.get('page')
+        const limit = req.nextUrl.searchParams.get('limit')
+
+        const pipeline: PipelineStage[] = [ { $skip: (Number(page) - 1) * Number(limit) } ] 
         
         if (query) {
             pipeline.unshift({
@@ -50,6 +53,8 @@ export async function GET(req: NextRequest): Promise<Response> {
                 // pipeline.push({ $sort: { 'lvl': -1 } })
             }
         }
+
+        pipeline.push({ $limit: Number(limit) })
 
         console.log(pipeline);
 

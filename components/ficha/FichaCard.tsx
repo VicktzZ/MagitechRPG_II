@@ -39,7 +39,7 @@ export default function FichaCard({ ficha, onClick, disableDeleteButton }: { fic
     return (
         <>
             <Card
-                onClick={onClick ?? (() => { router.push(`/plataform/ficha/${ficha._id}`) })}
+                onClick={onClick ?? (() => { router.push(`/app/ficha/${ficha._id}`) })}
                 key={ficha._id}
                 sx={{
                     display: 'flex',
