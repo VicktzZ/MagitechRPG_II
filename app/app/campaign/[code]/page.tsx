@@ -13,7 +13,7 @@ import { gameMasterContext, campaignContext } from '@contexts';
 import type { Ficha, Campaign as CampaignType, User } from '@types';
 import { campaignService, fichaService, sessionService } from '@services';
 import { ChatProvider } from '@contexts/ChatProvider';
-import { usePusher } from '@hooks/usePusher';
+import { usePusher } from '@hooks';
 
 export default function Campaign({ params }: { params: { code: string } }): ReactElement {
     const campaignName = 'presence-' + params.code;
@@ -48,7 +48,7 @@ export default function Campaign({ params }: { params: { code: string } }): Reac
 
                 if (campaignResponse.admin.includes(session?.user?._id ?? '')) setIsUserGM(true);
                 else {
-                    const fichaResponse = await fichaService.fetch({ userId: session?.user?._id ?? '' });
+                    const fichaResponse = await fichaService.fetch({ queryParams: { userId: session?.user?._id ?? '' } });
 
                     setUserFichas(fichaResponse);
                     setIsLoadingFichas(false);
@@ -113,7 +113,7 @@ export default function Campaign({ params }: { params: { code: string } }): Reac
             {!isLoading && !isUserGM && (
                 <Modal
                     open={openFichaModal}
-                    onClose={() => { router.push('/plataform'); }}
+                    onClose={() => { router.push('/app'); }}
                     disableAutoFocus
                     disableEnforceFocus
                     disableRestoreFocus

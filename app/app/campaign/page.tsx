@@ -16,7 +16,7 @@ export default function CampaignPage(): ReactElement {
 
     const fetchCampaigns = async (): Promise<void> => {
         setIsLoading(true);
-        const camps = await campaignService.fetch({ userId: session?.user?._id });
+        const camps = await campaignService.fetch({ queryParams: { userId: session?.user?._id } });
         setCampaigns(camps);
         setIsLoading(false);
     };
