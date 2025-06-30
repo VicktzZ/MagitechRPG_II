@@ -1,9 +1,9 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useDebouncedCallback } from '@mantine/hooks';
 import { useSnackbar } from 'notistack';
 import { Close } from '@mui/icons-material';
 import { toastDefault } from '@constants';
+import { useDebounce } from '@uidotdev/usehooks';
 import type { UseResourceListOptions, UseResourceListReturn } from '@types';
 
 export const useResourceList = <T extends Record<string, any>>(
@@ -26,6 +26,8 @@ export const useResourceList = <T extends Record<string, any>>(
     const queryClient = useQueryClient();
 
     const [ search, setSearch ] = useState(initialSearch);
+    const debouncedSearch = useDebounce(search, 500);
+
     const [ filter, setFilter ] = useState(initialFilter);
     const [ sort, setSort ] = useState(initialSort);
     const [ buttonSelected, setButtonSelected ] = useState({
@@ -34,17 +36,16 @@ export const useResourceList = <T extends Record<string, any>>(
         remove: false
     });
 
-    // Função para buscar itens com paginação infinita
     const fetchItems = useCallback(
         async ({ pageParam = 1 }) => {
             const params = {
                 queryParams: {
-                    search,
+                    search: debouncedSearch,
                     filter,
                     sort: sort.value,
                     order: sort.order,
-                    page: pageParam,
-                    limit: pageSize
+                    page: pageParam.toString(),
+                    limit: pageSize.toString()
                 }
             };
 
@@ -55,7 +56,7 @@ export const useResourceList = <T extends Record<string, any>>(
                 nextPage: data?.length === pageSize ? pageParam + 1 : undefined
             };
         },
-        [ search, filter, sort, pageSize, fetchFunction ]
+        [ debouncedSearch, filter, sort, pageSize, fetchFunction ]
     );
 
     // Configuração da query infinita
@@ -68,16 +69,12 @@ export const useResourceList = <T extends Record<string, any>>(
         isError,
         error
     } = useInfiniteQuery({
-        queryKey: [ queryKey, { search, filter, sort } ],
+        queryKey: [ queryKey, { search: debouncedSearch, filter, sort } ],
         queryFn: fetchItems,
+        staleTime: 500,
         getNextPageParam: (lastPage) => lastPage.nextPage,
         initialPageParam: 1
     });
-
-    // Debounce para a busca
-    const debouncedSearch = useDebouncedCallback((value: string) => {
-        setSearch(value);
-    }, 500);
 
     // Mutação para adicionar um item
     const { mutate: addItem } = useMutation({
@@ -140,10 +137,7 @@ export const useResourceList = <T extends Record<string, any>>(
         isFetchingNextPage,
 
         // Ações
-        setSearch: (value: string) => {
-            setSearch(value);
-            debouncedSearch(value);
-        },
+        setSearch,
         setFilter,
         setSort,
         setButtonSelected,

@@ -44,7 +44,7 @@ export default function CampaignOptionsModal({
 
             if (response) {
                 setOpen(false);
-                router.push(`/plataform/campaign/${campaignCode}`);
+                router.push(`/app/campaign/${campaignCode}`);
             } else {
                 enqueueSnackbar('Código da sessão inválido ou inexistente!', { variant: 'error' });
             }
@@ -78,7 +78,7 @@ export default function CampaignOptionsModal({
             enqueueSnackbar('Campanha criada com sucesso!', { variant: 'success' });
 
             setTimeout(() => {
-                router.push(`/plataform/campaign/${campaignCodeGen}`);
+                router.push(`/app/campaign/${campaignCodeGen}`);
             }, 1000);
         } catch (error: any) {
             setIsLoading(false);

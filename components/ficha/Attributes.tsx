@@ -503,13 +503,20 @@ export default function Attributes({ disabled }: { disabled?: boolean }): ReactE
                                 <InputLabel>Traços *</InputLabel>
                                 <Select
                                     name='traits'
-                                    value={String(f.values.traits)}
+                                    multiple
+                                    value={f.values.traits as any}
                                     onChange={setTraits}
                                     input={<OutlinedInput label="Chip" />}
                                     MenuProps={MenuProps}
-                                    renderValue={(selected) => (
+                                    renderValue={(selected: any) => (
                                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                                            <Chip key={String(selected)} label={String(selected)} />
+                                            {typeof selected === 'string' ? (
+                                                <Chip key={selected} label={selected} />
+                                            ) : (
+                                                selected.map((value: string) => (
+                                                    <Chip key={value} label={value} />
+                                                ))
+                                            )}
                                         </Box>
                                     )}
                                 >

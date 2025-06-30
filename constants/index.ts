@@ -35,6 +35,17 @@ export const toastDefault = (key: string, variant?: 'default' | 'error' | 'succe
     key
 })
 
+export const elements = [
+    'Fogo',
+    'Água',
+    'Ar',
+    'Terra',
+    'Eletricidade',
+    'Luz',
+    'Trevas',
+    'Não-Elemental'
+]
+
 export const elementColor = {
     'FOGO': red[500],
     'ÁGUA': blue[600],

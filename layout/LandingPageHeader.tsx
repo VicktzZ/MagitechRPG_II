@@ -157,7 +157,7 @@ export default function LandingPageHeader(): ReactElement {
                             <ListItem 
                                 button 
                                 key={provider.name}
-                                onClick={async () => await signIn(provider.id, { callbackUrl: '/plataform' })}
+                                onClick={async () => await signIn(provider.id, { callbackUrl: '/app' })}
                                 sx={{ py: 1.5 }}
                             >
                                 <Image style={{ width: '1.5rem', height: '1.5rem', marginRight: '16px' }} src={providersIcons[provider.id]} alt={provider.name} />
@@ -192,7 +192,7 @@ export default function LandingPageHeader(): ReactElement {
                         <ListItem 
                             button 
                             onClick={() => {
-                                router.push('/plataform');
+                                router.push('/app');
                                 handleMobileMenuToggle();
                             }}
                             sx={{ py: 1.5 }}
@@ -286,7 +286,7 @@ export default function LandingPageHeader(): ReactElement {
                                         <Button
                                             key={provider.id}
                                             variant="outlined"
-                                            onClick={() => { signIn(provider.id, { callbackUrl: '/plataform' }) }}
+                                            onClick={() => { signIn(provider.id, { callbackUrl: '/app' }) }}
                                             startIcon={
                                                 <Image 
                                                     style={{ width: '1.2rem', height: '1.2rem' }} 
@@ -313,7 +313,7 @@ export default function LandingPageHeader(): ReactElement {
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                                     <Button
                                         variant="contained"
-                                        onClick={() => router.push('/plataform')}
+                                        onClick={() => router.push('/app')}
                                         startIcon={<GamepadIcon />}
                                         sx={{ 
                                             backgroundColor: theme.palette.primary.main,
@@ -362,7 +362,7 @@ export default function LandingPageHeader(): ReactElement {
                                             </Typography>
                                         </Box>
                                         <Divider />
-                                        <MenuItem onClick={() => { router.push('/plataform'); handleClose(); }}>
+                                        <MenuItem onClick={() => { router.push('/app'); handleClose(); }}>
                                             <GamepadIcon fontSize="small" sx={{ mr: 1 }} />
                                             Acessar Plataforma
                                         </MenuItem>

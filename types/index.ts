@@ -30,7 +30,8 @@ import type {
     SessionInfo,
     Subclasses,
     Subclass,
-    Status
+    Status,
+    Element
 } from './ficha';
 
 import type { 
@@ -64,10 +65,16 @@ import type {
     DisconnectSessionDto
 } from './dto';
 
+import type { ApiRoutes, ApiBaseRequestType, ApiParams } from './api';
+import type { ResourceListModalProps } from './components';
+
 import type {
-    ApiRequest,
-    Service
-} from './api';
+    UseSkills,
+    UseSkillsOptions,
+    UseResourceListOptions,
+    UseResourceListReturn,
+    UseResourceListParams
+} from './hooks';
 
 export type { 
     User,
@@ -117,12 +124,19 @@ export type {
     Race,
     Magia,
     FinancialCondition,
-    ApiRequest,
-    Service,
     TestData,
     TestRequest,
     TempMessage,
-
+    Element,
+    ApiRoutes,
+    ApiBaseRequestType,
+    ApiParams,
+    UseSkills,
+    UseSkillsOptions,
+    UseResourceListOptions,
+    UseResourceListReturn,
+    UseResourceListParams,
+    ResourceListModalProps,
     QueryParamsDto,
     UpdateByIdDto,
     ConnectSessionDto,

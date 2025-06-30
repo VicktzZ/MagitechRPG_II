@@ -1,10 +1,11 @@
 import type { ReactElement } from 'react';
+import type { ApiParams } from './api';
 
 export interface ResourceListModalProps<T extends Record<string, any>> {
     open: boolean;
     onClose: () => void;
     queryKey: string;
-    fetchFunction: (params: any) => Promise<T[]>;
+    fetchFunction: (params: ApiParams<string, T>) => Promise<T[]>;
     addFunction: (item: T) => void;
     validateAdd: (item: T) => { isValid: boolean; errorMessage?: string };
     successMessage: (item: T) => string;
