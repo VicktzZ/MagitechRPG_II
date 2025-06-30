@@ -1,6 +1,6 @@
 import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Grid, Tab, Tabs, TextField } from '@mui/material';
 import { useState } from 'react';
-import type { Ficha, Race } from '@types';
+import type { Ficha } from '@types';
 import { useCampaignContext } from '@contexts';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
