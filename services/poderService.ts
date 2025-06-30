@@ -1,13 +1,32 @@
-import { apiRequest } from '@utils/apiRequest'
-import type { MagicPower, Service } from '@types'
-import type { SearchOptions } from '@enums'
+import type { MagicPower, QueryParamsDto, ApiParams } from '@types'
+import { SearchOptions } from '@enums'
+import { Service } from '@utils/apiRequest'
 
-const { get, post, delete: del, patch } = apiRequest<MagicPower>('poder')
-
-export const poderService: Service<MagicPower, SearchOptions> = {
-    async fetch(queryParams) { return await get({ queryParams }) as unknown as MagicPower[] },
-    async getById(id) { return await get({ param: id }) },
-    async create(poder) { return await post({ body: poder }) },
-    async updateById(body) { return await patch(body.id, body.data) },
-    async deleteById(id) { return await del(id) }
+interface PoderSearchParams {
+    search?: string;
+    filter?: string;
+    sort?: string;
+    order?: 'ASC' | 'DESC';
+    page?: number;
+    limit?: number;
 }
+
+class PoderService extends Service<MagicPower, keyof PoderSearchParams> {
+    override async fetch(params?: ApiParams<keyof PoderSearchParams, MagicPower>) {
+        const queryParams: QueryParamsDto<keyof PoderSearchParams> = {};
+        const { search, filter, sort, order, page, limit } = params?.queryParams ?? {}
+        
+        if (params?.queryParams) {
+            if (search) queryParams[SearchOptions.SEARCH] = search;
+            if (filter) queryParams[SearchOptions.FILTER] = filter;
+            if (sort) queryParams[SearchOptions.SORT] = sort;
+            if (order) queryParams[SearchOptions.ORDER] = order;
+            if (page) queryParams[SearchOptions.PAGE] = page;
+            if (limit) queryParams[SearchOptions.LIMIT] = limit;
+        }
+
+        return await super.fetch({ queryParams });
+    }
+}
+
+export const poderService = new PoderService('/poder')

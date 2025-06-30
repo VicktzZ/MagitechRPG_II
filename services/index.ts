@@ -6,7 +6,7 @@ import { pusherService } from './pusherService';
 import { sessionService } from './sessionService';
 import { userService } from './userService';
 import { messageService } from './messageService';
-import { notificationService } from './notificationsService';
+import { notificationService } from './notificationService';
 
 export {
     campaignService,

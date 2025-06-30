@@ -1,28 +1,13 @@
-import type { Campaign, Ficha, Note, Service, User } from '@types'
-import { apiRequest } from '@utils/apiRequest'
+import type { Campaign, Ficha, Note, User } from '@types'
+import { Service } from '@utils/apiRequest'
 
-const { get, post, patch, delete: del, url: campaignApi } = apiRequest<Campaign>('campaign')
-
-interface ICampaignService extends Service<Campaign, 'code' | 'userId'> {
-    getCampaignUsers: (id: string) => Promise<User[]>,
-    createNote: (id: string, note: Note) => Promise<Campaign>,
-    updateNote: (id: string, noteId: string, content: string) => Promise<Campaign>,
-    deleteNote: (id: string, noteId: string) => Promise<Campaign>,
-    removeUser: (id: string, userId: string) => Promise<Campaign>,
-    updateUserFicha: (id: string, ficha: Ficha) => Promise<void>
+class CampaignService extends Service<Campaign, 'code' | 'userId'> {
+    async getCampaignUsers(campaignId: string): Promise<User[]> { return await this.fetch({ param: `${campaignId}/users` }) as unknown as User[] }
+    async createNote(campaignId: string, note: Note) { return await this.post({ param: `${campaignId}/notes`, body: note }) }
+    async updateNote(campaignId: string, noteId: string, content: string) { return await this.patch({ param: `${campaignId}/notes`, body: { noteId, content } }) }
+    async deleteNote(campaignId: string, noteId: string) { return await this.delete({ param: `${campaignId}/notes`, body: { noteId } }) }
+    async removeUser(campaignId: string, userId: string) { return await this.delete({ param: `${campaignId}/users`, body: { userId } }) }
+    async updateUserFicha(campaignId: string, ficha: Ficha) { return await this.patch({ param: `${campaignId}/update-user-ficha`, body: ficha }) }
 }
 
-export const campaignService: ICampaignService = {
-    async fetch(queryParams) { return await get({ queryParams }) as unknown as Campaign[] },
-    async getById(code) { return await get({ queryParams: { code } }) },
-    async create(campaign) { return await post(campaign) },
-    async updateById(body) { return await patch(body.id, body.data) },
-    async deleteById(id) { return await del(id) },
-    
-    async getCampaignUsers(id) { return await campaignApi(`${id}/users`).get() as unknown as User[] },
-    async createNote(id, note) { return await campaignApi(`${id}/notes`).post(note) },
-    async updateNote(id, noteId, content) { return await campaignApi(`${id}/notes`).patch('', { noteId, content }) },
-    async deleteNote(id, noteId) { return await campaignApi(`${id}/notes`).delete('', { noteId }) },
-    async removeUser(id, userId) { return await campaignApi(`${id}/users`).delete('', { userId }) },
-    async updateUserFicha(id, ficha) { await campaignApi(`${id}/update-user-ficha`).post(ficha) }
-}
+export const campaignService = new CampaignService('/campaign')

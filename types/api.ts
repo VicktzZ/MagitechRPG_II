@@ -1,19 +1,23 @@
-import type { QueryParamsDto, UpdateByIdDto } from './dto'
+import type { AxiosResponse } from 'axios'
+import type { QueryParamsDto } from './dto'
 
-export interface ApiRequest<T> {
-    get: <K extends string = '', L = T>(params?: { queryParams?: QueryParamsDto<K>, param?: string, body?: L }) => Promise<T> 
-    post: <K = T>(body: K) => Promise<T>
-    delete: <K = T>(id: string, body?: K) => Promise<T>
-    patch: <K = T>(id: string, body: K) => Promise<T>
-    put: <K = T>(id: string, body: K) => Promise<T>
+export type ApiRoutes = 
+    '/auth' |
+    '/campaign' |
+    '/ficha' |
+    '/magia' |
+    '/notification' |
+    '/poder' |
+    '/pusher' |
+    '/pusher/events' |
+    '/events' |
+    '/pusher/auth' |
+    '/session' |
+    '/session/connect' |
+    '/connect' |
+    '/session/disconnect' |
+    '/disconnect' |
+    '/user'
 
-    url: (address: string) => ApiRequest<T>
-}
-
-export interface Service<T, K extends string = ''> {
-    fetch: (queryParams?: QueryParamsDto<K>) => Promise<T[]>
-    getById: (id: string) => Promise<T>
-    create: (body: T) => Promise<T>
-    updateById: (body: UpdateByIdDto<T>) => Promise<T>
-    deleteById: (id: string) => Promise<T>
-}
+export interface ApiParams<K extends string = '', L = unknown> { queryParams?: QueryParamsDto<K>, param?: string, body?: L }
+export type ApiBaseRequestType<T, K extends string = '', L = unknown> = (params?: ApiParams<K, L>) => Promise<AxiosResponse<T>>

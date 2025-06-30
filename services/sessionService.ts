@@ -1,9 +1,9 @@
 import type { Campaign, ConnectSessionDto, DisconnectSessionDto } from '@types'
-import { apiRequest } from '@utils/apiRequest'
+import { Service } from '@utils/apiRequest'
 
-const { url: sessionApi } = apiRequest<Campaign>('session')
-
-export const sessionService = {
-    async connect(body: ConnectSessionDto) { return await sessionApi('connect').post(body); },
-    async disconnect(body: DisconnectSessionDto) { return await sessionApi('disconnect').post(body as unknown as string); }
+class SessionService extends Service<Campaign> {
+    async connect(body: ConnectSessionDto) { return await this.post({ param: 'connect', body }) }
+    async disconnect(body: DisconnectSessionDto) { return await this.post({ param: 'disconnect', body }) }
 }
+
+export const sessionService = new SessionService('/session')

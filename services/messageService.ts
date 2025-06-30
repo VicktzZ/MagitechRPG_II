@@ -1,14 +1,9 @@
 import type { Message } from '@types';
-import { apiRequest } from '@utils/apiRequest';
+import { Service } from '@utils/apiRequest';
 
-const { url: messageApi } = apiRequest<Message | Message[]>('campaign');
+class MessageService extends Service<Message | Message[]> {
+    async getMessages(campaignCode: string) { return await this.fetch({ param: `${campaignCode}/messages` }) }
+    async sendMessage(campaignCode: string, message: Message) { return await this.create(message, { param: `${campaignCode}/messages` }) }
+}
 
-export const messageService = {
-    async getMessages(campaignCode: string) {
-        return await messageApi(`${campaignCode}/messages`).get() as Message[];
-    },
-
-    async sendMessage(campaignCode: string, message: Message) {
-        return await messageApi(`${campaignCode}/messages`).post(message) as Message;
-    }
-};
+export const messageService = new MessageService('/campaign');
