@@ -43,7 +43,7 @@ export default function AppDrawer(): ReactElement {
         >
             <Box>
                 <List>
-                    <ListItem disablePadding onClick={() => { router.push('/plataform') }}>
+                    <ListItem disablePadding onClick={() => { router.push('/app') }}>
                         <ListItemButton>
                             <ListItemIcon>
                                 <Home />
@@ -63,7 +63,7 @@ export default function AppDrawer(): ReactElement {
                 <Divider />
                 <List>
                     <ListItem disablePadding>
-                        <ListItemButton onClick={() => { router.push('/plataform/campaign') }}>
+                        <ListItemButton onClick={() => { router.push('/app/campaign') }}>
                             <ListItemIcon>
                                 <AutoStories />
                             </ListItemIcon>
@@ -71,7 +71,7 @@ export default function AppDrawer(): ReactElement {
                         </ListItemButton>
                     </ListItem>
                     <ListItem disablePadding>
-                        <ListItemButton onClick={() => { router.push('/plataform/ficha/create') }}>
+                        <ListItemButton onClick={() => { router.push('/app/ficha/create') }}>
                             <ListItemIcon>
                                 <Article />
                             </ListItemIcon>

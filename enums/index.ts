@@ -1,4 +1,4 @@
-export enum ApiMethod {
+export enum ApiMethods {
     GET = 'GET',
     POST = 'POST',
     DELETE = 'DELETE',
@@ -10,6 +10,8 @@ export enum SearchOptions {
     SEARCH = 'search',
     FILTER = 'filter',
     SORT = 'sort',
+    PAGE = 'page',
+    LIMIT = 'limit',
     ORDER = 'order'
 }
 

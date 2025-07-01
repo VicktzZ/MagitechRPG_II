@@ -18,9 +18,7 @@ const handler = NextAuth({
             clientId: process.env.DISCORD_CLIENT_ID,
             clientSecret: process.env.DISCORD_CLIENT_SECRET
         }),
-        // Adiciona o AdminProvider apenas em ambiente de desenvolvimento
         ...(process.env.NODE_ENV === 'development' ? [ AdminProvider ] : [])
-       
     ],
 
     session: {

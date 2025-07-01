@@ -1,6 +1,7 @@
 import type { Member, Ficha } from '@types'
+import { Service } from '@utils/apiRequest'
 
-export const pusherService = {
+class PusherService extends Service<any> {
     async authorizeChannel(socketId: string, channelName: string, session: Member, ficha: Ficha): Promise<any> {
         const params = new URLSearchParams()
         params.append('session', JSON.stringify({ user: session }))
@@ -16,7 +17,7 @@ export const pusherService = {
         }).then(async r => await r.json())
 
         return response
-    },
+    }
 
     async triggerEvent(channelName: string, eventName: string, data: any): Promise<any> {
         const eventData = {
@@ -33,3 +34,5 @@ export const pusherService = {
         return response
     }
 }
+
+export const pusherService = new PusherService('/pusher')

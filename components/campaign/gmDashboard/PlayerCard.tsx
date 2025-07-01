@@ -1,7 +1,7 @@
 import { useChannel } from '@contexts/channelContext'
 import { PusherEvent } from '@enums'
 import { WarningModal } from '@layout'
-import { Add, Backpack, Block, Bolt, ChatBubbleOutline, Favorite, Info, LocalPolice, MonetizationOn, MoreVert, Shield } from '@mui/icons-material'
+import { Backpack, Block, Bolt, ChatBubbleOutline, Favorite, Info, LocalPolice, MonetizationOn, MoreVert, Shield } from '@mui/icons-material'
 import {
     Box,
     Button,
@@ -22,13 +22,13 @@ import {
 } from '@mui/material'
 import { red } from '@mui/material/colors'
 import { campaignService, fichaService, notificationService } from '@services'
-import type { Ficha, Item, Weapon } from '@types'
+import type { Armor, Ficha, Item, Weapon } from '@types'
 import { enqueueSnackbar } from 'notistack'
 import { useState } from 'react'
 import { useCampaignContext } from '@contexts';
-import AddItemModal from './AddItemModal'
-import FichaDetailsModal from './FichaDetailsModal'
+import AddItemModal from './modals/AddItemModal'
 import { TextField } from '@mui/material'
+import { FichaDetailsModal } from './modals'
 
 export default function PlayerCard({ ficha }: { ficha: Required<Ficha> }) {
     const { channel } = useChannel()
@@ -50,19 +50,27 @@ export default function PlayerCard({ ficha }: { ficha: Required<Ficha> }) {
         setPlayerAnchorEl(null)
     }
 
-    const handleAddItem = async (item: Weapon | Item) => {
+    const handleAddItem = async (item: Weapon | Item | Armor) => {
+        if (!channel) return
+
         try {
             // Verifica se é uma arma ou um item
             const isWeapon = 'hit' in item
+            const isArmor = 'displacementPenalty' in item
             const updatedInventory = isWeapon
                 ? {
                     ...ficha.inventory,
                     weapons: [ ...ficha.inventory.weapons, item ]
                 }
-                : {
-                    ...ficha.inventory,
-                    items: [ ...ficha.inventory.items, item ]
-                }
+                : isArmor
+                    ? {
+                        ...ficha.inventory,
+                        armors: [ ...ficha.inventory.armors, item ]
+                    }
+                    : {
+                        ...ficha.inventory,
+                        items: [ ...ficha.inventory.items, item ]
+                    }
 
             const updatedFicha = await fichaService.updateById({
                 id: ficha._id,
@@ -223,23 +231,17 @@ export default function PlayerCard({ ficha }: { ficha: Required<Ficha> }) {
             <Menu anchorEl={playerAnchorEl} open={Boolean(playerAnchorEl)} onClose={handlePlayerMenuClose}>
                 <Box sx={{ width: 320, maxWidth: '100%' }}>
                     <MenuList>
-                        <MenuItem onClick={() => setAddItemModalOpen(true)}>
+                        <MenuItem onClick={viewFichaDetails}>
                             <ListItemIcon>
-                                <Add fontSize="small" />
+                                <Info />
                             </ListItemIcon>
-                            <ListItemText>Adicionar Item</ListItemText>
+                            <ListItemText>Ver detalhes</ListItemText>
                         </MenuItem>
                         <MenuItem onClick={() => setNotificationDialogOpen(true)}>
                             <ListItemIcon>
                                 <ChatBubbleOutline fontSize="small" />
                             </ListItemIcon>
                             <ListItemText>Enviar Notificação</ListItemText>
-                        </MenuItem>
-                        <MenuItem onClick={viewFichaDetails}>
-                            <ListItemIcon>
-                                <Info />
-                            </ListItemIcon>
-                            <ListItemText>Ver detalhes</ListItemText>
                         </MenuItem>
                         <Divider />
                         <MenuItem onClick={() => setRemoveUserDialogOpen(true)}>

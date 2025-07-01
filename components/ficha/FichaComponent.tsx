@@ -89,7 +89,7 @@ export default function FichaComponent({ disabled, ficha }: { disabled?: boolean
                             enqueueSnackbar('Ficha criada com sucesso!', toastDefault('itemCreated', 'success'))
                             setIsLoading(true)
                             setTimeout(() => {
-                                router.push('/plataform/ficha/' + response._id)
+                                router.push('/app/ficha/' + response._id)
                             }, 500);
                         } else {
                             enqueueSnackbar('Você deve gastar seus pontos de atributos!', toastDefault('error', 'error'))

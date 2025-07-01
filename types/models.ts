@@ -73,6 +73,7 @@ export interface Campaign {
         items: Item[] | Armor[] | Weapon[]
         magias: Magia[]
         creatures: Creature[]
+        skills: Skill[]
     }
 }
 

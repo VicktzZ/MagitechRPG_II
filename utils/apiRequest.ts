@@ -1,74 +1,80 @@
-import { ApiMethod } from '@enums'
-import type { ApiRequest, QueryParamsDto } from '@types'
+import type { AxiosInstance } from 'axios'
+import type { ApiBaseRequestType, ApiParams, ApiRoutes, UpdateByIdDto } from '@types'
+import axios from 'axios'
+import { ApiMethods } from '@enums'
 
-export function apiRequest<T>(baseUrl: string): ApiRequest<T> {
-    const url = '/api/' + baseUrl
+class BaseRequest<T> {
+    public readonly request: ApiBaseRequestType<T>;
 
-    return {
-        get: async <K extends string = '', L = T>(params?: { queryParams?: QueryParamsDto<K>, param?: string, body?: L }) => {
-            let apiUrl = url;
-
-            if (params?.param) {
-                apiUrl += '/' + params.param;
+    constructor(instance: AxiosInstance, requestMethod: ApiMethods) {
+        this.request = async <L = T, K extends string = ''>(config?: ApiParams<K, L>) => {
+            let url = '';
+            
+            if (config?.param) {
+                url = `/${config.param}`;
             }
-            if (params?.queryParams) {
-                const queryString = new URLSearchParams(params.queryParams as Record<string, string>).toString();
-                apiUrl += '?' + queryString;
+            
+            if (config?.queryParams) {
+                const queryString = new URLSearchParams(config.queryParams as Record<string, string>).toString();
+                url += `?${queryString}`;
             }
 
-            return await fetch(apiUrl, {
-                method: ApiMethod.GET,
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            }).then(async r => await r.json());
-        },
+            console.log({ requestUrl: url, method: requestMethod, baseURL: instance.defaults.baseURL });
 
-        post: async <K = T>(body: K) => {
-            return await fetch(url, {   
-                method: ApiMethod.POST,
-                body: JSON.stringify(body),
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            }).then(async r => await r.json())
-        },
+            const requestConfig = { data: config?.body };
 
-        delete: async <K = T>(id: string, body?: K) => {
-            const response = await fetch(`${url}/${id}`, {
-                method: ApiMethod.DELETE,
-                body: JSON.stringify(body),
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            }).then(async r => await r.json())
-            return response
-        },
-
-        patch: async <K = T>(id: string, body: K) => {
-            const response = await fetch(`${url}/${id}`, {
-                method: ApiMethod.PATCH,
-                body: JSON.stringify(body),
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            }).then(async r => await r.json())
-            return response
-        },
-
-        put: async <K = T>(id: string, body: K) => {
-            const response = await fetch(`${url}/${id}`, {
-                method: ApiMethod.PUT,
-                body: JSON.stringify(body),
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            }).then(async r => await r.json())
-            return response
-        },
-
-        url: (address: string) => {
-            return apiRequest<T>(baseUrl + '/' + address)
+            switch (requestMethod) {
+            case ApiMethods.GET:
+                return await instance.get(url, requestConfig);
+            case ApiMethods.POST:
+                return await instance.post(url, config?.body);
+            case ApiMethods.PUT:
+                return await instance.put(url, config?.body);
+            case ApiMethods.PATCH:
+                return await instance.patch(url, config?.body);
+            case ApiMethods.DELETE:
+                return await instance.delete(url, requestConfig);
+            default:
+                return await instance.get(url, requestConfig);
+            }
         }
     }
+    
+}
+
+export class ApiInstance<T> {
+    public readonly instance: AxiosInstance
+    protected get: ApiBaseRequestType<T>
+    protected post: ApiBaseRequestType<T>
+    protected put: ApiBaseRequestType<T>
+    protected patch: ApiBaseRequestType<T>
+    protected delete: ApiBaseRequestType<T>
+
+    constructor(baseURL: ApiRoutes) {
+        const instance = axios.create({
+            baseURL: '/api' + baseURL,
+            headers: {
+                'Content-Type': 'application/json'
+                // 'Authorization': `Bearer ${process.env.NEXT_PUBLIC_API_KEY}`
+                // TODO: Implementar autenticação e segurança
+            },
+            timeout: 10000,
+            timeoutErrorMessage: '10 SECONDS TIMEOUT'
+        })
+
+        this.instance = instance
+        this.get = new BaseRequest<T>(instance, ApiMethods.GET).request
+        this.post = new BaseRequest<T>(instance, ApiMethods.POST).request
+        this.put = new BaseRequest<T>(instance, ApiMethods.PUT).request
+        this.patch = new BaseRequest<T>(instance, ApiMethods.PATCH).request
+        this.delete = new BaseRequest<T>(instance, ApiMethods.DELETE).request
+    }
+}
+
+export class Service<T, K extends string = string> extends ApiInstance<T> {
+    async fetch(config?: ApiParams<K, T>) { return (await this.get(config)).data as T[] }
+    async getById(id: string, config?: ApiParams<K, T>) { return (await this.get({ param: id, ...config })).data }
+    async create(data: T, config?: ApiParams<K, T>) { return (await this.post({ body: data, ...config })).data }
+    async updateById(body: UpdateByIdDto<T>, config?: ApiParams<K, T>) { return (await this.patch({ param: body.id, body: body.data, ...config })).data }
+    async deleteById(id: string, config?: ApiParams<K, T>) { return (await this.delete({ param: id, ...config })).data }
 }

@@ -71,7 +71,10 @@ export async function POST(req: Request, { params }: { params: { id: string } })
                 spellsPoints++
                 rewardsList.push('+1 ponto de poder mágico')
                 rewardsList.push('+1 ponto de magia')
-                rewardsList.push(`ORM nível ${newORMLevel} Atingido!`)
+                if (currentLevel !== 20) {
+                    newORMLevel++
+                    rewardsList.push(`ORM nível ${newORMLevel} Atingido!`)
+                }
             }
         }
 
@@ -113,8 +116,6 @@ export async function POST(req: Request, { params }: { params: { id: string } })
             }
         }
 
-        // Calcula novo nível de ORM (máximo 4)
-
         // Aplica as recompensas
         const updates = {
             level: newLevel,
@@ -150,7 +151,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
         await Notification.create({
             userId: ficha.userId,
             title: 'Level Up!',
-            content: `Sua ficha ${ficha.name} foi para o nível ${newLevel}!${rewardsList.length > 0 ? `\n\n${rewardsList.join(';\n')}` : ''}`,
+            content: `Sua ficha ${ficha.name} foi para o nível ${newLevel}!\nRecompensas: ${rewardsList.length > 0 ? `\n\n${rewardsList.join(';\n')}` : ''}`,
             timestamp: new Date(),
             type: 'levelUp',
             link: `/ficha/${ficha._id}`,

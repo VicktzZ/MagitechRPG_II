@@ -64,14 +64,22 @@ function MagicPower({
         <Box
             data-id={id}
             sx={{
-                height: '40rem',
-                width: '25rem',
-                minWidth: matches ? '25rem' : '',
+                height: { xs: '32rem', sm: '36rem' },
+                width: '100%',
+                maxWidth: '22rem',
+                minWidth: '18rem',
                 display: 'flex',
-                p: 3,
-                bgcolor: 'background.paper',
-                boxShadow: theme.shadows[10],
-                borderRadius: 3
+                p: 2,
+                bgcolor: 'background.paper2',
+                boxShadow: theme.shadows[5],
+                borderRadius: 2,
+                boxSizing: 'border-box',
+                margin: '0 auto',
+                transition: 'all 0.2s ease-in-out',
+                '&:hover': {
+                    transform: 'translateY(-2px)',
+                    boxShadow: theme.shadows[8]
+                }
             }}
         >
             <Box 
@@ -99,7 +107,28 @@ function MagicPower({
                         <Typography>{magicPower['pré-requisito'] ?? 'Nenhum'}</Typography>
                     </Box>
                 </Box>
-                <Typography height='100%' width='100%' variant='caption' noWrap whiteSpace='pre-wrap'>{description}</Typography>
+                <Typography
+                    sx={{
+                        height: '100%',
+                        width: '100%',
+                        variant: 'caption',
+                        noWrap: true,
+                        whiteSpace: 'pre-wrap',
+                        overflow: 'auto',
+                        '&::-webkit-scrollbar': {
+                            width: '0.2em'
+                        },
+                        '&::-webkit-scrollbar-track': {
+                            bgcolor: 'transparent'
+                        },
+                        '&::-webkit-scrollbar-thumb': {
+                            bgcolor: theme.palette.primary.main,
+                            borderRadius: 2
+                        }
+                    } as any}
+                >
+                    {description}
+                </Typography>
                 <Box display='flex' width='100%' gap={matches ? 2 : 0} justifyContent='end'>
                     <Box display='flex' gap={1} width='100%' justifyContent='start'>
                         <Button 
@@ -201,7 +230,7 @@ function MagicSpell({
                 minWidth: matches ? '25rem' : '',
                 display: 'flex',
                 p: 3,
-                bgcolor: 'background.paper',
+                bgcolor: 'background.paper2',
                 boxShadow: theme.shadows[10],
                 borderRadius: 3
             }}

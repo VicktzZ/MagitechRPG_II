@@ -4,11 +4,17 @@ import { connectToDb } from '@utils/database';
 interface id { id: string }
 interface CampaignType { campaignCode: string; admin: string[] }
 
-export async function GET(_req: Request, { params: { id } }: { params: id }): Promise<Response> {
+export async function GET(_req: Request, { params }: { params: id }): Promise<Response> {
     try {
+        const { id } = params;
         await connectToDb();
 
-        const campaign = await Campaign.findById(id);
+        let campaign;
+        if (id.length === 8) {
+            campaign = await Campaign.findOne({ campaignCode: id });
+        } else {
+            campaign = await Campaign.findById(id);
+        }
 
         if (!campaign) {
             return Response.json({ message: 'NOT FOUND' }, { status: 404 });

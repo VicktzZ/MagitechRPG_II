@@ -1,4 +1,4 @@
-import type { Classes, Expertises, Ficha, Gender, Lineage, Race } from '@types';
+import type { Classes, Expertises, Ficha, Gender, Lineage, Race, Element, FinancialCondition } from '@types';
 
 export const expertisesDefaultValue: () => Expertises = () => ({
     'Agilidade': { value: 0, defaultAttribute: 'des' },
@@ -33,7 +33,7 @@ export const expertisesDefaultValue: () => Expertises = () => ({
     'Vontade': { value: 0, defaultAttribute: 'foc' }
 })
 
-export const fichaModel: Partial<Ficha> = {
+export const fichaModel: Ficha = {
     playerName: '',
     mode: 'Classic',
     name: '',
@@ -41,9 +41,9 @@ export const fichaModel: Partial<Ficha> = {
     class: '' as Classes,
     race: '' as unknown as Race,
     lineage: '' as unknown as Lineage,
-    elementalMastery: undefined,
+    elementalMastery: '' as unknown as Element,
     gender: '' as Gender,
-    financialCondition: undefined,
+    financialCondition: '' as unknown as FinancialCondition,
     traits: [],
     displacement: 9,
     level: 0,
@@ -147,5 +147,7 @@ export const fichaModel: Partial<Ficha> = {
         log: 0,
         sab: 0,
         mp: 0
-    }
+    },
+    userId: '',
+    status: []
 }

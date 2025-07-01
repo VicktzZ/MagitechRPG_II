@@ -14,4 +14,4 @@ export interface DisconnectSessionDto {
     userId: string;
 }
 
-export type QueryParamsDto<T extends string> = Partial<Record<T, string>>;
+export type QueryParamsDto<T extends string, K extends string | number | boolean = string> = Partial<Record<T, K>>;

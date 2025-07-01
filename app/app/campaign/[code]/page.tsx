@@ -8,12 +8,13 @@ import { Backdrop, Box, CircularProgress, Grid, Modal, Skeleton, type Theme, Typ
 import { useRouter } from 'next/navigation';
 import { CampaignComponent, CampaignHeader } from '@components/campaign';
 import { FichaCard } from '@components/ficha';
-import { useChannel } from '@contexts/channelContext';
 import { gameMasterContext, campaignContext } from '@contexts';
 import type { Ficha, Campaign as CampaignType, User } from '@types';
-import { campaignService, fichaService, sessionService } from '@services';
+import { campaignService, fichaService } from '@services';
 import { ChatProvider } from '@contexts/ChatProvider';
-import { usePusher } from '@hooks/usePusher';
+import { useQuery } from '@tanstack/react-query';
+import { useChannel } from '@contexts/channelContext';
+import { usePusher } from '@hooks';
 
 export default function Campaign({ params }: { params: { code: string } }): ReactElement {
     const campaignName = 'presence-' + params.code;
@@ -21,7 +22,7 @@ export default function Campaign({ params }: { params: { code: string } }): Reac
     
     const router = useRouter();
     const { data: session } = useSession();
-    const [ isLoading, setIsLoading ] = useState<    boolean>(true);
+    const [ isLoading, setIsLoading ] = useState<boolean>(true);
     const [ isLoadingFichas, setIsLoadingFichas ] = useState<boolean>(true);
     const [ userFichas, setUserFichas ] = useState<Ficha[]>([]);
     const [ allGameMastersId, setAllGameMastersId ] = useState<string[]>([]);
@@ -37,56 +38,66 @@ export default function Campaign({ params }: { params: { code: string } }): Reac
     usePusher(campaignName, isUserGM, ficha, session);
     const { channel } = useChannel();
 
+    const { data: campaignResponse, isLoading: isCampaignLoading } = useQuery({
+        queryKey: [ 'campaign', params.code ],
+        queryFn: async () => await campaignService.getById(params.code)
+    });
+
+    const { data: usersResponse, isLoading: isUsersLoading } = useQuery({
+        queryKey: [ 'campaignUsers', params.code ],
+        queryFn: async () => {
+            if (campaignResponse) return await campaignService.getCampaignUsers(params.code);
+        },
+        enabled: !!campaignResponse
+    });
+
+    const { data: fichaResponse, isLoading: isFichaLoading } = useQuery({
+        queryKey: [ 'userFichas', session?.user?._id ?? '' ],
+        queryFn: async () => {
+            if (session?.user?._id) return await fichaService.fetch({ queryParams: { userId: session?.user?._id ?? '' } });
+        },
+        enabled: !!session?.user?._id
+    });
+
+    const { data: playerFichasResponse, isLoading: isPlayerFichasLoading } = useQuery({
+        queryKey: [ 'playerFichas', campaignResponse?.players ?? [] ],
+        queryFn: async () => {
+            if (campaignResponse?.players) return await Promise.all(campaignResponse.players.map(async (player) => {
+                const playerFicha = await fichaService.getById(player.fichaId);
+                return playerFicha;
+            }));
+        },
+        enabled: !!campaignResponse?.players
+    });
+
     useEffect(() => {
-        const fetchCampaign = async () => {
-            const campaignResponse = await campaignService.getById(params.code);
-            setCampaign(campaignResponse);
-
-            if (campaignResponse) {
-                const usersResponse = await campaignService.getCampaignUsers(params.code)
-                setCampaignUsers(usersResponse);
-
-                if (campaignResponse.admin.includes(session?.user?._id ?? '')) setIsUserGM(true);
-                else {
-                    const fichaResponse = await fichaService.fetch({ userId: session?.user?._id ?? '' });
-
-                    setUserFichas(fichaResponse);
-                    setIsLoadingFichas(false);
-                    setOpenFichaModal(true);
-                }
-                setAllGameMastersId(campaignResponse.admin);
-
-                const playerFichasPromise = Promise.all(campaignResponse.players.map(async (player) => {
-                    const playerFicha = await fichaService.getById(player.fichaId);
-                    return playerFicha;
-                }));
-    
-                const playerFichasResponse = await playerFichasPromise;
-                setPlayerFichas(playerFichasResponse);
-            }
-
-            setIsLoading(false)
+        if (campaignResponse) setCampaign(campaignResponse);
+        if (usersResponse) setCampaignUsers(usersResponse);
+        if (fichaResponse) {
+            setUserFichas(fichaResponse);
+            setIsLoadingFichas(false);
+            setOpenFichaModal(true);
         }
+        if (playerFichasResponse) setPlayerFichas(playerFichasResponse);
+    }, [ campaignResponse, usersResponse, fichaResponse, playerFichasResponse ]);
 
-        fetchCampaign();
+    useEffect(() => {
+        setIsLoading(isCampaignLoading || isUsersLoading || isFichaLoading || isPlayerFichasLoading);
+    }, [ isCampaignLoading, isUsersLoading, isFichaLoading, isPlayerFichasLoading ]);
 
-        return () => {
-            channel?.disconnect();
-            sessionService.disconnect({ 
-                campaignCode: params.code,
-                userId: session?.user?._id ?? ''
-            }).then((data) => { console.log(data) })
-        };
-    }, [ params.code ]);
+    useEffect(() => {
+        if (campaignResponse?.admin.includes(session?.user?._id ?? '')) setIsUserGM(true);
+        setAllGameMastersId(campaignResponse?.admin ?? []);
+    }, [ campaignResponse, session?.user?._id ]);
 
     const campUsers = useMemo(() => ({
         admin: campaignUsers.filter(u => allGameMastersId.includes(u._id ?? '')),
         player: campaignUsers.filter(u => {
-            const isPlayer = campaign.players.some(p => p.userId === u._id);
+            const isPlayer = campaignResponse?.players.some(p => p.userId === u._id);
             const isGM = allGameMastersId.includes(u._id ?? '');
             return isPlayer && !isGM;
         })
-    }), [ campaignUsers, allGameMastersId, campaign.players ]);
+    }), [ campaignUsers, allGameMastersId, campaignResponse?.players ]);
 
     return (
         <>
@@ -113,7 +124,7 @@ export default function Campaign({ params }: { params: { code: string } }): Reac
             {!isLoading && !isUserGM && (
                 <Modal
                     open={openFichaModal}
-                    onClose={() => { router.push('/plataform'); }}
+                    onClose={() => { router.push('/app'); }}
                     disableAutoFocus
                     disableEnforceFocus
                     disableRestoreFocus
