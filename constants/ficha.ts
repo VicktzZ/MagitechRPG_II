@@ -1,3 +1,4 @@
+import { red, blue, orange, teal, deepPurple, green } from '@node_modules/@mui/material/colors';
 import type { Classes, Expertises, Ficha, Gender, Lineage, Race, Element, FinancialCondition } from '@types';
 
 export const expertisesDefaultValue: () => Expertises = () => ({
@@ -151,3 +152,36 @@ export const fichaModel: Ficha = {
     userId: '',
     status: []
 }
+
+export const attributeIcons = {
+    vig: {
+        color: red[500],
+        icon: 'health',
+        filter: 'invert(32%) sepia(55%) saturate(3060%) hue-rotate(343deg) brightness(99%) contrast(93%)'
+    },
+    foc: {
+        color: blue[500],
+        icon: 'potion',
+        filter: 'invert(42%) sepia(99%) saturate(584%) hue-rotate(169deg) brightness(101%) contrast(99%)'
+    },
+    des: {
+        color: orange[500],
+        icon: 'shield',
+        filter: 'invert(57%) sepia(63%) saturate(723%) hue-rotate(357deg) brightness(99%) contrast(107%)'
+    },
+    log: {
+        color: teal[500],
+        icon: 'book',
+        filter: 'invert(53%) sepia(48%) saturate(7320%) hue-rotate(150deg) brightness(89%) contrast(101%)'
+    },
+    sab: {
+        color: deepPurple[500],
+        icon: 'pawprint',
+        filter: 'invert(19%) sepia(90%) saturate(2394%) hue-rotate(253deg) brightness(90%) contrast(84%)'
+    },
+    car: {
+        color: green[500],
+        icon: 'aura',
+        filter: 'invert(60%) sepia(41%) saturate(642%) hue-rotate(73deg) brightness(91%) contrast(85%)'
+    }
+} as const;

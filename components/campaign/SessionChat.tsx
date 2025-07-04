@@ -1,21 +1,20 @@
 /* eslint-disable max-len */
 'use client'
 
-import { Box, Paper, IconButton, Typography, Stack, Avatar, Snackbar, Alert, TextField } from '@mui/material'
-import SendIcon from '@mui/icons-material/Send'
-import { useEffect, useState, useRef, type ReactElement, memo } from 'react'
+import { DiceMessage } from '@components/misc';
 import { useCampaignContext } from '@contexts';
-import { useSession } from 'next-auth/react'
-import { useChannel } from '@contexts/channelContext'
-import type { Attributes, Message, TempMessage, Expertises } from '@types'
-import { MessageType, PusherEvent } from '@enums'
-import TestModal from './TestModal'
-import TestDialog from './TestDialog'
-import { Button } from '@mui/material'
-import { ChevronLeft, ChevronRight } from '@mui/icons-material'
-import { messageService, fichaService } from '@services'
-import { DiceMessage } from '@components/misc'
-import { useChatContext } from '@contexts/chatContext'
+import { useChannel } from '@contexts/channelContext';
+import { useChatContext } from '@contexts/chatContext';
+import { MessageType, PusherEvent } from '@enums';
+import { ChevronLeft, ChevronRight } from '@mui/icons-material';
+import SendIcon from '@mui/icons-material/Send';
+import { Alert, Avatar, Box, Button, IconButton, Paper, Snackbar, Stack, TextField, Typography } from '@mui/material';
+import { fichaService } from '@services';
+import type { Attributes, Expertises, Message, TempMessage } from '@types';
+import { useSession } from 'next-auth/react';
+import { memo, useEffect, useRef, useState, type ReactElement } from 'react';
+import TestDialog from './TestDialog';
+import TestModal from './TestModal';
 
 // Componente do campo de mensagem
 const MessageInput = memo(function MessageInput({ onSendMessage }: { onSendMessage: (text: string) => void }) {
@@ -122,7 +121,6 @@ export default function SessionChat() {
     const { data: session } = useSession()
     const { channel } = useChannel()
 
-    const [ isLoading, setIsLoading ] = useState(true)
     const [ shouldAutoScroll, setShouldAutoScroll ] = useState(true)
     const [ isTestModalOpen, setIsTestModalOpen ] = useState(false)
     const [ isTestDialogOpen, setIsTestDialogOpen ] = useState(false)
@@ -328,23 +326,7 @@ export default function SessionChat() {
 
     // Carrega mensagens iniciais
     useEffect(() => {
-        const fetchMessages = async () => {
-            if (!campaign?._id) return
-
-            try {
-                const response = await messageService.getMessages(campaign.campaignCode)
-  
-                if (response) {
-                    setMessages(response)
-                }
-            } catch (error) {
-                console.error('Erro ao carregar mensagens:', error)
-            } finally {
-                setIsLoading(false)
-            }
-        }
-
-        fetchMessages()
+        setMessages(campaign?.session.messages ?? [])
     }, [ campaign?._id ])
 
     // Scroll to bottom quando as mensagens são carregadas inicialmente
@@ -431,163 +413,139 @@ export default function SessionChat() {
 
     return (
         <ChatWrapper isChatOpen={isChatOpen} setIsChatOpen={setIsChatOpen}>
-            {isLoading ? (
-                <Box sx={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    height: '100%',
-                    width: '100%',
-                    bgcolor: 'background.paper',
-                    position: 'relative'
-                }}>
-                    <Typography
-                        variant="h6"
-                        sx={{
-                            p: 2,
-                            borderBottom: '1px solid',
-                            borderColor: 'divider',
-                            bgcolor: 'background.paper'
-                        }}
+            <Paper sx={{
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'hidden'
+            }}>
+                <Typography
+                    variant="h6"
+                    sx={{
+                        p: 2,
+                        borderBottom: '1px solid',
+                        borderColor: 'divider',
+                        bgcolor: 'background.paper'
+                    }}
+                >
+                    Chat da Sessão
+                </Typography>
+                {campaign.admin.includes(session?.user?._id ?? '') && (
+                    <Button 
+                        variant="contained" 
+                        color="primary" 
+                        onClick={() => setIsTestModalOpen(true)}
+                        sx={{ m: 2 }}
                     >
-                        Chat da Sessão
-                    </Typography>
-                    <Typography>Carregando mensagens...</Typography>
-                </Box>
-            ) : (
-                <Paper sx={{
-                    height: '100%',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    overflow: 'hidden'
-                }}>
-                    <Typography
-                        variant="h6"
-                        sx={{
-                            p: 2,
-                            borderBottom: '1px solid',
-                            borderColor: 'divider',
-                            bgcolor: 'background.paper'
-                        }}
-                    >
-                        Chat da Sessão
-                    </Typography>
-                    {campaign.admin.includes(session?.user?._id ?? '') && (
-                        <Button 
-                            variant="contained" 
-                            color="primary" 
-                            onClick={() => setIsTestModalOpen(true)}
-                            sx={{ m: 2 }}
-                        >
-                            Teste
-                        </Button>
-                    )}
+                        Teste
+                    </Button>
+                )}
 
-                    <Box
-                        ref={chatBoxRef}
-                        sx={{
-                            flex: 1,
-                            overflowY: 'auto',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            bgcolor: 'background.paper3',
-                            gap: 1,
-                            p: 2
-                        }}
-                    >
-                        {messages
-                            .sort((a, b) => {
-                                const timeA = a.timestamp ? new Date(a.timestamp).getTime() : 0
-                                const timeB = b.timestamp ? new Date(b.timestamp).getTime() : 0
-                                return timeA - timeB
-                            })
-                            .map((msg, index) => (
-                                <Paper
-                                    key={msg.tempId ?? index}
-                                    sx={{
-                                        p: 1,
-                                        bgcolor: 'background.paper',
-                                        maxWidth: '80%',
-                                        alignSelf: msg.by.id === session?.user?._id ? 'flex-end' : 'flex-start',
-                                        opacity: msg.isPending ? 0.5 : 1,
-                                        transition: 'opacity 0.2s ease-in-out'
-                                    }}
-                                >
-                                    <Stack direction="row" spacing={1} alignItems="center" mb={0.5}>
-                                        <Avatar
-                                            src={msg.by.image}
-                                            alt={msg.by.name}
-                                            sx={{ width: 24, height: 24 }}
-                                        />
-                                        <Typography variant="caption" color="primary.main">
-                                            {msg.by.name}
+                <Box
+                    ref={chatBoxRef}
+                    sx={{
+                        flex: 1,
+                        overflowY: 'auto',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        bgcolor: 'background.paper3',
+                        gap: 1,
+                        p: 2
+                    }}
+                >
+                    {messages
+                        .sort((a, b) => {
+                            const timeA = a.timestamp ? new Date(a.timestamp).getTime() : 0
+                            const timeB = b.timestamp ? new Date(b.timestamp).getTime() : 0
+                            return timeA - timeB
+                        })
+                        .map((msg, index) => (
+                            <Paper
+                                key={msg.tempId ?? index}
+                                sx={{
+                                    p: 1,
+                                    bgcolor: 'background.paper',
+                                    maxWidth: '80%',
+                                    alignSelf: msg.by.id === session?.user?._id ? 'flex-end' : 'flex-start',
+                                    opacity: msg.isPending ? 0.5 : 1,
+                                    transition: 'opacity 0.2s ease-in-out'
+                                }}
+                            >
+                                <Stack direction="row" spacing={1} alignItems="center" mb={0.5}>
+                                    <Avatar
+                                        src={msg.by.image}
+                                        alt={msg.by.name}
+                                        sx={{ width: 24, height: 24 }}
+                                    />
+                                    <Typography variant="caption" color="primary.main">
+                                        {msg.by.name}
+                                    </Typography>
+                                    {(campaign.admin.includes(msg.by.id) || msg.by.isBot) && (
+                                        <Typography 
+                                            variant="caption" 
+                                            color={msg.by.isBot ? 'success.main' : 'primary.main'}
+                                            sx={{ opacity: 0.7, mx: 0.5 }}
+                                        >
+                                            {msg.by.isBot ? '(BOT)' : '(GM)'}
                                         </Typography>
-                                        {(campaign.admin.includes(msg.by.id) || msg.by.isBot) && (
-                                            <Typography 
-                                                variant="caption" 
-                                                color={msg.by.isBot ? 'success.main' : 'primary.main'}
-                                                sx={{ opacity: 0.7, mx: 0.5 }}
-                                            >
-                                                {msg.by.isBot ? '(BOT)' : '(GM)'}
-                                            </Typography>
-                                        )}
-                                        {msg.timestamp && (
-                                            <Typography 
-                                                variant="caption" 
-                                                color="text.secondary"
-                                                sx={{ ml: 'auto' }}
-                                            >
-                                                {new Date(msg.timestamp).toLocaleString('pt-BR', {
-                                                    day: '2-digit',
-                                                    month: '2-digit',
-                                                    year: 'numeric',
-                                                    hour: '2-digit',
-                                                    minute: '2-digit'
-                                                })}
-                                            </Typography>
-                                        )}
-                                    </Stack>
-                                    <DiceMessage text={msg.text} type={msg.type} />
-                                </Paper>
-                            ))}
-                        <div ref={messagesEndRef} />
-                    </Box>
+                                    )}
+                                    {msg.timestamp && (
+                                        <Typography 
+                                            variant="caption" 
+                                            color="text.secondary"
+                                            sx={{ ml: 'auto' }}
+                                        >
+                                            {new Date(msg.timestamp).toLocaleString('pt-BR', {
+                                                day: '2-digit',
+                                                month: '2-digit',
+                                                year: 'numeric',
+                                                hour: '2-digit',
+                                                minute: '2-digit'
+                                            })}
+                                        </Typography>
+                                    )}
+                                </Stack>
+                                <DiceMessage text={msg.text} type={msg.type} />
+                            </Paper>
+                        ))}
+                    <div ref={messagesEndRef} />
+                </Box>
 
-                    <MessageInput onSendMessage={handleSendMessage} />
+                <MessageInput onSendMessage={handleSendMessage} />
 
-                    {/* Modais e Snackbar */}
-                    <TestModal
-                        open={isTestModalOpen}
-                        onClose={() => { setIsTestModalOpen(false); }}
-                        onConfirm={handleTestConfirm}
-                        campaign={campaign}
-                    />
+                {/* Modais e Snackbar */}
+                <TestModal
+                    open={isTestModalOpen}
+                    onClose={() => { setIsTestModalOpen(false); }}
+                    onConfirm={handleTestConfirm}
+                    campaign={campaign}
+                />
 
-                    <TestDialog
-                        open={isTestDialogOpen}
-                        onClose={() => {
-                            setIsTestDialogOpen(false);
-                            setCurrentTest(null);
-                        }}
-                        dt={currentTest?.dt ?? 0}
-                        onRollComplete={handleTestRollComplete}
-                    />
+                <TestDialog
+                    open={isTestDialogOpen}
+                    onClose={() => {
+                        setIsTestDialogOpen(false);
+                        setCurrentTest(null);
+                    }}
+                    dt={currentTest?.dt ?? 0}
+                    onRollComplete={handleTestRollComplete}
+                />
 
-                    <Snackbar
-                        open={snackbarOpen}
-                        autoHideDuration={6000}
+                <Snackbar
+                    open={snackbarOpen}
+                    autoHideDuration={6000}
+                    onClose={() => { setSnackbarOpen(false); }}
+                    anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+                >
+                    <Alert
                         onClose={() => { setSnackbarOpen(false); }}
-                        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+                        severity={snackbarSeverity}
+                        sx={{ width: '100%' }}
                     >
-                        <Alert
-                            onClose={() => { setSnackbarOpen(false); }}
-                            severity={snackbarSeverity}
-                            sx={{ width: '100%' }}
-                        >
-                            {snackbarMessage}
-                        </Alert>
-                    </Snackbar>
-                </Paper>
-            )}
+                        {snackbarMessage}
+                    </Alert>
+                </Snackbar>
+            </Paper>
         </ChatWrapper>          
     );
 }

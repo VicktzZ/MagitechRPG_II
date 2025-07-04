@@ -50,12 +50,15 @@ import type {
     TempMessage,
     AmmoControl,
     Notification,
-    Note
+    Note,
+    CampaignSession,
+    CampaignData
 } from './models';
 
 import type { 
     EventData,
-    Roll
+    Roll,
+    Collections
 } from './misc';
 
 import type {
@@ -73,7 +76,10 @@ import type {
     UseSkillsOptions,
     UseResourceListOptions,
     UseResourceListReturn,
-    UseResourceListParams
+    UseResourceListParams,
+    UseRealtimeDatabaseType,
+    UseRealtimeDatabaseOperationTypes,
+    UseRealtimeDatabaseOnChange
 } from './hooks';
 
 export type { 
@@ -83,6 +89,7 @@ export type {
     PlayerInfo,
     AmmoType,
     Roll,
+    Collections,
     SessionAttributes,
     SessionInfo,
     AmmoControl,
@@ -140,5 +147,10 @@ export type {
     QueryParamsDto,
     UpdateByIdDto,
     ConnectSessionDto,
-    DisconnectSessionDto
+    DisconnectSessionDto,
+    UseRealtimeDatabaseType,
+    UseRealtimeDatabaseOperationTypes,
+    UseRealtimeDatabaseOnChange,
+    CampaignSession,
+    CampaignData
 }

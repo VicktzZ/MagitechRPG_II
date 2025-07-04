@@ -21,7 +21,16 @@ interface Roll {
     sum?: boolean
 }
 
+type Collections = 
+    'campaigns' |
+    'fichas' |
+    'magias' |
+    'notifications' |
+    'poderes' |
+    'users'
+
 export type {
     EventData,
-    Roll
+    Roll,
+    Collections
 }

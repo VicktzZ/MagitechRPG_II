@@ -11,14 +11,40 @@ import type { Channel, PresenceChannel } from 'pusher-js';
 import theme from '@themes/defaultTheme'
 import { SavingSpinner } from '@components/misc';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { persistQueryClient } from '@tanstack/react-query-persist-client';
+import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
 
+const queryClient = new QueryClient({
+    defaultOptions: {
+        queries: {
+            staleTime: 1000 * 60 * 5
+        }
+    }
+});   
+
+const localStoragePersister = createSyncStoragePersister({
+    storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+    key: 'react-query-persist-client'
+});
+
+if (typeof window !== 'undefined') { // Garante que só rode no lado do cliente
+    persistQueryClient({
+        queryClient: queryClient as any,
+        persister: localStoragePersister,
+        maxAge: 1000 * 60 * 60 * 24,
+        dehydrateOptions: {
+            shouldDehydrateQuery: (query) =>
+                query.gcTime !== Infinity &&
+                query.queryKey[0] !== 'some-key-to-exclude'
+        }
+    });
+}
+  
 export default function ContextProvider({ children }: { children: ReactNode }): ReactElement {
     const [ ficha, setFicha ] = useState<Ficha>(fichaModel);
     const [ user, setUser ] = useState(null);
     const [ isSaving, setIsSaving ] = useState<boolean>(false);
     const [ channel, setChannel ] = useState<Channel | null>(null);
-
-    const queryClient = new QueryClient()
 
     return (
         <QueryClientProvider client={queryClient}>

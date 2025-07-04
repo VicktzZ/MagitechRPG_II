@@ -28,7 +28,8 @@ export enum PusherEvent {
     TEST_RESULT = 'test:responded',
     SESSION_USERS_UPDATED = 'client-session_users_updated',
     USER_ENTER = 'client-user_enter',
-    ITEM_ADDED = 'client-item_added'
+    ITEM_ADDED = 'client-item_added',
+    USER_EXIT = 'user:exit'
 }
 
 export enum SkillType {

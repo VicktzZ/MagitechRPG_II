@@ -1,43 +1,108 @@
 /* eslint-disable @typescript-eslint/prefer-nullish-coalescing */
-import { useCampaignContext, useSavingSpinner } from '@contexts';
-import { useEffect, useRef } from 'react'
-import { debounce } from 'lodash'
-import { campaignService } from '@services';
+import { useSavingSpinner } from '@contexts';
+import { fichaService } from '@services';
+import type { Ficha } from '@types';
+import type React from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface UseSaveFichaChangesProps {
-    callback?: () => void;
+    ficha: Ficha;
+    callback?: () => Promise<void>;
     delay?: number;
     deps?: any[];
+    enabled?: boolean;
 }
 
-export default function useSaveFichaChanges(props?: UseSaveFichaChangesProps): () => void {
-    const { campaign: { myFicha, campaignCode }, fichaUpdated, setFichaUpdated } = useCampaignContext()
+export default function useSaveFichaChanges(props?: UseSaveFichaChangesProps): {
+    updateFicha: React.Dispatch<React.SetStateAction<Ficha>>;
+} {
+    const object = {};
     const { showSavingSpinner } = useSavingSpinner()
-    const timeoutRef = useRef<NodeJS.Timeout | null>(null)
+    const debounceRef = useRef<{
+        timeout: NodeJS.Timeout | null;
+        pending: boolean;
+    }>({ timeout: null, pending: false });
+    
+    const [ ficha, setFicha ] = useState<Ficha>(props?.ficha ?? object as Ficha);
+    const fichaRef = useRef(ficha);
+    const propsRef = useRef(props);
 
+    // Atualiza as refs quando as props ou o estado mudam
     useEffect(() => {
-        const debouncedFunction = debounce(async () => {
-            if (!myFicha || !fichaUpdated) return;
+        fichaRef.current = ficha;
+    }, [ ficha ]);
+    
+    useEffect(() => {
+        propsRef.current = props;
+    }, [ props ]);
 
-            showSavingSpinner(true)
-            props?.callback?.();
-            await campaignService.updateUserFicha(campaignCode, myFicha)
-
-            console.log({ myFicha, deps: props?.deps })
-            setFichaUpdated(false)
-            setTimeout(() => showSavingSpinner(false), props?.delay || 500)
-        }, props?.delay || 500)
-
-        if (fichaUpdated) {
-            timeoutRef.current = setTimeout(debouncedFunction, props?.delay || 100)
+    // Função para salvar a ficha
+    const saveFicha = useCallback(async () => {
+        const currentFicha = fichaRef.current;
+        const currentProps = propsRef.current;
+        
+        if (!currentFicha?._id || currentProps?.enabled === false) {
+            debounceRef.current.pending = false;
+            return;
         }
 
+        try {
+            showSavingSpinner(true);
+            await currentProps?.callback?.();
+            await fichaService.updateById({ 
+                id: currentFicha._id, 
+                data: currentFicha 
+            });
+        } finally {
+            setTimeout(() => showSavingSpinner(false), currentProps?.delay || 500);
+            debounceRef.current.pending = false;
+        }
+    }, [ showSavingSpinner ]);
+
+    // Efeito para limpar o timeout quando o componente desmontar
+    useEffect(() => {
         return () => {
-            if (timeoutRef.current) clearTimeout(timeoutRef.current)
-        }
-    }, [ myFicha, props?.callback, props?.delay, ...props?.deps ? props?.deps : [], fichaUpdated ])
+            if (debounceRef.current.timeout) {
+                clearTimeout(debounceRef.current.timeout);
+            }
+        };
+    }, []);
 
-    return () => {
-        showSavingSpinner(false)
+    // Atualiza a ficha e agenda o salvamento
+    const updateFicha: React.Dispatch<React.SetStateAction<Ficha>> = useCallback((updater) => {
+        // Atualiza o estado da ficha
+        setFicha(prevFicha => {
+            const newFicha = typeof updater === 'function' 
+                ? (updater as (prevState: Ficha) => Ficha)(prevFicha) 
+                : updater;
+            return { ...prevFicha, ...newFicha };
+        });
+
+        // Cancela o timeout anterior se existir
+        if (debounceRef.current.timeout) {
+            clearTimeout(debounceRef.current.timeout);
+        }
+
+        // Agenda um novo timeout para salvar
+        debounceRef.current.pending = true;
+        debounceRef.current.timeout = setTimeout(() => {
+            if (debounceRef.current.pending) {
+                saveFicha();
+            }
+        }, props?.delay || 500);
+
+        // Retorna undefined para evitar avisos do React
+        return undefined;
+    }, [ props?.delay, saveFicha ]);
+
+    // Efeito para salvar imediatamente se a ficha for alterada diretamente via props
+    useEffect(() => {
+        if (props?.ficha) {
+            setFicha(props.ficha);
+        }
+    }, [ props?.ficha ]);
+
+    return {
+        updateFicha
     }
 }

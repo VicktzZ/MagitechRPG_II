@@ -1,13 +1,13 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 'use client';
 
-import { useState, type ReactElement } from 'react';
-import { Box, Typography, Paper, Chip, Grid, Button } from '@mui/material';
-import { SkillType } from '@enums';
 import SkillsTreeDialog from '@components/ficha/SkillsTreeDialog';
+import { useCampaignCurrentFichaContext } from '@contexts';
+import { SkillType } from '@enums';
 import Masonry from '@mui/lab/Masonry';
-import { useCampaignContext } from '@contexts';
-import type { Skill, Ficha } from '@types';
+import { Box, Button, Chip, Grid, Paper, Typography } from '@mui/material';
+import type { Ficha, Skill } from '@types';
+import { useState, type ReactElement } from 'react';
 
 interface SkillFilterChipProps {
     label: string;
@@ -38,8 +38,7 @@ interface SkillsSectionProps {
 }
 
 export default function SkillsSection({ selectedSkillType, setSelectedSkillType }: SkillsSectionProps): ReactElement {
-    const { campaign: { myFicha: ficha } } = useCampaignContext()
-    if (!ficha) return <></>;
+    const { ficha } = useCampaignCurrentFichaContext();
     
     const filteredSkills = selectedSkillType === SkillType.ALL
         ? Object.values(ficha.skills).flat()

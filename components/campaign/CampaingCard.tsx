@@ -11,7 +11,6 @@ interface CampaingCardProps {
     gameMaster: string[];
     playersQtd: number;
     code: string;
-    onDelete: () => void;
 }
 
 export default function CampaingCard({
@@ -20,8 +19,7 @@ export default function CampaingCard({
     description,
     gameMaster,
     playersQtd,
-    code,
-    onDelete
+    code
 }: CampaingCardProps): ReactElement {
     const { data: session } = useSession();
     const userIsGM = gameMaster.includes(session?.user._id ?? '');
@@ -81,7 +79,6 @@ export default function CampaingCard({
                 open={isDeleteModalOpen}
                 campaignId={id}
                 onClose={() => { setIsDeleteModalOpen(false); }}
-                onDelete={onDelete}
             />
         </>
     );

@@ -6,14 +6,12 @@ interface DeleteCampaignModalProps {
     open: boolean;
     campaignId: string;
     onClose: () => void;
-    onDelete: () => void;
 }
 
-export function DeleteCampaignModal({ open, campaignId, onClose, onDelete }: DeleteCampaignModalProps): ReactElement {
+export function DeleteCampaignModal({ open, campaignId, onClose }: DeleteCampaignModalProps): ReactElement {
     const handleDelete = async (): Promise<void> => {
         try {
             await campaignService.deleteById(campaignId);
-            onDelete();
             onClose();
         } catch (error) {
             console.error('Erro ao deletar campanha:', error);
