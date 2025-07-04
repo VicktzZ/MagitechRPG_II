@@ -1,29 +1,26 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 'use client';
 
-import { useCampaignContext } from '@contexts';
+import { useCampaignCurrentFichaContext } from '@contexts';
 import { Grid, Paper, TextField, Typography } from '@mui/material';
-import { useCallback, useEffect, useState, type ReactElement } from 'react';
+import { useEffect, useState, type ReactElement } from 'react';
 
 export default function NotesSection(): ReactElement {
-    const { campaign: { myFicha: ficha }, setFichaUpdated } = useCampaignContext()
-    if (!ficha) return <></>;
+    const { ficha, updateFicha } = useCampaignCurrentFichaContext();
+    const fichaCopy = { ...ficha };
 
-    const [ notes, setNotes ] = useState(ficha.anotacoes ?? '');
+    const [ notes, setNotes ] = useState(fichaCopy?.anotacoes ?? '');
 
     useEffect(() => {
-        setNotes(ficha.anotacoes ?? '');
-    }, [ ficha.anotacoes ]);
-
-    const onChange = useCallback((value: string) => {
-        ficha.anotacoes = value;
-        setFichaUpdated(true);
-    }, [ ficha, setFichaUpdated ]);
+        updateFicha({
+            ...fichaCopy,
+            anotacoes: notes
+        });
+    }, [ notes ]);
 
     const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>): void => {
         const newValue = e.target.value;
         setNotes(newValue);
-        onChange(newValue);
     };
 
     return (

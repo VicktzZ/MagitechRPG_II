@@ -2,51 +2,19 @@
 'use client';
 
 import { RPGIcon } from '@components/misc';
-import { useCampaignContext } from '@contexts';
+import { attributeIcons } from '@constants/ficha';
+import { useCampaignCurrentFichaContext } from '@contexts';
 import { Avatar, Box, Button, Chip, Grid, LinearProgress, Paper, Typography } from '@mui/material';
-import { blue, deepPurple, green, orange, red, teal } from '@mui/material/colors';
+import { green, red } from '@node_modules/@mui/material/colors';
 import { useState, type ReactElement } from 'react';
-
-const attributeIcons = {
-    vig: {
-        color: red[500],
-        icon: 'health',
-        filter: 'invert(32%) sepia(55%) saturate(3060%) hue-rotate(343deg) brightness(99%) contrast(93%)'
-    },
-    foc: {
-        color: blue[500],
-        icon: 'potion',
-        filter: 'invert(42%) sepia(99%) saturate(584%) hue-rotate(169deg) brightness(101%) contrast(99%)'
-    },
-    des: {
-        color: orange[500],
-        icon: 'shield',
-        filter: 'invert(57%) sepia(63%) saturate(723%) hue-rotate(357deg) brightness(99%) contrast(107%)'
-    },
-    log: {
-        color: teal[500],
-        icon: 'book',
-        filter: 'invert(53%) sepia(48%) saturate(7320%) hue-rotate(150deg) brightness(89%) contrast(101%)'
-    },
-    sab: {
-        color: deepPurple[500],
-        icon: 'pawprint',
-        filter: 'invert(19%) sepia(90%) saturate(2394%) hue-rotate(253deg) brightness(90%) contrast(84%)'
-    },
-    car: {
-        color: green[500],
-        icon: 'aura',
-        filter: 'invert(60%) sepia(41%) saturate(642%) hue-rotate(73deg) brightness(91%) contrast(85%)'
-    }
-} as const;
 
 interface CharacterInfoProps {
     avatar: string;
 }
 
 export default function CharacterInfo({ avatar }: CharacterInfoProps): ReactElement {    
-    const { campaign: { myFicha: ficha }, setFichaUpdated } = useCampaignContext()
-    if (!ficha) return <></>;
+    const { ficha, updateFicha } = useCampaignCurrentFichaContext();
+    const fichaCopy = { ...ficha };
 
     const [ currentAttributes, setCurrentAttributes ] = useState({
         lp: ficha.attributes.lp,
@@ -55,10 +23,10 @@ export default function CharacterInfo({ avatar }: CharacterInfoProps): ReactElem
     });
 
     const setAttribute = (attr: 'lp' | 'mp' | 'ap', num: number, max?: number) => {
+        
         setCurrentAttributes(prev => {
-            ficha.attributes[attr] = prev[attr] + num;
-            console.log(max)
-            if (max) ficha.attributes[attr] = max;
+            fichaCopy.attributes[attr] = prev[attr] + num;
+            if (max) fichaCopy.attributes[attr] = max;
             
             return {
                 ...prev,
@@ -66,7 +34,7 @@ export default function CharacterInfo({ avatar }: CharacterInfoProps): ReactElem
             }
         });
 
-        setFichaUpdated(true);
+        updateFicha(fichaCopy);
     }
 
     const lpPercent = (currentAttributes.lp / ficha.maxLp) * 100;

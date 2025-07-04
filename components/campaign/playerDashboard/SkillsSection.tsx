@@ -6,7 +6,7 @@ import { Box, Typography, Paper, Chip, Grid, Button } from '@mui/material';
 import { SkillType } from '@enums';
 import SkillsTreeDialog from '@components/ficha/SkillsTreeDialog';
 import Masonry from '@mui/lab/Masonry';
-import { useCampaignContext } from '@contexts';
+import { useCampaignContext, useCampaignCurrentFichaContext } from '@contexts';
 import type { Skill, Ficha } from '@types';
 
 interface SkillFilterChipProps {
@@ -38,8 +38,7 @@ interface SkillsSectionProps {
 }
 
 export default function SkillsSection({ selectedSkillType, setSelectedSkillType }: SkillsSectionProps): ReactElement {
-    const { campaign: { myFicha: ficha } } = useCampaignContext()
-    if (!ficha) return <></>;
+    const { ficha } = useCampaignCurrentFichaContext();
     
     const filteredSkills = selectedSkillType === SkillType.ALL
         ? Object.values(ficha.skills).flat()

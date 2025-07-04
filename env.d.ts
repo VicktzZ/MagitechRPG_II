@@ -18,6 +18,7 @@ declare global {
             PUSHER_SECRET: string
             NEXT_PUBLIC_PUSHER_KEY: string
             NEXT_PUBLIC_API_KEY: string
+            NEXT_PUBLIC_REALM_APP_ID: string
             PUSHER_CLUSTER: string
             NODE_ENV: 'development' | 'production'
             ADMIN_PASSWORD: string

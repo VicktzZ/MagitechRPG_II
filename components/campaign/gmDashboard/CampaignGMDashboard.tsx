@@ -2,7 +2,6 @@
 'use client'
 
 import { useCampaignContext } from '@contexts';
-import { useGameMasterContext } from '@contexts/gameMasterContext'
 import AddIcon from '@mui/icons-material/Add'
 import {
     Avatar,
@@ -23,18 +22,15 @@ import {
     TextField,
     Typography
 } from '@mui/material'
-import { fichaService } from '@services'
+import { campaignService, fichaService } from '@services'
 import { useSnackbar } from 'notistack'
-import { type ReactElement, useEffect, useState } from 'react'
+import { type ReactElement, useMemo, useState } from 'react'
 import PlayerCard from './PlayerCard'
 import type { Ficha } from '@types'
-import { useChannel } from '@contexts/channelContext'
-import { PusherEvent } from '@enums'
+import { useRealtimeDatabase } from '@hooks';
 
 export default function CampaignGMDashboard(): ReactElement | null {
-    const { campUsers, playerFichas, setPlayerFichas } = useCampaignContext()
-    const { channel } = useChannel()
-    const { isUserGM } = useGameMasterContext()
+    const { users, fichas, code } = useCampaignContext()
     const { enqueueSnackbar } = useSnackbar()
     
     const [ levelUpDialogOpen, setLevelUpDialogOpen ] = useState(false)
@@ -42,27 +38,33 @@ export default function CampaignGMDashboard(): ReactElement | null {
     const [ isLevelingUp, setIsLevelingUp ] = useState(false)
     const [ levelsToAdd, setLevelsToAdd ] = useState<number>(1)
 
-    if (!isUserGM) return null
-
-    useEffect(() => {
-        channel?.bind(PusherEvent.FICHA_UPDATED, (ficha: Ficha) => {
-            setPlayerFichas(prev => {
-                return prev.map(f => f._id === ficha._id ? ficha : f)
-            })
-        })        
-    }, [ channel ])
-
-    const players = campUsers.player.map(player => {
-        const playerFicha = playerFichas.find(f => f.userId === player._id)
-
-        return {
-            id: player._id,
-            name: player.name,
-            avatar: player.image ?? '/assets/default-avatar.jpg',
-            status: [],
-            ficha: playerFicha!
-        }
+    const { data: playerFichas } = useRealtimeDatabase({
+        collectionName: 'fichas',
+        pipeline: [
+            {
+                $match: {
+                    _id: { $in: fichas.map(f => f._id) }
+                }
+            }
+        ]
+    }, {
+        queryKey: [ 'playerFichas', fichas.map(f => f._id) ],
+        queryFn: async () => await campaignService.getFichas(code)
     })
+
+    const players = useMemo(() => {
+        return users.player.map(player => {
+            const playerFicha = playerFichas?.find(f => f.userId === player._id)
+    
+            return {
+                id: player._id,
+                name: player.name,
+                avatar: player.image ?? '/assets/default-avatar.jpg',
+                status: [],
+                ficha: playerFicha
+            }
+        })
+    }, [ users, playerFichas ])
 
     const handleLevelUp = async () => {
         try {
@@ -72,7 +74,7 @@ export default function CampaignGMDashboard(): ReactElement | null {
             await Promise.all(
                 selectedPlayers.map(async playerId => {
                     const player = players.find(p => p.id === playerId)
-                    if (player?.ficha._id) {
+                    if (player?.ficha?._id) {
                         try {
                             const updatedFicha = await fichaService.increaseLevel(player.ficha._id, levelsToAdd)
                             enqueueSnackbar(`Ficha ${player.ficha.name} foi para o nível ${updatedFicha.level}!`, {
@@ -108,7 +110,7 @@ export default function CampaignGMDashboard(): ReactElement | null {
                             Jogadores
                         </Typography>
                         <Grid container spacing={2}>
-                            {playerFichas.map(ficha => (
+                            {playerFichas?.map(ficha => (
                                 <PlayerCard
                                     key={ficha._id}
                                     ficha={ficha as Required<Ficha>}
@@ -154,8 +156,8 @@ export default function CampaignGMDashboard(): ReactElement | null {
                                     <Avatar src={player.avatar} />
                                 </ListItemAvatar>
                                 <ListItemText
-                                    primary={player.ficha.name}
-                                    secondary={`Nível Atual: ${player.ficha.level ?? 'N/A'}`}
+                                    primary={player.ficha?.name}
+                                    secondary={`Nível Atual: ${player.ficha?.level ?? 'N/A'}`}
                                 />
                             </ListItem>
                         ))}

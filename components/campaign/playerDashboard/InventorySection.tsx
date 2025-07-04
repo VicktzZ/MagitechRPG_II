@@ -2,7 +2,7 @@
 'use client';
 
 import { rarityColor } from '@constants';
-import { useCampaignContext } from '@contexts';
+import { useCampaignCurrentFichaContext } from '@contexts';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { Masonry } from '@mui/lab';
 import { Accordion, AccordionDetails, AccordionSummary, Box, Chip, Grid, Paper, Typography } from '@mui/material';
@@ -10,8 +10,7 @@ import type { RarityType } from '@types';
 import { type ReactElement } from 'react';
 
 export default function InventorySection(): ReactElement {
-    const { campaign: { myFicha: ficha } } = useCampaignContext()
-    if (!ficha) return <></>;
+    const { ficha } = useCampaignCurrentFichaContext();
 
     const renderInventoryItem = (item: any, type: 'weapon' | 'armor' | 'item') => {
         const getItemDetails = () => {

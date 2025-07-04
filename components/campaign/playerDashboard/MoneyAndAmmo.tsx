@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 'use client';
 
-import { useCampaignContext } from '@contexts';
+import { useCampaignCurrentFichaContext } from '@contexts';
 import { AmmoType } from '@enums';
 import { Add as AddIcon, Remove as RemoveIcon } from '@mui/icons-material';
 import { Box, Button, Divider, Grid, IconButton, LinearProgress, MenuItem, Paper, Select, TextField, Typography } from '@mui/material';
@@ -9,8 +9,8 @@ import type { AmmoControl } from '@types';
 import { type ReactElement, useState } from 'react';
 
 export default function MoneyAndAmmo(): ReactElement {
-    const { campaign: { myFicha: ficha }, setFichaUpdated } = useCampaignContext()
-    if (!ficha) return <></>;
+    const { ficha, updateFicha } = useCampaignCurrentFichaContext();
+    const fichaCopy = { ...ficha };
     
     const [ ammo, setAmmo ] = useState<AmmoControl>({
         type: AmmoType.BULLET,
@@ -26,7 +26,7 @@ export default function MoneyAndAmmo(): ReactElement {
                 ? Math.min(prev.current + 1, prev.max)
                 : Math.max(prev.current - 1, 0);
                 
-            ficha.ammoCounter.current = current;
+            fichaCopy.ammoCounter.current = current;
 
             return {
                 ...prev,
@@ -34,15 +34,15 @@ export default function MoneyAndAmmo(): ReactElement {
             }
         });
 
-        setFichaUpdated(true);
+        updateFicha(fichaCopy);
     };
 
     const handleMaxAmmoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const newMax = Math.max(1, parseInt(event.target.value) || 1);
         setAmmo(prev => {
             const current = Math.min(prev.current, newMax);
-            ficha.ammoCounter.max = newMax;
-            ficha.ammoCounter.current = current;
+            fichaCopy.ammoCounter.max = newMax;
+            fichaCopy.ammoCounter.current = current;
 
             return {
                 ...prev,
@@ -51,7 +51,7 @@ export default function MoneyAndAmmo(): ReactElement {
             }
         });
 
-        setFichaUpdated(true);
+        updateFicha(fichaCopy);
     };
 
     const handleAmmoTypeChange = (event: any) => {
@@ -63,7 +63,7 @@ export default function MoneyAndAmmo(): ReactElement {
 
     const handleReload = () => {
         setAmmo(prev => {
-            ficha.ammoCounter.current = prev.max;
+            fichaCopy.ammoCounter.current = prev.max;
 
             return {
                 ...prev,
@@ -71,7 +71,7 @@ export default function MoneyAndAmmo(): ReactElement {
             }
         });
 
-        setFichaUpdated(true)
+        updateFicha(fichaCopy);
     };
 
     const getAmmoColor = (type: AmmoType): string => {
@@ -101,13 +101,8 @@ export default function MoneyAndAmmo(): ReactElement {
                             defaultValue={ficha.inventory.money}
                             onChange={(e) => {
                                 const value = parseFloat(e.target.value) || 0;
-                                
-                                const debounced = setTimeout(() => {
-                                    ficha.inventory.money = value;
-                                    setFichaUpdated(true);
-                                }, 500);
-                                
-                                return () => clearTimeout(debounced);
+                                fichaCopy.inventory.money = value;
+                                updateFicha(fichaCopy);
                             }}
                             type="number"
                             variant="outlined"

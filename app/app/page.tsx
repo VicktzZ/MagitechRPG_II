@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { FichaCard } from '@components/ficha';
 import { fichaService } from '@services';
-import { useQuery } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query';
 
 export default function App(): ReactElement {
     const router = useRouter()

@@ -5,7 +5,7 @@ import { type ReactElement, useState } from 'react'
 import { Box, Typography, Paper, Grid, Accordion, AccordionSummary, AccordionDetails, Chip } from '@mui/material'
 import type { Magia } from '@types'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
-import { useCampaignContext } from '@contexts';
+import { useCampaignCurrentFichaContext } from '@contexts';
 import { elementColor } from '@constants'
 
 function getMagicColor(magic: Magia): string {
@@ -71,8 +71,7 @@ function SpellStage({ stage, description, magic }: SpellStageProps): ReactElemen
 }
 
 export default function SpellsSection(): ReactElement {
-    const { campaign: { myFicha: ficha } } = useCampaignContext()
-    if (!ficha) return <></>;
+    const { ficha } = useCampaignCurrentFichaContext();
 
     const [ expandedSpell, setExpandedSpell ] = useState<string | false>(false)
 

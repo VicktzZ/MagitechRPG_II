@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 'use client'
 
-import { useCampaignContext } from '@contexts';
+import { useCampaignCurrentFichaContext } from '@contexts';
 import { useChatContext } from '@contexts/chatContext'
 import { MessageType } from '@enums'
 import { Box, Button, Chip, Grid, Paper, Typography } from '@mui/material'
@@ -11,8 +11,7 @@ import { useSession } from 'next-auth/react'
 import { type ReactElement } from 'react'
 
 export default function ExpertiseSection(): ReactElement {
-    const { campaign: { myFicha: ficha } } = useCampaignContext()
-    if (!ficha) return <></>;
+    const { ficha } = useCampaignCurrentFichaContext();
 
     const expertises = ficha.expertises
     const { handleSendMessage, setIsChatOpen, isChatOpen } = useChatContext()
