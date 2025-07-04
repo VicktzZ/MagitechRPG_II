@@ -1,21 +1,20 @@
 /* eslint-disable max-len */
 'use client'
 
-import { Box, Paper, IconButton, Typography, Stack, Avatar, Snackbar, Alert, TextField } from '@mui/material'
-import SendIcon from '@mui/icons-material/Send'
-import { useEffect, useState, useRef, type ReactElement, memo } from 'react'
+import { DiceMessage } from '@components/misc';
 import { useCampaignContext } from '@contexts';
-import { useSession } from 'next-auth/react'
-import { useChannel } from '@contexts/channelContext'
-import type { Attributes, Message, TempMessage, Expertises } from '@types'
-import { MessageType, PusherEvent } from '@enums'
-import TestModal from './TestModal'
-import TestDialog from './TestDialog'
-import { Button } from '@mui/material'
-import { ChevronLeft, ChevronRight } from '@mui/icons-material'
-import { messageService, fichaService } from '@services'
-import { DiceMessage } from '@components/misc'
-import { useChatContext } from '@contexts/chatContext'
+import { useChannel } from '@contexts/channelContext';
+import { useChatContext } from '@contexts/chatContext';
+import { MessageType, PusherEvent } from '@enums';
+import { ChevronLeft, ChevronRight } from '@mui/icons-material';
+import SendIcon from '@mui/icons-material/Send';
+import { Alert, Avatar, Box, Button, IconButton, Paper, Snackbar, Stack, TextField, Typography } from '@mui/material';
+import { fichaService } from '@services';
+import type { Attributes, Expertises, Message, TempMessage } from '@types';
+import { useSession } from 'next-auth/react';
+import { memo, useEffect, useRef, useState, type ReactElement } from 'react';
+import TestDialog from './TestDialog';
+import TestModal from './TestModal';
 
 // Componente do campo de mensagem
 const MessageInput = memo(function MessageInput({ onSendMessage }: { onSendMessage: (text: string) => void }) {

@@ -1,13 +1,13 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 'use client';
 
-import { useState, type ReactElement } from 'react';
-import { Box, Typography, Paper, Chip, Grid, Button } from '@mui/material';
-import { SkillType } from '@enums';
 import SkillsTreeDialog from '@components/ficha/SkillsTreeDialog';
+import { useCampaignCurrentFichaContext } from '@contexts';
+import { SkillType } from '@enums';
 import Masonry from '@mui/lab/Masonry';
-import { useCampaignContext, useCampaignCurrentFichaContext } from '@contexts';
-import type { Skill, Ficha } from '@types';
+import { Box, Button, Chip, Grid, Paper, Typography } from '@mui/material';
+import type { Ficha, Skill } from '@types';
+import { useState, type ReactElement } from 'react';
 
 interface SkillFilterChipProps {
     label: string;
