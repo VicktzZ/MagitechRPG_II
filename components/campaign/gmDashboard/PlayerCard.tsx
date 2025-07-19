@@ -175,21 +175,21 @@ export default function PlayerCard({ ficha }: { ficha: Required<Ficha> }) {
                         <Box className="stat">
                             <Favorite color="error" sx={{ fontSize: 16 }} />
                             <Typography variant="body2">
-                                {ficha.attributes.lp}/{ficha.maxLp}
+                                {ficha.attributes.lp}/{ficha.attributes.maxLp}
                             </Typography>
                         </Box>
 
                         <Box className="stat">
                             <Bolt color="info" sx={{ fontSize: 16 }} />
                             <Typography variant="body2">
-                                {ficha.attributes.mp}/{ficha.maxMp}
+                                {ficha.attributes.mp}/{ficha.attributes.maxMp}
                             </Typography>
                         </Box>
 
                         <Box className="stat">
                             <Shield color="success" sx={{ fontSize: 16 }} />
                             <Typography variant="body2">
-                                {ficha.attributes.ap}/{ficha.maxAp}
+                                {ficha.attributes.ap}/{ficha.attributes.maxAp}
                             </Typography>
                         </Box>
 
