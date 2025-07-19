@@ -54,8 +54,8 @@ export class ApiInstance<T> {
         const instance = axios.create({
             baseURL: '/api' + baseURL,
             headers: {
-                'Content-Type': 'application/json'
-                // 'Authorization': `Bearer ${process.env.NEXT_PUBLIC_API_KEY}`
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${process.env.NEXT_PUBLIC_API_KEY}`
                 // TODO: Implementar autenticação e segurança
             },
             timeout: 10000,

@@ -1,9 +1,8 @@
 import { red, blue, orange, teal, deepPurple, green } from '@node_modules/@mui/material/colors';
 import type { Classes, Expertises, Ficha, Gender, Lineage, Race, Element, FinancialCondition } from '@types';
 
-export const expertisesDefaultValue: () => Expertises = () => ({
+export const expertisesDefaultValue: Expertises = {
     'Agilidade': { value: 0, defaultAttribute: 'des' },
-    'Argumentação': { value: 0, defaultAttribute: 'sab' },
     'Atletismo': { value: 0, defaultAttribute: 'vig' },
     'Competência': { value: 0, defaultAttribute: 'log' },
     'Comunicação': { value: 0, defaultAttribute: 'car' },
@@ -11,10 +10,15 @@ export const expertisesDefaultValue: () => Expertises = () => ({
     'Conhecimento': { value: 0, defaultAttribute: 'sab' },
     'Controle': { value: 0, defaultAttribute: 'vig' },
     'Criatividade': { value: 0, defaultAttribute: 'log' },
+    'Culinária': { value: 0, defaultAttribute: 'des' },
+    'Diplomacia': { value: 0, defaultAttribute: 'car' },
     'Enganação': { value: 0, defaultAttribute: 'car' },
+    'Engenharia': { value: 0, defaultAttribute: 'log' },
+    'Força': { value: 0, defaultAttribute: 'vig' },
     'Furtividade': { value: 0, defaultAttribute: 'des' },
     'Intimidação': { value: 0, defaultAttribute: 'car' },
-    'Intuição': { value: 0, defaultAttribute: 'log' },
+    'Intuição': { value: 0, defaultAttribute: 'sab' },
+    'Interrogação': { value: 0, defaultAttribute: 'car' },
     'Investigação': { value: 0, defaultAttribute: 'log' },
     'Ladinagem': { value: 0, defaultAttribute: 'des' },
     'Liderança': { value: 0, defaultAttribute: 'car' },
@@ -27,12 +31,13 @@ export const expertisesDefaultValue: () => Expertises = () => ({
     'Reflexos': { value: 0, defaultAttribute: 'foc' },
     'RES Física': { value: 0, defaultAttribute: 'vig' },
     'RES Mágica': { value: 0, defaultAttribute: 'foc' },
-    'RES Mental': { value: 0, defaultAttribute: 'log' },
+    'RES Mental': { value: 0, defaultAttribute: 'sab' },
     'Sorte': { value: 0, defaultAttribute: 'sab' },
     'Sobrevivência': { value: 0, defaultAttribute: 'sab' },
+    'Tática': { value: 0, defaultAttribute: 'log' },
     'Tecnologia': { value: 0, defaultAttribute: 'log' },
     'Vontade': { value: 0, defaultAttribute: 'foc' }
-})
+}
 
 export const fichaModel: Ficha = {
     playerName: '',
@@ -52,10 +57,9 @@ export const fichaModel: Ficha = {
     ORMLevel: 1,
     magics: [],
     magicsSpace: 1,
+    mpLimit: 0,
+    overall: 0,
     subclass: '',
-    maxLp: 0,
-    maxMp: 0,
-    maxAp: 0,
     ammoCounter: {
         current: 0,
         max: 0
@@ -65,7 +69,8 @@ export const fichaModel: Ficha = {
         bonus: [],
         class: [],
         powers: [],
-        subclass: []
+        subclass: [],
+        race: []
     },
 
     capacity: {
@@ -128,27 +133,42 @@ export const fichaModel: Ficha = {
         money: 0
     },
 
-    expertises: expertisesDefaultValue(),
+    expertises: expertisesDefaultValue,
 
     points: {
-        attributes: 5,
+        attributes: 30,
         expertises: 0,
-        diligence: 0,
         skills: 0,
         magics: 1
     },
 
     attributes: {
         lp: 0,
+        mp: 0,
         ap: 5,
+        maxLp: 0,
+        maxMp: 0,
+        maxAp: 5,
         car: 0,
         vig: 0,
         des: 0,
         foc: 0,
         log: 0,
-        sab: 0,
-        mp: 0
+        sab: 0
     },
+    mods: {
+        attributes: {
+            des: 0,
+            vig: 0,
+            log: 0,
+            sab: 0,
+            foc: 0,
+            car: 0
+        },
+        discount: -10
+    },
+    dices: [],
+    passives: [], 
     userId: '',
     status: []
 }

@@ -6,7 +6,8 @@ export const skills: {
     occupation: Skill[],
     class: Record<Classes, Skill[]>,
     subclass: Record<Subclasses, Skill[]>,
-    bonus: Skill[]
+    bonus: Skill[],
+    race: Skill[]
 } = {
     lineage: [
         {
@@ -143,46 +144,46 @@ export const skills: {
         }
     ],
     class: {
-        'Lutador': [
+        'Combatente': [
             {
                 'name': 'Bom de Briga',
                 'description': 'Você pode adicionar seu bônus de Luta para dano em ataques corpo-a-corpo.',
-                'origin': 'Lutador',
+                'origin': 'Combatente',
                 'type': 'Classe',
                 'level': 0
             },
             {
                 'name': 'Reflexos Aumentados',
                 'description': 'Você ganha +1 dado em testes de agilidade (incluindo iniciativa).',
-                'origin': 'Lutador',
+                'origin': 'Combatente',
                 'type': 'Classe',
                 'level': 1
             },
             {
                 'name': 'Regeneração Furiosa',
                 'description': 'Quando seus LP ficarem abaixo de 50%, você regenera 1d6 por turno até atingir 50% de seus LP novamente.',
-                'origin': 'Lutador',
+                'origin': 'Combatente',
                 'type': 'Classe',
                 'level': 5
             },
             {
                 'name': 'Armado',
                 'description': 'Armas corpo-a-corpo dão +1 dados do mesmo tipo de dano.',
-                'origin': 'Lutador',
+                'origin': 'Combatente',
                 'type': 'Classe',
                 'level': 10
             },
             {
                 'name': 'Não-Elementalista',
                 'description': 'Magias não-elementais têm +1 dado respectivo para cálculo de dano, cálculo de cura, chance de acerto, etc.',
-                'origin': 'Lutador',
+                'origin': 'Combatente',
                 'type': 'Classe',
                 'level': 15
             },
             {
                 'name': 'Muralha',
                 'description': 'Quando você fica com 10% ou menos de LP, seu ataque aumenta em 50% até você atingir 50% da sua vida novamente.',
-                'origin': 'Lutador',
+                'origin': 'Combatente',
                 'type': 'Classe',
                 'level': 20
             }
@@ -504,7 +505,7 @@ export const skills: {
         ]
     },
     subclass: {
-        // LUTADOR
+        // Combatente
         'Polimorfo': [
             {
                 'name': 'Metamorfose Adaptativa',
@@ -763,7 +764,7 @@ export const skills: {
             },
             {
                 'name': 'Animação',
-                'description': 'Ao pagar 15 MP, você pode criar suas próprias magias-vivas. Todas elas duram por 2 rodadas e possuem 25 LP e 15 AP. Escolha entre os seguintes tipos de magias-vivas: Inteligente (+5 em testes), Protetora (+3 AP em raio de 3 metros), Lutadora (dá 4d4 de dano, ataca duas vezes por turno), Curadora (cura 1d4 por turno), Guardiã (reanima aliados caídos com 100% LP e MP), ou Espiritual (causa ou cura baseado no número de turnos que ficou viva).',
+                'description': 'Ao pagar 15 MP, você pode criar suas próprias magias-vivas. Todas elas duram por 2 rodadas e possuem 25 LP e 15 AP. Escolha entre os seguintes tipos de magias-vivas: Inteligente (+5 em testes), Protetora (+3 AP em raio de 3 metros), Combatentea (dá 4d4 de dano, ataca duas vezes por turno), Curadora (cura 1d4 por turno), Guardiã (reanima aliados caídos com 100% LP e MP), ou Espiritual (causa ou cura baseado no número de turnos que ficou viva).',
                 'origin': 'Animante',
                 'type': 'Subclasse',
                 'level': 20
@@ -967,7 +968,7 @@ export const skills: {
         },
         {
             'name': 'Palavras que Movem',
-            'description': 'Pode convencer NPCs a realizar uma ação específica, rolando Argumentação com vantagem.',
+            'description': 'Pode convencer NPCs a realizar uma ação específica, rolando Diplomacia com vantagem.',
             'type': 'Profissão',
             'origin': 'Político'
         },
@@ -1030,6 +1031,44 @@ export const skills: {
             'description': 'Pode evitar a morte uma vez por cena, ficando com 1 PV em vez de cair.',
             'type': 'Profissão',
             'origin': 'Desempregado'
+        }
+    ],
+    race: [
+        {
+            'name': 'Adaptabilidade Essencial',
+            'description': 'Sua capacidade de adaptação, que levou à criação da magia artificial, permite que você aprenda mais rapidamente. Você ganha um ponto de perícia adicional para distribuir em qualquer teste à sua escolha a cada 5 níveis de personagem.',
+            'type': 'Raça',
+            'origin': 'Humano'
+        },
+        {
+            'name': 'Otimização Cibernética',
+            'description': 'Sua fusão com a máquina permite otimizar sistemas. Uma vez por combate, você pode gastar 1 MP para recalibrar sua mira ou defesa. Seus próximos 2 ataques ganham +2 de bônus no teste de acerto, ou você ganha +1 AP temporário por 1 turno (a sua escolha).',
+            'type': 'Raça',
+            'origin': 'Ciborgue'
+        },
+        {
+            'name': 'Resiliência Sintética',
+            'description': 'Sua construção 100% mecânica  o torna resistente a certas condições. Você tem vantagem em testes de Resistência Física contra efeitos de envenenamento e doença. Além disso, quando for alvo de dano de eletricidade, o dano é reduzido em 1d10.',
+            'type': 'Raça',
+            'origin': 'Humanoide'
+        },
+        {
+            'name': 'Carga Mágica',
+            'description': 'Sua essência mágica infunde seus sistemas. Uma vez por combate, você pode escolher carregar um aliado (ou a si mesmo) com energia mágica. O alvo regenera 1 MP por turno por uma rodada. Essa habilidade pode ser usada uma vez por combate.',
+            'type': 'Raça',
+            'origin': 'Autômato'
+        },
+        {
+            'name': 'Surto Adaptativo',
+            'description': 'A energia mágica imbuída em você pode se manifestar em momentos de estresse. Quando seus LPs caírem abaixo de 25% do total, você ganha 1d6 de dano extra em todos os seus ataques por uma rodada. Essa habilidade pode ser ativada uma vez por combate.',
+            'type': 'Raça',
+            'origin': 'Mutante'
+        },
+        {
+            'name': 'Essência Fluida',
+            'description': 'Sendo um ser de pura magia, sua essência é maleável. Você pode gastar 1 MP adicional ao conjurar uma magia para aumentar seu alcance em um grau (Curto para Padrão, Padrão para Médio, etc.) ou para adicionar +2 à DT (Dificuldade de Teste) de um teste de resistência do alvo contra sua magia.',
+            'type': 'Raça',
+            'origin': 'Magia-viva'
         }
     ]
 }

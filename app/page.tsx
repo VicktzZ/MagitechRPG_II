@@ -2,10 +2,24 @@
 'use client'
 
 import { Footer, LandingPageHeader } from '@layout'
-import { Avatar, Box, Button, Card, Container, type SxProps, Typography, useMediaQuery } from '@mui/material'
+import { 
+    Avatar, 
+    Box, 
+    Button, 
+    Card, 
+    CircularProgress, 
+    Container, 
+    Typography, 
+    alpha, 
+    useMediaQuery,
+    type SxProps
+} from '@mui/material'
 import { useState, type ReactElement, useEffect, useRef } from 'react'
 import { Animate, AnimateOnScroll, Parallax } from '@components/misc'
 import VolunteerActivismIcon from '@mui/icons-material/VolunteerActivism'
+import AutoStoriesIcon from '@mui/icons-material/AutoStories'
+import HelpIcon from '@mui/icons-material/Help'
+import BookIcon from '@mui/icons-material/Book'
 import { intro, landingPageGrimoire, landingPageSynopse, BLOB_API } from '@constants'
 import { useTheme } from '@mui/material'
 import { useRouter } from 'next/navigation'
@@ -22,8 +36,10 @@ export default function LandingPage(): ReactElement | null {
     const [ deferredPrompt, setDeferredPrompt ] = useState<any>(null)
     const [ showButton, setShowButton ] = useState(false)
     const [ isClient, setIsClient ] = useState(false)
+    const [ isLoading, setIsLoading ] = useState(true)
     const [ isGlitching, setIsGlitching ] = useState(false)
     const [ isBgGlitching, setIsBgGlitching ] = useState(false)
+    const [ , setShowScrollIndicator ] = useState(true)
     const glitchRef = useRef<HTMLDivElement>(null)
     const timeoutRef = useRef<NodeJS.Timeout | null>(null)
     const bgTimeoutRef = useRef<NodeJS.Timeout | null>(null)
@@ -95,9 +111,35 @@ export default function LandingPage(): ReactElement | null {
         }
     }
 
+    // Função para scrollar suavemente até uma seção
+
+    // Gerenciar o indicador de scroll
     useEffect(() => {
-        setIsClient(true)
-    }, [])
+        const handleScroll = () => {
+            if (window.scrollY > 300) {
+                setShowScrollIndicator(false);
+            } else {
+                setShowScrollIndicator(true);
+            }
+        };
+
+        window.addEventListener('scroll', handleScroll);
+        return () => {
+            window.removeEventListener('scroll', handleScroll);
+        };
+    }, []);
+
+    // Gerenciar estado de cliente e loading
+    useEffect(() => {
+        setIsClient(true);
+        
+        // Simular tempo de carregamento para assets
+        const loadTimer = setTimeout(() => {
+            setIsLoading(false);
+        }, 1500);
+        
+        return () => clearTimeout(loadTimer);
+    }, []);
 
     useEffect(() => {
         const handleBeforeInstallPrompt = (event: any) => {
@@ -113,8 +155,80 @@ export default function LandingPage(): ReactElement | null {
         }
     }, [])
 
+    // Exibir loading enquanto não estiver pronto
     if (!isClient) {
-        return null
+        return null;
+    }
+    
+    // Componente de loading
+    if (isLoading) {
+        return (
+            <Box
+                sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    height: '100vh',
+                    width: '100vw',
+                    background: 'linear-gradient(135deg, #0d0e1b 0%, #1a1b2e 100%)',
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    zIndex: 9999
+                }}
+            >
+                <Box
+                    sx={{
+                        position: 'relative',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: 3
+                    }}
+                >
+                    <Typography 
+                        fontFamily="Apocalypse" 
+                        variant="h2" 
+                        color="primary.main" 
+                        sx={{ 
+                            textShadow: '0 0 15px ' + alpha(theme.palette.primary.main, 0.7),
+                            animation: 'pulse 1.5s infinite ease-in-out'
+                        }}
+                    >
+                        MAGITECH
+                    </Typography>
+                    
+                    <CircularProgress 
+                        size={60} 
+                        thickness={4} 
+                        color="secondary" 
+                        sx={{
+                            boxShadow: `0 0 20px ${alpha(theme.palette.secondary.main, 0.5)}`,
+                            borderRadius: '50%'
+                        }}
+                    />
+                    
+                    <Typography 
+                        variant="body1" 
+                        color="primary.light" 
+                        sx={{ mt: 2, opacity: 0.8 }}
+                    >
+                        Preparando sua aventura...
+                    </Typography>
+                    
+                    <Box
+                        sx={{
+                            '@keyframes pulse': {
+                                '0%': { opacity: 0.6 },
+                                '50%': { opacity: 1 },
+                                '100%': { opacity: 0.6 }
+                            }
+                        }}
+                    />
+                </Box>
+            </Box>
+        );
     }
 
     return (
@@ -273,7 +387,10 @@ export default function LandingPage(): ReactElement | null {
                                 width: '100%',
                                 maxWidth: '90%',
                                 textAlign: 'center',
-                                zIndex: 5
+                                zIndex: 5,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center'
                             }}
                         >
                             <Animate
@@ -391,15 +508,22 @@ export default function LandingPage(): ReactElement | null {
                                             >
                                                 MAGITECH
                                             </Box>
-                                            
-                                            <Box 
-                                                component="span" 
-                                                sx={{ 
-                                                    display: 'none' 
-                                                }}
-                                            >
-                                                APOCALYPSE
-                                            </Box>
+                                        </Typography>
+                                        
+                                        <Typography
+                                            variant="subtitle1" 
+                                            color="primary.light"
+                                            sx={{ 
+                                                mt: 3, 
+                                                mb: 5,
+                                                fontSize: !matches ? '1.2rem' : '1rem',
+                                                letterSpacing: '2px',
+                                                opacity: 0.9,
+                                                textShadow: '0 2px 4px rgba(0,0,0,0.5)',
+                                                fontWeight: 300
+                                            }}
+                                        >
+                                            O SISTEMA DE RPG QUE MISTURA MAGIA E TECNOLOGIA
                                         </Typography>
                                     </Box>
                                 </Box>
@@ -572,21 +696,66 @@ export default function LandingPage(): ReactElement | null {
                             >
                                 <Card
                                     sx={{
-                                        height: '25rem',
+                                        height: '100%', /* Removida altura fixa para evitar transbordamento */
+                                        minHeight: !matches ? '28rem' : 'auto',
                                         display: 'flex',
                                         flexDirection: 'column',
                                         bgcolor: 'background.paper',
                                         width: !matches ? '33%' : '100%',
                                         borderRadius: 4,
-                                        p: 3,
-                                        gap: 2
+                                        p: 4, /* Aumentado padding */
+                                        gap: 2,
+                                        position: 'relative',
+                                        overflow: 'hidden',
+                                        transition: 'all 0.3s ease',
+                                        mb: matches ? 3 : 0, /* Adicionado margin bottom em mobile */
+                                        '&:hover': {
+                                            transform: 'translateY(-8px)',
+                                            boxShadow: `0 16px 30px ${alpha('#000000', 0.25)}`,
+                                            '& .card-icon': {
+                                                transform: 'scale(1.1)',
+                                                color: theme.palette.primary.main
+                                            },
+                                            '& .card-highlight': {
+                                                height: '5px'
+                                            }
+                                        }
                                     }}
-                                    elevation={12}
+                                    elevation={5}
                                 >
-                                    <Typography variant="h5" fontWeight={900} textAlign="center">
+                                    <Box 
+                                        className="card-highlight"
+                                        sx={{
+                                            position: 'absolute',
+                                            top: 0,
+                                            left: 0,
+                                            width: '100%',
+                                            height: '3px',
+                                            background: `linear-gradient(90deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+                                            transition: 'all 0.3s ease'
+                                        }}
+                                    />
+                                    <Box 
+                                        sx={{
+                                            display: 'flex',
+                                            justifyContent: 'center',
+                                            mb: 2
+                                        }}
+                                    >
+                                        <AutoStoriesIcon 
+                                            className="card-icon"
+                                            sx={{
+                                                fontSize: '3.5rem',
+                                                color: theme.palette.primary.light,
+                                                transition: 'all 0.3s ease',
+                                                mb: 1
+                                            }}
+                                        />
+                                    </Box>
+                                    <Typography variant="h5" fontWeight={900} textAlign="center" sx={{ mb: 2 }}>
                                         O que é?
                                     </Typography>
-                                    <Typography>
+                                    <Typography sx={{ textAlign: 'justify', px: 2, pb: 2, lineHeight: 1.7 }}>
                                         Magitech RPG é um sistema de RPG de mesa feito por Vitor Hugo Rodrigues dos
                                         Santos inspirado em D&D, Tormenta, Order & Chaos, Ordem Paranormal, entre outros
                                         sistemas de RPG. Para quem não sabe, RPG (abreviação de Role Playing Game), é um
@@ -596,45 +765,133 @@ export default function LandingPage(): ReactElement | null {
                                 </Card>
                                 <Card
                                     sx={{
-                                        height: '25rem',
+                                        height: '100%', /* Removida altura fixa para evitar transbordamento */
+                                        minHeight: !matches ? '28rem' : 'auto',
                                         display: 'flex',
                                         flexDirection: 'column',
                                         bgcolor: 'background.paper',
                                         width: !matches ? '33%' : '100%',
                                         borderRadius: 4,
-                                        p: 3,
-                                        gap: 2
+                                        p: 4, /* Aumentado padding */
+                                        gap: 2,
+                                        position: 'relative',
+                                        overflow: 'hidden',
+                                        transition: 'all 0.3s ease',
+                                        mb: matches ? 3 : 0, /* Adicionado margin bottom em mobile */
+                                        '&:hover': {
+                                            transform: 'translateY(-8px)',
+                                            boxShadow: `0 16px 30px ${alpha('#000000', 0.25)}`,
+                                            '& .card-icon': {
+                                                transform: 'scale(1.1)',
+                                                color: theme.palette.secondary.main
+                                            },
+                                            '& .card-highlight': {
+                                                height: '5px'
+                                            }
+                                        }
                                     }}
-                                    elevation={12}
+                                    elevation={5}
                                 >
-                                    <Typography variant="h5" fontWeight={900} textAlign="center">
-                                        Porquê?
+                                    <Box 
+                                        className="card-highlight"
+                                        sx={{
+                                            position: 'absolute',
+                                            top: 0,
+                                            left: 0,
+                                            width: '100%',
+                                            height: '3px',
+                                            background: `linear-gradient(90deg, ${theme.palette.secondary.main}, ${theme.palette.primary.light})`,
+                                            transition: 'all 0.3s ease'
+                                        }}
+                                    />
+                                    <Box 
+                                        sx={{
+                                            display: 'flex',
+                                            justifyContent: 'center',
+                                            mb: 2
+                                        }}
+                                    >
+                                        <HelpIcon 
+                                            className="card-icon"
+                                            sx={{
+                                                fontSize: '3.5rem',
+                                                color: theme.palette.secondary.light,
+                                                transition: 'all 0.3s ease',
+                                                mb: 1
+                                            }}
+                                        />
+                                    </Box>
+                                    <Typography variant="h5" fontWeight={900} textAlign="center" sx={{ mb: 2 }}>
+                                        Por quê?
                                     </Typography>
-                                    <Typography>
-                                        Para quem joga RPG de mesa, sabe o quão trabalho e burocrático é jogar uma
+                                    <Typography sx={{ textAlign: 'justify', px: 2, pb: 2, lineHeight: 1.7 }}>
+                                        Para quem joga RPG de mesa, sabe o quão trabalhoso e burocrático é jogar uma
                                         sessão, principalmente se você for o Mestre. É necessário criar e anotar fichas,
-                                        programar sessoes, anotar detalhes em combate ou no mapa e muito mais. Tendo em
-                                        vista este problema, o Magitech foi desenvolvido para auxiliar não só Mestre,
-                                        mas também para os jogadores no que for preciso.
+                                        programar sessões, anotar detalhes em combate ou no mapa e muito mais. Tendo em
+                                        vista este problema, o Magitech foi desenvolvido para auxiliar não só o Mestre,
+                                        mas também os jogadores no que for preciso.
                                     </Typography>
                                 </Card>
                                 <Card
                                     sx={{
-                                        height: '25rem',
+                                        height: '100%',
                                         display: 'flex',
                                         flexDirection: 'column',
                                         bgcolor: 'background.paper',
                                         width: !matches ? '33%' : '100%',
                                         borderRadius: 4,
                                         p: 3,
-                                        gap: 2
+                                        gap: 2,
+                                        position: 'relative',
+                                        overflow: 'hidden',
+                                        transition: 'all 0.3s ease',
+                                        '&:hover': {
+                                            transform: 'translateY(-8px)',
+                                            boxShadow: `0 16px 30px ${alpha('#000000', 0.25)}`,
+                                            '& .card-icon': {
+                                                transform: 'scale(1.1)',
+                                                color: 'terciary.main'
+                                            },
+                                            '& .card-highlight': {
+                                                height: '5px'
+                                            }
+                                        }
                                     }}
-                                    elevation={12}
+                                    elevation={5}
                                 >
-                                    <Typography variant="h5" fontWeight={900} textAlign="center">
+                                    <Box 
+                                        className="card-highlight"
+                                        sx={{
+                                            position: 'absolute',
+                                            top: 0,
+                                            left: 0,
+                                            width: '100%',
+                                            height: '3px',
+                                            background: `linear-gradient(90deg, ${theme.palette.primary.light}, ${alpha(theme.palette.terciary.main, 0.8)})`,
+                                            transition: 'all 0.3s ease'
+                                        }}
+                                    />
+                                    <Box 
+                                        sx={{
+                                            display: 'flex',
+                                            justifyContent: 'center',
+                                            mb: 2
+                                        }}
+                                    >
+                                        <BookIcon 
+                                            className="card-icon"
+                                            sx={{
+                                                fontSize: '3.5rem',
+                                                color: alpha(theme.palette.terciary.main, 0.8),
+                                                transition: 'all 0.3s ease',
+                                                mb: 1
+                                            }}
+                                        />
+                                    </Box>
+                                    <Typography variant="h5" fontWeight={900} textAlign="center" sx={{ mb: 2 }}>
                                         Como funciona?
                                     </Typography>
-                                    <Typography>
+                                    <Typography sx={{ textAlign: 'justify', px: 2, pb: 2, lineHeight: 1.7 }}>
                                         Este site é uma aplicação web para auxílio na jogatina de Magitech RPG.
                                         Basicamente, é um sistema que integra fichas e sessões da mesa de RPG e
                                         automatiza o que antes precisava ser feito no papel. As regras do RPG estão
@@ -643,9 +900,6 @@ export default function LandingPage(): ReactElement | null {
                                 </Card>
                             </Box>
                         </AnimateOnScroll>
-                    </Box>
-
-                    <Box id="quem-somos" mb={!matches ? 30 : 20}>
                         <Box>
                             <Box width="100%">
                                 <Typography variant="h3" fontFamily="WBZ" textAlign="center" p={5} width="100%">
@@ -695,7 +949,7 @@ export default function LandingPage(): ReactElement | null {
                     <Box id="guia" mb={!matches ? 30 : 20}>
                         <Box p={5} width="100%">
                             <Typography variant="h3" fontFamily="WBZ" textAlign="center">
-                                Obtenha o Guia de Regras
+                                    Obtenha o Guia de Regras
                             </Typography>
                         </Box>
                         <AnimateOnScroll animateOnce animation="fadeInLeft">

@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 'use client';
 
-import SkillsTreeDialog from '@components/ficha/SkillsTreeDialog';
+import SkillsTreeDialog from '@components/ficha/dialogs/SkillsTreeDialog';
 import { useCampaignCurrentFichaContext } from '@contexts';
 import { SkillType } from '@enums';
 import Masonry from '@mui/lab/Masonry';
@@ -16,7 +16,7 @@ interface SkillFilterChipProps {
     onClick: () => void;
 }
 
-function SkillFilterChip({ label, type, selected, onClick }: SkillFilterChipProps) {
+function SkillFilterChip({ label , selected, onClick }: SkillFilterChipProps) {
     return (
         <Chip
             label={label}

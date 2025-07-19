@@ -8,6 +8,8 @@
   "plugins": [
       "react",
       "@typescript-eslint",
+      "unused-imports",
+      "unused-vars",
       "react-hooks",
       "prettier",
       "unicorn"
@@ -113,6 +115,8 @@
           "error",
           4
       ],
+      "unused-imports/no-unused-imports": "warn",
+      "unused-vars/no-unused-vars": "warn",
       "object-curly-spacing": [
           2,
           "always"

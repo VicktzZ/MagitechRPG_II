@@ -5,7 +5,6 @@ declare global {
             MONGO_ATLAS_PUBLIC_KEY: string
             MONGO_ATLAS_PRIVATE_KEY: string
             MONGO_ATLAS_PROJECT_ID: string
-            MONGO_ATLAS_CLUSTER_NAME: string
             GOOGLE_CLIENT_ID: string
             GOOGLE_CLIENT_SECRET: string
             DISCORD_CLIENT_ID: string
@@ -19,8 +18,8 @@ declare global {
             NEXT_PUBLIC_PUSHER_KEY: string
             NEXT_PUBLIC_API_KEY: string
             NEXT_PUBLIC_REALM_APP_ID: string
+            NEXT_PUBLIC_NODE_ENV: 'development' | 'production'
             PUSHER_CLUSTER: string
-            NODE_ENV: 'development' | 'production'
             ADMIN_PASSWORD: string
             ADMIN_EMAIL: string
             PUSHER_KEY: string

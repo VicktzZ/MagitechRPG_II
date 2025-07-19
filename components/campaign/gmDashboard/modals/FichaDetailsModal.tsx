@@ -242,14 +242,6 @@ export default function FichaDetailsModal({ open, onClose, ficha }: FichaDetails
                                         </Grid>
                                         <Grid item xs={6}>
                                             <Chip 
-                                                label={`Diligência: ${ficha.points.diligence}`} 
-                                                color="success" 
-                                                variant="outlined"
-                                                sx={{ width: '100%' }}
-                                            />
-                                        </Grid>
-                                        <Grid item xs={6}>
-                                            <Chip 
                                                 label={`Habilidades: ${ficha.points.skills}`} 
                                                 color="info" 
                                                 variant="outlined"

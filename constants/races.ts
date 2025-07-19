@@ -3,7 +3,8 @@ export const races = {
         attributes: {
             lp: 0,
             mp: 0,
-            ap: 0
+            ap: 0,
+            pda: 5
         }
     },
 
@@ -11,7 +12,8 @@ export const races = {
         attributes: {
             lp: 0,
             mp: 6,
-            ap: -1
+            ap: -1,
+            pda: 0
         }
     },
 
@@ -19,7 +21,8 @@ export const races = {
         attributes: {
             lp: 0,
             mp: -5,
-            ap: 1
+            ap: 1,
+            pda: 0
         }
     },
 
@@ -27,7 +30,8 @@ export const races = {
         attributes: {
             lp: 3,
             mp: 3,
-            ap: 0
+            ap: 0,
+            pda: 0
         }
     },
 
@@ -35,7 +39,8 @@ export const races = {
         attributes: {
             lp: 6,
             mp: -3,
-            ap: 0
+            ap: 0,
+            pda: 0
         }
     },
 
@@ -43,7 +48,8 @@ export const races = {
         attributes: {
             lp: -4,
             mp: 8,
-            ap: 0
+            ap: 0,
+            pda: 0
         }
     }
 }   

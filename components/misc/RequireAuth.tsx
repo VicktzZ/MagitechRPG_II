@@ -1,66 +1,75 @@
 'use client';
 
 import { Backdrop, CircularProgress } from '@mui/material';
-import { useSession, signIn } from 'next-auth/react';
+import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import React, { type ReactElement, useEffect, useState } from 'react';
 
-export default function RequireAuth({ children }: { children: ReactElement | ReactElement[] }): any {
-    const { data: session, status, update } = useSession();
-    const [ isLoading, setIsLoading ] = useState(true);
+interface RequireAuthProps {
+    children: ReactElement | ReactElement[]
+}
+
+export default function RequireAuth({ children }: RequireAuthProps): ReactElement | null {
+    const { data: session, status } = useSession();
     const router = useRouter();
+    const [ authChecked, setAuthChecked ] = useState(false);
+    const [ loading, setLoading ] = useState(true);
 
     useEffect(() => {
-        const handleStorageChange = () => {
-            // Atualiza a sessão se o storage mudar
-            update();
-        };
+        // Timeout para evitar loading infinito
+        const timeoutId = setTimeout(() => {
+            if (status === 'loading') {
+                console.warn('Tempo limite de autenticação excedido');
+                setLoading(false);
+            }
+        }, 10000); // 10 segundos de timeout
 
-        window.addEventListener('storage', handleStorageChange);
-        return () => { window.removeEventListener('storage', handleStorageChange) };
-    }, [ update ]);
-
-    useEffect(() => {
-        const checkAndUpdateSession = async () => {
-            if (status === 'loading') return;
-
+        if (status !== 'loading') {
+            clearTimeout(timeoutId);
+            setLoading(false);
+            
+            // Se não autenticado, redireciona para a página inicial
             if (status === 'unauthenticated') {
-                // Tenta recuperar dados do usuário do localStorage
-                const storedUser = localStorage.getItem('user');
-                if (storedUser) {
-                    try {
-                        // Tenta reautenticar
-                        await signIn('credentials', { 
-                            redirect: false,
-                            user: storedUser 
-                        });
-                        return;
-                    } catch (error) {
-                        console.error('Erro ao reautenticar:', error);
-                        localStorage.removeItem('user');
-                    }
-                }
                 router.push('/');
-            } else if (status === 'authenticated' && session?.user) {
-                // Atualiza o localStorage com os dados mais recentes
-                localStorage.setItem('user', JSON.stringify(session.user));
             }
-
-            if (isLoading) {
-                setIsLoading(false);
+            
+            // Se autenticado, marca como verificado
+            if (status === 'authenticated') {
+                setAuthChecked(true);
             }
-        };
+        }
 
-        checkAndUpdateSession();
-    }, [ status, session, router, isLoading ]);
+        return () => clearTimeout(timeoutId);
+    }, [ status, router ]);
 
-    if (isLoading || status === 'loading') {
+    // Efeito para lidar com mudanças na sessão
+    useEffect(() => {
+        if (status === 'authenticated' && session?.error === 'RefreshAccessTokenError') {
+            // Se houver erro de token, força logout
+            signOut({ callbackUrl: '/' });
+        }
+    }, [ session, status ]);
+
+    // Se ainda está carregando
+    if (loading || status === 'loading') {
         return (
-            <Backdrop open={true}>
-                <CircularProgress />
+            <Backdrop 
+                open 
+                sx={{ 
+                    zIndex: (theme) => theme.zIndex.drawer + 1,
+                    backgroundColor: 'rgba(0, 0, 0, 0.9)'
+                }}
+            >
+                <CircularProgress color="primary" />
             </Backdrop>
         );
     }
 
-    return status === 'authenticated' ? children : null;
+    // Se não está autenticado ou a verificação não foi concluída
+    if (status !== 'authenticated' || !authChecked) {
+        return null;
+    }
+
+    // Renderiza os children apenas se autenticado e verificado
+    return <>{children}</>;
 }
