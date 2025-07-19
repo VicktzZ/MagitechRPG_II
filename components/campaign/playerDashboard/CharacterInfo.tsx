@@ -4,8 +4,32 @@
 import { RPGIcon } from '@components/misc';
 import { attributeIcons } from '@constants/ficha';
 import { useCampaignCurrentFichaContext } from '@contexts';
-import { Avatar, Box, Button, Chip, Grid, LinearProgress, Paper, Typography } from '@mui/material';
-import { green, red } from '@node_modules/@mui/material/colors';
+import { 
+    Avatar, 
+    Box, 
+    Chip, 
+    LinearProgress, 
+    Paper, 
+    Typography,
+    Stack,
+    Divider,
+    IconButton,
+    Tooltip,
+    useTheme,
+    useMediaQuery,
+    Grid,
+    Button
+} from '@mui/material';
+import { 
+    Add, 
+    Remove, 
+    Refresh,
+    Star,
+    LocalFireDepartment,
+    Psychology,
+    Shield
+} from '@mui/icons-material';
+import { green, red, blue, orange, purple } from '@mui/material/colors';
 import { useState, type ReactElement } from 'react';
 
 interface CharacterInfoProps {
@@ -14,6 +38,8 @@ interface CharacterInfoProps {
 
 export default function CharacterInfo({ avatar }: CharacterInfoProps): ReactElement {    
     const { ficha, updateFicha } = useCampaignCurrentFichaContext();
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const fichaCopy = { ...ficha };
 
     const [ currentAttributes, setCurrentAttributes ] = useState({
@@ -37,9 +63,9 @@ export default function CharacterInfo({ avatar }: CharacterInfoProps): ReactElem
         updateFicha(fichaCopy);
     }
 
-    const lpPercent = (currentAttributes.lp / ficha.maxLp) * 100;
-    const mpPercent = (currentAttributes.mp / ficha.maxMp) * 100;
-    const apPercent = (currentAttributes.ap / ficha.maxAp) * 100;
+    const lpPercent = (currentAttributes.lp / ficha.attributes.maxLp) * 100;
+    const mpPercent = (currentAttributes.mp / ficha.attributes.maxMp) * 100;
+    const apPercent = (currentAttributes.ap / ficha.attributes.maxAp) * 100;
     const attributes = Object.entries(ficha.attributes).filter(([ key ]) => ![ 'lp', 'mp', 'ap' ].includes(key));
 
     function AttributeBar({ attributeValue }: { attributeValue: number }) {
@@ -64,122 +90,190 @@ export default function CharacterInfo({ avatar }: CharacterInfoProps): ReactElem
     }
 
     return (
-        <>
-            {/* Cabeçalho com informações básicas */}
-            <Grid item xs={12}>
-                <Paper sx={{ p: 2, bgcolor: 'background.paper2', borderRadius: 2 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, flexWrap: { xs: 'wrap', md: 'nowrap' } }}>
-                        <Avatar
-                            src={avatar}
-                            alt={ficha.name}
-                            sx={{ width: { xs: 60, md: 80 }, height: { xs: 60, md: 80 } }}
-                        />
-                        <Box sx={{ flex: 1 }}>
-                            <Typography variant="h5" gutterBottom>
-                                {ficha.name}
-                            </Typography>
-                            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
-                                <Chip label={`Nível ${ficha.level}`} color="primary" />
-                                <Chip label={ficha.lineage as unknown as string} />
-                                <Chip label={ficha.class as string} />
-                                {ficha.subclass && <Chip label={ficha.subclass as string} />}
-                                {ficha.elementalMastery && (
-                                    <Chip label={`Maestria: ${ficha.elementalMastery}`} color="secondary" />
-                                )}
-                            </Box>
-                            <Box display="flex" gap={1} mt={1}>
-                                {ficha.status?.map((status, index) => (
+        <Box sx={{ width: '100%' }}>
+            <Stack spacing={3}>
+                {/* Informações Básicas */}
+                <Box 
+                    sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 3,
+                        flexDirection: { xs: 'column', sm: 'row' }
+                    }}
+                >
+                    <Avatar
+                        src={avatar}
+                        alt={ficha.name}
+                        sx={{ 
+                            width: { xs: 80, md: 100 }, 
+                            height: { xs: 80, md: 100 },
+                            border: '3px solid',
+                            borderColor: 'primary.main',
+                            boxShadow: 3
+                        }}
+                    />
+                    <Stack spacing={2} flex={1} alignItems={{ xs: 'center', sm: 'flex-start' }}>
+                        <Typography 
+                            variant="h4" 
+                            sx={{ 
+                                fontWeight: 700,
+                                textAlign: { xs: 'center', sm: 'left' },
+                                background: 'linear-gradient(45deg, #667eea 30%, #764ba2 90%)',
+                                WebkitBackgroundClip: 'text',
+                                WebkitTextFillColor: 'transparent'
+                            }}
+                        >
+                            {ficha.name}
+                        </Typography>
+                        
+                        <Stack 
+                            direction="row" 
+                            spacing={1} 
+                            flexWrap="wrap"
+                            justifyContent={{ xs: 'center', sm: 'flex-start' }}
+                            sx={{ gap: 1 }}
+                        >
+                            <Chip 
+                                icon={<Star />}
+                                label={`Nível ${ficha.level}`} 
+                                color="primary" 
+                                variant="filled"
+                                sx={{ fontWeight: 600 }}
+                            />
+                            <Chip 
+                                label={ficha.lineage as unknown as string} 
+                                sx={{ 
+                                    bgcolor: blue[100],
+                                    color: blue[800],
+                                    fontWeight: 600
+                                }}
+                            />
+                            <Chip 
+                                icon={<Shield />}
+                                label={ficha.class as string} 
+                                sx={{ 
+                                    bgcolor: green[100],
+                                    color: green[800],
+                                    fontWeight: 600
+                                }}
+                            />
+                            {ficha.subclass && (
+                                <Chip 
+                                    icon={<Psychology />}
+                                    label={ficha.subclass as string}
+                                    sx={{ 
+                                        bgcolor: orange[100],
+                                        color: orange[800],
+                                        fontWeight: 600
+                                    }}
+                                />
+                            )}
+                            {ficha.elementalMastery && (
+                                <Chip 
+                                    icon={<LocalFireDepartment />}
+                                    label={`Maestria: ${ficha.elementalMastery}`} 
+                                    sx={{ 
+                                        bgcolor: purple[100],
+                                        color: purple[800],
+                                        fontWeight: 600
+                                    }}
+                                />
+                            )}
+                        </Stack>
+                        {ficha.status && ficha.status.length > 0 && (
+                            <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ gap: 1 }}>
+                                {ficha.status.map((status, index) => (
                                     <Chip
                                         key={index}
-                                        label={status.name}
-                                        color={status.type === 'buff' ? 'success' : status.type === 'debuff' ? 'error' : 'default'}
+                                        label={status as unknown as string}
                                         size="small"
+                                        color="warning"
+                                        variant="filled"
+                                        sx={{ 
+                                            bgcolor: red[100],
+                                            color: red[800],
+                                            fontWeight: 600
+                                        }}
                                     />
                                 ))}
-                            </Box>
+                            </Stack>
+                        )}
+                    </Stack>
+                </Box>
+
+                <Divider sx={{ opacity: 0.6 }} />
+
+                <LinearProgress
+                    variant="determinate"
+                    value={lpPercent}
+                    sx={{
+                        height: 10,
+                        borderRadius: 5,
+                        bgcolor: 'background.paper3',
+                        '& .MuiLinearProgress-bar': {
+                            bgcolor: 'error.main'
+                        }
+                    }}
+                />
+                <Typography variant="caption">
+                    {currentAttributes.lp}/{ficha.attributes.maxLp}
+                </Typography>
+                <Box display='flex' alignItems='center' gap={1}>
+                    <Button variant="contained" size="small" onClick={() => setAttribute('lp', 1)}>+1</Button>
+                    <Button variant="contained" size="small" onClick={() => setAttribute('lp', -1)}>-1</Button>
+                    <Button variant="contained" size="small" onClick={() => setAttribute('lp', 0, ficha.attributes.maxLp)}>MAX</Button>
+                </Box>
+                <Grid item xs={12} md={4}>
+                    <Box>
+                        <Typography variant="subtitle2" gutterBottom>MP</Typography>
+                        <LinearProgress
+                            variant="determinate"
+                            value={mpPercent}
+                            sx={{
+                                height: 10,
+                                borderRadius: 5,
+                                bgcolor: 'background.paper3',
+                                '& .MuiLinearProgress-bar': {
+                                    bgcolor: 'primary.main'
+                                }
+                            }}
+                        />
+                        <Typography variant="caption">
+                            {currentAttributes.mp}/{ficha.attributes.maxMp}
+                        </Typography>
+                    </Box>
+                    <Box display='flex' alignItems='center' gap={1}>
+                        <Button variant="contained" size="small" onClick={() => setAttribute('mp', 1)}>+1</Button>
+                        <Button variant="contained" size="small" onClick={() => setAttribute('mp', -1)}>-1</Button>
+                        <Button variant="contained" size="small" onClick={() => setAttribute('mp', 0, ficha.attributes.maxMp)}>MAX</Button>
+                    </Box>
+                </Grid>
+                <Grid item xs={12} md={4}>
+                    <Box>
+                        <Typography variant="subtitle2" gutterBottom>AP</Typography>
+                        <LinearProgress
+                            variant="determinate"
+                            value={apPercent}
+                            sx={{
+                                height: 10,
+                                borderRadius: 5,
+                                bgcolor: 'background.paper3',
+                                '& .MuiLinearProgress-bar': {
+                                    bgcolor: 'warning.main'
+                                }
+                            }}
+                        />
+                        <Typography variant="caption">
+                            {currentAttributes.ap}/{ficha.attributes.maxAp}
+                        </Typography>
+                        <Box display='flex' alignItems='center' gap={1}>
+                            <Button variant="contained" size="small" onClick={() => setAttribute('ap', 1)}>+1</Button>
+                            <Button variant="contained" size="small" onClick={() => setAttribute('ap', -1)}>-1</Button>
+                            <Button variant="contained" size="small" onClick={() => setAttribute('ap', 0, ficha.attributes.maxAp)}>MAX</Button>
                         </Box>
                     </Box>
-
-                    {/* Barras de Status */}
-                    <Grid container spacing={2} sx={{ mt: 2 }}>
-                        <Grid item xs={12} md={4}>
-                            <Box>
-                                <Typography variant="subtitle2" gutterBottom>LP</Typography>
-                                <LinearProgress
-                                    variant="determinate"
-                                    value={lpPercent}
-                                    sx={{
-                                        height: 10,
-                                        borderRadius: 5,
-                                        bgcolor: 'background.paper3',
-                                        '& .MuiLinearProgress-bar': {
-                                            bgcolor: 'error.main'
-                                        }
-                                    }}
-                                />
-                                <Typography variant="caption">
-                                    {currentAttributes.lp}/{ficha.maxLp}
-                                </Typography>
-                            </Box>
-                            <Box display='flex' alignItems='center' gap={1}>
-                                <Button variant="contained" size="small" onClick={() => setAttribute('lp', 1)}>+1</Button>
-                                <Button variant="contained" size="small" onClick={() => setAttribute('lp', -1)}>-1</Button>
-                                <Button variant="contained" size="small" onClick={() => setAttribute('lp', 0, ficha.maxLp)}>MAX</Button>
-                            </Box>
-                        </Grid>
-                        <Grid item xs={12} md={4}>
-                            <Box>
-                                <Typography variant="subtitle2" gutterBottom>MP</Typography>
-                                <LinearProgress
-                                    variant="determinate"
-                                    value={mpPercent}
-                                    sx={{
-                                        height: 10,
-                                        borderRadius: 5,
-                                        bgcolor: 'background.paper3',
-                                        '& .MuiLinearProgress-bar': {
-                                            bgcolor: 'primary.main'
-                                        }
-                                    }}
-                                />
-                                <Typography variant="caption">
-                                    {currentAttributes.mp}/{ficha.maxMp}
-                                </Typography>
-                            </Box>
-                            <Box display='flex' alignItems='center' gap={1}>
-                                <Button variant="contained" size="small" onClick={() => setAttribute('mp', 1)}>+1</Button>
-                                <Button variant="contained" size="small" onClick={() => setAttribute('mp', -1)}>-1</Button>
-                                <Button variant="contained" size="small" onClick={() => setAttribute('mp', 0, ficha.maxMp)}>MAX</Button>
-                            </Box>
-                        </Grid>
-                        <Grid item xs={12} md={4}>
-                            <Box>
-                                <Typography variant="subtitle2" gutterBottom>AP</Typography>
-                                <LinearProgress
-                                    variant="determinate"
-                                    value={apPercent}
-                                    sx={{
-                                        height: 10,
-                                        borderRadius: 5,
-                                        bgcolor: 'background.paper3',
-                                        '& .MuiLinearProgress-bar': {
-                                            bgcolor: 'warning.main'
-                                        }
-                                    }}
-                                />
-                                <Typography variant="caption">
-                                    {currentAttributes.ap}/{ficha.maxAp}
-                                </Typography>
-                                <Box display='flex' alignItems='center' gap={1}>
-                                    <Button variant="contained" size="small" onClick={() => setAttribute('ap', 1)}>+1</Button>
-                                    <Button variant="contained" size="small" onClick={() => setAttribute('ap', -1)}>-1</Button>
-                                    <Button variant="contained" size="small" onClick={() => setAttribute('ap', 0, ficha.maxAp)}>MAX</Button>
-                                </Box>
-                            </Box>
-                        </Grid>
-                    </Grid>
-                </Paper>
-            </Grid>
+                </Grid>
+            </Stack>
 
             {/* Atributos e Traços */}
             <Grid item xs={12} md={6}>
@@ -256,6 +350,6 @@ export default function CharacterInfo({ avatar }: CharacterInfoProps): ReactElem
                     </Box>
                 </Paper>
             </Grid>
-        </>
+        </Box>
     );
 }
