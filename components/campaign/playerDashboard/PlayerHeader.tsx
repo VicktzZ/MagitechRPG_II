@@ -21,7 +21,6 @@ import {
     Star,
     Shield,
     AutoAwesome,
-    Person,
     Cake,
     Wc,
     Speed,
@@ -31,7 +30,7 @@ import {
     Psychology,
     FlashOn
 } from '@mui/icons-material'
-import { blue, green, red, orange, purple, grey, yellow } from '@mui/material/colors'
+import { blue, green, red, purple, grey, yellow } from '@mui/material/colors'
 import { useCampaignCurrentFichaContext } from '@contexts'
 import { useState, type ReactElement } from 'react'
 import type { Ficha } from '@types'
@@ -138,10 +137,10 @@ function StatusBar({ label, current, max, color, icon, onIncrease, onDecrease }:
 export default function PlayerHeader({ avatar }: PlayerHeaderProps): ReactElement {
     const { ficha, updateFicha } = useCampaignCurrentFichaContext()
     const theme = useTheme()
-    const isMobile = useMediaQuery(theme.breakpoints.down('md'))
+    
     const isSmall = useMediaQuery(theme.breakpoints.down('sm'))
 
-    const [currentAttributes, setCurrentAttributes] = useState({
+    const [ currentAttributes, setCurrentAttributes ] = useState({
         lp: ficha.attributes.lp,
         mp: ficha.attributes.mp,
         ap: ficha.attributes.ap
@@ -170,15 +169,15 @@ export default function PlayerHeader({ avatar }: PlayerHeaderProps): ReactElemen
 
     const getElementIcon = (element: string) => {
         switch (element?.toLowerCase()) {
-            case 'fogo': return <LocalFireDepartment sx={{ color: red[500] }} />
-            case 'água': return <Psychology sx={{ color: blue[500] }} />
-            case 'terra': return <Shield sx={{ color: green[700] }} />
-            case 'ar': return <FlashOn sx={{ color: grey[400] }} />
-            default: return <AutoAwesome sx={{ color: purple[500] }} />
+        case 'fogo': return <LocalFireDepartment sx={{ color: red[500] }} />
+        case 'água': return <Psychology sx={{ color: blue[500] }} />
+        case 'terra': return <Shield sx={{ color: green[700] }} />
+        case 'ar': return <FlashOn sx={{ color: grey[400] }} />
+        default: return <AutoAwesome sx={{ color: purple[500] }} />
         }
     }
 
-    const getGenderIcon = (gender: string) => {
+    const getGenderIcon = () => {
         return <Wc sx={{ color: theme.palette.text.secondary }} />
     }
 
@@ -229,7 +228,7 @@ export default function PlayerHeader({ avatar }: PlayerHeaderProps): ReactElemen
                             
                             <Stack spacing={1} alignItems={{ xs: 'center', sm: 'flex-start', md: 'center' }}>
                                 <Typography 
-                                    variant={isSmall ? "h5" : "h4"} 
+                                    variant={isSmall ? 'h5' : 'h4'} 
                                     sx={{ 
                                         fontWeight: 700,
                                         textAlign: 'center',

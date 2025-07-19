@@ -1,4 +1,5 @@
 /* eslint-disable react-hooks/rules-of-hooks */
+/* eslint-disable @typescript-eslint/prefer-nullish-coalescing */
 'use client'
 
 import { useCampaignContext } from '@contexts';
@@ -28,14 +29,10 @@ import {
 } from '@mui/material'
 import { useQueryClient } from '@tanstack/react-query'
 import {
-    Add,
     Shield,
     People,
     TrendingUp,
-    Notifications,
-    AdminPanelSettings,
     SupervisorAccount,
-    Star,
     EmojiEvents
 } from '@mui/icons-material'
 import { campaignService, fichaService } from '@services'
@@ -44,7 +41,7 @@ import { type ReactElement, useMemo, useState } from 'react'
 import PlayerCard from './PlayerCard'
 import type { Ficha } from '@types'
 import { useRealtimeDatabase } from '@hooks';
-import { blue, green, orange, purple, grey, red } from '@mui/material/colors';
+import { blue, green, orange, purple } from '@mui/material/colors';
 
 // Componente Section reutilizável
 interface SectionProps {
@@ -119,8 +116,8 @@ export default function CampaignGMDashboard(): ReactElement | null {
         onChange: async () => {
             // Invalida o cache para forçar refetch dos dados
             console.log('[GM Dashboard] Invalidando cache e forçando refetch')
-            await queryClient.invalidateQueries({ queryKey: ['playerFichas', fichas.map(f => f._id)] })
-            await queryClient.refetchQueries({ queryKey: ['playerFichas', fichas.map(f => f._id)] })
+            await queryClient.invalidateQueries({ queryKey: [ 'playerFichas', fichas.map(f => f._id) ] })
+            await queryClient.refetchQueries({ queryKey: [ 'playerFichas', fichas.map(f => f._id) ] })
         }
     }, {
         queryKey: [ 'playerFichas', fichas.map(f => f._id) ],
@@ -160,7 +157,7 @@ export default function CampaignGMDashboard(): ReactElement | null {
             averageLevel,
             highestLevel
         };
-    }, [players, playerFichas]);
+    }, [ players, playerFichas ]);
 
     const handleLevelUp = async () => {
         try {

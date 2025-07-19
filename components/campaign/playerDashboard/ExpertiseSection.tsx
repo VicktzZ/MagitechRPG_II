@@ -12,8 +12,7 @@ import {
     Typography,
     Stack,
     Tooltip,
-    useTheme,
-    Divider
+    useTheme
 } from '@mui/material'
 import {
     Person,
@@ -22,7 +21,7 @@ import {
     Star,
     EmojiEvents
 } from '@mui/icons-material'
-import { blue, green, grey, purple, yellow, orange, red } from '@mui/material/colors'
+import { blue, green, grey, purple, orange, red } from '@mui/material/colors'
 import type { Expertises } from '@types'
 import { useSession } from 'next-auth/react'
 import { type ReactElement } from 'react'
@@ -41,11 +40,11 @@ export default function ExpertiseSection(): ReactElement {
     // Estatísticas das perícias
     const expertiseStats = {
         total: expertiseEntries.length,
-        novice: expertiseEntries.filter(([, exp]) => exp.value < 2).length,
-        trained: expertiseEntries.filter(([, exp]) => exp.value >= 2 && exp.value < 5).length,
-        expert: expertiseEntries.filter(([, exp]) => exp.value >= 5 && exp.value < 7).length,
-        master: expertiseEntries.filter(([, exp]) => exp.value >= 7 && exp.value < 9).length,
-        legendary: expertiseEntries.filter(([, exp]) => exp.value >= 9).length
+        novice: expertiseEntries.filter(([ , exp ]) => exp.value < 2).length,
+        trained: expertiseEntries.filter(([ , exp ]) => exp.value >= 2 && exp.value < 5).length,
+        expert: expertiseEntries.filter(([ , exp ]) => exp.value >= 5 && exp.value < 7).length,
+        master: expertiseEntries.filter(([ , exp ]) => exp.value >= 7 && exp.value < 9).length,
+        legendary: expertiseEntries.filter(([ , exp ]) => exp.value >= 9).length
     }
 
     const getExpertiseConfig = (value: number) => {
@@ -273,7 +272,7 @@ export default function ExpertiseSection(): ReactElement {
                                     gap: 2
                                 }}
                             >
-                                {expertiseEntries.map(([nome, expertise]) => {
+                                {expertiseEntries.map(([ nome, expertise ]) => {
                                     const config = getExpertiseConfig(expertise.value);
                                     const IconComponent = config.icon;
                                     

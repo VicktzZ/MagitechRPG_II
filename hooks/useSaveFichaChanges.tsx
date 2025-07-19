@@ -16,13 +16,14 @@ interface UseSaveFichaChangesProps {
 export default function useSaveFichaChanges(props?: UseSaveFichaChangesProps): {
     updateFicha: React.Dispatch<React.SetStateAction<Ficha>>;
 } {
+    const object = {};
     const { showSavingSpinner } = useSavingSpinner()
     const debounceRef = useRef<{
         timeout: NodeJS.Timeout | null;
         pending: boolean;
     }>({ timeout: null, pending: false });
     
-    const [ ficha, setFicha ] = useState<Ficha>(props?.ficha || {} as Ficha);
+    const [ ficha, setFicha ] = useState<Ficha>(props?.ficha ?? object as Ficha);
     const fichaRef = useRef(ficha);
     const propsRef = useRef(props);
 
@@ -102,7 +103,7 @@ export default function useSaveFichaChanges(props?: UseSaveFichaChangesProps): {
 
     // Efeito para sincronizar com props quando a ficha externa muda
     useEffect(() => {
-        if (props?.ficha && props.ficha._id) {
+        if (props?.ficha?._id) {
             setFicha(props.ficha);
             fichaRef.current = props.ficha;
         }

@@ -7,15 +7,12 @@ import { useChannel } from '@contexts/channelContext';
 import { useChatContext } from '@contexts/chatContext';
 import { MessageType, PusherEvent } from '@enums';
 import { 
-    ChevronLeft, 
     ChevronRight,
     Send,
     Chat,
     SmartToy,
     AdminPanelSettings,
-    Casino,
-    Visibility,
-    VisibilityOff
+    Casino
 } from '@mui/icons-material';
 import { 
     Alert, 
@@ -31,8 +28,7 @@ import {
     Chip,
     Tooltip,
     Badge,
-    useTheme,
-    Divider
+    useTheme
 } from '@mui/material';
 import { fichaService } from '@services';
 import type { Attributes, Expertises, Message, TempMessage } from '@types';
@@ -40,7 +36,7 @@ import { useSession } from 'next-auth/react';
 import { memo, useEffect, useRef, useState, type ReactElement } from 'react';
 import TestDialog from './TestDialog';
 import TestModal from './TestModal';
-import { blue, green, orange, purple, grey, red } from '@mui/material/colors';
+import { blue, green, orange, purple, grey } from '@mui/material/colors';
 
 // TODO: RESOLVER BUG DE DUPLICIDADE DE MENSAGENS   
 const MessageInput = memo(function MessageInput({ onSendMessage }: { onSendMessage: (text: string) => void }) {
@@ -638,183 +634,183 @@ export default function SessionChat() {
                     }} 
                     onScroll={handleScroll}
                 >
-                        {messages.length === 0 ? (
-                            <Box 
-                                sx={{
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    height: '100%',
-                                    textAlign: 'center',
-                                    p: 4
-                                }}
-                            >
-                                <Chat sx={{ fontSize: '4rem', color: grey[400], mb: 2 }} />
-                                <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
+                    {messages.length === 0 ? (
+                        <Box 
+                            sx={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                height: '100%',
+                                textAlign: 'center',
+                                p: 4
+                            }}
+                        >
+                            <Chat sx={{ fontSize: '4rem', color: grey[400], mb: 2 }} />
+                            <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
                                     Nenhuma mensagem ainda
-                                </Typography>
-                                <Typography variant="body2" color="text.secondary">
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
                                     Seja o primeiro a enviar uma mensagem no chat!
-                                </Typography>
-                            </Box>
-                        ) : (
-                            messages
-                                .sort((a, b) => {
-                                    const timeA = a.timestamp ? new Date(a.timestamp).getTime() : 0
-                                    const timeB = b.timestamp ? new Date(b.timestamp).getTime() : 0
-                                    return timeA - timeB
-                                })
-                                .map((msg, index) => {
-                                    const isOwnMessage = msg.by.id === session?.user?._id;
-                                    const isGM = campaign.admin.includes(msg.by.id);
-                                    const isBot = msg.by.isBot;
-                                    const isDiceMessage = msg.type === MessageType.DICE || msg.type === MessageType.EXPERTISE;
+                            </Typography>
+                        </Box>
+                    ) : (
+                        messages
+                            .sort((a, b) => {
+                                const timeA = a.timestamp ? new Date(a.timestamp).getTime() : 0
+                                const timeB = b.timestamp ? new Date(b.timestamp).getTime() : 0
+                                return timeA - timeB
+                            })
+                            .map((msg, index) => {
+                                const isOwnMessage = msg.by.id === session?.user?._id;
+                                const isGM = campaign.admin.includes(msg.by.id);
+                                const isBot = msg.by.isBot;
+                                const isDiceMessage = msg.type === MessageType.DICE || msg.type === MessageType.EXPERTISE;
                                     
-                                    return (
-                                        <Box
-                                            key={msg.tempId ?? index}
+                                return (
+                                    <Box
+                                        key={msg.tempId ?? index}
+                                        sx={{
+                                            display: 'flex',
+                                            justifyContent: isOwnMessage ? 'flex-end' : 'flex-start',
+                                            mb: 2
+                                        }}
+                                    >
+                                        <Paper
+                                            elevation={2}
                                             sx={{
-                                                display: 'flex',
-                                                justifyContent: isOwnMessage ? 'flex-end' : 'flex-start',
-                                                mb: 2
+                                                p: 2,
+                                                maxWidth: '85%',
+                                                minWidth: '200px',
+                                                bgcolor: isOwnMessage 
+                                                    ? blue[900]
+                                                    : isBot 
+                                                        ? green[100]
+                                                        : isGM 
+                                                            ? purple[900]
+                                                            : 'background.paper',
+                                                color: isOwnMessage 
+                                                    ? 'white'
+                                                    : 'text.primary',
+                                                borderRadius: isOwnMessage 
+                                                    ? '16px 4px 16px 16px'
+                                                    : '4px 16px 16px 16px',
+                                                border: isDiceMessage 
+                                                    ? `2px solid ${orange[400]}`
+                                                    : '1px solid',
+                                                borderColor: isDiceMessage 
+                                                    ? orange[400]
+                                                    : 'divider',
+                                                opacity: msg.isPending ? 0.6 : 1,
+                                                transition: 'all 0.3s ease',
+                                                position: 'relative',
+                                                '&:hover': {
+                                                    transform: 'translateY(-1px)',
+                                                    boxShadow: 3
+                                                }
                                             }}
                                         >
-                                            <Paper
-                                                elevation={2}
-                                                sx={{
-                                                    p: 2,
-                                                    maxWidth: '85%',
-                                                    minWidth: '200px',
-                                                    bgcolor: isOwnMessage 
-                                                        ? blue[900]
-                                                        : isBot 
-                                                            ? green[100]
-                                                            : isGM 
-                                                                ? purple[900]
-                                                                : 'background.paper',
-                                                    color: isOwnMessage 
-                                                        ? 'white'
-                                                        : 'text.primary',
-                                                    borderRadius: isOwnMessage 
-                                                        ? '16px 4px 16px 16px'
-                                                        : '4px 16px 16px 16px',
-                                                    border: isDiceMessage 
-                                                        ? `2px solid ${orange[400]}`
-                                                        : '1px solid',
-                                                    borderColor: isDiceMessage 
-                                                        ? orange[400]
-                                                        : 'divider',
-                                                    opacity: msg.isPending ? 0.6 : 1,
-                                                    transition: 'all 0.3s ease',
-                                                    position: 'relative',
-                                                    '&:hover': {
-                                                        transform: 'translateY(-1px)',
-                                                        boxShadow: 3
-                                                    }
-                                                }}
-                                            >
-                                                {/* Header da Mensagem */}
-                                                <Stack direction="row" spacing={1} alignItems="center" mb={1}>
-                                                    <Avatar
-                                                        src={msg.by.image}
-                                                        alt={msg.by.name}
-                                                        sx={{ 
-                                                            width: 28, 
-                                                            height: 28,
-                                                            border: isOwnMessage 
-                                                                ? '2px solid rgba(255,255,255,0.3)'
-                                                                : '2px solid',
-                                                            borderColor: isOwnMessage 
-                                                                ? 'rgba(255,255,255,0.3)'
-                                                                : 'divider'
+                                            {/* Header da Mensagem */}
+                                            <Stack direction="row" spacing={1} alignItems="center" mb={1}>
+                                                <Avatar
+                                                    src={msg.by.image}
+                                                    alt={msg.by.name}
+                                                    sx={{ 
+                                                        width: 28, 
+                                                        height: 28,
+                                                        border: isOwnMessage 
+                                                            ? '2px solid rgba(255,255,255,0.3)'
+                                                            : '2px solid',
+                                                        borderColor: isOwnMessage 
+                                                            ? 'rgba(255,255,255,0.3)'
+                                                            : 'divider'
+                                                    }}
+                                                />
+                                                <Typography 
+                                                    variant="subtitle2" 
+                                                    sx={{ 
+                                                        fontWeight: 600,
+                                                        color: isOwnMessage 
+                                                            ? 'rgba(255,255,255,0.9)'
+                                                            : 'text.primary'
+                                                    }}
+                                                >
+                                                    {msg.by.name}
+                                                </Typography>
+                                                    
+                                                {/* Badges de Papel */}
+                                                {isBot && (
+                                                    <Chip 
+                                                        icon={<SmartToy />}
+                                                        label="BOT"
+                                                        size="small"
+                                                        sx={{
+                                                            bgcolor: green[500],
+                                                            color: 'white',
+                                                            fontWeight: 600,
+                                                            fontSize: '0.7rem',
+                                                            height: 20
                                                         }}
                                                     />
-                                                    <Typography 
-                                                        variant="subtitle2" 
-                                                        sx={{ 
+                                                )}
+                                                {isGM && !isBot && (
+                                                    <Chip 
+                                                        icon={<AdminPanelSettings />}
+                                                        label="GM"
+                                                        size="small"
+                                                        sx={{
+                                                            bgcolor: purple[500],
+                                                            color: 'white',
                                                             fontWeight: 600,
+                                                            fontSize: '0.7rem',
+                                                            height: 20
+                                                        }}
+                                                    />
+                                                )}
+                                                {isDiceMessage && (
+                                                    <Chip 
+                                                        icon={<Casino />}
+                                                        label="DADOS"
+                                                        size="small"
+                                                        sx={{
+                                                            bgcolor: orange[500],
+                                                            color: 'white',
+                                                            fontWeight: 600,
+                                                            fontSize: '0.7rem',
+                                                            height: 20
+                                                        }}
+                                                    />
+                                                )}
+                                                    
+                                                {/* Timestamp */}
+                                                {msg.timestamp && (
+                                                    <Typography 
+                                                        variant="caption" 
+                                                        sx={{ 
+                                                            ml: 'auto',
                                                             color: isOwnMessage 
-                                                                ? 'rgba(255,255,255,0.9)'
-                                                                : 'text.primary'
+                                                                ? 'rgba(255,255,255,0.7)'
+                                                                : 'text.secondary',
+                                                            fontSize: '0.7rem'
                                                         }}
                                                     >
-                                                        {msg.by.name}
+                                                        {new Date(msg.timestamp).toLocaleString('pt-BR', {
+                                                            hour: '2-digit',
+                                                            minute: '2-digit'
+                                                        })}
                                                     </Typography>
-                                                    
-                                                    {/* Badges de Papel */}
-                                                    {isBot && (
-                                                        <Chip 
-                                                            icon={<SmartToy />}
-                                                            label="BOT"
-                                                            size="small"
-                                                            sx={{
-                                                                bgcolor: green[500],
-                                                                color: 'white',
-                                                                fontWeight: 600,
-                                                                fontSize: '0.7rem',
-                                                                height: 20
-                                                            }}
-                                                        />
-                                                    )}
-                                                    {isGM && !isBot && (
-                                                        <Chip 
-                                                            icon={<AdminPanelSettings />}
-                                                            label="GM"
-                                                            size="small"
-                                                            sx={{
-                                                                bgcolor: purple[500],
-                                                                color: 'white',
-                                                                fontWeight: 600,
-                                                                fontSize: '0.7rem',
-                                                                height: 20
-                                                            }}
-                                                        />
-                                                    )}
-                                                    {isDiceMessage && (
-                                                        <Chip 
-                                                            icon={<Casino />}
-                                                            label="DADOS"
-                                                            size="small"
-                                                            sx={{
-                                                                bgcolor: orange[500],
-                                                                color: 'white',
-                                                                fontWeight: 600,
-                                                                fontSize: '0.7rem',
-                                                                height: 20
-                                                            }}
-                                                        />
-                                                    )}
-                                                    
-                                                    {/* Timestamp */}
-                                                    {msg.timestamp && (
-                                                        <Typography 
-                                                            variant="caption" 
-                                                            sx={{ 
-                                                                ml: 'auto',
-                                                                color: isOwnMessage 
-                                                                    ? 'rgba(255,255,255,0.7)'
-                                                                    : 'text.secondary',
-                                                                fontSize: '0.7rem'
-                                                            }}
-                                                        >
-                                                            {new Date(msg.timestamp).toLocaleString('pt-BR', {
-                                                                hour: '2-digit',
-                                                                minute: '2-digit'
-                                                            })}
-                                                        </Typography>
-                                                    )}
-                                                </Stack>
+                                                )}
+                                            </Stack>
                                                 
-                                                {/* Conteúdo da Mensagem */}
-                                                <Box sx={{ mt: 1 }}>
-                                                    <DiceMessage text={msg.text} type={msg.type} />
-                                                </Box>
-                                            </Paper>
-                                        </Box>
-                                    );
-                                })
-                        )}
+                                            {/* Conteúdo da Mensagem */}
+                                            <Box sx={{ mt: 1 }}>
+                                                <DiceMessage text={msg.text} type={msg.type} />
+                                            </Box>
+                                        </Paper>
+                                    </Box>
+                                );
+                            })
+                    )}
                     <div ref={messagesEndRef} />
                 </Box>
 

@@ -11,7 +11,6 @@ import {
     AccordionDetails, 
     Chip,
     Stack,
-    Divider,
     Tooltip,
     useTheme
 } from '@mui/material'
@@ -259,7 +258,7 @@ export default function SpellsSection(): ReactElement {
                             borderColor: 'divider'
                         }}
                     >
-                        {[1, 2, 3, 4].map(level => {
+                        {[ 1, 2, 3, 4 ].map(level => {
                             const levelConfig = getSpellLevelColor(level);
                             const count = spellsByLevel[level as keyof typeof spellsByLevel].length;
                             return (

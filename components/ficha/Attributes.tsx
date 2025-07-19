@@ -1,6 +1,9 @@
 /* eslint-disable no-case-declarations */
 /* eslint-disable @typescript-eslint/no-shadow */
 /* eslint-disable react-hooks/rules-of-hooks */
+/* eslint-disable @typescript-eslint/prefer-nullish-coalescing */
+/* eslint-disable @typescript-eslint/restrict-plus-operands */
+
 import { RadarChart } from '@components/misc'
 import { LinearProgressWithLabel } from '@layout'
 import { Box, TextField, Tooltip } from '@mui/material'
@@ -256,11 +259,11 @@ function Attributes(): ReactElement {
         }
         
         setValue('attributes.lp', baseLP)
-        setValue('attributes.attributes.maxLp', baseMaxLP)
+        setValue('attributes.maxLp', baseMaxLP)
         setValue('attributes.mp', baseMP)
-        setValue('attributes.attributes.maxMp', baseMaxMP)
+        setValue('attributes.maxMp', baseMaxMP)
         setValue('attributes.ap', baseAP)
-        setValue('attributes.attributes.maxAp', baseMaxAP)
+        setValue('attributes.maxAp', baseMaxAP)
     }, [ vig, des, foc, race, classe ])
 
     // Case race 'Humano'
@@ -406,7 +409,7 @@ function Attributes(): ReactElement {
                                             <LinearProgressWithLabel
                                                 label='LP'
                                                 minvalue={field.value}
-                                                maxvalue={getValues('attributes.attributes.maxLp')}
+                                                maxvalue={getValues('attributes.maxLp')}
                                                 color='error'
                                             />
                                             {errors.attributes?.lp && (
@@ -427,7 +430,7 @@ function Attributes(): ReactElement {
                                             <LinearProgressWithLabel
                                                 label='MP'
                                                 minvalue={field.value}
-                                                maxvalue={getValues('attributes.attributes.maxMp')}
+                                                maxvalue={getValues('attributes.maxMp')}
                                                 color='info'
                                             />
                                             {errors.attributes?.mp && (
@@ -448,7 +451,7 @@ function Attributes(): ReactElement {
                                             <LinearProgressWithLabel
                                                 label='AP'
                                                 minvalue={field.value}
-                                                maxvalue={getValues('attributes.attributes.maxAp')}
+                                                maxvalue={getValues('attributes.maxAp')}
                                                 color='warning'
                                             />
                                             {errors.attributes?.ap && (
@@ -473,7 +476,7 @@ function Attributes(): ReactElement {
                                             </Typography>
                                             <Box sx={{ display: 'flex', alignItems: 'center' }}>
                                                 <Typography variant="body1" fontWeight="medium">
-                                                    {getValues('attributes.attributes.maxMp') + getValues('attributes.foc') + getValues('level')}
+                                                    {getValues('attributes.maxMp') + getValues('attributes.foc') + getValues('level')}
                                                 </Typography>
                                                 <Tooltip title="Base + Foco + Nível">
                                                     <InfoOutlined fontSize="inherit" sx={{ ml: 0.5, opacity: 0.6, fontSize: '0.875rem' }} />

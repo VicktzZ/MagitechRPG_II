@@ -13,17 +13,10 @@ import {
     Typography,
     Stack,
     Divider,
-    IconButton,
-    Tooltip,
-    useTheme,
-    useMediaQuery,
     Grid,
     Button
 } from '@mui/material';
-import { 
-    Add, 
-    Remove, 
-    Refresh,
+import {
     Star,
     LocalFireDepartment,
     Psychology,
@@ -38,8 +31,7 @@ interface CharacterInfoProps {
 
 export default function CharacterInfo({ avatar }: CharacterInfoProps): ReactElement {    
     const { ficha, updateFicha } = useCampaignCurrentFichaContext();
-    const theme = useTheme();
-    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+    
     const fichaCopy = { ...ficha };
 
     const [ currentAttributes, setCurrentAttributes ] = useState({

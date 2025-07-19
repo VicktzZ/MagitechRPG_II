@@ -10,10 +10,8 @@ import {
     ShoppingBag,
     Warning,
     CheckCircle,
-    Info,
     AutoFixNormal
 } from '@mui/icons-material';
-import { Masonry } from '@mui/lab';
 import { 
     Accordion, 
     AccordionDetails, 
@@ -28,7 +26,7 @@ import {
     Divider,
     useTheme
 } from '@mui/material';
-import { red, blue, green, orange, purple } from '@mui/material/colors';
+import { red, blue, green, orange } from '@mui/material/colors';
 import type { RarityType } from '@types';
 import { type ReactElement } from 'react';
 

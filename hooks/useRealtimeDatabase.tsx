@@ -23,7 +23,7 @@ export function useRealtimeDatabase<T>(
     const query = useQuery<T>({
         ...useQueryOptions,
         staleTime: 0, // Sempre considera os dados como stale
-        gcTime: 0, // Remove do cache imediatamente
+        gcTime: 0 // Remove do cache imediatamente
     } as any)
 
     useEffect(() => {

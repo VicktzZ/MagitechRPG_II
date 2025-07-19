@@ -11,8 +11,6 @@ import {
     Stack,
     Typography,
     Divider,
-    useTheme,
-    useMediaQuery,
     type SxProps
 } from '@mui/material';
 import { 
@@ -31,7 +29,6 @@ import { Passives, CustomDices } from '@components/ficha';
 import type { Ficha } from '@types';
 
 import { useSaveFichaChanges } from '@hooks';
-import CharacterInfo from './CharacterInfo';
 import ExpertiseSection from './ExpertiseSection';
 import InventorySection from './InventorySection';
 import MoneyAndAmmo from './MoneyAndAmmo';
@@ -83,9 +80,7 @@ export default function CampaignPlayerDashboard(): ReactElement | null {
     const { users, isUserGM } = useCampaignContext();
     const [ selectedSkillType, setSelectedSkillType ] = useState<SkillType>(SkillType.ALL);
     const [ fichaId ] = useLocalStorage<string>('currentFicha', '');
-    const theme = useTheme();
-    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-    const isTablet = useMediaQuery(theme.breakpoints.down('md'));
+    
     const queryClient = useQueryClient();
 
     if (!fichaId) return null;
@@ -109,7 +104,7 @@ export default function CampaignPlayerDashboard(): ReactElement | null {
         enabled: !isUserGM && !!ficha,
         callback: async () => {
             // Invalida o cache para forçar refetch dos dados atualizados
-            await queryClient.invalidateQueries({ queryKey: ['ficha', fichaId] })
+            await queryClient.invalidateQueries({ queryKey: [ 'ficha', fichaId ] })
         }
     })
 
@@ -154,7 +149,7 @@ export default function CampaignPlayerDashboard(): ReactElement | null {
                         <Box 
                             sx={{
                                 maxWidth: '1400px',
-                                mx: 'auto',
+                                mx: 'auto'
                             }}
                         >
                             {/* Header da Ficha */}
