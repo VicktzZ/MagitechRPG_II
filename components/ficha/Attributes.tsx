@@ -256,11 +256,11 @@ function Attributes(): ReactElement {
         }
         
         setValue('attributes.lp', baseLP)
-        setValue('attributes.maxLp', baseMaxLP)
+        setValue('attributes.attributes.maxLp', baseMaxLP)
         setValue('attributes.mp', baseMP)
-        setValue('attributes.maxMp', baseMaxMP)
+        setValue('attributes.attributes.maxMp', baseMaxMP)
         setValue('attributes.ap', baseAP)
-        setValue('attributes.maxAp', baseMaxAP)
+        setValue('attributes.attributes.maxAp', baseMaxAP)
     }, [ vig, des, foc, race, classe ])
 
     // Case race 'Humano'
@@ -406,7 +406,7 @@ function Attributes(): ReactElement {
                                             <LinearProgressWithLabel
                                                 label='LP'
                                                 minvalue={field.value}
-                                                maxvalue={getValues('attributes.maxLp')}
+                                                maxvalue={getValues('attributes.attributes.maxLp')}
                                                 color='error'
                                             />
                                             {errors.attributes?.lp && (
@@ -427,7 +427,7 @@ function Attributes(): ReactElement {
                                             <LinearProgressWithLabel
                                                 label='MP'
                                                 minvalue={field.value}
-                                                maxvalue={getValues('attributes.maxMp')}
+                                                maxvalue={getValues('attributes.attributes.maxMp')}
                                                 color='info'
                                             />
                                             {errors.attributes?.mp && (
@@ -448,7 +448,7 @@ function Attributes(): ReactElement {
                                             <LinearProgressWithLabel
                                                 label='AP'
                                                 minvalue={field.value}
-                                                maxvalue={getValues('attributes.maxAp')}
+                                                maxvalue={getValues('attributes.attributes.maxAp')}
                                                 color='warning'
                                             />
                                             {errors.attributes?.ap && (
@@ -473,7 +473,7 @@ function Attributes(): ReactElement {
                                             </Typography>
                                             <Box sx={{ display: 'flex', alignItems: 'center' }}>
                                                 <Typography variant="body1" fontWeight="medium">
-                                                    {getValues('attributes.maxMp') + getValues('attributes.foc') + getValues('level')}
+                                                    {getValues('attributes.attributes.maxMp') + getValues('attributes.foc') + getValues('level')}
                                                 </Typography>
                                                 <Tooltip title="Base + Foco + Nível">
                                                     <InfoOutlined fontSize="inherit" sx={{ ml: 0.5, opacity: 0.6, fontSize: '0.875rem' }} />

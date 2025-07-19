@@ -186,9 +186,7 @@ export default function NotesSection(): ReactElement {
                             onBlur={handleBlur}
                             placeholder="✍️ Escreva suas anotações aqui...\n\n• Lembretes importantes\n• Estratégias de combate\n• Informações sobre NPCs\n• Pistas e mistérios\n• Objetivos da sessão"
                             sx={{
-                                height: '100%',
                                 '& .MuiOutlinedInput-root': {
-                                    height: '100%',
                                     alignItems: 'flex-start',
                                     padding: 2,
                                     fontSize: '1rem',

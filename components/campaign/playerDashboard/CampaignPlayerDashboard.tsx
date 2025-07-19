@@ -38,10 +38,12 @@ import MoneyAndAmmo from './MoneyAndAmmo';
 import NotesSection from './NotesSection';
 import SkillsSection from './SkillsSection';
 import SpellsSection from './SpellsSection';
+import PlayerHeader from './PlayerHeader';
 import { useRealtimeDatabase } from '@hooks';
 import { useLocalStorage } from '@uidotdev/usehooks';
 import { fichaService } from '@services';
 import { campaignCurrentFichaContext } from '@contexts';
+import { useQueryClient } from '@tanstack/react-query';
 
 // Componente Section reutilizável
 function Section({ title, icon, children, action, sx }: { 
@@ -84,6 +86,7 @@ export default function CampaignPlayerDashboard(): ReactElement | null {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const isTablet = useMediaQuery(theme.breakpoints.down('md'));
+    const queryClient = useQueryClient();
 
     if (!fichaId) return null;
 
@@ -103,7 +106,11 @@ export default function CampaignPlayerDashboard(): ReactElement | null {
 
     const { updateFicha } = useSaveFichaChanges({ 
         ficha: ficha!, 
-        enabled: !isUserGM && !!ficha 
+        enabled: !isUserGM && !!ficha,
+        callback: async () => {
+            // Invalida o cache para forçar refetch dos dados atualizados
+            await queryClient.invalidateQueries({ queryKey: ['ficha', fichaId] })
+        }
     })
 
     // Formulário para integração com componentes da ficha
@@ -123,7 +130,6 @@ export default function CampaignPlayerDashboard(): ReactElement | null {
                 width: '100%', 
                 pb: 8, 
                 position: 'relative',
-                bgcolor: 'background.default',
                 minHeight: '100vh'
             }}
         >
@@ -149,38 +155,10 @@ export default function CampaignPlayerDashboard(): ReactElement | null {
                             sx={{
                                 maxWidth: '1400px',
                                 mx: 'auto',
-                                p: { xs: 2, sm: 3, md: 4 }
                             }}
                         >
                             {/* Header da Ficha */}
-                            <Paper 
-                                elevation={3}
-                                sx={{
-                                    p: 3,
-                                    mb: 4,
-                                    borderRadius: 3,
-                                    background: theme.palette.mode === 'dark'
-                                        ? 'linear-gradient(135deg, #1a2332 0%, #2d3748 100%)'
-                                        : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                                    color: 'white',
-                                    position: 'relative',
-                                    overflow: 'hidden',
-                                    '&::before': {
-                                        content: '""',
-                                        position: 'absolute',
-                                        top: 0,
-                                        left: 0,
-                                        right: 0,
-                                        bottom: 0,
-                                        background: 'rgba(255,255,255,0.1)',
-                                        backdropFilter: 'blur(10px)'
-                                    }
-                                }}
-                            >
-                                <Box position="relative" zIndex={1}>
-                                    <CharacterInfo avatar={avatar} />
-                                </Box>
-                            </Paper>
+                            <PlayerHeader avatar={avatar} />
 
                             {/* Grid Principal */}
                             <Stack spacing={4}>
@@ -200,7 +178,7 @@ export default function CampaignPlayerDashboard(): ReactElement | null {
                                     icon={<CasinoSharp sx={{ color: 'primary.main' }} />}
                                 >
                                     <Box>
-                                        <CustomDices />
+                                        <CustomDices enableChatIntegration={true} />
                                     </Box>
                                 </Section>
 

@@ -6,19 +6,46 @@ import { useCampaignContext } from '@contexts';
 import { useChannel } from '@contexts/channelContext';
 import { useChatContext } from '@contexts/chatContext';
 import { MessageType, PusherEvent } from '@enums';
-import { ChevronLeft, ChevronRight } from '@mui/icons-material';
-import SendIcon from '@mui/icons-material/Send';
-import { Alert, Avatar, Box, Button, IconButton, Paper, Snackbar, Stack, TextField, Typography } from '@mui/material';
+import { 
+    ChevronLeft, 
+    ChevronRight,
+    Send,
+    Chat,
+    SmartToy,
+    AdminPanelSettings,
+    Casino,
+    Visibility,
+    VisibilityOff
+} from '@mui/icons-material';
+import { 
+    Alert, 
+    Avatar, 
+    Box, 
+    Button, 
+    IconButton, 
+    Paper, 
+    Snackbar, 
+    Stack, 
+    TextField, 
+    Typography,
+    Chip,
+    Tooltip,
+    Badge,
+    useTheme,
+    Divider
+} from '@mui/material';
 import { fichaService } from '@services';
 import type { Attributes, Expertises, Message, TempMessage } from '@types';
 import { useSession } from 'next-auth/react';
 import { memo, useEffect, useRef, useState, type ReactElement } from 'react';
 import TestDialog from './TestDialog';
 import TestModal from './TestModal';
+import { blue, green, orange, purple, grey, red } from '@mui/material/colors';
 
-// Componente do campo de mensagem
+// TODO: RESOLVER BUG DE DUPLICIDADE DE MENSAGENS   
 const MessageInput = memo(function MessageInput({ onSendMessage }: { onSendMessage: (text: string) => void }) {
     const [ message, setMessage ] = useState('')
+    const theme = useTheme();
 
     const handleSendMessage = () => {
         if (message.trim()) {
@@ -35,37 +62,77 @@ const MessageInput = memo(function MessageInput({ onSendMessage }: { onSendMessa
     }
 
     return (
-        <Box sx={{
-            p: 2,
-            borderTop: '1px solid',
-            borderColor: 'divider',
-            bgcolor: 'background.paper',
-            display: 'flex',
-            alignItems: 'flex-start'
-        }}>
+        <Paper 
+            elevation={3}
+            sx={{
+                p: 2,
+                borderTop: '2px solid',
+                borderColor: 'primary.main',
+                background: theme.palette.mode === 'dark'
+                    ? 'linear-gradient(135deg, #1e293b 0%, #334155 100%)'
+                    : 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
+                display: 'flex',
+                alignItems: 'flex-end',
+                gap: 1
+            }}
+        >
             <TextField
                 fullWidth
                 multiline
-                rows={2}
-                placeholder="Digite sua mensagem, XdY para dados, ou #XdY para dados separados..."
+                maxRows={3}
+                placeholder=" Digite sua mensagem...\n\nXdY para dados\n#XdY para dados separados"
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
+                variant="outlined"
                 sx={{
                     '& .MuiOutlinedInput-root': {
-                        bgcolor: 'background.paper'
+                        bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.8)',
+                        borderRadius: 2,
+                        '& fieldset': {
+                            borderColor: blue[300],
+                            borderWidth: 2
+                        },
+                        '&:hover fieldset': {
+                            borderColor: blue[500]
+                        },
+                        '&.Mui-focused fieldset': {
+                            borderColor: blue[600],
+                            borderWidth: 2
+                        }
+                    },
+                    '& .MuiInputBase-input': {
+                        fontSize: '0.95rem',
+                        lineHeight: 1.4
                     }
                 }}
             />
-            <IconButton
-                color="primary"
-                onClick={handleSendMessage}
-                disabled={!message.trim()}
-                sx={{ ml: 1 }}
-            >
-                <SendIcon />
-            </IconButton>
-        </Box>
+            <Tooltip title={message.trim() ? 'Enviar mensagem (Enter)' : 'Digite uma mensagem'}>
+                <span>
+                    <IconButton
+                        color="primary"
+                        onClick={handleSendMessage}
+                        disabled={!message.trim()}
+                        size="large"
+                        sx={{
+                            bgcolor: blue[600],
+                            color: 'white',
+                            '&:hover': {
+                                bgcolor: blue[700],
+                                transform: 'scale(1.05)'
+                            },
+                            '&:disabled': {
+                                bgcolor: grey[300],
+                                color: grey[500]
+                            },
+                            transition: 'all 0.2s ease'
+                        }}
+                    >
+                        <Send />
+                    </IconButton>
+                </span>
+            </Tooltip>
+        </Paper>
     )
 })
 
@@ -73,44 +140,66 @@ const MessageInput = memo(function MessageInput({ onSendMessage }: { onSendMessa
 const ChatWrapper = memo(function ChatWrapper({ 
     children, 
     isChatOpen, 
-    setIsChatOpen 
+    setIsChatOpen,
+    messageCount = 0
 }: { 
     children: ReactElement, 
     isChatOpen: boolean, 
-    setIsChatOpen: (value: boolean) => void 
+    setIsChatOpen: (value: boolean) => void,
+    messageCount?: number
 }) {
+    const theme = useTheme();
+    
     return (
         <Box sx={{
             position: 'fixed',
-            right: isChatOpen ? 0 : -300,
+            right: isChatOpen ? 0 : -400,
             top: 0,
             height: '100vh',
-            width: '300px',
-            bgcolor: 'background.paper',
-            transition: 'right 0.3s ease-in-out',
-            borderLeft: '1px solid',
-            borderColor: 'divider',
-            zIndex: 1200,
-            display: 'flex'
+            width: '400px',
+            background: theme.palette.mode === 'dark'
+                ? 'linear-gradient(145deg, #1e293b 0%, #334155 100%)'
+                : 'linear-gradient(145deg, #f8fafc 0%, #e2e8f0 100%)',
+            transition: 'right 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+            borderLeft: '2px solid',
+            borderColor: 'primary.main',
+            zIndex: 1300,
+            display: 'flex',
+            boxShadow: theme.shadows[8]
         }}>
-            <IconButton
-                onClick={() => setIsChatOpen(!isChatOpen)}
-                sx={{
-                    position: 'absolute',
-                    left: -25,
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    bgcolor: 'background.paper',
-                    border: '1px solid',
-                    borderColor: 'divider',
-                    zIndex: 1200,
-                    '&:hover': {
-                        bgcolor: 'action.hover'
-                    }
-                }}
-            >
-                {isChatOpen ? <ChevronRight /> : <ChevronLeft />}
-            </IconButton>
+            <Tooltip title={isChatOpen ? 'Fechar chat' : 'Abrir chat'} placement="left">
+                <Badge 
+                    badgeContent={!isChatOpen && messageCount > 0 ? messageCount : 0} 
+                    color="error"
+                    sx={{
+                        position: 'absolute',
+                        left: -30,
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        zIndex: 1300
+                    }}
+                >
+                    <IconButton
+                        onClick={() => setIsChatOpen(!isChatOpen)}
+                        sx={{
+                            bgcolor: 'primary.main',
+                            color: 'white',
+                            border: '2px solid',
+                            borderColor: 'primary.main',
+                            width: 50,
+                            height: 50,
+                            '&:hover': {
+                                bgcolor: 'primary.dark',
+                                transform: 'scale(1.1)',
+                                boxShadow: 4
+                            },
+                            transition: 'all 0.3s ease'
+                        }}
+                    >
+                        {isChatOpen ? <ChevronRight /> : <Chat />}
+                    </IconButton>
+                </Badge>
+            </Tooltip>
             {children}
         </Box>
     );
@@ -120,6 +209,7 @@ export default function SessionChat() {
     const { campaign } = useCampaignContext()
     const { data: session } = useSession()
     const { channel } = useChannel()
+    const theme = useTheme();
 
     const [ shouldAutoScroll, setShouldAutoScroll ] = useState(true)
     const [ isTestModalOpen, setIsTestModalOpen ] = useState(false)
@@ -253,8 +343,8 @@ export default function SessionChat() {
         const rollMessage: Message = {
             id: crypto.randomUUID(),
             text: expertiseResult ? 
-                `🎲 ${currentTest.expertise.toUpperCase()} - 1d20${expertiseBonus >= 0 ? '+' : ''}${expertiseBonus}: [${expertiseResult.rolls.join(', ')}${expertiseResult.rolls.length > 1 ? ': ' + expertiseResult.finalRoll : ''}] = ${expertiseResult.total}` :
-                `🎲 ${roll.dice}: [${roll.result.join(', ')}] = ${roll.result.reduce((a, b) => a + b, 0)}`,
+                ` ${currentTest.expertise.toUpperCase()} - 1d20${expertiseBonus >= 0 ? '+' : ''}${expertiseBonus}: [${expertiseResult.rolls.join(', ')}${expertiseResult.rolls.length > 1 ? ': ' + expertiseResult.finalRoll : ''}] = ${expertiseResult.total}` :
+                ` ${roll.dice}: [${roll.result.join(', ')}] = ${roll.result.reduce((a, b) => a + b, 0)}`,
             by: {
                 id: session.user._id,
                 name: session.user.name,
@@ -267,7 +357,7 @@ export default function SessionChat() {
         // Cria a mensagem do resultado do teste (apenas se showResult estiver ativo)
         const resultMessage: Message | null = currentTest.showResult ? {
             id: crypto.randomUUID(),
-            text: `${success ? '✅' : '❌'} ${session.user.name} ${success ? 'passou' : 'não passou'} no teste!`,
+            text: `${success ? ' ' : ' '} ${session.user.name} ${success ? 'passou' : 'não passou'} no teste!`,
             type: MessageType.ROLL,
             by: {
                 id: 'dice-roller-bot',
@@ -314,9 +404,9 @@ export default function SessionChat() {
         // Só mostra o resultado para os mestres
         if (!isAdmin) return
 
-        const rollText = `🎲 ${data.playerName} rolou ${data.roll.dice}: [${data.roll.result.join(', ')}] = ${data.roll.result.reduce((a, b) => a + b, 0)}`
+        const rollText = ` ${data.playerName} rolou ${data.roll.dice}: [${data.roll.result.join(', ')}] = ${data.roll.result.reduce((a, b) => a + b, 0)}`
         const resultText = data.showResult ? 
-            `\n${data.success ? '✅' : '❌'} ${data.playerName} ${data.success ? 'passou' : 'não passou'} no teste!` : 
+            `\n${data.success ? ' ' : ' '} ${data.playerName} ${data.success ? 'passou' : 'não passou'} no teste!` : 
             ''
 
         setSnackbarMessage(rollText + resultText)
@@ -412,102 +502,319 @@ export default function SessionChat() {
     }, [ channel, session?.user?._id ])
 
     return (
-        <ChatWrapper isChatOpen={isChatOpen} setIsChatOpen={setIsChatOpen}>
-            <Paper sx={{
-                height: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                overflow: 'hidden'
-            }}>
-                <Typography
-                    variant="h6"
+        <ChatWrapper 
+            isChatOpen={isChatOpen} 
+            setIsChatOpen={setIsChatOpen}
+            messageCount={messages.length}
+        >
+            <Paper 
+                elevation={0}
+                sx={{
+                    width: '100%',
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    bgcolor: 'transparent',
+                    borderRadius: 0
+                }}
+            >
+                {/* Header do Chat */}
+                <Paper 
+                    elevation={2}
                     sx={{
-                        p: 2,
-                        borderBottom: '1px solid',
-                        borderColor: 'divider',
-                        bgcolor: 'background.paper'
+                        p: 3,
+                        background: theme.palette.mode === 'dark'
+                            ? 'linear-gradient(135deg, #1a2332 0%, #2d3748 100%)'
+                            : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        color: 'white',
+                        borderRadius: '0 0 16px 0',
+                        position: 'relative',
+                        overflow: 'hidden',
+                        '&::before': {
+                            content: '""',
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            background: 'rgba(255,255,255,0.1)',
+                            backdropFilter: 'blur(10px)'
+                        }
                     }}
                 >
-                    Chat da Sessão
-                </Typography>
-                {campaign.admin.includes(session?.user?._id ?? '') && (
-                    <Button 
-                        variant="contained" 
-                        color="primary" 
-                        onClick={() => setIsTestModalOpen(true)}
-                        sx={{ m: 2 }}
-                    >
-                        Teste
-                    </Button>
-                )}
+                    <Box position="relative" zIndex={1}>
+                        <Stack direction="row" alignItems="center" spacing={2} mb={1}>
+                            <Box 
+                                sx={{
+                                    p: 1,
+                                    borderRadius: 2,
+                                    bgcolor: 'rgba(255,255,255,0.2)',
+                                    border: '1px solid rgba(255,255,255,0.3)'
+                                }}
+                            >
+                                <Chat sx={{ fontSize: '1.5rem' }} />
+                            </Box>
+                            <Box flex={1}>
+                                <Typography variant="h5" sx={{ fontWeight: 700, mb: 0.5 }}>
+                                    Chat da Sessão
+                                </Typography>
+                                <Stack direction="row" spacing={1} alignItems="center">
+                                    <Chip 
+                                        label={`${messages.length} mensagem${messages.length !== 1 ? 's' : ''}`}
+                                        size="small"
+                                        sx={{
+                                            bgcolor: 'rgba(255,255,255,0.2)',
+                                            color: 'white',
+                                            fontWeight: 600
+                                        }}
+                                    />
+                                    <Chip 
+                                        label="Ao vivo"
+                                        size="small"
+                                        sx={{
+                                            bgcolor: green[500],
+                                            color: 'white',
+                                            fontWeight: 600,
+                                            animation: 'pulse 2s infinite'
+                                        }}
+                                    />
+                                </Stack>
+                            </Box>
+                        </Stack>
+                        
+                        {/* Botão de Teste para GMs */}
+                        {campaign.admin.includes(session?.user?._id ?? '') && (
+                            <Box sx={{ mt: 2 }}>
+                                <Tooltip title="Solicitar teste de atributo ou perícia">
+                                    <Button 
+                                        variant="contained" 
+                                        startIcon={<Casino />}
+                                        onClick={() => setIsTestModalOpen(true)}
+                                        sx={{
+                                            bgcolor: 'rgba(255,255,255,0.2)',
+                                            color: 'white',
+                                            border: '1px solid rgba(255,255,255,0.3)',
+                                            fontWeight: 600,
+                                            '&:hover': {
+                                                bgcolor: 'rgba(255,255,255,0.3)',
+                                                transform: 'translateY(-1px)',
+                                                boxShadow: 3
+                                            },
+                                            transition: 'all 0.2s ease'
+                                        }}
+                                    >
+                                        Solicitar Teste
+                                    </Button>
+                                </Tooltip>
+                            </Box>
+                        )}
+                    </Box>
+                </Paper>
 
-                <Box
+                {/* Lista de Mensagens */}
+                <Box 
                     ref={chatBoxRef}
                     sx={{
                         flex: 1,
                         overflowY: 'auto',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        bgcolor: 'background.paper3',
-                        gap: 1,
-                        p: 2
-                    }}
+                        p: 2,
+                        background: theme.palette.mode === 'dark' 
+                            ? 'rgba(0,0,0,0.2)' 
+                            : 'rgba(255,255,255,0.3)',
+                        '&::-webkit-scrollbar': {
+                            width: '8px'
+                        },
+                        '&::-webkit-scrollbar-track': {
+                            background: 'rgba(0,0,0,0.1)',
+                            borderRadius: '4px'
+                        },
+                        '&::-webkit-scrollbar-thumb': {
+                            background: 'rgba(0,0,0,0.3)',
+                            borderRadius: '4px',
+                            '&:hover': {
+                                background: 'rgba(0,0,0,0.5)'
+                            }
+                        }
+                    }} 
+                    onScroll={handleScroll}
                 >
-                    {messages
-                        .sort((a, b) => {
-                            const timeA = a.timestamp ? new Date(a.timestamp).getTime() : 0
-                            const timeB = b.timestamp ? new Date(b.timestamp).getTime() : 0
-                            return timeA - timeB
-                        })
-                        .map((msg, index) => (
-                            <Paper
-                                key={msg.tempId ?? index}
+                        {messages.length === 0 ? (
+                            <Box 
                                 sx={{
-                                    p: 1,
-                                    bgcolor: 'background.paper',
-                                    maxWidth: '80%',
-                                    alignSelf: msg.by.id === session?.user?._id ? 'flex-end' : 'flex-start',
-                                    opacity: msg.isPending ? 0.5 : 1,
-                                    transition: 'opacity 0.2s ease-in-out'
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    height: '100%',
+                                    textAlign: 'center',
+                                    p: 4
                                 }}
                             >
-                                <Stack direction="row" spacing={1} alignItems="center" mb={0.5}>
-                                    <Avatar
-                                        src={msg.by.image}
-                                        alt={msg.by.name}
-                                        sx={{ width: 24, height: 24 }}
-                                    />
-                                    <Typography variant="caption" color="primary.main">
-                                        {msg.by.name}
-                                    </Typography>
-                                    {(campaign.admin.includes(msg.by.id) || msg.by.isBot) && (
-                                        <Typography 
-                                            variant="caption" 
-                                            color={msg.by.isBot ? 'success.main' : 'primary.main'}
-                                            sx={{ opacity: 0.7, mx: 0.5 }}
+                                <Chat sx={{ fontSize: '4rem', color: grey[400], mb: 2 }} />
+                                <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
+                                    Nenhuma mensagem ainda
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                    Seja o primeiro a enviar uma mensagem no chat!
+                                </Typography>
+                            </Box>
+                        ) : (
+                            messages
+                                .sort((a, b) => {
+                                    const timeA = a.timestamp ? new Date(a.timestamp).getTime() : 0
+                                    const timeB = b.timestamp ? new Date(b.timestamp).getTime() : 0
+                                    return timeA - timeB
+                                })
+                                .map((msg, index) => {
+                                    const isOwnMessage = msg.by.id === session?.user?._id;
+                                    const isGM = campaign.admin.includes(msg.by.id);
+                                    const isBot = msg.by.isBot;
+                                    const isDiceMessage = msg.type === MessageType.DICE || msg.type === MessageType.EXPERTISE;
+                                    
+                                    return (
+                                        <Box
+                                            key={msg.tempId ?? index}
+                                            sx={{
+                                                display: 'flex',
+                                                justifyContent: isOwnMessage ? 'flex-end' : 'flex-start',
+                                                mb: 2
+                                            }}
                                         >
-                                            {msg.by.isBot ? '(BOT)' : '(GM)'}
-                                        </Typography>
-                                    )}
-                                    {msg.timestamp && (
-                                        <Typography 
-                                            variant="caption" 
-                                            color="text.secondary"
-                                            sx={{ ml: 'auto' }}
-                                        >
-                                            {new Date(msg.timestamp).toLocaleString('pt-BR', {
-                                                day: '2-digit',
-                                                month: '2-digit',
-                                                year: 'numeric',
-                                                hour: '2-digit',
-                                                minute: '2-digit'
-                                            })}
-                                        </Typography>
-                                    )}
-                                </Stack>
-                                <DiceMessage text={msg.text} type={msg.type} />
-                            </Paper>
-                        ))}
+                                            <Paper
+                                                elevation={2}
+                                                sx={{
+                                                    p: 2,
+                                                    maxWidth: '85%',
+                                                    minWidth: '200px',
+                                                    bgcolor: isOwnMessage 
+                                                        ? blue[900]
+                                                        : isBot 
+                                                            ? green[100]
+                                                            : isGM 
+                                                                ? purple[900]
+                                                                : 'background.paper',
+                                                    color: isOwnMessage 
+                                                        ? 'white'
+                                                        : 'text.primary',
+                                                    borderRadius: isOwnMessage 
+                                                        ? '16px 4px 16px 16px'
+                                                        : '4px 16px 16px 16px',
+                                                    border: isDiceMessage 
+                                                        ? `2px solid ${orange[400]}`
+                                                        : '1px solid',
+                                                    borderColor: isDiceMessage 
+                                                        ? orange[400]
+                                                        : 'divider',
+                                                    opacity: msg.isPending ? 0.6 : 1,
+                                                    transition: 'all 0.3s ease',
+                                                    position: 'relative',
+                                                    '&:hover': {
+                                                        transform: 'translateY(-1px)',
+                                                        boxShadow: 3
+                                                    }
+                                                }}
+                                            >
+                                                {/* Header da Mensagem */}
+                                                <Stack direction="row" spacing={1} alignItems="center" mb={1}>
+                                                    <Avatar
+                                                        src={msg.by.image}
+                                                        alt={msg.by.name}
+                                                        sx={{ 
+                                                            width: 28, 
+                                                            height: 28,
+                                                            border: isOwnMessage 
+                                                                ? '2px solid rgba(255,255,255,0.3)'
+                                                                : '2px solid',
+                                                            borderColor: isOwnMessage 
+                                                                ? 'rgba(255,255,255,0.3)'
+                                                                : 'divider'
+                                                        }}
+                                                    />
+                                                    <Typography 
+                                                        variant="subtitle2" 
+                                                        sx={{ 
+                                                            fontWeight: 600,
+                                                            color: isOwnMessage 
+                                                                ? 'rgba(255,255,255,0.9)'
+                                                                : 'text.primary'
+                                                        }}
+                                                    >
+                                                        {msg.by.name}
+                                                    </Typography>
+                                                    
+                                                    {/* Badges de Papel */}
+                                                    {isBot && (
+                                                        <Chip 
+                                                            icon={<SmartToy />}
+                                                            label="BOT"
+                                                            size="small"
+                                                            sx={{
+                                                                bgcolor: green[500],
+                                                                color: 'white',
+                                                                fontWeight: 600,
+                                                                fontSize: '0.7rem',
+                                                                height: 20
+                                                            }}
+                                                        />
+                                                    )}
+                                                    {isGM && !isBot && (
+                                                        <Chip 
+                                                            icon={<AdminPanelSettings />}
+                                                            label="GM"
+                                                            size="small"
+                                                            sx={{
+                                                                bgcolor: purple[500],
+                                                                color: 'white',
+                                                                fontWeight: 600,
+                                                                fontSize: '0.7rem',
+                                                                height: 20
+                                                            }}
+                                                        />
+                                                    )}
+                                                    {isDiceMessage && (
+                                                        <Chip 
+                                                            icon={<Casino />}
+                                                            label="DADOS"
+                                                            size="small"
+                                                            sx={{
+                                                                bgcolor: orange[500],
+                                                                color: 'white',
+                                                                fontWeight: 600,
+                                                                fontSize: '0.7rem',
+                                                                height: 20
+                                                            }}
+                                                        />
+                                                    )}
+                                                    
+                                                    {/* Timestamp */}
+                                                    {msg.timestamp && (
+                                                        <Typography 
+                                                            variant="caption" 
+                                                            sx={{ 
+                                                                ml: 'auto',
+                                                                color: isOwnMessage 
+                                                                    ? 'rgba(255,255,255,0.7)'
+                                                                    : 'text.secondary',
+                                                                fontSize: '0.7rem'
+                                                            }}
+                                                        >
+                                                            {new Date(msg.timestamp).toLocaleString('pt-BR', {
+                                                                hour: '2-digit',
+                                                                minute: '2-digit'
+                                                            })}
+                                                        </Typography>
+                                                    )}
+                                                </Stack>
+                                                
+                                                {/* Conteúdo da Mensagem */}
+                                                <Box sx={{ mt: 1 }}>
+                                                    <DiceMessage text={msg.text} type={msg.type} />
+                                                </Box>
+                                            </Paper>
+                                        </Box>
+                                    );
+                                })
+                        )}
                     <div ref={messagesEndRef} />
                 </Box>
 

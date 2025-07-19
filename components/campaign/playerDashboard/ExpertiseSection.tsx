@@ -225,11 +225,11 @@ export default function ExpertiseSection(): ReactElement {
                         }}
                     >
                         {[
-                            { key: 'novice', label: 'Novatos', count: expertiseStats.novice, color: grey[600] },
-                            { key: 'trained', label: 'Treinados', count: expertiseStats.trained, color: green[600] },
-                            { key: 'expert', label: 'Especialistas', count: expertiseStats.expert, color: blue[600] },
-                            { key: 'master', label: 'Mestres', count: expertiseStats.master, color: purple[600] },
-                            { key: 'legendary', label: 'Lendários', count: expertiseStats.legendary, color: orange[600] }
+                            { key: 'novice', label: 'Destreinado', count: expertiseStats.novice, color: grey[600] },
+                            { key: 'trained', label: 'Treinado', count: expertiseStats.trained, color: green[600] },
+                            { key: 'expert', label: 'Competente', count: expertiseStats.expert, color: blue[600] },
+                            { key: 'master', label: 'Experiente', count: expertiseStats.master, color: purple[600] },
+                            { key: 'legendary', label: 'Especialista', count: expertiseStats.legendary, color: orange[600] }
                         ].map(stat => (
                             <Stack key={stat.key} alignItems="center" spacing={0.5}>
                                 <Typography variant="h6" sx={{ color: stat.color, fontWeight: 700 }}>
