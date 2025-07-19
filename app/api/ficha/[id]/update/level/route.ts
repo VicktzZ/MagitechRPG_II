@@ -5,6 +5,7 @@ import { levelDefaultRewards } from '@constants/levelDefaultRewards'
 import { skills } from '@constants/skills'
 import type { Classes, Skill } from '@types'
 
+// TODO: Ajustar recompensas de acordo com nível
 export async function POST(req: Request, { params }: { params: { id: string } }) {
     try {
         await connectToDb()
@@ -27,7 +28,6 @@ export async function POST(req: Request, { params }: { params: { id: string } })
         let lpMpRewards = 0
         let testPoints = 0
         let attributePoints = 0
-        let diligencePoints = 0
         let magicPowerPoints = 0
         let spellsPoints = 0
         
@@ -38,68 +38,64 @@ export async function POST(req: Request, { params }: { params: { id: string } })
         for (let currentLevel = oldLevel + 1; currentLevel <= newLevel; currentLevel++) {
             if (currentLevel === 1) {
                 newORMLevel = 1
-                rewardsList.push(`+ ORM nível ${newORMLevel} Atingido!`)
+                rewardsList.push(`+ORM nível ${newORMLevel} Atingido!`)
             }
 
-            // No nível 20: Ponto de Atributo extra
+            // No nível 20: 20 pontos de Atributo extra
             if (currentLevel === 20) {
-                attributePoints++
-                rewardsList.push('+1 ponto de atributo (bônus nível 20)')
+                attributePoints += 20
+                rewardsList.push('+20 pontos de atributo (bônus nível 20)')
             }
 
+            // ? CASO LP E MP NÃO ACOMPANHE DANO NO SISTEMA, MUDAR RECOMPENSA DE LP E MP E/OU PONTOS DE ATRIBUTO
             // A cada 2 níveis: LP, MP e Pontos de Perícia
             if (currentLevel % 2 === 0) {
                 lpMpRewards++
-                testPoints++
+                testPoints += 3
             }
 
-            // A cada 3 níveis: Pontos de Atributo
-            if (currentLevel % 3 === 0) {
-                attributePoints++
-                rewardsList.push('+1 ponto de atributo')
-            }
-
-            // A cada 4 níveis: Pontos de Diligência
+            // A cada 4 níveis: Pontos de Atributo
             if (currentLevel % 4 === 0) {
-                diligencePoints++
-                rewardsList.push('+1 ponto de diligência')
+                attributePoints += 18
+                rewardsList.push('+18 pontos de atributo')
             }
 
             // A cada 5 níveis: Pontos de Poder Mágico, Magias e Aumento de nível ORM
             if (currentLevel % 5 === 0) {
                 magicPowerPoints++
-                spellsPoints++
+                spellsPoints += 2
                 rewardsList.push('+1 ponto de poder mágico')
-                rewardsList.push('+1 ponto de magia')
+                rewardsList.push('+2 pontos de magia')
                 if (currentLevel !== 20) {
                     newORMLevel++
-                    rewardsList.push(`ORM nível ${newORMLevel} Atingido!`)
+                    rewardsList.push(`+ORM nível ${newORMLevel} Atingido!`)
                 }
             }
         }
 
         // Se ganhou LP/MP, adiciona na lista de recompensas
         if (lpMpRewards > 0) {
-            const lpGain = lpMpRewards * (classRewards.lp + ficha.attributes.vig)
-            const mpGain = lpMpRewards * (classRewards.mp + ficha.attributes.foc)
+            const lpGain = lpMpRewards * (classRewards.lp + ficha.mods.attributes.vig)
+            const mpGain = lpMpRewards * (classRewards.mp + ficha.mods.attributes.foc)
             rewardsList.push(`+${lpGain} LP`)
             rewardsList.push(`+${mpGain} MP`)
         }
 
         // Se ganhou pontos de perícia, adiciona na lista
         if (testPoints > 0) {
-            rewardsList.push(`+${testPoints} ${testPoints === 1 ? 'ponto' : 'pontos'} de perícia`)
+            rewardsList.push(`+${testPoints} pontos de perícia`)
         }
 
         // Busca novas habilidades
-        const newSkills: Skill[] = []
+        const newClassSkills: Skill[] = []
+        const newSubclassSkills: Skill[] = []
         const classSkills = skills.class[ficha.class as Classes]
 
         // Verifica se há novas habilidades para o nível atual
         classSkills.forEach(skill => {
             if (skill.level! > oldLevel && skill.level! <= newLevel) {
-                newSkills.push(skill)
-                rewardsList.push(`Nova habilidade: ${skill.name}`)
+                newClassSkills.push(skill)
+                rewardsList.push(`+Nova habilidade de classe: ${skill.name}`)
             }
         })
 
@@ -109,8 +105,8 @@ export async function POST(req: Request, { params }: { params: { id: string } })
             if (subclassSkills) {
                 subclassSkills.forEach(skill => {
                     if (skill.level! > oldLevel && skill.level! <= newLevel) {
-                        newSkills.push(skill)
-                        rewardsList.push(`Nova habilidade: ${skill.name}`)
+                        newSubclassSkills.push(skill)
+                        rewardsList.push(`+Nova habilidade de subclasse: ${skill.name}`)
                     }
                 })
             }
@@ -120,30 +116,36 @@ export async function POST(req: Request, { params }: { params: { id: string } })
         const updates = {
             level: newLevel,
             // Apenas atualiza os máximos de LP e MP
-            maxLp: ficha.maxLp + (lpMpRewards * (classRewards.lp + ficha.attributes.vig)),
-            maxMp: ficha.maxMp + (lpMpRewards * (classRewards.mp + ficha.attributes.foc)),
+            maxLp: ficha.attributes.maxLp + (lpMpRewards * (classRewards.lp + ficha.attributes.vig)),
+            maxMp: ficha.attributes.maxMp + (lpMpRewards * (classRewards.mp + ficha.attributes.foc)),
             ...(lpMpRewards > 0 && {
-                'attributes.lp': ficha.attributes.lp >= ficha.maxLp ? ficha.attributes.lp + (lpMpRewards * (classRewards.lp + ficha.attributes.vig)) : ficha.attributes.lp,
-                'attributes.mp': ficha.attributes.mp >= ficha.maxMp ? ficha.attributes.mp + (lpMpRewards * (classRewards.mp + ficha.attributes.foc)) : ficha.attributes.mp
+                'attributes.lp': ficha.attributes.lp >= ficha.attributes.maxLp ? ficha.attributes.lp + (lpMpRewards * (classRewards.lp + ficha.attributes.vig)) : ficha.attributes.lp,
+                'attributes.mp': ficha.attributes.mp >= ficha.attributes.maxMp ? ficha.attributes.mp + (lpMpRewards * (classRewards.mp + ficha.attributes.foc)) : ficha.attributes.mp
             }),
             // Pontos ganhos
             'points.expertises': ficha.points.expertises + testPoints,
             'points.attributes': ficha.points.attributes + attributePoints,
-            'points.diligence': ficha.points.diligence + diligencePoints,
             'points.skills': ficha.points.skills + magicPowerPoints,
             'points.magics': ficha.points.magics + spellsPoints,
             // Atualiza ORM
             ORMLevel: newORMLevel
         }
 
+        const updateQuery = { $set: updates, $push: {} }
+
+        // Adiciona habilidades de classe somente se houver alguma nova
+        if (newClassSkills.length > 0) {
+            updateQuery.$push = { ...updateQuery.$push, 'skills.class': { $each: newClassSkills } }
+        }
+        
+        // Adiciona habilidades de subclasse somente se houver alguma nova
+        if (newSubclassSkills.length > 0) {
+            updateQuery.$push = { ...updateQuery.$push, 'skills.subclass': { $each: newSubclassSkills } }
+        }
+
         const updatedFicha = await Ficha.findByIdAndUpdate(
             id,
-            { 
-                $set: updates,
-                $push: {
-                    'skills.class': { $each: newSkills }
-                }
-            },
+            updateQuery,
             { new: true }
         ).lean()
 

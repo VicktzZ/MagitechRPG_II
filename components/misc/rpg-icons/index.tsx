@@ -440,6 +440,7 @@ import spinning_sword from './spinning-sword.svg'
 import spiral_shell from './spiral-shell.svg'
 import splash from './splash.svg'
 import spray_can from './spray-can.svg'
+import sword2 from './sword2.svg'
 import sprout_emblem from './sprout-emblem.svg'
 import sprout from './sprout.svg'
 import stopwatch from './stopwatch.svg'
@@ -923,6 +924,7 @@ const icons = {
     snake,
     snorkel,
     snowflake,
+    sword2,
     soccer_ball,
     spades_card,
     spades,
@@ -1002,11 +1004,13 @@ const RPGIcon = memo(({
     icon,
     height = '1.5rem',
     width = '1.5rem',
+    filter,
     sx
 }: { 
     icon: IconType
     height?: CSSProperties['height'] 
     width?: CSSProperties['width'] 
+    filter?: CSSProperties['filter']
     sx?: CSSProperties
 }): ReactElement => {
     return (
@@ -1014,10 +1018,12 @@ const RPGIcon = memo(({
             style={{
                 height,
                 width,
-                filter: 'invert(100%) sepia(71%) saturate(0%) hue-rotate(206deg) brightness(106%) contrast(107%)',
+                filter: filter ?? 'invert(100%) sepia(71%) saturate(0%) hue-rotate(206deg) brightness(106%) contrast(107%)',
                 ...sx
             }}
-            src={icons[icon]}
+            width={0}
+            height={0}
+            src={icons[icon] || '/'}
             alt='icon'
         />
     )

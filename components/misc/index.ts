@@ -1,5 +1,4 @@
 import AnimateOnScroll from './AnimateOnScroll'
-import ParticleComponent from './ParticleComponent'
 import RequireAuth from './RequireAuth'
 import RequireFicha from './RequireFicha'
 import { Parallax, Background as ParallaxBackground } from './Parallax'
@@ -11,7 +10,6 @@ import { DiceMessage } from './DiceMessage'
 import { SavingSpinner } from './SavingSpinner'
 
 export {
-    ParticleComponent,
     AnimateOnScroll,
     Parallax,
     ParallaxBackground,

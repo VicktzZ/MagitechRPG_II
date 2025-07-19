@@ -1,7 +1,7 @@
 import { type Class } from '@types';
 
 export const levelDefaultRewards: Record<Class['name'], { lp: number, mp: number }> = {
-    Lutador: {
+    Combatente: {
         lp: 4,
         mp: 1
     },

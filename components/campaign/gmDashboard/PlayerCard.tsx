@@ -1,5 +1,3 @@
-import { useChannel } from '@contexts/channelContext'
-import { PusherEvent } from '@enums'
 import { WarningModal } from '@layout'
 import { Backpack, Block, Bolt, ChatBubbleOutline, Favorite, Info, LocalPolice, MonetizationOn, MoreVert, Shield } from '@mui/icons-material'
 import {
@@ -31,8 +29,7 @@ import { TextField } from '@mui/material'
 import { FichaDetailsModal } from './modals'
 
 export default function PlayerCard({ ficha }: { ficha: Required<Ficha> }) {
-    const { channel } = useChannel()
-    const { campaign, playerFichas } = useCampaignContext()
+    const { campaign, fichas } = useCampaignContext()
     const [ playerAnchorEl, setPlayerAnchorEl ] = useState<null | HTMLElement>(null)
     const [ addItemModalOpen, setAddItemModalOpen ] = useState(false)
     const [ removeUserDialogOpen, setRemoveUserDialogOpen ] = useState(false)
@@ -51,8 +48,6 @@ export default function PlayerCard({ ficha }: { ficha: Required<Ficha> }) {
     }
 
     const handleAddItem = async (item: Weapon | Item | Armor) => {
-        if (!channel) return
-
         try {
             // Verifica se é uma arma ou um item
             const isWeapon = 'hit' in item
@@ -81,13 +76,6 @@ export default function PlayerCard({ ficha }: { ficha: Required<Ficha> }) {
             })
 
             if (updatedFicha) {
-                // Notifica o jogador sobre o novo item via Pusher
-                channel.trigger(PusherEvent.ITEM_ADDED, {
-                    fichaId: ficha._id,
-                    item,
-                    updatedFicha
-                })
-
                 enqueueSnackbar(`Item ${item.name} adicionado com sucesso!`, { variant: 'success' })
             }
         } catch (error) {
@@ -98,7 +86,7 @@ export default function PlayerCard({ ficha }: { ficha: Required<Ficha> }) {
 
     const handleSendNotification = async () => {
         try {
-            await notificationService.sendNotification(ficha.userId, {
+            await notificationService.create({
                 title: notificationTitle,
                 content: notificationContent,
                 userId: ficha.userId,
@@ -187,21 +175,21 @@ export default function PlayerCard({ ficha }: { ficha: Required<Ficha> }) {
                         <Box className="stat">
                             <Favorite color="error" sx={{ fontSize: 16 }} />
                             <Typography variant="body2">
-                                {ficha.attributes.lp}/{ficha.maxLp}
+                                {ficha.attributes.lp}/{ficha.attributes.maxLp}
                             </Typography>
                         </Box>
 
                         <Box className="stat">
                             <Bolt color="info" sx={{ fontSize: 16 }} />
                             <Typography variant="body2">
-                                {ficha.attributes.mp}/{ficha.maxMp}
+                                {ficha.attributes.mp}/{ficha.attributes.maxMp}
                             </Typography>
                         </Box>
 
                         <Box className="stat">
                             <Shield color="success" sx={{ fontSize: 16 }} />
                             <Typography variant="body2">
-                                {ficha.attributes.ap}/{ficha.maxAp}
+                                {ficha.attributes.ap}/{ficha.attributes.maxAp}
                             </Typography>
                         </Box>
 
@@ -297,7 +285,7 @@ export default function PlayerCard({ ficha }: { ficha: Required<Ficha> }) {
 
             {/* Modal de aviso */}
             <WarningModal
-                text={`Você tem certeza que deseja banir usuário ${playerFichas.find(
+                text={`Você tem certeza que deseja banir usuário ${fichas.find(
                     userFicha => userFicha._id === ficha._id
                 )?.name} da campanha?`}
                 open={removeUserDialogOpen}

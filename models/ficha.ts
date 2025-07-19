@@ -140,216 +140,8 @@ const fichaSchema = new Schema<FichaType>({
         required: [ true, 'Skills is required!' ]
     },
     expertises: {
-        'Atletismo': {
-            type: Object,
-            default: {
-                value: 0,
-                defaultAttribute: 'vig'
-            }
-        },
-        'RES Física': {
-            type: Object,
-            default: {
-                value: 0,
-                defaultAttribute: 'vig'
-            }
-        },
-        'RES Mental': {
-            type: Object,
-            default: {
-                value: 0,
-                defaultAttribute: 'log'
-            }
-        },
-        'RES Mágica': {
-            type: Object,
-            default: {
-                value: 0,
-                defaultAttribute: 'foc'
-            }
-        },
-        'Ladinagem': {
-            type: Object,
-            default: {
-                value: 0,
-                defaultAttribute: 'des'
-            }
-        },
-        'Agilidade': {
-            type: Object,
-            default: {
-                value: 0,
-                defaultAttribute: 'des'
-            }
-        },
-        'Sobrevivência': {
-            type: Object,
-            default: {
-                value: 0,
-                defaultAttribute: 'sab'
-            }
-        },
-        'Competência': {
-            type: Object,
-            default: {
-                value: 0,
-                defaultAttribute: 'log'
-            }
-        },
-        'Luta': {
-            type: Object,
-            default: {
-                value: 0,
-                defaultAttribute: 'vig'
-            }
-        },
-        'Conhecimento': {
-            type: Object,
-            default: {
-                value: 0,
-                defaultAttribute: 'sab'
-            }
-        },
-        'Criatividade': {
-            type: Object,
-            default: {
-                value: 0,
-                defaultAttribute: 'log'
-            }
-        },
-        'Furtividade': {
-            type: Object,
-            default: {
-                value: 0,
-                defaultAttribute: 'des'
-            }
-        },
-        'Pontaria': {
-            type: Object,
-            default: {
-                value: 0,
-                defaultAttribute: 'des'
-            }
-        },
-        'Reflexos': {
-            type: Object,
-            default: {
-                value: 0,
-                defaultAttribute: 'foc'
-            }
-        },
-        'Controle': {
-            type: Object,
-            default: {
-                value: 0,
-                defaultAttribute: 'foc'
-            }
-        },
-        'Condução': {
-            type: Object,
-            default: {
-                value: 0,
-                defaultAttribute: 'des'
-            }
-        },
-        'Sorte': {
-            type: Object,
-            default: {
-                value: 0,
-                defaultAttribute: 'sab'
-            }
-        },
-        'Enganação': {
-            type: Object,
-            default: {
-                value: 0,
-                defaultAttribute: 'car'
-            }
-        },
-        'Tecnologia': {
-            type: Object,
-            default: {
-                value: 0,
-                defaultAttribute: 'log'
-            }
-        },
-        'Magia': {
-            type: Object,
-            default: {
-                value: 0,
-                defaultAttribute: 'foc'
-            }
-        },
-        'Comunicação': {
-            type: Object,
-            default: {
-                value: 0,
-                defaultAttribute: 'car'
-            }
-        },
-        'Medicina': {
-            type: Object,
-            default: {
-                value: 0,
-                defaultAttribute: 'sab'
-            }
-        },
-        'Percepção': {
-            type: Object,
-            default: {
-                value: 0,
-                defaultAttribute: 'foc'
-            }
-        },
-        'Intuição': {
-            type: Object,
-            default: {
-                value: 0,
-                defaultAttribute: 'log'
-            }
-        },
-        'Investigação': {
-            type: Object,
-            default: {
-                value: 0,
-                defaultAttribute: 'log'
-            }
-        },
-        'Argumentação': {
-            type: Object,
-            default: {
-                value: 0,
-                defaultAttribute: 'car'
-            }
-        },
-        'Intimidação': {
-            type: Object,
-            default: {
-                value: 0,
-                defaultAttribute: 'car'
-            }
-        },
-        'Persuasão': {
-            type: Object,
-            default: {
-                value: 0,
-                defaultAttribute: 'car'
-            }
-        },
-        'Liderança': {
-            type: Object,
-            default: {
-                value: 0,
-                defaultAttribute: 'car'
-            }
-        },
-        'Vontade': {
-            type: Object,
-            default: {
-                value: 0,
-                defaultAttribute: 'foc'
-            }
-        }
+        type: Object,
+        required: [ true, 'Expertises is required!' ]
     },
     traits: {
         type: [ Object ],
@@ -372,12 +164,6 @@ const fichaSchema = new Schema<FichaType>({
             required: [ true, 'Attributes is required!' ],
             default: 9
         },
-        diligence: {
-            type: Number,
-            required: [ true, 'Diligence is required!' ],
-            default: 1
-        },
-
         expertises: {
             type: Number,
             required: [ true, 'Expertises is required!' ],
@@ -439,27 +225,28 @@ const fichaSchema = new Schema<FichaType>({
             type: Number,
             required: [ true, 'Car is required!' ],
             default: 0
-        }
-    },
-    maxLp: {
-        type: Number,
-        required: [ true, 'Max LP is required!' ],
-        default: function() {
-            return this.attributes.lp;
-        }
-    },
-    maxMp: {
-        type: Number,
-        required: [ true, 'Max MP is required!' ],
-        default: function() {
-            return this.attributes.mp;
-        }
-    },
-    maxAp: {
-        type: Number,
-        required: [ true, 'Max AP is required!' ],
-        default: function() {
-            return this.attributes.ap;
+        },
+
+        maxLp: {
+            type: Number,
+            required: [ true, 'Max LP is required!' ],
+            default: function() {
+                return this.attributes.lp;
+            }
+        },
+        maxMp: {
+            type: Number,
+            required: [ true, 'Max MP is required!' ],
+            default: function() {
+                return this.attributes.mp;
+            }
+        },
+        maxAp: {
+            type: Number,
+            required: [ true, 'Max AP is required!' ],
+            default: function() {
+                return this.attributes.ap;
+            }
         }
     },
     ammoCounter: {
@@ -472,6 +259,66 @@ const fichaSchema = new Schema<FichaType>({
             type: Number,
             required: [ true, 'Max ammo is required!' ],
             default: 30
+        }
+    },
+    overall: {
+        type: Number,
+        required: [ true, 'Overall is required!' ]
+    },
+    dices: {
+        type: [ Object ],
+        required: [ true, 'Dices is required!' ],
+        default: []
+    },
+    passives: {
+        type: [ Object ],
+        required: [ true, 'Passives is required!' ],
+        default: []
+    },
+    mpLimit: {
+        type: Number,
+        required: [ true, 'MP Limit is required!' ],
+        default: function() {
+            return this.attributes.mp + this.level + this.attributes.foc;
+        }
+    },
+    mods: {
+        attributes: {
+            des: {
+                type: Number,
+                required: [ true, 'DES MOD is required!' ],
+                default: 0
+            },
+            vig: {
+                type: Number,
+                required: [ true, 'VIG MOD is required!' ],
+                default: 0
+            },
+            log: {
+                type: Number,
+                required: [ true, 'LOG MOD is required!' ],
+                default: 0
+            },
+            sab: {
+                type: Number,
+                required: [ true, 'SAB MOD is required!' ],
+                default: 0
+            },
+            foc: {
+                type: Number,
+                required: [ true, 'FOC MOD is required!' ],
+                default: 0
+            },
+            car: {
+                type: Number,
+                required: [ true, 'CAR MOD is required!' ],
+                default: 0
+            }
+        },
+        discount: {
+            type: Number,
+            required: [ true, 'Discount is required!' ],
+            default: -10
         }
     }
 })

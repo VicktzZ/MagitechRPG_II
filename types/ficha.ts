@@ -1,4 +1,5 @@
-import { type Magia } from './models'
+import type { Dice } from './dices'
+import type { Magia } from './models'
 
 export interface Ficha {
     _id?: string
@@ -16,6 +17,8 @@ export interface Ficha {
     magics: Magia[]
     anotacoes?: string
     magicsSpace: number
+    mpLimit: number
+    overall: number
     gender: Gender
     elementalMastery: Element
     level: number
@@ -24,7 +27,9 @@ export interface Ficha {
     expertises: Expertises
     traits: Trait[]
     session?: SessionInfo[]
+    passives: Passive[]
     status: Status[]
+    dices: Dice[]
 
     capacity: {
         cargo: number
@@ -36,13 +41,13 @@ export interface Ficha {
         class: Skill[]
         subclass: Skill[]
         bonus: Skill[]
-        powers: Skill[]
+        powers: MagicPowerSkill[]
+        race: Skill[]
     }
 
     points: {
         attributes: number
         expertises: number
-        diligence: number
         skills: number
         magics: number
     }
@@ -57,14 +62,26 @@ export interface Ficha {
         sab: number
         foc: number
         car: number
+        maxLp: number
+        maxMp: number
+        maxAp: number
     }
 
-    maxLp: number
-    maxMp: number
-    maxAp: number
     ammoCounter: {
         current: number
         max: number
+    }
+
+    mods: {
+        attributes: {
+            des: number
+            vig: number
+            log: number
+            sab: number
+            foc: number
+            car: number
+        }
+        discount: number
     }
 }
 
@@ -81,8 +98,8 @@ export interface Class {
     }
 
     points: {
-        diligence: number
         expertises: number
+        skills?: number
     }
 
     skills: Skill[]
@@ -95,6 +112,10 @@ export interface Lineage {
     item: Item
 }
 
+export interface MagicPowerSkill extends Skill {
+    mastery?: string
+    element?: Element
+}
 export interface Occupation {
     name: OccupationNames
     description: string
@@ -128,7 +149,6 @@ export interface Inventory {
 
 export interface Expertises {
     'Agilidade': Expertise<'des'>
-    'Argumentação': Expertise<'sab'>
     'Atletismo': Expertise<'vig'>
     'Competência': Expertise<'log'>
     'Comunicação': Expertise<'car'>
@@ -136,10 +156,15 @@ export interface Expertises {
     'Conhecimento': Expertise<'sab'>
     'Controle': Expertise<'vig'>
     'Criatividade': Expertise<'log'>
+    'Culinária': Expertise<'des'>
+    'Diplomacia': Expertise<'car'>
     'Enganação': Expertise<'car'>
+    'Engenharia': Expertise<'log'>
+    'Força': Expertise<'vig'>
     'Furtividade': Expertise<'des'>
     'Intimidação': Expertise<'car'>
-    'Intuição': Expertise<'log'>
+    'Intuição': Expertise<'sab'>
+    'Interrogação': Expertise<'car'>
     'Investigação': Expertise<'log'>
     'Ladinagem': Expertise<'des'>
     'Liderança': Expertise<'car'>
@@ -152,9 +177,10 @@ export interface Expertises {
     'Reflexos': Expertise<'foc'>
     'RES Física': Expertise<'vig'>
     'RES Mágica': Expertise<'foc'>
-    'RES Mental': Expertise<'log'>
+    'RES Mental': Expertise<'sab'>
     'Sorte': Expertise<'sab'>
     'Sobrevivência': Expertise<'sab'>
+    'Tática': Expertise<'log'>
     'Tecnologia': Expertise<'log'>
     'Vontade': Expertise<'foc'>
 }
@@ -267,8 +293,8 @@ export interface Magic {
 export interface Skill {
     name: string
     description: string
-    type: 'Poder Mágico' | 'Classe' | 'Linhagem' | 'Subclasse' | 'Bônus' | 'Profissão' | 'Exclusivo'
-    origin?: string
+    type: 'Poder Mágico' | 'Classe' | 'Linhagem' | 'Subclasse' | 'Bônus' | 'Profissão' | 'Exclusivo' | 'Raça'
+    origin: string
     effects?: number[]
     level?: number
 }
@@ -298,12 +324,12 @@ export type Gender = 'Masculino' | 'Feminino' | 'Não-binário' | 'Outro' | 'Nã
 export type Attributes = 'des' | 'vig' | 'log' | 'sab' | 'foc' | 'car'
 export type UpperCaseAttributes = 'DES' | 'VIG' | 'LOG' | 'SAB' | 'FOC' | 'CAR'
 export type ItemType = 'Especial' | 'Utilidade' | 'Consumível' | 'Item Chave' | 'Munição' | 'Capacidade' | 'Padrão'
-export type RarityType = 'Comum' | 'Incomum' | 'Raro' | 'Épico' | 'Lendário' | 'Relíquia' | 'Mágico' | 'Especial' | 'Amaldiçoado'
+export type RarityType = 'Comum' | 'Incomum' | 'Raro' | 'Épico' | 'Lendário' | 'Único' | 'Mágico' | 'Especial' | 'Amaldiçoado'
 export type WeaponType = `Arremessável (${ThrowableRangeType})` | 'Duas mãos' | 'Padrão' | 'Automática' | 'Semi-automática'
 export type ArmorType = 'Padrão' | DamageType
 export type DamageType = 'Cortante' | 'Impactante' | 'Perfurante' | 'Explosivo' | Element
 export type Classes =
-    'Lutador' |
+    'Combatente' |
     'Especialista' |
     'Feiticeiro' |
     'Bruxo' |
@@ -416,6 +442,28 @@ export type ThrowableRangeType =
     'Ilimitado'
 
 export type ExpertisesNames = keyof Expertises
+
+export interface Passive {
+    id: string
+    title: string
+    description: string
+    occasion: PassiveOccasion
+    custom?: boolean
+}
+
+export type PassiveOccasion = 
+    'Início do turno' |
+    'Final do turno' |
+    'Ao ser atacado' |
+    'Ao atacar' |
+    'Ao usar magia' |
+    'Ao sofrer dano' |
+    'Ao causar dano' |
+    'Sempre ativo' |
+    'Quando curar' |
+    'Ao se deslocar' |
+    'Condição específica' |
+    'Personalizado'
 
 export type WeaponCategory<T extends 'Leve' | 'Pesada'> = 
     `Arma Branca (${T})` |

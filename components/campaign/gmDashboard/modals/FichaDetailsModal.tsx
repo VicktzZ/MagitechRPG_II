@@ -179,15 +179,15 @@ export default function FichaDetailsModal({ open, onClose, ficha }: FichaDetails
                                         <TableBody>
                                             <TableRow>
                                                 <TableCell>HP</TableCell>
-                                                <TableCell>{ficha.attributes.lp}/{ficha.maxLp}</TableCell>
+                                                <TableCell>{ficha.attributes.lp}/{ficha.attributes.maxLp}</TableCell>
                                             </TableRow>
                                             <TableRow>
                                                 <TableCell>MP</TableCell>
-                                                <TableCell>{ficha.attributes.mp}/{ficha.maxMp}</TableCell>
+                                                <TableCell>{ficha.attributes.mp}/{ficha.attributes.maxMp}</TableCell>
                                             </TableRow>
                                             <TableRow>
                                                 <TableCell>AP</TableCell>
-                                                <TableCell>{ficha.attributes.ap}/{ficha.maxAp}</TableCell>
+                                                <TableCell>{ficha.attributes.ap}/{ficha.attributes.maxAp}</TableCell>
                                             </TableRow>
                                             <TableRow>
                                                 <TableCell>Deslocamento</TableCell>
@@ -236,14 +236,6 @@ export default function FichaDetailsModal({ open, onClose, ficha }: FichaDetails
                                             <Chip 
                                                 label={`Perícias: ${ficha.points.expertises}`} 
                                                 color="secondary" 
-                                                variant="outlined"
-                                                sx={{ width: '100%' }}
-                                            />
-                                        </Grid>
-                                        <Grid item xs={6}>
-                                            <Chip 
-                                                label={`Diligência: ${ficha.points.diligence}`} 
-                                                color="success" 
                                                 variant="outlined"
                                                 sx={{ width: '100%' }}
                                             />
@@ -645,7 +637,7 @@ export default function FichaDetailsModal({ open, onClose, ficha }: FichaDetails
                                                 Total MP
                                             </Typography>
                                             <Typography variant="h6">
-                                                {ficha.attributes.mp}/{ficha.maxMp}
+                                                {ficha.attributes.mp}/{ficha.attributes.maxMp}
                                             </Typography>
                                         </Paper>
                                     </Grid>

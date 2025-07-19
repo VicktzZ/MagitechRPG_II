@@ -34,7 +34,7 @@ interface TestModalProps {
 }
 
 const expertisesList: Array<keyof Expertises> = [
-    'Agilidade', 'Argumentação', 'Atletismo', 'Competência', 'Comunicação',
+    'Agilidade', 'Diplomacia', 'Atletismo', 'Competência', 'Comunicação',
     'Condução', 'Conhecimento', 'Controle', 'Criatividade', 'Enganação',
     'Furtividade', 'Intimidação', 'Intuição', 'Investigação', 'Ladinagem',
     'Liderança', 'Luta', 'Magia', 'Medicina', 'Percepção',

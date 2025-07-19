@@ -10,17 +10,16 @@ import {
     TextField,
     Typography
 } from '@mui/material';
-import { useFormikContext } from 'formik';
 import { useSnackbar } from 'notistack';
-import { type ReactElement, useCallback, useEffect, useState } from 'react';
+import { type ReactElement, useCallback, useEffect, useMemo, useState, memo } from 'react';
 import { useInView } from 'react-intersection-observer';
 
 import { toastDefault } from '@constants';
 import { useResourceList } from '@hooks/useResourceList';
 import { CustomMenu } from '@layout';
-import type { Ficha, ResourceListModalProps } from '@types';
+import type { ResourceListModalProps } from '@types';
 
-export default function ResourceListModal<T extends Record<string, any>>({
+function ResourceListModal({
     open,
     onClose,
     queryKey,
@@ -33,8 +32,7 @@ export default function ResourceListModal<T extends Record<string, any>>({
     sortOptions,
     title,
     renderResource
-}: ResourceListModalProps<T>): ReactElement {
-    const f = useFormikContext<Ficha>();
+}: ResourceListModalProps<any>): ReactElement {
     const { enqueueSnackbar, closeSnackbar } = useSnackbar();
     const [ menuAnchor, setMenuAnchor ] = useState<HTMLElement | null>(null);
     const [ menuContent, setMenuContent ] = useState<ReactElement[]>([]);
@@ -49,14 +47,13 @@ export default function ResourceListModal<T extends Record<string, any>>({
         setSearch,
         setFilter,
         setSort,
-        setButtonSelected,
         addItem,
         loadMore,
         search,
         filter,
         sort,
         buttonSelected
-    } = useResourceList<T>({
+    } = useResourceList({
         initialSearch: '',
         initialFilter: '',
         initialSort: { value: 'Nível', order: 'ASC' as const },
@@ -70,14 +67,24 @@ export default function ResourceListModal<T extends Record<string, any>>({
     });
 
     const { ref: loadMoreRef, inView } = useInView({
-        threshold: 0.1,
-        triggerOnce: false
+        threshold: 0.5, // Aumentado para evitar carregamentos prematuros
+        triggerOnce: false,
+        delay: 300 // Adiciona um delay para evitar múltiplos disparos
     });
 
     useEffect(() => {
+        let timeoutId: NodeJS.Timeout | null = null;
+        
         if (inView && hasNextPage && !isFetchingNextPage) {
-            loadMore();
+            // Usa um timeout para evitar múltiplas chamadas em sequência
+            timeoutId = setTimeout(() => {
+                loadMore();
+            }, 200);
         }
+        
+        return () => {
+            if (timeoutId) clearTimeout(timeoutId);
+        };
     }, [ inView, hasNextPage, isFetchingNextPage, loadMore ]);
 
     const handleFilterSelect = useCallback((value: string) => {
@@ -95,43 +102,47 @@ export default function ResourceListModal<T extends Record<string, any>>({
         setMenuAnchor(null);
     }, [ setSort ]);
 
+    const sortMenuItems = useMemo(() => {
+        return [
+            ...sortOptions.map(option => (
+                <MenuItem key={option} onClick={() => handleSortSelect(option)}>{option}</MenuItem>
+            )),
+            <MenuItem key="Nenhum" onClick={() => handleSortSelect('')}>Nenhum</MenuItem>
+        ];
+    }, [ sortOptions, handleSortSelect ]);
+    
+    const sortOrderMenuItems = useMemo(() => {
+        return [
+            <MenuItem key="ASC" onClick={() => handleSortOrderSelect('ASC')}>ASC</MenuItem>,
+            <MenuItem key="DESC" onClick={() => handleSortOrderSelect('DESC')}>DESC</MenuItem>
+        ];
+    }, [ handleSortOrderSelect ]);
+
+    const filterMenuItems = useMemo(() => {
+        return filterOptions.map(option => (
+            <MenuItem key={option} onClick={() => handleFilterSelect(option)}>{option}</MenuItem>
+        ));
+    }, [ filterOptions, handleFilterSelect ]);
+
     const handleMenuOpen = useCallback((event: React.MouseEvent<HTMLElement>, type: 'filter' | 'sort' | 'sort-order') => {
         switch (type) {
         case 'filter':
-            setMenuContent(filterOptions.map(option => (
-                <MenuItem key={option} onClick={() => handleFilterSelect(option)}>{option}</MenuItem>
-            )));
+            setMenuContent(filterMenuItems);
             break;
 
         case 'sort':
-            setMenuContent([
-                ...sortOptions.map(option => (
-                    <MenuItem key={option} onClick={() => handleSortSelect(option)}>{option}</MenuItem>
-                )),
-                <MenuItem key="Nenhum" onClick={() => handleSortSelect('')}>Nenhum</MenuItem>
-            ]);
+            setMenuContent(sortMenuItems);
             break;
 
         case 'sort-order':
-            setMenuContent([
-                <MenuItem key="ASC" onClick={() => handleSortOrderSelect('ASC')}>ASC</MenuItem>,
-                <MenuItem key="DESC" onClick={() => handleSortOrderSelect('DESC')}>DESC</MenuItem>
-            ]);
+            setMenuContent(sortOrderMenuItems);
             break;
         }
 
         setMenuAnchor(event.currentTarget);
-    }, []);
+    }, [ filterMenuItems, sortMenuItems, sortOrderMenuItems ]);
 
-    const handleButtonClick = useCallback((type: 'add' | 'create' | 'remove') => {
-        setButtonSelected({
-            add: type === 'add',
-            create: type === 'create',
-            remove: type === 'remove'
-        });
-    }, [ setButtonSelected ]);
-
-    const handleAddItem = useCallback((item: T) => {
+    const handleAddItem = useCallback((item: any) => {
         try {
             addItem(item);
         } catch (error: any) {
@@ -146,97 +157,127 @@ export default function ResourceListModal<T extends Record<string, any>>({
         if (buttonSelected.add) {
             return (
                 <Box display="flex" flexDirection="column" gap={2} width="100%">
-                    <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, width: '100%' }}>
-                        <TextField
-                            placeholder="Pesquisar..."
-                            fullWidth
-                            size="small"
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            sx={{ minWidth: { xs: '100%', sm: '200px' } }}
-                        />
-
-                        <Button
-                            variant="outlined"
-                            size="small"
-                            endIcon={<ArrowDropDown />}
-                            onClick={(e) => handleMenuOpen(e, 'filter')}
-                        >
-                            {filter || 'Filtrar'}
-                        </Button>
-
-                        <Button
-                            variant="outlined"
-                            size="small"
-                            endIcon={<ArrowDropDown />}
-                            onClick={(e) => handleMenuOpen(e, 'sort')}
-                        >
-                            {sort.value || 'Ordenar'}
-                        </Button>
-
-                        {sort.value && (
-                            <Button
+                    <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                        <Box display="flex" gap={1} alignItems="center">
+                            <TextField
+                                label="Buscar"
                                 variant="outlined"
                                 size="small"
-                                onClick={(e) => handleMenuOpen(e, 'sort-order')}
-                            >
-                                {sort.order}
-                            </Button>
-                        )}
+                                // Usando defaultValue em vez de value para evitar que o React controle o input
+                                // Isso evita renderizações desnecessárias enquanto o usuário digita
+                                defaultValue={search}
+                                // Usar onBlur para atualizar a busca quando o usuário sair do campo
+                                onBlur={(e) => {
+                                    if (e.target.value !== search) {
+                                        setSearch(e.target.value);
+                                    }
+                                }}
+                                // Usar keyDown para permitir busca com Enter
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                        if (e.currentTarget.value !== search) {
+                                            setSearch(e.currentTarget.value);
+                                        }
+                                        // Remover foco do campo para evitar problemas
+                                        e.currentTarget.blur();
+                                    }
+                                }}
+                                sx={{ minWidth: '200px' }}
+                                autoComplete="off"
+                                id="resource-search-field"
+                                // Previne que o React redefina o input
+                                key="search-field-stable"
+                            />
+                            
+                            {filterOptions?.length > 0 && (
+                                <Button
+                                    variant="outlined"
+                                    size="small"
+                                    onClick={(e) => handleMenuOpen(e, 'filter')}
+                                    endIcon={<ArrowDropDown />}
+                                >
+                                    {filter || 'Filtro'}
+                                </Button>
+                            )}
+                            
+                            {sortOptions?.length > 0 && (
+                                <Box display="flex" gap={1} alignItems="center">
+                                    <Button
+                                        variant="outlined"
+                                        size="small"
+                                        onClick={(e) => handleMenuOpen(e, 'sort')}
+                                        endIcon={<ArrowDropDown />}
+                                    >
+                                        {sort.value || 'Ordenar por'}
+                                    </Button>
+                                    
+                                    <Button
+                                        variant="outlined"
+                                        size="small"
+                                        onClick={(e) => handleMenuOpen(e, 'sort-order')}
+                                        endIcon={<ArrowDropDown />}
+                                    >
+                                        {sort.order}
+                                    </Button>
+                                </Box>
+                            )}
+                        </Box>
                     </Box>
-
-                    <Box sx={{ 
-                        overflowY: 'auto', 
-                        overflowX: 'hidden', 
-                        maxHeight: '70vh', 
-                        width: '100%',
-                        '&::-webkit-scrollbar': {
-                            width: '6px'
-                        },
-                        '&::-webkit-scrollbar-track': {
-                            background: 'transparent'
-                        },
-                        '&::-webkit-scrollbar-thumb': {
-                            background: '#888',
-                            borderRadius: '3px'
-                        }
-                    }}>
-                        <Grid 
-                            container
-                            gap={2}
-                            spacing={{ xs: 2, sm: 2 }}
-                            sx={{
-                                justifyContent: 'center',
-                                p: 1,
-                                width: '100%',
-                                m: 0,
-                                '& > .MuiGrid-item': {
-                                    display: 'flex',
-                                    justifyContent: 'center',
-                                    p: '0 !important',
-                                    width: '100%',
-                                    maxWidth: '25rem'
-                                }
-                            }}
-                        >
-                            {items.map((item) => (
-                                <Grid item xs={12} sm={6} md={3} lg={3} key={item['id']}>
-                                    {renderResource({
-                                        item,
-                                        handleAddItem: () => handleAddItem(item)
-                                    })}
-                                </Grid>
-                            ))}
-
-                            <Box ref={loadMoreRef} sx={{ width: '100%', height: '20px', gridColumn: '1 / -1' }}>
-                                {isFetchingNextPage && (
-                                    <Box display="flex" justifyContent="center" p={2}>
-                                        <CircularProgress size={24} />
-                                    </Box>
+                    
+                    {items.length === 0 && !isLoading ? (
+                        <Box textAlign="center" py={4}>
+                            <Typography variant="body1" color="text.secondary">
+                                Nenhum item encontrado.
+                            </Typography>
+                        </Box>
+                    ) : (
+                        <Box sx={{ 
+                            overflowY: 'auto', 
+                            overflowX: 'hidden', 
+                            maxHeight: '70vh', 
+                            width: '100%',
+                            '&::-webkit-scrollbar': {
+                                width: '6px'
+                            },
+                            '&::-webkit-scrollbar-track': {
+                                background: 'transparent'
+                            },
+                            '&::-webkit-scrollbar-thumb': {
+                                background: '#888',
+                                borderRadius: '3px'
+                            }
+                        }}>
+                            <Grid container spacing={2}>
+                                {items.map((item, index) => {
+                                    const itemId = item._id || index;
+                                    
+                                    return (
+                                        <Grid item xs={12} sm={6} md={4} key={itemId}>
+                                            {renderResource({
+                                                item,
+                                                handleAddItem: () => handleAddItem(item)
+                                            })}
+                                        </Grid>
+                                    );
+                                })}
+                                
+                                {/* Elemento de referência para carregar mais */}
+                                {hasNextPage && (
+                                    <Grid item xs={12} ref={loadMoreRef}>
+                                        <Box display="flex" justifyContent="center" p={2}>
+                                            {isFetchingNextPage ? (
+                                                <CircularProgress size={24} />
+                                            ) : (
+                                                <Typography variant="body2" color="text.secondary">
+                                                    Carregando mais...
+                                                </Typography>
+                                            )}
+                                        </Box>
+                                    </Grid>
                                 )}
-                            </Box>
-                        </Grid>
-                    </Box>
+                            </Grid>
+                        </Box>
+                    )}
                 </Box>
             );
         } else if (buttonSelected.create) {
@@ -261,6 +302,11 @@ export default function ResourceListModal<T extends Record<string, any>>({
         }
     };
 
+    // Memoiza o conteúdo do modal para evitar re-renderizações desnecessárias
+    const modalContent = useMemo(() => {
+        return renderContent();
+    }, [ renderContent, buttonSelected.add, items, isLoading, hasNextPage, isFetchingNextPage ]);
+    
     return (
         <>
             <Modal
@@ -321,13 +367,6 @@ export default function ResourceListModal<T extends Record<string, any>>({
                         >
                             Criar
                         </Button>
-                        <Button
-                            variant={buttonSelected.remove ? 'contained' : 'outlined'}
-                            onClick={() => handleButtonClick('remove')}
-                            size="small"
-                        >
-                            Remover
-                        </Button>
                     </Box>
 
                     {isLoading && !items.length ? (
@@ -339,7 +378,7 @@ export default function ResourceListModal<T extends Record<string, any>>({
                             <Typography>Erro ao carregar os poderes: {error?.message}</Typography>
                         </Box>
                     ) : (
-                        renderContent()
+                        modalContent
                     )}
                 </Box>
             </Modal>
@@ -355,3 +394,5 @@ export default function ResourceListModal<T extends Record<string, any>>({
         </>
     );
 }
+
+export default memo(ResourceListModal);

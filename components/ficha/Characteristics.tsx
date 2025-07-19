@@ -1,88 +1,112 @@
-/* eslint-disable react-hooks/exhaustive-deps */
-/* eslint-disable @typescript-eslint/no-non-null-asserted-optional-chain */
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
-
 'use client';
 
-import { type ReactElement, useCallback, useMemo } from 'react'
-import { InputLabel, MenuItem, Select, useMediaQuery, type SelectChangeEvent, useTheme, Typography, Button } from '@mui/material'
-import { Box, FormControl, TextField } from '@mui/material'
-import { clickEffect } from '@public/sounds'
 import { classesModel } from '@constants/classes';
-import { useFormikContext, type FormikContextType } from 'formik';
-import { expertisesDefaultValue, type fichaModel } from '@constants/ficha';
-import { blue, green, red, yellow } from '@mui/material/colors';
-import { useAudio } from '@hooks';
-import { skills } from '@constants/skills';
+import { lineageExpertises, occupationsExpertises, type ExpertisesOverrided } from '@constants/lineageExpertises';
 import { races } from '@constants/races';
-import { type ExpertisesOverrided, lineageExpertises, occupationsExpertises } from '@constants/lineageExpertises';
-import type { Classes, Race } from '@types';
+import { skills } from '@constants/skills';
+import { useAudio } from '@hooks';
+import { Box, FormControl, FormHelperText, InputLabel, MenuItem, Select, TextField, Typography, useMediaQuery, useTheme, type SelectChangeEvent } from '@mui/material';
+import { blue, green, red, yellow } from '@mui/material/colors';
+import type { Classes, Ficha, Race } from '@types';
+import { useCallback, useMemo, type ReactElement } from 'react';
+import { Controller, useFormContext } from 'react-hook-form';
 
-export default function Characteristics({ disabled }: { disabled?: boolean }): ReactElement {
-    const f: FormikContextType<typeof fichaModel> = useFormikContext()
+export default function Characteristics(): ReactElement {
+    const { control, formState: { errors }, setValue, getValues } = useFormContext<Ficha>()
+    const ficha = getValues()
 
     const theme = useTheme()
     const matches = useMediaQuery(theme.breakpoints.down('md'))
-    const audio1 = useAudio(clickEffect)
-
-    const changeGameMode = (): void => {
-        f.resetForm()
-        f.setFieldValue('expertises', expertisesDefaultValue()) // TODO: Bug in "expertises" at changing game mode
-
-        if (f.values.mode === 'Classic') {
-            f.setFieldValue('inventory', {
-                items: [],
-                weapons: [],
-                armors: [],
-                money: 0            
-            })
-        }
-
-        f.setFieldValue('mode', f.values.mode === 'Classic' ? 'Apocalypse' : 'Classic')
-    }
+    const audio = useAudio('/sounds/cybernetic-technology-affirmation.wav')
+    const disabled = !!ficha._id
 
     const setClass = (e: SelectChangeEvent<any>): void => {
-        const classe: Classes = e.target.value
-        const expertiseHasValue = Object.values(f.values.expertises as any).some((expertise: any) => expertise.value > 1)
-
-        f.handleChange(e)
-
-        f.setFieldValue('points', {
-            ...f.values.points,
-            ...classesModel[classe].points,
-            diligence: classesModel[classe].points.diligence + (f.values.attributes?.log ?? 0),
-            expertises: !expertiseHasValue ? classesModel[classe].points.expertises :
-                expertiseHasValue && f.values.lineage as unknown as string !== '' ? classesModel[classe].points.expertises : 0
-        })
-
-        f.setFieldValue('skills.class', classesModel[classe].skills)
-
-        audio1.play()
+        const previousClass = getValues('class') as Classes;
+        const newClass = e.target.value as Classes;
+        
+        // Remover pontos de expertise da classe anterior (se existir)
+        if (previousClass) {
+            const previousClassExpertisePoints = classesModel[previousClass]?.points?.expertises || 0;
+            const currentPoints = getValues('points.expertises');
+            setValue('points.expertises', currentPoints - previousClassExpertisePoints);
+        }
+        
+        // Adicionar pontos de expertise da nova classe
+        const newClassExpertisePoints = classesModel[newClass]?.points?.expertises || 0;
+        const updatedPoints = getValues('points.expertises');
+        setValue('points.expertises', updatedPoints + newClassExpertisePoints);
+        
+        // Atualizar a classe e habilidade de classe
+        setValue('class', newClass, { shouldValidate: true });
+        setValue('skills.class', [ skills.class[newClass][0] ]);
+        
+        audio.play();
     }
 
     const setLineage = (e: SelectChangeEvent<any>): void => {
-        const lineage = e.target.value
-        const skillType = f.values.mode === 'Classic' ? 'lineage' : 'occupation'
+        const previousLineage = getValues('lineage');
+        const selectedLineage = e.target.value;
+        const isClassicMode = ficha.mode === 'Classic';
+        const antecedentSkills = isClassicMode ? skills.lineage : skills.occupation;
+        
+        if (previousLineage) {
+            const previousLineageBonus = isClassicMode 
+                ? lineageExpertises[previousLineage as unknown as keyof typeof lineageExpertises] 
+                : occupationsExpertises[previousLineage as unknown as keyof typeof occupationsExpertises];
+            
+            if (previousLineageBonus?.tests) {
+                Object.entries(previousLineageBonus.tests).forEach(([ expertise, bonus ]) => {
+                    const ex = expertise as keyof typeof ficha.expertises
+                    const currentExpertise = getValues(`expertises.${ex}`) as any;
+                    const currentValue = currentExpertise?.value || 0;
+                    
+                    setValue(`expertises.${ex}.value`, Math.max(0, currentValue - bonus));
+                });
+            }
+            
+            if (previousLineageBonus?.points) {
+                const currentPoints = getValues('points.expertises');
+                setValue('points.expertises', currentPoints - previousLineageBonus.points);
+            }
+        }
+        
+        const lineageBonus = isClassicMode 
+            ? lineageExpertises[selectedLineage as unknown as keyof typeof lineageExpertises] 
+            : occupationsExpertises[selectedLineage as unknown as keyof typeof occupationsExpertises];
+        
+        setValue('lineage', selectedLineage, { shouldValidate: true });
+        setValue('skills.lineage', [ antecedentSkills.find(skill => skill.origin === selectedLineage)! ]);
+        
+        if (lineageBonus?.tests) {
+            Object.entries(lineageBonus.tests).forEach(([ expertise, bonus ]) => {
+                const ex = expertise as keyof typeof ficha.expertises
+                const currentExpertise = getValues(`expertises.${ex}`);
 
-        f.handleChange(e)
-        f.setFieldValue('lineage', lineage)
-
-        skills[skillType]?.forEach(skill => {
-            if (skill.origin === lineage)
-                f.setFieldValue('skills.lineage', [ skill ])
-        })
-
-        audio1.play()
+                if (!currentExpertise) {
+                    setValue(`expertises.${ex}`, {
+                        value: bonus,
+                        defaultAttribute: 'sab'
+                    });
+                } else {
+                    const currentValue = currentExpertise?.value || 0;
+                    setValue(`expertises.${ex}.value`, currentValue + bonus);
+                }
+            });
+        }
+        
+        if (lineageBonus?.points) {
+            const currentPoints = getValues('points.expertises');
+            setValue('points.expertises', currentPoints + lineageBonus.points);
+        }
+        
+        audio.play();
     }
 
     const setRace = (e: SelectChangeEvent<any>): void => {
-        const race: Race['name'] = e.target.value
-
-        f.handleChange(e)
-        f.setFieldValue('race', race)
-
-        audio1.play()
+        const selectedRace = e.target.value as Race['name'];
+        setValue('race', selectedRace, { shouldValidate: true });
+        setValue('skills.race', [ skills.race.find(skill => skill.origin === selectedRace)! ])
+        audio.play();
     }
 
     const lineagePoints = useCallback((expertises: ExpertisesOverrided): string => {
@@ -106,8 +130,7 @@ export default function Characteristics({ disabled }: { disabled?: boolean }): R
     }, [])
 
     const lineages = useMemo(() => {
-        console.log(f.values.mode)
-        return Object.entries(f.values.mode === 'Classic' ? lineageExpertises : occupationsExpertises).map(([ lineage, expertises ]) => (
+        return Object.entries(ficha.mode === 'Classic' ? lineageExpertises : occupationsExpertises).map(([ lineage, expertises ]) => (
             <MenuItem
                 key={lineage}
                 value={lineage}
@@ -120,7 +143,7 @@ export default function Characteristics({ disabled }: { disabled?: boolean }): R
                 </Box>
             </MenuItem>
         ))
-    }, [ f.values.mode ])
+    }, [ ficha.mode ])
 
     const classes = useMemo(() => {
         return Object.keys(classesModel).map(classe => (
@@ -147,30 +170,21 @@ export default function Characteristics({ disabled }: { disabled?: boolean }): R
 
     return (
         <Box display='flex' gap={3} width='100%'>
-            {!disabled && (
-                <Button
-                    variant='contained'
-                    color={'terciary' as any}
-                    type='button'
-                    onClick={changeGameMode}
-                    sx={{
-                        position: 'absolute',
-                        top: 30,
-                        right: 32
-                    }}
-                >
-                    Modo de jogo: {f.values.mode}
-                </Button>
-            )}
             <Box display='flex' flexDirection='column' gap={2} width='65%'>
-                <TextField
+                <Controller
                     name='name'
-                    label='Nome'
-                    onBlur={f.handleChange}
-                    defaultValue={f.values.name?.trim()}
-                    required
-                    fullWidth
-                    disabled={disabled}
+                    control={control}
+                    render={({ field, fieldState: { error } }) => (
+                        <TextField
+                            {...field}
+                            label='Nome'
+                            error={!!error}
+                            disabled={disabled}
+                            helperText={error?.message}
+                            required
+                            fullWidth
+                        />
+                    )}
                 />
                 <Box display='flex' gap={3}>
                     <FormControl fullWidth>
@@ -178,7 +192,7 @@ export default function Characteristics({ disabled }: { disabled?: boolean }): R
                         <Select
                             name='class'
                             label='Classe de Mago'
-                            value={f.values.class}
+                            value={ficha.class}
                             required
                             fullWidth
                             disabled={disabled}
@@ -194,15 +208,15 @@ export default function Characteristics({ disabled }: { disabled?: boolean }): R
                     </FormControl>
                     {!matches && (
                         <FormControl sx={{ width: '50%' }}>
-                            <InputLabel>{f.values.mode === 'Classic' ? 'Linhagem' : 'Profissão'} *</InputLabel>
+                            <InputLabel>{ficha.mode === 'Classic' ? 'Linhagem' : 'Profissão'} *</InputLabel>
                             <Select
                                 name='lineage'
                                 label='Linhagem'
-                                value={f.values.lineage}
+                                value={ficha.lineage}
                                 required
                                 fullWidth
-                                onChange={setLineage}
                                 disabled={disabled}
+                                onChange={setLineage}
                                 MenuProps={{
                                     sx: { maxHeight: '60vh' }
                                 }}
@@ -218,11 +232,11 @@ export default function Characteristics({ disabled }: { disabled?: boolean }): R
                 {matches && (
                     <Box>
                         <FormControl sx={{ width: '100%' }}>
-                            <InputLabel>{f.values.mode === 'Classic' ? 'Linhagem' : 'Profissão'} *</InputLabel>
+                            <InputLabel>{ficha.mode === 'Classic' ? 'Linhagem' : 'Profissão'} *</InputLabel>
                             <Select
                                 name='lineage'
                                 label='Linhagem'
-                                value={f.values.lineage}
+                                value={ficha.lineage}
                                 required
                                 fullWidth
                                 disabled={disabled}
@@ -245,107 +259,125 @@ export default function Characteristics({ disabled }: { disabled?: boolean }): R
                     <InputLabel>Raça *</InputLabel>
                     <Select
                         name='race'
+                        disabled={disabled}
                         label='Raça'
-                        value={f.values.race}
+                        value={ficha.race}
                         required
                         fullWidth
-                        disabled={disabled}
                         renderValue={selected => String(selected)}
                         onChange={setRace}
                     >
-                        <MenuItem value='Humano'>
-                            <Box>
-                                <Typography>Humano</Typography>
-                                <Typography variant='caption' color={green[500]}>+1 Ponto de Atributo</Typography>
-                            </Box>
-                        </MenuItem>
-                        <MenuItem value='Ciborgue'>
-                            <Box display='flex' flexDirection='column'>
-                                <Typography>Ciborgue</Typography>
-                                <Typography variant='caption' color={green[500]}>+{races.Ciborgue.attributes.ap} AP</Typography>
-                                <Typography variant='caption' color={red[500]}>{races.Ciborgue.attributes.mp} MP</Typography>
-                            </Box>
-                        </MenuItem>
-                        <MenuItem value='Humanoide'>
-                            <Box display='flex' flexDirection='column'>
-                                <Typography>Humanóide</Typography>
-                                <Typography variant='caption' color={green[500]}>+{races.Humanoide.attributes.lp} LP</Typography>
-                                <Typography variant='caption' color={green[500]}>+{races.Humanoide.attributes.mp} MP</Typography>
-                            </Box>
-                        </MenuItem>
-                        <MenuItem value='Autômato'>
-                            <Box display='flex' flexDirection='column'>
-                                <Typography>Autômato</Typography>
-                                <Typography variant='caption' color={green[500]}>+{races['Autômato'].attributes.mp} MP</Typography>
-                                <Typography variant='caption' color={red[500]}>{races['Autômato'].attributes.ap} AP</Typography>
-                            </Box>
-                        </MenuItem>
-                        <MenuItem value='Mutante'>
-                            <Box display='flex' flexDirection='column'>
-                                <Typography>Mutante</Typography>
-                                <Typography variant='caption' color={green[500]}>+{races.Mutante.attributes.lp} LP</Typography>
-                                <Typography variant='caption' color={red[500]}>{races.Mutante.attributes.mp} MP</Typography>
-                            </Box>
-                        </MenuItem>
-                        <MenuItem value='Magia-viva'>
-                            <Box display='flex' flexDirection='column'>
-                                <Typography>Magia-viva</Typography>
-                                <Typography variant='caption' color={green[500]}>+{races['Magia-viva'].attributes.mp} MP</Typography>
-                                <Typography variant='caption' color={red[500]}>{races['Magia-viva'].attributes.lp} LP</Typography>
-                            </Box>
-                        </MenuItem>
+                        {Object.entries(races).map(([ raceName, raceData ]) => (
+                            <MenuItem key={raceName} value={raceName}>
+                                <Box display='flex' flexDirection='column'>
+                                    <Typography>{raceName}</Typography>
+                                    {raceName === 'Humano' ? (
+                                        <Typography variant='caption' color={green[500]}>+1 Ponto de Atributo</Typography>
+                                    ) : (
+                                        <>
+                                            {raceData.attributes.lp > 0 &&
+                                                <Typography variant='caption' color={green[500]}>+{raceData.attributes.lp} LP</Typography>}
+                                            {raceData.attributes.lp < 0 &&
+                                                <Typography variant='caption' color={red[500]}>{raceData.attributes.lp} LP</Typography>}
+                                            {raceData.attributes.mp > 0 &&
+                                                <Typography variant='caption' color={green[500]}>+{raceData.attributes.mp} MP</Typography>}
+                                            {raceData.attributes.mp < 0 &&
+                                                <Typography variant='caption' color={red[500]}>{raceData.attributes.mp} MP</Typography>}
+                                            {raceData.attributes.ap > 0 &&
+                                                <Typography variant='caption' color={green[500]}>+{raceData.attributes.ap} AP</Typography>}
+                                            {raceData.attributes.ap < 0 &&
+                                                <Typography variant='caption' color={red[500]}>{raceData.attributes.ap} AP</Typography>}
+                                        </>
+                                    )}
+                                </Box>
+                            </MenuItem>
+                        ))}
                     </Select>
                 </FormControl>
                 <Box display='flex' gap={3}>
-                    <TextField
+                    <Controller
                         name='age'
-                        label='Idade'
-                        onBlur={f.handleChange}
-                        defaultValue={f.values.age}
+                        control={control}
                         disabled={disabled}
-                        required
-                        sx={{ width: !matches ? '50%' : '100%' }}
+                        rules={{
+                            required: 'Idade é obrigatória',
+                            min: { value: 0, message: 'A idade não pode ser negativa' }
+                        }}
+                        render={({ field: { onChange, ...field }, fieldState: { error } }) => (
+                            <TextField
+                                {...field}
+                                label='Idade'
+                                type='number'
+                                error={!!error}
+                                helperText={error?.message}
+                                required
+                                sx={{ width: !matches ? '50%' : '100%' }}
+                                inputProps={{
+                                    min: 0,
+                                    onWheel: (e) => (e.target as HTMLElement).blur()
+                                }}
+                                onChange={(e) => {
+                                    // Converte o valor para número antes de enviar para o formulário
+                                    const value = parseInt(e.target.value, 10) || 0;
+                                    onChange(value);
+                                }}
+                            />
+                        )}
                     />
                     {!matches && (
                         <FormControl sx={{ width: '50%' }}>
                             <InputLabel>Gênero *</InputLabel>
-                            <Select
+                            <Controller
                                 name='gender'
-                                label='Gênero'
-                                value={f.values.gender}
-                                onChange={f.handleChange}
-                                defaultValue={f.values.gender}
+                                control={control}
                                 disabled={disabled}
-                                required
-                                fullWidth
-                            >
-                                <MenuItem value='Masculino'>Masculino</MenuItem>
-                                <MenuItem value='Feminino'>Feminino</MenuItem>
-                                <MenuItem value='Não-binário'>Não-binário</MenuItem>
-                                <MenuItem value='Outro'>Outro</MenuItem>
-                                <MenuItem value='Não definido'>Não definido</MenuItem>
-                            </Select>
+                                render={({ field }) => (
+                                    <Select
+                                        {...field}
+                                        label='Gênero *'
+                                        error={!!errors.gender}
+                                        required
+                                        fullWidth
+                                    >
+                                        <MenuItem value='Masculino'>Masculino</MenuItem>
+                                        <MenuItem value='Feminino'>Feminino</MenuItem>
+                                        <MenuItem value='Não-binário'>Não-binário</MenuItem>
+                                        <MenuItem value='Outro'>Outro</MenuItem>
+                                        <MenuItem value='Não definido'>Não definido</MenuItem>
+                                    </Select>
+                                )}
+                            />
+                            {errors.gender && (
+                                <FormHelperText error>{String(errors.gender.message)}</FormHelperText>
+                            )}
                         </FormControl>
                     )}
                 </Box>
                 {matches && (
                     <FormControl sx={{ width: '100%' }}>
                         <InputLabel>Gênero</InputLabel>
-                        <Select
+                        <Controller
                             name='gender'
-                            label='Gênero'
-                            onBlur={f.handleChange}
-                            defaultValue={f.values.gender}
-                            disabled={disabled}
-                            required
-                            fullWidth
-                        >
-                            <MenuItem value='Masculino'>Masculino</MenuItem>
-                            <MenuItem value='Feminino'>Feminino</MenuItem>
-                            <MenuItem value='Não-binário'>Não-binário</MenuItem>
-                            <MenuItem value='Outro'>Outro</MenuItem>
-                            <MenuItem value='Não definido'>Não definido</MenuItem>
-                        </Select>
+                            control={control}
+                            render={({ field }) => (
+                                <Select
+                                    {...field}
+                                    label='Gênero *'
+                                    error={!!errors.gender}
+                                    required
+                                    fullWidth
+                                >
+                                    <MenuItem value='Masculino'>Masculino</MenuItem>
+                                    <MenuItem value='Feminino'>Feminino</MenuItem>
+                                    <MenuItem value='Não-binário'>Não-binário</MenuItem>
+                                    <MenuItem value='Outro'>Outro</MenuItem>
+                                    <MenuItem value='Não definido'>Não definido</MenuItem>
+                                </Select>
+                            )}
+                        />
+                        {errors.gender && (
+                            <FormHelperText error>{String(errors.gender.message)}</FormHelperText>
+                        )}
                     </FormControl>
                 )}
             </Box>

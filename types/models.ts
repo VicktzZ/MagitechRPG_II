@@ -77,6 +77,24 @@ export interface Campaign {
     }
 }
 
+export interface CampaignSession {
+    players: Player[]
+    admin: string[]
+    session: Session
+}
+
+export interface CampaignData {
+    campaign: Campaign
+    fichas: Ficha[]
+    isUserGM: boolean
+    code: string
+    users: {
+        player: User[]
+        admin: User[],
+        all: User[]
+    }
+}
+
 export interface Creature {
     _id?: string
     name: string

@@ -1,8 +1,8 @@
+import { red, blue, orange, teal, deepPurple, green } from '@node_modules/@mui/material/colors';
 import type { Classes, Expertises, Ficha, Gender, Lineage, Race, Element, FinancialCondition } from '@types';
 
-export const expertisesDefaultValue: () => Expertises = () => ({
+export const expertisesDefaultValue: Expertises = {
     'Agilidade': { value: 0, defaultAttribute: 'des' },
-    'Argumentação': { value: 0, defaultAttribute: 'sab' },
     'Atletismo': { value: 0, defaultAttribute: 'vig' },
     'Competência': { value: 0, defaultAttribute: 'log' },
     'Comunicação': { value: 0, defaultAttribute: 'car' },
@@ -10,10 +10,15 @@ export const expertisesDefaultValue: () => Expertises = () => ({
     'Conhecimento': { value: 0, defaultAttribute: 'sab' },
     'Controle': { value: 0, defaultAttribute: 'vig' },
     'Criatividade': { value: 0, defaultAttribute: 'log' },
+    'Culinária': { value: 0, defaultAttribute: 'des' },
+    'Diplomacia': { value: 0, defaultAttribute: 'car' },
     'Enganação': { value: 0, defaultAttribute: 'car' },
+    'Engenharia': { value: 0, defaultAttribute: 'log' },
+    'Força': { value: 0, defaultAttribute: 'vig' },
     'Furtividade': { value: 0, defaultAttribute: 'des' },
     'Intimidação': { value: 0, defaultAttribute: 'car' },
-    'Intuição': { value: 0, defaultAttribute: 'log' },
+    'Intuição': { value: 0, defaultAttribute: 'sab' },
+    'Interrogação': { value: 0, defaultAttribute: 'car' },
     'Investigação': { value: 0, defaultAttribute: 'log' },
     'Ladinagem': { value: 0, defaultAttribute: 'des' },
     'Liderança': { value: 0, defaultAttribute: 'car' },
@@ -26,12 +31,13 @@ export const expertisesDefaultValue: () => Expertises = () => ({
     'Reflexos': { value: 0, defaultAttribute: 'foc' },
     'RES Física': { value: 0, defaultAttribute: 'vig' },
     'RES Mágica': { value: 0, defaultAttribute: 'foc' },
-    'RES Mental': { value: 0, defaultAttribute: 'log' },
+    'RES Mental': { value: 0, defaultAttribute: 'sab' },
     'Sorte': { value: 0, defaultAttribute: 'sab' },
     'Sobrevivência': { value: 0, defaultAttribute: 'sab' },
+    'Tática': { value: 0, defaultAttribute: 'log' },
     'Tecnologia': { value: 0, defaultAttribute: 'log' },
     'Vontade': { value: 0, defaultAttribute: 'foc' }
-})
+}
 
 export const fichaModel: Ficha = {
     playerName: '',
@@ -51,10 +57,9 @@ export const fichaModel: Ficha = {
     ORMLevel: 1,
     magics: [],
     magicsSpace: 1,
+    mpLimit: 0,
+    overall: 0,
     subclass: '',
-    maxLp: 0,
-    maxMp: 0,
-    maxAp: 0,
     ammoCounter: {
         current: 0,
         max: 0
@@ -64,7 +69,8 @@ export const fichaModel: Ficha = {
         bonus: [],
         class: [],
         powers: [],
-        subclass: []
+        subclass: [],
+        race: []
     },
 
     capacity: {
@@ -127,27 +133,75 @@ export const fichaModel: Ficha = {
         money: 0
     },
 
-    expertises: expertisesDefaultValue(),
+    expertises: expertisesDefaultValue,
 
     points: {
-        attributes: 5,
+        attributes: 30,
         expertises: 0,
-        diligence: 0,
         skills: 0,
         magics: 1
     },
 
     attributes: {
         lp: 0,
+        mp: 0,
         ap: 5,
+        maxLp: 0,
+        maxMp: 0,
+        maxAp: 5,
         car: 0,
         vig: 0,
         des: 0,
         foc: 0,
         log: 0,
-        sab: 0,
-        mp: 0
+        sab: 0
     },
+    mods: {
+        attributes: {
+            des: 0,
+            vig: 0,
+            log: 0,
+            sab: 0,
+            foc: 0,
+            car: 0
+        },
+        discount: -10
+    },
+    dices: [],
+    passives: [], 
     userId: '',
     status: []
 }
+
+export const attributeIcons = {
+    vig: {
+        color: red[500],
+        icon: 'health',
+        filter: 'invert(32%) sepia(55%) saturate(3060%) hue-rotate(343deg) brightness(99%) contrast(93%)'
+    },
+    foc: {
+        color: blue[500],
+        icon: 'potion',
+        filter: 'invert(42%) sepia(99%) saturate(584%) hue-rotate(169deg) brightness(101%) contrast(99%)'
+    },
+    des: {
+        color: orange[500],
+        icon: 'shield',
+        filter: 'invert(57%) sepia(63%) saturate(723%) hue-rotate(357deg) brightness(99%) contrast(107%)'
+    },
+    log: {
+        color: teal[500],
+        icon: 'book',
+        filter: 'invert(53%) sepia(48%) saturate(7320%) hue-rotate(150deg) brightness(89%) contrast(101%)'
+    },
+    sab: {
+        color: deepPurple[500],
+        icon: 'pawprint',
+        filter: 'invert(19%) sepia(90%) saturate(2394%) hue-rotate(253deg) brightness(90%) contrast(84%)'
+    },
+    car: {
+        color: green[500],
+        icon: 'aura',
+        filter: 'invert(60%) sepia(41%) saturate(642%) hue-rotate(73deg) brightness(91%) contrast(85%)'
+    }
+} as const;

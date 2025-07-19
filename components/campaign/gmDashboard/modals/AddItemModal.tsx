@@ -180,7 +180,7 @@ export default function AddItemModal({ open, onClose, onConfirm }: AddItemModalP
                                         <MenuItem value="Raro">Raro</MenuItem>
                                         <MenuItem value="Épico">Épico</MenuItem>
                                         <MenuItem value="Lendário">Lendário</MenuItem>
-                                        <MenuItem value="Relíquia">Relíquia</MenuItem>
+                                        <MenuItem value="Único">Único</MenuItem>
                                         <MenuItem value="Mágico">Mágico</MenuItem>
                                         <MenuItem value="Especial">Especial</MenuItem>
                                         <MenuItem value="Amaldiçoado">Amaldiçoado</MenuItem>
@@ -393,7 +393,7 @@ export default function AddItemModal({ open, onClose, onConfirm }: AddItemModalP
                                 <MenuItem value="Raro">Raro</MenuItem>
                                 <MenuItem value="Épico">Épico</MenuItem>
                                 <MenuItem value="Lendário">Lendário</MenuItem>
-                                <MenuItem value="Relíquia">Relíquia</MenuItem>
+                                <MenuItem value="Único">Único</MenuItem>
                                 <MenuItem value="Mágico">Mágico</MenuItem>
                                 <MenuItem value="Especial">Especial</MenuItem>
                                 <MenuItem value="Amaldiçoado">Amaldiçoado</MenuItem>
