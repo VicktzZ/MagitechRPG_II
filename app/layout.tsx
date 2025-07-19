@@ -29,10 +29,10 @@ export default function RootLayout({
                 margin: 0,
                 padding: 0,
                 overflowX: 'hidden',
-                backgroundColor: '#0d0e1b',
+                backgroundColor: '#0f172a', /* Atualizado para a cor background.dark da nova paleta */
                 WebkitBoxSizing: 'border-box',
                 MozBoxSizing: 'border-box',
-                color: '#f4f4f4',
+                color: '#f8fafc', /* Atualizado para a cor brand.100 da nova paleta */
                 fontFamily: 'Inter'
             }}>
                 <ContextProvider>

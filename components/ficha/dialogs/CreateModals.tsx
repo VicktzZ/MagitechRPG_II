@@ -19,7 +19,7 @@ import { TextField } from '@mui/material';
 import { FormControl, InputLabel } from '@mui/material';
 import type { Ficha, MergedItems } from '@types';
 import { type Dispatch, type SetStateAction, type ReactElement, useState } from 'react';
-import { type SubmitHandler, useForm, type UseFormRegister, type FieldErrors, type UseFormGetValues, UseFormProps, type UseFormReturn } from 'react-hook-form';
+import { useForm, type UseFormReturn } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 
@@ -91,7 +91,7 @@ function SelectFormComponent(
                 sx={props.selectStyle}
                 labelId={props.prop ?? props.id}
                 id={(props.prop ?? props.id) + 'Select'}
-                // value={(props.item?.[props.prop!] ?? props.value) || ''}
+                value={(props.item?.[props.prop!] ?? props.value) || ''}
                 defaultValue={props?.defaultValue ?? ''}
                 onChange={props?.onChange ?? (e => { props.setItem?.(state => ({ ...state, [props.prop!]: e.target.value as any })) })}
                 input={props.input}
@@ -115,7 +115,7 @@ function ItemModalForm({
     action: (data: z.infer<any>) => void;
     children: ReactElement
 }): ReactElement {
-    const { register, handleSubmit, formState: { errors }, getValues } = form;
+    const { register, handleSubmit, formState: { errors }, getValues, watch, setValue } = form;
 
     const theme = useTheme()
     const matches = useMediaQuery(theme.breakpoints.down('md'))
@@ -160,22 +160,39 @@ function ItemModalForm({
             <Box display='flex' alignItems='center' gap={2} mt={3}>
                 <TextField 
                     label='Quantidade' 
-                    type='number' 
-                    {...register('quantity')}
-                    error={errors?.['quantity'] && true}
-                    helperText={errors?.['quantity']?.message?.toString()}
+                    type='number'
+                    value={watch('quantity') || ''}
+                    onChange={(e) => {
+                        const value = parseInt(e.target.value, 10) || 0;
+                        setValue('quantity', value, { shouldValidate: true });
+                    }}
+                    error={!!errors.quantity}
+                    helperText={errors.quantity?.message?.toString()}
+                    inputProps={{
+                        min: 1,
+                        onWheel: (e) => (e.target as HTMLElement).blur()
+                    }}
                 />
                 <Box display='flex' alignItems='center' gap={1}>
                     <TextField 
                         label='Peso' 
-                        type='number' 
-                        {...register('weight')}
-                        error={errors?.['weight'] && true}
-                        helperText={errors?.['weight']?.message?.toString()}
+                        type='number'
+                        value={watch('weight') || ''}
+                        onChange={(e) => {
+                            const value = parseFloat(e.target.value) || 0;
+                            setValue('weight', value, { shouldValidate: true });
+                        }}
+                        error={!!errors.weight}
+                        helperText={errors.weight?.message?.toString()}
+                        inputProps={{
+                            min: 0,
+                            step: 0.1,
+                            onWheel: (e) => (e.target as HTMLElement).blur()
+                        }}
                     />
                     <Typography variant='h6'>KG</Typography>
                     <Typography variant='h6'>x</Typography>
-                    <Typography variant='h6'>{getValues('quantity')}</Typography>
+                    <Typography variant='h6'>{getValues('quantity') || 0}</Typography>
                 </Box>
                 <Box width='100%' display='flex' justifyContent='flex-end' alignItems='flex-end'>
                     <Button

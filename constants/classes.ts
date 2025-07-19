@@ -3,7 +3,7 @@ import { skills } from './skills';
 
 const { 
     class: { 
-        Lutador: LutadorSkills,
+        Combatente: CombatenteSkills,
         Especialista: EspecialistaSkills,
         Feiticeiro: feiticeiroSkills,
         Bruxo: bruxoSkills,
@@ -15,8 +15,8 @@ const {
 } = skills
 
 export const classesModel: Record<Classes, Class> = {
-    'Lutador': {
-        name: 'Lutador',
+    'Combatente': {
+        name: 'Combatente',
         description: 'A classe de mago com habilidades de combate e defesa. O seu poder de ataque e de defesa aumentam com o nível da classe.',
         attributes: {
             lp: 18,
@@ -25,11 +25,10 @@ export const classesModel: Record<Classes, Class> = {
         },
 
         points: {
-            diligence: 3,
-            expertises: 5
+            expertises: 10
         },
 
-        skills: LutadorSkills
+        skills: CombatenteSkills
     },
 
     'Especialista': {
@@ -42,8 +41,7 @@ export const classesModel: Record<Classes, Class> = {
         },
 
         points: {
-            diligence: 3,
-            expertises: 10
+            expertises: 20
         },
 
         skills: EspecialistaSkills
@@ -59,8 +57,7 @@ export const classesModel: Record<Classes, Class> = {
         },
 
         points: {
-            diligence: 4,
-            expertises: 6
+            expertises: 12
         },
 
         skills: feiticeiroSkills
@@ -76,8 +73,7 @@ export const classesModel: Record<Classes, Class> = {
         },
 
         points: {
-            diligence: 4,
-            expertises: 6
+            expertises: 12
         },
 
         skills: bruxoSkills
@@ -93,8 +89,7 @@ export const classesModel: Record<Classes, Class> = {
         },
 
         points: {
-            diligence: 3,
-            expertises: 8
+            expertises: 16
         },
 
         skills: mongeSkills
@@ -110,8 +105,7 @@ export const classesModel: Record<Classes, Class> = {
         },
 
         points: {
-            diligence: 5,
-            expertises: 6
+            expertises: 12
         },
 
         skills: druidaSkills
@@ -127,8 +121,8 @@ export const classesModel: Record<Classes, Class> = {
         },
 
         points: {
-            diligence: 6,
-            expertises: 6
+            expertises: 12,
+            skills: 1
         },
 
         skills: arcanoSkills
@@ -144,8 +138,7 @@ export const classesModel: Record<Classes, Class> = {
         },
 
         points: {
-            diligence: 5,
-            expertises: 5
+            expertises: 10
         },
 
         skills: ladinoSkills

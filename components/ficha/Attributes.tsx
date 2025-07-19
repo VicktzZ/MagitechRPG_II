@@ -1,586 +1,690 @@
-/* eslint-disable @typescript-eslint/restrict-plus-operands */
-/* eslint-disable @typescript-eslint/restrict-template-expressions */
-/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable no-case-declarations */
+/* eslint-disable @typescript-eslint/no-shadow */
+/* eslint-disable react-hooks/rules-of-hooks */
 import { RadarChart } from '@components/misc'
-import { classesModel } from '@constants/classes'
-import { CustomIconButton, LinearProgressWithLabel } from '@layout'
-import { FormControl, TextField } from '@mui/material'
-import { Box } from '@mui/material'
-import { green } from '@mui/material/colors'
-import { useFormikContext } from 'formik'
-import { type ReactElement, useState, useRef, useEffect, useMemo, useCallback } from 'react'
-import type { Attributes as AttributesType, Classes, Ficha, FinancialCondition, Expertises, Race } from '@types'
-import { positiveTraits } from '@constants/traits'
-import DiceRollModal from '@components/misc/DiceRollModal'
+import { LinearProgressWithLabel } from '@layout'
+import { Box, TextField, Tooltip } from '@mui/material'
+import type { Ficha } from '@types'
+import { type ReactElement, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Controller, useFormContext, useWatch } from 'react-hook-form'
 
-import { 
-    type SelectChangeEvent,
-    Button,
+import {
     Chip,
-    InputLabel,
-    ListSubheader,
-    MenuItem,
-    OutlinedInput,
-    Select,
-    Tooltip,
     Typography,
     useMediaQuery,
-    useTheme 
+    useTheme
 } from '@mui/material'
 
-import { useAudio } from '@hooks'
-import { selectEffect } from '@public/sounds'
+import { Assessment, InfoOutlined, LocalFireDepartment } from '@mui/icons-material'
+
+import { classColor } from '@constants'
+import { classesModel } from '@constants/classes'
 import { races } from '@constants/races'
-import useNumbersWithSpaces from '@hooks/useNumbersWithSpace'
-import { Check, Edit } from '@mui/icons-material'
-import Attribute from './Attribute'
-import LevelProgress from './LevelProgress'
-import { enqueueSnackbar } from '@node_modules/notistack'
-import { toastDefault } from '@constants'
+import { Attribute, LevelAndInfo } from '.'
 
-const ITEM_HEIGHT = 48;
-const ITEM_PADDING_TOP = 8;
-
-const MenuProps = {
-    PaperProps: {
-        style: {
-            maxHeight: ITEM_HEIGHT * 4.5 + ITEM_PADDING_TOP,
-            width: 250
-        }
-    }
-};
-
-export default function Attributes({ disabled }: { disabled?: boolean }): ReactElement {
-    const f = useFormikContext<Ficha>()
-
-    const traitRef = useRef<string | null>(null)
-    const raceRef = useRef<Race['name'] | null>(null)
-
+function Attributes(): ReactElement {
+    const { control, setValue, getValues, formState: { errors }, reset } = useFormContext<Ficha>()
+    const [ multiplier, setMultiplier ] = useState<number>(1)
+    
     const theme = useTheme()
-
-    const [ modalOpen, setModalOpen ] = useState(false)
-    const [ money, setMoney ] = useState<number>(f.values.inventory.money)
-    const [ editMoney, setEditMoney ] = useState<boolean>(false)
-    const [ canChangeTrait, setCanChangeTrait ] = useState<boolean>(true)
-
     const matches = useMediaQuery(theme.breakpoints.down('md'))
-    const audio = useAudio(selectEffect)
-    const numberWithSpaces = useNumbersWithSpaces()
 
-    const setDiligencePoints = (point: 'lp' | 'mp' | 'ap', action: 'add' | 'sub', value: number): void => {
-        const classe = classesModel[f.values.class as Classes] || null
-        
-        if (action === 'add') {
-            if (f.values.points.diligence > 0) {
-                f.setFieldValue('points.diligence', f.values.points.diligence - 1)
-                f.setFieldValue(`attributes.${point}`, f.values.attributes[point] + value)
-                if (disabled) {
-                    f.initialValues.attributes[point] += value
-                }
-            }
-        } else {
-            if (
-                classe ? (f.values.attributes[point] - value >= classe.attributes[point]) :
-                    (f.values.attributes[point] - value >= 0)
-            ) {
-                f.setFieldValue('points.diligence', f.values.points.diligence + 1)
-                f.setFieldValue(`attributes.${point}`, f.values.attributes[point] - value)
-                if (disabled) {
-                    f.initialValues.attributes[point] -= value
-                }
-            }
-        }
-    }
+    const ficha = getValues()
+    const disabled = !!ficha._id
 
-    const setTraits = useCallback((e: SelectChangeEvent): void => {
-        // TODO: Corrigir bug de traços
-        let trait
-        let prevTrait
-        setCanChangeTrait(true)
-
-        for (const item of positiveTraits) {
-            if (item.name === e.target.value) {
-                trait = item
-            }
-
-            if (item.name === traitRef.current) {
-                prevTrait = item
-            }
-        }
-
-        if (canChangeTrait) {
-            if (traitRef.current) {
-                if (prevTrait?.target.kind === 'attribute') {
-                    f.setFieldValue(
-                        `attributes.${prevTrait?.target.name.toLowerCase()}`, 
-                        f.values.attributes[prevTrait?.target.name.toLowerCase() as AttributesType] - prevTrait.value
-                    )
-                } else {
-                    f.values.expertises = { 
-                        ...f.values.expertises,
-                        [(prevTrait?.target.name ?? '') as keyof Expertises]: {
-                            ...f.values.expertises[(prevTrait?.target.name ?? '') as keyof Expertises],
-                            value: f.values.expertises[(prevTrait?.target.name ?? '') as keyof Expertises].value - (prevTrait?.value ?? 0)
-                        }
-                    }
-                }
-            }
-        }
-
-        if (trait?.target.kind === 'attribute') {
-            if (!disabled && f.values.attributes[trait.target.name.toLowerCase() as AttributesType] !== 3) {
-                f.setFieldValue(
-                    `attributes.${trait?.target.name.toLowerCase()}`, 
-                    f.values.attributes[trait?.target.name.toLowerCase() as AttributesType] + trait?.value
-                )
-            } else {
-                setCanChangeTrait(false)
-                enqueueSnackbar('Você não pode adicionar este traço pois ele excede o limite máximo do atributo determinado!', toastDefault('cannotAddTrait', 'warning'))
-                return;
-            }
-        } else {
-            f.setFieldValue('expertises', {
-                ...f.values.expertises,
-                [(trait?.target.name ?? '') as keyof Expertises]: {
-                    ...f.values.expertises[(trait?.target.name ?? '') as keyof Expertises],
-                    value: f.values.expertises[(trait?.target.name ?? '') as keyof Expertises].value + (trait?.value ?? 0)
-                }
-            })
-        }
-
-        if (canChangeTrait) {
-            audio.play()
+    // Watch para todos os atributos, perícias e nível para atualizar o overall
+    const attributes = useWatch({ control, name: 'attributes' })
+    const expertises = useWatch({ control, name: 'expertises' })
+    const level = useWatch({ control, name: 'level' })
     
-            f.setFieldValue('traits', [ e.target.value ])
-            traitRef.current = e.target.value
-        }
-    }, [ f.values.traits, f.values.attributes ])
-
-    const traitsArr = useMemo(() => {
-        return positiveTraits.map((trait) => (
-            <MenuItem
-                key={trait.name}
-                value={trait.name}
-            >
-                <Box>
-                    <Typography>
-                        {trait.name}
-                    </Typography>
-                    <Typography color={green[500]} variant='caption'>
-                        +{trait.value} {trait.target.name}
-                    </Typography>
-                </Box>
-            </MenuItem>
-        ))
-    }, [])
-
-    const attributePoints = (
-        attribute: 'vig' | 'des' | 'foc' | 'log' | 'sab' | 'car',
-        otherAttrs?: { attr: 'pd' | 'pt', value: number }
-    ): ReactElement => {
-        const onClick = (action: 'add' | 'sub'): void => {
-            const point = otherAttrs?.attr === 'pd' ? 'diligence' : 'expertises'
-
-            if (action === 'add') {
-                if ((f.values.points.attributes > 0 && f.values.attributes[attribute] < 3) || (disabled && f.values.points.attributes > 0)) {
-                    if (f.values.attributes[attribute] < 5) {
-                        f.setFieldValue('points.attributes', f.values.points.attributes - 1)
-                        f.setFieldValue(`attributes.${attribute}`, f.values.attributes[attribute] + 1)
-    
-                        if (otherAttrs && otherAttrs.attr !== 'pd' && otherAttrs.attr !== 'pt')
-                            f.setFieldValue(`attributes.${otherAttrs?.attr}`, f.values.attributes[otherAttrs.attr] + otherAttrs.value)
-                        else
-                            f.setFieldValue(`points.${point}`, f.values.points[point] + (otherAttrs?.value ?? 0))
-                    }
-                }
-            } else {
-                if (f.values.attributes[attribute] !== -1) {
-                    f.setFieldValue('points.attributes', f.values.points.attributes + 1)
-                    f.setFieldValue(`attributes.${attribute}`, f.values.attributes[attribute] - 1)
-
-                    if (otherAttrs && otherAttrs.attr !== 'pd' && otherAttrs.attr !== 'pt')
-                        f.setFieldValue(`attributes.${otherAttrs.attr}`, f.values.attributes[otherAttrs.attr] - otherAttrs.value)
-                    else
-                        f.setFieldValue(`points.${point}`, f.values.points[point] - (otherAttrs?.value ?? 0))
-                }
-            }
-        }
-
-        return (
-            <>
-                <Button onClick={() => { onClick('add') }} variant='outlined'>+1</Button>
-                <Button onClick={() => { onClick('sub') }} variant='outlined'>-1</Button>
-            </>
-        )
-    }
-
-    const baseAttrs = useMemo(() => {
-        const baseLP = 
-            (classesModel[f.values.class as Classes]?.attributes.lp ?? 0) +
-            f.values.attributes.vig * 3 +
-            (races[f.values.race as Race['name']]?.attributes.lp ?? 0)
-
-        const baseMP = 
-            (classesModel[f.values.class as Classes]?.attributes.mp ?? 0) +
-            f.values.attributes.foc * 2 +
-            (races[f.values.race as Race['name']]?.attributes.mp ?? 0)
-
-        const baseAP = 5 +
-            (classesModel[f.values.class as Classes]?.attributes.ap ?? 0) +
-            Math.floor(f.values.attributes.des * 1) +
-            (races[f.values.race as Race['name']]?.attributes.ap ?? 0)
-
-        return {
-            lp: baseLP,
-            mp: baseMP,
-            ap: baseAP,
-            maxLp: baseLP,
-            maxMp: baseMP,
-            maxAp: baseAP
-        }
-    }, [
-        f.values.class,
-        f.values.race,
-        f.values.attributes.vig,
-        f.values.attributes.des,
-        f.values.attributes.foc
-    ])
-
-    const humanFn = useCallback(() => {
-        if (!disabled) {
-            if (raceRef.current === 'Humano') f.setFieldValue('points.attributes', f.values.points.attributes - 1)
-            if (f.values.race === 'Humano') f.setFieldValue('points.attributes', f.values.points.attributes + 1)
-            
-            raceRef.current = f.values.race as Race['name']
-        }
-    }, [ f.values.race ])
-
+    // Efeito para atualizar o overall sempre que qualquer dependência mudar
     useEffect(() => {
-        const { ap, mp, lp } = baseAttrs
+        const attributesSum = (
+            (attributes?.vig || 0) +
+            (attributes?.foc || 0) +
+            (attributes?.des || 0) +
+            (attributes?.log || 0) +
+            (attributes?.sab || 0) +
+            (attributes?.car || 0)
+        );
 
-        f.setFieldValue('attributes', {
-            ...f.values.attributes,
-            lp,
-            mp,
-            ap,
-            maxLp: lp,
-            maxMp: mp,
-            maxAp: ap
-        })
-    }, [ baseAttrs ])
+        const expertisesSum = Object.values(expertises || {}).reduce(
+            (sum, expertise) => sum + (expertise && typeof expertise === 'object' && 'value' in expertise ? (expertise.value || 0) : 0),
+            0
+        );
+        
+        const overallValue = attributesSum + expertisesSum + (level || 0);
+        setValue('overall', overallValue);
+    }, [ attributes, expertises, level, setValue ]);
 
-    useEffect(humanFn, [ humanFn ])
+    const fichaDetailsColor = useMemo(() => {
+        const classe = ficha.class
+        return classColor?.[classe as keyof typeof classColor] ?? theme.palette.primary.main
+    }, [ ficha.class ])
 
+    const attributePoints = useCallback((attributeName: 'vig' | 'des' | 'foc' | 'log' | 'sab' | 'car') => {
+        
+        const modAttribute = (operation: 'increment' | 'decrement', changeAmount: number) => {
+            const currentAttributeValue = getValues(`attributes.${attributeName}`);
+            
+            const newValue = operation === 'increment' ? currentAttributeValue : currentAttributeValue - changeAmount;
+            const oldValue = operation === 'increment' ? newValue - changeAmount : newValue + changeAmount;
+            
+            switch(attributeName) {
+            case 'vig':
+                const oldVigBonus = Number((oldValue * 0.5).toFixed(1));
+                const newVigBonus = Number((newValue * 0.5).toFixed(1));
+                const vigBonusDiff = newVigBonus - oldVigBonus;
+                
+                if (vigBonusDiff !== 0) {
+                    const currentCapacity = getValues('capacity.max');
+                    const newCapacity = Number(currentCapacity) + Number(vigBonusDiff);
+                    setValue('capacity.max', newCapacity);
+                }
+                break;
+                
+            case 'foc':
+                // Para FOC, o bônus é de 0.33 * valor do atributo para pontos de magia
+                const oldFocBonus = Math.floor(oldValue * 0.33);
+                const newFocBonus = Math.floor(newValue * 0.33);
+                const focBonusDiff = newFocBonus - oldFocBonus;
+                
+                if (focBonusDiff !== 0) {
+                    const currentMagicPoints = getValues('points.magics');
+                    const newMagicPoints = currentMagicPoints + focBonusDiff;
+                    setValue('points.magics', newMagicPoints);
+                }
+                break;
+                
+            case 'des':
+                // Para DES, o bônus é de 0.2 * valor do atributo para deslocamento
+                const oldDesBonus = Math.floor(oldValue * 0.2);
+                const newDesBonus = Math.floor(newValue * 0.2);
+                const desBonusDiff = newDesBonus - oldDesBonus;
+                
+                if (desBonusDiff !== 0) {
+                    const currentDisplacement = getValues('displacement');
+                    const newDisplacement = currentDisplacement + desBonusDiff;
+                    setValue('displacement', newDisplacement);
+                }
+                break;
+                
+            case 'log':
+                // Para LOG, o bônus é de 0.5 * valor do atributo para espaço de magias
+                const oldLogBonus = Math.floor(oldValue * 0.5);
+                const newLogBonus = Math.floor(newValue * 0.5);
+                const logBonusDiff = newLogBonus - oldLogBonus;
+                
+                if (logBonusDiff !== 0) {
+                    const currentMagicsSpace = getValues('magicsSpace');
+                    const newMagicsSpace = currentMagicsSpace + logBonusDiff;
+                    setValue('magicsSpace', newMagicsSpace);
+                    
+                    // A cada 10 níveis adicionados, adicione +1 ponto em "points.skills"
+                    const oldLogSkillBonus = Math.floor(oldValue / 10);
+                    const newLogSkillBonus = Math.floor(newValue / 10);
+                    const logSkillBonusDiff = newLogSkillBonus - oldLogSkillBonus;
+                    
+                    if (logSkillBonusDiff !== 0) {
+                        const currentSkillPoints = getValues('points.skills');
+                        const newSkillPoints = currentSkillPoints + logSkillBonusDiff;
+                        setValue('points.skills', newSkillPoints);
+                    }
+                }
+                break;
+                
+            case 'sab':
+                // Para SAB, o bônus é de 1 * valor do atributo para pontos de perícias
+                const oldSabBonus = oldValue;
+                const newSabBonus = newValue;
+                const sabBonusDiff = newSabBonus - oldSabBonus;
+                
+                if (sabBonusDiff !== 0) {
+                    const currentExpertisePoints = getValues('points.expertises');
+                    const newExpertisePoints = currentExpertisePoints + sabBonusDiff;
+                    setValue('points.expertises', newExpertisePoints);
+                }
+                break;
+            }
+        }
+       
+        const onIncrement = useCallback(() => {
+            const updatedAttribute = getValues(`attributes.${attributeName}`);
+            const updatedPoints = getValues('points.attributes');
+
+            const possibleIncrements = Math.min(
+                multiplier,
+                updatedPoints,
+                30 - updatedAttribute
+            );
+
+            if (possibleIncrements > 0 && (updatedAttribute < 10 || disabled)) {
+                if (updatedAttribute < 30) {
+                    const newAttributeValue = updatedAttribute + possibleIncrements;
+                    const newPointsValue = updatedPoints - possibleIncrements;
+                    
+                    setValue(`attributes.${attributeName}`, newAttributeValue);
+                    setValue('points.attributes', newPointsValue);
+                    modAttribute('increment', possibleIncrements)
+                }
+            }
+        }, [ attributeName, getValues, multiplier, setValue, disabled ])
+
+        const onDecrement = useCallback(() => {
+            const updatedAttribute = getValues(`attributes.${attributeName}`);
+            const updatedPoints = getValues('points.attributes');
+            
+            const possibleDecrements = Math.min(
+                multiplier,
+                updatedAttribute
+            );
+
+            if (possibleDecrements > 0) {
+                const newAttributeValue = updatedAttribute - possibleDecrements;
+                const newPointsValue = updatedPoints + possibleDecrements;
+                
+                setValue(`attributes.${attributeName}`, newAttributeValue);
+                setValue('points.attributes', newPointsValue);
+                modAttribute('decrement', possibleDecrements)
+            }
+        }, [ attributeName, getValues, multiplier, setValue ])
+
+        return { onIncrement, onDecrement }
+    }, [ ficha, getValues, setValue, reset, disabled, multiplier ])
+
+    const vig = useWatch({
+        control,
+        name: 'attributes.vig'
+    })
+    const des = useWatch({
+        control,
+        name: 'attributes.des'
+    })
+    const foc = useWatch({
+        control,
+        name: 'attributes.foc'
+    })
+    const race = useWatch({
+        control,
+        name: 'race'
+    })
+    const classe = useWatch({
+        control,
+        name: 'class'
+    })
+
+    const raceRef = useRef(race)
+    const attributesRef = useRef({ vig, foc, des })
+
+    // Status Attributes
+    useEffect(() => {
+        let baseLP = 0; let baseMaxLP = 0; let baseMP = 0; let baseMaxMP = 0; let baseAP = 0; let baseMaxAP = 0
+        
+        if (disabled) {
+            baseLP = ficha.attributes.lp
+            baseMaxLP = ficha.attributes.maxLp
+            baseMP = ficha.attributes.mp
+            baseMaxMP = ficha.attributes.maxMp
+            baseAP = ficha.attributes.ap
+            baseMaxAP = ficha.attributes.maxAp
+
+            baseLP += vig - attributesRef.current.vig
+            baseMaxLP += vig - attributesRef.current.vig
+            baseMP += foc - attributesRef.current.foc
+            baseMaxMP += foc - attributesRef.current.foc
+            baseAP += Math.floor(des / 10) - Math.floor(attributesRef.current.des / 10)
+            baseMaxAP += Math.floor(des / 10) - Math.floor(attributesRef.current.des / 10)
+          
+            attributesRef.current.vig = vig
+            attributesRef.current.foc = foc
+            attributesRef.current.des = des
+        } else {
+            baseLP = (races[race as keyof typeof races]?.attributes.lp || 0) +
+                (classesModel[classe as keyof typeof classesModel]?.attributes.lp || 0) +
+                (vig || 0)
+            baseMaxLP = baseLP
+    
+            baseMP = (races[race as keyof typeof races]?.attributes.mp || 0) +
+                (classesModel[classe as keyof typeof classesModel]?.attributes.mp || 0) +
+                (foc || 0)
+            baseMaxMP = baseMP
+    
+            baseAP = (races[race as keyof typeof races]?.attributes.ap || 0) +
+                (classesModel[classe as keyof typeof classesModel]?.attributes.ap || 0) +
+                (Math.floor(des / 10) || 0)
+            baseMaxAP = baseAP
+        }
+        
+        setValue('attributes.lp', baseLP)
+        setValue('attributes.maxLp', baseMaxLP)
+        setValue('attributes.mp', baseMP)
+        setValue('attributes.maxMp', baseMaxMP)
+        setValue('attributes.ap', baseAP)
+        setValue('attributes.maxAp', baseMaxAP)
+    }, [ vig, des, foc, race, classe ])
+
+    // Case race 'Humano'
+    useEffect(() => {
+        if (ficha._id) return
+        let pointsAttributes = ficha.points.attributes + (races[race as keyof typeof races]?.attributes.pda || 0)
+       
+        if (raceRef.current && raceRef.current === 'Humano') {
+            pointsAttributes = ficha.points.attributes - 5
+        }
+
+        setValue('points.attributes', pointsAttributes)
+        raceRef.current = race
+    }, [ race ])
+    
     return (
-        <Box display='flex' flexDirection={matches ? 'column' : 'row'} width='100%' gap={matches ? 6 : 3}>
+        <Box
+            sx={{
+                width: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 2
+            }}
+        >
+            {/* Layout Responsivo */}
             <Box
-                width={matches ? '100%' : '50%'}
-                display='flex' 
-                flexDirection='column'
-                justifyContent='space-between'
-                gap={4} 
-            >
-                <RadarChart
-                    data={{
-                        labels: [ 'VIG', 'DES', 'FOC', 'LOG', 'SAB', 'CAR' ],
-                        datasets: [
-                            {
-                                label: 'Atributos',
-                                data: [ 
-                                    f.values.attributes.vig, 
-                                    f.values.attributes.des,
-                                    f.values.attributes.foc,
-                                    f.values.attributes.log,
-                                    f.values.attributes.sab,
-                                    f.values.attributes.car
-                                ],
-                                backgroundColor: `${theme.palette.primary.main}99`,
-                                borderColor: `${theme.palette.primary.main}`,
-                                borderWidth: 2
-                            }
-                        ]
-                    }}
-                    options={{
-                        plugins: {
-                            legend: {
-                                display: false
-                            }
-                        },
-                        scales: {
-                            r: {
-                                suggestedMin: -1,
-                                suggestedMax: 5,
-                                angleLines: {
-                                    color: '#f4f4f4'
-                                },
-                                pointLabels: {
-                                    color: '#f4f4f4'
-                                },
-                                grid: {
-                                    color: '#f4f4f4'
-                                },
-                                ticks: {
-                                    display: false
-                                }
-                            }
-                        }
-                    }}
-                />
-                <Box
-                    display='flex'
-                    flexDirection='column'
-                    justifyContent='space-between'
-                    height='100%'
-                    gap={1}
-                >
-                    <Box alignItems='center' display='flex' gap={1}>
-                        <Typography display='flex' gap={1} >Pontos de diligência: 
-                            <Tooltip title='LOG'>
-                                <b style={{ color: theme.palette.primary.main }}>{f.values.points.diligence}</b>
-                            </Tooltip>
-                        </Typography>
-                    </Box>
-                    <LinearProgressWithLabel
-                        label='LP'
-                        minvalue={!disabled ? f.values.attributes.lp : f.initialValues.attributes.lp}
-                        maxvalue={!disabled ? f.values.attributes.lp : f.initialValues.maxLp}
-                        color='error'
-                        morecomponents={
-                            <Box ml={1} sx={{
-                                display: 'flex',
-                                width: '100%',
-                                justifyContent: 'end',
-                                gap: 1,
-                                height: '30px'
-                            }}>
-                                <Button
-                                    onClick={() => { setDiligencePoints('lp', 'add', 2) }}  
-                                    variant='outlined'
-                                >+1</Button>
-                                <Button
-                                    onClick={() => { setDiligencePoints('lp', 'sub', 2) }} 
-                                    variant='outlined'
-                                >-1</Button>
-                            </Box>
-                        }
-                    />
-                    <LinearProgressWithLabel
-                        label='MP'
-                        minvalue={!disabled ? f.values.attributes.mp : f.initialValues.attributes.mp}
-                        maxvalue={!disabled ? f.values.attributes.mp : f.initialValues.maxMp}
-                        color='info'
-                        morecomponents={
-                            <Box ml={1} sx={{
-                                display: 'flex',
-                                gap: 1,
-                                width: '100%',
-                                justifyContent: 'end',
-                                height: '30px'
-                            }}>
-                                <Button 
-                                    onClick={() => { setDiligencePoints('mp', 'add', 1) }}  
-                                    variant='outlined'
-                                >+1</Button>
-                                <Button
-                                    onClick={() => { setDiligencePoints('mp', 'sub', 1) }} 
-                                    variant='outlined'
-                                >-1</Button>
-                            </Box>
-                        }
-                    />
-                    <LinearProgressWithLabel
-                        label='AP'
-                        minvalue={Math.floor(!disabled ? f.values.attributes.ap : f.initialValues.attributes.ap)}
-                        maxvalue={Math.floor(!disabled ? f.values.attributes.ap : f.initialValues.maxAp)}
-                        color='warning'
-                    />
-                </Box>
-            </Box>
-            <Box 
                 display='flex'
-                gap={3}
                 flexDirection='column'
-                width={matches ? '100%' : '50%'}
+                gap={matches ? 2 : 3}
+                sx={{
+                    width: '100%',
+                    overflow: 'hidden'
+                }}
             >
+                {/* Seção do Radar Chart e Barras de Progresso */}
                 <Box
-                    display='flex'
-                    flexDirection='column'
-                    gap={3}
+                    sx={{
+                        flex: 1,
+                        minWidth: 0,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 2,
+                        p: matches ? 1 : 2,
+                        borderRadius: 2,
+                        bgcolor: 'background.paper3',
+                        border: '1px solid',
+                        borderColor: 'divider'
+                    }}
                 >
-                    <Typography>Pontos de atributo: <b style={{ color: theme.palette.primary.main }}>{f.values.points.attributes}</b></Typography>
-                    <Box display='flex' flexDirection='column' gap={1}>
-                        <Attribute 
-                            setAtrribute={attributePoints('vig')} 
-                            attributeName='vig' 
-                            attributeValue={f.values.attributes.vig} 
-                        />
-                        <Attribute 
-                            setAtrribute={attributePoints('foc')} 
-                            attributeName='foc' 
-                            attributeValue={f.values.attributes.foc} 
-                        />
-                        <Attribute 
-                            setAtrribute={attributePoints('des')} 
-                            attributeName='des'
-                            attributeValue={f.values.attributes.des} 
-                        />
-                        <Attribute 
-                            setAtrribute={attributePoints('log', { attr: 'pd', value: 1 })} 
-                            attributeName='log' 
-                            attributeValue={f.values.attributes.log} 
-                        />
-                        <Attribute 
-                            setAtrribute={attributePoints('sab', { attr: 'pt', value: 1 })} 
-                            attributeName='sab' 
-                            attributeValue={f.values.attributes.sab} 
-                        />
-                        <Attribute 
-                            setAtrribute={attributePoints('car')} 
-                            attributeName='car' 
-                            attributeValue={f.values.attributes.car} 
-                        />
-                    </Box>
-                </Box>
-                <Box 
-                    display='flex'
-                    flexDirection='column'
-                    gap={3}
-                >
-                    <Box display='flex' flexDirection='column' justifyContent='space-between' height='100%' gap={4}>
-                        <Box display='flex' flexDirection='column' gap={4}>
-                            <LevelProgress amount={10} title='Nível' level={f.values.level} />
-                            <LevelProgress barWidth='6.65rem' amount={4} title='Nível do ORM' level={f.values.ORMLevel} />
-                        </Box>
-                        <Box display='flex' flexDirection='column' gap={1}>
-                            <Box display='flex' alignItems='center' gap={1}>
-                                <Typography>Deslocamento:</Typography>
-                                <Chip
-                                    color='primary' 
-                                    label={f.values.displacement + 'm'}
-                                />
-                            </Box>
-                            <Box display='flex' alignItems='center' gap={1}>
-                                <Typography>Dinheiro:</Typography>
-                                <Chip
-                                    color='primary' 
-                                    label={
-                                        <Box display='flex'>
-                                            <p>{f.values.mode === 'Classic' ? '¥' : '¢'}</p>
-                                            <p id='money'>
-                                                {numberWithSpaces(f.values.inventory.money)}
-                                            </p>
-                                        </Box>
+                    <Typography variant={matches ? 'subtitle1' : 'h6'} fontWeight="bold" color="primary">
+                        Atributos Físicos
+                    </Typography>
+                    <Box display='flex' gap={2} flexDirection={matches ? 'column' : 'row'}>
+                        {/* Radar Chart */}
+                        <Box
+                            sx={{
+                                p: matches ? 1 : 2,
+                                borderRadius: 2,
+                                bgcolor: 'background.paper',
+                                height: matches ? '250px' : '300px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                max: '100%'
+                            }}
+                        >
+                            <RadarChart
+                                data={{
+                                    labels: [ 'VIG', 'DES', 'FOC', 'LOG', 'SAB', 'CAR' ],
+                                    datasets: [
+                                        {
+                                            label: 'Atributos',
+                                            data: [
+                                                getValues('attributes.vig'),
+                                                getValues('attributes.des'),
+                                                getValues('attributes.foc'),
+                                                getValues('attributes.log'),
+                                                getValues('attributes.sab'),
+                                                getValues('attributes.car')
+                                            ],
+                                            backgroundColor: `${fichaDetailsColor}33`,
+                                            borderColor: fichaDetailsColor,
+                                            borderWidth: 2,
+                                            pointBackgroundColor: fichaDetailsColor,
+                                            pointBorderColor: fichaDetailsColor,
+                                            pointHoverBackgroundColor: fichaDetailsColor,
+                                            pointHoverBorderColor: fichaDetailsColor
+                                        }
+                                    ]
+                                }}
+                                options={{
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    plugins: {
+                                        legend: {
+                                            display: false
+                                        }
+                                    },
+                                    scales: {
+                                        r: {
+                                            suggestedMin: -5,
+                                            suggestedMax: 25,
+                                            angleLines: {
+                                                color: theme.palette.divider
+                                            },
+                                            pointLabels: {
+                                                color: theme.palette.text.primary,
+                                                font: {
+                                                    size: matches ? 10 : 12,
+                                                    weight: 'bold'
+                                                }
+                                            },
+                                            grid: {
+                                                color: theme.palette.divider
+                                            },
+                                            ticks: {
+                                                display: false
+                                            }
+                                        }
                                     }
-                                />
-                                {disabled && (
-                                    <Box display='flex' gap={3} alignItems='center'>
-                                        <CustomIconButton onClick={() => { setEditMoney(prevState => !prevState) }} sx={{ height: 35, width: 35 }}>
-                                            <Edit sx={{ height: 20, width: 20 }} />
-                                        </CustomIconButton>
-                                        {editMoney && (
-                                            <Box action='#' component='form' display='flex' alignItems='center' gap={1}>
-                                                <TextField 
-                                                    defaultValue={f.values.inventory.money}
-                                                    onChange={e => { setMoney(Number(e.target.value)) }}
-                                                    type='number'
-                                                />
-                                                <CustomIconButton type='submit' onClick={() => {
-                                                    setEditMoney(false)
-                                                    f.values.inventory.money = money
-                                                }} sx={{ height: 35, width: 35 }}>
-                                                    <Check sx={{ height: 20, width: 20 }} />
-                                                </CustomIconButton>
-                                            </Box>
-                                        )}
-                                    </Box>
-                                )}
-                            </Box>
+                                }}
+                            />
                         </Box>
-                    </Box>
-                    <Box display='flex' flexDirection='column' gap={1}>
-                        <Box display='flex' flexDirection='column' gap={2.5}>
-                            <FormControl fullWidth>
-                                <InputLabel>Traços *</InputLabel>
-                                <Select
-                                    name='traits'
-                                    multiple
-                                    value={f.values.traits as any}
-                                    onChange={setTraits}
-                                    input={<OutlinedInput label="Chip" />}
-                                    MenuProps={MenuProps}
-                                    renderValue={(selected: any) => (
-                                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                                            {typeof selected === 'string' ? (
-                                                <Chip key={selected} label={selected} />
-                                            ) : (
-                                                selected.map((value: string) => (
-                                                    <Chip key={value} label={value} />
-                                                ))
+
+                        {/* Pontos de Status */}
+                        <Box
+                            sx={{
+                                p: matches ? 1 : 2,
+                                borderRadius: 2,
+                                bgcolor: 'background.paper',
+                                border: '1px solid',
+                                borderColor: 'divider',
+                                width: '100%'
+                            }}
+                        >
+                            <Box display='flex' flexDirection='column' gap={1.5}>
+                                {/* LP */}
+                                <Controller
+                                    name='attributes.lp'
+                                    control={control}
+                                    render={({ field }) => (
+                                        <Box>
+                                            <LinearProgressWithLabel
+                                                label='LP'
+                                                minvalue={field.value}
+                                                maxvalue={getValues('attributes.maxLp')}
+                                                color='error'
+                                            />
+                                            {errors.attributes?.lp && (
+                                                <Typography color='error' variant='caption' display='block' mt={0.5}>
+                                                    {errors.attributes.lp.message}
+                                                </Typography>
                                             )}
                                         </Box>
                                     )}
-                                >
-                                    {traitsArr}
-                                </Select>
-                            </FormControl>
-                            <FormControl fullWidth>
-                                <InputLabel>Condição financeira *</InputLabel>
-                                <Select 
-                                    name='financialCondition'
-                                    label='Condição financeira'
-                                    value={f.values.financialCondition}
-                                    required
-                                    disabled={disabled}
-                                    fullWidth
-                                    onChange={e => {
-                                        const financialCondition = {
-                                            'Miserável': 10_000,
-                                            'Pobre': 50_000,
-                                            'Estável': 100_000,
-                                            'Rico': 300_000
-                                        }
+                                />
 
-                                        const value = e.target.value as FinancialCondition
+                                {/* MP */}
+                                <Controller
+                                    name='attributes.mp'
+                                    control={control}
+                                    render={({ field }) => (
+                                        <Box>
+                                            <LinearProgressWithLabel
+                                                label='MP'
+                                                minvalue={field.value}
+                                                maxvalue={getValues('attributes.maxMp')}
+                                                color='info'
+                                            />
+                                            {errors.attributes?.mp && (
+                                                <Typography color='error' variant='caption' display='block' mt={0.5}>
+                                                    {errors.attributes.mp.message}
+                                                </Typography>
+                                            )}
+                                        </Box>
+                                    )}
+                                />
 
-                                        f.handleChange(e)
-                                        f.setFieldValue('inventory.money', f.values.mode === 'Classic' ? financialCondition[value] : financialCondition[value] / 1000)
+                                {/* AP */}
+                                <Controller
+                                    name='attributes.ap'
+                                    control={control}
+                                    render={({ field }) => (
+                                        <Box>
+                                            <LinearProgressWithLabel
+                                                label='AP'
+                                                minvalue={field.value}
+                                                maxvalue={getValues('attributes.maxAp')}
+                                                color='warning'
+                                            />
+                                            {errors.attributes?.ap && (
+                                                <Typography color='error' variant='caption' display='block' mt={0.5}>
+                                                    {errors.attributes.ap.message}
+                                                </Typography>
+                                            )}
+                                        </Box>
+                                    )}
+                                />
 
-                                        audio.play()
-                                    }}
-                                >
-                                    <ListSubheader>{'< 6'}</ListSubheader>
-                                    <MenuItem value='Miserável'>Miserável</MenuItem>
-                                    <ListSubheader>6 - 12</ListSubheader>
-                                    <MenuItem value='Pobre'>Pobre</MenuItem>
-                                    <ListSubheader>12 - 17</ListSubheader>
-                                    <MenuItem value='Estável'>Estável</MenuItem>
-                                    <ListSubheader>{'> 17'}</ListSubheader>
-                                    <MenuItem value='Rico'>Rico</MenuItem>
-                                </Select>
-                            </FormControl>
+                                {/* Estatísticas gerais */}
+                                <Box sx={{ mt: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 1.5, bgcolor: 'background.paper' }}>
+                                    {/* Limite de MP Diário */}
+                                    <Box display="flex" alignItems="center" mb={1}>
+                                        <Tooltip title="Máximo de pontos de magia que podem ser gastos diariamente">
+                                            <LocalFireDepartment color="primary" fontSize="small" sx={{ mr: 1 }} />
+                                        </Tooltip>
+                                        <Box flexGrow={1}>
+                                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.2 }}>
+                                                Limite de MP Diário
+                                            </Typography>
+                                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                                <Typography variant="body1" fontWeight="medium">
+                                                    {getValues('attributes.maxMp') + getValues('attributes.foc') + getValues('level')}
+                                                </Typography>
+                                                <Tooltip title="Base + Foco + Nível">
+                                                    <InfoOutlined fontSize="inherit" sx={{ ml: 0.5, opacity: 0.6, fontSize: '0.875rem' }} />
+                                                </Tooltip>
+                                            </Box>
+                                        </Box>
+                                    </Box>
+
+                                    {/* Overall (Total de atributos) */}
+                                    <Box display="flex" alignItems="center">
+                                        <Tooltip title="Soma total de todos os atributos">
+                                            <Assessment color="warning" fontSize="small" sx={{ mr: 1 }} />
+                                        </Tooltip>
+                                        <Box flexGrow={1}>
+                                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.2 }}>
+                                                Overall (Total)
+                                            </Typography>
+                                            
+                                            {/* Valor com indicador visual */}
+                                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                                {(() => {
+                                                    // Soma todos os atributos principais
+                                                    const attributesSum = (
+                                                        getValues('attributes.vig') +
+                                                        getValues('attributes.foc') +
+                                                        getValues('attributes.des') +
+                                                        getValues('attributes.log') +
+                                                        getValues('attributes.sab') +
+                                                        getValues('attributes.car')
+                                                    );
+
+                                                    // Calcula a somatória dos bônus de perícias
+                                                    const expertises = getValues('expertises') || {};
+                                                    const expertisesSum = Object.values(expertises).reduce(
+                                                        (sum, expertise) => sum + (expertise && typeof expertise === 'object' && 'value' in expertise ? (expertise.value || 0) : 0), 
+                                                        0
+                                                    );
+                                                    
+                                                    // Valor total do overall (atributos + perícias)
+                                                    const overallValue = attributesSum + expertisesSum + ficha.level;
+                                                    setValue('overall', overallValue)
+                                                    
+                                                    // Define cores com base no valor
+                                                    let color = 'text.primary';
+                                                    if (overallValue >= 40) color = 'warning.main';
+                                                    if (overallValue >= 80) color = 'success.main';
+                                                    if (overallValue >= 120) color = 'primary.main';
+                                                    if (overallValue >= 180) color = 'error.main';
+
+                                                    return (
+                                                        <Typography 
+                                                            variant="body1" 
+                                                            fontWeight="medium"
+                                                            sx={{ 
+                                                                color,
+                                                                ...(overallValue >= 150 && {
+                                                                    textShadow: '0px 0px 3px rgba(25, 118, 210, 0.5)',
+                                                                    fontWeight: 'bold'
+                                                                }),
+                                                                ...(overallValue >= 180 && {
+                                                                    textShadow: '0px 0px 3px rgba(210, 25, 25, 0.5)',
+                                                                    fontWeight: 'bold'
+                                                                })
+                                                            }}
+                                                        >
+                                                            {overallValue}
+                                                        </Typography>
+                                                    );
+                                                })()} 
+                                                
+                                                <Tooltip title="Vigor + Foco + Destreza + Lógica + Sabedoria + Carisma + Bônus de Perícias + Nível">
+                                                    <InfoOutlined fontSize="inherit" sx={{ ml: 0.5, opacity: 0.6, fontSize: '0.875rem' }} />
+                                                </Tooltip>
+                                            </Box>
+                                        </Box>
+                                    </Box>
+                                </Box>
+                            </Box>
                         </Box>
-                        {!disabled && (
-                            <Button onClick={() => { setModalOpen(true) }} variant='outlined' >Rolar dados</Button>
-                        )}
                     </Box>
                 </Box>
-            </Box>
-            {modalOpen && (
-                <DiceRollModal
-                    open={modalOpen}
-                    onClose={() => { setModalOpen(false) }}
-                    bonus={[ f.values.attributes.car ]}
-                    isDisadvantage={f.values.attributes.car === 0}
-                    visibleDices
-                    visibleBaseAttribute
-                    roll={{
-                        dice: 20,
-                        quantity: f.values.attributes.car || 1,
-                        name: 'Condição Financeira',
-                        attribute: 'car'
+
+                {/* Seção dos Atributos Principais */}
+                <Box
+                    sx={{
+                        flex: 1,
+                        minWidth: 0, // Importante para evitar overflow
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 2
                     }}
-                />
-            )}
-        </Box>      
+                >
+                    {/* Pontos de Atributo */}
+                    <Box
+                        sx={{
+                            p: matches ? 1 : 2,
+                            borderRadius: 2,
+                            bgcolor: 'background.paper3',
+                            border: '1px solid',
+                            borderColor: 'divider'
+                        }}
+                    >
+                        <Box display='flex' alignItems='center' justifyContent='space-between' mb={2} flexWrap='wrap' gap={1}>
+                            <Typography variant={matches ? 'subtitle1' : 'h6'} fontWeight="bold" color="primary">
+                                Atributos Principais
+                            </Typography>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                                <Box display="flex" alignItems="center" gap={1}>                
+                                    <Typography variant="subtitle2" fontWeight="medium">Multiplicador:</Typography>
+                                    <TextField
+                                        size="small"
+                                        type="number"
+                                        inputProps={{ 
+                                            min: 1, 
+                                            max: 10, 
+                                            style: { padding: '4px 8px', width: '40px' } 
+                                        }}
+                                        value={multiplier}
+                                        onChange={(e) => {
+                                            const value = parseInt(e.target.value);
+                                            if (!isNaN(value) && value >= 1 && value <= 10) {
+                                                setMultiplier(value);
+                                            }
+                                        }}
+                                        sx={{ 
+                                            '& .MuiOutlinedInput-root': {
+                                                borderRadius: 1
+                                            }
+                                        }}
+                                    />
+                                </Box>
+                                <Controller
+                                    name='points.attributes'
+                                    control={control}
+                                    render={({ field }) => (
+                                        <Box display='flex' alignItems='center' gap={1} flexWrap='wrap'>
+                                            <Typography variant="body2" color="text.secondary">
+                                                Pontos:
+                                            </Typography>
+                                            <Chip
+                                                label={field.value}
+                                                color={field.value > 0 ? 'warning' : 'success'}
+                                                size="small"
+                                                sx={{ fontWeight: 'bold' }}
+                                            />
+                                        </Box>
+                                    )}
+                                />
+                            </Box>
+
+                            {/* Grid dos Atributos */}
+                            <Box display='flex' flexDirection='column' width='100%' gap={1}>
+                                {[ 'vig', 'foc', 'des', 'log', 'sab', 'car' ].map((attr) => {
+                                    const attributeName = attr as 'vig' | 'foc' | 'des' | 'log' | 'sab' | 'car'
+                                    const { onIncrement, onDecrement } = attributePoints(attributeName)
+
+                                    return (
+                                        <Controller
+                                            key={attributeName}
+                                            name={`attributes.${attributeName}`}
+                                            control={control}
+                                            render={({ field }) => (
+                                                <Box
+                                                    sx={{
+                                                        p: matches ? 1 : 1.5,
+                                                        borderRadius: 1,
+                                                        bgcolor: 'background.paper',
+                                                        border: '1px solid',
+                                                        borderColor: 'divider',
+                                                        transition: 'all 0.2s ease',
+                                                        '&:hover': {
+                                                            borderColor: 'primary.main',
+                                                            bgcolor: 'action.hover'
+                                                        }
+                                                    }}
+                                                >
+                                                    <Attribute
+                                                        onIncrement={onIncrement}
+                                                        onDecrement={onDecrement}
+                                                        attributeName={attributeName}
+                                                        attributeValue={field.value}
+                                                        error={errors.attributes?.[attributeName]?.message}
+                                                    />
+                                                </Box>
+                                            )}
+                                        />
+                                    )
+                                })}
+                            </Box>
+
+                            {/* Mensagem de erro dos pontos de atributo */}
+                            <Controller
+                                name='points.attributes'
+                                control={control}
+                                render={() => (
+                                    errors.points?.attributes ? (
+                                        <Typography color='error' variant='caption' display='block' mt={1}>
+                                            {errors.points.attributes.message}
+                                        </Typography>
+                                    ) : <></>
+                                )}
+                            />
+                        </Box>
+                    </Box>
+                </Box>
+
+                {/* Seção de nível e informações */}
+                <LevelAndInfo />
+            </Box>
+        </Box>
     )
 }
+
+export default memo(Attributes)

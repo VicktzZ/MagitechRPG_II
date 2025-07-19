@@ -21,7 +21,7 @@ interface SkillNodeProps {
 }
 
 const skillColors: Record<keyof typeof skills.class, string> = {
-    Lutador: red[500],
+    Combatente: red[500],
     Especialista: orange[500],
     Feiticeiro: pink[400],
     Bruxo: purple[400],

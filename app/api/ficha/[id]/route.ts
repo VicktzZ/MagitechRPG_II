@@ -1,4 +1,5 @@
 import Ficha from '@models/ficha';
+import Magia from '@models/magia';
 import { type Ficha as FichaType } from '@types';
 import { connectToDb } from '@utils/database';
 
@@ -7,8 +8,11 @@ interface id { id: string }
 export async function GET(_req: Request, { params: { id } }: { params: id }): Promise<Response> {
     try {
         await connectToDb()
-
+        
         const ficha = await Ficha.findById(id)
+        const magics = await Magia.find({ _id: { $in: ficha?.magics } })
+
+        ficha.magics = magics
 
         if (!ficha) {
             return Response.json({ message: 'NOT FOUND' }, { status: 404 })
