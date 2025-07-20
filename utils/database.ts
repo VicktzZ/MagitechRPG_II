@@ -14,7 +14,7 @@ export const connectToDb = async (): Promise<void> => {
         const dbName = process.env.NODE_ENV === 'development' ? 'magitech_dev' : 'magitech';
         
         await mongoose.connect(process.env.MONGODB_URI, {
-            dbName: 'magitech'
+            dbName
         })
 
         isConnected = true

@@ -57,16 +57,10 @@ const Magics = memo(() => {
     const theme = useTheme()
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
 
-    // Observa os valores relevantes do formulário
     const magics = useWatch({ control, name: 'magics' })
     
     const points = useWatch({ control, name: 'points' })
     const magicsSpace = useWatch({ control, name: 'magicsSpace' })
-
-    // Calcula a porcentagem de uso do espaço de magias
-    const usagePercentage = magics?.length ? Math.min(100, (magics.length / (magicsSpace || 1)) * 100) : 0
-    
-    const isAtCapacity = usagePercentage >= 100
 
     // Ordena e filtra as magias
     const filteredMagics = useMemo(() => {
@@ -386,7 +380,7 @@ const Magics = memo(() => {
                             <IconButton
                                 onClick={() => { setOpen(true) }}
                                 color="primary"
-                                disabled={isAtCapacity}
+                                disabled={magicsSpace < 5}
                                 sx={{
                                     borderRadius: 1.5,
                                     bgcolor: alpha(theme.palette.primary.main, 0.1),
