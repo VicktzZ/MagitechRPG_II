@@ -380,7 +380,7 @@ const Magics = memo(() => {
                             <IconButton
                                 onClick={() => { setOpen(true) }}
                                 color="primary"
-                                disabled={magicsSpace < 5}
+                                disabled={magicsSpace === 0 || points.magics === 0}
                                 sx={{
                                     borderRadius: 1.5,
                                     bgcolor: alpha(theme.palette.primary.main, 0.1),
