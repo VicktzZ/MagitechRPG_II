@@ -263,7 +263,7 @@ export default function FichaComponent(): ReactElement {
                                     color="primary"
                                     type={!ficha._id ? 'submit' : 'button'}
                                     onClick={form.handleSubmit(submitForm)}
-                                    disabled={!!ficha?._id && (session?.user._id !== ficha.userId)}
+                                    // disabled={!!ficha?._id && (session?.user._id !== ficha.userId)}
                                     startIcon={<Save />}
                                     size={isMobile ? 'small' : 'medium'}
                                     sx={{ minWidth: isMobile ? 100 : 150 }}

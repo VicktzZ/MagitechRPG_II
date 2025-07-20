@@ -476,9 +476,9 @@ function Attributes(): ReactElement {
                                             </Typography>
                                             <Box sx={{ display: 'flex', alignItems: 'center' }}>
                                                 <Typography variant="body1" fontWeight="medium">
-                                                    {getValues('attributes.maxMp') + getValues('attributes.foc') + getValues('level')}
+                                                    {getValues('attributes.maxMp') + getValues('attributes.foc') * 2 + getValues('level')}
                                                 </Typography>
-                                                <Tooltip title="Base + Foco + Nível">
+                                                <Tooltip title="Base + Foco * 2 + Nível">
                                                     <InfoOutlined fontSize="inherit" sx={{ ml: 0.5, opacity: 0.6, fontSize: '0.875rem' }} />
                                                 </Tooltip>
                                             </Box>

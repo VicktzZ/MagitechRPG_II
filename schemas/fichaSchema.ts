@@ -120,10 +120,7 @@ const PointsSchema = z.object({
 const SkillSchema = z.object({
     name: z.string().min(1, 'O nome da habilidade é obrigatório'),
     description: z.string().min(1, 'A descrição da habilidade é obrigatória'),
-    type: z.enum([ 'Poder Mágico', 'Classe', 'Linhagem', 'Subclasse', 'Bônus', 'Profissão', 'Exclusivo' ], {
-        required_error: 'O tipo da habilidade é obrigatório',
-        invalid_type_error: 'Tipo de habilidade inválido'
-    }),
+    type: z.string(),
     origin: z.string().optional(),
     effects: z.array(z.number().int()).optional(),
     level: z.number().int().min(0, 'O nível deve ser maior ou igual a 0').optional()
