@@ -45,7 +45,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Ficha } from '@types';
 import { useRouter } from 'next/navigation';
 import { useSnackbar } from 'notistack';
-import { useState, type ReactElement } from 'react';
+import { useEffect, useState, type ReactElement } from 'react';
 import { useFormContext, type SubmitHandler } from 'react-hook-form';
 
 function Section({ title, icon, children, action, sx }: { 
@@ -139,6 +139,10 @@ export default function FichaComponent(): ReactElement {
     })
 
     const { errors, isValid } = form.formState;
+
+    useEffect(() => {
+        console.log(errors)
+    }, [ errors ])
 
     const submitForm: SubmitHandler<Ficha> = async (values) => {
         enqueueSnackbar('Aguarde...', toastDefault('loadingFetch', 'info'))
@@ -259,7 +263,7 @@ export default function FichaComponent(): ReactElement {
                                     color="primary"
                                     type={!ficha._id ? 'submit' : 'button'}
                                     onClick={form.handleSubmit(submitForm)}
-                                    disabled={!!ficha?._id && (session?.user._id !== ficha.userId)}
+                                    // disabled={!!ficha?._id && (session?.user._id !== ficha.userId)}
                                     startIcon={<Save />}
                                     size={isMobile ? 'small' : 'medium'}
                                     sx={{ minWidth: isMobile ? 100 : 150 }}
