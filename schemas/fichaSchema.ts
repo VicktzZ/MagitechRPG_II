@@ -154,8 +154,8 @@ const AmmoCounterSchema = z.object({
 })
 
 const CapacitySchema = z.object({
-    cargo: z.number().min(0).default(0),
-    max: z.number().min(0).default(5.0)
+    cargo: z.coerce.number().min(0).default(0),
+    max: z.coerce.number().min(0).default(5.0)
 })
 
 const PassiveSchema = z.object({
@@ -181,9 +181,10 @@ const PassiveSchema = z.object({
 
 const StatusSchema = z.object({
     name: z.string().min(1, 'O nome do status é obrigatório'),
-    description: z.string(),
-    duration: z.number().int().min(0),
-    effect: z.array(z.string())
+    description: z.string().optional(),
+    type: z.string(),
+    duration: z.number().int().min(0).optional().default(0),
+    effect: z.array(z.string()).optional().default([])
 })
 
 const DiceSchema = z.object({
@@ -284,8 +285,8 @@ const MagicSchema = z.object({
     _id: z.string(),
     elemento: z.string().min(1, 'O elemento da magia é obrigatório'),
     nome: z.string().min(1, 'O nome da magia é obrigatório'),
-    custo: z.string().transform(val => parseInt(val) || 0),
-    nível: z.string().transform(val => parseInt(val) || 0),
+    custo: z.coerce.number().min(0, 'O custo da magia não pode ser negativo').default(0),
+    nível: z.coerce.number().min(0, 'O nível da magia não pode ser negativo').default(0),
     tipo: z.string().min(1, 'O tipo da magia é obrigatório'),
     execução: z.string().min(1, 'A execução da magia é obrigatória'),
     alcance: z.string().min(1, 'O alcance da magia é obrigatório'),

@@ -3,7 +3,7 @@
 // Script para migração completa da collection fichas
 
 // Use the database
-use('magitech_dev');
+use('magitech');
 
 // ============================================
 // 1. Alterar raridade "Relíquia" para "Único" em itens, armas e armaduras
@@ -165,9 +165,9 @@ db.getCollection('fichas').updateMany(
 print("✅ Propriedades 'dices' e 'passives' adicionadas!");
 
 // ============================================
-// 7. Multiplicar atributos de status por 3 (ou 0 se -1)
+// 7. Multiplicar atributos de status por 5 (ou 0 se -1)
 // ============================================
-print("7. Multiplicando atributos de status por 3...");
+print("7. Multiplicando atributos de status por 5...");
 
 db.getCollection('fichas').updateMany(
     {},
@@ -178,42 +178,42 @@ db.getCollection('fichas').updateMany(
                     $cond: {
                         if: { $eq: ["$attributes.vig", -1] },
                         then: 0,
-                        else: { $multiply: ["$attributes.vig", 3] }
+                        else: { $multiply: ["$attributes.vig", 5] }
                     }
                 },
                 "attributes.des": {
                     $cond: {
                         if: { $eq: ["$attributes.des", -1] },
                         then: 0,
-                        else: { $multiply: ["$attributes.des", 3] }
+                        else: { $multiply: ["$attributes.des", 5] }
                     }
                 },
                 "attributes.foc": {
                     $cond: {
                         if: { $eq: ["$attributes.foc", -1] },
                         then: 0,
-                        else: { $multiply: ["$attributes.foc", 3] }
+                        else: { $multiply: ["$attributes.foc", 5] }
                     }
                 },
                 "attributes.log": {
                     $cond: {
                         if: { $eq: ["$attributes.log", -1] },
                         then: 0,
-                        else: { $multiply: ["$attributes.log", 3] }
+                        else: { $multiply: ["$attributes.log", 5] }
                     }
                 },
                 "attributes.sab": {
                     $cond: {
                         if: { $eq: ["$attributes.sab", -1] },
                         then: 0,
-                        else: { $multiply: ["$attributes.sab", 3] }
+                        else: { $multiply: ["$attributes.sab", 5] }
                     }
                 },
                 "attributes.car": {
                     $cond: {
                         if: { $eq: ["$attributes.car", -1] },
                         then: 0,
-                        else: { $multiply: ["$attributes.car", 3] }
+                        else: { $multiply: ["$attributes.car", 5] }
                     }
                 }
             }
@@ -221,7 +221,7 @@ db.getCollection('fichas').updateMany(
     ]
 );
 
-print("✅ Atributos de status multiplicados por 3!");
+print("✅ Atributos de status multiplicados por 5!");
 
 // ============================================
 // 8. Alterar classe "Lutador" para "Combatente"
