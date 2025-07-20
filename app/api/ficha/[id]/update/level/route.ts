@@ -116,11 +116,11 @@ export async function POST(req: Request, { params }: { params: { id: string } })
         const updates = {
             level: newLevel,
             // Apenas atualiza os máximos de LP e MP
-            maxLp: ficha.maxLp + (lpMpRewards * (classRewards.lp + ficha.attributes.vig)),
-            maxMp: ficha.maxMp + (lpMpRewards * (classRewards.mp + ficha.attributes.foc)),
+            maxLp: ficha.attributes.maxLp + (lpMpRewards * (classRewards.lp + ficha.attributes.vig)),
+            maxMp: ficha.attributes.maxMp + (lpMpRewards * (classRewards.mp + ficha.attributes.foc)),
             ...(lpMpRewards > 0 && {
-                'attributes.lp': ficha.attributes.lp >= ficha.maxLp ? ficha.attributes.lp + (lpMpRewards * (classRewards.lp + ficha.attributes.vig)) : ficha.attributes.lp,
-                'attributes.mp': ficha.attributes.mp >= ficha.maxMp ? ficha.attributes.mp + (lpMpRewards * (classRewards.mp + ficha.attributes.foc)) : ficha.attributes.mp
+                'attributes.lp': ficha.attributes.lp >= ficha.attributes.maxLp ? ficha.attributes.lp + (lpMpRewards * (classRewards.lp + ficha.attributes.vig)) : ficha.attributes.lp,
+                'attributes.mp': ficha.attributes.mp >= ficha.attributes.maxMp ? ficha.attributes.mp + (lpMpRewards * (classRewards.mp + ficha.attributes.foc)) : ficha.attributes.mp
             }),
             // Pontos ganhos
             'points.expertises': ficha.points.expertises + testPoints,

@@ -40,9 +40,10 @@ import DiceRollModal from '../misc/DiceRollModal'
 
 interface DicePersonalizationProps {
     onClose?: () => void
+    enableChatIntegration?: boolean
 }
 
-export default function CustomDices({ onClose }: DicePersonalizationProps): ReactElement {
+export default function CustomDices({ onClose, enableChatIntegration = true }: DicePersonalizationProps): ReactElement {
     const theme = useTheme()
     const matches = useMediaQuery(theme.breakpoints.down('sm'))
     const { getValues } = useFormContext<Ficha>()
@@ -71,7 +72,7 @@ export default function CustomDices({ onClose }: DicePersonalizationProps): Reac
         handleDeleteDice,
         handleEditDice,
         editingDiceId
-    } = useCustomDices({ onClose })
+    } = useCustomDices({ onClose, enableChatIntegration })
 
     const attributes: Attributes[] = [ 'des', 'vig', 'log', 'sab', 'foc', 'car' ]
 

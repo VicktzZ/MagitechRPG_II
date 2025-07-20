@@ -51,9 +51,9 @@ function ChangePlayerStatusModal({ open, onClose, ficha }: { open: boolean, onCl
             mp: Number(ficha.attributes?.mp),
             ap: Number(ficha.attributes?.ap)
         },
-        maxLp: Number(ficha.maxLp),
-        maxMp: Number(ficha.maxMp),
-        maxAp: Number(ficha.maxAp),
+        maxLp: Number(ficha.attributes.maxLp),
+        maxMp: Number(ficha.attributes.maxMp),
+        maxAp: Number(ficha.attributes.maxAp),
         money: Number(ficha.inventory.money)
     };  
 
@@ -308,8 +308,8 @@ function ChangePlayerStatusModal({ open, onClose, ficha }: { open: boolean, onCl
                                             label="Pontos de Vida Máximos (MaxLp)"
                                             type="number"
                                             margin="normal"
-                                            error={!!errors.maxLp}
-                                            helperText={errors.maxLp?.message}
+                                            error={!!errors.attributes.maxLp}
+                                            helperText={errors.attributes.maxLp?.message}
                                         />
                                     )}
                                 />

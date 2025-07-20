@@ -7,9 +7,12 @@ import { useFormContext } from 'react-hook-form'
 import { useTheme } from '@mui/material'
 import { enqueueSnackbar } from 'notistack'
 import { toastDefault } from '@constants'
+import { useChatContext } from '@contexts/chatContext'
+import { MessageType } from '@enums'
 import { type Dice, type DiceConfig, type DiceEffect, type DiceEffectOperation, type DiceEffectType, type DiceEffectTarget, type RollResult, type Ficha } from '@types'
 
-export function useCustomDices({ onClose }: { onClose?: () => void }) {
+export function useCustomDices({ onClose, enableChatIntegration = true }: { onClose?: () => void, enableChatIntegration?: boolean }) {
+    const { handleSendMessage, setIsChatOpen } = useChatContext()
     const theme = useTheme()
     const { watch, setValue, getValues } = useFormContext<Ficha>()
 
@@ -199,7 +202,7 @@ export function useCustomDices({ onClose }: { onClose?: () => void }) {
         const modifiersResult: Array<{ name: string; value: number }> = []
 
         // Rola cada configuração de dado
-        dice.dices?.forEach(config => {
+        dice.dices.forEach(config => {
             for (let i = 0; i < config.quantity; i++) {
                 const roll = Math.floor(Math.random() * config.faces) + 1
                 rolls.push(roll)
@@ -207,7 +210,9 @@ export function useCustomDices({ onClose }: { onClose?: () => void }) {
 
                 // Verifica crítico para cada rolagem
                 if (roll === config.faces) {
-                    const critChance = dice.modifiers?.reduce((acc, mod) => acc + (mod.critChance || 0), 0) || 0
+                    const critChance = dice.modifiers && dice.modifiers.length > 0 
+                        ? dice.modifiers.reduce((acc, mod) => acc + (mod.critChance ?? 0), 0)
+                        : 0
                     if (Math.random() * 100 <= critChance) {
                         criticalHit = true
                     }
@@ -306,7 +311,24 @@ export function useCustomDices({ onClose }: { onClose?: () => void }) {
         )
         setValue('dices', updatedDices, { shouldValidate: true })
 
-    }, [ getValues, setValue, dices, rollResult, variableValues ])
+        // Integração com o chat
+        if (enableChatIntegration) {
+            // Cria mensagem formatada para o chat
+            const diceFacesText = dice.dices.map(config => `${config.quantity}d${config.faces}`).join(' + ')
+            const modifiersText = modifiersResult.map(mod => `${mod.value >= 0 ? '+' : ''}${mod.value} ${mod.name}`).join(' ')
+            
+            const rollsText = rolls.join(', ')
+            const messageText = `🎲 **${dice.name}** (${diceFacesText})
+${modifiersText ? `Modificadores: ${modifiersText}
+` : ''}Rolagens: [${rollsText}]
+Total: **${total}**${criticalHit ? ' 🔥 CRÍTICO! 🔥' : ''}`
+            
+            // Abre o chat e envia a mensagem
+            setIsChatOpen(true)
+            void handleSendMessage(messageText, MessageType.ROLL)
+        }
+
+    }, [ getValues, setValue, dices, rollResult, variableValues, enableChatIntegration, setIsChatOpen, handleSendMessage ])
 
     // Handler para Deletar Dado
     const handleDeleteDice = useCallback((diceToDelete: Dice) => {

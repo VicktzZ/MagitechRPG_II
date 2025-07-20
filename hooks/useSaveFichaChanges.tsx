@@ -48,11 +48,15 @@ export default function useSaveFichaChanges(props?: UseSaveFichaChangesProps): {
 
         try {
             showSavingSpinner(true);
+            console.log('Salvando ficha:', currentFicha._id, currentFicha);
             await currentProps?.callback?.();
             await fichaService.updateById({ 
                 id: currentFicha._id, 
                 data: currentFicha 
             });
+            console.log('Ficha salva com sucesso!');
+        } catch (error) {
+            console.error('Erro ao salvar ficha:', error);
         } finally {
             setTimeout(() => showSavingSpinner(false), currentProps?.delay || 500);
             debounceRef.current.pending = false;
@@ -75,7 +79,9 @@ export default function useSaveFichaChanges(props?: UseSaveFichaChangesProps): {
             const newFicha = typeof updater === 'function' 
                 ? (updater as (prevState: Ficha) => Ficha)(prevFicha) 
                 : updater;
-            return { ...prevFicha, ...newFicha };
+            
+            console.log('Atualizando ficha:', { prevFicha, newFicha });
+            return newFicha; // Retorna a nova ficha completa, não um merge
         });
 
         // Cancela o timeout anterior se existir
@@ -87,20 +93,21 @@ export default function useSaveFichaChanges(props?: UseSaveFichaChangesProps): {
         debounceRef.current.pending = true;
         debounceRef.current.timeout = setTimeout(() => {
             if (debounceRef.current.pending) {
-                saveFicha();
+                void saveFicha();
             }
-        }, props?.delay || 500);
+        }, props?.delay || 1000); // Aumentei o delay para 1 segundo
 
         // Retorna undefined para evitar avisos do React
         return undefined;
     }, [ props?.delay, saveFicha ]);
 
-    // Efeito para salvar imediatamente se a ficha for alterada diretamente via props
+    // Efeito para sincronizar com props quando a ficha externa muda
     useEffect(() => {
-        if (props?.ficha) {
+        if (props?.ficha?._id) {
             setFicha(props.ficha);
+            fichaRef.current = props.ficha;
         }
-    }, [ props?.ficha ]);
+    }, [ props?.ficha?._id, props?.ficha ]); // Dependência mais específica
 
     return {
         updateFicha

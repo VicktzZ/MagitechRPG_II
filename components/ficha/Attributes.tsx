@@ -1,6 +1,9 @@
 /* eslint-disable no-case-declarations */
 /* eslint-disable @typescript-eslint/no-shadow */
 /* eslint-disable react-hooks/rules-of-hooks */
+/* eslint-disable @typescript-eslint/prefer-nullish-coalescing */
+/* eslint-disable @typescript-eslint/restrict-plus-operands */
+
 import { RadarChart } from '@components/misc'
 import { LinearProgressWithLabel } from '@layout'
 import { Box, TextField, Tooltip } from '@mui/material'
