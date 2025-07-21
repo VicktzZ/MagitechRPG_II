@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/prefer-nullish-coalescing */
 /* eslint-disable @typescript-eslint/unbound-method */
 import { ResourceListModal } from '@components/utils';
 import { elements } from '@constants';
@@ -8,7 +9,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import type { ReactElement } from 'react';
 import { useFormContext } from 'react-hook-form';
 import Magic from '../subcomponents/Magic';
-import { type MagicPowerSkill } from '@types/ficha';
+import { type MagicPowerSkill } from '@types';
 
 const SkillsResourceListModal = ResourceListModal;    
 

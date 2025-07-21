@@ -1,5 +1,6 @@
 import Ficha from '@models/ficha';
 import Magia from '@models/magia';
+import Poder from '@models/poder';
 import { type Ficha as FichaType } from '@types';
 import { connectToDb } from '@utils/database';
 
@@ -11,8 +12,16 @@ export async function GET(_req: Request, { params: { id } }: { params: id }): Pr
         
         const ficha = await Ficha.findById(id)
         const magics = await Magia.find({ _id: { $in: ficha?.magics } })
+        const powers = await Poder.find({ _id: { $in: ficha?.skills.powers } })
 
         ficha.magics = magics
+        ficha.skills.powers = powers.map(power => ({
+            name: power.nome,
+            description: power['descrição'],
+            element: power.elemento,
+            mastery: power.maestria,
+            type: 'Poder Mágico'
+        }))
 
         if (!ficha) {
             return Response.json({ message: 'NOT FOUND' }, { status: 404 })
@@ -45,7 +54,7 @@ export async function PATCH(req: Request, { params: { id } }: { params: id }): P
         await connectToDb()
         
         const body: FichaType = await req.json()
-        const ficha = await Ficha.findByIdAndUpdate<FichaType>(id, body)
+        const ficha = await Ficha.findByIdAndUpdate<FichaType>(id, body, { new: true })
 
         if (!ficha) {
             return Response.json({ message: 'NOT FOUND' }, { status: 404 })

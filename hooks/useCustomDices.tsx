@@ -61,7 +61,7 @@ export function useCustomDices({ onClose, enableChatIntegration = true }: { onCl
             dices: prev.dices?.map((dice, i) => 
                 i === index 
                     ? { ...dice, [field]: field === 'quantity' 
-                        ? Math.max(1, Math.min(10, value))
+                        ? Math.max(1, Math.min(999, value))
                         : value }
                     : dice
             ) || []
@@ -198,7 +198,6 @@ export function useCustomDices({ onClose, enableChatIntegration = true }: { onCl
     const handleRollDice = useCallback((dice: Dice) => {
         const rolls: number[] = []
         let total = 0
-        let criticalHit = false
         const modifiersResult: Array<{ name: string; value: number }> = []
 
         // Rola cada configuração de dado
@@ -207,16 +206,6 @@ export function useCustomDices({ onClose, enableChatIntegration = true }: { onCl
                 const roll = Math.floor(Math.random() * config.faces) + 1
                 rolls.push(roll)
                 total += roll
-
-                // Verifica crítico para cada rolagem
-                if (roll === config.faces) {
-                    const critChance = dice.modifiers && dice.modifiers.length > 0 
-                        ? dice.modifiers.reduce((acc, mod) => acc + (mod.critChance ?? 0), 0)
-                        : 0
-                    if (Math.random() * 100 <= critChance) {
-                        criticalHit = true
-                    }
-                }
             }
         })
 
@@ -300,7 +289,6 @@ export function useCustomDices({ onClose, enableChatIntegration = true }: { onCl
             rolls,
             total,
             modifiersResult,
-            criticalHit,
             allRolls: newRolls,
             rollCount
         })
@@ -321,7 +309,7 @@ export function useCustomDices({ onClose, enableChatIntegration = true }: { onCl
             const messageText = `🎲 **${dice.name}** (${diceFacesText})
 ${modifiersText ? `Modificadores: ${modifiersText}
 ` : ''}Rolagens: [${rollsText}]
-Total: **${total}**${criticalHit ? ' 🔥 CRÍTICO! 🔥' : ''}`
+Total: **${total}**`
             
             // Abre o chat e envia a mensagem
             setIsChatOpen(true)

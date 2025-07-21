@@ -74,11 +74,14 @@ export default function Expertise({
             setOpen(true);
         } else if (onClick) {
             const newValue = expertise.value + edit.value;
-            if (getValues()._id ? newValue >= 0 && newValue <= 10 : newValue >= 0 && newValue <= 4) {
+            // Permite incrementar pontos em perícias negativas e respeita os limites máximos
+            if (edit.value > 0 && expertise.value < 0) {
+                onClick(newValue);
+            } else if (getValues()._id ? newValue >= 0 && newValue <= 10 : newValue >= 0 && newValue <= 4) {
                 onClick(newValue);
             }
         }
-    }, [ edit, expertise.value, onClick ]);
+    }, [ edit, expertise.value, onClick, getValues ]);
 
     const getEditPreview = useCallback((): number => {
         if (!edit?.isEditing) return expertise.value;
