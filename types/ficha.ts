@@ -113,6 +113,7 @@ export interface Lineage {
 }
 
 export interface MagicPowerSkill extends Skill {
+    _id?: string
     mastery?: string
     element?: Element
 }
@@ -306,7 +307,7 @@ export interface Subclass {
 }
 
 export interface MagicPower {
-    _id: string,
+    _id?: string
     elemento: Element
     nome: string
     'descrição': string
