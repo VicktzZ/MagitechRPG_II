@@ -5,7 +5,6 @@ export interface RollResult {
     rolls: number[]
     total: number
     modifiersResult: Array<{ name: string; value: number }>
-    criticalHit: boolean
     allRolls: number[]
     rollCount: number
 }
@@ -19,7 +18,6 @@ export interface Dice {
         attribute?: Attributes
         expertise?: ExpertisesNames
         bonus?: number
-        critChance?: number
     }>
     effects?: DiceEffect[]
     color?: string

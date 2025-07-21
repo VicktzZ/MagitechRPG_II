@@ -79,7 +79,6 @@ export default function CustomDices({ onClose, enableChatIntegration = true }: D
     const handleRollDice = useCallback((dice: Dice) => {
         const rolls: number[] = []
         let total = 0
-        let criticalHit = false
         const modifiersResult: Array<{ name: string; value: number }> = []
 
         // Rola cada configuração de dado
@@ -88,16 +87,6 @@ export default function CustomDices({ onClose, enableChatIntegration = true }: D
                 const roll = Math.floor(Math.random() * config.faces) + 1
                 rolls.push(roll)
                 total += roll
-
-                // Verifica crítico para cada rolagem
-                if (roll === config.faces) {
-                    const critChance = dice.modifiers && dice.modifiers.length > 0 
-                        ? dice.modifiers.reduce((acc, mod) => acc + (mod.critChance ?? 0), 0)
-                        : 0
-                    if (Math.random() * 100 <= critChance) {
-                        criticalHit = true
-                    }
-                }
             }
         })
 
@@ -174,7 +163,6 @@ export default function CustomDices({ onClose, enableChatIntegration = true }: D
             rolls,
             total,
             modifiersResult,
-            criticalHit,
             allRolls: rolls,
             rollCount: 1
         })
@@ -236,7 +224,6 @@ export default function CustomDices({ onClose, enableChatIntegration = true }: D
                                         {mod.attribute ? ` + ${mod.attribute.toUpperCase()}` : ''}
                                         {mod.expertise ? ` + ${mod.expertise}` : ''}
                                         {mod.bonus ? ` + ${mod.bonus}` : ''}
-                                        {mod.critChance ? ` (${mod.critChance}% crítico)` : ''}
                                     </span>
                                 ))}
                                 {dice.effects?.map((effect, i) => (
@@ -394,7 +381,8 @@ export default function CustomDices({ onClose, enableChatIntegration = true }: D
                                             key={index}
                                             display="flex"
                                             gap={2}
-                                            alignItems="center"
+                                            flexDirection={matches ? 'column' : 'row'}
+                                            alignItems={matches ? 'stretch' : 'center'}
                                             sx={{
                                                 p: 1.5,
                                                 borderRadius: 1,
@@ -421,13 +409,13 @@ export default function CustomDices({ onClose, enableChatIntegration = true }: D
                                                     ))}
                                                 </Select>
                                             </FormControl>
-
+                                            
                                             <TextField
                                                 type="number"
                                                 label="Quantidade"
                                                 value={diceConfig.quantity}
                                                 onChange={(e) => {
-                                                    const value = Math.min(99, Math.max(1, Number(e.target.value)));
+                                                    const value = Math.min(999, Math.max(1, parseInt(e.target.value) || 1));
                                                     handleUpdateDiceConfig(
                                                         index,
                                                         'quantity',
@@ -435,7 +423,7 @@ export default function CustomDices({ onClose, enableChatIntegration = true }: D
                                                     );
                                                 }}
                                                 size="small"
-                                                inputProps={{ min: 1, max: 99 }}
+                                                inputProps={{ min: 1, max: 999 }}
                                             />
 
                                             {newDice.dices!.length > 1 && (
@@ -490,7 +478,8 @@ export default function CustomDices({ onClose, enableChatIntegration = true }: D
                                             key={index}
                                             display="flex"
                                             gap={2}
-                                            alignItems="center"
+                                            flexDirection={matches ? 'column' : 'row'}
+                                            alignItems={matches ? 'stretch' : 'center'}
                                             sx={{
                                                 p: 1.5,
                                                 borderRadius: 1,
@@ -499,7 +488,7 @@ export default function CustomDices({ onClose, enableChatIntegration = true }: D
                                                 borderColor: 'divider'
                                             }}
                                         >
-                                            <FormControl size="small" sx={{ minWidth: 120 }}>
+                                            <FormControl size="small" sx={{ minWidth: 120, width: '100%' }}>
                                                 <InputLabel>Atributo</InputLabel>
                                                 <Select
                                                     value={modifier.attribute || ''}
@@ -521,7 +510,7 @@ export default function CustomDices({ onClose, enableChatIntegration = true }: D
                                                 </Select>
                                             </FormControl>
 
-                                            <FormControl size="small" sx={{ minWidth: 120 }}>
+                                            <FormControl size="small" sx={{ minWidth: 120, width: '100%' }}>
                                                 <InputLabel>Perícia</InputLabel>
                                                 <Select
                                                     value={modifier.expertise || ''}
@@ -553,21 +542,7 @@ export default function CustomDices({ onClose, enableChatIntegration = true }: D
                                                     Number(e.target.value)
                                                 )}
                                                 size="small"
-                                                sx={{ width: '100px' }}
-                                            />
-
-                                            <TextField
-                                                type="number"
-                                                label="% Crítico"
-                                                value={modifier.critChance || 0}
-                                                onChange={(e) => handleUpdateModifier(
-                                                    index,
-                                                    'critChance',
-                                                    Math.max(0, Math.min(100, Number(e.target.value)))
-                                                )}
-                                                size="small"
-                                                sx={{ width: '100px' }}
-                                                inputProps={{ min: 0, max: 100 }}
+                                                sx={{ width: matches ? '100%' : '100px', minWidth: 120 }}
                                             />
 
                                             <Tooltip title="Remover modificador">
@@ -589,6 +564,7 @@ export default function CustomDices({ onClose, enableChatIntegration = true }: D
                                     sx={{ 
                                         p: 1.5,
                                         mt: 2,
+                                        width: '100%',
                                         borderRadius: 1,
                                         border: '1px dashed',
                                         borderColor: 'divider',
@@ -618,7 +594,9 @@ export default function CustomDices({ onClose, enableChatIntegration = true }: D
                                     <Box key={index} mb={2}>
                                         <Box 
                                             display="flex" 
-                                            gap={2} 
+                                            gap={2}
+                                            flexDirection={matches ? 'column' : 'row'}
+                                            alignItems={matches ? 'stretch' : 'center'}
                                             sx={{
                                                 p: 1.5,
                                                 borderRadius: 1,
@@ -627,7 +605,7 @@ export default function CustomDices({ onClose, enableChatIntegration = true }: D
                                                 borderColor: 'divider'
                                             }}
                                         >
-                                            <FormControl size="small">
+                                            <FormControl size="small" sx={{ minWidth: 120, width: '100%' }}>
                                                 <InputLabel>Operação</InputLabel>
                                                 <Select
                                                     value={effect.operation}
@@ -643,7 +621,7 @@ export default function CustomDices({ onClose, enableChatIntegration = true }: D
                                                 </Select>
                                             </FormControl>
 
-                                            <FormControl size="small">
+                                            <FormControl size="small" sx={{ minWidth: 120, width: '100%' }}>
                                                 <InputLabel>Tipo</InputLabel>
                                                 <Select
                                                     value={effect.type}
@@ -660,7 +638,7 @@ export default function CustomDices({ onClose, enableChatIntegration = true }: D
                                                 </Select>
                                             </FormControl>
 
-                                            <FormControl size="small">
+                                            <FormControl size="small" sx={{ minWidth: 120, width: '100%' }}>
                                                 <InputLabel>Alvo</InputLabel>
                                                 <Select
                                                     value={effect.target}
@@ -689,6 +667,7 @@ export default function CustomDices({ onClose, enableChatIntegration = true }: D
                                                         Math.max(1, Math.min(999, Number(e.target.value)))
                                                     )}
                                                     size="small"
+                                                    sx={{ width: matches ? '100%' : 'auto' }}
                                                     inputProps={{ min: 1, max: 999 }}
                                                 />
                                             )}
@@ -751,7 +730,6 @@ export default function CustomDices({ onClose, enableChatIntegration = true }: D
                                             {mod.attribute ? ` + ${mod.attribute.toUpperCase()}` : ''}
                                             {mod.expertise ? ` + ${mod.expertise}` : ''}
                                             {mod.bonus ? ` + ${mod.bonus}` : ''}
-                                            {mod.critChance ? ` (${mod.critChance}% crítico)` : ''}
                                         </span>
                                     ))}
                                     {newDice.effects?.map((effect, index) => (
