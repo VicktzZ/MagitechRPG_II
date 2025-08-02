@@ -541,10 +541,10 @@ export default function FichaDetailsModal({ open, onClose, ficha }: FichaDetails
                                             <TableRow key={index}>
                                                 <TableCell>
                                                     <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                                                        <Typography variant="body2" fontWeight="bold">{magia.nome}</Typography>
-                                                        {magia.tipo && (
+                                                        <Typography variant="body2" fontWeight="bold">{magia?.nome}</Typography>
+                                                        {magia?.tipo && (
                                                             <Chip 
-                                                                label={magia.tipo} 
+                                                                label={magia?.tipo} 
                                                                 size="small" 
                                                                 variant="outlined"
                                                                 sx={{ mt: 0.5, alignSelf: 'flex-start' }}
@@ -554,18 +554,18 @@ export default function FichaDetailsModal({ open, onClose, ficha }: FichaDetails
                                                 </TableCell>
                                                 <TableCell>
                                                     <Chip 
-                                                        label={magia.elemento} 
+                                                        label={magia?.elemento} 
                                                         size="small" 
-                                                        sx={{ bgcolor: elementColor[magia.elemento], color: magia.elemento === 'NÃO-ELEMENTAL' || magia.elemento === 'LUZ' ? 'black' : 'white' }}
+                                                        sx={{ bgcolor: elementColor[magia?.elemento], color: magia?.elemento === 'NÃO-ELEMENTAL' || magia?.elemento === 'LUZ' ? 'black' : 'white' }}
                                                     />
                                                 </TableCell>
-                                                <TableCell>{magia.custo} MP</TableCell>
+                                                <TableCell>{magia?.custo} MP</TableCell>
                                                 <TableCell>
-                                                    {magia.nível}
+                                                    {magia?.nível}
                                                 </TableCell>
                                                 <TableCell>
                                                     <Typography variant="body2" sx={{ maxWidth: 250, whiteSpace: 'pre-wrap' }}>
-                                                        {magia['estágio 1']}
+                                                        {magia?.['estágio 1']}
                                                     </Typography>
                                                     {/* {magia.dano && (
                                                         <Box mt={1}>
