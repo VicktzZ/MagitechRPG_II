@@ -52,8 +52,11 @@ export default function SkillsModal({ open, onClose }: { open: boolean, onClose:
             type: 'Poder Mágico',
             origin: power.elemento || 'Desconhecido',
             mastery: power.maestria || 'Nenhum',
-            element: power.elemento
+            element: power.elemento,
+            _id: power._id ?? Date.now().toString()
         };
+
+        console.log(newSkill)
         
         // Adicionar a nova habilidade à ficha
         const updatedPowers = [ ...currentPowers, newSkill ];
