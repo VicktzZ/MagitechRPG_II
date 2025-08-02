@@ -1,5 +1,5 @@
 import { FichaCard } from '@components/ficha';
-import { useRealtimeDatabase } from '@hooks';
+// import { useRealtimeDatabase } from '@hooks';
 import { Backdrop, Box, CircularProgress, Grid, Modal, Skeleton, Typography } from '@mui/material';
 import { campaignService, fichaService, sessionService } from '@services';
 import { useQuery } from '@tanstack/react-query';
@@ -23,33 +23,10 @@ export function CampaignProvider({ children, code }: { children: ReactElement, c
     const [ isSubscribed, setIsSubscribed ] = useState<boolean>(false);
     const [ currentFicha, setCurrentFicha ] = useLocalStorage<string>('currentFicha', '');
 
-    const { data: campaignDataResponse, query: { isPending } } = useRealtimeDatabase(
-        {
-            collectionName: 'campaigns',
-            pipeline: [
-                {
-                    $match: {
-                        campaignCode: code
-                    }
-                }
-            ],
-            onChange: (params) => {
-                console.log(params)
-                // for (const [ key, value ] of Object.entries(params.updateDescription?.updatedFields ?? {})) {
-                //     if (key.startsWith('session.users')) {
-                //         if (value !== session?.user?._id) {
-                //             const user = campaignDataResponse?.users.all.find((user) => user._id === value);
-                //             enqueueSnackbar(`${user?.name} entrou na sessão!`, toastDefault('enterInSession'));
-                //         }
-                //     }
-                // }
-            }
-        },
-        {
-            queryKey: [ 'campaignData', code ],
-            queryFn: async () => await campaignService.getAllData(code, session?.user?._id ?? '')
-        }
-    );
+    const { data: campaignDataResponse, isPending } = useQuery({
+        queryKey: [ 'campaignData', code ],
+        queryFn: async () => await campaignService.getAllData(code, session?.user?._id ?? '')
+    });
 
     const isUserGM = campaignDataResponse?.isUserGM ?? false;
 
