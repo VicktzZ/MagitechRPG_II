@@ -5,24 +5,15 @@ import { Box, Button, Grid, Skeleton, Typography } from '@mui/material';
 import { useSession } from 'next-auth/react';
 import { useState, type ReactElement } from 'react';
 import { campaignService } from '@services';
-import { useRealtimeDatabase } from '@hooks';
+// import { useRealtimeDatabase } from '@hooks';
+import { useQuery } from '@node_modules/@tanstack/react-query/build/modern';
 
 export default function CampaignPage(): ReactElement {
     const { data: session } = useSession();
     const [ contentType, setContentType ] = useState<'create' | 'join'>('create');
     const [ open, setOpen ] = useState(false);
     
-    const { data: campaigns, query: { isPending } } = useRealtimeDatabase({
-        collectionName: 'campaigns',
-        pipeline: [
-            {
-                $or: [
-                    { admin: session?.user?._id },
-                    { players: session?.user?._id }
-                ]
-            }
-        ]
-    }, {
+    const { data: campaigns, isPending } = useQuery({
         queryKey: [ 'campaigns', session?.user?._id ],
         queryFn: async () => await campaignService.fetch({ queryParams: { userId: session?.user?._id } })
     });

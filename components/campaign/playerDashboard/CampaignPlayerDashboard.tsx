@@ -36,11 +36,11 @@ import NotesSection from './NotesSection';
 import SkillsSection from './SkillsSection';
 import SpellsSection from './SpellsSection';
 import PlayerHeader from './PlayerHeader';
-import { useRealtimeDatabase } from '@hooks';
+// import { useRealtimeDatabase } from '@hooks';
 import { useLocalStorage } from '@uidotdev/usehooks';
 import { fichaService } from '@services';
 import { campaignCurrentFichaContext } from '@contexts';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 // Componente Section reutilizável
 function Section({ title, icon, children, action, sx }: { 
@@ -85,16 +85,7 @@ export default function CampaignPlayerDashboard(): ReactElement | null {
 
     if (!fichaId) return null;
 
-    const { data: ficha, query: { isPending } } = useRealtimeDatabase({
-        collectionName: 'fichas',
-        pipeline: [
-            {
-                $match: {
-                    _id: fichaId
-                }
-            }
-        ]
-    }, {
+    const { data: ficha, isPending } = useQuery({
         queryKey: [ 'ficha', fichaId ],
         queryFn: async () => await fichaService.getById(fichaId)
     })
