@@ -27,7 +27,7 @@ import {
     Backdrop,
     Divider
 } from '@mui/material'
-import { useQuery } from '@tanstack/react-query'
+import { useQueryClient } from '@tanstack/react-query'
 import {
     Shield,
     People,
@@ -40,7 +40,7 @@ import { useSnackbar } from 'notistack'
 import { type ReactElement, useMemo, useState } from 'react'
 import PlayerCard from './PlayerCard'
 import type { Ficha } from '@types'
-// import { useRealtimeDatabase } from '@hooks';
+import { useRealtimeDatabase } from '@hooks';
 import { blue, green, orange, purple } from '@mui/material/colors';
 
 // Componente Section reutilizável
@@ -102,9 +102,25 @@ export default function CampaignGMDashboard(): ReactElement | null {
     const [ isLevelingUp, setIsLevelingUp ] = useState(false)
     const [ levelsToAdd, setLevelsToAdd ] = useState<number>(1)
 
-    // const queryClient = useQueryClient()
+    const queryClient = useQueryClient()
 
-    const { data: playerFichas } = useQuery({
+    const { data: playerFichas } = useRealtimeDatabase({
+        collectionName: 'fichas',
+        pipeline: [
+            {
+                $match: {
+                    _id: { $in: fichas.map(f => f._id) }
+                }
+            }
+        ],
+        onChange: async () => {
+            // Invalida o cache para forçar refetch dos dados
+            console.log('[GM Dashboard] Invalidando cache e forçando refetch')
+            await queryClient.invalidateQueries({ queryKey: [ 'playerFichas', fichas.map(f => f._id) ] })
+            await queryClient.refetchQueries({ queryKey: [ 'playerFichas', fichas.map(f => f._id) ] })
+        }
+    },
+    {
         queryKey: [ 'playerFichas', fichas.map(f => f._id) ],
         queryFn: async () => await campaignService.getFichas(code),
         staleTime: 0,

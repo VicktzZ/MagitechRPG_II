@@ -1,5 +1,4 @@
 import { FichaCard } from '@components/ficha';
-// import { useRealtimeDatabase } from '@hooks';
 import { Backdrop, Box, CircularProgress, Grid, Modal, Skeleton, Typography } from '@mui/material';
 import { campaignService, fichaService, sessionService } from '@services';
 import { useQuery } from '@tanstack/react-query';
@@ -10,7 +9,7 @@ import { type ReactElement, useEffect, useState } from 'react';
 import { campaignContext } from './campaignContext';
 import { enqueueSnackbar } from '@node_modules/notistack';
 import { toastDefault } from '@constants';
-import { usePusher } from '@hooks';
+import { usePusher, useRealtimeDatabase } from '@hooks';
 import { useLocalStorage } from '@uidotdev/usehooks';
 
 export function CampaignProvider({ children, code }: { children: ReactElement, code: string }) {
@@ -23,7 +22,27 @@ export function CampaignProvider({ children, code }: { children: ReactElement, c
     const [ isSubscribed, setIsSubscribed ] = useState<boolean>(false);
     const [ currentFicha, setCurrentFicha ] = useLocalStorage<string>('currentFicha', '');
 
-    const { data: campaignDataResponse, isPending } = useQuery({
+    const { data: campaignDataResponse, query: { isPending } } = useRealtimeDatabase({
+        collectionName: 'campaigns',
+        pipeline: [
+            {
+                $match: {
+                    campaignCode: code
+                }
+            }
+        ],
+        onChange: (params: any) => {
+            console.log(params)
+            // for (const [ key, value ] of Object.entries(params.updateDescription?.updatedFields ?? {})) {
+            //     if (key.startsWith('session.users')) {
+            //         if (value !== session?.user?._id) {
+            //             const user = campaignDataResponse?.users.all.find((user) => user._id === value);
+            //             enqueueSnackbar(`${user?.name} entrou na sessão!`, toastDefault('enterInSession'));
+            //         }
+            //     }
+            // }
+        }
+    }, {
         queryKey: [ 'campaignData', code ],
         queryFn: async () => await campaignService.getAllData(code, session?.user?._id ?? ''),
         enabled: !!session?.user?._id && !isSubscribed
