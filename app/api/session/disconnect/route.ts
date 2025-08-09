@@ -10,6 +10,10 @@ export async function POST(req: Request): Promise<Response> {
 
         const { campaignCode, userId }: { campaignCode: string; userId: string } = await req.json();
 
+        if (!userId || !campaignCode) {
+            return Response.json({ message: 'Missing userId or campaignCode' }, { status: 400 });
+        }
+
         const updatedCampaign: CampaignType | null = await Campaign.findOneAndUpdate(
             { campaignCode },
             {

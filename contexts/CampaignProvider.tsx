@@ -25,7 +25,8 @@ export function CampaignProvider({ children, code }: { children: ReactElement, c
 
     const { data: campaignDataResponse, isPending } = useQuery({
         queryKey: [ 'campaignData', code ],
-        queryFn: async () => await campaignService.getAllData(code, session?.user?._id ?? '')
+        queryFn: async () => await campaignService.getAllData(code, session?.user?._id ?? ''),
+        enabled: !!session?.user?._id && !isSubscribed
     });
 
     const isUserGM = campaignDataResponse?.isUserGM ?? false;
@@ -50,19 +51,21 @@ export function CampaignProvider({ children, code }: { children: ReactElement, c
         }
 
         return () => {
+            const userId = session?.user?._id;
+            if (!userId) return;
+
             setIsSubscribed(false);
-            sessionService.disconnect({ campaignCode: code, userId: session?.user?._id ?? '' });
+            sessionService.disconnect({ campaignCode: code, userId });
         }
     }, [ isPending, isUserGM, ficha ])
 
     return (
         <>
-            {isPending && (
+            {isPending ? (
                 <Backdrop open={true}>
                     <CircularProgress />
                 </Backdrop>
-            )}
-            {!isSubscribed && (
+            ) : (!isUserGM && !ficha) ? (
                 <Modal
                     open={true}
                     onClose={() => { router.push('/app'); }}
@@ -107,8 +110,8 @@ export function CampaignProvider({ children, code }: { children: ReactElement, c
                         </Grid>
                     </Box>
                 </Modal>
-            )}
-            {isSubscribed && campaignDataResponse && (ficha ?? isUserGM) && (
+            ) : null}
+            {campaignDataResponse && (isUserGM || ficha) && (
                 <campaignContext.Provider value={{ ...campaignDataResponse, code }}>
                     {children}
                 </campaignContext.Provider>   

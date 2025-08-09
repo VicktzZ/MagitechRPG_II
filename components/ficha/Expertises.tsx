@@ -41,7 +41,7 @@ export default function Expertises({ disabled }: { disabled?: boolean }): ReactE
             } else {
                 // Para decremento, o valor será exibido normalmente no botão
                 // mas o valor real será calculado no handleExpertiseChange
-                setEditValue(-multiplier);
+                setEditValue(-  multiplier);
             }
         }
     }, [ multiplier, points ]);
@@ -56,7 +56,7 @@ export default function Expertises({ disabled }: { disabled?: boolean }): ReactE
         control,
         name: 'attributes',
         defaultValue: { vig: 0, des: 0, foc: 0, log: 0, sab: 0, car: 0, lp: 0, mp: 0, ap: 0, maxLp: 0, maxMp: 0, maxAp: 0 }
-    }) as Attributes
+    }) as unknown as Attributes
 
     // Observar os modificadores de atributos
     const attributeMods = useWatch<Ficha, 'mods.attributes'>({

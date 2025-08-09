@@ -148,7 +148,6 @@ export default function FichaComponent(): ReactElement {
         enqueueSnackbar('Aguarde...', toastDefault('loadingFetch', 'info'))
 
         values.magics = values.magics.map(m => m._id) as any
-        console.log(values.skills.powers)
         values.skills.powers = values.skills.powers.map(p => p._id) as any
 
         if (!values._id) {
