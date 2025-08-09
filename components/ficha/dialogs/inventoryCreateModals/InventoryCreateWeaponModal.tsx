@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/consistent-type-assertions */
+
 import { toastDefault } from '@constants';
 import { weaponCateg, weaponKind, weaponMagicalAccessories, weaponScientificAccessories, damages } from '@constants/dataTypes';
 import { Grid, Stack, Typography, useMediaQuery, useTheme } from '@mui/material';

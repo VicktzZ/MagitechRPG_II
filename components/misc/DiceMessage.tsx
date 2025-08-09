@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/prefer-nullish-coalescing */
+/* eslint-disable @typescript-eslint/no-shadow */
+
 import { Box, Chip, Collapse, Divider, IconButton, Stack, Tooltip, Typography } from '@mui/material'
 import { MessageType } from '@enums'
 import { Casino, ExpandMore } from '@mui/icons-material'
@@ -81,8 +84,8 @@ export function DiceMessage({ text, type }: DiceMessageProps) {
     // Header: **Nome** (notação)
     const header = lines[0] || ''
     const headerMatch = header.match(/\*\*(.+?)\*\*\s*\((.+?)\)/)
-    const name = headerMatch?.[1] || 'Rolagem'
-    const notation = headerMatch?.[2] || ''
+    const name = headerMatch?.[1] ?? 'Rolagem'
+    const notation = headerMatch?.[2] ?? ''
 
     // Modificadores (opcional)
     const modsLine = lines.find(l => l.toLowerCase().startsWith('modificadores:'))

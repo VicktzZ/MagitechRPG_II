@@ -42,7 +42,7 @@ import {
 import { useSession } from '@node_modules/next-auth/react';
 import { fichaService } from '@services';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { FichaDto, type Ficha } from '@types';
+import { type FichaDto, type Ficha } from '@types';
 import { useRouter } from 'next/navigation';
 import { useSnackbar } from 'notistack';
 import { useEffect, useState, type ReactElement } from 'react';

@@ -16,16 +16,14 @@ import {
     useMediaQuery, 
     useTheme 
 } from '@mui/material'
-import { 
-    type Dice,
+import {
     type DiceEffectOperation,
     type DiceEffectTarget,
     type DiceEffectType,
     type Attributes, 
-    type ExpertisesNames, 
-    type Ficha
+    type ExpertisesNames
 } from '@types'
-import { type ReactElement, useCallback } from 'react'
+import { type ReactElement } from 'react'
 import Fade from '@mui/material/Fade'
 import { useCustomDices } from '@hooks/useCustomDices'
 import DiceRollModal from '../misc/DiceRollModal'

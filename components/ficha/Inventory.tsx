@@ -14,10 +14,9 @@ import {
     TouchApp,
     Warning
 } from '@mui/icons-material';
-import { Avatar, Fade, GlobalStyles } from '@mui/material';
+import { Fade } from '@mui/material';
 import {
     alpha,
-    Backdrop,
     Box,
     Button,
     Chip,
