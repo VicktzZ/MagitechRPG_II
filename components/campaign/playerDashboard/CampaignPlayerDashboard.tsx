@@ -28,7 +28,7 @@ import { FormProvider, useForm } from 'react-hook-form';
 import { Passives, CustomDices } from '@components/ficha';
 import type { Ficha } from '@types';
 
-import { useSaveFichaChanges } from '@hooks';
+import { useRealtimeDatabase, useSaveFichaChanges } from '@hooks';
 import ExpertiseSection from './ExpertiseSection';
 import InventorySection from './InventorySection';
 import MoneyAndAmmo from './MoneyAndAmmo';
@@ -36,11 +36,10 @@ import NotesSection from './NotesSection';
 import SkillsSection from './SkillsSection';
 import SpellsSection from './SpellsSection';
 import PlayerHeader from './PlayerHeader';
-// import { useRealtimeDatabase } from '@hooks';
 import { useLocalStorage } from '@uidotdev/usehooks';
 import { fichaService } from '@services';
 import { campaignCurrentFichaContext } from '@contexts';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 
 // Componente Section reutilizável
 function Section({ title, icon, children, action, sx }: { 
@@ -85,7 +84,16 @@ export default function CampaignPlayerDashboard(): ReactElement | null {
 
     if (!fichaId) return null;
 
-    const { data: ficha, isPending } = useQuery({
+    const { data: ficha, query: { isPending } } = useRealtimeDatabase({
+        collectionName: 'fichas',
+        pipeline: [
+            {
+                $match: {
+                    _id: fichaId
+                }
+            }
+        ]
+    }, {
         queryKey: [ 'ficha', fichaId ],
         queryFn: async () => await fichaService.getById(fichaId)
     })
@@ -94,12 +102,10 @@ export default function CampaignPlayerDashboard(): ReactElement | null {
         ficha: ficha!, 
         enabled: !isUserGM && !!ficha,
         callback: async () => {
-            // Invalida o cache para forçar refetch dos dados atualizados
             await queryClient.invalidateQueries({ queryKey: [ 'ficha', fichaId ] })
         }
     })
 
-    // Formulário para integração com componentes da ficha
     const form = useForm<Ficha>({
         defaultValues: ficha,
         values: ficha

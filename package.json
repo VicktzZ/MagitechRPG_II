@@ -11,7 +11,7 @@
     "eslint:fix": "eslint --ext .ts,.tsx --ignore-path .gitignore . --fix"
   },
   "engines": {
-    "node": ">=18.17.0"
+    "node": ">=22.12.0"
   },
   "dependencies": {
     "@dicebear/collection": "^7.0.1",
