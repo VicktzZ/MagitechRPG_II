@@ -3,13 +3,19 @@ import {
     Button,
     Typography,
     useMediaQuery,
-    useTheme
+    useTheme,
+    Stack,
+    Divider,
+    IconButton,
+    InputAdornment,
+    ButtonGroup
 } from '@mui/material';
 import { type ReactElement, memo, useCallback } from 'react';
-import { useFormContext } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { FormTextField } from './fields';
 import { FormSelect } from './fields';
 import { rarities } from '@constants/dataTypes';
+import { Add, Remove } from '@mui/icons-material';
 
 /**
  * Interface para as propriedades dos itens comuns a todos os tipos
@@ -22,9 +28,6 @@ export interface CommonItemFields {
   quantity: number;
 }
 
-/**
- * Tipo para formulário de criação de itens
- */
 export type ItemFormData = CommonItemFields & Record<string, any>;
 
 export function mapArrayToOptions(items: string[]): Array<{ value: string, label: string }> {
@@ -34,13 +37,15 @@ export function mapArrayToOptions(items: string[]): Array<{ value: string, label
     }));
 }
 
-/**
- * Wrapper para modais de criação de itens de inventário com campos comuns
- * @param props Propriedades do componente
- * @returns Componente React
- */
-export default memo(function InventoryCreateModalWrapper({ children, onSubmit  }: any): ReactElement {
-    const form = useFormContext<ItemFormData>();
+interface WrapperProps {
+    children: ReactElement;
+    onSubmit?: (data: ItemFormData) => void;
+    action?: (data: ItemFormData) => void; // compatibilidade retroativa
+    submitLabel?: string;
+};
+
+export default memo(function InventoryCreateModalWrapper({ children, onSubmit, action, submitLabel = 'Criar Item'  }: WrapperProps): ReactElement {
+    const form = useForm<ItemFormData>();
     const { register, handleSubmit, formState: { errors }, getValues, watch, setValue } = form;
 
     const theme = useTheme();
@@ -65,90 +70,103 @@ export default memo(function InventoryCreateModalWrapper({ children, onSubmit  }
 
     return (
         <>
-            <Box 
-                display={!matches ? 'flex' : 'column'} 
-                gap={2} 
-                component='form' 
-                noValidate 
-                onSubmit={handleSubmit(onSubmit)}
+            <Box component='form' noValidate onSubmit={handleSubmit(onSubmit ?? action ?? (() => {}))}
+                sx={{
+                    px: { xs: 0, sm: 0 },
+                    pt: 0.5
+                }}
             >
-                <FormTextField 
-                    label='Nome'
-                    registration={register('name')}
-                    error={errors?.name}
-                    sx={{ width: '30%' }}
-                />
-        
-                <FormSelect
-                    name="rarity"
-                    label="Raridade"
-                    options={rarityOptions}
-                    error={errors.rarity as any}
-                    required
-                    defaultValue='Comum'
-                    sx={{ width: '20%' }}
-                />
-        
-                <FormTextField 
-                    name="description"
-                    label="Descrição"
-                    multiline
-                    rows={3}
-                    registration={register('description')}
-                    error={errors.description as any}
-                    fullWidth
-                />
+                <Stack spacing={3}>
+                    <Stack spacing={1} sx={{ flex: 1 }}>
+                        <Typography variant='overline' color='text.disabled' sx={{ letterSpacing: 0.6 }}>Informações gerais</Typography>
+                        <Stack direction={matches ? 'column' : 'row'} spacing={2} alignItems='stretch'>
+                            <FormTextField 
+                                label='Nome'
+                                registration={register('name')}
+                                error={errors?.name}
+                                sx={{ width: matches ? '100%' : '60%' }}
+                            />
+                            <FormSelect
+                                registration={register('rarity')}
+                                name="rarity"
+                                label="Raridade"
+                                options={rarityOptions}
+                                error={errors.rarity as any}
+                                required
+                                defaultValue='Comum'
+                                sx={{ width: matches ? '100%' : '40%' }}
+                            />
+                        </Stack>
+                        <FormTextField 
+                            name="description"
+                            label="Descrição"
+                            multiline
+                            rows={matches ? 4 : 3}
+                            registration={register('description')}
+                            error={errors.description as any}
+                            fullWidth
+                        />
+                    </Stack>
+                </Stack>
             </Box>
-      
+
             {children}
-      
-            <Box display='flex' alignItems='center' gap={2} mt={3}>
-                <FormTextField
-                    label='Quantidade' 
+
+            <Divider sx={{ my: 2, opacity: 0.6 }} />
+            <Stack direction={matches ? 'column' : 'row'} spacing={3} alignItems={matches ? 'stretch' : 'flex-end'}>
+                <Stack direction='row' alignItems='center' spacing={1} sx={{ flex: matches ? 'unset' : 0 }}>
+                    <ButtonGroup variant='outlined' size='small' sx={{ borderRadius: 2 }}>
+                        <IconButton aria-label='diminuir' size='small' onClick={() => setValue('quantity', Math.max(1, (getValues('quantity') ?? 1) - 1), { shouldValidate: true })}>
+                            <Remove fontSize='small' />
+                        </IconButton>
+                        <FormTextField
+                            label='Quantidade' 
+                            type='number'
+                            registration={register('quantity')}
+                            error={errors.quantity as any}
+                            value={watch('quantity') || ''}
+                            onChange={handleQuantityChange}
+                            inputProps={{
+                                min: 1,
+                                onWheel: handleWheelEvent
+                            }}
+                            sx={{ width: 160 }}
+                        />
+                        <IconButton aria-label='aumentar' size='small' onClick={() => setValue('quantity', Math.max(1, (getValues('quantity') ?? 1) + 1), { shouldValidate: true })}>
+                            <Add fontSize='small' />
+                        </IconButton>
+                    </ButtonGroup>
+                </Stack>
+
+                <FormTextField 
+                    label='Peso' 
                     type='number'
-                    registration={register('quantity')}
-                    error={errors.quantity as any}
-                    value={watch('quantity') || ''}
-                    onChange={handleQuantityChange}
+                    registration={register('weight')}
+                    error={errors.weight as any}
+                    value={watch('weight') || ''}
+                    onChange={handleWeightChange}
                     inputProps={{
-                        min: 1,
+                        min: 0,
+                        step: 0.1,
                         onWheel: handleWheelEvent
                     }}
+                    InputProps={{ endAdornment: <InputAdornment position='end'>kg</InputAdornment> }}
+                    sx={{ width: matches ? '100%' : 200 }}
                 />
-        
-                <Box display='flex' alignItems='center' gap={1}>
-                    <FormTextField 
-                        label='Peso' 
-                        type='number'
-                        registration={register('weight')}
-                        error={errors.weight as any}
-                        value={watch('weight') || ''}
-                        onChange={handleWeightChange}
-                        inputProps={{
-                            min: 0,
-                            step: 0.1,
-                            onWheel: handleWheelEvent
-                        }}
-                    />
-                    <Typography variant='h6'>KG</Typography>
-                    <Typography variant='h6'>x</Typography>
-                    <Typography variant='h6'>{getValues('quantity') ?? 0}</Typography>
-                    <Typography variant="body2" color="text.secondary">
-                        Quantidade: {watch('quantity' as keyof ItemFormData)}
-                    </Typography>
-                </Box>
-        
-                <Box width='100%' display='flex' justifyContent='flex-end' alignItems='flex-end'>
-                    <Button
-                        onClick={handleSubmit(onSubmit)}
-                        type='submit'
-                        variant='contained'
-                        color={'terciary' as any}
-                    >
-            Criar Item
+
+                <Box flex={1} />
+
+                <Typography variant='body2' color='text.secondary'>
+                    Total: {((getValues('quantity') ?? 0) * (getValues('weight') ?? 0)).toFixed(2)} kg · Qtd {getValues('quantity') ?? 0}
+                </Typography>
+
+                <Box display='flex' justifyContent='flex-end'>
+                    <Button onClick={handleSubmit(onSubmit ?? action ?? (() => {}))} type='submit' variant='contained' color={'terciary' as any}
+                        sx={{ borderRadius: 999, px: 3, textTransform: 'none' }}>
+                        {submitLabel}
                     </Button>
                 </Box>
-            </Box>
+            </Stack>
         </>
     );
 });

@@ -42,7 +42,7 @@ import {
 import { useSession } from '@node_modules/next-auth/react';
 import { fichaService } from '@services';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type { Ficha } from '@types';
+import { type FichaDto, type Ficha } from '@types';
 import { useRouter } from 'next/navigation';
 import { useSnackbar } from 'notistack';
 import { useEffect, useState, type ReactElement } from 'react';
@@ -112,7 +112,7 @@ export default function FichaComponent(): ReactElement {
     const submitAudio = useAudio('/sounds/sci-fi-interface-zoom.wav')
 
     const { mutateAsync: updateFicha } = useMutation({
-        mutationFn: async ({ id, data }: { id: string, data: Ficha }) => await fichaService.updateById({ id, data }),
+        mutationFn: async ({ id, data }: { id: string, data: FichaDto }) => await fichaService.updateById({ id, data }),
         onSuccess: () => {
             enqueueSnackbar('Ficha atualizada com sucesso!', toastDefault('success', 'success'))
             setSaveProgress(100)
@@ -127,7 +127,7 @@ export default function FichaComponent(): ReactElement {
     })
 
     const { mutateAsync: createFicha } = useMutation({
-        mutationFn: async (data: Ficha) => await fichaService.create(data),
+        mutationFn: async (data: FichaDto) => await fichaService.create(data),
         onSuccess: () => {
             enqueueSnackbar('Ficha criada com sucesso!', toastDefault('success', 'success'))
             queryClient.invalidateQueries({ queryKey: [ 'ficha', ficha._id ] })
@@ -145,14 +145,20 @@ export default function FichaComponent(): ReactElement {
     }, [ errors ])
 
     const submitForm: SubmitHandler<Ficha> = async (values) => {
-        enqueueSnackbar('Aguarde...', toastDefault('loadingFetch', 'info'))
+        const fichaDto: FichaDto = {
+            ...values,
+            magics: values.magics.map(m => m._id) as string[],
+            skills: {
+                ...values.skills,
+                powers: values.skills.powers.map(p => p._id) as string[]
+            }
+        }
 
-        values.magics = values.magics.map(m => m._id) as any
-        values.skills.powers = values.skills.powers.map(p => p._id) as any
+        enqueueSnackbar('Aguarde...', toastDefault('loadingFetch', 'info'))
 
         if (!values._id) {
             try {
-                const response = await createFicha(values)
+                const response = await createFicha(fichaDto)
 
                 closeSnackbar('loadingFetch')
 
@@ -170,7 +176,7 @@ export default function FichaComponent(): ReactElement {
         }
 
         try {
-            const response = await updateFicha({ id: values._id, data: values })
+            const response = await updateFicha({ id: values._id, data: fichaDto })
 
             closeSnackbar('loadingFetch')
 

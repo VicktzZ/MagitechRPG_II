@@ -1,5 +1,5 @@
 import { WarningModal } from '@layout'
-import { Backpack, Block, Bolt, ChatBubbleOutline, Favorite, Info, LocalPolice, MonetizationOn, MoreVert, Shield } from '@mui/icons-material'
+import { Add, Backpack, Block, Bolt, ChatBubbleOutline, Favorite, Info, LocalPolice, MonetizationOn, MoreVert, Shield } from '@mui/icons-material'
 import {
     Box,
     Button,
@@ -224,6 +224,12 @@ export default function PlayerCard({ ficha }: { ficha: Required<Ficha> }) {
                                 <Info />
                             </ListItemIcon>
                             <ListItemText>Ver detalhes</ListItemText>
+                        </MenuItem>
+                        <MenuItem onClick={() => setAddItemModalOpen(true)}>
+                            <ListItemIcon>
+                                <Add fontSize="small" />
+                            </ListItemIcon>
+                            <ListItemText>Adicionar item</ListItemText>
                         </MenuItem>
                         <MenuItem onClick={() => setNotificationDialogOpen(true)}>
                             <ListItemIcon>

@@ -13,41 +13,44 @@ import lightTheme from '@themes/lightTheme'
 import { SavingSpinner } from '@components/misc';
 import { useThemeContext } from '@contexts';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { persistQueryClient } from '@tanstack/react-query-persist-client';
-import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
+// import { persistQueryClient } from '@tanstack/react-query-persist-client';
+// import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
 
 const queryClient = new QueryClient({
     defaultOptions: {
         queries: {
-            staleTime: 1000 * 60 * 5
+            refetchOnWindowFocus: false,
+            refetchOnReconnect: false,
+            refetchInterval: false,
+            staleTime: 30_000
         }
     }
 });   
 
-const localStoragePersister = createSyncStoragePersister({
-    storage: typeof window !== 'undefined' ? window.localStorage : undefined,
-    key: 'react-query-persist-client'
-});
+// const localStoragePersister = createSyncStoragePersister({
+//     storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+//     key: 'react-query-persist-client'
+// });
 
-if (typeof window !== 'undefined') { // Garante que só rode no lado do cliente
-    persistQueryClient({
-        queryClient: queryClient as any,
-        persister: localStoragePersister,
-        maxAge: 1000 * 60 * 60 * 24,
-        dehydrateOptions: {
-            shouldDehydrateQuery: (query) =>
-                query.gcTime !== Infinity &&
-                query.queryKey[0] !== 'some-key-to-exclude'
-        },
-        hydrateOptions: {
-            defaultOptions: {
-                queries: {
-                    retry: false
-                }
-            }
-        }
-    });
-}
+// if (typeof window !== 'undefined') {
+//     persistQueryClient({
+//         queryClient: queryClient as any,
+//         persister: localStoragePersister,
+//         maxAge: 1000 * 60 * 60 * 24,
+//         dehydrateOptions: {
+//             shouldDehydrateQuery: (query) =>
+//                 query.gcTime !== Infinity &&
+//                 query.queryKey[0] !== 'some-key-to-exclude'
+//         },
+//         hydrateOptions: {
+//             defaultOptions: {
+//                 queries: {
+//                     retry: false
+//                 }
+//             }
+//         }
+//     });
+// }
 
 interface ThemedAppProps {
     ficha: Ficha;

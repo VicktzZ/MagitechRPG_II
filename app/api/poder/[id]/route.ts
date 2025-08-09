@@ -1,4 +1,4 @@
-import Poder from '@models/poder';
+import Poder from '@models/db/poder';
 import type { MagicPower } from '@types';
 import { connectToDb } from '@utils/database';
 

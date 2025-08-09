@@ -1,8 +1,10 @@
+import type { DeepOverride } from './deepOverride'
 import type { Dice } from './dices'
 import type { Magia } from './models'
 
+type Id = string
 export interface Ficha {
-    _id?: string
+    _id?: Id
     playerName: string
     mode: 'Apocalypse' | 'Classic'
     userId: string
@@ -85,6 +87,12 @@ export interface Ficha {
     }
 }
 
+export type FichaDto = DeepOverride<Ficha, {
+    skills: {
+        powers: Id[]
+    },
+    magics: Id[]
+}>
 // Types
 
 export interface Class {

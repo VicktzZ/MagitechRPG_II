@@ -1,4 +1,4 @@
-import Campaign from '@models/campaign';
+import Campaign from '@models/db/campaign';
 import { connectToDb } from '@utils/database';
 import type { Campaign as CampaignType } from '@types';
 import type { NextRequest } from 'next/server';
