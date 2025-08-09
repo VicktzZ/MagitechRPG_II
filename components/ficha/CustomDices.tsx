@@ -25,18 +25,11 @@ import {
     type ExpertisesNames, 
     type Ficha
 } from '@types'
-import { useFormContext } from 'react-hook-form'
-import AddIcon from '@mui/icons-material/Add'
-import RemoveIcon from '@mui/icons-material/Remove'
-import DeleteIcon from '@mui/icons-material/Delete'
-import CasinoIcon from '@mui/icons-material/Casino'
-import EditIcon from '@mui/icons-material/Edit'
 import { type ReactElement, useCallback } from 'react'
-import { toastDefault } from '@constants'
-import { enqueueSnackbar } from 'notistack'
 import Fade from '@mui/material/Fade'
 import { useCustomDices } from '@hooks/useCustomDices'
 import DiceRollModal from '../misc/DiceRollModal'
+import { Add, Casino, Delete, Edit, Remove } from '@mui/icons-material'
 
 interface DicePersonalizationProps {
     onClose?: () => void
@@ -46,7 +39,6 @@ interface DicePersonalizationProps {
 export default function CustomDices({ onClose, enableChatIntegration = true }: DicePersonalizationProps): ReactElement {
     const theme = useTheme()
     const matches = useMediaQuery(theme.breakpoints.down('sm'))
-    const { getValues } = useFormContext<Ficha>()
 
     const {
         newDice,
@@ -71,119 +63,15 @@ export default function CustomDices({ onClose, enableChatIntegration = true }: D
         handleSaveDice,
         handleDeleteDice,
         handleEditDice,
-        editingDiceId
+        editingDiceId,
+        handleRollDice
     } = useCustomDices({ onClose, enableChatIntegration })
 
     const attributes: Attributes[] = [ 'des', 'vig', 'log', 'sab', 'foc', 'car' ]
 
-    const handleRollDice = useCallback((dice: Dice) => {
-        const rolls: number[] = []
-        let total = 0
-        const modifiersResult: Array<{ name: string; value: number }> = []
-
-        // Rola cada configuração de dado
-        dice.dices.forEach(config => {
-            for (let i = 0; i < config.quantity; i++) {
-                const roll = Math.floor(Math.random() * config.faces) + 1
-                rolls.push(roll)
-                total += roll
-            }
-        })
-
-        // Aplica os modificadores
-        if (dice.modifiers && dice.modifiers.length > 0) {
-            for (const mod of dice.modifiers) {
-                if (mod.attribute) {
-                    // Pegar o valor real do modificador do atributo da ficha
-                    const attrValue = getValues()?.mods?.attributes?.[mod.attribute] || 0
-                    total += attrValue
-                    modifiersResult.push({ name: mod.attribute.toUpperCase(), value: attrValue })
-                }
-                if (mod.expertise) {
-                    // Buscar valor real da perícia na ficha
-                    // Se expertise for um objeto, usamos a propriedade name como chave
-                    const expertiseName = mod.expertise;
-                    
-                    const expValue = getValues()?.expertises?.[expertiseName]?.value || 0
-                    total += expValue
-                    modifiersResult.push({ name: expertiseName, value: expValue })
-                }
-                if (mod.bonus) {
-                    total += mod.bonus
-                    modifiersResult.push({ name: 'Bônus', value: mod.bonus })
-                }
-            }
-        }
-
-        // Aplica os efeitos do dado
-        if (dice.effects?.length) {
-            for (const effect of dice.effects) {
-                const { operation, type, target, value } = effect
-                let effectValue: number
-
-                switch (type) {
-                case 'constant':
-                    effectValue = value!
-                    break
-                case 'variable':
-                    const effectIndex = dice.effects.indexOf(effect)
-                    if (!variableValues[effectIndex]) {
-                        enqueueSnackbar(
-                            'Insira um valor para todos os efeitos variáveis!',
-                            toastDefault('diceEffectError', 'error')
-                        )
-                        return
-                    }
-                    effectValue = variableValues[effectIndex]
-                    break
-                default: // 'result'
-                    effectValue = total
-                }
-
-                // Atualiza o valor do atributo/munição na ficha
-
-                if (target === 'ammo') {
-                    // setValue('ammoCounter.current', newValue, { shouldValidate: true })
-                } else {
-                    // setValue(`attributes.${target}`, newValue, { shouldValidate: true })
-                }
-
-                // Adiciona o efeito à lista de modificadores
-                modifiersResult.push({ 
-                    name: `${operation === 'increase' ? '+' : '-'} ${target.toUpperCase()}`, 
-                    value: effectValue 
-                })
-            }
-        }
-
-        // Atualiza o histórico de rolagens
-
-        setRollResult({
-            dice,
-            rolls,
-            total,
-            modifiersResult,
-            allRolls: rolls,
-            rollCount: 1
-        })
-
-        // Atualiza lastRolled
-        
-        // setValue('dices', updatedDices, { shouldValidate: true })
-        //     // setValue('dices', updatedDices, { shouldValidate: true })
-
-    //     // useAudio(diceRoll).play()
-    }, [])
-
     const handleCloseResult = () => {
         setRollResult(null)
     }
-
-    // Função para fechar modal de resultado
-
-    // Função auxiliar para calcular a média
-
-    // Calcular médias
 
     return (
         <Box>
@@ -258,7 +146,7 @@ export default function CustomDices({ onClose, enableChatIntegration = true }: D
                                         '&:hover': { bgcolor: alpha(dice.color || theme.palette.primary.main, 0.1) }
                                     }}
                                 >
-                                    <CasinoIcon fontSize="small" />
+                                    <Casino fontSize="small" />
                                 </IconButton>
                             </Tooltip>
                             <Tooltip title="Editar dado">
@@ -270,7 +158,7 @@ export default function CustomDices({ onClose, enableChatIntegration = true }: D
                                         '&:hover': { bgcolor: alpha(theme.palette.info.main, 0.1) }
                                     }}
                                 >
-                                    <EditIcon fontSize="small" />
+                                    <Edit fontSize="small" />
                                 </IconButton>
                             </Tooltip>
                             {dice.effects?.map((effect, i) => (
@@ -299,7 +187,7 @@ export default function CustomDices({ onClose, enableChatIntegration = true }: D
                                         '&:hover': { bgcolor: alpha(theme.palette.error.main, 0.1) }
                                     }}
                                 >
-                                    <DeleteIcon fontSize="small" />
+                                    <Delete fontSize="small" />
                                 </IconButton>
                             </Tooltip>
                         </Box>
@@ -336,7 +224,7 @@ export default function CustomDices({ onClose, enableChatIntegration = true }: D
                 <Button
                     variant={showCreateForm ? 'outlined' : 'contained'}
                     onClick={() => setShowCreateForm(!showCreateForm)}
-                    startIcon={showCreateForm ? <RemoveIcon /> : <AddIcon />}
+                    startIcon={showCreateForm ? <Remove /> : <Add />}
                     size="small"
                 >
                     {showCreateForm ? 'Cancelar' : 'Criar Novo Dado'}
@@ -436,7 +324,7 @@ export default function CustomDices({ onClose, enableChatIntegration = true }: D
                                                             '&:hover': { bgcolor: alpha(theme.palette.error.main, 0.1) }
                                                         }}
                                                     >
-                                                        <DeleteIcon fontSize="small" />
+                                                        <Delete fontSize="small" />
                                                     </IconButton>
                                                 </Tooltip>
                                             )}
@@ -459,7 +347,7 @@ export default function CustomDices({ onClose, enableChatIntegration = true }: D
                                     onClick={handleAddDiceConfig}
                                 >
                                     <Box display="flex" alignItems="center" justifyContent="center" gap={1}>
-                                        <AddIcon fontSize="small" sx={{ color: 'primary.main' }} />
+                                        <Add fontSize="small" sx={{ color: 'primary.main' }} />
                                         <Typography variant="body2" color="primary">
                                             Adicionar Dado
                                         </Typography>
@@ -554,7 +442,7 @@ export default function CustomDices({ onClose, enableChatIntegration = true }: D
                                                         '&:hover': { bgcolor: alpha(theme.palette.error.main, 0.1) }
                                                     }}
                                                 >
-                                                    <DeleteIcon fontSize="small" />
+                                                    <Delete fontSize="small" />
                                                 </IconButton>
                                             </Tooltip>
                                         </Box>
@@ -577,7 +465,7 @@ export default function CustomDices({ onClose, enableChatIntegration = true }: D
                                     onClick={handleAddModifier}
                                 >
                                     <Box display="flex" alignItems="center" justifyContent="center" gap={1}>
-                                        <AddIcon fontSize="small" sx={{ color: 'primary.main' }} />
+                                        <Add fontSize="small" sx={{ color: 'primary.main' }} />
                                         <Typography variant="body2" color="primary">
                                             Adicionar Modificador
                                         </Typography>
@@ -677,7 +565,7 @@ export default function CustomDices({ onClose, enableChatIntegration = true }: D
                                                 onClick={() => handleRemoveEffect(index)}
                                                 sx={{ color: 'error.main' }}
                                             >
-                                                <DeleteIcon />
+                                                <Delete />
                                             </IconButton>
                                         </Box>
                                     </Box>
@@ -697,7 +585,7 @@ export default function CustomDices({ onClose, enableChatIntegration = true }: D
                                     onClick={handleAddEffect}
                                 >
                                     <Box display="flex" alignItems="center" justifyContent="center" gap={1}>
-                                        <AddIcon fontSize="small" sx={{ color: 'primary.main' }} />
+                                        <Add fontSize="small" sx={{ color: 'primary.main' }} />
                                         <Typography variant="body2" color="primary">
                                             Adicionar Efeito
                                         </Typography>
@@ -718,7 +606,7 @@ export default function CustomDices({ onClose, enableChatIntegration = true }: D
                                     gap: 1
                                 }}
                             >
-                                <CasinoIcon sx={{ color: newDice.color || theme.palette.primary.main }} />
+                                <Casino sx={{ color: newDice.color || theme.palette.primary.main }} />
                                 <Typography variant="body2">
                                     {newDice.dices?.map((dice, index) => (
                                         <span key={index}>
@@ -789,7 +677,7 @@ export default function CustomDices({ onClose, enableChatIntegration = true }: D
                                         }
                                     }}
                                     disabled={!newDice.name}
-                                    startIcon={editingDiceId ? <EditIcon /> : <AddIcon />}
+                                    startIcon={editingDiceId ? <Edit /> : <Add />}
                                 >
                                     {editingDiceId ? 'Atualizar Dado' : 'Criar Dado'}
                                 </Button>

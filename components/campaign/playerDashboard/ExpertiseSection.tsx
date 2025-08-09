@@ -101,22 +101,17 @@ export default function ExpertiseSection(): ReactElement {
         const expertise = ficha.expertises[expertiseName]
         const expertiseValue = expertise.value
 
-        // Pega o atributo base da expertise
-        const baseAttribute = expertise.defaultAttribute?.toLowerCase() as keyof typeof ficha.attributes
-        const baseAttributeValue = ficha.attributes[baseAttribute]
+        // Determina quantos d20s rolar baseado nos mods do atributo padrão da perícia
+        const attrKey = (expertise.defaultAttribute ?? '') as keyof typeof ficha.mods.attributes
+        let numDice = Number(ficha.mods?.attributes?.[attrKey] ?? 1)
+        if (!Number.isFinite(numDice) || numDice < 1) numDice = 1
 
-        // Determina quantos d20s rolar baseado no valor do atributo base
-        let numDice = 1
-        let useWorst = false
-
-        if (baseAttributeValue === -1) {
-            numDice = 2
-            useWorst = true
-        } else if (baseAttributeValue === 3) {
-            numDice = 2
-        } else if (baseAttributeValue === 5) {
-            numDice = 3
-        }
+        console.log({
+            attrKey,
+            numDice,
+            mods: ficha.mods,
+            condition: !Number.isFinite(numDice) || numDice < 1
+        })
 
         // Rola os dados
         const rolls: number[] = []
@@ -124,11 +119,8 @@ export default function ExpertiseSection(): ReactElement {
             rolls.push(Math.floor(Math.random() * 20) + 1)
         }
 
-        // Determina qual resultado usar
-        let roll = rolls[0]
-        if (numDice > 1) {
-            roll = useWorst ? Math.min(...rolls) : Math.max(...rolls)
-        }
+        // Seleciona o melhor resultado entre os dados rolados
+        const roll = rolls.length > 1 ? Math.max(...rolls) : rolls[0]
 
         const total = roll + expertiseValue
 
