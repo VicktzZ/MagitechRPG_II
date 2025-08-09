@@ -9,7 +9,6 @@ import { useState, type ReactElement, useRef, useCallback, useMemo, useEffect } 
 
 import type { 
     Ficha,
-    Attributes,
     ExpertisesNames
 } from '@types';
 
@@ -51,19 +50,6 @@ export default function Expertises({ disabled }: { disabled?: boolean }): ReactE
         control,
         name: 'expertises'
     }) 
-
-    const attributes = useWatch<Ficha, 'attributes'>({
-        control,
-        name: 'attributes',
-        defaultValue: { vig: 0, des: 0, foc: 0, log: 0, sab: 0, car: 0, lp: 0, mp: 0, ap: 0, maxLp: 0, maxMp: 0, maxAp: 0 }
-    }) as unknown as Attributes
-
-    // Observar os modificadores de atributos
-    const attributeMods = useWatch<Ficha, 'mods.attributes'>({
-        control,
-        name: 'mods.attributes',
-        defaultValue: { vig: 0, des: 0, foc: 0, log: 0, sab: 0, car: 0 }
-    })
 
     const handleExpertiseChange = useCallback((name: ExpertisesNames, newValue: number): void => {
         if (!expertises || disabled) return;
@@ -141,16 +127,13 @@ export default function Expertises({ disabled }: { disabled?: boolean }): ReactE
                 if (!expertise) return null;
                 
                 const expertiseName = name as ExpertisesNames;
-                const attributeName = expertise.defaultAttribute as keyof typeof attributeMods;
-                // Usar o modificador do atributo, não o valor bruto
-                const attributeValue = attributeMods?.[attributeName] ?? 0;
                 
                 return (
                     <Expertise 
                         key={name}
                         name={expertiseName}
                         expertise={expertise}
-                        diceQuantity={attributeValue}
+                        diceQuantity={0}
                         disabled={disabled ?? false}
                         edit={{
                             isEditing: buttonRef.current !== null,
@@ -161,7 +144,7 @@ export default function Expertises({ disabled }: { disabled?: boolean }): ReactE
                 );
             })
             .filter((expertise): expertise is ReactElement => expertise !== null);
-    }, [ expertises, attributes, disabled, editValue, handleExpertiseChange ]);
+    }, [ expertises, disabled, editValue, handleExpertiseChange ]);
     
     const renderErrors = (): ReactElement | null => {
         if (!errors.expertises) return null;

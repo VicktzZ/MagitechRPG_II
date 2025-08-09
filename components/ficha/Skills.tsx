@@ -460,7 +460,7 @@ export default function Skills(): ReactElement {
                                     {selectedSkill.name}
                                 </Typography>
                                 <Typography variant='subtitle1' color='text.secondary'>
-                                    {selectedSkill.type === 'Poder Mágico' ? `${selectedSkill.type} • ${selectedSkill.element}` : selectedSkill.type}
+                                    {selectedSkill.type}
                                     {selectedSkill.origin && ` • ${selectedSkill.origin}`}
                                     {(selectedSkill.level || selectedSkill.level === 0) && (
                                         selectedSkill.level === 0 

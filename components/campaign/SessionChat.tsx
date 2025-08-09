@@ -613,6 +613,7 @@ export default function SessionChat() {
                     sx={{
                         flex: 1,
                         overflowY: 'auto',
+                        overflowX: 'hidden',
                         p: 2,
                         background: theme.palette.mode === 'dark' 
                             ? 'rgba(0,0,0,0.2)' 

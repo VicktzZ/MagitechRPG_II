@@ -1,6 +1,6 @@
-import Ficha from '@models/ficha';
-import Magia from '@models/magia';
-import Poder from '@models/poder';
+import Ficha from '@models/db/ficha';
+import Magia from '@models/db/magia';
+import Poder from '@models/db/poder';
 import { type Ficha as FichaType } from '@types';
 import { connectToDb } from '@utils/database';
 
@@ -16,6 +16,7 @@ export async function GET(_req: Request, { params: { id } }: { params: id }): Pr
 
         ficha.magics = magics
         ficha.skills.powers = powers.map(power => ({
+            _id: power._id,
             name: power.nome,
             description: power['descrição'],
             element: power.elemento,

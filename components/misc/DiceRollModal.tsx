@@ -23,7 +23,7 @@ const DiceRollModal = memo(({
     roll,
     sum,
     isDisadvantage,
-    bonus,
+    bonus = [],
     setResult,
     visibleDices,
     visibleBaseAttribute,
@@ -52,6 +52,11 @@ const DiceRollModal = memo(({
 
     // Armazenar o resultado em uma ref para persistir mesmo quando o componente perde o foco
     const diceRollRef = useRef<any>(null);
+    // Ref para memoizar o resultado da rolagem de perícia entre renders
+    const skillResultRef = useRef<{
+        notation: string;
+        result: ReturnType<typeof rollDice>;
+    } | null>(null);
 
     const [ showDetails, setShowDetails ] = useState(false);
     const [ animateRoll, setAnimateRoll ] = useState(true);
@@ -114,33 +119,9 @@ const DiceRollModal = memo(({
         
         // Modo de perícia tradicional
         if (roll) {
-            // Para vantagem/desvantagem, a quantidade de dados é baseada no modificador do atributo
-            // Para modificadores negativos, usamos desvantagem (2 dados)
-            // Para modificadores positivos, usamos quantidade igual ao modificador
-            let diceQuantity = 1; // Valor padrão
-            
-            // Se tiver bonus e o primeiro bonus for o modificador do atributo
-            if (bonus && bonus.length > 1) {
-                // O modificador do atributo está geralmente na posição 1
-                const attrModifier = bonus[1];
-                
-                if (attrModifier < 0) {
-                    // Modificador negativo = desvantagem (2 dados, pega o pior)
-                    diceQuantity = 2;
-                    isDisadvantage = true;
-                } else if (attrModifier > 0) {
-                    // Quantidade de dados = valor do modificador
-                    diceQuantity = attrModifier;
-                }
-            }
-            
+            // Nova regra: quantidade de dados vem diretamente de roll.quantity (mínimo 1)
+            const diceQuantity = Math.max(1, Number(roll.quantity ?? 1));
             const notation = `${diceQuantity}d${roll.dice}`;
-            
-            // Usando uma ref para memoizar o resultado da rolagem de perícia
-            const skillResultRef = useRef<{
-                notation: string;
-                result: ReturnType<typeof rollDice>;
-            } | null>(null);
             
             // Se já temos um resultado memoizado, usamos ele
             // Caso contrário, fazemos uma nova rolagem e guardamos
@@ -167,7 +148,7 @@ const DiceRollModal = memo(({
                 rawResult = rolls.reduce((acc, curr) => acc + curr, 0);
             }
 
-            if (bonus) {
+            if (Array.isArray(bonus) && bonus.length > 0) {
                 rawBonus = bonus.reduce((acc, curr) => acc + curr, 0);
                 rawResult += rawBonus;
             }
@@ -183,7 +164,7 @@ const DiceRollModal = memo(({
             }
             
             // Depois adicionamos os modificadores com seus nomes
-            if (bonus && bonus.length > 0) {
+            if (Array.isArray(bonus) && bonus.length > 0) {
                 // Preparamos os nomes dos modificadores
                 const modifierNames = bonus.map((value, index) => {
                     const name = index === 0 && roll.attribute ? roll.attribute : 
@@ -196,7 +177,7 @@ const DiceRollModal = memo(({
             }
 
             // Converter os bônus para o formato de modificadores para exibição consistente
-            const modifiers = bonus ? bonus.map((value, index) => {
+            const modifiers = Array.isArray(bonus) ? bonus.map((value, index) => {
                 // Primeiro índice é o valor da perícia
                 if (index === 0) {
                     return {
@@ -263,7 +244,7 @@ const DiceRollModal = memo(({
         
         // Modo de dado personalizado (será tratado pelo rollResult)
         return null;
-    }, [ roll, customDice, rollResult, sum, isDisadvantage, bonus ]);
+    }, [ roll?.dice, roll?.quantity, roll?.name, roll?.attribute, customDice, rollResult, sum, isDisadvantage, Array.isArray(bonus) ? bonus.map(Number).join('|') : '' ]);
 
     // Garantir que os resultados persistam entre renderizações
     useEffect(() => {
@@ -411,7 +392,7 @@ const DiceRollModal = memo(({
                             <Typography variant="caption" color="text.secondary">
                                 {roll?.quantity && roll?.dice ? `${roll.quantity}d${roll.dice}` : ''}
                             </Typography>
-                            {bonus && bonus.length > 0 && (
+                            {Array.isArray(bonus) && bonus.length > 0 && (
                                 <Chip
                                     label={`+${bonus.reduce((a, b) => a + b, 0)}`}
                                     size="small"
@@ -593,7 +574,7 @@ const DiceRollModal = memo(({
                                     {/* Modificadores para Expertises - Removido pois agora usamos o formato unificado */}
                                     
                                     {/* Modificadores (tanto para Perícias quanto para Dados Personalizados) */}
-                                    {diceRoll?.modifiers && diceRoll.modifiers.length > 0 && (
+                                    {Array.isArray(diceRoll?.modifiers) && diceRoll.modifiers.length > 0 && (
                                         <Box display="flex" justifyContent="space-between">
                                             <Typography variant="body2" color="text.secondary">Modificadores:</Typography>
                                             <Typography variant="body2">

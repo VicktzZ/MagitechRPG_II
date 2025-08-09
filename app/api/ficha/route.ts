@@ -1,4 +1,4 @@
-import Ficha from '@models/ficha';
+import Ficha from '@models/db/ficha';
 import { type Ficha as FichaType } from '@types';
 import { connectToDb } from '@utils/database';
 import type { NextRequest } from 'next/server';

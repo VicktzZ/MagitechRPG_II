@@ -1,6 +1,6 @@
-import Campaign from '@models/campaign';
-import Ficha from '@models/ficha';
-import User from '@models/user';
+import Campaign from '@models/db/campaign';
+import Ficha from '@models/db/ficha';
+import User from '@models/db/user';
 import type { Campaign as CampaignType } from '@types';
 import { connectToDb } from '@utils/database';
 

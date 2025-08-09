@@ -25,7 +25,8 @@ import {
     Tooltip,
     useTheme,
     Backdrop,
-    Divider
+    Divider,
+    Skeleton
 } from '@mui/material'
 import { useQueryClient } from '@tanstack/react-query'
 import {
@@ -104,7 +105,7 @@ export default function CampaignGMDashboard(): ReactElement | null {
 
     const queryClient = useQueryClient()
 
-    const { data: playerFichas } = useRealtimeDatabase({
+    const { data: playerFichas, query: { isPending: isPlayerFichasPending  } } = useRealtimeDatabase({
         collectionName: 'fichas',
         pipeline: [
             {
@@ -233,52 +234,58 @@ export default function CampaignGMDashboard(): ReactElement | null {
                             </Box>
                         }
                     >
-                        <Box 
-                            sx={{
-                                display: 'flex',
-                                justifyContent: 'space-around',
-                                p: 2,
-                                bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
-                                borderRadius: 2,
-                                border: '1px solid',
-                                borderColor: 'divider',
-                                flexWrap: 'wrap',
-                                gap: 2
-                            }}
-                        >
-                            <Stack alignItems="center" spacing={0.5}>
-                                <Typography variant="h4" sx={{ color: blue[600], fontWeight: 700 }}>
-                                    {campaignStats.totalPlayers}
-                                </Typography>
-                                <Typography variant="caption" color="text.secondary">
-                                    Jogadores Total
-                                </Typography>
-                            </Stack>
-                            <Stack alignItems="center" spacing={0.5}>
-                                <Typography variant="h4" sx={{ color: green[600], fontWeight: 700 }}>
-                                    {campaignStats.activePlayers}
-                                </Typography>
-                                <Typography variant="caption" color="text.secondary">
-                                    Fichas Ativas
-                                </Typography>
-                            </Stack>
-                            <Stack alignItems="center" spacing={0.5}>
-                                <Typography variant="h4" sx={{ color: orange[600], fontWeight: 700 }}>
-                                    {campaignStats.averageLevel}
-                                </Typography>
-                                <Typography variant="caption" color="text.secondary">
-                                    Nível Médio
-                                </Typography>
-                            </Stack>
-                            <Stack alignItems="center" spacing={0.5}>
-                                <Typography variant="h4" sx={{ color: purple[600], fontWeight: 700 }}>
-                                    {campaignStats.highestLevel}
-                                </Typography>
-                                <Typography variant="caption" color="text.secondary">
-                                    Maior Nível
-                                </Typography>
-                            </Stack>
-                        </Box>
+                        {isPlayerFichasPending ? (
+                            <Box sx={{ p: 2 }}>
+                                <Skeleton variant="rounded" height={80} />
+                            </Box>
+                        ) : (
+                            <Box 
+                                sx={{
+                                    display: 'flex',
+                                    justifyContent: 'space-around',
+                                    p: 2,
+                                    bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
+                                    borderRadius: 2,
+                                    border: '1px solid',
+                                    borderColor: 'divider',
+                                    flexWrap: 'wrap',
+                                    gap: 2
+                                }}
+                            >
+                                <Stack alignItems="center" spacing={0.5}>
+                                    <Typography variant="h4" sx={{ color: blue[600], fontWeight: 700 }}>
+                                        {campaignStats.totalPlayers}
+                                    </Typography>
+                                    <Typography variant="caption" color="text.secondary">
+                                        Jogadores Total
+                                    </Typography>
+                                </Stack>
+                                <Stack alignItems="center" spacing={0.5}>
+                                    <Typography variant="h4" sx={{ color: green[600], fontWeight: 700 }}>
+                                        {campaignStats.activePlayers}
+                                    </Typography>
+                                    <Typography variant="caption" color="text.secondary">
+                                        Fichas Ativas
+                                    </Typography>
+                                </Stack>
+                                <Stack alignItems="center" spacing={0.5}>
+                                    <Typography variant="h4" sx={{ color: orange[600], fontWeight: 700 }}>
+                                        {campaignStats.averageLevel}
+                                    </Typography>
+                                    <Typography variant="caption" color="text.secondary">
+                                        Nível Médio
+                                    </Typography>
+                                </Stack>
+                                <Stack alignItems="center" spacing={0.5}>
+                                    <Typography variant="h4" sx={{ color: purple[600], fontWeight: 700 }}>
+                                        {campaignStats.highestLevel}
+                                    </Typography>
+                                    <Typography variant="caption" color="text.secondary">
+                                        Maior Nível
+                                    </Typography>
+                                </Stack>
+                            </Box>
+                        )}
                     </Section>
 
                     {/* Ações Rápidas */}
@@ -343,7 +350,13 @@ export default function CampaignGMDashboard(): ReactElement | null {
                                 {playerFichas?.length || 0} ficha{(playerFichas?.length || 0) !== 1 ? 's' : ''} ativa{(playerFichas?.length || 0) !== 1 ? 's' : ''}
                             </Typography>
                             
-                            {!playerFichas || playerFichas.length === 0 ? (
+                            {isPlayerFichasPending ? (
+                                <Stack spacing={2}>
+                                    <Skeleton variant="rounded" height={140} />
+                                    <Skeleton variant="rounded" height={140} />
+                                    <Skeleton variant="rounded" height={140} />
+                                </Stack>
+                            ) : (!playerFichas || playerFichas.length === 0) ? (
                                 <Paper 
                                     sx={{ 
                                         p: 4, 

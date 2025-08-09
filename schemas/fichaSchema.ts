@@ -118,6 +118,7 @@ const PointsSchema = z.object({
 )
 
 const SkillSchema = z.object({
+    _id: z.string().optional(),
     name: z.string().min(1, 'O nome da habilidade é obrigatório'),
     description: z.string().min(1, 'A descrição da habilidade é obrigatória'),
     type: z.string(),

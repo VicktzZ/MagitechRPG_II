@@ -341,59 +341,6 @@ export function Inventory (): ReactElement {
                     </Stack>
                 </Paper>
 
-                {/* Estatísticas rápidas */}
-                <Paper 
-                    elevation={1}
-                    sx={{ 
-                        p: matches ? 1.5 : 2,
-                        borderRadius: 2,
-                        bgcolor: 'background.paper',
-                        border: '1px solid',
-                        borderColor: 'divider'
-                    }}
-                >
-                    <Stack 
-                        direction={matches ? 'column' : 'row'}
-                        divider={<Divider orientation={matches ? 'horizontal' : 'vertical'} flexItem />}
-                        spacing={matches ? 1 : 2}
-                        justifyContent='space-around'
-                    >
-                        <Stack direction='row' alignItems='center' spacing={1} flex={1} justifyContent='center'>
-                            <RPGIcon icon='sword2' filter={redFilter} />
-                            <Box textAlign='center'>
-                                <Typography variant="h6" fontWeight="bold" color={red[500]}>
-                                    {inventoryStats.weapons}
-                                </Typography>
-                                <Typography variant="caption" color="text.secondary">
-                                    Armas
-                                </Typography>
-                            </Box>
-                        </Stack>
-                        <Stack direction='row' alignItems='center' spacing={1} flex={1} justifyContent='center'>
-                            <Shield sx={{ color: blue[500] }} />
-                            <Box textAlign='center'>
-                                <Typography variant="h6" fontWeight="bold" color={blue[500]}>
-                                    {inventoryStats.armors}
-                                </Typography>
-                                <Typography variant="caption" color="text.secondary">
-                                    Armaduras
-                                </Typography>
-                            </Box>
-                        </Stack>
-                        <Stack direction='row' alignItems='center' spacing={1} flex={1} justifyContent='center'>
-                            <ShoppingBag sx={{ color: green[500] }} />
-                            <Box textAlign='center'>
-                                <Typography variant="h6" fontWeight="bold" color={green[500]}>
-                                    {inventoryStats.items}
-                                </Typography>
-                                <Typography variant="caption" color="text.secondary">
-                                    Itens
-                                </Typography>
-                            </Box>
-                        </Stack>
-                    </Stack>
-                </Paper>
-
                 {/* Conteúdo do Inventário */}
                 <Paper
                     elevation={1}
@@ -512,21 +459,10 @@ export function Inventory (): ReactElement {
                 </Paper>    
             </Box>
 
-            {/* Modal Melhorado */}
             <Modal
                 open={modalOpen}
                 onClose={() => setModalOpen(false)}
                 closeAfterTransition
-                slots={{ backdrop: Backdrop }}
-                slotProps={{
-                    backdrop: {
-                        timeout: 500,
-                        sx: {
-                            backgroundColor: alpha(theme.palette.background.default, 0.7),
-                            backdropFilter: 'blur(8px)'
-                        }
-                    }
-                }}
                 sx={{
                     display: 'flex',
                     justifyContent: 'center',
@@ -536,287 +472,100 @@ export function Inventory (): ReactElement {
             >
                 <Fade in={modalOpen}>
                     <Paper
-                        elevation={24}
+                        elevation={8}
                         sx={{
                             display: 'flex',
                             flexDirection: 'column',
                             minHeight: {
-                                xs: '80%',
-                                sm: '70%',
-                                md: '60%'
+                                xs: '85%',
+                                sm: '80%',
+                                md: '70%'
                             },
                             maxHeight: '90%',
                             width: '95%',
-                            maxWidth: '800px',
-                            borderRadius: 4,
+                            maxWidth: '1600px',
+                            borderRadius: 12,
                             overflow: 'hidden',
-                            border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
-                            boxShadow: `0 0 20px ${alpha(theme.palette.primary.main, 0.2)}`,
-                            transition: 'all 0.3s ease',
-                            position: 'relative',
-                            '&::before': {
-                                content: '""',
-                                position: 'absolute',
-                                top: 0,
-                                left: 0,
-                                right: 0,
-                                height: '4px',
-                                background: `linear-gradient(90deg, 
-                                    ${theme.palette.error.main}, 
-                                    ${theme.palette.info.main}, 
-                                    ${theme.palette.success.main})`,
-                                borderTopLeftRadius: 4,
-                                borderTopRightRadius: 4
-                            }
+                            border: `1px solid ${theme.palette.divider}`,
+                            transition: 'all 0.2s ease'
                         }}
                     >
                         {/* Header do Modal */}
-                        <Paper 
-                            elevation={0}
-                            sx={{ 
-                                p: { xs: 1.5, sm: 2 }, 
-                                background: `linear-gradient(135deg, ${alpha(theme.palette.primary.dark, 0.95)} 0%, ${alpha(theme.palette.primary.main, 0.95)} 100%)`,
-                                color: 'primary.contrastText',
-                                borderRadius: 0,
-                                position: 'relative',
-                                overflow: 'hidden',
-                                '&::after': {
-                                    content: '""',
-                                    position: 'absolute',
-                                    top: 0,
-                                    left: 0,
-                                    right: 0,
-                                    bottom: 0,
-                                    background: `radial-gradient(circle at top right, ${alpha('#fff', 0.1)}, transparent 70%)`,
-                                    pointerEvents: 'none'
-                                }
-                            }}
-                        >
+                        <Paper elevation={0} sx={{ p: { xs: 1.5, sm: 2 }, bgcolor: 'background.paper', borderRadius: 0, borderBottom: `1px solid ${theme.palette.divider}` }}>
                             <Stack direction='row' alignItems='center' justifyContent='space-between'>
                                 <Stack direction='row' alignItems='center' spacing={1.5}>
-                                    <Avatar
-                                        sx={{
-                                            bgcolor: alpha('#fff', 0.2),
-                                            width: 38,
-                                            height: 38,
-                                            display: 'flex',
-                                            justifyContent: 'center',
-                                            alignItems: 'center',
-                                            boxShadow: '0 0 10px rgba(0,0,0,0.2)',
-                                            animation: modalContent ? 'none' : 'pulseLight 2s infinite'
-                                        }}
-                                    >
-                                        <Add sx={{ color: '#fff', fontSize: 24 }} />
-                                    </Avatar>
+                                    <Add sx={{ color: 'text.secondary' }} />
                                     <Box>
-                                        <Typography 
-                                            variant='h6' 
-                                            fontWeight="bold"
-                                            sx={{
-                                                textShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                                                letterSpacing: '0.5px'
-                                            }}
-                                        >
+                                        <Typography variant='h6' fontWeight="bold">
                                             Adicionar Item ao Inventário
                                         </Typography>
-                                        <Typography 
-                                            variant="caption" 
-                                            sx={{ 
-                                                opacity: 0.8,
-                                                display: { xs: 'none', sm: 'block' }
-                                            }}
-                                        >
+                                        <Typography variant="caption" color='text.secondary' sx={{ display: { xs: 'none', sm: 'block' } }}>
                                             Selecione o tipo de item para começar
                                         </Typography>
                                     </Box>
                                 </Stack>
                                 <Tooltip title="Fechar" arrow>
-                                    <IconButton 
-                                        onClick={() => setModalOpen(false)}
-                                        sx={{ 
-                                            color: 'primary.contrastText',
-                                            bgcolor: alpha('#fff', 0.1),
-                                            transition: 'all 0.2s ease',
-                                            '&:hover': {
-                                                bgcolor: alpha('#fff', 0.2),
-                                                transform: 'rotate(90deg)'
-                                            }
-                                        }}
-                                    >
+                                    <IconButton onClick={() => setModalOpen(false)}>
                                         <Close />
                                     </IconButton>
                                 </Tooltip>
                             </Stack>
                         </Paper>
                         
-                        {/* Botões de Categoria com Estilo Aprimorado */}
-                        <Paper
-                            elevation={4}
-                            sx={{
-                                p: { xs: 1.5, sm: 2 },
-                                bgcolor: alpha(theme.palette.background.paper, 0.8),
-                                borderRadius: 0,
-                                borderBottom: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-                                backdropFilter: 'blur(10px)',
-                                position: 'relative',
-                                zIndex: 1
-                            }}
-                        >
+                        {/* Barra de categorias minimalista */}
+                        <Paper elevation={0} sx={{ p: { xs: 1, sm: 1.5 }, bgcolor: 'background.paper', borderRadius: 0, borderBottom: `1px solid ${theme.palette.divider}` }}>
                             <Stack 
                                 direction={{ xs: 'column', sm: 'row' }} 
-                                spacing={{ xs: 1, sm: 1.5 }} 
+                                spacing={{ xs: 1, sm: 1 }} 
                                 justifyContent='center'
                                 alignItems="stretch"
                             >
                                 <Tooltip title="Adicionar uma nova arma ao inventário" arrow>
-                                    <Button 
-                                        onClick={() => changeModalContent('weapon')} 
-                                        variant={addButtonsStyle.weapon}
-                                        startIcon={
-                                            <Avatar
-                                                sx={{
-                                                    width: 24,
-                                                    height: 24,
-                                                    bgcolor: 'transparent',
-                                                    boxShadow: addButtonsStyle.weapon === 'contained' ? '0 0 10px rgba(244,67,54,0.5)' : 'none'
-                                                }}
-                                            >
-                                                <RPGIcon 
-                                                    icon='sword2' 
-                                                    sx={{ 
-                                                        fontSize: 16,
-                                                        color: addButtonsStyle.weapon === 'contained' ? 'white' : theme.palette.error.main
-                                                    }} 
-                                                />
-                                            </Avatar>
-                                        }
-                                        sx={{ 
-                                            fontWeight: 'bold',
-                                            px: 3,
+                                    <Button onClick={() => changeModalContent('weapon')} variant={addButtonsStyle.weapon}
+                                        startIcon={<RPGIcon icon='sword2' sx={{ fontSize: 16, color: 'text.secondary' }} />}
+                                        sx={{
+                                            fontWeight: 600,
+                                            px: 2.5,
                                             py: 1,
                                             borderRadius: 2,
                                             flex: { xs: 1, sm: 1 },
-                                            transition: 'all 0.3s ease',
-                                            background: addButtonsStyle.weapon === 'contained' 
-                                                ? `linear-gradient(135deg, ${theme.palette.error.dark} 0%, ${theme.palette.error.main} 100%)` 
-                                                : 'transparent',
-                                            border: addButtonsStyle.weapon !== 'contained' 
-                                                ? `1px solid ${theme.palette.error.main}` 
-                                                : 'none',
-                                            boxShadow: addButtonsStyle.weapon === 'contained'
-                                                ? `0 4px 20px ${alpha(theme.palette.error.main, 0.5)}`
-                                                : 'none',
-                                            '&:hover': {
-                                                background: addButtonsStyle.weapon === 'contained'
-                                                    ? `linear-gradient(135deg, ${theme.palette.error.dark} 0%, ${theme.palette.error.main} 100%)`
-                                                    : alpha(theme.palette.error.main, 0.1),
-                                                transform: 'translateY(-2px)',
-                                                boxShadow: addButtonsStyle.weapon === 'contained'
-                                                    ? `0 6px 25px ${alpha(theme.palette.error.main, 0.6)}`
-                                                    : `0 4px 15px ${alpha(theme.palette.error.main, 0.3)}`
-                                            }
+                                            borderColor: theme.palette.divider,
+                                            background: addButtonsStyle.weapon === 'contained' ? alpha(theme.palette.primary.main, 0.06) : 'transparent',
+                                            '&:hover': { background: alpha(theme.palette.text.primary, 0.04) }
                                         }}
                                     >
                                         Arma
                                     </Button>
                                 </Tooltip>
                                 <Tooltip title="Adicionar uma nova armadura ao inventário" arrow>
-                                    <Button 
-                                        onClick={() => changeModalContent('armor')} 
-                                        variant={addButtonsStyle.armor}
-                                        startIcon={
-                                            <Avatar
-                                                sx={{
-                                                    width: 24,
-                                                    height: 24,
-                                                    bgcolor: 'transparent',
-                                                    boxShadow: addButtonsStyle.armor === 'contained' ? '0 0 10px rgba(33,150,243,0.5)' : 'none'
-                                                }}
-                                            >
-                                                <Shield 
-                                                    sx={{ 
-                                                        fontSize: 16,
-                                                        color: addButtonsStyle.armor === 'contained' ? 'white' : theme.palette.info.main
-                                                    }} 
-                                                />
-                                            </Avatar>
-                                        }
-                                        sx={{ 
-                                            fontWeight: 'bold',
-                                            px: 3,
+                                    <Button onClick={() => changeModalContent('armor')} variant={addButtonsStyle.armor}
+                                        startIcon={<Shield sx={{ fontSize: 16, color: 'text.secondary' }} />}
+                                        sx={{
+                                            fontWeight: 600,
+                                            px: 2.5,
                                             py: 1,
                                             borderRadius: 2,
                                             flex: { xs: 1, sm: 1 },
-                                            transition: 'all 0.3s ease',
-                                            background: addButtonsStyle.armor === 'contained' 
-                                                ? `linear-gradient(135deg, ${theme.palette.info.dark} 0%, ${theme.palette.info.main} 100%)` 
-                                                : 'transparent',
-                                            border: addButtonsStyle.armor !== 'contained' 
-                                                ? `1px solid ${theme.palette.info.main}` 
-                                                : 'none',
-                                            boxShadow: addButtonsStyle.armor === 'contained'
-                                                ? `0 4px 20px ${alpha(theme.palette.info.main, 0.5)}`
-                                                : 'none',
-                                            '&:hover': {
-                                                background: addButtonsStyle.armor === 'contained'
-                                                    ? `linear-gradient(135deg, ${theme.palette.info.dark} 0%, ${theme.palette.info.main} 100%)`
-                                                    : alpha(theme.palette.info.main, 0.1),
-                                                transform: 'translateY(-2px)',
-                                                boxShadow: addButtonsStyle.armor === 'contained'
-                                                    ? `0 6px 25px ${alpha(theme.palette.info.main, 0.6)}`
-                                                    : `0 4px 15px ${alpha(theme.palette.info.main, 0.3)}`
-                                            }
+                                            borderColor: theme.palette.divider,
+                                            background: addButtonsStyle.armor === 'contained' ? alpha(theme.palette.primary.main, 0.06) : 'transparent',
+                                            '&:hover': { background: alpha(theme.palette.text.primary, 0.04) }
                                         }}
                                     >
                                         Armadura
                                     </Button>
                                 </Tooltip>
                                 <Tooltip title="Adicionar um novo item ao inventário" arrow>
-                                    <Button 
-                                        onClick={() => changeModalContent('item')} 
-                                        variant={addButtonsStyle.item}
-                                        startIcon={
-                                            <Avatar
-                                                sx={{
-                                                    width: 24,
-                                                    height: 24,
-                                                    bgcolor: 'transparent',
-                                                    boxShadow: addButtonsStyle.item === 'contained' ? '0 0 10px rgba(76,175,80,0.5)' : 'none'
-                                                }}
-                                            >
-                                                <ShoppingBag 
-                                                    sx={{ 
-                                                        fontSize: 16,
-                                                        color: addButtonsStyle.item === 'contained' ? 'white' : theme.palette.success.main
-                                                    }} 
-                                                />
-                                            </Avatar>
-                                        }
-                                        sx={{ 
-                                            fontWeight: 'bold',
-                                            px: 3,
+                                    <Button onClick={() => changeModalContent('item')} variant={addButtonsStyle.item}
+                                        startIcon={<ShoppingBag sx={{ fontSize: 16, color: 'text.secondary' }} />}
+                                        sx={{
+                                            fontWeight: 600,
+                                            px: 2.5,
                                             py: 1,
                                             borderRadius: 2,
                                             flex: { xs: 1, sm: 1 },
-                                            transition: 'all 0.3s ease',
-                                            background: addButtonsStyle.item === 'contained' 
-                                                ? `linear-gradient(135deg, ${theme.palette.success.dark} 0%, ${theme.palette.success.main} 100%)` 
-                                                : 'transparent',
-                                            border: addButtonsStyle.item !== 'contained' 
-                                                ? `1px solid ${theme.palette.success.main}` 
-                                                : 'none',
-                                            boxShadow: addButtonsStyle.item === 'contained'
-                                                ? `0 4px 20px ${alpha(theme.palette.success.main, 0.5)}`
-                                                : 'none',
-                                            '&:hover': {
-                                                background: addButtonsStyle.item === 'contained'
-                                                    ? `linear-gradient(135deg, ${theme.palette.success.dark} 0%, ${theme.palette.success.main} 100%)`
-                                                    : alpha(theme.palette.success.main, 0.1),
-                                                transform: 'translateY(-2px)',
-                                                boxShadow: addButtonsStyle.item === 'contained'
-                                                    ? `0 6px 25px ${alpha(theme.palette.success.main, 0.6)}`
-                                                    : `0 4px 15px ${alpha(theme.palette.success.main, 0.3)}`
-                                            }
+                                            borderColor: theme.palette.divider,
+                                            background: addButtonsStyle.item === 'contained' ? alpha(theme.palette.primary.main, 0.06) : 'transparent',
+                                            '&:hover': { background: alpha(theme.palette.text.primary, 0.04) }
                                         }}
                                     >
                                         Item
@@ -825,14 +574,12 @@ export function Inventory (): ReactElement {
                             </Stack>
                         </Paper>
                         
-                        {/* Conteúdo do Modal com Animação */}
+                        {/* Conteúdo */}
                         <Box 
                             sx={{ 
                                 flex: 1, 
                                 overflow: 'auto', 
-                                p: { xs: 1.5, sm: 2, md: 3 },
-                                bgcolor: alpha(theme.palette.background.paper, 0.95),
-                                position: 'relative'
+                                p: { xs: 1.5, sm: 2, md: 3 }
                             }}
                         >
                             {modalContent ? (
@@ -847,43 +594,17 @@ export function Inventory (): ReactElement {
                                         alignItems: 'center', 
                                         justifyContent: 'center',
                                         height: '100%',
-                                        opacity: 0.7,
+                                        opacity: 0.8,
                                         p: 3
                                     }}
                                 >
-                                    <Avatar
-                                        sx={{
-                                            bgcolor: alpha(theme.palette.primary.main, 0.1),
-                                            width: 60,
-                                            height: 60,
-                                            mb: 2
-                                        }}
-                                    >
-                                        <TouchApp sx={{ fontSize: 30, color: theme.palette.primary.main }} />
-                                    </Avatar>
+                                    <TouchApp sx={{ fontSize: 32, color: 'text.disabled', mb: 1 }} />
                                     <Typography variant="body1" align="center" fontWeight="medium" color="text.secondary">
                                         Selecione um tipo de item acima para começar
                                     </Typography>
                                 </Box>
                             )}
                         </Box>
-                        
-                        {/* Keyframes para animações */}
-                        <GlobalStyles 
-                            styles={{
-                                '@keyframes pulseLight': {
-                                    '0%': {
-                                        boxShadow: '0 0 0 0 rgba(255,255,255,0.4)'
-                                    },
-                                    '70%': {
-                                        boxShadow: '0 0 0 10px rgba(255,255,255,0)'
-                                    },
-                                    '100%': {
-                                        boxShadow: '0 0 0 0 rgba(255,255,255,0)'
-                                    }
-                                }
-                            }}
-                        />
                     </Paper>
                 </Fade>
             </Modal>

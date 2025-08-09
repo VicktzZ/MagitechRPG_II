@@ -35,6 +35,7 @@ import type {
     MagicPowerSkill,
     Status,
     Element,
+    FichaDto,
     ExpertisesNames
 } from './ficha';
 
@@ -108,6 +109,7 @@ export type {
     Collections,
     SessionAttributes,
     SessionInfo,
+    FichaDto,
     AmmoControl,
     ItemAttributes,
     ItemTyping,

@@ -13,7 +13,7 @@ import {
     alpha
 } from '@mui/material';
 import { useState, type ReactElement, useCallback } from 'react';
-import type { Expertise as ExpertiseType, Ficha, ExpertisesNames } from '@types';
+import type { Expertise as ExpertiseType, Ficha, ExpertisesNames, Attributes } from '@types';
 import { blue, green, grey, purple, yellow, red } from '@mui/material/colors';
 import DiceRollModal from '@components/misc/DiceRollModal';
 import { useFormContext } from 'react-hook-form';
@@ -33,8 +33,8 @@ interface ExpertiseProps {
 
 export default function Expertise({ 
     name,
-    expertise,
-    diceQuantity,
+    expertise
+    ,
     disabled,
     edit,
     onClick
@@ -93,6 +93,11 @@ export default function Expertise({
     const previewValue = getEditPreview();
     const color = determinateColor();
     const proficiencyLevel = getProficiencyLevel();
+    const attr: Attributes = expertise.defaultAttribute;
+    // eslint-disable-next-line camelcase, @typescript-eslint/naming-convention
+    const dice_quantity = 
+        getValues().mods.attributes[attr] > 0 ? 
+            getValues().mods.attributes[attr] : 1;
 
     return (
         <>
@@ -331,15 +336,16 @@ export default function Expertise({
                 <DiceRollModal 
                     open={open}
                     onClose={() => setOpen(false)}
-                    bonus={[ expertise.value, diceQuantity ]}
-                    isDisadvantage={expertise.value < 0 || diceQuantity < 0}
+                    bonus={[ expertise.value ]}
+                    isDisadvantage={expertise.value < 0}
                     visibleBaseAttribute
                     visibleDices
                     roll={{
                         name,
                         dice: 20,
                         attribute: expertise.defaultAttribute,
-                        quantity: 1 // Sempre usamos 1d20, o bônus do atributo já vai no bonus
+                        // eslint-disable-next-line camelcase
+                        quantity: dice_quantity
                     }}
                 />
             )}

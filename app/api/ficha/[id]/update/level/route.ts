@@ -1,6 +1,6 @@
 import { connectToDb } from '@utils/database'
-import Ficha from '@models/ficha'
-import Notification from '@models/notification'
+import Ficha from '@models/db/ficha'
+import Notification from '@models/db/notification'
 import { levelDefaultRewards } from '@constants/levelDefaultRewards'
 import { skills } from '@constants/skills'
 import type { Classes, Skill } from '@types'

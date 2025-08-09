@@ -5,7 +5,7 @@ import type { Session } from 'next-auth';
 import type { JWT } from '@node_modules/next-auth/jwt';
 import type { User as UserType } from '@types';
 import { connectToDb } from '@utils/database';
-import User from '@models/user';
+import User from '@models/db/user';
 import { AdminProvider } from './adminProvider';
 
 const handler = NextAuth({

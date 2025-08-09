@@ -1,4 +1,4 @@
-import User from '@models/user';
+import User from '@models/db/user';
 import { connectToDb } from '@utils/database';
 import type { User as UserType } from '@types';
 
