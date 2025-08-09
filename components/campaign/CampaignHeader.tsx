@@ -205,7 +205,10 @@ export default function CampaignHeader(): ReactElement {
                             if (!session?.user?._id || !campaign._id) return
 
                             setCurrentFicha('');
-                            sessionService.disconnect({ campaignCode: campaign.campaignCode, userId: session.user._id });
+                            const userId = session?.user?._id;
+                            if (!userId) return;
+                            
+                            sessionService.disconnect({ campaignCode: campaign.campaignCode, userId });
                             campaignService.removeUser(campaign._id, session.user._id);
                             router.push('/app/campaign');
                         }} variant="contained">Sair da campanha</Button>

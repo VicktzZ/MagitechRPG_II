@@ -6,11 +6,12 @@ const withPWA = require('next-pwa')({
 
 const nextConfig = {
     reactStrictMode: false,
+    productionBrowserSourceMaps: true,
     typescript: {
         ignoreBuildErrors: true
     },
     experimental: {
-        serverComponentsExternalPackages: [ 'mongoose' ]
+        serverComponentsExternalPackages: [ 'mongoose' ],
     },
     logging: {
         fetches: {
