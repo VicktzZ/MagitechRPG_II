@@ -5,13 +5,15 @@ import { MessageType } from '@enums';
 const chance = new Chance();
 
 export interface DiceResult {
-    rolls: number[];
+    rolls: number[]; // Para casos simples XdY, mantido por compatibilidade
     total: number;
     notation: string;
-    operator1: { type: string; value: number } | null;
-    operator2: { type: string; value: number } | null;
-    subtotal: number;
+    operator1: { type: string; value: number } | null; // legado
+    operator2: { type: string; value: number } | null; // legado
+    subtotal: number; // legado
     error?: string;
+    // Novo: quando a expressão for complexa, usamos esta string para exibir o detalhamento
+    display?: string;
 }
 
 const formatD20Roll = (roll: number): string => {
@@ -31,128 +33,142 @@ const formatRolls = (rolls: number[], notation: string): string => {
     return `[${rolls.join(', ')}]`;
 };
 
-export const rollDice = (diceNotation: string): DiceResult | null => {
-    // Remove todos os espaços da notação
-    const cleanNotation = diceNotation.replace(/\s+/g, '');
+// Parser recursivo para expressões com dados e números
+// Suporta + - * / e parênteses, termos de dados NdM (N, M até 999), inteiros e decimais
+const evalDiceExpr = (expr: string): { total: number; display: string } => {
+    const s = expr.replace(/\s+/g, '');
+    let i = 0;
 
-    // Suporta: XdY, XdY+Z, XdY-Z, XdY*Z, XdY/Z, (XdY+Z)*W, (XdY+Z)/W
-    const diceRegex = /(\d+)d(\d+)([-+*/](?:\d*[.,])?\d+)?([-+*/](?:\d*[.,])?\d+)?/;
-    const match = cleanNotation.match(diceRegex);
+    const peek = () => s[i] ?? '';
+    const next = () => s[i++] ?? '';
 
-    if (match) {
-        const [ , numberOfDice, diceSides, operator1, operator2 ] = match;
-        const diceCount = parseInt(numberOfDice);
-        const sides = parseInt(diceSides);
+    const parseNumber = (): string => {
+        let num = '';
+        while (/\d|[.]/.test(peek())) num += next();
+        return num;
+    };
 
-        // Validação do número de dados
-        if (diceCount > 999) {
-            return {
-                rolls: [],
-                total: 0,
-                notation: diceNotation.trim(),
-                operator1: null,
-                operator2: null,
-                subtotal: 0,
-                error: 'Número máximo de dados excedido. Use no máximo 999 dados.'
-            };
-        }
-
-        // Validação de dados inválidos
-        if (sides <= 0) {
-            return {
-                rolls: [],
-                total: 0,
-                notation: diceNotation.trim(),
-                operator1: null,
-                operator2: null,
-                subtotal: 0,
-                error: 'Número de faces inválido. O dado deve ter pelo menos 1 face.'
-            };
-        }
-
-        const rolls = [];
+    const parseDice = (): { total: number; disp: string } => {
+        // N d M
+        const nStr = parseNumber();
+        if (peek().toLowerCase() !== 'd') throw new Error('Esperado d em termo de dado');
+        next(); // consume 'd'
+        const mStr = parseNumber();
+        const n = Math.min(parseInt(nStr || '1'), 999);
+        const m = Math.min(parseInt(mStr || '0'), 100000);
+        if (!m || m <= 0) throw new Error('Faces inválidas no dado');
+        const rolls: number[] = [];
         let total = 0;
-
-        // Rola os dados
-        for (let i = 0; i < diceCount; i++) {
-            const roll = chance.rpg('1d' + diceSides);
-            rolls.push(roll[0]);
-            total += roll[0];
+        for (let k = 0; k < n; k++) {
+            const r = chance.rpg('1d' + m)[0];
+            rolls.push(r);
+            total += r;
         }
+        return { total, disp: `[${rolls.join(', ')}]` };
+    };
 
-        // Processa os operadores
-        let subtotal = total;
-        let finalTotal = total;
-        let op1Value = 0;
-        let op2Value = 0;
-        let op1Type = '';
-        let op2Type = '';
+    const parseFactor = (): { total: number; disp: string } => {
+        if (peek() === '(') {
+            next();
+            const inner = parseExpr();
+            if (next() !== ')') throw new Error('Parêntese não fechado');
+            return { total: inner.total, disp: `(${inner.disp})` };
+        }
+        // número, dado ou número seguido de d (dado)
+        if (/\d/.test(peek())) {
+            const start = i;
+            const numStr = parseNumber();
+            if (peek().toLowerCase() === 'd') {
+                // é um dado NdM, precisamos voltar para incluir N
+                i = start; // reset para reprocessar como dado
+                const d = parseDice();
+                return { total: d.total, disp: d.disp };
+            }
+            const val = Math.floor(parseFloat(numStr));
+            return { total: val, disp: `${val}` };
+        }
+        throw new Error('Fator inválido na expressão');
+    };
 
-        const parseDecimal = (value: string) => {
-            return parseFloat(value.slice(1).replace(',', '.'));
-        };
-
-        if (operator1) {
-            op1Type = operator1[0];
-            op1Value = parseDecimal(operator1);
-
-            // Aplica o primeiro operador
-            switch (op1Type) {
-            case '+':
-                subtotal = total + op1Value;
-                finalTotal = Math.floor(subtotal);
-                break;
-            case '-':
-                subtotal = total - op1Value;
-                finalTotal = Math.floor(subtotal);
-                break;
-            case '*':
-                subtotal = total;
-                finalTotal = Math.floor(total * op1Value);
-                break;
-            case '/':
-                subtotal = total;
-                finalTotal = Math.floor(total / op1Value);
-                break;
+    const parseTerm = (): { total: number; disp: string } => {
+        let left = parseFactor();
+        while (peek() === '*' || peek() === '/') {
+            const op = next();
+            const right = parseFactor();
+            if (op === '*') {
+                left = { total: Math.floor(left.total * right.total), disp: `${left.disp} * ${right.disp}` };
+            } else {
+                const denom = right.total || 1;
+                left = { total: Math.floor(left.total / denom), disp: `${left.disp} / ${right.disp}` };
             }
         }
+        return left;
+    };
 
-        if (operator2) {
-            op2Type = operator2[0];
-            op2Value = parseDecimal(operator2);
+    const parseExpr = (): { total: number; disp: string } => {
+        let left = parseTerm();
+        while (peek() === '+' || peek() === '-') {
+            const op = next();
+            const right = parseTerm();
+            if (op === '+') {
+                left = { total: left.total + right.total, disp: `${left.disp} + ${right.disp}` };
+            } else {
+                left = { total: left.total - right.total, disp: `${left.disp} - ${right.disp}` };
+            }
+        }
+        return left;
+    };
 
-            // Aplica o segundo operador
-            switch (op2Type) {
-            case '*':
-                finalTotal = Math.floor(subtotal * op2Value);
-                break;
-            case '/':
-                finalTotal = Math.floor(subtotal / op2Value);
-                break;
-            case '+':
-                if (op1Type === '*' || op1Type === '/') {
-                    finalTotal = Math.floor(finalTotal + op2Value);
-                }
-                break;
-            case '-':
-                if (op1Type === '*' || op1Type === '/') {
-                    finalTotal = Math.floor(finalTotal - op2Value);
-                }
-                break;
+    const res = parseExpr();
+    if (i < s.length) throw new Error('Expressão inválida');
+    return { total: res.total, display: res.disp };
+};
+
+export const rollDice = (diceNotation: string): DiceResult | null => {
+    const notation = diceNotation.trim();
+    const clean = notation.replace(/\s+/g, '');
+
+    // Se não for uma expressão pura de dados, não tenta avaliar (deixa o chamador decidir como enviar)
+    const isPureDiceExpr = /^[\d()d\-+*/.,]+$/i.test(clean)
+    if (!isPureDiceExpr) {
+        return null
+    }
+
+    try {
+        // Avalia expressão completa (inclui casos simples)
+        const { total, display } = evalDiceExpr(clean);
+
+        // Tenta extrair um único termo XdY simples para preencher rolls (compatibilidade)
+        const simple = clean.match(/^\(?\s*(\d+)d(\d+)\s*\)?$/i);
+        let rolls: number[] = [];
+        if (simple) {
+            const count = parseInt(simple[1]);
+            const sides = parseInt(simple[2]);
+            for (let i = 0; i < count; i++) {
+                rolls.push(chance.rpg('1d' + sides)[0]);
             }
         }
 
         return {
             rolls,
-            total: finalTotal,
-            notation: diceNotation.trim(),
-            operator1: operator1 ? { type: op1Type, value: op1Value } : null,
-            operator2: operator2 ? { type: op2Type, value: op2Value } : null,
-            subtotal
+            total,
+            notation,
+            operator1: null,
+            operator2: null,
+            subtotal: total,
+            display
+        };
+    } catch (e) {
+        return {
+            rolls: [],
+            total: 0,
+            notation,
+            operator1: null,
+            operator2: null,
+            subtotal: 0,
+            error: (e as Error).message || 'Expressão inválida'
         };
     }
-
-    return null;
 };
 
 export const createDiceMessage = (
@@ -171,21 +187,10 @@ export const createDiceMessage = (
         };
     }
 
-    let resultText = formatRolls(diceResult.rolls, diceResult.notation);
-
-    if (diceResult.operator1) {
-        const { type, value } = diceResult.operator1;
-        resultText += ` ${type} ${value}`;
-
-        if (diceResult.operator2) {
-            const op2 = diceResult.operator2;
-            resultText += ` ${op2.type} ${op2.value}`;
-        }
-
-        resultText += ` = ${diceResult.total}`;
-    } else {
-        resultText += ` = ${diceResult.total}`;
-    }
+    // Usa display quando disponível (expressões complexas). Caso contrário, mantém formato antigo
+    let resultText = diceResult.display
+        ? `${diceResult.display} = ${diceResult.total}`
+        : `${formatRolls(diceResult.rolls, diceResult.notation)} = ${diceResult.total}`;
 
     return {
         text: `🎲 ${diceResult.notation}: ${resultText}`,

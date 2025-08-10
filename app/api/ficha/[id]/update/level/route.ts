@@ -3,7 +3,7 @@ import Ficha from '@models/db/ficha'
 import Notification from '@models/db/notification'
 import { levelDefaultRewards } from '@constants/levelDefaultRewards'
 import { skills } from '@constants/skills'
-import type { Classes, Skill } from '@types'
+import type { Classes, Ficha as FichaType, Skill } from '@types'
 
 // TODO: Ajustar recompensas de acordo com nível
 export async function POST(req: Request, { params }: { params: { id: string } }) {
@@ -13,7 +13,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
         const { id } = params
         const { level } = await req.json()
 
-        const ficha = await Ficha.findById(id)
+        const ficha: FichaType | null = await Ficha.findById(id)
 
         if (!ficha) {
             return Response.json({ message: 'Ficha não encontrada' }, { status: 404 })
@@ -22,7 +22,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
         const oldLevel = ficha.level
         const newLevel = oldLevel + level
         const classRewards = levelDefaultRewards[ficha.class as Classes]
-        let newORMLevel = Math.min(4, Math.floor(newLevel / 5))
+        let newORMLevel = newLevel % 5 === 0 ? Math.min(4, Math.floor(newLevel / 5)) : ficha.ORMLevel
 
         // Inicializa as recompensas
         let lpMpRewards = 0
@@ -56,8 +56,8 @@ export async function POST(req: Request, { params }: { params: { id: string } })
 
             // A cada 4 níveis: Pontos de Atributo
             if (currentLevel % 4 === 0) {
-                attributePoints += 18
-                rewardsList.push('+18 pontos de atributo')
+                attributePoints += 12
+                rewardsList.push('+12 pontos de atributo')
             }
 
             // A cada 5 níveis: Pontos de Poder Mágico, Magias e Aumento de nível ORM
@@ -115,10 +115,9 @@ export async function POST(req: Request, { params }: { params: { id: string } })
         // Aplica as recompensas
         const updates = {
             level: newLevel,
-            // Apenas atualiza os máximos de LP e MP
-            maxLp: ficha.attributes.maxLp + (lpMpRewards * (classRewards.lp + ficha.attributes.vig)),
-            maxMp: ficha.attributes.maxMp + (lpMpRewards * (classRewards.mp + ficha.attributes.foc)),
             ...(lpMpRewards > 0 && {
+                'attributes.maxLp': ficha.attributes.maxLp + (lpMpRewards * (classRewards.lp + ficha.attributes.vig)),
+                'attributes.maxMp': ficha.attributes.maxMp + (lpMpRewards * (classRewards.mp + ficha.attributes.foc)),
                 'attributes.lp': ficha.attributes.lp >= ficha.attributes.maxLp ? ficha.attributes.lp + (lpMpRewards * (classRewards.lp + ficha.attributes.vig)) : ficha.attributes.lp,
                 'attributes.mp': ficha.attributes.mp >= ficha.attributes.maxMp ? ficha.attributes.mp + (lpMpRewards * (classRewards.mp + ficha.attributes.foc)) : ficha.attributes.mp
             }),
