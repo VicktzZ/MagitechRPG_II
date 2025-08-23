@@ -17,7 +17,7 @@ import { useMediaQuery } from '@mui/material';
 import { MenuItem } from '@mui/material';
 import { TextField } from '@mui/material';
 import { FormControl, InputLabel } from '@mui/material';
-import type { Ficha, MergedItems } from '@types';
+import type { MergedItems } from '@types';
 import { type Dispatch, type SetStateAction, type ReactElement, useState } from 'react';
 import { useForm, type UseFormReturn } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -42,7 +42,6 @@ import {
 } from '@constants/dataTypes';
 
 import { Typography } from '@mui/material';
-import { type FormikContextType } from '@node_modules/formik/dist';
 import { useSnackbar } from '@node_modules/notistack';
 import { toastDefault } from '@constants';
 
@@ -69,7 +68,6 @@ const defaultValidationSchema = {
 
 interface ModalProps { 
     closeModal: () => void
-    formik: FormikContextType<Ficha>;
 }
 
 function SelectFormComponent(
@@ -166,8 +164,8 @@ function ItemModalForm({
                         const value = parseInt(e.target.value, 10) || 0;
                         setValue('quantity', value, { shouldValidate: true });
                     }}
-                    error={!!errors.quantity}
-                    helperText={errors.quantity?.message?.toString()}
+                    error={!!errors['quantity']}
+                    helperText={errors['quantity']?.message?.toString()}
                     inputProps={{
                         min: 1,
                         onWheel: (e) => (e.target as HTMLElement).blur()
@@ -182,8 +180,8 @@ function ItemModalForm({
                             const value = parseFloat(e.target.value) || 0;
                             setValue('weight', value, { shouldValidate: true });
                         }}
-                        error={!!errors.weight}
-                        helperText={errors.weight?.message?.toString()}
+                        error={!!errors['weight']}
+                        helperText={errors['weight']?.message?.toString()}
                         inputProps={{
                             min: 0,
                             step: 0.1,
@@ -209,7 +207,7 @@ function ItemModalForm({
     );
 }
 
-function WeaponModal({ closeModal, formik }: ModalProps): ReactElement {
+function WeaponModal({ closeModal }: ModalProps): ReactElement {
     const { enqueueSnackbar } = useSnackbar()
     const validationSchema = z.object({
         ...defaultValidationSchema,
@@ -465,7 +463,7 @@ function WeaponModal({ closeModal, formik }: ModalProps): ReactElement {
     );
 }
 
-function ArmorModal({ closeModal, formik }: ModalProps): ReactElement {
+function ArmorModal({ closeModal }: ModalProps): ReactElement {
     const theme = useTheme();
     const matches = useMediaQuery(theme.breakpoints.down('md'));
     const { enqueueSnackbar } = useSnackbar();
@@ -591,7 +589,7 @@ function ArmorModal({ closeModal, formik }: ModalProps): ReactElement {
     );
 }
 
-function ItemModal({ formik, closeModal }: ModalProps): ReactElement {
+function ItemModal({ closeModal }: ModalProps): ReactElement {
     const theme = useTheme();
     const matches = useMediaQuery(theme.breakpoints.down('md'));
     const { enqueueSnackbar } = useSnackbar();

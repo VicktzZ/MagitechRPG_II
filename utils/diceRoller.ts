@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-use-before-define */
 import Chance from 'chance';
 import type { Message } from '@types';
 import { MessageType } from '@enums';
@@ -67,7 +68,7 @@ const evalDiceExpr = (expr: string): { total: number; display: string } => {
         return { total, disp: `[${rolls.join(', ')}]` };
     };
 
-    const parseFactor = (): { total: number; disp: string } => {
+    function parseFactor(): { total: number; disp: string } {
         if (peek() === '(') {
             next();
             const inner = parseExpr();
@@ -90,7 +91,7 @@ const evalDiceExpr = (expr: string): { total: number; display: string } => {
         throw new Error('Fator inválido na expressão');
     };
 
-    const parseTerm = (): { total: number; disp: string } => {
+    function parseTerm(): { total: number; disp: string } {
         let left = parseFactor();
         while (peek() === '*' || peek() === '/') {
             const op = next();
@@ -105,7 +106,7 @@ const evalDiceExpr = (expr: string): { total: number; display: string } => {
         return left;
     };
 
-    const parseExpr = (): { total: number; disp: string } => {
+    function parseExpr(): { total: number; disp: string } {
         let left = parseTerm();
         while (peek() === '+' || peek() === '-') {
             const op = next();
@@ -140,7 +141,7 @@ export const rollDice = (diceNotation: string): DiceResult | null => {
 
         // Tenta extrair um único termo XdY simples para preencher rolls (compatibilidade)
         const simple = clean.match(/^\(?\s*(\d+)d(\d+)\s*\)?$/i);
-        let rolls: number[] = [];
+        const rolls: number[] = [];
         if (simple) {
             const count = parseInt(simple[1]);
             const sides = parseInt(simple[2]);
@@ -188,7 +189,7 @@ export const createDiceMessage = (
     }
 
     // Usa display quando disponível (expressões complexas). Caso contrário, mantém formato antigo
-    let resultText = diceResult.display
+    const resultText = diceResult.display
         ? `${diceResult.display} = ${diceResult.total}`
         : `${formatRolls(diceResult.rolls, diceResult.notation)} = ${diceResult.total}`;
 

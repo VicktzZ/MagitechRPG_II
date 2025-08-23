@@ -44,15 +44,6 @@ export function DiceMessage({ text, type }: DiceMessageProps) {
             rolls = [ finalRoll ]
         }
 
-        const bonusValue = bonus ? parseInt(bonus.replace(/[+]/, '')) : 0
-        const expertiseColor = bonusValue >= 9 ? '#ffeb3b' : bonusValue >= 7 ? '#9c27b0' : bonusValue >= 5 ? '#2196f3' : bonusValue >= 2 ? '#4caf50' : '#9e9e9e'
-
-        const formattedRolls = rolls.map((r, i) => (
-            <span key={i} style={{ color: r === 1 ? '#f44336' : r === 20 ? '#4CAF50' : 'inherit' }}>
-                {r}{i < rolls.length - 1 ? ', ' : ''}
-            </span>
-        ))
-
         return (
             <Box sx={{ wordBreak: 'break-word' }}>
                 {/* Título acima, completo */}
@@ -125,8 +116,6 @@ export function DiceMessage({ text, type }: DiceMessageProps) {
 
         // Coleção total para melhor/pior, média e subtotal
         const rollNums: number[] = groups.flat()
-        const subtotal = rollNums.reduce((acc, n) => acc + n, 0)
-        const avg = rollNums.length ? (subtotal / rollNums.length) : undefined
 
         // Se não conseguiu por grupos (ex.: nenhum colchete), tenta fallback antigo
         if (!groups.length) {
@@ -161,7 +150,14 @@ export function DiceMessage({ text, type }: DiceMessageProps) {
                 <Stack direction="row" alignItems="center" spacing={1} sx={{ minWidth: 0 }}>
                     {/* Expressão em cinza no cabeçalho */}
                     {notation && (
-                        <Typography component="span" color="text.secondary" noWrap sx={{ minWidth: 0, textOverflow: 'ellipsis', overflow: 'hidden', maxWidth: '60%' }}>({notation.replace(/\s+/g, '')})</Typography>
+                        <Typography 
+                            component="span" 
+                            color="text.secondary" 
+                            noWrap 
+                            sx={{ minWidth: 0, textOverflow: 'ellipsis', overflow: 'hidden', maxWidth: '60%' }}
+                        >
+                            ({notation.replace(/\s+/g, '')})
+                        </Typography>
                     )}
                     <Box flex={1} />
                     {typeof total === 'number' && (
@@ -217,8 +213,8 @@ export function DiceMessage({ text, type }: DiceMessageProps) {
     // Header: **Nome** (notação)
     const header = lines[0] || ''
     const headerMatch = header.match(/\*\*(.+?)\*\*\s*\((.+?)\)/)
-    const name = headerMatch?.[1] ?? 'Rolagem'
-    const headerNotation = ((headerMatch?.[2] as string) || (messageText.match(/\(([^)]+)\)/)?.[1] || '')).replace(/\s+/g, '')
+    
+    const headerNotation = ((headerMatch?.[2]) || (messageText.match(/\(([^)]+)\)/)?.[1] || '')).replace(/\s+/g, '')
 
     // Modificadores (opcional)
     const modsLine = lines.find(l => l.toLowerCase().startsWith('modificadores:'))

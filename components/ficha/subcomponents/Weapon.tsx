@@ -1,8 +1,8 @@
 import { useMemo, useState, type ReactElement } from 'react'
 import type { ItemTyping, Roll } from '@types'
-import { alpha, Box, Button, Chip, Collapse, Divider, IconButton, Paper, Stack, Tooltip, Typography, useTheme } from '@mui/material'
+import { alpha, Box, Chip, Collapse, Divider, IconButton, Paper, Stack, Tooltip, Typography, useTheme } from '@mui/material'
 import { rarityWeaponBonuses } from '@constants/dataTypes'
-import { DiceRollModal, RPGIcon } from '@components/misc'
+import { DiceRollModal } from '@components/misc'
 import {
     ArrowDropUp,
     ArrowDropDown,
@@ -21,7 +21,7 @@ export function Weapon(props: ItemTyping<'weapon'>): ReactElement {
     const theme = useTheme()
     const [ open, setOpen ] = useState(false)
     const [ showStats, setShowStats ] = useState(false)
-    const [ rollState, setRollState ] = useState<Roll>({
+    const [ rollState  ] = useState<Roll>({
         name: 'Acerto',
         dice: 20,
         diceQuantity: props.diceQuantity,
@@ -57,26 +57,6 @@ export function Weapon(props: ItemTyping<'weapon'>): ReactElement {
     }, [ props.effect ])
 
     // Função para rolar dano ou acerto
-    const damageRoll = ({ name, crit }: { name: string, crit?: boolean }): void => {
-        const critOrBase = crit ? 'critValue' : 'value'
-        const damageInfo = crit ? parseDamage.critical : parseDamage.base
-        const rarityBonus = rarityWeaponBonuses[props.rarity]
-
-        setRollState({
-            name,
-            dice: damageInfo.dice,
-            diceQuantity: damageInfo.quantity,
-            visibleDices: false,
-            visibleBaseAttribute: false,
-            bonus: [
-                damageInfo.bonus,
-                critOrBase === 'critValue' ? rarityBonus * 2 : rarityBonus
-            ],
-            sum: true
-        })
-
-        setOpen(true)
-    }
 
     return (
         <>
@@ -186,7 +166,7 @@ export function Weapon(props: ItemTyping<'weapon'>): ReactElement {
                 </Paper>
 
                 {/* Seção de botões para rolagem */}
-                <Box display='flex' flexDirection='column' gap={1} mt={2}>
+                {/* <Box display='flex' flexDirection='column' gap={1} mt={2}>
                     <Button
                         variant='contained'
                         size='small'
@@ -238,7 +218,7 @@ export function Weapon(props: ItemTyping<'weapon'>): ReactElement {
                     >
                         Rolar Dano Crítico
                     </Button>
-                </Box>
+                </Box> */}
             </Box>
 
             {open && <DiceRollModal open={open} onClose={() => { setOpen(false) }} {...rollState} />}

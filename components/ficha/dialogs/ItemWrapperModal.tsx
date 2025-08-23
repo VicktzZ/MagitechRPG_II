@@ -49,7 +49,6 @@ export function ItemWrapperModal({
                         border: `1px solid ${alpha(itemAttr.color, 0.4)}`
                     }}
                 >
-                    {/* Header do modal colorido baseado no tipo de item */}
                     <Box
                         display='flex'
                         justifyContent='space-between'

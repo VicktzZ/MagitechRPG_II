@@ -483,7 +483,7 @@ export function Inventory (): ReactElement {
                             maxHeight: '90%',
                             width: '95%',
                             maxWidth: '1600px',
-                            borderRadius: 12,
+                            borderRadius: 2,
                             overflow: 'hidden',
                             border: `1px solid ${theme.palette.divider}`,
                             transition: 'all 0.2s ease'
