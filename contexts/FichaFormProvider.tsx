@@ -7,6 +7,15 @@ import { FormProvider, useForm } from 'react-hook-form';
 import { fichaSchema } from '@schemas';
 import type { Ficha } from '@types';
 import type { ReactElement } from 'react';
+import { createContext, useContext } from 'react';
+import type { UseFormReturn } from 'react-hook-form';
+
+export const FichaFormContext = createContext<UseFormReturn<Ficha> | null>(null);
+export const useFichaForm = (): UseFormReturn<Ficha> => {
+    const ctx = useContext(FichaFormContext);
+    if (!ctx) throw new Error('useFichaForm deve ser usado dentro de FichaFormProvider');
+    return ctx;
+};
 
 export default function FichaFormProvider({ children, formData }: { children: ReactElement, formData?: Ficha }) {
     const { data: session } = useSession()
@@ -26,7 +35,9 @@ export default function FichaFormProvider({ children, formData }: { children: Re
     
     return (
         <FormProvider {...form}>
-            {children}
+            <FichaFormContext.Provider value={form}>
+                {children}
+            </FichaFormContext.Provider>
         </FormProvider>
     )
 }

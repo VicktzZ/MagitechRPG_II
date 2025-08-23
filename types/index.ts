@@ -35,7 +35,6 @@ import type {
     MagicPowerSkill,
     Status,
     Element,
-    FichaDto,
     ExpertisesNames
 } from './ficha';
 
@@ -70,7 +69,8 @@ import type {
     QueryParamsDto,
     UpdateByIdDto,
     ConnectSessionDto,
-    DisconnectSessionDto
+    DisconnectSessionDto,
+    FichaDto
 } from './dto';
 
 import type { ApiRoutes, ApiBaseRequestType, ApiParams } from './api';

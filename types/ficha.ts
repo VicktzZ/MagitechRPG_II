@@ -1,4 +1,3 @@
-import type { DeepOverride } from './deepOverride'
 import type { Dice } from './dices'
 import type { Magia } from './models'
 
@@ -87,14 +86,7 @@ export interface Ficha {
     }
 }
 
-export type FichaDto = DeepOverride<Ficha, {
-    skills: {
-        powers: Id[]
-    },
-    magics: Id[]
-}>
 // Types
-
 export interface Class {
     name: Classes
     description: string
@@ -241,7 +233,7 @@ export interface Weapon<T extends 'Leve' | 'Pesada' = any> {
     magazineSize?: number
     quantity?: number
     accessories?: WeaponAccesoriesType[]
-    bonus: 'Luta' | 'Agilidade' | 'Furtividade' | 'Pontaria' | 'Magia' | 'Tecnologia' | 'Controle'
+    bonus: 'Luta' | 'Agilidade' | 'Furtividade' | 'Pontaria' | 'Magia' | 'Tecnologia' | 'Controle' | 'Força'
     effect: {
         value: string
         critValue: string
@@ -335,7 +327,7 @@ export type UpperCaseAttributes = 'DES' | 'VIG' | 'LOG' | 'SAB' | 'FOC' | 'CAR'
 export type ItemType = 'Especial' | 'Utilidade' | 'Consumível' | 'Item Chave' | 'Munição' | 'Capacidade' | 'Padrão'
 export type RarityType = 'Comum' | 'Incomum' | 'Raro' | 'Épico' | 'Lendário' | 'Único' | 'Mágico' | 'Especial' | 'Amaldiçoado'
 export type WeaponType = `Arremessável (${ThrowableRangeType})` | 'Duas mãos' | 'Padrão' | 'Automática' | 'Semi-automática'
-export type ArmorType = 'Padrão' | DamageType
+export type ArmorType = 'Padrão' | 'Total' | DamageType
 export type DamageType = 'Cortante' | 'Impactante' | 'Perfurante' | 'Explosivo' | Element
 export type Classes =
     'Combatente' |
@@ -420,6 +412,8 @@ export type AmmoType =
     'Calibre .50' |
     'Calibre 12' |
     'Calibre 22' | 
+    'Dardo' |
+    'Ácido' |
     'Bateria de lítio' |
     'Amplificador de partículas' |
     'Cartucho de fusão' |
@@ -474,7 +468,7 @@ export type PassiveOccasion =
     'Condição específica' |
     'Personalizado'
 
-export type WeaponCategory<T extends 'Leve' | 'Pesada'> = 
+export type WeaponCategory <T extends 'Leve' | 'Pesada'> = 
     `Arma Branca (${T})` |
     `Arma de Longo Alcance (${T})` |
     `Arma de Fogo (${T})` |

@@ -11,7 +11,7 @@ import {
     ButtonGroup
 } from '@mui/material';
 import { type ReactElement, memo, useCallback } from 'react';
-import { useForm } from 'react-hook-form';
+import { useFormContext } from 'react-hook-form';
 import { FormTextField } from './fields';
 import { FormSelect } from './fields';
 import { rarities } from '@constants/dataTypes';
@@ -39,14 +39,13 @@ export function mapArrayToOptions(items: string[]): Array<{ value: string, label
 
 interface WrapperProps {
     children: ReactElement;
-    onSubmit?: (data: ItemFormData) => void;
-    action?: (data: ItemFormData) => void; // compatibilidade retroativa
+    action?: (data: ItemFormData) => void;
     submitLabel?: string;
+    headerComponent?: ReactElement;
 };
 
-export default memo(function InventoryCreateModalWrapper({ children, onSubmit, action, submitLabel = 'Criar Item'  }: WrapperProps): ReactElement {
-    const form = useForm<ItemFormData>();
-    const { register, handleSubmit, formState: { errors }, getValues, watch, setValue } = form;
+export default memo(function InventoryCreateModalWrapper({ children, action, submitLabel = 'Criar Item', headerComponent }: WrapperProps): ReactElement {
+    const { register, handleSubmit, formState: { errors }, getValues, watch, setValue } = useFormContext<ItemFormData>();
 
     const theme = useTheme();
     const matches = useMediaQuery(theme.breakpoints.down('md'));
@@ -68,15 +67,21 @@ export default memo(function InventoryCreateModalWrapper({ children, onSubmit, a
 
     const rarityOptions = mapArrayToOptions(rarities);
 
+    const onSubmit = (data: ItemFormData) => {
+        console.log(data);
+        action?.(data);
+    };
+
     return (
         <>
-            <Box component='form' noValidate onSubmit={handleSubmit(onSubmit ?? action ?? (() => {}))}
+            <Box component='form' onSubmit={handleSubmit(onSubmit)}
                 sx={{
                     px: { xs: 0, sm: 0 },
                     pt: 0.5
                 }}
             >
                 <Stack spacing={3}>
+                    {headerComponent}
                     <Stack spacing={1} sx={{ flex: 1 }}>
                         <Typography variant='overline' color='text.disabled' sx={{ letterSpacing: 0.6 }}>Informações gerais</Typography>
                         <Stack direction={matches ? 'column' : 'row'} spacing={2} alignItems='stretch'>
@@ -88,12 +93,10 @@ export default memo(function InventoryCreateModalWrapper({ children, onSubmit, a
                             />
                             <FormSelect
                                 registration={register('rarity')}
-                                name="rarity"
                                 label="Raridade"
                                 options={rarityOptions}
                                 error={errors.rarity as any}
                                 required
-                                defaultValue='Comum'
                                 sx={{ width: matches ? '100%' : '40%' }}
                             />
                         </Stack>
@@ -143,7 +146,7 @@ export default memo(function InventoryCreateModalWrapper({ children, onSubmit, a
                     type='number'
                     registration={register('weight')}
                     error={errors.weight as any}
-                    value={watch('weight') || ''}
+                    value={watch('weight') || 0}
                     onChange={handleWeightChange}
                     inputProps={{
                         min: 0,
@@ -161,7 +164,7 @@ export default memo(function InventoryCreateModalWrapper({ children, onSubmit, a
                 </Typography>
 
                 <Box display='flex' justifyContent='flex-end'>
-                    <Button onClick={handleSubmit(onSubmit ?? action ?? (() => {}))} type='submit' variant='contained' color={'terciary' as any}
+                    <Button onClick={handleSubmit(onSubmit)} type='submit' variant='contained' color={'terciary' as any}
                         sx={{ borderRadius: 999, px: 3, textTransform: 'none' }}>
                         {submitLabel}
                     </Button>

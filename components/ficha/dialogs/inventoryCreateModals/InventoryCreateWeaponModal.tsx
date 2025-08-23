@@ -1,49 +1,55 @@
+/* eslint-disable @typescript-eslint/prefer-nullish-coalescing */
 /* eslint-disable @typescript-eslint/consistent-type-assertions */
 
 import { toastDefault } from '@constants';
-import { weaponCateg, weaponKind, weaponMagicalAccessories, weaponScientificAccessories, damages } from '@constants/dataTypes';
-import { Grid, Stack, Typography, useMediaQuery, useTheme } from '@mui/material';
+import { Stack, Typography, useMediaQuery, useTheme } from '@mui/material';
 import { type ReactElement, memo, useCallback, useMemo } from 'react';
 import { useSnackbar } from 'notistack';
-import { useFormContext } from 'react-hook-form';
+import { FormProvider, useForm } from 'react-hook-form';
 import { FormMultiSelect, FormSelect, FormTextField } from './fields';
 import InventoryCreateModalWrapper, { mapArrayToOptions, type ItemFormData } from './InventoryCreateModalWrapper';
-
-interface WeaponFormFields extends ItemFormData {
-    kind: string;
-    categ: string;
-    accessories: string[];
-    bonus: {
-        dex: number;
-        str: number;
-        weakpoint: number;
-    };
-    damage: {
-        dices: number;
-        sides: number;
-        mod: number;
-    };
-    criticalDamage: string;
-    damageType: string;
-    hit: string;
-    // Campo auxiliar para compor WeaponType quando for Arremessável
-    throwableRange?: '3m' | '9m' | '18m' | '30m' | '90m' | 'Visível' | 'Ilimitado';
-};
+import { deafultWeapons, defaultWeapon } from '@constants/defaultWeapons';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { weaponSchema,  type WeaponFormFields  } from '@schemas/itemsSchemas';
+import { useFichaForm } from '@contexts/FichaFormProvider';
+import { useAudio } from '@hooks';
+import {
+    weaponCateg,
+    weaponKind,
+    weaponMagicalAccessories,
+    weaponScientificAccessories,
+    damages,
+    ranges,
+    weaponBonuses,
+    weaponHit,
+    ballisticWeaponAmmo,
+    energyWeaponAmmo,
+    otherWeaponAmmo
+} from '@constants/dataTypes';
 
 export const InventoryCreateWeaponModal = memo(({ action }: { action: () => void }): ReactElement => {
     const theme = useTheme();
     const matches = useMediaQuery(theme.breakpoints.down('md'));
     const { enqueueSnackbar } = useSnackbar();
+    const fichaForm = useFichaForm();
+    const audio = useAudio('/sounds/sci-fi-interface-zoom.wav');
 
-    const formContext = useFormContext<WeaponFormFields>();
-    const { register, formState: { errors }, watch } = formContext;
-    
+    const weaponForm = useForm<WeaponFormFields>({
+        mode: 'onChange',
+        reValidateMode: 'onChange',
+        defaultValues: defaultWeapon,
+        resolver: zodResolver(weaponSchema)
+    });
+    const { register, formState: { errors }  } = weaponForm;
+
     // Memoizar as opções para os selects
     const weaponKindOptions = useMemo(() => mapArrayToOptions(weaponKind), []);
     const weaponCategoryOptions = useMemo(() => mapArrayToOptions(weaponCateg), []);
     const damageTypeOptions = useMemo(() => mapArrayToOptions(damages), []);
-    const throwableRangeOptions = useMemo(() => mapArrayToOptions([ '3m', '9m', '18m', '30m', '90m', 'Visível', 'Ilimitado' ]), []);
-    
+    const rangeOptions = useMemo(() => mapArrayToOptions(ranges), []);
+    const bonusOptions = useMemo(() => mapArrayToOptions(weaponBonuses), []);
+    const hitOptions = useMemo(() => weaponHit.map(item => ({ value: item, label: item.toUpperCase() })), []);
+  
     // Memoizar as opções de acessórios agrupadas
     const accessoriesOptions = useMemo(() => [
         { header: 'Geral', options: [ { value: 'Não possui acessórios', label: 'Não possui acessórios' } ] },
@@ -51,160 +57,200 @@ export const InventoryCreateWeaponModal = memo(({ action }: { action: () => void
         { header: 'Mágicos', options: mapArrayToOptions(weaponMagicalAccessories) }
     ], []);
 
-    const create = useCallback((data: ItemFormData) => {
-        const w = data as unknown as WeaponFormFields;
-        const composedKind = w.kind === 'Arremessável' && w.throwableRange
-            ? `Arremessável (${w.throwableRange})`
+    // Memoizar as opções de munição agrupadas
+    const ammoOptions = useMemo(() => [
+        { header: 'Geral', options: [ { value: 'Não consome', label: 'Não consome' } ] },
+        { header: 'Balística', options: mapArrayToOptions(ballisticWeaponAmmo) },
+        { header: 'Energia', options: mapArrayToOptions(energyWeaponAmmo) },
+        { header: 'Outros', options: mapArrayToOptions(otherWeaponAmmo) }
+    ], []);
+
+    // Memoizar as opções de armas bases agrupadas
+    const baseWeaponOptions = useMemo(() => [
+        { header: 'Geral', options: [ { value: 'Nenhum', label: 'Nenhum' } ] },
+        { header: 'Corpo a corpo', options: mapArrayToOptions(deafultWeapons.melee.map(item => item.name).sort()) },
+        { header: 'Longo alcance', options: mapArrayToOptions(deafultWeapons.ranged.map(item => item.name).sort()) },
+        { header: 'Mágico', options: mapArrayToOptions(deafultWeapons.magic.map(item => item.name).sort()) },
+        { header: 'Balística', options: mapArrayToOptions(deafultWeapons.ballistic.map(item => item.name).sort()) },
+        { header: 'Energia', options: mapArrayToOptions(deafultWeapons.energy.map(item => item.name).sort()) },
+        { header: 'Especial', options: mapArrayToOptions(deafultWeapons.special.map(item => item.name).sort()) }
+    ], []);
+
+    const setDefaultWeapon = (weaponName: string) => {
+        const allWeapons = Object.values(deafultWeapons).flat();
+        const weapon = allWeapons.find(item => item.name === weaponName);
+
+        if (weapon) {
+            const newValues = {
+                ...weapon,
+                categ: (weapon.categ ?? '').split('(')[0].trim(),
+                kind: (weapon.kind as string).split('(')[0].trim()
+            };
+            weaponForm.reset(newValues);
+        } else if (weaponName === 'Nenhum') {
+            weaponForm.reset(defaultWeapon);
+        }
+        audio.play();
+    };
+
+    const create = useCallback((data: WeaponFormFields & ItemFormData) => {
+        const w = data;
+        const composedKind = w.kind === 'Arremessável' && w.range
+            ? `Arremessável (${w.range})`
             : w.kind;
 
-        // Caso futuramente seja necessário enviar o objeto, já deixamos o valor composto
         const payload = { ...w, kind: composedKind } as WeaponFormFields;
-
+        const current = fichaForm.getValues('inventory.weapons') ?? [];
+        fichaForm.setValue('inventory.weapons', [ ...current, payload ], { shouldValidate: true, shouldDirty: true });
+        
         enqueueSnackbar(`${payload.name} criado com sucesso!`, toastDefault('itemCreated', 'success'));
         action();
-    }, [ enqueueSnackbar, action ]);
+    }, [ enqueueSnackbar, action, fichaForm ]);
 
     return (
-        <InventoryCreateModalWrapper onSubmit={create} submitLabel='Criar Arma'>
-            <Stack spacing={2}>
-                {/* Seção: Classificação */}
-                <Stack>
-                    <Typography variant='subtitle2' color='text.secondary' sx={{ mb: 1 }}>Classificação</Typography>
-                    <Stack direction={matches ? 'column' : 'row'} spacing={2}>
-                        <FormSelect
-                            name='kind'
-                            label='Tipo'
-                            registration={register('kind')}
-                            error={errors?.kind as any}
-                            options={weaponKindOptions}
-                            defaultValue='Padrão'
-                            sx={{ minWidth: matches ? '100%' : '20%' }}
-                        />
-                        {/* Quando o tipo for Arremessável, exibe seletor de alcance (ThrowableRangeType) */}
-                        {watch('kind') === 'Arremessável' && (
+        <FormProvider {...weaponForm}>
+            <InventoryCreateModalWrapper 
+                action={create} 
+                submitLabel='Criar Arma'
+                headerComponent={
+                    <FormSelect
+                        label="Arma base"
+                        options={baseWeaponOptions}
+                        onChange={(e) => setDefaultWeapon(e.target.value as string)}
+                        sx={{ minWidth: matches ? '100%' : '20%' }}
+                        fullWidth
+                        hasGroups
+                    />
+                }
+            >
+                <Stack spacing={2}>
+                    {/* Seção: Classificação */}
+                    <Stack>
+                        <Typography variant='subtitle2' color='text.secondary' sx={{ mb: 1 }}>Classificação</Typography>
+                        <Stack direction={matches ? 'column' : 'row'} spacing={2}>
                             <FormSelect
-                                name='throwableRange'
-                                label='Alcance'
-                                registration={register('throwableRange')}
-                                error={errors?.throwableRange as any}
-                                options={throwableRangeOptions}
+                                name='categ'
+                                label='Categoria'
+                                registration={register('categ')}
+                                error={errors?.categ}
+                                options={weaponCategoryOptions}
                                 sx={{ minWidth: matches ? '100%' : '20%' }}
                             />
-                        )}
-                        <FormSelect
-                            name='categ'
-                            label='Categoria'
-                            registration={register('categ')}
-                            error={errors?.categ as any}
-                            options={weaponCategoryOptions}
-                            sx={{ minWidth: matches ? '100%' : '20%' }}
-                        />
-                        <FormMultiSelect
-                            name='accessories'
-                            label='Acessórios'
-                            registration={register('accessories')}
-                            error={errors?.accessories as any}
-                            options={accessoriesOptions}
-                            hasGroups={true}
-                            defaultValue={[ 'Não possui acessórios' ]}
-                            sx={{ minWidth: matches ? '100%' : '30%' }}
-                        />
+                            <FormSelect
+                                name='kind'
+                                label='Tipo'
+                                registration={register('kind')}
+                                error={errors?.kind}
+                                options={weaponKindOptions}
+                                sx={{ minWidth: matches ? '100%' : '20%' }}
+                            />
+                            <FormSelect
+                                name='range'
+                                label='Alcance'
+                                registration={register('range')}
+                                error={errors?.range}
+                                options={rangeOptions}
+                                sx={{ minWidth: matches ? '100%' : '20%' }}
+                            />
+                            <FormMultiSelect
+                                name='accessories'
+                                label='Acessórios'
+                                registration={register('accessories')}
+                                error={errors?.accessories as any}
+                                options={accessoriesOptions}
+                                hasGroups
+                                sx={{ minWidth: matches ? '100%' : '30%' }}
+                            />
+                        </Stack>
                     </Stack>
-                </Stack>
 
-                {/* Seção: Bônus */}
-                <Stack>
-                    <Typography variant='subtitle2' color='text.secondary' sx={{ mb: 1 }}>Bônus</Typography>
-                    <Grid container spacing={2}>
-                        <Grid item xs={12} sm={4}>
+                    {/* Seção: Dano */}
+                    <Stack>
+                        <Typography variant='subtitle2' color='text.secondary' sx={{ mb: 1 }}>Dano</Typography>
+                        <Stack direction={matches ? 'column' : 'row'} spacing={2}>
                             <FormTextField 
-                                name='bonus.dex'
-                                label='Destreza' 
-                                type='number' 
-                                registration={register('bonus.dex')}
-                                error={errors?.bonus as any}
-                                placeholder='Ex: +1'
+                                name='effect.value'
+                                label='Dano' 
+                                type='text' 
+                                registration={register('effect.value')}
+                                error={errors?.effect?.value as any}
+                                placeholder='Ex: 1d6'
                             />
-                        </Grid>
-                        <Grid item xs={12} sm={4}>
                             <FormTextField 
-                                name='bonus.str'
-                                label='Força' 
-                                type='number' 
-                                registration={register('bonus.str')}
-                                error={errors?.bonus as any}
-                                placeholder='Ex: +2'
+                                name='effect.critValue'
+                                label='Dano Crítico' 
+                                type='text' 
+                                registration={register('effect.critValue')}
+                                error={errors?.effect?.critValue as any}
+                                placeholder='Ex: 2d6'
                             />
-                        </Grid>
-                        <Grid item xs={12} sm={4}>
                             <FormTextField 
-                                name='bonus.weakpoint'
-                                label='Ponto fraco' 
+                                name='effect.critChance'
+                                label='Chance Crítica' 
                                 type='number' 
-                                registration={register('bonus.weakpoint')}
-                                error={errors?.bonus as any}
-                                placeholder='Ex: +1'
+                                registration={register('effect.critChance')}
+                                error={errors?.effect?.critChance as any}
+                                inputProps={{ min: 1, step: 1, max: 20 }}
+                                sx={{ minWidth: matches ? '100%' : '10%' }}
+                                placeholder='Ex: 19'
                             />
-                        </Grid>
-                    </Grid>
-                </Stack>
-
-                {/* Seção: Dano */}
-                <Stack>
-                    <Typography variant='subtitle2' color='text.secondary' sx={{ mb: 1 }}>Dano</Typography>
-                    <Grid container spacing={2}>
-                        <Grid item xs={12} sm={4}>
-                            <FormTextField 
-                                name='damage.dices'
-                                label='Qtd. de dados' 
-                                type='number' 
-                                registration={register('damage.dices')}
-                                error={errors?.damage as any}
-                                placeholder='Ex: 1'
-                            />
-                        </Grid>
-                        <Grid item xs={12} sm={4}>
-                            <FormTextField 
-                                name='damage.sides'
-                                label='Lados' 
-                                type='number' 
-                                registration={register('damage.sides')}
-                                error={errors?.damage as any}
-                                placeholder='Ex: 6'
-                            />
-                        </Grid>
-                        <Grid item xs={12} sm={4}>
-                            <FormTextField 
-                                name='damage.mod'
-                                label='Modificador' 
-                                type='number' 
-                                registration={register('damage.mod')}
-                                error={errors?.damage as any}
-                                placeholder='Ex: +2'
-                            />
-                        </Grid>
-                        <Grid item xs={12} sm={6}>
-                            <FormSelect
-                                name='criticalDamage'
-                                label='Dano crítico'
-                                registration={register('criticalDamage')}
-                                error={errors?.criticalDamage as any}
-                                options={[ { value: '1d6', label: '1d6' }, { value: '2d6', label: '2d6' } ]}
-                            />
-                        </Grid>
-                        <Grid item xs={12} sm={6}>
-                            <FormSelect
-                                name='damageType'
-                                label='Tipo de dano'
-                                registration={register('damageType')}
-                                error={errors?.damageType as any}
+                            <FormSelect 
+                                sx={{ minWidth: matches ? '100%' : '20%' }}
+                                name='effect.effectType'
+                                label='Tipo do dano' 
+                                registration={register('effect.effectType')}
+                                error={errors?.effect?.effectType as any}
                                 options={damageTypeOptions}
                             />
-                        </Grid>
-                    </Grid>
+                            <FormSelect 
+                                sx={{ minWidth: matches ? '100%' : '20%' }}
+                                name='hit'
+                                label='Atributo' 
+                                registration={register('hit')}
+                                error={errors?.hit as any}
+                                options={hitOptions}
+                            />
+                            <FormSelect 
+                                sx={{ minWidth: matches ? '100%' : '20%' }}
+                                name='bonus'
+                                label='Bônus' 
+                                registration={register('bonus')}
+                                error={errors?.bonus as any}
+                                options={bonusOptions}
+                            />
+                        </Stack>
+                    </Stack>
+
+                    { /* Seção: Outros */ }
+                    <Stack>
+                        <Typography variant='subtitle2' color='text.secondary' sx={{ mb: 1 }}>Outros</Typography>
+                        <Stack direction={matches ? 'column' : 'row'} spacing={2}>
+                            <FormSelect 
+                                sx={{ minWidth: matches ? '100%' : '20%' }}
+                                name='ammo'
+                                label='Munição' 
+                                registration={register('ammo')}
+                                error={errors?.ammo as any}
+                                options={ammoOptions}
+                                hasGroups
+                            />
+                            {weaponForm.watch('ammo') !== 'Não consome' && (
+                                <FormTextField 
+                                    name='magazineSize'
+                                    label='Tamanho do carregador' 
+                                    type='number'
+                                    registration={register('magazineSize')}
+                                    error={errors?.magazineSize as any}
+                                    inputProps={{ min: 1, step: 1 }}
+                                    sx={{ minWidth: matches ? '100%' : '20%' }}
+                                    placeholder='Ex: 30'
+                                />
+                            )}
+                        </Stack>
+                    </Stack>
                 </Stack>
-            </Stack>
-        </InventoryCreateModalWrapper>
+            </InventoryCreateModalWrapper>
+        </FormProvider>
     );
 });
 

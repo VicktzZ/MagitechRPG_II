@@ -388,13 +388,16 @@ function Attribute({
                         </Typography>
                         <Box mt={1}>
                             <Typography variant="caption" fontWeight="medium">
-                                {attributeMod >= 0 ? `+${attributeMod}` : attributeMod} Dado em testes de {config.label}<br/>
-                                {attributeMod >= 0 ? `+${attributeMod}` : attributeMod} no modificador de {config.label}<br/>
+                                {(() => {
+                                    const attributeMessage = attributeMod >= 0 ? `+${attributeMod}` : attributeMod
+                                    return `${attributeMessage} No modificador de ${config.label} ( ${attributeMessage} dados [${attributeMod >= 0 ? 'VANTAGEM' : 'DESVANTAGEM'}] )`
+                                })()}
+                                <br />
                                 {attributeName === 'car' && (discountValue > 0 ? `+${discountValue}% de desconto` : `${discountValue}% de desconto`)}
                             </Typography>
                         </Box>
                     </Box>
-                }
+                }   
                 arrow
                 placement="left"
             >

@@ -30,8 +30,10 @@ export const weaponSchema = z.object({
     categ: z.string().min(1, { message: 'Categoria de arma é obrigatória' }),
     bonus: z.string().min(1, { message: 'Bonus de arma é obrigatória' }),
     hit: z.string().min(1, { message: 'Dano de arma é obrigatório' }),
+    kind: z.string().min(1, { message: 'Tipo de arma é obrigatório' }).default('Padrão'),
     range: z.string().min(1, { message: 'Alcance é obrigatório' }),
-    accessories: z.array(z.string()).min(1, { message: 'Pelo menos um acessório é necessário' }),
+    accessories: z.array(z.string()),
+    magazineSize: z.coerce.number().int().default(0),
     effect: weaponEffectSchema
 });
 
@@ -42,7 +44,9 @@ export const armorSchema = z.object({
     displacementPenalty: z.coerce.number().int().default(0),
     defensiveBonus: z.coerce.number().int().default(0),
     defenseType: z.string().min(1, { message: 'Tipo de defesa é obrigatório' }),
-    accessories: z.array(z.string()).min(1, { message: 'Pelo menos um acessório é necessário' })
+    value: z.coerce.number().int().default(0),
+    quantity: z.coerce.number().int().default(1),
+    accessories: z.array(z.string())
 });
 
 // Schema para itens comuns

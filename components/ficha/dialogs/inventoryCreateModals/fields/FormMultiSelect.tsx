@@ -11,6 +11,7 @@ import {
     type SelectProps 
 } from '@mui/material';
 import { type ReactElement, memo, useMemo } from 'react';
+import { Controller, useFormContext } from 'react-hook-form';
 import { type FieldError, type UseFormRegisterReturn } from 'react-hook-form';
 
 interface OptionGroup {
@@ -38,7 +39,6 @@ const FormMultiSelect = memo(({
     label,
     options,
     hasGroups = false,
-    defaultValue = [],
     sx,
     ...rest 
 }: FormMultiSelectProps): ReactElement => {
@@ -85,6 +85,8 @@ const FormMultiSelect = memo(({
         );
     };
 
+    const { control } = useFormContext();
+
     return (
         <FormControl sx={sx}>
             <InputLabel 
@@ -93,19 +95,24 @@ const FormMultiSelect = memo(({
             >
                 {label}
             </InputLabel>
-            <Select
-                labelId={registration.name}
-                id={`${registration.name}-select`}
-                defaultValue={defaultValue}
-                multiple
-                input={<OutlinedInput id="select-multiple-chip" label={label} />}
-                renderValue={renderValue}
-                {...registration}
-                {...rest}
-                MenuProps={menuProps}
-            >
-                {renderOptions}
-            </Select>
+            <Controller
+                name={registration.name as any}
+                control={control}
+                render={({ field }) => (
+                    <Select
+                        labelId={registration.name}
+                        id={`${registration.name}-select`}
+                        multiple
+                        input={<OutlinedInput id="select-multiple-chip" label={label} />}
+                        renderValue={renderValue}
+                        {...field}
+                        {...rest}
+                        MenuProps={menuProps}
+                    >
+                        {renderOptions}
+                    </Select>
+                )}
+            />
             {error && (
                 <FormHelperText sx={{ color: 'error.main' }}>
                     {error.message?.toString()}
