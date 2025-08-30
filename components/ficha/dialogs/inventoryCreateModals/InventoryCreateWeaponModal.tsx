@@ -116,6 +116,7 @@ export const InventoryCreateWeaponModal = memo(({ action }: { action: () => void
                     <FormSelect
                         label="Arma base"
                         options={baseWeaponOptions}
+                        defaultValue='Nenhum'   
                         onChange={(e) => setDefaultWeapon(e.target.value as string)}
                         sx={{ minWidth: matches ? '100%' : '20%' }}
                         fullWidth

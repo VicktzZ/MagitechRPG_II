@@ -132,10 +132,9 @@ export default function MagicsModal({ open, onClose }: { open: boolean, onClose:
                             validateAdd={validateAdd}
                             successMessage={(magic) => `Magia ${magic.nome} adicionada!`}
                             errorMessage={(err) => err.message || 'Erro ao adicionar magia'}
-                            filterOptions={elements.map(element => element.toUpperCase())}
+                            filterOptions={elements}
                             sortOptions={[ 'Nível', 'Elemento', 'Alfabética' ]}
                             renderResource={({ item, handleAddItem }) => {
-                                // Verifica se a magia já está no inventário
                                 const currentMagics = getValues('magics') || [];
                                 const alreadyAdded = currentMagics.some(m => m._id === item._id);
                                 

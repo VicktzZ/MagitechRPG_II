@@ -49,9 +49,10 @@ export async function GET(req: NextRequest): Promise<Response> {
         }
 
         if (filter && filter !== 'Nenhum') {
+            const filterUpper = filter.toUpperCase()
             pipeline.push({
                 $match: {
-                    'elemento': filter
+                    $expr: { $eq: [ { $toUpper: '$elemento' }, filterUpper ] }
                 }
             })
         }
@@ -65,6 +66,8 @@ export async function GET(req: NextRequest): Promise<Response> {
                 pipeline.push({ $sort: { 'nível': orderBy } })
             } else if (sort === 'Custo') {
                 pipeline.push({ $sort: { 'custo': orderBy } })
+            } else if (sort === 'Elemento') {
+                pipeline.push({ $sort: { 'elemento': orderBy } })
             }
         }
         

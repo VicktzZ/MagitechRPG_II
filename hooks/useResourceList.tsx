@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState, useRef } from 'react';
-import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSnackbar } from 'notistack';
 import { Close } from '@mui/icons-material';
 import { toastDefault } from '@constants';
@@ -38,6 +38,9 @@ export const useResourceList = <T extends Record<string, any>>(
         remove: false
     });
 
+    // Quando houver filtro aplicado, buscamos tudo de uma vez (sem paginação infinita)
+    const isAllMode = useMemo(() => Boolean(filter && filter !== 'Nenhum'), [ filter ]);
+
     const fetchItems = useCallback(
         async ({ pageParam = 1 }) => {
             const params = {
@@ -61,15 +64,39 @@ export const useResourceList = <T extends Record<string, any>>(
         [ debouncedSearch, filter, sort, pageSize, fetchFunction ]
     );
 
-    // Configuração da query infinita
+    // Modo sem paginação: busca todos os itens de uma vez quando existir filtro
+    const allQuery = useQuery({
+        queryKey: [ queryKey, { search: debouncedSearch, filter, sort, mode: 'all' } ],
+        queryFn: async () => {
+            const params = {
+                queryParams: {
+                    search: debouncedSearch,
+                    filter,
+                    sort: sort.value,
+                    order: sort.order,
+                    page: '1',
+                    // Limite alto, mas seguro. Usuário informou que não passa de 50
+                    limit: '100'
+                }
+            };
+            return await fetchFunction(params);
+        },
+        enabled: isAllMode,
+        staleTime: 60000,
+        gcTime: 300000,
+        refetchOnWindowFocus: false,
+        refetchOnMount: false
+    });
+
+    // Configuração da query infinita (usada apenas quando não há filtro)
     const {
-        data,
+        data: infData,
         fetchNextPage,
         hasNextPage,
         isFetchingNextPage,
-        isLoading,
-        isError,
-        error
+        isLoading: infLoading,
+        isError: infIsError,
+        error: infError
     } = useInfiniteQuery({
         queryKey: [ queryKey, { search: debouncedSearch, filter, sort } ],
         queryFn: fetchItems,
@@ -78,7 +105,8 @@ export const useResourceList = <T extends Record<string, any>>(
         getNextPageParam: (lastPage) => lastPage.nextPage,
         initialPageParam: 1,
         refetchOnWindowFocus: false, // Evita refetch quando a janela ganha foco
-        refetchOnMount: false // Evita refetch quando o componente é montado
+        refetchOnMount: false, // Evita refetch quando o componente é montado
+        enabled: !isAllMode
     });
 
     // Mutação para adicionar um item
@@ -130,10 +158,15 @@ export const useResourceList = <T extends Record<string, any>>(
 
     // Achatando a lista de páginas para facilitar o uso e removendo duplicatas
     const items = useMemo(() => {
-        if (!data?.pages) return [];
+        // Modo ALL: retorna os dados diretamente
+        if (isAllMode) {
+            return Array.isArray(allQuery.data) ? allQuery.data : [];
+        }
+
+        if (!infData?.pages) return [];
         
         // Extrai todos os itens e remove duplicatas por ID
-        const allItems = data.pages.flatMap((page) => page.data || []);
+        const allItems = infData.pages.flatMap((page) => page.data || []);
         const uniqueMap = new Map();
         
         // Processa os itens em ordem reversa para garantir que os mais recentes tenham prioridade
@@ -153,7 +186,8 @@ export const useResourceList = <T extends Record<string, any>>(
         if (sort.value && sort.value !== 'Nenhum') {
             const sortField = sort.value === 'Alfabética' ? 'nome' : 
                 sort.value === 'Nível' ? 'nível' : 
-                    sort.value === 'Custo' ? 'custo' : 'nome';
+                    sort.value === 'Custo' ? 'custo' : 
+                        sort.value === 'Elemento' ? 'elemento' : 'nome';
             
             uniqueItems.sort((a, b) => {
                 const valA = a[sortField];
@@ -173,12 +207,13 @@ export const useResourceList = <T extends Record<string, any>>(
         }
         
         return uniqueItems;
-    }, [ data, sort.value, sort.order ]);
+    }, [ isAllMode, allQuery.data, infData, sort.value, sort.order ]);
 
     // Referência para controlar o tempo da última chamada
     const lastFetchRef = useRef(0);
     
     const loadMore = useCallback(() => {
+        if (isAllMode) return; // Desabilita carregamento infinito quando buscando tudo
         // Verifica se passou tempo suficiente desde a última chamada (500ms)
         const now = Date.now();
         if (now - lastFetchRef.current < 500) {
@@ -191,7 +226,7 @@ export const useResourceList = <T extends Record<string, any>>(
         if (hasNextPage && !isFetchingNextPage) {
             fetchNextPage();
         }
-    }, [ fetchNextPage, hasNextPage, isFetchingNextPage ]);
+    }, [ isAllMode, fetchNextPage, hasNextPage, isFetchingNextPage ]);
 
     return {
         // Estados
@@ -202,11 +237,11 @@ export const useResourceList = <T extends Record<string, any>>(
 
         // Dados
         items,
-        isLoading,
-        isError,
-        error,
-        hasNextPage,
-        isFetchingNextPage,
+        isLoading: isAllMode ? allQuery.isLoading : infLoading,
+        isError: isAllMode ? allQuery.isError : infIsError,
+        error: (isAllMode ? allQuery.error : infError) as any,
+        hasNextPage: isAllMode ? false : hasNextPage,
+        isFetchingNextPage: isAllMode ? false : isFetchingNextPage,
 
         // Ações
         setSearch,

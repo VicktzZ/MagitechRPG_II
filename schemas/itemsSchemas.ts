@@ -53,7 +53,7 @@ export const armorSchema = z.object({
 export const itemSchema = z.object({
     ...defaultValidationSchema,
     level: z.coerce.number().int().default(1),
-    categ: z.string().min(1, { message: 'Categoria do item é obrigatória' })
+    kind: z.string().min(1, { message: 'Tipo do item é obrigatória' })
 });
 
 // Tipos inferidos dos schemas
