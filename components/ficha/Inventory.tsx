@@ -1,20 +1,17 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import ItemComponent from '@components/ficha/subcomponents/Item';
-import CreateItemModal from '@components/ficha/dialogs/inventoryCreateModals/CreateItemModal';
 import { RPGIcon } from '@components/misc';
 import { rarityArmorBonuses } from '@constants/dataTypes';
+import { AddItemModal } from '@layout';
 import {
     Add,
     CheckCircle,
-    Close,
     FitnessCenter,
     Inventory2,
     Shield,
     ShoppingBag,
-    TouchApp,
     Warning
 } from '@mui/icons-material';
-import { Fade } from '@mui/material';
 import {
     alpha,
     Box,
@@ -22,9 +19,7 @@ import {
     Chip,
     Divider,
     Grid,
-    IconButton,
     LinearProgress,
-    Modal,
     Paper,
     Stack,
     Tooltip,
@@ -37,51 +32,21 @@ import type { Ficha } from '@types';
 import { useMemo, useState, type ReactElement } from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
 
-type ItemName = 'weapon' | 'item' | 'armor'
 const redFilter = 'invert(16%) sepia(44%) saturate(6989%) hue-rotate(352deg) brightness(97%) contrast(82%)'
 
 // TODO: ACRESCENTAR ITENS DE LINHAGEM (ao mudar)
 export function Inventory (): ReactElement {
-    const { control   } = useFormContext<Ficha>()
+    const { control } = useFormContext<Ficha>()
     
     const theme = useTheme()
     const matches = useMediaQuery(theme.breakpoints.down('md'))
     
     // Observa os valores relevantes do formulário
     const inventory = useWatch({ control, name: 'inventory' })
-    
     const expertises = useWatch({ control, name: 'expertises' })
     const capacity = useWatch({ control, name: 'capacity' })
     
     const [ modalOpen, setModalOpen ] = useState<boolean>(false)
-    const [ modalContent, setModalContent ] = useState<ReactElement>(
-        <CreateItemModal 
-            itemType={'weapon'}
-            onClose={() => { setModalOpen(false) }}
-        />
-    )
-    
-    const [ addButtonsStyle, setAddButtonsStyle ] = useState<Record<ItemName, 'outlined' | 'contained'>>({
-        weapon: 'contained',
-        armor: 'outlined',
-        item: 'outlined'
-    })
-
-    const changeModalContent = (itemName: ItemName): void => {
-        setAddButtonsStyle({
-            weapon: 'outlined',
-            armor: 'outlined',
-            item: 'outlined',
-            [itemName]: 'contained'
-        })
-
-        setModalContent(
-            <CreateItemModal 
-                itemType={itemName}
-                onClose={() => { setModalOpen(false) }}
-            />
-        )
-    }
 
     // Calcula estatísticas do inventário
     const inventoryStats = useMemo(() => {
@@ -458,155 +423,10 @@ export function Inventory (): ReactElement {
                 </Paper>    
             </Box>
 
-            <Modal
-                open={modalOpen}
-                onClose={() => setModalOpen(false)}
-                closeAfterTransition
-                sx={{
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    p: 2
-                }}
-            >
-                <Fade in={modalOpen}>
-                    <Paper
-                        elevation={8}
-                        sx={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            minHeight: {
-                                xs: '85%',
-                                sm: '80%',
-                                md: '70%'
-                            },
-                            maxHeight: '90%',
-                            width: '95%',
-                            maxWidth: '1600px',
-                            borderRadius: 2,
-                            overflow: 'hidden',
-                            border: `1px solid ${theme.palette.divider}`,
-                            transition: 'all 0.2s ease'
-                        }}
-                    >
-                        {/* Header do Modal */}
-                        <Paper elevation={0} sx={{ p: { xs: 1.5, sm: 2 }, bgcolor: 'background.paper', borderRadius: 0, borderBottom: `1px solid ${theme.palette.divider}` }}>
-                            <Stack direction='row' alignItems='center' justifyContent='space-between'>
-                                <Stack direction='row' alignItems='center' spacing={1.5}>
-                                    <Add sx={{ color: 'text.secondary' }} />
-                                    <Box>
-                                        <Typography variant='h6' fontWeight="bold">
-                                            Adicionar Item ao Inventário
-                                        </Typography>
-                                        <Typography variant="caption" color='text.secondary' sx={{ display: { xs: 'none', sm: 'block' } }}>
-                                            Selecione o tipo de item para começar
-                                        </Typography>
-                                    </Box>
-                                </Stack>
-                                <Tooltip title="Fechar" arrow>
-                                    <IconButton onClick={() => setModalOpen(false)}>
-                                        <Close />
-                                    </IconButton>
-                                </Tooltip>
-                            </Stack>
-                        </Paper>
-                        
-                        {/* Barra de categorias minimalista */}
-                        <Paper elevation={0} sx={{ p: { xs: 1, sm: 1.5 }, bgcolor: 'background.paper', borderRadius: 0, borderBottom: `1px solid ${theme.palette.divider}` }}>
-                            <Stack 
-                                direction={{ xs: 'column', sm: 'row' }} 
-                                spacing={{ xs: 1, sm: 1 }} 
-                                justifyContent='center'
-                                alignItems="stretch"
-                            >
-                                <Tooltip title="Adicionar uma nova arma ao inventário" arrow>
-                                    <Button onClick={() => changeModalContent('weapon')} variant={addButtonsStyle.weapon}
-                                        startIcon={<RPGIcon icon='sword2' sx={{ fontSize: 16, color: 'text.secondary' }} />}
-                                        sx={{
-                                            fontWeight: 600,
-                                            px: 2.5,
-                                            py: 1,
-                                            borderRadius: 2,
-                                            flex: { xs: 1, sm: 1 },
-                                            borderColor: theme.palette.divider,
-                                            background: addButtonsStyle.weapon === 'contained' ? alpha(theme.palette.primary.main, 0.06) : 'transparent',
-                                            '&:hover': { background: alpha(theme.palette.text.primary, 0.04) }
-                                        }}
-                                    >
-                                        Arma
-                                    </Button>
-                                </Tooltip>
-                                <Tooltip title="Adicionar uma nova armadura ao inventário" arrow>
-                                    <Button onClick={() => changeModalContent('armor')} variant={addButtonsStyle.armor}
-                                        startIcon={<Shield sx={{ fontSize: 16, color: 'text.secondary' }} />}
-                                        sx={{
-                                            fontWeight: 600,
-                                            px: 2.5,
-                                            py: 1,
-                                            borderRadius: 2,
-                                            flex: { xs: 1, sm: 1 },
-                                            borderColor: theme.palette.divider,
-                                            background: addButtonsStyle.armor === 'contained' ? alpha(theme.palette.primary.main, 0.06) : 'transparent',
-                                            '&:hover': { background: alpha(theme.palette.text.primary, 0.04) }
-                                        }}
-                                    >
-                                        Armadura
-                                    </Button>
-                                </Tooltip>
-                                <Tooltip title="Adicionar um novo item ao inventário" arrow>
-                                    <Button onClick={() => changeModalContent('item')} variant={addButtonsStyle.item}
-                                        startIcon={<ShoppingBag sx={{ fontSize: 16, color: 'text.secondary' }} />}
-                                        sx={{
-                                            fontWeight: 600,
-                                            px: 2.5,
-                                            py: 1,
-                                            borderRadius: 2,
-                                            flex: { xs: 1, sm: 1 },
-                                            borderColor: theme.palette.divider,
-                                            background: addButtonsStyle.item === 'contained' ? alpha(theme.palette.primary.main, 0.06) : 'transparent',
-                                            '&:hover': { background: alpha(theme.palette.text.primary, 0.04) }
-                                        }}
-                                    >
-                                        Item
-                                    </Button>
-                                </Tooltip>
-                            </Stack>
-                        </Paper>
-                        
-                        {/* Conteúdo */}
-                        <Box 
-                            sx={{ 
-                                flex: 1, 
-                                overflow: 'auto', 
-                                p: { xs: 1.5, sm: 2, md: 3 }
-                            }}
-                        >
-                            {modalContent ? (
-                                <Fade in={!!modalContent} timeout={500}>
-                                    <Box>{modalContent}</Box>
-                                </Fade>
-                            ) : (
-                                <Box 
-                                    sx={{ 
-                                        display: 'flex', 
-                                        flexDirection: 'column', 
-                                        alignItems: 'center', 
-                                        justifyContent: 'center',
-                                        height: '100%',
-                                        opacity: 0.8,
-                                        p: 3
-                                    }}
-                                >
-                                    <TouchApp sx={{ fontSize: 32, color: 'text.disabled', mb: 1 }} />
-                                    <Typography variant="body1" align="center" fontWeight="medium" color="text.secondary">
-                                        Selecione um tipo de item acima para começar
-                                    </Typography>
-                                </Box>
-                            )}
-                        </Box>
-                    </Paper>
-                </Fade>
-            </Modal>
+            <AddItemModal
+                modalOpen={modalOpen}
+                setModalOpen={setModalOpen}
+            />
         </>
     )
 }

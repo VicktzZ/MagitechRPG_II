@@ -27,7 +27,7 @@ import {
     otherWeaponAmmo
 } from '@constants/dataTypes';
 
-export const InventoryCreateWeaponModal = memo(({ action }: { action: () => void }): ReactElement => {
+export const InventoryCreateWeaponModal = memo(({ action, disableDefaultCreate = false }: { action: () => void, disableDefaultCreate?: boolean }): ReactElement => {
     const theme = useTheme();
     const matches = useMediaQuery(theme.breakpoints.down('md'));
     const { enqueueSnackbar } = useSnackbar();
@@ -110,8 +110,8 @@ export const InventoryCreateWeaponModal = memo(({ action }: { action: () => void
     return (
         <FormProvider {...weaponForm}>
             <InventoryCreateModalWrapper 
-                action={create} 
-                submitLabel='Criar Arma'
+                action={!disableDefaultCreate ? create : action} 
+                submitLabel='Adicionar Arma'
                 headerComponent={
                     <FormSelect
                         label="Arma base"
@@ -121,6 +121,7 @@ export const InventoryCreateWeaponModal = memo(({ action }: { action: () => void
                         sx={{ minWidth: matches ? '100%' : '20%' }}
                         fullWidth
                         hasGroups
+                        menuStyle={{ maxHeight: 8 }}
                     />
                 }
             >
