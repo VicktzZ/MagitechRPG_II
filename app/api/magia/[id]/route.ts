@@ -1,4 +1,4 @@
-import Magia from '@models/db/ficha';
+import Magia from '@models/db/magia';
 import { type Magia as MagiaType } from '@types';
 import { connectToDb } from '@utils/database';
 

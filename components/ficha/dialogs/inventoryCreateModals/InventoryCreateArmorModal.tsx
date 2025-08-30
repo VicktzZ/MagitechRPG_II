@@ -78,6 +78,7 @@ export const InventoryCreateArmorModal = memo(({ action }: { action: () => void 
                     <FormSelect
                         label="Armadura base"
                         options={baseArmorsOptions}
+                        defaultValue='Nenhum'
                         onChange={(e) => setDefaultArmor(e.target.value as string)}
                         sx={{ minWidth: matches ? '100%' : '20%' }}
                         fullWidth
