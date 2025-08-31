@@ -203,8 +203,8 @@ export default function FichaComponent(): ReactElement {
                 display: 'flex',
                 flexDirection: 'column',
                 gap: 3,
-                p: isMobile ? 2 : 3,
-                maxWidth: '1700px',
+                p: isMobile ? '15px 0' : 3,
+                maxWidth: '1900px',
                 mx: 'auto',
                 width: '100%'
             }}
