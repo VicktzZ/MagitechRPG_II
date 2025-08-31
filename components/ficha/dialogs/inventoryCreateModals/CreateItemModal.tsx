@@ -6,11 +6,13 @@ import { InventoryCreateItemModal } from './InventoryCreateItemModal';
 
 interface CreateItemModalProps {
     itemType: 'weapon' | 'armor' | 'item';
+    disableDefaultCreate?: boolean;
     onClose: () => void;
 }
 
 const CreateItemModal = memo(({ 
     itemType,
+    disableDefaultCreate = false,
     onClose
 }: CreateItemModalProps): ReactElement => {
     const CreateItemComponentModal = useMemo(() => {
@@ -32,7 +34,7 @@ const CreateItemModal = memo(({
             width='100%'
             gap={2}
         >
-            <CreateItemComponentModal action={onClose} />
+            <CreateItemComponentModal disableDefaultCreate={disableDefaultCreate} action={onClose} />
         </Box>
     );
 });

@@ -39,7 +39,7 @@ export function mapArrayToOptions(items: string[]): Array<{ value: string, label
 
 interface WrapperProps {
     children: ReactElement;
-    action?: (data: ItemFormData) => void;
+    action?: (data: any /* ItemFormData */) => void;
     submitLabel?: string;
     headerComponent?: ReactElement;
 };
@@ -119,9 +119,6 @@ export default memo(function InventoryCreateModalWrapper({ children, action, sub
             <Stack direction={matches ? 'column' : 'row'} spacing={3} alignItems={matches ? 'stretch' : 'flex-end'}>
                 <Stack direction='row' alignItems='center' spacing={1} sx={{ flex: matches ? 'unset' : 0 }}>
                     <ButtonGroup variant='outlined' size='small' sx={{ borderRadius: 2 }}>
-                        <IconButton aria-label='diminuir' size='small' onClick={() => setValue('quantity', Math.max(1, (getValues('quantity') ?? 1) - 1), { shouldValidate: true })}>
-                            <Remove fontSize='small' />
-                        </IconButton>
                         <FormTextField
                             label='Quantidade' 
                             type='number'
@@ -137,6 +134,9 @@ export default memo(function InventoryCreateModalWrapper({ children, action, sub
                         />
                         <IconButton aria-label='aumentar' size='small' onClick={() => setValue('quantity', Math.max(1, (getValues('quantity') ?? 1) + 1), { shouldValidate: true })}>
                             <Add fontSize='small' />
+                        </IconButton>
+                        <IconButton aria-label='diminuir' size='small' onClick={() => setValue('quantity', Math.max(1, (getValues('quantity') ?? 1) - 1), { shouldValidate: true })}>
+                            <Remove fontSize='small' />
                         </IconButton>
                     </ButtonGroup>
                 </Stack>
@@ -165,7 +165,7 @@ export default memo(function InventoryCreateModalWrapper({ children, action, sub
 
                 <Box display='flex' justifyContent='flex-end'>
                     <Button onClick={handleSubmit(onSubmit)} type='submit' variant='contained' color={'terciary' as any}
-                        sx={{ borderRadius: 999, px: 3, textTransform: 'none' }}>
+                        sx={{ px: 3, textTransform: 'none' }}>
                         {submitLabel}
                     </Button>
                 </Box>

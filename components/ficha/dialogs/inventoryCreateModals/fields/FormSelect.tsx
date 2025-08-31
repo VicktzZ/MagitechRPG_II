@@ -1,5 +1,5 @@
 import { FormControl, FormHelperText, InputLabel, ListSubheader, MenuItem, Select, type SelectProps } from '@mui/material';
-import { type ReactElement, memo, useMemo } from 'react';
+import { type CSSProperties, type ReactElement, memo, useMemo } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
 import { type FieldError, type UseFormRegisterReturn } from 'react-hook-form';
 
@@ -10,6 +10,7 @@ interface FormSelectProps extends Omit<SelectProps, 'error'> {
     options: Array<{ value: string, label: string }> | OptionGroup[];
     noLabel?: boolean;
     hasGroups?: boolean;
+    menuStyle?: CSSProperties;
 }
 
 interface OptionGroup {
@@ -28,17 +29,19 @@ const FormSelect = memo(({
     noLabel = false,
     sx,
     hasGroups = false,
+    menuStyle,
     ...rest 
 }: FormSelectProps): ReactElement => {
   
     const menuProps = useMemo(() => ({
         PaperProps: {
             style: {
-                maxHeight: ITEM_HEIGHT * 4.5 + ITEM_PADDING_TOP,
-                width: 250
+                ...menuStyle,
+                maxHeight: ITEM_HEIGHT * (Number(menuStyle?.maxHeight) || 4.5) + ITEM_PADDING_TOP,
+                width: (Number(menuStyle?.width) || 250)
             }
         }
-    }), []);
+    }), [ menuStyle ]);
 
     const renderOptions = useMemo(() => {
         if (!hasGroups) {

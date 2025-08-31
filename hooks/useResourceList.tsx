@@ -38,7 +38,7 @@ export const useResourceList = <T extends Record<string, any>>(
         remove: false
     });
 
-    // Quando houver filtro aplicado, buscamos tudo de uma vez (sem paginação infinita)
+    // Quando houver filtro aplicado, buscam-se todos os itens de uma vez
     const isAllMode = useMemo(() => Boolean(filter && filter !== 'Nenhum'), [ filter ]);
 
     const fetchItems = useCallback(
@@ -75,11 +75,11 @@ export const useResourceList = <T extends Record<string, any>>(
                     sort: sort.value,
                     order: sort.order,
                     page: '1',
-                    // Limite alto, mas seguro. Usuário informou que não passa de 50
                     limit: '100'
                 }
             };
-            return await fetchFunction(params);
+            const data = await fetchFunction(params);
+            return data?.sort((a, b) => (a['nível'] || 0) - (b['nível'] || 0));
         },
         enabled: isAllMode,
         staleTime: 60000,
@@ -173,7 +173,7 @@ export const useResourceList = <T extends Record<string, any>>(
         // (itens da primeira página substituem itens duplicados de páginas posteriores)
         for (let i = allItems.length - 1; i >= 0; i--) {
             const item = allItems[i];
-            const id = item._id || item.id;
+            const id = item['_id'] || item['id'];
             if (id) {
                 uniqueMap.set(id, item);
             }

@@ -15,7 +15,7 @@ import { deafultArmors, defaultArmor } from '@constants/defaultArmors';
 /**
  * Modal para criação de armaduras de inventário
  */
-export const InventoryCreateArmorModal = memo(({ action }: { action: () => void }): ReactElement => {
+export const InventoryCreateArmorModal = memo(({ action, disableDefaultCreate = false }: { action: () => void, disableDefaultCreate?: boolean }): ReactElement => {
     const theme = useTheme();
     const matches = useMediaQuery(theme.breakpoints.down('md'));
     const { enqueueSnackbar } = useSnackbar();
@@ -72,8 +72,8 @@ export const InventoryCreateArmorModal = memo(({ action }: { action: () => void 
     return (
         <FormProvider {...armorForm}>
             <InventoryCreateModalWrapper
-                action={create}
-                submitLabel='Criar Armadura'
+                action={!disableDefaultCreate ? create : action}
+                submitLabel='Adicionar Armadura'
                 headerComponent={
                     <FormSelect
                         label="Armadura base"
@@ -83,6 +83,7 @@ export const InventoryCreateArmorModal = memo(({ action }: { action: () => void 
                         sx={{ minWidth: matches ? '100%' : '20%' }}
                         fullWidth
                         hasGroups
+                        menuStyle={{ maxHeight: 8 }}
                     />
                 }
             >
@@ -92,7 +93,7 @@ export const InventoryCreateArmorModal = memo(({ action }: { action: () => void 
                         registration={register('kind')}
                         error={errors?.kind}
                         options={armorKindOptions}
-                        sx={{ width: '12%' }}
+                        sx={{ minWidth: '12%' }}
                     />
                     
                     <FormSelect
@@ -100,16 +101,7 @@ export const InventoryCreateArmorModal = memo(({ action }: { action: () => void 
                         registration={register('categ')}
                         error={errors?.categ}
                         options={armorCategOptions}
-                        sx={{ width: '10%', ml: -1 }}
-                    />
-                    
-                    <FormMultiSelect
-                        label='Acessórios'
-                        registration={register('accessories')}
-                        error={errors?.accessories}
-                        options={accessoriesOptions}
-                        hasGroups={true}
-                        sx={{ minWidth: '20%' }}
+                        sx={{ minWidth: '10%' }}
                     />
                     
                     <FormTextField 
@@ -124,6 +116,15 @@ export const InventoryCreateArmorModal = memo(({ action }: { action: () => void 
                         type='number' 
                         registration={register('displacementPenalty')}
                         error={errors?.displacementPenalty}
+                    />
+
+                    <FormMultiSelect
+                        label='Acessórios'
+                        registration={register('accessories')}
+                        error={errors?.accessories}
+                        options={accessoriesOptions}
+                        hasGroups={true}
+                        sx={{ minWidth: '20%' }}
                     />
                 </Grid>
             </InventoryCreateModalWrapper>

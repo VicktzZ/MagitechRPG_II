@@ -11,9 +11,7 @@ import { useFichaForm } from '@contexts/FichaFormProvider';
 import { defaultItems, defaultItem } from '@constants/defaultItems';
 import type { Item } from '@types';
 
-export const InventoryCreateItemModal = memo(({ action }: {
-    action: () => void;
-}): ReactElement => {
+export const InventoryCreateItemModal = memo(({ action, disableDefaultCreate = false }: { action: () => void, disableDefaultCreate?: boolean }): ReactElement => {
     const theme = useTheme();
     const matches = useMediaQuery(theme.breakpoints.down('md'));
     const { enqueueSnackbar } = useSnackbar();
@@ -64,8 +62,8 @@ export const InventoryCreateItemModal = memo(({ action }: {
     return (
         <FormProvider {...form}>
             <InventoryCreateModalWrapper 
-                action={create}
-                submitLabel='Criar Item'
+                action={!disableDefaultCreate ? create : action}
+                submitLabel='Adicionar Item'
                 headerComponent={
                     <FormSelect
                         label="Item base"
@@ -75,6 +73,7 @@ export const InventoryCreateItemModal = memo(({ action }: {
                         sx={{ minWidth: matches ? '100%' : '20%' }}
                         fullWidth
                         hasGroups
+                        menuStyle={{ maxHeight: 8 }}
                     />
                 }
             >
