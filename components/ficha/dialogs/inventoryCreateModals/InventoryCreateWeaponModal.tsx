@@ -26,13 +26,25 @@ import {
     energyWeaponAmmo,
     otherWeaponAmmo
 } from '@constants/dataTypes';
+import type { Weapon } from '@types';
+import { useCampaignContext } from '@contexts';
 
-export const InventoryCreateWeaponModal = memo(({ action, disableDefaultCreate = false }: { action: () => void, disableDefaultCreate?: boolean }): ReactElement => {
+export const InventoryCreateWeaponModal = memo(({
+    action,
+    disableDefaultCreate = false,
+    onConfirm
+}: { 
+    action: () => void, 
+    disableDefaultCreate?: boolean, 
+    onConfirm?: (item: Weapon) => void 
+}): ReactElement => {
     const theme = useTheme();
     const matches = useMediaQuery(theme.breakpoints.down('md'));
     const { enqueueSnackbar } = useSnackbar();
     const fichaForm = useFichaForm();
     const audio = useAudio('/sounds/sci-fi-interface-zoom.wav');
+    const { campaign } = useCampaignContext()
+    console.log(campaign)
 
     const weaponForm = useForm<WeaponFormFields>({
         mode: 'onChange',
@@ -110,7 +122,7 @@ export const InventoryCreateWeaponModal = memo(({ action, disableDefaultCreate =
     return (
         <FormProvider {...weaponForm}>
             <InventoryCreateModalWrapper 
-                action={!disableDefaultCreate ? create : action} 
+                action={!disableDefaultCreate ? create : onConfirm} 
                 submitLabel='Adicionar Arma'
                 headerComponent={
                     <FormSelect

@@ -11,11 +11,20 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { armorSchema } from './validationSchemas';
 import { useFichaForm } from '@contexts/FichaFormProvider';
 import { deafultArmors, defaultArmor } from '@constants/defaultArmors';
+import type { Armor } from '@types';
 
 /**
  * Modal para criação de armaduras de inventário
  */
-export const InventoryCreateArmorModal = memo(({ action, disableDefaultCreate = false }: { action: () => void, disableDefaultCreate?: boolean }): ReactElement => {
+export const InventoryCreateArmorModal = memo(({
+    action,
+    disableDefaultCreate = false,
+    onConfirm
+}: { 
+    action: () => void, 
+    disableDefaultCreate?: boolean, 
+    onConfirm?: (item: Armor) => void 
+}): ReactElement => {
     const theme = useTheme();
     const matches = useMediaQuery(theme.breakpoints.down('md'));
     const { enqueueSnackbar } = useSnackbar();
@@ -60,8 +69,8 @@ export const InventoryCreateArmorModal = memo(({ action, disableDefaultCreate = 
     ], []);
 
     function setDefaultArmor(armorName: string) {
-        const allAmors = Object.values(deafultArmors).flat();
-        const armor = allAmors.find((a) => a.name === armorName);
+        const allArmors = Object.values(deafultArmors).flat();
+        const armor = allArmors.find((a) => a.name === armorName);
         if (armor) {
             armorForm.reset(armor);
         } else if (armorName === 'Nenhum') {
@@ -72,7 +81,7 @@ export const InventoryCreateArmorModal = memo(({ action, disableDefaultCreate = 
     return (
         <FormProvider {...armorForm}>
             <InventoryCreateModalWrapper
-                action={!disableDefaultCreate ? create : action}
+                action={!disableDefaultCreate ? create : onConfirm}
                 submitLabel='Adicionar Armadura'
                 headerComponent={
                     <FormSelect

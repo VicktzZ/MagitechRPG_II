@@ -148,6 +148,6 @@ export const defaultArmor = {
     weight: 0,
     value: 0,
     displacementPenalty: 0,
-    accessories:    [ 'Não possui acessórios' ],
+    accessories: [ 'Não possui acessórios' ],
     quantity: 1
 }

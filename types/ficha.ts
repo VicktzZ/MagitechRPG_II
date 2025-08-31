@@ -478,8 +478,8 @@ export type WeaponCategory <T extends 'Leve' | 'Pesada'> =
     `Arma Mágica (${T})` |
     `Arma Especial (${T})`
 
-export type WeaponAccesoriesType = WeaponScientificAccesoriesType | WeaponMagicalAccesoriesType
-export type ArmorAccessoriesType = ArmorScientificAccesoriesType | ArmorMagicalAccesoriesType
+export type WeaponAccesoriesType = WeaponScientificAccesoriesType | WeaponMagicalAccesoriesType | 'Não possui acessórios'
+export type ArmorAccessoriesType = ArmorScientificAccesoriesType | ArmorMagicalAccesoriesType | 'Não possui acessórios'
 
 export type WeaponScientificAccesoriesType = 
     'Gravitron' |

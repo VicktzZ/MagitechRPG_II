@@ -32,7 +32,7 @@ export const weaponSchema = z.object({
     hit: z.string().min(1, { message: 'Dano de arma é obrigatório' }),
     kind: z.string().min(1, { message: 'Tipo de arma é obrigatório' }).default('Padrão'),
     range: z.string().min(1, { message: 'Alcance é obrigatório' }),
-    accessories: z.array(z.string()),
+    accessories: z.array(z.string()).default([ 'Não possui acessórios' ]),
     magazineSize: z.coerce.number().int().default(0),
     effect: weaponEffectSchema
 });

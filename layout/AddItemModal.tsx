@@ -3,23 +3,27 @@ import { Add, Close, TouchApp } from '@mui/icons-material'
 import { useState, type ReactElement } from 'react'
 import CreateItemModal from '@components/ficha/dialogs/inventoryCreateModals/CreateItemModal'
 import { useTheme } from '@mui/material'
+import type { Armor, Item, Weapon } from '@types'
 
 type ItemName = 'weapon' | 'item' | 'armor'
 
 export default function AddItemModal({
     modalOpen,
     setModalOpen,
-    disableDefaultCreate = false
+    disableDefaultCreate = false,
+    onConfirm
 }: {
     modalOpen: boolean,
     setModalOpen: (open: boolean) => void,
-    disableDefaultCreate?: boolean
+    disableDefaultCreate?: boolean,
+    onConfirm?: (item: Weapon | Item | Armor) => void
 }) {
     const [ modalContent, setModalContent ] = useState<ReactElement>(
         <CreateItemModal
             itemType={'weapon'}
             disableDefaultCreate={disableDefaultCreate}
             onClose={() => { setModalOpen(false) }}
+            onConfirm={params => { onConfirm?.(params); setModalOpen(false) }}
         />
     )
 
@@ -33,6 +37,7 @@ export default function AddItemModal({
                 itemType={newValue}
                 disableDefaultCreate={disableDefaultCreate}
                 onClose={() => { setModalOpen(false) }}
+                onConfirm={params => { onConfirm?.(params); setModalOpen(false) }}
             />
         )
     }
