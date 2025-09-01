@@ -4,41 +4,21 @@
 
 import { useCampaignContext } from '@contexts';
 import {
-    Avatar,
     Box,
-    Button,
-    CircularProgress,
-    Dialog,
-    DialogActions,
-    DialogContent,
-    DialogTitle,
-    List,
-    ListItem,
-    ListItemAvatar,
-    ListItemText,
     Paper,
     Snackbar,
-    TextField,
     Typography,
     Stack,
-    Chip,
-    Tooltip,
     useTheme,
-    Backdrop,
-    Divider,
     Skeleton
 } from '@mui/material'
 import { useQueryClient } from '@tanstack/react-query'
 import {
-    Shield,
     People,
-    TrendingUp,
-    SupervisorAccount,
-    EmojiEvents
+    SupervisorAccount
 } from '@mui/icons-material'
-import { campaignService, fichaService } from '@services'
-import { useSnackbar } from 'notistack'
-import { type ReactElement, useMemo, useState } from 'react'
+import { campaignService } from '@services'
+import { type ReactElement, useMemo } from 'react'
 import PlayerCard from './PlayerCard'
 import type { Ficha } from '@types'
 import { useRealtimeDatabase } from '@hooks';
@@ -95,14 +75,9 @@ function Section({ title, icon, children, sx }: SectionProps) {
 
 export default function CampaignGMDashboard(): ReactElement | null {
     const { users, fichas, code } = useCampaignContext()
-    const { enqueueSnackbar } = useSnackbar()
+    
     const theme = useTheme();
     
-    const [ levelUpDialogOpen, setLevelUpDialogOpen ] = useState(false)
-    const [ selectedPlayers, setSelectedPlayers ] = useState<string[]>([])
-    const [ isLevelingUp, setIsLevelingUp ] = useState(false)
-    const [ levelsToAdd, setLevelsToAdd ] = useState<number>(1)
-
     const queryClient = useQueryClient()
 
     const { data: playerFichas, query: { isPending: isPlayerFichasPending  } } = useRealtimeDatabase({
@@ -161,60 +136,8 @@ export default function CampaignGMDashboard(): ReactElement | null {
         };
     }, [ players, playerFichas ]);
 
-    const handleLevelUp = async () => {
-        try {
-            setIsLevelingUp(true)
-
-            // Processa cada jogador individualmente para poder mostrar mensagens específicas
-            await Promise.all(
-                selectedPlayers.map(async playerId => {
-                    const player = players.find(p => p.id === playerId)
-                    if (player?.ficha?._id) {
-                        try {
-                            const updatedFicha = await fichaService.increaseLevel(player.ficha._id, levelsToAdd)
-                            enqueueSnackbar(`Ficha ${player.ficha.name} foi para o nível ${updatedFicha.level}!`, {
-                                variant: 'success'
-                            })
-                        } catch (error) {
-                            console.error(`Erro ao evoluir ficha ${player.ficha.name}:`, error)
-                            enqueueSnackbar(`Não foi possível evoluir a ficha ${player.ficha.name}!`, {
-                                variant: 'error'
-                            })
-                        }
-                    }
-                })
-            )
-
-            setLevelUpDialogOpen(false)
-            setLevelsToAdd(1)
-            setSelectedPlayers([])
-        } catch (error) {
-            console.error('Erro ao aumentar nível:', error)
-        } finally {
-            setIsLevelingUp(false)
-        }
-    }
-
     return (
         <Box sx={{ width: '100%', pb: 8, position: 'relative' }}>
-            {isLevelingUp && (
-                <Backdrop 
-                    open={true} 
-                    sx={{ 
-                        zIndex: theme.zIndex.drawer + 1,
-                        backdropFilter: 'blur(4px)',
-                        bgcolor: 'rgba(0,0,0,0.7)'
-                    }}
-                >
-                    <Stack alignItems="center" spacing={2}>
-                        <CircularProgress size={60} thickness={4} />
-                        <Typography variant="h6" color="white">
-                            Evoluindo personagens...
-                        </Typography>
-                    </Stack>
-                </Backdrop>
-            )}
-            
             <Box sx={{ maxWidth: '1400px', mx: 'auto' }}>
                 <Stack spacing={4}>
                     {/* Estatísticas da Campanha */}
@@ -288,46 +211,6 @@ export default function CampaignGMDashboard(): ReactElement | null {
                         )}
                     </Section>
 
-                    {/* Ações Rápidas */}
-                    <Section 
-                        title="Ações do Game Master" 
-                        icon={
-                            <Box 
-                                sx={{
-                                    p: 1.5,
-                                    borderRadius: 2,
-                                    bgcolor: purple[100],
-                                    border: '2px solid',
-                                    borderColor: purple[200]
-                                }}
-                            >
-                                <Shield sx={{ color: purple[700], fontSize: '2rem' }} />
-                            </Box>
-                        }
-                    >
-                        <Box display="flex" gap={2} flexWrap="wrap">
-                            <Tooltip title="Evoluir jogadores selecionados">
-                                <Button
-                                    variant="contained"
-                                    size="large"
-                                    startIcon={<TrendingUp />}
-                                    onClick={() => setLevelUpDialogOpen(true)}
-                                    sx={{
-                                        bgcolor: green[600],
-                                        '&:hover': {
-                                            bgcolor: green[700],
-                                            transform: 'translateY(-2px)',
-                                            boxShadow: 4
-                                        },
-                                        transition: 'all 0.3s ease'
-                                    }}
-                                >
-                                    Aumentar Nível
-                                </Button>
-                            </Tooltip>
-                        </Box>
-                    </Section>
-
                     {/* Lista de Jogadores */}
                     <Section 
                         title="Jogadores da Campanha" 
@@ -397,207 +280,6 @@ export default function CampaignGMDashboard(): ReactElement | null {
                     </Section>
                 </Stack>
             </Box>
-
-            {/* Dialog de Level Up Aprimorado */}
-            <Dialog 
-                open={levelUpDialogOpen} 
-                onClose={() => !isLevelingUp && setLevelUpDialogOpen(false)}
-                maxWidth="md"
-                fullWidth
-                PaperProps={{
-                    sx: {
-                        borderRadius: 3,
-                        background: theme.palette.mode === 'dark'
-                            ? 'linear-gradient(145deg, #1e293b 0%, #334155 100%)'
-                            : 'linear-gradient(145deg, #f8fafc 0%, #e2e8f0 100%)'
-                    }
-                }}
-            >
-                <DialogTitle 
-                    sx={{ 
-                        bgcolor: 'primary.main',
-                        color: 'white',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 2
-                    }}
-                >
-                    <EmojiEvents />
-                    Evolução de Personagens
-                </DialogTitle>
-                
-                <DialogContent sx={{ p: 3 }}>
-                    <Stack spacing={3}>
-                        <Typography variant="body1" color="text.secondary">
-                            Selecione os jogadores que deseja evoluir e defina quantos níveis adicionar:
-                        </Typography>
-                        
-                        {/* Campo de Níveis */}
-                        <Paper 
-                            elevation={1}
-                            sx={{ 
-                                p: 2, 
-                                bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
-                                borderRadius: 2
-                            }}
-                        >
-                            <TextField
-                                label="Quantidade de Níveis"
-                                type="number"
-                                value={levelsToAdd}
-                                onChange={e => {
-                                    const value = parseInt(e.target.value)
-                                    if (value > 0) {
-                                        setLevelsToAdd(value)
-                                    }
-                                }}
-                                inputProps={{ min: 1, max: 10 }}
-                                fullWidth
-                                disabled={isLevelingUp}
-                                sx={{
-                                    '& .MuiOutlinedInput-root': {
-                                        '& fieldset': {
-                                            borderColor: green[300]
-                                        },
-                                        '&:hover fieldset': {
-                                            borderColor: green[500]
-                                        },
-                                        '&.Mui-focused fieldset': {
-                                            borderColor: green[600]
-                                        }
-                                    }
-                                }}
-                            />
-                        </Paper>
-                        
-                        {/* Lista de Jogadores */}
-                        <Box>
-                            <Typography variant="h6" sx={{ mb: 2, color: 'text.primary' }}>
-                                Jogadores ({selectedPlayers.length} selecionado{selectedPlayers.length !== 1 ? 's' : ''})
-                            </Typography>
-                            
-                            <Paper 
-                                elevation={1}
-                                sx={{ 
-                                    maxHeight: 400, 
-                                    overflow: 'auto',
-                                    border: '1px solid',
-                                    borderColor: 'divider'
-                                }}
-                            >
-                                <List>
-                                    {players.map((player, index) => (
-                                        <Box key={player.id}>
-                                            <ListItem
-                                                button
-                                                onClick={() => {
-                                                    if (isLevelingUp) return
-                                                    const newSelected = selectedPlayers.includes(player.id!)
-                                                        ? selectedPlayers.filter(id => id !== player.id)
-                                                        : [ ...selectedPlayers, player.id ]
-                                                    setSelectedPlayers(newSelected as string[])
-                                                }}
-                                                selected={selectedPlayers.includes(player.id!)}
-                                                disabled={isLevelingUp}
-                                                sx={{
-                                                    borderRadius: 1,
-                                                    mx: 1,
-                                                    my: 0.5,
-                                                    '&.Mui-selected': {
-                                                        bgcolor: green[100] + '60',
-                                                        '&:hover': {
-                                                            bgcolor: green[100] + '80'
-                                                        }
-                                                    }
-                                                }}
-                                            >
-                                                <ListItemAvatar>
-                                                    <Avatar 
-                                                        src={player.avatar}
-                                                        sx={{
-                                                            border: selectedPlayers.includes(player.id!) 
-                                                                ? `2px solid ${green[500]}` 
-                                                                : '2px solid transparent'
-                                                        }}
-                                                    />
-                                                </ListItemAvatar>
-                                                <ListItemText
-                                                    primary={
-                                                        <Box display="flex" alignItems="center" gap={1}>
-                                                            <Typography variant="subtitle1" fontWeight={600}>
-                                                                {player.ficha?.name || 'Sem ficha'}
-                                                            </Typography>
-                                                            {selectedPlayers.includes(player.id!) && (
-                                                                <Chip 
-                                                                    label="Selecionado" 
-                                                                    size="small" 
-                                                                    color="success"
-                                                                    sx={{ fontWeight: 600 }}
-                                                                />
-                                                            )}
-                                                        </Box>
-                                                    }
-                                                    secondary={
-                                                        <Box display="flex" alignItems="center" gap={1} mt={0.5}>
-                                                            <Chip 
-                                                                label={`Nível ${player.ficha?.level ?? 'N/A'}`}
-                                                                size="small"
-                                                                sx={{
-                                                                    bgcolor: blue[100],
-                                                                    color: blue[800],
-                                                                    fontWeight: 600
-                                                                }}
-                                                            />
-                                                            {selectedPlayers.includes(player.id!) && (
-                                                                <Chip 
-                                                                    label={`→ Nível ${(player.ficha?.level || 0) + levelsToAdd}`}
-                                                                    size="small"
-                                                                    sx={{
-                                                                        bgcolor: green[100],
-                                                                        color: green[800],
-                                                                        fontWeight: 600
-                                                                    }}
-                                                                />
-                                                            )}
-                                                        </Box>
-                                                    }
-                                                />
-                                            </ListItem>
-                                            {index < players.length - 1 && <Divider />}
-                                        </Box>
-                                    ))}
-                                </List>
-                            </Paper>
-                        </Box>
-                    </Stack>
-                </DialogContent>
-                
-                <DialogActions sx={{ p: 3, gap: 2 }}>
-                    <Button 
-                        onClick={() => setLevelUpDialogOpen(false)} 
-                        disabled={isLevelingUp}
-                        variant="outlined"
-                        size="large"
-                    >
-                        Cancelar
-                    </Button>
-                    <Button
-                        onClick={handleLevelUp}
-                        variant="contained"
-                        size="large"
-                        disabled={selectedPlayers.length === 0 || isLevelingUp}
-                        startIcon={isLevelingUp ? <CircularProgress size={20} /> : <TrendingUp />}
-                        sx={{
-                            bgcolor: green[600],
-                            '&:hover': {
-                                bgcolor: green[700]
-                            }
-                        }}
-                    >
-                        {isLevelingUp ? 'Evoluindo...' : `Evoluir ${selectedPlayers.length} Jogador${selectedPlayers.length !== 1 ? 'es' : ''}`}
-                    </Button>
-                </DialogActions>
-            </Dialog>
 
             <Snackbar />
         </Box>

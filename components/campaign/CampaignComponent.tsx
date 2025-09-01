@@ -4,6 +4,7 @@ import { useCampaignContext } from '@contexts';
 import { Box } from '@mui/material';
 import { type ReactElement } from 'react';
 import { CampaignGMDashboard, CampaignNotes, CampaignPlayerDashboard, SessionChat } from '.';
+import GMActions from './gmDashboard/GMActions';
 
 export default function CampaignComponent(): ReactElement {
     const { isUserGM } = useCampaignContext();
@@ -20,6 +21,11 @@ export default function CampaignComponent(): ReactElement {
                 <Box sx={{
                     width: '100%'
                 }}>
+                    {isUserGM && (
+                        <Box sx={{ display: 'flex', mb: 2 }}>
+                            <GMActions />
+                        </Box>
+                    )}
                     <CampaignNotes />
                     {isUserGM ? <CampaignGMDashboard /> : <CampaignPlayerDashboard />}
                 </Box>

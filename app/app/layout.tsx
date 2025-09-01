@@ -2,7 +2,7 @@
 
 import '@public/fonts/fonts.css'
 
-import { Box, Theme, useMediaQuery } from '@mui/material';
+import { Box, type Theme, useMediaQuery } from '@mui/material';
 import { AppDrawer, Notifications } from '@layout';
 import { RequireAuth } from '@components/misc';
 import type { ReactElement } from 'react';

@@ -11,11 +11,13 @@ export default function AddItemModal({
     modalOpen,
     setModalOpen,
     disableDefaultCreate = false,
+    title = 'Adicionar Item ao Inventário',
     onConfirm
 }: {
     modalOpen: boolean,
     setModalOpen: (open: boolean) => void,
     disableDefaultCreate?: boolean,
+    title?: string,
     onConfirm?: (item: Weapon | Item | Armor) => void
 }) {
     const [ modalContent, setModalContent ] = useState<ReactElement>(
@@ -83,7 +85,7 @@ export default function AddItemModal({
                                 <Add sx={{ color: 'text.secondary' }} />
                                 <Box>
                                     <Typography variant='h6' fontWeight="bold">
-                                        Adicionar Item ao Inventário
+                                        {title}
                                     </Typography>
                                     <Typography variant="caption" color='text.secondary' sx={{ display: { xs: 'none', sm: 'block' } }}>
                                         Selecione o tipo de item

@@ -52,8 +52,8 @@ const FormSelect = memo(({
             ));
         } else {
             return (options as unknown as OptionGroup[]).map((group) => [
-                <ListSubheader key={group.header}>{group.header}</ListSubheader>,
-                ...(group.options?.map(option => (
+                <ListSubheader key={group?.header}>{group?.header}</ListSubheader>,
+                ...(group?.options?.map(option => (
                     <MenuItem key={option.value} value={option.value}>
                         {option.label}
                     </MenuItem>

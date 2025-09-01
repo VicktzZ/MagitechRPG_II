@@ -12,6 +12,7 @@ import { armorSchema } from './validationSchemas';
 import { useFichaForm } from '@contexts/FichaFormProvider';
 import { deafultArmors, defaultArmor } from '@constants/defaultArmors';
 import type { Armor } from '@types';
+import { useCampaignContext } from '@contexts';
 
 /**
  * Modal para criação de armaduras de inventário
@@ -29,6 +30,7 @@ export const InventoryCreateArmorModal = memo(({
     const matches = useMediaQuery(theme.breakpoints.down('md'));
     const { enqueueSnackbar } = useSnackbar();
     const fichaForm = useFichaForm();
+    const { campaign } = useCampaignContext();
 
     type ArmorFormFields = z.infer<typeof armorSchema>;
 
@@ -63,16 +65,20 @@ export const InventoryCreateArmorModal = memo(({
     }, [ enqueueSnackbar, action, fichaForm ]);
 
     const baseArmorsOptions = useMemo(() => [
+        campaign.custom.items.armor.length > 0 && { header: 'Personalizados', options: mapArrayToOptions(campaign.custom.items.armor.map(item => item.name)) },
         { header: 'Geral', options: [ { value: 'Nenhum', label: 'Nenhum' } ] },
         { header: 'Leve', options: mapArrayToOptions(deafultArmors.leve.map(item => item.name).sort()) },
         { header: 'Pesada', options: mapArrayToOptions(deafultArmors.pesada.map(item => item.name).sort()) }
-    ], []);
+    ], [ campaign.custom.items.armor ]);
 
     function setDefaultArmor(armorName: string) {
         const allArmors = Object.values(deafultArmors).flat();
         const armor = allArmors.find((a) => a.name === armorName);
-        if (armor) {
-            armorForm.reset(armor);
+        const campaignArmor = campaign.custom.items.armor?.find(item => item.name === armorName);
+        const a = armor ?? campaignArmor;
+
+        if (a) {
+            armorForm.reset(a);
         } else if (armorName === 'Nenhum') {
             armorForm.reset(defaultArmor);
         }
