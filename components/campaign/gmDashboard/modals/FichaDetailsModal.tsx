@@ -89,9 +89,17 @@ export default function FichaDetailsModal({ open, onClose, ficha }: FichaDetails
             >
                 <DialogTitle>
                     <Box display="flex" justifyContent="space-between" alignItems="center">
-                        <Typography variant="h6">
-                            {ficha.name} - Nível {ficha.level}
-                        </Typography>
+                        <Box>
+                            <Box display="flex" alignItems="center" gap={1}>
+                                <Typography variant="h6">
+                                    {ficha.name} - Nível {ficha.level}
+                                </Typography>
+                                <Typography color="textSecondary" variant="subtitle1">({ficha._id})</Typography>
+                            </Box>
+                            <Typography variant="subtitle1">
+                                {ficha.playerName}
+                            </Typography>
+                        </Box>
                         <Chip 
                             label={`${ficha.class as string} ${ficha.subclass ? `/ ${ficha.subclass as string}` : ''}`}
                             color="primary"

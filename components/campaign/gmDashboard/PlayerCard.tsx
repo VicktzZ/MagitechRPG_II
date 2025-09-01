@@ -1,4 +1,4 @@
-import { WarningModal } from '@layout'
+import { AddItemModal, WarningModal } from '@layout'
 import { Add, Backpack, Block, Bolt, ChatBubbleOutline, Favorite, Info, LocalPolice, MonetizationOn, MoreVert, Shield } from '@mui/icons-material'
 import {
     Box,
@@ -24,7 +24,6 @@ import type { Armor, Ficha, Item, Weapon } from '@types'
 import { enqueueSnackbar } from 'notistack'
 import { useState } from 'react'
 import { useCampaignContext } from '@contexts';
-import AddItemModal from './modals/AddItemModal'
 import { TextField } from '@mui/material'
 import { FichaDetailsModal } from './modals'
 
@@ -250,8 +249,9 @@ export default function PlayerCard({ ficha }: { ficha: Required<Ficha> }) {
 
             {/* Modal de Adicionar Item */}
             <AddItemModal
-                open={addItemModalOpen}
-                onClose={() => setAddItemModalOpen(false)}
+                modalOpen={addItemModalOpen}
+                setModalOpen={setAddItemModalOpen}
+                disableDefaultCreate={true}
                 onConfirm={handleAddItem}
             />
 

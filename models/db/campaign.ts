@@ -74,8 +74,18 @@ const campaignSchema = new Schema<CampaignType>({
     custom: {
         type: new Schema({
             items: {
-                type: [ Object ],
-                default: []
+                weapon: {
+                    type: [ Object ],
+                    default: []
+                },
+                armor: {
+                    type: [ Object ],
+                    default: []
+                },
+                item: {
+                    type: [ Object ],
+                    default: []
+                }
             },
             magias: {
                 type: [ Object ],
@@ -91,7 +101,11 @@ const campaignSchema = new Schema<CampaignType>({
             }
         }, { _id: false }),
         default: () => ({
-            items: [],
+            items: {
+                weapon: [],
+                armor: [],
+                item: []
+            },
             magias: [],
             creatures: [],
             skills: []

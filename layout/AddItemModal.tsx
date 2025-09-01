@@ -3,23 +3,29 @@ import { Add, Close, TouchApp } from '@mui/icons-material'
 import { useState, type ReactElement } from 'react'
 import CreateItemModal from '@components/ficha/dialogs/inventoryCreateModals/CreateItemModal'
 import { useTheme } from '@mui/material'
+import type { Armor, Item, Weapon } from '@types'
 
 type ItemName = 'weapon' | 'item' | 'armor'
 
 export default function AddItemModal({
     modalOpen,
     setModalOpen,
-    disableDefaultCreate = false
+    disableDefaultCreate = false,
+    title = 'Adicionar Item ao Inventário',
+    onConfirm
 }: {
     modalOpen: boolean,
     setModalOpen: (open: boolean) => void,
-    disableDefaultCreate?: boolean
+    disableDefaultCreate?: boolean,
+    title?: string,
+    onConfirm?: (item: Weapon | Item | Armor) => void
 }) {
     const [ modalContent, setModalContent ] = useState<ReactElement>(
         <CreateItemModal
             itemType={'weapon'}
             disableDefaultCreate={disableDefaultCreate}
             onClose={() => { setModalOpen(false) }}
+            onConfirm={params => { onConfirm?.(params); setModalOpen(false) }}
         />
     )
 
@@ -33,6 +39,7 @@ export default function AddItemModal({
                 itemType={newValue}
                 disableDefaultCreate={disableDefaultCreate}
                 onClose={() => { setModalOpen(false) }}
+                onConfirm={params => { onConfirm?.(params); setModalOpen(false) }}
             />
         )
     }
@@ -78,7 +85,7 @@ export default function AddItemModal({
                                 <Add sx={{ color: 'text.secondary' }} />
                                 <Box>
                                     <Typography variant='h6' fontWeight="bold">
-                                        Adicionar Item ao Inventário
+                                        {title}
                                     </Typography>
                                     <Typography variant="caption" color='text.secondary' sx={{ display: { xs: 'none', sm: 'block' } }}>
                                         Selecione o tipo de item

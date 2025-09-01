@@ -13,8 +13,8 @@ import type { UseFormReturn } from 'react-hook-form';
 export const FichaFormContext = createContext<UseFormReturn<Ficha> | null>(null);
 export const useFichaForm = (): UseFormReturn<Ficha> => {
     const ctx = useContext(FichaFormContext);
-    if (!ctx) throw new Error('useFichaForm deve ser usado dentro de FichaFormProvider');
-    return ctx;
+    // if (!ctx) throw new Error('useFichaForm deve ser usado dentro de FichaFormProvider');
+    return ctx!;
 };
 
 export default function FichaFormProvider({ children, formData }: { children: ReactElement, formData?: Ficha }) {

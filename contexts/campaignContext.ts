@@ -14,7 +14,11 @@ export const campaignContext = createContext<CampaignData>({
             messages: []
         },
         custom: {
-            items: [],
+            items: {
+                weapon: [],
+                armor: [],
+                item: []
+            },
             magias: [],
             creatures: [],
             skills: []

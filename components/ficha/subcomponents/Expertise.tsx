@@ -122,7 +122,7 @@ export default function Expertise({
                                 Valor: {expertise.value}
                             </Typography>
                             <Typography variant="body2">
-                                Atributo: {expertise.defaultAttribute?.toUpperCase()}
+                                Atributo: {expertise.defaultAttribute?.toUpperCase() || 'Nenhum'}
                             </Typography>
                             {isEditing && (
                                 <Typography variant="body2" color="warning.main">

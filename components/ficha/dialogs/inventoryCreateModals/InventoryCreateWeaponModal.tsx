@@ -26,13 +26,24 @@ import {
     energyWeaponAmmo,
     otherWeaponAmmo
 } from '@constants/dataTypes';
+import type { Weapon } from '@types';
+import { useCampaignContext } from '@contexts';
 
-export const InventoryCreateWeaponModal = memo(({ action, disableDefaultCreate = false }: { action: () => void, disableDefaultCreate?: boolean }): ReactElement => {
+export const InventoryCreateWeaponModal = memo(({
+    action,
+    disableDefaultCreate = false,
+    onConfirm
+}: { 
+    action: () => void, 
+    disableDefaultCreate?: boolean, 
+    onConfirm?: (item: Weapon) => void 
+}): ReactElement => {
     const theme = useTheme();
     const matches = useMediaQuery(theme.breakpoints.down('md'));
     const { enqueueSnackbar } = useSnackbar();
     const fichaForm = useFichaForm();
     const audio = useAudio('/sounds/sci-fi-interface-zoom.wav');
+    const { campaign } = useCampaignContext()
 
     const weaponForm = useForm<WeaponFormFields>({
         mode: 'onChange',
@@ -67,6 +78,7 @@ export const InventoryCreateWeaponModal = memo(({ action, disableDefaultCreate =
 
     // Memoizar as opções de armas bases agrupadas
     const baseWeaponOptions = useMemo(() => [
+        campaign.custom.items.weapon.length > 0 && { header: 'Personalizados', options: mapArrayToOptions(campaign.custom.items.weapon.map(item => item.name)) },
         { header: 'Geral', options: [ { value: 'Nenhum', label: 'Nenhum' } ] },
         { header: 'Corpo a corpo', options: mapArrayToOptions(deafultWeapons.melee.map(item => item.name).sort()) },
         { header: 'Longo alcance', options: mapArrayToOptions(deafultWeapons.ranged.map(item => item.name).sort()) },
@@ -74,17 +86,19 @@ export const InventoryCreateWeaponModal = memo(({ action, disableDefaultCreate =
         { header: 'Balística', options: mapArrayToOptions(deafultWeapons.ballistic.map(item => item.name).sort()) },
         { header: 'Energia', options: mapArrayToOptions(deafultWeapons.energy.map(item => item.name).sort()) },
         { header: 'Especial', options: mapArrayToOptions(deafultWeapons.special.map(item => item.name).sort()) }
-    ], []);
+    ], [ campaign.custom.items.weapon ]);
 
     const setDefaultWeapon = (weaponName: string) => {
         const allWeapons = Object.values(deafultWeapons).flat();
         const weapon = allWeapons.find(item => item.name === weaponName);
+        const campaignWeapon = campaign.custom.items.weapon?.find(item => item.name === weaponName);
+        const w = weapon ?? campaignWeapon;
 
-        if (weapon) {
+        if (w) {
             const newValues = {
-                ...weapon,
-                categ: (weapon.categ ?? '').split('(')[0].trim(),
-                kind: (weapon.kind as string).split('(')[0].trim()
+                ...w,
+                categ: (w.categ as string ?? '').split('(')[0].trim(),
+                kind: (w.kind as string).split('(')[0].trim()
             };
             weaponForm.reset(newValues);
         } else if (weaponName === 'Nenhum') {
@@ -110,7 +124,7 @@ export const InventoryCreateWeaponModal = memo(({ action, disableDefaultCreate =
     return (
         <FormProvider {...weaponForm}>
             <InventoryCreateModalWrapper 
-                action={!disableDefaultCreate ? create : action} 
+                action={!disableDefaultCreate ? create : onConfirm} 
                 submitLabel='Adicionar Arma'
                 headerComponent={
                     <FormSelect

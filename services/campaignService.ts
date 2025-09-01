@@ -1,4 +1,4 @@
-import type { Campaign, CampaignData, Ficha, Note, User } from '@types'
+import type { Campaign, CampaignData, Ficha, Note, User, Weapon, Armor, Item } from '@types'
 import { Service } from '@utils/apiRequest'
 
 class CampaignService extends Service<Campaign, 'code' | 'userId'> {
@@ -10,6 +10,9 @@ class CampaignService extends Service<Campaign, 'code' | 'userId'> {
     async updateUserFicha(campaignId: string, ficha: Ficha) { return (await this.patch({ param: `${campaignId}/update-user-ficha`, body: ficha })).data }
     async getFichas(campaignId: string) { return await this.fetch({ param: `${campaignId}/fichas` }) as unknown as Ficha[] }
     async getAllData(campaignId: string, userId: string) { return (await this.post({ param: `${campaignId}/get-all-data`, body: ({ userId } as any) })).data as unknown as CampaignData }
+    async addCustomItem(campaignId: string, type: 'weapon' | 'armor' | 'item', item: Weapon | Armor | Item) {
+        return (await this.post({ param: `${campaignId}/custom/items`, body: { type, item } })).data
+    }
 }
 
 export const campaignService = new CampaignService('/campaign')

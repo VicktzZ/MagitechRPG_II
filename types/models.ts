@@ -70,10 +70,14 @@ export interface Campaign {
     myFicha?: Ficha | null
     session: Session
     custom: {
-        items: Item[] | Armor[] | Weapon[]
         magias: Magia[]
         creatures: Creature[]
         skills: Skill[]
+        items: {
+            weapon: Weapon[]
+            armor: Armor[]
+            item: Item[]
+        }
     }
 }
 
