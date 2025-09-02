@@ -55,7 +55,7 @@ export function Armor(props: ItemTyping<'armor'>): ReactElement {
                         <Box flex={1}>
                             <LinearProgress
                                 variant="determinate"
-                                value={Math.min((totalProtection / 30) * 100, 100)} // 30 como valor máximo hipotético
+                                value={Math.min((totalProtection / 15) * 100, 100)} // 30 como valor máximo hipotético
                                 sx={{
                                     height: 8,
                                     borderRadius: 1,

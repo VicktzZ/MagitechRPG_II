@@ -5,31 +5,13 @@ import type { Trait } from '@types';
 
 export const positiveTraits: Trait[] = [
     {
-        name: 'Saúde de Ferro',
+        name: 'Hipertrofiado',
         value: 3,
         target: {
             kind: 'expertise',
             name: 'Força'
         }
     },
-
-    // {
-    //     name: 'Reflexos de Gato',
-    //     value: 1,
-    //     target: {
-    //         kind: 'attribute',
-    //         name: 'DES'
-    //     }
-    // },
-
-    // {
-    //     name: 'Foco Absoluto',
-    //     value: 3,
-    //     target: {
-    //         kind: 'attribute',
-    //         name: 'FOC'
-    //     }
-    // },
 
     {
         name: 'Genial',
@@ -40,23 +22,92 @@ export const positiveTraits: Trait[] = [
         }
     },
 
-    // {
-    //     name: 'Veterano',
-    //     value: 1,
-    //     target: {
-    //         kind: 'attribute',
-    //         name: 'SAB'
-    //     }
-    // },
+    {
+        name: 'Piloto',
+        value: 3,
+        target: {
+            kind: 'expertise',
+            name: 'Condução'
+        }
+    },
 
-    // {
-    //     name: 'Lider',
-    //     value: 1,
-    //     target: {
-    //         kind: 'attribute',
-    //         name: 'CAR'
-    //     }
-    // },
+    {
+        name: 'Cozinheiro',
+        value: 3,
+        target: {
+            kind: 'expertise',
+            name: 'Culinária'
+        }
+    },
+    {
+        name: 'Assertivo',
+        value: 3,
+        target: {
+            kind: 'expertise',
+            name: 'Diplomacia'
+        }
+    },
+    {
+        name: 'Pragmático',
+        value: 3,
+        target: {
+            kind: 'expertise',
+            name: 'Eficácia'
+        }
+    },
+    {
+        name: 'Inabalável',
+        value: 3,
+        target: {
+            kind: 'expertise',
+            name: 'Fortitude'
+        }
+    },
+    
+    {
+        name: 'Ameaçador',
+        value: 3,
+        target: {
+            kind: 'expertise',
+            name: 'Intimidação'
+        }
+    },
+    
+    {
+        name: 'Inclemente',
+        value: 3,
+        target: {
+            kind: 'expertise',
+            name: 'Interrogação'
+        }
+    },
+
+    {
+        name: 'Cleptomaníaco',
+        value: 3,
+        target: {
+            kind: 'expertise',
+            name: 'Ladinagem'
+        }
+    },
+
+    {
+        name: 'Estratégico',
+        value: 3,
+        target: {
+            kind: 'expertise',
+            name: 'Tática'
+        }
+    },
+
+    {
+        name: 'Determinado',
+        value: 3,
+        target: {
+            kind: 'expertise',
+            name: 'Vontade'
+        }
+    },
 
     {
         name: 'Perspicaz',
@@ -268,31 +319,13 @@ export const positiveTraits: Trait[] = [
 
 export const negativeTraits: Trait[] = [
     {
-        name: 'Saúde Frágil',
+        name: 'Hipotrofiado',
         value: -2,
         target: {
             kind: 'expertise',
             name: 'Força'
         }
     },
-
-    // {
-    //     name: 'Desajeitado',
-    //     value: -1,
-    //     target: {
-    //         kind: 'attribute',
-    //         name: 'DES'
-    //     }
-    // },
-
-    // {
-    //     name: 'Distraído',
-    //     value: -1,
-    //     target: {
-    //         kind: 'attribute',
-    //         name: 'FOC'
-    //     }
-    // },
 
     {
         name: 'Confuso',
@@ -303,23 +336,77 @@ export const negativeTraits: Trait[] = [
         }
     },
 
-    // {
-    //     name: 'Inexperiente',
-    //     value: -1,
-    //     target: {
-    //         kind: 'attribute',
-    //         name: 'SAB'
-    //     }
-    // },
+    {
+        name: 'Desgovernado',
+        value: -2,
+        target: {
+            kind: 'expertise',
+            name: 'Condução'
+        }
+    },
 
-    // {
-    //     name: 'Antissocial',
-    //     value: -1,
-    //     target: {
-    //         kind: 'attribute',
-    //         name: 'CAR'
-    //     }
-    // },
+    {
+        name: 'Contraditório',
+        value: -2,
+        target: {
+            kind: 'expertise',
+            name: 'Diplomacia'
+        }
+    },
+
+    {
+        name: 'Indeciso',
+        value: -2,
+        target: {
+            kind: 'expertise',
+            name: 'Eficácia'
+        }
+    },
+
+    {
+        name: 'Vulnerável',
+        value: -2,
+        target: {
+            kind: 'expertise',
+            name: 'Fortitude'
+        }
+    },
+
+    {
+        name: 'Inofensivo',
+        value: -2,
+        target: {
+            kind: 'expertise',
+            name: 'Intimidação'
+        }
+    },
+    
+    {
+        name: 'Desastrado',
+        value: -2,
+        target: {
+            kind: 'expertise',
+            name: 'Ladinagem'
+        }
+    },
+
+    {
+        name: 'Afobado',
+        value: -2,
+        target: {
+            kind: 'expertise',
+            name: 'Tática'
+        }
+    },
+    
+    {
+        name: 'Hesitante',
+        value: -2,
+        target: {
+            kind: 'expertise',
+            name: 'Vontade'
+        }
+    },
 
     {
         name: 'Desatento',
@@ -349,7 +436,7 @@ export const negativeTraits: Trait[] = [
     },
 
     {
-        name: 'Preguiçoso',
+        name: 'Sedentário',
         value: -2,
         target: {
             kind: 'expertise',
@@ -403,7 +490,7 @@ export const negativeTraits: Trait[] = [
     },
 
     {
-        name: 'Moroso',
+        name: 'Preguiçoso',
         value: -2,
         target: {
             kind: 'expertise',

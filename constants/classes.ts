@@ -21,7 +21,7 @@ export const classesModel: Record<Classes, Class> = {
         attributes: {
             lp: 18,
             mp: 2,
-            ap: 8
+            ap: 10
         },
 
         points: {
@@ -37,7 +37,7 @@ export const classesModel: Record<Classes, Class> = {
         attributes: {
             lp: 14,
             mp: 6,
-            ap: 6
+            ap: 8
         },
 
         points: {
@@ -53,7 +53,7 @@ export const classesModel: Record<Classes, Class> = {
         attributes: {
             lp: 10,
             mp: 10,
-            ap: 5
+            ap: 7
         },
 
         points: {
@@ -69,7 +69,7 @@ export const classesModel: Record<Classes, Class> = {
         attributes: {
             lp: 12,
             mp: 8,
-            ap: 6
+            ap: 8
         },
 
         points: {
@@ -85,7 +85,7 @@ export const classesModel: Record<Classes, Class> = {
         attributes: {
             lp: 14,
             mp: 4,
-            ap: 7
+            ap: 9
         },
 
         points: {
@@ -101,7 +101,7 @@ export const classesModel: Record<Classes, Class> = {
         attributes: {
             lp: 16,
             mp: 6,
-            ap: 6
+            ap: 8
         },
 
         points: {
@@ -117,7 +117,7 @@ export const classesModel: Record<Classes, Class> = {
         attributes: {
             lp: 9,
             mp: 12,
-            ap: 4
+            ap: 6
         },
 
         points: {
@@ -134,7 +134,7 @@ export const classesModel: Record<Classes, Class> = {
         attributes: {
             lp: 8,
             mp: 4,
-            ap: 5
+            ap: 7
         },
 
         points: {

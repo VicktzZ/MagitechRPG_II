@@ -138,7 +138,7 @@ export const fichaModel: Ficha = {
     expertises: expertisesDefaultValue,
 
     points: {
-        attributes: 30,
+        attributes: 25,
         expertises: 0,
         skills: 0,
         magics: 1

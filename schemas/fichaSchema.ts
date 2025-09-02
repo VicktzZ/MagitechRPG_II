@@ -298,9 +298,17 @@ const ExpertiseValueSchema = z.object({
     value: z.number().int().min(-10, 'O valor da perícia não pode ser menor que -10')
         .max(10, 'O valor máximo para uma perícia é 10')
         .default(0),
-    defaultAttribute: z.enum([ 'vig', 'des', 'foc', 'log', 'sab', 'car' ], {
-        required_error: 'O atributo base é obrigatório',
-        invalid_type_error: 'Atributo inválido'
+    defaultAttribute: z.union([
+        z.enum([ 'vig', 'des', 'foc', 'log', 'sab', 'car' ]),
+        z.null()
+    ]).optional().nullable().refine((value) => {
+        if (value === null) {
+            return true;
+        }
+        return typeof value === 'string';
+    }, {
+        message: 'O atributo base deve ser um valor válido ou nulo',
+        path: [ 'defaultAttribute' ]
     })
 })
 
