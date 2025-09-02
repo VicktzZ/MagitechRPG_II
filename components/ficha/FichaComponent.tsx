@@ -43,6 +43,7 @@ import { useSession } from '@node_modules/next-auth/react';
 import { fichaService } from '@services';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { type FichaDto, type Ficha } from '@types';
+import { useLocalStorage } from '@uidotdev/usehooks';
 import { useRouter } from 'next/navigation';
 import { useSnackbar } from 'notistack';
 import { useEffect, useState, type ReactElement } from 'react';
@@ -110,6 +111,7 @@ export default function FichaComponent(): ReactElement {
     const isTablet = useMediaQuery(theme.breakpoints.down('md'))
     const isNotebook = useMediaQuery(theme.breakpoints.between('md', 'xl'))
     const submitAudio = useAudio('/sounds/sci-fi-interface-zoom.wav')
+    const [ , setCreateFichaAutosave ] = useLocalStorage<Ficha | null>('create-ficha-autosave')
 
     const { mutateAsync: updateFicha } = useMutation({
         mutationFn: async ({ id, data }: { id: string, data: FichaDto }) => await fichaService.updateById({ id, data }),
@@ -165,6 +167,7 @@ export default function FichaComponent(): ReactElement {
                 enqueueSnackbar('Ficha criada com sucesso!', toastDefault('success', 'success'))
                 setIsLoading(true)
                 submitAudio.play()
+                setCreateFichaAutosave(null)
                 setTimeout(() => {
                     router.push('/app/ficha/' + response._id)
                 }, 500);
@@ -224,26 +227,43 @@ export default function FichaComponent(): ReactElement {
                     alignItems={isMobile ? 'stretch' : 'center'}
                     spacing={2}
                 >
-                    <Box>
-                        <Typography 
-                            variant={isMobile ? 'h5' : 'h4'} 
-                            fontFamily="Sakana"
-                            sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
-                        >
-                            {!ficha._id ? (
-                                <>
-                                    <Add /> Criar Nova Ficha
-                                </>
-                            ) : (
-                                <>
-                                    <Person /> {ficha.name || 'Ficha sem nome'}
-                                </>
-                            )}
-                        </Typography>
-                        {ficha._id && (
-                            <Typography variant="body2" color="text.secondary" mt={1}>
-                                Jogador: {ficha.playerName} • Última atualização: {new Date().toLocaleDateString('pt-BR')}
+                    <Box display='flex' gap={2}>
+                        <Box>
+                            <Typography 
+                                variant={isMobile ? 'h5' : 'h4'} 
+                                fontFamily="Sakana"
+                                sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+                            >
+                                {!ficha._id ? (
+                                    <>
+                                        <Add /> Criar Nova Ficha
+                                    </>
+                                ) : (
+                                    <>
+                                        <Person /> {ficha.name || 'Ficha sem nome'}
+                                    </>
+                                )}
                             </Typography>
+                            {ficha._id && (
+                                <Typography variant="body2" color="text.secondary" mt={1}>
+                                    Jogador: {ficha.playerName}
+                                </Typography>
+                            )}
+                        </Box>
+                        {!ficha._id && (
+                            <Box>
+                                <Button
+                                    variant='contained'
+                                    color={'terciary' as any}
+                                    type='button'
+                                    onClick={() => {
+                                        setCreateFichaAutosave(null)
+                                        window.location.reload()
+                                    }}
+                                >
+                                    Resetar Ficha
+                                </Button>
+                            </Box>
                         )}
                     </Box>
                     

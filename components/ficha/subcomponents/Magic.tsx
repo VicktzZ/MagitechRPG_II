@@ -3,17 +3,18 @@
 
 'use client';
 
-import { Add, AutoAwesome, Close, Flare, LocalFireDepartment, Bolt, WaterDrop, Nature, Air } from '@mui/icons-material';
+import { Add, AutoAwesome, Close, Flare, LocalFireDepartment, Bolt, WaterDrop, Air, Grass, DarkMode, LightMode, Psychology, DoNotDisturb } from '@mui/icons-material';
 import { alpha, Box, Button, CardContent, Chip, Grid, IconButton, Paper, Stack, Tooltip, Typography, useTheme } from '@mui/material';
 import { useState, type ReactElement } from 'react';
 import { motion } from 'framer-motion';
 import type { Magia as MagiaType, MagicPower as MagicPowerType } from '@types';
 import { elementColor } from '@constants';
 import { MagicPower } from './MagicPower';
+import { RPGIcon } from '@components/misc';
 
 // Tipos e constantes
 type MagicStage = 'estágio 1' | 'estágio 2' | 'estágio 3' | 'maestria';
-type ElementType = 'FOGO' | 'ÁGUA' | 'AR' | 'TERRA' | 'ELETRICIDADE' | 'GELO' | 'LUZ' | 'ESCURIDÃO' | 'NEUTRO';
+type ElementType = 'FOGO' | 'ÁGUA' | 'AR' | 'TERRA' | 'ELETRICIDADE' | 'LUZ' | 'TREVAS' | 'NEUTRO' | 'SANGUE' | 'VÁCUO' | 'PSÍQUICO' | 'RADIOATIVO' | 'EXPLOSIVO';
 
 type MagicTyping<C extends 'magic-spell' | 'magic-power'> =
     C extends 'magic-spell' ?
@@ -34,16 +35,28 @@ type MagicTyping<C extends 'magic-spell' | 'magic-power'> =
     }
 
 // Mapeamento de elementos para ícones
-const elementIcons = {
+const elementIcons: Record<ElementType, React.ReactNode> = {
     'FOGO': <LocalFireDepartment />,
     'ÁGUA': <WaterDrop />,
     'AR': <Air />,
-    'TERRA': <Nature />,
+    'TERRA': <Grass />,
     'ELETRICIDADE': <Bolt />,
-    'GELO': <Flare sx={{ color: '#A5F2F3' }} />,
-    'LUZ': <Flare />,
-    'ESCURIDÃO': <Flare sx={{ color: '#4A4A4A' }} />,
-    'NEUTRO': <AutoAwesome />
+    'LUZ': <LightMode />,
+    'TREVAS': <DarkMode />,
+    'NEUTRO': <AutoAwesome />,
+
+    'SANGUE': <WaterDrop />,
+    'VÁCUO': <DoNotDisturb />,
+    'PSÍQUICO': <Psychology />,
+    'EXPLOSIVO': <Flare />,
+    'RADIOATIVO': <RPGIcon 
+        icon="radioactive" 
+        sx={{
+            marginLeft: '10px',
+            marginRight: '-5px',
+            filter: 'brightness(0) saturate(100%) invert(23%) sepia(39%) saturate(4708%) hue-rotate(277deg) brightness(90%) contrast(97%)' 
+        }} 
+    />
 };
 
 function MagicSpell({
@@ -62,8 +75,8 @@ function MagicSpell({
 
     // Elemento para cor/ícone
     const elemento = magic.elemento.toUpperCase() as ElementType;
-    const elementoColor = elementColor[elemento] || theme.palette.primary.main;
-    const elementIcon = elementIcons[elemento] || <AutoAwesome />;
+    const elementoColor = elementColor[elemento as keyof typeof elementColor] || theme.palette.primary.main;
+    const elementIcon = elementIcons[elemento] ?? <AutoAwesome />;
 
     // Dados dos níveis disponíveis
     const availableStages: MagicStage[] = [ 'estágio 1' ];

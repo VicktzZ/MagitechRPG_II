@@ -1,5 +1,5 @@
 import { Gavel, Inventory2, Shield } from '@mui/icons-material'
-import { amber, blue, blueGrey, brown, cyan, deepPurple, green, grey, indigo, lightBlue, lightGreen, orange, pink, red, teal  } from '@mui/material/colors'
+import { amber, blue, blueGrey, cyan, deepPurple, green, grey, indigo, lightBlue, lightGreen, orange, pink, purple, red, teal } from '@mui/material/colors'
 import type { Class, ItemAttributes, RarityType } from '@types'
 
 /* eslint-disable max-len */
@@ -47,11 +47,19 @@ export const elements = [
     'Não-Elemental'
 ]
 
+export const specialElements = [
+    'Sangue',
+    'Vácuo',
+    'Psíquico',
+    'Radioativo',
+    'Explosão'
+]
+
 export const elementColor = {
     'FOGO': red[500],
     'ÁGUA': blue[600],
     'AR': grey[300],
-    'TERRA': brown[400],
+    'TERRA': green[500],
     'PLANTA': green[200],
     'ELETRICIDADE': indigo[300],
     'GELO': blue[300],
@@ -59,8 +67,13 @@ export const elementColor = {
     'LUZ': amber[400],
     'TOXINA': green[600],
     'TREVAS': blueGrey[400],
+    'NÃO-ELEMENTAL': grey[100],
+    
+    'SANGUE': red[900],
+    'VÁCUO': '#555',
     'PSÍQUICO': pink[500],
-    'NÃO-ELEMENTAL': grey[100]
+    'RADIOATIVO': purple[500],
+    'EXPLOSIVO': amber[900]
 }
 
 export const rarityColor: Record<RarityType, string> = {
