@@ -77,7 +77,7 @@ export default function Expertise({
             // Permite incrementar pontos em perícias negativas e respeita os limites máximos
             if (edit.value > 0 && expertise.value < 0) {
                 onClick(newValue);
-            } else if (getValues()._id ? newValue >= 0 && newValue <= 10 : newValue >= 0 && newValue <= 4) {
+            } else if (getValues()._id ? newValue >= 0 && newValue <= 10 : newValue >= 0 && newValue <= 3) {
                 onClick(newValue);
             }
         }

@@ -4,7 +4,7 @@ import { magiaService } from '@services';
 import { ResourceListModal } from '@components/utils';
 import type { Ficha, Magia as MagicType } from '@types';
 import type { ReactElement } from 'react';
-import { elements } from '@constants';
+import { elements, specialElements } from '@constants';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Box, Backdrop } from '@mui/material';
 import Magic from '../subcomponents/Magic';
@@ -132,7 +132,7 @@ export default function MagicsModal({ open, onClose }: { open: boolean, onClose:
                             validateAdd={validateAdd}
                             successMessage={(magic) => `Magia ${magic.nome} adicionada!`}
                             errorMessage={(err) => err.message || 'Erro ao adicionar magia'}
-                            filterOptions={elements}
+                            filterOptions={getValues('level') < 15 ? elements : [ ...elements, ...specialElements ]}
                             sortOptions={[ 'Nível', 'Elemento', 'Alfabética' ]}
                             renderResource={({ item, handleAddItem }) => {
                                 const currentMagics = getValues('magics') || [];
