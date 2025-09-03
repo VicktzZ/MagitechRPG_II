@@ -51,7 +51,7 @@ export const specialElements = [
     'Sangue',
     'Vácuo',
     'Psíquico',
-    'Radioativo',
+    'Radiação',
     'Explosão'
 ]
 
@@ -72,8 +72,8 @@ export const elementColor = {
     'SANGUE': red[900],
     'VÁCUO': '#555',
     'PSÍQUICO': pink[500],
-    'RADIOATIVO': purple[500],
-    'EXPLOSIVO': amber[900]
+    'RADIAÇÃO': purple[500],
+    'EXPLOSÃO': amber[900]
 }
 
 export const rarityColor: Record<RarityType, string> = {

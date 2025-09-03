@@ -14,7 +14,7 @@ import { RPGIcon } from '@components/misc';
 
 // Tipos e constantes
 type MagicStage = 'estágio 1' | 'estágio 2' | 'estágio 3' | 'maestria';
-type ElementType = 'FOGO' | 'ÁGUA' | 'AR' | 'TERRA' | 'ELETRICIDADE' | 'LUZ' | 'TREVAS' | 'NEUTRO' | 'SANGUE' | 'VÁCUO' | 'PSÍQUICO' | 'RADIOATIVO' | 'EXPLOSIVO';
+type ElementType = 'FOGO' | 'ÁGUA' | 'AR' | 'TERRA' | 'ELETRICIDADE' | 'LUZ' | 'TREVAS' | 'NEUTRO' | 'SANGUE' | 'VÁCUO' | 'PSÍQUICO' | 'RADIAÇÃO' | 'EXPLOSÃO';
 
 type MagicTyping<C extends 'magic-spell' | 'magic-power'> =
     C extends 'magic-spell' ?
@@ -48,8 +48,8 @@ const elementIcons: Record<ElementType, React.ReactNode> = {
     'SANGUE': <WaterDrop />,
     'VÁCUO': <DoNotDisturb />,
     'PSÍQUICO': <Psychology />,
-    'EXPLOSIVO': <Flare />,
-    'RADIOATIVO': <RPGIcon 
+    'EXPLOSÃO': <Flare />,
+    'RADIAÇÃO': <RPGIcon 
         icon="radioactive" 
         sx={{
             marginLeft: '10px',
