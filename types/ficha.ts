@@ -344,20 +344,35 @@ export type Classes =
 export type Subclasses = 
     'Polimorfo' |
     'Comandante' |
+    'Aniquilador' |
+
     'Forasteiro' |
     'Errante' |
+    'Duelista' |
+
     'Conjurador' |
     'Elementalista' |
+    'Caoticista' |
+
     'Necromante' |
     'Espiritista' |
-    'Discípulo da Fúria' |
-    'Protetor da Alma' |
+    'Arauto' |
+
+    'Discípulo' |
+    'Protetor' |
+    'Mestre' |
+
     'Animante' |
     'Naturomante' |
+    'Guardião' |
+
     'Arquimago' |
     'Metamágico' |
+    'Glifomante' |
+
     'Espectro' |
-    'Estrategista'
+    'Estrategista' |
+    'Embusteiro'
     
 export type LineageNames = 
     'Órfão' |

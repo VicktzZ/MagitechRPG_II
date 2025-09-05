@@ -1,3 +1,4 @@
+/* eslint-disable max-len */
 import type { Classes, Subclasses } from '@types';
 
 export const subclasses: Record<Classes, Partial<Record<Subclasses, { description: string }>>> = {
@@ -7,6 +8,9 @@ export const subclasses: Record<Classes, Partial<Record<Subclasses, { descriptio
         },
         'Comandante': {
             description: 'Líder nato que inspira aliados em combate, fornecendo bônus táticos e coordenando ataques em grupo.'
+        },
+        'Aniquilador': {
+            description: 'Combatente que abre mão de parte de sua capacidade defensiva para se tornar uma força imparável no campo de batalha, quebrando linhas inimigas e esmagando qualquer um que ouse ficar em seu caminho.'
         }
     },
 
@@ -16,6 +20,9 @@ export const subclasses: Record<Classes, Partial<Record<Subclasses, { descriptio
         },
         'Errante': {
             description: 'Viajante resiliente que se adapta a qualquer terreno, superando obstáculos e guiando aliados por caminhos perigosos.'
+        },
+        'Duelista': {
+            description: 'Estrategista que reage e controla o ritmo de um duelo com precisão calculada, transformando qualquer confronto em uma demonstração de superioridade tática.'
         }
     },
     
@@ -25,15 +32,21 @@ export const subclasses: Record<Classes, Partial<Record<Subclasses, { descriptio
         },
         'Elementalista': {
             description: 'Manipulador dos elementos primordiais, canalizando forças naturais para criar efeitos mágicos devastadores.'
+        },
+        'Caoticista': {
+            description: 'Mago feiticeiro que desfaz e reconstrói a magia de formas imprevisíveis. Ele vê os códigos mágicos como fios soltos e se deleita em tecê-los em padrões caóticos'
         }
     },
 
     'Monge': {
-        'Discípulo da Fúria': {
+        'Discípulo': {
             description: 'Combatente que canaliza sua raiva interior em poder físico, transformando emoção em força destrutiva.'
         },
-        'Protetor da Alma': {
-            description: 'Mestre da harmonia espiritual que protege aliados com auras curativas e barreiras defensivas.'
+        'Protetor': {
+            description: 'Especialista da harmonia espiritual que protege aliados com auras curativas e barreiras defensivas.'
+        },
+        'Mestre': {
+            description: 'Monge que transcendeu os limites do corpo físico para manipular diretamente sua energia interior, ou Ki, criando barreiras de força e canalizando seu poder em explosões avassaladoras, transformando-se em uma verdadeira arma de energia viva.'
         }
     },
 
@@ -43,6 +56,9 @@ export const subclasses: Record<Classes, Partial<Record<Subclasses, { descriptio
         },
         'Espiritista': {
             description: 'Médium que comunica e controla espíritos, invocando entidades do além para auxiliar em combate e cura.'
+        },
+        'Arauto': {
+            description: 'Bruxo que se especializa na arte de amaldiçoar, aplicando feitiços debilitantes que corroem a força vital, a sorte e a sanidade de seus inimigos.'
         }
     },
 
@@ -52,6 +68,9 @@ export const subclasses: Record<Classes, Partial<Record<Subclasses, { descriptio
         },
         'Naturomante': {
             description: 'Canalizador das forças naturais que manipula flora, fauna e fenômenos naturais para proteger e atacar.'
+        },
+        'Guardião': {
+            description: 'O Guardião abraça o lado mais primitivo e feroz da natureza. Em vez de apenas cultivar a vida, ele personifica sua força indomável, transformando seu próprio corpo para imitar as maiores feras.'
         }
     },
 
@@ -61,6 +80,9 @@ export const subclasses: Record<Classes, Partial<Record<Subclasses, { descriptio
         },
         'Metamágico': {
             description: 'Estudioso que manipula a própria estrutura da magia, alterando e aprimorando feitiços de formas impossíveis.'
+        },
+        'Glifomante': {
+            description: 'Arcano que trata o campo de batalha como sua tela. Ele se especializa em "Magia Simbólica", criando runas, selos e glifos que manipulam a realidade de formas complexas. '
         }
     },
 
@@ -70,6 +92,9 @@ export const subclasses: Record<Classes, Partial<Record<Subclasses, { descriptio
         },
         'Estrategista': {
             description: 'Mestre da manipulação tática que prevê movimentos inimigos e explora fraquezas com precisão calculada.'
+        },
+        'Embusteiro': {
+            description: 'Ladino que se especializa em enganar e enganar, usando sua mente para criar desinformações e enganar seus inimigos.'
         }
     }
 }

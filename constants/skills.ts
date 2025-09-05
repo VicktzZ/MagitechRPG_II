@@ -552,6 +552,29 @@ export const skills: {
                 'level': 20
             }
         ],
+        'Aniquilador': [
+            {
+                'name': 'Força Implacável',
+                'description': 'Seus ataques corpo a corpo se tornam tão avassaladores que destroem as defesas inimigas. Ao atacar, você pode gastar 5 MP para ignorar permanentemente 1d6 pontos de AP do alvo para cada ataque subsequente que você desferir contra ele neste combate. O efeito é cumulativo.',
+                'origin': 'Aniquilador',
+                'type': 'Subclasse',
+                'level': 10
+            },
+            {
+                'name': 'Frenesi de Batalha',
+                'description': 'A dor apenas alimenta sua fúria. Sempre que você sofrer dano igual ou superior a 15% do seu LP máximo em um único ataque, você entra em um frenesi. No seu próximo turno, seu primeiro ataque corpo a corpo causará +3d10 de dano adicional e atordoará o alvo por 1 turno (teste de Resistência Física para negar).',
+                'origin': 'Aniquilador',
+                'type': 'Subclasse',
+                'level': 15
+            },
+            {
+                'name': 'Avatar da Destruição',
+                'description': 'Uma vez por dia, como uma ação completa, você pode gastar 20 MP para se transformar em um avatar da destruição por 3 rodadas. Nesta forma, sua força atinge o ápice: Seus ataques corpo a corpo causam o dobro de dano. Todos os seus ataques ignoram completamente os Pontos de Armadura (AP) do alvo. Você se torna imune aos estados Medo, Atordoado e Paralisado.',
+                'origin': 'Aniquilador',
+                'type': 'Subclasse',
+                'level': 20
+            }
+        ],
 
         // ESPECIALISTA
         'Forasteiro': [
@@ -596,6 +619,29 @@ export const skills: {
                 'name': 'Trilha da Fortuna',
                 'description': 'Uma vez por combate, ative um estado supremo por uma rodada para você e aliados: testes são automaticamente bem-sucedidos e adicionam +2d4 a qualquer dano ou cura realizada.',
                 'origin': 'Errante',
+                'type': 'Subclasse',
+                'level': 20
+            }
+        ],
+        'Duelista': [
+            {
+                'name': 'Analisar Oponente',
+                'description': 'Como uma ação padrão, você pode gastar 8 MP para analisar um alvo que possa ver. Você descobre uma de suas resistências ou vulnerabilidades elementais (à escolha do Mestre) e ganha vantagem (+1d20) em todos os testes de ataque contra esse alvo por 3 turnos.',
+                'origin': 'Duelista',
+                'type': 'Subclasse',
+                'level': 10
+            },
+            {
+                'name': 'Resposta Tática',
+                'description': 'Sua capacidade de antecipação é letal. Uma vez por rodada, quando um inimigo errar um ataque corpo a corpo contra você, você pode usar sua reação para realizar um ataque corpo a corpo imediato contra ele com +5 de bônus no acerto.',
+                'origin': 'Duelista',
+                'type': 'Subclasse',
+                'level': 15
+            },
+            {
+                'name': 'Xeque-Mate',
+                'description': 'Uma vez por dia, você pode prever o movimento final de seu adversário. Ao ser atacado por um inimigo que você tenha sob o efeito da sua habilidade *Analisar Oponente*, você pode usar sua reação e gastar 20 MP para executar um contra-ataque perfeito. O ataque do inimigo automaticamente erra, e você desfere um ataque imediato que é considerado um acerto crítico garantido além de aumentar o dano em +6d6. Após ser atingido pelo seu Xeque-Mate, o alvo fica em estado de choque, sofrendo desvantagem em todos os seus testes de ataque e resistência até o final do seu próximo turno.',
+                'origin': 'Duelista',
                 'type': 'Subclasse',
                 'level': 20
             }
@@ -648,50 +694,96 @@ export const skills: {
                 'level': 20
             }
         ],
+        'Caoticista': [
+            {
+                'name': 'Magia Instável',
+                'description': 'Sempre que você conjura uma magia de dano, pode gastar 3 MP adicionais para infundir caos nela. Role 1d6: o dano da magia muda para um tipo elemental correspondente ao resultado (1: Fogo, 2: Água, 3: Ar, 4: Terra, 5: Eletricidade, 6: Trevas ou Luz, à sua escolha). O alvo sofre desvantagem no teste de resistência contra esta magia.',
+                'origin': 'Tecelão do Caos',
+                'type': 'Subclasse',
+                'level': 10
+            },
+            {
+                'name': 'Absorção Entrópica',
+                'description': 'Quando um inimigo conjura uma magia e falha em acertar você (seja por errar o teste de acerto ou por você passar em um teste de resistência), você absorve parte da energia dissipada. Você recupera 1d10 MP e sua próxima magia de dano causa +2d8 de dano adicional.',
+                'origin': 'Tecelão do Caos',
+                'type': 'Subclasse',
+                'level': 15
+            },
+            {
+                'name': 'Zona de Anomalia Arcana',
+                'description': 'Uma vez por dia, como ação completa, você gasta 20 MP para rasgar o tecido da realidade, criando uma zona de magia caótica de 15 metros de raio por 1d4 rodadas. No início do turno de cada criatura (aliada ou inimiga) dentro da zona, role 1d6 para determinar o efeito anômalo que ocorre com ela: 1-2 (Pulso Destrutivo): A criatura sofre 5d10 de dano de um tipo elemental aleatório (role 1d6 novamente para determinar o elemento). 3-4 (Surto Vital): A criatura recupera 5d10 LP. 5 (Deslocamento Espacial): A criatura é teletransportada para um espaço desocupado aleatório dentro da zona. 6 (Onda de Mana): A criatura recupera ou perde 3d8 MP (50% de chance para cada).',
+                'origin': 'Tecelão do Caos',
+                'type': 'Subclasse',
+                'level': 20
+            }
+        ],
 
         // MONGE
-        'Discípulo da Fúria': [
+        'Discípulo': [
             {
                 'name': 'Ecos de Raiva',
                 'description': 'Sempre que você for alvo de um ataque crítico ou perder 50% ou mais de seus LPs, entre automaticamente no estado de Fúria no próximo turno. Além disso, ao perder LP pela primeira vez em combate, entre em fúria.',
-                'origin': 'Discípulo da Fúria',
+                'origin': 'Discípulo',
                 'type': 'Subclasse',
                 'level': 10
             },
             {
                 'name': 'Impacto Devastador',
                 'description': 'Ataques no estado de Fúria ignoram 2 de AP do alvo. Ao entrar em Fúria, o primeiro ataque corpo a corpo no turno causa +1d20 de dano adicional.',
-                'origin': 'Discípulo da Fúria',
+                'origin': 'Discípulo',
                 'type': 'Subclasse',
                 'level': 15
             },
             {
                 'name': 'Fúria Implacável',
                 'description': 'Ganha +2 em todos os testes que envolvem Vigor e Destreza enquanto estiver no estado de Fúria. Caso seus LPs estejam abaixo de 50%, fique em Fúria por tempo ilimitado até se curar ou morrer. Se derrotar um inimigo nesse estado, permaneça em Fúria por mais um turno sem custo adicional.',
-                'origin': 'Discípulo da Fúria',
+                'origin': 'Discípulo',
                 'type': 'Subclasse',
                 'level': 20
             }
         ],
-        'Protetor da Alma': [
+        'Protetor': [
             {
                 'name': 'Presença Tranquilizante',
                 'description': 'Ao entrar no estado de Calma, restaura 2d6 LP para você e aliados em um raio de 5 metros no início do turno. Inimigos na área têm desvantagem em ataques e sofrem -2 em testes de resistência enquanto aliados ganham +2 em testes de Agilidade e curam 1d4 LP ao final de cada turno.',
-                'origin': 'Protetor da Alma',
+                'origin': 'Protetor',
                 'type': 'Subclasse',
                 'level': 10
             },
             {
                 'name': 'Aura Serena',
                 'description': 'Aliados em um raio de 10 metros ganham +2 em testes de resistência mental e curam +1 LP por turno enquanto você estiver vivo.',
-                'origin': 'Protetor da Alma',
+                'origin': 'Protetor',
                 'type': 'Subclasse',
                 'level': 15
             },
             {
                 'name': 'Harmonia',
                 'description': 'Ao entrar em calma 3 vezes consecutivas, você entra no estado de Harmonia: aliados próximos ganham imunidade a dano mágico, +3 em testes envolvendo Destreza e curas feitas por você ou aliados têm +2d8 de bônus. Ao final, cure todos em 3d8 e remova condições debilitantes. Dura até seu próximo turno.',
-                'origin': 'Protetor da Alma',
+                'origin': 'Protetor',
+                'type': 'Subclasse',
+                'level': 20
+            }
+        ],
+        'Mestre': [
+            {
+                'name': 'Golpe de Ki',
+                'description': 'Você pode gastar 4 MP para infundir seus punhos com energia. Por 3 turnos, seus ataques desarmados ganham um alcance de 3 metros (Curto) e causam um dano adicional de 2d8 do tipo Não-Elemental.',
+                'origin': 'Mestre',
+                'type': 'Subclasse',
+                'level': 10
+            },
+            {
+                'name': 'Barreira de Ki',
+                'description': 'Como reação ao ser alvo de um ataque, você pode gastar 8 MP para criar uma barreira de energia pura. Você ganha +10 de AP temporário contra este ataque. Se o ataque for corpo a corpo e for completamente absorvido pela barreira, o atacante é empurrado 3 metros para trás.',
+                'origin': 'Mestre',
+                'type': 'Subclasse',
+                'level': 15
+            },
+            {
+                'name': 'Canhão de Ki Devastador',
+                'description': 'Uma vez por dia, como ação completa, você canaliza toda a sua energia e dispara um raio massivo de 18 metros de comprimento e 3 metros de largura. Todas as criaturas na linha sofrem 15d10 de dano Não-Elemental e devem fazer um teste de Resistência Física ou serão empurradas até o final da linha. Usar esta habilidade o impede de usar qualquer habilidade que consuma MP no seu próximo turno.',
+                'origin': 'Mestre',
                 'type': 'Subclasse',
                 'level': 20
             }
@@ -740,6 +832,29 @@ export const skills: {
                 'name': 'Chamado dos Ancestrais',
                 'description': 'Adicione +3 espíritos ao seu deck espiritual: Espírito Protetor (+2 AP a um aliado), Espírito Guerreiro (4d10 de dano a um inimigo) e Espírito da Morte (necrose mortal de 3d6 de dano das trevas, custando 2 LP por turno). Controle dois espíritos simultaneamente.',
                 'origin': 'Espiritista',
+                'type': 'Subclasse',
+                'level': 20
+            }
+        ],
+        'Arauto': [
+            {
+                'name': 'Maldição Debilitante',
+                'description': 'Como ação padrão, você pode gastar 8 MP para amaldiçoar um alvo visível por 3 turnos. O alvo amaldiçoado tem desvantagem em todos os testes de resistência (Física, Mental e Mágica). Apenas uma criatura pode ser afetada por esta maldição por vez.',
+                'origin': 'Arauto',
+                'type': 'Subclasse',
+                'level': 10
+            },
+            {
+                'name': 'Vínculo Doloroso',
+                'description': 'Como ação completa, você gasta 12 MP para criar um elo sombrio entre até três inimigos que estejam a até 9 metros um do outro. Por 1d4 rodadas, sempre que um dos alvos vinculados sofrer dano de um ataque ou magia, os outros alvos vinculados sofrem 50% desse dano como dano de trevas.',
+                'origin': 'Arauto',
+                'type': 'Subclasse',
+                'level': 15
+            },
+            {
+                'name': 'Ceifar a Essência',
+                'description': 'Uma vez por dia, você pode marcar uma criatura com a Maldição Final gastando 18 MP. A criatura marcada não pode recuperar LP por nenhum meio mágico. Além disso, se a criatura marcada for derrotada enquanto a maldição estiver ativa, ela explode em energia necrótica, causando 10d8 de dano de Trevas a todos os outros inimigos em um raio de 9 metros.',
+                'origin': 'Arauto',
                 'type': 'Subclasse',
                 'level': 20
             }
@@ -793,6 +908,29 @@ export const skills: {
                 'level': 20
             }
         ],
+        'Guardião': [
+            {
+                'name': 'Postura Bestial',
+                'description': 'No início do seu turno, como ação livre, você pode adotar a postura de um animal, ganhando benefícios até o início do seu próximo turno. Você pode escolher entre: Postura do Urso: Você ganha +3 em testes de Resistência Física e +5 LP temporários. Postura do Lobo: Seus ataques corpo a corpo causam +1d8 de dano adicional e você pode se mover 3 metros após atacar. Postura da Águia: Você ganha vantagem em testes de Percepção e seus ataques à distância ignoram cobertura parcial.',
+                'origin': 'Guardião',
+                'type': 'Subclasse',
+                'level': 10
+            },
+            {
+                'name': 'Mimetismo Feral',
+                'description': 'Você aprende a manifestar fisicamente os aspectos de suas posturas. Como ação de movimento, gastando 8 MP, você pode manifestar uma característica por 1d6 turnos: Garras do Lobo: Seus ataques desarmados causam 3d8 de dano cortante e podem causar hemorragia. Couro do Urso: Você ganha +3 de AP permanente enquanto a transformação durar. Asas da Águia: Você ganha a capacidade de voar com um deslocamento de 9 metros.',
+                'origin': 'Guardião',
+                'type': 'Subclasse',
+                'level': 15
+            },
+            {
+                'name': 'Fúria da Natureza',
+                'description': 'Uma vez por dia, gastando 18 MP, você pode se transformar completamente em uma fera mágica por 2 minutos ou 2 rodadas. Nesta forma, seu modificador de VIG e DES aumentam em +2, você ganha +25 LP temporários, seus ataques desarmados causam 6d10 de dano e você pode atacar duas vezes por turno como uma única ação padrão. Você escolhe a aparência da fera.',
+                'origin': 'Guardião',
+                'type': 'Subclasse',
+                'level': 20
+            }
+        ],
 
         // ARCANO
 
@@ -842,6 +980,29 @@ export const skills: {
                 'level': 20
             }
         ],
+        'Glifomante': [
+            {
+                'name': 'Glifo de Proteção',
+                'description': 'Expandindo sua Magia Simbólica, você pode gastar 8 MP para inscrever um glifo invisível em uma superfície. O glifo dura até ser ativado. Quando uma criatura inimiga se move a até 1,5 metro dele, o glifo explode. Você define o efeito ao criá-lo: Glifo de Alarme: Alerta você mentalmente. Glifo Explosivo: Causa 5d8 de dano de um elemento à sua escolha. Glifo de Imobilização: Força o alvo a um teste de Reflexos ou fica imobilizado por 2 turnos.',
+                'origin': 'Glifomante',
+                'type': 'Subclasse',
+                'level': 10
+            },
+            {
+                'name': 'Sentinela Rúnica',
+                'description': 'Como ação completa, você pode gastar 12 MP para desenhar um conjunto de runas no chão que se erguem para formar um golem arcano. O golem tem 40 LP, 15 AP e ataca uma vez por turno, causando 3d10 de dano Não-Elemental. Ele dura 1d6 turnos e obedece a seus comandos mentais.',
+                'origin': 'Glifomante',
+                'type': 'Subclasse',
+                'level': 15
+            },
+            {
+                'name': 'Selo do Arcanista Supremo',
+                'description': 'Uma vez por dia, gastando 20 MP, você leva uma rodada inteira para inscrever um grande círculo rúnico de 9 metros de raio no chão. O círculo dura 5 turnos. Você escolhe seu efeito ao criá-lo: Selo de Fortalecimento: Aliados dentro do círculo recuperam 2d6 LP no início de seus turnos e têm vantagem em todos os ataques. Selo de Supressão: Inimigos dentro do círculo têm seu deslocamento reduzido pela metade e não podem usar magias de Nível 3 ou superior.',
+                'origin': 'Glifomante',
+                'type': 'Subclasse',
+                'level': 20
+            }
+        ],
 
         // LADINO
 
@@ -887,6 +1048,29 @@ export const skills: {
                 'name': 'Ritmo da Batalha',
                 'description': 'Uma vez por combate, você pode gastar 10 MP para entrar em um estado de domínio total por duas rodadas: realize dois ataques como parte de uma única ação padrão, todos os ataques ganham +2 em chance de acerto e ignoram 2 pontos de armadura. Inimigos atacados por você têm desvantagem em seus ataques no turno seguinte.',
                 'origin': 'Estrategista',
+                'type': 'Subclasse',
+                'level': 20
+            }
+        ],
+        'Embusteiro': [
+            {
+                'name': 'Imagem Espelhada',
+                'description': 'Como ação padrão, você pode gastar 6 MP para criar uma duplicata ilusória perfeita de si mesmo. A duplicata dura 1 minuto ou até ser atingida. Enquanto a duplicata existir, os inimigos devem fazer um teste de Percepção (DT 15) para determinar qual é o verdadeiro alvo. Se falharem, atacam a imagem. Você pode usar sua ação bônus para mover a imagem.',
+                'origin': 'Embusteiro',
+                'type': 'Subclasse',
+                'level': 10
+            },
+            {
+                'name': 'Passo do Enganador',
+                'description': 'Como uma ação de movimento, você pode gastar 8 MP para manipular a percepção espacial e trocar de lugar instantaneamente com um alvo. Você pode escolher: Trocar de lugar com sua Imagem Espelhada ativa. Trocar de lugar com uma criatura inimiga a até 9 metros. O alvo pode resistir com um teste de Resistência Mental. Seu primeiro ataque realizado após usar o Passo do Enganador no mesmo turno ganha vantagem (+1d20).',
+                'origin': 'Embusteiro',
+                'type': 'Subclasse',
+                'level': 15
+            },
+            {
+                'name': 'Fantasma da Traição',
+                'description': 'Uma vez por dia, como ação completa, você pode gastar 18 MP para implantar uma poderosa ilusão na mente de um alvo. O alvo deve fazer um teste de Resistência Mental. Se falhar, por 1d4 turnos, ele enxerga seus próprios aliados como os inimigos mais ameaçadores no campo de batalha e usará suas ações para atacá-los com força total.',
+                'origin': 'Embusteiro',
                 'type': 'Subclasse',
                 'level': 20
             }
@@ -1036,7 +1220,7 @@ export const skills: {
     race: [
         {
             'name': 'Adaptabilidade Essencial',
-            'description': 'Sua capacidade de adaptação, que levou à criação da magia artificial, permite que você aprenda mais rapidamente. Você ganha um ponto de perícia adicional para distribuir em qualquer teste à sua escolha a cada 5 níveis de personagem.',
+            'description': 'Sua capacidade de adaptação, que levou à criação da magia artificial, permite que você aprenda mais rapidamente. Você ganha dois pontos de perícia adicional para distribuir em qualquer teste à sua escolha a cada 5 níveis de personagem.',
             'type': 'Raça',
             'origin': 'Humano'
         },
