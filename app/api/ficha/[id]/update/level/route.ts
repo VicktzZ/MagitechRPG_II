@@ -74,6 +74,12 @@ export async function POST(req: Request, { params }: { params: { id: string } })
                 spellsPoints += 2
                 rewardsList.push('+1 ponto de poder mágico')
                 rewardsList.push('+2 pontos de magia')
+
+                if (ficha.race === 'Humano') {
+                    testPoints += 2
+                    rewardsList.push('+2 pontos de perícia (bônus de raça "Humano")')
+                }
+
                 if (currentLevel !== 20) {
                     newORMLevel++
                     rewardsList.push(`+ORM nível ${newORMLevel} Atingido!`)

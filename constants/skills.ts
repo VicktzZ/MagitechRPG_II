@@ -1036,7 +1036,7 @@ export const skills: {
     race: [
         {
             'name': 'Adaptabilidade Essencial',
-            'description': 'Sua capacidade de adaptação, que levou à criação da magia artificial, permite que você aprenda mais rapidamente. Você ganha um ponto de perícia adicional para distribuir em qualquer teste à sua escolha a cada 5 níveis de personagem.',
+            'description': 'Sua capacidade de adaptação, que levou à criação da magia artificial, permite que você aprenda mais rapidamente. Você ganha dois pontos de perícia adicional para distribuir em qualquer teste à sua escolha a cada 5 níveis de personagem.',
             'type': 'Raça',
             'origin': 'Humano'
         },
