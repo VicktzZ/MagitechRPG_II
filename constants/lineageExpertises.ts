@@ -118,7 +118,7 @@ export const lineageExpertises: Record<Lineage['name'], ExpertisesOverrided> = {
         }
     },
     
-    'Combatente': {
+    'Atirador': {
         tests: {
             'Pontaria': 2,
             'Reflexos': 2

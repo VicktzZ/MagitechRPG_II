@@ -22,7 +22,7 @@ import {
     Zoom
 } from '@mui/material'
 import { blue, deepPurple, green, orange, red, teal } from '@mui/material/colors'
-import type { Ficha } from '@types'
+import type { Ficha, Lineage } from '@types'
 import { memo, type ReactElement, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useFormContext, useWatch } from 'react-hook-form'
 
@@ -105,7 +105,8 @@ function Attribute({
     const matches = useMediaQuery(theme.breakpoints.down('md'))
     const isSmall = useMediaQuery(theme.breakpoints.down('sm'))
     const config = attributeIcons[attributeName]
-    const { setValue, control } = useFormContext<Ficha>()
+    const { setValue, control, getValues } = useFormContext<Ficha>()
+    const ficha = getValues()
 
     const initialAttributeValue = useRef(attributeValue)
     const previousAttributeValue = useRef(attributeValue)
@@ -320,7 +321,13 @@ function Attribute({
 
     // Set attributes mods
     useEffect(() => {
-        setValue(`mods.attributes.${attributeName}`, Math.floor((attr / 5) - 1))
+        let lineageBonus = 0
+        
+        if (attributeName === 'car' && ficha.lineage === 'Artista' as unknown as Lineage) {
+            lineageBonus = 1
+        }
+        
+        setValue(`mods.attributes.${attributeName}`, Math.floor((attr / 5) - 1) + lineageBonus)
         
         const difference = attr - previousAttributeValue.current
         

@@ -17,7 +17,8 @@ Record<
             kind: 'Especial',
             type: 'item',
             weight: 0,
-            effects: [ '+5 MP adicionados.' ]
+            effects: [ '+5 MP adicionados.' ],
+            rarity: 'Comum'
         }
     ],
     'Infiltrado': [
@@ -27,7 +28,8 @@ Record<
             kind: 'Utilidade',
             type: 'item',
             weight: 0.2,
-            effects: [ 'Pode enxergar alvos em até 90m.' ]
+            effects: [ 'Pode enxergar alvos em até 90m.' ],
+            rarity: 'Comum'
         },
         {
             name: 'Bomba de fumaça',
@@ -35,7 +37,8 @@ Record<
             kind: 'Utilidade',
             type: 'item',
             weight: 0.5,
-            effects: [ 'Levanta uma cortina de fumaça em uma área de 6m.' ]
+            effects: [ 'Levanta uma cortina de fumaça em uma área de 6m.' ],
+            rarity: 'Comum'
         }
     ],
     'Estrangeiro': [
@@ -45,7 +48,8 @@ Record<
             kind: 'Especial',
             type: 'item',
             effects: [ 'Você pode passar por todas as provas da UFEM como Ação Livre.' ],
-            weight: 0.3
+            weight: 0.3,
+            rarity: 'Comum'
         }
     ],
     'Camponês': [
@@ -55,7 +59,8 @@ Record<
             kind: 'Especial',
             type: 'item',
             weight: 0,
-            effects:  [ '+25% de Desconto em qualquer compra.' ]
+            effects:  [ '+25% de Desconto em qualquer compra.' ],
+            rarity: 'Comum'
         }
     ],
     'Burguês': [
@@ -65,7 +70,8 @@ Record<
             kind: 'Consumível',
             type: 'item',
             weight: 0,
-            effects: [ '+¥200 000 ao utilizar.' ]
+            effects: [ '+¥200 000 ao utilizar.' ],
+            rarity: 'Comum'
         }
     ],
     'Artista': [
@@ -81,12 +87,13 @@ Record<
             weight: 1,
             kind: 'Padrão',
             effect: {
-                value: '3d6',
-                critValue: '6d6',
+                value: '3d6+1',
+                critValue: '6d6+2',
                 critChance: 20,
                 kind: 'damage',
                 effectType: 'Impactante'
-            }
+            },
+            rarity: 'Comum'
         }
     ],
     'Ginasta': [
@@ -96,7 +103,8 @@ Record<
             kind: 'Especial',
             type: 'item',
             effects: [ '+3 LP adicionados', '+2 dano em ataques corpo-a-corpo.' ],
-            weight: 0
+            weight: 0,
+            rarity: 'Comum'
         }
     ],
     'Herdeiro': [
@@ -106,7 +114,8 @@ Record<
             kind: 'Especial',
             type: 'item',
             effects: [ 'Receba uma limosine e um jatinho particular.' ],
-            weight: 0
+            weight: 0,
+            rarity: 'Comum'
         }
     ],
     'Cobaia': [
@@ -116,7 +125,8 @@ Record<
             kind: 'Especial',
             type: 'item',
             effects: [ '+2 magias.' ],
-            weight: 0
+            weight: 0,
+            rarity: 'Comum'
         }
     ],
     'Gangster': [
@@ -132,12 +142,13 @@ Record<
             type: 'weapon',
             weight: 1.4,
             effect: {
-                value: '3d6',
-                critValue: '6d6',
+                value: '3d4',
+                critValue: '6d4',
                 critChance: 20,
                 kind: 'damage',
-                effectType: 'Impactante'
-            }
+                effectType: 'Perfurante'
+            },
+            rarity: 'Comum'
         }
     ],
     'Hacker': [
@@ -147,21 +158,24 @@ Record<
             kind: 'Utilidade',
             type: 'item',
             weight: 0.1,
-            effects: [ 'Permite a comunicação à distância.' ]
+            effects: [ 'Permite a comunicação à distância.' ],
+            rarity: 'Comum'
         },
+        
         {
             name: 'Controlador Wireless',
             description: 'Um dispositivo touchscreen com uma espessura de um papel que pode ser instalado em seu pulso ou antebraço para controlar e manipular todo e qualquer equipamento que esteja em alguma rede ou que transmita algum sinal. Dependendo do que se quiser tirar proveito com este equipamento, é necessário ter a habilidade “Hacking” e/ou um teste de Tecnologia de DT proporcional a atividade desejada.\nObtido pela linhagem: Hacker',
             kind: 'Utilidade',
             type: 'item',
             weight: 0.7,
-            effects: [ 'Permite o controle de dispositivos wireless remotamente.' ]
+            effects: [ 'Permite o controle de dispositivos wireless remotamente.' ],
+            rarity: 'Comum'
         }
     ],
-    'Combatente': [
+    'Atirador': [
         {
             name: 'Revolver (energia)',
-            description: 'Um porrete com espinhos.\nObtido pela linhagem: Combatente',
+            description: 'Um revolver de energia que pode ser recarregado com baterias de lítio.\nObtido pela linhagem: Atirador',
             kind: 'Padrão',
             categ: 'Arma de Energia (Leve)',
             range: 'Médio (18m)',
@@ -176,15 +190,17 @@ Record<
                 critChance: 19,
                 kind: 'damage',
                 effectType: 'Perfurante'
-            }
+            },
+            rarity: 'Comum'
         },
         {
             name: 'Bateria de lítio',
-            description: 'Utilizado para recarregar a maioria das armas leves de energia.\nObtido pela linhagem: Combatente',
+            description: 'Utilizado para recarregar a maioria das armas leves de energia.\nObtido pela linhagem: Atirador',
             kind: 'Munição',
             type: 'item',
             weight: 0.3,
-            effects: [ 'Recarrega armas leves de energia.' ]
+            effects: [ 'Recarrega armas leves de energia.' ],
+            rarity: 'Comum'
         }
     ],
     'Clínico': [
@@ -195,7 +211,8 @@ Record<
             type: 'item',
             weight: 0.5,
             quantity: 2,
-            effects: [ 'Cura o alvo em 3d6+2.' ]
+            effects: [ 'Cura o alvo em 3d6+2.' ],
+            rarity: 'Comum'
         }
     ],
     'Aventureiro': [
@@ -205,7 +222,8 @@ Record<
             kind: 'Utilidade',
             type: 'item',
             weight: 2,
-            effects: [ 'O gancho pode ser utilizado em distâncias de até 20m.' ]
+            effects: [ 'O gancho pode ser utilizado em distâncias de até 20m.' ],
+            rarity: 'Comum'
         },
         {
             name: 'Mochila pequena',
@@ -213,7 +231,8 @@ Record<
             kind: 'Capacidade',
             type: 'item',
             weight: 2.5,
-            effects: [ '+2.5kg de capacidade de carga.' ]
+            effects: [ '+2.5kg de capacidade de carga.' ],
+            rarity: 'Comum'
         }
     ],
     'Trambiqueiro': [
@@ -223,7 +242,8 @@ Record<
             kind: 'Utilidade',
             type: 'item',
             effects: [ 'Pode arrombar trancas eletrônicas ou não-eletrônicas.' ],
-            weight: 0
+            weight: 0,
+            rarity: 'Comum'
         }
     ],
     'Prodígio': [
@@ -233,7 +253,8 @@ Record<
             kind: 'Especial',
             type: 'item',
             weight: 0,
-            effects: [ '+1.1x de EXP e dinheiro.' ]
+            effects: [ '+1.1x de EXP e dinheiro.' ],
+            rarity: 'Comum'
         }
     ],
     'Novato': [
@@ -243,7 +264,8 @@ Record<
             kind: 'Consumível',
             type: 'item',
             weight: 0,
-            effects: [ '+¥30 000 ao utilizar.' ]
+            effects: [ '+¥30 000 ao utilizar.' ],
+            rarity: 'Comum'
         },
         {
             name: 'Mochila pequena',
@@ -251,7 +273,8 @@ Record<
             kind: 'Capacidade',
             type: 'item',
             weight: 2.5,
-            effects: [ '+2.5kg de capacidade de carga.' ]
+            effects: [ '+2.5kg de capacidade de carga.' ],
+            rarity: 'Comum'
         }
     ],
     'Inventor': [
@@ -272,7 +295,8 @@ Record<
                 critChance: 20,
                 kind: 'damage',
                 effectType: 'Impactante'
-            }
+            },
+            rarity: 'Comum'
         }
     ],
     'Idólatra': [
@@ -283,7 +307,8 @@ Record<
             type: 'item',
             weight: 0,
             effects: [ '+2 MP', '+1 de ponto no efeito da magia.' ],
-            level: 1
+            level: 1,
+            rarity: 'Comum'
         }
     ],
     'Cismático': [
@@ -305,7 +330,8 @@ Record<
                 critChance: 17,
                 kind: 'damage',
                 effectType: 'Perfurante'
-            }
+            },
+            rarity: 'Comum'
         }
     ],
     'Pesquisador': [
@@ -315,7 +341,8 @@ Record<
             kind: 'Especial',
             type: 'item',
             weight: 0.2,
-            effects: [ 'O decodificador tem uma memória que armazena até 5 magias decodificadas.' ]
+            effects: [ 'O decodificador tem uma memória que armazena até 5 magias decodificadas.' ],
+            rarity: 'Comum'
         }
     ],
     'Investigador': [
@@ -326,7 +353,8 @@ Record<
             type: 'item',
             weight: 0,
             effects: [ '+2 em testes de Percepção para encontrar pistas ou evidências.' ],
-            level: 0
+            level: 0,
+            rarity: 'Comum'
         }
     ]
 }

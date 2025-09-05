@@ -372,7 +372,7 @@ export type LineageNames =
     'Cobaia' |
     'Gangster' |
     'Hacker' |
-    'Combatente' |
+    'Atirador' |
     'Clínico' |
     'Aventureiro' |
     'Trambiqueiro' |
