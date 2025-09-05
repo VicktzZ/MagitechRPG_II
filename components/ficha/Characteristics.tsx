@@ -2,7 +2,7 @@
 
 import { classesModel } from '@constants/classes';
 import { lineageExpertises, occupationsExpertises, type ExpertisesOverrided } from '@constants/lineageExpertises';
-import { lineageItems } from '@constants/lineageItems';
+import { lineageItems } from '@constants/lineageOccupationItems';
 import { races } from '@constants/races';
 import { skills } from '@constants/skills';
 import { useAudio } from '@hooks';
