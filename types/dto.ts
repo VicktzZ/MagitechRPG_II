@@ -1,5 +1,5 @@
 import type { DeepOverride } from './deepOverride';
-import type { Ficha } from './ficha';
+import type { Classes, Ficha, LineageNames, OccupationNames } from './ficha';
 
 type Id = string;
 
@@ -20,6 +20,8 @@ export interface DisconnectSessionDto {
 }
 
 export type FichaDto = DeepOverride<Ficha, {
+    lineage: LineageNames | OccupationNames,
+    class: Classes,
     skills: {
         powers: Id[]
     },

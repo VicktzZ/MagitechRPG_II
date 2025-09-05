@@ -2,12 +2,13 @@
 
 import { classesModel } from '@constants/classes';
 import { lineageExpertises, occupationsExpertises, type ExpertisesOverrided } from '@constants/lineageExpertises';
+import { lineageItems } from '@constants/lineageItems';
 import { races } from '@constants/races';
 import { skills } from '@constants/skills';
 import { useAudio } from '@hooks';
 import { Box, FormControl, FormHelperText, InputLabel, MenuItem, Select, TextField, Typography, useMediaQuery, useTheme, type SelectChangeEvent } from '@mui/material';
 import { blue, green, red, yellow } from '@mui/material/colors';
-import type { Classes, Ficha, Race } from '@types';
+import type { Classes, Ficha, LineageNames, Race } from '@types';
 import { useCallback, useMemo, type ReactElement } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
 
@@ -44,10 +45,11 @@ export default function Characteristics(): ReactElement {
     }
 
     const setLineage = (e: SelectChangeEvent<any>): void => {
-        const previousLineage = getValues('lineage');
+        const previousLineage = getValues('lineage') as unknown as LineageNames;
         const selectedLineage = e.target.value;
         const isClassicMode = ficha.mode === 'Classic';
         const antecedentSkills = isClassicMode ? skills.lineage : skills.occupation;
+        const antecedentItems = lineageItems[selectedLineage as keyof typeof lineageItems]
         
         if (previousLineage) {
             const previousLineageBonus = isClassicMode 
@@ -68,6 +70,15 @@ export default function Characteristics(): ReactElement {
                 const currentPoints = getValues('points.expertises');
                 setValue('points.expertises', currentPoints - previousLineageBonus.points);
             }
+
+            if (lineageItems[previousLineage]) {
+                const oldLineageItems = lineageItems[previousLineage]
+
+                oldLineageItems.forEach(item => {
+                    const type = item.type as 'item' | 'weapon'
+                    setValue(`inventory.${type}s`, getValues(`inventory.${type}s`).filter(i => i.name !== item.name) as any)
+                })
+            }
         }
         
         const lineageBonus = isClassicMode 
@@ -76,6 +87,23 @@ export default function Characteristics(): ReactElement {
         
         setValue('lineage', selectedLineage, { shouldValidate: true });
         setValue('skills.lineage', [ antecedentSkills.find(skill => skill.origin === selectedLineage)! ]);
+        
+        // Adicionar itens da nova linhagem
+        if (antecedentItems) {
+            const currentItems = getValues('inventory.items');
+            const currentWeapons = getValues('inventory.weapons');
+            
+            antecedentItems.forEach(item => {
+                if (item.type === 'weapon') {
+                    currentWeapons.push(item as any);
+                } else {
+                    currentItems.push(item as any);
+                }
+            });
+            
+            setValue('inventory.items', currentItems);
+            setValue('inventory.weapons', currentWeapons);
+        }
         
         if (lineageBonus?.tests) {
             Object.entries(lineageBonus.tests).forEach(([ expertise, bonus ]) => {
@@ -98,7 +126,14 @@ export default function Characteristics(): ReactElement {
             const currentPoints = getValues('points.expertises');
             setValue('points.expertises', currentPoints + lineageBonus.points);
         }
-        
+
+        // Bônus de linhagem
+        if (selectedLineage === 'Artista') {
+            setValue('mods.attributes.car', (ficha.mods.attributes.car || 0) + 1);
+        } else if (previousLineage === 'Artista') {
+            setValue('mods.attributes.car', Math.max(0, (ficha.mods.attributes.car || 0) - 1));
+        }
+
         audio.play();
     }
 

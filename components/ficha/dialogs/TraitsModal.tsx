@@ -27,7 +27,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { green, red, blue } from '@mui/material/colors';
-import type { Trait } from '@types';
+import type { LineageNames, Trait } from '@types';
 
 interface TraitWithSelected extends Trait {
     selected: boolean;
@@ -38,9 +38,10 @@ interface TraitsModalProps {
     onClose: () => void;
     selectedTraits: string[];
     onTraitsChange: (traits: string[]) => void;
+    lineage?: LineageNames;
 }
 
-function TraitsModal({ open, onClose, selectedTraits, onTraitsChange }: TraitsModalProps) {
+function TraitsModal({ open, onClose, selectedTraits, onTraitsChange, lineage }: TraitsModalProps) {
     const theme = useTheme();
     const matches = useMediaQuery(theme.breakpoints.down('md'));
     const [ tabIndex, setTabIndex ] = useState(0);
@@ -50,7 +51,6 @@ function TraitsModal({ open, onClose, selectedTraits, onTraitsChange }: TraitsMo
     const [ selectedNegative, setSelectedNegative ] = useState<string[]>([]);
     const [ selectedTraitDetails, setSelectedTraitDetails ] = useState<Trait | null>(null);
 
-    // Ao inicializar, marcar os traços que já estavam selecionados
     useEffect(() => {
         const positiveSelected = selectedTraits.filter(
             trait => positiveTraits.some(pt => pt.name === trait)
@@ -62,7 +62,6 @@ function TraitsModal({ open, onClose, selectedTraits, onTraitsChange }: TraitsMo
         setSelectedPositive(positiveSelected);
         setSelectedNegative(negativeSelected);
 
-        // Processar os dados dos traços
         setPositiveTraitsData(
             positiveTraits.map(trait => ({
                 ...trait,
@@ -78,56 +77,52 @@ function TraitsModal({ open, onClose, selectedTraits, onTraitsChange }: TraitsMo
         );
     }, [ selectedTraits ]);
 
-    // Verificar se dois traços têm targets opostos (mesmo target, valores de sinais opostos)
     const areOppositeTraits = (positive: Trait | undefined, negative: Trait | undefined): boolean => {
         if (!positive || !negative) return false;
         
-        // Verifica se ambos afetam o mesmo atributo/perícia
         if (positive.target.name.toLowerCase() !== negative.target.name.toLowerCase()) return false;
         if (positive.target.kind !== negative.target.kind) return false;
         
-        // Verifica se os valores têm sinais opostos
         return (positive.value > 0 && negative.value < 0) || 
                (positive.value < 0 && negative.value > 0);
     };
 
-    // Manipular mudanças de traços
-    const handleTraitToggle = (trait: Trait, isPositive: boolean) => {
-        // Verificar potencial conflito com traços opostos
-        if (isPositive) {
-            // Verificar se há um traço negativo selecionado que seja oposto ao traço positivo que está sendo selecionado
-            const selectedNegativeTrait = negativeTraits.find(nt => selectedNegative.includes(nt.name));
-            
-            if (selectedNegativeTrait && areOppositeTraits(trait, selectedNegativeTrait)) {
-                // Permitir a seleção para mostrar o erro na interface, sem alert
-                // A barra de status já mostra o erro e o botão de salvar será desabilitado
-            }
-            
-            // Permitir apenas um traço positivo
-            const updatedSelection = selectedPositive.includes(trait.name)
-                ? [] // Remover se já estiver selecionado
-                : [ trait.name ]; // Substituir a seleção atual
+    const isNovato = lineage === 'Novato';
 
-            setSelectedPositive(updatedSelection);
-            setPositiveTraitsData(prevTraits =>
-                prevTraits.map(t => ({
-                    ...t,
-                    selected: t.name === trait.name && !t.selected
-                }))
-            );
-        } else {
-            // Verificar se há um traço positivo selecionado que seja oposto ao traço negativo que está sendo selecionado
-            const selectedPositiveTrait = positiveTraits.find(pt => selectedPositive.includes(pt.name));
-            
-            if (selectedPositiveTrait && areOppositeTraits(selectedPositiveTrait, trait)) {
-                // Permitir a seleção para mostrar o erro na interface, sem alert
-                // A barra de status já mostra o erro e o botão de salvar será desabilitado
+    const handleTraitToggle = (trait: Trait, isPositive: boolean) => {
+        if (isNovato && !isPositive) return;
+        if (isPositive) {
+            if (isNovato) {
+                const updatedSelection = selectedPositive.includes(trait.name)
+                    ? selectedPositive.filter(t => t !== trait.name)
+                    : selectedPositive.length < 2
+                        ? [ ...selectedPositive, trait.name ]
+                        : selectedPositive;
+
+                setSelectedPositive(updatedSelection);
+                setPositiveTraitsData(prevTraits =>
+                    prevTraits.map(t => ({
+                        ...t,
+                        selected: updatedSelection.includes(t.name)
+                    }))
+                );
+            } else {
+                const updatedSelection = selectedPositive.includes(trait.name)
+                    ? []
+                    : [ trait.name ];
+
+                setSelectedPositive(updatedSelection);
+                setPositiveTraitsData(prevTraits =>
+                    prevTraits.map(t => ({
+                        ...t,
+                        selected: t.name === trait.name && !t.selected
+                    }))
+                );
             }
-            
-            // Permitir apenas um traço negativo
+        } else {
             const updatedSelection = selectedNegative.includes(trait.name)
-                ? [] // Remover se já estiver selecionado
-                : [ trait.name ]; // Substituir a seleção atual
+                ? []
+                : [ trait.name ];
 
             setSelectedNegative(updatedSelection);
             setNegativeTraitsData(prevTraits =>
@@ -138,7 +133,6 @@ function TraitsModal({ open, onClose, selectedTraits, onTraitsChange }: TraitsMo
             );
         }
 
-        // Mostrar detalhes do traço
         const traitDetails = isPositive
             ? positiveTraits.find(t => t.name === trait.name)
             : negativeTraits.find(t => t.name === trait.name);
@@ -152,10 +146,27 @@ function TraitsModal({ open, onClose, selectedTraits, onTraitsChange }: TraitsMo
     };
 
     const getValidationStatus = () => {
+        if (isNovato) {
+            const hasEnoughPositives = selectedPositive.length === 2;
+            
+            if (hasEnoughPositives) {
+                return { 
+                    valid: true, 
+                    message: 'Seleção válida: 2 traços positivos (requerido para Novato)', 
+                    severity: 'success' 
+                };
+            } else {
+                return { 
+                    valid: false, 
+                    message: `Selecione mais ${2 - selectedPositive.length} traço(s) positivo(s) (requerido para Novato)`, 
+                    severity: 'warning' 
+                };
+            }
+        }
+
         const hasPositive = selectedPositive.length === 1;
         const hasNegative = selectedNegative.length === 1;
         
-        // Verificar se os traços são opostos
         const positiveTrait = positiveTraits.find(pt => selectedPositive.includes(pt.name));
         const negativeTrait = negativeTraits.find(nt => selectedNegative.includes(nt.name));
         const hasOppositeTraits = areOppositeTraits(positiveTrait, negativeTrait);
@@ -339,20 +350,22 @@ function TraitsModal({ open, onClose, selectedTraits, onTraitsChange }: TraitsMo
                                     {negativeTraitsData.map((trait) => (
                                         <ListItem
                                             key={trait.name}
-                                            button
-                                            onClick={() => handleTraitToggle(trait, false)}
+                                            onClick={() => !isNovato && handleTraitToggle(trait, false)}
                                             sx={{
                                                 bgcolor: trait.selected 
                                                     ? alpha(red[500], 0.1) 
                                                     : 'transparent',
                                                 '&:hover': {
-                                                    bgcolor: trait.selected 
+                                                    bgcolor: !isNovato && (trait.selected 
                                                         ? alpha(red[500], 0.2) 
-                                                        : alpha(theme.palette.action.hover, 0.1)
-                                                }
+                                                        : alpha(theme.palette.action.hover, 0.1))
+                                                },
+                                                opacity: isNovato ? 0.5 : 1,
+                                                cursor: isNovato ? 'not-allowed' : 'pointer',
+                                                pointerEvents: isNovato ? 'none' : 'auto'
                                             }}
                                             secondaryAction={
-                                                trait.selected && (
+                                                trait.selected && !isNovato && (
                                                     <CheckCircleIcon 
                                                         sx={{ color: red[500] }} 
                                                         fontSize="small" 
@@ -481,7 +494,9 @@ function TraitsModal({ open, onClose, selectedTraits, onTraitsChange }: TraitsMo
                                     Selecione um traço para ver seus detalhes
                                 </Typography>
                                 <Typography variant="body2" color="text.secondary">
-                                    Você precisa selecionar exatamente um traço positivo e um negativo
+                                    {isNovato 
+                                        ? 'Você precisa selecionar exatamente dois traços positivos (nenhum negativo)'
+                                        : 'Você precisa selecionar exatamente um traço positivo e um negativo'}
                                 </Typography>
                             </Box>
                         )}

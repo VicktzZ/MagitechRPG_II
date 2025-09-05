@@ -7,7 +7,7 @@ import { AttachMoney, AutoAwesome, DirectionsRun, Psychology } from '@mui/icons-
 import { Box, Button, Chip, FormControl, InputLabel, ListSubheader, MenuItem, OutlinedInput, Select, TextField, Typography, useMediaQuery } from '@mui/material'
 import { alpha, useTheme } from '@mui/material/styles'
 import { green, orange, purple } from '@node_modules/@mui/material/colors'
-import type { Classes, Element, Expertises, Ficha, Subclasses, Trait } from '@types'
+import type { Classes, Element, Expertises, Ficha, LineageNames, Subclasses, Trait } from '@types'
 import { useCallback, useRef, useState } from 'react'
 import { Controller, useFormContext, useWatch } from 'react-hook-form'
 import ElementalMasteryModal from './dialogs/ElementalMasteryModal'
@@ -400,6 +400,7 @@ export default function LevelAndInfo() {
                                                     handleTraitsChange(newTraits);
                                                     audio.play()
                                                 }}
+                                                lineage={ficha.lineage as unknown as LineageNames}
                                             />
                                         </Box>
                                     </>

@@ -3,7 +3,7 @@ import Ficha from '@models/db/ficha'
 import Notification from '@models/db/notification'
 import { levelDefaultRewards } from '@constants/levelDefaultRewards'
 import { skills } from '@constants/skills'
-import type { Classes, Ficha as FichaType, Skill } from '@types'
+import type { Classes, FichaDto, Skill } from '@types'
 
 // TODO: Ajustar recompensas de acordo com nível
 export async function POST(req: Request, { params }: { params: { id: string } }) {
@@ -13,7 +13,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
         const { id } = params
         const { level } = await req.json()
 
-        const ficha: FichaType | null = await Ficha.findById(id)
+        const ficha: FichaDto | null = await Ficha.findById(id)
 
         if (!ficha) {
             return Response.json({ message: 'Ficha não encontrada' }, { status: 404 })
@@ -37,6 +37,10 @@ export async function POST(req: Request, { params }: { params: { id: string } })
         // Verifica cada nível individualmente para aplicar as recompensas
         for (let currentLevel = oldLevel + 1; currentLevel <= newLevel; currentLevel++) {
             if (currentLevel === 1) {
+                if (ficha.lineage === 'Estrangeiro') {
+                    spellsPoints += 1
+                    rewardsList.push('+1 ponto de magia (bônus de linhagem "Estrangeiro")')
+                }
                 newORMLevel = 1
                 rewardsList.push(`+ORM nível ${newORMLevel} Atingido!`)
             }
@@ -45,6 +49,10 @@ export async function POST(req: Request, { params }: { params: { id: string } })
             if (currentLevel === 20) {
                 attributePoints += 20
                 rewardsList.push('+20 pontos de atributo (bônus nível 20)')
+                if (ficha.lineage === 'Estrangeiro') {
+                    spellsPoints += 1
+                    rewardsList.push('+1 ponto de magia (bônus de linhagem "Estrangeiro")')
+                }
             }
 
             // ? CASO LP E MP NÃO ACOMPANHE DANO NO SISTEMA, MUDAR RECOMPENSA DE LP E MP E/OU PONTOS DE ATRIBUTO
@@ -75,10 +83,25 @@ export async function POST(req: Request, { params }: { params: { id: string } })
 
         // Se ganhou LP/MP, adiciona na lista de recompensas
         if (lpMpRewards > 0) {
-            const lpGain = lpMpRewards * (classRewards.lp + ficha.mods.attributes.vig)
-            const mpGain = lpMpRewards * (classRewards.mp + ficha.mods.attributes.foc)
+            let lineageMpGain = 0
+            let lineageLpGain = 0
+
+            let mpGain = lpMpRewards * (classRewards.mp + ficha.mods.attributes.foc)
+            let lpGain = lpMpRewards * (classRewards.lp + ficha.mods.attributes.vig)
             rewardsList.push(`+${lpGain} LP`)
             rewardsList.push(`+${mpGain} MP`)
+
+            if (ficha.lineage === 'Idólatra') {
+                lineageMpGain = lpMpRewards
+                mpGain += lineageMpGain
+                rewardsList.push(`+${lineageMpGain} MP (bônus de linhagem "Idólatra")`)
+            }
+
+            if (ficha.lineage === 'Ginasta') {
+                lineageLpGain = lpMpRewards
+                lpGain += lineageLpGain
+                rewardsList.push(`+${lineageLpGain} LP (bônus de linhagem "Ginasta")`)
+            }
         }
 
         // Se ganhou pontos de perícia, adiciona na lista

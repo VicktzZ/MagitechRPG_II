@@ -1,3 +1,5 @@
+'use client';
+
 import { FichaCard } from '@components/ficha';
 import { Backdrop, Box, CircularProgress, Grid, Modal, Skeleton, Typography } from '@mui/material';
 import { campaignService, fichaService, sessionService } from '@services';
