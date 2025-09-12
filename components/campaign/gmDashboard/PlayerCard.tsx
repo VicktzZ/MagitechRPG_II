@@ -249,6 +249,7 @@ export default function PlayerCard({ ficha }: { ficha: Required<Ficha> }) {
 
             {/* Modal de Adicionar Item */}
             <AddItemModal
+                subtitle={`Adicionar item para ${ficha.name} (${ficha._id})`}
                 modalOpen={addItemModalOpen}
                 setModalOpen={setAddItemModalOpen}
                 disableDefaultCreate={true}

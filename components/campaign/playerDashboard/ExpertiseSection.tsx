@@ -337,11 +337,11 @@ export default function ExpertiseSection(): ReactElement {
                                                             }}
                                                         />
                                                         <Chip 
-                                                            label={expertise.defaultAttribute.toUpperCase()}
+                                                            label={expertise.defaultAttribute?.toUpperCase()}
                                                             size="small"
                                                             sx={{
-                                                                bgcolor: getAttributeColor(expertise.defaultAttribute.toUpperCase()) + '20',
-                                                                color: getAttributeColor(expertise.defaultAttribute.toUpperCase()),
+                                                                bgcolor: getAttributeColor(expertise.defaultAttribute?.toUpperCase()) + '20',
+                                                                color: getAttributeColor(expertise.defaultAttribute?.toUpperCase()),
                                                                 fontWeight: 600,
                                                                 fontSize: '0.75rem'
                                                             }}
