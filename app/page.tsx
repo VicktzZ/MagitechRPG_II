@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
 'use client'
+// TODO: !IMPORTANTE - Ampliar segurança da API (autenticação, cors)
 
 import { Footer, LandingPageHeader } from '@layout'
 import { 

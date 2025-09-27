@@ -23,6 +23,7 @@ const DiceRollModal = memo(({
     roll,
     sum,
     isDisadvantage,
+    isAdvantage,
     bonus = [],
     setResult,
     visibleDices,
@@ -33,6 +34,7 @@ const DiceRollModal = memo(({
     open: boolean
     onClose: () => void
     isDisadvantage?: boolean
+    isAdvantage?: boolean
     setResult?: (result: number | number[]) => void
     // Suporte para dois modos de funcionamento:
     // 1. Roll tradicional (perícias)
@@ -303,10 +305,11 @@ const DiceRollModal = memo(({
     // Cores temáticas baseadas no tipo de rolagem
     const rollColor = useMemo(() => {
         if (isDisadvantage) return theme.palette.error.main; // Vermelho para desvantagem
+        if (isAdvantage) return theme.palette.success.main; // Verde para vantagem
         if (diceRoll?.rawResult && roll?.dice && diceRoll.rawResult >= (roll.dice * 0.8)) return theme.palette.success.main; // Verde para resultados muito altos
         if (diceRoll?.rawResult && roll?.dice && diceRoll.rawResult <= (roll.dice * 0.2)) return theme.palette.error.main; // Vermelho para resultados muito baixos
         return diceColor; // Cor do dado ou cor padrão
-    }, [ diceRoll?.rawResult, isDisadvantage, roll?.dice, theme, diceColor ]);
+    }, [ diceRoll?.rawResult, isDisadvantage, isAdvantage, roll?.dice, theme, diceColor ]);
 
     // Determina a mensagem de resultado
     const resultMessage = useMemo(() => {
@@ -405,6 +408,14 @@ const DiceRollModal = memo(({
                                     label="DESVANTAGEM"
                                     size="small"
                                     color="error"
+                                    sx={{ height: 18, fontSize: '0.7rem', fontWeight: 'bold' }}
+                                />
+                            )}
+                            {isAdvantage && (
+                                <Chip
+                                    label="VANTAGEM"
+                                    size="small"
+                                    color="success"
                                     sx={{ height: 18, fontSize: '0.7rem', fontWeight: 'bold' }}
                                 />
                             )}
@@ -619,6 +630,16 @@ const DiceRollModal = memo(({
                                             </Tooltip>
                                         </Box>
                                     )}
+                                    {isAdvantage && (
+                                        <Box display="flex" alignItems="center" gap={1}>
+                                            <Typography variant="body2" color="success.main" fontWeight="medium">
+                                                Rolagem com vantagem (+1 ou mais)
+                                            </Typography>
+                                            <Tooltip title="Usa o maior valor entre os dados" arrow>
+                                                <InfoOutlined fontSize="small" color="action" />
+                                            </Tooltip>
+                                        </Box>
+                                    )}
                                 </Stack>
                             </Paper>
                         </Collapse>
@@ -630,5 +651,4 @@ const DiceRollModal = memo(({
 })
 
 DiceRollModal.displayName = 'DiceRollModal';
-
 export default DiceRollModal;
