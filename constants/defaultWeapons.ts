@@ -554,7 +554,7 @@ export const deafultWeapons: Record<'melee' | 'ranged' | 'magic' | 'ballistic' |
             effect: {
                 value: '2d8',
                 critValue: '6d8',
-                critChance: 23,
+                critChance: 20,
                 effectType: 'Perfurante'
             }
         },
@@ -574,7 +574,7 @@ export const deafultWeapons: Record<'melee' | 'ranged' | 'magic' | 'ballistic' |
             effect: {
                 value: '1d6',
                 critValue: '3d6',
-                critChance: 23,
+                critChance: 20,
                 effectType: 'Perfurante'
             }
         },
@@ -709,7 +709,7 @@ export const deafultWeapons: Record<'melee' | 'ranged' | 'magic' | 'ballistic' |
             effect: {
                 value: '1d10x2',
                 critValue: '3d10',
-                critChance: 23,
+                critChance: 19,
                 effectType: 'Cortante'
             }
         }
@@ -791,7 +791,7 @@ export const deafultWeapons: Record<'melee' | 'ranged' | 'magic' | 'ballistic' |
             effect: {
                 value: '3d12',
                 critValue: '9d12',
-                critChance: 23,
+                critChance: 20,
                 effectType: 'Perfurante'
             }
         },
@@ -891,7 +891,7 @@ export const deafultWeapons: Record<'melee' | 'ranged' | 'magic' | 'ballistic' |
             effect: {
                 value: '3d10',
                 critValue: '3d10',
-                critChance: 23,
+                critChance: 20,
                 effectType: 'Perfurante'
             }
         },
@@ -931,7 +931,7 @@ export const deafultWeapons: Record<'melee' | 'ranged' | 'magic' | 'ballistic' |
             effect: {
                 value: '3d12',
                 critValue: '6d12',
-                critChance: 23,
+                critChance: 20,
                 effectType: 'Perfurante'
             }
         },

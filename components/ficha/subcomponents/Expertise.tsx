@@ -94,10 +94,15 @@ export default function Expertise({
     const color = determinateColor();
     const proficiencyLevel = getProficiencyLevel();
     const attr: Attributes = expertise.defaultAttribute;
-    // eslint-disable-next-line camelcase, @typescript-eslint/naming-convention
-    const dice_quantity = 
-        getValues().mods.attributes[attr] > 0 ? 
-            getValues().mods.attributes[attr] : 1;
+    const attrModifier = getValues().mods.attributes[attr] || 0;
+    
+    // Determinar se é vantagem, desvantagem ou normal com base no modificador do atributo
+    const isAdvantage = attrModifier > 0;
+    const isDisadvantage = attrModifier < 0;
+    
+    // Determinar quantidade de dados baseada na regra:
+    // -1: Desvantagem (2 dados), 0: Normal (1 dado), +1: Vantagem (2 dados), >+1: Vantagem (múltiplos dados)
+    const diceQuantity = attrModifier < 0 ? 2 : attrModifier;
 
     return (
         <>
@@ -337,15 +342,15 @@ export default function Expertise({
                     open={open}
                     onClose={() => setOpen(false)}
                     bonus={[ expertise.value ]}
-                    isDisadvantage={expertise.value < 0}
+                    isDisadvantage={isDisadvantage}
+                    isAdvantage={isAdvantage}
                     visibleBaseAttribute
                     visibleDices
                     roll={{
                         name,
                         dice: 20,
                         attribute: expertise.defaultAttribute,
-                        // eslint-disable-next-line camelcase
-                        quantity: dice_quantity
+                        quantity: diceQuantity
                     }}
                 />
             )}
