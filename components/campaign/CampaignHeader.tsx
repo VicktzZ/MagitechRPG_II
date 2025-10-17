@@ -1,97 +1,35 @@
 'use client'
 
-import { useEffect, useState, type ReactElement } from 'react'
+import { useCampaignContext } from '@contexts'
 import {
-    Box,
-    Typography,
     Avatar,
-    Tooltip,
-    Paper,
-    useMediaQuery,
-    Divider,
-    Skeleton,
+    Box,
     Button,
+    Divider,
+    Paper,
+    Tooltip,
+    Typography,
+    useMediaQuery,
     type Theme
 } from '@mui/material'
-import { useSession } from 'next-auth/react'
-import { useChannel } from '@contexts/channelContext'
-import { useCampaignContext } from '@contexts';
-import { PusherEvent } from '@enums'
 import { grey } from '@mui/material/colors'
+import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
+import { campaignService, sessionService } from '@services'
 import type { User } from '@types'
+import { useLocalStorage } from '@uidotdev/usehooks'
 import Image from 'next/image'
-
-interface OnlineUser extends User {
-    lastSeen: Date
-}
+import { useMemo, useState, type ReactElement } from 'react'
 
 export default function CampaignHeader(): ReactElement {
-    const { data: session } = useSession()
-    const { channel } = useChannel()
-    const { campaign, campUsers, playerFichas } = useCampaignContext()
-    const [ onlineUsers, setOnlineUsers ] = useState<OnlineUser[]>([])
-    const [ sessionUsers, setSessionUsers ] = useState<string[]>([])
+    const { campaign, users, fichas, isUserGM } = useCampaignContext()
     const [ copiedCode, setCopiedCode ] = useState<boolean>(false)
+    const [ , setCurrentFicha ] = useLocalStorage<string>('currentFicha', '');
+    const { data: session } = useSession()
+    
+    const router = useRouter()
     const isMobile = useMediaQuery((theme: Theme) => theme.breakpoints.down('sm'))
-
-    // Função para atualizar o status online dos usuários
-    const updateOnlineUsers = (users: OnlineUser[]) => {
-        // Remove usuários que não deram sinal nos últimos 30 segundos
-        const now = new Date()
-        const activeUsers = users.filter(user => {
-            const lastSeen = new Date(user.lastSeen)
-            const diffInSeconds = (now.getTime() - lastSeen.getTime()) / 1000
-            return diffInSeconds <= 30
-        })
-
-        setOnlineUsers(activeUsers)
-    }
-
-    // Envia status online periodicamente
-    useEffect(() => {
-        if (!channel || !session?.user) return
-
-        const interval = setInterval(() => {
-            channel.trigger(PusherEvent.SESSION_USERS_UPDATED, {
-                user: session.user,
-                lastSeen: new Date()
-            }) 
-        }, 10000) // Atualiza a cada 10 segundos
-
-        return () => clearInterval(interval)
-    }, [ channel, session ])
-
-    // Escuta atualizações de status dos usuários
-    useEffect(() => {
-        if (!channel) return
-
-        channel.bind(PusherEvent.SUBSCRIPTION, () => {
-            // Quando se conecta, envia status imediatamente
-            if (session?.user) {
-                channel.trigger(PusherEvent.SESSION_USERS_UPDATED, {
-                    user: session.user,
-                    lastSeen: new Date()
-                })
-            }
-        })
-
-        return () => {
-            channel.unbind(PusherEvent.SUBSCRIPTION)
-        }
-    }, [ channel, session ])
-
-    // Limpa usuários inativos periodicamente
-    useEffect(() => {
-        const interval = setInterval(() => {
-            updateOnlineUsers(onlineUsers)
-        }, 5000) // Verifica a cada 5 segundos
-
-        return () => clearInterval(interval)
-    }, [ onlineUsers ])
-
-    useEffect(() => {
-        setSessionUsers(campaign.session.users)
-    }, [ campaign.session.users ])
+    const onlineUsers = useMemo(() => campaign.session.users, [ campaign ])
 
     const renderUserAvatar = (user: User, isAdmin: boolean = false) => (
         <Box display="flex" gap={2} key={user._id}>
@@ -104,14 +42,14 @@ export default function CampaignHeader(): ReactElement {
                     style={{
                         height: '100%',
                         width: '100%',
-                        filter: sessionUsers.includes(user._id!) ? 'none' : 'grayscale(100%)',
+                        filter: onlineUsers.includes(user._id!) ? 'none' : 'grayscale(100%)',
                         transition: 'filter 0.3s ease-in-out'
                     }}
                 />
             </Avatar>
             <Box>
                 <Typography>
-                    {isAdmin ? 'Game Master' : playerFichas.find(ficha => ficha.userId === user._id)?.name}
+                    {isAdmin ? 'Game Master' : fichas.find(ficha => ficha.userId === user._id)?.name}
                 </Typography>
                 <Typography color={grey[500]} variant="caption">
                     {user.name}
@@ -178,7 +116,7 @@ export default function CampaignHeader(): ReactElement {
                                 <Typography variant="subtitle2" color="primary">
                                     Mestre
                                 </Typography>
-                                <Typography variant="body2">{campUsers.admin[0].name}</Typography>
+                                <Typography variant="body2">{users.admin[0].name}</Typography>
                             </Box>
                             <Box
                                 sx={{
@@ -191,7 +129,7 @@ export default function CampaignHeader(): ReactElement {
                                     Jogadores
                                 </Typography>
                                 <Typography variant="body2">
-                                    {onlineUsers.length} / {campUsers.player.length}
+                                    {onlineUsers.length} / {users.all.length}
                                 </Typography>
                             </Box>
                         </Box>
@@ -223,6 +161,7 @@ export default function CampaignHeader(): ReactElement {
                 minWidth="40%"
                 minHeight={!isMobile ? '70vh' : '10vh'}
                 bgcolor="background.paper"
+                justifyContent='space-between'
                 borderRadius={1}
                 p={2}
                 mb={6}
@@ -231,38 +170,50 @@ export default function CampaignHeader(): ReactElement {
                 <Box
                     display="flex"
                     flexDirection="column"
-                    alignItems={'flex-start'}
                     justifyContent="center"
-                    gap={3}
+                    gap={2}
                 >
-                    {campUsers.admin.map(user => renderUserAvatar(user, true))}
-                </Box>
+                    <Box
+                        display="flex"
+                        flexDirection="column"
+                        alignItems={'flex-start'}
+                        justifyContent="center"
+                        gap={3}
+                    >
+                        {users.admin.map(user => renderUserAvatar(user, true))}
+                    </Box>
 
-                <Divider />
+                    <Divider />
 
-                <Box
-                    display="flex"
-                    flexDirection="column"
-                    alignItems={'flex-start'}
-                    justifyContent="center"
-                    gap={3}
-                >
-                    {campUsers.player.map(user => (
-                        <Box display="flex" flexDirection="column" gap={2} key={user._id}>
-                            {isMobile ? (
-                                <Box display="flex" alignItems="center" gap={2}>
-                                    <Skeleton variant="circular" width={45} height={45} />
-                                    <Box>
-                                        <Skeleton variant="text" width={100} height={20} />
-                                        <Skeleton variant="text" width={80} height={20} />
-                                    </Box>
-                                </Box>
-                            ) : (
-                                renderUserAvatar(user)
-                            )}
-                        </Box>
-                    ))}
+                    <Box
+                        display="flex"
+                        flexDirection="column"
+                        alignItems={'flex-start'}
+                        justifyContent="center"
+                        gap={3}
+                    >
+                        {users.player.map(user => (
+                            <Box display="flex" flexDirection="column" gap={2} key={user._id}>
+                                {renderUserAvatar(user)}
+                            </Box>
+                        ))}
+                    </Box>
                 </Box>
+                {!isUserGM && (
+                    <Box>
+                        <Button onClick={() => {
+                            if (!session?.user?._id || !campaign._id) return
+
+                            setCurrentFicha('');
+                            const userId = session?.user?._id;
+                            if (!userId) return;
+                            
+                            sessionService.disconnect({ campaignCode: campaign.campaignCode, userId });
+                            campaignService.removeUser(campaign._id, session.user._id);
+                            router.push('/app/campaign');
+                        }} variant="contained">Sair da campanha</Button>
+                    </Box>
+                )}
             </Box>
         </Box>
     )

@@ -1,7 +1,9 @@
-import { type Magia } from './models'
+import type { Dice } from './dices'
+import type { Magia } from './models'
 
+type Id = string
 export interface Ficha {
-    _id?: string
+    _id?: Id
     playerName: string
     mode: 'Apocalypse' | 'Classic'
     userId: string
@@ -16,6 +18,8 @@ export interface Ficha {
     magics: Magia[]
     anotacoes?: string
     magicsSpace: number
+    mpLimit: number
+    overall: number
     gender: Gender
     elementalMastery: Element
     level: number
@@ -24,7 +28,9 @@ export interface Ficha {
     expertises: Expertises
     traits: Trait[]
     session?: SessionInfo[]
+    passives: Passive[]
     status: Status[]
+    dices: Dice[]
 
     capacity: {
         cargo: number
@@ -36,13 +42,13 @@ export interface Ficha {
         class: Skill[]
         subclass: Skill[]
         bonus: Skill[]
-        powers: Skill[]
+        powers: MagicPowerSkill[]
+        race: Skill[]
     }
 
     points: {
         attributes: number
         expertises: number
-        diligence: number
         skills: number
         magics: number
     }
@@ -57,19 +63,30 @@ export interface Ficha {
         sab: number
         foc: number
         car: number
+        maxLp: number
+        maxMp: number
+        maxAp: number
     }
 
-    maxLp: number
-    maxMp: number
-    maxAp: number
     ammoCounter: {
         current: number
         max: number
     }
+
+    mods: {
+        attributes: {
+            des: number
+            vig: number
+            log: number
+            sab: number
+            foc: number
+            car: number
+        }
+        discount: number
+    }
 }
 
 // Types
-
 export interface Class {
     name: Classes
     description: string
@@ -81,8 +98,8 @@ export interface Class {
     }
 
     points: {
-        diligence: number
         expertises: number
+        skills?: number
     }
 
     skills: Skill[]
@@ -95,6 +112,11 @@ export interface Lineage {
     item: Item
 }
 
+export interface MagicPowerSkill extends Skill {
+    _id?: string
+    mastery?: string
+    element?: Element
+}
 export interface Occupation {
     name: OccupationNames
     description: string
@@ -128,7 +150,6 @@ export interface Inventory {
 
 export interface Expertises {
     'Agilidade': Expertise<'des'>
-    'Argumentação': Expertise<'sab'>
     'Atletismo': Expertise<'vig'>
     'Competência': Expertise<'log'>
     'Comunicação': Expertise<'car'>
@@ -136,10 +157,17 @@ export interface Expertises {
     'Conhecimento': Expertise<'sab'>
     'Controle': Expertise<'vig'>
     'Criatividade': Expertise<'log'>
+    'Culinária': Expertise<'des'>
+    'Diplomacia': Expertise<'car'>
+    'Eficácia': Expertise<null>
     'Enganação': Expertise<'car'>
+    'Engenharia': Expertise<'log'>
+    'Fortitude': Expertise<null>
+    'Força': Expertise<'vig'>
     'Furtividade': Expertise<'des'>
     'Intimidação': Expertise<'car'>
-    'Intuição': Expertise<'log'>
+    'Intuição': Expertise<'sab'>
+    'Interrogação': Expertise<'car'>
     'Investigação': Expertise<'log'>
     'Ladinagem': Expertise<'des'>
     'Liderança': Expertise<'car'>
@@ -152,16 +180,17 @@ export interface Expertises {
     'Reflexos': Expertise<'foc'>
     'RES Física': Expertise<'vig'>
     'RES Mágica': Expertise<'foc'>
-    'RES Mental': Expertise<'log'>
+    'RES Mental': Expertise<'sab'>
     'Sorte': Expertise<'sab'>
     'Sobrevivência': Expertise<'sab'>
+    'Tática': Expertise<'log'>
     'Tecnologia': Expertise<'log'>
     'Vontade': Expertise<'foc'>
 }
 
 export interface Expertise<T extends Attributes | null> {
     value: number
-    defaultAttribute?: T
+    defaultAttribute?: T | null
 }
 
 export interface Trait {
@@ -206,13 +235,25 @@ export interface Weapon<T extends 'Leve' | 'Pesada' = any> {
     magazineSize?: number
     quantity?: number
     accessories?: WeaponAccesoriesType[]
-    bonus: 'Luta' | 'Agilidade' | 'Furtividade' | 'Pontaria' | 'Magia' | 'Tecnologia' | 'Controle'
+    bonus: 'Luta' | 'Agilidade' | 'Furtividade' | 'Pontaria' | 'Magia' | 'Tecnologia' | 'Controle' | 'Força'
     effect: {
         value: string
         critValue: string
         critChance: number
         effectType: DamageType
     }
+}
+
+export interface CampaignCustomWeapon extends Weapon {
+    _id: string
+}
+
+export interface CampaignCustomArmor extends Armor {
+    _id: string
+}
+
+export interface CampaignCustomItem extends Item {
+    _id: string
 }
 
 export interface Armor {
@@ -267,8 +308,8 @@ export interface Magic {
 export interface Skill {
     name: string
     description: string
-    type: 'Poder Mágico' | 'Classe' | 'Linhagem' | 'Subclasse' | 'Bônus' | 'Profissão' | 'Exclusivo'
-    origin?: string
+    type: 'Poder Mágico' | 'Classe' | 'Linhagem' | 'Subclasse' | 'Bônus' | 'Profissão' | 'Exclusivo' | 'Raça'
+    origin: string
     effects?: number[]
     level?: number
 }
@@ -280,7 +321,7 @@ export interface Subclass {
 }
 
 export interface MagicPower {
-    _id: string,
+    _id?: string
     elemento: Element
     nome: string
     'descrição': string
@@ -298,12 +339,12 @@ export type Gender = 'Masculino' | 'Feminino' | 'Não-binário' | 'Outro' | 'Nã
 export type Attributes = 'des' | 'vig' | 'log' | 'sab' | 'foc' | 'car'
 export type UpperCaseAttributes = 'DES' | 'VIG' | 'LOG' | 'SAB' | 'FOC' | 'CAR'
 export type ItemType = 'Especial' | 'Utilidade' | 'Consumível' | 'Item Chave' | 'Munição' | 'Capacidade' | 'Padrão'
-export type RarityType = 'Comum' | 'Incomum' | 'Raro' | 'Épico' | 'Lendário' | 'Relíquia' | 'Mágico' | 'Especial' | 'Amaldiçoado'
+export type RarityType = 'Comum' | 'Incomum' | 'Raro' | 'Épico' | 'Lendário' | 'Único' | 'Mágico' | 'Especial' | 'Amaldiçoado'
 export type WeaponType = `Arremessável (${ThrowableRangeType})` | 'Duas mãos' | 'Padrão' | 'Automática' | 'Semi-automática'
-export type ArmorType = 'Padrão' | DamageType
+export type ArmorType = 'Padrão' | 'Total' | DamageType
 export type DamageType = 'Cortante' | 'Impactante' | 'Perfurante' | 'Explosivo' | Element
 export type Classes =
-    'Lutador' |
+    'Combatente' |
     'Especialista' |
     'Feiticeiro' |
     'Bruxo' |
@@ -315,20 +356,35 @@ export type Classes =
 export type Subclasses = 
     'Polimorfo' |
     'Comandante' |
+    'Aniquilador' |
+
     'Forasteiro' |
     'Errante' |
+    'Duelista' |
+
     'Conjurador' |
     'Elementalista' |
+    'Caoticista' |
+
     'Necromante' |
     'Espiritista' |
-    'Discípulo da Fúria' |
-    'Protetor da Alma' |
+    'Arauto' |
+
+    'Discípulo' |
+    'Protetor' |
+    'Mestre' |
+
     'Animante' |
     'Naturomante' |
+    'Guardião' |
+
     'Arquimago' |
     'Metamágico' |
+    'Glifomante' |
+
     'Espectro' |
-    'Estrategista'
+    'Estrategista' |
+    'Embusteiro'
     
 export type LineageNames = 
     'Órfão' |
@@ -343,7 +399,7 @@ export type LineageNames =
     'Cobaia' |
     'Gangster' |
     'Hacker' |
-    'Combatente' |
+    'Atirador' |
     'Clínico' |
     'Aventureiro' |
     'Trambiqueiro' |
@@ -385,6 +441,8 @@ export type AmmoType =
     'Calibre .50' |
     'Calibre 12' |
     'Calibre 22' | 
+    'Dardo' |
+    'Ácido' |
     'Bateria de lítio' |
     'Amplificador de partículas' |
     'Cartucho de fusão' |
@@ -417,7 +475,29 @@ export type ThrowableRangeType =
 
 export type ExpertisesNames = keyof Expertises
 
-export type WeaponCategory<T extends 'Leve' | 'Pesada'> = 
+export interface Passive {
+    id: string
+    title: string
+    description: string
+    occasion: PassiveOccasion
+    custom?: boolean
+}
+
+export type PassiveOccasion = 
+    'Início do turno' |
+    'Final do turno' |
+    'Ao ser atacado' |
+    'Ao atacar' |
+    'Ao usar magia' |
+    'Ao sofrer dano' |
+    'Ao causar dano' |
+    'Sempre ativo' |
+    'Quando curar' |
+    'Ao se deslocar' |
+    'Condição específica' |
+    'Personalizado'
+
+export type WeaponCategory <T extends 'Leve' | 'Pesada'> = 
     `Arma Branca (${T})` |
     `Arma de Longo Alcance (${T})` |
     `Arma de Fogo (${T})` |
@@ -425,8 +505,8 @@ export type WeaponCategory<T extends 'Leve' | 'Pesada'> =
     `Arma Mágica (${T})` |
     `Arma Especial (${T})`
 
-export type WeaponAccesoriesType = WeaponScientificAccesoriesType | WeaponMagicalAccesoriesType
-export type ArmorAccessoriesType = ArmorScientificAccesoriesType | ArmorMagicalAccesoriesType
+export type WeaponAccesoriesType = WeaponScientificAccesoriesType | WeaponMagicalAccesoriesType | 'Não possui acessórios'
+export type ArmorAccessoriesType = ArmorScientificAccesoriesType | ArmorMagicalAccesoriesType | 'Não possui acessórios'
 
 export type WeaponScientificAccesoriesType = 
     'Gravitron' |

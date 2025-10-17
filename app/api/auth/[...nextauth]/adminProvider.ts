@@ -1,7 +1,7 @@
 import { connectToDb } from '@utils/database';
 import { type User as UserType } from '@types';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import User from '@models/user';
+import User from '@models/db/user';
 
 const adminProvider = CredentialsProvider as any
 

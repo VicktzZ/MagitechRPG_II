@@ -1,5 +1,5 @@
 import { connectToDb } from '@utils/database'
-import Notification from '@models/notification'
+import Notification from '@models/db/notification'
 
 export async function PATCH(req: Request, { params }: { params: { id: string } }) {
     try {

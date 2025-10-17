@@ -1,21 +1,7 @@
-import type { Campaign, Ficha, User } from '@types'
-import { createContext, type Dispatch, type SetStateAction, useContext } from 'react'
+import type { CampaignData } from '@types'
+import { createContext, useContext } from 'react'
 
-interface CampaignContextType {
-    campaign: Campaign
-    setCampaign: Dispatch<SetStateAction<Campaign>>
-    campUsers: {
-        admin: User[]
-        player: User[]
-    }
-
-    playerFichas: Ficha[]
-    setPlayerFichas: Dispatch<SetStateAction<Ficha[]>>,
-    fichaUpdated: boolean,
-    setFichaUpdated: Dispatch<SetStateAction<boolean>>
-}
-
-export const campaignContext = createContext<CampaignContextType>({
+export const campaignContext = createContext<CampaignData>({
     campaign: {
         _id: '',
         admin: [],
@@ -28,22 +14,26 @@ export const campaignContext = createContext<CampaignContextType>({
             messages: []
         },
         custom: {
-            items: [],
+            items: {
+                weapon: [],
+                armor: [],
+                item: []
+            },
             magias: [],
-            creatures: []
+            creatures: [],
+            skills: []
         },
         myFicha: null,
         notes: []
     },
-    campUsers: {
+    users: {
         admin: [],
-        player: []
+        player: [],
+        all: []
     },
-    playerFichas: [],
-    setPlayerFichas: () => {},
-    setCampaign: () => {},
-    fichaUpdated: false,
-    setFichaUpdated: () => {}
+    fichas: [],
+    isUserGM: false,
+    code: ''
 })
 
-export const useCampaignContext = (): CampaignContextType => useContext(campaignContext)
+export const useCampaignContext = (): CampaignData => useContext(campaignContext)

@@ -1,5 +1,6 @@
-import { amber, blue, blueGrey, brown, cyan, deepPurple, green, grey, indigo, orange, pink, red } from '@node_modules/@mui/material/colors'
-import { type RarityType } from '@types'
+import { Gavel, Inventory2, Shield } from '@mui/icons-material'
+import { amber, blue, blueGrey, cyan, deepPurple, green, grey, indigo, lightBlue, lightGreen, orange, pink, purple, red, teal } from '@mui/material/colors'
+import type { Class, ItemAttributes, RarityType } from '@types'
 
 /* eslint-disable max-len */
 export const intro = `agia. Algo que só era possível em contos de fadas agora é possível no final do século XXI graças a tecnologia. Depois da drástica queda de temperatura que o mundo sofreu em 2025, a fome subiu e a economia mundial quebrou, quando em 2030, a terceira guerra mundial eclodiu, como consequência dos atos anteriores. A guerra termonuclear reduziu a população mundial para 3 bilhões, além de deixar muitas partes do mundo inabitadas com uma radiação que só se dissiparia depois de séculos.
@@ -12,7 +13,7 @@ Com um salto de mais de 100 anos em tecnologia, em 10 anos, em 2045 após o fim 
 
 Em 2052, O Primeiro Colégio da Universidade Federal de Magia (UFEM), cuja é a atual mais renomada escola de magia do mundo, foi fundada, em Tokyo, Japão. Esta escola treina adolescentes para se tornarem magos a fim de ajudarem o estado, seja essa ajuda para fins militares, governamentais ou científicos, além de lhes proporcionar o bônus do aprendizado da maior descoberta da humanidade.
 
-A Magia é na verdade um grande e complexo sistema de códigos que são transmitidos via satélite e processados por ORM’s (Objeto Receptor de Magia ou Magic Receiver Object). Todo mago possui um ORM, sendo que este pode ser literalmente qualquer coisa, desde que tenha um chip microscópico chamado Zeptachip embutido no objeto que consiga interpretar e decodificar os códigos. Quando você tem os códigos decriptografados em mãos, você pode realinhar e reorganizar esses códigos (por meio do ORM) criando uma Sequência Mágica. Uma sequência mágica pode ser desde uma magia medíocre até uma catástrofe dependendo de como esses códigos forem organizados. Uma vez tendo decodificado uma magia, não será necessário realizar o processo de reorganização do código para utilizá-la novamente. Por conta de existir infinitas possibilidades de rearranjar esses códigos, a possibilidade de criar magias também é infinita.
+A Magia é na verdade um grande e complexo sistema de códigos que são transmitidos via satélite e processados por ORM's (Objeto Receptor de Magia ou Magic Receiver Object). Todo mago possui um ORM, sendo que este pode ser literalmente qualquer coisa, desde que tenha um chip microscópico chamado Zeptachip embutido no objeto que consiga interpretar e decodificar os códigos. Quando você tem os códigos decriptografados em mãos, você pode realinhar e reorganizar esses códigos (por meio do ORM) criando uma Sequência Mágica. Uma sequência mágica pode ser desde uma magia medíocre até uma catástrofe dependendo de como esses códigos forem organizados. Uma vez tendo decodificado uma magia, não será necessário realizar o processo de reorganização do código para utilizá-la novamente. Por conta de existir infinitas possibilidades de rearranjar esses códigos, a possibilidade de criar magias também é infinita.
 `
 export const about = 'Magitech RPG é um sistema de RPG de mesa feito por Vitor Hugo Rodrigues dos Santos inspirado em D&D, Tormenta, Order & Chaos, Ordem Paranormal, entre outros sistemas de RPG. Para quem não sabe, RPG (abreviação de Role Playing Game), é um jogo de interpretação de papéis, onde aqueles que participam são divididos entre o Mestre e os Jogadores. O Mestre é responsável por criar histórias interativas e dinâmicas, ambos parte do universo proposto feito do mesmo ou adaptado de um existente. Ele tem de liderar jogadores de forma autônoma e julgar suas ações e diálogos dentro deste sistema de regras do jogo. Manter a coerência e o equilíbrio e toda a história por trás da aventura. As palavras do Mestre são universais, desde que seja justo e todos se divirtam, mesmo quando as coisas dão errado para a equipe. O Jogador, que é sujeito a todas e quaisquer consequências da história, que nem sempre estão sob seu controle, possuem o dom de enriquecer história. O papel dos jogadores, é desempenhar consequências que guiarão a aventura e si mesmos, seja essas consequências boas ou ruins O Sistema Magitech RPG não é um sistema complicado quando se trata de jogabilidade, sendo o mais complexo a criação de personagens e a manipulação de magias.'
 export const landingPageBg = 'https://cdn.leonardo.ai/users/09bf7b68-cc31-4280-b643-f788807fe7cd/generations/c793f097-4dd2-4508-ba53-9de8a93d5f50/AlbedoBase_XL_an_epic_battle_between_a_man_with_a_school_unifo_0.jpg'
@@ -46,11 +47,19 @@ export const elements = [
     'Não-Elemental'
 ]
 
+export const specialElements = [
+    'Sangue',
+    'Vácuo',
+    'Psíquico',
+    'Radiação',
+    'Explosão'
+]
+
 export const elementColor = {
     'FOGO': red[500],
     'ÁGUA': blue[600],
     'AR': grey[300],
-    'TERRA': brown[400],
+    'TERRA': green[500],
     'PLANTA': green[200],
     'ELETRICIDADE': indigo[300],
     'GELO': blue[300],
@@ -58,8 +67,13 @@ export const elementColor = {
     'LUZ': amber[400],
     'TOXINA': green[600],
     'TREVAS': blueGrey[400],
+    'NÃO-ELEMENTAL': grey[100],
+    
+    'SANGUE': red[900],
+    'VÁCUO': '#555',
     'PSÍQUICO': pink[500],
-    'NÃO-ELEMENTAL': grey[100]
+    'RADIAÇÃO': purple[500],
+    'EXPLOSÃO': amber[900]
 }
 
 export const rarityColor: Record<RarityType, string> = {
@@ -68,8 +82,40 @@ export const rarityColor: Record<RarityType, string> = {
     'Raro': blue[400],
     'Épico': deepPurple[400],
     'Lendário': orange[400],
-    'Relíquia': red[400],
+    'Único': red[400],
     'Mágico': cyan[400],
     'Especial': indigo[400],
     'Amaldiçoado': pink[400]
+}
+
+export const classColor: Record<Class['name'], string> = {
+    'Combatente': red[500],
+    'Especialista': blue[600],
+    'Feiticeiro': teal[400],
+    'Bruxo': deepPurple[400],
+    'Monge': lightBlue[300],
+    'Druida': lightGreen[500],
+    'Arcano': pink[500],
+    'Ladino': grey[500]
+}
+
+export const itemAttributes: ItemAttributes = {
+    weapon: {
+        icon: Gavel,
+        color: '#ef5350',
+        label: 'Arma',
+        badgeColor: 'error.main'
+    },
+    armor: {
+        icon: Shield,
+        color: '#42a5f5',
+        label: 'Armadura',
+        badgeColor: 'info.main'
+    },
+    item: {
+        icon: Inventory2,
+        color: '#66bb6a',
+        label: 'Item',
+        badgeColor: 'success.main'
+    }
 }

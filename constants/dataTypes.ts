@@ -55,8 +55,9 @@ const rarities: RarityType[] = [
     'Raro',
     'Épico',
     'Lendário',
-    'Relíquia',
-    'Mágico'
+    'Único',
+    'Mágico',
+    'Amaldiçoado'
 ]
 
 const ranges: RangeType[] = [
@@ -75,6 +76,7 @@ const weaponCateg = [
     'Arma de Longo Alcance',
     'Arma de Fogo',
     'Arma de Energia',
+    'Arma Especial',
     'Arma Mágica'
 ]
 
@@ -111,6 +113,9 @@ const otherWeaponAmmo: AmmoType[] = [
     'Foguete',
     'Serra de metal',
     'Combustível',
+    'Ácido',
+    'Dardo',
+    'Flecha',
     'Bateria de Cádmio com Óxido de Grafeno',
     'Granada'    
 ]
@@ -176,7 +181,8 @@ const weaponBonuses: Array<Weapon<'Leve' | 'Pesada'>['bonus']> = [
     'Luta',
     'Magia',
     'Pontaria',
-    'Tecnologia'
+    'Tecnologia',
+    'Força'
 ]
 
 const rarityWeaponBonuses: Record<RarityType, number> = {
@@ -185,7 +191,7 @@ const rarityWeaponBonuses: Record<RarityType, number> = {
     'Raro': 2,
     'Épico': 3,
     'Lendário': 4,
-    'Relíquia': 5,
+    'Único': 5,
     'Mágico': 5,
     'Especial': 0,
     'Amaldiçoado': 0
@@ -197,7 +203,7 @@ const rarityArmorBonuses: Record<RarityType, number> = {
     'Raro': 1,
     'Épico': 2,
     'Lendário': 2,
-    'Relíquia': 3,
+    'Único': 3,
     'Mágico': 3,
     'Especial': 0,
     'Amaldiçoado': 0

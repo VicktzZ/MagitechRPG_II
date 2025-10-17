@@ -11,6 +11,7 @@ export interface ResourceListModalProps<T extends Record<string, any>> {
     successMessage: (item: T) => string;
     errorMessage: (err: Error) => string;
     filterOptions: string[];
+    hasGroupsInFilter?: boolean;    
     sortOptions: string[];
     renderResource: ({ item, handleAddItem }: { item: T, handleAddItem?: () => void }) => ReactElement;
     pageSize?: number;

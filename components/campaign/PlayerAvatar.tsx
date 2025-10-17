@@ -3,7 +3,7 @@ import Image from 'next/image';
 import { type ReactElement } from 'react';
 
 export default function PlayerAvatar({
-    userIsGM,
+    
     image,
     username,
     charname

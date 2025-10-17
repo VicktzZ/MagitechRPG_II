@@ -1,58 +1,111 @@
 /* eslint-disable max-len */
 import type { Trait } from '@types';
 
+// TODO: Deixar disponível apenas traços que alteram perícias
+
 export const positiveTraits: Trait[] = [
     {
-        name: 'Saúde de Ferro',
-        value: 1,
+        name: 'Hipertrofiado',
+        value: 3,
         target: {
-            kind: 'attribute',
-            name: 'VIG'
-        }
-    },
-
-    {
-        name: 'Reflexos de Gato',
-        value: 1,
-        target: {
-            kind: 'attribute',
-            name: 'DES'
-        }
-    },
-
-    {
-        name: 'Foco Absoluto',
-        value: 1,
-        target: {
-            kind: 'attribute',
-            name: 'FOC'
+            kind: 'expertise',
+            name: 'Força'
         }
     },
 
     {
         name: 'Genial',
-        value: 1,
+        value: 3,
         target: {
-            kind: 'attribute',
-            name: 'LOG'
+            kind: 'expertise',
+            name: 'Engenharia'
         }
     },
 
     {
-        name: 'Veterano',
-        value: 1,
+        name: 'Piloto',
+        value: 3,
         target: {
-            kind: 'attribute',
-            name: 'SAB'
+            kind: 'expertise',
+            name: 'Condução'
         }
     },
 
     {
-        name: 'Lider',
-        value: 1,
+        name: 'Cozinheiro',
+        value: 3,
         target: {
-            kind: 'attribute',
-            name: 'CAR'
+            kind: 'expertise',
+            name: 'Culinária'
+        }
+    },
+    {
+        name: 'Assertivo',
+        value: 3,
+        target: {
+            kind: 'expertise',
+            name: 'Diplomacia'
+        }
+    },
+    {
+        name: 'Pragmático',
+        value: 3,
+        target: {
+            kind: 'expertise',
+            name: 'Eficácia'
+        }
+    },
+    {
+        name: 'Inabalável',
+        value: 3,
+        target: {
+            kind: 'expertise',
+            name: 'Fortitude'
+        }
+    },
+    
+    {
+        name: 'Ameaçador',
+        value: 3,
+        target: {
+            kind: 'expertise',
+            name: 'Intimidação'
+        }
+    },
+    
+    {
+        name: 'Inclemente',
+        value: 3,
+        target: {
+            kind: 'expertise',
+            name: 'Interrogação'
+        }
+    },
+
+    {
+        name: 'Cleptomaníaco',
+        value: 3,
+        target: {
+            kind: 'expertise',
+            name: 'Ladinagem'
+        }
+    },
+
+    {
+        name: 'Estratégico',
+        value: 3,
+        target: {
+            kind: 'expertise',
+            name: 'Tática'
+        }
+    },
+
+    {
+        name: 'Determinado',
+        value: 3,
+        target: {
+            kind: 'expertise',
+            name: 'Vontade'
         }
     },
 
@@ -266,62 +319,98 @@ export const positiveTraits: Trait[] = [
 
 export const negativeTraits: Trait[] = [
     {
-        name: 'Saúde Frágil',
-        value: -1,
+        name: 'Hipotrofiado',
+        value: -2,
         target: {
-            kind: 'attribute',
-            name: 'VIG'
-        }
-    },
-
-    {
-        name: 'Desajeitado',
-        value: -1,
-        target: {
-            kind: 'attribute',
-            name: 'DES'
-        }
-    },
-
-    {
-        name: 'Distraído',
-        value: -1,
-        target: {
-            kind: 'attribute',
-            name: 'FOC'
+            kind: 'expertise',
+            name: 'Força'
         }
     },
 
     {
         name: 'Confuso',
-        value: -1,
+        value: -2,
         target: {
-            kind: 'attribute',
-            name: 'LOG'
+            kind: 'expertise',
+            name: 'Engenharia'
         }
     },
 
     {
-        name: 'Inexperiente',
-        value: -1,
+        name: 'Desgovernado',
+        value: -2,
         target: {
-            kind: 'attribute',
-            name: 'SAB'
+            kind: 'expertise',
+            name: 'Condução'
         }
     },
 
     {
-        name: 'Antissocial',
-        value: -1,
+        name: 'Contraditório',
+        value: -2,
         target: {
-            kind: 'attribute',
-            name: 'CAR'
+            kind: 'expertise',
+            name: 'Diplomacia'
+        }
+    },
+
+    {
+        name: 'Indeciso',
+        value: -2,
+        target: {
+            kind: 'expertise',
+            name: 'Eficácia'
+        }
+    },
+
+    {
+        name: 'Vulnerável',
+        value: -2,
+        target: {
+            kind: 'expertise',
+            name: 'Fortitude'
+        }
+    },
+
+    {
+        name: 'Inofensivo',
+        value: -2,
+        target: {
+            kind: 'expertise',
+            name: 'Intimidação'
+        }
+    },
+    
+    {
+        name: 'Desastrado',
+        value: -2,
+        target: {
+            kind: 'expertise',
+            name: 'Ladinagem'
+        }
+    },
+
+    {
+        name: 'Afobado',
+        value: -2,
+        target: {
+            kind: 'expertise',
+            name: 'Tática'
+        }
+    },
+    
+    {
+        name: 'Hesitante',
+        value: -2,
+        target: {
+            kind: 'expertise',
+            name: 'Vontade'
         }
     },
 
     {
         name: 'Desatento',
-        value: -3,
+        value: -2,
         target: {
             kind: 'expertise',
             name: 'Percepção'
@@ -330,7 +419,7 @@ export const negativeTraits: Trait[] = [
 
     {
         name: 'Medroso',
-        value: -3,
+        value: -2,
         target: {
             kind: 'expertise',
             name: 'RES Mental'
@@ -339,7 +428,7 @@ export const negativeTraits: Trait[] = [
 
     {
         name: 'Lento',
-        value: -3,
+        value: -2,
         target: {
             kind: 'expertise',
             name: 'Reflexos'
@@ -347,8 +436,8 @@ export const negativeTraits: Trait[] = [
     },
 
     {
-        name: 'Preguiçoso',
-        value: -3,
+        name: 'Sedentário',
+        value: -2,
         target: {
             kind: 'expertise',
             name: 'Sobrevivência'
@@ -357,7 +446,7 @@ export const negativeTraits: Trait[] = [
 
     {
         name: 'Improdutivo',
-        value: -3,
+        value: -2,
         target: {
             kind: 'expertise',
             name: 'Criatividade'
@@ -366,7 +455,7 @@ export const negativeTraits: Trait[] = [
 
     {
         name: 'Tapado',
-        value: -3,
+        value: -2,
         target: {
             kind: 'expertise',
             name: 'Competência'
@@ -375,16 +464,16 @@ export const negativeTraits: Trait[] = [
 
     {
         name: 'Teimoso',
-        value: -3,
+        value: -2,
         target: {
             kind: 'expertise',
-            name: 'Argumentação'
+            name: 'Diplomacia'
         }
     },
 
     {
         name: 'Instável',
-        value: -3,
+        value: -2,
         target: {
             kind: 'expertise',
             name: 'Controle'
@@ -393,7 +482,7 @@ export const negativeTraits: Trait[] = [
 
     {
         name: 'Ignorante',
-        value: -3,
+        value: -2,
         target: {
             kind: 'expertise',
             name: 'Conhecimento'
@@ -401,8 +490,8 @@ export const negativeTraits: Trait[] = [
     },
 
     {
-        name: 'Moroso',
-        value: -3,
+        name: 'Preguiçoso',
+        value: -2,
         target: {
             kind: 'expertise',
             name: 'Atletismo'
@@ -411,7 +500,7 @@ export const negativeTraits: Trait[] = [
 
     {
         name: 'Barulhento',
-        value: -3,
+        value: -2,
         target: {
             kind: 'expertise',
             name: 'Furtividade'
@@ -420,7 +509,7 @@ export const negativeTraits: Trait[] = [
 
     {
         name: 'Reservado',
-        value: -3,
+        value: -2,
         target: {
             kind: 'expertise',
             name: 'Comunicação'
@@ -429,7 +518,7 @@ export const negativeTraits: Trait[] = [
 
     {
         name: 'Fraco',
-        value: -3,
+        value: -2,
         target: {
             kind: 'expertise',
             name: 'Luta'
@@ -438,7 +527,7 @@ export const negativeTraits: Trait[] = [
 
     {
         name: 'Frágil',
-        value: -3,
+        value: -2,
         target: {
             kind: 'expertise',
             name: 'RES Física'
@@ -447,7 +536,7 @@ export const negativeTraits: Trait[] = [
 
     {
         name: 'Ingênuo',
-        value: -3,
+        value: -2,
         target: {
             kind: 'expertise',
             name: 'Enganação'
@@ -456,7 +545,7 @@ export const negativeTraits: Trait[] = [
 
     {
         name: 'Azarado',
-        value: -3,
+        value: -2,
         target: {
             kind: 'expertise',
             name: 'Sorte'
@@ -465,7 +554,7 @@ export const negativeTraits: Trait[] = [
 
     {
         name: 'Impulsivo',
-        value: -3,
+        value: -2,
         target: {
             kind: 'expertise',
             name: 'Intuição'
@@ -474,7 +563,7 @@ export const negativeTraits: Trait[] = [
 
     {
         name: 'Impreciso',
-        value: -3,
+        value: -2,
         target: {
             kind: 'expertise',
             name: 'Pontaria'
@@ -483,7 +572,7 @@ export const negativeTraits: Trait[] = [
 
     {
         name: 'Descuidado',
-        value: -3,
+        value: -2,
         target: {
             kind: 'expertise',
             name: 'Investigação'
@@ -492,7 +581,7 @@ export const negativeTraits: Trait[] = [
 
     {
         name: 'Lerdo',
-        value: -3,
+        value: -2,
         target: {
             kind: 'expertise',
             name: 'Agilidade'
@@ -501,7 +590,7 @@ export const negativeTraits: Trait[] = [
 
     {
         name: 'Desconexo',
-        value: -3,
+        value: -2,
         target: {
             kind: 'expertise',
             name: 'Persuasão'
@@ -510,7 +599,7 @@ export const negativeTraits: Trait[] = [
 
     {
         name: 'Imprudente',
-        value: -3,
+        value: -2,
         target: {
             kind: 'expertise',
             name: 'Medicina'
@@ -519,7 +608,7 @@ export const negativeTraits: Trait[] = [
 
     {
         name: 'Desinformado',
-        value: -3,
+        value: -2,
         target: {
             kind: 'expertise',
             name: 'Tecnologia'
@@ -528,7 +617,7 @@ export const negativeTraits: Trait[] = [
 
     {
         name: 'Apático',
-        value: -3,
+        value: -2,
         target: {
             kind: 'expertise',
             name: 'Liderança'

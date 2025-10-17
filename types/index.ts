@@ -30,8 +30,15 @@ import type {
     SessionInfo,
     Subclasses,
     Subclass,
+    Passive,
+    PassiveOccasion,
+    MagicPowerSkill,
     Status,
-    Element
+    Element,
+    ExpertisesNames,
+    CampaignCustomWeapon,
+    CampaignCustomArmor,
+    CampaignCustomItem
 } from './ficha';
 
 import type { 
@@ -50,30 +57,49 @@ import type {
     TempMessage,
     AmmoControl,
     Notification,
-    Note
+    Note,
+    CampaignSession,
+    CampaignData
 } from './models';
 
 import type { 
     EventData,
-    Roll
+    Roll,
+    Collections
 } from './misc';
 
 import type {
     QueryParamsDto,
     UpdateByIdDto,
     ConnectSessionDto,
-    DisconnectSessionDto
+    DisconnectSessionDto,
+    FichaDto
 } from './dto';
 
 import type { ApiRoutes, ApiBaseRequestType, ApiParams } from './api';
 import type { ResourceListModalProps } from './components';
+
+import type { ItemAttributes, ItemTyping } from './item';
+
+import type {
+    Dice,
+    DiceConfig,
+    DiceEffect,
+    DiceEffectOperation,
+    DiceEffectType,
+    DiceEffectTarget,
+    RollResult
+} from './dices'
 
 import type {
     UseSkills,
     UseSkillsOptions,
     UseResourceListOptions,
     UseResourceListReturn,
-    UseResourceListParams
+    UseResourceListParams,
+    UseRealtimeDatabaseType,
+    UseRealtimeDatabaseOperationTypes,
+    UseRealtimeDatabaseOnChange
 } from './hooks';
 
 export type { 
@@ -83,10 +109,17 @@ export type {
     PlayerInfo,
     AmmoType,
     Roll,
+    Collections,
     SessionAttributes,
     SessionInfo,
+    FichaDto,
     AmmoControl,
+    ItemAttributes,
+    ItemTyping,
     Player,
+    Passive,
+    PassiveOccasion,
+    MagicPowerSkill,
     SessionModel,
     Ficha,
     DamageType,
@@ -121,6 +154,7 @@ export type {
     Note,
     Expertises,
     Expertise,
+    ExpertisesNames,
     Race,
     Magia,
     FinancialCondition,
@@ -140,5 +174,20 @@ export type {
     QueryParamsDto,
     UpdateByIdDto,
     ConnectSessionDto,
-    DisconnectSessionDto
+    DisconnectSessionDto,
+    UseRealtimeDatabaseType,
+    UseRealtimeDatabaseOperationTypes,
+    UseRealtimeDatabaseOnChange,
+    CampaignSession,
+    CampaignData,
+    Dice,
+    DiceConfig,
+    DiceEffect,
+    DiceEffectOperation,
+    DiceEffectType,
+    DiceEffectTarget,
+    RollResult,
+    CampaignCustomWeapon,
+    CampaignCustomArmor,
+    CampaignCustomItem
 }

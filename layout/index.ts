@@ -7,12 +7,14 @@ import LinearProgressWithLabel from './LinearProgressWithLabel';
 import CustomIconButton from './CustomIconButton';
 import AppDrawer from './AppDrawer';
 import Notifications from './Notifications';
+import AddItemModal from './AddItemModal';
 
 export {
     LandingPageHeader,
     CustomMenu,
     WarningModal,
     AppDrawer,
+    AddItemModal,
     Footer,
     CustomIconButton,
     LinearProgressWithLabel,

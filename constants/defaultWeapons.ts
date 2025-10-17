@@ -203,7 +203,7 @@ export const deafultWeapons: Record<'melee' | 'ranged' | 'magic' | 'ballistic' |
             hit: 'vig',
             ammo: 'Não consome',
             quantity: 1,
-            bonus: 'Luta',
+            bonus: 'Força',
             effect: {
                 value: '3d12',
                 critValue: '4d12',
@@ -374,7 +374,7 @@ export const deafultWeapons: Record<'melee' | 'ranged' | 'magic' | 'ballistic' |
             hit: 'vig',
             ammo: 'Não consome',
             quantity: 1,
-            bonus: 'Luta',
+            bonus: 'Força',
             effect: {
                 value: '3d8',
                 critValue: '6d8',
@@ -393,7 +393,7 @@ export const deafultWeapons: Record<'melee' | 'ranged' | 'magic' | 'ballistic' |
             hit: 'vig',
             ammo: 'Não consome',
             quantity: 1,
-            bonus: 'Luta',
+            bonus: 'Força',
             effect: {
                 value: '2d12',
                 critValue: '4d12',
@@ -412,7 +412,7 @@ export const deafultWeapons: Record<'melee' | 'ranged' | 'magic' | 'ballistic' |
             hit: 'vig',
             ammo: 'Não consome',
             quantity: 1,
-            bonus: 'Luta',
+            bonus: 'Força',
             effect: {
                 value: '2d20',
                 critValue: '4d20',
@@ -431,7 +431,7 @@ export const deafultWeapons: Record<'melee' | 'ranged' | 'magic' | 'ballistic' |
             hit: 'vig',
             ammo: 'Não consome',
             quantity: 1,
-            bonus: 'Luta',
+            bonus: 'Força',
             effect: {
                 value: '2d12',
                 critValue: '6d12',
@@ -450,7 +450,7 @@ export const deafultWeapons: Record<'melee' | 'ranged' | 'magic' | 'ballistic' |
             hit: 'vig',
             ammo: 'Não consome',
             quantity: 1,
-            bonus: 'Controle',
+            bonus: 'Força',
             effect: {
                 value: '3d12',
                 critValue: '9d16',
@@ -503,11 +503,12 @@ export const deafultWeapons: Record<'melee' | 'ranged' | 'magic' | 'ballistic' |
             description: '',
             rarity: 'Comum',
             kind: 'Padrão',
-            categ: 'Arma Branca (Leve)',
+            categ: 'Arma de Longo Alcance (Leve)',
             range: 'Médio (18m)',
             weight: 1.0,
             hit: 'des',
-            ammo: 'Não consome',
+            ammo: 'Flecha',
+            magazineSize: 1,
             quantity: 1,
             bonus: 'Agilidade',
             effect: {
@@ -522,11 +523,12 @@ export const deafultWeapons: Record<'melee' | 'ranged' | 'magic' | 'ballistic' |
             description: '',
             rarity: 'Comum',
             kind: 'Padrão',
-            categ: 'Arma Branca (Pesada)',
+            categ: 'Arma de Longo Alcance (Pesada)',
             range: 'Longo (30m)',
             weight: 1.5,
             hit: 'des',
-            ammo: 'Não consome',
+            ammo: 'Flecha',
+            magazineSize: 1,
             quantity: 1,
             bonus: 'Pontaria',
             effect: {
@@ -541,17 +543,18 @@ export const deafultWeapons: Record<'melee' | 'ranged' | 'magic' | 'ballistic' |
             description: '',
             rarity: 'Comum',
             kind: 'Padrão',
-            categ: 'Arma Branca (Leve)',
+            categ: 'Arma de Longo Alcance (Leve)',
             range: 'Médio (18m)',
             weight: 1.2,
             hit: 'des',
-            ammo: 'Não consome',
+            ammo: 'Flecha',
+            magazineSize: 1,
             quantity: 1,
             bonus: 'Pontaria',
             effect: {
                 value: '2d8',
                 critValue: '6d8',
-                critChance: 23,
+                critChance: 20,
                 effectType: 'Perfurante'
             }
         },
@@ -560,17 +563,18 @@ export const deafultWeapons: Record<'melee' | 'ranged' | 'magic' | 'ballistic' |
             description: '',
             rarity: 'Comum',
             kind: 'Padrão',
-            categ: 'Arma Branca (Leve)',
+            categ: 'Arma de Longo Alcance (Leve)',
             range: 'Padrão (9m)',
             weight: 0.1,
             hit: 'des',
-            ammo: 'Não consome',
+            ammo: 'Dardo',
+            magazineSize: 1,
             quantity: 1,
             bonus: 'Agilidade',
             effect: {
                 value: '1d6',
                 critValue: '3d6',
-                critChance: 23,
+                critChance: 20,
                 effectType: 'Perfurante'
             }
         },
@@ -579,11 +583,12 @@ export const deafultWeapons: Record<'melee' | 'ranged' | 'magic' | 'ballistic' |
             description: '',
             rarity: 'Comum',
             kind: 'Padrão',
-            categ: 'Arma Branca (Leve)',
+            categ: 'Arma de Longo Alcance (Leve)',
             range: 'Padrão (9m)',
             weight: 0.6,
             hit: 'des',
-            ammo: 'Não consome',
+            ammo: 'Flecha',
+            magazineSize: 1,
             quantity: 1,
             bonus: 'Agilidade',
             effect: {
@@ -598,11 +603,12 @@ export const deafultWeapons: Record<'melee' | 'ranged' | 'magic' | 'ballistic' |
             description: '',
             rarity: 'Comum',
             kind: 'Padrão',
-            categ: 'Arma Branca (Pesada)',
+            categ: 'Arma de Longo Alcance (Pesada)',
             range: 'Ampliado (90m)',
             weight: 2.5,
             hit: 'des',
-            ammo: 'Não consome',
+            ammo: 'Flecha',
+            magazineSize: 1,
             quantity: 1,
             bonus: 'Pontaria',
             effect: {
@@ -617,7 +623,7 @@ export const deafultWeapons: Record<'melee' | 'ranged' | 'magic' | 'ballistic' |
             description: '',
             rarity: 'Comum',
             kind: 'Padrão',
-            categ: 'Arma Branca (Leve)',
+            categ: 'Arma de Longo Alcance (Leve)',
             range: 'Curto (3m)',
             weight: 0.5,
             hit: 'des',
@@ -636,7 +642,7 @@ export const deafultWeapons: Record<'melee' | 'ranged' | 'magic' | 'ballistic' |
             description: '',
             rarity: 'Comum',
             kind: 'Padrão',
-            categ: 'Arma Branca (Leve)',
+            categ: 'Arma de Longo Alcance (Leve)',
             range: 'Curto (3m)',
             weight: 0.3,
             hit: 'des',
@@ -655,7 +661,7 @@ export const deafultWeapons: Record<'melee' | 'ranged' | 'magic' | 'ballistic' |
             description: '',
             rarity: 'Comum',
             kind: 'Padrão',
-            categ: 'Arma Branca (Leve)',
+            categ: 'Arma de Longo Alcance (Leve)',
             range: 'Curto (3m)',
             weight: 0.1,
             hit: 'des',
@@ -674,7 +680,7 @@ export const deafultWeapons: Record<'melee' | 'ranged' | 'magic' | 'ballistic' |
             description: '',
             rarity: 'Comum',
             kind: 'Padrão',
-            categ: 'Arma Branca (Leve)',
+            categ: 'Arma de Longo Alcance (Leve)',
             range: 'Padrão (9m)',
             weight: 0.2,
             hit: 'des',
@@ -693,7 +699,7 @@ export const deafultWeapons: Record<'melee' | 'ranged' | 'magic' | 'ballistic' |
             description: '',
             rarity: 'Comum',
             kind: 'Padrão',
-            categ: 'Arma Branca (Pesada)',
+            categ: 'Arma de Longo Alcance (Pesada)',
             range: 'Padrão (9m)',
             weight: 1.9,
             hit: 'des',
@@ -703,7 +709,7 @@ export const deafultWeapons: Record<'melee' | 'ranged' | 'magic' | 'ballistic' |
             effect: {
                 value: '1d10x2',
                 critValue: '3d10',
-                critChance: 23,
+                critChance: 19,
                 effectType: 'Cortante'
             }
         }
@@ -785,7 +791,7 @@ export const deafultWeapons: Record<'melee' | 'ranged' | 'magic' | 'ballistic' |
             effect: {
                 value: '3d12',
                 critValue: '9d12',
-                critChance: 23,
+                critChance: 20,
                 effectType: 'Perfurante'
             }
         },
@@ -819,7 +825,7 @@ export const deafultWeapons: Record<'melee' | 'ranged' | 'magic' | 'ballistic' |
             weight: 3.0,
             hit: 'vig',
             ammo: '9mm',
-            magazineSize: 20,
+            magazineSize: 32,
             quantity: 1,
             bonus: 'Controle',
             effect: {
@@ -839,7 +845,7 @@ export const deafultWeapons: Record<'melee' | 'ranged' | 'magic' | 'ballistic' |
             weight: 5.0,
             hit: 'des',
             ammo: 'Calibre 22',
-            magazineSize: 60,
+            magazineSize: 28,
             quantity: 1,
             bonus: 'Pontaria',
             effect: {
@@ -885,7 +891,7 @@ export const deafultWeapons: Record<'melee' | 'ranged' | 'magic' | 'ballistic' |
             effect: {
                 value: '3d10',
                 critValue: '3d10',
-                critChance: 23,
+                critChance: 20,
                 effectType: 'Perfurante'
             }
         },
@@ -925,7 +931,7 @@ export const deafultWeapons: Record<'melee' | 'ranged' | 'magic' | 'ballistic' |
             effect: {
                 value: '3d12',
                 critValue: '6d12',
-                critChance: 23,
+                critChance: 20,
                 effectType: 'Perfurante'
             }
         },
@@ -939,7 +945,7 @@ export const deafultWeapons: Record<'melee' | 'ranged' | 'magic' | 'ballistic' |
             weight: 4.0,
             hit: 'des',
             ammo: 'Calibre 22',
-            magazineSize: 32,
+            magazineSize: 20,
             quantity: 1,
             bonus: 'Pontaria',
             effect: {
@@ -1021,6 +1027,7 @@ export const deafultWeapons: Record<'melee' | 'ranged' | 'magic' | 'ballistic' |
             weight: 0.8,
             hit: 'des',
             ammo: 'Bateria de lítio',
+            magazineSize: 0,
             quantity: 1,
             bonus: 'Pontaria',
             effect: {
@@ -1040,6 +1047,7 @@ export const deafultWeapons: Record<'melee' | 'ranged' | 'magic' | 'ballistic' |
             weight: 1.2,
             hit: 'des',
             ammo: 'Bateria de lítio',
+            magazineSize: 0,
             quantity: 1,
             bonus: 'Pontaria',
             effect: {
@@ -1059,6 +1067,7 @@ export const deafultWeapons: Record<'melee' | 'ranged' | 'magic' | 'ballistic' |
             weight: 0.5,
             hit: 'des',
             ammo: 'Bateria de lítio',
+            magazineSize: 0,
             quantity: 1,
             bonus: 'Agilidade',
             effect: {
@@ -1076,10 +1085,11 @@ export const deafultWeapons: Record<'melee' | 'ranged' | 'magic' | 'ballistic' |
             categ: 'Arma de Energia (Pesada)',
             range: 'Médio (18m)',
             weight: 2.0,
+            magazineSize: 0,
             hit: 'des',
             ammo: 'Amplificador de partículas',
             quantity: 1,
-            bonus: 'Controle',
+            bonus: 'Pontaria',
             effect: {
                 value: '2d12',
                 critValue: '8d12',
@@ -1094,6 +1104,7 @@ export const deafultWeapons: Record<'melee' | 'ranged' | 'magic' | 'ballistic' |
             kind: 'Duas mãos',
             categ: 'Arma de Energia (Pesada)',
             range: 'Curto (3m)',
+            magazineSize: 0,
             weight: 3.5,
             hit: 'vig',
             ammo: 'Cartucho de fusão',
@@ -1111,6 +1122,7 @@ export const deafultWeapons: Record<'melee' | 'ranged' | 'magic' | 'ballistic' |
             description: '',
             rarity: 'Comum',
             kind: 'Automática',
+            magazineSize: 0,
             categ: 'Arma de Energia (Leve)',
             range: 'Médio (18m)',
             weight: 2.5,
@@ -1131,6 +1143,7 @@ export const deafultWeapons: Record<'melee' | 'ranged' | 'magic' | 'ballistic' |
             rarity: 'Comum',
             kind: 'Duas mãos',
             categ: 'Arma de Energia (Leve)',
+            magazineSize: 0,
             range: 'Longo (30m)',
             weight: 4,
             hit: 'des',
@@ -1148,6 +1161,7 @@ export const deafultWeapons: Record<'melee' | 'ranged' | 'magic' | 'ballistic' |
             name: 'Metralhadora a laser',
             description: '',
             rarity: 'Comum',
+            magazineSize: 0,
             kind: 'Duas mãos',
             categ: 'Arma de Energia (Pesada)',
             range: 'Longo (30m)',
@@ -1167,6 +1181,7 @@ export const deafultWeapons: Record<'melee' | 'ranged' | 'magic' | 'ballistic' |
             name: 'Rifle holográfico',
             description: '',
             rarity: 'Comum',
+            magazineSize: 0,
             kind: 'Duas mãos',
             categ: 'Arma de Energia (Leve)',
             range: 'Médio (18m)',
@@ -1188,6 +1203,7 @@ export const deafultWeapons: Record<'melee' | 'ranged' | 'magic' | 'ballistic' |
             rarity: 'Comum',
             kind: 'Duas mãos',
             categ: 'Arma de Energia (Pesada)',
+            magazineSize: 0,
             range: 'Ampliado (90m)',
             weight: 5,
             hit: 'des',
@@ -1207,6 +1223,7 @@ export const deafultWeapons: Record<'melee' | 'ranged' | 'magic' | 'ballistic' |
             rarity: 'Comum',
             kind: 'Duas mãos',
             categ: 'Arma de Energia (Leve)',
+            magazineSize: 0,
             range: 'Ampliado (90m)',
             weight: 4,
             hit: 'des',
@@ -1223,6 +1240,7 @@ export const deafultWeapons: Record<'melee' | 'ranged' | 'magic' | 'ballistic' |
         {
             name: 'Fuzil de hidrogênio',
             description: '',
+            magazineSize: 0,
             rarity: 'Comum',
             kind: 'Duas mãos',
             categ: 'Arma de Energia (Pesada)',
@@ -1244,6 +1262,7 @@ export const deafultWeapons: Record<'melee' | 'ranged' | 'magic' | 'ballistic' |
             description: '',
             rarity: 'Comum',
             kind: 'Automática',
+            magazineSize: 0,
             categ: 'Arma de Energia (Pesada)',
             range: 'Curto (3m)',
             weight: 6,
@@ -1263,6 +1282,7 @@ export const deafultWeapons: Record<'melee' | 'ranged' | 'magic' | 'ballistic' |
             description: '',
             rarity: 'Comum',
             kind: 'Padrão',
+            magazineSize: 0,
             categ: 'Arma de Energia (Leve)',
             range: 'Padrão (9m)',
             weight: 1,
@@ -1287,6 +1307,7 @@ export const deafultWeapons: Record<'melee' | 'ranged' | 'magic' | 'ballistic' |
             weight: 12.5,
             hit: 'des',
             ammo: 'Amplificador de partículas',
+            magazineSize: 0,
             quantity: 1,
             bonus: 'Controle',
             effect: {
@@ -1301,7 +1322,7 @@ export const deafultWeapons: Record<'melee' | 'ranged' | 'magic' | 'ballistic' |
         {
             name: 'Lança-chamas',
             description: '',
-            rarity: 'Especial',
+            rarity: 'Comum',
             kind: 'Duas mãos',
             categ: 'Arma Especial (Pesada)',
             range: 'Curto (3m)',
@@ -1321,7 +1342,7 @@ export const deafultWeapons: Record<'melee' | 'ranged' | 'magic' | 'ballistic' |
         {
             name: 'Lança-granadas',
             description: '',
-            rarity: 'Especial',
+            rarity: 'Comum',
             kind: 'Duas mãos',
             categ: 'Arma Especial (Pesada)',
             range: 'Padrão (9m)',
@@ -1341,7 +1362,7 @@ export const deafultWeapons: Record<'melee' | 'ranged' | 'magic' | 'ballistic' |
         {
             name: 'Lança-foguetes',
             description: '',
-            rarity: 'Especial',
+            rarity: 'Comum',
             kind: 'Duas mãos',
             categ: 'Arma Especial (Pesada)',
             range: 'Longo (30m)',
@@ -1350,7 +1371,7 @@ export const deafultWeapons: Record<'melee' | 'ranged' | 'magic' | 'ballistic' |
             ammo: 'Foguete',
             magazineSize: 1,
             quantity: 1,
-            bonus: 'Controle',
+            bonus: 'Força',
             effect: {
                 value: '2d20',
                 critValue: '4d20',
@@ -1361,7 +1382,7 @@ export const deafultWeapons: Record<'melee' | 'ranged' | 'magic' | 'ballistic' |
         {
             name: 'Lanca-serra',
             description: '',
-            rarity: 'Especial',
+            rarity: 'Comum',
             kind: 'Duas mãos',
             categ: 'Arma Especial (Pesada)',
             range: 'Curto (3m)',
@@ -1370,7 +1391,7 @@ export const deafultWeapons: Record<'melee' | 'ranged' | 'magic' | 'ballistic' |
             ammo: 'Serra de metal',
             magazineSize: 1,
             quantity: 1,
-            bonus: 'Controle',
+            bonus: 'Força',
             effect: {
                 value: '5d8',
                 critValue: '10d8',
@@ -1381,14 +1402,14 @@ export const deafultWeapons: Record<'melee' | 'ranged' | 'magic' | 'ballistic' |
         {
             name: 'Minigun',
             description: '',
-            rarity: 'Especial',
+            rarity: 'Comum',
             kind: 'Duas mãos',
             categ: 'Arma Especial (Pesada)',
             range: 'Médio (18m)',
             weight: 20,
             hit: 'vig',
             ammo: '9mm',
-            magazineSize: 5,
+            magazineSize: 100,
             quantity: 1,
             bonus: 'Controle',
             effect: {
@@ -1401,7 +1422,7 @@ export const deafultWeapons: Record<'melee' | 'ranged' | 'magic' | 'ballistic' |
         {
             name: 'Lança-foguetes guiado',
             description: '',
-            rarity: 'Especial',
+            rarity: 'Comum',
             kind: 'Duas mãos',
             categ: 'Arma Especial (Pesada)',
             range: 'Médio (18m)',
@@ -1410,7 +1431,7 @@ export const deafultWeapons: Record<'melee' | 'ranged' | 'magic' | 'ballistic' |
             ammo: 'Foguete',
             magazineSize: 4,
             quantity: 1,
-            bonus: 'Controle',
+            bonus: 'Força',
             effect: {
                 value: '2d20',
                 critValue: '4d20',
@@ -1421,13 +1442,14 @@ export const deafultWeapons: Record<'melee' | 'ranged' | 'magic' | 'ballistic' |
         {
             name: 'Canhão Antiaéreo Eletromagnético',
             description: '',
-            rarity: 'Especial',
+            rarity: 'Comum',
             kind: 'Duas mãos',
             categ: 'Arma Especial (Pesada)',
             range: 'Ampliado (90m)',
             weight: 30,
             hit: 'log',
             ammo: 'Bateria de Cádmio com Óxido de Grafeno',
+            magazineSize: 3,
             quantity: 1,
             bonus: 'Tecnologia',
             effect: {
@@ -1490,7 +1512,7 @@ export const deafultWeapons: Record<'melee' | 'ranged' | 'magic' | 'ballistic' |
             hit: 'vig',
             ammo: 'Não consome',
             quantity: 1,
-            bonus: 'Controle',
+            bonus: 'Força',
             effect: {
                 value: '5d20',
                 critValue: '10d20',
@@ -1547,7 +1569,7 @@ export const deafultWeapons: Record<'melee' | 'ranged' | 'magic' | 'ballistic' |
             hit: 'vig',
             ammo: 'Não consome',
             quantity: 1,
-            bonus: 'Controle',
+            bonus: 'Força',
             effect: {
                 value: '5d20',
                 critValue: '15d20/19.5',
@@ -1575,7 +1597,7 @@ export const deafultWeapons: Record<'melee' | 'ranged' | 'magic' | 'ballistic' |
             }
         },
         {
-            name: 'Lance-ácido',
+            name: 'Lança-ácido',
             description: '',
             rarity: 'Mágico',
             kind: 'Duas mãos',
@@ -1583,7 +1605,7 @@ export const deafultWeapons: Record<'melee' | 'ranged' | 'magic' | 'ballistic' |
             range: 'Curto (3m)',
             weight: 8.5,
             hit: 'foc',
-            ammo: 'Não consome',
+            ammo: 'Ácido',
             magazineSize: 1,
             quantity: 1,
             bonus: 'Magia',
@@ -1633,4 +1655,25 @@ export const deafultWeapons: Record<'melee' | 'ranged' | 'magic' | 'ballistic' |
             }
         }
     ]
+}
+
+export const defaultWeapon = {
+    name: '',
+    description: '',
+    rarity: 'Comum',
+    weight: 0,
+    quantity: 1,
+    range: '',
+    categ: '',
+    hit: '',
+    bonus: '',
+    kind: 'Padrão',
+    ammo: 'Não consome',
+    accessories: [ 'Não possui acessórios' ],
+    effect: {
+        value: '',
+        effectType: '',
+        critChance: 20,
+        critValue: ''
+    }
 }

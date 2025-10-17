@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import type { JWT } from '@node_modules/next-auth/jwt'
-import _ from 'next-auth'
 
 declare module 'next-auth' {
   interface Session {

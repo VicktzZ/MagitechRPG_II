@@ -1,5 +1,5 @@
-import Campaign from '@models/campaign';
-import Ficha from '@models/ficha';
+import Campaign from '@models/db/campaign';
+import Ficha from '@models/db/ficha';
 import type { Campaign as CampaignType, Ficha as FichaType, SessionInfo } from '@types';
 import { pusherServer } from '@utils/pusher';
 import { PusherEvent } from '@enums';

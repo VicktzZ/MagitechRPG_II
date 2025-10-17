@@ -1,4 +1,4 @@
-import Notification from '@models/notification'
+import Notification from '@models/db/notification'
 import { connectToDb } from '@utils/database'
 
 export async function DELETE(req: Request): Promise<Response> {

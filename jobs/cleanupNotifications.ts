@@ -1,6 +1,6 @@
 import cron from 'node-cron'
 import { connectToDb } from '@utils/database'
-import Notification from '@models/notification'
+import Notification from '@models/db/notification'
 
 export async function cleanupNotifications() {
     try {

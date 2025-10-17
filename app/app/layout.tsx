@@ -2,7 +2,7 @@
 
 import '@public/fonts/fonts.css'
 
-import { Box } from '@mui/material';
+import { Box, type Theme, useMediaQuery } from '@mui/material';
 import { AppDrawer, Notifications } from '@layout';
 import { RequireAuth } from '@components/misc';
 import type { ReactElement } from 'react';
@@ -12,11 +12,12 @@ export default function RootLayout({
 }: {
   children: ReactElement
 }): ReactElement<any, any> {
-    const NODE_ENV = 'production' // process.env.NODE_ENV
+    const NODE_ENV = process.env.NEXT_PUBLIC_NODE_ENV
+    const isMobile = useMediaQuery((theme: Theme) => theme.breakpoints.down('sm'))
 
     return NODE_ENV === 'production' ? (
         <RequireAuth>
-            <Box p={3}>
+            <Box p={isMobile ? 2 : 3}>
                 <Box display='flex' width='100%' alignItems='center' justifyContent='space-between'>
                     <AppDrawer />
                     <Notifications />

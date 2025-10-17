@@ -1,5 +1,5 @@
 import { PusherEvent } from '@enums';
-import Campaign from '@models/campaign';
+import Campaign from '@models/db/campaign';
 import type { Campaign as CampaignType } from '@types';
 import { connectToDb } from '@utils/database';
 import { pusherServer } from '@utils/pusher';
@@ -9,6 +9,10 @@ export async function POST(req: Request): Promise<Response> {
         await connectToDb();
 
         const { campaignCode, userId }: { campaignCode: string; userId: string } = await req.json();
+
+        if (!userId || !campaignCode) {
+            return Response.json({ message: 'Missing userId or campaignCode' }, { status: 400 });
+        }
 
         const updatedCampaign: CampaignType | null = await Campaign.findOneAndUpdate(
             { campaignCode },

@@ -4,7 +4,7 @@ export interface ExpertisesOverrided {
     points?: number,
     tests?: {
         'Agilidade'?: number
-        'Argumentação'?: number
+        'Diplomacia'?: number
         'Atletismo'?: number
         'Competência'?: number
         'Comunicação'?: number
@@ -41,7 +41,7 @@ export const lineageExpertises: Record<Lineage['name'], ExpertisesOverrided> = {
         tests: {
             'Sobrevivência': 2
         },
-        points: 1
+        points: 2
     },
 
     'Infiltrado': {
@@ -52,7 +52,7 @@ export const lineageExpertises: Record<Lineage['name'], ExpertisesOverrided> = {
     },
 
     'Estrangeiro': {
-        points: 2
+        points: 4
     },
 
     'Camponês': {
@@ -94,14 +94,14 @@ export const lineageExpertises: Record<Lineage['name'], ExpertisesOverrided> = {
         tests: {
             'Magia': 2
         },
-        points: 1
+        points: 2
     },
 
     'Gangster': {
         tests: {
             'Intimidação': 2
         },
-        points: 1
+        points: 2
     },
 
     'Hacker': {
@@ -118,7 +118,7 @@ export const lineageExpertises: Record<Lineage['name'], ExpertisesOverrided> = {
         }
     },
     
-    'Combatente': {
+    'Atirador': {
         tests: {
             'Pontaria': 2,
             'Reflexos': 2
@@ -161,7 +161,7 @@ export const lineageExpertises: Record<Lineage['name'], ExpertisesOverrided> = {
         tests: {
             'Magia': 2
         },
-        points: 1
+        points: 2
     },
 
     'Cismático': {
@@ -192,7 +192,7 @@ export const occupationsExpertises: Record<Occupation['name'], ExpertisesOverrid
             'Criatividade': 2
         },
 
-        points: 1
+        points: 2
     },
 
     'Médico': {
@@ -249,7 +249,7 @@ export const occupationsExpertises: Record<Occupation['name'], ExpertisesOverrid
             'Conhecimento': 2
         },
 
-        points: 1
+        points: 2
     },
 
     'Pesquisador': {
@@ -275,7 +275,7 @@ export const occupationsExpertises: Record<Occupation['name'], ExpertisesOverrid
 
     'Político': {
         tests: {
-            'Argumentação': 2,
+            'Diplomacia': 2,
             'Liderança': 2
         }
     },

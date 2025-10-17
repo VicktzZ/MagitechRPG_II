@@ -1,16 +1,20 @@
 'use client'
 
 import { FichaComponent } from '@components/ficha';
+import { FichaFormProvider } from '@contexts';
 import { Backdrop, CircularProgress } from '@mui/material';
 import { fichaService } from '@services';
-import { type ReactElement } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import type { ReactElement } from 'react';
 
-export default function Ficha({ params }: { params: { id: string } }): ReactElement {
-    const { data: ficha, isPending } = useQuery({
+export default function Page({ params }: { params: { id: string } }): ReactElement {
+    const { isPending, data } = useQuery({
         queryKey: [ 'ficha', params.id ],
-        queryFn: async () => await fichaService.getById(params.id)
+        queryFn: async () => await fichaService.getById(params.id),
+        staleTime: 60000
     })
+
+    console.log(data)
 
     return (
         <>
@@ -19,7 +23,9 @@ export default function Ficha({ params }: { params: { id: string } }): ReactElem
                     <CircularProgress />
                 </Backdrop>
             ) : (
-                <FichaComponent disabled ficha={ficha!} />
+                <FichaFormProvider formData={data}>
+                    <FichaComponent />
+                </FichaFormProvider>
             )}
         </>
     )

@@ -1,4 +1,4 @@
-import Ficha from '@models/ficha'
+import Ficha from '@models/db/ficha'
 import { NextResponse } from 'next/server'
 
 export async function POST() {

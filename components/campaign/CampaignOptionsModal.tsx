@@ -12,6 +12,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@mui/material';
 import type { Campaign } from '@types';
 import { campaignService } from '@services';
+import { useMutation } from '@node_modules/@tanstack/react-query/build/modern';
 
 export default function CampaignOptionsModal({
     open,
@@ -24,7 +25,6 @@ export default function CampaignOptionsModal({
 }): ReactElement {
     const { data: session } = useSession();
 
-    const [ isLoading, setIsLoading ] = useState<boolean>(false);
     const [ campaignCode, setCampaignCode ] = useState<string>('');
     const [ campaignProps, setCampaignProps ] = useState<Partial<Campaign>>({
         title: '',
@@ -32,14 +32,14 @@ export default function CampaignOptionsModal({
     });
 
     const { enqueueSnackbar } = useSnackbar();
-    
     const theme = useTheme();
     const router = useRouter();
+    const { mutateAsync, isPending } = useMutation({
+        mutationFn: async (props: Partial<Campaign>) => await campaignService.create(props)
+    })
 
     const joinCampaign = async (): Promise<void> => {
         if (campaignCode) {
-            setIsLoading(true);
-
             const response = await campaignService.getById(campaignCode)
 
             if (response) {
@@ -48,8 +48,6 @@ export default function CampaignOptionsModal({
             } else {
                 enqueueSnackbar('Código da sessão inválido ou inexistente!', { variant: 'error' });
             }
-
-            setIsLoading(false);
         } else {
             enqueueSnackbar('Insira o código da sessão!', { variant: 'error' });
         }
@@ -60,9 +58,8 @@ export default function CampaignOptionsModal({
 
         try {
             setOpen(false);
-            setIsLoading(true);
 
-            await campaignService.create({
+            await mutateAsync({
                 admin: [ session?.user?._id ?? '' ],
                 campaignCode: campaignCodeGen,
                 title: campaignProps.title ?? '',
@@ -74,14 +71,9 @@ export default function CampaignOptionsModal({
                 }
             })
 
-            setIsLoading(false);
             enqueueSnackbar('Campanha criada com sucesso!', { variant: 'success' });
-
-            setTimeout(() => {
-                router.push(`/app/campaign/${campaignCodeGen}`);
-            }, 1000);
+            router.push(`/app/campaign/${campaignCodeGen}`);
         } catch (error: any) {
-            setIsLoading(false);
             enqueueSnackbar('Erro ao criar sessão: ' + error.message, { variant: 'error' });
         }
     };
@@ -160,7 +152,7 @@ export default function CampaignOptionsModal({
                     </Box>
                 </Box>
             </Modal>
-            <Backdrop sx={{ zIndex: 999 }} open={isLoading}>
+            <Backdrop sx={{ zIndex: 999 }} open={isPending}>
                 <CircularProgress />
             </Backdrop>
         </>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, type ReactElement } from 'react'
+import { useState, type ReactElement } from 'react'
 import {
     Box,
     Paper,
@@ -19,10 +19,6 @@ import {
 import { useSnackbar } from 'notistack'
 import { campaignService } from '@services'
 import { useCampaignContext } from '@contexts';
-import { useGameMasterContext } from '@contexts/gameMasterContext'
-import { useChannel } from '@contexts/channelContext'
-import { PusherEvent } from '@enums'
-import AddIcon from '@mui/icons-material/Add'
 import EditIcon from '@mui/icons-material/Edit'
 import DeleteIcon from '@mui/icons-material/Delete'
 import type { Note } from '@types'
@@ -30,48 +26,11 @@ import type { Note } from '@types'
 const NOTE_HEIGHT = 200 // Altura padrão para as notas em pixels
 
 export default function CampaignNotes(): ReactElement {
-    const { campaign, setCampaign } = useCampaignContext()
-    const { isUserGM } = useGameMasterContext()
+    const { campaign, isUserGM } = useCampaignContext()
     const { enqueueSnackbar } = useSnackbar()
-    const { channel } = useChannel()
     const [ noteDialogOpen, setNoteDialogOpen ] = useState(false)
     const [ editingNote, setEditingNote ] = useState<Note | null>(null)
     const [ noteContent, setNoteContent ] = useState('')
-
-    useEffect(() => {
-        if (!channel) return
-
-        channel.bind(PusherEvent.NOTES_UPDATED, (data: Note | string) => {
-            if (typeof data === 'string') {
-                setCampaign(prev => ({
-                    ...prev,
-                    notes: prev.notes.filter(note => note._id !== data)
-                }))
-            } else {
-                setCampaign(prev => {
-                    const isUpdate = prev.notes.some(note => note._id === data._id)
-                    const notes = isUpdate
-                        ? prev.notes.map(note => note._id === data._id ? data : note)
-                        : [ ...prev.notes, data ]
-
-                    return {
-                        ...prev,
-                        notes
-                    }
-                })
-            }
-        })
-
-        return () => {
-            channel.unbind(PusherEvent.NOTES_UPDATED)
-        }
-    },  [ channel, setCampaign ])
-
-    const handleAddNote = () => {
-        setEditingNote(null)
-        setNoteContent('')
-        setNoteDialogOpen(true)
-    }
 
     const handleEditNote = (note: Note) => {
         setEditingNote(note)
@@ -116,19 +75,6 @@ export default function CampaignNotes(): ReactElement {
 
     return (
         <Box sx={{ width: '100%' }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                {isUserGM && (
-                    <Button
-                        variant="contained"
-                        color="primary"
-                        startIcon={<AddIcon />}
-                        onClick={handleAddNote}
-                    >
-                        Nova Nota
-                    </Button>
-                )}
-            </Box>
-
             <Paper sx={{ display: 'flex', flexDirection: 'column', gap: 2, p: 2, mb: 2 }}>
                 <Typography variant="h6">Notas da Campanha</Typography>
                 <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 2 }}>

@@ -1,5 +1,7 @@
+import type { User } from 'realm-web';
 import type { ApiParams } from './api';
 import type { MagicPower } from './ficha';
+import type { UseQueryResult } from '@tanstack/react-query';
 
 export interface UseSkillsOptions {
     initialSearch?: string;
@@ -91,4 +93,30 @@ export interface UseResourceListReturn<T> {
     setButtonSelected: React.Dispatch<React.SetStateAction<{ add: boolean; create: boolean; remove: boolean }>>;
     addItem: (item: T) => void;
     loadMore: () => void;
+}
+
+export type UseRealtimeDatabaseOperationTypes = 'insert' | 'update' | 'delete' | 'replace';
+
+export interface UseRealtimeDatabaseType<T> {
+    data?: T;
+    changedDocument?: T;
+    updateDescription?: {
+        updatedFields: Record<string, any>;
+        removedFields: Record<string, any>;
+    };
+    operationType: UseRealtimeDatabaseOperationTypes;
+    eventId: { _id: string };
+    documentId: string;
+    credentials: User | null;
+    query: UseQueryResult<T, Error>
+}
+
+export interface UseRealtimeDatabaseOnChange<T> {
+    changedDocument?: T;
+    updateDescription?: {
+        updatedFields: Record<string, any>;
+        removedFields: Record<string, any>;
+    };
+    operationType: UseRealtimeDatabaseOperationTypes;
+    documentId: string;
 }

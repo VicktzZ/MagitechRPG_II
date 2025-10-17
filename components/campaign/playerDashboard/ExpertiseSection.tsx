@@ -1,66 +1,117 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 'use client'
 
-import { useCampaignContext } from '@contexts';
+import { useCampaignCurrentFichaContext } from '@contexts';
 import { useChatContext } from '@contexts/chatContext'
 import { MessageType } from '@enums'
-import { Box, Button, Chip, Grid, Paper, Typography } from '@mui/material'
-import { blue, green, grey, purple, yellow } from '@mui/material/colors'
+import { 
+    Box, 
+    Button, 
+    Chip, 
+    Paper, 
+    Typography,
+    Stack,
+    Tooltip,
+    useTheme
+} from '@mui/material'
+import {
+    Person,
+    Casino,
+    TrendingUp,
+    Star,
+    EmojiEvents
+} from '@mui/icons-material'
+import { blue, green, grey, purple, orange, red } from '@mui/material/colors'
 import type { Expertises } from '@types'
 import { useSession } from 'next-auth/react'
 import { type ReactElement } from 'react'
 
 export default function ExpertiseSection(): ReactElement {
-    const { campaign: { myFicha: ficha } } = useCampaignContext()
-    if (!ficha) return <></>;
+    const { ficha } = useCampaignCurrentFichaContext();
+    const theme = useTheme();
 
     const expertises = ficha.expertises
     const { handleSendMessage, setIsChatOpen, isChatOpen } = useChatContext()
     const { data: session } = useSession()
 
-    // Ordena as perícias em ordem alfabética e divide em 3 colunas
+    // Ordena as perícias em ordem alfabética
     const expertiseEntries = Object.entries(expertises).sort((a, b) => a[0].localeCompare(b[0]))
-    const columnSize = Math.ceil(expertiseEntries.length / 3)
-    const columns = [
-        expertiseEntries.slice(0, columnSize),
-        expertiseEntries.slice(columnSize, columnSize * 2),
-        expertiseEntries.slice(columnSize * 2)
-    ]
+    
+    // Estatísticas das perícias
+    const expertiseStats = {
+        total: expertiseEntries.length,
+        novice: expertiseEntries.filter(([ , exp ]) => exp.value < 2).length,
+        trained: expertiseEntries.filter(([ , exp ]) => exp.value >= 2 && exp.value < 5).length,
+        expert: expertiseEntries.filter(([ , exp ]) => exp.value >= 5 && exp.value < 7).length,
+        master: expertiseEntries.filter(([ , exp ]) => exp.value >= 7 && exp.value < 9).length,
+        legendary: expertiseEntries.filter(([ , exp ]) => exp.value >= 9).length
+    }
 
-    const determinateExpertiseColor = (value: number): string => {
+    const getExpertiseConfig = (value: number) => {
         if (value < 2) {
-            return grey[500]
+            return { 
+                color: grey[600], 
+                bg: grey[100], 
+                label: 'Novato',
+                icon: Person
+            }
         } else if (value < 5) {
-            return green[500]
+            return { 
+                color: green[600], 
+                bg: green[100], 
+                label: 'Treinado',
+                icon: TrendingUp
+            }
         } else if (value < 7) {
-            return blue[500]
+            return { 
+                color: blue[600], 
+                bg: blue[100], 
+                label: 'Especialista',
+                icon: Star
+            }
         } else if (value < 9) {
-            return purple[500]
+            return { 
+                color: purple[600], 
+                bg: purple[100], 
+                label: 'Mestre',
+                icon: EmojiEvents
+            }
         } else {
-            return yellow[500]
+            return { 
+                color: orange[600], 
+                bg: orange[100], 
+                label: 'Lendário',
+                icon: Casino
+            }
         }
+    }
+
+    const getAttributeColor = (attr: string) => {
+        const colors: Record<string, string> = {
+            'FOR': red[600],
+            'AGI': green[600],
+            'INT': blue[600],
+            'PRE': purple[600],
+            'VIG': orange[600]
+        }
+        return colors[attr] || grey[600]
     }
 
     const handleExpertiseClick = async (expertiseName: keyof Expertises) => {
         const expertise = ficha.expertises[expertiseName]
         const expertiseValue = expertise.value
 
-        // Pega o atributo base da expertise
-        const baseAttribute = expertise.defaultAttribute?.toLowerCase() as keyof typeof ficha.attributes
-        const baseAttributeValue = ficha.attributes[baseAttribute]
+        // Determina quantos d20s rolar baseado nos mods do atributo padrão da perícia
+        const attrKey = (expertise.defaultAttribute ?? '') as keyof typeof ficha.mods.attributes
+        let numDice = Number(ficha.mods?.attributes?.[attrKey] ?? 1)
+        if (!Number.isFinite(numDice) || numDice < 1) numDice = 1
 
-        // Determina quantos d20s rolar baseado no valor do atributo base
-        let numDice = 1
-        let useWorst = false
-
-        if (baseAttributeValue === -1) {
-            numDice = 2
-            useWorst = true
-        } else if (baseAttributeValue === 3) {
-            numDice = 2
-        } else if (baseAttributeValue === 5) {
-            numDice = 3
-        }
+        console.log({
+            attrKey,
+            numDice,
+            mods: ficha.mods,
+            condition: !Number.isFinite(numDice) || numDice < 1
+        })
 
         // Rola os dados
         const rolls: number[] = []
@@ -68,11 +119,8 @@ export default function ExpertiseSection(): ReactElement {
             rolls.push(Math.floor(Math.random() * 20) + 1)
         }
 
-        // Determina qual resultado usar
-        let roll = rolls[0]
-        if (numDice > 1) {
-            roll = useWorst ? Math.min(...rolls) : Math.max(...rolls)
-        }
+        // Seleciona o melhor resultado entre os dados rolados
+        const roll = rolls.length > 1 ? Math.max(...rolls) : rolls[0]
 
         const total = roll + expertiseValue
 
@@ -104,56 +152,222 @@ export default function ExpertiseSection(): ReactElement {
     }
 
     return (
-        <Grid item xs={12}>
-            <Paper sx={{ p: 2, bgcolor: 'background.paper2', borderRadius: 2 }}>
-                <Typography variant="h6" gutterBottom>
-                    Perícias
-                </Typography>
+        <Box sx={{ width: '100%' }}>
+            <Paper 
+                elevation={2}
+                sx={{ 
+                    p: 3, 
+                    borderRadius: 3,
+                    background: theme.palette.mode === 'dark'
+                        ? 'linear-gradient(145deg, #1e293b 0%, #334155 100%)'
+                        : 'linear-gradient(145deg, #f8fafc 0%, #e2e8f0 100%)',
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    transition: 'all 0.3s ease',
+                    '&:hover': {
+                        boxShadow: 4,
+                        transform: 'translateY(-2px)'
+                    }
+                }}
+            >
+                <Stack spacing={3}>
+                    {/* Header */}
+                    <Box display="flex" alignItems="center" gap={2}>
+                        <Box 
+                            sx={{
+                                p: 1.5,
+                                borderRadius: 2,
+                                bgcolor: blue[100],
+                                border: '2px solid',
+                                borderColor: blue[200]
+                            }}
+                        >
+                            <Person sx={{ color: blue[700], fontSize: '2rem' }} />
+                        </Box>
+                        <Box flex={1}>
+                            <Typography 
+                                variant="h5" 
+                                sx={{ 
+                                    fontWeight: 700,
+                                    color: 'primary.main',
+                                    mb: 0.5
+                                }}
+                            >
+                                Perícias & Especialidades
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                                {expertiseStats.total} perícia{expertiseStats.total !== 1 ? 's' : ''} disponível{expertiseStats.total !== 1 ? 'eis' : ''}
+                            </Typography>
+                        </Box>
+                    </Box>
 
-                <Grid container spacing={2}>
-                    {columns.map((column, index) => (
-                        <Grid item xs={12} sm={6} md={4} key={index}>
-                            {column.map(([ nome, expertise ]) => (
-                                <Button
-                                    key={nome}
-                                    fullWidth
-                                    onClick={async () => await handleExpertiseClick(nome as keyof Expertises)}
-                                    sx={{
-                                        mb: 1,
-                                        p: 2,
-                                        bgcolor: 'background.paper3',
-                                        color: 'white',
-                                        justifyContent: 'flex-start',
-                                        textAlign: 'left',
-                                        '&:hover': {
-                                            bgcolor: 'action.hover'
-                                        }
-                                    }}
-                                >
-                                    <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', flexWrap: 'wrap', gap: 1 }}>
-                                        <Typography variant="subtitle1" sx={{ minWidth: '40%' }}>{nome}</Typography>
-                                        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', ml: 'auto' }}>
-                                            <Chip 
-                                                label={`${expertise.value >= 0 ? '+' : ''}${expertise.value}`}
-                                                size="small"
+                    {/* Estatísticas por Nível */}
+                    <Box 
+                        sx={{
+                            display: 'flex',
+                            justifyContent: 'space-around',
+                            p: 2,
+                            bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
+                            borderRadius: 2,
+                            border: '1px solid',
+                            borderColor: 'divider',
+                            flexWrap: 'wrap',
+                            gap: 2
+                        }}
+                    >
+                        {[
+                            { key: 'novice', label: 'Destreinado', count: expertiseStats.novice, color: grey[600] },
+                            { key: 'trained', label: 'Treinado', count: expertiseStats.trained, color: green[600] },
+                            { key: 'expert', label: 'Competente', count: expertiseStats.expert, color: blue[600] },
+                            { key: 'master', label: 'Experiente', count: expertiseStats.master, color: purple[600] },
+                            { key: 'legendary', label: 'Especialista', count: expertiseStats.legendary, color: orange[600] }
+                        ].map(stat => (
+                            <Stack key={stat.key} alignItems="center" spacing={0.5}>
+                                <Typography variant="h6" sx={{ color: stat.color, fontWeight: 700 }}>
+                                    {stat.count}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                    {stat.label}
+                                </Typography>
+                            </Stack>
+                        ))}
+                    </Box>
+
+                    {/* Lista de Perícias */}
+                    <Box>
+                        {expertiseEntries.length === 0 ? (
+                            <Paper 
+                                sx={{ 
+                                    p: 4, 
+                                    textAlign: 'center',
+                                    border: '2px dashed',
+                                    borderColor: 'divider',
+                                    bgcolor: 'transparent'
+                                }}
+                            >
+                                <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
+                                    Nenhuma perícia encontrada
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                    As perícias do personagem aparecerão aqui.
+                                </Typography>
+                            </Paper>
+                        ) : (
+                            <Box 
+                                sx={{
+                                    display: 'grid',
+                                    gridTemplateColumns: {
+                                        xs: '1fr',
+                                        sm: 'repeat(2, 1fr)',
+                                        md: 'repeat(3, 1fr)'
+                                    },
+                                    gap: 2
+                                }}
+                            >
+                                {expertiseEntries.map(([ nome, expertise ]) => {
+                                    const config = getExpertiseConfig(expertise.value);
+                                    const IconComponent = config.icon;
+                                    
+                                    return (
+                                        <Tooltip 
+                                            key={nome}
+                                            title={`Clique para rolar ${nome} (${config.label})`}
+                                            placement="top"
+                                        >
+                                            <Button
+                                                fullWidth
+                                                onClick={async () => await handleExpertiseClick(nome as keyof Expertises)}
+                                                elevation={1}
                                                 sx={{
-                                                    bgcolor: determinateExpertiseColor(expertise.value)
+                                                    p: 2.5,
+                                                    bgcolor: config.bg + '40',
+                                                    border: '1px solid',
+                                                    borderColor: config.color + '40',
+                                                    borderRadius: 2,
+                                                    justifyContent: 'flex-start',
+                                                    textAlign: 'left',
+                                                    transition: 'all 0.3s ease',
+                                                    '&:hover': {
+                                                        bgcolor: config.bg + '60',
+                                                        borderColor: config.color + '80',
+                                                        transform: 'translateY(-2px)',
+                                                        boxShadow: 3
+                                                    }
                                                 }}
-                                            />
-                                            <Chip 
-                                                label={expertise.defaultAttribute.toUpperCase()}
-                                                size="small"
-                                                variant="outlined"
-                                                color="primary"
-                                            />
-                                        </Box>
-                                    </Box>
-                                </Button>
-                            ))}
-                        </Grid>
-                    ))}
-                </Grid>
+                                            >
+                                                <Stack spacing={1.5} width="100%">
+                                                    <Box display="flex" alignItems="center" gap={1.5}>
+                                                        <Box 
+                                                            sx={{
+                                                                p: 0.8,
+                                                                borderRadius: 1,
+                                                                bgcolor: config.color + '20',
+                                                                border: '1px solid',
+                                                                borderColor: config.color + '40'
+                                                            }}
+                                                        >
+                                                            <IconComponent 
+                                                                sx={{ 
+                                                                    color: config.color,
+                                                                    fontSize: '1.2rem'
+                                                                }} 
+                                                            />
+                                                        </Box>
+                                                        <Typography 
+                                                            variant="subtitle1" 
+                                                            sx={{ 
+                                                                fontWeight: 600,
+                                                                color: 'text.primary',
+                                                                flex: 1
+                                                            }}
+                                                        >
+                                                            {nome}
+                                                        </Typography>
+                                                    </Box>
+                                                    
+                                                    <Box display="flex" gap={1} flexWrap="wrap" justifyContent="space-between">
+                                                        <Chip 
+                                                            label={`${expertise.value >= 0 ? '+' : ''}${expertise.value}`}
+                                                            size="small"
+                                                            sx={{
+                                                                bgcolor: config.color,
+                                                                color: 'white',
+                                                                fontWeight: 700,
+                                                                fontSize: '0.8rem'
+                                                            }}
+                                                        />
+                                                        <Chip 
+                                                            label={expertise.defaultAttribute?.toUpperCase()}
+                                                            size="small"
+                                                            sx={{
+                                                                bgcolor: getAttributeColor(expertise.defaultAttribute?.toUpperCase()) + '20',
+                                                                color: getAttributeColor(expertise.defaultAttribute?.toUpperCase()),
+                                                                fontWeight: 600,
+                                                                fontSize: '0.75rem'
+                                                            }}
+                                                        />
+                                                        <Chip 
+                                                            label={config.label}
+                                                            size="small"
+                                                            variant="outlined"
+                                                            sx={{
+                                                                borderColor: config.color + '60',
+                                                                color: config.color,
+                                                                fontWeight: 600,
+                                                                fontSize: '0.7rem'
+                                                            }}
+                                                        />
+                                                    </Box>
+                                                </Stack>
+                                            </Button>
+                                        </Tooltip>
+                                    );
+                                })}
+                            </Box>
+                        )}
+                    </Box>
+                </Stack>
             </Paper>
-        </Grid>
+        </Box>
     )
 }

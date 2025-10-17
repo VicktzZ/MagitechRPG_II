@@ -89,9 +89,17 @@ export default function FichaDetailsModal({ open, onClose, ficha }: FichaDetails
             >
                 <DialogTitle>
                     <Box display="flex" justifyContent="space-between" alignItems="center">
-                        <Typography variant="h6">
-                            {ficha.name} - Nível {ficha.level}
-                        </Typography>
+                        <Box>
+                            <Box display="flex" alignItems="center" gap={1}>
+                                <Typography variant="h6">
+                                    {ficha.name} - Nível {ficha.level}
+                                </Typography>
+                                <Typography color="textSecondary" variant="subtitle1">({ficha._id})</Typography>
+                            </Box>
+                            <Typography variant="subtitle1">
+                                {ficha.playerName}
+                            </Typography>
+                        </Box>
                         <Chip 
                             label={`${ficha.class as string} ${ficha.subclass ? `/ ${ficha.subclass as string}` : ''}`}
                             color="primary"
@@ -179,15 +187,15 @@ export default function FichaDetailsModal({ open, onClose, ficha }: FichaDetails
                                         <TableBody>
                                             <TableRow>
                                                 <TableCell>HP</TableCell>
-                                                <TableCell>{ficha.attributes.lp}/{ficha.maxLp}</TableCell>
+                                                <TableCell>{ficha.attributes.lp}/{ficha.attributes.maxLp}</TableCell>
                                             </TableRow>
                                             <TableRow>
                                                 <TableCell>MP</TableCell>
-                                                <TableCell>{ficha.attributes.mp}/{ficha.maxMp}</TableCell>
+                                                <TableCell>{ficha.attributes.mp}/{ficha.attributes.maxMp}</TableCell>
                                             </TableRow>
                                             <TableRow>
                                                 <TableCell>AP</TableCell>
-                                                <TableCell>{ficha.attributes.ap}/{ficha.maxAp}</TableCell>
+                                                <TableCell>{ficha.attributes.ap}/{ficha.attributes.maxAp}</TableCell>
                                             </TableRow>
                                             <TableRow>
                                                 <TableCell>Deslocamento</TableCell>
@@ -236,14 +244,6 @@ export default function FichaDetailsModal({ open, onClose, ficha }: FichaDetails
                                             <Chip 
                                                 label={`Perícias: ${ficha.points.expertises}`} 
                                                 color="secondary" 
-                                                variant="outlined"
-                                                sx={{ width: '100%' }}
-                                            />
-                                        </Grid>
-                                        <Grid item xs={6}>
-                                            <Chip 
-                                                label={`Diligência: ${ficha.points.diligence}`} 
-                                                color="success" 
                                                 variant="outlined"
                                                 sx={{ width: '100%' }}
                                             />
@@ -474,7 +474,7 @@ export default function FichaDetailsModal({ open, onClose, ficha }: FichaDetails
                             )}
                             
                             <Grid item xs={12} md={6}>
-                                <Typography variant="subtitle1" gutterBottom>Habilidades de Linhagem ({ficha.skills.lineage.length})</Typography>
+                                <Typography variant="subtitle1" gutterBottom>Habilidades de Linhagem ({ficha.skills.lineage?.length})</Typography>
                                 <TableContainer component={Paper} variant="outlined" sx={{ maxHeight: 200, overflow: 'auto' }}>
                                     <Table size="small">
                                         <TableHead>
@@ -484,7 +484,7 @@ export default function FichaDetailsModal({ open, onClose, ficha }: FichaDetails
                                             </TableRow>
                                         </TableHead>
                                         <TableBody>
-                                            {ficha.skills.lineage.map((skill, index) => (
+                                            {ficha.skills.lineage?.map((skill, index) => (
                                                 <TableRow key={index}>
                                                     <TableCell>{skill.name}</TableCell>
                                                     <TableCell>{skill.origin ?? '—'}</TableCell>
@@ -495,9 +495,9 @@ export default function FichaDetailsModal({ open, onClose, ficha }: FichaDetails
                                 </TableContainer>
                             </Grid>
                             
-                            {ficha.skills.bonus.length > 0 && (
+                            {ficha.skills.bonus?.length > 0 && (
                                 <Grid item xs={12} md={6}>
-                                    <Typography variant="subtitle1" gutterBottom>Habilidades Bônus ({ficha.skills.bonus.length})</Typography>
+                                    <Typography variant="subtitle1" gutterBottom>Habilidades Bônus ({ficha.skills.bonus?.length})</Typography>
                                     <TableContainer component={Paper} variant="outlined" sx={{ maxHeight: 200, overflow: 'auto' }}>
                                         <Table size="small">
                                             <TableHead>
@@ -507,7 +507,7 @@ export default function FichaDetailsModal({ open, onClose, ficha }: FichaDetails
                                                 </TableRow>
                                             </TableHead>
                                             <TableBody>
-                                                {ficha.skills.bonus.map((skill, index) => (
+                                                {ficha.skills.bonus?.map((skill, index) => (
                                                     <TableRow key={index}>
                                                         <TableCell>{skill.name}</TableCell>
                                                         <TableCell>{skill.origin ?? '—'}</TableCell>
@@ -528,11 +528,11 @@ export default function FichaDetailsModal({ open, onClose, ficha }: FichaDetails
                                 Espaço Mágico: {ficha.magicsSpace} / Maestria Elemental: {ficha.elementalMastery ?? 'Nenhuma'}
                             </Typography>
                             <Typography variant="body2" color="text.secondary" gutterBottom>
-                                Total de Magias: {ficha.magics.length}
+                                Total de Magias: {ficha.magics?.length}
                             </Typography>
                         </Box>
                         
-                        {ficha.magics.length > 0 ? (
+                        {ficha.magics?.length > 0 ? (
                             <TableContainer component={Paper} variant="outlined" sx={{ maxHeight: 400, overflow: 'auto' }}>
                                 <Table size="small">
                                     <TableHead>
@@ -545,14 +545,14 @@ export default function FichaDetailsModal({ open, onClose, ficha }: FichaDetails
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>
-                                        {ficha.magics.map((magia, index) => (
+                                        {ficha.magics?.map((magia, index) => (
                                             <TableRow key={index}>
                                                 <TableCell>
                                                     <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                                                        <Typography variant="body2" fontWeight="bold">{magia.nome}</Typography>
-                                                        {magia.tipo && (
+                                                        <Typography variant="body2" fontWeight="bold">{magia?.nome}</Typography>
+                                                        {magia?.tipo && (
                                                             <Chip 
-                                                                label={magia.tipo} 
+                                                                label={magia?.tipo} 
                                                                 size="small" 
                                                                 variant="outlined"
                                                                 sx={{ mt: 0.5, alignSelf: 'flex-start' }}
@@ -562,18 +562,18 @@ export default function FichaDetailsModal({ open, onClose, ficha }: FichaDetails
                                                 </TableCell>
                                                 <TableCell>
                                                     <Chip 
-                                                        label={magia.elemento} 
+                                                        label={magia?.elemento} 
                                                         size="small" 
-                                                        sx={{ bgcolor: elementColor[magia.elemento], color: magia.elemento === 'NÃO-ELEMENTAL' || magia.elemento === 'LUZ' ? 'black' : 'white' }}
+                                                        sx={{ bgcolor: elementColor[magia?.elemento], color: magia?.elemento === 'NÃO-ELEMENTAL' || magia?.elemento === 'LUZ' ? 'black' : 'white' }}
                                                     />
                                                 </TableCell>
-                                                <TableCell>{magia.custo} MP</TableCell>
+                                                <TableCell>{magia?.custo} MP</TableCell>
                                                 <TableCell>
-                                                    {magia.nível}
+                                                    {magia?.nível}
                                                 </TableCell>
                                                 <TableCell>
                                                     <Typography variant="body2" sx={{ maxWidth: 250, whiteSpace: 'pre-wrap' }}>
-                                                        {magia['estágio 1']}
+                                                        {magia?.['estágio 1']}
                                                     </Typography>
                                                     {/* {magia.dano && (
                                                         <Box mt={1}>
@@ -603,7 +603,7 @@ export default function FichaDetailsModal({ open, onClose, ficha }: FichaDetails
                             </Box>
                         )}
                         
-                        {ficha.elementalMastery && ficha.magics.length > 0 && (
+                        {ficha.elementalMastery && ficha.magics?.length > 0 && (
                             <Box sx={{ mt: 3 }}>
                                 <Typography variant="subtitle1" gutterBottom>
                                     Estatísticas de Magia
@@ -615,7 +615,7 @@ export default function FichaDetailsModal({ open, onClose, ficha }: FichaDetails
                                                 Custo Médio
                                             </Typography>
                                             <Typography variant="h6">
-                                                {Math.round(ficha.magics.reduce((acc, m) => acc + (m.custo || 0), 0) / ficha.magics.length)} MP
+                                                {Math.round(ficha.magics?.reduce((acc, m) => acc + (m.custo || 0), 0) / ficha.magics?.length)} MP
                                             </Typography>
                                         </Paper>
                                     </Grid>
@@ -625,7 +625,7 @@ export default function FichaDetailsModal({ open, onClose, ficha }: FichaDetails
                                                 Elementos Dominantes
                                             </Typography>
                                             <Typography variant="body2">
-                                                {Array.from(new Set(ficha.magics.map(m => m.elemento))).join(', ')}
+                                                {Array.from(new Set(ficha.magics?.map(m => m.elemento))).join(', ')}
                                             </Typography>
                                         </Paper>
                                     </Grid>
@@ -645,7 +645,7 @@ export default function FichaDetailsModal({ open, onClose, ficha }: FichaDetails
                                                 Total MP
                                             </Typography>
                                             <Typography variant="h6">
-                                                {ficha.attributes.mp}/{ficha.maxMp}
+                                                {ficha.attributes.mp}/{ficha.attributes.maxMp}
                                             </Typography>
                                         </Paper>
                                     </Grid>

@@ -11,7 +11,7 @@
     "eslint:fix": "eslint --ext .ts,.tsx --ignore-path .gitignore . --fix"
   },
   "engines": {
-    "node": ">=18.17.0"
+    "node": ">=22.12.0"
   },
   "dependencies": {
     "@dicebear/collection": "^7.0.1",
@@ -24,14 +24,18 @@
     "@mui/lab": "^7.0.0-beta.10",
     "@mui/material": "^5.15.2",
     "@mui/styles": "^5.15.3",
+    "@tanstack/query-persist-client-core": "^5.81.5",
+    "@tanstack/query-sync-storage-persister": "^5.81.5",
     "@tanstack/react-query": "^5.17.12",
     "@tanstack/react-query-devtools": "^5.80.10",
+    "@tanstack/react-query-persist-client": "^5.81.5",
     "@tsparticles/engine": "^3.0.2",
     "@tsparticles/react": "^3.0.0",
     "@tsparticles/slim": "^3.0.2",
     "@types/axios": "^0.14.4",
     "@types/chance": "^1.1.6",
     "@types/node-cron": "^3.0.11",
+    "@types/uuid": "^10.0.0",
     "@typescript-eslint/eslint-plugin": "^6.15.0",
     "@typescript-eslint/parser": "^6.15.0",
     "@uidotdev/usehooks": "^2.4.1",
@@ -39,12 +43,14 @@
     "chance": "^1.1.11",
     "chart.js": "^4.4.1",
     "clipboard-copy": "^4.0.1",
+    "colortranslator": "^5.0.0",
     "eslint-config-standard-with-typescript": "^43.0.0",
     "eslint-plugin-unicorn": "^50.0.1",
     "firebase": "^11.10.0",
-    "formik": "^2.4.5",
+    "eslint-plugin-unused-imports": "^4.1.4",
+    "eslint-plugin-unused-vars": "^0.0.3",
     "framer-motion": "^10.16.16",
-    "mongodb": "^6.8.0",
+    "mongodb": "^6.17.0",
     "mongoose": "^8.0.3",
     "next": "14.0.4",
     "next-auth": "^4.24.5",
@@ -61,6 +67,7 @@
     "react-intersection-observer": "^9.16.0",
     "react-parallax": "^3.5.1",
     "react-query": "^3.39.3",
+    "realm-web": "^2.0.1",
     "sharp": "^0.32.6",
     "zod": "^3.22.4"
   },

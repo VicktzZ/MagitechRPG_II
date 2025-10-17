@@ -6,90 +6,91 @@ export const skills: {
     occupation: Skill[],
     class: Record<Classes, Skill[]>,
     subclass: Record<Subclasses, Skill[]>,
-    bonus: Skill[]
+    bonus: Skill[],
+    race: Skill[]
 } = {
     lineage: [
         {
             name: 'Parcimônia',
-            description: 'Para você, menos é mais. Se o valor do seu dado for igual a 2, o resultado será um Acerto Crítico (performará a ação da melhor maneira possível). Se o valor for igual a 1 ainda é considerado falha crítica. 20 no dado ainda significa acerto crítico.',
+            description: 'Para você, menos é mais. Caso você tire um (1) em 1d20 (falha crítica) você pode pagar 5 MP para re-rolar o dado. Limitado a 3 vezes por dia.',
             type: 'Linhagem',
             origin: 'Órfão'
         },
         {
             name: 'Contramedida',
-            description: 'Graças ao seu treinamento, sua habilidade em espionagem supera qualquer outra. Esta habilidade te permite gastar 20 MP em um teste: O mestre é obrigado a te revelar a DT do teste e reduzi-la em 10 pontos ou em 15 pontos se a DT for maior que 35. Também pode ser usada em testes em conjunto. Não é possível utilizar em combate.',
+            description: 'Graças ao seu treinamento, sua habilidade em espionagem supera qualquer outra. Esta habilidade te permite gastar 8 MP em um teste: O mestre é obrigado a te revelar a DT do teste e reduzi-la em 5 pontos ou em 10 pontos se a DT for igual ou maior que 25. Também pode ser usada em testes em conjunto. Não é possível utilizar em combate. Limitado a 3 usos por dia.',
             origin: 'Infiltrado',
             type: 'Linhagem'
         },
         {
             name: 'Intercambiador',
-            description: 'Você tem maior facilidade para aprender as coisas. Sempre que você atinge um novo nível do ORM (1, 5, 10, 15 e 20. Nível 1 incluído), você pode escolher uma magia adicional do mesmo nível e afinidade do seu personagem. No caso de 2 ou mais afinidades, você pode escolher uma magia do estágio atingido para cada uma.',
+            description: 'Você tem maior facilidade para aprender as coisas. Sempre que você atinge um novo nível do ORM (1, 2, 3 e 4. Nível 1 incluído), você pode escolher uma magia adicional do mesmo nível.',
             origin: 'Estrangeiro',
             type: 'Linhagem'
         },
         {
             name: 'Sortudo',
-            description: 'Com sua sorte, você pode passar por qualquer coisa. Se você tirar um valor menor que 10 no dado de qualquer teste você pode pagar 25 MP para passar instantaneamente com um resultado mediano. No caso de teste prolongado, irá contar como 3 sucessos. Limitado a 3 vezes por dia. Não pode ser usada em testes em conjunto.',
+            description: 'Com sua sorte, você pode passar por qualquer coisa. Se você tirar um valor menor que 5 (exceto 1 [falha crítica]) no dado de qualquer teste você pode pagar 10 MP para passar instantaneamente com um resultado mediano. No caso de teste prolongado, irá contar como 3 sucessos. Limitado a 3 vezes por dia. Não pode ser usada em testes em conjunto.',
             origin: 'Camponês',
             type: 'Linhagem'
         },
         {
             name: 'Soberba',
-            description: 'Seu patrimônio lhe permite sair na frente dos outros. Você pode gastar 10 MP para adicionar a sua SAB na soma de qualquer teste.',
+            description: 'Seu patrimônio lhe permite sair na frente dos outros. Você pode gastar 4 MP para adicionar o modificador de sua SAB * 2 na soma de qualquer teste. Limitado a uma vez por teste. Limitado a 5 vezes por dia.',
             origin: 'Burguês',
             type: 'Linhagem'
         },
         {
             name: 'Memorável',
-            description: 'Seu carisma convence o público. Testes que usam CAR podem ser somados a +1d20 além de jogar com vantagem (adiciona +1d20 para o teste) se forem pagos 10 MP.',
+            description: 'Seu carisma convence o público. Você ganha +1 no seu modificador de CAR.',
             origin: 'Artista',
             type: 'Linhagem'
         },
         {
             name: 'Sarado',
-            description: 'Um corpo superior à média. Você recebe +2 LP a cada nível atingido.',
+            description: 'Um corpo superior à média. Você recebe +1 LP a cada nível atingido.',
             origin: 'Ginasta',
             type: 'Linhagem'
         },
         {
             name: 'Ambição',
-            description: 'Sua herança reflete em sua ambição. Em qualquer teste você pode pagar 25 MP: A DT do teste aumenta em 10 ou em 15 pontos (Você escolhe). Se você passar no teste, o mestre é obrigado a te dar o dobro ou o triplo (respectivamente) do efeito normal. Exemplo: Dobro de dano, triplo de deslocamento, dobro de cura de vida, triplo de chance de acerto etc. Se você falhar conta como falha crítica.',
+            description: 'Sua herança reflete em sua ambição. Em qualquer teste você pode pagar 5 MP: A DT do teste aumenta em 10 pontos. Se você passar no teste, o mestre é obrigado a te dar o dobro do efeito normal. Exemplo: Dobro de dano, dobro de cura de vida, dobro de chance de acerto etc. Se você falhar conta como falha crítica. Limitado a 5 vezes por dia.',
             origin: 'Herdeiro',
             type: 'Linhagem'
         },
         {
             name: 'Ultrapassar',
-            description: 'O seu poder sobre-humano ultrapassa os limites. No caso de ataque mágico der um acerto crítico em batalha: Você pode pagar 25 MP e magias ofensivas podem dar até 1d4 vezes de dano crítico. Se o resultado do d4 for 1, você pode pagar mais 10 MP para rodar o d4 de novo ou considere o dano crítico normal. Se na segunda rolagem o resultado permanecer 1, não haverá dano crítico.',
+            description: 'O seu poder sobre-humano ultrapassa os limites. No caso de ataque mágico der um acerto crítico em batalha: Você pode pagar 10 MP e magias ofensivas podem dar até 1d4 vezes de dano crítico. Se o resultado do d4 for 1, você pode pagar mais 5 MP para rodar o d4 de novo ou considere o dano crítico normal. Se na segunda rolagem o resultado permanecer 1, não haverá dano crítico. Limitado a 2 vezes por dia, uma vez por combate.',
             origin: 'Cobaia',
             type: 'Linhagem'
         },
         {
             name: 'Opressor',
-            description: 'A sua silhueta aflige os demais. Você pode pagar 15 MP para adicionar seu bônus de força em rolagens de dano ou chances de acerto se estiver a uma distância de corpo a corpo.',
+            description: 'A sua silhueta aflige os demais. Você pode pagar 5 MP para adicionar seu bônus de força em rolagens de dano ou chances de acerto se estiver a uma distância corpo a corpo com uma arma branca.',
             origin: 'Gangster',
             type: 'Linhagem'
         },
         {
             name: 'Hacking',
-            description: 'A tecnologia lhe dá possibilidades infinitas. Você pode abrir portas, controlar dispositivos eletrônicos, descobrir informações essenciais, inerentes ou pessoais, desativar alarmes e armadilhas, descobrir e identificar magias e descobrir informações sobre inimigos (LP, MP, atributos, habilidades etc.) ao pagar 10 MP para fazer um teste de tecnologia (A DT é proporcional ao alvo do hacking). Você também pode substituir qualquer teste de magia por tecnologia ao pagar 10 MP. Esta habilidade só é válida se o usuário estiver conectado à internet.',
+            description: 'A tecnologia lhe dá possibilidades infinitas. Você pode abrir portas, controlar dispositivos eletrônicos, descobrir informações essenciais, inerentes ou pessoais, desativar alarmes e armadilhas, descobrir e identificar magias e descobrir informações sobre inimigos (LP, MP, atributos, habilidades etc.) ao pagar 5 MP para fazer um teste de tecnologia (A DT é proporcional ao alvo do hacking). Você também pode substituir qualquer teste de magia por tecnologia ao pagar 3 MP. Esta habilidade só é válida se o usuário estiver conectado à internet.',
             origin: 'Hacker',
             type: 'Linhagem'
         },
         {
             name: 'Alopatia',
-            description: 'Seus estudos em anatomia humana superam a média. Você consegue realizar um teste de Medicina de DT 15 para curar a si mesmo e companheiros em 3d6 uma vez por dia, uma vez por pessoa, sem utilizar consumíveis para cura.',
+            description: 'Seus estudos em anatomia humana superam a média. Você consegue realizar um teste de Medicina de DT 15 para curar a si mesmo e companheiros em 3d6+2 duas vezes por dia, uma vez por pessoa, sem utilizar consumíveis para cura.',
             origin: 'Clínico',
             type: 'Linhagem'
         },
         {
             name: 'Poder Bélico',
             description: 'Um armamento pesado é a resposta para todos os problemas. Você possui proficiência com todas as armas e você pode colocar até 4 acessórios científicos e 3 mágicos em suas armas',
-            origin: 'Combatente',
+            origin: 'Atirador',
             type: 'Linhagem'
         },
         {
             name: 'Adaptar-se',
-            description: 'O ser humano foi feito para se adaptar, e você faz isso com maestria. Você pode gastar 5 MP para transformar qualquer teste (inclusive testes com desvantagem) em um teste com vantagem. ',
+            description: 'Seu instinto aventureiro faz com que você seja capaz de se adaptar a qualquer situação. Você pode gastar 5 MP para transformar qualquer teste (inclusive testes com desvantagem) em um teste com vantagem, seja ele baseado em física, magia, resistência, tecnologia ou qualquer outro tipo de teste. Caso o teste já seja com vantagem, adiciona +1d20.',
             origin: 'Aventureiro',
             type: 'Linhagem'
         },
@@ -101,88 +102,88 @@ export const skills: {
         },
         {
             name: 'Talento',
-            description: 'Você tem talento em ter talento. Em qualquer teste você pode gastar 5 MP para adicionar sua LOG a soma final.',
+            description: 'Você tem talento em ter talento. Em qualquer teste você pode gastar 4 MP para adicionar seu modificador de LOG * 2 a soma final. Limitado a 5 vezes por dia.',
             origin: 'Prodígio',
             type: 'Linhagem'
         },
         {
             name: 'Oportunista',
-            description: 'Um iniciante sempre tem várias oportunidades. Você pode escolher duas vantagens. (Visto mais a frente no capítulo Características.)',
+            description: 'Um iniciante sempre tem várias oportunidades. Você pode escolher dois traços positivos.',
             origin: 'Novato',
             type: 'Linhagem'
         },
         {
             name: 'Engenhoca',
-            description: 'Engenhocas facilitam o seu cotidiano. Você pode gastar 10 MP para rodar um teste de criatividade de DT 15 e inventar uma engenhoca para algum teste especificado (você escolhe) e acoplar a qualquer ser vivo. O alvo recebe +2 no teste determinado. Se o teste falhar, a engenhoca dá um bônus de +1 a um teste aleatório. A engenhoca tem uma bateria que dura 2 horas e não pode ser recarregada. Só é possível ter uma engenhoca ativa em um ser vivo por vez. A engenhoca pode ser retirada e realocada em outro ser vivo após colocação. A critério do mestre, você também pode rodar um teste de competência e inventar outras pequenas bugigangas como câmeras, rastreadores, drones, alarmes etc. Essa habilidade só pode ser utilizada se o usuário tiver uma ferramenta mecânica.',
+            description: 'Engenhocas facilitam o seu cotidiano. Você pode gastar 5 MP para rodar um teste de criatividade de DT 15 e inventar uma engenhoca para algum teste especificado (você escolhe) e acoplar a qualquer ser vivo. O alvo recebe +2 no teste determinado. Se o teste falhar, a engenhoca dá um bônus de +1 a um teste aleatório. A engenhoca tem uma bateria que dura 2 horas e não pode ser recarregada. Só é possível ter uma engenhoca ativa em um ser vivo por vez. A engenhoca pode ser retirada e realocada em outro ser vivo após colocação. A critério do mestre, você também pode rodar um teste de competência e inventar outras pequenas bugigangas como câmeras, rastreadores, drones, alarmes etc. Essa habilidade só pode ser utilizada se o usuário tiver uma ferramenta mecânica.',
             origin: 'Inventor',
             type: 'Linhagem'
         },
         {
             name: 'Encantado',
-            description: 'O vício em magia fortalece seu espírito. Você recebe +3 MP a cada nível atingido.',
+            description: 'O vício em magia fortalece seu espírito. Você recebe +1 MP a cada nível atingido.',
             origin: 'Idólatra',
             type: 'Linhagem'
         },
         {
             name: 'Desilusão',
-            description: 'É melhor prevenir do que remediar. Você pode anular qualquer magia se pagar 25 MP. Limitado a 3 vezes por dia.',
+            description: 'É melhor prevenir do que remediar. Você pode anular qualquer magia se pagar 20 MP. Limitado a 2 vezes por dia.',
             origin: 'Cismático',
             type: 'Linhagem'
         },
         {
             name: 'Decodificação Mágica',
-            description: 'Decodificadores são dispositivos que permitem que você leia e altere os códigos mágicos transmitidos pelos satélites. Você pode gastar 10 MP para rodar um teste de competência de DT 15 e decodificar uma magia que você tenha visto ou sentido, e assim, aprender a usá-la. Se o teste falhar, você recebe uma magia aleatória que pode ser útil ou não. O decodificador tem uma memória que armazena até 5 magias decodificadas, e você pode apagar ou substituir as magias armazenadas. Você pode usar as magias decodificadas como se fossem suas, mas elas consomem o dobro de MP. A critério do mestre, você também pode rodar um teste de competência e decodificar outras informações mágicas, como a localização, a intensidade, o tipo etc. Essa habilidade só pode ser utilizada se o usuário tiver um decodificador.',
+            description: 'Decodificadores são dispositivos que permitem que você leia e altere os códigos mágicos transmitidos pelos satélites. Você pode gastar 5 MP para rodar um teste de competência de DT 15 e decodificar uma magia que você tenha visto ou sentido, e assim, aprender a usá-la. Se o teste falhar, você recebe uma magia aleatória que pode ser útil ou não. O decodificador tem uma memória que armazena até 5 magias decodificadas, e você pode apagar ou substituir as magias armazenadas. Você pode usar as magias decodificadas como se fossem suas, mas elas consomem o dobro de MP. A critério do mestre, você também pode rodar um teste de competência e decodificar outras informações mágicas, como a localização, a intensidade, o tipo etc. Essa habilidade só pode ser utilizada se o usuário tiver um decodificador.',
             origin: 'Pesquisador',
             type: 'Linhagem'
         },
         {
             name: 'Rastreamento',
-            description: 'Graças à sua experiência, sua habilidade em seguir pistas e rastrear alvos é incomparável. Esta habilidade te permite gastar 20 MP em um teste: Você pode escolher um alvo que você tenha visto ou sentido, e saber a sua localização exata, a distância, a direção e o tempo que ele levou para chegar até lá. Você também pode saber se o alvo está sob efeito de alguma magia ou se ele tem algum ORM. Esta habilidade pode ser usada em combate ou fora dele.',
+            description: 'Graças à sua experiência, sua habilidade em seguir pistas e rastrear alvos é incomparável. Esta habilidade te permite gastar 5 MP em um teste: Você pode escolher um alvo que você tenha visto ou sentido, e saber a sua localização exata, a distância, a direção e o tempo que ele levou para chegar até lá. Você também pode saber se o alvo está sob efeito de alguma magia ou se ele tem algum ORM. Esta habilidade pode ser usada em combate ou fora dele.',
             origin: 'Investigador',
             type: 'Linhagem'
         }
     ],
     class: {
-        'Lutador': [
+        'Combatente': [
             {
                 'name': 'Bom de Briga',
                 'description': 'Você pode adicionar seu bônus de Luta para dano em ataques corpo-a-corpo.',
-                'origin': 'Lutador',
+                'origin': 'Combatente',
                 'type': 'Classe',
                 'level': 0
             },
             {
                 'name': 'Reflexos Aumentados',
                 'description': 'Você ganha +1 dado em testes de agilidade (incluindo iniciativa).',
-                'origin': 'Lutador',
+                'origin': 'Combatente',
                 'type': 'Classe',
                 'level': 1
             },
             {
                 'name': 'Regeneração Furiosa',
                 'description': 'Quando seus LP ficarem abaixo de 50%, você regenera 1d6 por turno até atingir 50% de seus LP novamente.',
-                'origin': 'Lutador',
+                'origin': 'Combatente',
                 'type': 'Classe',
                 'level': 5
             },
             {
                 'name': 'Armado',
                 'description': 'Armas corpo-a-corpo dão +1 dados do mesmo tipo de dano.',
-                'origin': 'Lutador',
+                'origin': 'Combatente',
                 'type': 'Classe',
                 'level': 10
             },
             {
                 'name': 'Não-Elementalista',
                 'description': 'Magias não-elementais têm +1 dado respectivo para cálculo de dano, cálculo de cura, chance de acerto, etc.',
-                'origin': 'Lutador',
+                'origin': 'Combatente',
                 'type': 'Classe',
                 'level': 15
             },
             {
                 'name': 'Muralha',
                 'description': 'Quando você fica com 10% ou menos de LP, seu ataque aumenta em 50% até você atingir 50% da sua vida novamente.',
-                'origin': 'Lutador',
+                'origin': 'Combatente',
                 'type': 'Classe',
                 'level': 20
             }
@@ -504,7 +505,7 @@ export const skills: {
         ]
     },
     subclass: {
-        // LUTADOR
+        // Combatente
         'Polimorfo': [
             {
                 'name': 'Metamorfose Adaptativa',
@@ -547,6 +548,29 @@ export const skills: {
                 'name': 'Chamado à Glória',
                 'description': 'Três vezes ao dia, uma vez por combate, você pode gastar 12 MP para inspirar todos os aliados dentro de 15 metros. Eles ganham vantagem +2 (jogam +1d20+2) em todos os testes de ataque e resistência até o final do combate. Além disso, no final do turno de cada um, se curam em +1d6 LP e regeneram +1d4 MP.',
                 'origin': 'Comandante',
+                'type': 'Subclasse',
+                'level': 20
+            }
+        ],
+        'Aniquilador': [
+            {
+                'name': 'Força Implacável',
+                'description': 'Seus ataques corpo a corpo se tornam tão avassaladores que destroem as defesas inimigas. Ao atacar, você pode gastar 5 MP para ignorar permanentemente 1d6 pontos de AP do alvo para cada ataque subsequente que você desferir contra ele neste combate. O efeito é cumulativo.',
+                'origin': 'Aniquilador',
+                'type': 'Subclasse',
+                'level': 10
+            },
+            {
+                'name': 'Frenesi de Batalha',
+                'description': 'A dor apenas alimenta sua fúria. Sempre que você sofrer dano igual ou superior a 15% do seu LP máximo em um único ataque, você entra em um frenesi. No seu próximo turno, seu primeiro ataque corpo a corpo causará +3d10 de dano adicional e atordoará o alvo por 1 turno (teste de Resistência Física para negar).',
+                'origin': 'Aniquilador',
+                'type': 'Subclasse',
+                'level': 15
+            },
+            {
+                'name': 'Avatar da Destruição',
+                'description': 'Uma vez por dia, como uma ação completa, você pode gastar 20 MP para se transformar em um avatar da destruição por 3 rodadas. Nesta forma, sua força atinge o ápice: Seus ataques corpo a corpo causam o dobro de dano. Todos os seus ataques ignoram completamente os Pontos de Armadura (AP) do alvo. Você se torna imune aos estados Medo, Atordoado e Paralisado.',
+                'origin': 'Aniquilador',
                 'type': 'Subclasse',
                 'level': 20
             }
@@ -599,6 +623,29 @@ export const skills: {
                 'level': 20
             }
         ],
+        'Duelista': [
+            {
+                'name': 'Analisar Oponente',
+                'description': 'Como uma ação padrão, você pode gastar 8 MP para analisar um alvo que possa ver. Você descobre uma de suas resistências ou vulnerabilidades elementais (à escolha do Mestre) e ganha vantagem (+1d20) em todos os testes de ataque contra esse alvo por 3 turnos.',
+                'origin': 'Duelista',
+                'type': 'Subclasse',
+                'level': 10
+            },
+            {
+                'name': 'Resposta Tática',
+                'description': 'Sua capacidade de antecipação é letal. Uma vez por rodada, quando um inimigo errar um ataque corpo a corpo contra você, você pode usar sua reação para realizar um ataque corpo a corpo imediato contra ele com +5 de bônus no acerto.',
+                'origin': 'Duelista',
+                'type': 'Subclasse',
+                'level': 15
+            },
+            {
+                'name': 'Xeque-Mate',
+                'description': 'Uma vez por dia, você pode prever o movimento final de seu adversário. Ao ser atacado por um inimigo que você tenha sob o efeito da sua habilidade *Analisar Oponente*, você pode usar sua reação e gastar 20 MP para executar um contra-ataque perfeito. O ataque do inimigo automaticamente erra, e você desfere um ataque imediato que é considerado um acerto crítico garantido além de aumentar o dano em +6d6. Após ser atingido pelo seu Xeque-Mate, o alvo fica em estado de choque, sofrendo desvantagem em todos os seus testes de ataque e resistência até o final do seu próximo turno.',
+                'origin': 'Duelista',
+                'type': 'Subclasse',
+                'level': 20
+            }
+        ],
 
         // FEITICEIRO
         'Conjurador': [
@@ -647,50 +694,96 @@ export const skills: {
                 'level': 20
             }
         ],
+        'Caoticista': [
+            {
+                'name': 'Magia Instável',
+                'description': 'Sempre que você conjura uma magia de dano, pode gastar 3 MP adicionais para infundir caos nela. Role 1d6: o dano da magia muda para um tipo elemental correspondente ao resultado (1: Fogo, 2: Água, 3: Ar, 4: Terra, 5: Eletricidade, 6: Trevas ou Luz, à sua escolha). O alvo sofre desvantagem no teste de resistência contra esta magia.',
+                'origin': 'Tecelão do Caos',
+                'type': 'Subclasse',
+                'level': 10
+            },
+            {
+                'name': 'Absorção Entrópica',
+                'description': 'Quando um inimigo conjura uma magia e falha em acertar você (seja por errar o teste de acerto ou por você passar em um teste de resistência), você absorve parte da energia dissipada. Você recupera 1d10 MP e sua próxima magia de dano causa +2d8 de dano adicional.',
+                'origin': 'Tecelão do Caos',
+                'type': 'Subclasse',
+                'level': 15
+            },
+            {
+                'name': 'Zona de Anomalia Arcana',
+                'description': 'Uma vez por dia, como ação completa, você gasta 20 MP para rasgar o tecido da realidade, criando uma zona de magia caótica de 15 metros de raio por 1d4 rodadas. No início do turno de cada criatura (aliada ou inimiga) dentro da zona, role 1d6 para determinar o efeito anômalo que ocorre com ela: 1-2 (Pulso Destrutivo): A criatura sofre 5d10 de dano de um tipo elemental aleatório (role 1d6 novamente para determinar o elemento). 3-4 (Surto Vital): A criatura recupera 5d10 LP. 5 (Deslocamento Espacial): A criatura é teletransportada para um espaço desocupado aleatório dentro da zona. 6 (Onda de Mana): A criatura recupera ou perde 3d8 MP (50% de chance para cada).',
+                'origin': 'Tecelão do Caos',
+                'type': 'Subclasse',
+                'level': 20
+            }
+        ],
 
         // MONGE
-        'Discípulo da Fúria': [
+        'Discípulo': [
             {
                 'name': 'Ecos de Raiva',
                 'description': 'Sempre que você for alvo de um ataque crítico ou perder 50% ou mais de seus LPs, entre automaticamente no estado de Fúria no próximo turno. Além disso, ao perder LP pela primeira vez em combate, entre em fúria.',
-                'origin': 'Discípulo da Fúria',
+                'origin': 'Discípulo',
                 'type': 'Subclasse',
                 'level': 10
             },
             {
                 'name': 'Impacto Devastador',
                 'description': 'Ataques no estado de Fúria ignoram 2 de AP do alvo. Ao entrar em Fúria, o primeiro ataque corpo a corpo no turno causa +1d20 de dano adicional.',
-                'origin': 'Discípulo da Fúria',
+                'origin': 'Discípulo',
                 'type': 'Subclasse',
                 'level': 15
             },
             {
                 'name': 'Fúria Implacável',
                 'description': 'Ganha +2 em todos os testes que envolvem Vigor e Destreza enquanto estiver no estado de Fúria. Caso seus LPs estejam abaixo de 50%, fique em Fúria por tempo ilimitado até se curar ou morrer. Se derrotar um inimigo nesse estado, permaneça em Fúria por mais um turno sem custo adicional.',
-                'origin': 'Discípulo da Fúria',
+                'origin': 'Discípulo',
                 'type': 'Subclasse',
                 'level': 20
             }
         ],
-        'Protetor da Alma': [
+        'Protetor': [
             {
                 'name': 'Presença Tranquilizante',
                 'description': 'Ao entrar no estado de Calma, restaura 2d6 LP para você e aliados em um raio de 5 metros no início do turno. Inimigos na área têm desvantagem em ataques e sofrem -2 em testes de resistência enquanto aliados ganham +2 em testes de Agilidade e curam 1d4 LP ao final de cada turno.',
-                'origin': 'Protetor da Alma',
+                'origin': 'Protetor',
                 'type': 'Subclasse',
                 'level': 10
             },
             {
                 'name': 'Aura Serena',
                 'description': 'Aliados em um raio de 10 metros ganham +2 em testes de resistência mental e curam +1 LP por turno enquanto você estiver vivo.',
-                'origin': 'Protetor da Alma',
+                'origin': 'Protetor',
                 'type': 'Subclasse',
                 'level': 15
             },
             {
                 'name': 'Harmonia',
                 'description': 'Ao entrar em calma 3 vezes consecutivas, você entra no estado de Harmonia: aliados próximos ganham imunidade a dano mágico, +3 em testes envolvendo Destreza e curas feitas por você ou aliados têm +2d8 de bônus. Ao final, cure todos em 3d8 e remova condições debilitantes. Dura até seu próximo turno.',
-                'origin': 'Protetor da Alma',
+                'origin': 'Protetor',
+                'type': 'Subclasse',
+                'level': 20
+            }
+        ],
+        'Mestre': [
+            {
+                'name': 'Golpe de Ki',
+                'description': 'Você pode gastar 4 MP para infundir seus punhos com energia. Por 3 turnos, seus ataques desarmados ganham um alcance de 3 metros (Curto) e causam um dano adicional de 2d8 do tipo Não-Elemental.',
+                'origin': 'Mestre',
+                'type': 'Subclasse',
+                'level': 10
+            },
+            {
+                'name': 'Barreira de Ki',
+                'description': 'Como reação ao ser alvo de um ataque, você pode gastar 8 MP para criar uma barreira de energia pura. Você ganha +10 de AP temporário contra este ataque. Se o ataque for corpo a corpo e for completamente absorvido pela barreira, o atacante é empurrado 3 metros para trás.',
+                'origin': 'Mestre',
+                'type': 'Subclasse',
+                'level': 15
+            },
+            {
+                'name': 'Canhão de Ki Devastador',
+                'description': 'Uma vez por dia, como ação completa, você canaliza toda a sua energia e dispara um raio massivo de 18 metros de comprimento e 3 metros de largura. Todas as criaturas na linha sofrem 15d10 de dano Não-Elemental e devem fazer um teste de Resistência Física ou serão empurradas até o final da linha. Usar esta habilidade o impede de usar qualquer habilidade que consuma MP no seu próximo turno.',
+                'origin': 'Mestre',
                 'type': 'Subclasse',
                 'level': 20
             }
@@ -743,6 +836,29 @@ export const skills: {
                 'level': 20
             }
         ],
+        'Arauto': [
+            {
+                'name': 'Maldição Debilitante',
+                'description': 'Como ação padrão, você pode gastar 8 MP para amaldiçoar um alvo visível por 3 turnos. O alvo amaldiçoado tem desvantagem em todos os testes de resistência (Física, Mental e Mágica). Apenas uma criatura pode ser afetada por esta maldição por vez.',
+                'origin': 'Arauto',
+                'type': 'Subclasse',
+                'level': 10
+            },
+            {
+                'name': 'Vínculo Doloroso',
+                'description': 'Como ação completa, você gasta 12 MP para criar um elo sombrio entre até três inimigos que estejam a até 9 metros um do outro. Por 1d4 rodadas, sempre que um dos alvos vinculados sofrer dano de um ataque ou magia, os outros alvos vinculados sofrem 50% desse dano como dano de trevas.',
+                'origin': 'Arauto',
+                'type': 'Subclasse',
+                'level': 15
+            },
+            {
+                'name': 'Ceifar a Essência',
+                'description': 'Uma vez por dia, você pode marcar uma criatura com a Maldição Final gastando 18 MP. A criatura marcada não pode recuperar LP por nenhum meio mágico. Além disso, se a criatura marcada for derrotada enquanto a maldição estiver ativa, ela explode em energia necrótica, causando 10d8 de dano de Trevas a todos os outros inimigos em um raio de 9 metros.',
+                'origin': 'Arauto',
+                'type': 'Subclasse',
+                'level': 20
+            }
+        ],
 
         // DRUIDA
 
@@ -763,7 +879,7 @@ export const skills: {
             },
             {
                 'name': 'Animação',
-                'description': 'Ao pagar 15 MP, você pode criar suas próprias magias-vivas. Todas elas duram por 2 rodadas e possuem 25 LP e 15 AP. Escolha entre os seguintes tipos de magias-vivas: Inteligente (+5 em testes), Protetora (+3 AP em raio de 3 metros), Lutadora (dá 4d4 de dano, ataca duas vezes por turno), Curadora (cura 1d4 por turno), Guardiã (reanima aliados caídos com 100% LP e MP), ou Espiritual (causa ou cura baseado no número de turnos que ficou viva).',
+                'description': 'Ao pagar 15 MP, você pode criar suas próprias magias-vivas. Todas elas duram por 2 rodadas e possuem 25 LP e 15 AP. Escolha entre os seguintes tipos de magias-vivas: Inteligente (+5 em testes), Protetora (+3 AP em raio de 3 metros), Combatentea (dá 4d4 de dano, ataca duas vezes por turno), Curadora (cura 1d4 por turno), Guardiã (reanima aliados caídos com 100% LP e MP), ou Espiritual (causa ou cura baseado no número de turnos que ficou viva).',
                 'origin': 'Animante',
                 'type': 'Subclasse',
                 'level': 20
@@ -788,6 +904,29 @@ export const skills: {
                 'name': 'Força da Vida',
                 'description': 'Uma vez por combate, gaste 10 MP para manifestar energia vital em todo o campo de batalha por uma rodada. Todos os aliados recuperam 2d8 LP no início de cada turno, aliados invocados ganham +2d8 de dano, inimigos sofrem 1d12 de dano por turno e têm desvantagem em ataques. Ao final, aliados em um raio de 15 metros recebem +10 MP e +10 LP.',
                 'origin': 'Naturomante',
+                'type': 'Subclasse',
+                'level': 20
+            }
+        ],
+        'Guardião': [
+            {
+                'name': 'Postura Bestial',
+                'description': 'No início do seu turno, como ação livre, você pode adotar a postura de um animal, ganhando benefícios até o início do seu próximo turno. Você pode escolher entre: Postura do Urso: Você ganha +3 em testes de Resistência Física e +5 LP temporários. Postura do Lobo: Seus ataques corpo a corpo causam +1d8 de dano adicional e você pode se mover 3 metros após atacar. Postura da Águia: Você ganha vantagem em testes de Percepção e seus ataques à distância ignoram cobertura parcial.',
+                'origin': 'Guardião',
+                'type': 'Subclasse',
+                'level': 10
+            },
+            {
+                'name': 'Mimetismo Feral',
+                'description': 'Você aprende a manifestar fisicamente os aspectos de suas posturas. Como ação de movimento, gastando 8 MP, você pode manifestar uma característica por 1d6 turnos: Garras do Lobo: Seus ataques desarmados causam 3d8 de dano cortante e podem causar hemorragia. Couro do Urso: Você ganha +3 de AP permanente enquanto a transformação durar. Asas da Águia: Você ganha a capacidade de voar com um deslocamento de 9 metros.',
+                'origin': 'Guardião',
+                'type': 'Subclasse',
+                'level': 15
+            },
+            {
+                'name': 'Fúria da Natureza',
+                'description': 'Uma vez por dia, gastando 18 MP, você pode se transformar completamente em uma fera mágica por 2 minutos ou 2 rodadas. Nesta forma, seu modificador de VIG e DES aumentam em +2, você ganha +25 LP temporários, seus ataques desarmados causam 6d10 de dano e você pode atacar duas vezes por turno como uma única ação padrão. Você escolhe a aparência da fera.',
+                'origin': 'Guardião',
                 'type': 'Subclasse',
                 'level': 20
             }
@@ -841,6 +980,29 @@ export const skills: {
                 'level': 20
             }
         ],
+        'Glifomante': [
+            {
+                'name': 'Glifo de Proteção',
+                'description': 'Expandindo sua Magia Simbólica, você pode gastar 8 MP para inscrever um glifo invisível em uma superfície. O glifo dura até ser ativado. Quando uma criatura inimiga se move a até 1,5 metro dele, o glifo explode. Você define o efeito ao criá-lo: Glifo de Alarme: Alerta você mentalmente. Glifo Explosivo: Causa 5d8 de dano de um elemento à sua escolha. Glifo de Imobilização: Força o alvo a um teste de Reflexos ou fica imobilizado por 2 turnos.',
+                'origin': 'Glifomante',
+                'type': 'Subclasse',
+                'level': 10
+            },
+            {
+                'name': 'Sentinela Rúnica',
+                'description': 'Como ação completa, você pode gastar 12 MP para desenhar um conjunto de runas no chão que se erguem para formar um golem arcano. O golem tem 40 LP, 15 AP e ataca uma vez por turno, causando 3d10 de dano Não-Elemental. Ele dura 1d6 turnos e obedece a seus comandos mentais.',
+                'origin': 'Glifomante',
+                'type': 'Subclasse',
+                'level': 15
+            },
+            {
+                'name': 'Selo do Arcanista Supremo',
+                'description': 'Uma vez por dia, gastando 20 MP, você leva uma rodada inteira para inscrever um grande círculo rúnico de 9 metros de raio no chão. O círculo dura 5 turnos. Você escolhe seu efeito ao criá-lo: Selo de Fortalecimento: Aliados dentro do círculo recuperam 2d6 LP no início de seus turnos e têm vantagem em todos os ataques. Selo de Supressão: Inimigos dentro do círculo têm seu deslocamento reduzido pela metade e não podem usar magias de Nível 3 ou superior.',
+                'origin': 'Glifomante',
+                'type': 'Subclasse',
+                'level': 20
+            }
+        ],
 
         // LADINO
 
@@ -886,6 +1048,29 @@ export const skills: {
                 'name': 'Ritmo da Batalha',
                 'description': 'Uma vez por combate, você pode gastar 10 MP para entrar em um estado de domínio total por duas rodadas: realize dois ataques como parte de uma única ação padrão, todos os ataques ganham +2 em chance de acerto e ignoram 2 pontos de armadura. Inimigos atacados por você têm desvantagem em seus ataques no turno seguinte.',
                 'origin': 'Estrategista',
+                'type': 'Subclasse',
+                'level': 20
+            }
+        ],
+        'Embusteiro': [
+            {
+                'name': 'Imagem Espelhada',
+                'description': 'Como ação padrão, você pode gastar 6 MP para criar uma duplicata ilusória perfeita de si mesmo. A duplicata dura 1 minuto ou até ser atingida. Enquanto a duplicata existir, os inimigos devem fazer um teste de Percepção (DT 15) para determinar qual é o verdadeiro alvo. Se falharem, atacam a imagem. Você pode usar sua ação bônus para mover a imagem.',
+                'origin': 'Embusteiro',
+                'type': 'Subclasse',
+                'level': 10
+            },
+            {
+                'name': 'Passo do Enganador',
+                'description': 'Como uma ação de movimento, você pode gastar 8 MP para manipular a percepção espacial e trocar de lugar instantaneamente com um alvo. Você pode escolher: Trocar de lugar com sua Imagem Espelhada ativa. Trocar de lugar com uma criatura inimiga a até 9 metros. O alvo pode resistir com um teste de Resistência Mental. Seu primeiro ataque realizado após usar o Passo do Enganador no mesmo turno ganha vantagem (+1d20).',
+                'origin': 'Embusteiro',
+                'type': 'Subclasse',
+                'level': 15
+            },
+            {
+                'name': 'Fantasma da Traição',
+                'description': 'Uma vez por dia, como ação completa, você pode gastar 18 MP para implantar uma poderosa ilusão na mente de um alvo. O alvo deve fazer um teste de Resistência Mental. Se falhar, por 1d4 turnos, ele enxerga seus próprios aliados como os inimigos mais ameaçadores no campo de batalha e usará suas ações para atacá-los com força total.',
+                'origin': 'Embusteiro',
                 'type': 'Subclasse',
                 'level': 20
             }
@@ -967,7 +1152,7 @@ export const skills: {
         },
         {
             'name': 'Palavras que Movem',
-            'description': 'Pode convencer NPCs a realizar uma ação específica, rolando Argumentação com vantagem.',
+            'description': 'Pode convencer NPCs a realizar uma ação específica, rolando Diplomacia com vantagem.',
             'type': 'Profissão',
             'origin': 'Político'
         },
@@ -1030,6 +1215,44 @@ export const skills: {
             'description': 'Pode evitar a morte uma vez por cena, ficando com 1 PV em vez de cair.',
             'type': 'Profissão',
             'origin': 'Desempregado'
+        }
+    ],
+    race: [
+        {
+            'name': 'Adaptabilidade Essencial',
+            'description': 'Sua capacidade de adaptação, que levou à criação da magia artificial, permite que você aprenda mais rapidamente. Você ganha dois pontos de perícia adicional para distribuir em qualquer teste à sua escolha a cada 5 níveis de personagem.',
+            'type': 'Raça',
+            'origin': 'Humano'
+        },
+        {
+            'name': 'Otimização Cibernética',
+            'description': 'Sua fusão com a máquina permite otimizar sistemas. Uma vez por combate, você pode gastar 1 MP para recalibrar sua mira ou defesa. Seus próximos 2 ataques ganham +2 de bônus no teste de acerto, ou você ganha +1 AP temporário por 1 turno (a sua escolha).',
+            'type': 'Raça',
+            'origin': 'Ciborgue'
+        },
+        {
+            'name': 'Resiliência Sintética',
+            'description': 'Sua construção 100% mecânica  o torna resistente a certas condições. Você tem vantagem em testes de Resistência Física contra efeitos de envenenamento e doença. Além disso, quando for alvo de dano de eletricidade, o dano é reduzido em 1d10.',
+            'type': 'Raça',
+            'origin': 'Humanoide'
+        },
+        {
+            'name': 'Carga Mágica',
+            'description': 'Sua essência mágica infunde seus sistemas. Uma vez por combate, você pode escolher carregar um aliado (ou a si mesmo) com energia mágica. O alvo regenera 1 MP por turno por uma rodada. Essa habilidade pode ser usada uma vez por combate.',
+            'type': 'Raça',
+            'origin': 'Autômato'
+        },
+        {
+            'name': 'Surto Adaptativo',
+            'description': 'A energia mágica imbuída em você pode se manifestar em momentos de estresse. Quando seus LPs caírem abaixo de 25% do total, você ganha 1d6 de dano extra em todos os seus ataques por uma rodada. Essa habilidade pode ser ativada uma vez por combate.',
+            'type': 'Raça',
+            'origin': 'Mutante'
+        },
+        {
+            'name': 'Essência Fluida',
+            'description': 'Sendo um ser de pura magia, sua essência é maleável. Você pode gastar 1 MP adicional ao conjurar uma magia para aumentar seu alcance em um grau (Curto para Padrão, Padrão para Médio, etc.) ou para adicionar +2 à DT (Dificuldade de Teste) de um teste de resistência do alvo contra sua magia.',
+            'type': 'Raça',
+            'origin': 'Magia-viva'
         }
     ]
 }

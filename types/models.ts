@@ -1,5 +1,5 @@
 import type { MessageType } from '@enums'
-import type { Armor, Attributes, Expertises, Ficha, Item, Magic, Skill, Weapon } from './ficha'
+import type { Attributes, CampaignCustomArmor, CampaignCustomItem, CampaignCustomWeapon, Expertises, Ficha, Magic, Skill } from './ficha'
 
 export interface User {
     _id?: string
@@ -70,10 +70,32 @@ export interface Campaign {
     myFicha?: Ficha | null
     session: Session
     custom: {
-        items: Item[] | Armor[] | Weapon[]
         magias: Magia[]
         creatures: Creature[]
         skills: Skill[]
+        items: {
+            weapon: CampaignCustomWeapon[]
+            armor: CampaignCustomArmor[]
+            item: CampaignCustomItem[]
+        }
+    }
+}
+
+export interface CampaignSession {
+    players: Player[]
+    admin: string[]
+    session: Session
+}
+
+export interface CampaignData {
+    campaign: Campaign
+    fichas: Ficha[]
+    isUserGM: boolean
+    code: string
+    users: {
+        player: User[]
+        admin: User[],
+        all: User[]
     }
 }
 

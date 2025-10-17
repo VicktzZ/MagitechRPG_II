@@ -1,5 +1,5 @@
 import { PusherEvent } from '@enums';
-import Campaign from '@models/campaign';
+import Campaign from '@models/db/campaign';
 import { pusherServer } from '@utils/pusher';
 import { connectToDb } from '@utils/database';
 import type { NextRequest } from 'next/server';

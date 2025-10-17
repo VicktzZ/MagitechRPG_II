@@ -2,7 +2,7 @@ import { pusherServer } from '@utils/pusher';
 import type { NextRequest } from 'next/server'
 import type { EventData } from '@types';
 
-const handler = async (req: NextRequest, res: Response): Promise<Response> => {
+const handler = async (req: NextRequest ): Promise<Response> => {
     try {
         const eventData: EventData = await req.json()    
     
