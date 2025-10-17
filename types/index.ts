@@ -35,7 +35,10 @@ import type {
     MagicPowerSkill,
     Status,
     Element,
-    ExpertisesNames
+    ExpertisesNames,
+    CampaignCustomWeapon,
+    CampaignCustomArmor,
+    CampaignCustomItem
 } from './ficha';
 
 import type { 
@@ -183,5 +186,8 @@ export type {
     DiceEffectOperation,
     DiceEffectType,
     DiceEffectTarget,
-    RollResult
+    RollResult,
+    CampaignCustomWeapon,
+    CampaignCustomArmor,
+    CampaignCustomItem
 }

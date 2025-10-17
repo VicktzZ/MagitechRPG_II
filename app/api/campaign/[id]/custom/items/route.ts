@@ -2,6 +2,7 @@ import { connectToDb } from '@utils/database'
 import Campaign from '@models/db/campaign'
 import { pusherServer } from '@utils/pusher'
 import { PusherEvent } from '@enums'
+import { v4 as uuidv4 } from 'uuid';
 
 export async function POST(req: Request, { params }: { params: { id: string } }): Promise<Response> {
     try {
@@ -16,7 +17,12 @@ export async function POST(req: Request, { params }: { params: { id: string } })
 
         const campaign = await Campaign.findByIdAndUpdate(
             id,
-            { $push: { [`custom.items.${type}`]: item } },
+            { $push: {
+                [`custom.items.${type}`]: {
+                    ...item,
+                    _id: `${type}-${uuidv4()}`
+                }
+            } },
             { new: true }
         );
 

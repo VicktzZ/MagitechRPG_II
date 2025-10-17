@@ -12,6 +12,7 @@ import { useFichaForm } from '@contexts/FichaFormProvider';
 import { defaultItems, defaultItem } from '@constants/defaultItems';
 import type { Item } from '@types';
 import { useCampaignContext } from '@contexts';
+import { campaignService } from '@services';
 
 export const InventoryCreateItemModal = memo(({
     action,
@@ -26,7 +27,7 @@ export const InventoryCreateItemModal = memo(({
     const matches = useMediaQuery(theme.breakpoints.down('md'));
     const { enqueueSnackbar } = useSnackbar();
     const fichaForm = useFichaForm();
-    const { campaign } = useCampaignContext();
+    const { campaign, isUserGM } = useCampaignContext();
 
     const form = useForm<ItemFormFields>({
         mode: 'onChange',
@@ -39,7 +40,13 @@ export const InventoryCreateItemModal = memo(({
 
     const itemKindOptions = mapArrayToOptions([ 'Especial', 'Utilidade', 'Consumível', 'Item Chave', 'Munição', 'Capacidade', 'Padrão' ]);
     const baseItemOptions = useMemo(() => [
-        campaign.custom.items.item.length > 0 && { header: 'Personalizados', options: mapArrayToOptions(campaign.custom.items.item.map(item => item.name)) },
+        campaign.custom.items.item.length > 0 && {
+            header: 'Personalizados',
+            options: mapArrayToOptions(
+                campaign.custom.items.item.map(item => ({ name: item.name, id: item._id, value: item.name })),
+                isUserGM
+            )
+        },
         { header: 'Geral', options: [ { value: 'Nenhum', label: 'Nenhum' } ] },
         { header: 'Científico', options: mapArrayToOptions(defaultItems.cientificos.map((item: Item) => item.name).sort()) },
         { header: 'Mágico', options: mapArrayToOptions(defaultItems.magicos.map((item: Item) => item.name).sort()) }
@@ -89,6 +96,11 @@ export const InventoryCreateItemModal = memo(({
                         fullWidth
                         hasGroups
                         menuStyle={{ maxHeight: 8 }}
+                        onDelete={async (id) => {
+                            await campaignService.deleteCustomItem(campaign._id!, 'item', id);
+                            enqueueSnackbar('Item removido com sucesso!', toastDefault('itemDeleted', 'success'));
+                            action();
+                        }}
                     />
                 }
             >

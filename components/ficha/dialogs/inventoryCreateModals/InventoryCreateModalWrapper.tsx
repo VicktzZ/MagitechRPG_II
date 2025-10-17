@@ -30,11 +30,25 @@ export interface CommonItemFields {
 
 export type ItemFormData = CommonItemFields & Record<string, any>;
 
-export function mapArrayToOptions(items: string[]): Array<{ value: string, label: string }> {
-    return items?.map(item => ({
-        value: item,
-        label: item
-    }));
+export function mapArrayToOptions(
+    items: string[] | Array<{ name: string, id: string, value: string }>,
+    isDeleteEnabled = false
+): Array<{ value: string, label: string, id?: string, isDeleteEnabled?: boolean }> {
+    return items?.map(item => {
+        if (typeof item === 'string') {
+            return {
+                value: item,
+                label: item,
+                isDeleteEnabled
+            };
+        }
+        return {
+            value: item.value,
+            id: item.id,
+            label: item.name,
+            isDeleteEnabled
+        };
+    });
 }
 
 interface WrapperProps {

@@ -244,6 +244,18 @@ export interface Weapon<T extends 'Leve' | 'Pesada' = any> {
     }
 }
 
+export interface CampaignCustomWeapon extends Weapon {
+    _id: string
+}
+
+export interface CampaignCustomArmor extends Armor {
+    _id: string
+}
+
+export interface CampaignCustomItem extends Item {
+    _id: string
+}
+
 export interface Armor {
     name: string
     description: string

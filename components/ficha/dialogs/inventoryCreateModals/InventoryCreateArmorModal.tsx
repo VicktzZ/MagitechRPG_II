@@ -13,6 +13,7 @@ import { useFichaForm } from '@contexts/FichaFormProvider';
 import { deafultArmors, defaultArmor } from '@constants/defaultArmors';
 import type { Armor } from '@types';
 import { useCampaignContext } from '@contexts';
+import { campaignService } from '@services';
 
 /**
  * Modal para criação de armaduras de inventário
@@ -30,7 +31,7 @@ export const InventoryCreateArmorModal = memo(({
     const matches = useMediaQuery(theme.breakpoints.down('md'));
     const { enqueueSnackbar } = useSnackbar();
     const fichaForm = useFichaForm();
-    const { campaign } = useCampaignContext();
+    const { campaign, isUserGM } = useCampaignContext();
 
     type ArmorFormFields = z.infer<typeof armorSchema>;
 
@@ -65,7 +66,13 @@ export const InventoryCreateArmorModal = memo(({
     }, [ enqueueSnackbar, action, fichaForm ]);
 
     const baseArmorsOptions = useMemo(() => [
-        campaign.custom.items.armor.length > 0 && { header: 'Personalizados', options: mapArrayToOptions(campaign.custom.items.armor.map(item => item.name)) },
+        campaign.custom.items.armor.length > 0 && {
+            header: 'Personalizados',
+            options: mapArrayToOptions(
+                campaign.custom.items.armor.map(item => ({ name: item.name, id: item._id, value: item.name })),
+                isUserGM
+            )
+        },
         { header: 'Geral', options: [ { value: 'Nenhum', label: 'Nenhum' } ] },
         { header: 'Leve', options: mapArrayToOptions(deafultArmors.leve.map(item => item.name).sort()) },
         { header: 'Pesada', options: mapArrayToOptions(deafultArmors.pesada.map(item => item.name).sort()) }
@@ -99,6 +106,11 @@ export const InventoryCreateArmorModal = memo(({
                         fullWidth
                         hasGroups
                         menuStyle={{ maxHeight: 8 }}
+                        onDelete={async (id) => {
+                            await campaignService.deleteCustomItem(campaign._id!, 'armor', id);
+                            enqueueSnackbar('Armadura removida com sucesso!', toastDefault('itemDeleted', 'success'));
+                            action();
+                        }}
                     />
                 }
             >

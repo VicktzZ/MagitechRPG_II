@@ -28,6 +28,7 @@ import {
 } from '@constants/dataTypes';
 import type { Weapon } from '@types';
 import { useCampaignContext } from '@contexts';
+import { campaignService } from '@services';
 
 export const InventoryCreateWeaponModal = memo(({
     action,
@@ -43,7 +44,7 @@ export const InventoryCreateWeaponModal = memo(({
     const { enqueueSnackbar } = useSnackbar();
     const fichaForm = useFichaForm();
     const audio = useAudio('/sounds/sci-fi-interface-zoom.wav');
-    const { campaign } = useCampaignContext()
+    const { campaign, isUserGM } = useCampaignContext()
 
     const weaponForm = useForm<WeaponFormFields>({
         mode: 'onChange',
@@ -78,7 +79,13 @@ export const InventoryCreateWeaponModal = memo(({
 
     // Memoizar as opções de armas bases agrupadas
     const baseWeaponOptions = useMemo(() => [
-        campaign.custom.items.weapon.length > 0 && { header: 'Personalizados', options: mapArrayToOptions(campaign.custom.items.weapon.map(item => item.name)) },
+        campaign.custom.items.weapon.length > 0 && {
+            header: 'Personalizados',
+            options: mapArrayToOptions(
+                campaign.custom.items.weapon.map(item => ({ name: item.name, id: item._id, value: item.name })),
+                isUserGM
+            )
+        },
         { header: 'Geral', options: [ { value: 'Nenhum', label: 'Nenhum' } ] },
         { header: 'Corpo a corpo', options: mapArrayToOptions(deafultWeapons.melee.map(item => item.name).sort()) },
         { header: 'Longo alcance', options: mapArrayToOptions(deafultWeapons.ranged.map(item => item.name).sort()) },
@@ -136,6 +143,11 @@ export const InventoryCreateWeaponModal = memo(({
                         fullWidth
                         hasGroups
                         menuStyle={{ maxHeight: 8 }}
+                        onDelete={async (id) => {
+                            await campaignService.deleteCustomItem(campaign._id!, 'weapon', id);
+                            enqueueSnackbar('Arma removida com sucesso!', toastDefault('itemDeleted', 'success'));
+                            action();
+                        }}
                     />
                 }
             >
