@@ -33,8 +33,7 @@ interface ExpertiseProps {
 
 export default function Expertise({ 
     name,
-    expertise
-    ,
+    expertise,
     disabled,
     edit,
     onClick
