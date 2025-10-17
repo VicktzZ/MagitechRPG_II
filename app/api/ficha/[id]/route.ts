@@ -1,6 +1,6 @@
 import Ficha from '@models/db/ficha';
 import Magia from '@models/db/magia';
-import Poder from '@models/db/poder';
+import Poder from '@models/db/power';
 import { type Ficha as FichaType } from '@types';
 import { connectToDb } from '@utils/database';
 

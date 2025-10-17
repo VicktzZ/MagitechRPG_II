@@ -1,52 +1,45 @@
-import type { Magia as MagiaType } from '@types';
+import { z } from 'zod';
+import {
+    collection,
+    doc,
+    Firestore,
+    getFirestore,
+    type FirestoreDataConverter,
+    type QueryDocumentSnapshot,
+    type SnapshotOptions,
+} from 'firebase/firestore';
+import { Magia } from '@types';
+import { app } from '@utils/database';
+import { ElementoToUpperEnum } from '@schemas/zodEnums';
 
-import { Schema, model, models } from 'mongoose';
+const spellSchema = z.object({
+    _id: z.string(),
+    'elemento': ElementoToUpperEnum,
+    'nome': z.string(),
+    'nível': z.number(),
+    'custo': z.number(),
+    'tipo': z.string(),
+    'execução': z.string(),
+    'alcance': z.string(),
+    'estágio 1': z.string(),
+    'estágio 2': z.string().optional(),
+    'estágio 3': z.string().optional(),
+    'maestria': z.string().optional()
+});
 
-const magiaSchema = new Schema<MagiaType>({
-    elemento: {
-        type: String,
-        required: [ true, 'Elemento is required!' ]
+const spellConverter: FirestoreDataConverter<Magia> = {
+    toFirestore: (data) => {
+        const { _id, ...rest } = spellSchema.parse(data);
+        return rest;
     },
-    nome: {
-        type: String,
-        required: [ true, 'Name is required!' ]
+    fromFirestore: (snap: QueryDocumentSnapshot, options: SnapshotOptions) => {
+        const raw = snap.data(options) as any;
+        const parsed = spellSchema.omit({ _id: true }).parse(raw);
+        return { _id: snap.id, ...parsed };
     },
-    custo: {
-        type: Number,
-        required: [ true, 'Custo is required!' ],
-        default: 1
-    },
-    'nível': {
-        type: Number,
-        required: [ true, 'Nível is required!' ],
-        default: 1
-    },
-    tipo: {
-        type: String,
-        required: [ true, 'Tipo is required!' ]
-    },
-    'execução': {
-        type: String,
-        required: [ true, 'Execução is required!' ]
-    },
-    alcance: {
-        type: String,
-        required: [ true, 'Alcance is required!' ]  
-    },
-    'estágio 1': {
-        type: String
-    },
-    'estágio 2': {
-        type: String
-    },
-    'estágio 3': {
-        type: String
-    },
-    maestria: {
-        type: String
-    }
-})
+};
 
-const Magia = models['Magia'] || model('Magia', magiaSchema)
+export const spellCollection = collection(getFirestore(app), 'spells').withConverter(spellConverter);
 
-export default Magia
+export const spellDoc = (id: string) =>
+    doc(spellCollection, id);

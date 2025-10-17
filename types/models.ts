@@ -193,4 +193,9 @@ type Elemento =
     'ELETRICIDADE' |
     'TREVAS' |
     'LUZ' |
+    'SANGUE' |
+    'VÁCUO' |
+    'PSÍQUICO' |
+    'RADIAÇÃO' |
+    'EXPLOSÃO' |
     'NÃO-ELEMENTAL'

@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
 'use client'
 // TODO: !IMPORTANTE - Ampliar segurança da API (autenticação, cors)
+// TODO: !IMPORTANTE - Colocar autenticação em Firebase
 
 import { Footer, LandingPageHeader } from '@layout'
 import { 

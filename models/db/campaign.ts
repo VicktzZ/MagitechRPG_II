@@ -1,142 +1,74 @@
+import { z } from 'zod';
+import { collection, doc, getFirestore, type FirestoreDataConverter, type QueryDocumentSnapshot, type SnapshotOptions } from 'firebase/firestore';
 import type { Campaign as CampaignType } from '@types';
-import { Schema, model, models } from 'mongoose';
+import { app } from '@utils/database';
 
-const messageSchema = new Schema({
-    text: {
-        type: String,
-        required: true
-    },
-    by: {
-        id: {
-            type: String,
-            required: true
-        },
-        image: {
-            type: String,
-            required: true
-        },
-        name: {
-            type: String,
-            required: true
-        }
-    },
-    timestamp: {
-        type: Date,
-        required: true,
-        default: Date.now
-    }
+// Subschemas
+const playerSchema = z.object({
+    userId: z.string(),
+    fichaId: z.string(),
 });
 
-const noteSchema = new Schema({
-    content: {
-        type: String,
-        required: true
-    },
-    timestamp: {
-        type: Date,
-        required: true,
-        default: Date.now
-    }
+const messageSchema = z.object({
+    id: z.string().optional(),
+    timestamp: z.date().optional(),
+    type: z.string(), // MessageType (usar string para não acoplar enum runtime)
+    text: z.string(),
+    isHTML: z.boolean().optional(),
+    by: z.object({
+        id: z.string(),
+        image: z.string(),
+        name: z.string(),
+        isBot: z.boolean().optional(),
+    }),
 });
 
-const campaignSchema = new Schema<CampaignType>({
-    admin: {
-        type: [ String ],
-        required: [ true, 'Admin is required!' ]
-    },
-
-    campaignCode: {
-        type: String,
-        required: [ true, 'Campaign ID is required!' ]
-    },
-    
-    title: {
-        type: String,
-        required: [ true, 'Campaign title is required!' ]
-    },
-
-    description: {
-        type: String,
-        required: [ true, 'Campaign description is required!' ]
-    },
-
-    players: {
-        type: [ Object ],
-        required: [ true, 'Players is required!' ],
-        default: []
-    },
-
-    notes: {
-        type: [ noteSchema ],
-        default: []
-    },
-
-    custom: {
-        type: new Schema({
-            items: {
-                weapon: {
-                    type: [ Object ],
-                    default: []
-                },
-                armor: {
-                    type: [ Object ],
-                    default: []
-                },
-                item: {
-                    type: [ Object ],
-                    default: []
-                }
-            },
-            magias: {
-                type: [ Object ],
-                default: []
-            },
-            creatures: {
-                type: [ Object ],
-                default: []
-            },
-            skills: {
-                type: [ Object ],
-                default: []
-            }
-        }, { _id: false }),
-        default: () => ({
-            items: {
-                weapon: [],
-                armor: [],
-                item: []
-            },
-            magias: [],
-            creatures: [],
-            skills: []
-        })
-    },
-    
-    session: {
-        type: new Schema({
-            users: {
-                type: [ String ],
-                default: []
-            },
-            messages: {
-                type: [ messageSchema ],
-                default: []
-            }
-        }, { _id: false }),
-        required: [ true, 'Session is required!' ],
-        default: () => ({
-            users: [],
-            messages: []
-        })
-    }
+const noteSchema = z.object({
+    _id: z.string().optional(),
+    content: z.string(),
+    timestamp: z.date(),
 });
 
-campaignSchema.methods['clearMessagesIfLimitReached'] = function(limit: number) {
-    if (this['session'].messages.length > limit) {
-        this['session'].messages = this['session'].messages.slice(-limit);
-    }
+const sessionSchema = z.object({
+    users: z.array(z.string()),
+    messages: z.array(messageSchema).optional(),
+});
+
+const campaignSchema = z.object({
+    _id: z.string().optional(),
+    admin: z.array(z.string()),
+    campaignCode: z.string(),
+    title: z.string(),
+    description: z.string(),
+    players: z.array(playerSchema),
+    notes: z.array(noteSchema),
+    myFicha: z.any().nullable().optional(),
+    session: sessionSchema,
+    custom: z.object({
+        magias: z.array(z.any()),
+        creatures: z.array(z.any()),
+        skills: z.array(z.any()),
+        items: z.object({
+            weapon: z.array(z.any()),
+            armor: z.array(z.any()),
+            item: z.array(z.any()),
+        }),
+    }),
+});
+
+const campaignConverter: FirestoreDataConverter<CampaignType> = {
+    toFirestore: (data) => {
+        const { _id, ...rest } = campaignSchema.parse(data);
+        return rest;
+    },
+    fromFirestore: (snap: QueryDocumentSnapshot, options: SnapshotOptions) => {
+        const raw = snap.data(options) as unknown;
+        const parsed = campaignSchema.omit({ _id: true }).parse(raw);
+        return { _id: snap.id, ...parsed } as CampaignType;
+    },
 };
 
-const Campaign = models['Campaign'] || model('Campaign', campaignSchema);
+export const campaignCollection = collection(getFirestore(app), 'campaigns').withConverter(campaignConverter);
 
-export default Campaign;
+export const campaignDoc = (id: string) =>
+    doc(campaignCollection, id);

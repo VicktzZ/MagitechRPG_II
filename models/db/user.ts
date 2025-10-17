@@ -1,30 +1,37 @@
-import { Schema, model, models } from 'mongoose';
+import { z } from 'zod';
+import {
+    collection,
+    doc,
+    Firestore,
+    getFirestore,
+    type FirestoreDataConverter,
+    type QueryDocumentSnapshot,
+    type SnapshotOptions,
+} from 'firebase/firestore';
+import { User } from '@types';
+import { app } from '@utils/database';
 
-const userSchema = new Schema({
-    email: {
-        type: String,
-        unique: [ true, 'Email already exists!' ],
-        required: [ true, 'Email is required!' ]
+const userSchema = z.object({
+    _id: z.string(),
+    name: z.string(),
+    email: z.string(),
+    image: z.string(),
+    fichas: z.array(z.string())
+});
+
+const userConverter: FirestoreDataConverter<User> = {
+    toFirestore: (data) => {
+        const { _id, ...rest } = userSchema.parse(data);
+        return rest;
     },
-
-    name: {
-        type: String,
-        required: [ true, 'Name is required!' ]
-        // match: [ /^(?=.{3,20}$)(?![_.])(?!.*[_.]{2})[a-zA-Z0-9._]+(?<![_.])$/, 'Username invalid, it should contain 3-20 alphanumeric letters and be unique!' ]
+    fromFirestore: (snap: QueryDocumentSnapshot, options: SnapshotOptions) => {
+        const raw = snap.data(options) as any;
+        const parsed = userSchema.omit({ _id: true }).parse(raw);
+        return { _id: snap.id, ...parsed };
     },
+};
 
-    image: {
-        type: String
-    },
+export const userCollection = collection(getFirestore(app), 'users').withConverter(userConverter);
 
-    fichas: {
-        type: [ Schema.Types.ObjectId ],
-        ref: 'Ficha',
-        required: true,
-        default: []
-    }
-})
-
-const User = models['User'] || model('User', userSchema)
-
-export default User
+export const userDoc = (id: string) =>
+    doc(userCollection, id);

@@ -1,10 +1,13 @@
 declare global {
     namespace NodeJS {
         interface ProcessEnv {
-            MONGODB_URI: string
-            MONGO_ATLAS_PUBLIC_KEY: string
-            MONGO_ATLAS_PRIVATE_KEY: string
-            MONGO_ATLAS_PROJECT_ID: string
+            FIREBASE_APIKEY: string
+            FIREBASE_AUTHDOMAIN: string
+            FIREBASE_PROJECT_ID: string
+            FIREBASE_STORAGEBUCKET: string
+            FIREBASE_MESSAGING_SENDER_ID: string
+            FIREBASE_APP_ID: string
+            FIREBASE_MEASUREMENT_ID: string
             GOOGLE_CLIENT_ID: string
             GOOGLE_CLIENT_SECRET: string
             DISCORD_CLIENT_ID: string

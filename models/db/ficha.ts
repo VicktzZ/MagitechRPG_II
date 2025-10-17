@@ -1,328 +1,224 @@
-import type { Ficha as FichaType } from '@types';
-import { Schema, model, models } from 'mongoose';
+import { z } from 'zod';
+import {
+    collection,
+    doc,
+    Firestore,
+    getFirestore,
+    type FirestoreDataConverter,
+    type QueryDocumentSnapshot,
+    type SnapshotOptions,
+} from 'firebase/firestore';
+import { Ficha } from '@types';
+import { app } from '@utils/database';
 
-const fichaSchema = new Schema<FichaType>({
-    playerName: {
-        type: String,
-        required: [ true, 'Player name is required!' ]
-    },
-    mode: {
-        type: String,
-        required: [ true, 'Mode is required!' ]
-    },
-    name: {
-        type: String,
-        required: [ true, 'Name is required!' ]
-    },
-    userId: {
-        type: String,
-        required: [ true, 'userId is required!' ]
-    },
-    age: {
-        type: Number,
-        required: [ true, 'Age is required!' ]
-    },
-    class: {
-        type: String,
-        required: [ true, 'Class is required!' ]
-    },
-    capacity: {
-        type: Object,
-        required: [ true, 'Capacity is required!' ]
-    },
-    ORMLevel: {
-        type: Number,
-        default: 1
-    },
-    race: {
-        type: String,
-        required: [ true, 'Race is required!' ]
-    },
-    displacement: {
-        type: Number,
-        required: [ true, 'Displacement is required!' ]
-    },
-    lineage: {
-        type: String,
-        required: [ true, 'Lineage is required!' ]
-    },
-    inventory: {
-        money: {
-            type: Number,
-            default: 0
-        },
-        items: {
-            type: [ Object ],
-            default: [
-                {
-                    name: 'Celular',
-                    description: 'Celular institucional dado a todos estudantes da UFEM.',
-                    kind: 'Especial',
-                    weight: 0.2
-                },
-                {
-                    name: 'ORM',
-                    description: 'Um ORM pode ser qualquer coisa desde que esteja embutido com um Zeptachip. Este dispositivo é necessário para manipular qualquer forma de magia.',
-                    kind: 'Especial',
-                    level: 1,
-                    weight: 0.1
-                }
-            ]
-        },
-        weapons: {
-            type: [ Object ],
-            default: [
-                {
-                    name: 'Bastão Retrátil',
-                    description: 'Um bastão retrátil dado a estudantes da UFEM como arma de defesa pessoal',
-                    categ: 'Arma Branca (Leve)',
-                    range: 'Corpo-a-corpo',
-                    weight: 0.2,
-                    hit: 'des',
-                    bonus: 'Agilidade',
-                    effect: {
-                        value: '2d6',
-                        critValue: '4d6',
-                        critChance: 20,
-                        kind: 'damage',
-                        effectType: 'Impactante'
-                    }
-                }
-            ]
-        },
-        armors: {
-            type: [ Object ],
-            default: [
-                {
-                    name: 'Uniforme da UFEM',
-                    description: 'Um uniforme escolar dado a todos estudantes da UFEM para identificação e segurança na instalação.',
-                    categ: 'Leve',
-                    weight: 0.5,
-                    value: 5,
-                    displacementPenalty:0
-                }
-            ]
-        }
-    },
-    magics: {
-        type: [ Object ],
-        required: [ true, 'Magics is required!' ],
-        default: []
-    },
-    gender: {
-        type: String,
-        required: [ true, 'Gender is required!' ]
-    },
-    elementalMastery: {
-        type: String,
-        default: null
-    },
-    anotacoes: {
-        type: String,
-        default: null
-    },
-    level: {
-        type: Number,
-        default: 0
-    },
-    subclass: {
-        type: String
-    },
-    financialCondition: {
-        type: String,
-        required: [ true, 'Financial condition is required!' ]
-    },
-    magicsSpace: {
-        type: Number
-    },
-    skills: {
-        type: Object,
-        required: [ true, 'Skills is required!' ]
-    },
-    expertises: {
-        type: Object,
-        required: [ true, 'Expertises is required!' ]
-    },
-    traits: {
-        type: [ Object ],
-        required: [ true, 'Traits is required!' ],
-        default: []
-    },
-    session: {
-        type: [ {
-            campaignCode: String,
-            attributes: {
-                maxLp: Number,
-                maxMp: Number
-            }
-        } ],
-        default: []
-    },
-    points: {
-        attributes: {
-            type: Number,
-            required: [ true, 'Attributes is required!' ],
-            default: 9
-        },
-        expertises: {
-            type: Number,
-            required: [ true, 'Expertises is required!' ],
-            default: 0
-        },
-        skills: {
-            type: Number,
-            required: [ true, 'Skills is required!' ],
-            default: 0
-        },
-        magics: {
-            type: Number,
-            required: [ true, 'Magics is required!' ],
-            default: 0
-        }
-    },
-    attributes: {
-        lp: {
-            type: Number,
-            required: [ true, 'LP is required!' ],
-            default: 0
-        },
-        mp: {
-            type: Number,
-            required: [ true, 'MP is required!' ],
-            default: 0
-        },
-        ap: {
-            type: Number,
-            required: [ true, 'AP is required!' ],
-            default: 5
-        },
-        des: {
-            type: Number,
-            required: [ true, 'Des is required!' ],
-            default: 0
-        },
-        vig: {
-            type: Number,
-            required: [ true, 'Vig is required!' ],
-            default: 0
-        },
-        foc: {
-            type: Number,
-            required: [ true, 'Foc is required!' ],
-            default: 0
-        },
-        log: {
-            type: Number,
-            required: [ true, 'Log is required!' ],
-            default: 0
-        },
-        sab: {
-            type: Number,
-            required: [ true, 'Sab is required!' ],
-            default: 0
-        },
-        car: {
-            type: Number,
-            required: [ true, 'Car is required!' ],
-            default: 0
-        },
+const skillSchema = z.object({
+    name: z.string(),
+    description: z.string(),
+    type: z.enum(['Poder Mágico', 'Classe', 'Linhagem', 'Subclasse', 'Bônus', 'Profissão', 'Exclusivo', 'Raça']),
+    origin: z.string(),
+    effects: z.array(z.number()).optional(),
+    level: z.number().optional(),
+});
 
-        maxLp: {
-            type: Number,
-            required: [ true, 'Max LP is required!' ],
-            default: function() {
-                return this.attributes.lp;
-            }
-        },
-        maxMp: {
-            type: Number,
-            required: [ true, 'Max MP is required!' ],
-            default: function() {
-                return this.attributes.mp;
-            }
-        },
-        maxAp: {
-            type: Number,
-            required: [ true, 'Max AP is required!' ],
-            default: function() {
-                return this.attributes.ap;
-            }
-        }
-    },
-    ammoCounter: {
-        current: {
-            type: Number,
-            required: [ true, 'Current ammo is required!' ],
-            default: 0
-        },
-        max: {
-            type: Number,
-            required: [ true, 'Max ammo is required!' ],
-            default: 30
-        }
-    },
-    overall: {
-        type: Number,
-        required: [ true, 'Overall is required!' ]
-    },
-    dices: {
-        type: [ Object ],
-        required: [ true, 'Dices is required!' ],
-        default: []
-    },
-    passives: {
-        type: [ Object ],
-        required: [ true, 'Passives is required!' ],
-        default: []
-    },
-    mpLimit: {
-        type: Number,
-        required: [ true, 'MP Limit is required!' ],
-        default: function() {
-            return this.attributes.mp + this.level + this.attributes.foc;
-        }
-    },
-    mods: {
-        attributes: {
-            des: {
-                type: Number,
-                required: [ true, 'DES MOD is required!' ],
-                default: 0
-            },
-            vig: {
-                type: Number,
-                required: [ true, 'VIG MOD is required!' ],
-                default: 0
-            },
-            log: {
-                type: Number,
-                required: [ true, 'LOG MOD is required!' ],
-                default: 0
-            },
-            sab: {
-                type: Number,
-                required: [ true, 'SAB MOD is required!' ],
-                default: 0
-            },
-            foc: {
-                type: Number,
-                required: [ true, 'FOC MOD is required!' ],
-                default: 0
-            },
-            car: {
-                type: Number,
-                required: [ true, 'CAR MOD is required!' ],
-                default: 0
-            }
-        },
-        discount: {
-            type: Number,
-            required: [ true, 'Discount is required!' ],
-            default: -10
-        }
-    }
-})
+const magicPowerSkillSchema = skillSchema.extend({
+    _id: z.string().optional(),
+    mastery: z.string().optional(),
+    element: z.string().optional(),
+});
 
-const Ficha = models['Ficha'] || model('Ficha', fichaSchema)
+const itemSchema = z.object({
+    name: z.string(),
+    description: z.string(),
+    quantity: z.number().optional(),
+    rarity: z.string(),
+    kind: z.string(),
+    weight: z.number(),
+    effects: z.union([z.array(z.number()), z.array(z.string())]).optional(),
+    level: z.number().optional(),
+});
 
-export default Ficha
+const weaponSchema = z.object({
+    name: z.string(),
+    description: z.string(),
+    rarity: z.string(),
+    kind: z.union([z.string(), z.array(z.string())]),
+    categ: z.string(),
+    range: z.string(),
+    weight: z.number(),
+    hit: z.string(),
+    ammo: z.string(),
+    magazineSize: z.number().optional(),
+    quantity: z.number().optional(),
+    accessories: z.array(z.string()).optional(),
+    bonus: z.enum(['Luta', 'Agilidade', 'Furtividade', 'Pontaria', 'Magia', 'Tecnologia', 'Controle', 'Força']).optional(),
+    effect: z.object({
+        value: z.string(),
+        critValue: z.string(),
+        critChance: z.number(),
+        effectType: z.string(),
+    }),
+});
+
+const armorSchema = z.object({
+    name: z.string(),
+    description: z.string(),
+    rarity: z.string(),
+    kind: z.string(),
+    categ: z.enum(['Leve', 'Média', 'Pesada']),
+    quantity: z.number().optional(),
+    weight: z.number(),
+    value: z.number(),
+    displacementPenalty: z.number(),
+    accessories: z.array(z.string()).optional(),
+});
+
+const traitSchema = z.object({
+    name: z.string(),
+    value: z.number(),
+    target: z.union([
+        z.object({ kind: z.literal('attribute'), name: z.union([z.enum(['DES','VIG','LOG','SAB','FOC','CAR']), z.enum(['des','vig','log','sab','foc','car'])]) }),
+        z.object({ kind: z.literal('expertise'), name: z.string() }),
+    ]),
+});
+
+const passiveSchema = z.object({
+    id: z.string(),
+    title: z.string(),
+    description: z.string(),
+    occasion: z.union([
+        z.literal('Início do turno'),
+        z.literal('Final do turno'),
+        z.literal('Ao ser atacado'),
+        z.literal('Ao atacar'),
+        z.literal('Ao usar magia'),
+        z.literal('Ao sofrer dano'),
+        z.literal('Ao causar dano'),
+        z.literal('Sempre ativo'),
+        z.literal('Quando curar'),
+        z.literal('Ao se deslocar'),
+        z.literal('Condição específica'),
+        z.literal('Personalizado'),
+    ]),
+    custom: z.boolean().optional(),
+});
+
+const statusSchema = z.object({
+    name: z.string(),
+    type: z.enum(['buff', 'debuff', 'normal']),
+});
+
+const sessionInfoSchema = z.object({
+    campaignCode: z.string(),
+    attributes: z.object({
+        maxLp: z.number(),
+        maxMp: z.number(),
+    }),
+});
+
+const expertisesValueSchema = z.object({
+    value: z.number(),
+    defaultAttribute: z.union([z.enum(['des','vig','log','sab','foc','car']), z.null()]).optional(),
+});
+
+const fichaSchema = z.object({
+    _id: z.string().optional(),
+    playerName: z.string(),
+    mode: z.enum(['Apocalypse', 'Classic']),
+    userId: z.string(),
+    name: z.string(),
+    age: z.number(),
+    class: z.string(),
+    race: z.union([z.string(), z.object({ name: z.string(), description: z.string(), effect: z.number(), skill: skillSchema.optional() })]),
+    lineage: z.union([
+        z.string(),
+        z.object({ name: z.string(), description: z.string(), effects: z.array(z.number()), item: itemSchema }),
+    ]),
+    ORMLevel: z.number(),
+    inventory: z.object({
+        items: z.array(itemSchema),
+        weapons: z.array(weaponSchema),
+        armors: z.array(armorSchema),
+        money: z.number(),
+    }),
+    displacement: z.number(),
+    magics: z.array(z.any()),
+    anotacoes: z.string().optional(),
+    magicsSpace: z.number(),
+    mpLimit: z.number(),
+    overall: z.number(),
+    gender: z.enum(['Masculino', 'Feminino', 'Não-binário', 'Outro', 'Não definido']),
+    elementalMastery: z.string(),
+    level: z.number(),
+    subclass: z.union([z.string(), z.object({ name: z.string(), description: z.string(), skills: z.array(skillSchema) })]),
+    financialCondition: z.enum(['Miserável', 'Pobre', 'Estável', 'Rico']),
+    expertises: z.record(expertisesValueSchema),
+    traits: z.array(traitSchema),
+    session: z.array(sessionInfoSchema).optional(),
+    passives: z.array(passiveSchema),
+    status: z.array(statusSchema),
+    dices: z.array(z.any()),
+    capacity: z.object({
+        cargo: z.number(),
+        max: z.number(),
+    }),
+    skills: z.object({
+        lineage: z.array(skillSchema),
+        class: z.array(skillSchema),
+        subclass: z.array(skillSchema),
+        bonus: z.array(skillSchema),
+        powers: z.array(magicPowerSkillSchema),
+        race: z.array(skillSchema),
+    }),
+    points: z.object({
+        attributes: z.number(),
+        expertises: z.number(),
+        skills: z.number(),
+        magics: z.number(),
+    }),
+    attributes: z.object({
+        lp: z.number(),
+        mp: z.number(),
+        ap: z.number(),
+        des: z.number(),
+        vig: z.number(),
+        log: z.number(),
+        sab: z.number(),
+        foc: z.number(),
+        car: z.number(),
+        maxLp: z.number(),
+        maxMp: z.number(),
+        maxAp: z.number(),
+    }),
+    ammoCounter: z.object({
+        current: z.number(),
+        max: z.number(),
+    }),
+    mods: z.object({
+        attributes: z.object({
+            des: z.number(),
+            vig: z.number(),
+            log: z.number(),
+            sab: z.number(),
+            foc: z.number(),
+            car: z.number(),
+        }),
+        discount: z.number(),
+    }),
+});
+
+const fichaConverter: FirestoreDataConverter<any> = {
+    toFirestore: (data) => {
+        const { _id, ...rest } = fichaSchema.parse(data);
+        return rest;
+    },
+    fromFirestore: (snap: QueryDocumentSnapshot, options: SnapshotOptions) => {
+        const raw = snap.data(options) as any;
+        const parsed = fichaSchema.omit({ _id: true }).parse(raw);
+        return { _id: snap.id, ...parsed };
+    },
+};
+
+export const fichaCollection = collection(getFirestore(app), 'fichas').withConverter(fichaConverter);
+
+export const fichaDoc = (id: string) =>
+    doc(fichaCollection, id);

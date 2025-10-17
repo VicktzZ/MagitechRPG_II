@@ -1,26 +1,28 @@
-import mongoose from 'mongoose'
+import { initializeApp } from 'firebase/app';
+import { getAnalytics, isSupported } from 'firebase/analytics';
 
-let isConnected = false
+const firebaseConfig = {
+    apiKey: process.env.FIREBASE_APIKEY,
+    authDomain: process.env.FIREBASE_AUTHDOMAIN,
+    projectId: process.env.FIREBASE_PROJECT_ID,
+    storageBucket: process.env.FIREBASE_STORAGEBUCKET,
+    messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
+    appId: process.env.FIREBASE_APP_ID,
+    measurementId: process.env.FIREBASE_MEASUREMENT_ID
+};
 
-export const connectToDb = async (): Promise<void> => {
-    mongoose.set('strictQuery', true)
-
-    if (isConnected) {
-        console.log('MongoDB is already connected')
-        return
-    } 
-
-    try {
-        const dbName = process.env.NODE_ENV === 'development' ? 'magitech_dev' : 'magitech';
-        
-        await mongoose.connect(process.env.MONGODB_URI, {
-            dbName
+export const app = initializeApp(firebaseConfig);
+// Inicializa Analytics apenas no browser e quando suportado
+export let analytics: ReturnType<typeof getAnalytics> | undefined;
+if (typeof window !== 'undefined') {
+    // Evita falhas em ambientes sem suporte (ex.: SSR/Node)
+    isSupported()
+        .then((supported) => {
+            if (supported) {
+                analytics = getAnalytics(app);
+            }
         })
-
-        isConnected = true
-
-        console.log(`MongoDB connected to database: ${dbName}`)
-    } catch (error) {
-        console.log(error)
-    }
+        .catch(() => {
+            // silenciosamente ignora quando não suportado
+        });
 }

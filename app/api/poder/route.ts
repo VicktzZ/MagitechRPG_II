@@ -1,4 +1,4 @@
-import Poder from '@models/db/poder';
+import Poder from '@models/db/power';
 import { connectToDb } from '@utils/database';
 import type { MagicPower } from '@types';
 import type { PipelineStage } from 'mongoose';
