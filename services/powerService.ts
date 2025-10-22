@@ -29,4 +29,4 @@ class PoderService extends Service<MagicPower, keyof PoderSearchParams> {
     }
 }
 
-export const poderService = new PoderService('/poder')
+export const poderService = new PoderService('/power')

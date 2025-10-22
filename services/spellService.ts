@@ -4,4 +4,4 @@ import { Service } from '@utils/apiRequest';
 
 class MagiaService extends Service<Magia, SearchOptions> {}
 
-export const magiaService = new MagiaService('/magia');
+export const magiaService = new MagiaService('/spell');

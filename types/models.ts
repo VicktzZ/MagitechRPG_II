@@ -93,7 +93,7 @@ export interface CampaignData {
     isUserGM: boolean
     code: string
     users: {
-        player: User[]
+        players: User[]
         admin: User[],
         all: User[]
     }

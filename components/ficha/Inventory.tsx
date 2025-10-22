@@ -35,6 +35,7 @@ import { useFormContext, useWatch } from 'react-hook-form';
 const redFilter = 'invert(16%) sepia(44%) saturate(6989%) hue-rotate(352deg) brightness(97%) contrast(82%)'
 
 // TODO: ACRESCENTAR ITENS DE LINHAGEM (ao mudar)
+// TODO: INCREMENTAR SISTEMAS DE NÍVEIS (3) PARA ITENS
 export function Inventory (): ReactElement {
     const { control } = useFormContext<Ficha>()
     

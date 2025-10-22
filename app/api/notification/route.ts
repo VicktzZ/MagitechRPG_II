@@ -1,13 +1,12 @@
-import Notification from '@models/db/notification'
-import { connectToDb } from '@utils/database'
+import { deleteDoc } from 'firebase/firestore';
+import { notificationDoc } from '@models/db/notification'
 
 export async function DELETE(req: Request): Promise<Response> {
     try {
-        await connectToDb()
-        const body = await req.json()
-        const notification = await Notification.deleteOne({ _id: body.id })
-        return Response.json(notification)
+        const body = await req.json();
+        await deleteDoc(notificationDoc(body.id));
+        return Response.json({ message: 'SUCCESS' });
     } catch (error: any) {
-        return Response.json({ message: 'NOT FOUND', error: error.message }, { status: 404 })
+        return Response.json({ message: 'NOT FOUND', error: error.message }, { status: 404 });
     }
 }

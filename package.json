@@ -14,6 +14,7 @@
     "node": ">=22.12.0"
   },
   "dependencies": {
+    "@dataconnect/generated": "file:src/dataconnect-generated",
     "@dicebear/collection": "^7.0.1",
     "@dicebear/core": "^7.0.1",
     "@emotion/react": "^11.11.3",
@@ -46,9 +47,9 @@
     "colortranslator": "^5.0.0",
     "eslint-config-standard-with-typescript": "^43.0.0",
     "eslint-plugin-unicorn": "^50.0.1",
-    "firebase": "^11.10.0",
     "eslint-plugin-unused-imports": "^4.1.4",
     "eslint-plugin-unused-vars": "^0.0.3",
+    "firebase": "^11.10.0",
     "framer-motion": "^10.16.16",
     "mongodb": "^6.17.0",
     "mongoose": "^8.0.3",
@@ -81,6 +82,7 @@
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-prettier": "^5.1.2",
     "prettier": "3.1.1",
-    "typescript": "^5"
+    "typescript": "^5",
+    "@types/bun": "latest"
   }
 }

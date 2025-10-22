@@ -1,11 +1,9 @@
+import { notificationCollection } from '@models/db/notification'
+import { deleteDoc, query, where } from 'firebase/firestore'
 import cron from 'node-cron'
-import { connectToDb } from '@utils/database'
-import Notification from '@models/db/notification'
 
 export async function cleanupNotifications() {
     try {
-        await connectToDb()
-
         // Deleta notificações com mais de 15 dias
         const fifteenDaysAgo = new Date()
         fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15)
@@ -14,14 +12,13 @@ export async function cleanupNotifications() {
         const yesterday = new Date()
         yesterday.setDate(yesterday.getDate() - 1)
 
-        const result = await Notification.deleteMany({
-            $or: [
-                { timestamp: { $lt: fifteenDaysAgo } },
-                { read: true, timestamp: { $lt: yesterday } }
-            ]
-        })
+        await deleteDoc(query(notificationCollection,
+            where('timestamp', '<', fifteenDaysAgo), 
+            where('read', '==', true), 
+            where('timestamp', '<', yesterday)
+        ) as any)
 
-        console.log(`[Job] Notificações antigas removidas: ${result.deletedCount}`)
+        console.log('[Job] Notificações antigas removidas')
     } catch (error) {
         console.error('[Job] Erro ao limpar notificações:', error)
     }

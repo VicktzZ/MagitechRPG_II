@@ -113,7 +113,7 @@ export default function CampaignPlayerDashboard(): ReactElement | null {
 
     if (!ficha || isUserGM) return null;
     
-    const fichaUser = users.player.find(player => player._id === ficha.userId);
+    const fichaUser = users.players.find(player => player._id === ficha.userId);
     const avatar = fichaUser?.image ?? '/assets/default-avatar.jpg';
 
     return (

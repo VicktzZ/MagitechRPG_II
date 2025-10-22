@@ -112,7 +112,7 @@ export default function GMActions(): ReactElement {
     })
 
     const players = useMemo(() => {
-        return users.player.map(player => {
+        return users.players?.map(player => {
             const playerFicha = playerFichas?.find(f => f.userId === player._id)
             return {
                 id: player._id,
@@ -266,7 +266,7 @@ export default function GMActions(): ReactElement {
                             </Typography>
                             <Box sx={{ maxHeight: 360, overflow: 'auto', border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
                                 <List>
-                                    {players.map((player, index) => (
+                                    {players?.map((player, index) => (
                                         <Box key={player.id}>
                                             <ListItem
                                                 button

@@ -49,7 +49,7 @@ export default function TestModal({ open, onClose, onConfirm, campaign }: TestMo
     const [ showSucess, setShowSucess ] = useState(true);
     const [ showResult, setShowResult ] = useState(true);
     const [ selectedPlayers, setSelectedPlayers ] = useState<string[]>([]);
-    const { campUsers } = useCampaignContext();
+    const { users } = useCampaignContext();
 
     // Filtra apenas os jogadores online que não são admin
     const availablePlayers = campaign.session.users
@@ -170,14 +170,14 @@ export default function TestModal({ open, onClose, onConfirm, campaign }: TestMo
                         label="Exibir resultado"
                     />
 
-                    {!isGroupTest && campUsers.player.length > 0 && (
+                    {!isGroupTest && users.players.length > 0 && (
                         <List sx={{ 
                             maxHeight: 200, 
                             overflow: 'auto',
                             bgcolor: 'background.paper2',
                             borderRadius: 1
                         }}>
-                            {campUsers.player.map(player => {
+                            {users.players.map(player => {
                                 return (
                                     <ListItem
                                         key={player._id}

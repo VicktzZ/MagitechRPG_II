@@ -9,7 +9,7 @@ class CampaignService extends Service<Campaign, 'code' | 'userId'> {
     async removeUser(campaignId: string, userId: string) { return (await this.delete({ param: `${campaignId}/users`, body: { userId } })).data }
     async updateUserFicha(campaignId: string, ficha: Ficha) { return (await this.patch({ param: `${campaignId}/update-user-ficha`, body: ficha })).data }
     async getFichas(campaignId: string) { return await this.fetch({ param: `${campaignId}/fichas` }) as unknown as Ficha[] }
-    async getAllData(campaignId: string, userId: string) { return (await this.post({ param: `${campaignId}/get-all-data`, body: ({ userId } as any) })).data as unknown as CampaignData }
+    async getAllData(campaignId: string, userId: string) { return (await this.get({ param: `${campaignId}/get-all-data?userId=${userId}` })).data as unknown as CampaignData }
     
     // Custom campaign
     async addCustomItem(campaignId: string, type: 'weapon' | 'armor' | 'item', item: Weapon | Armor | Item) {

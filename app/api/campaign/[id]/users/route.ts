@@ -1,27 +1,23 @@
-import Campaign from '@models/db/campaign'
-import User from '@models/db/user'
-import { connectToDb } from '@utils/database'
-import type { Campaign as CampaignType } from '@types'
+import { userCollection } from '@models/db/user';
+import { getCampaign } from '@utils/server/getCampaign';
+import { getDocs, query, updateDoc, where } from 'firebase/firestore';
 import type { NextRequest } from 'next/server';
-
 interface id { id: string }
 
 export async function GET(_req: NextRequest, { params }: { params: id }): Promise<Response> {
     try {
-        await connectToDb();
-        let code
-
         const { id } = params;
-        if (id.length === 8) code = id;
 
-        const campaign: CampaignType | null = await Campaign.findOne(
-            code ? { campaignCode: code } : { _id: id }
-        );
+        const campaignSnap = await getCampaign(id);
+        if (!campaignSnap.exists()) {
+            return Response.json({ message: 'CAMPAIGN NOT FOUND' }, { status: 404 });
+        }
+        const campaign = campaignSnap.data();
 
-        if (!campaign) return Response.json({ message: 'CAMPAIGN NOT FOUND' }, { status: 404 });
-
-        const users = await User.find({ _id: { $in: [ ...campaign.players.map(player => player.userId), ...campaign.admin ] } });
-        if (!users) return Response.json({ message: 'USERS NOT FOUND' }, { status: 404 });
+        const userIds = [ ...campaign.players.map(p => p.userId), ...campaign.admin ];
+        const userQuery = query(userCollection, where('_id', 'in', userIds));
+        const userSnap = await getDocs(userQuery);
+        const users = userSnap.docs.map(d => d.data());
 
         return Response.json(users);
     } catch (error: any) {
@@ -31,25 +27,21 @@ export async function GET(_req: NextRequest, { params }: { params: id }): Promis
 
 export async function DELETE(req: NextRequest, { params }: { params: id }): Promise<Response> {
     try {
-        await connectToDb();
-        let code;
-
         const { id } = params;
-        if (id.length === 8) code = id;
-
         const { userId } = await req.json();
-        
-        const campaign = await Campaign.findOneAndUpdate(
-            code ? { campaignCode: code } : { _id: id },
-            { $pull: { players: { userId }, 'session.users': userId } },
-            { new: true }
-        );
 
-        if (!campaign) {
+        const campaignSnap = await getCampaign(id);
+        if (!campaignSnap.exists()) {
             return Response.json({ message: 'CAMPAIGN NOT FOUND' }, { status: 404 });
         }
+        const campaign = campaignSnap.data();
 
-        return Response.json({ message: 'USER REMOVED FROM CAMPAIGN', campaign });
+        await updateDoc(campaignSnap.ref, {
+            players: campaign.players.filter(p => p.userId !== userId),
+            'session.users': campaign.session.users.filter(u => u !== userId)
+        });
+
+        return Response.json({ message: 'USER REMOVED FROM CAMPAIGN' });
     } catch (error: any) {
         return Response.json({ message: 'FORBIDDEN', error: error.message }, { status: 403 });
     }

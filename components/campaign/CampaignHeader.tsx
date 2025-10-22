@@ -31,6 +31,14 @@ export default function CampaignHeader(): ReactElement {
     const isMobile = useMediaQuery((theme: Theme) => theme.breakpoints.down('sm'))
     const onlineUsers = useMemo(() => campaign.session.users, [ campaign ])
 
+    console.log({
+        campaign,
+        users,
+        fichas,
+        isUserGM,
+        onlineUsers
+    })
+
     const renderUserAvatar = (user: User, isAdmin: boolean = false) => (
         <Box display="flex" gap={2} key={user._id}>
             <Avatar sx={{ height: '3rem', width: '3rem' }}>
@@ -192,7 +200,7 @@ export default function CampaignHeader(): ReactElement {
                         justifyContent="center"
                         gap={3}
                     >
-                        {users.player.map(user => (
+                        {users.players.map(user => (
                             <Box display="flex" flexDirection="column" gap={2} key={user._id}>
                                 {renderUserAvatar(user)}
                             </Box>

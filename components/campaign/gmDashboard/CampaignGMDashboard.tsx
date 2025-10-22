@@ -104,7 +104,7 @@ export default function CampaignGMDashboard(): ReactElement | null {
     })
 
     const players = useMemo(() => {
-        return users.player.map(player => {
+        return users.players?.map(player => {
             const playerFicha = playerFichas?.find(f => f.userId === player._id)
     
             return {
@@ -119,8 +119,8 @@ export default function CampaignGMDashboard(): ReactElement | null {
 
     // Estatísticas da campanha
     const campaignStats = useMemo(() => {
-        const totalPlayers = players.length;
-        const activePlayers = players.filter(p => p.ficha).length;
+        const totalPlayers = players?.length ?? 0;
+        const activePlayers = players?.filter(p => p.ficha).length ?? 0;
         const averageLevel = playerFichas?.length 
             ? Math.round(playerFichas.reduce((sum, f) => sum + f.level, 0) / playerFichas.length)
             : 0;

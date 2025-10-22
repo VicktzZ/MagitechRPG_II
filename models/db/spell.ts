@@ -1,16 +1,15 @@
-import { z } from 'zod';
+import { ElementoToUpperEnum } from '@schemas/zodEnums';
+import type { Magia } from '@types';
+import { app } from '@utils/database';
 import {
     collection,
     doc,
-    Firestore,
     getFirestore,
     type FirestoreDataConverter,
     type QueryDocumentSnapshot,
-    type SnapshotOptions,
+    type SnapshotOptions
 } from 'firebase/firestore';
-import { Magia } from '@types';
-import { app } from '@utils/database';
-import { ElementoToUpperEnum } from '@schemas/zodEnums';
+import { z } from 'zod';
 
 const spellSchema = z.object({
     _id: z.string(),
@@ -29,14 +28,14 @@ const spellSchema = z.object({
 
 const spellConverter: FirestoreDataConverter<Magia> = {
     toFirestore: (data) => {
-        const { _id, ...rest } = spellSchema.parse(data);
+        const {  ...rest } = spellSchema.parse(data);
         return rest;
     },
     fromFirestore: (snap: QueryDocumentSnapshot, options: SnapshotOptions) => {
         const raw = snap.data(options) as any;
         const parsed = spellSchema.omit({ _id: true }).parse(raw);
         return { _id: snap.id, ...parsed };
-    },
+    }
 };
 
 export const spellCollection = collection(getFirestore(app), 'spells').withConverter(spellConverter);

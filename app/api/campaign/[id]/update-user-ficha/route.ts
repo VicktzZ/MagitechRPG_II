@@ -1,18 +1,16 @@
 import { PusherEvent } from '@enums';
-import Ficha from '@models/db/ficha';
-import { type Ficha as FichaType } from '@types';
-import { connectToDb } from '@utils/database';
+import { updateDoc } from 'firebase/firestore';
+import { fichaDoc } from '@models/db/ficha';
 import { pusherServer } from '@utils/pusher';
 
 export async function POST(req: Request, { params }: { params: { id: string } }) {
-    const body: FichaType = await req.json();
+    const body = await req.json();
     const fichaId = body._id;
     delete body._id
     
     const { id: code } = params;
     
-    await connectToDb();
-    await Ficha.findByIdAndUpdate(fichaId, body, { new: true });
+    await updateDoc(fichaDoc(fichaId ?? ''), body);
 
     await pusherServer.trigger('presence-' + code, PusherEvent.FICHA_UPDATED, { ...body, _id: fichaId });
 

@@ -1,15 +1,13 @@
-import { z } from 'zod';
+import type { User } from '@types';
+import { db } from '@utils/database';
 import {
     collection,
     doc,
-    Firestore,
-    getFirestore,
     type FirestoreDataConverter,
     type QueryDocumentSnapshot,
-    type SnapshotOptions,
+    type SnapshotOptions
 } from 'firebase/firestore';
-import { User } from '@types';
-import { app } from '@utils/database';
+import { z } from 'zod';
 
 const userSchema = z.object({
     _id: z.string(),
@@ -21,17 +19,17 @@ const userSchema = z.object({
 
 const userConverter: FirestoreDataConverter<User> = {
     toFirestore: (data) => {
-        const { _id, ...rest } = userSchema.parse(data);
+        const {  ...rest } = userSchema.parse(data);
         return rest;
     },
     fromFirestore: (snap: QueryDocumentSnapshot, options: SnapshotOptions) => {
         const raw = snap.data(options) as any;
         const parsed = userSchema.omit({ _id: true }).parse(raw);
         return { _id: snap.id, ...parsed };
-    },
+    }
 };
 
-export const userCollection = collection(getFirestore(app), 'users').withConverter(userConverter);
+export const userCollection = collection(db, 'users').withConverter(userConverter);
 
 export const userDoc = (id: string) =>
     doc(userCollection, id);

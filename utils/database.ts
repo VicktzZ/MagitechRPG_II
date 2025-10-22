@@ -1,5 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAnalytics, isSupported } from 'firebase/analytics';
+import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
     apiKey: process.env.FIREBASE_APIKEY,
@@ -12,6 +13,7 @@ const firebaseConfig = {
 };
 
 export const app = initializeApp(firebaseConfig);
+export const db = getFirestore(app);
 // Inicializa Analytics apenas no browser e quando suportado
 export let analytics: ReturnType<typeof getAnalytics> | undefined;
 if (typeof window !== 'undefined') {

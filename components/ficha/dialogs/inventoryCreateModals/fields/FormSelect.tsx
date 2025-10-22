@@ -1,5 +1,5 @@
-import { FormControl, FormHelperText, IconButton, InputLabel, ListSubheader, MenuItem, Modal, Select, type SelectProps } from '@mui/material';
-import { type CSSProperties, type ReactElement, ReactNode, memo, useMemo, useState } from 'react';
+import { FormControl, FormHelperText, InputLabel, ListSubheader, MenuItem, Select, type SelectProps } from '@mui/material';
+import { type CSSProperties, type ReactElement, type ReactNode, memo, useMemo, useState } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
 import { type FieldError, type UseFormRegisterReturn } from 'react-hook-form';
 import { Delete } from '@mui/icons-material';

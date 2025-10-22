@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/consistent-type-assertions */
 import { z } from 'zod';
 import { collection, doc, getFirestore, type FirestoreDataConverter, type QueryDocumentSnapshot, type SnapshotOptions } from 'firebase/firestore';
 import type { Campaign as CampaignType } from '@types';
@@ -6,13 +7,13 @@ import { app } from '@utils/database';
 // Subschemas
 const playerSchema = z.object({
     userId: z.string(),
-    fichaId: z.string(),
+    fichaId: z.string()
 });
 
 const messageSchema = z.object({
     id: z.string().optional(),
-    timestamp: z.date().optional(),
-    type: z.string(), // MessageType (usar string para não acoplar enum runtime)
+    timestamp: z.string().optional(),
+    type: z.string().optional(), // MessageType (usar string para não acoplar enum runtime)
     text: z.string(),
     isHTML: z.boolean().optional(),
     by: z.object({
@@ -20,18 +21,19 @@ const messageSchema = z.object({
         image: z.string(),
         name: z.string(),
         isBot: z.boolean().optional(),
-    }),
+        isGM: z.boolean().optional()
+    })
 });
 
 const noteSchema = z.object({
     _id: z.string().optional(),
     content: z.string(),
-    timestamp: z.date(),
+    timestamp: z.string().optional()
 });
 
 const sessionSchema = z.object({
     users: z.array(z.string()),
-    messages: z.array(messageSchema).optional(),
+    messages: z.array(messageSchema).optional()
 });
 
 const campaignSchema = z.object({
@@ -51,21 +53,21 @@ const campaignSchema = z.object({
         items: z.object({
             weapon: z.array(z.any()),
             armor: z.array(z.any()),
-            item: z.array(z.any()),
-        }),
-    }),
+            item: z.array(z.any())
+        })
+    })
 });
 
 const campaignConverter: FirestoreDataConverter<CampaignType> = {
     toFirestore: (data) => {
-        const { _id, ...rest } = campaignSchema.parse(data);
+        const {  ...rest } = campaignSchema.parse(data);
         return rest;
     },
     fromFirestore: (snap: QueryDocumentSnapshot, options: SnapshotOptions) => {
         const raw = snap.data(options) as unknown;
         const parsed = campaignSchema.omit({ _id: true }).parse(raw);
-        return { _id: snap.id, ...parsed } as CampaignType;
-    },
+        return { _id: snap.id, ...parsed } as unknown as CampaignType;
+    }
 };
 
 export const campaignCollection = collection(getFirestore(app), 'campaigns').withConverter(campaignConverter);

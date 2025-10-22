@@ -5,9 +5,9 @@ export type ApiRoutes =
     '/auth' |
     '/campaign' |
     '/ficha' |
-    '/magia' |
+    '/spell' |
     '/notification' |
-    '/poder' |
+    '/power' |
     '/pusher' |
     '/pusher/events' |
     '/events' |

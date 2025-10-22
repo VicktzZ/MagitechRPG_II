@@ -5,6 +5,7 @@ import '@public/global.css'
 import { type ReactElement } from 'react';
 import ContextProvider from '@contexts/ContextProvider';
 import { startJobs } from '@jobs'
+// TODO: Adicionar useSuspenseQuery
 
 // Inicia os jobs apenas no servidor
 if (typeof window === 'undefined') {

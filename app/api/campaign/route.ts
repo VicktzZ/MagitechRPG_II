@@ -1,33 +1,39 @@
-import Campaign from '@models/db/campaign';
-import { connectToDb } from '@utils/database';
-import type { Campaign as CampaignType } from '@types';
 import type { NextRequest } from 'next/server';
+import type { Campaign as CampaignType } from '@types';
+import { getDocs, query, where, setDoc, doc } from 'firebase/firestore';
+import { campaignCollection } from '@models/db/campaign';
+import { v4 as uuidv4 } from 'uuid';
+import { getCampaign } from '@utils/server/getCampaign';
 
 export async function GET(req: NextRequest): Promise<Response> {
     try {
-        await connectToDb();
-        let response;
-
         const campaignCode = req.nextUrl.searchParams.get('code');
         const userId = req.nextUrl.searchParams.get('userId');
 
         if (campaignCode) {
-            response = await Campaign.findOne({ campaignCode });
-        } else if (userId) {
-            const campaignAsPlayer = await Campaign.find({ 'players.userId': userId });
-            const campaignAsGM = await Campaign.find({ admin: userId });
-            
-            // Remove duplicatas usando Set e o ID da campanha como chave
-            const uniqueCampaigns = new Map();
-            [ ...campaignAsPlayer, ...campaignAsGM ].forEach(camp => {
-                uniqueCampaigns.set(camp._id.toString(), camp);
-            });
-            
-            response = Array.from(uniqueCampaigns.values());
-        } else {
-            response = await Campaign.find();
+            const snap = await getCampaign(campaignCode);
+            if (!snap.exists()) return Response.json({ message: 'NOT FOUND' }, { status: 404 });
+            return Response.json(snap.data());
         }
-        
+
+        if (userId) {
+            const qGM = query(campaignCollection, where('admin', 'array-contains', userId));
+            const gmSnap = await getDocs(qGM);
+            const gm = gmSnap.docs.map(d => d.data());
+
+            const allSnap = await getDocs(campaignCollection);
+            const asPlayer = allSnap.docs
+                .map(d => d.data())
+                .filter(c => Array.isArray(c.players) && c.players.some(p => p.userId === userId));
+
+            const map = new Map<string, CampaignType>();
+            [ ...gm, ...asPlayer ].forEach(c => { if (c._id) map.set(c._id, c); });
+            const response = Array.from(map.values());
+            return Response.json(response);
+        }
+
+        const snap = await getDocs(campaignCollection);
+        const response = snap.docs.map(d => d.data());
         return Response.json(response);
     } catch (error: any) {
         return Response.json({ message: 'NOT FOUND', error: error.message }, { status: 404 });
@@ -36,13 +42,11 @@ export async function GET(req: NextRequest): Promise<Response> {
 
 export async function POST(req: Request): Promise<Response> {
     try {
-        await connectToDb();
-        
         const campaignBody: CampaignType = await req.json();
-        const campaign = await Campaign.create<CampaignType>(campaignBody);
-
-        return Response.json(campaign);
+        const id = campaignBody._id ?? uuidv4();
+        await setDoc(doc(campaignCollection, id), { ...campaignBody, _id: id });
+        return Response.json({ ...campaignBody, _id: id });
     } catch (error: any) {
         return Response.json({ message: 'BAD REQUEST', error: error.message }, { status: 400 });
     }
-}   
+}

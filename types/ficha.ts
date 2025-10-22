@@ -322,7 +322,7 @@ export interface Subclass {
 
 export interface MagicPower {
     _id?: string
-    elemento: Element
+    elemento: Element | ElementToUpper
     nome: string
     'descrição': string
     maestria: string
@@ -565,4 +565,24 @@ export type Element =
     'Eletricidade' |
     'Trevas' |
     'Luz' |
-    'Não-elemental'
+    'Não-elemental' |
+    'Sangue' |
+    'Radiação' |
+    'Explosão' |
+    'Psíquico' |
+    'Vácuo'
+
+export type ElementToUpper = 
+    'FOGO' |
+    'ÁGUA' |
+    'TERRA' |
+    'AR' |
+    'ELETRICIDADE' |
+    'TREVAS' |
+    'LUZ' |
+    'NÃO-ELEMENTAL' | 
+    'SANGUE' |
+    'RADIAÇÃO' |
+    'EXPLOSAO' |
+    'PSÍQUICO' |
+    'VÁCUO'

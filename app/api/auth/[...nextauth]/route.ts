@@ -1,11 +1,10 @@
-import NextAuth from 'next-auth/next';
-import GoogleProvider from 'next-auth/providers/google';
-import DiscordProvider from 'next-auth/providers/discord';
+import { userCollection } from '@models/db/user';
+import type { JWT } from 'next-auth/jwt';
+import { addDoc, doc, getDocs, limit, query, updateDoc, where } from 'firebase/firestore';
 import type { Session } from 'next-auth';
-import type { JWT } from '@node_modules/next-auth/jwt';
-import type { User as UserType } from '@types';
-import { connectToDb } from '@utils/database';
-import User from '@models/db/user';
+import NextAuth from 'next-auth/next';
+import DiscordProvider from 'next-auth/providers/discord';
+import GoogleProvider from 'next-auth/providers/google';
 import { AdminProvider } from './adminProvider';
 
 const handler = NextAuth({
@@ -23,7 +22,7 @@ const handler = NextAuth({
 
     session: {
         strategy: 'jwt',
-        maxAge: 30 * 24 * 60 * 60, // 30 dias
+        maxAge: 7 * 24 * 60 * 60, // 7 dias
         updateAge: 24 * 60 * 60 // 24 horas
     },
 
@@ -39,17 +38,21 @@ const handler = NextAuth({
 
         session: async ({ session, token }: { session: Session, token: JWT }) => {
             try {
-                await connectToDb();
-                const sessionUser = await User.findOne<UserType>({
-                    email: session?.user?.email 
-                });
+                const userQuery = query(
+                    userCollection,
+                    where('email', '==', session?.user?.email),
+                    limit(1)
+                );
+                const userSnapshot = await getDocs(userQuery);
 
-                if (sessionUser) {
+                if (!userSnapshot.empty) {
+                    const sessionUser = userSnapshot.docs[0].data();
                     session.user = {
                         _id: String(sessionUser._id),
                         email: String(sessionUser.email),
                         name: String(sessionUser.name),
-                        image: String(sessionUser.image)
+                        image: String(sessionUser.image),
+                        token: session.token
                     };
                 }
 
@@ -63,26 +66,33 @@ const handler = NextAuth({
 
         signIn: async ({ profile, user }) => {
             try {
-                await connectToDb();
                 const p: any = profile ?? user;
 
-                const userExists = await User.findOne({
-                    email: p?.email
-                });
+                const userQuery = query(
+                    userCollection,
+                    where('email', '==', p?.email),
+                    limit(1)
+                );
+                const userSnapshot = await getDocs(userQuery);
 
-                if (userExists) {
-                    if (userExists.image !== p?.picture && userExists.image !== p?.image_url) {
-                        await userExists.updateOne({
-                            image: p?.picture ?? p?.image_url
+                if (!userSnapshot.empty) {
+                    const userExistsDoc = userSnapshot.docs[0];
+                    const userExistsData = userExistsDoc.data();
+                    const newImage = p?.picture ?? p?.image_url;
+
+                    if (userExistsData.image !== newImage) {
+                        await updateDoc(doc(userCollection, userExistsDoc.id), {
+                            image: newImage
                         });
                     }
                     return true;
                 }
 
-                await User.create({
+                await addDoc(userCollection, {
                     email: p?.email?.toLowerCase(),
                     name: p?.name?.replace(' ', '').toLowerCase() ?? p?.username?.replace(' ', '').toLowerCase(),
-                    image: p?.picture ?? p?.image_url
+                    image: p?.picture ?? p?.image_url,
+                    fichas: []
                 });
 
                 return true;

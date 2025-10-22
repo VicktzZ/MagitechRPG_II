@@ -2,19 +2,18 @@ import { z } from 'zod';
 import {
     collection,
     doc,
-    Firestore,
     getFirestore,
     type FirestoreDataConverter,
     type QueryDocumentSnapshot,
-    type SnapshotOptions,
+    type SnapshotOptions
 } from 'firebase/firestore';
-import { MagicPower } from '@types';
+import { type MagicPower } from '@types';
 import { app } from '@utils/database';
-import { ElementoEnum } from '@schemas/zodEnums';
+import { ElementoToUpperEnum } from '@schemas/zodEnums';
 
 const powerSchema = z.object({
     _id: z.string(),
-    elemento: ElementoEnum,
+    elemento: ElementoToUpperEnum,
     nome: z.string(),
     'descrição': z.string(),
     maestria: z.string(),
@@ -23,14 +22,14 @@ const powerSchema = z.object({
 
 const powerConverter: FirestoreDataConverter<MagicPower> = {
     toFirestore: (data) => {
-        const { _id, ...rest } = powerSchema.parse(data);
+        const {  ...rest } = powerSchema.parse(data);
         return rest;
     },
     fromFirestore: (snap: QueryDocumentSnapshot, options: SnapshotOptions) => {
         const raw = snap.data(options) as any;
         const parsed = powerSchema.omit({ _id: true }).parse(raw);
-        return { _id: snap.id, ...parsed };
-    },
+        return { _id: snap.id, ...parsed } as unknown as MagicPower;
+    }
 };
 
 export const powerCollection = collection(getFirestore(app), 'powers').withConverter(powerConverter);

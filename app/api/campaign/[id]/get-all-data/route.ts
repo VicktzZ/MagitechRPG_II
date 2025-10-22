@@ -1,57 +1,87 @@
-import Campaign from '@models/db/campaign';
-import Ficha from '@models/db/ficha';
-import User from '@models/db/user';
-import type { Campaign as CampaignType } from '@types';
-import { connectToDb } from '@utils/database';
+/* eslint-disable @typescript-eslint/promise-function-async */
+import { fichaDoc } from '@models/db/ficha';
+import { userCollection } from '@models/db/user';
+import { getDoc, getDocs, query, where } from 'firebase/firestore';
 
-interface id { id: string }
+import { getCampaign } from '@utils/server/getCampaign';
+import type { NextRequest } from 'next/server';
 
-export async function POST(req: Request, { params }: { params: id }): Promise<Response> {
+interface CampaignGetAllDataParams {
+    id: string;
+}
+
+export async function GET(
+    req: NextRequest,
+    { params }: { params: CampaignGetAllDataParams }
+): Promise<Response> {
     try {
         const { id } = params;
-        await connectToDb();
+        const userId = req.nextUrl.searchParams.get('userId');
 
-        const { userId } = await req.json();
+        // Buscar campanha por id ou campaignCode se for 8 chars
+        const campaignSnap = await getCampaign(id);
+        if (!campaignSnap.exists()) {
+            return Response.json({ message: 'Campanha não encontrada' }, { status: 404 });
+        }
+        const campaign = campaignSnap.data();
 
-        let campaign: CampaignType;
-        if (id.length === 8) {
-            campaign = (await Campaign.findOne({ campaignCode: id }))!;
-        } else {
-            campaign = (await Campaign.findById(id))!;
+        // Buscar fichas dos jogadores de forma mais eficiente
+        const fichaIds = campaign.players.map(p => p.fichaId);
+
+        const fichasPromises = fichaIds.map(fichaId => getDoc(fichaDoc(fichaId)));
+        const fichasSnaps = await Promise.all(fichasPromises);
+        const fichas = fichasSnaps
+            .filter(snap => snap.exists())
+            .map(snap => snap.data())
+            .filter(ficha => ficha !== undefined);
+
+        // Buscar usuários (players e admin) de forma mais eficiente
+        const userIds = [ ...campaign.players.map(p => p.userId), ...campaign.admin ];
+
+        // Para evitar limitações do Firestore 'in' query (máximo 10), dividir em batches se necessário
+        const userBatches = [];
+        for (let i = 0; i < userIds.length; i += 10) {
+            userBatches.push(userIds.slice(i, i + 10));
         }
 
-        if (!campaign) {
-            return Response.json({ message: 'NOT FOUND' }, { status: 404 });
-        }
+        const userPromises = userBatches.map(batch =>
+            getDocs(query(userCollection, where('_id', 'in', batch)))
+        );
 
-        const fichas = await Promise.all(campaign.players.map(async player => {
-            const ficha = await Ficha.findById(player.fichaId);
-            return ficha;
-        }));
+        const userSnaps = await Promise.all(userPromises);
+        const allUsers = userSnaps
+            .flatMap(snap => snap.docs)
+            .map(doc => doc.data());
 
-        const player = await Promise.all(campaign.players.map(async plyr => {
-            const user = await User.findById(plyr.userId);
-            return user;
-        }));
+        // Separar players e admin
+        const players = allUsers.filter(u => campaign.players.some(p => p.userId === u._id));
+        const admin = allUsers.filter(u => campaign.admin.includes(u._id));
 
-        const admin = await Promise.all(campaign.admin.map(async adm => {
-            const user = await User.findById(adm);
-            return user;
-        }));
+        // Verificar se o usuário atual é GM
+        const isUserGM = userId ? campaign.admin.includes(userId) : false;
 
         const result = {
             campaign,
             fichas,
             users: {
-                player,
+                players,
                 admin,
-                all: [ ...player, ...admin ]
+                all: allUsers
             },
-            isUserGM: campaign.admin.includes(userId)
-        }
+            isUserGM,
+            metadata: {
+                totalFichas: fichas.length,
+                totalUsers: allUsers.length,
+                totalPlayers: players.length
+            }
+        };
 
         return Response.json(result, { status: 200 });
+
     } catch (error: any) {
-        return Response.json({ message: 'FORBIDDEN', error: error.message }, { status: 403 });
+        return Response.json({
+            message: 'Erro interno do servidor',
+            error: error.message
+        }, { status: 500 });
     }
 }

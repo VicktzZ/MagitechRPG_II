@@ -187,12 +187,12 @@ const weaponBonuses: Array<Weapon<'Leve' | 'Pesada'>['bonus']> = [
 
 const rarityWeaponBonuses: Record<RarityType, number> = {
     'Comum': 0,
-    'Incomum': 1,
-    'Raro': 2,
-    'Épico': 3,
-    'Lendário': 4,
-    'Único': 5,
-    'Mágico': 5,
+    'Incomum': 2,
+    'Raro': 4,
+    'Épico': 6,
+    'Lendário': 8,
+    'Único': 10,
+    'Mágico': 0,
     'Especial': 0,
     'Amaldiçoado': 0
 }
@@ -200,11 +200,11 @@ const rarityWeaponBonuses: Record<RarityType, number> = {
 const rarityArmorBonuses: Record<RarityType, number> = {
     'Comum': 0,
     'Incomum': 1,
-    'Raro': 1,
-    'Épico': 2,
-    'Lendário': 2,
-    'Único': 3,
-    'Mágico': 3,
+    'Raro': 2,
+    'Épico': 3,
+    'Lendário': 4,
+    'Único': 5,
+    'Mágico': 0,
     'Especial': 0,
     'Amaldiçoado': 0
 }
