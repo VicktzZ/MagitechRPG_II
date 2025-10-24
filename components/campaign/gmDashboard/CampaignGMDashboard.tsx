@@ -17,11 +17,10 @@ import {
     People,
     SupervisorAccount
 } from '@mui/icons-material'
-import { campaignService } from '@services'
 import { type ReactElement, useMemo } from 'react'
 import PlayerCard from './PlayerCard'
 import type { Ficha } from '@types'
-import { useRealtimeDatabase } from '@hooks';
+import { useFichasRealtime } from '@services/firestore/hooks';
 import { blue, green, orange, purple } from '@mui/material/colors';
 
 // Componente Section reutilizável
@@ -74,33 +73,22 @@ function Section({ title, icon, children, sx }: SectionProps) {
 }
 
 export default function CampaignGMDashboard(): ReactElement | null {
-    const { users, fichas, code } = useCampaignContext()
+    const { users, fichas  } = useCampaignContext()
     
     const theme = useTheme();
     
     const queryClient = useQueryClient()
 
-    const { data: playerFichas, query: { isPending: isPlayerFichasPending  } } = useRealtimeDatabase({
-        collectionName: 'fichas',
-        pipeline: [
-            {
-                $match: {
-                    _id: { $in: fichas.map(f => f._id) }
-                }
-            }
-        ],
+    // 🔥 Buscar fichas dos jogadores em tempo real usando Firestore
+    const { data: playerFichas, loading: isPlayerFichasPending } = useFichasRealtime({
+        filters: fichas.length > 0 ? [
+            { field: '_id', operator: 'in', value: fichas.map(f => f._id) }
+        ] : undefined,
         onChange: async () => {
-            // Invalida o cache para forçar refetch dos dados
             console.log('[GM Dashboard] Invalidando cache e forçando refetch')
             await queryClient.invalidateQueries({ queryKey: [ 'playerFichas', fichas.map(f => f._id) ] })
             await queryClient.refetchQueries({ queryKey: [ 'playerFichas', fichas.map(f => f._id) ] })
         }
-    },
-    {
-        queryKey: [ 'playerFichas', fichas.map(f => f._id) ],
-        queryFn: async () => await campaignService.getFichas(code),
-        staleTime: 0,
-        gcTime: 0
     })
 
     const players = useMemo(() => {

@@ -13,23 +13,21 @@ import {
     type Theme
 } from '@mui/material'
 import { grey } from '@mui/material/colors'
-import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
 import { campaignService, sessionService } from '@services'
 import type { User } from '@types'
-import { useLocalStorage } from '@uidotdev/usehooks'
+import { useSession } from 'next-auth/react'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 import { useMemo, useState, type ReactElement } from 'react'
 
 export default function CampaignHeader(): ReactElement {
     const { campaign, users, fichas, isUserGM } = useCampaignContext()
     const [ copiedCode, setCopiedCode ] = useState<boolean>(false)
-    const [ , setCurrentFicha ] = useLocalStorage<string>('currentFicha', '');
     const { data: session } = useSession()
     
     const router = useRouter()
     const isMobile = useMediaQuery((theme: Theme) => theme.breakpoints.down('sm'))
-    const onlineUsers = useMemo(() => campaign.session.users, [ campaign ])
+    const onlineUsers = useMemo(() => campaign.session?.users ?? [], [ campaign ])
 
     console.log({
         campaign,
@@ -124,7 +122,7 @@ export default function CampaignHeader(): ReactElement {
                                 <Typography variant="subtitle2" color="primary">
                                     Mestre
                                 </Typography>
-                                <Typography variant="body2">{users.admin[0].name}</Typography>
+                                <Typography variant="body2">{users.admin[0]?.name}</Typography>
                             </Box>
                             <Box
                                 sx={{
@@ -212,7 +210,7 @@ export default function CampaignHeader(): ReactElement {
                         <Button onClick={() => {
                             if (!session?.user?._id || !campaign._id) return
 
-                            setCurrentFicha('');
+                            localStorage.setItem('currentFicha', '');
                             const userId = session?.user?._id;
                             if (!userId) return;
                             

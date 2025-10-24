@@ -50,6 +50,7 @@
     "eslint-plugin-unused-imports": "^4.1.4",
     "eslint-plugin-unused-vars": "^0.0.3",
     "firebase": "^11.10.0",
+    "firebase-admin": "^13.5.0",
     "framer-motion": "^10.16.16",
     "mongodb": "^6.17.0",
     "mongoose": "^8.0.3",
@@ -73,6 +74,7 @@
     "zod": "^3.22.4"
   },
   "devDependencies": {
+    "@types/bun": "latest",
     "@types/lodash.debounce": "^4.0.9",
     "@types/node": "^20",
     "@types/react": "^18",
@@ -82,7 +84,6 @@
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-prettier": "^5.1.2",
     "prettier": "3.1.1",
-    "typescript": "^5",
-    "@types/bun": "latest"
+    "typescript": "^5"
   }
 }

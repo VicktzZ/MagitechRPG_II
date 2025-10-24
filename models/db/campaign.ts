@@ -42,10 +42,10 @@ const campaignSchema = z.object({
     campaignCode: z.string(),
     title: z.string(),
     description: z.string(),
-    players: z.array(playerSchema),
+    players: z.array(playerSchema).or(z.any()),
     notes: z.array(noteSchema),
     myFicha: z.any().nullable().optional(),
-    session: sessionSchema,
+    session: sessionSchema.or(z.any()),
     custom: z.object({
         magias: z.array(z.any()),
         creatures: z.array(z.any()),
@@ -54,7 +54,8 @@ const campaignSchema = z.object({
             weapon: z.array(z.any()),
             armor: z.array(z.any()),
             item: z.array(z.any())
-        })
+        }),
+        dices: z.array(z.any()).optional()
     })
 });
 

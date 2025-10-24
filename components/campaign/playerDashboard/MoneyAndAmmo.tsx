@@ -3,39 +3,38 @@
 
 import { useCampaignCurrentFichaContext } from '@contexts';
 import { AmmoType } from '@enums';
-import { 
-    Add as AddIcon, 
-    Remove as RemoveIcon,
+import {
+    Add as AddIcon,
     AttachMoney,
-    Refresh,
-    GpsFixed,
+    FiberManualRecord,
     FlashOn,
-    Star,
-    FiberManualRecord
+    GpsFixed,
+    Refresh,
+    Remove as RemoveIcon,
+    Star
 } from '@mui/icons-material';
-import { 
-    Box, 
-    Button, 
-    IconButton, 
-    LinearProgress, 
-    MenuItem, 
-    Paper, 
-    Select, 
-    TextField, 
-    Typography,
-    Stack,
-    Tooltip,
+import {
+    Box,
+    Button,
     Chip,
+    IconButton,
+    LinearProgress,
+    MenuItem,
+    Paper,
+    Select,
+    Stack,
+    TextField,
+    Tooltip,
+    Typography,
     useTheme
 } from '@mui/material';
-import { green, orange, blue, purple, red } from '@mui/material/colors';
+import { blue, green, orange, purple, red } from '@mui/material/colors';
 import type { AmmoControl } from '@types';
 import { type ReactElement, useState } from 'react';
 
 export default function MoneyAndAmmo(): ReactElement {
     const { ficha, updateFicha } = useCampaignCurrentFichaContext();
     const theme = useTheme();
-    const fichaCopy = { ...ficha };
     
     const [ ammo, setAmmo ] = useState<AmmoControl>({
         type: AmmoType.BULLET,
@@ -51,23 +50,33 @@ export default function MoneyAndAmmo(): ReactElement {
                 ? Math.min(prev.current + 1, prev.max)
                 : Math.max(prev.current - 1, 0);
                 
-            fichaCopy.ammoCounter.current = current;
+            // Atualizar no Firestore em tempo real
+            updateFicha({
+                ammoCounter: {
+                    current,
+                    max: prev.max
+                }
+            });
 
             return {
                 ...prev,
                 current
             }
         });
-
-        updateFicha(fichaCopy);
     };
 
     const handleMaxAmmoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const newMax = Math.max(1, parseInt(event.target.value) || 1);
         setAmmo(prev => {
             const current = Math.min(prev.current, newMax);
-            fichaCopy.ammoCounter.max = newMax;
-            fichaCopy.ammoCounter.current = current;
+
+            // Atualizar no Firestore em tempo real
+            updateFicha({
+                ammoCounter: {
+                    current,
+                    max: newMax
+                }
+            });
 
             return {
                 ...prev,
@@ -75,8 +84,23 @@ export default function MoneyAndAmmo(): ReactElement {
                 current
             }
         });
+    };
 
-        updateFicha(fichaCopy);
+    const handleReload = () => {
+        setAmmo(prev => {
+            // Atualizar no Firestore em tempo real
+            updateFicha({
+                ammoCounter: {
+                    current: prev.max,
+                    max: prev.max
+                }
+            });
+
+            return {
+                ...prev,
+                current: prev.max
+            }
+        });
     };
 
     const handleAmmoTypeChange = (event: any) => {
@@ -84,19 +108,6 @@ export default function MoneyAndAmmo(): ReactElement {
             ...prev,
             type: event.target.value
         }));
-    };
-
-    const handleReload = () => {
-        setAmmo(prev => {
-            fichaCopy.ammoCounter.current = prev.max;
-
-            return {
-                ...prev,
-                current: prev.max
-            }
-        });
-
-        updateFicha(fichaCopy);
     };
 
     const getAmmoColor = (type: AmmoType) => {
@@ -199,8 +210,13 @@ export default function MoneyAndAmmo(): ReactElement {
                                 defaultValue={ficha.inventory.money}
                                 onChange={(e) => {
                                     const value = parseFloat(e.target.value) || 0;
-                                    fichaCopy.inventory.money = value;
-                                    updateFicha(fichaCopy);
+                                    // 🔥 Atualizar no Firestore em tempo real
+                                    updateFicha({
+                                        inventory: {
+                                            ...ficha.inventory,
+                                            money: value
+                                        }
+                                    });
                                 }}
                                 type="number"
                                 variant="outlined"

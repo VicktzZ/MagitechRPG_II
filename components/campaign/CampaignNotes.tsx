@@ -78,10 +78,10 @@ export default function CampaignNotes(): ReactElement {
             <Paper sx={{ display: 'flex', flexDirection: 'column', gap: 2, p: 2, mb: 2 }}>
                 <Typography variant="h6">Notas da Campanha</Typography>
                 <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 2 }}>
-                    {campaign.notes.length === 0 && (
+                    {campaign.notes?.length === 0 && (
                         <Typography variant="body1">A campanha não possui nenhuma nota.</Typography>
                     )}
-                    {campaign.notes.map((note) => (
+                    {campaign.notes?.map((note) => (
                         <Card 
                             key={note._id} 
                             sx={{ 

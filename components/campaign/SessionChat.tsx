@@ -226,7 +226,7 @@ export default function SessionChat() {
         handleSendMessage
     } = useChatContext()
 
-    const isAdmin = session?.user && campaign.admin.includes(session.user._id)
+    const isAdmin = session?.user && campaign.admin?.includes(session.user._id)
 
     const scrollToBottom = () => {
         if (shouldAutoScroll && messagesEndRef.current) {
@@ -412,7 +412,7 @@ export default function SessionChat() {
 
     // Carrega mensagens iniciais
     useEffect(() => {
-        setMessages(campaign?.session.messages ?? [])
+        setMessages(campaign?.session?.messages ?? [])
     }, [ campaign?._id ])
 
     // Scroll to bottom quando as mensagens são carregadas inicialmente
@@ -579,7 +579,7 @@ export default function SessionChat() {
                         </Stack>
                         
                         {/* Botão de Teste para GMs */}
-                        {campaign.admin.includes(session?.user?._id ?? '') && (
+                        {campaign.admin?.includes(session?.user?._id ?? '') && (
                             <Box sx={{ mt: 2 }}>
                                 <Tooltip title="Solicitar teste de atributo ou perícia">
                                     <Button 
@@ -664,7 +664,7 @@ export default function SessionChat() {
                             })
                             .map((msg, index) => {
                                 const isOwnMessage = msg.by.id === session?.user?._id;
-                                const isGM = campaign.admin.includes(msg.by.id);
+                                const isGM = campaign.admin?.includes(msg.by.id);
                                 const isBot = msg.by.isBot;
                                 const isDiceMessage = msg.type === MessageType.DICE || msg.type === MessageType.EXPERTISE;
                                     

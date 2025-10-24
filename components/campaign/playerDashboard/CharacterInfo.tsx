@@ -4,25 +4,25 @@
 import { RPGIcon } from '@components/misc';
 import { attributeIcons } from '@constants/ficha';
 import { useCampaignCurrentFichaContext } from '@contexts';
-import { 
-    Avatar, 
-    Box, 
-    Chip, 
-    LinearProgress, 
-    Paper, 
-    Typography,
-    Stack,
-    Divider,
-    Grid,
-    Button
-} from '@mui/material';
 import {
-    Star,
     LocalFireDepartment,
     Psychology,
-    Shield
+    Shield,
+    Star
 } from '@mui/icons-material';
-import { green, red, blue, orange, purple } from '@mui/material/colors';
+import {
+    Avatar,
+    Box,
+    Button,
+    Chip,
+    Divider,
+    Grid,
+    LinearProgress,
+    Paper,
+    Stack,
+    Typography
+} from '@mui/material';
+import { blue, green, orange, purple, red } from '@mui/material/colors';
 import { useState, type ReactElement } from 'react';
 
 interface CharacterInfoProps {
@@ -32,8 +32,6 @@ interface CharacterInfoProps {
 export default function CharacterInfo({ avatar }: CharacterInfoProps): ReactElement {    
     const { ficha, updateFicha } = useCampaignCurrentFichaContext();
     
-    const fichaCopy = { ...ficha };
-
     const [ currentAttributes, setCurrentAttributes ] = useState({
         lp: ficha.attributes.lp,
         mp: ficha.attributes.mp,
@@ -41,18 +39,24 @@ export default function CharacterInfo({ avatar }: CharacterInfoProps): ReactElem
     });
 
     const setAttribute = (attr: 'lp' | 'mp' | 'ap', num: number, max?: number) => {
-        
-        setCurrentAttributes(prev => {
-            fichaCopy.attributes[attr] = prev[attr] + num;
-            if (max) fichaCopy.attributes[attr] = max;
-            
-            return {
-                ...prev,
-                [attr]: ficha.attributes[attr]
+        let newValue = currentAttributes[attr] + num;
+
+        if (max) {
+            newValue = max;
+        }
+
+        setCurrentAttributes(prev => ({
+            ...prev,
+            [attr]: newValue
+        }));
+
+        // Atualizar no Firestore em tempo real
+        updateFicha({
+            attributes: {
+                ...ficha.attributes,
+                [attr]: newValue
             }
         });
-
-        updateFicha(fichaCopy);
     }
 
     const lpPercent = (currentAttributes.lp / ficha.attributes.maxLp) * 100;

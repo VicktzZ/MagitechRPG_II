@@ -3,27 +3,22 @@
 import { FichaComponent } from '@components/ficha';
 import { FichaFormProvider } from '@contexts';
 import { Backdrop, CircularProgress } from '@mui/material';
-import { fichaService } from '@services';
-import { useQuery } from '@tanstack/react-query';
+import { useCompleteFicha } from '@hooks/useCompleteFicha';
 import type { ReactElement } from 'react';
 
 export default function Page({ params }: { params: { id: string } }): ReactElement {
-    const { isPending, data } = useQuery({
-        queryKey: [ 'ficha', params.id ],
-        queryFn: async () => await fichaService.getById(params.id),
-        staleTime: 60000
-    })
-
-    console.log(data)
+    const { data: completeFicha, loading } = useCompleteFicha({
+        fichaId: params.id
+    });
 
     return (
         <>
-            { isPending ? (
+            {loading && !completeFicha ? (
                 <Backdrop open>
                     <CircularProgress />
                 </Backdrop>
             ) : (
-                <FichaFormProvider formData={data}>
+                <FichaFormProvider formData={completeFicha!}>
                     <FichaComponent />
                 </FichaFormProvider>
             )}

@@ -1,13 +1,13 @@
 declare global {
     namespace NodeJS {
         interface ProcessEnv {
-            FIREBASE_APIKEY: string
-            FIREBASE_AUTHDOMAIN: string
-            FIREBASE_PROJECT_ID: string
-            FIREBASE_STORAGEBUCKET: string
-            FIREBASE_MESSAGING_SENDER_ID: string
-            FIREBASE_APP_ID: string
-            FIREBASE_MEASUREMENT_ID: string
+            NEXT_PUBLIC_FIREBASE_APIKEY: string
+            NEXT_PUBLIC_FIREBASE_AUTHDOMAIN: string
+            NEXT_PUBLIC_FIREBASE_PROJECT_ID: string
+            NEXT_PUBLIC_FIREBASE_STORAGEBUCKET: string
+            NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: string
+            NEXT_PUBLIC_FIREBASE_APP_ID: string
+            NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID: string
             GOOGLE_CLIENT_ID: string
             GOOGLE_CLIENT_SECRET: string
             DISCORD_CLIENT_ID: string

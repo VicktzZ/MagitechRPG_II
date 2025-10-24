@@ -1,5 +1,6 @@
 import type { MessageType } from '@enums'
 import type { Attributes, CampaignCustomArmor, CampaignCustomItem, CampaignCustomWeapon, Expertises, Ficha, Magic, Skill } from './ficha'
+import { type Dice } from './dices'
 
 export interface User {
     _id?: string
@@ -77,7 +78,8 @@ export interface Campaign {
             weapon: CampaignCustomWeapon[]
             armor: CampaignCustomArmor[]
             item: CampaignCustomItem[]
-        }
+        },
+        dices: Dice[]
     }
 }
 

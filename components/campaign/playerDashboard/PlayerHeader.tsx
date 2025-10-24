@@ -1,39 +1,39 @@
 'use client'
 
 import {
-    Box,
-    Paper,
-    Stack,
-    Typography,
-    Avatar,
-    Chip,
-    LinearProgress,
-    IconButton,
-    Tooltip,
-    useTheme,
-    useMediaQuery,
-    Divider,
-    Grid
-} from '@mui/material'
-import {
     Add as AddIcon,
-    Remove as RemoveIcon,
-    Star,
-    Shield,
     AutoAwesome,
     Cake,
-    Wc,
-    Speed,
-    TrendingUp,
-    LocalFireDepartment,
     Favorite,
+    FlashOn,
+    LocalFireDepartment,
     Psychology,
-    FlashOn
-} from '@mui/icons-material'
-import { blue, green, red, purple, grey, yellow } from '@mui/material/colors'
-import { useCampaignCurrentFichaContext } from '@contexts'
-import { useState, type ReactElement } from 'react'
-import type { Ficha } from '@types'
+    Remove as RemoveIcon,
+    Shield,
+    Speed,
+    Star,
+    TrendingUp,
+    Wc
+} from '@mui/icons-material';
+import {
+    Avatar,
+    Box,
+    Chip,
+    Divider,
+    Grid,
+    IconButton,
+    LinearProgress,
+    Paper,
+    Stack,
+    Tooltip,
+    Typography,
+    useMediaQuery,
+    useTheme
+} from '@mui/material';
+import { blue, green, grey, purple, red, yellow } from '@mui/material/colors';
+import { useFichaUpdater } from '@services/firestore/hooks';
+import { useState, type ReactElement } from 'react';
+import { useCampaignCurrentFichaContext } from '@contexts';
 
 interface PlayerHeaderProps {
     avatar: string
@@ -157,14 +157,12 @@ export default function PlayerHeader({ avatar }: PlayerHeaderProps): ReactElemen
             [attr]: newValue
         }))
 
-        const updatedFicha: Ficha = {
-            ...ficha,
+        updateFicha({
             attributes: {
                 ...ficha.attributes,
                 [attr]: newValue
             }
-        }
-        updateFicha(updatedFicha)
+        })
     }
 
     const getElementIcon = (element: string) => {
@@ -364,8 +362,8 @@ export default function PlayerHeader({ avatar }: PlayerHeaderProps): ReactElemen
                                     max={ficha.attributes.maxMp}
                                     color={blue[500]}
                                     icon={<AutoAwesome sx={{ color: blue[300] }} />}
-                                    onIncrease={() => updateAttribute('mp', 1)}
-                                    onDecrease={() => updateAttribute('mp', -1)}
+                                    onIncrease={() => updateAttributeLocal('mp', 1)}
+                                    onDecrease={() => updateAttributeLocal('mp', -1)}
                                 />
                                 
                                 <StatusBar
@@ -374,8 +372,8 @@ export default function PlayerHeader({ avatar }: PlayerHeaderProps): ReactElemen
                                     max={ficha.attributes.maxAp}
                                     color={yellow[600]}
                                     icon={<Shield sx={{ color: yellow[300] }} />}
-                                    onIncrease={() => updateAttribute('ap', 1)}
-                                    onDecrease={() => updateAttribute('ap', -1)}
+                                    onIncrease={() => updateAttributeLocal('ap', 1)}
+                                    onDecrease={() => updateAttributeLocal('ap', -1)}
                                 />
                             </Stack>
                         </Stack>

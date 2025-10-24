@@ -19,17 +19,16 @@ export async function GET(req: NextRequest): Promise<Response> {
         if (userId) {
             const qGM = query(campaignCollection, where('admin', 'array-contains', userId));
             const gmSnap = await getDocs(qGM);
-            const gm = gmSnap.docs.map(d => d.data());
+            const asGm = gmSnap.docs.map(d => d.data())
+                .map(c => ({ _id: c._id, code: c.campaignCode }));
 
             const allSnap = await getDocs(campaignCollection);
             const asPlayer = allSnap.docs
                 .map(d => d.data())
-                .filter(c => Array.isArray(c.players) && c.players.some(p => p.userId === userId));
+                .filter(c => Array.isArray(c.players) && c.players.some(p => p.userId === userId))
+                .map(c => ({ _id: c._id, code: c.campaignCode }));
 
-            const map = new Map<string, CampaignType>();
-            [ ...gm, ...asPlayer ].forEach(c => { if (c._id) map.set(c._id, c); });
-            const response = Array.from(map.values());
-            return Response.json(response);
+            return Response.json({ asGm, asPlayer });
         }
 
         const snap = await getDocs(campaignCollection);

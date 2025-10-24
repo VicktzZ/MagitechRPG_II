@@ -1,46 +1,18 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { IconButton, Badge, Menu, MenuItem, Typography, Box } from '@mui/material'
 import { Notifications as NotificationsIcon } from '@mui/icons-material'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import type { Notification } from '@types'
+import { useMyNotifications } from '@services/firestore/hooks'
 
 export default function Notifications() {
     const { data: session } = useSession()
-    const router = useRouter()
+    const { data: notifications } = useMyNotifications(session?.user?._id ?? '')
     const [ anchorEl, setAnchorEl ] = useState<null | HTMLElement>(null)
-    const [ notifications, setNotifications ] = useState<Notification[]>([])
-
-    // Busca notificações ao montar o componente
-    useEffect(() => {
-        const fetchNotifications = async () => {
-            if (!session?.user?._id) return
-
-            try {
-                const response = await fetch(`/api/notifications/${session.user._id}`)
-                if (!response.ok) {
-                    throw new Error('Erro ao buscar notificações')
-                }
-                
-                const data = await response.json()
-                
-                // Verifica se data é um array
-                if (Array.isArray(data)) {
-                    setNotifications(data)
-                } else {
-                    console.error('Resposta inválida:', data)
-                    setNotifications([])
-                }
-            } catch (error) {
-                console.error('Erro ao buscar notificações:', error)
-                setNotifications([])
-            }
-        }
-
-        fetchNotifications()
-    }, [ session?.user?._id ])
+    const router = useRouter()
 
     const handleClick = (event: React.MouseEvent<HTMLElement>) => {
         setAnchorEl(event.currentTarget)
@@ -66,15 +38,6 @@ export default function Notifications() {
                 throw new Error('Erro ao marcar notificação como lida')
             }
 
-            // Atualiza estado local
-            setNotifications(prev => 
-                prev.map(n => 
-                    n._id === notification._id 
-                        ? { ...n, read: true }
-                        : n
-                )
-            )
-
             // Fecha menu e navega para o link se existir
             handleClose()
             if (notification.link) {
@@ -94,6 +57,7 @@ export default function Notifications() {
                 size="large"
                 color="inherit"
                 onClick={handleClick}
+                sx={{ border: '1px solid #aaa' }}
             >
                 <Badge badgeContent={unreadCount} color="error">
                     <NotificationsIcon />

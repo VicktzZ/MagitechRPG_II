@@ -15,7 +15,7 @@ const notificationSchema = z.object({
     userId: z.string(),
     title: z.string(),
     content: z.string(),
-    timestamp: z.date(),
+    timestamp: z.date().or(z.string()),
     read: z.boolean(),
     type: z.enum([ 'levelUp', 'newMessage', 'newPlayer', 'other' ]),
     link: z.string().optional()

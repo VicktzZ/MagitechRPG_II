@@ -32,7 +32,7 @@ import type { Note, Weapon, Armor, Item } from '@types';
 import { useSnackbar } from 'notistack';
 import { useMemo, useState, type ReactElement } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { useRealtimeDatabase } from '@hooks';
+import { useFichasRealtime } from '@services/firestore/hooks';
 import { blue, green } from '@mui/material/colors';
 import AddItemModal from '@layout/AddItemModal';
 
@@ -93,22 +93,16 @@ export default function GMActions(): ReactElement {
         }
     }
 
-    // Player fichas realtime
+    // Player fichas em tempo real usando Firestore
     const queryClient = useQueryClient()
-    const { data: playerFichas } = useRealtimeDatabase({
-        collectionName: 'fichas',
-        pipeline: [
-            { $match: { _id: { $in: fichas.map(f => f._id) } } }
-        ],
+    const { data: playerFichas } = useFichasRealtime({
+        filters: fichas.length > 0 ? [
+            { field: '_id', operator: 'in', value: fichas.map(f => f._id) }
+        ] : undefined,
         onChange: async () => {
             await queryClient.invalidateQueries({ queryKey: [ 'playerFichas', fichas.map(f => f._id) ] })
             await queryClient.refetchQueries({ queryKey: [ 'playerFichas', fichas.map(f => f._id) ] })
         }
-    }, {
-        queryKey: [ 'playerFichas', fichas.map(f => f._id) ],
-        queryFn: async () => await campaignService.getFichas(code),
-        staleTime: 0,
-        gcTime: 0
     })
 
     const players = useMemo(() => {

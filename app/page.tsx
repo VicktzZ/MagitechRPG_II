@@ -101,12 +101,7 @@ export default function LandingPage(): ReactElement | null {
     const handleInstallClick = () => {
         if (deferredPrompt) {
             deferredPrompt.prompt()
-            deferredPrompt.userChoice.then((choiceResult: any) => {
-                if (choiceResult.outcome === 'accepted') {
-                    console.log('Usuário aceitou a instalação da PWA')
-                } else {
-                    console.log('Usuário não aceitou a instalação da PWA')
-                }
+            deferredPrompt.userChoice.then(() => {
                 setShowButton(false)
                 setDeferredPrompt(null)
             })

@@ -13,7 +13,7 @@ import { z } from 'zod';
 
 const spellSchema = z.object({
     _id: z.string(),
-    'elemento': ElementoToUpperEnum,
+    'elemento': ElementoToUpperEnum.or(z.string()),
     'nome': z.string(),
     'nível': z.number(),
     'custo': z.number(),

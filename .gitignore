@@ -38,6 +38,11 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# firestore
+firestore.indexes.json
+firebase.json
+firebase-debug.log
+
 # others
 licenses
 

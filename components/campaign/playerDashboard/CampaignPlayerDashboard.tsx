@@ -1,45 +1,43 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 'use client';
 
+import { CustomDices, Passives } from '@components/ficha';
 import { useCampaignContext } from '@contexts';
 import { SkillType } from '@enums';
 import { 
-    Backdrop, 
-    Box, 
-    CircularProgress, 
+    AttachMoney,
+    AutoAwesome,
+    CasinoSharp,
+    EventNote,
+    Inventory2,
+    Notes,
+    Person,
+    SportsMartialArts
+} from '@mui/icons-material';
+import {
+    Backdrop,
+    Box,
+    CircularProgress,
+    Divider,
     Paper,
     Stack,
     Typography,
-    Divider,
     type SxProps
 } from '@mui/material';
-import { 
-    Person,
-    EventNote,
-    CasinoSharp,
-    AutoAwesome,
-    Inventory2,
-    SportsMartialArts,
-    Notes,
-    AttachMoney
-} from '@mui/icons-material';
+import type { Ficha } from '@types';
 import { useState, type ReactElement } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
-import { Passives, CustomDices } from '@components/ficha';
-import type { Ficha } from '@types';
 
-import { useRealtimeDatabase, useSaveFichaChanges } from '@hooks';
+import { campaignCurrentFichaContext } from '@contexts';
+import { useFichaUpdater } from '@services/firestore/hooks';
 import ExpertiseSection from './ExpertiseSection';
 import InventorySection from './InventorySection';
 import MoneyAndAmmo from './MoneyAndAmmo';
 import NotesSection from './NotesSection';
+import PlayerHeader from './PlayerHeader';
 import SkillsSection from './SkillsSection';
 import SpellsSection from './SpellsSection';
-import PlayerHeader from './PlayerHeader';
-import { useLocalStorage } from '@uidotdev/usehooks';
-import { fichaService } from '@services';
-import { campaignCurrentFichaContext } from '@contexts';
-import { useQueryClient } from '@tanstack/react-query';
+import { useCompleteFicha } from '@hooks/useCompleteFicha';
 
 // Componente Section reutilizável
 function Section({ title, icon, children, action, sx }: { 
@@ -78,33 +76,14 @@ function Section({ title, icon, children, action, sx }: {
 export default function CampaignPlayerDashboard(): ReactElement | null {
     const { users, isUserGM } = useCampaignContext();
     const [ selectedSkillType, setSelectedSkillType ] = useState<SkillType>(SkillType.ALL);
-    const [ fichaId ] = useLocalStorage<string>('currentFicha', '');
+    const fichaId = localStorage.getItem('currentFicha');
     
-    const queryClient = useQueryClient();
-
     if (!fichaId) return null;
 
-    const { data: ficha, query: { isPending } } = useRealtimeDatabase({
-        collectionName: 'fichas',
-        pipeline: [
-            {
-                $match: {
-                    _id: fichaId
-                }
-            }
-        ]
-    }, {
-        queryKey: [ 'ficha', fichaId ],
-        queryFn: async () => await fichaService.getById(fichaId)
-    })
+    // 🔥 Usando hook personalizado para ficha completa em tempo real
+    const { data: ficha, loading } = useCompleteFicha({ fichaId });
 
-    const { updateFicha } = useSaveFichaChanges({ 
-        ficha: ficha!, 
-        enabled: !isUserGM && !!ficha,
-        callback: async () => {
-            await queryClient.invalidateQueries({ queryKey: [ 'ficha', fichaId ] })
-        }
-    })
+    const { updateFicha } = useFichaUpdater(fichaId);
 
     const form = useForm<Ficha>({
         defaultValues: ficha,
@@ -125,7 +104,7 @@ export default function CampaignPlayerDashboard(): ReactElement | null {
                 minHeight: '100vh'
             }}
         >
-            {isPending ? (
+            {loading ? (
                 <Backdrop 
                     open={true}
                     sx={{ 

@@ -52,8 +52,8 @@ export default function TestModal({ open, onClose, onConfirm, campaign }: TestMo
     const { users } = useCampaignContext();
 
     // Filtra apenas os jogadores online que não são admin
-    const availablePlayers = campaign.session.users
-        .filter(userId => !campaign.admin.includes(userId))
+    const availablePlayers = campaign.session?.users
+        .filter(userId => !campaign.admin?.includes(userId))
         .map(userId => {
             const player = campaign.players.find(p => p.userId === userId);
             return player?.userId;

@@ -74,7 +74,7 @@ function MagicSpell({
     const [ extraManaCost, setExtraManaCost ] = useState<number>(0);
 
     // Elemento para cor/ícone
-    const elemento = magic.elemento.toUpperCase() as ElementType;
+    const elemento = magic.elemento?.toUpperCase() as ElementType;
     const elementoColor = elementColor[elemento as keyof typeof elementColor] || theme.palette.primary.main;
     const elementIcon = elementIcons[elemento] ?? <AutoAwesome />;
 

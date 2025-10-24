@@ -95,7 +95,7 @@ const Magics = memo(() => {
     // Extrai elementos únicos para os filtros
     const uniqueElements = useMemo(() => {
         if (!magics?.length) return []
-        const elements = new Set(magics.map(magic => magic.elemento.toUpperCase()))
+        const elements = new Set(magics.map(magic => magic.elemento?.toUpperCase()))
         return Array.from(elements)
     }, [ magics ])
 
@@ -108,7 +108,7 @@ const Magics = memo(() => {
         // Contagem de elementos
         const elementDistribution: Record<string, number> = {}
         magics.forEach(magic => {
-            const element = magic.elemento.toUpperCase()
+            const element = magic.elemento?.toUpperCase()
             elementDistribution[element] = (elementDistribution[element] || 0) + 1
         })
 
@@ -516,7 +516,7 @@ const Magics = memo(() => {
                                             />
                                             {uniqueElements.map(element => {
                                                 const count = magicsStats.elementDistribution[element] || 0;
-                                                const elementColor = (elementColors as any)[element.toUpperCase()] || theme.palette.primary.main;
+                                                const elementColor = (elementColors as any)[element?.toUpperCase()] || theme.palette.primary.main;
 
                                                 return (
                                                     <Chip

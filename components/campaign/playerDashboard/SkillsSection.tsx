@@ -7,7 +7,6 @@ import { SkillType } from '@enums';
 import Masonry from '@mui/lab/Masonry';
 import { 
     Box, 
-    Button, 
     Chip, 
     Paper, 
     Typography,
@@ -19,7 +18,6 @@ import {
     Badge
 } from '@mui/material';
 import {
-    AccountTree,
     ExpandMore,
     ExpandLess,
     Star,
@@ -172,7 +170,7 @@ export default function SkillsSection({ selectedSkillType, setSelectedSkillType 
                             </Box>
                         </Box>
                         
-                        <Tooltip title="Abrir árvore de habilidades">
+                        {/* <Tooltip title="Abrir árvore de habilidades">
                             <Button 
                                 variant="contained" 
                                 startIcon={<AccountTree />}
@@ -188,7 +186,7 @@ export default function SkillsSection({ selectedSkillType, setSelectedSkillType 
                             >
                                 Árvore de Habilidades
                             </Button>
-                        </Tooltip>
+                        </Tooltip> */}
                     </Box>
 
                     {/* Filtros */}

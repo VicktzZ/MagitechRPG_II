@@ -26,7 +26,7 @@ import { useRouter } from 'next/navigation';
 import { useSnackbar } from 'notistack';
 import { useState, type ReactElement } from 'react';
 
-export default function FichaCard({ ficha, onClick, disableDeleteButton, onDelete }: { ficha: Ficha, onClick?: () => void, disableDeleteButton?: boolean, onDelete?: () => void }): ReactElement {
+export default function FichaCard({ ficha, onClick, disableDeleteButton }: { ficha: Ficha, onClick?: () => void, disableDeleteButton?: boolean }): ReactElement {
     const theme = useTheme()
     const router = useRouter()
     const matches = useMediaQuery(theme.breakpoints.down('md'))
@@ -44,7 +44,6 @@ export default function FichaCard({ ficha, onClick, disableDeleteButton, onDelet
                 setTimeout(() => {
                     closeSnackbar('loadingDelete')
                     enqueueSnackbar(`Ficha ${ficha.name} deletada!`, toastDefault('itemDeleted', 'success'))
-                    onDelete?.()
                 }, 500);
             } catch (error: any) {
                 enqueueSnackbar(`Algo deu errado: ${error.message}`, toastDefault('error', 'error'))

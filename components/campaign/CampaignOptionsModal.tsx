@@ -65,6 +65,18 @@ export default function CampaignOptionsModal({
                 title: campaignProps.title ?? '',
                 description: campaignProps.description ?? '',
                 players: [],
+                notes: [],
+                custom: {
+                    creatures: [],
+                    items: {
+                        weapon: [],
+                        armor: [],
+                        item: []
+                    },
+                    magias: [],
+                    skills: [],
+                    dices: []
+                },
                 session: {
                     users: [],
                     messages: []

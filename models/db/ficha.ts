@@ -52,8 +52,8 @@ const weaponSchema = z.object({
     effect: z.object({
         value: z.string(),
         critValue: z.string(),
-        critChance: z.number(),
-        effectType: z.string()
+        critChance: z.number().or(z.string()),
+        effectType: z.string().optional()
     })
 });
 
@@ -133,14 +133,14 @@ const fichaSchema = z.object({
     ]),
     ORMLevel: z.number(),
     inventory: z.object({
-        items: z.array(itemSchema),
-        weapons: z.array(weaponSchema),
-        armors: z.array(armorSchema),
+        items: z.array(itemSchema).or(z.any()),
+        weapons: z.array(weaponSchema).or(z.any()),
+        armors: z.array(armorSchema).or(z.any()),
         money: z.number()
     }),
     displacement: z.number(),
     magics: z.array(z.any()),
-    anotacoes: z.string().optional(),
+    anotacoes: z.string().optional().nullable(),
     magicsSpace: z.number(),
     mpLimit: z.number().optional(),
     overall: z.number().optional(),
@@ -148,16 +148,16 @@ const fichaSchema = z.object({
     elementalMastery: z.string().optional().nullable(),
     level: z.number(),
     subclass: z.union([ z.string(), z.object({ name: z.string(), description: z.string(), skills: z.array(skillSchema) }) ]),
-    financialCondition: z.enum([ 'Miserável', 'Pobre', 'Estável', 'Rico' ]),
+    financialCondition: z.enum([ 'Miserável', 'Pobre', 'Estável', 'Rico' ]).or(z.any()),
     expertises: z.record(expertisesValueSchema),
     traits: z.array(traitSchema).or(z.array(z.string())),
-    session: z.array(sessionInfoSchema).optional(),
+    session: z.array(sessionInfoSchema).optional().or(z.any()),
     passives: z.array(passiveSchema),
-    status: z.array(statusSchema),
+    status: z.array(statusSchema).or(z.any()),
     dices: z.array(z.any()),
     capacity: z.object({
-        cargo: z.string().transform((val) => Number(val)),
-        max: z.string().transform((val) => Number(val))
+        cargo: z.string().transform((val) => Number(val)).or(z.number()),
+        max: z.string().transform((val) => Number(val)).or(z.number())
     }),
     skills: z.object({
         lineage: z.array(skillSchema).or(z.array(z.any())).optional(),
