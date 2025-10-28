@@ -1,8 +1,8 @@
 import { fichaModel } from '@constants/ficha';
-import { type Ficha } from '@types';
 import { type Dispatch, type SetStateAction, createContext } from 'react';
+import { type Charsheet } from '@models/entities';
 
-export const fichaContext = createContext<{ ficha: Ficha, setFicha: Dispatch<SetStateAction<Ficha>> }>({
-    ficha: fichaModel ,
-    setFicha: () => {}
+export const fichaContext = createContext<{ charsheet: Charsheet, setCharsheet: Dispatch<SetStateAction<Charsheet>> }>({
+    charsheet: fichaModel ,
+    setCharsheet: () => {}
 })

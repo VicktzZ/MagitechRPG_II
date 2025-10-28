@@ -1,7 +1,9 @@
+import { type Expertises, type Race } from '@models';
+import { type Charsheet } from '@models/entities';
+import { type ClassNames, type LineageNames } from '@models/types/string';
 import { red, blue, orange, teal, deepPurple, green } from '@node_modules/@mui/material/colors';
-import type { Classes, Expertises, Ficha, Gender, Lineage, Race, Element, FinancialCondition } from '@types';
 
-export const expertisesDefaultValue: Expertises = {
+export const expertisesDefaultValue: keyof Expertises = {
     'Agilidade': { value: 0, defaultAttribute: 'des' },
     'Atletismo': { value: 0, defaultAttribute: 'vig' },
     'Competência': { value: 0, defaultAttribute: 'log' },
@@ -41,14 +43,14 @@ export const expertisesDefaultValue: Expertises = {
     'Vontade': { value: 0, defaultAttribute: 'foc' }
 }
 
-export const fichaModel: Ficha = {
+export const fichaModel: Charsheet = {
     playerName: '',
     mode: 'Classic',
     name: '',
     age: 0,
-    class: '' as Classes,
-    race: '' as unknown as Race,
-    lineage: '' as unknown as Lineage,
+    class: '' as ClassNames,
+    race: '' as Race['name'],
+    lineage: '' as LineageNames,
     elementalMastery: '' as unknown as Element,
     gender: '' as Gender,
     financialCondition: '' as unknown as FinancialCondition,

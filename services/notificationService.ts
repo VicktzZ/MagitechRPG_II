@@ -1,4 +1,4 @@
-import type { Notification } from '@types'
+import type { Notification } from '@models/entities'
 import { Service } from '@utils/apiRequest'
 
 class NotificationService extends Service<Notification> {}

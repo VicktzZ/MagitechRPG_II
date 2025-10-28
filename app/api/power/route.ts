@@ -1,38 +1,38 @@
 /* eslint-disable @typescript-eslint/prefer-nullish-coalescing */
-import { getDocs, query, where, orderBy, setDoc } from 'firebase/firestore';
-import { powerCollection, powerDoc } from '@models/db/power';
-import { type MagicPower } from '@types';
+import { powerRepository } from '@repositories';
+import type { Power } from '@models/entities';
+import { PowerDTO } from '@models/dtos/PowerDTO';
+import { validate } from 'class-validator';
+import { plainToInstance } from 'class-transformer';
 import type { NextRequest } from 'next/server';
-import { v4 as uuidv4 } from 'uuid';
 
 export async function GET(req: NextRequest): Promise<Response> {
     try {
         const search = req.nextUrl.searchParams.get('search');
         const order = req.nextUrl.searchParams.get('order')?.toLowerCase() || 'asc';
         const filter = req.nextUrl.searchParams.get('filter');
-        const sort = req.nextUrl.searchParams.get('sort')?.toLowerCase() || 'nome';
-        // const limit = Number(req.nextUrl.searchParams.get('limit')) || 20;
+        const sort = req.nextUrl.searchParams.get('sort')?.toLowerCase() || 'name';
         
-        let q = powerCollection;
+        let query = powerRepository.limit(1000); // Start with a query builder
         
-        // Filtros básicos (Firestore não tem $search fuzzy; usar where com regex limitado)
         if (search) {
-            q = query(q, where('nome', '>=', search), where('nome', '<=', search));
+            query = query
+                .whereGreaterOrEqualThan('name', search)
+                .whereLessThan('name', search + '\uf8ff');
         }
         
         if (filter && filter !== 'Nenhum') {
-            q = query(q, where('elemento', '==', filter));
+            query = query.whereEqualTo('element', filter);
         }
         
-        // Ordenação (limitada a campos únicos)
-        const orderByField = filter ? 'nome' : sort;
-        q = query(q, orderBy(orderByField, order));
+        const orderByField = filter ? 'name' : sort as keyof Power;
+        if (order === 'asc') {
+            query = query.orderByAscending(orderByField);
+        } else {
+            query = query.orderByDescending(orderByField);
+        }
         
-        // Paginação simples
-        // q = query(q, limitDocs(limit));
-        
-        const snap = await getDocs(q);
-        const poderes = snap.docs.map(d => d.data());
+        const poderes = await query.find();
         
         return Response.json(poderes);
     } catch (error: any) {
@@ -42,10 +42,17 @@ export async function GET(req: NextRequest): Promise<Response> {
 
 export async function POST(req: Request): Promise<Response> {
     try {
-        const body: MagicPower = await req.json();
-        const id = body._id ?? uuidv4();
-        await setDoc(powerDoc(id), { ...body, _id: id });
-        return Response.json({ ...body, _id: id });
+        const body: PowerDTO = await req.json();
+        const dto = plainToInstance(PowerDTO, body);
+        const errors = await validate(dto);
+
+        if (errors.length > 0) {
+            return Response.json({ message: 'BAD REQUEST', errors }, { status: 400 });
+        }
+        
+        const createdPower = await powerRepository.create(dto as Power);
+        
+        return Response.json(createdPower, { status: 201 });
     } catch (error: any) {
         return Response.json({ message: 'BAD REQUEST', error: error.message }, { status: 400 });
     }

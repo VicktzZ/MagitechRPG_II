@@ -13,15 +13,16 @@ import {
     alpha
 } from '@mui/material';
 import { useState, type ReactElement, useCallback } from 'react';
-import type { Expertise as ExpertiseType, Ficha, ExpertisesNames, Attributes } from '@types';
 import { blue, green, grey, purple, yellow, red } from '@mui/material/colors';
 import DiceRollModal from '@components/misc/DiceRollModal';
 import { useFormContext } from 'react-hook-form';
 import { Casino, Edit, TrendingUp } from '@mui/icons-material';
+import type { Attributes, Expertise as ExpertiseType, Expertises } from '@models';
+import type { Charsheet } from '@models/entities';
 
 interface ExpertiseProps {
-    name: ExpertisesNames;
-    expertise: ExpertiseType<any>;
+    name: keyof Expertises;
+    expertise: ExpertiseType;
     diceQuantity: number;
     disabled: boolean;
     edit?: {
@@ -42,7 +43,7 @@ export default function Expertise({
     const matches = useMediaQuery(theme.breakpoints.down('md'));
     const [ open, setOpen ] = useState<boolean>(false);
     const [ isHovered, setIsHovered ] = useState<boolean>(false);
-    const { getValues } = useFormContext<Ficha>();
+    const { getValues } = useFormContext<Charsheet>();
 
     const determinateColor = useCallback((): string => {
         if (expertise.value < 0) {
@@ -76,7 +77,7 @@ export default function Expertise({
             // Permite incrementar pontos em perícias negativas e respeita os limites máximos
             if (edit.value > 0 && expertise.value < 0) {
                 onClick(newValue);
-            } else if (getValues()._id ? newValue >= 0 && newValue <= 10 : newValue >= 0 && newValue <= 3) {
+            } else if (getValues().id ? newValue >= 0 && newValue <= 10 : newValue >= 0 && newValue <= 3) {
                 onClick(newValue);
             }
         }
@@ -92,7 +93,7 @@ export default function Expertise({
     const previewValue = getEditPreview();
     const color = determinateColor();
     const proficiencyLevel = getProficiencyLevel();
-    const attr: Attributes = expertise.defaultAttribute;
+    const attr: keyof Attributes = expertise.defaultAttribute;
     const attrModifier = getValues().mods.attributes[attr] || 0;
     
     // Determinar se é vantagem, desvantagem ou normal com base no modificador do atributo

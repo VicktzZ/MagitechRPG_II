@@ -1,11 +1,22 @@
-import { notificationCollection, notificationDoc } from '@models/db/notification';
-import { getDocs, limit as limitDocs, query, updateDoc, where } from 'firebase/firestore';
+import { notificationRepository } from '@repositories';
+import { NotificationDTO } from '@models/dtos';
+import { plainToInstance } from 'class-transformer';
+import { validate } from 'class-validator';
+import type { Notification } from '@models/entities';  
 
 export async function PATCH(req: Request, { params }: { params: { id: string } }) {
     try {
         const { id } = params;
-        const { read } = await req.json();
-        await updateDoc(notificationDoc(id), { read });
+        const body: NotificationDTO = await req.json();
+        const dto = plainToInstance(NotificationDTO, body, { excludeExtraneousValues: true });
+        const errors = await validate(dto, { skipMissingProperties: true, whitelist: false });
+
+        if (errors.length > 0) {
+            return Response.json({ message: 'BAD REQUEST', errors }, { status: 400 });
+        }
+
+        await notificationRepository.update({ ...dto, id } as Notification);
+        
         return Response.json({ message: 'SUCCESS' });
     } catch (error) {
         console.error('Erro ao atualizar notificação:', error);
@@ -16,9 +27,13 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
 export async function GET(_req: Request, { params }: { params: { id: string } }) {
     try {
         const { id } = params;
-        const q = query(notificationCollection, where('userId', '==', id), limitDocs(50));
-        const snap = await getDocs(q);
-        const notifications = snap.docs.map(d => d.data()).sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+        
+        const notifications = await notificationRepository
+            .whereEqualTo('userId', id)
+            .orderByDescending('timestamp')
+            .limit(50)
+            .find();
+            
         return Response.json(notifications);
     } catch (error) {
         console.error('Erro ao buscar notificações:', error);

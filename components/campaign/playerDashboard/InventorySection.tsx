@@ -2,7 +2,8 @@
 'use client';
 
 import { rarityColor } from '@constants';
-import { useCampaignCurrentFichaContext } from '@contexts';
+import { useCampaignCurrentCharsheetContext } from '@contexts';
+import type { RarityType } from '@models/types/string';
 import { 
     ExpandMore,
     Inventory2,
@@ -27,15 +28,14 @@ import {
     useTheme
 } from '@mui/material';
 import { red, blue, green, orange } from '@mui/material/colors';
-import type { RarityType } from '@types';
 import { type ReactElement } from 'react';
 
 export default function InventorySection(): ReactElement {
-    const { ficha } = useCampaignCurrentFichaContext();
+    const { charsheet } = useCampaignCurrentCharsheetContext();
     const theme = useTheme();
 
-    const totalItems = ficha.inventory.weapons.length + ficha.inventory.armors.length + ficha.inventory.items.length;
-    const capacityPercent = (ficha.capacity.cargo / ficha.capacity.max) * 100;
+    const totalItems = charsheet.inventory.weapons.length + charsheet.inventory.armors.length + charsheet.inventory.items.length;
+    const capacityPercent = (charsheet.capacity.cargo / charsheet.capacity.max) * 100;
     const isOverloaded = capacityPercent > 100;
     const isNearLimit = capacityPercent > 80;
 
@@ -281,7 +281,7 @@ export default function InventorySection(): ReactElement {
                                     Inventário
                                 </Typography>
                                 <Typography variant="body2" color="text.secondary">
-                                    {totalItems} {totalItems === 1 ? 'item' : 'itens'} • Capacidade: {ficha.capacity.cargo}/{ficha.capacity.max} kg
+                                    {totalItems} {totalItems === 1 ? 'item' : 'itens'} • Capacidade: {charsheet.capacity.cargo}/{charsheet.capacity.max} kg
                                 </Typography>
                             </Box>
                             <Tooltip title={isOverloaded ? 'Sobrecarga!' : isNearLimit ? 'Próximo do limite' : 'Capacidade OK'}>
@@ -331,7 +331,7 @@ export default function InventorySection(): ReactElement {
                                 <Box display="flex" alignItems="center" gap={0.5}>
                                     <AutoFixNormal sx={{ color: red[600], fontSize: '1.2rem' }} />
                                     <Typography variant="h6" sx={{ color: red[600], fontWeight: 700 }}>
-                                        {ficha.inventory.weapons.length}
+                                        {charsheet.inventory.weapons.length}
                                     </Typography>
                                 </Box>
                                 <Typography variant="caption" color="text.secondary">
@@ -345,7 +345,7 @@ export default function InventorySection(): ReactElement {
                                 <Box display="flex" alignItems="center" gap={0.5}>
                                     <Shield sx={{ color: blue[600], fontSize: '1.2rem' }} />
                                     <Typography variant="h6" sx={{ color: blue[600], fontWeight: 700 }}>
-                                        {ficha.inventory.armors.length}
+                                        {charsheet.inventory.armors.length}
                                     </Typography>
                                 </Box>
                                 <Typography variant="caption" color="text.secondary">
@@ -359,7 +359,7 @@ export default function InventorySection(): ReactElement {
                                 <Box display="flex" alignItems="center" gap={0.5}>
                                     <ShoppingBag sx={{ color: green[600], fontSize: '1.2rem' }} />
                                     <Typography variant="h6" sx={{ color: green[600], fontWeight: 700 }}>
-                                        {ficha.inventory.items.length}
+                                        {charsheet.inventory.items.length}
                                     </Typography>
                                 </Box>
                                 <Typography variant="caption" color="text.secondary">
@@ -374,11 +374,11 @@ export default function InventorySection(): ReactElement {
                         <Box display="flex" alignItems="center" gap={1} mb={2}>
                             <AutoFixNormal sx={{ color: red[600] }} />
                             <Typography variant="h6" sx={{ color: red[600], fontWeight: 600 }}>
-                                Armas ({ficha.inventory.weapons.length})
+                                Armas ({charsheet.inventory.weapons.length})
                             </Typography>
                         </Box>
                         
-                        {ficha.inventory.weapons.length === 0 ? (
+                        {charsheet.inventory.weapons.length === 0 ? (
                             <Paper 
                                 sx={{ 
                                     p: 3, 
@@ -394,7 +394,7 @@ export default function InventorySection(): ReactElement {
                             </Paper>
                         ) : (
                             <Stack spacing={1}>
-                                {ficha.inventory.weapons.map((weapon) => renderInventoryItem(weapon, 'weapon'))}
+                                {charsheet.inventory.weapons.map((weapon) => renderInventoryItem(weapon, 'weapon'))}
                             </Stack>
                         )}
                     </Box>
@@ -404,11 +404,11 @@ export default function InventorySection(): ReactElement {
                         <Box display="flex" alignItems="center" gap={1} mb={2}>
                             <Shield sx={{ color: blue[600] }} />
                             <Typography variant="h6" sx={{ color: blue[600], fontWeight: 600 }}>
-                                Armaduras ({ficha.inventory.armors.length})
+                                Armaduras ({charsheet.inventory.armors.length})
                             </Typography>
                         </Box>
                         
-                        {ficha.inventory.armors.length === 0 ? (
+                        {charsheet.inventory.armors.length === 0 ? (
                             <Paper 
                                 sx={{ 
                                     p: 3, 
@@ -424,7 +424,7 @@ export default function InventorySection(): ReactElement {
                             </Paper>
                         ) : (
                             <Stack spacing={1}>
-                                {ficha.inventory.armors.map((armor) => renderInventoryItem(armor, 'armor'))}
+                                {charsheet.inventory.armors.map((armor) => renderInventoryItem(armor, 'armor'))}
                             </Stack>
                         )}
                     </Box>
@@ -434,11 +434,11 @@ export default function InventorySection(): ReactElement {
                         <Box display="flex" alignItems="center" gap={1} mb={2}>
                             <ShoppingBag sx={{ color: green[600] }} />
                             <Typography variant="h6" sx={{ color: green[600], fontWeight: 600 }}>
-                                Itens ({ficha.inventory.items.length})
+                                Itens ({charsheet.inventory.items.length})
                             </Typography>
                         </Box>
                         
-                        {ficha.inventory.items.length === 0 ? (
+                        {charsheet.inventory.items.length === 0 ? (
                             <Paper 
                                 sx={{ 
                                     p: 3, 
@@ -454,7 +454,7 @@ export default function InventorySection(): ReactElement {
                             </Paper>
                         ) : (
                             <Stack spacing={1}>
-                                {ficha.inventory.items.map((item) => renderInventoryItem(item, 'item'))}
+                                {charsheet.inventory.items.map((item) => renderInventoryItem(item, 'item'))}
                             </Stack>
                         )}
                     </Box>

@@ -31,7 +31,6 @@ import {
     useTheme
 } from '@mui/material';
 import { blue, green, grey, purple, red, yellow } from '@mui/material/colors';
-import { useFichaUpdater } from '@services/firestore/hooks';
 import { useState, type ReactElement } from 'react';
 import { useCampaignCurrentFichaContext } from '@contexts';
 

@@ -2,14 +2,15 @@
 
 import { Dialog, DialogContent, DialogTitle, Box, Typography, Paper, Grid, IconButton, Tooltip } from '@mui/material'
 import { Close } from '@mui/icons-material'
-import type { Ficha, Skill } from '@types'
 import { skills } from '@constants/skills'
 import { blue, green, indigo, orange, pink, purple, red, yellow } from '@mui/material/colors'
+import type { Skill } from '@models'
+import type { Charsheet } from '@models/entities'
 
 interface SkillsTreeDialogProps {
     open: boolean
     onClose: () => void
-    ficha: Required<Ficha>
+    ficha: Required<Charsheet>
 }
 
 interface SkillNodeProps {
@@ -38,7 +39,7 @@ function SkillNode({ skill, isUnlocked = false, skillClass, icon, size = 2.5 }: 
                 elevation={3}
                 sx={{
                     p: 2,
-                    bgcolor: isUnlocked ? skillColors[skillClass as keyof typeof skillColors] : 'background.paper',
+                    bgcolor: isUnlocked ? skillColors[skillClass ] : 'background.paper',
                     color: isUnlocked ? 'primary.contrastText' : 'text.primary',
                     cursor: 'pointer',
                     fontFamily: 'Runes',
@@ -46,7 +47,7 @@ function SkillNode({ skill, isUnlocked = false, skillClass, icon, size = 2.5 }: 
                     transition: 'all 0.2s',
                     '&:hover': {
                         transform: 'scale(1.05)',
-                        bgcolor: isUnlocked ? skillColors[skillClass as keyof typeof skillColors] : 'background.paper'
+                        bgcolor: isUnlocked ? skillColors[skillClass ] : 'background.paper'
                     },
                     position: 'relative',
                     height: '7rem',
@@ -65,7 +66,7 @@ function SkillNode({ skill, isUnlocked = false, skillClass, icon, size = 2.5 }: 
     )
 }
 
-function ClassSkillTree({ ficha }: { ficha: Required<Ficha> }) {
+function ClassSkillTree({ ficha }: { ficha: Required<Charsheet> }) {
     const classSkills = skills.class[ficha.class as keyof typeof skills.class] ?? []
 
     // Organiza as habilidades em níveis específicos (0, 1, 5, 10, 15, 20)
@@ -231,7 +232,7 @@ function ClassSkillTree({ ficha }: { ficha: Required<Ficha> }) {
     )
 }
 
-function SubclassSkillTree({ ficha }: { ficha: Required<Ficha> }) {
+function SubclassSkillTree({ ficha }: { ficha: Required<Charsheet> }) {
     if (!ficha.subclass) return null
 
     const subclassSkills = skills.subclass[ficha.subclass as keyof typeof skills.subclass] ?? []

@@ -1,36 +1,39 @@
-import { campaignDoc } from '@models/db/campaign';
-import type { Campaign as CampaignType } from '@types';
-import { getCampaign } from '@utils/server/getCampaign';
-import { updateDoc } from 'firebase/firestore';
+import { updateDoc } from '@firebase/firestore';
+import { getCollectionDoc } from '@models/docs';
+import { CreateCustomItemDTO } from '@models/dtos';
+import type { Campaign } from '@models/entities/Campaign';
+import { findCampaignByCodeOrId } from '@utils/helpers/findCampaignByCodeOrId';
+import { plainToInstance } from 'class-transformer';
+import { validate } from 'class-validator';
 
 export async function DELETE(req: Request, { params }: { params: { id: string, ItemId: string } }) {
     try {
         const { id, ItemId } = params;
-        const type = await req.json() as string;
+        const body = await req.json();
 
-        if (!type || ![ 'weapon','armor','item' ].includes(type)) {
-            return Response.json({ message: 'Parâmetros inválidos' }, { status: 400 });
+        const dto = plainToInstance(CreateCustomItemDTO, { type: body.type || body }, { excludeExtraneousValues: true });
+        const errors = await validate(dto, { skipMissingProperties: true, whitelist: false });
+
+        if (errors.length > 0) {
+            return Response.json({ message: 'BAD REQUEST', errors }, { status: 400 });
         }
 
-        // Buscar campanha atual
-        const campaignSnap = await getCampaign(id);
-        if (!campaignSnap.exists()) {
+        const { type } = dto;
+        const campaign = await findCampaignByCodeOrId(id);
+
+        if (!campaign) {
             return Response.json({ message: 'Campanha não encontrada' }, { status: 404 });
         }
-        const campaign = campaignSnap.data();
         
-        // Remover item do array específico
-        const updatedItems = (campaign.custom?.items?.[type as keyof CampaignType['custom']['items']] || []).filter(item => item._id !== ItemId);
-        await updateDoc(campaignDoc(id), {
-            [`custom.items.${type}`]: updatedItems
+        const fieldPath = `custom.items.${type}`;
+        const itemsArray = (campaign.custom?.items?.[type as keyof Campaign['custom']['items']] || []) as Array<{ id: string }>;
+        
+        const updatedItems = itemsArray.filter(item => item.id !== ItemId);
+
+        await updateDoc(getCollectionDoc('campaigns', campaign.id), {
+            [fieldPath]: updatedItems
         });
-
-        // await pusherServer.trigger(
-        //     `presence-${campaign.campaignCode}`,
-        //     PusherEvent.ITEM_DELETED,
-        //     { type, item }
-        // );
-
+        
         return Response.json({ type, ItemId });
     } catch (error: any) {
         console.error('Erro ao excluir item customizado:', error);

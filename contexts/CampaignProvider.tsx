@@ -15,7 +15,7 @@ export function CampaignProvider({ children, code }: { children: ReactElement, c
 
     const campaignData = useCampaignData({
         campaignCode: code,
-        userId: session?.user?._id
+        userId: session?.user?.id
     });
 
     const isUserGM = campaignData?.isUserGM ?? false;
@@ -44,8 +44,8 @@ export function CampaignProvider({ children, code }: { children: ReactElement, c
         )
     }
 
-    if (campaignData && (isUserGM || campaignData.fichas.find(f => f.userId === session?.user?._id))) {
-        localStorage.setItem('currentFicha', campaignData.fichas.find(f => f.userId === session?.user?._id)?._id ?? '');
+    if (campaignData && (isUserGM || campaignData.charsheets.find(f => f.userId === session?.user?.id))) {
+        localStorage.setItem('currentFicha', campaignData.charsheets.find(f => f.userId === session?.user?.id)?.id ?? '');
         return (
             <campaignContext.Provider value={campaignData}>
                 {children}
@@ -86,12 +86,12 @@ export function CampaignProvider({ children, code }: { children: ReactElement, c
                             <Skeleton
                                 variant='rectangular' key={Math.random()} width='20rem' height='15rem'
                             />
-                        )) : fichasResponse?.map((f: Ficha) => (
+                        )) : charsheetsResponse?.map((f: Ficha) => (
                             <FichaCard
-                                key={f._id}
+                                key={f.id}
                                 ficha={f}
                                 disableDeleteButton
-                                onClick={() => { setCurrentFicha(f._id ?? ''); setFicha(f); }}
+                                onClick={() => { setCurrentFicha(f.id ?? ''); setFicha(f); }}
                             />
                         ))}
                     </Grid> */}

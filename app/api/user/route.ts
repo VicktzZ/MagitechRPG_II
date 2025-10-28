@@ -1,12 +1,12 @@
-import { userCollection, userDoc } from '@models/db/user';
-import type { User as UserType } from '@types';
-import { getDocs, setDoc } from 'firebase/firestore';
-import { v4 as uuidv4 } from 'uuid';
+import { UserDTO } from '@models/dtos';
+import { userRepository } from '@repositories';
+import { validate } from 'class-validator';
+import { plainToInstance } from 'class-transformer'
+import type { User } from '@models/entities';
 
 export async function GET() {
     try {
-        const snap = await getDocs(userCollection);
-        const users = snap.docs.map(d => d.data());
+        const users = await userRepository.find();
 
         return Response.json({ users, message: 'SUCCESS' }, { status: 200 });
     } catch (error: any) {
@@ -16,11 +16,17 @@ export async function GET() {
 
 export async function POST(req: Request) {
     try {
-        const body: UserType = await req.json();
-        const id = uuidv4();
-        await setDoc(userDoc(id), { ...body, _id: id });
+        const body: UserDTO = await req.json();
+        const dto = plainToInstance(UserDTO, body);
+        const errors = await validate(dto);
 
-        return Response.json({ user: { ...body, _id: id }, message: 'SUCCESS' }, { status: 201 });
+        if (errors.length > 0) {
+            return Response.json({ message: 'BAD REQUEST', errors }, { status: 400 });
+        }
+
+        const createdUser = await userRepository.create(dto as User);
+
+        return Response.json({ user: createdUser, message: 'SUCCESS' }, { status: 201 });
     } catch (error: any) {
         return Response.json({ message: 'FORBIDDEN', error: error?.message }, { status: 403 });
     }

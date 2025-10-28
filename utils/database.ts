@@ -13,17 +13,3 @@ const firebaseConfig = {
 
 export const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
-
-// Removido Analytics temporariamente para evitar problemas de instalação
-// export let analytics: ReturnType<typeof getAnalytics> | undefined;
-// if (typeof window !== 'undefined') {
-//     isSupported()
-//         .then((supported) => {
-//             if (supported) {
-//                 analytics = getAnalytics(app);
-//             }
-//         })
-//         .catch(() => {
-//             // silenciosamente ignora quando não suportado
-//         });
-// }

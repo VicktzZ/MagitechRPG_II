@@ -26,7 +26,7 @@ import {
     energyWeaponAmmo,
     otherWeaponAmmo
 } from '@constants/dataTypes';
-import type { Weapon } from '@types';
+import type { Weapon } from '@models';
 import { useCampaignContext } from '@contexts';
 import { campaignService } from '@services';
 
@@ -82,7 +82,7 @@ export const InventoryCreateWeaponModal = memo(({
         campaign.custom.items.weapon.length > 0 && {
             header: 'Personalizados',
             options: mapArrayToOptions(
-                campaign.custom.items.weapon.map(item => ({ name: item.name, id: item._id, value: item.name })),
+                campaign.custom.items.weapon.map(item => ({ name: item.name, id: item.id, value: item.name })),
                 isUserGM
             )
         },
@@ -144,7 +144,7 @@ export const InventoryCreateWeaponModal = memo(({
                         hasGroups
                         menuStyle={{ maxHeight: 8 }}
                         onDelete={async (id) => {
-                            await campaignService.deleteCustomItem(campaign._id!, 'weapon', id);
+                            await campaignService.deleteCustomItem(campaign.id, 'weapon', id);
                             enqueueSnackbar('Arma removida com sucesso!', toastDefault('itemDeleted', 'success'));
                             action();
                         }}

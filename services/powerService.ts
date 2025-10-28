@@ -1,6 +1,8 @@
-import type { MagicPower, QueryParamsDto, ApiParams } from '@types'
 import { SearchOptions } from '@enums'
 import { Service } from '@utils/apiRequest'
+import type { Power } from '@models/entities';
+import type { ApiParams } from '@models/types/api';
+import type { QueryParamsDto } from '@models/types/dto';
 
 interface PoderSearchParams {
     search?: string;
@@ -11,8 +13,8 @@ interface PoderSearchParams {
     limit?: number;
 }
 
-class PoderService extends Service<MagicPower, keyof PoderSearchParams> {
-    override async fetch(params?: ApiParams<keyof PoderSearchParams, MagicPower>) {
+class PowerService extends Service<Power, keyof PoderSearchParams> {
+    override async fetch(params?: ApiParams<keyof PoderSearchParams, Power>) {
         const queryParams: QueryParamsDto<keyof PoderSearchParams> = {};
         const { search, filter, sort, order, page, limit } = params?.queryParams ?? {}
         
@@ -29,4 +31,4 @@ class PoderService extends Service<MagicPower, keyof PoderSearchParams> {
     }
 }
 
-export const poderService = new PoderService('/power')
+export const powerService = new PowerService('/power')

@@ -1,10 +1,15 @@
 /* eslint-disable @typescript-eslint/prefer-nullish-coalescing */
 import { PusherEvent } from '@enums';
 import { pusherServer } from '@utils/pusher';
-import { getCampaign } from '@utils/server/getCampaign';
+import { findCampaignByCodeOrId } from '@utils/helpers/findCampaignByCodeOrId';
 import { arrayUnion, updateDoc } from 'firebase/firestore';
+import { getCollectionDoc } from '@models/docs';
 import type { NextRequest } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
+import { validate } from 'class-validator';
+import { plainToInstance } from 'class-transformer';
+import { Message } from '@models';
+
 interface id { id: string }
 
 export async function POST(
@@ -13,21 +18,30 @@ export async function POST(
 ): Promise<Response> {
     try {
         const { id } = params;
-        const message = await req.json();
-        const messageId = message.id || uuidv4();
-        const messageWithId = { ...message, id: messageId };
+        const body = await req.json();
 
-        // Adicionar mensagem usando arrayUnion
-        const campaignSnap = await getCampaign(id);
-        if (!campaignSnap.exists()) {
+        const dto = plainToInstance(Message, body);
+        const errors = await validate(dto);
+        if (errors.length > 0) {
+            return Response.json({ message: 'BAD REQUEST', errors }, { status: 400 });
+        }
+
+        const messageWithId = { ...dto, id: uuidv4() };
+
+        const campaign = await findCampaignByCodeOrId(id);
+        if (!campaign) {
             return Response.json({ error: 'Campanha não encontrada' }, { status: 404 });
         }
-        await updateDoc(campaignSnap.ref, {
+
+        await updateDoc(getCollectionDoc('campaigns', campaign.id), {
             'session.messages': arrayUnion(messageWithId)
         });
 
-        // Envia apenas a nova mensagem via Pusher
-        await pusherServer.trigger('presence-' + id, PusherEvent.NEW_MESSAGE, messageWithId);
+        await pusherServer.trigger(
+            `presence-${campaign.campaignCode}`, 
+            PusherEvent.NEW_MESSAGE, 
+            messageWithId
+        );
 
         return Response.json(messageWithId, { status: 200 });
     } catch (error) {
@@ -42,11 +56,12 @@ export async function GET(
 ): Promise<Response> {
     try {
         const { id } = params;
-        const snap = await getCampaign(id);
-        if (!snap.exists()) {
+
+        const campaign = await findCampaignByCodeOrId(id);
+        if (!campaign) {
             return Response.json({ error: 'Campanha não encontrada' }, { status: 404 });
         }
-        const campaign = snap.data();
+
         return Response.json(campaign?.session?.messages || [], { status: 200 });
     } catch (error) {
         console.error('Erro ao buscar mensagens:', error);

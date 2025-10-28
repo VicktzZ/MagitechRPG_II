@@ -1,7 +1,7 @@
-import type { Magia } from '@types';
+import type { Spell } from '@models/entities';
 import type { SearchOptions } from '@enums';
 import { Service } from '@utils/apiRequest';
 
-class MagiaService extends Service<Magia, SearchOptions> {}
+class SpellService extends Service<Spell, SearchOptions> {}
 
-export const magiaService = new MagiaService('/spell');
+export const spellService = new SpellService('/spell');

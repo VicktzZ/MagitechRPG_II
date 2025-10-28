@@ -30,7 +30,7 @@ import DarkModeIcon from '@mui/icons-material/DarkMode';
 import LightModeIcon from '@mui/icons-material/LightMode';
 import AllInclusiveIcon from '@mui/icons-material/AllInclusive';
 import { blue, red, green, grey, purple, amber, blueGrey } from '@mui/material/colors';
-import type { Element } from '@types';
+import type { Element } from '@models/types/string';
 
 interface ElementalMasteryModalProps {
     open: boolean;

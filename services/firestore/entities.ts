@@ -3,24 +3,19 @@ import {
     type DocumentData
 } from 'firebase/firestore';
 
-import { campaignCollection } from '@models/db/campaign';
-import { fichaCollection } from '@models/db/ficha';
-import { notificationCollection } from '@models/db/notification';
-import { powerCollection } from '@models/db/power';
-import { spellCollection } from '@models/db/spell';
-import { userCollection } from '@models/db/user';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { type FirestoreQueryOptions, type RealtimeOptions } from './types';
 import { FirestoreEntity } from './custom-orm';
+import { campaignCollection, charsheetCollection, notificationsCollection, powersCollection, spellsCollection, userCollection } from '@models/docs';
 
 // === ENTIDADES ESPECÍFICAS ===
 export const CampaignEntity = new FirestoreEntity(campaignCollection);
-export const FichaEntity = new FirestoreEntity(fichaCollection);
+export const CharsheetEntity = new FirestoreEntity(charsheetCollection);
 export const UserEntity = new FirestoreEntity(userCollection);
-export const SpellEntity = new FirestoreEntity(spellCollection);
-export const PowerEntity = new FirestoreEntity(powerCollection);
-export const NotificationEntity = new FirestoreEntity(notificationCollection);
+export const SpellEntity = new FirestoreEntity(spellsCollection);
+export const PowerEntity = new FirestoreEntity(powersCollection);
+export const NotificationEntity = new FirestoreEntity(notificationsCollection);
 
 // === HOOKS UTILITÁRIOS ===
 

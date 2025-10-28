@@ -1,7 +1,8 @@
 import type { AxiosInstance } from 'axios'
-import type { ApiBaseRequestType, ApiParams, ApiRoutes, UpdateByIdDto } from '@types'
 import axios from 'axios'
 import { ApiMethods } from '@enums'
+import type { ApiBaseRequestType, ApiParams, ApiRoutes } from '@models/types/api';
+import type { UpdateByIdDto } from '@models/types/dto';
 
 class BaseRequest<T> {
     public readonly request: ApiBaseRequestType<T>;

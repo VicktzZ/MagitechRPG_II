@@ -1,5 +1,4 @@
 import { useMemo, useState, type ReactElement } from 'react'
-import type { ItemTyping, Roll } from '@types'
 import { alpha, Box, Chip, Collapse, Divider, IconButton, Paper, Stack, Tooltip, Typography, useTheme } from '@mui/material'
 import { rarityWeaponBonuses } from '@constants/dataTypes'
 import { DiceRollModal } from '@components/misc'
@@ -15,6 +14,8 @@ import {
     Diamond,
     Star
 } from '@mui/icons-material'
+import type { ItemTyping } from '@models/types/item'
+import type { Roll } from '@models/types/misc'
 
 // TODO: CORRIGIR BUG DE ROLAGEM DE DADO
 export function Weapon(props: ItemTyping<'weapon'>): ReactElement {

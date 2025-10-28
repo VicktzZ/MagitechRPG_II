@@ -1,28 +1,43 @@
-/* eslint-disable @typescript-eslint/prefer-nullish-coalescing */
-import { updateDoc, arrayUnion } from 'firebase/firestore';
-import { campaignDoc } from '@models/db/campaign';
-import { pusherServer } from '@utils/pusher';
 import { PusherEvent } from '@enums';
-import type { Note } from '@types';
+import { updateDoc } from '@firebase/firestore';
+import { Note } from '@models';
+import { getCollectionDoc } from '@models/docs';
+import { findCampaignByCodeOrId } from '@utils/helpers/findCampaignByCodeOrId';
+import { pusherServer } from '@utils/pusher';
+import { plainToInstance } from 'class-transformer';
+import { validate } from 'class-validator';
+import { FieldValue } from 'firebase-admin/firestore';
 import { v4 as uuidv4 } from 'uuid';
-import { getCampaign } from '@utils/server/getCampaign';
 
-// Criar nota
 export async function POST(req: Request, { params }: { params: { id: string } }) {
     try {
         const { id } = params;
-        const note: Note = await req.json();
-        const noteId = note._id || uuidv4();
-        const noteWithId = { ...note, _id: noteId, timestamp: note.timestamp || new Date() };
+        const body = await req.json();
+        
+        const dto = plainToInstance(Note, body);
+        const errors = await validate(dto);
 
-        // Adicionar nota ao array usando arrayUnion
-        await updateDoc(campaignDoc(id), {
-            notes: arrayUnion(noteWithId)
+        if (errors.length > 0) {
+            return Response.json({ message: 'BAD REQUEST', errors }, { status: 400 });
+        }
+
+        const noteWithId = { 
+            ...dto, 
+            id: uuidv4(), 
+            timestamp: new Date() 
+        };
+
+        const campaign = await findCampaignByCodeOrId(id);
+        if (!campaign) {
+            return Response.json({ message: 'Campanha não encontrada' }, { status: 404 });
+        }
+
+        await updateDoc(getCollectionDoc('campaigns', campaign.id), {
+            notes: FieldValue.arrayUnion(noteWithId)
         });
 
-        // Dispara o evento do Pusher
         await pusherServer.trigger(
-            `presence-${id}`,
+            `presence-${campaign.campaignCode}`,
             PusherEvent.NOTES_UPDATED,
             noteWithId
         );
@@ -34,40 +49,39 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     }
 }
 
-// Atualizar nota
 export async function PATCH(req: Request, { params }: { params: { id: string } }) {
     try {
         const { id } = params;
-        const { noteId, content } = await req.json();
+        const body: Note = await req.json();
 
-        if (!noteId || !content) {
-            return Response.json({ message: 'ID da nota e conteúdo são obrigatórios' }, { status: 400 });
+        const dto = plainToInstance(Note, body);
+        const errors = await validate(dto);
+
+        if (errors.length > 0) {
+            return Response.json({ message: 'BAD REQUEST', errors }, { status: 400 });
         }
 
-        // Firestore não suporta atualização de itens específicos em arrays diretamente.
-        // Para atualizar uma nota específica, precisamos buscar o documento,
-        // modificar localmente e salvar de volta.
-        // Por simplicidade, vamos buscar e atualizar manualmente.
-        const campaignSnap = await getCampaign(id);
-        if (!campaignSnap.exists()) {
+        const { id: noteId, content } = dto;
+        const campaign = await findCampaignByCodeOrId(id);
+
+        if (!campaign) {
             return Response.json({ message: 'Campanha não encontrada' }, { status: 404 });
         }
-        const campaign = campaignSnap.data();
         
-        // Atualizar nota no array
         const updatedNotes = campaign.notes.map(note => 
-            note._id === noteId ? { ...note, content } : note
+            note.id === noteId ? { ...note, content } : note
         );
         
-        await updateDoc(campaignDoc(id), { notes: updatedNotes });
+        await updateDoc(getCollectionDoc('campaigns', campaign.id), { 
+            notes: updatedNotes 
+        });
         
-        const updatedNote = updatedNotes.find(note => note._id === noteId);
+        const updatedNote = updatedNotes.find(note => note.id === noteId);
         
         if (!updatedNote) {
             return Response.json({ message: 'Nota não encontrada' }, { status: 404 });
         }
 
-        // Dispara o evento do Pusher
         await pusherServer.trigger(
             `presence-${campaign.campaignCode}`,
             PusherEvent.NOTES_UPDATED,
@@ -81,28 +95,31 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     }
 }
 
-// Deletar nota
 export async function DELETE(req: Request, { params }: { params: { id: string } }) {
     try {
         const { id } = params;
-        const { noteId } = await req.json();
+        const body: Note = await req.json();
 
-        if (!noteId) {
-            return Response.json({ message: 'ID da nota é obrigatório' }, { status: 400 });
+        const dto = plainToInstance(Note, body);
+        const errors = await validate(dto);
+
+        if (errors.length > 0) {
+            return Response.json({ message: 'BAD REQUEST', errors }, { status: 400 });
         }
+        
+        const { id: noteId } = dto;
+        const campaign = await findCampaignByCodeOrId(id);
 
-        // Buscar campanha atual
-        const campaignSnap = await getCampaign(id);
-        if (!campaignSnap.exists()) {
+        if (!campaign) {
             return Response.json({ message: 'Campanha não encontrada' }, { status: 404 });
         }
-        const campaign = campaignSnap.data();
         
-        // Remover nota do array
-        const updatedNotes = campaign.notes.filter(note => note._id !== noteId);
-        await updateDoc(campaignDoc(id), { notes: updatedNotes });
+        const updatedNotes = campaign.notes.filter(note => note.id !== noteId);
+        
+        await updateDoc(getCollectionDoc('campaigns', campaign.id), { 
+            notes: updatedNotes 
+        });
 
-        // Dispara o evento do Pusher
         await pusherServer.trigger(
             `presence-${campaign.campaignCode}`,
             PusherEvent.NOTES_UPDATED,

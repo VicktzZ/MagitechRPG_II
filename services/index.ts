@@ -1,7 +1,7 @@
 import { campaignService } from './campaignService';
-import { fichaService } from './fichaService'
-import { magiaService } from './spellService';
-import { poderService } from './powerService';
+import { charsheetService } from './charsheetService'
+import { spellService } from './spellService';
+import { powerService } from './powerService';
 import { pusherService } from './pusherService';
 import { sessionService } from './sessionService';
 import { userService } from './userService';
@@ -10,10 +10,10 @@ import { notificationService } from './notificationService';
 
 export {
     campaignService,
-    fichaService,
-    magiaService,
+    charsheetService,
+    spellService as magiaService,
     messageService,
-    poderService,
+    powerService as poderService,
     pusherService,
     sessionService,
     notificationService,

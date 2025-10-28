@@ -1,6 +1,7 @@
-import { fichaCollection } from '@models/db/ficha';
-import { getCampaign } from '@utils/server/getCampaign';
-import { getDocs } from 'firebase/firestore';
+/* eslint-disable @typescript-eslint/promise-function-async */
+import { charsheetRepository } from '@repositories';
+import { chunk } from '@utils/helpers/chunk';
+import { findCampaignByCodeOrId } from '@utils/helpers/findCampaignByCodeOrId';
 
 interface id { id: string }
 
@@ -8,18 +9,27 @@ export async function GET(_req: Request, { params }: { params: id }): Promise<Re
     try {
         const { id } = params;
 
-        const campaignSnap = await getCampaign(id);
-        if (!campaignSnap.exists()) {
+        const campaign = await findCampaignByCodeOrId(id);
+        if (!campaign) {
             return Response.json({ message: 'NOT FOUND' }, { status: 404 });
         }
-        const campaign = campaignSnap.data();
 
-        const allFichasSnap = await getDocs(fichaCollection);
-        const fichas = allFichasSnap.docs
-            .map(d => d.data())
-            .filter(f => campaign.players.some(p => p.fichaId === f._id));
+        const charsheetIds = campaign.players.map(p => p.charsheetId);
 
-        return Response.json(fichas);
+        if (charsheetIds.length === 0) {
+            return Response.json([]);
+        }
+
+        const idChunks = chunk(charsheetIds, 10);
+        
+        const queries = idChunks.map(ids => 
+            charsheetRepository.whereIn('id', ids).find()
+        );
+        
+        const results = await Promise.all(queries);
+        const charsheets = results.flat();
+
+        return Response.json(charsheets);
     } catch (error: any) {
         return Response.json({ message: 'FORBIDDEN', error: error.message }, { status: 403 });
     }

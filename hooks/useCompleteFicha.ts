@@ -1,79 +1,52 @@
 /* eslint-disable @typescript-eslint/prefer-nullish-coalescing */
-/**
- * Hook personalizado para buscar ficha completa em tempo real com relacionamentos
- * Substitui a necessidade de múltiplas consultas API para obter ficha + magias + poderes
- */
-
-import { useFicha, useSpellsRealtime, usePowersRealtime } from '@services/firestore/hooks';
+import { useCharsheet, useSpellsRealtime, usePowersRealtime } from '@services/firestore/hooks';
 import { useMemo } from 'react';
-import type { Ficha } from '@types';
+import type { Charsheet } from '@models/entities';
 
-interface UseCompleteFichaOptions {
-    /** ID da ficha para buscar */
-    fichaId: string;
-    /** Se deve habilitar as consultas relacionadas (padrão: true) */
+interface UseCompleteCharsheetOptions {
+    charsheetId: string;
     enabled?: boolean;
 }
 
-interface UseCompleteFichaResult {
-    /** Ficha completa com todos os relacionamentos resolvidos */
-    data: Ficha | null;
-    /** Estado de loading geral (ficha + magias + poderes) */
+interface UseCompleteCharsheetResult {
+    data: Charsheet | null;
     loading: boolean;
-    /** Erro ocorrido durante a busca */
     error: Error | null;
 }
 
-/**
- * Hook que busca uma ficha completa em tempo real com todos os seus relacionamentos
- * (magias e poderes) resolvidos automaticamente
- *
- * @param options - Configurações do hook
- * @returns Ficha completa com dados em tempo real
- *
- * @example
- * ```typescript
- * const { data: ficha, loading } = useCompleteFicha({
- *   fichaId: 'ficha-123'
- * });
- *
- * // Usa a ficha completa normalmente
- * return <FichaComponent ficha={ficha} />;
- * ```
- */
-export function useCompleteFicha({
-    fichaId,
+export function useCompleteCharsheet({
+    charsheetId,
     enabled = true
-}: UseCompleteFichaOptions): UseCompleteFichaResult {
-    // 🔥 Buscar ficha principal em tempo real
-    const { data: ficha, loading: fichaLoading, error: fichaError } = useFicha(fichaId);
+}: UseCompleteCharsheetOptions): UseCompleteCharsheetResult {
+    // 🔥 Buscar charsheet principal em tempo real
+    const { data: charsheet, loading: charsheetLoading, error: charsheetError } = useCharsheet(charsheetId);
 
     // Extrair IDs das magias relacionadas
     const magicIds = useMemo(() =>
-        enabled && ficha?.magics?.length > 0
-            ? ficha.magics.map(m => m._id || m).filter(Boolean)
+        enabled && charsheet?.spells?.length > 0
+            ? charsheet.spells.map(m => m.id || m).filter(Boolean)
             : [],
-    [ ficha?.magics, enabled ]
+    [ charsheet?.spells, enabled ]
     );
 
     // 🔥 Buscar magias relacionadas em paralelo
     const {
-        data: relatedMagics,
-        loading: magicsLoading,
-        error: magicsError
+        data: relatedSpells,
+        loading: spellsLoading,
+        error: spellsError
     } = useSpellsRealtime({
         filters: magicIds.length > 0 ? [
-            { field: '_id', operator: 'in', value: magicIds }
+            { field: 'id', operator: 'in', value: magicIds }
         ] : undefined,
         enabled: enabled && magicIds.length > 0
     });
 
     // Extrair IDs dos poderes relacionados
     const powerIds = useMemo(() =>
-        enabled && ficha?.skills?.powers?.length > 0
-            ? ficha.skills.powers.map(p => p._id || p).filter(Boolean)
+        enabled && charsheet?.skills?.powers?.length > 0
+            ? charsheet.skills.powers.map(p => p.id || p).filter(Boolean)
             : [],
-    [ ficha?.skills?.powers, enabled ]
+    [ charsheet?.skills?.powers, enabled ]
     );
 
     // 🔥 Buscar poderes relacionados em paralelo
@@ -83,54 +56,54 @@ export function useCompleteFicha({
         error: powersError
     } = usePowersRealtime({
         filters: powerIds.length > 0 ? [
-            { field: '_id', operator: 'in', value: powerIds }
+            { field: 'id', operator: 'in', value: powerIds }
         ] : undefined,
         enabled: enabled && powerIds.length > 0
     });
 
     // 🔥 Combinar dados em tempo real
-    const completeFicha = useMemo((): Ficha | null => {
-        if (!ficha || !enabled) return null;
+    const completeCharsheet = useMemo((): Charsheet | null => {
+        if (!charsheet || !enabled) return null;
 
-        const fichaWithRelations = { ...ficha };
+        const charsheetWithRelations = { ...charsheet };
 
         // Resolver magias: substituir IDs pelos dados completos
-        if (relatedMagics && relatedMagics.length > 0) {
-            const magicMap = new Map(relatedMagics.map(m => [ m._id, m ]));
-            fichaWithRelations.magics = ficha.magics.map(magicId =>
-                magicMap.get(magicId._id || magicId) || magicId
+        if (relatedSpells && relatedSpells.length > 0) {
+            const magicMap = new Map(relatedSpells.map(m => [ m.id, m ]));
+            charsheetWithRelations.spells = charsheet.spells.map(magicId =>
+                magicMap.get(magicId.id || magicId) || magicId
             );
         }
 
         // Resolver poderes: substituir IDs pelos dados completos
         if (relatedPowers && relatedPowers.length > 0) {
-            const powerMap = new Map(relatedPowers.map(p => [ p._id, p ]));
-            if (fichaWithRelations.skills?.powers) {
-                fichaWithRelations.skills.powers = ficha.skills.powers.map(powerId => {
-                    const fullPower = powerMap.get(powerId._id || powerId);
+            const powerMap = new Map(relatedPowers.map(p => [ p.id, p ]));
+            if (charsheetWithRelations.skills?.powers) {
+                charsheetWithRelations.skills.powers = charsheet.skills.powers.map(powerId => {
+                    const fullPower = powerMap.get(powerId.id || powerId);
                     return fullPower ? {
-                        _id: fullPower._id,
-                        name: fullPower.nome,
-                        description: fullPower['descrição'],
-                        element: fullPower.elemento,
-                        mastery: fullPower.maestria,
+                        id: fullPower.id,
+                        name: fullPower.name,
+                        description: fullPower.description,
+                        element: fullPower.element,
+                        mastery: fullPower.mastery,
                         type: 'Poder Mágico' as const
                     } : powerId;
                 });
             }
         }
 
-        return fichaWithRelations;
-    }, [ ficha, relatedMagics, relatedPowers, enabled ]);
+        return charsheetWithRelations;
+    }, [ charsheet, relatedSpells, relatedPowers, enabled ]);
 
     // Estado de loading geral
-    const loading = enabled ? (fichaLoading || magicsLoading || powersLoading) : false;
+    const loading = enabled ? (charsheetLoading || spellsLoading || powersLoading) : false;
 
     // Primeiro erro encontrado (se houver)
-    const error = fichaError || magicsError || powersError;
+    const error = charsheetError || spellsError || powersError;
 
     return {
-        data: completeFicha,
+        data: completeCharsheet,
         loading,
         error
     };

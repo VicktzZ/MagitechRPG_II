@@ -6,24 +6,26 @@ import { lineageItems } from '@constants/lineageOccupationItems';
 import { races } from '@constants/races';
 import { skills } from '@constants/skills';
 import { useAudio } from '@hooks';
+import type { Race } from '@models';
+import type { Charsheet } from '@models/entities';
+import type { ClassNames, LineageNames } from '@models/types/string';
 import { Box, FormControl, FormHelperText, InputLabel, MenuItem, Select, TextField, Typography, useMediaQuery, useTheme, type SelectChangeEvent } from '@mui/material';
 import { blue, green, red, yellow } from '@mui/material/colors';
-import type { Classes, Ficha, LineageNames, Race } from '@types';
 import { useCallback, useMemo, type ReactElement } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
 
 export default function Characteristics(): ReactElement {
-    const { control, formState: { errors }, setValue, getValues } = useFormContext<Ficha>()
+    const { control, formState: { errors }, setValue, getValues } = useFormContext<Charsheet>()
     const ficha = getValues()
 
     const theme = useTheme()
     const matches = useMediaQuery(theme.breakpoints.down('md'))
     const audio = useAudio('/sounds/cybernetic-technology-affirmation.wav')
-    const disabled = !!ficha._id
+    const disabled = !!ficha.id
 
     const setClass = (e: SelectChangeEvent<any>): void => {
-        const previousClass = getValues('class') as Classes;
-        const newClass = e.target.value as Classes;
+        const previousClass = getValues('class') as ClassNames;
+        const newClass = e.target.value as ClassNames;
         
         // Remover pontos de expertise da classe anterior (se existir)
         if (previousClass) {

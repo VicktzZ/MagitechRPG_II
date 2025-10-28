@@ -21,7 +21,7 @@ import { campaignService } from '@services'
 import { useCampaignContext } from '@contexts';
 import EditIcon from '@mui/icons-material/Edit'
 import DeleteIcon from '@mui/icons-material/Delete'
-import type { Note } from '@types'
+import type { Note } from '@models'
 
 const NOTE_HEIGHT = 200 // Altura padrão para as notas em pixels
 
@@ -40,7 +40,7 @@ export default function CampaignNotes(): ReactElement {
 
     const handleDeleteNote = async (noteId: string) => {
         try {
-            await campaignService.deleteNote(campaign._id!, noteId)
+            await campaignService.deleteNote(campaign.id, noteId)
             enqueueSnackbar('Nota excluída com sucesso!', { variant: 'success' })
         } catch (error) {
             console.error('Erro ao deletar nota:', error)
@@ -55,15 +55,8 @@ export default function CampaignNotes(): ReactElement {
                 return
             }
 
-            if (editingNote) {
-                await campaignService.updateNote(campaign._id!, editingNote._id!, noteContent)
-            } else {
-                const newNote: Note = {
-                    content: noteContent,
-                    timestamp: new Date()
-                }
-                await campaignService.createNote(campaign._id!, newNote)
-            }
+            if (editingNote) await campaignService.updateNote(campaign.id, editingNote.id, noteContent)
+            else await campaignService.createNote(campaign.id, { content: noteContent })
 
             setNoteDialogOpen(false)
             enqueueSnackbar('Nota salva com sucesso!', { variant: 'success' })
@@ -83,7 +76,7 @@ export default function CampaignNotes(): ReactElement {
                     )}
                     {campaign.notes?.map((note) => (
                         <Card 
-                            key={note._id} 
+                            key={note.id} 
                             sx={{ 
                                 height: NOTE_HEIGHT, 
                                 display: 'flex', 
@@ -116,7 +109,7 @@ export default function CampaignNotes(): ReactElement {
                                     <IconButton size="small" onClick={() => handleEditNote(note)}>
                                         <EditIcon />
                                     </IconButton>
-                                    <IconButton size="small" onClick={async () => await handleDeleteNote(note._id!)}>
+                                    <IconButton size="small" onClick={async () => await handleDeleteNote(note.id)}>
                                         <DeleteIcon />
                                     </IconButton>
                                 </CardActions>

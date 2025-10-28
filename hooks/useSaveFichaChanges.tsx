@@ -1,20 +1,20 @@
 /* eslint-disable @typescript-eslint/prefer-nullish-coalescing */
 import { useSavingSpinner } from '@contexts';
-import { fichaService } from '@services';
-import type { Ficha } from '@types';
+import { charsheetService } from '@services';
+import type { Charsheet } from '@models/entities';
 import type React from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-interface UseSaveFichaChangesProps {
-    ficha: Ficha;
+interface UseSaveCharsheetChangesProps {
+    charsheet: Charsheet;
     callback?: () => Promise<void>;
     delay?: number;
     deps?: any[];
     enabled?: boolean;
 }
 
-export default function useSaveFichaChanges(props?: UseSaveFichaChangesProps): {
-    updateFicha: React.Dispatch<React.SetStateAction<Ficha>>;
+export default function useSaveCharsheetChanges(props?: UseSaveCharsheetChangesProps): {
+    updateCharsheet: React.Dispatch<React.SetStateAction<Charsheet>>;
 } {
     const object = {};
     const { showSavingSpinner } = useSavingSpinner()
@@ -23,40 +23,40 @@ export default function useSaveFichaChanges(props?: UseSaveFichaChangesProps): {
         pending: boolean;
     }>({ timeout: null, pending: false });
     
-    const [ ficha, setFicha ] = useState<Ficha>(props?.ficha ?? object as Ficha);
-    const fichaRef = useRef(ficha);
+    const [ charsheet, setCharsheet ] = useState<Charsheet>(props?.charsheet ?? object as Charsheet);
+    const charsheetRef = useRef(charsheet);
     const propsRef = useRef(props);
 
     // Atualiza as refs quando as props ou o estado mudam
     useEffect(() => {
-        fichaRef.current = ficha;
-    }, [ ficha ]);
+        charsheetRef.current = charsheet;
+    }, [ charsheet ]);
     
     useEffect(() => {
         propsRef.current = props;
     }, [ props ]);
 
-    // Função para salvar a ficha
-    const saveFicha = useCallback(async () => {
-        const currentFicha = fichaRef.current;
+    // Função para salvar a charsheet
+    const saveCharsheet = useCallback(async () => {
+        const currentCharsheet = charsheetRef.current;
         const currentProps = propsRef.current;
         
-        if (!currentFicha?._id || currentProps?.enabled === false) {
+        if (!currentCharsheet?.id || currentProps?.enabled === false) {
             debounceRef.current.pending = false;
             return;
         }
 
         try {
             showSavingSpinner(true);
-            console.log('Salvando ficha:', currentFicha._id, currentFicha);
+            console.log('Salvando charsheet:', currentCharsheet.id, currentCharsheet);
             await currentProps?.callback?.();
-            await fichaService.updateById({ 
-                id: currentFicha._id, 
-                data: currentFicha 
+            await charsheetService.updateById({ 
+                id: currentCharsheet.id, 
+                data: currentCharsheet 
             });
-            console.log('Ficha salva com sucesso!');
+            console.log('Charsheet salva com sucesso!');
         } catch (error) {
-            console.error('Erro ao salvar ficha:', error);
+            console.error('Erro ao salvar charsheet:', error);
         } finally {
             setTimeout(() => showSavingSpinner(false), currentProps?.delay || 500);
             debounceRef.current.pending = false;
@@ -72,16 +72,16 @@ export default function useSaveFichaChanges(props?: UseSaveFichaChangesProps): {
         };
     }, []);
 
-    // Atualiza a ficha e agenda o salvamento
-    const updateFicha: React.Dispatch<React.SetStateAction<Ficha>> = useCallback((updater) => {
-        // Atualiza o estado da ficha
-        setFicha(prevFicha => {
-            const newFicha = typeof updater === 'function' 
-                ? (updater as (prevState: Ficha) => Ficha)(prevFicha) 
+    // Atualiza a charsheet e agenda o salvamento
+    const updateCharsheet: React.Dispatch<React.SetStateAction<Charsheet>> = useCallback((updater) => {
+        // Atualiza o estado da charsheet
+        setCharsheet(prevCharsheet => {
+            const newCharsheet = typeof updater === 'function' 
+                ? (updater as (prevState: Charsheet) => Charsheet)(prevCharsheet) 
                 : updater;
             
-            console.log('Atualizando ficha:', { prevFicha, newFicha });
-            return newFicha; // Retorna a nova ficha completa, não um merge
+            console.log('Atualizando charsheet:', { prevCharsheet, newCharsheet });
+            return newCharsheet; // Retorna a nova charsheet completa, não um merge
         });
 
         // Cancela o timeout anterior se existir
@@ -93,23 +93,23 @@ export default function useSaveFichaChanges(props?: UseSaveFichaChangesProps): {
         debounceRef.current.pending = true;
         debounceRef.current.timeout = setTimeout(() => {
             if (debounceRef.current.pending) {
-                void saveFicha();
+                void saveCharsheet();
             }
         }, props?.delay || 1000); // Aumentei o delay para 1 segundo
 
         // Retorna undefined para evitar avisos do React
         return undefined;
-    }, [ props?.delay, saveFicha ]);
+    }, [ props?.delay, saveCharsheet ]);
 
-    // Efeito para sincronizar com props quando a ficha externa muda
+    // Efeito para sincronizar com props quando a charsheet externa muda
     useEffect(() => {
-        if (props?.ficha?._id) {
-            setFicha(props.ficha);
-            fichaRef.current = props.ficha;
+        if (props?.charsheet?.id) {
+            setCharsheet(props.charsheet);
+            charsheetRef.current = props.charsheet;
         }
-    }, [ props?.ficha?._id, props?.ficha ]); // Dependência mais específica
+    }, [ props?.charsheet?.id, props?.charsheet ]); // Dependência mais específica
 
     return {
-        updateFicha
+        updateCharsheet
     }
 }

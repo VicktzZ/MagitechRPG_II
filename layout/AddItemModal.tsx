@@ -3,7 +3,7 @@ import { Add, Close, TouchApp } from '@mui/icons-material'
 import { useState, type ReactElement } from 'react'
 import CreateItemModal from '@components/ficha/dialogs/inventoryCreateModals/CreateItemModal'
 import { useTheme } from '@mui/material'
-import type { Armor, Item, Weapon } from '@types'
+import type { Armor, Item, Weapon } from '@models'
 
 type ItemName = 'weapon' | 'item' | 'armor'
 

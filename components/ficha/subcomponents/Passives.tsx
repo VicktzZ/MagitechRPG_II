@@ -27,10 +27,10 @@ import {
 import { Add, Delete, Edit, EventNote } from '@mui/icons-material';
 import { useFormContext, useWatch } from 'react-hook-form';
 import { amber, blue, grey, red } from '@mui/material/colors';
+import type { PassiveOccasion } from '@models/types/string';
+import type { Charsheet } from '@models/entities';
+import type { Passive } from '@models';
 
-import type { Ficha, Passive, PassiveOccasion } from '@types';
-
-// Lista de ocasiões pré-definidas para passivas
 const occasionOptions: PassiveOccasion[] = [
     'Início do turno',
     'Final do turno',
@@ -71,7 +71,7 @@ interface PassiveFormData {
 }
 
 export default function Passives() {
-    const { control, setValue, getValues } = useFormContext<Ficha>();
+    const { control, setValue, getValues } = useFormContext<Charsheet>();
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     
@@ -79,7 +79,7 @@ export default function Passives() {
     const [ editingPassive, setEditingPassive ] = useState<PassiveFormData | null>(null);
     
     // Observar as passivas
-    const passives = useWatch<Ficha, 'passives'>({
+    const passives = useWatch<Charsheet, 'passives'>({
         control,
         name: 'passives',
         defaultValue: []

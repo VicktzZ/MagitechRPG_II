@@ -27,8 +27,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { green, red, blue } from '@mui/material/colors';
-import type { LineageNames, Trait } from '@types';
-
+import type { Trait, Lineage } from '@models';
 interface TraitWithSelected extends Trait {
     selected: boolean;
 }
@@ -38,7 +37,7 @@ interface TraitsModalProps {
     onClose: () => void;
     selectedTraits: string[];
     onTraitsChange: (traits: string[]) => void;
-    lineage?: LineageNames;
+    lineage?: Lineage['name'];
 }
 
 function TraitsModal({ open, onClose, selectedTraits, onTraitsChange, lineage }: TraitsModalProps) {

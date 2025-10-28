@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 'use client'
 
-import { useCampaignCurrentFichaContext } from '@contexts';
+import { useCampaignCurrentCharsheetContext } from '@contexts';
 import { useChatContext } from '@contexts/chatContext'
 import { MessageType } from '@enums'
 import { 
@@ -22,15 +22,15 @@ import {
     EmojiEvents
 } from '@mui/icons-material'
 import { blue, green, grey, purple, orange, red } from '@mui/material/colors'
-import type { Expertises } from '@types'
 import { useSession } from 'next-auth/react'
 import { type ReactElement } from 'react'
+import type { Expertises } from '@models';
 
 export default function ExpertiseSection(): ReactElement {
-    const { ficha } = useCampaignCurrentFichaContext();
+    const { charsheet } = useCampaignCurrentCharsheetContext();
     const theme = useTheme();
 
-    const expertises = ficha.expertises
+    const expertises = charsheet.expertises
     const { handleSendMessage, setIsChatOpen, isChatOpen } = useChatContext()
     const { data: session } = useSession()
 
@@ -98,18 +98,18 @@ export default function ExpertiseSection(): ReactElement {
     }
 
     const handleExpertiseClick = async (expertiseName: keyof Expertises) => {
-        const expertise = ficha.expertises[expertiseName]
+        const expertise = charsheet.expertises[expertiseName]
         const expertiseValue = expertise.value
 
         // Determina quantos d20s rolar baseado nos mods do atributo padrão da perícia
-        const attrKey = (expertise.defaultAttribute ?? '') as keyof typeof ficha.mods.attributes
-        let numDice = Number(ficha.mods?.attributes?.[attrKey] ?? 1)
+        const attrKey = (expertise.defaultAttribute ?? '') as keyof typeof charsheet.mods.attributes
+        let numDice = Number(charsheet.mods?.attributes?.[attrKey] ?? 1)
         if (!Number.isFinite(numDice) || numDice < 1) numDice = 1
 
         console.log({
             attrKey,
             numDice,
-            mods: ficha.mods,
+            mods: charsheet.mods,
             condition: !Number.isFinite(numDice) || numDice < 1
         })
 
@@ -137,7 +137,7 @@ export default function ExpertiseSection(): ReactElement {
                 text,
                 type: MessageType.EXPERTISE,
                 by: {
-                    id: session.user._id ?? '',
+                    id: session.user.id ?? '',
                     name: session.user.name ?? '',
                     image: session.user.image ?? ''
                 },

@@ -1,8 +1,8 @@
 import { type SxProps, useTheme, Modal, Zoom, Paper, alpha, Box, Avatar, Typography, IconButton } from '@mui/material'
 import { Close } from '@mui/icons-material'
 import type { ReactElement } from 'react'
-import type { ItemAttributes } from '@types'
 import { itemAttributes } from '@constants'
+import type { ItemAttributes } from '@models/types/item'
 
 export function ItemWrapperModal({
     open,

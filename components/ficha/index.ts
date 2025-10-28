@@ -1,7 +1,7 @@
 import Expertise from './subcomponents/Expertise';
 import Item from './subcomponents/Item';
 import Magics from './Magics';
-import MagicsModal from './dialogs/MagicsModal';
+import SpellsModal from './dialogs/MagicsModal';
 import Skills from './Skills';
 import Inventory from './Inventory';
 import Attributes from './Attributes';
@@ -35,5 +35,5 @@ export {
     Magics,
     Skills,
     LevelAndInfo,
-    MagicsModal
+    SpellsModal as MagicsModal
 }

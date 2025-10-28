@@ -1221,7 +1221,7 @@ export default function LandingPage(): ReactElement | null {
                                                         boxShadow: theme.shadows[10]
                                                     }
                                                 }}
-                                                onClick={() => window.open('https://www.paypal.com/donate/?hosted_button_id=ABCDEFGH12345', '_blank')}
+                                                onClick={() => window.open('https://www.paypal.com/donate/?hosted_buttonid=ABCDEFGH12345', '_blank')}
                                             >
                                                 Doar com PayPal
                                             </Button>

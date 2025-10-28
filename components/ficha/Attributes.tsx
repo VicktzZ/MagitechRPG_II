@@ -7,7 +7,6 @@
 import { RadarChart } from '@components/misc'
 import { LinearProgressWithLabel } from '@layout'
 import { Box, TextField, Tooltip } from '@mui/material'
-import type { Ficha } from '@types'
 import { type ReactElement, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Controller, useFormContext, useWatch } from 'react-hook-form'
 
@@ -24,16 +23,17 @@ import { classColor } from '@constants'
 import { classesModel } from '@constants/classes'
 import { races } from '@constants/races'
 import { Attribute, LevelAndInfo } from '.'
+import type { Charsheet } from '@models/entities'
 
 function Attributes(): ReactElement {
-    const { control, setValue, getValues, formState: { errors }, reset } = useFormContext<Ficha>()
+    const { control, setValue, getValues, formState: { errors }, reset } = useFormContext<Charsheet>()
     const [ multiplier, setMultiplier ] = useState<number>(1)
     
     const theme = useTheme()
     const matches = useMediaQuery(theme.breakpoints.down('md'))
 
-    const ficha = getValues()
-    const disabled = !!ficha._id
+    const charsheet = getValues()
+    const disabled = !!charsheet.id
 
     // Watch para todos os atributos, perícias e nível para atualizar o overall
     const attributes = useWatch({ control, name: 'attributes' })
@@ -61,9 +61,9 @@ function Attributes(): ReactElement {
     }, [ attributes, expertises, level, setValue ]);
 
     const fichaDetailsColor = useMemo(() => {
-        const classe = ficha.class
+        const classe = charsheet.class
         return classColor?.[classe as keyof typeof classColor] ?? theme.palette.primary.main
-    }, [ ficha.class ])
+    }, [ charsheet.class ])
 
     const attributePoints = useCallback((attributeName: 'vig' | 'des' | 'foc' | 'log' | 'sab' | 'car') => {
         
@@ -119,9 +119,9 @@ function Attributes(): ReactElement {
                 const logBonusDiff = newLogBonus - oldLogBonus;
                 
                 if (logBonusDiff !== 0) {
-                    const currentMagicsSpace = getValues('magicsSpace');
-                    const newMagicsSpace = currentMagicsSpace + logBonusDiff;
-                    setValue('magicsSpace', newMagicsSpace);
+                    const currentSpellSpace = getValues('spellSpace');
+                    const newSpellSpace = currentSpellSpace + logBonusDiff;
+                    setValue('spellSpace', newSpellSpace);
                     
                     // A cada 10 níveis adicionados, adicione +1 ponto em "points.skills"
                     const oldLogSkillBonus = Math.floor(oldValue / 10);
@@ -193,7 +193,7 @@ function Attributes(): ReactElement {
         }, [ attributeName, getValues, multiplier, setValue ])
 
         return { onIncrement, onDecrement }
-    }, [ ficha, getValues, setValue, reset, disabled, multiplier ])
+    }, [ charsheet, getValues, setValue, reset, disabled, multiplier ])
 
     const vig = useWatch({
         control,
@@ -224,12 +224,12 @@ function Attributes(): ReactElement {
         let baseLP = 0; let baseMaxLP = 0; let baseMP = 0; let baseMaxMP = 0; let baseAP = 0; let baseMaxAP = 0
         
         if (disabled) {
-            baseLP = ficha.attributes.lp
-            baseMaxLP = ficha.attributes.maxLp
-            baseMP = ficha.attributes.mp
-            baseMaxMP = ficha.attributes.maxMp
-            baseAP = ficha.attributes.ap
-            baseMaxAP = ficha.attributes.maxAp
+            baseLP = charsheet.stats.lp
+            baseMaxLP = charsheet.stats.maxLp
+            baseMP = charsheet.stats.mp
+            baseMaxMP = charsheet.stats.maxMp
+            baseAP = charsheet.stats.ap
+            baseMaxAP = charsheet.stats.maxAp
 
             baseLP += vig - attributesRef.current.vig
             baseMaxLP += vig - attributesRef.current.vig
@@ -258,21 +258,21 @@ function Attributes(): ReactElement {
             baseMaxAP = baseAP
         }
         
-        setValue('attributes.lp', baseLP)
-        setValue('attributes.maxLp', baseMaxLP)
-        setValue('attributes.mp', baseMP)
-        setValue('attributes.maxMp', baseMaxMP)
-        setValue('attributes.ap', baseAP)
-        setValue('attributes.maxAp', baseMaxAP)
+        setValue('stats.lp', baseLP)
+        setValue('stats.maxLp', baseMaxLP)
+        setValue('stats.mp', baseMP)
+        setValue('stats.maxMp', baseMaxMP)
+        setValue('stats.ap', baseAP)
+        setValue('stats.maxAp', baseMaxAP)
     }, [ vig, des, foc, race, classe ])
 
     // Case race 'Humano'
     useEffect(() => {
-        if (ficha._id) return
-        let pointsAttributes = ficha.points.attributes + (races[race as keyof typeof races]?.attributes.pda || 0)
+        if (charsheet.id) return
+        let pointsAttributes = charsheet.points.attributes + (races[race as keyof typeof races]?.attributes.pda || 0)
        
         if (raceRef.current && raceRef.current === 'Humano') {
-            pointsAttributes = ficha.points.attributes - 5
+            pointsAttributes = charsheet.points.attributes - 5
         }
 
         setValue('points.attributes', pointsAttributes)
@@ -402,19 +402,19 @@ function Attributes(): ReactElement {
                             <Box display='flex' flexDirection='column' gap={1.5}>
                                 {/* LP */}
                                 <Controller
-                                    name='attributes.lp'
+                                    name='stats.lp'
                                     control={control}
                                     render={({ field }) => (
                                         <Box>
                                             <LinearProgressWithLabel
                                                 label='LP'
                                                 minvalue={field.value}
-                                                maxvalue={getValues('attributes.maxLp')}
+                                                maxvalue={getValues('stats.maxLp')}
                                                 color='error'
                                             />
-                                            {errors.attributes?.lp && (
+                                            {errors.stats?.lp && (
                                                 <Typography color='error' variant='caption' display='block' mt={0.5}>
-                                                    {errors.attributes.lp.message}
+                                                    {errors.stats.lp.message}
                                                 </Typography>
                                             )}
                                         </Box>
@@ -423,19 +423,19 @@ function Attributes(): ReactElement {
 
                                 {/* MP */}
                                 <Controller
-                                    name='attributes.mp'
+                                    name='stats.mp'
                                     control={control}
                                     render={({ field }) => (
                                         <Box>
                                             <LinearProgressWithLabel
                                                 label='MP'
                                                 minvalue={field.value}
-                                                maxvalue={getValues('attributes.maxMp')}
+                                                maxvalue={getValues('stats.maxMp')}
                                                 color='info'
                                             />
-                                            {errors.attributes?.mp && (
+                                            {errors.stats?.mp && (
                                                 <Typography color='error' variant='caption' display='block' mt={0.5}>
-                                                    {errors.attributes.mp.message}
+                                                    {errors.stats.mp.message}
                                                 </Typography>
                                             )}
                                         </Box>
@@ -444,19 +444,19 @@ function Attributes(): ReactElement {
 
                                 {/* AP */}
                                 <Controller
-                                    name='attributes.ap'
+                                    name='stats.ap'
                                     control={control}
                                     render={({ field }) => (
                                         <Box>
                                             <LinearProgressWithLabel
                                                 label='AP'
                                                 minvalue={field.value}
-                                                maxvalue={getValues('attributes.maxAp')}
+                                                maxvalue={getValues('stats.maxAp')}
                                                 color='warning'
                                             />
-                                            {errors.attributes?.ap && (
+                                            {errors.stats?.ap && (
                                                 <Typography color='error' variant='caption' display='block' mt={0.5}>
-                                                    {errors.attributes.ap.message}
+                                                    {errors.stats.ap.message}
                                                 </Typography>
                                             )}
                                         </Box>
@@ -476,7 +476,7 @@ function Attributes(): ReactElement {
                                             </Typography>
                                             <Box sx={{ display: 'flex', alignItems: 'center' }}>
                                                 <Typography variant="body1" fontWeight="medium">
-                                                    {getValues('attributes.maxMp') + getValues('attributes.foc') * 2 + getValues('level')}
+                                                    {getValues('stats.maxMp') + getValues('attributes.foc') * 2 + getValues('level')}
                                                 </Typography>
                                                 <Tooltip title="Base + Foco * 2 + Nível">
                                                     <InfoOutlined fontSize="inherit" sx={{ ml: 0.5, opacity: 0.6, fontSize: '0.875rem' }} />
@@ -516,7 +516,7 @@ function Attributes(): ReactElement {
                                                     );
                                                     
                                                     // Valor total do overall (atributos + perícias)
-                                                    const overallValue = attributesSum + expertisesSum + ficha.level;
+                                                    const overallValue = attributesSum + expertisesSum + charsheet.level;
                                                     setValue('overall', overallValue)
                                                     
                                                     // Define cores com base no valor

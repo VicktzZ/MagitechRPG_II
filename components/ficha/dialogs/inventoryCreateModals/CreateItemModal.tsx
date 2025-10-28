@@ -3,7 +3,7 @@ import { type ReactElement, memo, useMemo } from 'react';
 import { InventoryCreateWeaponModal } from './InventoryCreateWeaponModal';
 import { InventoryCreateArmorModal } from './InventoryCreateArmorModal';
 import { InventoryCreateItemModal } from './InventoryCreateItemModal';
-import type { Armor, Item, Weapon } from '@types';
+import type { Armor, Item, Weapon } from '@models';
 
 interface CreateItemModalProps {
     itemType: 'weapon' | 'armor' | 'item';

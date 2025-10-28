@@ -1,4 +1,5 @@
-import type { Class, Classes } from  '@types';
+import type { Class } from '@models';
+import type { ClassNames } from '@models/types/string';
 import { skills } from './skills';
 
 const { 
@@ -14,7 +15,7 @@ const {
     }
 } = skills
 
-export const classesModel: Record<Classes, Class> = {
+export const classesModel: Record<ClassNames, Class> = {
     'Combatente': {
         name: 'Combatente',
         description: 'A classe de mago com habilidades de combate e defesa. O seu poder de ataque e de defesa aumentam com o nível da classe.',

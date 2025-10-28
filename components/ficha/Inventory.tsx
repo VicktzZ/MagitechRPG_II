@@ -3,6 +3,7 @@ import ItemComponent from '@components/ficha/subcomponents/Item';
 import { RPGIcon } from '@components/misc';
 import { rarityArmorBonuses } from '@constants/dataTypes';
 import { AddItemModal } from '@layout';
+import type { Charsheet } from '@models/entities';
 import {
     Add,
     CheckCircle,
@@ -28,7 +29,6 @@ import {
     useTheme
 } from '@mui/material';
 import { blue, green, red } from '@mui/material/colors';
-import type { Ficha } from '@types';
 import { useMemo, useState, type ReactElement } from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
 
@@ -37,7 +37,7 @@ const redFilter = 'invert(16%) sepia(44%) saturate(6989%) hue-rotate(352deg) bri
 // TODO: ACRESCENTAR ITENS DE LINHAGEM (ao mudar)
 // TODO: INCREMENTAR SISTEMAS DE NÍVEIS (3) PARA ITENS
 export function Inventory (): ReactElement {
-    const { control } = useFormContext<Ficha>()
+    const { control } = useFormContext<Charsheet>()
     
     const theme = useTheme()
     const matches = useMediaQuery(theme.breakpoints.down('md'))

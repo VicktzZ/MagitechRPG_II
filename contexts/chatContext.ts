@@ -1,6 +1,7 @@
 import { createContext, type Dispatch, type SetStateAction, useContext } from 'react'
-import type { Message, TempMessage } from '@types'
 import { type MessageType } from '@enums'
+import type { TempMessage } from '@models/types/session'
+import type { Message } from '@models'
 
 interface ChatContextData {
     messages: TempMessage[]

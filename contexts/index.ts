@@ -6,7 +6,7 @@ import { channelContext } from './channelContext';
 import { chatContext } from './chatContext';
 import { savingSpinnerContext, useSavingSpinner } from './savingSpinnerContext';
 import { useCampaignContext } from './campaignContext';
-import { campaignCurrentFichaContext, useCampaignCurrentFichaContext } from './campaignCurrentFichaContext';
+import { campaignCurrentCharsheetContext, useCampaignCurrentCharsheetContext } from './campaignCurrentCharsheetContext';
 import { ThemeProvider, useThemeContext } from './themeContext';
 import FichaFormProvider from './FichaFormProvider';
 
@@ -20,8 +20,8 @@ export {
     savingSpinnerContext,
     useSavingSpinner,
     useCampaignContext,
-    campaignCurrentFichaContext,
-    useCampaignCurrentFichaContext,
+    campaignCurrentCharsheetContext,
+    useCampaignCurrentCharsheetContext,
     ThemeProvider,
     useThemeContext,
     FichaFormProvider

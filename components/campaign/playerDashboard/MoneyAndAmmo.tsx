@@ -1,8 +1,9 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 'use client';
 
-import { useCampaignCurrentFichaContext } from '@contexts';
+import { useCampaignCurrentCharsheetContext } from '@contexts';
 import { AmmoType } from '@enums';
+import type { AmmoControl } from '@models/types/misc';
 import {
     Add as AddIcon,
     AttachMoney,
@@ -29,17 +30,16 @@ import {
     useTheme
 } from '@mui/material';
 import { blue, green, orange, purple, red } from '@mui/material/colors';
-import type { AmmoControl } from '@types';
 import { type ReactElement, useState } from 'react';
 
 export default function MoneyAndAmmo(): ReactElement {
-    const { ficha, updateFicha } = useCampaignCurrentFichaContext();
+    const { charsheet, updateCharsheet } = useCampaignCurrentCharsheetContext();
     const theme = useTheme();
     
     const [ ammo, setAmmo ] = useState<AmmoControl>({
         type: AmmoType.BULLET,
-        current: ficha.ammoCounter.current,
-        max: ficha.ammoCounter.max
+        current: charsheet.ammoCounter.current,
+        max: charsheet.ammoCounter.max
     });
 
     const ammoPercent = (ammo.current / ammo.max) * 100;
@@ -51,7 +51,7 @@ export default function MoneyAndAmmo(): ReactElement {
                 : Math.max(prev.current - 1, 0);
                 
             // Atualizar no Firestore em tempo real
-            updateFicha({
+            updateCharsheet({
                 ammoCounter: {
                     current,
                     max: prev.max
@@ -71,7 +71,7 @@ export default function MoneyAndAmmo(): ReactElement {
             const current = Math.min(prev.current, newMax);
 
             // Atualizar no Firestore em tempo real
-            updateFicha({
+            updateCharsheet({
                 ammoCounter: {
                     current,
                     max: newMax
@@ -89,7 +89,7 @@ export default function MoneyAndAmmo(): ReactElement {
     const handleReload = () => {
         setAmmo(prev => {
             // Atualizar no Firestore em tempo real
-            updateFicha({
+            updateCharsheet({
                 ammoCounter: {
                     current: prev.max,
                     max: prev.max
@@ -186,7 +186,7 @@ export default function MoneyAndAmmo(): ReactElement {
                                         mb: 0.5
                                     }}
                                 >
-                                    {ficha.mode === 'Classic' ? '¥ ' : '¢ '}Dinheiro
+                                    {charsheet.mode === 'Classic' ? '¥ ' : '¢ '}Dinheiro
                                 </Typography>
                                 <Typography variant="body2" color="text.secondary">
                                     Recursos financeiros do personagem
@@ -207,13 +207,13 @@ export default function MoneyAndAmmo(): ReactElement {
                             }}
                         >
                             <TextField
-                                defaultValue={ficha.inventory.money}
+                                defaultValue={charsheet.inventory.money}
                                 onChange={(e) => {
                                     const value = parseFloat(e.target.value) || 0;
                                     // 🔥 Atualizar no Firestore em tempo real
-                                    updateFicha({
+                                    updateCharsheet({
                                         inventory: {
-                                            ...ficha.inventory,
+                                            ...charsheet.inventory,
                                             money: value
                                         }
                                     });

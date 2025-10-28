@@ -2,7 +2,7 @@ import { rarityArmorBonuses } from '@constants/dataTypes'
 import { useTheme, Box, Paper, alpha, Stack, Typography, IconButton, LinearProgress, Chip, Collapse, Divider, Tooltip } from '@mui/material'
 import { ArrowDropUp, ArrowDropDown, CategoryOutlined, Speed, FitnessCenter, Shield, Star, InfoOutlined } from '@mui/icons-material'
 import { type ReactElement, useState, useMemo } from 'react'
-import type { ItemTyping } from '@types'
+import type { ItemTyping } from '@models/types/item'
 
 export function Armor(props: ItemTyping<'armor'>): ReactElement {
     const theme = useTheme()

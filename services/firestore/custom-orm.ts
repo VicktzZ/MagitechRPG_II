@@ -136,7 +136,7 @@ export class FirestoreEntity<T extends DocumentData = DocumentData> {
             const q = this.buildQuery(options);
             const querySnapshot = await getDocs(q);
             return querySnapshot.docs.map(doc => ({
-                _id: doc.id,
+                id: doc.id,
                 ...doc.data()
             }));
         } catch (error) {
@@ -189,7 +189,7 @@ export class FirestoreEntity<T extends DocumentData = DocumentData> {
                 q,
                 (snapshot) => {
                     const data = snapshot.docs.map(doc => ({
-                        _id: doc.id,
+                        id: doc.id,
                         ...doc.data()
                     }));
 

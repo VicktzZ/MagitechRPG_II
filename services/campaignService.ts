@@ -1,4 +1,6 @@
-import type { Campaign, CampaignData, Ficha, Note, User, Weapon, Armor, Item } from '@types'
+import type { Armor, Item, Note, Weapon } from '@models'
+import type { Campaign, Charsheet, User } from '@models/entities'
+import type { CampaignData } from '@models/types/session'
 import { Service } from '@utils/apiRequest'
 
 class CampaignService extends Service<Campaign, 'code' | 'userId'> {
@@ -7,8 +9,8 @@ class CampaignService extends Service<Campaign, 'code' | 'userId'> {
     async updateNote(campaignId: string, noteId: string, content: string) { return (await this.patch({ param: `${campaignId}/notes`, body: { noteId, content } })).data }
     async deleteNote(campaignId: string, noteId: string) { return (await this.delete({ param: `${campaignId}/notes`, body: { noteId } })).data }
     async removeUser(campaignId: string, userId: string) { return (await this.delete({ param: `${campaignId}/users`, body: { userId } })).data }
-    async updateUserFicha(campaignId: string, ficha: Ficha) { return (await this.patch({ param: `${campaignId}/update-user-ficha`, body: ficha })).data }
-    async getFichas(campaignId: string) { return await this.fetch({ param: `${campaignId}/fichas` }) as unknown as Ficha[] }
+    async updateUserCharsheet(campaignId: string, charsheet: Charsheet) { return (await this.patch({ param: `${campaignId}/update-user-charsheet`, body: charsheet })).data }
+    async getCharsheets(campaignId: string) { return await this.fetch({ param: `${campaignId}/charsheets` }) as unknown as Charsheet[] }
     async getAllData(campaignId: string, userId: string) { return (await this.get({ param: `${campaignId}/get-all-data?userId=${userId}` })).data as unknown as CampaignData }
     
     // Custom campaign

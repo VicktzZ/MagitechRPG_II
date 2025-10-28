@@ -1,15 +1,5 @@
-import type { 
-    Armor,
-    AmmoType,
-    ArmorAccessoriesType,
-    Attributes,
-    DamageType,
-    Item,
-    RangeType,
-    RarityType, 
-    WeaponAccesoriesType,
-    Weapon
-} from '@types'
+import type { Armor, Attributes, Item, Weapon } from '@models'
+import type { AmmoType, ArmorAccessoriesType, DamageType, RangeType, RarityType, WeaponAccesoriesType } from '@models/types/string'
 
 const damages: DamageType[] = [
     'Cortante',
@@ -86,7 +76,7 @@ const armorCateg: Array<Armor['categ']> = [
     'Pesada'
 ]
 
-const weaponHit: Attributes[] = [
+const weaponHit: Array<keyof Attributes> = [
     'foc',
     'log',
     'sab',
@@ -120,7 +110,7 @@ const otherWeaponAmmo: AmmoType[] = [
     'Granada'    
 ]
 
-const weaponScientificAccessories: WeaponAccesoriesType [] = [
+const weaponScientificAccessories: WeaponAccesoriesType[] = [
     'Cano curto',
     'Cano/Lâmina Estriada',
     'Cabo de borracha',
@@ -174,7 +164,7 @@ const armorMagicalAccessories: ArmorAccessoriesType[] = [
     'SAM'
 ]
 
-const weaponBonuses: Array<Weapon<'Leve' | 'Pesada'>['bonus']> = [
+const weaponBonuses: Array<Weapon['bonus']> = [
     'Agilidade',
     'Controle',
     'Furtividade',

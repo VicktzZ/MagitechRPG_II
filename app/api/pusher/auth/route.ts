@@ -1,12 +1,13 @@
 import { pusherServer } from '@utils/pusher';
 import type { NextRequest } from 'next/server';
-import type { Member, Ficha } from '@types';
+import type { Member } from '@models/types/misc';
+import type { Charsheet } from '@models/entities';
 
 export async function POST(req: NextRequest): Promise<Response> {
     try {
         const body = await req.text()
         const sessionParam: Member = JSON.parse(req.nextUrl.searchParams.get('session') ?? '{}')?.user
-        const fichaParam: Ficha = JSON.parse(req.nextUrl.searchParams.get('ficha') ?? '{}')
+        const charsheetParam: Charsheet = JSON.parse(req.nextUrl.searchParams.get('charsheet') ?? '{}')
 
         const socketId = body.split('=')[1].split('&')[0]
         const channelName = body?.split('&')[1]?.split('=')[1]
@@ -17,7 +18,7 @@ export async function POST(req: NextRequest): Promise<Response> {
 
         const channelAuthResponse = pusherServer.authorizeChannel(socketId, channelName, {
             user_id: socketId,
-            user_info: { ...sessionParam, socketId, currentFicha: fichaParam }
+            user_info: { ...sessionParam, socketId, currentCharsheet: charsheetParam }
         })
 
         return Response.json(channelAuthResponse)

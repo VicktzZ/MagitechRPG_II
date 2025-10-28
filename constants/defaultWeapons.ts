@@ -1,6 +1,6 @@
-import type { Weapon } from '@types'
+import type { Weapon } from '@models'
 
-export const deafultWeapons: Record<'melee' | 'ranged' | 'magic' | 'ballistic' | 'energy' | 'special', Weapon[]> = {
+export const deafultWeapons: Record<'melee' | 'ranged' | 'magic' | 'ballistic' | 'energy' | 'special', Array<Partial<Weapon>>> = {
     melee: [
         {
             name: 'Faca',

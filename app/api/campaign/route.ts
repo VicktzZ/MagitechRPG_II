@@ -1,9 +1,10 @@
+import { campaignRepository } from '@repositories';
+import { findCampaignByCodeOrId } from '@utils/helpers/findCampaignByCodeOrId';
+import { CampaignDTO } from '@models/dtos';
+import { validate } from 'class-validator';
+import { plainToInstance } from 'class-transformer';
 import type { NextRequest } from 'next/server';
-import type { Campaign as CampaignType } from '@types';
-import { getDocs, query, where, setDoc, doc } from 'firebase/firestore';
-import { campaignCollection } from '@models/db/campaign';
-import { v4 as uuidv4 } from 'uuid';
-import { getCampaign } from '@utils/server/getCampaign';
+import type { Campaign } from '@models/entities';
 
 export async function GET(req: NextRequest): Promise<Response> {
     try {
@@ -11,29 +12,34 @@ export async function GET(req: NextRequest): Promise<Response> {
         const userId = req.nextUrl.searchParams.get('userId');
 
         if (campaignCode) {
-            const snap = await getCampaign(campaignCode);
-            if (!snap.exists()) return Response.json({ message: 'NOT FOUND' }, { status: 404 });
-            return Response.json(snap.data());
+            const campaign = await findCampaignByCodeOrId(campaignCode);
+            if (!campaign) {
+                return Response.json({ message: 'NOT FOUND' }, { status: 404 });
+            }
+            return Response.json(campaign);
         }
 
         if (userId) {
-            const qGM = query(campaignCollection, where('admin', 'array-contains', userId));
-            const gmSnap = await getDocs(qGM);
-            const asGm = gmSnap.docs.map(d => d.data())
-                .map(c => ({ _id: c._id, code: c.campaignCode }));
+            const asGmQuery = campaignRepository
+                .whereArrayContains('admin', userId)
+                .find();
+            
+            const allCampaignsQuery = campaignRepository.find();
 
-            const allSnap = await getDocs(campaignCollection);
-            const asPlayer = allSnap.docs
-                .map(d => d.data())
+            const [ gmCampaigns, allCampaigns ] = await Promise.all([ asGmQuery, allCampaignsQuery ]);
+
+            const asGm = gmCampaigns.map(c => ({ id: c.id, code: c.campaignCode }));
+
+            const asPlayer = allCampaigns
                 .filter(c => Array.isArray(c.players) && c.players.some(p => p.userId === userId))
-                .map(c => ({ _id: c._id, code: c.campaignCode }));
+                .map(c => ({ id: c.id, code: c.campaignCode }));
 
             return Response.json({ asGm, asPlayer });
         }
 
-        const snap = await getDocs(campaignCollection);
-        const response = snap.docs.map(d => d.data());
-        return Response.json(response);
+        const allCampaigns = await campaignRepository.find();
+        return Response.json(allCampaigns);
+
     } catch (error: any) {
         return Response.json({ message: 'NOT FOUND', error: error.message }, { status: 404 });
     }
@@ -41,10 +47,17 @@ export async function GET(req: NextRequest): Promise<Response> {
 
 export async function POST(req: Request): Promise<Response> {
     try {
-        const campaignBody: CampaignType = await req.json();
-        const id = campaignBody._id ?? uuidv4();
-        await setDoc(doc(campaignCollection, id), { ...campaignBody, _id: id });
-        return Response.json({ ...campaignBody, _id: id });
+        const body: Campaign = await req.json();
+        const dto = plainToInstance(CampaignDTO, body);
+        const errors = await validate(dto);
+        
+        if (errors.length > 0) {
+            return Response.json({ message: 'BAD REQUEST', errors }, { status: 400 });
+        }
+        
+        const createdCampaign = await campaignRepository.create(dto as Campaign);
+        
+        return Response.json(createdCampaign, { status: 201 });
     } catch (error: any) {
         return Response.json({ message: 'BAD REQUEST', error: error.message }, { status: 400 });
     }

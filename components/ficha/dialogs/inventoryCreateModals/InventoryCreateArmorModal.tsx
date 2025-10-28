@@ -11,7 +11,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { armorSchema } from './validationSchemas';
 import { useFichaForm } from '@contexts/FichaFormProvider';
 import { deafultArmors, defaultArmor } from '@constants/defaultArmors';
-import type { Armor } from '@types';
+import type { Armor } from '@models';
 import { useCampaignContext } from '@contexts';
 import { campaignService } from '@services';
 
@@ -69,7 +69,7 @@ export const InventoryCreateArmorModal = memo(({
         campaign.custom.items.armor.length > 0 && {
             header: 'Personalizados',
             options: mapArrayToOptions(
-                campaign.custom.items.armor.map(item => ({ name: item.name, id: item._id, value: item.name })),
+                campaign.custom.items.armor.map(item => ({ name: item.name, id: item.id, value: item.name })),
                 isUserGM
             )
         },
@@ -107,7 +107,7 @@ export const InventoryCreateArmorModal = memo(({
                         hasGroups
                         menuStyle={{ maxHeight: 8 }}
                         onDelete={async (id) => {
-                            await campaignService.deleteCustomItem(campaign._id!, 'armor', id);
+                            await campaignService.deleteCustomItem(campaign.id, 'armor', id);
                             enqueueSnackbar('Armadura removida com sucesso!', toastDefault('itemDeleted', 'success'));
                             action();
                         }}

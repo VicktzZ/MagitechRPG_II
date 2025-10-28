@@ -5,6 +5,8 @@ import { Attributes, Characteristics, CustomDices, Expertises, Inventory, Magics
 import { toastDefault } from '@constants';
 import { useAudio } from '@hooks';
 import { CustomIconButton, WarningModal } from '@layout';
+import type { CharsheetDTO } from '@models/dtos';
+import type { Charsheet } from '@models/entities';
 import {
     Add,
     ArticleRounded,
@@ -40,9 +42,8 @@ import {
     type SxProps
 } from '@mui/material';
 import { useSession } from '@node_modules/next-auth/react';
-import { fichaService } from '@services';
+import { charsheetService } from '@services';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { type FichaDto, type Ficha } from '@types';
 import { useLocalStorage } from '@uidotdev/usehooks';
 import { useRouter } from 'next/navigation';
 import { useSnackbar } from 'notistack';
@@ -82,9 +83,9 @@ function Section({ title, icon, children, action, sx }: {
     )
 }
 
-export default function FichaComponent(): ReactElement {
-    const form = useFormContext<Ficha>()
-    const ficha = form.getValues()
+export default function CharsheetComponent(): ReactElement {
+    const form = useFormContext<Charsheet>()
+    const charsheet = form.getValues()
     const { data: session } = useSession()
     const queryClient = useQueryClient()
     const audio = useAudio('/sounds/arcade-cyber-bling.wav')
@@ -111,16 +112,16 @@ export default function FichaComponent(): ReactElement {
     const isTablet = useMediaQuery(theme.breakpoints.down('md'))
     const isNotebook = useMediaQuery(theme.breakpoints.between('md', 'xl'))
     const submitAudio = useAudio('/sounds/sci-fi-interface-zoom.wav')
-    const [ , setCreateFichaAutosave ] = useLocalStorage<Ficha | null>('create-ficha-autosave')
+    const [ , setCreateCharsheetAutosave ] = useLocalStorage<Charsheet | null>('create-charsheet-autosave')
 
-    const { mutateAsync: updateFicha } = useMutation({
-        mutationFn: async ({ id, data }: { id: string, data: FichaDto }) => await fichaService.updateById({ id, data }),
+    const { mutateAsync: updateCharsheet } = useMutation({
+        mutationFn: async ({ id, data }: { id: string, data: CharsheetDTO }) => await charsheetService.updateById({ id, data }),
         onSuccess: () => {
-            enqueueSnackbar('Ficha atualizada com sucesso!', toastDefault('success', 'success'))
+            enqueueSnackbar('Charsheet atualizada com sucesso!', toastDefault('success', 'success'))
             setSaveProgress(100)
             setTimeout(() => setSaveProgress(0), 2000)
-            queryClient.invalidateQueries({ queryKey: [ 'ficha', ficha._id ] })
-            queryClient.invalidateQueries({ queryKey: [ 'fichas', session?.user?._id ] })
+            queryClient.invalidateQueries({ queryKey: [ 'charsheet', charsheet.id ] })
+            queryClient.invalidateQueries({ queryKey: [ 'charsheets', session?.user?.id ] })
         },
         onError: (error: any) => {
             enqueueSnackbar(`Algo deu errado: ${error.message}`, toastDefault('error', 'error'))
@@ -128,12 +129,12 @@ export default function FichaComponent(): ReactElement {
         }
     })
 
-    const { mutateAsync: createFicha } = useMutation({
-        mutationFn: async (data: FichaDto) => await fichaService.create(data),
+    const { mutateAsync: createCharsheet } = useMutation({
+        mutationFn: async (data: CharsheetDTO) => await charsheetService.create(data),
         onSuccess: () => {
-            enqueueSnackbar('Ficha criada com sucesso!', toastDefault('success', 'success'))
-            queryClient.invalidateQueries({ queryKey: [ 'ficha', ficha._id ] })
-            queryClient.invalidateQueries({ queryKey: [ 'fichas', session?.user?._id ] })
+            enqueueSnackbar('Charsheet criada com sucesso!', toastDefault('success', 'success'))
+            queryClient.invalidateQueries({ queryKey: [ 'charsheet', charsheet.id ] })
+            queryClient.invalidateQueries({ queryKey: [ 'charsheets', session?.user?.id ] })
         },
         onError: (error: any) => {
             enqueueSnackbar(`Algo deu errado: ${error.message}`, toastDefault('error', 'error'))
@@ -146,30 +147,30 @@ export default function FichaComponent(): ReactElement {
         console.log(errors)
     }, [ errors ])
 
-    const submitForm: SubmitHandler<Ficha> = async (values) => {
-        const fichaDto: FichaDto = {
+    const submitForm: SubmitHandler<CharsheetDTO> = async (values) => {
+        const charsheetDto: Charsheet = {
             ...values,
-            magics: values.magics.map(m => m._id) as string[],
+            spells: values.spells.map(m => m.id) as string[],
             skills: {
                 ...values.skills,
-                powers: values.skills.powers.map(p => p._id) as string[]
+                powers: values.skills.powers.map(p => p.id) as string[]
             }
         }
 
         enqueueSnackbar('Aguarde...', toastDefault('loadingFetch', 'info'))
 
-        if (!values._id) {
+        if (!values.id) {
             try {
-                const response = await createFicha(fichaDto)
+                const response = await createCharsheet(charsheetDto)
 
                 closeSnackbar('loadingFetch')
 
-                enqueueSnackbar('Ficha criada com sucesso!', toastDefault('success', 'success'))
+                enqueueSnackbar('Charsheet criada com sucesso!', toastDefault('success', 'success'))
                 setIsLoading(true)
                 submitAudio.play()
-                setCreateFichaAutosave(null)
+                setCreateCharsheetAutosave(null)
                 setTimeout(() => {
-                    router.push('/app/ficha/' + response._id)
+                    router.push('/app/charsheet/' + response.id)
                 }, 500);
             } catch (error: any) {
                 closeSnackbar('loadingFetch')
@@ -179,17 +180,17 @@ export default function FichaComponent(): ReactElement {
         }
 
         try {
-            const response = await updateFicha({ id: values._id, data: fichaDto })
+            const response = await updateCharsheet({ id: values.id, data: charsheetDto })
 
             closeSnackbar('loadingFetch')
 
-            if (ficha._id) {
-                enqueueSnackbar('Ficha salva com sucesso!', toastDefault('success', 'success'))
+            if (charsheet.id) {
+                enqueueSnackbar('Charsheet salva com sucesso!', toastDefault('success', 'success'))
             } else {
-                enqueueSnackbar('Ficha criada com sucesso!', toastDefault('fichaCreated', 'success'))
+                enqueueSnackbar('Charsheet criada com sucesso!', toastDefault('charsheetCreated', 'success'))
                 setIsLoading(true)
                 setTimeout(() => {
-                    router.push('/app/ficha/' + response._id)
+                    router.push('/app/charsheet/' + response.id)
                 }, 500);
             }
         } catch (error: any) {
@@ -201,7 +202,7 @@ export default function FichaComponent(): ReactElement {
     return (
         <Box 
             component="form" 
-            onSubmit={!ficha._id ? form.handleSubmit(submitForm) : undefined}
+            onSubmit={!charsheet.id ? form.handleSubmit(submitForm) : undefined}
             sx={{ 
                 display: 'flex',
                 flexDirection: 'column',
@@ -234,34 +235,34 @@ export default function FichaComponent(): ReactElement {
                                 fontFamily="Sakana"
                                 sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
                             >
-                                {!ficha._id ? (
+                                {!charsheet.id ? (
                                     <>
-                                        <Add /> Criar Nova Ficha
+                                        <Add /> Criar Nova Charsheet
                                     </>
                                 ) : (
                                     <>
-                                        <Person /> {ficha.name || 'Ficha sem nome'}
+                                        <Person /> {charsheet.name || 'Charsheet sem nome'}
                                     </>
                                 )}
                             </Typography>
-                            {ficha._id && (
+                            {charsheet.id && (
                                 <Typography variant="body2" color="text.secondary" mt={1}>
-                                    Jogador: {ficha.playerName}
+                                    Jogador: {charsheet.playerName}
                                 </Typography>
                             )}
                         </Box>
-                        {!ficha._id && (
+                        {!charsheet.id && (
                             <Box>
                                 <Button
                                     variant='contained'
                                     color={'terciary' as any}
                                     type='button'
                                     onClick={() => {
-                                        setCreateFichaAutosave(null)
+                                        setCreateCharsheetAutosave(null)
                                         window.location.reload()
                                     }}
                                 >
-                                    Resetar Ficha
+                                    Resetar Charsheet
                                 </Button>
                             </Box>
                         )}
@@ -273,14 +274,14 @@ export default function FichaComponent(): ReactElement {
                             color={'terciary' as any}
                             type='button'
                             onClick={changeGameMode}
-                            disabled={!!form.getValues()._id}
+                            disabled={!!form.getValues().id}
                         >
                             Modo de jogo: {form.getValues().mode}
                         </Button>
                         <Tooltip 
                             title={
                                 !isValid ? 'Preencha todos os campos obrigatórios' : 
-                                    session?.user._id !== ficha.userId ? 'Você não pode salvar esta ficha' : 
+                                    session?.user.id !== charsheet.userId ? 'Você não pode salvar esta charsheet' : 
                                         'Salvar alterações'
                             }
                         >
@@ -288,14 +289,14 @@ export default function FichaComponent(): ReactElement {
                                 <Button
                                     variant="contained"
                                     color="primary"
-                                    type={!ficha._id ? 'submit' : 'button'}
+                                    type={!charsheet.id ? 'submit' : 'button'}
                                     onClick={form.handleSubmit(submitForm)}
-                                    disabled={!!ficha?._id && (session?.user._id !== ficha.userId)}
+                                    disabled={!!charsheet?.id && (session?.user.id !== charsheet.userId)}
                                     startIcon={<Save />}
                                     size={isMobile ? 'small' : 'medium'}
                                     sx={{ minWidth: isMobile ? 100 : 150 }}
                                 >
-                                    {!ficha._id ? 'Criar' : 'Salvar'}
+                                    {!charsheet.id ? 'Criar' : 'Salvar'}
                                 </Button>
                             </span>
                         </Tooltip>
@@ -538,8 +539,8 @@ export default function FichaComponent(): ReactElement {
             <WarningModal
                 open={openModal}
                 onClose={() => setOpenModal(false)}
-                onConfirm={() => { submitForm(ficha); setOpenModal(false) }}
-                text='Após criar a ficha, alguns campos não poderão ser alterados. Deseja continuar?'
+                onConfirm={() => { submitForm(charsheet); setOpenModal(false) }}
+                text='Após criar a charsheet, alguns campos não poderão ser alterados. Deseja continuar?'
                 title='Confirmar Criação'
             />
             
@@ -553,7 +554,7 @@ export default function FichaComponent(): ReactElement {
                 <Stack spacing={2} alignItems="center">
                     <CircularProgress size={60} />
                     <Typography variant="h6" color="primary">
-                        Criando sua ficha...
+                        Criando sua charsheet...
                     </Typography>
                 </Stack>
             </Backdrop>

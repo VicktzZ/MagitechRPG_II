@@ -11,12 +11,13 @@ export default function CampaignPage(): ReactElement {
     const { data: session } = useSession();
     const [ contentType, setContentType ] = useState<'create' | 'join'>('create');
     const [ open, setOpen ] = useState(false);
-    const userId = session?.user?._id ?? '';
+    const userId = session?.user?.id ?? '';
 
     const theme = useTheme()
     const matches = useMediaQuery(theme.breakpoints.down('md'))
 
     const { data: allCampaigns, loading } = useUserCampaigns(userId);
+    console.log(allCampaigns);
 
     return (
         <Box display='flex' flexDirection='column' gap={3} p={2}>
@@ -41,14 +42,14 @@ export default function CampaignPage(): ReactElement {
                             <Typography>Você não está em nenhuma campanha no momento</Typography>
                         ) : allCampaigns?.map(camp => (
                             <motion.div 
-                                key={camp._id}
+                                key={camp.id}
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: -10 }}
                                 transition={{ duration: 0.5 }}
                             >
                                 <CampaingCard
-                                    id={camp._id!}
+                                    id={camp.id!}
                                     title={camp.title}
                                     description={camp.description}
                                     gameMaster={camp.admin}

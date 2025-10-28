@@ -5,7 +5,7 @@ import { useSnackbar } from 'notistack';
 import { Close } from '@mui/icons-material';
 import { toastDefault } from '@constants';
 import { useDebounce } from '@uidotdev/usehooks';
-import type { UseResourceListOptions, UseResourceListReturn } from '@types';
+import type { UseResourceListOptions, UseResourceListReturn } from '@models/types/hooks';
 
 export const useResourceList = <T extends Record<string, any>>(
     options: UseResourceListOptions<T>
@@ -173,7 +173,7 @@ export const useResourceList = <T extends Record<string, any>>(
         // (itens da primeira página substituem itens duplicados de páginas posteriores)
         for (let i = allItems.length - 1; i >= 0; i--) {
             const item = allItems[i];
-            const id = item._id || item.id;
+            const id = item.id || item.id;
             if (id) {
                 uniqueMap.set(id, item);
             }

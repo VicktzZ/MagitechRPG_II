@@ -5,12 +5,12 @@ import { IconButton, Badge, Menu, MenuItem, Typography, Box } from '@mui/materia
 import { Notifications as NotificationsIcon } from '@mui/icons-material'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import type { Notification } from '@types'
 import { useMyNotifications } from '@services/firestore/hooks'
+import type { Notification } from '@models/entities'
 
 export default function Notifications() {
     const { data: session } = useSession()
-    const { data: notifications } = useMyNotifications(session?.user?._id ?? '')
+    const { data: notifications } = useMyNotifications(session?.user?.id ?? '')
     const [ anchorEl, setAnchorEl ] = useState<null | HTMLElement>(null)
     const router = useRouter()
 
@@ -23,10 +23,10 @@ export default function Notifications() {
     }
 
     const handleNotificationClick = async (notification: Notification) => {
-        if (!notification._id) return
+        if (!notification.id) return
 
         try {
-            const response = await fetch(`/api/notifications/${notification._id}`, {
+            const response = await fetch(`/api/notifications/${notification.id}`, {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json'
@@ -82,7 +82,7 @@ export default function Notifications() {
                 ) : (
                     notifications.map(notification => (
                         <MenuItem 
-                            key={notification._id} 
+                            key={notification.id} 
                             onClick={async () => await handleNotificationClick(notification)}
                             sx={{
                                 backgroundColor: notification.read ? 'transparent' : 'action.hover',

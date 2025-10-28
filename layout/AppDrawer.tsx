@@ -138,7 +138,7 @@ export default function AppDrawer(): ReactElement {
                         </ListItemButton>
                     </ListItem>
                     <ListItem disablePadding>
-                        <ListItemButton onClick={() => { router.push('/app/ficha/create') }}>
+                        <ListItemButton onClick={() => { router.push('/app/charsheet/create') }}>
                             <ListItemIcon>
                                 <Article />
                             </ListItemIcon>

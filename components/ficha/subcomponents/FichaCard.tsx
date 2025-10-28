@@ -20,13 +20,13 @@ import {
     useMediaQuery,
     useTheme
 } from '@mui/material';
-import { fichaService } from '@services';
-import type { Ficha } from '@types';
+import { charsheetService } from '@services';
+import type { Charsheet } from '@models/entities';
 import { useRouter } from 'next/navigation';
 import { useSnackbar } from 'notistack';
 import { useState, type ReactElement } from 'react';
 
-export default function FichaCard({ ficha, onClick, disableDeleteButton }: { ficha: Ficha, onClick?: () => void, disableDeleteButton?: boolean }): ReactElement {
+export default function FichaCard({ ficha, onClick, disableDeleteButton }: { ficha: Charsheet, onClick?: () => void, disableDeleteButton?: boolean }): ReactElement {
     const theme = useTheme()
     const router = useRouter()
     const matches = useMediaQuery(theme.breakpoints.down('md'))
@@ -40,7 +40,7 @@ export default function FichaCard({ ficha, onClick, disableDeleteButton }: { fic
             enqueueSnackbar('Aguarde...', toastDefault('loadingDelete', 'info'))
 
             try {
-                await fichaService.deleteById(ficha._id ?? '')
+                await charsheetService.deleteById(ficha.id ?? '')
                 setTimeout(() => {
                     closeSnackbar('loadingDelete')
                     enqueueSnackbar(`Ficha ${ficha.name} deletada!`, toastDefault('itemDeleted', 'success'))
@@ -54,8 +54,8 @@ export default function FichaCard({ ficha, onClick, disableDeleteButton }: { fic
     return (
         <>
             <Card
-                onClick={onClick ?? (() => { router.push(`/app/ficha/${ficha._id}`) })}
-                key={ficha._id}
+                onClick={onClick ?? (() => { router.push(`/app/charsheet/${ficha.id}`) })}
+                key={ficha.id}
                 sx={{
                     position: 'relative',
                     height: !matches ? 290 : 320,

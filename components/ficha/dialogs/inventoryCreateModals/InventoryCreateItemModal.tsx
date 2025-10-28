@@ -10,7 +10,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { itemSchema, type ItemFormFields } from '@schemas/itemsSchemas';
 import { useFichaForm } from '@contexts/FichaFormProvider';
 import { defaultItems, defaultItem } from '@constants/defaultItems';
-import type { Item } from '@types';
+import type { Item } from '@models';
 import { useCampaignContext } from '@contexts';
 import { campaignService } from '@services';
 
@@ -43,7 +43,7 @@ export const InventoryCreateItemModal = memo(({
         campaign.custom.items.item.length > 0 && {
             header: 'Personalizados',
             options: mapArrayToOptions(
-                campaign.custom.items.item.map(item => ({ name: item.name, id: item._id, value: item.name })),
+                campaign.custom.items.item.map(item => ({ name: item.name, id: item.id, value: item.name })),
                 isUserGM
             )
         },
@@ -97,7 +97,7 @@ export const InventoryCreateItemModal = memo(({
                         hasGroups
                         menuStyle={{ maxHeight: 8 }}
                         onDelete={async (id) => {
-                            await campaignService.deleteCustomItem(campaign._id!, 'item', id);
+                            await campaignService.deleteCustomItem(campaign.id, 'item', id);
                             enqueueSnackbar('Item removido com sucesso!', toastDefault('itemDeleted', 'success'));
                             action();
                         }}

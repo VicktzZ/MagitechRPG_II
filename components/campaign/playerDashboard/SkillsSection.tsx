@@ -1,8 +1,7 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 'use client';
 
-import SkillsTreeDialog from '@components/ficha/dialogs/SkillsTreeDialog';
-import { useCampaignCurrentFichaContext } from '@contexts';
+import { useCampaignCurrentCharsheetContext } from '@contexts';
 import { SkillType } from '@enums';
 import Masonry from '@mui/lab/Masonry';
 import { 
@@ -27,8 +26,8 @@ import {
     Whatshot
 } from '@mui/icons-material';
 import { blue, green, orange, purple, red } from '@mui/material/colors';
-import type { Ficha, Skill } from '@types';
 import { useState, type ReactElement } from 'react';
+import type { Skill } from '@models';
 
 interface SkillFilterChipProps {
     label: string;
@@ -87,21 +86,20 @@ interface SkillsSectionProps {
 }
 
 export default function SkillsSection({ selectedSkillType, setSelectedSkillType }: SkillsSectionProps): ReactElement {
-    const { ficha } = useCampaignCurrentFichaContext();
+    const { charsheet } = useCampaignCurrentCharsheetContext();
     const theme = useTheme();
     
     const filteredSkills = selectedSkillType === SkillType.ALL
-        ? Object.values(ficha.skills).flat()
-        : ficha.skills[selectedSkillType] || [];
-
-    const [ treeModalOpen, setTreeModalOpen ] = useState(false)
+        ? Object.values(charsheet.skills).flat()
+        : charsheet.skills[selectedSkillType] || [];
+    
     const [ expandedSkill, setExpandedSkill ] = useState<string | false>(false)
 
     const getSkillTypeCount = (type: SkillType) => {
         if (type === SkillType.ALL) {
-            return Object.values(ficha.skills).flat().length;
+            return Object.values(charsheet.skills).flat().length;
         }
-        return ficha.skills[type]?.length || 0;
+        return charsheet.skills[type]?.length || 0;
     };
 
     const getSkillTypeColor = (type: SkillType) => {
@@ -349,12 +347,12 @@ export default function SkillsSection({ selectedSkillType, setSelectedSkillType 
                         )}
                     </Box>
                 </Stack>
-
+                {/* 
                 <SkillsTreeDialog
                     open={treeModalOpen}
                     onClose={() => setTreeModalOpen(false)}
-                    ficha={ficha as Required<Ficha>}
-                />
+                    charsheet={charsheet}
+                /> */}
             </Paper>
         </Box>
     );

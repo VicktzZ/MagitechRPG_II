@@ -1,9 +1,9 @@
-import type { CampaignData } from '@types'
+import type { CampaignData } from '@models/types/session'
 import { createContext, useContext } from 'react'
 
 export const campaignContext = createContext<CampaignData>({
     campaign: {
-        _id: '',
+        id: '',
         admin: [],
         campaignCode: '',
         title: '',
@@ -23,17 +23,16 @@ export const campaignContext = createContext<CampaignData>({
             creatures: [],
             skills: []
         },
-        myFicha: null,
+        myCharsheet: null,
         notes: []
     },
     users: {
         admin: [],
-        player: [],
+        players: [],
         all: []
     },
-    fichas: [],
-    isUserGM: false,
-    code: ''
+    charsheets: [],
+    isUserGM: false
 })
 
 export const useCampaignContext = (): CampaignData => useContext(campaignContext)

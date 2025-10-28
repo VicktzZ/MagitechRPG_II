@@ -4,7 +4,7 @@
 import { FichaCard } from '@components/ficha';
 import { Add } from '@mui/icons-material';
 import { Avatar, Box, Card, Grid, Skeleton, Typography, useMediaQuery, useTheme } from '@mui/material';
-import { useFichas, useFichasRealtime } from '@services/firestore/hooks';
+import { useCharsheetsRealtime } from '@services/firestore/hooks';
 import { QueryBuilder } from '@services/firestore/utils';
 import { motion } from 'framer-motion';
 import { useSession } from 'next-auth/react';
@@ -17,9 +17,9 @@ export default function App(): ReactElement {
     const matches = useMediaQuery(theme.breakpoints.down('md'))
     const { data: session } = useSession()
 
-    const { data: fichas, loading } = useFichasRealtime({
+    const { data: fichas, loading } = useCharsheetsRealtime({
         filters: [
-            QueryBuilder.equals('userId', session?.user?._id ?? '')
+            QueryBuilder.equals('userId', session?.user?.id ?? '')
         ],
         orderBy: [
             QueryBuilder.asc('name')
@@ -43,14 +43,14 @@ export default function App(): ReactElement {
                         />
                     )) : fichas?.map((ficha) => (
                         <motion.div 
-                            key={ficha._id}
+                            key={ficha.id}
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -10 }}
                             transition={{ duration: 0.5 }}
                         >
                             <FichaCard 
-                                key={ficha._id}
+                                key={ficha.id}
                                 ficha={ficha}
                             />
                         </motion.div>
@@ -101,7 +101,7 @@ export default function App(): ReactElement {
                                     opacity: 0.9
                                 }
                             }}
-                            onClick={() => { router.push('/app/ficha/create') }}
+                            onClick={() => { router.push('/app/charsheet/create') }}
                         >
                             <Box 
                                 display='flex' 

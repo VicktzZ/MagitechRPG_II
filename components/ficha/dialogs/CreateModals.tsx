@@ -17,7 +17,6 @@ import { useMediaQuery } from '@mui/material';
 import { MenuItem } from '@mui/material';
 import { TextField } from '@mui/material';
 import { FormControl, InputLabel } from '@mui/material';
-import type { MergedItems } from '@types';
 import { type Dispatch, type SetStateAction, type ReactElement, useState } from 'react';
 import { useForm, type UseFormReturn } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -44,6 +43,7 @@ import {
 import { Typography } from '@mui/material';
 import { useSnackbar } from '@node_modules/notistack';
 import { toastDefault } from '@constants';
+import type { MergedItems } from '@models/types/misc';
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
@@ -91,7 +91,7 @@ function SelectFormComponent(
                 id={(props.prop ?? props.id) + 'Select'}
                 value={(props.item?.[props.prop!] ?? props.value) || ''}
                 defaultValue={props?.defaultValue ?? ''}
-                onChange={props?.onChange ?? (e => { props.setItem?.(state => ({ ...state, [props.prop!]: e.target.value as any })) })}
+                onChange={props?.onChange ?? (e => { props.setItem?.(state => ({ ...state, [props.prop!]: e.target.value  })) })}
                 input={props.input}
                 multiple={props.multiple}
                 renderValue={props.renderValue as any}

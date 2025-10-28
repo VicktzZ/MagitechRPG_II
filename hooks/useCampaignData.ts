@@ -1,9 +1,9 @@
+import type { CampaignData } from '@models/types/session';
 import {
     useCampaignRealtime,
-    useFichasRealtime,
+    useCharsheetsRealtime,
     useUsersRealtime
 } from '@services/firestore/hooks';
-import type { Campaign, Ficha, User } from '@types';
 import { useMemo } from 'react';
 
 interface UseCampaignDataOptions {
@@ -11,67 +11,57 @@ interface UseCampaignDataOptions {
     userId?: string;
 }
 
-interface CampaignDataResponse {
-    campaign: Campaign;
-    users: {
-        admin: User[];
-        players: User[];
-        all: User[];
-    };
-    fichas: Ficha[];
-    isUserGM: boolean;
-    code: string;
-}
-
 export function useCampaignData({
     campaignCode,
     userId
-}: UseCampaignDataOptions): CampaignDataResponse | null {
-    // 🔥 Buscar campanha em tempo real (só quando código é válido)
-    const campaign = useCampaignRealtime({
-        filters: campaignCode && campaignCode.trim() ? [
+}: UseCampaignDataOptions): CampaignData | null {
+    const { data: campaign, loading } = useCampaignRealtime({
+        filters: [
             { field: 'campaignCode', operator: '==', value: campaignCode }
-        ] : undefined
-    }).data[0];
+        ]
+    });
 
-    const { data: campaignFichas } = useFichasRealtime({
-        filters: campaign && campaignCode ? [
-            { field: '_id', operator: 'in', value: campaign.players.map(p => p.fichaId) }
-        ] : undefined
+    const c = useMemo(() => campaign?.[0], [ campaign ])
+
+    const { data: campaignCharsheets } = useCharsheetsRealtime({
+        enabled: !loading && !!c,
+        filters: [
+            { field: 'id', operator: 'in', value: c?.players.map(p => p.charsheetId) }
+        ]
     });
 
     const { data: campaignUsers } = useUsersRealtime({
-        filters: campaign && campaignCode ? [
-            { field: '_id', operator: 'in', value: [ ...campaign.players.map(p => p.userId), ...campaign.admin ] }
-        ] : undefined
+        enabled: !loading && !!c,
+        filters: [
+            { field: 'id', operator: 'in', value: [ ...(c?.players.map(p => p.userId) || []), ...(c?.admin || []) ] }
+        ]
     });
 
-    const campaignData = useMemo((): CampaignDataResponse | null => {
-        if (!campaign) return null;
+    const campaignData = useMemo((): CampaignData | null => {
+        if (!c) return null;
 
         const adminUsers = campaignUsers?.filter(user =>
-            campaign.admin?.includes(user._id ?? '')
+            c.admin?.includes(user.id ?? '')
         ) || [];
 
         const playerUsers = campaignUsers?.filter(user =>
-            !campaign.admin?.includes(user._id ?? ' ')
+            !c.admin?.includes(user.id ?? ' ')
         ) || [];
 
-        const isUserGM = campaign.admin?.includes(userId ?? '') || false;
-        const fichas = campaignFichas || [];
+        const isUserGM = c.admin?.includes(userId ?? '') || false;
+        const charsheets = campaignCharsheets || [];
 
         return {
-            campaign,
+            campaign: c,
             users: {
                 admin: adminUsers,
                 players: playerUsers,
                 all: campaignUsers || []
             },
-            fichas,
-            isUserGM,
-            code: campaignCode
+            charsheets,
+            isUserGM
         };
-    }, [ campaign, campaignUsers, campaignFichas, userId, campaignCode ]);
+    }, [ campaign, campaignUsers, campaignCharsheets, userId, campaignCode ]);
 
     return campaignData;
 }

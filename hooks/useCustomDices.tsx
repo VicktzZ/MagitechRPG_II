@@ -9,22 +9,24 @@ import { enqueueSnackbar } from 'notistack'
 import { toastDefault } from '@constants'
 import { useChatContext } from '@contexts/chatContext'
 import { MessageType } from '@enums'
-import { type Dice, type DiceConfig, type DiceEffect, type DiceEffectOperation, type DiceEffectType, type DiceEffectTarget, type RollResult, type Ficha } from '@types'
+import type { CharsheetDTO } from '@models/dtos'
+import { Dice } from '@models'
+import type { DiceConfig, DiceEffect, DiceEffectOperation, DiceEffectTarget, DiceEffectType, RollResult } from '@models/types/dices'
 
 export function useCustomDices({ onClose, enableChatIntegration = true }: { onClose?: () => void, enableChatIntegration?: boolean }) {
     const { handleSendMessage, setIsChatOpen } = useChatContext()
     const theme = useTheme()
-    const { watch, setValue, getValues } = useFormContext<Ficha>()
+    const { watch, setValue, getValues } = useFormContext<CharsheetDTO>()
 
     // Estados
     const [ editingDiceId, setEditingDiceId ] = useState<string | null>(null)
-    const [ newDice, setNewDice ] = useState<Partial<Dice>>({
+    const [ newDice, setNewDice ] = useState<Partial<Dice>>(new Dice({
         name: '',
         dices: [ { faces: 20, quantity: 1 } ],
         modifiers: [],
         effects: [],
         color: theme.palette.primary.main
-    })
+    }))
 
     const [ variableValues, setVariableValues ] = useState<Record<number, number>>({})
     const [ showCreateForm, setShowCreateForm ] = useState(false)
@@ -58,11 +60,13 @@ export function useCustomDices({ onClose, enableChatIntegration = true }: { onCl
     const handleUpdateDiceConfig = useCallback((index: number, field: keyof DiceConfig, value: number) => {
         setNewDice(prev => ({
             ...prev,
-            dices: prev.dices?.map((dice, i) => 
-                i === index 
-                    ? { ...dice, [field]: field === 'quantity' 
-                        ? Math.max(1, Math.min(999, value))
-                        : value }
+            dices: prev.dices?.map((dice, i) =>
+                i === index
+                    ? {
+                        ...dice, [field]: field === 'quantity'
+                            ? Math.max(1, Math.min(999, value))
+                            : value
+                    }
                     : dice
             ) || []
         }))
@@ -86,7 +90,7 @@ export function useCustomDices({ onClose, enableChatIntegration = true }: { onCl
     const handleUpdateModifier = useCallback((index: number, field: string, value: any) => {
         setNewDice(prev => ({
             ...prev,
-            modifiers: prev.modifiers?.map((mod, i) => 
+            modifiers: prev.modifiers?.map((mod, i) =>
                 i === index ? { ...mod, [field]: value } : mod
             ) || []
         }))
@@ -147,7 +151,7 @@ export function useCustomDices({ onClose, enableChatIntegration = true }: { onCl
             )
             return
         }
-        
+
         const normalizedDice = {
             ...newDice,
             modifiers: newDice.modifiers || []
@@ -158,31 +162,26 @@ export function useCustomDices({ onClose, enableChatIntegration = true }: { onCl
 
         if (editingDiceId) {
             // Edição de um dado existente
-            updatedDices = currentDices.map(dice => 
+            updatedDices = currentDices.map(dice =>
                 dice.id === editingDiceId ? {
                     ...normalizedDice as Dice,
                     id: editingDiceId,
                     updatedAt: new Date().toISOString()
                 } : dice
             )
-            
+
             enqueueSnackbar(
                 'Dado personalizado atualizado com sucesso!',
                 toastDefault('diceUpdated', 'success')
             )
-            
+
             setEditingDiceId(null)
         } else {
             // Criação de um novo dado
-            const newId = `dice_${new Date().getTime()}`
-            const dice: Dice = {
-                ...normalizedDice as Dice,
-                id: newId,
-                createdAt: new Date().toISOString()
-            }
+            const dice = new Dice(normalizedDice)
 
             updatedDices = [ ...currentDices, dice ]
-            
+
             enqueueSnackbar(
                 'Dado personalizado criado com sucesso!',
                 toastDefault('diceCreated', 'success')
@@ -216,15 +215,15 @@ export function useCustomDices({ onClose, enableChatIntegration = true }: { onCl
                 const attrValue = getValues(`attributes.${mod.attribute}`) || 0
                 total += attrValue
                 modifiersResult.push({ name: mod.attribute.toUpperCase(), value: attrValue })
-            } 
+            }
             // Se tiver perícia, usa o valor da perícia da ficha
             else if (mod.expertise) {
                 const expertiseName = mod.expertise
-                
-                const expValue = (getValues()?.expertises?.[expertiseName]?.value ) || 0
+
+                const expValue = (getValues()?.expertises?.[expertiseName]?.value) || 0
                 total += expValue
                 modifiersResult.push({ name: expertiseName, value: expValue })
-            } 
+            }
             // Se não tiver atributo nem perícia mas tiver bônus, aplica o bônus
             else if (mod.bonus) {
                 total += mod.bonus
@@ -258,9 +257,9 @@ export function useCustomDices({ onClose, enableChatIntegration = true }: { onCl
                 }
 
                 // Atualiza o valor do atributo/munição na ficha
-                const currentValue = target === 'ammo' 
+                const currentValue = target === 'ammo'
                     ? getValues('ammoCounter.current') || 0
-                    : getValues(`attributes.${target}`) || 0
+                    : getValues(`stats.${target}`) || 0
 
                 const newValue = operation === 'increase'
                     ? currentValue + effectValue
@@ -269,12 +268,12 @@ export function useCustomDices({ onClose, enableChatIntegration = true }: { onCl
                 if (target === 'ammo') {
                     setValue('ammoCounter.current', newValue, { shouldValidate: true })
                 } else {
-                    setValue(`attributes.${target}`, newValue, { shouldValidate: true })
+                    setValue(`stats.${target}`, newValue, { shouldValidate: true })
                 }
 
-                modifiersResult.push({ 
-                    name: `${operation === 'increase' ? '+' : '-'} ${target.toUpperCase()}`, 
-                    value: effectValue 
+                modifiersResult.push({
+                    name: `${operation === 'increase' ? '+' : '-'} ${target.toUpperCase()}`,
+                    value: effectValue
                 })
             }
         }
@@ -294,7 +293,7 @@ export function useCustomDices({ onClose, enableChatIntegration = true }: { onCl
         })
 
         // Atualiza lastRolled
-        const updatedDices = dices.map(d => 
+        const updatedDices = dices.map(d =>
             d === dice ? { ...d, lastRolled: new Date().toISOString() } : d
         )
         setValue('dices', updatedDices, { shouldValidate: true })
@@ -304,13 +303,13 @@ export function useCustomDices({ onClose, enableChatIntegration = true }: { onCl
             // Cria mensagem formatada para o chat
             const diceFacesText = dice.dices.map(config => `${config.quantity}d${config.faces}`).join(' + ')
             const modifiersText = modifiersResult.map(mod => `${mod.value >= 0 ? '+' : ''}${mod.value} ${mod.name}`).join(' ')
-            
+
             const rollsText = rolls.join(', ')
             const messageText = `🎲 **${dice.name}** (${diceFacesText})
-${modifiersText ? `Modificadores: ${modifiersText}
-` : ''}Rolagens: [${rollsText}]
-Total: **${total}**`
-            
+            ${modifiersText ? `Modificadores: ${modifiersText}
+            ` : ''}Rolagens: [${rollsText}]
+            Total: **${total}**`
+
             // Abre o chat e envia a mensagem
             setIsChatOpen(true)
             void handleSendMessage(messageText, MessageType.ROLL)

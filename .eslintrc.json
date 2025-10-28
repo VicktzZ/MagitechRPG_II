@@ -110,6 +110,9 @@
       "import/no-duplicates": [
           "off"
       ],
+      "@typescript-eslint/consistent-type-assertions": [
+          "off"
+      ],
       "no-multiple-empty-lines": "error",
       "indent": [
           "error",

@@ -19,8 +19,7 @@ import {
 } from '@mui/icons-material'
 import { type ReactElement, useMemo } from 'react'
 import PlayerCard from './PlayerCard'
-import type { Ficha } from '@types'
-import { useFichasRealtime } from '@services/firestore/hooks';
+import { useCharsheetsRealtime } from '@services/firestore/hooks';
 import { blue, green, orange, purple } from '@mui/material/colors';
 
 // Componente Section reutilizável
@@ -73,30 +72,30 @@ function Section({ title, icon, children, sx }: SectionProps) {
 }
 
 export default function CampaignGMDashboard(): ReactElement | null {
-    const { users, fichas  } = useCampaignContext()
+    const { users, charsheets } = useCampaignContext()
     
     const theme = useTheme();
     
     const queryClient = useQueryClient()
 
     // 🔥 Buscar fichas dos jogadores em tempo real usando Firestore
-    const { data: playerFichas, loading: isPlayerFichasPending } = useFichasRealtime({
-        filters: fichas.length > 0 ? [
-            { field: '_id', operator: 'in', value: fichas.map(f => f._id) }
+    const { data: playerFichas, loading: isPlayerFichasPending } = useCharsheetsRealtime({
+        filters: charsheets.length > 0 ? [
+            { field: 'id', operator: 'in', value: charsheets.map(f => f.id) }
         ] : undefined,
         onChange: async () => {
             console.log('[GM Dashboard] Invalidando cache e forçando refetch')
-            await queryClient.invalidateQueries({ queryKey: [ 'playerFichas', fichas.map(f => f._id) ] })
-            await queryClient.refetchQueries({ queryKey: [ 'playerFichas', fichas.map(f => f._id) ] })
+            await queryClient.invalidateQueries({ queryKey: [ 'playerFichas', charsheets.map(f => f.id) ] })
+            await queryClient.refetchQueries({ queryKey: [ 'playerFichas', charsheets.map(f => f.id) ] })
         }
     })
 
     const players = useMemo(() => {
         return users.players?.map(player => {
-            const playerFicha = playerFichas?.find(f => f.userId === player._id)
+            const playerFicha = playerFichas?.find(f => f.userId === player.id)
     
             return {
-                id: player._id,
+                id: player.id,
                 name: player.name,
                 avatar: player.image ?? '/assets/default-avatar.jpg',
                 status: [],
@@ -258,8 +257,8 @@ export default function CampaignGMDashboard(): ReactElement | null {
                                 >
                                     {playerFichas.map(ficha => (
                                         <PlayerCard
-                                            key={ficha._id}
-                                            ficha={ficha as Required<Ficha>}
+                                            key={ficha.id}
+                                            ficha={ficha }
                                         />
                                     ))}
                                 </Box>

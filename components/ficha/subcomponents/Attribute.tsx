@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
 import { RPGIcon } from '@components/misc'
 import { type IconType } from '@components/misc/rpg-icons'
+import type { Charsheet } from '@models/entities'
 import {
     AutoAwesome,
     EmojiPeople,
@@ -22,7 +23,6 @@ import {
     Zoom
 } from '@mui/material'
 import { blue, deepPurple, green, orange, red, teal } from '@mui/material/colors'
-import type { Ficha, Lineage } from '@types'
 import { memo, type ReactElement, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useFormContext, useWatch } from 'react-hook-form'
 
@@ -105,8 +105,8 @@ function Attribute({
     const matches = useMediaQuery(theme.breakpoints.down('md'))
     const isSmall = useMediaQuery(theme.breakpoints.down('sm'))
     const config = attributeIcons[attributeName]
-    const { setValue, control, getValues } = useFormContext<Ficha>()
-    const ficha = getValues()
+    const { setValue, control, getValues } = useFormContext<Charsheet>()
+    const charsheet = getValues()
 
     const initialAttributeValue = useRef(attributeValue)
     const previousAttributeValue = useRef(attributeValue)
@@ -323,7 +323,7 @@ function Attribute({
     useEffect(() => {
         let lineageBonus = 0
         
-        if (attributeName === 'car' && ficha.lineage === 'Artista' as unknown as Lineage) {
+        if (attributeName === 'car' && charsheet.lineage === 'Artista') {
             lineageBonus = 1
         }
         

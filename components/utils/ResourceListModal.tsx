@@ -17,7 +17,7 @@ import { useInView } from 'react-intersection-observer';
 import { toastDefault } from '@constants';
 import { useResourceList } from '@hooks/useResourceList';
 import { CustomMenu } from '@layout';
-import type { ResourceListModalProps } from '@types';
+import type { ResourceListModalProps } from '@models/types/components';
 
 function ResourceListModal({
     open,
@@ -249,7 +249,7 @@ function ResourceListModal({
                         }}>
                             <Grid container spacing={2}>
                                 {items.map((item, index) => {
-                                    const itemId = item._id || index;
+                                    const itemId = item.id || index;
                                     
                                     return (
                                         <Grid item xs={12} sm={6} md={4} key={itemId}>

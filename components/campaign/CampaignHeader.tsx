@@ -1,6 +1,7 @@
 'use client'
 
 import { useCampaignContext } from '@contexts'
+import type { User } from '@models/entities'
 import {
     Avatar,
     Box,
@@ -14,14 +15,13 @@ import {
 } from '@mui/material'
 import { grey } from '@mui/material/colors'
 import { campaignService, sessionService } from '@services'
-import type { User } from '@types'
 import { useSession } from 'next-auth/react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useMemo, useState, type ReactElement } from 'react'
 
 export default function CampaignHeader(): ReactElement {
-    const { campaign, users, fichas, isUserGM } = useCampaignContext()
+    const { campaign, users, charsheets, isUserGM } = useCampaignContext()
     const [ copiedCode, setCopiedCode ] = useState<boolean>(false)
     const { data: session } = useSession()
     
@@ -29,16 +29,8 @@ export default function CampaignHeader(): ReactElement {
     const isMobile = useMediaQuery((theme: Theme) => theme.breakpoints.down('sm'))
     const onlineUsers = useMemo(() => campaign.session?.users ?? [], [ campaign ])
 
-    console.log({
-        campaign,
-        users,
-        fichas,
-        isUserGM,
-        onlineUsers
-    })
-
     const renderUserAvatar = (user: User, isAdmin: boolean = false) => (
-        <Box display="flex" gap={2} key={user._id}>
+        <Box display="flex" gap={2} key={user.id}>
             <Avatar sx={{ height: '3rem', width: '3rem' }}>
                 <Image
                     height={250}
@@ -48,14 +40,14 @@ export default function CampaignHeader(): ReactElement {
                     style={{
                         height: '100%',
                         width: '100%',
-                        filter: onlineUsers.includes(user._id!) ? 'none' : 'grayscale(100%)',
+                        filter: onlineUsers.includes(user.id) ? 'none' : 'grayscale(100%)',
                         transition: 'filter 0.3s ease-in-out'
                     }}
                 />
             </Avatar>
             <Box>
                 <Typography>
-                    {isAdmin ? 'Game Master' : fichas.find(ficha => ficha.userId === user._id)?.name}
+                    {isAdmin ? 'Game Master' : charsheets.find(c => c.userId === user.id)?.name}
                 </Typography>
                 <Typography color={grey[500]} variant="caption">
                     {user.name}
@@ -199,7 +191,7 @@ export default function CampaignHeader(): ReactElement {
                         gap={3}
                     >
                         {users.players.map(user => (
-                            <Box display="flex" flexDirection="column" gap={2} key={user._id}>
+                            <Box display="flex" flexDirection="column" gap={2} key={user.id}>
                                 {renderUserAvatar(user)}
                             </Box>
                         ))}
@@ -208,14 +200,14 @@ export default function CampaignHeader(): ReactElement {
                 {!isUserGM && (
                     <Box>
                         <Button onClick={() => {
-                            if (!session?.user?._id || !campaign._id) return
+                            if (!session?.user?.id || !campaign.id) return
 
-                            localStorage.setItem('currentFicha', '');
-                            const userId = session?.user?._id;
+                            localStorage.setItem('currentCharsheet', '');
+                            const userId = session?.user?.id;
                             if (!userId) return;
                             
                             sessionService.disconnect({ campaignCode: campaign.campaignCode, userId });
-                            campaignService.removeUser(campaign._id, session.user._id);
+                            campaignService.removeUser(campaign.id, session.user.id);
                             router.push('/app/campaign');
                         }} variant="contained">Sair da campanha</Button>
                     </Box>

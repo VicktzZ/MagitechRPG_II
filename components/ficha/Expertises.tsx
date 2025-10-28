@@ -6,15 +6,12 @@ import { Box, Button, Grid, Typography, useTheme, FormHelperText, type ButtonPro
 import { blue, green, grey, purple, yellow } from '@mui/material/colors';
 import { useFormContext, useWatch, type FieldError } from 'react-hook-form';
 import { useState, type ReactElement, useRef, useCallback, useMemo, useEffect } from 'react';
-
-import type { 
-    Ficha,
-    ExpertisesNames
-} from '@types';
+import type { Charsheet } from '@models/entities';
+import type { Expertises as ExpertisesType } from '@models';
 
 // TODO: Ajustar limite de acordo com nível (5: Competente, 10: Experiente, 15: Especialista)
 export default function Expertises({ disabled }: { disabled?: boolean }): ReactElement {
-    const { control, setValue  , formState: { errors } } = useFormContext<Ficha>()
+    const { control, setValue  , formState: { errors } } = useFormContext<Charsheet>()
     const theme = useTheme()
 
     const buttonRef = useRef<'add' | 'sub' | null>(null)
@@ -23,7 +20,7 @@ export default function Expertises({ disabled }: { disabled?: boolean }): ReactE
     const [ multiplier, setMultiplier ] = useState<number>(1)
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
 
-    const points = useWatch<Ficha, 'points.expertises'>({
+    const points = useWatch<Charsheet, 'points.expertises'>({
         control,
         name: 'points.expertises' as const,
         defaultValue: 0
@@ -46,12 +43,12 @@ export default function Expertises({ disabled }: { disabled?: boolean }): ReactE
     }, [ multiplier, points ]);
 
     // Observa as mudanças nas perícias e atributos para atualizar a interface
-    const expertises = useWatch<Ficha, 'expertises'>({
+    const expertises = useWatch<Charsheet, 'expertises'>({
         control,
         name: 'expertises'
     }) 
 
-    const handleExpertiseChange = useCallback((name: ExpertisesNames, newValue: number): void => {
+    const handleExpertiseChange = useCallback((name: keyof ExpertisesType, newValue: number): void => {
         if (!expertises || disabled) return;
         
         const currentValue = expertises[name]?.value || 0;
@@ -126,7 +123,7 @@ export default function Expertises({ disabled }: { disabled?: boolean }): ReactE
             .map(([ name, expertise ]) => {
                 if (!expertise) return null;
                 
-                const expertiseName = name as ExpertisesNames;
+                const expertiseName = name as keyof ExpertisesType;
                 
                 return (
                     <Expertise 

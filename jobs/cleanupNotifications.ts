@@ -1,4 +1,4 @@
-import { notificationCollection } from '@models/db/notification'
+import { notificationsCollection } from '@models/docs'
 import { deleteDoc, query, where } from 'firebase/firestore'
 import cron from 'node-cron'
 
@@ -12,7 +12,7 @@ export async function cleanupNotifications() {
         const yesterday = new Date()
         yesterday.setDate(yesterday.getDate() - 1)
 
-        await deleteDoc(query(notificationCollection,
+        await deleteDoc(query(notificationsCollection,
             where('timestamp', '<', fifteenDaysAgo), 
             where('read', '==', true), 
             where('timestamp', '<', yesterday)

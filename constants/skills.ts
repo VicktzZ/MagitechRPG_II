@@ -1,11 +1,12 @@
 /* eslint-disable max-len */
-import type { Classes, Skill, Subclasses } from '@types'
+import type { Skill } from '@models'
+import type { ClassNames, SubclassNames } from '@models/types/string'
 
 export const skills: {
     lineage: Skill[],
     occupation: Skill[],
-    class: Record<Classes, Skill[]>,
-    subclass: Record<Subclasses, Skill[]>,
+    class: Record<ClassNames, Skill[]>,
+    subclass: Record<SubclassNames, Skill[]>,
     bonus: Skill[],
     race: Skill[]
 } = {

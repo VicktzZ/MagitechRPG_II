@@ -19,15 +19,14 @@ import {
 import {
     type DiceEffectOperation,
     type DiceEffectTarget,
-    type DiceEffectType,
-    type Attributes, 
-    type ExpertisesNames
-} from '@types'
+    type DiceEffectType
+} from '@models/types/dices'
 import { type ReactElement } from 'react'
 import Fade from '@mui/material/Fade'
 import { useCustomDices } from '@hooks/useCustomDices'
 import DiceRollModal from '../misc/DiceRollModal'
 import { Add, Casino, Delete, Edit, Remove } from '@mui/icons-material'
+import type { Attributes, Expertises } from '@models'
 
 interface DicePersonalizationProps {
     onClose?: () => void
@@ -65,7 +64,7 @@ export default function CustomDices({ onClose, enableChatIntegration = true }: D
         handleRollDice
     } = useCustomDices({ onClose, enableChatIntegration })
 
-    const attributes: Attributes[] = [ 'des', 'vig', 'log', 'sab', 'foc', 'car' ]
+    const attributes: Array<keyof Attributes> = [ 'des', 'vig', 'log', 'sab', 'foc', 'car' ]
 
     const handleCloseResult = () => {
         setRollResult(null)
@@ -404,7 +403,7 @@ export default function CustomDices({ onClose, enableChatIntegration = true }: D
                                                     onChange={(e) => handleUpdateModifier(
                                                         index,
                                                         'expertise',
-                                                        e.target.value as ExpertisesNames
+                                                        e.target.value as keyof Expertises
                                                     )}
                                                 >
                                                     <MenuItem value="">

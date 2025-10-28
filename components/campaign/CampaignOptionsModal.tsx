@@ -4,15 +4,15 @@
 import { Backdrop, CircularProgress, TextField, useTheme } from '@mui/material';
 import { Typography } from '@mui/material';
 import { Box, Modal } from '@mui/material';
-import { generateEntryCode } from '@functions';
 import { useState, type ReactElement } from 'react';
 import { useSnackbar } from 'notistack';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@mui/material';
-import type { Campaign } from '@types';
 import { campaignService } from '@services';
 import { useMutation } from '@node_modules/@tanstack/react-query/build/modern';
+import generateEntryCode from '@utils/generateEntryCode';
+import type { Campaign } from '@models/entities';
 
 export default function CampaignOptionsModal({
     open,
@@ -60,7 +60,7 @@ export default function CampaignOptionsModal({
             setOpen(false);
 
             await mutateAsync({
-                admin: [ session?.user?._id ?? '' ],
+                admin: [ session?.user?.id ?? '' ],
                 campaignCode: campaignCodeGen,
                 title: campaignProps.title ?? '',
                 description: campaignProps.description ?? '',

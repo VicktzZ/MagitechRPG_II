@@ -31,12 +31,13 @@ import {
     useTheme
 } from '@mui/material';
 import { fichaService } from '@services';
-import type { Attributes, Expertises, Message, TempMessage } from '@types';
 import { useSession } from 'next-auth/react';
 import { memo, useEffect, useRef, useState, type ReactElement } from 'react';
 import TestDialog from './TestDialog';
 import TestModal from './TestModal';
 import { blue, green, orange, purple, grey } from '@mui/material/colors';
+import type { Attributes, Expertises, Message } from '@models';
+import type { TempMessage } from '@models/types/session';
 
 // TODO: RESOLVER BUG DE DUPLICIDADE DE MENSAGENS   
 const MessageInput = memo(function MessageInput({ onSendMessage }: { onSendMessage: (text: string) => void }) {
@@ -226,7 +227,7 @@ export default function SessionChat() {
         handleSendMessage
     } = useChatContext()
 
-    const isAdmin = session?.user && campaign.admin?.includes(session.user._id)
+    const isAdmin = session?.user && campaign.admin?.includes(session.user.id)
 
     const scrollToBottom = () => {
         if (shouldAutoScroll && messagesEndRef.current) {
@@ -252,7 +253,7 @@ export default function SessionChat() {
         const testRequest: any = {
             ...data,
             requestedBy: {
-                id: session.user._id,
+                id: session.user.id,
                 name: session.user.name
             }
         }
@@ -279,15 +280,15 @@ export default function SessionChat() {
         let baseAttributeValue = 0
 
         if (currentTest.expertise) {
-            const player = campaign.players.find(p => p.userId === session.user._id)
+            const player = campaign.players.find(p => p.userId === session.user.id)
             if (player) {
                 try {
-                    const ficha = await fichaService.getById(player.fichaId)
+                    const ficha = await fichaService.getById(player.charsheetId)
                     if (ficha) {
                         const expertise = ficha.expertises[currentTest.expertise as keyof Expertises]
                         expertiseBonus = expertise.value
                         baseAttribute = expertise.defaultAttribute?.toLowerCase()
-                        baseAttributeValue = ficha.attributes[baseAttribute as Attributes]
+                        baseAttributeValue = ficha.attributes[baseAttribute as keyof Attributes]
 
                         console.log({
                             currentTest,
@@ -342,7 +343,7 @@ export default function SessionChat() {
                 ` ${currentTest.expertise.toUpperCase()} - 1d20${expertiseBonus >= 0 ? '+' : ''}${expertiseBonus}: [${expertiseResult.rolls.join(', ')}${expertiseResult.rolls.length > 1 ? ': ' + expertiseResult.finalRoll : ''}] = ${expertiseResult.total}` :
                 ` ${roll.dice}: [${roll.result.join(', ')}] = ${roll.result.reduce((a, b) => a + b, 0)}`,
             by: {
-                id: session.user._id,
+                id: session.user.id,
                 name: session.user.name,
                 image: session.user.image ?? '/assets/default-avatar.png'
             },
@@ -413,7 +414,7 @@ export default function SessionChat() {
     // Carrega mensagens iniciais
     useEffect(() => {
         setMessages(campaign?.session?.messages ?? [])
-    }, [ campaign?._id ])
+    }, [ campaign?.id ])
 
     // Scroll to bottom quando as mensagens são carregadas inicialmente
     useEffect(() => {
@@ -469,9 +470,9 @@ export default function SessionChat() {
 
         const handleTestRequest = (data: any) => {
             // Se o usuário atual é um dos selecionados para o teste
-            const isSelected = data.isGroupTest || data.selectedPlayers.includes(session.user._id)
+            const isSelected = data.isGroupTest || data.selectedPlayers.includes(session.user.id)
             
-            if (isSelected && !campaign.admin.includes(session.user._id)) {
+            if (isSelected && !campaign.admin.includes(session.user.id)) {
                 setCurrentTest(data)
                 setIsTestDialogOpen(true)
             }
@@ -495,7 +496,7 @@ export default function SessionChat() {
             channel.unbind(PusherEvent.TEST_REQUEST, handleTestRequest)
             channel.unbind(PusherEvent.TEST_RESULT, handleTestResultPusher)
         }
-    }, [ channel, session?.user?._id ])
+    }, [ channel, session?.user?.id ])
 
     return (
         <ChatWrapper 
@@ -579,7 +580,7 @@ export default function SessionChat() {
                         </Stack>
                         
                         {/* Botão de Teste para GMs */}
-                        {campaign.admin?.includes(session?.user?._id ?? '') && (
+                        {campaign.admin?.includes(session?.user?.id ?? '') && (
                             <Box sx={{ mt: 2 }}>
                                 <Tooltip title="Solicitar teste de atributo ou perícia">
                                     <Button 
@@ -663,7 +664,7 @@ export default function SessionChat() {
                                 return timeA - timeB
                             })
                             .map((msg, index) => {
-                                const isOwnMessage = msg.by.id === session?.user?._id;
+                                const isOwnMessage = msg.by.id === session?.user?.id;
                                 const isGM = campaign.admin?.includes(msg.by.id);
                                 const isBot = msg.by.isBot;
                                 const isDiceMessage = msg.type === MessageType.DICE || msg.type === MessageType.EXPERTISE;

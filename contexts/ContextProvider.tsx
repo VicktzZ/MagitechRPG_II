@@ -6,13 +6,13 @@ import { SessionProvider } from 'next-auth/react';
 import { fichaContext, userContext, channelContext, savingSpinnerContext, ThemeProvider } from '@contexts';
 import { fichaModel } from '@constants/ficha';
 import { SnackbarProvider } from 'notistack';
-import type { Ficha } from '@types';
 import type { Channel, PresenceChannel } from 'pusher-js';
 import darkTheme from '@themes/defaultTheme'
 import lightTheme from '@themes/lightTheme'
 import { SavingSpinner } from '@components/misc';
 import { useThemeContext } from '@contexts';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import type { Charsheet } from '@models/entities';
 // import { persistQueryClient } from '@tanstack/react-query-persist-client';
 // import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
 
@@ -53,8 +53,8 @@ const queryClient = new QueryClient({
 // }
 
 interface ThemedAppProps {
-    ficha: Ficha;
-    setFicha: Dispatch<SetStateAction<Ficha>>;
+    ficha: Charsheet;
+    setFicha: Dispatch<SetStateAction<Charsheet>>;
     user: any;
     setUser: Dispatch<SetStateAction<any>>;
     isSaving: boolean;
@@ -73,7 +73,7 @@ function ThemedApp({
     return (
         <channelContext.Provider value={{ channel: channel as PresenceChannel, setChannel: setChannel as Dispatch<SetStateAction<PresenceChannel | null>> }}>
             <userContext.Provider value={{ user, setUser }}>
-                <fichaContext.Provider value={{ ficha, setFicha }}>
+                <fichaContext.Provider value={{ charsheet: ficha, setCharsheet: setFicha }}>
                     <savingSpinnerContext.Provider value={{ isSaving, showSavingSpinner: setIsSaving }}>
                         <MuiThemeProvider theme={currentTheme}>
                             <SessionProvider>
@@ -90,7 +90,7 @@ function ThemedApp({
 }
   
 export default function ContextProvider({ children }: { children: ReactNode }): ReactElement {
-    const [ ficha, setFicha ] = useState<Ficha>(fichaModel);
+    const [ ficha, setFicha ] = useState<Charsheet>(fichaModel);
     const [ user, setUser ] = useState(null);
     const [ isSaving, setIsSaving ] = useState<boolean>(false);
     const [ channel, setChannel ] = useState<Channel | null>(null);

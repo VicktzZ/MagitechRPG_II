@@ -1,7 +1,7 @@
 import { campaignService } from '@services';
 import {
     CampaignEntity,
-    FichaEntity,
+    CharsheetEntity,
     NotificationEntity,
     PowerEntity,
     SpellEntity,
@@ -13,12 +13,12 @@ import {
     UserEntity
 } from '@services/firestore/entities';
 import { useQuery } from '@tanstack/react-query';
-import type { Campaign, Ficha, Magia, MagicPower, Notification, User } from '@types';
 import { useCallback, useMemo } from 'react';
 import type { FirestoreQueryOptions, RealtimeOptions } from './types';
 import { QueryBuilder } from './utils';
+import type { Campaign, Charsheet, Power, Spell, User } from '@models/entities';
 
-interface UserCampaignsResponse extends Record<'asGm' | 'asPlayer', Array<Record<'_id' | 'code', string>>> {}
+interface UserCampaignsResponse extends Record<'asGm' | 'asPlayer', Array<Record<'id' | 'code', string>>> {}
 
 // === UTILITÁRIOS PARA CONSTRUÇÃO DE QUERIES ===
 
@@ -36,21 +36,21 @@ export function useCampaignRealtime(options: FirestoreQueryOptions & RealtimeOpt
 export function useCampaign(id: string, options: RealtimeOptions = {}) {
     return useFirestoreDocument<Campaign>(CampaignEntity as any, id, options);
 }
-// Hook para fichas com funcionalidades específicas
-export function useFichas(options: FirestoreQueryOptions = {}) {
-    return useFirestoreEntity(FichaEntity, options);
+
+export function useCharsheets(options: FirestoreQueryOptions = {}) {
+    return useFirestoreEntity(CharsheetEntity, options);
 }
 
-export function useFichasRealtime(options: FirestoreQueryOptions & RealtimeOptions = {}) {
-    return useFirestoreRealtime<Ficha>(FichaEntity as any, options);
+export function useCharsheetsRealtime(options: FirestoreQueryOptions & RealtimeOptions = {}) {
+    return useFirestoreRealtime<Charsheet>(CharsheetEntity as any, options);
 }
 
-export function useFicha(id: string, options: RealtimeOptions = {}) {
-    return useFirestoreDocument<Ficha>(FichaEntity as any, id, options);
+export function useCharsheet(id: string, options: RealtimeOptions = {}) {
+    return useFirestoreDocument<Charsheet>(CharsheetEntity as any, id, options);
 }
 
-export function useFichaCRUD() {
-    return useFirestoreCRUD(FichaEntity);
+export function useCharsheetCRUD() {
+    return useFirestoreCRUD(CharsheetEntity);
 }
 
 // Hook para usuários com funcionalidades específicas
@@ -66,17 +66,17 @@ export function useUser(id: string, options: RealtimeOptions = {}) {
     return useFirestoreDocument<User>(UserEntity as any, id, options);
 }
 
-// Hook para magias com funcionalidades específicas
+// Hook para spells com funcionalidades específicas
 export function useSpells(options: FirestoreQueryOptions = {}) {
     return useFirestoreEntity(SpellEntity, options);
 }
 
 export function useSpellsRealtime(options: FirestoreQueryOptions & RealtimeOptions = {}) {
-    return useFirestoreRealtime<Magia>(SpellEntity as any, options);
+    return useFirestoreRealtime<Spell>(SpellEntity as any, options);
 }
 
 export function useSpell(id: string, options: RealtimeOptions = {}) {
-    return useFirestoreDocument<Magia>(SpellEntity as any, id, options);
+    return useFirestoreDocument<Spell>(SpellEntity as any, id, options);
 }
 // Hook para poderes com funcionalidades específicas
 export function usePowers(options: FirestoreQueryOptions = {}) {
@@ -84,11 +84,11 @@ export function usePowers(options: FirestoreQueryOptions = {}) {
 }
 
 export function usePowersRealtime(options: FirestoreQueryOptions & RealtimeOptions = {}) {
-    return useFirestoreRealtime<MagicPower>(PowerEntity as any, options);
+    return useFirestoreRealtime<Power>(PowerEntity as any, options);
 }
 
 export function usePower(id: string, options: RealtimeOptions = {}) {
-    return useFirestoreDocument<MagicPower>(PowerEntity as any, id, options);
+    return useFirestoreDocument<Power>(PowerEntity as any, id, options);
 }
 
 // Hook para notificações com funcionalidades específicas
@@ -140,7 +140,7 @@ export function useUnreadNotifications(userId: string, options: RealtimeOptions 
         ...options
     });
 }
-// Hook para magias paginadas
+// Hook para spells paginadas
 export function useSpellsPaginated(pageSize: number = 20, initialPage: number = 1) {
     return useFirestorePagination(SpellEntity, {
         pageSize,
@@ -162,7 +162,7 @@ export function usePowersPaginated(pageSize: number = 20, initialPage: number = 
         ]
     });
 }
-// Hook para buscar magias
+// Hook para buscar spells
 export function useSpellSearch(searchTerm: string, options: RealtimeOptions = {}) {
     return useSpellsRealtime({
         filters: searchTerm ? [
@@ -200,14 +200,14 @@ export function useUserCampaigns(userId: string, options: RealtimeOptions = {}) 
 
     const adminFilters = useMemo(() =>
         data && data.asGm.length > 0 ? [
-            { field: '_id', operator: 'in', value: data.asGm.map(c => c._id) }
+            { field: 'id', operator: 'in', value: data.asGm.map(c => c.id) }
         ] : undefined,
     [ data?.asGm ]
     );
 
     const playerFilters = useMemo(() =>
         data && data.asPlayer.length > 0 ? [
-            { field: '_id', operator: 'in', value: data.asPlayer.map(c => c._id) }
+            { field: 'id', operator: 'in', value: data.asPlayer.map(c => c.id) }
         ] : undefined,
     [ data?.asPlayer ]
     );
@@ -232,11 +232,11 @@ export function useUserCampaigns(userId: string, options: RealtimeOptions = {}) 
         const campaignMap = new Map();
 
         adminCampaigns.forEach(campaign => {
-            campaignMap.set(campaign._id, campaign);
+            campaignMap.set(campaign.id, campaign);
         });
 
         playerCampaigns.forEach(campaign => {
-            campaignMap.set(campaign._id, campaign);
+            campaignMap.set(campaign.id, campaign);
         });
 
         return Array.from(campaignMap.values());
@@ -251,21 +251,21 @@ export function useUserCampaigns(userId: string, options: RealtimeOptions = {}) 
     };
 }
 
-// Hook para atualizar fichas em tempo real
-export function useFichaUpdater(fichaId: string) {
-    const { update } = useFichaCRUD();
+// Hook para atualizar charsheets em tempo real
+export function useCharsheetUpdater(charsheetId: string) {
+    const { update } = useCharsheetCRUD();
 
-    const updateFicha = useCallback(async (data: Partial<Ficha>) => {
-        if (!fichaId) return;
+    const updateCharsheet = useCallback(async (data: Partial<Charsheet>) => {
+        if (!charsheetId) return;
 
         try {
-            await update(fichaId, data);
-            console.log('[FichaUpdater] Ficha atualizada:', fichaId);
+            await update(charsheetId, data);
+            console.log('[CharsheetUpdater] Charsheet atualizada:', charsheetId);
         } catch (error) {
-            console.error('[FichaUpdater] Erro ao atualizar ficha:', error);
+            console.error('[CharsheetUpdater] Erro ao atualizar charsheet:', error);
             throw error;
         }
-    }, [ fichaId, update ]);
+    }, [ charsheetId, update ]);
 
-    return { updateFicha };
+    return { updateCharsheet };
 }

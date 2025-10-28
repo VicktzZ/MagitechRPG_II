@@ -1,6 +1,6 @@
-import { type Class } from '@types';
+import type { ClassNames } from '@models/types/string';
 
-export const levelDefaultRewards: Record<Class['name'], { lp: number, mp: number }> = {
+export const levelDefaultRewards: Record<ClassNames, { lp: number, mp: number }> = {
     Combatente: {
         lp: 4,
         mp: 1

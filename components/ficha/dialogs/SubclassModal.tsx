@@ -25,13 +25,13 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import PsychologyIcon from '@mui/icons-material/Psychology';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import { blue, orange } from '@mui/material/colors';
-import type { Classes, Subclasses } from '@types';
+import type { Class, Subclass } from '@models';
 
 interface SubclassModalProps {
     open: boolean;
     onClose: () => void;
-    currentClass: Classes | null;
-    onConfirm: (subclass: Subclasses) => void;
+    currentClass: Class['name'] | null;
+    onConfirm: (subclass: Subclass['name']) => void;
 }
 
 const obj = {}
@@ -39,22 +39,22 @@ const obj = {}
 function SubclassModal({ open, onClose, currentClass, onConfirm }: SubclassModalProps) {
     const theme = useTheme();
     const matches = useMediaQuery(theme.breakpoints.down('md'));
-    const [ selectedSubclass, setSelectedSubclass ] = useState<Subclasses | null>(null);
-    const [ availableSubclasses, setAvailableSubclasses ] = useState<Partial<Record<Subclasses, { description: string }>>>({});
+    const [ selectedSubclass, setSelectedSubclass ] = useState<Subclass['name'] | null>(null);
+    const [ availableSubclasses, setAvailableSubclasses ] = useState<Partial<Record<Subclass['name'], { description: string }>>>({});
 
     // Ao inicializar, carregar as subclasses disponíveis para a classe atual
     useEffect(() => {
         if (currentClass) {
-            setAvailableSubclasses(subclasses[currentClass] || obj as Partial<Record<Subclasses, { description: string }>>);
+            setAvailableSubclasses(subclasses[currentClass] || obj as Partial<Record<Subclass['name'], { description: string }>>);
         } else {
-            setAvailableSubclasses(obj as Partial<Record<Subclasses, { description: string }>>);
+            setAvailableSubclasses(obj as Partial<Record<Subclass['name'], { description: string }>>);
         }
         // Resetar a seleção quando a classe mudar
         setSelectedSubclass(null);
     }, [ currentClass ]);
 
     // Manipular seleção de subclasse
-    const handleSubclassSelect = (subclassName: Subclasses) => {
+    const handleSubclassSelect = (subclassName: Subclass['name']) => {
         setSelectedSubclass(subclassName);
     };
 
@@ -156,7 +156,7 @@ function SubclassModal({ open, onClose, currentClass, onConfirm }: SubclassModal
                                     <ListItem
                                         key={name}
                                         button
-                                        onClick={() => handleSubclassSelect(name as Subclasses)}
+                                        onClick={() => handleSubclassSelect(name as Subclass['name'])}
                                         sx={{
                                             bgcolor: selectedSubclass === name 
                                                 ? alpha(orange[500], 0.1) 

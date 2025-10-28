@@ -10,12 +10,15 @@ import {
 } from '@mui/material'
 import Modal from '@mui/material/Modal'
 import { useMemo, type ReactElement, useEffect, memo, useState, useRef } from 'react'
-import type { Attributes, Dice, Roll, RollResult } from '@types';
+import type { Dice } from '@models/Dice';
 import { rollDice } from '@utils/diceRoller';
 import { 
     Casino, Close, Visibility, VisibilityOff, 
     StarRate, Refresh, InfoOutlined
 } from '@mui/icons-material';
+import type { Roll } from '@models/types/misc';
+import type { Attributes } from '@models';
+import type { RollResult } from '@models/types/dices';
 
 const DiceRollModal = memo(({
     open,
@@ -42,7 +45,7 @@ const DiceRollModal = memo(({
         dice: number,
         quantity: number
         name: string,
-        attribute: Attributes
+        attribute: keyof Attributes
     },
     // 2. Dado personalizado
     customDice?: Dice,

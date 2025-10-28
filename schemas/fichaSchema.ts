@@ -118,7 +118,7 @@ const PointsSchema = z.object({
 )
 
 const SkillSchema = z.object({
-    _id: z.string().optional(),
+    id: z.string().optional(),
     name: z.string().min(1, 'O nome da habilidade é obrigatório'),
     description: z.string().min(1, 'A descrição da habilidade é obrigatória'),
     type: z.string(),
@@ -209,7 +209,7 @@ const ModsSchema = z.object({
 
 // Schema base para itens do inventário
 const BaseItemSchema = z.object({
-    _id: z.string().optional(),
+    id: z.string().optional(),
     name: z.string().min(1, 'O nome do item é obrigatório'),
     description: z.string().optional(),
     weight: z.number().min(0, 'O peso não pode ser negativo').default(0),
@@ -280,7 +280,7 @@ const InventoryItemSchema = z.union([
 ])
 
 const MagicSchema = z.object({
-    _id: z.string(),
+    id: z.string(),
     elemento: z.string().min(1, 'O elemento da magia é obrigatório'),
     nome: z.string().min(1, 'O nome da magia é obrigatório'),
     custo: z.coerce.number().min(0, 'O custo da magia não pode ser negativo').default(0),
@@ -334,7 +334,7 @@ const SessionInfoSchema = z.object({
 
 // Schema principal da Ficha
 export const fichaSchema = z.object({
-    _id: z.string().optional(),
+    id: z.string().optional(),
     playerName: z.string().min(1, 'O nome do jogador é obrigatório'),
     mode: GameModes.default('Classic'),
     userId: z.string().min(1, 'ID do usuário é obrigatório'),

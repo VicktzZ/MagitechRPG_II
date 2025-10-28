@@ -24,7 +24,6 @@ import {
     Typography,
     type SxProps
 } from '@mui/material';
-import type { Ficha } from '@types';
 import { useState, type ReactElement } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 
@@ -38,6 +37,7 @@ import PlayerHeader from './PlayerHeader';
 import SkillsSection from './SkillsSection';
 import SpellsSection from './SpellsSection';
 import { useCompleteFicha } from '@hooks/useCompleteFicha';
+import type { Charsheet } from '@models/entities';
 
 // Componente Section reutilizável
 function Section({ title, icon, children, action, sx }: { 
@@ -85,14 +85,14 @@ export default function CampaignPlayerDashboard(): ReactElement | null {
 
     const { updateFicha } = useFichaUpdater(fichaId);
 
-    const form = useForm<Ficha>({
+    const form = useForm<Charsheet>({
         defaultValues: ficha,
         values: ficha
     });
 
     if (!ficha || isUserGM) return null;
     
-    const fichaUser = users.players.find(player => player._id === ficha.userId);
+    const fichaUser = users.players.find(player => player.id === ficha.userId);
     const avatar = fichaUser?.image ?? '/assets/default-avatar.jpg';
 
     return (

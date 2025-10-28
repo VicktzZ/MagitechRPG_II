@@ -7,7 +7,6 @@ import { AttachMoney, AutoAwesome, DirectionsRun, Psychology } from '@mui/icons-
 import { Box, Button, Chip, FormControl, InputLabel, ListSubheader, MenuItem, OutlinedInput, Select, TextField, Typography, useMediaQuery } from '@mui/material'
 import { alpha, useTheme } from '@mui/material/styles'
 import { green, orange, purple } from '@node_modules/@mui/material/colors'
-import type { Classes, Element, Expertises, Ficha, LineageNames, Subclasses, Trait } from '@types'
 import { useCallback, useRef, useState } from 'react'
 import { Controller, useFormContext, useWatch } from 'react-hook-form'
 import ElementalMasteryModal from './dialogs/ElementalMasteryModal'
@@ -15,14 +14,16 @@ import SubclassModal from './dialogs/SubclassModal'
 import TraitsModal from './dialogs/TraitsModal'
 import LevelProgress from './subcomponents/LevelProgress'
 import { skills } from '@constants/skills'
+import type { CharsheetDTO } from '@models/dtos'
+import type { Class, Expertises, Lineage, Subclass, Trait } from '@models'
 
 export default function LevelAndInfo() {
-    const { control, getValues, setValue , formState: { errors } } = useFormContext<Ficha>()
+    const { control, getValues, setValue , formState: { errors } } = useFormContext<CharsheetDTO>()
     const [ diceModalOpen, setDiceModalOpen ] = useState<boolean>(false)
     const [ traitsModalOpen, setTraitsModalOpen ] = useState<boolean>(false)
     const [ subclassModalOpen, setSubclassModalOpen ] = useState<boolean>(false)
     const [ elementalMasteryModalOpen, setElementalMasteryModalOpen ] = useState<boolean>(false)
-    const [ selectedSubclass, setSelectedSubclass ] = useState<Subclasses | null>(null)
+    const [ selectedSubclass, setSelectedSubclass ] = useState<Subclass['name'] | null>(null)
     const traitsRef = useRef<Trait[]>([])
     const audio = useAudio('/sounds/sci-fi-positive-notification.wav')
     const audio2 = useAudio('/sounds/fast-sci-fi-bleep.wav')
@@ -44,16 +45,16 @@ export default function LevelAndInfo() {
     ]
     
     // Função para obter subclasses baseada na classe atual
-    const getAvailableSubclasses = useCallback((): Partial<Record<Subclasses, { description: string; }>> => {
+    const getAvailableSubclasses = useCallback((): Partial<Record<Subclass['name'], { description: string; }>> => {
         if (!playerClass) return {}
         const classKey = typeof playerClass === 'string' ? playerClass : playerClass.name
-        return subclasses[classKey as Classes] || {}
+        return subclasses[classKey as Class['name']] || {}
     }, [ playerClass ])
     
     // Verifica se os campos podem ser editados (nível >= 10 e não salvos ainda)
-    const canEditMasteryFields = level >= 10 && !ficha._id
-    const isSubclassLocked = !!currentSubclass && !!ficha._id
-    const isElementalMasteryLocked = !!currentElementalMastery && !!ficha._id
+    const canEditMasteryFields = level >= 10 && !ficha.id
+    const isSubclassLocked = !!currentSubclass && !!ficha.id
+    const isElementalMasteryLocked = !!currentElementalMastery && !!ficha.id
     
     const handleTraitsChange = useCallback((selectedTraitNames: string[]): void => {
         const currentExpertises = { ...getValues('expertises') };
@@ -68,7 +69,7 @@ export default function LevelAndInfo() {
                 currentExpertises[expertiseName] = {
                     ...currentExpertises[expertiseName],
                     value: Math.max(0, currentValue - trait.value)
-                } as any;
+                } ;
             }
         });
 
@@ -81,7 +82,7 @@ export default function LevelAndInfo() {
                     currentExpertises[expertiseName] = {
                         ...currentExpertises[expertiseName],
                         value: currentValue + trait.value
-                    } as any;
+                    } ;
                 }
                 newTraits.push(trait);
             }
@@ -95,7 +96,7 @@ export default function LevelAndInfo() {
     }, [ getValues, setValue, traitsRef ])
     
     // Handler para confirmar seleção de subclasse
-    const handleSubclassConfirm = useCallback((subclass: Subclasses) => {
+    const handleSubclassConfirm = useCallback((subclass: Subclass['name']) => {
         if (subclass) {
             setValue('subclass', subclass, { shouldValidate: true, shouldDirty: true })
             setValue('skills.subclass', [ skills.subclass[subclass][0] ])
@@ -279,7 +280,7 @@ export default function LevelAndInfo() {
                                                 size="small"
                                                 sx={{ fontWeight: 'bold', minWidth: '80px' }}
                                             />
-                                            {ficha._id && (
+                                            {ficha.id && (
                                                 <TextField
                                                     {...field}
                                                     value={money}
@@ -340,13 +341,13 @@ export default function LevelAndInfo() {
                                             value={Array.isArray(field.value) && field.value.length > 0 ?
                                                 field.value.map((t: any) => typeof t === 'object' ? t.name : t).join(', ') :
                                                 'Nenhum traço selecionado'}
-                                            onClick={() => !ficha._id && setTraitsModalOpen(true)}
+                                            onClick={() => !ficha.id && setTraitsModalOpen(true)}
                                             endAdornment={
                                                 <Button
                                                     variant="contained"
                                                     color="primary"
                                                     size="small"
-                                                    disabled={!!ficha._id}
+                                                    disabled={!!ficha.id}
                                                     onClick={(e) => {
                                                         e.stopPropagation();
                                                         setTraitsModalOpen(true);
@@ -357,7 +358,7 @@ export default function LevelAndInfo() {
                                                 </Button>
                                             }
                                             sx={{
-                                                cursor: ficha._id ? 'default' : 'pointer',
+                                                cursor: ficha.id ? 'default' : 'pointer',
                                                 '.MuiOutlinedInput-input': {
                                                     paddingLeft: 1
                                                 }
@@ -400,7 +401,7 @@ export default function LevelAndInfo() {
                                                     handleTraitsChange(newTraits);
                                                     audio.play()
                                                 }}
-                                                lineage={ficha.lineage as unknown as LineageNames}
+                                                lineage={ficha.lineage as unknown as Lineage['name']}
                                             />
                                         </Box>
                                     </>
@@ -615,7 +616,7 @@ export default function LevelAndInfo() {
                                         {...field}
                                         label='Condição financeira'
                                         required
-                                        disabled={!!ficha._id}
+                                        disabled={!!ficha.id}
                                         fullWidth
                                         error={!!errors.financialCondition}
                                         onChange={(e) => {
@@ -655,7 +656,7 @@ export default function LevelAndInfo() {
                         </FormControl>
 
                         {/* Botão de Rolar Dados */}
-                        {!ficha._id && (
+                        {!ficha.id && (
                             <Button
                                 onClick={() => { setDiceModalOpen(true) }}
                                 variant='outlined'
@@ -701,7 +702,7 @@ export default function LevelAndInfo() {
             <SubclassModal
                 open={subclassModalOpen}
                 onClose={() => setSubclassModalOpen(false)}
-                currentClass={playerClass as Classes}
+                currentClass={playerClass as Class['name']}
                 onConfirm={(subclass) => handleSubclassConfirm(subclass)}
             />
 

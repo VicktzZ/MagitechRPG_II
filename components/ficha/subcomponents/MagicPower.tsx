@@ -1,9 +1,9 @@
-import { elementColor } from '@constants';
+import { elementColor as eColor } from '@constants';
 import { useTheme, alpha, Paper, CardContent, Stack, Tooltip, Chip, Typography, Box, Button, IconButton } from '@mui/material';
 import { AutoAwesome, Info, Add, Close, LocalFireDepartment, WaterDrop, Air, Nature, Bolt, Flare } from '@mui/icons-material';
 import { type ReactElement, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { MagicPower as MagicPowerType } from '@types';
+import type { Power } from '@models/entities';
 
 const elementIcons = {
     'FOGO': <LocalFireDepartment />,
@@ -18,13 +18,13 @@ const elementIcons = {
 };
 
 export function MagicPower({
-    magicPower,
+    power,
     id,
     isAdding,
     onIconClick,
     disabled = false
 }: {
-    magicPower: MagicPowerType,
+    power: Power,
     id: string,
     isAdding?: boolean,
     onIconClick?: () => void,
@@ -33,18 +33,18 @@ export function MagicPower({
     const theme = useTheme();
 
     // Estados
-    const [ description, setDescription ] = useState<string>(magicPower['descrição']);
+    const [ description, setDescription ] = useState<string>(power.description);
     const [ activeTab, setActiveTab ] = useState<'descrição' | 'maestria'>('descrição');
 
-    // Elemento para cor/ícone
-    const elemento = magicPower.elemento.toUpperCase() as any;
-    const elementoColor = elementColor[elemento] || theme.palette.primary.main;
-    const elementIcon = elementIcons[elemento] || <AutoAwesome />;
+    // Element para cor/ícone
+    const element = power.element.toUpperCase() as any;
+    const elementColor = eColor[element] || theme.palette.primary.main;
+    const elementIcon = elementIcons[element] || <AutoAwesome />;
 
     // Trocar entre descrição e maestria
     const handleTabChange = (tab: 'descrição' | 'maestria'): void => {
         setActiveTab(tab);
-        setDescription(magicPower[tab]!);
+        setDescription(power[tab]!);
     };
 
     // Animações - removida a animação de hover que causava problemas com cliques
@@ -70,7 +70,7 @@ export function MagicPower({
             left: '-100%',
             width: '100%',
             height: '100%',
-            background: `linear-gradient(90deg, transparent, ${alpha(elementoColor, 0.2)}, transparent)`,
+            background: `linear-gradient(90deg, transparent, ${alpha(elementColor, 0.2)}, transparent)`,
             animation: disabled ? 'none' : 'shine 3s infinite'
         },
         '@keyframes shine': {
@@ -98,13 +98,13 @@ export function MagicPower({
                     background: theme.palette.mode === 'dark'
                         ? `linear-gradient(135deg, ${alpha(theme.palette.background.paper, 0.9)}, ${alpha(theme.palette.background.default, 0.95)})`
                         : `linear-gradient(135deg, ${alpha(theme.palette.background.paper, 0.9)}, ${alpha(theme.palette.background.default, 0.95)})`,
-                    border: `1px solid ${alpha(elementoColor, theme.palette.mode === 'dark' ? 0.3 : 0.2)}`,
+                    border: `1px solid ${alpha(elementColor, theme.palette.mode === 'dark' ? 0.3 : 0.2)}`,
                     boxSizing: 'border-box',
                     margin: '0 auto',
                     transition: 'all 0.3s ease',
                     ...(!disabled && {
                         '&:hover': {
-                            borderColor: alpha(elementoColor, 0.5)
+                            borderColor: alpha(elementColor, 0.5)
                         },
                         ...shineAnimation
                     })
@@ -117,7 +117,7 @@ export function MagicPower({
                     height: '100%',
                     p: { xs: 2, sm: 3 }
                 }}>
-                    {/* Header com elemento e nome */}
+                    {/* Header com element e nome */}
                     <Stack
                         direction="row"
                         spacing={1.5}
@@ -131,24 +131,24 @@ export function MagicPower({
                                 left: 0,
                                 width: '100%',
                                 height: '1px',
-                                background: `linear-gradient(90deg, ${alpha(elementoColor, 0.7)}, transparent)`
+                                background: `linear-gradient(90deg, ${alpha(elementColor, 0.7)}, transparent)`
                             }
                         }}
                     >
-                        {/* Badge de elemento */}
-                        <Tooltip title={`Elemento: ${magicPower.elemento}`} arrow placement="top">
+                        {/* Badge de element */}
+                        <Tooltip title={`Element: ${power.element}`} arrow placement="top">
                             <Chip
                                 icon={elementIcon}
-                                label={magicPower.elemento}
+                                label={power.element}
                                 sx={{
-                                    bgcolor: alpha(elementoColor, 0.1),
-                                    color: elementoColor,
+                                    bgcolor: alpha(elementColor, 0.1),
+                                    color: elementColor,
                                     borderRadius: '16px',
                                     fontWeight: 600,
-                                    '& .MuiChip-icon': { color: elementoColor },
+                                    '& .MuiChip-icon': { color: elementColor },
                                     ...(!disabled && {
                                         '&:hover': {
-                                            bgcolor: alpha(elementoColor, 0.2)
+                                            bgcolor: alpha(elementColor, 0.2)
                                         }
                                     })
                                 }}
@@ -157,7 +157,7 @@ export function MagicPower({
 
                         {/* Nome do poder com tooltip */}
                         <Tooltip
-                            title={`Poder mágico ${magicPower.elemento}: confere habilidades especiais relacionadas à ${magicPower.elemento.toLowerCase()}`}
+                            title={`Poder mágico ${power.element}: confere habilidades especiais relacionadas à ${power.element.toLowerCase()}`}
                             arrow
                             placement="top"
                         >
@@ -172,12 +172,12 @@ export function MagicPower({
                                     wordBreak: 'break-word',
                                     width: '100%',
                                     ...(!disabled && {
-                                        '&:hover': { color: elementoColor }
+                                        '&:hover': { color: elementColor }
                                     }),
                                     transition: 'color 0.3s ease'
                                 }}
                             >
-                                {magicPower.nome}
+                                {power.name}
                             </Typography>
                         </Tooltip>
                     </Stack>
@@ -185,12 +185,12 @@ export function MagicPower({
                     {/* Seção de pré-requisitos */}
                     <Box sx={{ mt: 1 }}>
                         <Stack direction="row" spacing={1} alignItems="baseline" flexWrap="wrap">
-                            <Info fontSize="small" sx={{ color: elementoColor }} />
+                            <Info fontSize="small" sx={{ color: elementColor }} />
                             <Typography variant="subtitle2" fontWeight="medium" sx={{ fontSize: { xs: '0.875rem', sm: '0.9rem', md: '1rem' } }}>
                                 Pré-requisito: 
                             </Typography>
                             <Typography variant="body2" sx={{ fontStyle: 'italic', wordBreak: 'break-word', fontSize: { xs: '0.8rem', sm: '0.85rem', md: '0.9rem' } }}>
-                                {magicPower['pré-requisito'] ?? 'Nenhum'}
+                                {power.preRequisite ?? 'Nenhum'}
                             </Typography>
                         </Stack>
                     </Box>
@@ -218,7 +218,7 @@ export function MagicPower({
                                         maxHeight: { xs: '200px', sm: '250px', md: '300px' },
                                         overflow: 'auto',
                                         bgcolor: alpha(theme.palette.background.paper, 0.4),
-                                        borderColor: alpha(elementoColor, 0.2),
+                                        borderColor: alpha(elementColor, 0.2),
                                         position: 'relative',
                                         '&::-webkit-scrollbar': {
                                             width: '8px',
@@ -228,10 +228,10 @@ export function MagicPower({
                                             background: alpha(theme.palette.background.paper, 0.1)
                                         },
                                         '&::-webkit-scrollbar-thumb': {
-                                            background: alpha(elementoColor, 0.3),
+                                            background: alpha(elementColor, 0.3),
                                             borderRadius: '4px',
                                             '&:hover': {
-                                                background: alpha(elementoColor, 0.5)
+                                                background: alpha(elementColor, 0.5)
                                             }
                                         }
                                     }}
@@ -293,18 +293,18 @@ export function MagicPower({
                                     py: 0.5,
                                     fontSize: { xs: '0.75rem', sm: '0.8rem', md: '0.875rem' },
                                     color: activeTab === 'descrição'
-                                        ? elemento === 'AR' || elemento === 'NÃO-ELEMENTAL' ? '#111' : '#fff' : elementoColor,
+                                        ? element === 'AR' || element === 'NÃO-ELEMENTAL' ? '#111' : '#fff' : elementColor,
                                     bgcolor: activeTab === 'descrição'
-                                        ? elementoColor
+                                        ? elementColor
                                         : 'transparent',
-                                    borderColor: alpha(elementoColor, 0.5),
+                                    borderColor: alpha(elementColor, 0.5),
                                     ...(!disabled && {
                                         '&:hover': {
                                             bgcolor: activeTab === 'descrição'
-                                                ? elementoColor
-                                                : alpha(elementoColor, 0.1),
+                                                ? elementColor
+                                                : alpha(elementColor, 0.1),
                                             transform: 'translateY(-2px)',
-                                            boxShadow: `0 2px 8px ${alpha(elementoColor, 0.25)}`
+                                            boxShadow: `0 2px 8px ${alpha(elementColor, 0.25)}`
                                         }
                                     })
                                 }}
@@ -324,18 +324,18 @@ export function MagicPower({
                                     py: 0.5,
                                     fontSize: { xs: '0.75rem', sm: '0.8rem', md: '0.875rem' },
                                     color: activeTab === 'maestria'
-                                        ? elemento === 'AR' || elemento === 'NÃO-ELEMENTAL' ? '#111' : '#fff' : elementoColor,
+                                        ? element === 'AR' || element === 'NÃO-ELEMENTAL' ? '#111' : '#fff' : elementColor,
                                     bgcolor: activeTab === 'maestria'
-                                        ? elementoColor
+                                        ? elementColor
                                         : 'transparent',
-                                    borderColor: alpha(elementoColor, 0.5),
+                                    borderColor: alpha(elementColor, 0.5),
                                     ...(!disabled && {
                                         '&:hover': {
                                             bgcolor: activeTab === 'maestria'
-                                                ? elementoColor
-                                                : alpha(elementoColor, 0.1),
+                                                ? elementColor
+                                                : alpha(elementColor, 0.1),
                                             transform: 'translateY(-2px)',
-                                            boxShadow: `0 2px 8px ${alpha(elementoColor, 0.25)}`
+                                            boxShadow: `0 2px 8px ${alpha(elementColor, 0.25)}`
                                         }
                                     })
                                 }}

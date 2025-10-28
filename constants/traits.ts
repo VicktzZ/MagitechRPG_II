@@ -1,8 +1,7 @@
 /* eslint-disable max-len */
-import type { Trait } from '@types';
+import type{ Trait } from '@models'
 
 // TODO: Deixar disponível apenas traços que alteram perícias
-
 export const positiveTraits: Trait[] = [
     {
         name: 'Hipertrofiado',

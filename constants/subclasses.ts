@@ -1,7 +1,7 @@
-/* eslint-disable max-len */
-import type { Classes, Subclasses } from '@types';
+import type { ClassNames, SubclassNames } from '@models/types/string';
 
-export const subclasses: Record<Classes, Partial<Record<Subclasses, { description: string }>>> = {
+/* eslint-disable max-len */
+export const subclasses: Record<ClassNames, Partial<Record<SubclassNames, { description: string }>>> = {
     'Combatente': {
         'Polimorfo': {
             description: 'Guerreiro que adapta seu corpo para diferentes situações de combate, transformando-se para maximizar eficiência em batalha.'

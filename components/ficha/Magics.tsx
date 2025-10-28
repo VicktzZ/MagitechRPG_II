@@ -30,13 +30,13 @@ import {
     useTheme
 } from '@mui/material'
 import { motion, AnimatePresence } from 'framer-motion'
-import type { Ficha, Magia as MagiaType } from '@types'
 import { useFormContext, useWatch } from 'react-hook-form'
 import { memo, useCallback, useMemo, useState } from 'react'
 import { Magic } from '.';
-import MagicsModal from './dialogs/MagicsModal'
+import SpellsModal from './dialogs/MagicsModal'
 import { useSnackbar } from 'notistack';
 import { toastDefault, elementColor as elementColors } from '@constants';
+import type { Spell } from '@models/entities';
 
 /**
  * Componente Magics
@@ -52,7 +52,7 @@ const Magics = memo(() => {
     const [ sortType, setSortType ] = useState<'elemento' | 'level' | 'name'>('name')
 
     // Hooks e contexto
-    const { control, setValue, getValues } = useFormContext<Ficha>()
+    const { control, setValue, getValues } = useFormContext<Charsheet>()
     const { enqueueSnackbar, closeSnackbar } = useSnackbar()
     const theme = useTheme()
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
@@ -81,11 +81,11 @@ const Magics = memo(() => {
             filtered.sort((a, b) => a.elemento.localeCompare(b.elemento))
             break
         case 'level':
-            filtered.sort((a, b) => ((b as any).level ?? 0) - ((a as any).level ?? 0))
+            filtered.sort((a, b) => ((b ).level ?? 0) - ((a ).level ?? 0))
             break
         case 'name':
         default:
-            filtered.sort((a, b) => (a as any).name?.localeCompare((b as any).name) || 0)
+            filtered.sort((a, b) => (a ).name?.localeCompare((b ).name) || 0)
             break
         }
 
@@ -120,7 +120,7 @@ const Magics = memo(() => {
 
     const handleRemoveMagic = useCallback((magicId: string, magicName: string) => {
         const currentMagics = [ ...magics ]
-        const magicIndex = currentMagics.findIndex(m => m._id === magicId)
+        const magicIndex = currentMagics.findIndex(m => m.id === magicId)
 
         if (magicIndex !== -1) {
             currentMagics.splice(magicIndex, 1)
@@ -136,12 +136,12 @@ const Magics = memo(() => {
         }
     }, [ magics, points, magicsSpace, enqueueSnackbar, closeSnackbar, setValue ])
 
-    const renderMagicCard = useCallback((magic: MagiaType) => {
+    const renderMagicCard = useCallback((magic: Spell) => {
 
         return (
             <Grid
                 item
-                key={magic._id ?? ''}
+                key={magic.id ?? ''}
                 xs={12}
                 sm={6}
                 md={4}
@@ -165,9 +165,9 @@ const Magics = memo(() => {
                 >
                     <Magic
                         as='magic-spell'
-                        id={magic._id ?? ''}
+                        id={magic.id ?? ''}
                         magic={magic}
-                        onIconClick={() => { handleRemoveMagic(magic._id ?? '', magic.nome) }}
+                        onIconClick={() => { handleRemoveMagic(magic.id ?? '', magic.name) }}
                     />
                 </motion.div>
             </Grid>
@@ -229,7 +229,7 @@ const Magics = memo(() => {
 
         // Agrupa magias por elemento se estiver ordenando por elemento
         if (sortType === 'elemento') {
-            const groupedByElement: Record<string, MagiaType[]> = {}
+            const groupedByElement: Record<string, Spell[]> = {}
 
             filteredMagics.forEach(magic => {
                 const element = magic.elemento.toUpperCase()
@@ -577,7 +577,7 @@ const Magics = memo(() => {
             </Paper>
 
             {/* Modal para adicionar magias */}
-            <MagicsModal
+            <SpellsModal
                 open={open}
                 onClose={() => { setOpen(false) }}
             />

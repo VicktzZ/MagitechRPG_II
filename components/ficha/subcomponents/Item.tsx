@@ -24,12 +24,7 @@ import {
     Stack,
     TextField, Typography, useTheme
 } from '@mui/material'
-import type {
-    Ficha,
-    Inventory,
-    ItemTyping,
-    MergedItems
-} from '@types'
+
 import { useSnackbar } from 'notistack'
 import { type ReactElement, useMemo, useState } from 'react'
 import { useFormContext } from 'react-hook-form'
@@ -37,8 +32,12 @@ import { ItemWrapperModal } from '../dialogs/ItemWrapperModal'
 import { Armor } from './Armor'
 import { Weapon } from './Weapon'
 
-// TODO: ADICIONAR OPÇÃO PARA EDITAR ITENS
+import type { ItemTyping } from '@models/types/item'
+import type { MergedItems } from '@models/types/misc'
+import type { Charsheet } from '@models/entities'
+import type { Inventory } from '@models'
 
+// TODO: ADICIONAR OPÇÃO PARA EDITAR ITENS
 function ItemComponent(props: ItemTyping<'item'>): ReactElement {
     const theme = useTheme()
     const [ showDescription, setShowDescription ] = useState(false)
@@ -173,7 +172,7 @@ function ItemWrapper({
     item: MergedItems<'Leve' | 'Pesada'>
 }): ReactElement {
     const theme = useTheme()
-    const { getValues, setValue } = useFormContext<Ficha>()
+    const { getValues, setValue } = useFormContext<Charsheet>()
 
     const [ open, setOpen ] = useState(false)
     const [ , setShowTooltip ] = useState(false)
@@ -670,9 +669,9 @@ export default function Item<C extends 'weapon' | 'armor' | 'item'>({
         <ItemWrapper
             description={description}
             title={name}
-            item={{ name, description, ...props } as any}
+            item={{ name, description, ...props } }
         >
-            <Component {...props as any} />
+            <Component {...props } />
         </ItemWrapper>
     )
 }

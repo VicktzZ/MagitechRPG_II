@@ -7,19 +7,16 @@ import { Add, AutoAwesome, Close, Flare, LocalFireDepartment, Bolt, WaterDrop, A
 import { alpha, Box, Button, CardContent, Chip, Grid, IconButton, Paper, Stack, Tooltip, Typography, useTheme } from '@mui/material';
 import { useState, type ReactElement } from 'react';
 import { motion } from 'framer-motion';
-import type { Magia as MagiaType, MagicPower as MagicPowerType } from '@types';
 import { elementColor } from '@constants';
 import { MagicPower } from './MagicPower';
 import { RPGIcon } from '@components/misc';
-
-// Tipos e constantes
-type MagicStage = 'estágio 1' | 'estágio 2' | 'estágio 3' | 'maestria';
-type ElementType = 'FOGO' | 'ÁGUA' | 'AR' | 'TERRA' | 'ELETRICIDADE' | 'LUZ' | 'TREVAS' | 'NEUTRO' | 'SANGUE' | 'VÁCUO' | 'PSÍQUICO' | 'RADIAÇÃO' | 'EXPLOSÃO';
+import type { Power, Spell } from '@models/entities';
+import { type Element } from '@models/types/string';
 
 type MagicTyping<C extends 'magic-spell' | 'magic-power'> =
     C extends 'magic-spell' ?
     {
-        magic: MagiaType,
+        magic: Spell,
         id: string,
         isAdding?: boolean,
         onIconClick?: () => void,
@@ -27,7 +24,7 @@ type MagicTyping<C extends 'magic-spell' | 'magic-power'> =
     }
     :
     {
-        magicPower: MagicPowerType,
+        magicPower: Power,
         id: string,
         isAdding?: boolean,
         onIconClick?: () => void,
@@ -69,42 +66,42 @@ function MagicSpell({
     const theme = useTheme();
 
     // Estados
-    const [ description, setDescription ] = useState<string>(magic['estágio 1']);
-    const [ activeStage, setActiveStage ] = useState<MagicStage>('estágio 1');
+    const [ description, setDescription ] = useState<string>(magic.stages[0]);
+    const [ activeStage, setActiveStage ] = useState<number>(0);
     const [ extraManaCost, setExtraManaCost ] = useState<number>(0);
 
     // Elemento para cor/ícone
-    const elemento = magic.elemento?.toUpperCase() as ElementType;
+    const elemento = magic.element?.toUpperCase() as Element;
     const elementoColor = elementColor[elemento as keyof typeof elementColor] || theme.palette.primary.main;
     const elementIcon = elementIcons[elemento] ?? <AutoAwesome />;
 
     // Dados dos níveis disponíveis
-    const availableStages: MagicStage[] = [ 'estágio 1' ];
-    if (magic['estágio 2']) availableStages.push('estágio 2');
-    if (magic['estágio 3']) availableStages.push('estágio 3');
-    if (magic['maestria']) availableStages.push('maestria');
+    const availableStages: Array<0 | 1 | 2> = [ 0 ];
+    if (magic.stages[1]) availableStages.push(1);
+    if (magic.stages[2]) availableStages.push(2);
+    if (magic.stages[2] && magic.level === 4) availableStages.push(2);
 
     // Trocar entre estágios e calcular custos adicionais de MP
-    const handleStageChange = (stage: MagicStage): void => {
+    const handleStageChange = (stage: 0 | 1 | 2): void => {
         setActiveStage(stage);
-        setDescription(magic[stage]!);
+        setDescription(magic.stages[stage]!);
 
         // Cálculo do custo adicional de MP baseado no nível da magia e estágio
         let extraCost = 0;
-        const magicLevel = Number(magic.nível);
+        const magicLevel = Number(magic.level);
 
         if (magicLevel === 4) {
-            if (stage === 'estágio 2') extraCost = 4;
-            else if (stage === 'maestria') extraCost = 9;
+            if (stage === 1) extraCost = 4;
+            else if (stage === 2) extraCost = 9;
         } else if (magicLevel === 3) {
-            if (stage === 'estágio 2') extraCost = 2;
-            else if (stage === 'estágio 3') extraCost = 5;
+            if (stage === 1) extraCost = 2;
+            else if (stage === 2) extraCost = 5;
         } else if (magicLevel === 2) {
-            if (stage === 'estágio 2') extraCost = 2;
-            else if (stage === 'estágio 3') extraCost = 4;
+            if (stage === 1) extraCost = 2;
+            else if (stage === 2) extraCost = 4;
         } else {
-            if (stage === 'estágio 2') extraCost = 1;
-            else if (stage === 'estágio 3') extraCost = 2;
+            if (stage === 1) extraCost = 1;
+            else if (stage === 2) extraCost = 2;
         }
 
         setExtraManaCost(extraCost);
@@ -211,10 +208,10 @@ function MagicSpell({
                         }}
                     >
                         {/* Badge de elemento */}
-                        <Tooltip title={`Elemento: ${magic.elemento}`} arrow placement="top">
+                        <Tooltip title={`Elemento: ${magic.element}`} arrow placement="top">
                             <Chip
                                 icon={elementIcon}
-                                label={magic.elemento}
+                                label={magic.element}
                                 sx={{
                                     bgcolor: alpha(elementoColor, 0.15),
                                     color: elementoColor,
@@ -237,7 +234,7 @@ function MagicSpell({
 
                         {/* Nome da magia com tooltip */}
                         <Tooltip
-                            title={`Magia de ${magic.elemento}: ${magic.tipo} de nível ${magic.nível}`}
+                            title={`Magia de ${magic.element}: ${magic.type} de nível ${magic.level}`}
                             arrow
                             placement="top"
                         >
@@ -257,7 +254,7 @@ function MagicSpell({
                                     transition: 'color 0.3s ease'
                                 }}
                             >
-                                {magic.nome}
+                                {magic.name}
                             </Typography>
                         </Tooltip>
                     </Stack>
@@ -279,7 +276,7 @@ function MagicSpell({
                                     fontWeight: 600
                                 }}
                             >
-                                {magic.nível}
+                                {magic.level}
                             </Typography>
                         </Stack>
                         <Stack direction="row" spacing={1} alignItems="baseline">
@@ -297,7 +294,7 @@ function MagicSpell({
                                     fontWeight: 600
                                 }}
                             >
-                                {Number(magic.custo) + extraManaCost} MP
+                                {Number(magic.mpCost) + extraManaCost} MP
                                 {extraManaCost > 0 && (
                                     <Typography
                                         component="span"
@@ -325,7 +322,7 @@ function MagicSpell({
                                 variant="body2"
                                 color="text.secondary"
                             >
-                                {magic.tipo}
+                                {magic.type}
                             </Typography>
                         </Stack>
                         <Stack direction="row" spacing={1} alignItems="baseline">
@@ -340,7 +337,7 @@ function MagicSpell({
                                 variant="body2"
                                 color="text.secondary"
                             >
-                                {magic.alcance}
+                                {magic.range}
                             </Typography>
                         </Stack>
                         <Stack direction="row" spacing={1} alignItems="baseline">
@@ -355,7 +352,7 @@ function MagicSpell({
                                 variant="body2"
                                 color="text.secondary"
                             >
-                                {magic['execução']}
+                                {magic.execution}
                             </Typography>
                         </Stack>
                     </Stack>
@@ -458,7 +455,7 @@ function MagicSpell({
                                         })
                                     }}
                                 >
-                                    {stage.charAt(0).toUpperCase() + stage.slice(1)}
+                                    {magic.level === 4 ? 'Maestria' : `Estágio ${stage}`}
                                 </Button>
                             ))}
                         </Stack>
@@ -526,7 +523,7 @@ export function MagicCollection({
     type = 'magic-spell',
     disabled = false
 }: {
-    items: MagiaType[] | MagicPowerType[],
+    items: Spell[] | Power[],
     type?: 'magic-spell' | 'magic-power',
     disabled?: boolean
 }): ReactElement {
@@ -536,7 +533,7 @@ export function MagicCollection({
     // Para implementação futura - filtragem por elemento
     const filteredItems = selectedElement
         ? items.filter(item => {
-            const elemento = 'elemento' in item ? item.elemento : '';
+            const elemento = 'element' in item ? item.element : '';
             return elemento.toUpperCase() === selectedElement;
         })
         : items;

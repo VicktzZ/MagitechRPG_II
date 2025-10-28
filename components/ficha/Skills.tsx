@@ -24,16 +24,17 @@ import {
     useEffect
 } from 'react'
 import { useFormContext, useWatch } from 'react-hook-form'
-import type { Ficha, Skill } from '@types'
 import { skills } from '@constants/skills';
-import { type MagicPowerSkill } from '@types';
+import type { CharsheetDTO } from '@models/dtos';
+import type { Power } from '@models/entities';
+import type { Skill } from '@models';
 
 type SkillsFilterType = 'all' | 'class' | 'subclass' | 'lineage' | 'powers' | 'bonus' | 'race'
 
 export default function Skills(): ReactElement {
-    const { control, setValue, getValues, formState: { errors } } = useFormContext<Ficha>()
+    const { control, setValue, getValues, formState: { errors } } = useFormContext<CharsheetDTO>()
     const skillRef = useRef<EventTarget & HTMLSpanElement | null>()
-    const [ selectedSkill, setSelectedSkill ] = useState<MagicPowerSkill | null>(null)
+    const [ selectedSkill, setSelectedSkill ] = useState<Power | null>(null)
     const [ skillsFilter, setSkillsFilter ] = useState<SkillsFilterType>('all')
     const [ showMasteryDescription, setShowMasteryDescription ] = useState(false)
     const theme = useTheme()

@@ -1,4 +1,4 @@
-import type { Lineage, Occupation } from '@types';
+import type { Lineage, Occupation } from '@models'
 
 export interface ExpertisesOverrided {
     points?: number,

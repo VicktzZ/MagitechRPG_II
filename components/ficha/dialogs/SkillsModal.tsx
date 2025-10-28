@@ -1,38 +1,39 @@
+/* eslint-disable @typescript-eslint/return-await */
 /* eslint-disable @typescript-eslint/prefer-nullish-coalescing */
 /* eslint-disable @typescript-eslint/unbound-method */
 import { ResourceListModal } from '@components/utils';
 import { elements } from '@constants';
 import { Box } from '@mui/material';
 import { poderService } from '@services';
-import type { Ficha, MagicPower } from '@types';
+import type { Power } from '@models/entities';
 import { AnimatePresence, motion } from 'framer-motion';
 import type { ReactElement } from 'react';
 import { useFormContext } from 'react-hook-form';
 import Magic from '../subcomponents/Magic';
-import { type MagicPowerSkill } from '@types';
+import type { CharsheetDTO } from '@models/dtos';
 
 const SkillsResourceListModal = ResourceListModal;    
 
 export default function SkillsModal({ open, onClose }: { open: boolean, onClose: () => void }): ReactElement {
-    const { getValues, setValue } = useFormContext<Ficha>();
+    const { getValues, setValue } = useFormContext<CharsheetDTO>();
     
     const invalidate = (message: string) => ({ isValid: false, errorMessage: message });
     
-    const validateAdd = (power: MagicPower) => {
+    const validateAdd = (power: Power) => {
         const availableSkillPoints = getValues().points.skills || 0;
         if (availableSkillPoints <= 0) {
             return invalidate('Você não tem pontos de habilidade disponíveis!');
         }
         
         // Verificar se o nível de ORM é suficiente
-        if (getValues().ORMLevel < Number(power['pré-requisito']?.split(' ')[2]?.replace(',', '') ?? 0)) {
+        if (getValues().ORMLevel < Number(power.preRequisite?.split(' ')[2]?.replace(',', '') ?? 0)) {
             return invalidate('Seu nível de ORM não é suficiente para este poder!');
         }
         
         // Verificar se o usuário já possui esta habilidade
         const currentPowers = getValues().skills.powers || [];
         const alreadyHasPower = currentPowers.some(existingPower => 
-            existingPower.name === power.nome && existingPower.type === 'Poder Mágico'
+            existingPower.name === power.name && existingPower.type === 'Poder Mágico'
         );
         
         if (alreadyHasPower) {
@@ -42,18 +43,18 @@ export default function SkillsModal({ open, onClose }: { open: boolean, onClose:
         return { isValid: true };
     };
 
-    const addPower = async (power: MagicPower) => {
+    const addPower = async (power: Power) => {
         const currentPowers = getValues().skills.powers || [];
         
         // Criar a nova habilidade no formato correto
-        const newSkill: MagicPowerSkill = {
-            name: power.nome,
-            description: `${power.descrição}\n\nPré-requisitos: ${power['pré-requisito'] ?? 'Nenhum'}`,
+        const newSkill: Power = {
+            name: power.name,
+            description: `${power.description}\n\nPré-requisitos: ${power.preRequisite ?? 'Nenhum'}`,
             type: 'Poder Mágico',
-            origin: power.elemento || 'Desconhecido',
-            mastery: power.maestria || 'Nenhum',
-            element: power.elemento,
-            _id: power._id ?? Date.now().toString()
+            origin: power.element || 'Desconhecido',
+            mastery: power.mastery || 'Nenhum',
+            element: power.element,
+            id: power.id ?? Date.now().toString()
         };
 
         console.log(newSkill)
@@ -71,14 +72,14 @@ export default function SkillsModal({ open, onClose }: { open: boolean, onClose:
         audio.volume = 0.3;
         audio.play().catch(() => console.log('Erro ao tocar áudio'));
         
-        return { ...power, _id: power._id || Date.now().toString() };
+        return { ...power, id: power.id || Date.now().toString() };
     };
     
     // Função para remover um poder mágico da ficha
-    const removePower = (power: MagicPower) => {
+    const removePower = (power: Power) => {
         const currentPowers = getValues().skills.powers || [];
         const updatedPowers = currentPowers.filter(existingPower => 
-            !(existingPower.name === power.nome && existingPower.type === 'Poder Mágico')
+            !(existingPower.name === power.name && existingPower.type === 'Poder Mágico')
         );
         
         setValue('skills.powers', updatedPowers, { shouldValidate: true });
@@ -166,9 +167,9 @@ export default function SkillsModal({ open, onClose }: { open: boolean, onClose:
                             >
                                 <Magic
                                     as="magic-power"
-                                    key={item._id}
+                                    key={item.id}
                                     magicPower={item}
-                                    id={item._id}
+                                    id={item.id}
                                     isAdding={(() => {
                                         // Verificar se o usuário já possui esta habilidade
                                         const currentPowers = getValues().skills.powers || [];

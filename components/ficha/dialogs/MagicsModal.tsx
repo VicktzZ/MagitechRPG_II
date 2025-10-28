@@ -1,50 +1,53 @@
+/* eslint-disable @typescript-eslint/return-await */
 /* eslint-disable @typescript-eslint/unbound-method */
 import { useFormContext } from 'react-hook-form';
-import { magiaService } from '@services';
+import { magiaService as spellService } from '@services';
 import { ResourceListModal } from '@components/utils';
-import type { Ficha, Magia as MagicType } from '@types';
-import type { ReactElement } from 'react';
 import { elements, specialElements } from '@constants';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Box, Backdrop } from '@mui/material';
+import type { Spell } from '@models/entities';
+import type { ReactElement } from 'react';
+import type { CharsheetDTO } from '@models/dtos';
+
 import Magic from '../subcomponents/Magic';
 
-const MagicsResourceListModal = ResourceListModal;    
+const SpellsResourceListModal = ResourceListModal;    
 
-export default function MagicsModal({ open, onClose }: { open: boolean, onClose: () => void }): ReactElement {
-    const { getValues, setValue } = useFormContext<Ficha>();
+export default function SpellsModal({ open, onClose }: { open: boolean, onClose: () => void }): ReactElement {
+    const { getValues, setValue } = useFormContext<CharsheetDTO>();
     
     const invalidate = (message: string) => ({ isValid: false, errorMessage: message });
 
-    const validateAdd = (magic: MagicType) => {
-        const { ORMLevel, magicsSpace, points } = getValues();
+    const validateAdd = (spell: Spell) => {
+        const { ORMLevel, spellSpace, points } = getValues();
         
-        if (ORMLevel < Number(magic.nível)) {
+        if (ORMLevel < Number(spell.level)) {
             return invalidate('Seu nível de ORM não é suficiente para esta magia!');
         }
-        if (magicsSpace < 1 || points.magics < 1) {
+        if (spellSpace < 1 || points.spells < 1) {
             return invalidate('Você não tem mais espaço ou pontos de magia suficientes!');
         }
 
         return { isValid: true };
     };
 
-    const addMagic = async (magic: MagicType) => {
-        const currentMagics = getValues('magics') || [];
+    const addSpell = async (spell: Spell) => {
+        const currentSpells = getValues('spells') || [];
         const currentPoints = getValues('points');
-        const currentMagicsSpace = getValues('magicsSpace');
+        const currentSpellsSpace = getValues('spellSpace');
         
-        const newMagic = {
-            ...magic,
-            _id: magic._id ?? Date.now().toString()
+        const newSpell = {
+            ...spell,
+            id: spell.id ?? Date.now().toString()
         };
         
-        setValue('magics', [ ...currentMagics, newMagic ], { shouldValidate: true });
+        setValue('spells', [ ...currentSpells, newSpell ], { shouldValidate: true });
         setValue('points.magics', currentPoints.magics - 1, { shouldValidate: true });
-        setValue('magicsSpace', currentMagicsSpace - 1, { shouldValidate: true });
-        console.log(getValues().magics)
+        setValue('spellSpace', currentSpellsSpace - 1, { shouldValidate: true });
+        console.log(getValues().spells)
 
-        return newMagic;
+        return newSpell;
     };
     
     const modalVariants = {
@@ -122,21 +125,21 @@ export default function MagicsModal({ open, onClose }: { open: boolean, onClose:
                             backgroundColor: 'background.paper'
                         }}
                     >
-                        <MagicsResourceListModal
+                        <SpellsResourceListModal
                             title="Gerenciar Magias"
                             open={open}
                             onClose={onClose}
-                            queryKey="Magics"
-                            fetchFunction={async (params) => await magiaService.fetch(params)}
-                            addFunction={addMagic}
+                            queryKey="Spells"
+                            fetchFunction={async (params) => await spellService.fetch(params)}
+                            addFunction={addSpell}
                             validateAdd={validateAdd}
-                            successMessage={(magic) => `Magia ${magic.nome} adicionada!`}
+                            successMessage={(spell) => `Magia ${spell.nome} adicionada!`}
                             errorMessage={(err) => err.message || 'Erro ao adicionar magia'}
                             filterOptions={getValues('level') < 15 ? elements : [ ...elements, ...specialElements ]}
                             sortOptions={[ 'Nível', 'Elemento', 'Alfabética' ]}
                             renderResource={({ item, handleAddItem }) => {
-                                const currentMagics = getValues('magics') || [];
-                                const alreadyAdded = currentMagics.some(m => m._id === item._id);
+                                const currentSpells = getValues('spells') || [];
+                                const alreadyAdded = currentSpells.some(m => m.id === item.id);
                                 
                                 return (
                                     <motion.div
@@ -148,9 +151,9 @@ export default function MagicsModal({ open, onClose }: { open: boolean, onClose:
                                     >
                                         <Magic
                                             as="magic-spell"
-                                            key={item._id ?? item.nome}
+                                            key={item.id ?? item.nome}
                                             magic={item}
-                                            id={item._id ?? item.nome}
+                                            id={item.id ?? item.nome}
                                             isAdding={!alreadyAdded}
                                             onIconClick={alreadyAdded ? undefined : handleAddItem}
                                         />
