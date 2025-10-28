@@ -175,7 +175,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
         await notificationRepository.create({
             userId: charsheet.userId,
             title: 'Level Up!',
-            content: `Sua ficha ${charsheet.name} foi para o nível ${newLevel}!\nRecompensas: ${rewardsList.length > 0 ? `\n\n${rewardsList.join('\n')}` : ''}`,
+            content: `Sua charsheet ${charsheet.name} foi para o nível ${newLevel}!\nRecompensas: ${rewardsList.length > 0 ? `\n\n${rewardsList.join('\n')}` : ''}`,
             timestamp: new Date(),
             type: 'levelUp',
             link: `/charsheet/${charsheet.id}`,

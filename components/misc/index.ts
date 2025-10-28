@@ -1,6 +1,6 @@
 import AnimateOnScroll from './AnimateOnScroll'
 import RequireAuth from './RequireAuth'
-import RequireFicha from './RequireFicha'
+import RequireCharsheet from './RequireCharsheet'
 import { Parallax, Background as ParallaxBackground } from './Parallax'
 import Animate from './Animate'
 import RadarChart from './RadarChart'
@@ -18,7 +18,7 @@ export {
     Animate,
     RPGIcon,
     RequireAuth,
-    RequireFicha,
+    RequireCharsheet,
     RadarChart,
     SavingSpinner
 }

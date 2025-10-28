@@ -85,7 +85,7 @@ const handler = NextAuth({
                 newUser.email = email;
                 newUser.name = p?.name?.replace(' ', '').toLowerCase() ?? p?.username?.replace(' ', '').toLowerCase();
                 newUser.image = newImage;
-                newUser.fichas = [];
+                newUser.charsheets = [];
 
                 await userRepository.create(newUser);
 

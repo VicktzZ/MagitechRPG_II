@@ -3,10 +3,10 @@ import type { Member } from '@models/types/misc'
 import { Service } from '@utils/apiRequest'
 
 class PusherService extends Service<any> {
-    async authorizeChannel(socketId: string, channelName: string, session: Member, ficha: Charsheet): Promise<any> {
+    async authorizeChannel(socketId: string, channelName: string, session: Member, charsheet: Charsheet): Promise<any> {
         const params = new URLSearchParams()
         params.append('session', JSON.stringify({ user: session }))
-        params.append('ficha', JSON.stringify(ficha))
+        params.append('charsheet', JSON.stringify(charsheet))
 
         const body = new URLSearchParams()
         body.append('socketid', socketId)

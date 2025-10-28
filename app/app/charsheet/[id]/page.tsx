@@ -1,26 +1,26 @@
 'use client'
 
-import { FichaComponent } from '@components/ficha';
-import { FichaFormProvider } from '@contexts';
+import { CharsheetComponent } from '@components/charsheet';
+import { CharsheetFormProvider } from '@contexts';
 import { Backdrop, CircularProgress } from '@mui/material';
-import { useCompleteFicha } from '@hooks/useCompleteFicha';
+import { useCompleteCharsheet } from '@hooks/useCompleteCharsheet';
 import type { ReactElement } from 'react';
 
 export default function Page({ params }: { params: { id: string } }): ReactElement {
-    const { data: completeFicha, loading } = useCompleteFicha({
-        fichaId: params.id
+    const { data: completeCharsheet, loading } = useCompleteCharsheet({
+        charsheetId: params.id
     });
 
     return (
         <>
-            {loading && !completeFicha ? (
+            {loading && !completeCharsheet ? (
                 <Backdrop open>
                     <CircularProgress />
                 </Backdrop>
             ) : (
-                <FichaFormProvider formData={completeFicha}>
-                    <FichaComponent />
-                </FichaFormProvider>
+                <CharsheetFormProvider formData={completeCharsheet}>
+                    <CharsheetComponent />
+                </CharsheetFormProvider>
             )}
         </>
     )

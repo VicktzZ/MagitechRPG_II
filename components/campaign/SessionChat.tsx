@@ -30,7 +30,7 @@ import {
     Badge,
     useTheme
 } from '@mui/material';
-import { fichaService } from '@services';
+import { charsheetService } from '@services';
 import { useSession } from 'next-auth/react';
 import { memo, useEffect, useRef, useState, type ReactElement } from 'react';
 import TestDialog from './TestDialog';
@@ -273,7 +273,7 @@ export default function SessionChat() {
 
         if (!currentTest || !session?.user) return
 
-        // Se for um teste de perícia, busca o bônus da perícia na ficha do jogador
+        // Se for um teste de perícia, busca o bônus da perícia na charsheet do jogador
         let expertiseBonus = 0
         let expertiseResult = null
         let baseAttribute = null
@@ -283,16 +283,16 @@ export default function SessionChat() {
             const player = campaign.players.find(p => p.userId === session.user.id)
             if (player) {
                 try {
-                    const ficha = await fichaService.getById(player.charsheetId)
-                    if (ficha) {
-                        const expertise = ficha.expertises[currentTest.expertise as keyof Expertises]
+                    const charsheet = await charsheetService.getById(player.charsheetId)
+                    if (charsheet) {
+                        const expertise = charsheet.expertises[currentTest.expertise as keyof Expertises]
                         expertiseBonus = expertise.value
                         baseAttribute = expertise.defaultAttribute?.toLowerCase()
-                        baseAttributeValue = ficha.attributes[baseAttribute as keyof Attributes]
+                        baseAttributeValue = charsheet.attributes[baseAttribute as keyof Attributes]
 
                         console.log({
                             currentTest,
-                            ficha,
+                            charsheet,
                             expertise,
                             expertiseBonus,
                             baseAttribute,
@@ -331,7 +331,7 @@ export default function SessionChat() {
                         }
                     }
                 } catch (error) {
-                    console.error('Erro ao buscar ficha:', error)
+                    console.error('Erro ao buscar charsheet:', error)
                 }
             }
         }

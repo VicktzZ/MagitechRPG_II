@@ -8,7 +8,7 @@ import type { Charsheet, Spell, User } from '@models/entities';
 
 // export interface CampaignData {
 //     campaign: Campaign
-//     fichas: Ficha[]
+//     charsheets: Charsheet[]
 //     isUserGM: boolean
 //     code: string
 //     users: {
@@ -85,7 +85,7 @@ export interface PusherMemberParam {
         email: string
         image: string
         id: string
-        currentFicha: string,
+        currentCharsheet: string,
         socketId: string
     }
 }

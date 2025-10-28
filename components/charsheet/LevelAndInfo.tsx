@@ -34,7 +34,7 @@ export default function LevelAndInfo() {
     const currentSubclass = useWatch({ control, name: 'subclass' })
     const currentElementalMastery = useWatch({ control, name: 'elementalMastery' })
     const numberWithSpaces = useNumbersWithSpaces()
-    const ficha = getValues()
+    const charsheet = getValues()
 
     const theme = useTheme()
     const matches = useMediaQuery(theme.breakpoints.down('md'))
@@ -52,9 +52,9 @@ export default function LevelAndInfo() {
     }, [ playerClass ])
     
     // Verifica se os campos podem ser editados (nível >= 10 e não salvos ainda)
-    const canEditMasteryFields = level >= 10 && !ficha.id
-    const isSubclassLocked = !!currentSubclass && !!ficha.id
-    const isElementalMasteryLocked = !!currentElementalMastery && !!ficha.id
+    const canEditMasteryFields = level >= 10 && !charsheet.id
+    const isSubclassLocked = !!currentSubclass && !!charsheet.id
+    const isElementalMasteryLocked = !!currentElementalMastery && !!charsheet.id
     
     const handleTraitsChange = useCallback((selectedTraitNames: string[]): void => {
         const currentExpertises = { ...getValues('expertises') };
@@ -280,7 +280,7 @@ export default function LevelAndInfo() {
                                                 size="small"
                                                 sx={{ fontWeight: 'bold', minWidth: '80px' }}
                                             />
-                                            {ficha.id && (
+                                            {charsheet.id && (
                                                 <TextField
                                                     {...field}
                                                     value={money}
@@ -341,13 +341,13 @@ export default function LevelAndInfo() {
                                             value={Array.isArray(field.value) && field.value.length > 0 ?
                                                 field.value.map((t: any) => typeof t === 'object' ? t.name : t).join(', ') :
                                                 'Nenhum traço selecionado'}
-                                            onClick={() => !ficha.id && setTraitsModalOpen(true)}
+                                            onClick={() => !charsheet.id && setTraitsModalOpen(true)}
                                             endAdornment={
                                                 <Button
                                                     variant="contained"
                                                     color="primary"
                                                     size="small"
-                                                    disabled={!!ficha.id}
+                                                    disabled={!!charsheet.id}
                                                     onClick={(e) => {
                                                         e.stopPropagation();
                                                         setTraitsModalOpen(true);
@@ -358,7 +358,7 @@ export default function LevelAndInfo() {
                                                 </Button>
                                             }
                                             sx={{
-                                                cursor: ficha.id ? 'default' : 'pointer',
+                                                cursor: charsheet.id ? 'default' : 'pointer',
                                                 '.MuiOutlinedInput-input': {
                                                     paddingLeft: 1
                                                 }
@@ -401,7 +401,7 @@ export default function LevelAndInfo() {
                                                     handleTraitsChange(newTraits);
                                                     audio.play()
                                                 }}
-                                                lineage={ficha.lineage as unknown as Lineage['name']}
+                                                lineage={charsheet.lineage as unknown as Lineage['name']}
                                             />
                                         </Box>
                                     </>
@@ -616,17 +616,17 @@ export default function LevelAndInfo() {
                                         {...field}
                                         label='Condição financeira'
                                         required
-                                        disabled={!!ficha.id}
+                                        disabled={!!charsheet.id}
                                         fullWidth
                                         error={!!errors.financialCondition}
                                         onChange={(e) => {
                                             field.onChange(e)
                                             
                                             const moneyValue = {
-                                                'Miserável': ficha.mode === 'Classic' ? 10_000 : 10,
-                                                'Pobre': ficha.mode === 'Classic' ? 30_000 : 30,
-                                                'Estável': ficha.mode === 'Classic' ? 100_000 : 100,
-                                                'Rico': ficha.mode === 'Classic' ? 300_000 : 300
+                                                'Miserável': charsheet.mode === 'Classic' ? 10_000 : 10,
+                                                'Pobre': charsheet.mode === 'Classic' ? 30_000 : 30,
+                                                'Estável': charsheet.mode === 'Classic' ? 100_000 : 100,
+                                                'Rico': charsheet.mode === 'Classic' ? 300_000 : 300
                                             }
                                             
                                             const selectedCondition = e.target.value as keyof typeof moneyValue
@@ -656,7 +656,7 @@ export default function LevelAndInfo() {
                         </FormControl>
 
                         {/* Botão de Rolar Dados */}
-                        {!ficha.id && (
+                        {!charsheet.id && (
                             <Button
                                 onClick={() => { setDiceModalOpen(true) }}
                                 variant='outlined'
@@ -685,13 +685,13 @@ export default function LevelAndInfo() {
                 <DiceRollModal
                     open={diceModalOpen}
                     onClose={() => { setDiceModalOpen(false) }}
-                    bonus={[ ficha.mods.attributes.car ]}
-                    isDisadvantage={ficha.mods.attributes.car === -1}
+                    bonus={[ charsheet.mods.attributes.car ]}
+                    isDisadvantage={charsheet.mods.attributes.car === -1}
                     visibleDices
                     visibleBaseAttribute
                     roll={{
                         dice: 20,
-                        quantity: ficha.mods.attributes.car || 1,
+                        quantity: charsheet.mods.attributes.car || 1,
                         name: 'Condição Financeira',
                         attribute: 'car'
                     }}

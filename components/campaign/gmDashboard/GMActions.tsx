@@ -89,29 +89,29 @@ export default function GMActions(): ReactElement {
         }
     }
 
-    // Player fichas em tempo real usando Firestore
+    // Player charsheets em tempo real usando Firestore
     const queryClient = useQueryClient()
-    const { data: playerFichas } = useCharsheetsRealtime({
+    const { data: playerCharsheets } = useCharsheetsRealtime({
         filters: charsheets.length > 0 ? [
             { field: 'id', operator: 'in', value: charsheets.map(f => f.id) }
         ] : undefined,
         onChange: async () => {
-            await queryClient.invalidateQueries({ queryKey: [ 'playerFichas', charsheets.map(f => f.id) ] })
-            await queryClient.refetchQueries({ queryKey: [ 'playerFichas', charsheets.map(f => f.id) ] })
+            await queryClient.invalidateQueries({ queryKey: [ 'playerCharsheets', charsheets.map(f => f.id) ] })
+            await queryClient.refetchQueries({ queryKey: [ 'playerCharsheets', charsheets.map(f => f.id) ] })
         }
     })
 
     const players = useMemo(() => {
         return users.players?.map(player => {
-            const playerFicha = playerFichas?.find(f => f.userId === player.id)
+            const playerCharsheet = playerCharsheets?.find(f => f.userId === player.id)
             return {
                 id: player.id,
                 name: player.name,
                 avatar: player.image ?? '/assets/default-avatar.jpg',
-                ficha: playerFicha
+                charsheet: playerCharsheet
             }
         })
-    }, [ users, playerFichas ])
+    }, [ users, playerCharsheets ])
 
     const handleOpenLevelUp = () => {
         setSelectedPlayers([])
@@ -126,13 +126,13 @@ export default function GMActions(): ReactElement {
             await Promise.all(
                 selectedPlayers.map(async playerId => {
                     const player = players.find(p => p.id === playerId)
-                    if (player?.ficha?.id) {
+                    if (player?.charsheet?.id) {
                         try {
-                            const updatedFicha = await charsheetService.increaseLevel(player.ficha.id, levelsToAdd)
-                            enqueueSnackbar(`Ficha ${player.ficha.name} foi para o nível ${updatedFicha.level}!`, { variant: 'success' })
+                            const updatedCharsheet = await charsheetService.increaseLevel(player.charsheet.id, levelsToAdd)
+                            enqueueSnackbar(`Charsheet ${player.charsheet.name} foi para o nível ${updatedCharsheet.level}!`, { variant: 'success' })
                         } catch (error) {
-                            console.error(`Erro ao evoluir ficha ${player.ficha.name}:`, error)
-                            enqueueSnackbar(`Não foi possível evoluir a ficha ${player.ficha.name}!`, { variant: 'error' })
+                            console.error(`Erro ao evoluir charsheet ${player.charsheet.name}:`, error)
+                            enqueueSnackbar(`Não foi possível evoluir a charsheet ${player.charsheet.name}!`, { variant: 'error' })
                         }
                     }
                 })
@@ -290,7 +290,7 @@ export default function GMActions(): ReactElement {
                                                     primary={
                                                         <Box display="flex" alignItems="center" gap={1}>
                                                             <Typography variant="subtitle1" fontWeight={600}>
-                                                                {player.ficha?.name ?? 'Sem ficha'}
+                                                                {player.charsheet?.name ?? 'Sem charsheet'}
                                                             </Typography>
                                                             {selectedPlayers.includes(player.id) && (
                                                                 <Chip label="Selecionado" size="small" color="success" sx={{ fontWeight: 600 }} />
@@ -300,13 +300,13 @@ export default function GMActions(): ReactElement {
                                                     secondary={
                                                         <Box display="flex" alignItems="center" gap={1} mt={0.5}>
                                                             <Chip 
-                                                                label={`Nível ${player.ficha?.level ?? 'N/A'}`}
+                                                                label={`Nível ${player.charsheet?.level ?? 'N/A'}`}
                                                                 size="small"
                                                                 sx={{ bgcolor: blue[100], color: blue[800], fontWeight: 600 }}
                                                             />
                                                             {selectedPlayers.includes(player.id) && (
                                                                 <Chip 
-                                                                    label={`→ Nível ${(player.ficha?.level ?? 0) + levelsToAdd}`}
+                                                                    label={`→ Nível ${(player.charsheet?.level ?? 0) + levelsToAdd}`}
                                                                     size="small"
                                                                     sx={{ bgcolor: green[100], color: green[800], fontWeight: 600 }}
                                                                 />

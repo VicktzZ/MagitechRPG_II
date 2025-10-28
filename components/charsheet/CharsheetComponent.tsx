@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-shadow */
 'use client';
 
-import { Attributes, Characteristics, CustomDices, Expertises, Inventory, Magics, Passives, Skills, SkillsModal } from '@components/ficha';
+import { Attributes, Characteristics, CustomDices, Expertises, Inventory, Magics, Passives, Skills, SkillsModal } from '@components/charsheet';
 import { toastDefault } from '@constants';
 import { useAudio } from '@hooks';
 import { CustomIconButton, WarningModal } from '@layout';
@@ -237,11 +237,11 @@ export default function CharsheetComponent(): ReactElement {
                             >
                                 {!charsheet.id ? (
                                     <>
-                                        <Add /> Criar Nova Charsheet
+                                        <Add /> Criar Nova Ficha
                                     </>
                                 ) : (
                                     <>
-                                        <Person /> {charsheet.name || 'Charsheet sem nome'}
+                                        <Person /> {charsheet.name || 'Ficha sem nome'}
                                     </>
                                 )}
                             </Typography>
@@ -262,7 +262,7 @@ export default function CharsheetComponent(): ReactElement {
                                         window.location.reload()
                                     }}
                                 >
-                                    Resetar Charsheet
+                                    Resetar Ficha
                                 </Button>
                             </Box>
                         )}
@@ -281,7 +281,7 @@ export default function CharsheetComponent(): ReactElement {
                         <Tooltip 
                             title={
                                 !isValid ? 'Preencha todos os campos obrigatórios' : 
-                                    session?.user.id !== charsheet.userId ? 'Você não pode salvar esta charsheet' : 
+                                    session?.user.id !== charsheet.userId ? 'Você não pode salvar esta ficha' : 
                                         'Salvar alterações'
                             }
                         >

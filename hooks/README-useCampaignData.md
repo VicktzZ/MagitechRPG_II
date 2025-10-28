@@ -7,7 +7,7 @@ O hook `useCampaignData` original tinha problemas de dependência entre hooks cu
 ```typescript
 // ❌ PROBLEMA: dependências entre hooks
 const campaign = useCampaignRealtime({...}).data[0]; // Busca campanha
-const fichas = useCharsheetsRealtime({...}).data; // Depende de campaign.players ← ERRO!
+const charsheets = useCharsheetsRealtime({...}).data; // Depende de campaign.players ← ERRO!
 const users = useUsersRealtime({...}).data; // Depende de campaign.admin ← ERRO!
 ```
 
@@ -25,11 +25,11 @@ export async function getCampaignData({ campaignCode, userId }) {
     // 1. Busca campanha primeiro
     const campaign = await CampaignEntity.findOne({...});
 
-    // 2. Busca fichas e usuários em paralelo
-    const [fichas, users] = await Promise.all([...]);
+    // 2. Busca charsheets e usuários em paralelo
+    const [charsheets, users] = await Promise.all([...]);
 
     // 3. Retorna dados organizados
-    return { campaign, fichas, users };
+    return { campaign, charsheets, users };
 }
 ```
 

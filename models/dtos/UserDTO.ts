@@ -4,7 +4,7 @@ export class UserDTO {
     @IsString() name: string;
     @IsEmail() email: string;
     @IsUrl() image: string;
-    @IsOptional() fichas?: string[] = [];
+    @IsOptional() charsheets?: string[] = [];
 
     constructor(user: UserDTO) {
         Object.assign(this, user)

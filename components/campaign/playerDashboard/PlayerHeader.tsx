@@ -32,7 +32,7 @@ import {
 } from '@mui/material';
 import { blue, green, grey, purple, red, yellow } from '@mui/material/colors';
 import { useState, type ReactElement } from 'react';
-import { useCampaignCurrentFichaContext } from '@contexts';
+import { useCampaignCurrentCharsheetContext } from '@contexts';
 
 interface PlayerHeaderProps {
     avatar: string
@@ -134,21 +134,21 @@ function StatusBar({ label, current, max, color, icon, onIncrease, onDecrease }:
 }
 
 export default function PlayerHeader({ avatar }: PlayerHeaderProps): ReactElement {
-    const { ficha, updateFicha } = useCampaignCurrentFichaContext()
+    const { charsheet, updateCharsheet } = useCampaignCurrentCharsheetContext()
     const theme = useTheme()
     
     const isSmall = useMediaQuery(theme.breakpoints.down('sm'))
 
     const [ currentAttributes, setCurrentAttributes ] = useState({
-        lp: ficha.attributes.lp,
-        mp: ficha.attributes.mp,
-        ap: ficha.attributes.ap
+        lp: charsheet.attributes.lp,
+        mp: charsheet.attributes.mp,
+        ap: charsheet.attributes.ap
     })
 
     const updateAttribute = (attr: 'lp' | 'mp' | 'ap', change: number) => {
         const currentValue = currentAttributes[attr] || 0
         const maxKey = `max${attr.charAt(0).toUpperCase() + attr.slice(1)}` as 'maxLp' | 'maxMp' | 'maxAp'
-        const maxValue = ficha.attributes[maxKey] || 0
+        const maxValue = charsheet.attributes[maxKey] || 0
         const newValue = Math.max(0, Math.min(currentValue + change, maxValue))
         
         setCurrentAttributes(prev => ({
@@ -156,9 +156,9 @@ export default function PlayerHeader({ avatar }: PlayerHeaderProps): ReactElemen
             [attr]: newValue
         }))
 
-        updateFicha({
+        updateCharsheet({
             attributes: {
-                ...ficha.attributes,
+                ...charsheet.attributes,
                 [attr]: newValue
             }
         })
@@ -214,7 +214,7 @@ export default function PlayerHeader({ avatar }: PlayerHeaderProps): ReactElemen
                         >
                             <Avatar
                                 src={avatar}
-                                alt={ficha.name}
+                                alt={charsheet.name}
                                 sx={{ 
                                     width: { xs: 80, md: 120 }, 
                                     height: { xs: 80, md: 120 },
@@ -232,7 +232,7 @@ export default function PlayerHeader({ avatar }: PlayerHeaderProps): ReactElemen
                                         textShadow: '2px 2px 4px rgba(0,0,0,0.3)'
                                     }}
                                 >
-                                    {ficha.name}
+                                    {charsheet.name}
                                 </Typography>
                                 
                                 <Typography 
@@ -243,7 +243,7 @@ export default function PlayerHeader({ avatar }: PlayerHeaderProps): ReactElemen
                                         fontWeight: 500
                                     }}
                                 >
-                                    {ficha.playerName}
+                                    {charsheet.playerName}
                                 </Typography>
                             </Stack>
                         </Stack>
@@ -260,7 +260,7 @@ export default function PlayerHeader({ avatar }: PlayerHeaderProps): ReactElemen
                                 <Stack direction="row" flexWrap="wrap" gap={1}>
                                     <Chip 
                                         icon={<Star />}
-                                        label={`Nível ${ficha.level}`} 
+                                        label={`Nível ${charsheet.level}`} 
                                         sx={{ 
                                             bgcolor: 'rgba(255,255,255,0.2)',
                                             color: 'white',
@@ -270,7 +270,7 @@ export default function PlayerHeader({ avatar }: PlayerHeaderProps): ReactElemen
                                     />
                                     <Chip 
                                         icon={<Shield />}
-                                        label={ficha.class as string} 
+                                        label={charsheet.class as string} 
                                         sx={{ 
                                             bgcolor: 'rgba(255,255,255,0.2)',
                                             color: 'white',
@@ -282,16 +282,16 @@ export default function PlayerHeader({ avatar }: PlayerHeaderProps): ReactElemen
 
                                 <Stack direction="row" flexWrap="wrap" gap={1}>
                                     <Chip 
-                                        label={ficha.lineage as string} 
+                                        label={charsheet.lineage as string} 
                                         sx={{ 
                                             bgcolor: 'rgba(255,255,255,0.15)',
                                             color: 'white',
                                             fontWeight: 500
                                         }}
                                     />
-                                    {ficha.subclass && (
+                                    {charsheet.subclass && (
                                         <Chip 
-                                            label={ficha.subclass as string} 
+                                            label={charsheet.subclass as string} 
                                             sx={{ 
                                                 bgcolor: 'rgba(255,255,255,0.15)',
                                                 color: 'white',
@@ -303,8 +303,8 @@ export default function PlayerHeader({ avatar }: PlayerHeaderProps): ReactElemen
 
                                 <Stack direction="row" flexWrap="wrap" gap={1}>
                                     <Chip 
-                                        icon={getElementIcon(ficha.elementalMastery as string)}
-                                        label={ficha.elementalMastery as string} 
+                                        icon={getElementIcon(charsheet.elementalMastery as string)}
+                                        label={charsheet.elementalMastery as string} 
                                         sx={{ 
                                             bgcolor: 'rgba(255,255,255,0.15)',
                                             color: 'white',
@@ -313,8 +313,8 @@ export default function PlayerHeader({ avatar }: PlayerHeaderProps): ReactElemen
                                         }}
                                     />
                                     <Chip 
-                                        icon={getGenderIcon(ficha.gender as string)}
-                                        label={ficha.gender as string} 
+                                        icon={getGenderIcon(charsheet.gender as string)}
+                                        label={charsheet.gender as string} 
                                         sx={{ 
                                             bgcolor: 'rgba(255,255,255,0.15)',
                                             color: 'white',
@@ -324,7 +324,7 @@ export default function PlayerHeader({ avatar }: PlayerHeaderProps): ReactElemen
                                     />
                                     <Chip 
                                         icon={<Cake />}
-                                        label={`${ficha.age} anos`} 
+                                        label={`${charsheet.age} anos`} 
                                         sx={{ 
                                             bgcolor: 'rgba(255,255,255,0.15)',
                                             color: 'white',
@@ -348,7 +348,7 @@ export default function PlayerHeader({ avatar }: PlayerHeaderProps): ReactElemen
                                 <StatusBar
                                     label="Pontos de Vida"
                                     current={currentAttributes.lp}
-                                    max={ficha.attributes.maxLp}
+                                    max={charsheet.attributes.maxLp}
                                     color={red[500]}
                                     icon={<Favorite sx={{ color: red[300] }} />}
                                     onIncrease={() => updateAttribute('lp', 1)}
@@ -358,7 +358,7 @@ export default function PlayerHeader({ avatar }: PlayerHeaderProps): ReactElemen
                                 <StatusBar
                                     label="Pontos de Mana"
                                     current={currentAttributes.mp}
-                                    max={ficha.attributes.maxMp}
+                                    max={charsheet.attributes.maxMp}
                                     color={blue[500]}
                                     icon={<AutoAwesome sx={{ color: blue[300] }} />}
                                     onIncrease={() => updateAttributeLocal('mp', 1)}
@@ -368,7 +368,7 @@ export default function PlayerHeader({ avatar }: PlayerHeaderProps): ReactElemen
                                 <StatusBar
                                     label="Pontos de Armadura"
                                     current={currentAttributes.ap}
-                                    max={ficha.attributes.maxAp}
+                                    max={charsheet.attributes.maxAp}
                                     color={yellow[600]}
                                     icon={<Shield sx={{ color: yellow[300] }} />}
                                     onIncrease={() => updateAttributeLocal('ap', 1)}
@@ -390,7 +390,7 @@ export default function PlayerHeader({ avatar }: PlayerHeaderProps): ReactElemen
                                 Limite MP Diário:
                             </Typography>
                             <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                                {ficha.mpLimit}
+                                {charsheet.mpLimit}
                             </Typography>
                         </Stack>
                     </Grid>
@@ -402,7 +402,7 @@ export default function PlayerHeader({ avatar }: PlayerHeaderProps): ReactElemen
                                 Overall:
                             </Typography>
                             <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                                {ficha.overall || 0}
+                                {charsheet.overall || 0}
                             </Typography>
                         </Stack>
                     </Grid>
@@ -414,7 +414,7 @@ export default function PlayerHeader({ avatar }: PlayerHeaderProps): ReactElemen
                                 Deslocamento:
                             </Typography>
                             <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                                {ficha.displacement}m
+                                {charsheet.displacement}m
                             </Typography>
                         </Stack>
                     </Grid>

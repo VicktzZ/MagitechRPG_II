@@ -1,12 +1,12 @@
 'use client';
 
-import { FichaComponent } from '@components/ficha';
-import { FichaFormProvider } from '@contexts';
+import { CharsheetComponent } from '@components/charsheet';
+import { CharsheetFormProvider } from '@contexts';
 import type { ReactElement } from 'react'
-export default function FichaPage(): ReactElement {
+export default function CharsheetPage(): ReactElement {
     return (
-        <FichaFormProvider>
-            <FichaComponent />
-        </FichaFormProvider>
+        <CharsheetFormProvider>
+            <CharsheetComponent />
+        </CharsheetFormProvider>
     )
 }

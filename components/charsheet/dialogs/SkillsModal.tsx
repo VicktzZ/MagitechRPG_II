@@ -59,7 +59,7 @@ export default function SkillsModal({ open, onClose }: { open: boolean, onClose:
 
         console.log(newSkill)
         
-        // Adicionar a nova habilidade à ficha
+        // Adicionar a nova habilidade à charsheet
         const updatedPowers = [ ...currentPowers, newSkill ];
         setValue('skills.powers', updatedPowers, { shouldValidate: true });
         
@@ -75,7 +75,7 @@ export default function SkillsModal({ open, onClose }: { open: boolean, onClose:
         return { ...power, id: power.id || Date.now().toString() };
     };
     
-    // Função para remover um poder mágico da ficha
+    // Função para remover um poder mágico da charsheet
     const removePower = (power: Power) => {
         const currentPowers = getValues().skills.powers || [];
         const updatedPowers = currentPowers.filter(existingPower => 

@@ -160,17 +160,17 @@ export interface ICampaignStats {
     averagePlayers: number;
 }
 
-// Ficha Types
-export interface IFichaQueryOptions extends IFirestoreQueryOptions {
-    byUser?: string; // Buscar fichas de um usuário específico
-    byCampaign?: string; // Buscar fichas de uma campanha específica
+// Charsheet Types
+export interface ICharsheetQueryOptions extends IFirestoreQueryOptions {
+    byUser?: string; // Buscar charsheets de um usuário específico
+    byCampaign?: string; // Buscar charsheets de uma campanha específica
     byClass?: string; // Filtrar por classe
     byLevel?: number; // Filtrar por nível
     minLevel?: number; // Nível mínimo
     maxLevel?: number; // Nível máximo
 }
 
-export interface IFichaStats {
+export interface ICharsheetStats {
     total: number;
     byClass: Record<string, number>;
     averageLevel: number;
@@ -180,7 +180,7 @@ export interface IFichaStats {
 // User Types
 export interface IUserQueryOptions extends IFirestoreQueryOptions {
     byCampaign?: string; // Buscar usuários de uma campanha específica
-    hasFichas?: boolean; // Filtrar por usuários com fichas
+    hasCharsheets?: boolean; // Filtrar por usuários com charsheets
 }
 
 // Spell Types

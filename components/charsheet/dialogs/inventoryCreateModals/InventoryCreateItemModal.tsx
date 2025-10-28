@@ -8,7 +8,7 @@ import { FormSelect, FormTextField } from './fields';
 import InventoryCreateModalWrapper, { mapArrayToOptions } from './InventoryCreateModalWrapper';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { itemSchema, type ItemFormFields } from '@schemas/itemsSchemas';
-import { useFichaForm } from '@contexts/FichaFormProvider';
+import { useCharsheetForm } from '@contexts/CharsheetFormProvider';
 import { defaultItems, defaultItem } from '@constants/defaultItems';
 import type { Item } from '@models';
 import { useCampaignContext } from '@contexts';
@@ -26,7 +26,7 @@ export const InventoryCreateItemModal = memo(({
     const theme = useTheme();
     const matches = useMediaQuery(theme.breakpoints.down('md'));
     const { enqueueSnackbar } = useSnackbar();
-    const fichaForm = useFichaForm();
+    const charsheetForm = useCharsheetForm();
     const { campaign, isUserGM } = useCampaignContext();
 
     const form = useForm<ItemFormFields>({
@@ -75,11 +75,11 @@ export const InventoryCreateItemModal = memo(({
             kind: data.kind as any,
             level: Number(data.level) || 1
         };
-        const current = fichaForm.getValues('inventory.items') ?? [];
-        fichaForm.setValue('inventory.items', [ ...current, payload ], { shouldValidate: true, shouldDirty: true });
+        const current = charsheetForm.getValues('inventory.items') ?? [];
+        charsheetForm.setValue('inventory.items', [ ...current, payload ], { shouldValidate: true, shouldDirty: true });
         enqueueSnackbar(`${data.name} criado com sucesso!`, toastDefault('itemCreated', 'success'));
         action();
-    }, [ enqueueSnackbar, action, fichaForm ]);
+    }, [ enqueueSnackbar, action, charsheetForm ]);
 
     return (
         <FormProvider {...form}>

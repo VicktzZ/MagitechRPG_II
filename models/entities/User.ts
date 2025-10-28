@@ -7,5 +7,5 @@ export class User {
     email: string;
     image: string;
     createdAt: Date = new Date();
-    fichas?: string[] = [];
+    charsheets?: string[] = [];
 }

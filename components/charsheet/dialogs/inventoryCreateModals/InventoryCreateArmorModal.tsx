@@ -9,7 +9,7 @@ import { FormMultiSelect, FormSelect, FormTextField } from './fields';
 import InventoryCreateModalWrapper, { mapArrayToOptions } from './InventoryCreateModalWrapper';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { armorSchema } from './validationSchemas';
-import { useFichaForm } from '@contexts/FichaFormProvider';
+import { useCharsheetForm } from '@contexts/CharsheetFormProvider';
 import { deafultArmors, defaultArmor } from '@constants/defaultArmors';
 import type { Armor } from '@models';
 import { useCampaignContext } from '@contexts';
@@ -30,7 +30,7 @@ export const InventoryCreateArmorModal = memo(({
     const theme = useTheme();
     const matches = useMediaQuery(theme.breakpoints.down('md'));
     const { enqueueSnackbar } = useSnackbar();
-    const fichaForm = useFichaForm();
+    const charsheetForm = useCharsheetForm();
     const { campaign, isUserGM } = useCampaignContext();
 
     type ArmorFormFields = z.infer<typeof armorSchema>;
@@ -59,11 +59,11 @@ export const InventoryCreateArmorModal = memo(({
     ], []);
 
     const create = useCallback((data: ArmorFormFields) => {
-        const current = fichaForm.getValues('inventory.armors') ?? [];
-        fichaForm.setValue('inventory.armors', [ ...current, data ], { shouldValidate: true, shouldDirty: true });
+        const current = charsheetForm.getValues('inventory.armors') ?? [];
+        charsheetForm.setValue('inventory.armors', [ ...current, data ], { shouldValidate: true, shouldDirty: true });
         enqueueSnackbar(`${data.name} criado com sucesso!`, toastDefault('itemCreated', 'success'));
         action();
-    }, [ enqueueSnackbar, action, fichaForm ]);
+    }, [ enqueueSnackbar, action, charsheetForm ]);
 
     const baseArmorsOptions = useMemo(() => [
         campaign.custom.items.armor.length > 0 && {

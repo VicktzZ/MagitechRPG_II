@@ -11,7 +11,7 @@ import InventoryCreateModalWrapper, { mapArrayToOptions, type ItemFormData } fro
 import { deafultWeapons, defaultWeapon } from '@constants/defaultWeapons';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { weaponSchema,  type WeaponFormFields  } from '@schemas/itemsSchemas';
-import { useFichaForm } from '@contexts/FichaFormProvider';
+import { useCharsheetForm } from '@contexts/CharsheetFormProvider';
 import { useAudio } from '@hooks';
 import {
     weaponCateg,
@@ -42,7 +42,7 @@ export const InventoryCreateWeaponModal = memo(({
     const theme = useTheme();
     const matches = useMediaQuery(theme.breakpoints.down('md'));
     const { enqueueSnackbar } = useSnackbar();
-    const fichaForm = useFichaForm();
+    const charsheetForm = useCharsheetForm();
     const audio = useAudio('/sounds/sci-fi-interface-zoom.wav');
     const { campaign, isUserGM } = useCampaignContext()
 
@@ -121,12 +121,12 @@ export const InventoryCreateWeaponModal = memo(({
             : w.kind;
 
         const payload = { ...w, kind: composedKind } as WeaponFormFields;
-        const current = fichaForm.getValues('inventory.weapons') ?? [];
-        fichaForm.setValue('inventory.weapons', [ ...current, payload ], { shouldValidate: true, shouldDirty: true });
+        const current = charsheetForm.getValues('inventory.weapons') ?? [];
+        charsheetForm.setValue('inventory.weapons', [ ...current, payload ], { shouldValidate: true, shouldDirty: true });
         
         enqueueSnackbar(`${payload.name} criado com sucesso!`, toastDefault('itemCreated', 'success'));
         action();
-    }, [ enqueueSnackbar, action, fichaForm ]);
+    }, [ enqueueSnackbar, action, charsheetForm ]);
 
     return (
         <FormProvider {...weaponForm}>

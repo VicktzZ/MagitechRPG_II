@@ -9,8 +9,8 @@ import Attribute from './subcomponents/Attribute';
 import Characteristics from './Characteristics';
 import Expertises from './Expertises';
 import Magic from './subcomponents/Magic';
-import FichaComponent from './FichaComponent';
-import FichaCard from './subcomponents/FichaCard';
+import CharsheetComponent from './CharsheetComponent';
+import CharsheetCard from './subcomponents/CharsheetCard';
 import SkillsModal from './dialogs/SkillsModal';
 import CreateItemModal from './dialogs/inventoryCreateModals/CreateItemModal';
 import CustomDices from './CustomDices';
@@ -22,7 +22,7 @@ export {
     Item,
     Passives,
     Attributes,
-    FichaCard,
+    CharsheetCard,
     Attribute,
     CreateItemModal as ItemModal,
     Characteristics,
@@ -30,7 +30,7 @@ export {
     Inventory,
     SkillsModal,
     CustomDices,
-    FichaComponent,
+    CharsheetComponent,
     Magic,
     Magics,
     Skills,

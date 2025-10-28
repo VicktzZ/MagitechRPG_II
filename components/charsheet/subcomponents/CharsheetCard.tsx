@@ -26,7 +26,7 @@ import { useRouter } from 'next/navigation';
 import { useSnackbar } from 'notistack';
 import { useState, type ReactElement } from 'react';
 
-export default function FichaCard({ ficha, onClick, disableDeleteButton }: { ficha: Charsheet, onClick?: () => void, disableDeleteButton?: boolean }): ReactElement {
+export default function CharsheetCard({ charsheet, onClick, disableDeleteButton }: { charsheet: Charsheet, onClick?: () => void, disableDeleteButton?: boolean }): ReactElement {
     const theme = useTheme()
     const router = useRouter()
     const matches = useMediaQuery(theme.breakpoints.down('md'))
@@ -34,16 +34,16 @@ export default function FichaCard({ ficha, onClick, disableDeleteButton }: { fic
 
     const [ openModal, setOpenModal ] = useState<boolean>(false)
 
-    const deleteFicha = (): void => {
+    const deleteCharsheet = (): void => {
         (async () => {
             setOpenModal(false) 
             enqueueSnackbar('Aguarde...', toastDefault('loadingDelete', 'info'))
 
             try {
-                await charsheetService.deleteById(ficha.id ?? '')
+                await charsheetService.deleteById(charsheet.id ?? '')
                 setTimeout(() => {
                     closeSnackbar('loadingDelete')
-                    enqueueSnackbar(`Ficha ${ficha.name} deletada!`, toastDefault('itemDeleted', 'success'))
+                    enqueueSnackbar(`Charsheet ${charsheet.name} deletada!`, toastDefault('itemDeleted', 'success'))
                 }, 500);
             } catch (error: any) {
                 enqueueSnackbar(`Algo deu errado: ${error.message}`, toastDefault('error', 'error'))
@@ -54,8 +54,8 @@ export default function FichaCard({ ficha, onClick, disableDeleteButton }: { fic
     return (
         <>
             <Card
-                onClick={onClick ?? (() => { router.push(`/app/charsheet/${ficha.id}`) })}
-                key={ficha.id}
+                onClick={onClick ?? (() => { router.push(`/app/charsheet/${charsheet.id}`) })}
+                key={charsheet.id}
                 sx={{
                     position: 'relative',
                     height: !matches ? 290 : 320,
@@ -105,7 +105,7 @@ export default function FichaCard({ ficha, onClick, disableDeleteButton }: { fic
                                 boxShadow: 1
                             }}
                         >
-                            {ficha.name.charAt(0).toUpperCase()}
+                            {charsheet.name.charAt(0).toUpperCase()}
                         </Avatar>
                         <Box flex={1}>
                             <Typography 
@@ -117,7 +117,7 @@ export default function FichaCard({ ficha, onClick, disableDeleteButton }: { fic
                                     fontSize: !matches ? '1.1rem' : '1.25rem'
                                 }}
                             >
-                                {ficha.name}
+                                {charsheet.name}
                             </Typography>
                             <Box display='flex' alignItems='center' gap={1.5}>
                                 <Box 
@@ -130,7 +130,7 @@ export default function FichaCard({ ficha, onClick, disableDeleteButton }: { fic
                                 >
                                     <Star fontSize='small' />
                                     <Typography variant='caption' sx={{ fontWeight: 600 }}>
-                                        {ficha.level}
+                                        {charsheet.level}
                                     </Typography>
                                 </Box>
                                 <Typography 
@@ -148,7 +148,7 @@ export default function FichaCard({ ficha, onClick, disableDeleteButton }: { fic
                                         fontWeight: 500
                                     }}
                                 >
-                                    {ficha.mode}
+                                    {charsheet.mode}
                                 </Typography>
                             </Box>
                         </Box>
@@ -163,7 +163,7 @@ export default function FichaCard({ ficha, onClick, disableDeleteButton }: { fic
                                 Gênero:
                             </Typography>
                             <Typography variant='body2' sx={{ fontWeight: 600 }}>
-                                {ficha.gender}
+                                {charsheet.gender}
                             </Typography>
                         </Box>
                         
@@ -172,7 +172,7 @@ export default function FichaCard({ ficha, onClick, disableDeleteButton }: { fic
                                 Classe:
                             </Typography>
                             <Typography variant='body2' sx={{ fontWeight: 600, color: theme.palette.info.main }}>  
-                                {ficha.class as string}
+                                {charsheet.class as string}
                             </Typography>
                         </Box>
 
@@ -191,7 +191,7 @@ export default function FichaCard({ ficha, onClick, disableDeleteButton }: { fic
                                     whiteSpace: 'nowrap'
                                 }}
                             >
-                                {ficha.lineage as unknown as string}
+                                {charsheet.lineage as unknown as string}
                             </Typography>
                         </Box>
 
@@ -200,7 +200,7 @@ export default function FichaCard({ ficha, onClick, disableDeleteButton }: { fic
                                 Raça:
                             </Typography>
                             <Typography variant='body2' sx={{ fontWeight: 600, color: theme.palette.success.main }}>  
-                                {ficha.race as string}
+                                {charsheet.race as string}
                             </Typography>
                         </Box>
                     </Stack>
@@ -228,13 +228,13 @@ export default function FichaCard({ ficha, onClick, disableDeleteButton }: { fic
                                     color: 'warning.main'
                                 }}
                             >
-                                {ficha.mode === 'Classic' ? '¥' : '¢'}{ficha.inventory.money}
+                                {charsheet.mode === 'Classic' ? '¥' : '¢'}{charsheet.inventory.money}
                             </Typography>
                         </Box>
                         
                         <Box display='flex' alignItems='center' gap={1}>
                             {!disableDeleteButton && (
-                                <Tooltip title='Deletar Ficha'>
+                                <Tooltip title='Deletar Charsheet'>
                                     <IconButton
                                         onClick={e => { e.stopPropagation(); setOpenModal(true) }}
                                         size='small'
@@ -269,8 +269,8 @@ export default function FichaCard({ ficha, onClick, disableDeleteButton }: { fic
             <WarningModal 
                 open={openModal}
                 onClose={() => { setOpenModal(false) }}
-                onConfirm={deleteFicha}
-                title='Tem certeza que deseja deletar essa ficha?'
+                onConfirm={deleteCharsheet}
+                title='Tem certeza que deseja deletar essa charsheet?'
                 text='Esta ação é irreversível!'
             />
         </>

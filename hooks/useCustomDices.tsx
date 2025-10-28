@@ -210,13 +210,13 @@ export function useCustomDices({ onClose, enableChatIntegration = true }: { onCl
 
         // Aplica os modificadores
         dice.modifiers?.forEach(mod => {
-            // Se tiver atributo, usa o valor do atributo da ficha
+            // Se tiver atributo, usa o valor do atributo da charsheet
             if (mod.attribute) {
                 const attrValue = getValues(`attributes.${mod.attribute}`) || 0
                 total += attrValue
                 modifiersResult.push({ name: mod.attribute.toUpperCase(), value: attrValue })
             }
-            // Se tiver perícia, usa o valor da perícia da ficha
+            // Se tiver perícia, usa o valor da perícia da charsheet
             else if (mod.expertise) {
                 const expertiseName = mod.expertise
 
@@ -256,7 +256,7 @@ export function useCustomDices({ onClose, enableChatIntegration = true }: { onCl
                     effectValue = total
                 }
 
-                // Atualiza o valor do atributo/munição na ficha
+                // Atualiza o valor do atributo/munição na charsheet
                 const currentValue = target === 'ammo'
                     ? getValues('ammoCounter.current') || 0
                     : getValues(`stats.${target}`) || 0

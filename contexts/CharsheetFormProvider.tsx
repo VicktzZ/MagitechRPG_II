@@ -1,10 +1,10 @@
 'use client';
 
-import { fichaModel } from '@constants/ficha';
+import { charsheetModel } from '@constants/charsheet';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useSession } from 'next-auth/react';
 import { FormProvider, useForm } from 'react-hook-form';
-import { fichaSchema } from '@schemas';
+import { charsheetSchema } from '@schemas';
 import { createContext, useContext, useEffect } from 'react';
 import { useLocalStorage } from '@uidotdev/usehooks';
 import { usePathname } from 'next/navigation';
@@ -12,28 +12,28 @@ import type { ReactElement } from 'react';
 import type { UseFormReturn } from 'react-hook-form';
 import type { CharsheetDTO } from '@models/dtos';
 
-export const FichaFormContext = createContext<UseFormReturn<CharsheetDTO> | null>(null);
-export const useFichaForm = (): UseFormReturn<CharsheetDTO> => {
-    const ctx = useContext(FichaFormContext);
-    // if (!ctx) throw new Error('useFichaForm deve ser usado dentro de FichaFormProvider');
+export const CharsheetFormContext = createContext<UseFormReturn<CharsheetDTO> | null>(null);
+export const useCharsheetForm = (): UseFormReturn<CharsheetDTO> => {
+    const ctx = useContext(CharsheetFormContext);
+    // if (!ctx) throw new Error('useCharsheetForm deve ser usado dentro de CharsheetFormProvider');
     return ctx!;
 };
 
-export default function FichaFormProvider({ children, formData }: { children: ReactElement, formData?: CharsheetDTO }) {
+export default function CharsheetFormProvider({ children, formData }: { children: ReactElement, formData?: CharsheetDTO }) {
     const { data: session } = useSession()
-    const [ createFichaAutosave, setCreateFichaAutosave ] = useLocalStorage<CharsheetDTO | null>('create-ficha-autosave')
+    const [ createCharsheetAutosave, setCreateCharsheetAutosave ] = useLocalStorage<CharsheetDTO | null>('create-charsheet-autosave')
     const pathname = usePathname();
     
     const form = useForm<CharsheetDTO>({
         mode: 'onChange',
         defaultValues: {
-            ...fichaModel,
-            ...createFichaAutosave,
+            ...charsheetModel,
+            ...createCharsheetAutosave,
             playerName: session?.user?.name,
             userId: session?.user?.id,
             ...formData
         },
-        resolver: zodResolver(fichaSchema),
+        resolver: zodResolver(charsheetSchema),
         shouldFocusError: true,
         criteriaMode: 'all'
     })
@@ -45,7 +45,7 @@ export default function FichaFormProvider({ children, formData }: { children: Re
             const subscription = form.watch((value) => {
                 clearTimeout(timeoutId);
                 timeoutId = setTimeout(() => {
-                    setCreateFichaAutosave(value as CharsheetDTO);
+                    setCreateCharsheetAutosave(value as CharsheetDTO);
                 }, 300);
             });
             
@@ -54,13 +54,13 @@ export default function FichaFormProvider({ children, formData }: { children: Re
                 clearTimeout(timeoutId);
             };
         }
-    }, [ pathname, form, setCreateFichaAutosave, formData ]);
+    }, [ pathname, form, setCreateCharsheetAutosave, formData ]);
     
     return (
         <FormProvider {...form}>
-            <FichaFormContext.Provider value={form}>
+            <CharsheetFormContext.Provider value={form}>
                 {children}
-            </FichaFormContext.Provider>
+            </CharsheetFormContext.Provider>
         </FormProvider>
     )
 }

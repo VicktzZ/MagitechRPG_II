@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 'use client'
 
-import { FichaCard } from '@components/ficha';
+import { CharsheetCard } from '@components/charsheet';
 import { Add } from '@mui/icons-material';
 import { Avatar, Box, Card, Grid, Skeleton, Typography, useMediaQuery, useTheme } from '@mui/material';
 import { useCharsheetsRealtime } from '@services/firestore/hooks';
@@ -17,7 +17,7 @@ export default function App(): ReactElement {
     const matches = useMediaQuery(theme.breakpoints.down('md'))
     const { data: session } = useSession()
 
-    const { data: fichas, loading } = useCharsheetsRealtime({
+    const { data: charsheets, loading } = useCharsheetsRealtime({
         filters: [
             QueryBuilder.equals('userId', session?.user?.id ?? '')
         ],
@@ -41,17 +41,17 @@ export default function App(): ReactElement {
                                 maxWidth: 360
                             }}
                         />
-                    )) : fichas?.map((ficha) => (
+                    )) : charsheets?.map((charsheet) => (
                         <motion.div 
-                            key={ficha.id}
+                            key={charsheet.id}
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -10 }}
                             transition={{ duration: 0.5 }}
                         >
-                            <FichaCard 
-                                key={ficha.id}
-                                ficha={ficha}
+                            <CharsheetCard 
+                                key={charsheet.id}
+                                charsheet={charsheet}
                             />
                         </motion.div>
                     ))}

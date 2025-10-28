@@ -2,7 +2,7 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 'use client';
 
-import { useCampaignCurrentFichaContext } from '@contexts';
+import { useCampaignCurrentCharsheetContext } from '@contexts';
 import {
     Edit,
     Notes,
@@ -21,10 +21,10 @@ import { blue, green, grey } from '@mui/material/colors';
 import { useState, type ReactElement } from 'react';
 
 export default function NotesSection(): ReactElement {
-    const { ficha, updateFicha } = useCampaignCurrentFichaContext();
+    const { charsheet, updateCharsheet } = useCampaignCurrentCharsheetContext();
     const theme = useTheme();
 
-    const [ notes, setNotes ] = useState(ficha?.anotacoes ?? '');
+    const [ notes, setNotes ] = useState(charsheet?.anotacoes ?? '');
     const [ isEditing, setIsEditing ] = useState(false);
     
     const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>): void => {
@@ -38,8 +38,8 @@ export default function NotesSection(): ReactElement {
 
     const handleBlur = () => {
         setIsEditing(false);
-        if (ficha) {
-            updateFicha({ anotacoes: notes });
+        if (charsheet) {
+            updateCharsheet({ anotacoes: notes });
         }
     };
 

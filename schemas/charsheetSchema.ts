@@ -332,8 +332,8 @@ const SessionInfoSchema = z.object({
     })
 })
 
-// Schema principal da Ficha
-export const fichaSchema = z.object({
+// Schema principal da Charsheet
+export const charsheetSchema = z.object({
     id: z.string().optional(),
     playerName: z.string().min(1, 'O nome do jogador é obrigatório'),
     mode: GameModes.default('Classic'),
@@ -422,4 +422,4 @@ export const fichaSchema = z.object({
 })
 
 // Tipo inferido do schema
-export type FichaType = z.infer<typeof fichaSchema>
+export type CharsheetType = z.infer<typeof charsheetSchema>

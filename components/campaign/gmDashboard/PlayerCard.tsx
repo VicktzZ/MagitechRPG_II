@@ -24,16 +24,16 @@ import { enqueueSnackbar } from 'notistack'
 import { useState } from 'react'
 import { useCampaignContext } from '@contexts';
 import { TextField } from '@mui/material'
-import { FichaDetailsModal } from './modals'
+import { CharsheetDetailsModal } from './modals'
 import type { Armor, Item, Weapon } from '@models'
 import type { CharsheetDTO } from '@models/dtos'
 
-export default function PlayerCard({ ficha: charsheet }: { ficha: Required<CharsheetDTO> }) {
+export default function PlayerCard({ charsheet: charsheet }: { charsheet: Required<CharsheetDTO> }) {
     const { campaign, charsheets } = useCampaignContext()
     const [ playerAnchorEl, setPlayerAnchorEl ] = useState<null | HTMLElement>(null)
     const [ addItemModalOpen, setAddItemModalOpen ] = useState(false)
     const [ removeUserDialogOpen, setRemoveUserDialogOpen ] = useState(false)
-    const [ fichaDetailsOpen, setFichaDetailsOpen ] = useState(false)
+    const [ charsheetDetailsOpen, setCharsheetDetailsOpen ] = useState(false)
 
     const [ notificationDialogOpen, setNotificationDialogOpen ] = useState(false)
     const [ notificationTitle, setNotificationTitle ] = useState('')
@@ -67,7 +67,7 @@ export default function PlayerCard({ ficha: charsheet }: { ficha: Required<Chars
                         items: [ ...charsheet.inventory.items, item ]
                     }
 
-            const updatedFicha = await charsheetService.updateById({
+            const updatedCharsheet = await charsheetService.updateById({
                 id: charsheet.id,
                 data: {
                     ...charsheet,
@@ -75,7 +75,7 @@ export default function PlayerCard({ ficha: charsheet }: { ficha: Required<Chars
                 }
             })
 
-            if (updatedFicha) {
+            if (updatedCharsheet) {
                 enqueueSnackbar(`Item ${item.name} adicionado com sucesso!`, { variant: 'success' })
             }
         } catch (error) {
@@ -103,8 +103,8 @@ export default function PlayerCard({ ficha: charsheet }: { ficha: Required<Chars
         setNotificationDialogOpen(false)
     }
 
-    const viewFichaDetails = () => {
-        setFichaDetailsOpen(true);
+    const viewCharsheetDetails = () => {
+        setCharsheetDetailsOpen(true);
         handlePlayerMenuClose();
     }
 
@@ -219,7 +219,7 @@ export default function PlayerCard({ ficha: charsheet }: { ficha: Required<Chars
             <Menu anchorEl={playerAnchorEl} open={Boolean(playerAnchorEl)} onClose={handlePlayerMenuClose}>
                 <Box sx={{ width: 320, maxWidth: '100%' }}>
                     <MenuList>
-                        <MenuItem onClick={viewFichaDetails}>
+                        <MenuItem onClick={viewCharsheetDetails}>
                             <ListItemIcon>
                                 <Info />
                             </ListItemIcon>
@@ -294,17 +294,17 @@ export default function PlayerCard({ ficha: charsheet }: { ficha: Required<Chars
             {/* Modal de aviso */}
             <WarningModal
                 text={`Você tem certeza que deseja banir usuário ${charsheets.find(
-                    userFicha => userFicha.id === charsheet.id
+                    userCharsheet => userCharsheet.id === charsheet.id
                 )?.name} da campanha?`}
                 open={removeUserDialogOpen}
                 onClose={() => setRemoveUserDialogOpen(false)}
                 onConfirm={handleRemoveUser}
             />
 
-            {/* Modal de Detalhes da Ficha */}
-            <FichaDetailsModal 
-                open={fichaDetailsOpen}
-                onClose={() => setFichaDetailsOpen(false)}
+            {/* Modal de Detalhes da Charsheet */}
+            <CharsheetDetailsModal 
+                open={charsheetDetailsOpen}
+                onClose={() => setCharsheetDetailsOpen(false)}
                 charsheet={charsheet}
             />
         </>

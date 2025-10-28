@@ -1,7 +1,7 @@
 import { Fade, Paper, Stack, Box, Typography, Tooltip, IconButton, Tabs, Tab, Modal } from '@mui/material'
 import { Add, Close, TouchApp } from '@mui/icons-material'
 import { useState, type ReactElement } from 'react'
-import CreateItemModal from '@components/ficha/dialogs/inventoryCreateModals/CreateItemModal'
+import CreateItemModal from '@components/charsheet/dialogs/inventoryCreateModals/CreateItemModal'
 import { useTheme } from '@mui/material'
 import type { Armor, Item, Weapon } from '@models'
 

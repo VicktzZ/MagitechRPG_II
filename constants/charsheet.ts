@@ -43,7 +43,7 @@ export const expertisesDefaultValue: keyof Expertises = {
     'Vontade': { value: 0, defaultAttribute: 'foc' }
 }
 
-export const fichaModel: Charsheet = {
+export const charsheetModel: Charsheet = {
     playerName: '',
     mode: 'Classic',
     name: '',

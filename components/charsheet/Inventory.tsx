@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import ItemComponent from '@components/ficha/subcomponents/Item';
+import ItemComponent from '@components/charsheet/subcomponents/Item';
 import { RPGIcon } from '@components/misc';
 import { rarityArmorBonuses } from '@constants/dataTypes';
 import { AddItemModal } from '@layout';

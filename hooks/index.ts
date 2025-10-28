@@ -1,11 +1,11 @@
 import useAudio from './useAudio';
-import useSaveFichaChanges from './useSaveFichaChanges';
+import useSaveCharsheetChanges from './useSaveCharsheetChanges';
 import { usePusher } from './usePusher';
 import { useResourceList } from './useResourceList';
 
 export {
     useAudio,
-    useSaveFichaChanges,
+    useSaveCharsheetChanges,
     usePusher,
     useResourceList
 }

@@ -45,7 +45,7 @@ export function CampaignProvider({ children, code }: { children: ReactElement, c
     }
 
     if (campaignData && (isUserGM || campaignData.charsheets.find(f => f.userId === session?.user?.id))) {
-        localStorage.setItem('currentFicha', campaignData.charsheets.find(f => f.userId === session?.user?.id)?.id ?? '');
+        localStorage.setItem('currentCharsheet', campaignData.charsheets.find(f => f.userId === session?.user?.id)?.id ?? '');
         return (
             <campaignContext.Provider value={campaignData}>
                 {children}
@@ -79,19 +79,19 @@ export function CampaignProvider({ children, code }: { children: ReactElement, c
                     gap={2}
                 >
                     <Box>
-                        <Typography variant='h6'>Escolha uma Ficha para ingressar</Typography>
+                        <Typography variant='h6'>Escolha uma Charsheet para ingressar</Typography>
                     </Box>
                     {/* <Grid minHeight='100%' overflow='auto' gap={2} container>
-                        {isFichaLoading ? [ 0, 1, 2, 4, 5 ].map(() => (
+                        {isCharsheetLoading ? [ 0, 1, 2, 4, 5 ].map(() => (
                             <Skeleton
                                 variant='rectangular' key={Math.random()} width='20rem' height='15rem'
                             />
-                        )) : charsheetsResponse?.map((f: Ficha) => (
-                            <FichaCard
+                        )) : charsheetsResponse?.map((f: Charsheet) => (
+                            <CharsheetCard
                                 key={f.id}
-                                ficha={f}
+                                charsheet={f}
                                 disableDeleteButton
-                                onClick={() => { setCurrentFicha(f.id ?? ''); setFicha(f); }}
+                                onClick={() => { setCurrentCharsheet(f.id ?? ''); setCharsheet(f); }}
                             />
                         ))}
                     </Grid> */}

@@ -1,5 +1,5 @@
 import { campaignContext } from './campaignContext';
-import { fichaContext } from './fichaContext';
+import { charsheetContext } from './charsheetContext';
 import { userContext } from './userContext';
 import { drawerContext } from './drawerContext';
 import { channelContext } from './channelContext';
@@ -8,10 +8,10 @@ import { savingSpinnerContext, useSavingSpinner } from './savingSpinnerContext';
 import { useCampaignContext } from './campaignContext';
 import { campaignCurrentCharsheetContext, useCampaignCurrentCharsheetContext } from './campaignCurrentCharsheetContext';
 import { ThemeProvider, useThemeContext } from './themeContext';
-import FichaFormProvider from './FichaFormProvider';
+import CharsheetFormProvider from './CharsheetFormProvider';
 
 export {
-    fichaContext,
+    charsheetContext,
     userContext,
     drawerContext,
     channelContext,
@@ -24,5 +24,5 @@ export {
     useCampaignCurrentCharsheetContext,
     ThemeProvider,
     useThemeContext,
-    FichaFormProvider
+    CharsheetFormProvider
 }

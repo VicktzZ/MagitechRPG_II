@@ -60,7 +60,7 @@ function Attributes(): ReactElement {
         setValue('overall', overallValue);
     }, [ attributes, expertises, level, setValue ]);
 
-    const fichaDetailsColor = useMemo(() => {
+    const charsheetDetailsColor = useMemo(() => {
         const classe = charsheet.class
         return classColor?.[classe as keyof typeof classColor] ?? theme.palette.primary.main
     }, [ charsheet.class ])
@@ -344,13 +344,13 @@ function Attributes(): ReactElement {
                                                 getValues('attributes.sab'),
                                                 getValues('attributes.car')
                                             ],
-                                            backgroundColor: `${fichaDetailsColor}33`,
-                                            borderColor: fichaDetailsColor,
+                                            backgroundColor: `${charsheetDetailsColor}33`,
+                                            borderColor: charsheetDetailsColor,
                                             borderWidth: 2,
-                                            pointBackgroundColor: fichaDetailsColor,
-                                            pointBorderColor: fichaDetailsColor,
-                                            pointHoverBackgroundColor: fichaDetailsColor,
-                                            pointHoverBorderColor: fichaDetailsColor
+                                            pointBackgroundColor: charsheetDetailsColor,
+                                            pointBorderColor: charsheetDetailsColor,
+                                            pointHoverBackgroundColor: charsheetDetailsColor,
+                                            pointHoverBorderColor: charsheetDetailsColor
                                         }
                                     ]
                                 }}

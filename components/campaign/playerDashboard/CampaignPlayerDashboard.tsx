@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 'use client';
 
-import { CustomDices, Passives } from '@components/ficha';
+import { CustomDices, Passives } from '@components/charsheet';
 import { useCampaignContext } from '@contexts';
 import { SkillType } from '@enums';
 import { 
@@ -27,8 +27,8 @@ import {
 import { useState, type ReactElement } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 
-import { campaignCurrentFichaContext } from '@contexts';
-import { useFichaUpdater } from '@services/firestore/hooks';
+import { campaignCurrentCharsheetContext } from '@contexts';
+import { useCharsheetUpdater } from '@services/firestore/hooks';
 import ExpertiseSection from './ExpertiseSection';
 import InventorySection from './InventorySection';
 import MoneyAndAmmo from './MoneyAndAmmo';
@@ -36,7 +36,7 @@ import NotesSection from './NotesSection';
 import PlayerHeader from './PlayerHeader';
 import SkillsSection from './SkillsSection';
 import SpellsSection from './SpellsSection';
-import { useCompleteFicha } from '@hooks/useCompleteFicha';
+import { useCompleteCharsheet } from '@hooks/useCompleteCharsheet';
 import type { Charsheet } from '@models/entities';
 
 // Componente Section reutilizável
@@ -76,24 +76,24 @@ function Section({ title, icon, children, action, sx }: {
 export default function CampaignPlayerDashboard(): ReactElement | null {
     const { users, isUserGM } = useCampaignContext();
     const [ selectedSkillType, setSelectedSkillType ] = useState<SkillType>(SkillType.ALL);
-    const fichaId = localStorage.getItem('currentFicha');
+    const charsheetId = localStorage.getItem('currentCharsheet');
     
-    if (!fichaId) return null;
+    if (!charsheetId) return null;
 
-    // 🔥 Usando hook personalizado para ficha completa em tempo real
-    const { data: ficha, loading } = useCompleteFicha({ fichaId });
+    // 🔥 Usando hook personalizado para charsheet completa em tempo real
+    const { data: charsheet, loading } = useCompleteCharsheet({ charsheetId });
 
-    const { updateFicha } = useFichaUpdater(fichaId);
+    const { updateCharsheet } = useCharsheetUpdater(charsheetId);
 
     const form = useForm<Charsheet>({
-        defaultValues: ficha,
-        values: ficha
+        defaultValues: charsheet,
+        values: charsheet
     });
 
-    if (!ficha || isUserGM) return null;
+    if (!charsheet || isUserGM) return null;
     
-    const fichaUser = users.players.find(player => player.id === ficha.userId);
-    const avatar = fichaUser?.image ?? '/assets/default-avatar.jpg';
+    const charsheetUser = users.players.find(player => player.id === charsheet.userId);
+    const avatar = charsheetUser?.image ?? '/assets/default-avatar.jpg';
 
     return (
         <Box 
@@ -115,20 +115,20 @@ export default function CampaignPlayerDashboard(): ReactElement | null {
                     <Stack spacing={2} alignItems="center">
                         <CircularProgress size={60} />
                         <Typography variant="h6" color="primary">
-                            Carregando ficha...
+                            Carregando charsheet...
                         </Typography>
                     </Stack>
                 </Backdrop>
             ) : (
                 <FormProvider {...form}>
-                    <campaignCurrentFichaContext.Provider value={{ ficha, updateFicha }}>
+                    <campaignCurrentCharsheetContext.Provider value={{ charsheet, updateCharsheet }}>
                         <Box 
                             sx={{
                                 maxWidth: '1400px',
                                 mx: 'auto'
                             }}
                         >
-                            {/* Header da Ficha */}
+                            {/* Header da Charsheet */}
                             <PlayerHeader avatar={avatar} />
 
                             {/* Grid Principal */}
@@ -236,7 +236,7 @@ export default function CampaignPlayerDashboard(): ReactElement | null {
                                 </Box>
                             </Stack>
                         </Box>
-                    </campaignCurrentFichaContext.Provider>
+                    </campaignCurrentCharsheetContext.Provider>
                 </FormProvider>
             )}
         </Box>

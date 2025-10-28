@@ -35,7 +35,7 @@ export interface UseSkills {
     setFilter: React.Dispatch<React.SetStateAction<string>>;
     setSort: React.Dispatch<React.SetStateAction<{ value: string; order: 'ASC' | 'DESC' }>>;
     setButtonSelected: React.Dispatch<React.SetStateAction<{ add: boolean; create: boolean; remove: boolean }>>;
-    addPowerToFicha: (power: Power) => void;
+    addPowerToCharsheet: (power: Power) => void;
     loadMore: () => void;
 }
 

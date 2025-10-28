@@ -10,7 +10,7 @@ import type { Charsheet } from '@models/entities'
 interface SkillsTreeDialogProps {
     open: boolean
     onClose: () => void
-    ficha: Required<Charsheet>
+    charsheet: Required<Charsheet>
 }
 
 interface SkillNodeProps {
@@ -66,8 +66,8 @@ function SkillNode({ skill, isUnlocked = false, skillClass, icon, size = 2.5 }: 
     )
 }
 
-function ClassSkillTree({ ficha }: { ficha: Required<Charsheet> }) {
-    const classSkills = skills.class[ficha.class as keyof typeof skills.class] ?? []
+function ClassSkillTree({ charsheet }: { charsheet: Required<Charsheet> }) {
+    const classSkills = skills.class[charsheet.class as keyof typeof skills.class] ?? []
 
     // Organiza as habilidades em níveis específicos (0, 1, 5, 10, 15, 20)
     const skillLevels = {
@@ -96,8 +96,8 @@ function ClassSkillTree({ ficha }: { ficha: Required<Charsheet> }) {
             <Box>
                 <SkillNode
                     skill={skillLevels[0]}
-                    skillClass={ficha.class as keyof typeof skills.class}
-                    isUnlocked={ficha.level >= 0}
+                    skillClass={charsheet.class as keyof typeof skills.class}
+                    isUnlocked={charsheet.level >= 0}
                     icon='X'
                 />
             </Box>
@@ -127,14 +127,14 @@ function ClassSkillTree({ ficha }: { ficha: Required<Charsheet> }) {
             >
                 <SkillNode
                     skill={skillLevels[1]}
-                    skillClass={ficha.class as keyof typeof skills.class}
-                    isUnlocked={ficha.level >= 1}
+                    skillClass={charsheet.class as keyof typeof skills.class}
+                    isUnlocked={charsheet.level >= 1}
                     icon='a'
                 />
                 <SkillNode
                     skill={skillLevels[5]}
-                    skillClass={ficha.class as keyof typeof skills.class}
-                    isUnlocked={ficha.level >= 5}
+                    skillClass={charsheet.class as keyof typeof skills.class}
+                    isUnlocked={charsheet.level >= 5}
                     icon='c'
                 />
             </Box>
@@ -175,8 +175,8 @@ function ClassSkillTree({ ficha }: { ficha: Required<Charsheet> }) {
                 >
                     <SkillNode
                         skill={skillLevels[10]}
-                        skillClass={ficha.class as keyof typeof skills.class}
-                        isUnlocked={ficha.level >= 10}
+                        skillClass={charsheet.class as keyof typeof skills.class}
+                        isUnlocked={charsheet.level >= 10}
                         size={3}
                         icon='7'
                     />
@@ -197,8 +197,8 @@ function ClassSkillTree({ ficha }: { ficha: Required<Charsheet> }) {
                 >
                     <SkillNode
                         skill={skillLevels[15]}
-                        skillClass={ficha.class as keyof typeof skills.class}
-                        isUnlocked={ficha.level >= 15}
+                        skillClass={charsheet.class as keyof typeof skills.class}
+                        isUnlocked={charsheet.level >= 15}
                         size={3}
                         icon='f'
                     />
@@ -222,8 +222,8 @@ function ClassSkillTree({ ficha }: { ficha: Required<Charsheet> }) {
             >
                 <SkillNode
                     skill={skillLevels[20]}
-                    skillClass={ficha.class as keyof typeof skills.class}
-                    isUnlocked={ficha.level >= 20}
+                    skillClass={charsheet.class as keyof typeof skills.class}
+                    isUnlocked={charsheet.level >= 20}
                     size={3}
                     icon='B'
                 />
@@ -232,10 +232,10 @@ function ClassSkillTree({ ficha }: { ficha: Required<Charsheet> }) {
     )
 }
 
-function SubclassSkillTree({ ficha }: { ficha: Required<Charsheet> }) {
-    if (!ficha.subclass) return null
+function SubclassSkillTree({ charsheet }: { charsheet: Required<Charsheet> }) {
+    if (!charsheet.subclass) return null
 
-    const subclassSkills = skills.subclass[ficha.subclass as keyof typeof skills.subclass] ?? []
+    const subclassSkills = skills.subclass[charsheet.subclass as keyof typeof skills.subclass] ?? []
 
     // Organiza as habilidades em níveis específicos (10, 15, 20)
     const skillLevels = {
@@ -262,8 +262,8 @@ function SubclassSkillTree({ ficha }: { ficha: Required<Charsheet> }) {
             <Box>
                 <SkillNode
                     skill={skillLevels[10]}
-                    skillClass={ficha.class as keyof typeof skills.class}
-                    isUnlocked={ficha.level >= 10}
+                    skillClass={charsheet.class as keyof typeof skills.class}
+                    isUnlocked={charsheet.level >= 10}
                     icon='g'
                 />
             </Box>
@@ -285,8 +285,8 @@ function SubclassSkillTree({ ficha }: { ficha: Required<Charsheet> }) {
             >
                 <SkillNode
                     skill={skillLevels[15]}
-                    skillClass={ficha.class as keyof typeof skills.class}
-                    isUnlocked={ficha.level >= 15}
+                    skillClass={charsheet.class as keyof typeof skills.class}
+                    isUnlocked={charsheet.level >= 15}
                     icon='h'
                 />
             </Box>
@@ -308,8 +308,8 @@ function SubclassSkillTree({ ficha }: { ficha: Required<Charsheet> }) {
             >
                 <SkillNode
                     skill={skillLevels[20]}
-                    skillClass={ficha.class as keyof typeof skills.class}
-                    isUnlocked={ficha.level >= 20}
+                    skillClass={charsheet.class as keyof typeof skills.class}
+                    isUnlocked={charsheet.level >= 20}
                     icon='i'
                 />
             </Box>
@@ -317,7 +317,7 @@ function SubclassSkillTree({ ficha }: { ficha: Required<Charsheet> }) {
     )
 }
 
-export default function SkillsTreeDialog({ open, onClose, ficha }: SkillsTreeDialogProps) {
+export default function SkillsTreeDialog({ open, onClose, charsheet }: SkillsTreeDialogProps) {
     return (
         <Dialog
             open={open}
@@ -341,7 +341,7 @@ export default function SkillsTreeDialog({ open, onClose, ficha }: SkillsTreeDia
             </DialogTitle>
             <DialogContent>
                 <Box sx={{ position: 'relative' }}>
-                    {ficha.subclass && (
+                    {charsheet.subclass && (
                         <Box
                             sx={{
                                 position: 'absolute',
@@ -356,24 +356,24 @@ export default function SkillsTreeDialog({ open, onClose, ficha }: SkillsTreeDia
                     )}
                     <Grid container spacing={4}>
                         {/* Lado esquerdo - Classe */}
-                        <Grid item xs={12} md={ficha.subclass ? 6 : 12}>
+                        <Grid item xs={12} md={charsheet.subclass ? 6 : 12}>
                             <Box sx={{ textAlign: 'center', mb: 4 }}>
                                 <Typography fontFamily='Sakana' variant="h4">
-                                    {ficha.class as string}
+                                    {charsheet.class as string}
                                 </Typography>
                             </Box>
-                            <ClassSkillTree ficha={ficha} />
+                            <ClassSkillTree charsheet={charsheet} />
                         </Grid>
 
                         {/* Lado direito - Subclasse (se existir) */}
-                        {ficha.subclass && (
+                        {charsheet.subclass && (
                             <Grid item xs={12} md={6}>
                                 <Box sx={{ textAlign: 'center', mb: 4 }}>
                                     <Typography fontFamily='Sakana' variant="h4">
-                                        {ficha.subclass as string}
+                                        {charsheet.subclass as string}
                                     </Typography>
                                 </Box>
-                                <SubclassSkillTree ficha={ficha} />
+                                <SubclassSkillTree charsheet={charsheet} />
                             </Grid>
                         )}
                     </Grid>

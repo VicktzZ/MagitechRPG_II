@@ -34,27 +34,27 @@ export async function POST(req: Request): Promise<Response> {
         }
 
         if (!isGM) {
-            const userFicha = await charsheetRepository.whereEqualTo('userId', userId).findOne();
-            if (!userFicha) {
-                return Response.json({ message: 'Ficha não encontrada' }, { status: 400 });
+            const userCharsheet = await charsheetRepository.whereEqualTo('userId', userId).findOne();
+            if (!userCharsheet) {
+                return Response.json({ message: 'Charsheet não encontrada' }, { status: 400 });
             }
 
-            const { id: fichaId } = userFicha;
+            const { id: charsheetId } = userCharsheet;
             const isPlayer = campaign.players?.some(player => player.userId === userId);
 
             if (!isPlayer) {
-                updatePayload['players'] = FieldValue.arrayUnion({ userId, fichaId });
+                updatePayload['players'] = FieldValue.arrayUnion({ userId, charsheetId });
             }
 
             const sessionInfo: SessionInfo = {
                 campaignCode,
                 stats: {
-                    maxLp: userFicha.stats.maxLp,
-                    maxMp: userFicha.stats.maxMp
+                    maxLp: userCharsheet.stats.maxLp,
+                    maxMp: userCharsheet.stats.maxMp
                 }
             };
 
-            await updateDoc(getCollectionDoc('charsheets', fichaId), {
+            await updateDoc(getCollectionDoc('charsheets', charsheetId), {
                 session: FieldValue.arrayUnion(sessionInfo)
             });
 
@@ -63,9 +63,9 @@ export async function POST(req: Request): Promise<Response> {
                 PusherEvent.USER_ENTER,
                 {
                     userId,
-                    name: userFicha.name,
-                    id: fichaId,
-                    currentFicha: userFicha
+                    name: userCharsheet.name,
+                    id: charsheetId,
+                    currentCharsheet: userCharsheet
                 }
             );
         }

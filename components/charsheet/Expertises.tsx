@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 'use client';
 
-import { Expertise } from '@components/ficha';
+import { Expertise } from '@components/charsheet';
 import { Box, Button, Grid, Typography, useTheme, FormHelperText, type ButtonProps, useMediaQuery, TextField } from '@mui/material';
 import { blue, green, grey, purple, yellow } from '@mui/material/colors';
 import { useFormContext, useWatch, type FieldError } from 'react-hook-form';

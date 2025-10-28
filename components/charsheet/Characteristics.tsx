@@ -16,12 +16,12 @@ import { Controller, useFormContext } from 'react-hook-form';
 
 export default function Characteristics(): ReactElement {
     const { control, formState: { errors }, setValue, getValues } = useFormContext<Charsheet>()
-    const ficha = getValues()
+    const charsheet = getValues()
 
     const theme = useTheme()
     const matches = useMediaQuery(theme.breakpoints.down('md'))
     const audio = useAudio('/sounds/cybernetic-technology-affirmation.wav')
-    const disabled = !!ficha.id
+    const disabled = !!charsheet.id
 
     const setClass = (e: SelectChangeEvent<any>): void => {
         const previousClass = getValues('class') as ClassNames;
@@ -49,7 +49,7 @@ export default function Characteristics(): ReactElement {
     const setLineage = (e: SelectChangeEvent<any>): void => {
         const previousLineage = getValues('lineage') as unknown as LineageNames;
         const selectedLineage = e.target.value;
-        const isClassicMode = ficha.mode === 'Classic';
+        const isClassicMode = charsheet.mode === 'Classic';
         const antecedentSkills = isClassicMode ? skills.lineage : skills.occupation;
         const antecedentItems = lineageItems[selectedLineage as keyof typeof lineageItems]
         
@@ -60,7 +60,7 @@ export default function Characteristics(): ReactElement {
             
             if (previousLineageBonus?.tests) {
                 Object.entries(previousLineageBonus.tests).forEach(([ expertise, bonus ]) => {
-                    const ex = expertise as keyof typeof ficha.expertises
+                    const ex = expertise as keyof typeof charsheet.expertises
                     const currentExpertise = getValues(`expertises.${ex}`) as any;
                     const currentValue = currentExpertise?.value || 0;
                     
@@ -109,7 +109,7 @@ export default function Characteristics(): ReactElement {
         
         if (lineageBonus?.tests) {
             Object.entries(lineageBonus.tests).forEach(([ expertise, bonus ]) => {
-                const ex = expertise as keyof typeof ficha.expertises
+                const ex = expertise as keyof typeof charsheet.expertises
                 const currentExpertise = getValues(`expertises.${ex}`);
 
                 if (!currentExpertise) {
@@ -131,9 +131,9 @@ export default function Characteristics(): ReactElement {
 
         // Bônus de linhagem
         if (selectedLineage === 'Artista') {
-            setValue('mods.attributes.car', (ficha.mods.attributes.car || 0) + 1);
+            setValue('mods.attributes.car', (charsheet.mods.attributes.car || 0) + 1);
         } else if (previousLineage === 'Artista') {
-            setValue('mods.attributes.car', Math.max(0, (ficha.mods.attributes.car || 0) - 1));
+            setValue('mods.attributes.car', Math.max(0, (charsheet.mods.attributes.car || 0) - 1));
         }
 
         audio.play();
@@ -167,7 +167,7 @@ export default function Characteristics(): ReactElement {
     }, [])
 
     const lineages = useMemo(() => {
-        return Object.entries(ficha.mode === 'Classic' ? lineageExpertises : occupationsExpertises).map(([ lineage, expertises ]) => (
+        return Object.entries(charsheet.mode === 'Classic' ? lineageExpertises : occupationsExpertises).map(([ lineage, expertises ]) => (
             <MenuItem
                 key={lineage}
                 value={lineage}
@@ -180,7 +180,7 @@ export default function Characteristics(): ReactElement {
                 </Box>
             </MenuItem>
         ))
-    }, [ ficha.mode ])
+    }, [ charsheet.mode ])
 
     const classes = useMemo(() => {
         return Object.keys(classesModel).map(classe => (
@@ -229,7 +229,7 @@ export default function Characteristics(): ReactElement {
                         <Select
                             name='class'
                             label='Classe de Mago'
-                            value={ficha.class}
+                            value={charsheet.class}
                             required
                             fullWidth
                             disabled={disabled}
@@ -245,11 +245,11 @@ export default function Characteristics(): ReactElement {
                     </FormControl>
                     {!matches && (
                         <FormControl sx={{ width: '50%' }}>
-                            <InputLabel>{ficha.mode === 'Classic' ? 'Linhagem' : 'Profissão'} *</InputLabel>
+                            <InputLabel>{charsheet.mode === 'Classic' ? 'Linhagem' : 'Profissão'} *</InputLabel>
                             <Select
                                 name='lineage'
                                 label='Linhagem'
-                                value={ficha.lineage}
+                                value={charsheet.lineage}
                                 required
                                 fullWidth
                                 disabled={disabled}
@@ -269,11 +269,11 @@ export default function Characteristics(): ReactElement {
                 {matches && (
                     <Box>
                         <FormControl sx={{ width: '100%' }}>
-                            <InputLabel>{ficha.mode === 'Classic' ? 'Linhagem' : 'Profissão'} *</InputLabel>
+                            <InputLabel>{charsheet.mode === 'Classic' ? 'Linhagem' : 'Profissão'} *</InputLabel>
                             <Select
                                 name='lineage'
                                 label='Linhagem'
-                                value={ficha.lineage}
+                                value={charsheet.lineage}
                                 required
                                 fullWidth
                                 disabled={disabled}
@@ -298,7 +298,7 @@ export default function Characteristics(): ReactElement {
                         name='race'
                         disabled={disabled}
                         label='Raça'
-                        value={ficha.race}
+                        value={charsheet.race}
                         required
                         fullWidth
                         renderValue={selected => String(selected)}
