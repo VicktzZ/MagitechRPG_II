@@ -102,7 +102,7 @@ export default function Expertise({
     
     // Determinar quantidade de dados baseada na regra:
     // -1: Desvantagem (2 dados), 0: Normal (1 dado), +1: Vantagem (2 dados), >+1: Vantagem (múltiplos dados)
-    const diceQuantity = attrModifier < 0 ? 2 : attrModifier;
+    const diceQuantity = attrModifier < 0 ? 2 : attrModifier + 1;
 
     return (
         <>
