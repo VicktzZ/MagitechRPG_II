@@ -135,11 +135,11 @@ export function DiceMessage({ text, type }: DiceMessageProps) {
         const totalMatch = rest.match(/=\s*(\d+)/)
         const total = totalMatch ? parseInt(totalMatch[1]) : undefined
 
-    // Fallback: se não há nenhum dado claro (sem headerNotation, sem rolls, sem total), renderiza texto simples
-    const hasAnyDiceInfo = (!!headerNotation) || (rolls.length > 0) || (typeof total === 'number')
-    if (!hasAnyDiceInfo) {
-        return <Typography>{messageText}</Typography>
-    }
+        // Fallback: se não há nenhum dado claro (sem headerNotation, sem rolls, sem total), renderiza texto simples
+        // const hasAnyDiceInfo = (!!headerNotation) || (rolls.length > 0) || (typeof total === 'number')
+        // if (!hasAnyDiceInfo) {
+        //     return <Typography>{messageText}</Typography>
+        // }
 
         const best = rollNums.length ? Math.max(...rollNums) : undefined
         const worst = rollNums.length ? Math.min(...rollNums) : undefined

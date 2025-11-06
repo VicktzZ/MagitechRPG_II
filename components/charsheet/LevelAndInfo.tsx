@@ -16,7 +16,7 @@ import LevelProgress from './subcomponents/LevelProgress'
 import { skills } from '@constants/skills'
 import type { CharsheetDTO } from '@models/dtos'
 import type { Class, Expertises, Lineage, Subclass, Trait } from '@models'
-import { Element } from '@models/types/string'
+import { type Element } from '@models/types/string'
 
 export default function LevelAndInfo() {
     const { control, getValues, setValue , formState: { errors } } = useFormContext<CharsheetDTO>()

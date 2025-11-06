@@ -37,7 +37,6 @@ import TestDialog from './TestDialog';
 import TestModal from './TestModal';
 import { blue, green, orange, purple, grey } from '@mui/material/colors';
 import type { Attributes, Expertises, Message } from '@models';
-import type { TempMessage } from '@models/types/session';
 
 // TODO: RESOLVER BUG DE DUPLICIDADE DE MENSAGENS   
 const MessageInput = memo(function MessageInput({ onSendMessage }: { onSendMessage: (text: string) => void }) {
@@ -468,7 +467,6 @@ export default function SessionChat() {
     // Configura os eventos do Pusher (apenas testes, mensagens via Firestore)
     useEffect(() => {
         if (!channel || !session?.user) return
-
 
         const handleTestRequest = (data: any) => {
             // Se o usuário atual é um dos selecionados para o teste

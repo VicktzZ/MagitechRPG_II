@@ -2,7 +2,6 @@
 'use client';
 
 import { useCampaignContext, useCampaignCurrentCharsheetContext } from '@contexts';
-import { SkillType } from '@enums';
 import {
     AttachMoney,
     AutoAwesome,
@@ -17,7 +16,7 @@ import {
     CircularProgress,
     Stack
 } from '@mui/material';
-import { useState, type ReactElement } from 'react';
+import { type ReactElement } from 'react';
 
 import { Passives, Skills } from '@components/charsheet';
 import Section from '../Section';
@@ -116,7 +115,7 @@ export default function CampaignPlayerDashboard(): ReactElement | null {
                                 </Box>
                             </Section>
 
-                             {/* Magias */}
+                            {/* Magias */}
                             <Section 
                                 title="Magias" 
                                 icon={<AutoAwesome sx={{ color: 'secondary.main' }} />}

@@ -17,7 +17,7 @@ const playerStatusSchema = z.object({
         foc: z.number().int().min(0),
         log: z.number().int().min(0),
         sab: z.number().int().min(0),
-        car: z.number().int().min(0),
+        car: z.number().int().min(0)
     }),
     stats: z.object({
         lp: z.number().int().min(0),

@@ -48,7 +48,7 @@ export default function CampaignPage(): ReactElement {
                                 transition={{ duration: 0.5 }}
                             >
                                 <CampaingCard
-                                    id={camp.id!}
+                                    id={camp.id}
                                     title={camp.title}
                                     description={camp.description}
                                     gameMaster={camp.admin}

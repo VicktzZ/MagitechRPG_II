@@ -15,7 +15,7 @@ import { useCallback, useMemo, type ReactElement } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
 
 export default function Characteristics(): ReactElement {
-    const { control, formState: { errors }, setValue, getValues } = useFormContext<Charsheet>()
+    const { control, formState: , setValue, getValues } = useFormContext<Charsheet>()
     const charsheet = getValues()
 
     const theme = useTheme()

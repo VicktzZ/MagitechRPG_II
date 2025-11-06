@@ -1,5 +1,5 @@
-import { Box, LinearProgress, Paper, Typography } from "@mui/material";
-import { ReactElement } from "react";
+import { Box, LinearProgress, Paper, Typography } from '@mui/material';
+import { type ReactElement } from 'react';
 
 export function AttributeCard({
     label,

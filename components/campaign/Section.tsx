@@ -1,5 +1,5 @@
-import { Box, Divider, Paper, SxProps, Typography } from "@mui/material";
-import type {ReactElement } from "react";
+import { Box, Divider, Paper, type SxProps, Typography } from '@mui/material';
+import type { ReactElement } from 'react';
 
 export default function Section({ title, icon, children, action, sx }: { 
     title?: string; 

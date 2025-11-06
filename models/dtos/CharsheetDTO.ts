@@ -1,4 +1,4 @@
-import { BaseCharsheet, Race, Trait, type Skill } from '@models';
+import { BaseCharsheet, type Skill } from '@models';
 import { Type } from 'class-transformer';
 import { IsArray, IsObject, IsString, ValidateNested } from 'class-validator';
 import { SpellDTO } from './SpellDTO';

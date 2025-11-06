@@ -41,8 +41,8 @@ type SortOrder = 'alpha-asc' | 'alpha-desc' | 'value-asc' | 'value-desc';
 export default function ExpertiseSection(): ReactElement {
     const { charsheet } = useCampaignCurrentCharsheetContext();
     const theme = useTheme();
-    const [filterLevel, setFilterLevel] = useState<ExpertiseLevel>('all');
-    const [sortOrder, setSortOrder] = useState<SortOrder>('alpha-asc');
+    const [ filterLevel, setFilterLevel ] = useState<ExpertiseLevel>('all');
+    const [ sortOrder, setSortOrder ] = useState<SortOrder>('alpha-asc');
 
     const expertises = charsheet.expertises
     const { handleSendMessage, setIsChatOpen, isChatOpen } = useChatContext()
@@ -60,7 +60,7 @@ export default function ExpertiseSection(): ReactElement {
         let entries = Object.entries(expertises);
 
         if (filterLevel !== 'all') {
-            entries = entries.filter(([, exp]) => {
+            entries = entries.filter(([ , exp ]) => {
                 const level = getExpertiseLevel(exp.value);
                 return level === filterLevel;
             });
@@ -68,33 +68,33 @@ export default function ExpertiseSection(): ReactElement {
 
         entries.sort((a, b) => {
             switch (sortOrder) {
-                case 'alpha-asc':
-                    return a[0].localeCompare(b[0]);
-                case 'alpha-desc':
-                    return b[0].localeCompare(a[0]);
-                case 'value-asc':
-                    return a[1].value - b[1].value;
-                case 'value-desc':
-                    return b[1].value - a[1].value;
-                default:
-                    return 0;
+            case 'alpha-asc':
+                return a[0].localeCompare(b[0]);
+            case 'alpha-desc':
+                return b[0].localeCompare(a[0]);
+            case 'value-asc':
+                return a[1].value - b[1].value;
+            case 'value-desc':
+                return b[1].value - a[1].value;
+            default:
+                return 0;
             }
         });
 
         return entries;
-    }, [expertises, filterLevel, sortOrder]);
+    }, [ expertises, filterLevel, sortOrder ]);
     
     const expertiseStats = useMemo(() => {
         const allEntries = Object.entries(expertises);
         return {
             total: allEntries.length,
-            novice: allEntries.filter(([, exp]) => exp.value < 2).length,
-            trained: allEntries.filter(([, exp]) => exp.value >= 2 && exp.value < 5).length,
-            expert: allEntries.filter(([, exp]) => exp.value >= 5 && exp.value < 7).length,
-            master: allEntries.filter(([, exp]) => exp.value >= 7 && exp.value < 9).length,
-            legendary: allEntries.filter(([, exp]) => exp.value >= 9).length
+            novice: allEntries.filter(([ , exp ]) => exp.value < 2).length,
+            trained: allEntries.filter(([ , exp ]) => exp.value >= 2 && exp.value < 5).length,
+            expert: allEntries.filter(([ , exp ]) => exp.value >= 5 && exp.value < 7).length,
+            master: allEntries.filter(([ , exp ]) => exp.value >= 7 && exp.value < 9).length,
+            legendary: allEntries.filter(([ , exp ]) => exp.value >= 9).length
         };
-    }, [expertises]);
+    }, [ expertises ]);
 
     const getExpertiseConfig = (value: number) => {
         if (value < 2) {
@@ -214,7 +214,6 @@ export default function ExpertiseSection(): ReactElement {
             >
                 <Stack spacing={3}>
                     {/* Header */}
-                  
 
                     {/* Estatísticas por Nível */}
                     <Box 
@@ -406,7 +405,7 @@ export default function ExpertiseSection(): ReactElement {
                                     gap: 2
                                 }}
                             >
-                                {filteredAndSortedExpertises.map(([nome, expertise]) => {
+                                {filteredAndSortedExpertises.map(([ nome, expertise ]) => {
                                     const config = getExpertiseConfig(expertise.value);
                                     const IconComponent = config.icon;
                                     

@@ -25,7 +25,7 @@ export function StatusBar({
     const overPercentage = (overValue / max) * 100; // Percentual do overheal
     const normalPercentage = (current / max) * 100; // Percentual normal quando não tem overheal
 
-    const [inputValue, setInputValue] = useState(1);
+    const [ inputValue, setInputValue ] = useState(1);
 
     const handleInputChange = (e: any) => {
         const value = parseInt(e.target.value) || 1;
@@ -34,9 +34,9 @@ export function StatusBar({
 
     const getOverhealColor = (baseColor: string) => {
         const colorMap: Record<string, string> = {
-            '#ef4444': orange['A700'],
-            '#3b82f6': indigo['A700'],
-            '#eab308': lime['A700']
+            '#ef4444': orange.A700,
+            '#3b82f6': indigo.A700,
+            '#eab308': lime.A700
         };
         return colorMap[baseColor] || baseColor;
     };

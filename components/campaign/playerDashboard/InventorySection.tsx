@@ -41,8 +41,8 @@ type InventoryTab = 'all' | 'weapons' | 'armors' | 'items';
 export default function InventorySection(): ReactElement {
     const { charsheet } = useCampaignCurrentCharsheetContext();
     const theme = useTheme();
-    const [activeTab, setActiveTab] = useState<InventoryTab>('all');
-    const [searchQuery, setSearchQuery] = useState('');
+    const [ activeTab, setActiveTab ] = useState<InventoryTab>('all');
+    const [ searchQuery, setSearchQuery ] = useState('');
 
     const totalItems = charsheet.inventory.weapons.length + charsheet.inventory.armors.length + charsheet.inventory.items.length;
     const capacityPercent = (charsheet.capacity.cargo / charsheet.capacity.max) * 100;

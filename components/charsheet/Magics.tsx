@@ -3,7 +3,7 @@
 'use client';
 
 import { elementColor as elementColors, toastDefault } from '@constants';
-import { CharsheetDTO } from '@models/dtos';
+import { type CharsheetDTO } from '@models/dtos';
 import type { Spell } from '@models/entities';
 import {
     AddCircle,

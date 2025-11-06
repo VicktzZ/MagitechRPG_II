@@ -11,7 +11,7 @@ import {
     Typography
 } from '@mui/material';
 import Image from 'next/image';
-import { useMemo, useState, type ReactElement } from 'react';
+import { useMemo } from 'react';
 import { StatusBar } from './StatusBar';
 import { AttributeCard } from './AttributeCard';
 import type { Stats } from '@models';

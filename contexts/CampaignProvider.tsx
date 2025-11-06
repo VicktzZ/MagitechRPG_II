@@ -59,7 +59,7 @@ export function CampaignProvider({ children, code }: { children: ReactElement, c
     }
 
     if (!!campaignData && (isUserGM || !!campaignData.charsheets.find(c => c.userId === session?.user?.id) || campaignData.charsheets.map(c => c.id).includes(charsheetId)) || charsheetId) {
-        localStorage.setItem('currentCharsheet', (charsheetId || campaignData.charsheets.find(f => f.userId === session?.user?.id)?.id) || '');
+        localStorage.setItem('currentCharsheet', (charsheetId || campaignData.charsheets.find(f => f.userId === session?.user?.id)?.id) ?? '');
 
         const value: CampaignContextValue = {
             ...campaignData,

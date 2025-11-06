@@ -1,7 +1,6 @@
 import { red, blue, orange, teal, deepPurple, green } from '@mui/material/colors';
 import generateEntryCode from '@utils/generateEntryCode';
 import { type Expertises, type Race } from '@models';
-import { type Charsheet } from '@models/entities';
 import type { FinancialCondition, Gender, SubclassNames, ClassNames, LineageNames } from '@models/types/string';
 import { CharsheetDTO } from '@models/dtos';
 

@@ -1,5 +1,5 @@
-import type { Message, Expertises, Session, Note, Skill, Creature, Weapon, Armor, Item } from '@models';
-import type { Campaign, Charsheet, Spell, User } from '@models/entities';
+import type { Message, Expertises } from '@models';
+import type { Campaign, Charsheet, User } from '@models/entities';
 
 // export interface SessionModel {
 //     sessionCode: string
