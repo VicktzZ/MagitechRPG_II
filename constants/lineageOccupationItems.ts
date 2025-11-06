@@ -1,6 +1,7 @@
-/* eslint-disable max-len */
-import type { Lineage, MergedItems, Occupation } from '@types';
+import type { Lineage, Occupation } from '@models'
+import type { MergedItems } from '@models/types/misc'
 
+/* eslint-disable max-len */
 export const lineageItems: 
 Record<
     Lineage['name'],

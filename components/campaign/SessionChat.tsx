@@ -30,13 +30,13 @@ import {
     Badge,
     useTheme
 } from '@mui/material';
-import { fichaService } from '@services';
-import type { Attributes, Expertises, Message, TempMessage } from '@types';
+import { charsheetService } from '@services';
 import { useSession } from 'next-auth/react';
 import { memo, useEffect, useRef, useState, type ReactElement } from 'react';
 import TestDialog from './TestDialog';
 import TestModal from './TestModal';
 import { blue, green, orange, purple, grey } from '@mui/material/colors';
+import type { Attributes, Expertises, Message } from '@models';
 
 // TODO: RESOLVER BUG DE DUPLICIDADE DE MENSAGENS   
 const MessageInput = memo(function MessageInput({ onSendMessage }: { onSendMessage: (text: string) => void }) {
@@ -202,7 +202,7 @@ const ChatWrapper = memo(function ChatWrapper({
 });
 
 export default function SessionChat() {
-    const { campaign } = useCampaignContext()
+    const { campaign, updateCampaign } = useCampaignContext()
     const { data: session } = useSession()
     const { channel } = useChannel()
     const theme = useTheme();
@@ -226,7 +226,7 @@ export default function SessionChat() {
         handleSendMessage
     } = useChatContext()
 
-    const isAdmin = session?.user && campaign.admin.includes(session.user._id)
+    const isAdmin = session?.user && campaign.admin?.includes(session.user.id)
 
     const scrollToBottom = () => {
         if (shouldAutoScroll && messagesEndRef.current) {
@@ -243,7 +243,27 @@ export default function SessionChat() {
     }
     
     const sendMessage = async (newMessage: Message) => {
+        // Atualiza UI localmente (pendente) e persiste no Firestore
         sendMsg(newMessage, scrollToBottom)
+        try {
+            const currentMessages = campaign?.session?.messages ?? []
+            const currentUsers = campaign?.session?.users ?? []
+            // Normaliza a mensagem antes de persistir (remove flags temporárias)
+            const toPersist: any = { ...newMessage }
+            delete toPersist.isPending
+            delete toPersist.tempId
+            if (toPersist.timestamp instanceof Date) {
+                toPersist.timestamp = toPersist.timestamp.toISOString()
+            }
+            await updateCampaign({
+                session: {
+                    users: currentUsers,
+                    messages: [ ...currentMessages, toPersist ]
+                } as any
+            })
+        } catch (e) {
+            console.error('[SessionChat] Falha ao persistir mensagem no Firestore:', e)
+        }
     }
 
     const handleTestConfirm = (data: any) => {
@@ -252,7 +272,7 @@ export default function SessionChat() {
         const testRequest: any = {
             ...data,
             requestedBy: {
-                id: session.user._id,
+                id: session.user.id,
                 name: session.user.name
             }
         }
@@ -272,26 +292,26 @@ export default function SessionChat() {
 
         if (!currentTest || !session?.user) return
 
-        // Se for um teste de perícia, busca o bônus da perícia na ficha do jogador
+        // Se for um teste de perícia, busca o bônus da perícia na charsheet do jogador
         let expertiseBonus = 0
         let expertiseResult = null
         let baseAttribute = null
         let baseAttributeValue = 0
 
         if (currentTest.expertise) {
-            const player = campaign.players.find(p => p.userId === session.user._id)
+            const player = campaign.players.find(p => p.userId === session.user.id)
             if (player) {
                 try {
-                    const ficha = await fichaService.getById(player.fichaId)
-                    if (ficha) {
-                        const expertise = ficha.expertises[currentTest.expertise as keyof Expertises]
+                    const charsheet = await charsheetService.getById(player.charsheetId)
+                    if (charsheet) {
+                        const expertise = charsheet.expertises[currentTest.expertise as keyof Expertises]
                         expertiseBonus = expertise.value
                         baseAttribute = expertise.defaultAttribute?.toLowerCase()
-                        baseAttributeValue = ficha.attributes[baseAttribute as Attributes]
+                        baseAttributeValue = charsheet.stats[baseAttribute as keyof Attributes]
 
                         console.log({
                             currentTest,
-                            ficha,
+                            charsheet,
                             expertise,
                             expertiseBonus,
                             baseAttribute,
@@ -330,7 +350,7 @@ export default function SessionChat() {
                         }
                     }
                 } catch (error) {
-                    console.error('Erro ao buscar ficha:', error)
+                    console.error('Erro ao buscar charsheet:', error)
                 }
             }
         }
@@ -342,11 +362,11 @@ export default function SessionChat() {
                 ` ${currentTest.expertise.toUpperCase()} - 1d20${expertiseBonus >= 0 ? '+' : ''}${expertiseBonus}: [${expertiseResult.rolls.join(', ')}${expertiseResult.rolls.length > 1 ? ': ' + expertiseResult.finalRoll : ''}] = ${expertiseResult.total}` :
                 ` ${roll.dice}: [${roll.result.join(', ')}] = ${roll.result.reduce((a, b) => a + b, 0)}`,
             by: {
-                id: session.user._id,
+                id: session.user.id,
                 name: session.user.name,
                 image: session.user.image ?? '/assets/default-avatar.png'
             },
-            timestamp: new Date(),
+            timestamp: new Date().toISOString(),
             type: expertiseResult ? MessageType.EXPERTISE : MessageType.ROLL
         }
 
@@ -361,7 +381,7 @@ export default function SessionChat() {
                 name: 'Dice Roller',
                 isBot: true
             },
-            timestamp: new Date()
+            timestamp: new Date().toISOString()
         } : null
 
         if (currentTest.isVisible) {
@@ -410,10 +430,23 @@ export default function SessionChat() {
         setSnackbarOpen(true)
     }
 
-    // Carrega mensagens iniciais
+    // Sincroniza mensagens do Firestore (tempo real) e remove estado pendente
     useEffect(() => {
-        setMessages(campaign?.session.messages ?? [])
-    }, [ campaign?._id ])
+        const list = campaign?.session?.messages ?? []
+        if (Array.isArray(list)) {
+            const unique: any[] = []
+            const seen = new Set<string>()
+            for (const m of list) {
+                const key = (m as any).id || `${(m as any).timestamp}-${(m as any).by?.id}-${(m as any).text}`
+                if (seen.has(key)) continue
+                seen.add(key)
+                unique.push({ ...m, isPending: false })
+            }
+            setMessages(unique)
+        } else {
+            setMessages([])
+        }
+    }, [ campaign?.session?.messages ])
 
     // Scroll to bottom quando as mensagens são carregadas inicialmente
     useEffect(() => {
@@ -431,47 +464,15 @@ export default function SessionChat() {
         }
     }, [])
 
-    // Configura os eventos do Pusher
+    // Configura os eventos do Pusher (apenas testes, mensagens via Firestore)
     useEffect(() => {
         if (!channel || !session?.user) return
 
-        const handleNewMessage = (data: Message) => {
-            setMessages(prev => {
-                // Procura uma mensagem temporária correspondente
-                const tempMessage = prev.find(
-                    (m: TempMessage) => m.timestamp && data.timestamp && 
-                    new Date(m.timestamp).getTime() === new Date(data.timestamp).getTime() &&
-                    m.by.id === data.by.id &&
-                    m.text === data.text &&
-                    m.isPending
-                )
-
-                if (tempMessage) {
-                    // Atualiza a mensagem temporária para não pendente
-                    return prev.map(m => 
-                        m.tempId === tempMessage.tempId
-                            ? { ...m, isPending: false }
-                            : m
-                    )
-                }
-
-                // Se não encontrou mensagem temporária, adiciona a nova como uma mensagem confirmada
-                const newMessage: TempMessage = {
-                    ...data,
-                    isPending: false,
-                    tempId: Date.now().toString()
-                }
-                
-                setTimeout(scrollToBottom, 100)
-                return [ ...prev, newMessage ]
-            })
-        }
-
         const handleTestRequest = (data: any) => {
             // Se o usuário atual é um dos selecionados para o teste
-            const isSelected = data.isGroupTest || data.selectedPlayers.includes(session.user._id)
+            const isSelected = data.isGroupTest || data.selectedPlayers.includes(session.user.id)
             
-            if (isSelected && !campaign.admin.includes(session.user._id)) {
+            if (isSelected && !campaign.admin.includes(session.user.id)) {
                 setCurrentTest(data)
                 setIsTestDialogOpen(true)
             }
@@ -486,16 +487,14 @@ export default function SessionChat() {
             handleTestResult(data)
         }
 
-        channel.bind(PusherEvent.NEW_MESSAGE, handleNewMessage)
         channel.bind(PusherEvent.TEST_REQUEST, handleTestRequest)
         channel.bind(PusherEvent.TEST_RESULT, handleTestResultPusher)
 
         return () => {
-            channel.unbind(PusherEvent.NEW_MESSAGE, handleNewMessage)
             channel.unbind(PusherEvent.TEST_REQUEST, handleTestRequest)
             channel.unbind(PusherEvent.TEST_RESULT, handleTestResultPusher)
         }
-    }, [ channel, session?.user?._id ])
+    }, [ channel, session?.user?.id ])
 
     return (
         <ChatWrapper 
@@ -579,7 +578,7 @@ export default function SessionChat() {
                         </Stack>
                         
                         {/* Botão de Teste para GMs */}
-                        {campaign.admin.includes(session?.user?._id ?? '') && (
+                        {campaign.admin?.includes(session?.user?.id ?? '') && (
                             <Box sx={{ mt: 2 }}>
                                 <Tooltip title="Solicitar teste de atributo ou perícia">
                                     <Button 
@@ -663,8 +662,8 @@ export default function SessionChat() {
                                 return timeA - timeB
                             })
                             .map((msg, index) => {
-                                const isOwnMessage = msg.by.id === session?.user?._id;
-                                const isGM = campaign.admin.includes(msg.by.id);
+                                const isOwnMessage = msg.by.id === session?.user?.id;
+                                const isGM = campaign.admin?.includes(msg.by.id);
                                 const isBot = msg.by.isBot;
                                 const isDiceMessage = msg.type === MessageType.DICE || msg.type === MessageType.EXPERTISE;
                                     

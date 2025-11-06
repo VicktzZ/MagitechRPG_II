@@ -1,26 +1,15 @@
-import mongoose from 'mongoose'
+import { initializeApp } from 'firebase/app';
+import { getFirestore } from 'firebase/firestore';
 
-let isConnected = false
+const firebaseConfig = {
+    apiKey: process.env.NEXT_PUBLIC_FIREBASE_APIKEY,
+    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTHDOMAIN,
+    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGEBUCKET,
+    messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+    measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
+};
 
-export const connectToDb = async (): Promise<void> => {
-    mongoose.set('strictQuery', true)
-
-    if (isConnected) {
-        console.log('MongoDB is already connected')
-        return
-    } 
-
-    try {
-        const dbName = process.env.NODE_ENV === 'development' ? 'magitech_dev' : 'magitech';
-        
-        await mongoose.connect(process.env.MONGODB_URI, {
-            dbName
-        })
-
-        isConnected = true
-
-        console.log(`MongoDB connected to database: ${dbName}`)
-    } catch (error) {
-        console.log(error)
-    }
-}
+export const app = initializeApp(firebaseConfig);
+export const db = getFirestore(app);

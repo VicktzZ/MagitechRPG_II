@@ -1,9 +1,9 @@
 import { Fade, Paper, Stack, Box, Typography, Tooltip, IconButton, Tabs, Tab, Modal } from '@mui/material'
 import { Add, Close, TouchApp } from '@mui/icons-material'
 import { useState, type ReactElement } from 'react'
-import CreateItemModal from '@components/ficha/dialogs/inventoryCreateModals/CreateItemModal'
+import CreateItemModal from '@components/charsheet/dialogs/inventoryCreateModals/CreateItemModal'
 import { useTheme } from '@mui/material'
-import type { Armor, Item, Weapon } from '@types'
+import type { Armor, Item, Weapon } from '@models'
 
 type ItemName = 'weapon' | 'item' | 'armor'
 
@@ -12,12 +12,14 @@ export default function AddItemModal({
     setModalOpen,
     disableDefaultCreate = false,
     title = 'Adicionar Item ao Inventário',
+    subtitle = 'Selecione o tipo de item',
     onConfirm
 }: {
     modalOpen: boolean,
     setModalOpen: (open: boolean) => void,
     disableDefaultCreate?: boolean,
     title?: string,
+    subtitle?: string,
     onConfirm?: (item: Weapon | Item | Armor) => void
 }) {
     const [ modalContent, setModalContent ] = useState<ReactElement>(
@@ -88,7 +90,7 @@ export default function AddItemModal({
                                         {title}
                                     </Typography>
                                     <Typography variant="caption" color='text.secondary' sx={{ display: { xs: 'none', sm: 'block' } }}>
-                                        Selecione o tipo de item
+                                        {subtitle}
                                     </Typography>
                                 </Box>
                             </Stack>

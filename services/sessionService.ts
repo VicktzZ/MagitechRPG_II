@@ -1,4 +1,5 @@
-import type { Campaign, ConnectSessionDto, DisconnectSessionDto } from '@types'
+import type { Campaign } from '@models/entities'
+import type { ConnectSessionDto, DisconnectSessionDto } from '@models/types/dto'
 import { Service } from '@utils/apiRequest'
 
 class SessionService extends Service<Campaign> {

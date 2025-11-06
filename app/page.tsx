@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
 'use client'
+// TODO: !IMPORTANTE - Ampliar segurança da API (autenticação, cors)
+// TODO: !IMPORTANTE - Colocar autenticação em Firebase
 
 import { Footer, LandingPageHeader } from '@layout'
 import { 
@@ -99,12 +101,7 @@ export default function LandingPage(): ReactElement | null {
     const handleInstallClick = () => {
         if (deferredPrompt) {
             deferredPrompt.prompt()
-            deferredPrompt.userChoice.then((choiceResult: any) => {
-                if (choiceResult.outcome === 'accepted') {
-                    console.log('Usuário aceitou a instalação da PWA')
-                } else {
-                    console.log('Usuário não aceitou a instalação da PWA')
-                }
+            deferredPrompt.userChoice.then(() => {
                 setShowButton(false)
                 setDeferredPrompt(null)
             })
@@ -1224,7 +1221,7 @@ export default function LandingPage(): ReactElement | null {
                                                         boxShadow: theme.shadows[10]
                                                     }
                                                 }}
-                                                onClick={() => window.open('https://www.paypal.com/donate/?hosted_button_id=ABCDEFGH12345', '_blank')}
+                                                onClick={() => window.open('https://www.paypal.com/donate/?hosted_buttonid=ABCDEFGH12345', '_blank')}
                                             >
                                                 Doar com PayPal
                                             </Button>

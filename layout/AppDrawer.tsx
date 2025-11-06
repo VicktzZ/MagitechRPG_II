@@ -1,20 +1,24 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
-import { Avatar, Box, Divider, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Typography, useTheme, alpha, Tooltip, IconButton } from '@mui/material';
+import { Avatar, Box, Divider, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Typography, useTheme, alpha, Tooltip, IconButton, Dialog, DialogTitle, DialogContent, Grid, Pagination } from '@mui/material';
+
 import { type KeyboardEvent, type MouseEvent, type ReactElement, type ReactNode, useState } from 'react';
-import { Article, AutoStories, Home, Logout, Menu, Start, LightMode, DarkMode } from '@mui/icons-material';
+import { Article, AutoStories, Home, Logout, Menu, Start, LightMode, DarkMode, Person } from '@mui/icons-material';
 import { useThemeContext } from '@contexts';
 import { signOut, useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import CustomIconButton from './CustomIconButton';
 import Image from 'next/image';
+import { useFirestoreRealtime } from '@hooks/useFirestoreRealtime';
 
 export default function AppDrawer(): ReactElement {
     const theme = useTheme();
-    const { data: session } = useSession();
+    const { data: session, update } = useSession();
     const { themeMode, toggleTheme } = useThemeContext();
     
     const [ drawerOpen, setDrawerOpen ] = useState<boolean>(false);
-   
+    const [ usersModalOpen, setUsersModalOpen ] = useState(false);
+    const [ page, setPage ] = useState(1);
+
     const router = useRouter()
 
     const toggleDrawer =
@@ -30,6 +34,18 @@ export default function AppDrawer(): ReactElement {
 
                 setDrawerOpen(openParam)
             };  
+    
+    const { data: users } = useFirestoreRealtime('user');
+
+    function handleImpersonate(u: any) {
+        try {
+            localStorage.setItem('userId', u.id);
+            update({ user: { ...(session?.user ?? {}), id: u.id } });
+        } catch {}
+        setUsersModalOpen(false);
+        setDrawerOpen(false);
+        router.push('/app');
+    }
 
     const list = (): ReactNode => (
         <Box
@@ -138,7 +154,7 @@ export default function AppDrawer(): ReactElement {
                         </ListItemButton>
                     </ListItem>
                     <ListItem disablePadding>
-                        <ListItemButton onClick={() => { router.push('/app/ficha/create') }}>
+                        <ListItemButton onClick={() => { router.push('/app/charsheet/create') }}>
                             <ListItemIcon>
                                 <Article />
                             </ListItemIcon>
@@ -153,6 +169,16 @@ export default function AppDrawer(): ReactElement {
                             <ListItemText primary='Logout' />
                         </ListItemButton>
                     </ListItem>
+                    {process.env.NEXT_PUBLIC_NODE_ENV === 'development' && (
+                        <ListItem disablePadding>
+                            <ListItemButton onClick={() => setUsersModalOpen(true)}>
+                                <ListItemIcon>
+                                    <Person />
+                                </ListItemIcon>
+                                <ListItemText primary='Simular conta' />
+                            </ListItemButton>
+                        </ListItem>
+                    )}
                 </List>
             </Box>
             <Box 
@@ -229,6 +255,28 @@ export default function AppDrawer(): ReactElement {
             >
                 {list()}
             </Drawer>
+            <Dialog open={usersModalOpen} onClose={() => setUsersModalOpen(false)} maxWidth="md" fullWidth>
+                <DialogTitle>Selecionar usuário</DialogTitle>
+                <DialogContent>
+                    <Grid container spacing={2} sx={{ mt: 1 }}>
+                        {(users || []).slice((page - 1) * 10, page * 10).map((u: any) => (
+                            <Grid item xs={12} sm={6} md={4} key={u.id}>
+                                <ListItemButton onClick={() => handleImpersonate(u)} sx={{ borderRadius: 2, border: '1px solid', borderColor: alpha(theme.palette.divider, 0.5) }}>
+                                    <ListItemIcon>
+                                        <Avatar src={u.image || undefined}>
+                                            {u.name?.charAt(0)?.toUpperCase()}
+                                        </Avatar>
+                                    </ListItemIcon>
+                                    <ListItemText primary={u.name || 'Sem nome'} secondary={u.email || u.id} />
+                                </ListItemButton>
+                            </Grid>
+                        ))}
+                    </Grid>
+                    <Box display="flex" justifyContent="center" mt={2}>
+                        <Pagination count={Math.max(1, Math.ceil((users?.length || 0) / 10))} page={page} onChange={(_, p) => setPage(p)} />
+                    </Box>
+                </DialogContent>
+            </Dialog>
         </Box>
     );
 }

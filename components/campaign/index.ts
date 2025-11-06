@@ -7,6 +7,7 @@ import CampaignHeader from './CampaignHeader';
 import SessionChat from './SessionChat';
 import CampaignGMDashboard from './gmDashboard/CampaignGMDashboard';
 import CampaignNotes from './CampaignNotes';
+import Section from './Section';
 
 export {
     CampaignOptionsModal,
@@ -17,5 +18,6 @@ export {
     CampaignGMDashboard,
     CampaignNotes,
     SessionChat,
-    PlayerAvatar
+    PlayerAvatar,
+    Section
 };

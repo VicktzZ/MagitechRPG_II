@@ -3,26 +3,23 @@
 'use client'
 
 import { useCampaignContext } from '@contexts';
-import {
-    Box,
-    Paper,
-    Snackbar,
-    Typography,
-    Stack,
-    useTheme,
-    Skeleton
-} from '@mui/material'
-import { useQueryClient } from '@tanstack/react-query'
+import { useFirestoreRealtime } from '@hooks/useFirestoreRealtime';
 import {
     People,
     SupervisorAccount
-} from '@mui/icons-material'
-import { campaignService } from '@services'
-import { type ReactElement, useMemo } from 'react'
-import PlayerCard from './PlayerCard'
-import type { Ficha } from '@types'
-import { useRealtimeDatabase } from '@hooks';
+} from '@mui/icons-material';
+import {
+    Box,
+    Paper,
+    Skeleton,
+    Snackbar,
+    Stack,
+    Typography,
+    useTheme
+} from '@mui/material';
 import { blue, green, orange, purple } from '@mui/material/colors';
+import { type ReactElement, useMemo } from 'react';
+import PlayerCard from './PlayerCard';
 
 // Componente Section reutilizável
 interface SectionProps {
@@ -74,58 +71,42 @@ function Section({ title, icon, children, sx }: SectionProps) {
 }
 
 export default function CampaignGMDashboard(): ReactElement | null {
-    const { users, fichas, code } = useCampaignContext()
+    const { users, charsheets } = useCampaignContext()
     
     const theme = useTheme();
     
-    const queryClient = useQueryClient()
+    // const queryClient = useQueryClient()
 
-    const { data: playerFichas, query: { isPending: isPlayerFichasPending  } } = useRealtimeDatabase({
-        collectionName: 'fichas',
-        pipeline: [
-            {
-                $match: {
-                    _id: { $in: fichas.map(f => f._id) }
-                }
-            }
+    const { data: playerCharsheets, loading: isPlayerCharsheetsPending } = useFirestoreRealtime('charsheet', {
+        filters: [
+            { field: 'id', operator: 'in', value: charsheets.map(f => f.id) }
         ],
-        onChange: async () => {
-            // Invalida o cache para forçar refetch dos dados
-            console.log('[GM Dashboard] Invalidando cache e forçando refetch')
-            await queryClient.invalidateQueries({ queryKey: [ 'playerFichas', fichas.map(f => f._id) ] })
-            await queryClient.refetchQueries({ queryKey: [ 'playerFichas', fichas.map(f => f._id) ] })
-        }
-    },
-    {
-        queryKey: [ 'playerFichas', fichas.map(f => f._id) ],
-        queryFn: async () => await campaignService.getFichas(code),
-        staleTime: 0,
-        gcTime: 0
+        enabled: charsheets.length > 0
     })
 
     const players = useMemo(() => {
-        return users.player.map(player => {
-            const playerFicha = playerFichas?.find(f => f.userId === player._id)
+        return users.players?.map(player => {
+            const playerCharsheet = playerCharsheets?.find(f => f.userId === player.id)
     
             return {
-                id: player._id,
+                id: player.id,
                 name: player.name,
                 avatar: player.image ?? '/assets/default-avatar.jpg',
                 status: [],
-                ficha: playerFicha
+                charsheet: playerCharsheet
             }
         })
-    }, [ users, playerFichas ])
+    }, [ users, playerCharsheets ])
 
     // Estatísticas da campanha
     const campaignStats = useMemo(() => {
-        const totalPlayers = players.length;
-        const activePlayers = players.filter(p => p.ficha).length;
-        const averageLevel = playerFichas?.length 
-            ? Math.round(playerFichas.reduce((sum, f) => sum + f.level, 0) / playerFichas.length)
+        const totalPlayers = players?.length ?? 0;
+        const activePlayers = players?.filter(p => p.charsheet).length ?? 0;
+        const averageLevel = playerCharsheets?.length 
+            ? Math.round(playerCharsheets.reduce((sum, f) => sum + f.level, 0) / playerCharsheets.length)
             : 0;
-        const highestLevel = playerFichas?.length 
-            ? Math.max(...playerFichas.map(f => f.level))
+        const highestLevel = playerCharsheets?.length 
+            ? Math.max(...playerCharsheets.map(f => f.level))
             : 0;
         
         return {
@@ -134,7 +115,7 @@ export default function CampaignGMDashboard(): ReactElement | null {
             averageLevel,
             highestLevel
         };
-    }, [ players, playerFichas ]);
+    }, [ players, playerCharsheets ]);
 
     return (
         <Box sx={{ width: '100%', pb: 8, position: 'relative' }}>
@@ -157,7 +138,7 @@ export default function CampaignGMDashboard(): ReactElement | null {
                             </Box>
                         }
                     >
-                        {isPlayerFichasPending ? (
+                        {isPlayerCharsheetsPending ? (
                             <Box sx={{ p: 2 }}>
                                 <Skeleton variant="rounded" height={80} />
                             </Box>
@@ -230,16 +211,16 @@ export default function CampaignGMDashboard(): ReactElement | null {
                     >
                         <Box>
                             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                                {playerFichas?.length || 0} ficha{(playerFichas?.length || 0) !== 1 ? 's' : ''} ativa{(playerFichas?.length || 0) !== 1 ? 's' : ''}
+                                {playerCharsheets?.length || 0} ficha{(playerCharsheets?.length || 0) !== 1 ? 's' : ''} ativa{(playerCharsheets?.length || 0) !== 1 ? 's' : ''}
                             </Typography>
                             
-                            {isPlayerFichasPending ? (
+                            {isPlayerCharsheetsPending ? (
                                 <Stack spacing={2}>
                                     <Skeleton variant="rounded" height={140} />
                                     <Skeleton variant="rounded" height={140} />
                                     <Skeleton variant="rounded" height={140} />
                                 </Stack>
-                            ) : (!playerFichas || playerFichas.length === 0) ? (
+                            ) : (!playerCharsheets || playerCharsheets.length === 0) ? (
                                 <Paper 
                                     sx={{ 
                                         p: 4, 
@@ -268,10 +249,10 @@ export default function CampaignGMDashboard(): ReactElement | null {
                                         gap: 3
                                     }}
                                 >
-                                    {playerFichas.map(ficha => (
+                                    {playerCharsheets.map(charsheet => (
                                         <PlayerCard
-                                            key={ficha._id}
-                                            ficha={ficha as Required<Ficha>}
+                                            key={charsheet.id}
+                                            charsheet={charsheet}
                                         />
                                     ))}
                                 </Box>

@@ -1,38 +1,38 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 'use client'
 
-import { type ReactElement, useState } from 'react'
-import { 
-    Box, 
-    Typography, 
-    Paper, 
-    Accordion, 
-    AccordionSummary, 
-    AccordionDetails, 
+import { elementColor } from '@constants';
+import { useCampaignCurrentCharsheetContext } from '@contexts';
+import type { SpellDTO } from '@models/dtos';
+import {
+    Air,
+    AutoAwesome,
+    Brightness2,
+    Circle,
+    ExpandMore,
+    FlashOn,
+    LocalFireDepartment,
+    Terrain,
+    WaterDrop,
+    WbSunny
+} from '@mui/icons-material';
+import {
+    Accordion,
+    AccordionDetails,
+    AccordionSummary,
+    Box,
     Chip,
+    Paper,
     Stack,
     Tooltip,
+    Typography,
     useTheme
-} from '@mui/material'
-import {
-    ExpandMore,
-    AutoAwesome,
-    LocalFireDepartment,
-    WaterDrop,
-    Terrain,
-    Air,
-    FlashOn,
-    Brightness2,
-    WbSunny,
-    Circle
-} from '@mui/icons-material'
-import type { Magia } from '@types'
-import { useCampaignCurrentFichaContext } from '@contexts';
-import { elementColor } from '@constants'
-import { blue, red, green, orange, purple, grey } from '@mui/material/colors';
+} from '@mui/material';
+import { blue, green, grey, orange, purple, red } from '@mui/material/colors';
+import { type ReactElement, useState } from 'react';
 
-function getMagicColor(magic: Magia): string {
-    switch (magic.elemento) {
+function getSpellColor(spell: SpellDTO): string {
+    switch (spell.element?.toUpperCase()) {
     case 'AR':
     case 'LUZ':
     case 'NÃO-ELEMENTAL':
@@ -72,9 +72,9 @@ function getSpellLevelColor(level: number) {
     case 2:
         return { color: blue[600], bg: blue[100] };
     case 3:
-        return { color: orange[600], bg: orange[100] };
-    case 4:
         return { color: purple[600], bg: purple[100] };
+    case 4:
+        return { color: orange[600], bg: orange[100] };
     default:
         return { color: grey[600], bg: grey[100] };
     }
@@ -82,32 +82,32 @@ function getSpellLevelColor(level: number) {
 interface SpellStageProps {
     stage: number
     description: string
-    magic: Magia
+    spell: SpellDTO
 }
 
-function SpellStage({ stage, description, magic }: SpellStageProps): ReactElement {
-    let mpCost = Number(magic.custo)
+function SpellStage({ stage, description, spell }: SpellStageProps): ReactElement {
+    let mpCost = Number(spell.mpCost)
     let extraCost: Record<string, number> = {
         'estágio 1': 0,
         'estágio 2': 1,
         'estágio 3': 2
     }
 
-    if (Number(magic['nível']) === 4)
+    if (Number(spell.level) === 4)
         extraCost = {
             'estágio 1': 0,
             'estágio 2': 4,
             'maestria': 9
         }
         
-    if (Number(magic['nível']) === 3)
+    if (Number(spell.level) === 3)
         extraCost = {
             'estágio 1': 0,
             'estágio 2': 2,
             'estágio 3': 5
         }
 
-    if (Number(magic['nível']) === 2)
+    if (Number(spell.level) === 2)
         extraCost = {
             'estágio 1': 0,
             'estágio 2': 2,
@@ -179,7 +179,7 @@ function SpellStage({ stage, description, magic }: SpellStageProps): ReactElemen
 }
 
 export default function SpellsSection(): ReactElement {
-    const { ficha } = useCampaignCurrentFichaContext();
+    const { charsheet } = useCampaignCurrentCharsheetContext();
     const theme = useTheme();
 
     const [ expandedSpell, setExpandedSpell ] = useState<string | false>(false)
@@ -188,12 +188,12 @@ export default function SpellsSection(): ReactElement {
         setExpandedSpell(isExpanded ? spellName : false)
     }
 
-    const allSpells = ficha.magics
+    const allSpells = charsheet.spells
     const spellsByLevel = {
-        1: allSpells.filter(spell => Number(spell['nível']) === 1),
-        2: allSpells.filter(spell => Number(spell['nível']) === 2),
-        3: allSpells.filter(spell => Number(spell['nível']) === 3),
-        4: allSpells.filter(spell => Number(spell['nível']) === 4)
+        1: allSpells.filter(spell => Number(spell.level) === 1),
+        2: allSpells.filter(spell => Number(spell.level) === 2),
+        3: allSpells.filter(spell => Number(spell.level) === 3),
+        4: allSpells.filter(spell => Number(spell.level) === 4)
     };
 
     return (
@@ -216,36 +216,6 @@ export default function SpellsSection(): ReactElement {
                 }}
             >
                 <Stack spacing={3}>
-                    {/* Header */}
-                    <Box display="flex" alignItems="center" gap={2}>
-                        <Box 
-                            sx={{
-                                p: 1.5,
-                                borderRadius: 2,
-                                bgcolor: purple[100],
-                                border: '2px solid',
-                                borderColor: purple[200]
-                            }}
-                        >
-                            <AutoAwesome sx={{ color: purple[700], fontSize: '2rem' }} />
-                        </Box>
-                        <Box flex={1}>
-                            <Typography 
-                                variant="h5" 
-                                sx={{ 
-                                    fontWeight: 700,
-                                    color: 'primary.main',
-                                    mb: 0.5
-                                }}
-                            >
-                                Grimório de Magias
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                                {allSpells.length} magia{allSpells.length !== 1 ? 's' : ''} conhecida{allSpells.length !== 1 ? 's' : ''}
-                            </Typography>
-                        </Box>
-                    </Box>
-
                     {/* Estatísticas por Nível */}
                     <Box 
                         sx={{
@@ -276,7 +246,7 @@ export default function SpellsSection(): ReactElement {
                         })}
                     </Box>
 
-                    {/* Lista de Magias */}
+                    {/* Lista de Spells */}
                     <Box>
                         {allSpells.length === 0 ? (
                             <Paper 
@@ -292,20 +262,20 @@ export default function SpellsSection(): ReactElement {
                                     Nenhuma magia conhecida
                                 </Typography>
                                 <Typography variant="body2" color="text.secondary">
-                                    O grimório está vazio. Aprenda novas magias para começar a conjurar!
+                                    O grimório está vazio. Aprenda novas spells para começar a conjurar!
                                 </Typography>
                             </Paper>
                         ) : (
                             <Stack spacing={2}>
-                                {allSpells.map((magic: Magia) => {
-                                    const ElementIcon = getElementIcon(magic.elemento);
-                                    const levelConfig = getSpellLevelColor(Number(magic['nível']));
+                                {allSpells.map(spell => {
+                                    const ElementIcon = getElementIcon(spell.element);
+                                    const levelConfig = getSpellLevelColor(Number(spell.level));
                                     
                                     return (
                                         <Accordion
-                                            key={magic.nome}
-                                            expanded={expandedSpell === magic.nome}
-                                            onChange={handleSpellExpand(magic.nome)}
+                                            key={spell.name}
+                                            expanded={expandedSpell === spell.name}
+                                            onChange={handleSpellExpand(spell.name)}
                                             elevation={2}
                                             sx={{
                                                 border: '1px solid',
@@ -335,14 +305,14 @@ export default function SpellsSection(): ReactElement {
                                                         sx={{
                                                             p: 0.8,
                                                             borderRadius: 1,
-                                                            bgcolor: elementColor[magic.elemento] || grey[300],
+                                                            bgcolor: elementColor[spell.element] || grey[300],
                                                             border: '1px solid',
                                                             borderColor: 'rgba(0,0,0,0.2)'
                                                         }}
                                                     >
                                                         <ElementIcon 
                                                             sx={{ 
-                                                                color: getMagicColor(magic),
+                                                                color: getSpellColor(spell),
                                                                 fontSize: '1.2rem'
                                                             }} 
                                                         />
@@ -356,20 +326,20 @@ export default function SpellsSection(): ReactElement {
                                                                 mb: 0.5
                                                             }}
                                                         >
-                                                            {magic.nome}
+                                                            {spell.name}
                                                         </Typography>
                                                         <Box display="flex" gap={1} flexWrap="wrap">
                                                             <Chip 
-                                                                label={magic.elemento} 
+                                                                label={spell.element} 
                                                                 size="small" 
                                                                 sx={{ 
-                                                                    bgcolor: elementColor[magic.elemento] || grey[300], 
-                                                                    color: getMagicColor(magic),
+                                                                    bgcolor: elementColor[spell.element] || grey[300], 
+                                                                    color: getSpellColor(spell),
                                                                     fontWeight: 600
                                                                 }} 
                                                             />
                                                             <Chip 
-                                                                label={`Nível ${magic['nível']}`} 
+                                                                label={`Nível ${spell.level}`} 
                                                                 size="small" 
                                                                 sx={{
                                                                     bgcolor: levelConfig.bg,
@@ -384,7 +354,7 @@ export default function SpellsSection(): ReactElement {
                                                 <Box display="flex" gap={1} flexWrap="wrap">
                                                     <Tooltip title="Alcance">
                                                         <Chip 
-                                                            label={magic.alcance} 
+                                                            label={spell.range} 
                                                             size="small" 
                                                             sx={{
                                                                 bgcolor: blue[100],
@@ -395,7 +365,7 @@ export default function SpellsSection(): ReactElement {
                                                     </Tooltip>
                                                     <Tooltip title="Tempo de Execução">
                                                         <Chip 
-                                                            label={magic.execução} 
+                                                            label={spell.execution} 
                                                             size="small" 
                                                             sx={{
                                                                 bgcolor: green[100],
@@ -404,9 +374,9 @@ export default function SpellsSection(): ReactElement {
                                                             }}
                                                         />
                                                     </Tooltip>
-                                                    <Tooltip title="Tipo de Magia">
+                                                    <Tooltip title="Tipo de Spell">
                                                         <Chip 
-                                                            label={magic.tipo} 
+                                                            label={spell.type} 
                                                             size="small" 
                                                             sx={{
                                                                 bgcolor: red[100],
@@ -420,10 +390,9 @@ export default function SpellsSection(): ReactElement {
                                             
                                             <AccordionDetails sx={{ p: 3 }}>
                                                 <Stack spacing={2}>
-                                                    {magic['estágio 1'] && <SpellStage magic={magic} stage={1} description={magic['estágio 1']} />}
-                                                    {magic['estágio 2'] && <SpellStage magic={magic} stage={2} description={magic['estágio 2']} />}
-                                                    {magic['estágio 3'] && <SpellStage magic={magic} stage={3} description={magic['estágio 3']} />}
-                                                    {magic.maestria && <SpellStage magic={magic} stage={4} description={magic.maestria} />}
+                                                    {spell.stages?.[0] && <SpellStage spell={spell} stage={1} description={spell.stages?.[0]} />}
+                                                    {spell.stages?.[1] && <SpellStage spell={spell} stage={2} description={spell.stages?.[1]} />}
+                                                    {spell.stages?.[2] && <SpellStage spell={spell} stage={3} description={spell.stages?.[2]} />}
                                                 </Stack>
                                             </AccordionDetails>
                                         </Accordion>

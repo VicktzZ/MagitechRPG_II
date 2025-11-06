@@ -3,12 +3,12 @@
 <div align="center">
   <img src="public/logo.png" alt="MagitechRPG Logo" width="200" />
   <br>
-  <strong>Sistema de gerenciamento de campanhas e fichas de personagem para o RPG MagitechRPG</strong>
+  <strong>Sistema de gerenciamento de campanhas e charsheets de personagem para o RPG MagitechRPG</strong>
 </div>
 
 ## Sobre o Projeto
 
-MagitechRPG II é uma aplicação web moderna desenvolvida para gerenciar campanhas e fichas de personagem do sistema de RPG de mesa MagitechRPG. A plataforma oferece uma interface intuitiva para mestres e jogadores criarem, gerenciarem e acompanharem suas aventuras em um mundo que combina elementos de magia e tecnologia.
+MagitechRPG II é uma aplicação web moderna desenvolvida para gerenciar campanhas e charsheets de personagem do sistema de RPG de mesa MagitechRPG. A plataforma oferece uma interface intuitiva para mestres e jogadores criarem, gerenciarem e acompanharem suas aventuras em um mundo que combina elementos de magia e tecnologia.
 
 ## Sobre o MagitechRPG (O Jogo)
 
@@ -48,7 +48,7 @@ MagitechRPG é um sistema de RPG de mesa original que combina elementos de fanta
 
 - **Dashboard do Jogador**: Interface intuitiva para gerenciar personagens
 - **Dashboard do Mestre**: Ferramentas para administrar campanhas e jogadores
-- **Fichas Interativas**: Criação e edição detalhada de personagens
+- **Charsheets Interativas**: Criação e edição detalhada de personagens
 - **Sistema de Campanhas**: Criação e gestão de campanhas com múltiplos jogadores
 - **Rolagem de Dados**: Sistema visual para rolagem de dados customizáveis
 - **Grimório de Magias**: Gerenciamento de magias por elemento e nível

@@ -1,36 +1,54 @@
-import { connectToDb } from '@utils/database'
-import Campaign from '@models/db/campaign'
-import { pusherServer } from '@utils/pusher'
-import { PusherEvent } from '@enums'
+import { PusherEvent } from '@enums';
+import { CreateCustomItemDTO } from '@models/dtos';
+import { campaignRepository } from '@repositories';
+import { findCampaignByCodeOrId } from '@utils/helpers/findCampaignByCodeOrId';
+import { pusherServer } from '@utils/pusher';
+import { plainToInstance } from 'class-transformer';
+import { validate } from 'class-validator';
+import { v4 as uuidv4 } from 'uuid';
 
 export async function POST(req: Request, { params }: { params: { id: string } }): Promise<Response> {
     try {
-        await connectToDb();
         const { id } = params;
-        const body = await req.json();
-        const { type, item } = body || {};
+        const body: CreateCustomItemDTO = await req.json();
 
-        if (!type || !item || ![ 'weapon','armor','item' ].includes(type)) {
-            return Response.json({ message: 'Parâmetros inválidos' }, { status: 400 });
+        const dto = plainToInstance(CreateCustomItemDTO, body);
+        const errors = await validate(dto);
+
+        if (errors.length > 0) {
+            return Response.json({ message: 'BAD REQUEST', errors }, { status: 400 });
         }
 
-        const campaign = await Campaign.findByIdAndUpdate(
-            id,
-            { $push: { [`custom.items.${type}`]: item } },
-            { new: true }
-        );
+        const { type, item } = body;
 
+        const campaign = await findCampaignByCodeOrId(id);
         if (!campaign) {
             return Response.json({ message: 'Campanha não encontrada' }, { status: 404 });
         }
 
+        const newItem = {
+            ...item,
+            id: uuidv4()
+        };
+
         await pusherServer.trigger(
             `presence-${campaign.campaignCode}`,
             PusherEvent.ITEM_ADDED,
-            { type, item }
+            { type, item: newItem }
         );
 
-        return Response.json(item);
+        await campaignRepository.update({
+            ...campaign,
+            custom: {
+                ...campaign.custom,
+                items: {
+                    ...campaign.custom?.items,
+                    [type]: [ ...campaign.custom?.items?.[type] || [], newItem ]
+                }
+            }
+        });
+
+        return Response.json(newItem);
     } catch (error: any) {
         console.error('Erro ao adicionar item customizado:', error);
         return Response.json({ 

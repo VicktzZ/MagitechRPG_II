@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
 import Chance from 'chance';
-import type { Message } from '@types';
 import { MessageType } from '@enums';
+import { Message } from '@models';
 
 const chance = new Chance();
 
@@ -26,11 +26,11 @@ const formatD20Roll = (roll: number): string => {
 const formatRolls = (rolls: number[], notation: string): string => {
     // Verifica se é uma rolagem de d20
     const isD20 = notation.toLowerCase().match(/^\d*d20$/);
-    
+
     if (isD20) {
         return rolls.map(roll => formatD20Roll(roll)).join(', ');
     }
-    
+
     return `[${rolls.join(', ')}]`;
 };
 
@@ -180,12 +180,11 @@ export const createDiceMessage = (
 
     // Se houver erro, retorna a mensagem de erro
     if (diceResult.error) {
-        return {
+        return new Message({
             text: `❌ Erro ao rolar ${diceResult.notation}: ${diceResult.error}`,
             type: MessageType.ERROR,
-            by: user,
-            timestamp: new Date()
-        };
+            by: user
+        });
     }
 
     // Usa display quando disponível (expressões complexas). Caso contrário, mantém formato antigo
@@ -193,13 +192,12 @@ export const createDiceMessage = (
         ? `${diceResult.display} = ${diceResult.total}`
         : `${formatRolls(diceResult.rolls, diceResult.notation)} = ${diceResult.total}`;
 
-    return {
+    return new Message({
         text: `🎲 ${diceResult.notation}: ${resultText}`,
         type: MessageType.ROLL,
         by: user,
-        timestamp: new Date(),
         isHTML: true
-    };
+    });
 };
 
 export const rollSeparateDice = (
@@ -207,32 +205,34 @@ export const rollSeparateDice = (
     user: { id: string; image: string; name: string }
 ): Message[] | null => {
     const cleanNotation = diceNotation.substring(1).trim(); // Remove o # e espaços
-    
+
     // Validação do número de dados em sequência
     const numberOfDiceMatch = cleanNotation.match(/^(\d+)d/);
     if (numberOfDiceMatch) {
         const numberOfDice = parseInt(numberOfDiceMatch[1]);
         if (numberOfDice > 99) {
-            return [ {
-                text: `❌ Erro ao rolar ${cleanNotation}: Máximo de 99 dados em sequência permitido.`,
-                type: MessageType.ERROR,
-                by: user,
-                timestamp: new Date()
-            } ];
+            return [
+                new Message({
+                    text: `❌ Erro ao rolar ${cleanNotation}: Máximo de 99 dados em sequência permitido.`,
+                    type: MessageType.ERROR,
+                    by: user
+                })
+            ];
         }
     }
-    
+
     const diceResult = rollDice(cleanNotation);
 
     if (diceResult) {
         // Se houver erro, retorna apenas a mensagem de erro
         if (diceResult.error) {
-            return [ {
-                text: `❌ Erro ao rolar ${diceResult.notation}: ${diceResult.error}`,
-                type: MessageType.ERROR,
-                by: user,
-                timestamp: new Date()
-            } ];
+            return [
+                new Message({
+                    text: `❌ Erro ao rolar ${diceResult.notation}: ${diceResult.error}`,
+                    type: MessageType.ERROR,
+                    by: user
+                })
+            ];
         }
 
         // Remove espaços antes de fazer o split

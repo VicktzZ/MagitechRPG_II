@@ -4,11 +4,17 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+        {
+            "type": "node-terminal",
+            "request": "launch",
+            "name": "NEXT_JS (SERVER)",
+            "command": "npm run dev"
+        },
         
         {
             "type": "chrome",
             "request": "launch",
-            "name": "NEXT_JS",
+            "name": "NEXT_JS (CLIENT)",
             "url": "http://localhost:3000",
             "webRoot": "${workspaceFolder}",
             "sourceMaps": true

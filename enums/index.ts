@@ -22,7 +22,7 @@ export enum PusherEvent {
     NEW_MESSAGE = 'client-new_message',
     MESSAGE_SENT = 'message:sent',
     CAMPAIGN_UPDATED = 'campaign:updated',
-    FICHA_UPDATED = 'ficha:updated',
+    CHARSHEET_UPDATED = 'charsheet:updated',
     NOTES_UPDATED = 'notes:updated',
     TEST_REQUEST = 'test:requested',
     TEST_RESULT = 'test:responded',

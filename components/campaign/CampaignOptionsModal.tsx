@@ -1,34 +1,35 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 'use client';
 
-import { Backdrop, CircularProgress, TextField, useTheme } from '@mui/material';
+import { Backdrop, CircularProgress, FormControl, InputLabel, MenuItem, Select, TextField, useTheme } from '@mui/material';
 import { Typography } from '@mui/material';
 import { Box, Modal } from '@mui/material';
-import { generateEntryCode } from '@functions';
 import { useState, type ReactElement } from 'react';
 import { useSnackbar } from 'notistack';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@mui/material';
-import type { Campaign } from '@types';
 import { campaignService } from '@services';
-import { useMutation } from '@node_modules/@tanstack/react-query/build/modern';
+import { useMutation } from '@tanstack/react-query';
+import generateEntryCode from '@utils/generateEntryCode';
+import type { Campaign } from '@models/entities';
 
 export default function CampaignOptionsModal({
     open,
     setOpen,
-    contentType 
-}: { 
+    contentType
+}: {
     open: boolean,
     setOpen: (open: boolean) => void,
-    contentType: 'create' | 'join' 
+    contentType: 'create' | 'join'
 }): ReactElement {
     const { data: session } = useSession();
 
     const [ campaignCode, setCampaignCode ] = useState<string>('');
     const [ campaignProps, setCampaignProps ] = useState<Partial<Campaign>>({
         title: '',
-        description: ''
+        description: '',
+        mode: 'Classic'
     });
 
     const { enqueueSnackbar } = useSnackbar();
@@ -60,11 +61,24 @@ export default function CampaignOptionsModal({
             setOpen(false);
 
             await mutateAsync({
-                admin: [ session?.user?._id ?? '' ],
+                admin: [ session?.user?.id ?? '' ],
                 campaignCode: campaignCodeGen,
                 title: campaignProps.title ?? '',
                 description: campaignProps.description ?? '',
+                mode: campaignProps.mode ?? 'Classic',
                 players: [],
+                notes: [],
+                custom: {
+                    creatures: [],
+                    items: {
+                        weapon: [],
+                        armor: [],
+                        item: []
+                    },
+                    magias: [],
+                    skills: [],
+                    dices: []
+                },
                 session: {
                     users: [],
                     messages: []
@@ -104,7 +118,7 @@ export default function CampaignOptionsModal({
                             width: '80%'
                         }
                     }}
-                >   
+                >
                     <Box height='100%' display='flex' gap={4} flexDirection='column'>
                         <Box display='flex' gap={2} justifyContent='space-between' alignItems='center'>
                             <Typography variant='h6'>Campanha</Typography>
@@ -113,7 +127,7 @@ export default function CampaignOptionsModal({
                             <Box display='flex' flexDirection='column' gap={2}>
                                 {contentType === 'join' ? (
                                     <TextField
-                                        fullWidth 
+                                        fullWidth
                                         label='Código'
                                         placeholder='Código da campanha'
                                         value={campaignCode}
@@ -122,28 +136,43 @@ export default function CampaignOptionsModal({
                                 ) : (
                                     <>
                                         <TextField
-                                            fullWidth 
+                                            fullWidth
                                             label='Título'
                                             placeholder='Nome da campanha'
                                             value={campaignProps.title}
                                             onChange={(e) => { setCampaignProps(state => ({ ...state, title: e.target.value })); }}
                                         />
                                         <TextField
-                                            fullWidth 
+                                            fullWidth
                                             label='Descrição'
                                             placeholder='Descrição da campanha'
                                             value={campaignProps.description}
                                             onChange={(e) => { setCampaignProps(state => ({ ...state, description: e.target.value })); }}
                                         />
+                                        <FormControl fullWidth>
+                                            <InputLabel>Modo da campanha</InputLabel>
+                                            <Select
+                                                fullWidth
+                                                label='Modo'
+                                                value={campaignProps.mode}
+                                                placeholder='Modo da campanha'
+                                                onChange={(e) => { setCampaignProps(state => ({ ...state, mode: e.target.value })); }}
+                                                displayEmpty
+                                            >
+                                                <MenuItem value="" disabled>Selecione um modo</MenuItem>
+                                                <MenuItem value='Classic'>Classic</MenuItem>
+                                                <MenuItem value='Roguelite'>Roguelite</MenuItem>
+                                            </Select>
+                                        </FormControl>
                                     </>
                                 )}
                             </Box>
                             <Box display='flex' gap={2} justifyContent='space-between' width='100%'>
                                 <Button onClick={() => { setOpen(false); }} variant='outlined'>Cancelar</Button>
-                                <Box display='flex'alignItems='center' gap={1.5}>
-                                    <Button 
-                                        onClick={contentType === 'join' ? joinCampaign : createCampaign} 
-                                        color={'terciary' as any} 
+                                <Box display='flex' alignItems='center' gap={1.5}>
+                                    <Button
+                                        onClick={contentType === 'join' ? joinCampaign : createCampaign}
+                                        color={'terciary' as any}
                                         variant='contained'
                                     >{contentType === 'join' ? 'Ingressar' : 'Criar'}</Button>
                                 </Box>

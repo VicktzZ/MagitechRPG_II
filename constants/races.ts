@@ -1,6 +1,6 @@
 export const races = {
     'Humano': {
-        attributes: {
+        stats: {
             lp: 0,
             mp: 0,
             ap: 0,
@@ -9,7 +9,7 @@ export const races = {
     },
 
     'Autômato': {
-        attributes: {
+        stats: {
             lp: 0,
             mp: 6,
             ap: -1,
@@ -18,7 +18,7 @@ export const races = {
     },
 
     'Ciborgue': {
-        attributes: {
+        stats: {
             lp: 0,
             mp: -5,
             ap: 1,
@@ -27,7 +27,7 @@ export const races = {
     },
 
     'Humanoide': {
-        attributes: {
+        stats: {
             lp: 3,
             mp: 3,
             ap: 0,
@@ -36,7 +36,7 @@ export const races = {
     },
 
     'Mutante': {
-        attributes: {
+        stats: {
             lp: 6,
             mp: -3,
             ap: 0,
@@ -45,7 +45,7 @@ export const races = {
     },
 
     'Magia-viva': {
-        attributes: {
+        stats: {
             lp: -4,
             mp: 8,
             ap: 0,

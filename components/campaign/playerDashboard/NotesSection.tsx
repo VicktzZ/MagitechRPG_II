@@ -1,47 +1,32 @@
+/* eslint-disable max-len */
 /* eslint-disable react-hooks/rules-of-hooks */
 'use client';
 
-import { useCampaignCurrentFichaContext } from '@contexts';
-import { 
-    Box,
-    Paper, 
-    TextField, 
-    Typography,
-    Stack,
-    Chip,
-    useTheme
-} from '@mui/material';
+import { useCampaignCurrentCharsheetContext } from '@contexts';
 import {
-    Notes,
     Edit,
+    Notes,
     Save
 } from '@mui/icons-material';
-import { useEffect, useState, type ReactElement } from 'react';
-import { grey, blue, green } from '@mui/material/colors';
+import {
+    Box,
+    Chip,
+    Paper,
+    Stack,
+    TextField,
+    Typography,
+    useTheme
+} from '@mui/material';
+import { blue, green, grey } from '@mui/material/colors';
+import { useState, type ReactElement } from 'react';
 
 export default function NotesSection(): ReactElement {
-    const { ficha, updateFicha } = useCampaignCurrentFichaContext();
+    const { charsheet, updateCharsheet } = useCampaignCurrentCharsheetContext();
     const theme = useTheme();
-    const fichaCopy = { ...ficha };
 
-    const [ notes, setNotes ] = useState(fichaCopy?.anotacoes ?? '');
+    const [ notes, setNotes ] = useState(charsheet?.anotacoes ?? '');
     const [ isEditing, setIsEditing ] = useState(false);
-    const [ wordCount, setWordCount ] = useState(0);
-    const [ charCount, setCharCount ] = useState(0);
-
-    useEffect(() => {
-        updateFicha({
-            ...fichaCopy,
-            anotacoes: notes
-        });
-        
-        // Atualiza contadores
-        const words = notes.trim() ? notes.trim().split(/\s+/).length : 0;
-        const chars = notes.length;
-        setWordCount(words);
-        setCharCount(chars);
-    }, [ notes ]);
-
+    
     const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>): void => {
         const newValue = e.target.value;
         setNotes(newValue);
@@ -53,6 +38,9 @@ export default function NotesSection(): ReactElement {
 
     const handleBlur = () => {
         setIsEditing(false);
+        if (charsheet) {
+            updateCharsheet({ anotacoes: notes });
+        }
     };
 
     return (
@@ -137,54 +125,17 @@ export default function NotesSection(): ReactElement {
                         </Box>
                     </Box>
 
-                    {/* Estatísticas */}
-                    <Box 
-                        sx={{
-                            display: 'flex',
-                            justifyContent: 'space-around',
-                            p: 2,
-                            bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
-                            borderRadius: 2,
-                            border: '1px solid',
-                            borderColor: 'divider'
-                        }}
-                    >
-                        <Stack alignItems="center" spacing={0.5}>
-                            <Typography variant="h6" sx={{ color: blue[600], fontWeight: 700 }}>
-                                {wordCount}
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary">
-                                Palavra{wordCount !== 1 ? 's' : ''}
-                            </Typography>
-                        </Stack>
-                        <Stack alignItems="center" spacing={0.5}>
-                            <Typography variant="h6" sx={{ color: green[600], fontWeight: 700 }}>
-                                {charCount}
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary">
-                                Caractere{charCount !== 1 ? 's' : ''}
-                            </Typography>
-                        </Stack>
-                        <Stack alignItems="center" spacing={0.5}>
-                            <Typography variant="h6" sx={{ color: grey[600], fontWeight: 700 }}>
-                                {Math.ceil(charCount / 280) || 1}
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary">
-                                Página{Math.ceil(charCount / 280) !== 1 ? 's' : ''}
-                            </Typography>
-                        </Stack>
-                    </Box>
-
                     {/* Campo de Texto */}
                     <Box flex={1}>
                         <TextField
                             fullWidth
                             multiline
+                            rows={20}
                             value={notes}
                             onChange={handleChange}
                             onFocus={handleFocus}
                             onBlur={handleBlur}
-                            placeholder="✍️ Escreva suas anotações aqui...\n\n• Lembretes importantes\n• Estratégias de combate\n• Informações sobre NPCs\n• Pistas e mistérios\n• Objetivos da sessão"
+                            placeholder={'✍️ Escreva suas anotações aqui...\n\n• Lembretes importantes\n• Estratégias de combate\n• Informações sobre NPCs\n• Pistas e mistérios\n• Objetivos da sessão'}
                             sx={{
                                 '& .MuiOutlinedInput-root': {
                                     alignItems: 'flex-start',

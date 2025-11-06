@@ -1,21 +1,15 @@
-import Campaign from '@models/db/campaign';
-import { connectToDb } from '@utils/database';
+import { campaignRepository } from '@repositories';
+import { CampaignDTO } from '@models/dtos/CampaignDTO';
+import { validate } from 'class-validator';
+import { plainToInstance } from 'class-transformer';
+import { findCampaignByCodeOrId } from '@utils/helpers/findCampaignByCodeOrId';
+import type { Campaign } from '@models/entities/Campaign';
 
-interface id { id: string }
-interface CampaignType { campaignCode: string; admin: string[] }
-
-export async function GET(_req: Request, { params }: { params: id }): Promise<Response> {
+export async function GET(_req: Request, { params }: { params: { id: string } }): Promise<Response> {
     try {
         const { id } = params;
-        await connectToDb();
 
-        let campaign;
-        if (id.length === 8) {
-            campaign = await Campaign.findOne({ campaignCode: id });
-        } else {
-            campaign = await Campaign.findById(id);
-        }
-
+        const campaign = await findCampaignByCodeOrId(id);
         if (!campaign) {
             return Response.json({ message: 'NOT FOUND' }, { status: 404 });
         }
@@ -25,50 +19,44 @@ export async function GET(_req: Request, { params }: { params: id }): Promise<Re
         return Response.json({ message: 'FORBIDDEN', error: error.message }, { status: 403 });
     }
 }
-
-export async function DELETE(_req: Request, { params }: { params: id }): Promise<Response> {
+ 
+export async function DELETE(_req: Request, { params }: { params: { id: string } }): Promise<Response> {
     try {
-        await connectToDb();
-        let code;
-
         const { id } = params;
-        if (id.length === 8) code = id;
-
-        const campaign = await Campaign.findOneAndDelete(
-            code ? { campaignCode: code } : { _id: id }
-        );
+        const campaign = await findCampaignByCodeOrId(id);
 
         if (!campaign) {
             return Response.json({ message: 'NOT FOUND' }, { status: 404 });
         }
 
-        return Response.json({ deletedCampaign: campaign, message: 'SUCCESS' });
+        await campaignRepository.delete(campaign.id);
+        
+        return Response.json({ message: 'SUCCESS' });
     } catch (error: any) {
         return Response.json({ message: 'BAD REQUEST', error: error.message }, { status: 400 });
     }
 }
 
-export async function PATCH(req: Request, { params }: { params: id }): Promise<Response> {
+export async function PATCH(req: Request, { params }: { params: { id: string } }): Promise<Response> {
     try {
-        await connectToDb();
-        
-        let code;
-
         const { id } = params;
-        if (id.length === 8) code = id;
+        const body: CampaignDTO = await req.json();
 
-        const body: CampaignType = await req.json();
-        const campaign = await Campaign.findOneAndUpdate<CampaignType>(
-            code ? { campaignCode: code } : { _id: id },
-            body,
-            { new: true }
-        );
+        const dto = plainToInstance(CampaignDTO, body, { excludeExtraneousValues: true });
+        const errors = await validate(dto, { skipMissingProperties: true });
 
+        if (errors.length > 0) {
+            return Response.json({ message: 'BAD REQUEST', errors }, { status: 400 });
+        }
+
+        const campaign = await findCampaignByCodeOrId(id);
         if (!campaign) {
             return Response.json({ message: 'NOT FOUND' }, { status: 404 });
         }
 
-        return Response.json({ updatedCampaign: campaign, message: 'SUCCESS' });
+        await campaignRepository.update({ ...dto, id } as Campaign);
+        
+        return Response.json({ message: 'SUCCESS' });
     } catch (error: any) {
         return Response.json({ message: 'NOT FOUND', error: error.message }, { status: 404 });
     }

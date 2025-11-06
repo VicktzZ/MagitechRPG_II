@@ -1,14 +1,21 @@
-import type { CampaignData } from '@types'
+import type { CampaignData } from '@models/types/session'
+import type { Campaign } from '@models/entities'
 import { createContext, useContext } from 'react'
 
-export const campaignContext = createContext<CampaignData>({
+export interface CampaignContextValue extends CampaignData {
+    updateCampaign: (data: Partial<Campaign>) => Promise<void>
+}
+
+export const campaignContext = createContext<CampaignContextValue>({
     campaign: {
-        _id: '',
+        id: '',
         admin: [],
         campaignCode: '',
         title: '',
         description: '',
         players: [],
+        mode: 'Classic',
+        createdAt: new Date().toISOString(),
         session: {
             users: [],
             messages: []
@@ -19,21 +26,21 @@ export const campaignContext = createContext<CampaignData>({
                 armor: [],
                 item: []
             },
+            dices: [],
             magias: [],
             creatures: [],
             skills: []
         },
-        myFicha: null,
         notes: []
     },
     users: {
         admin: [],
-        player: [],
+        players: [],
         all: []
     },
-    fichas: [],
+    charsheets: [],
     isUserGM: false,
-    code: ''
+    updateCampaign: async () => {}
 })
 
-export const useCampaignContext = (): CampaignData => useContext(campaignContext)
+export const useCampaignContext = (): CampaignContextValue => useContext(campaignContext)

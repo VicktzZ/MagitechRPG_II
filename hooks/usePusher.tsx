@@ -2,17 +2,18 @@ import { useEffect, useRef, useCallback } from 'react';
 import PusherClient, { type PresenceChannel } from 'pusher-js';
 import { useChannel } from '@contexts/channelContext';
 import { PusherEvent } from '@enums';
+import type { Session } from 'next-auth';
 
 const PUSHER_KEY = process.env.NEXT_PUBLIC_PUSHER_KEY;
 const CLUSTER = 'sa1';
 
-export function usePusher(campaignName: string, isUserGM: boolean, ficha: any, session: any) {
+export function usePusher(campaignName: string, isUserGM: boolean, session: Session | null) {
     const pusherRef = useRef<PusherClient | null>(null);
     const channelRef = useRef<PresenceChannel | null>(null);
     const { setChannel } = useChannel();
 
     const subscribe = useCallback(() => {
-        if (!pusherRef.current || !campaignName || (!isUserGM && !ficha)) return;
+        if (!pusherRef.current || !campaignName || !isUserGM) return;
 
         const channel = pusherRef.current.subscribe(campaignName) as PresenceChannel;
 
@@ -20,7 +21,7 @@ export function usePusher(campaignName: string, isUserGM: boolean, ficha: any, s
             setChannel(channel);
             channelRef.current = channel;
         });
-    }, [ campaignName, isUserGM, ficha, setChannel ]);
+    }, [ campaignName, isUserGM, setChannel ]);
 
     useEffect(() => {
         if (!pusherRef.current) {
@@ -44,6 +45,7 @@ export function usePusher(campaignName: string, isUserGM: boolean, ficha: any, s
         };
 
         document.addEventListener('visibilitychange', onVisible);
+        console.log('[Pusher Client] Connected')
 
         return () => {
             document.removeEventListener('visibilitychange', onVisible);
@@ -57,5 +59,5 @@ export function usePusher(campaignName: string, isUserGM: boolean, ficha: any, s
             pusherRef.current?.disconnect();
             pusherRef.current = null;
         };
-    }, [ subscribe, campaignName, isUserGM, ficha, setChannel ]);
+    }, [ subscribe, campaignName, isUserGM, setChannel ]);
 }

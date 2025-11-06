@@ -1,10 +1,11 @@
+/* eslint-disable @typescript-eslint/prefer-nullish-coalescing */
 import { useCallback, useMemo, useState, useRef } from 'react';
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSnackbar } from 'notistack';
 import { Close } from '@mui/icons-material';
 import { toastDefault } from '@constants';
 import { useDebounce } from '@uidotdev/usehooks';
-import type { UseResourceListOptions, UseResourceListReturn } from '@types';
+import type { UseResourceListOptions, UseResourceListReturn } from '@models/types/hooks';
 
 export const useResourceList = <T extends Record<string, any>>(
     options: UseResourceListOptions<T>
@@ -42,23 +43,23 @@ export const useResourceList = <T extends Record<string, any>>(
     const isAllMode = useMemo(() => Boolean(filter && filter !== 'Nenhum'), [ filter ]);
 
     const fetchItems = useCallback(
-        async ({ pageParam = 1 }) => {
+        async ({ pageParam = null }: { pageParam?: string | null }) => {
             const params = {
                 queryParams: {
                     search: debouncedSearch,
                     filter,
                     sort: sort.value,
                     order: sort.order,
-                    page: pageParam.toString(),
-                    limit: pageSize.toString()
+                    limit: pageSize.toString(),
+                    cursor: pageParam || undefined
                 }
             };
 
             const data = await fetchFunction(params);
 
             return {
-                data,
-                nextPage: data?.length === pageSize ? pageParam + 1 : undefined
+                data: data.data || [],
+                nextPage: data.hasMore ? data.nextCursor : undefined
             };
         },
         [ debouncedSearch, filter, sort, pageSize, fetchFunction ]
@@ -74,12 +75,11 @@ export const useResourceList = <T extends Record<string, any>>(
                     filter,
                     sort: sort.value,
                     order: sort.order,
-                    page: '1',
                     limit: '100'
                 }
             };
             const data = await fetchFunction(params);
-            return data?.sort((a, b) => (a['nível'] || 0) - (b['nível'] || 0));
+            return data?.data?.sort((a, b) => (a['nível'] || 0) - (b['nível'] || 0)) || [];
         },
         enabled: isAllMode,
         staleTime: 60000,
@@ -173,7 +173,7 @@ export const useResourceList = <T extends Record<string, any>>(
         // (itens da primeira página substituem itens duplicados de páginas posteriores)
         for (let i = allItems.length - 1; i >= 0; i--) {
             const item = allItems[i];
-            const id = item['_id'] || item['id'];
+            const id = item.id || item.id;
             if (id) {
                 uniqueMap.set(id, item);
             }

@@ -1,34 +1,45 @@
-import Campaign from '@models/db/campaign';
-import { connectToDb } from '@utils/database';
-import type { Campaign as CampaignType } from '@types';
+import { campaignRepository } from '@repositories';
+import { findCampaignByCodeOrId } from '@utils/helpers/findCampaignByCodeOrId';
+import { CampaignDTO } from '@models/dtos';
+import { validate } from 'class-validator';
+import { plainToInstance } from 'class-transformer';
 import type { NextRequest } from 'next/server';
+import { Campaign } from '@models/entities';
 
 export async function GET(req: NextRequest): Promise<Response> {
     try {
-        await connectToDb();
-        let response;
-
         const campaignCode = req.nextUrl.searchParams.get('code');
         const userId = req.nextUrl.searchParams.get('userId');
 
         if (campaignCode) {
-            response = await Campaign.findOne({ campaignCode });
-        } else if (userId) {
-            const campaignAsPlayer = await Campaign.find({ 'players.userId': userId });
-            const campaignAsGM = await Campaign.find({ admin: userId });
-            
-            // Remove duplicatas usando Set e o ID da campanha como chave
-            const uniqueCampaigns = new Map();
-            [ ...campaignAsPlayer, ...campaignAsGM ].forEach(camp => {
-                uniqueCampaigns.set(camp._id.toString(), camp);
-            });
-            
-            response = Array.from(uniqueCampaigns.values());
-        } else {
-            response = await Campaign.find();
+            const campaign = await findCampaignByCodeOrId(campaignCode);
+            if (!campaign) {
+                return Response.json({ message: 'NOT FOUND' }, { status: 404 });
+            }
+            return Response.json(campaign);
         }
-        
-        return Response.json(response);
+
+        if (userId) {
+            const asGmQuery = campaignRepository
+                .whereArrayContains('admin', userId)
+                .find();
+            
+            const allCampaignsQuery = campaignRepository.find();
+
+            const [ gmCampaigns, allCampaigns ] = await Promise.all([ asGmQuery, allCampaignsQuery ]);
+
+            const asGm = gmCampaigns.map(c => ({ id: c.id, code: c.campaignCode }));
+
+            const asPlayer = allCampaigns
+                .filter(c => Array.isArray(c.players) && c.players.some(p => p.userId === userId))
+                .map(c => ({ id: c.id, code: c.campaignCode }));
+
+            return Response.json({ asGm, asPlayer });
+        }
+
+        const allCampaigns = await campaignRepository.find();
+        return Response.json(allCampaigns);
+
     } catch (error: any) {
         return Response.json({ message: 'NOT FOUND', error: error.message }, { status: 404 });
     }
@@ -36,13 +47,19 @@ export async function GET(req: NextRequest): Promise<Response> {
 
 export async function POST(req: Request): Promise<Response> {
     try {
-        await connectToDb();
+        const body: Campaign = await req.json();
+        const dto = plainToInstance(CampaignDTO, body);
+        const errors = await validate(dto);
         
-        const campaignBody: CampaignType = await req.json();
-        const campaign = await Campaign.create<CampaignType>(campaignBody);
-
-        return Response.json(campaign);
+        if (errors.length > 0) {
+            return Response.json({ message: 'BAD REQUEST', errors }, { status: 400 });
+        }
+        
+        const newCampaign = new Campaign(dto);
+        const createdCampaign = await campaignRepository.create(newCampaign);
+        
+        return Response.json(createdCampaign, { status: 201 });
     } catch (error: any) {
         return Response.json({ message: 'BAD REQUEST', error: error.message }, { status: 400 });
     }
-}   
+}

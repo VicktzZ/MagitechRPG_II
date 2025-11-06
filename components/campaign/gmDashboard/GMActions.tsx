@@ -1,43 +1,43 @@
 'use client';
 
 import { useCampaignContext } from '@contexts';
+import { useFirestoreRealtime } from '@hooks/useFirestoreRealtime';
+import AddItemModal from '@layout/AddItemModal';
+import type { Armor, Item, Weapon } from '@models';
+import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import NoteAddIcon from '@mui/icons-material/NoteAdd';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
-import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
-import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import {
+    Avatar,
     Box,
     Button,
+    Chip,
+    CircularProgress,
     Dialog,
     DialogActions,
     DialogContent,
     DialogTitle,
+    Divider,
     List,
     ListItem,
     ListItemAvatar,
-    ListItemText,
-    Avatar,
     ListItemIcon,
-    ListItemText as MenuItemText,
+    ListItemText,
     Menu,
     MenuItem,
+    ListItemText as MenuItemText,
     TextField,
-    Typography,
-    Chip,
-    Divider,
-    CircularProgress
+    Typography
 } from '@mui/material';
-import { campaignService, fichaService } from '@services';
-import type { Note, Weapon, Armor, Item } from '@types';
+import { blue, green } from '@mui/material/colors';
+import { campaignService, charsheetService } from '@services';
+import { useQueryClient } from '@tanstack/react-query';
 import { useSnackbar } from 'notistack';
 import { useMemo, useState, type ReactElement } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
-import { useRealtimeDatabase } from '@hooks';
-import { blue, green } from '@mui/material/colors';
-import AddItemModal from '@layout/AddItemModal';
 
 export default function GMActions(): ReactElement {
-    const { campaign, isUserGM, users, fichas, code } = useCampaignContext()
+    const { campaign, isUserGM, users, charsheets } = useCampaignContext()
     const { enqueueSnackbar } = useSnackbar()
 
     const [ anchorEl, setAnchorEl ] = useState<null | HTMLElement>(null)
@@ -79,11 +79,7 @@ export default function GMActions(): ReactElement {
                 return
             }
 
-            const newNote: Note = {
-                content: noteContent.trim(),
-                timestamp: new Date()
-            }
-            await campaignService.createNote(campaign._id!, newNote)
+            await campaignService.createNote(campaign.id, { content: noteContent.trim() })
             enqueueSnackbar('Nota criada com sucesso!', { variant: 'success' })
             setOpenAddDialog(false)
             setNoteContent('')
@@ -93,35 +89,29 @@ export default function GMActions(): ReactElement {
         }
     }
 
-    // Player fichas realtime
+    // Player charsheets em tempo real usando Firestore
     const queryClient = useQueryClient()
-    const { data: playerFichas } = useRealtimeDatabase({
-        collectionName: 'fichas',
-        pipeline: [
-            { $match: { _id: { $in: fichas.map(f => f._id) } } }
-        ],
+    const { data: playerCharsheets } = useFirestoreRealtime('charsheet', {
+        filters: charsheets.length > 0 ? [
+            { field: 'id', operator: 'in', value: charsheets.map(f => f.id) }
+        ] : undefined,
         onChange: async () => {
-            await queryClient.invalidateQueries({ queryKey: [ 'playerFichas', fichas.map(f => f._id) ] })
-            await queryClient.refetchQueries({ queryKey: [ 'playerFichas', fichas.map(f => f._id) ] })
+            await queryClient.invalidateQueries({ queryKey: [ 'playerCharsheets', charsheets.map(f => f.id) ] })
+            await queryClient.refetchQueries({ queryKey: [ 'playerCharsheets', charsheets.map(f => f.id) ] })
         }
-    }, {
-        queryKey: [ 'playerFichas', fichas.map(f => f._id) ],
-        queryFn: async () => await campaignService.getFichas(code),
-        staleTime: 0,
-        gcTime: 0
     })
 
     const players = useMemo(() => {
-        return users.player.map(player => {
-            const playerFicha = playerFichas?.find(f => f.userId === player._id)
+        return users.players?.map(player => {
+            const playerCharsheet = playerCharsheets?.find(f => f.userId === player.id)
             return {
-                id: player._id,
+                id: player.id,
                 name: player.name,
                 avatar: player.image ?? '/assets/default-avatar.jpg',
-                ficha: playerFicha
+                charsheet: playerCharsheet
             }
         })
-    }, [ users, playerFichas ])
+    }, [ users, playerCharsheets ])
 
     const handleOpenLevelUp = () => {
         setSelectedPlayers([])
@@ -136,13 +126,13 @@ export default function GMActions(): ReactElement {
             await Promise.all(
                 selectedPlayers.map(async playerId => {
                     const player = players.find(p => p.id === playerId)
-                    if (player?.ficha?._id) {
+                    if (player?.charsheet?.id) {
                         try {
-                            const updatedFicha = await fichaService.increaseLevel(player.ficha._id, levelsToAdd)
-                            enqueueSnackbar(`Ficha ${player.ficha.name} foi para o nível ${updatedFicha.level}!`, { variant: 'success' })
+                            const updatedCharsheet = await charsheetService.increaseLevel(player.charsheet.id, levelsToAdd)
+                            enqueueSnackbar(`Charsheet ${player.charsheet.name} foi para o nível ${updatedCharsheet.level}!`, { variant: 'success' })
                         } catch (error) {
-                            console.error(`Erro ao evoluir ficha ${player.ficha.name}:`, error)
-                            enqueueSnackbar(`Não foi possível evoluir a ficha ${player.ficha.name}!`, { variant: 'error' })
+                            console.error(`Erro ao evoluir charsheet ${player.charsheet.name}:`, error)
+                            enqueueSnackbar(`Não foi possível evoluir a charsheet ${player.charsheet.name}!`, { variant: 'error' })
                         }
                     }
                 })
@@ -266,18 +256,18 @@ export default function GMActions(): ReactElement {
                             </Typography>
                             <Box sx={{ maxHeight: 360, overflow: 'auto', border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
                                 <List>
-                                    {players.map((player, index) => (
+                                    {players?.map((player, index) => (
                                         <Box key={player.id}>
                                             <ListItem
                                                 button
                                                 onClick={() => {
                                                     if (isLevelingUp) return
-                                                    const newSelected = selectedPlayers.includes(player.id!)
+                                                    const newSelected = selectedPlayers.includes(player.id)
                                                         ? selectedPlayers.filter(id => id !== player.id)
                                                         : [ ...selectedPlayers, player.id ]
-                                                    setSelectedPlayers(newSelected as string[])
+                                                    setSelectedPlayers(newSelected)
                                                 }}
-                                                selected={selectedPlayers.includes(player.id!)}
+                                                selected={selectedPlayers.includes(player.id)}
                                                 disabled={isLevelingUp}
                                                 sx={{
                                                     '&.Mui-selected': {
@@ -290,7 +280,7 @@ export default function GMActions(): ReactElement {
                                                     <Avatar 
                                                         src={player.avatar}
                                                         sx={{
-                                                            border: selectedPlayers.includes(player.id!) 
+                                                            border: selectedPlayers.includes(player.id) 
                                                                 ? `2px solid ${green[500]}` 
                                                                 : '2px solid transparent'
                                                         }}
@@ -300,9 +290,9 @@ export default function GMActions(): ReactElement {
                                                     primary={
                                                         <Box display="flex" alignItems="center" gap={1}>
                                                             <Typography variant="subtitle1" fontWeight={600}>
-                                                                {player.ficha?.name ?? 'Sem ficha'}
+                                                                {player.charsheet?.name ?? 'Sem charsheet'}
                                                             </Typography>
-                                                            {selectedPlayers.includes(player.id!) && (
+                                                            {selectedPlayers.includes(player.id) && (
                                                                 <Chip label="Selecionado" size="small" color="success" sx={{ fontWeight: 600 }} />
                                                             )}
                                                         </Box>
@@ -310,13 +300,13 @@ export default function GMActions(): ReactElement {
                                                     secondary={
                                                         <Box display="flex" alignItems="center" gap={1} mt={0.5}>
                                                             <Chip 
-                                                                label={`Nível ${player.ficha?.level ?? 'N/A'}`}
+                                                                label={`Nível ${player.charsheet?.level ?? 'N/A'}`}
                                                                 size="small"
                                                                 sx={{ bgcolor: blue[100], color: blue[800], fontWeight: 600 }}
                                                             />
-                                                            {selectedPlayers.includes(player.id!) && (
+                                                            {selectedPlayers.includes(player.id) && (
                                                                 <Chip 
-                                                                    label={`→ Nível ${(player.ficha?.level ?? 0) + levelsToAdd}`}
+                                                                    label={`→ Nível ${(player.charsheet?.level ?? 0) + levelsToAdd}`}
                                                                     size="small"
                                                                     sx={{ bgcolor: green[100], color: green[800], fontWeight: 600 }}
                                                                 />
@@ -357,17 +347,16 @@ export default function GMActions(): ReactElement {
                 title="Adicionar Item Customizado"
                 onConfirm={async (created: Weapon | Armor | Item) => {
                     try {
-                        // Type guards para identificar o tipo do item
                         const isWeapon = (it: any): it is Weapon => it && 'hit' in it && 'effect' in it && 'ammo' in it
                         const isArmor = (it: any): it is Armor => it && 'displacementPenalty' in it && 'value' in it && 'categ' in it
 
                         const type: 'weapon' | 'armor' | 'item' = isWeapon(created) ? 'weapon' : isArmor(created) ? 'armor' : 'item'
 
-                        await campaignService.addCustomItem(campaign._id!, type, created)
+                        await campaignService.addCustomItem(campaign.id, type, created)
                         
                         // Atualiza dados da campanha imediatamente
-                        await queryClient.invalidateQueries({ queryKey: [ 'campaignData', code ] })
-                        await queryClient.refetchQueries({ queryKey: [ 'campaignData', code ] })
+                        await queryClient.invalidateQueries({ queryKey: [ 'campaignData', campaign.campaignCode ] })
+                        await queryClient.refetchQueries({ queryKey: [ 'campaignData', campaign.campaignCode ] })
 
                         setAddItemModalOpen(false)
                         enqueueSnackbar('Item customizado adicionado à campanha!', { variant: 'success' })

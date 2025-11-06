@@ -1,12 +1,11 @@
 import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Grid, Tab, Tabs, TextField } from '@mui/material';
 import { useState } from 'react';
-import type { Ficha } from '@types';
-import { useCampaignContext } from '@contexts';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { fichaService } from '@services';
-import { useSnackbar } from '@node_modules/notistack';
+import { charsheetService } from '@services';
+import { useSnackbar } from 'notistack';
+import { type CharsheetDTO } from '@models/dtos';
 
 const playerStatusSchema = z.object({
     name: z.string().min(1, 'Nome é obrigatório'),
@@ -18,43 +17,46 @@ const playerStatusSchema = z.object({
         foc: z.number().int().min(0),
         log: z.number().int().min(0),
         sab: z.number().int().min(0),
-        car: z.number().int().min(0),
+        car: z.number().int().min(0)
+    }),
+    stats: z.object({
         lp: z.number().int().min(0),
         mp: z.number().int().min(0),
-        ap: z.number().int().min(0)
+        ap: z.number().int().min(0),
+        maxLp: z.number().int().min(0),
+        maxMp: z.number().int().min(0),
+        maxAp: z.number().int().min(0)
     }),
-    maxLp: z.number().int().min(0),
-    maxMp: z.number().int().min(0),
-    maxAp: z.number().int().min(0),
     money: z.string().transform(val => parseInt(val)).refine(val => !isNaN(val) && val >= 0, { message: 'O valor deve ser um número válido e maior ou igual a 0' })
 });
 
 type PlayerStatusFormData = z.infer<typeof playerStatusSchema>;
 
-function ChangePlayerStatusModal({ open, onClose, ficha }: { open: boolean, onClose: () => void, ficha: Required<Ficha> }) {
+function ChangePlayerStatusModal({ open, onClose, charsheet }: { open: boolean, onClose: () => void, charsheet: Required<CharsheetDTO> }) {
     const [ tabValue, setTabValue ] = useState(0);
-    const { setFichaUpdated, setPlayerFichas, playerFichas } = useCampaignContext();
     const { enqueueSnackbar } = useSnackbar();
 
     const defaultValues = {
-        name: ficha.name,
-        race: ficha.race as string,
-        traits: ficha.traits.join(', '),
+        name: charsheet.name,
+        race: charsheet.race as unknown as string,
+        traits: charsheet.traits.join(', '),
         attributes: {
-            vig: Number(ficha.attributes?.vig),
-            des: Number(ficha.attributes?.des),
-            foc: Number(ficha.attributes?.foc),
-            log: Number(ficha.attributes?.log),
-            sab: Number(ficha.attributes?.sab),
-            car: Number(ficha.attributes?.car),
-            lp: Number(ficha.attributes?.lp),
-            mp: Number(ficha.attributes?.mp),
-            ap: Number(ficha.attributes?.ap)
+            vig: Number(charsheet.attributes?.vig),
+            des: Number(charsheet.attributes?.des),
+            foc: Number(charsheet.attributes?.foc),
+            log: Number(charsheet.attributes?.log),
+            sab: Number(charsheet.attributes?.sab),
+            car: Number(charsheet.attributes?.car)
         },
-        maxLp: Number(ficha.attributes.maxLp),
-        maxMp: Number(ficha.attributes.maxMp),
-        maxAp: Number(ficha.attributes.maxAp),
-        money: Number(ficha.inventory.money)
+        stats: {
+            lp: Number(charsheet.stats?.lp),
+            mp: Number(charsheet.stats?.mp),
+            ap: Number(charsheet.stats?.ap),
+            maxLp: Number(charsheet.stats.maxLp),
+            maxMp: Number(charsheet.stats.maxMp),
+            maxAp: Number(charsheet.stats.maxAp)
+        },
+        money: Number(charsheet.inventory.money)
     };  
 
     const { control, handleSubmit, formState: { errors } } = useForm<PlayerStatusFormData>({
@@ -73,37 +75,24 @@ function ChangePlayerStatusModal({ open, onClose, ficha }: { open: boolean, onCl
             ...rest,
             traits: rest.traits.split(',').map(trait => trait.trim()).filter(Boolean),
             inventory: {
-                ...ficha.inventory,
+                ...charsheet.inventory,
                 money
             }
         };
 
         try {
-            await fichaService.updateById({
-                id: ficha._id,
+            await charsheetService.updateById({
+                id: charsheet.id,
                 data: {
-                    ...ficha,
+                    ...charsheet,
                     ...processedData
-                } as unknown as Ficha
-            });
-
-            const updatedPlayerFichas = playerFichas.map(playerFicha => {
-                if (playerFicha._id === ficha._id) {
-                    return {
-                        ...playerFicha, 
-                        ...processedData
-                    } as unknown as Ficha;
-                }
-                return playerFicha;
+                } as unknown as CharsheetDTO
             });
     
-            setPlayerFichas(updatedPlayerFichas);
-    
-            setFichaUpdated(true);
             enqueueSnackbar('Status do jogador atualizado com sucesso!', { variant: 'success' });
         } catch (error) {
             console.error(error);
-            enqueueSnackbar('Erro ao atualizar ficha', { variant: 'error' });
+            enqueueSnackbar('Erro ao atualizar charsheet', { variant: 'error' });
             return;
         }
 
@@ -282,7 +271,7 @@ function ChangePlayerStatusModal({ open, onClose, ficha }: { open: boolean, onCl
                             </Grid>
                             <Grid item xs={12} sm={3}>
                                 <Controller
-                                    name="attributes.lp"
+                                    name="stats.lp"
                                     control={control}
                                     render={({ field }) => (
                                         <TextField
@@ -291,8 +280,8 @@ function ChangePlayerStatusModal({ open, onClose, ficha }: { open: boolean, onCl
                                             label="Pontos de Vida (LP)"
                                             type="number"
                                             margin="normal"
-                                            error={!!errors.attributes?.lp}
-                                            helperText={errors.attributes?.lp?.message}
+                                            error={!!errors.stats?.lp}
+                                            helperText={errors.stats?.lp?.message}
                                         />
                                     )}
                                 />
@@ -308,15 +297,15 @@ function ChangePlayerStatusModal({ open, onClose, ficha }: { open: boolean, onCl
                                             label="Pontos de Vida Máximos (MaxLp)"
                                             type="number"
                                             margin="normal"
-                                            error={!!errors.attributes.maxLp}
-                                            helperText={errors.attributes.maxLp?.message}
+                                            error={!!errors?.stats?.maxLp}
+                                            helperText={errors?.stats?.maxLp?.message}
                                         />
                                     )}
                                 />
                             </Grid>
                             <Grid item xs={12} sm={6}>
                                 <Controller
-                                    name="attributes.mp"
+                                    name="stats.mp"
                                     control={control}
                                     render={({ field }) => (
                                         <TextField
@@ -325,15 +314,15 @@ function ChangePlayerStatusModal({ open, onClose, ficha }: { open: boolean, onCl
                                             label="Pontos de Mana (MP)"
                                             type="number"
                                             margin="normal"
-                                            error={!!errors.attributes?.mp}
-                                            helperText={errors.attributes?.mp?.message}
+                                            error={!!errors.stats?.mp}
+                                            helperText={errors.stats?.mp?.message}
                                         />
                                     )}
                                 />
                             </Grid>
                             <Grid item xs={12} sm={6}>
                                 <Controller
-                                    name="attributes.ap"
+                                    name="stats.ap"
                                     control={control}
                                     render={({ field }) => (
                                         <TextField
@@ -342,8 +331,8 @@ function ChangePlayerStatusModal({ open, onClose, ficha }: { open: boolean, onCl
                                             label="Pontos de Armadura (AP)"
                                             type="number"
                                             margin="normal"
-                                            error={!!errors.attributes?.ap}
-                                            helperText={errors.attributes?.ap?.message}
+                                            error={!!errors.stats?.ap}
+                                            helperText={errors.stats?.ap?.message}
                                         />
                                     )}
                                 />

@@ -1,7 +1,8 @@
 import type { AxiosInstance } from 'axios'
-import type { ApiBaseRequestType, ApiParams, ApiRoutes, UpdateByIdDto } from '@types'
 import axios from 'axios'
 import { ApiMethods } from '@enums'
+import type { ApiBaseRequestType, ApiParams, ApiRoutes } from '@models/types/api';
+import type { UpdateByIdDto } from '@models/types/dto';
 
 class BaseRequest<T> {
     public readonly request: ApiBaseRequestType<T>;
@@ -57,9 +58,7 @@ export class ApiInstance<T> {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${process.env.NEXT_PUBLIC_API_KEY}`
                 // TODO: Implementar autenticação e segurança
-            },
-            timeout: 10000,
-            timeoutErrorMessage: '10 SECONDS TIMEOUT'
+            }
         })
 
         this.instance = instance
@@ -72,9 +71,21 @@ export class ApiInstance<T> {
 }
 
 export class Service<T, K extends string = string> extends ApiInstance<T> {
-    async fetch(config?: ApiParams<K, T>) { return (await this.get(config)).data as T[] }
+    async fetch(config?: ApiParams<K, T>) { 
+        const response = (await this.get(config)).data;
+        // Se a resposta já tem o formato { data, hasMore, nextCursor }, retorna como está
+        if (response && typeof response === 'object' && 'data' in response) {
+            return response as { data: T[], hasMore?: boolean, nextCursor?: string };
+        }
+        // Caso contrário, retorna no formato antigo para compatibilidade
+        return { data: response as T[], hasMore: false, nextCursor: undefined };
+    }
+
     async getById(id: string, config?: ApiParams<K, T>) { return (await this.get({ param: id, ...config })).data }
+
     async create<L = T>(data: Partial<L>, config?: ApiParams<K, T>) { return (await this.post({ body: data, ...config })).data as unknown as L }
+
     async updateById<L = T>(body: UpdateByIdDto<L>, config?: ApiParams<K, T>) { return (await this.patch({ param: body.id, body: body.data, ...config })).data as unknown as L }
+
     async deleteById(id: string, config?: ApiParams<K, T>) { return (await this.delete({ param: id, ...config })).data }
 }

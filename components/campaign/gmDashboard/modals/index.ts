@@ -1,7 +1,7 @@
-import FichaDetailsModal from './FichaDetailsModal';
+import CharsheetDetailsModal from './CharsheetDetailsModal';
 import ChangePlayerStatusModal from './ChangePlayerStatusModal';
 
 export { 
-    FichaDetailsModal,
+    CharsheetDetailsModal,
     ChangePlayerStatusModal
 }

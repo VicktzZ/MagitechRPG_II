@@ -1,4 +1,4 @@
-import type { Message } from '@types';
+import type { Message } from '@models';
 import { Service } from '@utils/apiRequest';
 
 class MessageService extends Service<Message | Message[]> {

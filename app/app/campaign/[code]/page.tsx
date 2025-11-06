@@ -1,6 +1,6 @@
 'use client';
 
-import { CampaignComponent, CampaignHeader } from '@components/campaign';
+import { CampaignComponent } from '@components/campaign';
 import { CampaignProvider } from '@contexts/CampaignProvider';
 import { ChatProvider } from '@contexts/ChatProvider';
 import { Box, useMediaQuery } from '@mui/material';
@@ -15,7 +15,6 @@ export default function Campaign({ params }: { params: { code: string } }): Reac
             <ChatProvider>
                 <Box display='flex' flexDirection='column' gap={3} p={2} minHeight='90vh'>
                     <Box height='100%' width='100%' display={!isMobile ? 'flex' : 'column'} gap={2}>
-                        <CampaignHeader />
                         <CampaignComponent />
                     </Box>
                 </Box>

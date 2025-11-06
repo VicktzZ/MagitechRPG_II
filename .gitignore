@@ -18,6 +18,8 @@
 
 # misc
 .DS_Store
+.firebase
+.gemini
 *.pem
 
 # debug
@@ -27,6 +29,7 @@ yarn-error.log*
 
 # local env files
 .env*.local
+.env.test
 .env
 
 # vercel
@@ -35,6 +38,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# firestore
+firestore.indexes.json
+firebase.json
+firebase-debug.log
 
 # others
 licenses

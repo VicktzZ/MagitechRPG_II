@@ -1,26 +1,34 @@
-import User from '@models/db/user';
-import { connectToDb } from '@utils/database';
-import type { User as UserType } from '@types';
+import { UserDTO } from '@models/dtos';
+import { userRepository } from '@repositories';
+import { validate } from 'class-validator';
+import { plainToInstance } from 'class-transformer'
+import { User } from '@models/entities';
 
 export async function GET() {
     try {
-        await connectToDb()
-        
-        const users = await User.find()
+        const users = await userRepository.find();
 
-        return Response.json({ users, message: 'SUCCESS' }, { status: 200 })
+        return Response.json({ users, message: 'SUCCESS' }, { status: 200 });
     } catch (error: any) {
-        return Response.json({ message: 'FORBIDDEN', error: error.message }, { status: 403 })
+        return Response.json({ message: 'FORBIDDEN', error: error?.message }, { status: 403 });
     }
 }
 
 export async function POST(req: Request) {
     try {
-        const body: UserType = await req.json()
-        const user = await User.create(body)
+        const body: UserDTO = await req.json();
+        const dto = plainToInstance(UserDTO, body);
+        const errors = await validate(dto);
 
-        return Response.json({ user, message: 'SUCCESS' }, { status: 201 })
+        if (errors.length > 0) {
+            return Response.json({ message: 'BAD REQUEST', errors }, { status: 400 });
+        }
+
+        const newUser = new User(dto);
+        const createdUser = await userRepository.create(newUser);
+
+        return Response.json({ user: createdUser, message: 'SUCCESS' }, { status: 201 });
     } catch (error: any) {
-        return Response.json({ message: 'BAD REQUEST', error: error.message }, { status: 400 })
+        return Response.json({ message: 'FORBIDDEN', error: error?.message }, { status: 403 });
     }
 }

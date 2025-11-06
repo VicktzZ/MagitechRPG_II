@@ -5,9 +5,10 @@ import { useSession } from 'next-auth/react'
 import { createDiceMessage, rollDice, rollSeparateDice } from '@utils/diceRoller'
 import { MessageType } from '@enums'
 import { enqueueSnackbar } from 'notistack'
-import type { Message, TempMessage } from '@types'
 import { chatContext } from './chatContext'
 import { useMediaQuery, type Theme } from '@mui/material'
+import type { TempMessage } from '@models/types/session'
+import type { Message } from '@models'
 
 export function ChatProvider({ children }: { children: React.ReactNode }) {
     const isMobile = useMediaQuery((theme: Theme) => theme.breakpoints.down('sm'))
@@ -19,7 +20,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     const sendMessage = async (newMessage: Message, scrollToBottom: () => void = () => {}) => {
         const messageWithTimestamp = {
             ...newMessage,
-            timestamp: new Date(),
+            timestamp: new Date().toISOString(),
             tempId: Date.now().toString(),
             isPending: true
         }
@@ -68,7 +69,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         if (!text) return
 
         const user = {
-            id: session?.user?._id ?? '',
+            id: session?.user?.id ?? '',
             name: session?.user?.name ?? '',
             image: session?.user?.image ?? ''
         }

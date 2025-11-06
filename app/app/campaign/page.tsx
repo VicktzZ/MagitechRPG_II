@@ -1,31 +1,22 @@
 'use client';
 
 import { CampaignOptionsModal, CampaingCard } from '@components/campaign';
-import { Box, Button, Grid, Skeleton, Typography } from '@mui/material';
+import { Box, Button, Grid, Skeleton, Typography, useMediaQuery, useTheme } from '@mui/material';
 import { useSession } from 'next-auth/react';
 import { useState, type ReactElement } from 'react';
-import { campaignService } from '@services';
-import { useRealtimeDatabase } from '@hooks';
+import { motion } from 'framer-motion';
+import { useUserCampaigns } from '@hooks/useUserCampaigns';
 
 export default function CampaignPage(): ReactElement {
     const { data: session } = useSession();
     const [ contentType, setContentType ] = useState<'create' | 'join'>('create');
     const [ open, setOpen ] = useState(false);
-    
-    const { data: campaigns, query: { isPending } } = useRealtimeDatabase({
-        collectionName: 'campaigns',
-        pipeline: [
-            {
-                $or: [
-                    { admin: session?.user?._id },
-                    { players: session?.user?._id }
-                ]
-            }
-        ]
-    }, {
-        queryKey: [ 'campaigns', session?.user?._id ],
-        queryFn: async () => await campaignService.fetch({ queryParams: { userId: session?.user?._id } })
-    });
+    const userId = session?.user?.id ?? '';
+
+    const theme = useTheme()
+    const matches = useMediaQuery(theme.breakpoints.down('md'))
+
+    const { data: allCampaigns, loading } = useUserCampaigns(userId);
 
     return (
         <Box display='flex' flexDirection='column' gap={3} p={2}>
@@ -35,41 +26,52 @@ export default function CampaignPage(): ReactElement {
                         <Typography variant='h5'>Campanha</Typography>
                     </Box>
                     <Grid container gap={2}>
-                        {isPending ? [ 0, 1, 2, 3 ].map(() => (
-                            <Skeleton 
-                                key={Math.random()} 
+                        {loading ? [ 0, 1, 2, 3 ].map(() => (
+                            <Skeleton
+                                key={Math.random()}
                                 variant='rectangular'
-                                height={250}
-                                width={350}
+                                sx={{
+                                    borderRadius: 3,
+                                    height: !matches ? 290 : 320,
+                                    width: !matches ? 320 : '100%',
+                                    maxWidth: 360
+                                }}
                             />
-                        )) : campaigns?.length === 0 ? (
+                        )) : allCampaigns?.length === 0 && !loading ? (
                             <Typography>Você não está em nenhuma campanha no momento</Typography>
-                        ) : campaigns?.map(camp => (
-                            <CampaingCard 
-                                key={camp._id}
-                                id={camp._id!}
-                                title={camp.title}
-                                description={camp.description}
-                                gameMaster={camp.admin}
-                                playersQtd={camp.players.length}
-                                code={camp.campaignCode}
-                            />
+                        ) : allCampaigns?.map(camp => (
+                            <motion.div 
+                                key={camp.id}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -10 }}
+                                transition={{ duration: 0.5 }}
+                            >
+                                <CampaingCard
+                                    id={camp.id}
+                                    title={camp.title}
+                                    description={camp.description}
+                                    gameMaster={camp.admin}
+                                    playersQtd={camp.players.length}
+                                    code={camp.campaignCode}
+                                />
+                            </motion.div>
                         ))}
                     </Grid>
                 </Box>
             </Box>
             <Box>
                 <Box display='flex' gap={2}>
-                    <Button 
+                    <Button
                         onClick={() => { setOpen(true); setContentType('join'); }}
                         variant='contained'
                     >Ingressar</Button>
-                    <Button 
+                    <Button
                         onClick={() => { setOpen(true); setContentType('create'); }}
                         variant='contained'
                     >Criar</Button>
                 </Box>
-                <CampaignOptionsModal 
+                <CampaignOptionsModal
                     open={open}
                     setOpen={setOpen}
                     contentType={contentType}

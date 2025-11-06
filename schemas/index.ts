@@ -1,3 +1,3 @@
-import { fichaSchema } from './fichaSchema';
+import { charsheetSchema } from './charsheetSchema';
 
-export { fichaSchema }
+export { charsheetSchema }

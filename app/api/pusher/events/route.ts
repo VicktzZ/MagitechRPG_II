@@ -1,6 +1,6 @@
 import { pusherServer } from '@utils/pusher';
+import type { EventData } from '@models/types/misc';
 import type { NextRequest } from 'next/server'
-import type { EventData } from '@types';
 
 const handler = async (req: NextRequest ): Promise<Response> => {
     try {

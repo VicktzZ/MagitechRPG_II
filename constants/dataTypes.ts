@@ -1,15 +1,5 @@
-import type { 
-    Armor,
-    AmmoType,
-    ArmorAccessoriesType,
-    Attributes,
-    DamageType,
-    Item,
-    RangeType,
-    RarityType, 
-    WeaponAccesoriesType,
-    Weapon
-} from '@types'
+import type { Armor, Attributes, Item, Weapon } from '@models'
+import type { AmmoType, ArmorAccessoriesType, DamageType, RangeType, RarityType, WeaponAccesoriesType } from '@models/types/string'
 
 const damages: DamageType[] = [
     'Cortante',
@@ -86,7 +76,7 @@ const armorCateg: Array<Armor['categ']> = [
     'Pesada'
 ]
 
-const weaponHit: Attributes[] = [
+const weaponHit: Array<keyof Attributes> = [
     'foc',
     'log',
     'sab',
@@ -120,7 +110,7 @@ const otherWeaponAmmo: AmmoType[] = [
     'Granada'    
 ]
 
-const weaponScientificAccessories: WeaponAccesoriesType [] = [
+const weaponScientificAccessories: WeaponAccesoriesType[] = [
     'Cano curto',
     'Cano/Lâmina Estriada',
     'Cabo de borracha',
@@ -174,7 +164,7 @@ const armorMagicalAccessories: ArmorAccessoriesType[] = [
     'SAM'
 ]
 
-const weaponBonuses: Array<Weapon<'Leve' | 'Pesada'>['bonus']> = [
+const weaponBonuses: Array<Weapon['bonus']> = [
     'Agilidade',
     'Controle',
     'Furtividade',
@@ -187,12 +177,12 @@ const weaponBonuses: Array<Weapon<'Leve' | 'Pesada'>['bonus']> = [
 
 const rarityWeaponBonuses: Record<RarityType, number> = {
     'Comum': 0,
-    'Incomum': 1,
-    'Raro': 2,
-    'Épico': 3,
-    'Lendário': 4,
-    'Único': 5,
-    'Mágico': 5,
+    'Incomum': 2,
+    'Raro': 4,
+    'Épico': 6,
+    'Lendário': 8,
+    'Único': 10,
+    'Mágico': 0,
     'Especial': 0,
     'Amaldiçoado': 0
 }
@@ -200,11 +190,11 @@ const rarityWeaponBonuses: Record<RarityType, number> = {
 const rarityArmorBonuses: Record<RarityType, number> = {
     'Comum': 0,
     'Incomum': 1,
-    'Raro': 1,
-    'Épico': 2,
-    'Lendário': 2,
-    'Único': 3,
-    'Mágico': 3,
+    'Raro': 2,
+    'Épico': 3,
+    'Lendário': 4,
+    'Único': 5,
+    'Mágico': 0,
     'Especial': 0,
     'Amaldiçoado': 0
 }

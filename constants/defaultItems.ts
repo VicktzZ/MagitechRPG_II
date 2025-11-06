@@ -1,7 +1,7 @@
 /* eslint-disable max-len */
-import type { Item } from '@types';
+import type { Item } from '@models';
 
-export const defaultItems: Record<'cientificos' | 'magicos', Item[]> = {
+export const defaultItems: Record<'cientificos' | 'magicos', Array<Partial<Item>>> = {
     cientificos: [
         {
             name: 'Gancho',
@@ -288,7 +288,7 @@ export const defaultItems: Record<'cientificos' | 'magicos', Item[]> = {
     ] 
 }
 
-export const defaultItem: Item = {
+export const defaultItem = {
     name: '',
     description: '',
     rarity: 'Comum',

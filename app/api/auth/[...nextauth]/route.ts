@@ -1,12 +1,11 @@
-import NextAuth from 'next-auth/next';
-import GoogleProvider from 'next-auth/providers/google';
-import DiscordProvider from 'next-auth/providers/discord';
+import { userRepository } from '@repositories';
+import type { JWT } from 'next-auth/jwt';
 import type { Session } from 'next-auth';
-import type { JWT } from '@node_modules/next-auth/jwt';
-import type { User as UserType } from '@types';
-import { connectToDb } from '@utils/database';
-import User from '@models/db/user';
+import NextAuth from 'next-auth/next';
+import DiscordProvider from 'next-auth/providers/discord';
+import GoogleProvider from 'next-auth/providers/google';
 import { AdminProvider } from './adminProvider';
+import { User } from '@models/entities';
 
 const handler = NextAuth({
     providers: [
@@ -23,8 +22,8 @@ const handler = NextAuth({
 
     session: {
         strategy: 'jwt',
-        maxAge: 30 * 24 * 60 * 60, // 30 dias
-        updateAge: 24 * 60 * 60 // 24 horas
+        maxAge: 7 * 24 * 60 * 60,
+        updateAge: 24 * 60 * 60
     },
 
     callbacks: {
@@ -39,17 +38,17 @@ const handler = NextAuth({
 
         session: async ({ session, token }: { session: Session, token: JWT }) => {
             try {
-                await connectToDb();
-                const sessionUser = await User.findOne<UserType>({
-                    email: session?.user?.email 
-                });
+                const sessionUser = await userRepository
+                    .whereEqualTo('email', session?.user?.email)
+                    .findOne();
 
                 if (sessionUser) {
                     session.user = {
-                        _id: String(sessionUser._id),
+                        id: String(sessionUser.id),
                         email: String(sessionUser.email),
                         name: String(sessionUser.name),
-                        image: String(sessionUser.image)
+                        image: String(sessionUser.image),
+                        token
                     };
                 }
 
@@ -63,27 +62,32 @@ const handler = NextAuth({
 
         signIn: async ({ profile, user }) => {
             try {
-                await connectToDb();
                 const p: any = profile ?? user;
+                const email = p?.email?.toLowerCase();
+                
+                const existingUser = await userRepository
+                    .whereEqualTo('email', email)
+                    .findOne();
 
-                const userExists = await User.findOne({
-                    email: p?.email
-                });
+                const newImage = p?.picture ?? p?.image_url;
 
-                if (userExists) {
-                    if (userExists.image !== p?.picture && userExists.image !== p?.image_url) {
-                        await userExists.updateOne({
-                            image: p?.picture ?? p?.image_url
+                if (existingUser) {
+                    if (existingUser.image !== newImage) {
+                        await userRepository.update({
+                            ...existingUser,
+                            image: newImage
                         });
                     }
                     return true;
                 }
 
-                await User.create({
-                    email: p?.email?.toLowerCase(),
-                    name: p?.name?.replace(' ', '').toLowerCase() ?? p?.username?.replace(' ', '').toLowerCase(),
-                    image: p?.picture ?? p?.image_url
-                });
+                const newUser = new User()
+                newUser.email = email;
+                newUser.name = p?.name?.replace(' ', '').toLowerCase() ?? p?.username?.replace(' ', '').toLowerCase();
+                newUser.image = newImage;
+                newUser.charsheets = [];
+
+                await userRepository.create(newUser);
 
                 return true;
             } catch (error) {

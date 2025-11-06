@@ -2,27 +2,27 @@
 'use client';
 
 import { RPGIcon } from '@components/misc';
-import { attributeIcons } from '@constants/ficha';
-import { useCampaignCurrentFichaContext } from '@contexts';
-import { 
-    Avatar, 
-    Box, 
-    Chip, 
-    LinearProgress, 
-    Paper, 
-    Typography,
-    Stack,
-    Divider,
-    Grid,
-    Button
-} from '@mui/material';
+import { attributeIcons } from '@constants/charsheet';
+import { useCampaignCurrentCharsheetContext } from '@contexts';
 import {
-    Star,
     LocalFireDepartment,
     Psychology,
-    Shield
+    Shield,
+    Star
 } from '@mui/icons-material';
-import { green, red, blue, orange, purple } from '@mui/material/colors';
+import {
+    Avatar,
+    Box,
+    Button,
+    Chip,
+    Divider,
+    Grid,
+    LinearProgress,
+    Paper,
+    Stack,
+    Typography
+} from '@mui/material';
+import { blue, green, orange, purple, red } from '@mui/material/colors';
 import { useState, type ReactElement } from 'react';
 
 interface CharacterInfoProps {
@@ -30,35 +30,39 @@ interface CharacterInfoProps {
 }
 
 export default function CharacterInfo({ avatar }: CharacterInfoProps): ReactElement {    
-    const { ficha, updateFicha } = useCampaignCurrentFichaContext();
+    const { charsheet, updateCharsheet } = useCampaignCurrentCharsheetContext();
     
-    const fichaCopy = { ...ficha };
-
     const [ currentAttributes, setCurrentAttributes ] = useState({
-        lp: ficha.attributes.lp,
-        mp: ficha.attributes.mp,
-        ap: ficha.attributes.ap
+        lp: charsheet.stats.lp,
+        mp: charsheet.stats.mp,
+        ap: charsheet.stats.ap
     });
 
     const setAttribute = (attr: 'lp' | 'mp' | 'ap', num: number, max?: number) => {
-        
-        setCurrentAttributes(prev => {
-            fichaCopy.attributes[attr] = prev[attr] + num;
-            if (max) fichaCopy.attributes[attr] = max;
-            
-            return {
-                ...prev,
-                [attr]: ficha.attributes[attr]
+        let newValue = currentAttributes[attr] + num;
+
+        if (max) {
+            newValue = max;
+        }
+
+        setCurrentAttributes(prev => ({
+            ...prev,
+            [attr]: newValue
+        }));
+
+        // Atualizar no Firestore em tempo real
+        updateCharsheet({
+            stats: {
+                ...charsheet.stats,
+                [attr]: newValue
             }
         });
-
-        updateFicha(fichaCopy);
     }
 
-    const lpPercent = (currentAttributes.lp / ficha.attributes.maxLp) * 100;
-    const mpPercent = (currentAttributes.mp / ficha.attributes.maxMp) * 100;
-    const apPercent = (currentAttributes.ap / ficha.attributes.maxAp) * 100;
-    const attributes = Object.entries(ficha.attributes).filter(([ key ]) => ![ 'lp', 'mp', 'ap' ].includes(key));
+    const lpPercent = (currentAttributes.lp / charsheet.stats.maxLp) * 100;
+    const mpPercent = (currentAttributes.mp / charsheet.stats.maxMp) * 100;
+    const apPercent = (currentAttributes.ap / charsheet.stats.maxAp) * 100;
+    const attributes = Object.entries(charsheet.stats).filter(([ key ]) => ![ 'lp', 'mp', 'ap' ].includes(key));
 
     function AttributeBar({ attributeValue }: { attributeValue: number }) {
         const bars = [];
@@ -95,7 +99,7 @@ export default function CharacterInfo({ avatar }: CharacterInfoProps): ReactElem
                 >
                     <Avatar
                         src={avatar}
-                        alt={ficha.name}
+                        alt={charsheet.name}
                         sx={{ 
                             width: { xs: 80, md: 100 }, 
                             height: { xs: 80, md: 100 },
@@ -115,7 +119,7 @@ export default function CharacterInfo({ avatar }: CharacterInfoProps): ReactElem
                                 WebkitTextFillColor: 'transparent'
                             }}
                         >
-                            {ficha.name}
+                            {charsheet.name}
                         </Typography>
                         
                         <Stack 
@@ -127,13 +131,13 @@ export default function CharacterInfo({ avatar }: CharacterInfoProps): ReactElem
                         >
                             <Chip 
                                 icon={<Star />}
-                                label={`Nível ${ficha.level}`} 
+                                label={`Nível ${charsheet.level}`} 
                                 color="primary" 
                                 variant="filled"
                                 sx={{ fontWeight: 600 }}
                             />
                             <Chip 
-                                label={ficha.lineage as unknown as string} 
+                                label={charsheet.lineage as unknown as string} 
                                 sx={{ 
                                     bgcolor: blue[100],
                                     color: blue[800],
@@ -142,17 +146,17 @@ export default function CharacterInfo({ avatar }: CharacterInfoProps): ReactElem
                             />
                             <Chip 
                                 icon={<Shield />}
-                                label={ficha.class as string} 
+                                label={charsheet.class as string} 
                                 sx={{ 
                                     bgcolor: green[100],
                                     color: green[800],
                                     fontWeight: 600
                                 }}
                             />
-                            {ficha.subclass && (
+                            {charsheet.subclass && (
                                 <Chip 
                                     icon={<Psychology />}
-                                    label={ficha.subclass as string}
+                                    label={charsheet.subclass as string}
                                     sx={{ 
                                         bgcolor: orange[100],
                                         color: orange[800],
@@ -160,10 +164,10 @@ export default function CharacterInfo({ avatar }: CharacterInfoProps): ReactElem
                                     }}
                                 />
                             )}
-                            {ficha.elementalMastery && (
+                            {charsheet.elementalMastery && (
                                 <Chip 
                                     icon={<LocalFireDepartment />}
-                                    label={`Maestria: ${ficha.elementalMastery}`} 
+                                    label={`Maestria: ${charsheet.elementalMastery}`} 
                                     sx={{ 
                                         bgcolor: purple[100],
                                         color: purple[800],
@@ -172,9 +176,9 @@ export default function CharacterInfo({ avatar }: CharacterInfoProps): ReactElem
                                 />
                             )}
                         </Stack>
-                        {ficha.status && ficha.status.length > 0 && (
+                        {charsheet.status && charsheet.status.length > 0 && (
                             <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ gap: 1 }}>
-                                {ficha.status.map((status, index) => (
+                                {charsheet.status.map((status, index) => (
                                     <Chip
                                         key={index}
                                         label={status as unknown as string}
@@ -208,12 +212,12 @@ export default function CharacterInfo({ avatar }: CharacterInfoProps): ReactElem
                     }}
                 />
                 <Typography variant="caption">
-                    {currentAttributes.lp}/{ficha.attributes.maxLp}
+                    {currentAttributes.lp}/{charsheet.stats.maxLp}
                 </Typography>
                 <Box display='flex' alignItems='center' gap={1}>
                     <Button variant="contained" size="small" onClick={() => setAttribute('lp', 1)}>+1</Button>
                     <Button variant="contained" size="small" onClick={() => setAttribute('lp', -1)}>-1</Button>
-                    <Button variant="contained" size="small" onClick={() => setAttribute('lp', 0, ficha.attributes.maxLp)}>MAX</Button>
+                    <Button variant="contained" size="small" onClick={() => setAttribute('lp', 0, charsheet.stats.maxLp)}>MAX</Button>
                 </Box>
                 <Grid item xs={12} md={4}>
                     <Box>
@@ -231,13 +235,13 @@ export default function CharacterInfo({ avatar }: CharacterInfoProps): ReactElem
                             }}
                         />
                         <Typography variant="caption">
-                            {currentAttributes.mp}/{ficha.attributes.maxMp}
+                            {currentAttributes.mp}/{charsheet.stats.maxMp}
                         </Typography>
                     </Box>
                     <Box display='flex' alignItems='center' gap={1}>
                         <Button variant="contained" size="small" onClick={() => setAttribute('mp', 1)}>+1</Button>
                         <Button variant="contained" size="small" onClick={() => setAttribute('mp', -1)}>-1</Button>
-                        <Button variant="contained" size="small" onClick={() => setAttribute('mp', 0, ficha.attributes.maxMp)}>MAX</Button>
+                        <Button variant="contained" size="small" onClick={() => setAttribute('mp', 0, charsheet.stats.maxMp)}>MAX</Button>
                     </Box>
                 </Grid>
                 <Grid item xs={12} md={4}>
@@ -256,12 +260,12 @@ export default function CharacterInfo({ avatar }: CharacterInfoProps): ReactElem
                             }}
                         />
                         <Typography variant="caption">
-                            {currentAttributes.ap}/{ficha.attributes.maxAp}
+                            {currentAttributes.ap}/{charsheet.stats.maxAp}
                         </Typography>
                         <Box display='flex' alignItems='center' gap={1}>
                             <Button variant="contained" size="small" onClick={() => setAttribute('ap', 1)}>+1</Button>
                             <Button variant="contained" size="small" onClick={() => setAttribute('ap', -1)}>-1</Button>
-                            <Button variant="contained" size="small" onClick={() => setAttribute('ap', 0, ficha.attributes.maxAp)}>MAX</Button>
+                            <Button variant="contained" size="small" onClick={() => setAttribute('ap', 0, charsheet.stats.maxAp)}>MAX</Button>
                         </Box>
                     </Box>
                 </Grid>
@@ -325,7 +329,7 @@ export default function CharacterInfo({ avatar }: CharacterInfoProps): ReactElem
                             Traços
                         </Typography>
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                            {ficha.traits.map((trait) => (
+                            {charsheet.traits.map((trait) => (
                                 <Chip
                                     key={trait as unknown as string}
                                     label={trait as unknown as string}

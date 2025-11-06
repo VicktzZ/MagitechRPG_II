@@ -1,17 +1,17 @@
 import { campaignContext } from './campaignContext';
-import { fichaContext } from './fichaContext';
+import { charsheetContext } from './charsheetContext';
 import { userContext } from './userContext';
 import { drawerContext } from './drawerContext';
 import { channelContext } from './channelContext';
 import { chatContext } from './chatContext';
 import { savingSpinnerContext, useSavingSpinner } from './savingSpinnerContext';
 import { useCampaignContext } from './campaignContext';
-import { campaignCurrentFichaContext, useCampaignCurrentFichaContext } from './campaignCurrentFichaContext';
+import { campaignCurrentCharsheetContext, useCampaignCurrentCharsheetContext } from './campaignCurrentCharsheetContext';
 import { ThemeProvider, useThemeContext } from './themeContext';
-import FichaFormProvider from './FichaFormProvider';
+import CharsheetFormProvider from './CharsheetFormProvider';
 
 export {
-    fichaContext,
+    charsheetContext,
     userContext,
     drawerContext,
     channelContext,
@@ -20,9 +20,9 @@ export {
     savingSpinnerContext,
     useSavingSpinner,
     useCampaignContext,
-    campaignCurrentFichaContext,
-    useCampaignCurrentFichaContext,
+    campaignCurrentCharsheetContext,
+    useCampaignCurrentCharsheetContext,
     ThemeProvider,
     useThemeContext,
-    FichaFormProvider
+    CharsheetFormProvider
 }

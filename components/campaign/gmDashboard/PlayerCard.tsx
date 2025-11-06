@@ -19,24 +19,29 @@ import {
     Typography
 } from '@mui/material'
 import { red } from '@mui/material/colors'
-import { campaignService, fichaService, notificationService } from '@services'
-import type { Armor, Ficha, Item, Weapon } from '@types'
+import { campaignService, charsheetService, notificationService } from '@services'
 import { enqueueSnackbar } from 'notistack'
 import { useState } from 'react'
 import { useCampaignContext } from '@contexts';
 import { TextField } from '@mui/material'
-import { FichaDetailsModal } from './modals'
+import { CharsheetDetailsModal } from './modals'
+import type { Armor, Item, Weapon } from '@models'
+import type { CharsheetDTO } from '@models/dtos'
+import useNumbersWithSpaces from '@hooks/useNumbersWithSpace'
 
-export default function PlayerCard({ ficha }: { ficha: Required<Ficha> }) {
-    const { campaign, fichas } = useCampaignContext()
+export default function PlayerCard({ charsheet }: { charsheet: Required<CharsheetDTO> }) {
+    const { campaign, charsheets } = useCampaignContext()
     const [ playerAnchorEl, setPlayerAnchorEl ] = useState<null | HTMLElement>(null)
     const [ addItemModalOpen, setAddItemModalOpen ] = useState(false)
     const [ removeUserDialogOpen, setRemoveUserDialogOpen ] = useState(false)
-    const [ fichaDetailsOpen, setFichaDetailsOpen ] = useState(false)
+    const [ charsheetDetailsOpen, setCharsheetDetailsOpen ] = useState(false)
 
     const [ notificationDialogOpen, setNotificationDialogOpen ] = useState(false)
     const [ notificationTitle, setNotificationTitle ] = useState('')
     const [ notificationContent, setNotificationContent ] = useState('')
+
+    const sessionCharsheet = charsheet.session.find(s => s.campaignCode === campaign.campaignCode)
+    const spacedMoney = useNumbersWithSpaces()
 
     const handlePlayerMenuClick = (event: React.MouseEvent<HTMLElement>) => {
         setPlayerAnchorEl(event.currentTarget)
@@ -53,28 +58,28 @@ export default function PlayerCard({ ficha }: { ficha: Required<Ficha> }) {
             const isArmor = 'displacementPenalty' in item
             const updatedInventory = isWeapon
                 ? {
-                    ...ficha.inventory,
-                    weapons: [ ...ficha.inventory.weapons, item ]
+                    ...charsheet.inventory,
+                    weapons: [ ...charsheet.inventory.weapons, item ]
                 }
                 : isArmor
                     ? {
-                        ...ficha.inventory,
-                        armors: [ ...ficha.inventory.armors, item ]
+                        ...charsheet.inventory,
+                        armors: [ ...charsheet.inventory.armors, item ]
                     }
                     : {
-                        ...ficha.inventory,
-                        items: [ ...ficha.inventory.items, item ]
+                        ...charsheet.inventory,
+                        items: [ ...charsheet.inventory.items, item ]
                     }
 
-            const updatedFicha = await fichaService.updateById({
-                id: ficha._id,
+            const updatedCharsheet = await charsheetService.updateById({
+                id: charsheet.id,
                 data: {
-                    ...ficha,
+                    ...charsheet,
                     inventory: updatedInventory
                 }
             })
 
-            if (updatedFicha) {
+            if (updatedCharsheet) {
                 enqueueSnackbar(`Item ${item.name} adicionado com sucesso!`, { variant: 'success' })
             }
         } catch (error) {
@@ -88,8 +93,8 @@ export default function PlayerCard({ ficha }: { ficha: Required<Ficha> }) {
             await notificationService.create({
                 title: notificationTitle,
                 content: notificationContent,
-                userId: ficha.userId,
-                timestamp: new Date(),
+                userId: charsheet.userId,
+                timestamp: new Date().toISOString(),
                 read: false,
                 type: 'other'
             })
@@ -102,16 +107,16 @@ export default function PlayerCard({ ficha }: { ficha: Required<Ficha> }) {
         setNotificationDialogOpen(false)
     }
 
-    const viewFichaDetails = () => {
-        setFichaDetailsOpen(true);
+    const viewCharsheetDetails = () => {
+        setCharsheetDetailsOpen(true);
         handlePlayerMenuClose();
     }
 
     const handleRemoveUser = async () => {
         try {
-            if (!ficha._id) return
+            if (!charsheet.id) return
 
-            await campaignService.removeUser(campaign._id!, ficha.userId)
+            await campaignService.removeUser(campaign.id, charsheet.userId)
 
             enqueueSnackbar('Usuário removido com sucesso!', { variant: 'success' })
         } catch (error: any) {
@@ -124,7 +129,7 @@ export default function PlayerCard({ ficha }: { ficha: Required<Ficha> }) {
 
     return (
         <>
-            <Grid item xs={12} md={6} key={ficha._id}>
+            <Grid item xs={12} md={6} key={charsheet.id}>
                 <Paper
                     sx={{
                         p: 2,
@@ -148,10 +153,10 @@ export default function PlayerCard({ ficha }: { ficha: Required<Ficha> }) {
                     {/* Nome e Informações do Personagem */}
                     <Box textAlign="center" mb={2}>
                         <Typography variant="subtitle1" fontWeight="bold">
-                            {ficha.name}
+                            {charsheet.name}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
-                            Nv. {ficha.level} • {ficha.class as string} • {ficha.lineage as unknown as string}
+                            Nv. {charsheet.level} • {charsheet.class as string} • {charsheet.lineage as unknown as string}
                         </Typography>
                     </Box>
 
@@ -174,40 +179,40 @@ export default function PlayerCard({ ficha }: { ficha: Required<Ficha> }) {
                         <Box className="stat">
                             <Favorite color="error" sx={{ fontSize: 16 }} />
                             <Typography variant="body2">
-                                {ficha.attributes.lp}/{ficha.attributes.maxLp}
+                                {sessionCharsheet?.stats.lp}/{sessionCharsheet?.stats.maxLp}
                             </Typography>
                         </Box>
 
                         <Box className="stat">
                             <Bolt color="info" sx={{ fontSize: 16 }} />
                             <Typography variant="body2">
-                                {ficha.attributes.mp}/{ficha.attributes.maxMp}
+                                {sessionCharsheet?.stats.mp}/{sessionCharsheet?.stats.maxMp}
                             </Typography>
                         </Box>
 
                         <Box className="stat">
                             <Shield color="success" sx={{ fontSize: 16 }} />
                             <Typography variant="body2">
-                                {ficha.attributes.ap}/{ficha.attributes.maxAp}
+                                {sessionCharsheet?.stats.ap}/{sessionCharsheet?.stats.maxAp}
                             </Typography>
                         </Box>
 
                         <Box className="stat">
                             <MonetizationOn sx={{ fontSize: 16, color: 'gold' }} />
-                            <Typography variant="body2">{ficha.inventory.money}</Typography>
+                            <Typography variant="body2">{spacedMoney(charsheet.inventory.money)}</Typography>
                         </Box>
 
                         <Box className="stat">
                             <LocalPolice sx={{ fontSize: 16, color: 'orange' }} />
                             <Typography variant="body2">
-                                {ficha.ammoCounter.current}/{ficha.ammoCounter.max}
+                                {charsheet.ammoCounter.current}/{charsheet.ammoCounter.max}
                             </Typography>
                         </Box>
 
                         <Box className="stat">
                             <Backpack sx={{ fontSize: 16, color: 'gray' }} />
                             <Typography variant="body2">
-                                {ficha.capacity.cargo}/{ficha.capacity.max} kg
+                                {charsheet.capacity.cargo}/{charsheet.capacity.max} kg
                             </Typography>
                         </Box>
                     </Box>
@@ -218,7 +223,7 @@ export default function PlayerCard({ ficha }: { ficha: Required<Ficha> }) {
             <Menu anchorEl={playerAnchorEl} open={Boolean(playerAnchorEl)} onClose={handlePlayerMenuClose}>
                 <Box sx={{ width: 320, maxWidth: '100%' }}>
                     <MenuList>
-                        <MenuItem onClick={viewFichaDetails}>
+                        <MenuItem onClick={viewCharsheetDetails}>
                             <ListItemIcon>
                                 <Info />
                             </ListItemIcon>
@@ -249,6 +254,7 @@ export default function PlayerCard({ ficha }: { ficha: Required<Ficha> }) {
 
             {/* Modal de Adicionar Item */}
             <AddItemModal
+                subtitle={`Adicionar item para ${charsheet.name} (${charsheet.id})`}
                 modalOpen={addItemModalOpen}
                 setModalOpen={setAddItemModalOpen}
                 disableDefaultCreate={true}
@@ -291,19 +297,19 @@ export default function PlayerCard({ ficha }: { ficha: Required<Ficha> }) {
 
             {/* Modal de aviso */}
             <WarningModal
-                text={`Você tem certeza que deseja banir usuário ${fichas.find(
-                    userFicha => userFicha._id === ficha._id
+                text={`Você tem certeza que deseja banir usuário ${charsheets.find(
+                    userCharsheet => userCharsheet.id === charsheet.id
                 )?.name} da campanha?`}
                 open={removeUserDialogOpen}
                 onClose={() => setRemoveUserDialogOpen(false)}
                 onConfirm={handleRemoveUser}
             />
 
-            {/* Modal de Detalhes da Ficha */}
-            <FichaDetailsModal 
-                open={fichaDetailsOpen}
-                onClose={() => setFichaDetailsOpen(false)}
-                ficha={ficha}
+            {/* Modal de Detalhes da Charsheet */}
+            <CharsheetDetailsModal 
+                open={charsheetDetailsOpen}
+                onClose={() => setCharsheetDetailsOpen(false)}
+                charsheet={charsheet}
             />
         </>
     )

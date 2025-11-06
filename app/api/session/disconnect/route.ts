@@ -1,60 +1,73 @@
 import { PusherEvent } from '@enums';
-import Campaign from '@models/db/campaign';
-import type { Campaign as CampaignType } from '@types';
-import { connectToDb } from '@utils/database';
+import { JoinCampaignDTO as LeaveCampaignDTO } from '@models/dtos';
+import { campaignRepository, charsheetRepository } from '@repositories';
 import { pusherServer } from '@utils/pusher';
+import { plainToInstance } from 'class-transformer';
+import { validate } from 'class-validator';
 
 export async function POST(req: Request): Promise<Response> {
     try {
-        await connectToDb();
+        const body = await req.json();
+        const dto = plainToInstance(LeaveCampaignDTO, body, { excludeExtraneousValues: true });
+        const errors = await validate(dto, { skipMissingProperties: true, whitelist: false });
 
-        const { campaignCode, userId }: { campaignCode: string; userId: string } = await req.json();
-
-        if (!userId || !campaignCode) {
-            return Response.json({ message: 'Missing userId or campaignCode' }, { status: 400 });
+        if (errors.length > 0) {
+            return Response.json({ message: 'BAD REQUEST', errors }, { status: 400 });
         }
+        
+        const { campaignCode, userId } = body;
 
-        const updatedCampaign: CampaignType | null = await Campaign.findOneAndUpdate(
-            { campaignCode },
-            {
-                $pull: {
-                    'session.users': userId
-                }
-            },
-            { new: true } // Retorna o documento atualizado
-        );
+        const campaign = await campaignRepository
+            .whereEqualTo('campaignCode', campaignCode)
+            .findOne();
 
-        if (!updatedCampaign) {
+        if (!campaign) {
             return Response.json(
-                { message: 'Campanha não encontrada ou falha ao atualizar sessão' },
+                { message: 'Campanha não encontrada' },
                 { status: 400 }
             );
         }
 
-        // Envia apenas os dados necessários via Pusher
+        await campaignRepository.update({
+            ...campaign,
+            session: {
+                ...campaign.session,
+                users: campaign.session.users.filter(u => u !== userId)
+            }
+        });
+
+        const updatedCampaign = await campaignRepository.whereEqualTo('campaignCode', campaignCode).findOne();
+        
+        if (!updatedCampaign) {
+            return Response.json(
+                { message: 'Falha ao atualizar sessão' },
+                { status: 500 }
+            );
+        }
+
         const userInfo = updatedCampaign.players.find(p => p.userId === userId);
+        let userName = 'Unknown';
+
+        if (userInfo) {
+            const userSheet = await charsheetRepository.findById(userInfo.charsheetId);
+            if (userSheet) userName = userSheet.name;
+        }
+        
         await pusherServer.trigger(
             'presence-' + campaignCode,
             PusherEvent.USER_EXIT,
             {
                 userId,
-                userName: userInfo?.userId ?? 'Unknown',
-                timestamp: new Date()
+                userName,
+                timestamp: new Date().toISOString()
             }
         );
 
-        // Notifica sobre a atualização da campanha
-        await pusherServer.trigger(
-            'presence-' + campaignCode,
-            PusherEvent.CAMPAIGN_UPDATED,
-            updatedCampaign
-        );
-
         return Response.json(updatedCampaign, { status: 200 });
-    } catch (error) {
+    } catch (error: any) {
         console.error('Erro ao desconectar usuário:', error);
         return Response.json(
-            { message: 'Erro interno ao processar desconexão' },
+            { message: 'Erro interno ao processar desconexão', error: error.message },
             { status: 500 }
         );
     }

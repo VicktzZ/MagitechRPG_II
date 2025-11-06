@@ -12,10 +12,9 @@ export default function RootLayout({
 }: {
   children: ReactElement
 }): ReactElement<any, any> {
-    const NODE_ENV = process.env.NEXT_PUBLIC_NODE_ENV
     const isMobile = useMediaQuery((theme: Theme) => theme.breakpoints.down('sm'))
 
-    return NODE_ENV === 'production' ? (
+    return (
         <RequireAuth>
             <Box p={isMobile ? 2 : 3}>
                 <Box display='flex' width='100%' alignItems='center' justifyContent='space-between'>
@@ -27,7 +26,5 @@ export default function RootLayout({
                 </Box>
             </Box>
         </RequireAuth>
-    ) : (
-        <>{children}</>
     )
 }

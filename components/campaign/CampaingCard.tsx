@@ -44,7 +44,7 @@ export default function CampaingCard({
     code
 }: CampaingCardProps): ReactElement {
     const { data: session } = useSession();
-    const userIsGM = gameMaster.includes(session?.user._id ?? '');
+    const userIsGM = gameMaster?.includes?.(session?.user.id ?? '');
     const router = useRouter();
     const theme = useTheme();
     const matches = useMediaQuery(theme.breakpoints.down('md'));

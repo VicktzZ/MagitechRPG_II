@@ -1,9 +1,8 @@
-import { connectToDb } from '@utils/database';
-import { type User as UserType } from '@types';
+import { userRepository } from '@repositories';
+import type { User } from '@models/entities';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import User from '@models/db/user';
 
-const adminProvider = CredentialsProvider as any
+const adminProvider = CredentialsProvider as any;
 
 export const AdminProvider = adminProvider({
     name: 'Admin',
@@ -16,25 +15,24 @@ export const AdminProvider = adminProvider({
         password: { label: 'Password', type: 'password' }
     },
     async authorize(credentials: { username: string, password: string }) {
-        await connectToDb()
-        
-        let user
+        let user: User | null = null;
 
         if (
             credentials?.username === process.env.ADMIN_EMAIL &&
             credentials.password === process.env.ADMIN_PASSWORD
         ) {
-            user = await User.findOne<UserType>({ email: credentials?.username })
+            user = await userRepository
+                .whereEqualTo('email', credentials.username)
+                .findOne();
         }
 
         if (user) {
             return {
-                _id: user._id,
-                id: user._id,
+                id: user.id,
                 email: user.email,
                 image: user.image,
                 name: user.name
-            }
-        } else return null
+            };
+        } else return null;
     }
-})
+});

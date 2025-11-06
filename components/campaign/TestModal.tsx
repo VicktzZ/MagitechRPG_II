@@ -23,8 +23,10 @@ import {
     InputLabel
 } from '@mui/material';
 import { useState } from 'react';
-import type { Campaign, TestData, Expertises } from '@types';
 import { useCampaignContext } from '@contexts';
+import type { TestData } from '@models/types/session';
+import type { Campaign } from '@models/entities';
+import type { Expertises } from '@models';
 
 interface TestModalProps {
     open: boolean;
@@ -49,11 +51,11 @@ export default function TestModal({ open, onClose, onConfirm, campaign }: TestMo
     const [ showSucess, setShowSucess ] = useState(true);
     const [ showResult, setShowResult ] = useState(true);
     const [ selectedPlayers, setSelectedPlayers ] = useState<string[]>([]);
-    const { campUsers } = useCampaignContext();
+    const { users } = useCampaignContext();
 
     // Filtra apenas os jogadores online que não são admin
-    const availablePlayers = campaign.session.users
-        .filter(userId => !campaign.admin.includes(userId))
+    const availablePlayers = campaign.session?.users
+        .filter(userId => !campaign.admin?.includes(userId))
         .map(userId => {
             const player = campaign.players.find(p => p.userId === userId);
             return player?.userId;
@@ -118,7 +120,7 @@ export default function TestModal({ open, onClose, onConfirm, campaign }: TestMo
                         <InputLabel>Perícia</InputLabel>
                         <Select
                             value={expertise}
-                            onChange={(e) => setExpertise(e.target.value as keyof Expertises)}
+                            onChange={(e) => setExpertise(e.target.value)}
                             label="Perícia"
                         >
                             <MenuItem value="">
@@ -170,20 +172,20 @@ export default function TestModal({ open, onClose, onConfirm, campaign }: TestMo
                         label="Exibir resultado"
                     />
 
-                    {!isGroupTest && campUsers.player.length > 0 && (
+                    {!isGroupTest && users.players.length > 0 && (
                         <List sx={{ 
                             maxHeight: 200, 
                             overflow: 'auto',
                             bgcolor: 'background.paper2',
                             borderRadius: 1
                         }}>
-                            {campUsers.player.map(player => {
+                            {users.players.map(player => {
                                 return (
                                     <ListItem
-                                        key={player._id}
+                                        key={player.id}
                                         button
-                                        onClick={() => { handlePlayerToggle(player._id!); }}
-                                        selected={selectedPlayers.includes(player._id!)}
+                                        onClick={() => { handlePlayerToggle(player.id); }}
+                                        selected={selectedPlayers.includes(player.id)}
                                     >
                                         <ListItemAvatar>
                                             <Avatar 

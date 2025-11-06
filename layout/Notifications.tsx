@@ -1,46 +1,26 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { IconButton, Badge, Menu, MenuItem, Typography, Box } from '@mui/material'
+import { useFirestoreRealtime } from '@hooks/useFirestoreRealtime'
+import type { Notification } from '@models/entities'
 import { Notifications as NotificationsIcon } from '@mui/icons-material'
+import { Badge, Box, IconButton, Menu, MenuItem, Typography } from '@mui/material'
+import { QueryBuilder } from '@utils/queryBuilder'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import type { Notification } from '@types'
+import { useState } from 'react'
 
 export default function Notifications() {
     const { data: session } = useSession()
-    const router = useRouter()
+    const { data: notifications } = useFirestoreRealtime('notification', {
+        filters: [
+            QueryBuilder.equals('userId', session?.user?.id ?? '')
+        ],
+        orderBy: [
+            QueryBuilder.desc('timestamp')
+        ]
+    })
     const [ anchorEl, setAnchorEl ] = useState<null | HTMLElement>(null)
-    const [ notifications, setNotifications ] = useState<Notification[]>([])
-
-    // Busca notificações ao montar o componente
-    useEffect(() => {
-        const fetchNotifications = async () => {
-            if (!session?.user?._id) return
-
-            try {
-                const response = await fetch(`/api/notifications/${session.user._id}`)
-                if (!response.ok) {
-                    throw new Error('Erro ao buscar notificações')
-                }
-                
-                const data = await response.json()
-                
-                // Verifica se data é um array
-                if (Array.isArray(data)) {
-                    setNotifications(data)
-                } else {
-                    console.error('Resposta inválida:', data)
-                    setNotifications([])
-                }
-            } catch (error) {
-                console.error('Erro ao buscar notificações:', error)
-                setNotifications([])
-            }
-        }
-
-        fetchNotifications()
-    }, [ session?.user?._id ])
+    const router = useRouter()
 
     const handleClick = (event: React.MouseEvent<HTMLElement>) => {
         setAnchorEl(event.currentTarget)
@@ -51,10 +31,10 @@ export default function Notifications() {
     }
 
     const handleNotificationClick = async (notification: Notification) => {
-        if (!notification._id) return
+        if (!notification.id) return
 
         try {
-            const response = await fetch(`/api/notifications/${notification._id}`, {
+            const response = await fetch(`/api/notifications/${notification.id}`, {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json'
@@ -65,15 +45,6 @@ export default function Notifications() {
             if (!response.ok) {
                 throw new Error('Erro ao marcar notificação como lida')
             }
-
-            // Atualiza estado local
-            setNotifications(prev => 
-                prev.map(n => 
-                    n._id === notification._id 
-                        ? { ...n, read: true }
-                        : n
-                )
-            )
 
             // Fecha menu e navega para o link se existir
             handleClose()
@@ -94,6 +65,7 @@ export default function Notifications() {
                 size="large"
                 color="inherit"
                 onClick={handleClick}
+                sx={{ border: '1px solid #aaa', height: 40, width: 40 }}
             >
                 <Badge badgeContent={unreadCount} color="error">
                     <NotificationsIcon />
@@ -118,7 +90,7 @@ export default function Notifications() {
                 ) : (
                     notifications.map(notification => (
                         <MenuItem 
-                            key={notification._id} 
+                            key={notification.id} 
                             onClick={async () => await handleNotificationClick(notification)}
                             sx={{
                                 backgroundColor: notification.read ? 'transparent' : 'action.hover',
