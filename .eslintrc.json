@@ -118,6 +118,12 @@
           "error",
           4
       ],
+      "@typescript-eslint/require-array-sort-compare": [
+          "off",
+          {
+              "ignoreStringArrays": true
+          }
+      ],
       "unused-imports/no-unused-imports": "warn",
       "unused-vars/no-unused-vars": "warn",
       "object-curly-spacing": [
