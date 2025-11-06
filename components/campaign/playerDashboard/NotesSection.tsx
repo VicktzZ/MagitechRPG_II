@@ -130,7 +130,7 @@ export default function NotesSection(): ReactElement {
                         <TextField
                             fullWidth
                             multiline
-                            rows={25}
+                            rows={20}
                             value={notes}
                             onChange={handleChange}
                             onFocus={handleFocus}

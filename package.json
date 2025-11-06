@@ -8,20 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "eslint": "eslint --ext .ts,.tsx --ignore-path .gitignore .",
-    "eslint:fix": "eslint --ext .ts,.tsx --ignore-path .gitignore . --fix",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage",
-    "test:api": "jest tests/api",
-    "test:auth": "jest tests/api/auth",
-    "test:campaign": "jest tests/api/campaign",
-    "test:charsheet": "jest tests/api/charsheet",
-    "test:spell": "jest tests/api/spell",
-    "test:power": "jest tests/api/power",
-    "test:user": "jest tests/api/user",
-    "test:notification": "jest tests/api/notification",
-    "test:pusher": "jest tests/api/pusher",
-    "test:session": "jest tests/api/session"
+    "eslint:fix": "eslint --ext .ts,.tsx --ignore-path .gitignore . --fix"
   },
   "engines": {
     "node": ">=22.12.0"

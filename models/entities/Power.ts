@@ -10,4 +10,8 @@ export class Power {
     type?: string = 'Poder Mágico';
     origin?: string;
     preRequisite?: string = 'None';
+
+    constructor(power?: Partial<Power>) {
+        Object.assign(this, power)
+    }
 }

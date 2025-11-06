@@ -12,4 +12,8 @@ export class Spell {
     execution: string
     range: RangeType
     stages: string[]
+
+    constructor(spell?: Partial<Spell>) {
+        Object.assign(this, spell)
+    }
 }

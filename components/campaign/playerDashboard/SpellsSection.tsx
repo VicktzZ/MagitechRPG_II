@@ -32,7 +32,7 @@ import { blue, green, grey, orange, purple, red } from '@mui/material/colors';
 import { type ReactElement, useState } from 'react';
 
 function getSpellColor(spell: SpellDTO): string {
-    switch (spell.element.toUpperCase()) {
+    switch (spell.element?.toUpperCase()) {
     case 'AR':
     case 'LUZ':
     case 'NÃO-ELEMENTAL':
@@ -72,9 +72,9 @@ function getSpellLevelColor(level: number) {
     case 2:
         return { color: blue[600], bg: blue[100] };
     case 3:
-        return { color: orange[600], bg: orange[100] };
-    case 4:
         return { color: purple[600], bg: purple[100] };
+    case 4:
+        return { color: orange[600], bg: orange[100] };
     default:
         return { color: grey[600], bg: grey[100] };
     }
@@ -216,36 +216,6 @@ export default function SpellsSection(): ReactElement {
                 }}
             >
                 <Stack spacing={3}>
-                    {/* Header */}
-                    <Box display="flex" alignItems="center" gap={2}>
-                        <Box 
-                            sx={{
-                                p: 1.5,
-                                borderRadius: 2,
-                                bgcolor: purple[100],
-                                border: '2px solid',
-                                borderColor: purple[200]
-                            }}
-                        >
-                            <AutoAwesome sx={{ color: purple[700], fontSize: '2rem' }} />
-                        </Box>
-                        <Box flex={1}>
-                            <Typography 
-                                variant="h5" 
-                                sx={{ 
-                                    fontWeight: 700,
-                                    color: 'primary.main',
-                                    mb: 0.5
-                                }}
-                            >
-                                Grimório de Spells
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                                {allSpells.length} spell{allSpells.length !== 1 ? 's' : ''} conhecida{allSpells.length !== 1 ? 's' : ''}
-                            </Typography>
-                        </Box>
-                    </Box>
-
                     {/* Estatísticas por Nível */}
                     <Box 
                         sx={{
@@ -289,7 +259,7 @@ export default function SpellsSection(): ReactElement {
                                 }}
                             >
                                 <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
-                                    Nenhuma spell conhecida
+                                    Nenhuma magia conhecida
                                 </Typography>
                                 <Typography variant="body2" color="text.secondary">
                                     O grimório está vazio. Aprenda novas spells para começar a conjurar!
@@ -420,9 +390,9 @@ export default function SpellsSection(): ReactElement {
                                             
                                             <AccordionDetails sx={{ p: 3 }}>
                                                 <Stack spacing={2}>
-                                                    {spell.stages[0] && <SpellStage spell={spell} stage={1} description={spell.stages[0]} />}
-                                                    {spell.stages[1] && <SpellStage spell={spell} stage={2} description={spell.stages[1]} />}
-                                                    {spell.stages[2] && <SpellStage spell={spell} stage={3} description={spell.stages[2]} />}
+                                                    {spell.stages?.[0] && <SpellStage spell={spell} stage={1} description={spell.stages?.[0]} />}
+                                                    {spell.stages?.[1] && <SpellStage spell={spell} stage={2} description={spell.stages?.[1]} />}
+                                                    {spell.stages?.[2] && <SpellStage spell={spell} stage={3} description={spell.stages?.[2]} />}
                                                 </Stack>
                                             </AccordionDetails>
                                         </Accordion>

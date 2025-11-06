@@ -4,4 +4,5 @@ export class JoinCampaignDTO {
     @IsString() campaignCode: string
     @IsString() userId: string
     @IsBoolean() isGM: boolean
+    @IsString() charsheetId: string
 }

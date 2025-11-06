@@ -27,13 +27,15 @@ import { useCustomDices } from '@hooks/useCustomDices'
 import DiceRollModal from '../misc/DiceRollModal'
 import { Add, Casino, Delete, Edit, Remove } from '@mui/icons-material'
 import type { Attributes, Expertises } from '@models'
+import { Dice } from '@models'
 
 interface DicePersonalizationProps {
     onClose?: () => void
+    realtime?: boolean
     enableChatIntegration?: boolean
 }
 
-export default function CustomDices({ onClose, enableChatIntegration = true }: DicePersonalizationProps): ReactElement {
+export default function CustomDices({ onClose, realtime = false, enableChatIntegration = true }: DicePersonalizationProps): ReactElement {
     const theme = useTheme()
     const matches = useMediaQuery(theme.breakpoints.down('sm'))
 
@@ -61,8 +63,9 @@ export default function CustomDices({ onClose, enableChatIntegration = true }: D
         handleDeleteDice,
         handleEditDice,
         editingDiceId,
+        setEditingDiceId,
         handleRollDice
-    } = useCustomDices({ onClose, enableChatIntegration })
+    } = useCustomDices({ onClose, enableChatIntegration, realtime })
 
     const attributes: Array<keyof Attributes> = [ 'des', 'vig', 'log', 'sab', 'foc', 'car' ]
 
@@ -220,7 +223,26 @@ export default function CustomDices({ onClose, enableChatIntegration = true }: D
             <Box display="flex" justifyContent="center" mb={showCreateForm ? 3 : 0}>
                 <Button
                     variant={showCreateForm ? 'outlined' : 'contained'}
-                    onClick={() => setShowCreateForm(!showCreateForm)}
+                    onClick={() => {
+                        if (showCreateForm) {
+                            // Fechando o formulário: apenas limpamos o estado de edição
+                            setShowCreateForm(false)
+                            setEditingDiceId(null)
+                            setVariableValues({})
+                        } else {
+                            // Abrindo para criar um NOVO dado: reset total do formulário
+                            setEditingDiceId(null)
+                            setNewDice(new Dice({
+                                name: '',
+                                dices: [ { faces: 20, quantity: 1 } ],
+                                modifiers: [],
+                                effects: [],
+                                color: theme.palette.primary.main
+                            }))
+                            setVariableValues({})
+                            setShowCreateForm(true)
+                        }
+                    }}
                     startIcon={showCreateForm ? <Remove /> : <Add />}
                     size="small"
                 >
@@ -381,7 +403,7 @@ export default function CustomDices({ onClose, enableChatIntegration = true }: D
                                                     onChange={(e) => handleUpdateModifier(
                                                         index,
                                                         'attribute',
-                                                        e.target.value as Attributes
+                                                        e.target.value as keyof Attributes
                                                     )}
                                                 >
                                                     <MenuItem value="">

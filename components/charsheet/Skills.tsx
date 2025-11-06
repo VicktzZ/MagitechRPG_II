@@ -34,7 +34,7 @@ type SkillsFilterType = 'all' | 'class' | 'subclass' | 'lineage' | 'powers' | 'b
 export default function Skills(): ReactElement {
     const { control, setValue, getValues, formState: { errors } } = useFormContext<CharsheetDTO>()
     const skillRef = useRef<EventTarget & HTMLSpanElement | null>()
-    const [ selectedSkill, setSelectedSkill ] = useState<Power | null>(null)
+    const [ selectedSkill, setSelectedSkill ] = useState<Power | null>(null) 
     const [ skillsFilter, setSkillsFilter ] = useState<SkillsFilterType>('all')
     const [ showMasteryDescription, setShowMasteryDescription ] = useState(false)
     const theme = useTheme()
@@ -254,12 +254,12 @@ export default function Skills(): ReactElement {
 
         if (skillsFilter === 'all') {
             return [
-                ...(formSkills.class || []),
-                ...(formSkills.subclass || []),
-                ...(formSkills.bonus || []),
-                ...(formSkills.powers || []),
-                ...(formSkills.lineage || []),
-                ...(formSkills.race || [])
+                ...(formSkills?.class || []),
+                ...(formSkills?.subclass || []),
+                ...(formSkills?.bonus || []),
+                ...(formSkills?.powers || []),
+                ...(formSkills?.lineage || []),
+                ...(formSkills?.race || [])
             ].map(renderSkill)
         } else {
             const filteredSkills = formSkills[skillsFilter as keyof typeof formSkills] || []
@@ -435,12 +435,12 @@ export default function Skills(): ReactElement {
                             }
                         }}
                     >
-                        <AnimatePresence mode="popLayout">
+                        <AnimatePresence mode="popLayout" initial={false}>
                             {skillsRender}
                         </AnimatePresence>
                     </Box>
                 </FormControl>
-                
+
                 {selectedSkill && (
                     <Box 
                         bgcolor='background.paper3' 

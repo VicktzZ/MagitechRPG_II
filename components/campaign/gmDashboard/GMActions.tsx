@@ -1,40 +1,40 @@
 'use client';
 
 import { useCampaignContext } from '@contexts';
+import { useFirestoreRealtime } from '@hooks/useFirestoreRealtime';
+import AddItemModal from '@layout/AddItemModal';
+import type { Armor, Item, Weapon } from '@models';
+import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import NoteAddIcon from '@mui/icons-material/NoteAdd';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
-import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
-import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import {
+    Avatar,
     Box,
     Button,
+    Chip,
+    CircularProgress,
     Dialog,
     DialogActions,
     DialogContent,
     DialogTitle,
+    Divider,
     List,
     ListItem,
     ListItemAvatar,
-    ListItemText,
-    Avatar,
     ListItemIcon,
-    ListItemText as MenuItemText,
+    ListItemText,
     Menu,
     MenuItem,
+    ListItemText as MenuItemText,
     TextField,
-    Typography,
-    Chip,
-    Divider,
-    CircularProgress
+    Typography
 } from '@mui/material';
+import { blue, green } from '@mui/material/colors';
 import { campaignService, charsheetService } from '@services';
+import { useQueryClient } from '@tanstack/react-query';
 import { useSnackbar } from 'notistack';
 import { useMemo, useState, type ReactElement } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
-import { useCharsheetsRealtime } from '@services/firestore/hooks';
-import { blue, green } from '@mui/material/colors';
-import AddItemModal from '@layout/AddItemModal';
-import type { Armor, Item, Weapon } from '@models';
 
 export default function GMActions(): ReactElement {
     const { campaign, isUserGM, users, charsheets } = useCampaignContext()
@@ -91,7 +91,7 @@ export default function GMActions(): ReactElement {
 
     // Player charsheets em tempo real usando Firestore
     const queryClient = useQueryClient()
-    const { data: playerCharsheets } = useCharsheetsRealtime({
+    const { data: playerCharsheets } = useFirestoreRealtime('charsheet', {
         filters: charsheets.length > 0 ? [
             { field: 'id', operator: 'in', value: charsheets.map(f => f.id) }
         ] : undefined,

@@ -1,16 +1,24 @@
 'use client'
 
-import { useState } from 'react'
-import { IconButton, Badge, Menu, MenuItem, Typography, Box } from '@mui/material'
+import { useFirestoreRealtime } from '@hooks/useFirestoreRealtime'
+import type { Notification } from '@models/entities'
 import { Notifications as NotificationsIcon } from '@mui/icons-material'
+import { Badge, Box, IconButton, Menu, MenuItem, Typography } from '@mui/material'
+import { QueryBuilder } from '@utils/queryBuilder'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { useMyNotifications } from '@services/firestore/hooks'
-import type { Notification } from '@models/entities'
+import { useState } from 'react'
 
 export default function Notifications() {
     const { data: session } = useSession()
-    const { data: notifications } = useMyNotifications(session?.user?.id ?? '')
+    const { data: notifications } = useFirestoreRealtime('notification', {
+        filters: [
+            QueryBuilder.equals('userId', session?.user?.id ?? '')
+        ],
+        orderBy: [
+            QueryBuilder.desc('timestamp')
+        ]
+    })
     const [ anchorEl, setAnchorEl ] = useState<null | HTMLElement>(null)
     const router = useRouter()
 
@@ -57,7 +65,7 @@ export default function Notifications() {
                 size="large"
                 color="inherit"
                 onClick={handleClick}
-                sx={{ border: '1px solid #aaa' }}
+                sx={{ border: '1px solid #aaa', height: 40, width: 40 }}
             >
                 <Badge badgeContent={unreadCount} color="error">
                     <NotificationsIcon />

@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/prefer-nullish-coalescing */
-import { useCharsheet, useSpellsRealtime, usePowersRealtime } from '@services/firestore/hooks';
+import type { CharsheetDTO, SpellDTO } from '@models/dtos';
+import { QueryBuilder } from '@utils/queryBuilder';
 import { useMemo } from 'react';
-import type { Charsheet } from '@models/entities';
+import { useFirestoreRealtime } from './useFirestoreRealtime';
 
 interface UseCompleteCharsheetOptions {
     charsheetId: string;
@@ -9,7 +10,7 @@ interface UseCompleteCharsheetOptions {
 }
 
 interface UseCompleteCharsheetResult {
-    data: Charsheet | null;
+    data: CharsheetDTO | null;
     loading: boolean;
     error: Error | null;
 }
@@ -18,88 +19,102 @@ export function useCompleteCharsheet({
     charsheetId,
     enabled = true
 }: UseCompleteCharsheetOptions): UseCompleteCharsheetResult {
-    // 🔥 Buscar charsheet principal em tempo real
-    const { data: charsheet, loading: charsheetLoading, error: charsheetError } = useCharsheet(charsheetId);
+    const { data, loading: charsheetLoading, error: charsheetError } = useFirestoreRealtime('charsheet', {
+        filters: [ QueryBuilder.equals('id', charsheetId) ]
+    });
 
-    // Extrair IDs das magias relacionadas
-    const magicIds = useMemo(() =>
-        enabled && charsheet?.spells?.length > 0
-            ? charsheet.spells.map(m => m.id || m).filter(Boolean)
-            : [],
-    [ charsheet?.spells, enabled ]
+    const charsheet = useMemo(() => data?.[0] || null, [ data ]);
+
+    // Spells podem vir como objetos completos ou apenas IDs. Separa para buscar só o que falta.
+    // Pode vir como SpellDTO[] OU string[]; tratamos como unknown[] e refinamos
+    const spellsInput = useMemo<unknown[]>(() => (charsheet?.spells as unknown[]) ?? [], [ charsheet?.spells ]);
+    const spellObjects = useMemo<SpellDTO[]>(
+        () => spellsInput.filter((s: any): s is SpellDTO => typeof s === 'object' && s !== null && 'name' in s),
+        [ spellsInput ]
+    );
+    const spellIdsToFetch = useMemo<string[]>(
+        () => spellsInput.filter((s: any): s is string => typeof s === 'string'),
+        [ spellsInput ]
     );
 
-    // 🔥 Buscar magias relacionadas em paralelo
     const {
         data: relatedSpells,
         loading: spellsLoading,
         error: spellsError
-    } = useSpellsRealtime({
-        filters: magicIds.length > 0 ? [
-            { field: 'id', operator: 'in', value: magicIds }
-        ] : undefined,
-        enabled: enabled && magicIds.length > 0
+    } = useFirestoreRealtime('spell', {
+        // Firestore 'in' suporta no máximo 10 itens. Se >10, evitamos a busca para não quebrar.
+        filters: spellIdsToFetch.length > 0 && spellIdsToFetch.length <= 10
+            ? [ { field: 'id', operator: 'in', value: spellIdsToFetch } ]
+            : undefined,
+        enabled: enabled && spellIdsToFetch.length > 0 && spellIdsToFetch.length <= 10
     });
 
-    // Extrair IDs dos poderes relacionados
-    const powerIds = useMemo(() =>
-        enabled && charsheet?.skills?.powers?.length > 0
-            ? charsheet.skills.powers.map(p => p.id || p).filter(Boolean)
-            : [],
-    [ charsheet?.skills?.powers, enabled ]
+    // Powers (skills.powers) também podem vir como objetos ou IDs
+    // Pode vir como Array<Partial<Skill>> OU string[]; tratamos como unknown[] e refinamos
+    const powersInput = useMemo<unknown[]>(() => (charsheet?.skills?.powers as unknown[]) ?? [], [ charsheet?.skills?.powers ]);
+    const powerObjects = useMemo<any[]>(
+        () => powersInput.filter((p: any): p is any => typeof p === 'object' && p !== null && 'name' in p),
+        [ powersInput ]
+    );
+    const powerIdsToFetch = useMemo<string[]>(
+        () => powersInput.filter((p: any): p is string => typeof p === 'string'),
+        [ powersInput ]
     );
 
-    // 🔥 Buscar poderes relacionados em paralelo
     const {
         data: relatedPowers,
         loading: powersLoading,
         error: powersError
-    } = usePowersRealtime({
-        filters: powerIds.length > 0 ? [
-            { field: 'id', operator: 'in', value: powerIds }
-        ] : undefined,
-        enabled: enabled && powerIds.length > 0
+    } = useFirestoreRealtime('power', {
+        filters: powerIdsToFetch.length > 0 && powerIdsToFetch.length <= 10
+            ? [ { field: 'id', operator: 'in', value: powerIdsToFetch } ]
+            : undefined,
+        enabled: enabled && powerIdsToFetch.length > 0 && powerIdsToFetch.length <= 10
     });
 
-    // 🔥 Combinar dados em tempo real
-    const completeCharsheet = useMemo((): Charsheet | null => {
+    const completeCharsheet = useMemo((): CharsheetDTO | null => {
         if (!charsheet || !enabled) return null;
 
-        const charsheetWithRelations = { ...charsheet };
+        const charsheetWithRelations: CharsheetDTO = { ...charsheet } as any;
 
-        // Resolver magias: substituir IDs pelos dados completos
-        if (relatedSpells && relatedSpells.length > 0) {
-            const magicMap = new Map(relatedSpells.map(m => [ m.id, m ]));
-            charsheetWithRelations.spells = charsheet.spells.map(magicId =>
-                magicMap.get(magicId.id || magicId) || magicId
-            );
+        // Monta spells finais: mantém objetos existentes e adiciona os buscados; remove IDs não resolvidos
+        {
+            const fetchedMap = new Map((relatedSpells ?? []).map((m: any) => [ m.id, m ]));
+            const fetchedFromIds = spellIdsToFetch
+                .map(id => fetchedMap.get(id))
+                .filter((m): m is any => Boolean(m));
+
+            const allSpells = [ ...spellObjects, ...fetchedFromIds ] as any[];
+            // Mantém apenas spells com stages válidos para não quebrar os componentes
+            const validSpells = allSpells.filter(s => Array.isArray(s?.stages) && s.stages.length > 0);
+            (charsheetWithRelations as any).spells = validSpells as SpellDTO[];
         }
 
-        // Resolver poderes: substituir IDs pelos dados completos
-        if (relatedPowers && relatedPowers.length > 0) {
-            const powerMap = new Map(relatedPowers.map(p => [ p.id, p ]));
-            if (charsheetWithRelations.skills?.powers) {
-                charsheetWithRelations.skills.powers = charsheet.skills.powers.map(powerId => {
-                    const fullPower = powerMap.get(powerId.id || powerId);
-                    return fullPower ? {
-                        id: fullPower.id,
-                        name: fullPower.name,
-                        description: fullPower.description,
-                        element: fullPower.element,
-                        mastery: fullPower.mastery,
-                        type: 'Poder Mágico' as const
-                    } : powerId;
-                });
-            }
+        // Monta powers finais: mantém objetos existentes e adiciona os buscados formatados; remove IDs não resolvidos
+        if (charsheetWithRelations.skills?.powers) {
+            const fetchedMap = new Map((relatedPowers ?? []).map(p => [ p.id, p ]));
+            const fetchedPowers = powerIdsToFetch
+                .map(id => fetchedMap.get(id))
+                .filter((p): p is any => Boolean(p))
+                .map(fullPower => ({
+                    id: fullPower.id,
+                    name: fullPower.name,
+                    description: fullPower.description,
+                    element: fullPower.element,
+                    mastery: fullPower.mastery,
+                    type: 'Poder Mágico' as const
+                }));
+
+            charsheetWithRelations.skills.powers = [ ...powerObjects, ...fetchedPowers ];
         }
 
         return charsheetWithRelations;
     }, [ charsheet, relatedSpells, relatedPowers, enabled ]);
 
-    // Estado de loading geral
-    const loading = enabled ? (charsheetLoading || spellsLoading || powersLoading) : false;
-
-    // Primeiro erro encontrado (se houver)
+    // Considera carregando enquanto ainda precisamos resolver IDs e estamos tentando buscar
+    const needsSpellFetch = enabled && spellIdsToFetch.length > 0 && spellIdsToFetch.length <= 10;
+    const needsPowerFetch = enabled && powerIdsToFetch.length > 0 && powerIdsToFetch.length <= 10;
+    const loading = enabled ? (charsheetLoading || (needsSpellFetch && spellsLoading) || (needsPowerFetch && powersLoading)) : false;
     const error = charsheetError || spellsError || powersError;
 
     return {

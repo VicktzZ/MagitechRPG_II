@@ -41,7 +41,7 @@ import {
 } from '@constants/dataTypes';
 
 import { Typography } from '@mui/material';
-import { useSnackbar } from '@node_modules/notistack';
+import { useSnackbar } from 'notistack';
 import { toastDefault } from '@constants';
 import type { MergedItems } from '@models/types/misc';
 
@@ -254,7 +254,7 @@ function WeaponModal({ closeModal }: ModalProps): ReactElement {
     const { register, formState: { errors, touchedFields } } = form;
 
     const create = (data: WeaponFormFields) => {
-        formik.setFieldValue('inventory.weapons', [ ...formik.values.inventory.weapons, data ]);
+        form.setValue('inventory.weapons', [ ...form.getValues('inventory.weapons'), data ]);
         enqueueSnackbar(`${data.name} criado com sucesso!`, toastDefault('itemCreated', 'success'));
         closeModal();
     };
@@ -618,7 +618,7 @@ function ItemModal({ closeModal }: ModalProps): ReactElement {
 
     const create = async (data: ItemFormFields): Promise<void> => {
         data.effects = [ data.effects ] as unknown as string;
-        formik.setFieldValue('inventory.items', [ ...formik.values.inventory.items, data ]);
+        form.setValue('inventory.items', [ ...form.getValues('inventory.items'), data ]);
 
         enqueueSnackbar(`${data.name} criado com sucesso!`, toastDefault(data.name, 'success'));
 

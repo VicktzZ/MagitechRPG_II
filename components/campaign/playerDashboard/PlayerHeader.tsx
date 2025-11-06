@@ -1,425 +1,296 @@
 'use client'
 
-import {
-    Add as AddIcon,
-    AutoAwesome,
-    Cake,
-    Favorite,
-    FlashOn,
-    LocalFireDepartment,
-    Psychology,
-    Remove as RemoveIcon,
-    Shield,
-    Speed,
-    Star,
-    TrendingUp,
-    Wc
-} from '@mui/icons-material';
+import { useCampaignContext, useCampaignCurrentCharsheetContext } from '@contexts';
 import {
     Avatar,
     Box,
+
     Chip,
-    Divider,
     Grid,
-    IconButton,
-    LinearProgress,
     Paper,
-    Stack,
-    Tooltip,
-    Typography,
-    useMediaQuery,
-    useTheme
+    Typography
 } from '@mui/material';
-import { blue, green, grey, purple, red, yellow } from '@mui/material/colors';
-import { useState, type ReactElement } from 'react';
-import { useCampaignCurrentCharsheetContext } from '@contexts';
+import Image from 'next/image';
+import { useMemo, useState, type ReactElement } from 'react';
+import { StatusBar } from './StatusBar';
+import { AttributeCard } from './AttributeCard';
+import type { Stats } from '@models';
 
-interface PlayerHeaderProps {
-    avatar: string
-}
+const attributeConfig = {
+    vig: { icon: '💪', color: { bgcolor: 'rgba(239, 68, 68, 0.2)', border: '1px solid rgba(239, 68, 68, 0.4)' } },
+    foc: { icon: '🎯', color: { bgcolor: 'rgba(59, 130, 246, 0.2)', border: '1px solid rgba(59, 130, 246, 0.4)' } },
+    des: { icon: '⚡', color: { bgcolor: 'rgba(234, 179, 8, 0.2)', border: '1px solid rgba(234, 179, 8, 0.4)' } },
+    log: { icon: '🧠', color: { bgcolor: 'rgba(6, 182, 212, 0.2)', border: '1px solid rgba(6, 182, 212, 0.4)' } },
+    sab: { icon: '🔮', color: { bgcolor: 'rgba(168, 85, 247, 0.2)', border: '1px solid rgba(168, 85, 247, 0.4)' } },
+    car: { icon: '🌟', color: { bgcolor: 'rgba(34, 197, 94, 0.2)', border: '1px solid rgba(34, 197, 94, 0.4)' } }
+};
 
-interface StatusBarProps {
-    label: string
-    current: number
-    max: number
-    color: string
-    icon: ReactElement
-    onIncrease: () => void
-    onDecrease: () => void
-}
+export default function PlayerHeader({ avatar }: { avatar: string | undefined }) {
+    const { charsheet, updateCharsheet } = useCampaignCurrentCharsheetContext();
+    const { campaign: { campaignCode } } = useCampaignContext()
+    const session = useMemo(() => charsheet.session.find(s => s.campaignCode === campaignCode), [ charsheet.session, campaignCode ]);
 
-function StatusBar({ label, current, max, color, icon, onIncrease, onDecrease }: StatusBarProps) {
-    const percentage = Math.min((current / max) * 100, 100)
-    const theme = useTheme()
-    
-    return (
-        <Box sx={{ minWidth: 200 }}>
-            <Stack direction="row" alignItems="center" spacing={1} mb={1}>
-                {icon}
-                <Typography variant="body2" fontWeight={600} color="text.secondary">
-                    {label}
-                </Typography>
-                <Typography variant="body2" fontWeight={700} sx={{ ml: 'auto' }}>
-                    {current}/{max}
-                </Typography>
-            </Stack>
-            
-            <Box sx={{ position: 'relative', mb: 1 }}>
-                <LinearProgress
-                    variant="determinate"
-                    value={percentage}
-                    sx={{
-                        height: 12,
-                        borderRadius: 6,
-                        bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
-                        '& .MuiLinearProgress-bar': {
-                            borderRadius: 6,
-                            bgcolor: color,
-                            background: `linear-gradient(90deg, ${color} 0%, ${color}dd 100%)`
-                        }
-                    }}
-                />
-                <Typography
-                    variant="caption"
-                    sx={{
-                        position: 'absolute',
-                        top: '50%',
-                        left: '50%',
-                        transform: 'translate(-50%, -50%)',
-                        color: percentage > 50 ? 'white' : 'text.primary',
-                        fontWeight: 700,
-                        fontSize: '0.7rem',
-                        textShadow: percentage > 50 ? '1px 1px 2px rgba(0,0,0,0.5)' : 'none'
-                    }}
-                >
-                    {Math.round(percentage)}%
-                </Typography>
-            </Box>
-            
-            <Stack direction="row" spacing={1} justifyContent="center">
-                <Tooltip title={`Diminuir ${label}`}>
-                    <IconButton
-                        size="small"
-                        onClick={onDecrease}
-                        disabled={current <= 0}
-                        sx={{
-                            bgcolor: red[100],
-                            color: red[600],
-                            '&:hover': { bgcolor: red[200] },
-                            '&:disabled': { bgcolor: grey[100], color: grey[400] }
-                        }}
-                    >
-                        <RemoveIcon fontSize="small" />
-                    </IconButton>
-                </Tooltip>
-                
-                <Tooltip title={`Aumentar ${label}`}>
-                    <IconButton
-                        size="small"
-                        onClick={onIncrease}
-                        disabled={current >= max}
-                        sx={{
-                            bgcolor: green[100],
-                            color: green[600],
-                            '&:hover': { bgcolor: green[200] },
-                            '&:disabled': { bgcolor: grey[100], color: grey[400] }
-                        }}
-                    >
-                        <AddIcon fontSize="small" />
-                    </IconButton>
-                </Tooltip>
-            </Stack>
-        </Box>
-    )
-}
+    if (!session) return null;
 
-export default function PlayerHeader({ avatar }: PlayerHeaderProps): ReactElement {
-    const { charsheet, updateCharsheet } = useCampaignCurrentCharsheetContext()
-    const theme = useTheme()
-    
-    const isSmall = useMediaQuery(theme.breakpoints.down('sm'))
-
-    const [ currentAttributes, setCurrentAttributes ] = useState({
-        lp: charsheet.attributes.lp,
-        mp: charsheet.attributes.mp,
-        ap: charsheet.attributes.ap
-    })
-
-    const updateAttribute = (attr: 'lp' | 'mp' | 'ap', change: number) => {
-        const currentValue = currentAttributes[attr] || 0
-        const maxKey = `max${attr.charAt(0).toUpperCase() + attr.slice(1)}` as 'maxLp' | 'maxMp' | 'maxAp'
-        const maxValue = charsheet.attributes[maxKey] || 0
-        const newValue = Math.max(0, Math.min(currentValue + change, maxValue))
-        
-        setCurrentAttributes(prev => ({
-            ...prev,
-            [attr]: newValue
-        }))
-
+    const updateStat = (stat: keyof Stats, delta: number) => {
         updateCharsheet({
-            attributes: {
-                ...charsheet.attributes,
-                [attr]: newValue
-            }
-        })
-    }
-
-    const getElementIcon = (element: string) => {
-        switch (element?.toLowerCase()) {
-        case 'fogo': return <LocalFireDepartment sx={{ color: red[500] }} />
-        case 'água': return <Psychology sx={{ color: blue[500] }} />
-        case 'terra': return <Shield sx={{ color: green[700] }} />
-        case 'ar': return <FlashOn sx={{ color: grey[400] }} />
-        default: return <AutoAwesome sx={{ color: purple[500] }} />
-        }
-    }
-
-    const getGenderIcon = () => {
-        return <Wc sx={{ color: theme.palette.text.secondary }} />
-    }
+            session: [
+                ...charsheet.session.filter(s => s.campaignCode !== campaignCode),
+                {
+                    ...session,
+                    stats: {
+                        ...session.stats,
+                        [stat]: Math.max(0, Math.min(session.stats[stat] + delta, session.stats[`max${stat.charAt(0).toUpperCase() + stat.slice(1)}`] * 2))
+                    }
+                }
+            ]
+        });
+    };
 
     return (
-        <Paper 
-            elevation={4}
-            sx={{
-                p: { xs: 2, md: 4 },
-                mb: 4,  
-                borderRadius: 3,
-                background: theme.palette.mode === 'dark'
-                    ? 'linear-gradient(135deg, #1a2332 0%, #2d3748 100%)'
-                    : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                color: 'white',
-                position: 'relative',
-                overflow: 'hidden',
-                '&::before': {
-                    content: '""',
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    background: 'rgba(255,255,255,0.1)',
-                    backdropFilter: 'blur(10px)'
-                }
-            }}
-        >
-            <Box position="relative" zIndex={1}>
-                <Grid container spacing={3} alignItems="center">
-                    {/* Avatar e Informações Básicas */}
-                    <Grid item xs={12} md={4}>
-                        <Stack 
-                            direction={{ xs: 'column', sm: 'row', md: 'column' }}
-                            alignItems="center" 
-                            spacing={2}
-                        >
-                            <Avatar
+        <Paper sx={{
+            bgcolor: '#1e293b',
+            border: '1px solid #475569',
+            borderRadius: 3,
+            p: 2,
+            mb: 2
+        }}>
+            {/* Primeira linha: Avatar + Info Básica */}
+            <Box sx={{ display: 'flex', gap: { xs: 1, sm: 1.5 }, mb: 2, flexDirection: { xs: 'column', sm: 'row' }, alignItems: { xs: 'center', sm: 'flex-start' } }}>
+                <Box sx={{ position: 'relative' }}>
+                    <Avatar sx={{ width: { xs: '56px', sm: '64px' }, height: { xs: '56px', sm: '64px' } }}>
+                        {avatar ? (
+                            <Image
                                 src={avatar}
                                 alt={charsheet.name}
-                                sx={{ 
-                                    width: { xs: 80, md: 120 }, 
-                                    height: { xs: 80, md: 120 },
-                                    border: '4px solid rgba(255,255,255,0.3)',
-                                    boxShadow: '0 8px 32px rgba(0,0,0,0.3)'
+                                width={64}
+                                height={64}
+                            />
+                        ) : (
+                            charsheet.name.charAt(0)
+                        )}
+                    </Avatar>
+                    <Box sx={{
+                        position: 'absolute',
+                        bottom: '-4px',
+                        right: '-4px',
+                        bgcolor: '#3b82f6',
+                        color: 'white',
+                        px: 0.75,
+                        py: 0.25,
+                        borderRadius: '12px',
+                        fontSize: '10px',
+                        fontWeight: 700,
+                        border: '2px solid #1e293b'
+                    }}>
+                        {charsheet.level}
+                    </Box>
+                </Box>
+                
+                <Box sx={{ flex: 1, minWidth: 0, textAlign: { xs: 'center', sm: 'left' } }}>
+                    <Typography variant="h6" sx={{ truncate: true, fontSize: { xs: '16px', sm: '18px' } }}>
+                        {charsheet.name}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: '#9ca3af', truncate: true, mb: 1, fontSize: { xs: '10px', sm: '12px' } }}>
+                        {charsheet.playerName}
+                    </Typography>
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, justifyContent: { xs: 'center', sm: 'flex-start' } }}>
+                        <Chip
+                            label={`♟️ ${charsheet.class}`}
+                            sx={{
+                                bgcolor: 'rgba(59, 130, 246, 0.2)',
+                                color: '#93c5fd',
+                                border: '1px solid rgba(59, 130, 246, 0.3)'
+                            }}
+                        />
+                        {charsheet.subclass && (
+                            <Chip
+                                label={`✨ ${charsheet.subclass}`}
+                                sx={{
+                                    bgcolor: 'rgba(168, 85, 247, 0.2)',
+                                    color: '#c4b5fd',
+                                    border: '1px solid rgba(168, 85, 247, 0.3)'
                                 }}
                             />
-                            
-                            <Stack spacing={1} alignItems={{ xs: 'center', sm: 'flex-start', md: 'center' }}>
-                                <Typography 
-                                    variant={isSmall ? 'h5' : 'h4'} 
-                                    sx={{ 
-                                        fontWeight: 700,
-                                        textAlign: 'center',
-                                        textShadow: '2px 2px 4px rgba(0,0,0,0.3)'
-                                    }}
-                                >
-                                    {charsheet.name}
-                                </Typography>
-                                
-                                <Typography 
-                                    variant="subtitle1" 
-                                    sx={{ 
-                                        opacity: 0.9,
-                                        textAlign: 'center',
-                                        fontWeight: 500
-                                    }}
-                                >
-                                    {charsheet.playerName}
-                                </Typography>
-                            </Stack>
-                        </Stack>
+                        )}
+                    </Box>
+                    <Box sx={{
+                        mt: 1,
+                        pt: 1,
+                        borderTop: '1px solid rgba(71, 85, 105, 0.5)'
+                    }}>
+                        <Typography variant="caption" sx={{ color: '#9ca3af', fontSize: { xs: '10px', sm: '11px' } }}>
+                            {charsheet.lineage} • {charsheet.gender} • {charsheet.age} anos
+                        </Typography>
+                    </Box>
+                </Box>
+            </Box>
+
+            {/* Segunda linha: Atributos */}
+            <Box sx={{ mb: 2 }}>
+                <Typography variant="caption" sx={{
+                    color: '#9ca3af',
+                    fontWeight: 600,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                    fontSize: '11px',
+                    mb: 1
+                }}>
+                    Atributos Principais
+                </Typography>
+                <Grid container spacing={1} sx={{ mt: 0.5 }}>
+                    <Grid item xs={6} sm={4} md={2}>
+                        <AttributeCard
+                            label="VIG"
+                            value={charsheet.attributes.vig}
+                            icon={attributeConfig.vig.icon}
+                            iconColor={attributeConfig.vig.color}
+                        />
                     </Grid>
-
-                    {/* Informações do Personagem */}
-                    <Grid item xs={12} md={4}>
-                        <Stack spacing={2}>
-                            <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
-                                Informações do Personagem
-                            </Typography>
-                            
-                            <Stack spacing={1.5}>
-                                <Stack direction="row" flexWrap="wrap" gap={1}>
-                                    <Chip 
-                                        icon={<Star />}
-                                        label={`Nível ${charsheet.level}`} 
-                                        sx={{ 
-                                            bgcolor: 'rgba(255,255,255,0.2)',
-                                            color: 'white',
-                                            fontWeight: 600,
-                                            '& .MuiChip-icon': { color: 'white' }
-                                        }}
-                                    />
-                                    <Chip 
-                                        icon={<Shield />}
-                                        label={charsheet.class as string} 
-                                        sx={{ 
-                                            bgcolor: 'rgba(255,255,255,0.2)',
-                                            color: 'white',
-                                            fontWeight: 600,
-                                            '& .MuiChip-icon': { color: 'white' }
-                                        }}
-                                    />
-                                </Stack>
-
-                                <Stack direction="row" flexWrap="wrap" gap={1}>
-                                    <Chip 
-                                        label={charsheet.lineage as string} 
-                                        sx={{ 
-                                            bgcolor: 'rgba(255,255,255,0.15)',
-                                            color: 'white',
-                                            fontWeight: 500
-                                        }}
-                                    />
-                                    {charsheet.subclass && (
-                                        <Chip 
-                                            label={charsheet.subclass as string} 
-                                            sx={{ 
-                                                bgcolor: 'rgba(255,255,255,0.15)',
-                                                color: 'white',
-                                                fontWeight: 500
-                                            }}
-                                        />
-                                    )}
-                                </Stack>
-
-                                <Stack direction="row" flexWrap="wrap" gap={1}>
-                                    <Chip 
-                                        icon={getElementIcon(charsheet.elementalMastery as string)}
-                                        label={charsheet.elementalMastery as string} 
-                                        sx={{ 
-                                            bgcolor: 'rgba(255,255,255,0.15)',
-                                            color: 'white',
-                                            fontWeight: 500,
-                                            '& .MuiChip-icon': { color: 'white' }
-                                        }}
-                                    />
-                                    <Chip 
-                                        icon={getGenderIcon(charsheet.gender as string)}
-                                        label={charsheet.gender as string} 
-                                        sx={{ 
-                                            bgcolor: 'rgba(255,255,255,0.15)',
-                                            color: 'white',
-                                            fontWeight: 500,
-                                            '& .MuiChip-icon': { color: 'white' }
-                                        }}
-                                    />
-                                    <Chip 
-                                        icon={<Cake />}
-                                        label={`${charsheet.age} anos`} 
-                                        sx={{ 
-                                            bgcolor: 'rgba(255,255,255,0.15)',
-                                            color: 'white',
-                                            fontWeight: 500,
-                                            '& .MuiChip-icon': { color: 'white' }
-                                        }}
-                                    />
-                                </Stack>
-                            </Stack>
-                        </Stack>
+                    <Grid item xs={6} sm={4} md={2}>
+                        <AttributeCard
+                            label="FOC"
+                            value={charsheet.attributes.foc}
+                            icon={attributeConfig.foc.icon}
+                            iconColor={attributeConfig.foc.color}
+                        />
                     </Grid>
-
-                    {/* Atributos de Status */}
-                    <Grid item xs={12} md={4}>
-                        <Stack spacing={2}>
-                            <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
-                                Status
-                            </Typography>
-                            
-                            <Stack spacing={2}>
-                                <StatusBar
-                                    label="Pontos de Vida"
-                                    current={currentAttributes.lp}
-                                    max={charsheet.attributes.maxLp}
-                                    color={red[500]}
-                                    icon={<Favorite sx={{ color: red[300] }} />}
-                                    onIncrease={() => updateAttribute('lp', 1)}
-                                    onDecrease={() => updateAttribute('lp', -1)}
-                                />
-                                
-                                <StatusBar
-                                    label="Pontos de Mana"
-                                    current={currentAttributes.mp}
-                                    max={charsheet.attributes.maxMp}
-                                    color={blue[500]}
-                                    icon={<AutoAwesome sx={{ color: blue[300] }} />}
-                                    onIncrease={() => updateAttributeLocal('mp', 1)}
-                                    onDecrease={() => updateAttributeLocal('mp', -1)}
-                                />
-                                
-                                <StatusBar
-                                    label="Pontos de Armadura"
-                                    current={currentAttributes.ap}
-                                    max={charsheet.attributes.maxAp}
-                                    color={yellow[600]}
-                                    icon={<Shield sx={{ color: yellow[300] }} />}
-                                    onIncrease={() => updateAttributeLocal('ap', 1)}
-                                    onDecrease={() => updateAttributeLocal('ap', -1)}
-                                />
-                            </Stack>
-                        </Stack>
+                    <Grid item xs={6} sm={4} md={2}>
+                        <AttributeCard
+                            label="DES"
+                            value={charsheet.attributes.des}
+                            icon={attributeConfig.des.icon}
+                            iconColor={attributeConfig.des.color}
+                        />
+                    </Grid>
+                    <Grid item xs={6} sm={4} md={2}>
+                        <AttributeCard
+                            label="LOG"
+                            value={charsheet.attributes.log}
+                            icon={attributeConfig.log.icon}
+                            iconColor={attributeConfig.log.color}
+                        />
+                    </Grid>
+                    <Grid item xs={6} sm={4} md={2}>
+                        <AttributeCard
+                            label="SAB"
+                            value={charsheet.attributes.sab}
+                            icon={attributeConfig.sab.icon}
+                            iconColor={attributeConfig.sab.color}
+                        />
+                    </Grid>
+                    <Grid item xs={6} sm={4} md={2}>
+                        <AttributeCard
+                            label="CAR"
+                            value={charsheet.attributes.car}
+                            icon={attributeConfig.car.icon}
+                            iconColor={attributeConfig.car.color}
+                        />
                     </Grid>
                 </Grid>
-
-                {/* Atributos Secundários */}
-                <Divider sx={{ my: 3, bgcolor: 'rgba(255,255,255,0.2)' }} />
                 
-                <Grid container spacing={2}>
+                <Grid container spacing={1} sx={{ mt: 1.5 }}>
                     <Grid item xs={12} sm={4}>
-                        <Stack direction="row" alignItems="center" spacing={1}>
-                            <Psychology sx={{ color: 'rgba(255,255,255,0.7)' }} />
-                            <Typography variant="body2" sx={{ opacity: 0.8 }}>
-                                Limite MP Diário:
+                        <Paper sx={{
+                            bgcolor: 'rgba(71, 85, 105, 0.3)',
+                            border: '1px solid rgba(71, 85, 105, 0.3)',
+                            borderRadius: 1,
+                            p: 1,
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center'
+                        }}>
+                            <Typography sx={{ fontSize: { xs: '9px', sm: '10px' }, color: '#9ca3af', textTransform: 'uppercase', fontWeight: 600 }}>
+                                Limite MP
                             </Typography>
-                            <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                            <Typography sx={{ fontSize: { xs: '12px', sm: '14px' }, fontWeight: 700, color: '#22d3ee' }}>
                                 {charsheet.mpLimit}
                             </Typography>
-                        </Stack>
+                        </Paper>
                     </Grid>
-                    
                     <Grid item xs={12} sm={4}>
-                        <Stack direction="row" alignItems="center" spacing={1}>
-                            <TrendingUp sx={{ color: 'rgba(255,255,255,0.7)' }} />
-                            <Typography variant="body2" sx={{ opacity: 0.8 }}>
-                                Overall:
+                        <Paper sx={{
+                            bgcolor: 'rgba(71, 85, 105, 0.3)',
+                            border: '1px solid rgba(71, 85, 105, 0.3)',
+                            borderRadius: 1,
+                            p: 1,
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center'
+                        }}>
+                            <Typography sx={{ fontSize: { xs: '9px', sm: '10px' }, color: '#9ca3af', textTransform: 'uppercase', fontWeight: 600 }}>
+                                Overall
                             </Typography>
-                            <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                                {charsheet.overall || 0}
+                            <Typography sx={{ fontSize: { xs: '12px', sm: '14px' }, fontWeight: 700, color: '#60a5fa' }}>
+                                {charsheet.overall}
                             </Typography>
-                        </Stack>
+                        </Paper>
                     </Grid>
-                    
                     <Grid item xs={12} sm={4}>
-                        <Stack direction="row" alignItems="center" spacing={1}>
-                            <Speed sx={{ color: 'rgba(255,255,255,0.7)' }} />
-                            <Typography variant="body2" sx={{ opacity: 0.8 }}>
-                                Deslocamento:
+                        <Paper sx={{
+                            bgcolor: 'rgba(34, 197, 94, 0.1)',
+                            border: '1px solid rgba(34, 197, 94, 0.3)',
+                            borderRadius: 1,
+                            p: 1,
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center'
+                        }}>
+                            <Typography sx={{ fontSize: { xs: '9px', sm: '10px' }, color: '#d1d5db', textTransform: 'uppercase', fontWeight: 600 }}>
+                                🚀 Desloc.
                             </Typography>
-                            <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                            <Typography sx={{ fontSize: { xs: '12px', sm: '14px' }, fontWeight: 700, color: '#4ade80' }}>
                                 {charsheet.displacement}m
                             </Typography>
-                        </Stack>
+                        </Paper>
                     </Grid>
                 </Grid>
             </Box>
+
+            {/* Terceira linha: Status */}
+            <Box>
+                <Typography variant="caption" sx={{
+                    color: '#9ca3af',
+                    fontWeight: 600,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                    fontSize: '11px',
+                    mb: 1
+                }}>
+                    Status
+                </Typography>
+                <Box sx={{ mt: 1 }}>
+                    <StatusBar
+                        label="Pontos de Vida (LP)"
+                        current={session.stats.lp}
+                        max={session.stats.maxLp}
+                        color="#ef4444"
+                        icon="❤️"
+                        onIncrease={(value) => updateStat('lp', value)}
+                        onDecrease={(value) => updateStat('lp', -value)}
+                    />
+                    
+                    <StatusBar
+                        label="Pontos de Mana (MP)"
+                        current={session.stats.mp}
+                        max={session.stats.maxMp}
+                        color="#3b82f6"
+                        icon="✨"
+                        onIncrease={(value) => updateStat('mp', value)}
+                        onDecrease={(value) => updateStat('mp', -value)}
+                    />
+                    
+                    <StatusBar
+                        label="Pontos de Armadura (AP)"
+                        current={session.stats.ap}
+                        max={session.stats.maxAp}
+                        color="#eab308"
+                        icon="🛡️"
+                        onIncrease={(value) => updateStat('ap', value)}
+                        onDecrease={(value) => updateStat('ap', -value)}
+                    />
+                </Box>
+            </Box>
         </Paper>
-    )
+    );
 }

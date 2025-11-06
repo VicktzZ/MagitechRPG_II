@@ -203,7 +203,7 @@ const ChatWrapper = memo(function ChatWrapper({
 });
 
 export default function SessionChat() {
-    const { campaign } = useCampaignContext()
+    const { campaign, updateCampaign } = useCampaignContext()
     const { data: session } = useSession()
     const { channel } = useChannel()
     const theme = useTheme();
@@ -244,7 +244,27 @@ export default function SessionChat() {
     }
     
     const sendMessage = async (newMessage: Message) => {
+        // Atualiza UI localmente (pendente) e persiste no Firestore
         sendMsg(newMessage, scrollToBottom)
+        try {
+            const currentMessages = campaign?.session?.messages ?? []
+            const currentUsers = campaign?.session?.users ?? []
+            // Normaliza a mensagem antes de persistir (remove flags temporárias)
+            const toPersist: any = { ...newMessage }
+            delete toPersist.isPending
+            delete toPersist.tempId
+            if (toPersist.timestamp instanceof Date) {
+                toPersist.timestamp = toPersist.timestamp.toISOString()
+            }
+            await updateCampaign({
+                session: {
+                    users: currentUsers,
+                    messages: [ ...currentMessages, toPersist ]
+                } as any
+            })
+        } catch (e) {
+            console.error('[SessionChat] Falha ao persistir mensagem no Firestore:', e)
+        }
     }
 
     const handleTestConfirm = (data: any) => {
@@ -288,7 +308,7 @@ export default function SessionChat() {
                         const expertise = charsheet.expertises[currentTest.expertise as keyof Expertises]
                         expertiseBonus = expertise.value
                         baseAttribute = expertise.defaultAttribute?.toLowerCase()
-                        baseAttributeValue = charsheet.attributes[baseAttribute as keyof Attributes]
+                        baseAttributeValue = charsheet.stats[baseAttribute as keyof Attributes]
 
                         console.log({
                             currentTest,
@@ -347,7 +367,7 @@ export default function SessionChat() {
                 name: session.user.name,
                 image: session.user.image ?? '/assets/default-avatar.png'
             },
-            timestamp: new Date(),
+            timestamp: new Date().toISOString(),
             type: expertiseResult ? MessageType.EXPERTISE : MessageType.ROLL
         }
 
@@ -362,7 +382,7 @@ export default function SessionChat() {
                 name: 'Dice Roller',
                 isBot: true
             },
-            timestamp: new Date()
+            timestamp: new Date().toISOString()
         } : null
 
         if (currentTest.isVisible) {
@@ -411,10 +431,23 @@ export default function SessionChat() {
         setSnackbarOpen(true)
     }
 
-    // Carrega mensagens iniciais
+    // Sincroniza mensagens do Firestore (tempo real) e remove estado pendente
     useEffect(() => {
-        setMessages(campaign?.session?.messages ?? [])
-    }, [ campaign?.id ])
+        const list = campaign?.session?.messages ?? []
+        if (Array.isArray(list)) {
+            const unique: any[] = []
+            const seen = new Set<string>()
+            for (const m of list) {
+                const key = (m as any).id || `${(m as any).timestamp}-${(m as any).by?.id}-${(m as any).text}`
+                if (seen.has(key)) continue
+                seen.add(key)
+                unique.push({ ...m, isPending: false })
+            }
+            setMessages(unique)
+        } else {
+            setMessages([])
+        }
+    }, [ campaign?.session?.messages ])
 
     // Scroll to bottom quando as mensagens são carregadas inicialmente
     useEffect(() => {
@@ -432,41 +465,10 @@ export default function SessionChat() {
         }
     }, [])
 
-    // Configura os eventos do Pusher
+    // Configura os eventos do Pusher (apenas testes, mensagens via Firestore)
     useEffect(() => {
         if (!channel || !session?.user) return
 
-        const handleNewMessage = (data: Message) => {
-            setMessages(prev => {
-                // Procura uma mensagem temporária correspondente
-                const tempMessage = prev.find(
-                    (m: TempMessage) => m.timestamp && data.timestamp && 
-                    new Date(m.timestamp).getTime() === new Date(data.timestamp).getTime() &&
-                    m.by.id === data.by.id &&
-                    m.text === data.text &&
-                    m.isPending
-                )
-
-                if (tempMessage) {
-                    // Atualiza a mensagem temporária para não pendente
-                    return prev.map(m => 
-                        m.tempId === tempMessage.tempId
-                            ? { ...m, isPending: false }
-                            : m
-                    )
-                }
-
-                // Se não encontrou mensagem temporária, adiciona a nova como uma mensagem confirmada
-                const newMessage: TempMessage = {
-                    ...data,
-                    isPending: false,
-                    tempId: Date.now().toString()
-                }
-                
-                setTimeout(scrollToBottom, 100)
-                return [ ...prev, newMessage ]
-            })
-        }
 
         const handleTestRequest = (data: any) => {
             // Se o usuário atual é um dos selecionados para o teste
@@ -487,12 +489,10 @@ export default function SessionChat() {
             handleTestResult(data)
         }
 
-        channel.bind(PusherEvent.NEW_MESSAGE, handleNewMessage)
         channel.bind(PusherEvent.TEST_REQUEST, handleTestRequest)
         channel.bind(PusherEvent.TEST_RESULT, handleTestResultPusher)
 
         return () => {
-            channel.unbind(PusherEvent.NEW_MESSAGE, handleNewMessage)
             channel.unbind(PusherEvent.TEST_REQUEST, handleTestRequest)
             channel.unbind(PusherEvent.TEST_RESULT, handleTestResultPusher)
         }

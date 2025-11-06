@@ -12,47 +12,96 @@ import {
     Typography,
     Stack,
     Tooltip,
-    useTheme
+    useTheme,
+    FormControl,
+    Select,
+    MenuItem,
+    InputLabel,
+    ToggleButtonGroup,
+    ToggleButton
 } from '@mui/material'
 import {
     Person,
     Casino,
     TrendingUp,
     Star,
-    EmojiEvents
+    EmojiEvents,
+    FilterList,
+    SortByAlpha,
+    TrendingDown
 } from '@mui/icons-material'
 import { blue, green, grey, purple, orange, red } from '@mui/material/colors'
 import { useSession } from 'next-auth/react'
-import { type ReactElement } from 'react'
+import { type ReactElement, useState, useMemo } from 'react'
 import type { Expertises } from '@models';
+
+type ExpertiseLevel = 'all' | 'novice' | 'trained' | 'expert' | 'master' | 'legendary';
+type SortOrder = 'alpha-asc' | 'alpha-desc' | 'value-asc' | 'value-desc';
 
 export default function ExpertiseSection(): ReactElement {
     const { charsheet } = useCampaignCurrentCharsheetContext();
     const theme = useTheme();
+    const [filterLevel, setFilterLevel] = useState<ExpertiseLevel>('all');
+    const [sortOrder, setSortOrder] = useState<SortOrder>('alpha-asc');
 
     const expertises = charsheet.expertises
     const { handleSendMessage, setIsChatOpen, isChatOpen } = useChatContext()
     const { data: session } = useSession()
 
-    // Ordena as perícias em ordem alfabética
-    const expertiseEntries = Object.entries(expertises).sort((a, b) => a[0].localeCompare(b[0]))
+    const getExpertiseLevel = (value: number): ExpertiseLevel => {
+        if (value < 2) return 'novice';
+        if (value < 5) return 'trained';
+        if (value < 7) return 'expert';
+        if (value < 9) return 'master';
+        return 'legendary';
+    };
+
+    const filteredAndSortedExpertises = useMemo(() => {
+        let entries = Object.entries(expertises);
+
+        if (filterLevel !== 'all') {
+            entries = entries.filter(([, exp]) => {
+                const level = getExpertiseLevel(exp.value);
+                return level === filterLevel;
+            });
+        }
+
+        entries.sort((a, b) => {
+            switch (sortOrder) {
+                case 'alpha-asc':
+                    return a[0].localeCompare(b[0]);
+                case 'alpha-desc':
+                    return b[0].localeCompare(a[0]);
+                case 'value-asc':
+                    return a[1].value - b[1].value;
+                case 'value-desc':
+                    return b[1].value - a[1].value;
+                default:
+                    return 0;
+            }
+        });
+
+        return entries;
+    }, [expertises, filterLevel, sortOrder]);
     
-    // Estatísticas das perícias
-    const expertiseStats = {
-        total: expertiseEntries.length,
-        novice: expertiseEntries.filter(([ , exp ]) => exp.value < 2).length,
-        trained: expertiseEntries.filter(([ , exp ]) => exp.value >= 2 && exp.value < 5).length,
-        expert: expertiseEntries.filter(([ , exp ]) => exp.value >= 5 && exp.value < 7).length,
-        master: expertiseEntries.filter(([ , exp ]) => exp.value >= 7 && exp.value < 9).length,
-        legendary: expertiseEntries.filter(([ , exp ]) => exp.value >= 9).length
-    }
+    const expertiseStats = useMemo(() => {
+        const allEntries = Object.entries(expertises);
+        return {
+            total: allEntries.length,
+            novice: allEntries.filter(([, exp]) => exp.value < 2).length,
+            trained: allEntries.filter(([, exp]) => exp.value >= 2 && exp.value < 5).length,
+            expert: allEntries.filter(([, exp]) => exp.value >= 5 && exp.value < 7).length,
+            master: allEntries.filter(([, exp]) => exp.value >= 7 && exp.value < 9).length,
+            legendary: allEntries.filter(([, exp]) => exp.value >= 9).length
+        };
+    }, [expertises]);
 
     const getExpertiseConfig = (value: number) => {
         if (value < 2) {
             return { 
                 color: grey[600], 
                 bg: grey[100], 
-                label: 'Novato',
+                label: 'Destreinado',
                 icon: Person
             }
         } else if (value < 5) {
@@ -106,13 +155,6 @@ export default function ExpertiseSection(): ReactElement {
         let numDice = Number(charsheet.mods?.attributes?.[attrKey] ?? 1)
         if (!Number.isFinite(numDice) || numDice < 1) numDice = 1
 
-        console.log({
-            attrKey,
-            numDice,
-            mods: charsheet.mods,
-            condition: !Number.isFinite(numDice) || numDice < 1
-        })
-
         // Rola os dados
         const rolls: number[] = []
         for (let i = 0; i < numDice; i++) {
@@ -141,7 +183,7 @@ export default function ExpertiseSection(): ReactElement {
                     name: session.user.name ?? '',
                     image: session.user.image ?? ''
                 },
-                timestamp: new Date(),
+                timestamp: new Date().toISOString(),
                 isHTML: true
             })
         }
@@ -172,34 +214,7 @@ export default function ExpertiseSection(): ReactElement {
             >
                 <Stack spacing={3}>
                     {/* Header */}
-                    <Box display="flex" alignItems="center" gap={2}>
-                        <Box 
-                            sx={{
-                                p: 1.5,
-                                borderRadius: 2,
-                                bgcolor: blue[100],
-                                border: '2px solid',
-                                borderColor: blue[200]
-                            }}
-                        >
-                            <Person sx={{ color: blue[700], fontSize: '2rem' }} />
-                        </Box>
-                        <Box flex={1}>
-                            <Typography 
-                                variant="h5" 
-                                sx={{ 
-                                    fontWeight: 700,
-                                    color: 'primary.main',
-                                    mb: 0.5
-                                }}
-                            >
-                                Perícias & Especialidades
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                                {expertiseStats.total} perícia{expertiseStats.total !== 1 ? 's' : ''} disponível{expertiseStats.total !== 1 ? 'eis' : ''}
-                            </Typography>
-                        </Box>
-                    </Box>
+                  
 
                     {/* Estatísticas por Nível */}
                     <Box 
@@ -233,9 +248,129 @@ export default function ExpertiseSection(): ReactElement {
                         ))}
                     </Box>
 
+                    {/* Filtros e Ordenação */}
+                    <Box 
+                        sx={{
+                            display: 'flex',
+                            gap: 2,
+                            flexWrap: 'wrap',
+                            alignItems: 'center',
+                            p: 2,
+                            bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.01)',
+                            borderRadius: 2,
+                            border: '1px solid',
+                            borderColor: 'divider'
+                        }}
+                    >
+                        <FormControl size="small" sx={{ minWidth: 200 }}>
+                            <InputLabel>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                    <FilterList fontSize="small" />
+                                    Filtrar por Nível
+                                </Box>
+                            </InputLabel>
+                            <Select
+                                value={filterLevel}
+                                label="Filtrar por Nível"
+                                onChange={(e) => setFilterLevel(e.target.value as ExpertiseLevel)}
+                            >
+                                <MenuItem value="all">Todas as Perícias</MenuItem>
+                                <MenuItem value="novice">
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: grey[600] }} />
+                                        Destreinado
+                                    </Box>
+                                </MenuItem>
+                                <MenuItem value="trained">
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: green[600] }} />
+                                        Treinado
+                                    </Box>
+                                </MenuItem>
+                                <MenuItem value="expert">
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: blue[600] }} />
+                                        Competente
+                                    </Box>
+                                </MenuItem>
+                                <MenuItem value="master">
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: purple[600] }} />
+                                        Experiente
+                                    </Box>
+                                </MenuItem>
+                                <MenuItem value="legendary">
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: orange[600] }} />
+                                        Especialista
+                                    </Box>
+                                </MenuItem>
+                            </Select>
+                        </FormControl>
+
+                        <ToggleButtonGroup
+                            value={sortOrder}
+                            exclusive
+                            onChange={(_, newSort) => {
+                                if (newSort !== null) {
+                                    setSortOrder(newSort);
+                                }
+                            }}
+                            size="small"
+                            sx={{ flexWrap: 'wrap' }}
+                        >
+                            <ToggleButton value="alpha-asc">
+                                <Tooltip title="A → Z">
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                        <SortByAlpha fontSize="small" />
+                                        <Typography variant="caption">A-Z</Typography>
+                                    </Box>
+                                </Tooltip>
+                            </ToggleButton>
+                            <ToggleButton value="alpha-desc">
+                                <Tooltip title="Z → A">
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                        <SortByAlpha fontSize="small" sx={{ transform: 'scaleY(-1)' }} />
+                                        <Typography variant="caption">Z-A</Typography>
+                                    </Box>
+                                </Tooltip>
+                            </ToggleButton>
+                            <ToggleButton value="value-desc">
+                                <Tooltip title="Maior Valor">
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                        <TrendingUp fontSize="small" />
+                                        <Typography variant="caption">Maior</Typography>
+                                    </Box>
+                                </Tooltip>
+                            </ToggleButton>
+                            <ToggleButton value="value-asc">
+                                <Tooltip title="Menor Valor">
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                        <TrendingDown fontSize="small" />
+                                        <Typography variant="caption">Menor</Typography>
+                                    </Box>
+                                </Tooltip>
+                            </ToggleButton>
+                        </ToggleButtonGroup>
+
+                        {(filterLevel !== 'all' || sortOrder !== 'alpha-asc') && (
+                            <Button
+                                size="small"
+                                variant="outlined"
+                                onClick={() => {
+                                    setFilterLevel('all');
+                                    setSortOrder('alpha-asc');
+                                }}
+                                sx={{ ml: 'auto' }}
+                            >
+                                Limpar Filtros
+                            </Button>
+                        )}
+                    </Box>
+
                     {/* Lista de Perícias */}
                     <Box>
-                        {expertiseEntries.length === 0 ? (
+                        {filteredAndSortedExpertises.length === 0 ? (
                             <Paper 
                                 sx={{ 
                                     p: 4, 
@@ -246,10 +381,16 @@ export default function ExpertiseSection(): ReactElement {
                                 }}
                             >
                                 <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
-                                    Nenhuma perícia encontrada
+                                    {filterLevel !== 'all' 
+                                        ? 'Nenhuma perícia encontrada com este filtro'
+                                        : 'Nenhuma perícia encontrada'
+                                    }
                                 </Typography>
                                 <Typography variant="body2" color="text.secondary">
-                                    As perícias do personagem aparecerão aqui.
+                                    {filterLevel !== 'all' 
+                                        ? 'Tente ajustar os filtros para ver mais perícias.'
+                                        : 'As perícias do personagem aparecerão aqui.'
+                                    }
                                 </Typography>
                             </Paper>
                         ) : (
@@ -259,12 +400,13 @@ export default function ExpertiseSection(): ReactElement {
                                     gridTemplateColumns: {
                                         xs: '1fr',
                                         sm: 'repeat(2, 1fr)',
-                                        md: 'repeat(3, 1fr)'
+                                        md: 'repeat(3, 1fr)',
+                                        lg: 'repeat(5, 1fr)'
                                     },
                                     gap: 2
                                 }}
                             >
-                                {expertiseEntries.map(([ nome, expertise ]) => {
+                                {filteredAndSortedExpertises.map(([nome, expertise]) => {
                                     const config = getExpertiseConfig(expertise.value);
                                     const IconComponent = config.icon;
                                     

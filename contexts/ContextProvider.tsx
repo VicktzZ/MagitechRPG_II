@@ -1,18 +1,17 @@
 'use client';
 
-import { CssBaseline, ThemeProvider as MuiThemeProvider } from '@mui/material';
-import { type ReactNode, type ReactElement, useState, type Dispatch, type SetStateAction } from 'react';
-import { SessionProvider } from 'next-auth/react';
-import { charsheetContext, userContext, channelContext, savingSpinnerContext, ThemeProvider } from '@contexts';
+import { SavingSpinner } from '@components/misc';
 import { charsheetModel } from '@constants/charsheet';
+import { channelContext, charsheetContext, savingSpinnerContext, ThemeProvider, userContext, useThemeContext } from '@contexts';
+import type { Charsheet } from '@models/entities';
+import { CssBaseline, ThemeProvider as MuiThemeProvider } from '@mui/material';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import darkTheme from '@themes/defaultTheme';
+import lightTheme from '@themes/lightTheme';
+import { SessionProvider } from 'next-auth/react';
 import { SnackbarProvider } from 'notistack';
 import type { Channel, PresenceChannel } from 'pusher-js';
-import darkTheme from '@themes/defaultTheme'
-import lightTheme from '@themes/lightTheme'
-import { SavingSpinner } from '@components/misc';
-import { useThemeContext } from '@contexts';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import type { Charsheet } from '@models/entities';
+import { type Dispatch, type ReactElement, type ReactNode, type SetStateAction, useState } from 'react';
 // import { persistQueryClient } from '@tanstack/react-query-persist-client';
 // import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
 
@@ -25,7 +24,7 @@ const queryClient = new QueryClient({
             staleTime: 30_000
         }
     }
-});   
+});
 
 // const localStoragePersister = createSyncStoragePersister({
 //     storage: typeof window !== 'undefined' ? window.localStorage : undefined,
@@ -64,8 +63,8 @@ interface ThemedAppProps {
     children: ReactNode;
 }
 
-function ThemedApp({ 
-    charsheet, setCharsheet, user, setUser, isSaving, setIsSaving, channel, setChannel, children 
+function ThemedApp({
+    charsheet, setCharsheet, user, setUser, isSaving, setIsSaving, channel, setChannel, children
 }: ThemedAppProps): ReactElement {
     const { themeMode } = useThemeContext();
     const currentTheme = themeMode === 'dark' ? darkTheme : lightTheme;
@@ -73,7 +72,7 @@ function ThemedApp({
     return (
         <channelContext.Provider value={{ channel: channel as PresenceChannel, setChannel: setChannel as Dispatch<SetStateAction<PresenceChannel | null>> }}>
             <userContext.Provider value={{ user, setUser }}>
-                <charsheetContext.Provider value={{ charsheet: charsheet, setCharsheet: setCharsheet }}>
+                <charsheetContext.Provider value={{ charsheet, setCharsheet }}>
                     <savingSpinnerContext.Provider value={{ isSaving, showSavingSpinner: setIsSaving }}>
                         <MuiThemeProvider theme={currentTheme}>
                             <SessionProvider>
@@ -88,7 +87,7 @@ function ThemedApp({
         </channelContext.Provider>
     );
 }
-  
+
 export default function ContextProvider({ children }: { children: ReactNode }): ReactElement {
     const [ charsheet, setCharsheet ] = useState<Charsheet>(charsheetModel);
     const [ user, setUser ] = useState(null);
@@ -99,7 +98,7 @@ export default function ContextProvider({ children }: { children: ReactNode }): 
         <QueryClientProvider client={queryClient}>
             <SnackbarProvider maxSnack={3}>
                 <ThemeProvider>
-                    <ThemedApp 
+                    <ThemedApp
                         charsheet={charsheet}
                         setCharsheet={setCharsheet}
                         user={user}

@@ -7,6 +7,7 @@ export interface ConnectSessionDto {
     campaignCode: string;
     userId: string;
     isGM: boolean;
+    charsheetId: string;
 }
 
 export interface DisconnectSessionDto {

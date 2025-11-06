@@ -5,7 +5,7 @@ import type { Creature } from '../Creature';
 import type { Weapon } from '../Weapon';
 import type { Armor } from '../Armor';
 import type { Item } from '../Item';
-import { Collection } from '@node_modules/fireorm/lib/src';
+import { Collection } from 'fireorm';
 import generateEntryCode from '@utils/generateEntryCode';
 import type { Skill, Dice } from '@models';
 
@@ -14,7 +14,7 @@ export class Campaign {
     id: string;
     admin: string[] = [];
     campaignCode: string = generateEntryCode();
-    createdAt: Date = new Date();
+    createdAt: string = new Date().toISOString();
     title: string;
     description: string;
     players: Array<{ userId: string, charsheetId: string }> = [];
@@ -42,4 +42,8 @@ export class Campaign {
                 item: []
             }
         };
+    
+    constructor(campaign?: Partial<Campaign>) {
+        Object.assign(this, campaign)
+    }
 }

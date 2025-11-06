@@ -1,10 +1,10 @@
-import { IsBoolean, IsDate, IsObject, IsOptional, IsString } from 'class-validator'
 import { v4 as uuidv4 } from 'uuid';
+import { IsBoolean, IsObject, IsOptional, IsString } from 'class-validator';
 
 export class Message {
     @IsString() id: string = uuidv4();
     @IsString() text: string;
-    @IsDate() timestamp: Date = new Date();
+    @IsString() timestamp: string = new Date().toISOString();
 
     @IsString()
     @IsOptional() 

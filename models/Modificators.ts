@@ -1,25 +1,15 @@
-import { IsNumber, IsObject } from 'class-validator';
+import { IsNumber, ValidateNested } from 'class-validator';
+import { Attributes } from './Attributes';
+import { Type } from 'class-transformer';
 
 export class Modificators {
-    @IsObject() attributes: {
-        des: number;
-        vig: number;
-        log: number;
-        sab: number;
-        foc: number;
-        car: number;
-    } = {
-            des: 0,
-            vig: 0,
-            log: 0,
-            sab: 0,
-            foc: 0,
-            car: 0
-        };
-        
+    @ValidateNested()
+    @Type(() => Attributes)
+        attributes: Attributes = new Attributes();
+
     @IsNumber() discount: number = 0;
 
-    constructor(modificators?: Modificators) {
-        Object.assign(this, modificators)
+    constructor(mods?: Modificators) {
+        Object.assign(this, mods)
     }
 }

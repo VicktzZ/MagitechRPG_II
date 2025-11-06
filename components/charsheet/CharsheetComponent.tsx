@@ -41,13 +41,13 @@ import {
     useTheme,
     type SxProps
 } from '@mui/material';
-import { useSession } from '@node_modules/next-auth/react';
+import { useSession } from 'next-auth/react';
 import { charsheetService } from '@services';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useLocalStorage } from '@uidotdev/usehooks';
 import { useRouter } from 'next/navigation';
 import { useSnackbar } from 'notistack';
-import { useEffect, useState, type ReactElement } from 'react';
+import { useEffect, useMemo, useState, type ReactElement } from 'react';
 import { useFormContext, type SubmitHandler } from 'react-hook-form';
 
 function Section({ title, icon, children, action, sx }: { 
@@ -143,25 +143,37 @@ export default function CharsheetComponent(): ReactElement {
 
     const { errors, isValid } = form.formState;
 
+    const errorList = useMemo(() => {
+        const list: Array<{ path: string; message: string }> = []
+        const walk = (obj: any, prefix: string[] = []) => {
+            if (!obj || typeof obj !== 'object') return
+            Object.entries(obj).forEach(([ key, val ]: any) => {
+                if (!val) return
+                const current = [ ...prefix, key ]
+                if (typeof val.message === 'string') {
+                    list.push({ path: current.join('.'), message: val.message })
+                }
+                if (typeof val === 'object') {
+                    walk(val, current)
+                }
+            })
+        }
+        walk(errors as any)
+        const unique = new Map<string, { path: string; message: string }>()
+        list.forEach(e => { if (!unique.has(e.path + e.message)) unique.set(e.path + e.message, e) })
+        return Array.from(unique.values())
+    }, [ errors ])
+
     useEffect(() => {
         console.log(errors)
     }, [ errors ])
 
     const submitForm: SubmitHandler<CharsheetDTO> = async (values) => {
-        const charsheetDto: Charsheet = {
-            ...values,
-            spells: values.spells.map(m => m.id) as string[],
-            skills: {
-                ...values.skills,
-                powers: values.skills.powers.map(p => p.id) as string[]
-            }
-        }
-
         enqueueSnackbar('Aguarde...', toastDefault('loadingFetch', 'info'))
 
         if (!values.id) {
             try {
-                const response = await createCharsheet(charsheetDto)
+                const response = await createCharsheet(values)
 
                 closeSnackbar('loadingFetch')
 
@@ -318,9 +330,17 @@ export default function CharsheetComponent(): ReactElement {
             {/* Alertas de validação */}
             {Object.keys(errors).length > 0 && (
                 <Alert severity="error" icon={<Warning />}>
-                    <Typography variant="body2">
-                        Existem erros no formulário. Por favor, verifique os campos destacados.
-                    </Typography>
+                    <Stack spacing={0.5}>
+                        <Typography variant="body2">
+                            Existem erros no formulário. Corrija os itens abaixo:
+                        </Typography>
+                        {errorList.slice(0, 10).map((e, i) => (
+                            <Typography key={i} variant="caption">• {e.message}</Typography>
+                        ))}
+                        {errorList.length > 10 && (
+                            <Typography variant="caption">(+ {errorList.length - 10} outros)</Typography>
+                        )}
+                    </Stack>
                 </Alert>
             )}
 
@@ -554,7 +574,7 @@ export default function CharsheetComponent(): ReactElement {
                 <Stack spacing={2} alignItems="center">
                     <CircularProgress size={60} />
                     <Typography variant="h6" color="primary">
-                        Criando sua charsheet...
+                        Criando ficha...
                     </Typography>
                 </Stack>
             </Backdrop>

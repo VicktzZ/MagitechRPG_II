@@ -1,7 +1,7 @@
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { notificationRepository } from '@repositories';
-import type { Notification } from '@models/entities';
+import { Notification } from '@models/entities';
 import { NotificationDTO } from '@models/dtos';
 
 export async function GET(_: Request, { params }: { params: { userId: string } }): Promise<Response> {
@@ -27,7 +27,8 @@ export async function POST(req: Request, { params }: { params: { userId: string 
             return Response.json({ message: 'BAD REQUEST', errors }, { status: 400 });
         }
 
-        const createdNotification = await notificationRepository.create(dto as Notification);
+        const notification = new Notification(dto);
+        const createdNotification = await notificationRepository.create(notification);
         
         return Response.json(createdNotification);
     } catch (error: any) {

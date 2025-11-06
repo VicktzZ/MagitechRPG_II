@@ -1,24 +1,38 @@
 'use client';
 
+import { CharsheetCard } from '@components/charsheet';
+import { usePusher } from '@hooks';
 import { useCampaignData } from '@hooks/useCampaignData';
-import { Backdrop, Box, CircularProgress, Modal, Typography } from '@mui/material';
+import { useFirestoreRealtime } from '@hooks/useFirestoreRealtime';
+import { Backdrop, Box, CircularProgress, Grid, Modal, Skeleton, Typography } from '@mui/material';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { type ReactElement } from 'react';
-import { campaignContext } from './campaignContext';
+import { useState, type ReactElement } from 'react';
+import { campaignContext, type CampaignContextValue } from './campaignContext';
+import { campaignEntity } from '@utils/firestoreEntities';
+import type { Campaign } from '@models/entities';
 
 export function CampaignProvider({ children, code }: { children: ReactElement, code: string }) {
     document.title = 'Campaign - ' + code;
 
     const router = useRouter();
     const { data: session } = useSession();
+    const [ charsheetId, setCharsheetId ] = useState('');
 
     const campaignData = useCampaignData({
         campaignCode: code,
         userId: session?.user?.id
     });
 
+    const { data: charsheetsResponse, loading } = useFirestoreRealtime('charsheet', {
+        filters: [
+            { field: 'userId', operator: '==', value: session?.user?.id }
+        ]
+    });
+
     const isUserGM = campaignData?.isUserGM ?? false;
+
+    usePusher(code, isUserGM, session)
 
     if (!campaignData) {
         return (
@@ -44,10 +58,19 @@ export function CampaignProvider({ children, code }: { children: ReactElement, c
         )
     }
 
-    if (campaignData && (isUserGM || campaignData.charsheets.find(f => f.userId === session?.user?.id))) {
-        localStorage.setItem('currentCharsheet', campaignData.charsheets.find(f => f.userId === session?.user?.id)?.id ?? '');
+    if (!!campaignData && (isUserGM || !!campaignData.charsheets.find(c => c.userId === session?.user?.id) || campaignData.charsheets.map(c => c.id).includes(charsheetId)) || charsheetId) {
+        localStorage.setItem('currentCharsheet', (charsheetId || campaignData.charsheets.find(f => f.userId === session?.user?.id)?.id) || '');
+
+        const value: CampaignContextValue = {
+            ...campaignData,
+            updateCampaign: async (data: Partial<Campaign>) => {
+                if (!campaignData.campaign.id) return;
+                await campaignEntity.update(campaignData.campaign.id, data);
+            }
+        };
+
         return (
-            <campaignContext.Provider value={campaignData}>
+            <campaignContext.Provider value={value}>
                 {children}
             </campaignContext.Provider>
         )
@@ -55,7 +78,7 @@ export function CampaignProvider({ children, code }: { children: ReactElement, c
         return (
             <Modal
                 open={true}
-                onClose={() => { router.push('/app'); }}
+                onClose={() => { router.push('/app/campaign'); }}
                 disableAutoFocus
                 disableEnforceFocus
                 disableRestoreFocus
@@ -79,22 +102,22 @@ export function CampaignProvider({ children, code }: { children: ReactElement, c
                     gap={2}
                 >
                     <Box>
-                        <Typography variant='h6'>Escolha uma Charsheet para ingressar</Typography>
+                        <Typography variant='h6'>Escolha uma ficha para ingressar</Typography>
                     </Box>
-                    {/* <Grid minHeight='100%' overflow='auto' gap={2} container>
-                        {isCharsheetLoading ? [ 0, 1, 2, 4, 5 ].map(() => (
+                    <Grid minHeight='100%' overflow='auto' gap={2} container>
+                        {loading ? [ 0, 1, 2 ].map(() => (
                             <Skeleton
                                 variant='rectangular' key={Math.random()} width='20rem' height='15rem'
                             />
-                        )) : charsheetsResponse?.map((f: Charsheet) => (
+                        )) : charsheetsResponse?.map(c => (
                             <CharsheetCard
-                                key={f.id}
-                                charsheet={f}
+                                key={c.id}
+                                charsheet={c}
                                 disableDeleteButton
-                                onClick={() => { setCurrentCharsheet(f.id ?? ''); setCharsheet(f); }}
+                                onClick={() => setCharsheetId(c.id)}
                             />
                         ))}
-                    </Grid> */}
+                    </Grid>
                 </Box>
             </Modal>
         )

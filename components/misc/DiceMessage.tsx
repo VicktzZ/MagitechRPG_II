@@ -14,13 +14,9 @@ interface DiceMessageProps {
 export function DiceMessage({ text, type }: DiceMessageProps) {
     const [ open, setOpen ] = useState(false)
 
-    // Se for mensagem HTML ou não começar com emoji de dado, exibe texto simples
-    if (!text.startsWith('🎲')) {
-        return <Typography>{text}</Typography>
-    }
-
-    // Remove o emoji de dado do início
-    const messageText = text.substring(2).trim()
+    // Aceita mensagens com ou sem emoji inicial. Se houver, remove-o.
+    const hasEmoji = text.startsWith('🎲')
+    const messageText = (hasEmoji ? text.substring(2) : text).trim()
 
     // Caso 1: Mensagens de perícia (mantém suporte anterior)
     if (type === MessageType.EXPERTISE) {
@@ -110,6 +106,12 @@ export function DiceMessage({ text, type }: DiceMessageProps) {
         const notation = headerAlt?.[1] ?? ''
         const rest = headerAlt?.[2] ?? single
 
+        // Fallback: se não parece mensagem de dado, renderiza texto simples
+        const looksLikeDice = /\d+d\d+/i.test(single) || /\[[^\]]+\]/.test(single) || /=\s*\d+/.test(single)
+        if (!looksLikeDice) {
+            return <Typography>{messageText}</Typography>
+        }
+
         // Captura cada grupo de rolagens entre colchetes na ordem
         const groupMatches = Array.from(rest.matchAll(/\[([^\]]+)\]/g)).map(m => m[1])
         const groups: number[][] = groupMatches.map(g => g.split(',').map(s => parseInt(s.trim())).filter(n => !Number.isNaN(n)))
@@ -132,6 +134,12 @@ export function DiceMessage({ text, type }: DiceMessageProps) {
         // Total final
         const totalMatch = rest.match(/=\s*(\d+)/)
         const total = totalMatch ? parseInt(totalMatch[1]) : undefined
+
+    // Fallback: se não há nenhum dado claro (sem headerNotation, sem rolls, sem total), renderiza texto simples
+    const hasAnyDiceInfo = (!!headerNotation) || (rolls.length > 0) || (typeof total === 'number')
+    if (!hasAnyDiceInfo) {
+        return <Typography>{messageText}</Typography>
+    }
 
         const best = rollNums.length ? Math.max(...rollNums) : undefined
         const worst = rollNums.length ? Math.min(...rollNums) : undefined

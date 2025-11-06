@@ -19,7 +19,7 @@ export const classesModel: Record<ClassNames, Class> = {
     'Combatente': {
         name: 'Combatente',
         description: 'A classe de mago com habilidades de combate e defesa. O seu poder de ataque e de defesa aumentam com o nível da classe.',
-        attributes: {
+        stats: {
             lp: 18,
             mp: 2,
             ap: 10
@@ -35,7 +35,7 @@ export const classesModel: Record<ClassNames, Class> = {
     'Especialista': {
         name: 'Especialista',
         description: 'A classe de mago com habilidades de combate e defesa. O seu poder de ataque e de defesa aumentam com o nível da classe.',
-        attributes: {
+        stats: {
             lp: 14,
             mp: 6,
             ap: 8
@@ -51,7 +51,7 @@ export const classesModel: Record<ClassNames, Class> = {
     'Feiticeiro': {
         name: 'Feiticeiro',
         description: 'A classe de mago com habilidades de combate e defesa. O seu poder de ataque e de defesa aumentam com o nível da classe.',
-        attributes: {
+        stats: {
             lp: 10,
             mp: 10,
             ap: 7
@@ -67,7 +67,7 @@ export const classesModel: Record<ClassNames, Class> = {
     'Bruxo': {
         name: 'Bruxo',
         description: 'A classe de mago com habilidades de combate e defesa. O seu poder de ataque e de defesa aumentam com o nível da classe.',
-        attributes: {
+        stats: {
             lp: 12,
             mp: 8,
             ap: 8
@@ -83,7 +83,7 @@ export const classesModel: Record<ClassNames, Class> = {
     'Monge': {
         name: 'Monge',
         description: 'A classe de mago com habilidades de combate e defesa. O seu poder de ataque e de defesa aumentam com o nível da classe.',
-        attributes: {
+        stats: {
             lp: 14,
             mp: 4,
             ap: 9
@@ -99,7 +99,7 @@ export const classesModel: Record<ClassNames, Class> = {
     'Druida': {
         name: 'Druida',
         description: 'A classe de mago com habilidades de combate e defesa. O seu poder de ataque e de defesa aumentam com o nível da classe.',
-        attributes: {
+        stats: {
             lp: 16,
             mp: 6,
             ap: 8
@@ -115,7 +115,7 @@ export const classesModel: Record<ClassNames, Class> = {
     'Arcano': {
         name: 'Arcano',
         description: 'A classe de mago com habilidades de combate e defesa. O seu poder de ataque e de defesa aumentam com o nível da classe.',
-        attributes: {
+        stats: {
             lp: 9,
             mp: 12,
             ap: 6
@@ -132,7 +132,7 @@ export const classesModel: Record<ClassNames, Class> = {
     'Ladino': {
         name: 'Ladino',
         description: 'A classe de mago com habilidades de combate e defesa. O seu poder de ataque e de defesa aumentam com o nível da classe.',
-        attributes: {
+        stats: {
             lp: 8,
             mp: 4,
             ap: 7

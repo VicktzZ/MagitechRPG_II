@@ -9,4 +9,8 @@ export class CreateCustomItemDTO {
     @Type(() => Armor)
     @Type(() => Item)
         item: Weapon | Armor | Item;
+
+    constructor(data: CreateCustomItemDTO) {
+        Object.assign(this, data);
+    }
 }

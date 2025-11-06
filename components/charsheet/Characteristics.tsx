@@ -191,13 +191,13 @@ export default function Characteristics(): ReactElement {
                     </Typography>
                     <Box display='flex' gap={2}>
                         <Typography fontWeight={900} variant='caption' color={red[500]}>
-                            LP: {classesModel[classe as keyof typeof classesModel].attributes.lp}
+                            LP: {classesModel[classe as keyof typeof classesModel].stats.lp}
                         </Typography>
                         <Typography fontWeight={900} variant='caption' color={blue[300]}>
-                            MP: {classesModel[classe as keyof typeof classesModel].attributes.mp}
+                            MP: {classesModel[classe as keyof typeof classesModel].stats.mp}
                         </Typography>
                         <Typography fontWeight={900} variant='caption' color={yellow[500]}>
-                            AP: {classesModel[classe as keyof typeof classesModel].attributes.ap}
+                            AP: {classesModel[classe as keyof typeof classesModel].stats.ap}
                         </Typography>
                     </Box>
                 </Box>
@@ -207,7 +207,9 @@ export default function Characteristics(): ReactElement {
 
     return (
         <Box display='flex' gap={3} width='100%'>
+            {/* Coluna esquerda */}
             <Box display='flex' flexDirection='column' gap={2} width='65%'>
+                {/* Nome */}
                 <Controller
                     name='name'
                     control={control}
@@ -223,123 +225,167 @@ export default function Characteristics(): ReactElement {
                         />
                     )}
                 />
+
+                {/* Classe e Linhagem (desktop) */}
                 <Box display='flex' gap={3}>
-                    <FormControl fullWidth>
-                        <InputLabel>Classe de Mago *</InputLabel>
-                        <Select
-                            name='class'
-                            label='Classe de Mago'
-                            value={charsheet.class}
-                            required
-                            fullWidth
-                            disabled={disabled}
-                            onChange={e => {
-                                setClass(e)
-                            }}
-                            renderValue={(value) => (
-                                <Typography>{value as string}</Typography>
-                            )}
-                        >
-                            {classes}
-                        </Select>
-                    </FormControl>
-                    {!matches && (
-                        <FormControl sx={{ width: '50%' }}>
-                            <InputLabel>{charsheet.mode === 'Classic' ? 'Linhagem' : 'Profissão'} *</InputLabel>
-                            <Select
-                                name='lineage'
-                                label='Linhagem'
-                                value={charsheet.lineage}
-                                required
-                                fullWidth
-                                disabled={disabled}
-                                onChange={setLineage}
-                                MenuProps={{
-                                    sx: { maxHeight: '60vh' }
-                                }}
-                                renderValue={value => (
-                                    <Typography>{value as unknown as string}</Typography>
+                    <Controller
+                        name='class'
+                        control={control}
+                        render={({ field, fieldState: { error } }) => (
+                            <FormControl fullWidth error={!!error} disabled={disabled}>
+                                <InputLabel>Classe de Mago *</InputLabel>
+                                <Select
+                                    {...field}
+                                    label='Classe de Mago'
+                                    required
+                                    fullWidth
+                                    onChange={(e) => {
+                                        setClass(e)
+                                        field.onChange((e as SelectChangeEvent<any>).target.value)
+                                    }}
+                                    renderValue={(value) => (
+                                        <Typography>{value as string}</Typography>
+                                    )}
+                                >
+                                    {classes}
+                                </Select>
+                                {error && (
+                                    <FormHelperText error>{String(error.message)}</FormHelperText>
                                 )}
-                            >
-                                {lineages}
-                            </Select>
-                        </FormControl>
+                            </FormControl>
+                        )}
+                    />
+
+                    {!matches && (
+                        <Controller
+                            name='lineage'
+                            control={control}
+                            render={({ field, fieldState: { error } }) => (
+                                <FormControl sx={{ width: '50%' }} error={!!error} disabled={disabled}>
+                                    <InputLabel>{charsheet.mode === 'Classic' ? 'Linhagem' : 'Profissão'} *</InputLabel>
+                                    <Select
+                                        {...field}
+                                        label='Linhagem'
+                                        required
+                                        fullWidth
+                                        onChange={(e) => {
+                                            setLineage(e)
+                                            field.onChange((e as SelectChangeEvent<any>).target.value)
+                                        }}
+                                        MenuProps={{ sx: { maxHeight: '60vh' } }}
+                                        renderValue={value => (
+                                            <Typography>{value as unknown as string}</Typography>
+                                        )}
+                                    >
+                                        {lineages}
+                                    </Select>
+                                    {error && (
+                                        <FormHelperText error>{String(error.message)}</FormHelperText>
+                                    )}
+                                </FormControl>
+                            )}
+                        />
                     )}
                 </Box>
+
+                {/* Linhagem (mobile) */}
                 {matches && (
-                    <Box>
-                        <FormControl sx={{ width: '100%' }}>
-                            <InputLabel>{charsheet.mode === 'Classic' ? 'Linhagem' : 'Profissão'} *</InputLabel>
-                            <Select
-                                name='lineage'
-                                label='Linhagem'
-                                value={charsheet.lineage}
-                                required
-                                fullWidth
-                                disabled={disabled}
-                                onChange={setLineage}
-                                MenuProps={{
-                                    sx: { maxHeight: '60vh' }
-                                }}
-                                renderValue={value => (
-                                    <Typography>{value as unknown as string}</Typography>
+                    <Controller
+                        name='lineage'
+                        control={control}
+                        render={({ field, fieldState: { error } }) => (
+                            <FormControl sx={{ width: '100%' }} error={!!error} disabled={disabled}>
+                                <InputLabel>{charsheet.mode === 'Classic' ? 'Linhagem' : 'Profissão'} *</InputLabel>
+                                <Select
+                                    {...field}
+                                    label='Linhagem'
+                                    required
+                                    fullWidth
+                                    onChange={(e) => {
+                                        setLineage(e)
+                                        field.onChange((e as SelectChangeEvent<any>).target.value)
+                                    }}
+                                    MenuProps={{ sx: { maxHeight: '60vh' } }}
+                                    renderValue={value => (
+                                        <Typography>{value as unknown as string}</Typography>
+                                    )}
+                                >
+                                    {lineages}
+                                </Select>
+                                {error && (
+                                    <FormHelperText error>{String(error.message)}</FormHelperText>
                                 )}
-                            >
-                                {lineages}
-                            </Select>
-                        </FormControl>
-                    </Box>
+                            </FormControl>
+                        )}
+                    />
                 )}
             </Box>
+
+            {/* Coluna direita */}
             <Box display='flex' flexDirection='column' gap={2} width='35%'>
-                <FormControl>
-                    <InputLabel>Raça *</InputLabel>
-                    <Select
-                        name='race'
-                        disabled={disabled}
-                        label='Raça'
-                        value={charsheet.race}
-                        required
-                        fullWidth
-                        renderValue={selected => String(selected)}
-                        onChange={setRace}
-                    >
-                        {Object.entries(races).map(([ raceName, raceData ]) => (
-                            <MenuItem key={raceName} value={raceName}>
-                                <Box display='flex' flexDirection='column'>
-                                    <Typography>{raceName}</Typography>
-                                    {raceName === 'Humano' ? (
-                                        <Typography variant='caption' color={green[500]}>+1 Ponto de Atributo</Typography>
-                                    ) : (
-                                        <>
-                                            {raceData.attributes.lp > 0 &&
-                                                <Typography variant='caption' color={green[500]}>+{raceData.attributes.lp} LP</Typography>}
-                                            {raceData.attributes.lp < 0 &&
-                                                <Typography variant='caption' color={red[500]}>{raceData.attributes.lp} LP</Typography>}
-                                            {raceData.attributes.mp > 0 &&
-                                                <Typography variant='caption' color={green[500]}>+{raceData.attributes.mp} MP</Typography>}
-                                            {raceData.attributes.mp < 0 &&
-                                                <Typography variant='caption' color={red[500]}>{raceData.attributes.mp} MP</Typography>}
-                                            {raceData.attributes.ap > 0 &&
-                                                <Typography variant='caption' color={green[500]}>+{raceData.attributes.ap} AP</Typography>}
-                                            {raceData.attributes.ap < 0 &&
-                                                <Typography variant='caption' color={red[500]}>{raceData.attributes.ap} AP</Typography>}
-                                        </>
-                                    )}
-                                </Box>
-                            </MenuItem>
-                        ))}
-                    </Select>
-                </FormControl>
+                {/* Raça */}
+                <Controller
+                    name='race'
+                    control={control}
+                    render={({ field, fieldState: { error } }) => (
+                        <FormControl error={!!error} disabled={disabled}>
+                            <InputLabel>Raça *</InputLabel>
+                            <Select
+                                {...field}
+                                label='Raça'
+                                required
+                                fullWidth
+                                renderValue={selected => String(selected)}
+                                onChange={(e) => {
+                                    setRace(e)
+                                    field.onChange((e as SelectChangeEvent<any>).target.value)
+                                }}
+                            >
+                                {Object.entries(races).map(([ raceName, raceData ]) => (
+                                    <MenuItem key={raceName} value={raceName}>
+                                        <Box display='flex' flexDirection='column'>
+                                            <Typography>{raceName}</Typography>
+                                            {raceName === 'Humano' ? (
+                                                <Typography variant='caption' color={green[500]}>+1 Ponto de Atributo</Typography>
+                                            ) : (
+                                                <>
+                                                    {raceData.stats.lp > 0 && (
+                                                        <Typography variant='caption' color={green[500]}>+{raceData.stats.lp} LP</Typography>
+                                                    )}
+                                                    {raceData.stats.lp < 0 && (
+                                                        <Typography variant='caption' color={red[500]}>{raceData.stats.lp} LP</Typography>
+                                                    )}
+                                                    {raceData.stats.mp > 0 && (
+                                                        <Typography variant='caption' color={green[500]}>+{raceData.stats.mp} MP</Typography>
+                                                    )}
+                                                    {raceData.stats.mp < 0 && (
+                                                        <Typography variant='caption' color={red[500]}>{raceData.stats.mp} MP</Typography>
+                                                    )}
+                                                    {raceData.stats.ap > 0 && (
+                                                        <Typography variant='caption' color={green[500]}>+{raceData.stats.ap} AP</Typography>
+                                                    )}
+                                                    {raceData.stats.ap < 0 && (
+                                                        <Typography variant='caption' color={red[500]}>{raceData.stats.ap} AP</Typography>
+                                                    )}
+                                                </>
+                                            )}
+                                        </Box>
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                            {error && (
+                                <FormHelperText error>{String(error.message)}</FormHelperText>
+                            )}
+                        </FormControl>
+                    )}
+                />
+
+                {/* Idade e Gênero (desktop) */}
                 <Box display='flex' gap={3}>
                     <Controller
                         name='age'
                         control={control}
                         disabled={disabled}
-                        rules={{
-                            required: 'Idade é obrigatória',
-                            min: { value: 0, message: 'A idade não pode ser negativa' }
-                        }}
                         render={({ field: { onChange, ...field }, fieldState: { error } }) => (
                             <TextField
                                 {...field}
@@ -349,30 +395,59 @@ export default function Characteristics(): ReactElement {
                                 helperText={error?.message}
                                 required
                                 sx={{ width: !matches ? '50%' : '100%' }}
-                                inputProps={{
-                                    min: 0,
-                                    onWheel: (e) => (e.target as HTMLElement).blur()
-                                }}
+                                inputProps={{ min: 0, onWheel: (e) => (e.target as HTMLElement).blur() }}
                                 onChange={(e) => {
-                                    // Converte o valor para número antes de enviar para o formulário
                                     const value = parseInt(e.target.value, 10) || 0;
                                     onChange(value);
                                 }}
                             />
                         )}
                     />
+
                     {!matches && (
                         <FormControl sx={{ width: '50%' }}>
                             <InputLabel>Gênero *</InputLabel>
                             <Controller
                                 name='gender'
                                 control={control}
-                                disabled={disabled}
-                                render={({ field }) => (
+                                render={({ field, fieldState: { error } }) => (
+                                    <>
+                                        <Select
+                                            {...field}
+                                            label='Gênero *'
+                                            error={!!error}
+                                            required
+                                            fullWidth
+                                        >
+                                            <MenuItem value='Masculino'>Masculino</MenuItem>
+                                            <MenuItem value='Feminino'>Feminino</MenuItem>
+                                            <MenuItem value='Não-binário'>Não-binário</MenuItem>
+                                            <MenuItem value='Outro'>Outro</MenuItem>
+                                            <MenuItem value='Não definido'>Não definido</MenuItem>
+                                        </Select>
+                                        {error && (
+                                            <FormHelperText error>{String(error.message)}</FormHelperText>
+                                        )}
+                                    </>
+                                )}
+                            />
+                        </FormControl>
+                    )}
+                </Box>
+
+                {/* Gênero (mobile) */}
+                {matches && (
+                    <FormControl sx={{ width: '100%' }}>
+                        <InputLabel>Gênero</InputLabel>
+                        <Controller
+                            name='gender'
+                            control={control}
+                            render={({ field, fieldState: { error } }) => (
+                                <>
                                     <Select
                                         {...field}
                                         label='Gênero *'
-                                        error={!!errors.gender}
+                                        error={!!error}
                                         required
                                         fullWidth
                                     >
@@ -382,39 +457,12 @@ export default function Characteristics(): ReactElement {
                                         <MenuItem value='Outro'>Outro</MenuItem>
                                         <MenuItem value='Não definido'>Não definido</MenuItem>
                                     </Select>
-                                )}
-                            />
-                            {errors.gender && (
-                                <FormHelperText error>{String(errors.gender.message)}</FormHelperText>
-                            )}
-                        </FormControl>
-                    )}
-                </Box>
-                {matches && (
-                    <FormControl sx={{ width: '100%' }}>
-                        <InputLabel>Gênero</InputLabel>
-                        <Controller
-                            name='gender'
-                            control={control}
-                            render={({ field }) => (
-                                <Select
-                                    {...field}
-                                    label='Gênero *'
-                                    error={!!errors.gender}
-                                    required
-                                    fullWidth
-                                >
-                                    <MenuItem value='Masculino'>Masculino</MenuItem>
-                                    <MenuItem value='Feminino'>Feminino</MenuItem>
-                                    <MenuItem value='Não-binário'>Não-binário</MenuItem>
-                                    <MenuItem value='Outro'>Outro</MenuItem>
-                                    <MenuItem value='Não definido'>Não definido</MenuItem>
-                                </Select>
+                                    {error && (
+                                        <FormHelperText error>{String(error.message)}</FormHelperText>
+                                    )}
+                                </>
                             )}
                         />
-                        {errors.gender && (
-                            <FormHelperText error>{String(errors.gender.message)}</FormHelperText>
-                        )}
                     </FormControl>
                 )}
             </Box>

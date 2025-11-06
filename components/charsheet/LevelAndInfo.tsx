@@ -6,7 +6,7 @@ import useNumbersWithSpaces from '@hooks/useNumbersWithSpace'
 import { AttachMoney, AutoAwesome, DirectionsRun, Psychology } from '@mui/icons-material'
 import { Box, Button, Chip, FormControl, InputLabel, ListSubheader, MenuItem, OutlinedInput, Select, TextField, Typography, useMediaQuery } from '@mui/material'
 import { alpha, useTheme } from '@mui/material/styles'
-import { green, orange, purple } from '@node_modules/@mui/material/colors'
+import { green, orange, purple } from '@mui/material/colors'
 import { useCallback, useRef, useState } from 'react'
 import { Controller, useFormContext, useWatch } from 'react-hook-form'
 import ElementalMasteryModal from './dialogs/ElementalMasteryModal'
@@ -16,6 +16,7 @@ import LevelProgress from './subcomponents/LevelProgress'
 import { skills } from '@constants/skills'
 import type { CharsheetDTO } from '@models/dtos'
 import type { Class, Expertises, Lineage, Subclass, Trait } from '@models'
+import { Element } from '@models/types/string'
 
 export default function LevelAndInfo() {
     const { control, getValues, setValue , formState: { errors } } = useFormContext<CharsheetDTO>()

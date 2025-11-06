@@ -6,6 +6,10 @@ export class User {
     name: string;
     email: string;
     image: string;
-    createdAt: Date = new Date();
+    createdAt: string = new Date().toISOString();
     charsheets?: string[] = [];
+
+    constructor(user?: Partial<User>) {
+        Object.assign(this, user)
+    }
 }

@@ -81,6 +81,13 @@ function MagicSpell({
     if (magic.stages[2]) availableStages.push(2);
     if (magic.stages[2] && magic.level === 4) availableStages.push(2);
 
+    const isCommonElement = 
+        magic.element !== 'Vácuo' &&
+        magic.element !== 'Sangue' &&
+        magic.element !== 'Psíquico' &&
+        magic.element !== 'Radiação' &&
+        magic.element !== 'Explosão'
+    
     // Trocar entre estágios e calcular custos adicionais de MP
     const handleStageChange = (stage: 0 | 1 | 2): void => {
         setActiveStage(stage);
@@ -455,7 +462,7 @@ function MagicSpell({
                                         })
                                     }}
                                 >
-                                    {magic.level === 4 ? 'Maestria' : `Estágio ${stage}`}
+                                    {magic.level === 4 && !isCommonElement ? 'Maestria' : `Estágio ${stage + 1}`}
                                 </Button>
                             ))}
                         </Stack>
@@ -513,7 +520,14 @@ export default function Magic<C extends 'magic-spell' | 'magic-power'>({
                 alignItems: 'center'
             }}
         >
-            <Component {...props as any} />
+            {(() => {
+                // Quando for MagicPower, renomeia magicPower -> power
+                if (as === 'magic-power') {
+                    const { magicPower, ...rest } = props as any;
+                    return <Component {...{ ...rest, power: magicPower }} />;
+                }
+                return <Component {...(props as any)} />;
+            })()}
         </div>
     );
 }

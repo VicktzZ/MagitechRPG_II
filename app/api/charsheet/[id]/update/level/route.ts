@@ -145,6 +145,21 @@ export async function POST(req: Request, { params }: { params: { id: string } })
             }
         }
 
+        const updatedSessions = charsheet.session.map(session => {
+            return {
+                ...session,
+                stats: {
+                    ...session.stats,
+                    lp: newLp,
+                    mp: newMp,
+                    maxLp: newMaxLp,
+                    maxMp: newMaxMp,
+                    ap: charsheet.stats.ap,
+                    maxAp: charsheet.stats.maxAp
+                }
+            };
+        });
+
         const updatedCharsheet: Charsheet = {
             ...charsheet,
             level: newLevel,
@@ -167,7 +182,8 @@ export async function POST(req: Request, { params }: { params: { id: string } })
                 ...charsheet.skills,
                 class: [ ...charsheet.skills.class, ...newClassSkills ],
                 subclass: [ ...charsheet.skills.subclass, ...newSubclassSkills ]
-            }
+            },
+            session: updatedSessions
         };
 
         await charsheetRepository.update(updatedCharsheet);
@@ -176,7 +192,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
             userId: charsheet.userId,
             title: 'Level Up!',
             content: `Sua charsheet ${charsheet.name} foi para o nível ${newLevel}!\nRecompensas: ${rewardsList.length > 0 ? `\n\n${rewardsList.join('\n')}` : ''}`,
-            timestamp: new Date(),
+            timestamp: new Date().toISOString(),
             type: 'levelUp',
             link: `/charsheet/${charsheet.id}`,
             read: false

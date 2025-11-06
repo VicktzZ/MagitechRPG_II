@@ -2,7 +2,7 @@ import { UserDTO } from '@models/dtos';
 import { userRepository } from '@repositories';
 import { validate } from 'class-validator';
 import { plainToInstance } from 'class-transformer'
-import type { User } from '@models/entities';
+import { User } from '@models/entities';
 
 export async function GET() {
     try {
@@ -24,7 +24,8 @@ export async function POST(req: Request) {
             return Response.json({ message: 'BAD REQUEST', errors }, { status: 400 });
         }
 
-        const createdUser = await userRepository.create(dto as User);
+        const newUser = new User(dto);
+        const createdUser = await userRepository.create(newUser);
 
         return Response.json({ user: createdUser, message: 'SUCCESS' }, { status: 201 });
     } catch (error: any) {

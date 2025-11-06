@@ -30,6 +30,7 @@ import { amber, blue, grey, red } from '@mui/material/colors';
 import type { PassiveOccasion } from '@models/types/string';
 import type { Charsheet } from '@models/entities';
 import type { Passive } from '@models';
+import { useCampaignCurrentCharsheetContext } from '@contexts';
 
 const occasionOptions: PassiveOccasion[] = [
     'Início do turno',
@@ -70,8 +71,9 @@ interface PassiveFormData {
     custom: boolean;
 }
 
-export default function Passives() {
+export default function Passives({ realtime = false }: { realtime?: boolean }) {
     const { control, setValue, getValues } = useFormContext<Charsheet>();
+    const { updateCharsheet } = useCampaignCurrentCharsheetContext()
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     
@@ -104,6 +106,9 @@ export default function Passives() {
             custom: passive.custom || false
         });
         setOpen(true);
+        if (realtime) {
+            updateCharsheet({ passives: getValues('passives') });
+        }
     };
     
     const handleClose = () => {
@@ -114,6 +119,9 @@ export default function Passives() {
     const handleDelete = (id: string) => {
         const updatedPassives = passives.filter(p => p.id !== id);
         setValue('passives', updatedPassives, { shouldValidate: true });
+        if (realtime) {
+            updateCharsheet({ passives: updatedPassives });
+        }
     };
     
     const handleSave = () => {
@@ -141,6 +149,9 @@ export default function Passives() {
         
         setValue('passives', currentPassives, { shouldValidate: true });
         handleClose();
+        if (realtime) {
+            updateCharsheet({ passives: currentPassives });
+        }
     };
 
     return (
@@ -185,7 +196,7 @@ export default function Passives() {
                                 <CardContent sx={{ pb: 1 }}>
                                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                         <Typography variant="h6" gutterBottom fontWeight="bold">
-                                            {passive.title}
+                                            {passive.title.length > 20 ? `${passive.title.slice(0, 20)}...` : passive.title}
                                         </Typography>
                                         <Box>
                                             <Chip 
@@ -202,7 +213,7 @@ export default function Passives() {
                                     </Box>
                                     
                                     <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'pre-line' }}>
-                                        {passive.description}
+                                        {passive.description.length > 50 ? `${passive.description.slice(0, 50)}...` : passive.description}
                                     </Typography>
                                     
                                     <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>

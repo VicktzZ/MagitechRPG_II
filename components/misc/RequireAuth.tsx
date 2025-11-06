@@ -35,6 +35,7 @@ export default function RequireAuth({ children }: RequireAuthProps): ReactElemen
             
             // Se autenticado, marca como verificado
             if (status === 'authenticated') {
+                localStorage.setItem('userId', session?.user?.id ?? '');
                 setAuthChecked(true);
             }
         }

@@ -27,8 +27,9 @@ import { TextField } from '@mui/material'
 import { CharsheetDetailsModal } from './modals'
 import type { Armor, Item, Weapon } from '@models'
 import type { CharsheetDTO } from '@models/dtos'
+import useNumbersWithSpaces from '@hooks/useNumbersWithSpace'
 
-export default function PlayerCard({ charsheet: charsheet }: { charsheet: Required<CharsheetDTO> }) {
+export default function PlayerCard({ charsheet }: { charsheet: Required<CharsheetDTO> }) {
     const { campaign, charsheets } = useCampaignContext()
     const [ playerAnchorEl, setPlayerAnchorEl ] = useState<null | HTMLElement>(null)
     const [ addItemModalOpen, setAddItemModalOpen ] = useState(false)
@@ -38,6 +39,9 @@ export default function PlayerCard({ charsheet: charsheet }: { charsheet: Requir
     const [ notificationDialogOpen, setNotificationDialogOpen ] = useState(false)
     const [ notificationTitle, setNotificationTitle ] = useState('')
     const [ notificationContent, setNotificationContent ] = useState('')
+
+    const sessionCharsheet = charsheet.session.find(s => s.campaignCode === campaign.campaignCode)
+    const spacedMoney = useNumbersWithSpaces()
 
     const handlePlayerMenuClick = (event: React.MouseEvent<HTMLElement>) => {
         setPlayerAnchorEl(event.currentTarget)
@@ -90,7 +94,7 @@ export default function PlayerCard({ charsheet: charsheet }: { charsheet: Requir
                 title: notificationTitle,
                 content: notificationContent,
                 userId: charsheet.userId,
-                timestamp: new Date(),
+                timestamp: new Date().toISOString(),
                 read: false,
                 type: 'other'
             })
@@ -175,27 +179,27 @@ export default function PlayerCard({ charsheet: charsheet }: { charsheet: Requir
                         <Box className="stat">
                             <Favorite color="error" sx={{ fontSize: 16 }} />
                             <Typography variant="body2">
-                                {charsheet.stats.lp}/{charsheet.stats.maxLp}
+                                {sessionCharsheet?.stats.lp}/{sessionCharsheet?.stats.maxLp}
                             </Typography>
                         </Box>
 
                         <Box className="stat">
                             <Bolt color="info" sx={{ fontSize: 16 }} />
                             <Typography variant="body2">
-                                {charsheet.stats.mp}/{charsheet.stats.maxMp}
+                                {sessionCharsheet?.stats.mp}/{sessionCharsheet?.stats.maxMp}
                             </Typography>
                         </Box>
 
                         <Box className="stat">
                             <Shield color="success" sx={{ fontSize: 16 }} />
                             <Typography variant="body2">
-                                {charsheet.stats.ap}/{charsheet.stats.maxAp}
+                                {sessionCharsheet?.stats.ap}/{sessionCharsheet?.stats.maxAp}
                             </Typography>
                         </Box>
 
                         <Box className="stat">
                             <MonetizationOn sx={{ fontSize: 16, color: 'gold' }} />
-                            <Typography variant="body2">{charsheet.inventory.money}</Typography>
+                            <Typography variant="body2">{spacedMoney(charsheet.inventory.money)}</Typography>
                         </Box>
 
                         <Box className="stat">

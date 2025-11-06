@@ -23,7 +23,7 @@ import {
     IconButton
 } from '@mui/material';
 import { elementColor } from '@constants';
-import { Edit } from '@node_modules/@mui/icons-material';
+import { Edit } from '@mui/icons-material';
 import ChangePlayerStatusModal from './ChangePlayerStatusModal';
 import type { CharsheetDTO } from '@models/dtos';
 
@@ -276,33 +276,33 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet }: Char
                                 <TableBody>
                                     <TableRow>
                                         <TableCell>Destreza (DES)</TableCell>
-                                        <TableCell>{charsheet.attributes.des}</TableCell>
-                                        <TableCell>{Math.floor((charsheet.attributes.des - 10) / 2)}</TableCell>
+                                        <TableCell>{charsheet.stats.des}</TableCell>
+                                        <TableCell>{Math.floor((charsheet.stats.des - 10) / 2)}</TableCell>
                                     </TableRow>
                                     <TableRow>
                                         <TableCell>Vigor (VIG)</TableCell>
-                                        <TableCell>{charsheet.attributes.vig}</TableCell>
-                                        <TableCell>{Math.floor((charsheet.attributes.vig - 10) / 2)}</TableCell>
+                                        <TableCell>{charsheet.stats.vig}</TableCell>
+                                        <TableCell>{Math.floor((charsheet.stats.vig - 10) / 2)}</TableCell>
                                     </TableRow>
                                     <TableRow>
                                         <TableCell>Lógica (LOG)</TableCell>
-                                        <TableCell>{charsheet.attributes.log}</TableCell>
-                                        <TableCell>{Math.floor((charsheet.attributes.log - 10) / 2)}</TableCell>
+                                        <TableCell>{charsheet.stats.log}</TableCell>
+                                        <TableCell>{Math.floor((charsheet.stats.log - 10) / 2)}</TableCell>
                                     </TableRow>
                                     <TableRow>
                                         <TableCell>Sabedoria (SAB)</TableCell>
-                                        <TableCell>{charsheet.attributes.sab}</TableCell>
-                                        <TableCell>{Math.floor((charsheet.attributes.sab - 10) / 2)}</TableCell>
+                                        <TableCell>{charsheet.stats.sab}</TableCell>
+                                        <TableCell>{Math.floor((charsheet.stats.sab - 10) / 2)}</TableCell>
                                     </TableRow>
                                     <TableRow>
                                         <TableCell>Foco (FOC)</TableCell>
-                                        <TableCell>{charsheet.attributes.foc}</TableCell>
-                                        <TableCell>{Math.floor((charsheet.attributes.foc - 10) / 2)}</TableCell>
+                                        <TableCell>{charsheet.stats.foc}</TableCell>
+                                        <TableCell>{Math.floor((charsheet.stats.foc - 10) / 2)}</TableCell>
                                     </TableRow>
                                     <TableRow>
                                         <TableCell>Carisma (CAR)</TableCell>
-                                        <TableCell>{charsheet.attributes.car}</TableCell>
-                                        <TableCell>{Math.floor((charsheet.attributes.car - 10) / 2)}</TableCell>
+                                        <TableCell>{charsheet.stats.car}</TableCell>
+                                        <TableCell>{Math.floor((charsheet.stats.car - 10) / 2)}</TableCell>
                                     </TableRow>
                                 </TableBody>
                             </Table>
@@ -324,7 +324,7 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet }: Char
                                 <TableBody>
                                     {Object.entries(charsheet.expertises).map(([ name, expertise ]) => {
                                         const attrValue = expertise.defaultAttribute 
-                                            ? Math.floor((charsheet.attributes[expertise.defaultAttribute as keyof typeof charsheet.attributes] - 10) / 2)
+                                            ? Math.floor((charsheet.stats[expertise.defaultAttribute as keyof typeof charsheet.stats] - 10) / 2)
                                             : 0;    
                                         
                                         return (

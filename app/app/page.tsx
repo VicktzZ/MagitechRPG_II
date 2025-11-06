@@ -2,10 +2,10 @@
 'use client'
 
 import { CharsheetCard } from '@components/charsheet';
+import { useFirestoreRealtime } from '@hooks/useFirestoreRealtime';
 import { Add } from '@mui/icons-material';
 import { Avatar, Box, Card, Grid, Skeleton, Typography, useMediaQuery, useTheme } from '@mui/material';
-import { useCharsheetsRealtime } from '@services/firestore/hooks';
-import { QueryBuilder } from '@services/firestore/utils';
+import { QueryBuilder } from '@utils/queryBuilder';
 import { motion } from 'framer-motion';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
@@ -17,7 +17,7 @@ export default function App(): ReactElement {
     const matches = useMediaQuery(theme.breakpoints.down('md'))
     const { data: session } = useSession()
 
-    const { data: charsheets, loading } = useCharsheetsRealtime({
+    const { data: charsheets, loading } = useFirestoreRealtime('charsheet', {
         filters: [
             QueryBuilder.equals('userId', session?.user?.id ?? '')
         ],

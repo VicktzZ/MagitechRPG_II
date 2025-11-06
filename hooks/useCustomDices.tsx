@@ -12,11 +12,13 @@ import { MessageType } from '@enums'
 import type { CharsheetDTO } from '@models/dtos'
 import { Dice } from '@models'
 import type { DiceConfig, DiceEffect, DiceEffectOperation, DiceEffectTarget, DiceEffectType, RollResult } from '@models/types/dices'
+import { useCampaignCurrentCharsheetContext } from '@contexts'
 
-export function useCustomDices({ onClose, enableChatIntegration = true }: { onClose?: () => void, enableChatIntegration?: boolean }) {
+export function useCustomDices({ onClose, realtime = false, enableChatIntegration = true }: { onClose?: () => void, realtime?: boolean, enableChatIntegration?: boolean }) {
     const { handleSendMessage, setIsChatOpen } = useChatContext()
-    const theme = useTheme()
+    const { updateCharsheet } = useCampaignCurrentCharsheetContext()
     const { watch, setValue, getValues } = useFormContext<CharsheetDTO>()
+    const theme = useTheme()
 
     // Estados
     const [ editingDiceId, setEditingDiceId ] = useState<string | null>(null)
@@ -140,6 +142,11 @@ export function useCustomDices({ onClose, enableChatIntegration = true }: { onCl
         })
         setShowCreateForm(true)
         setEditingDiceId(dice.id || null)
+        if (realtime) {
+            updateCharsheet({
+                dices: getValues('dices')
+            })
+        }
     }, [ setNewDice, setShowCreateForm ])
 
     // Handler para Salvar Dado
@@ -191,6 +198,11 @@ export function useCustomDices({ onClose, enableChatIntegration = true }: { onCl
         setValue('dices', updatedDices, { shouldValidate: true })
         setShowCreateForm(false)
         if (onClose) onClose()
+        if (realtime) {
+            updateCharsheet({
+                dices: updatedDices.map(d => ({ ...d }))
+            })
+        }
     }, [ newDice, getValues, setValue, onClose ])
 
     // Handler para Rolar Dado
@@ -322,6 +334,12 @@ export function useCustomDices({ onClose, enableChatIntegration = true }: { onCl
         const currentDices = getValues('dices') || []
         const updatedDices = currentDices.filter(d => d.id !== diceToDelete.id)
         setValue('dices', updatedDices, { shouldValidate: true })
+        if (realtime) {
+            updateCharsheet({
+                dices: updatedDices.map(d => ({ ...d }))
+            })
+            return
+        }
         enqueueSnackbar(
             'Dado removido com sucesso!',
             toastDefault('diceDeleted', 'success')

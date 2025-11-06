@@ -1,6 +1,6 @@
 import { BaseCharsheet, Race, Trait, type Skill } from '@models';
 import { Type } from 'class-transformer';
-import { IsArray, IsObject, ValidateNested } from 'class-validator';
+import { IsArray, IsObject, IsString, ValidateNested } from 'class-validator';
 import { SpellDTO } from './SpellDTO';
 
 export class CharsheetDTO extends BaseCharsheet {
@@ -11,14 +11,9 @@ export class CharsheetDTO extends BaseCharsheet {
     @IsArray() 
         spells: SpellDTO[] = [];
 
-    @ValidateNested()
-    @Type(() => Race)
-        race: Race;
-
-    @ValidateNested({ each: true })
-    @Type(() => Trait)
-    @IsArray() 
-        traits: Trait[] = [];
+    @IsArray()
+    @IsString({ each: true })
+        traits: string[] = [];
 
     constructor(charsheet: CharsheetDTO) {
         super();

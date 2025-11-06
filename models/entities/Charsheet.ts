@@ -1,6 +1,6 @@
+import { BaseCharsheet, type Race } from '@models';
 import { Collection } from 'fireorm';
 import type { Skill } from '../Skill';
-import { BaseCharsheet, type Race } from '@models';
 
 @Collection('charsheets')
 export class Charsheet extends BaseCharsheet {
@@ -23,4 +23,9 @@ export class Charsheet extends BaseCharsheet {
         };
         
     spells: string[] = [];
+    
+    constructor(charsheet?: Partial<Charsheet>) {
+        super(charsheet)
+        Object.assign(this, charsheet)
+    }
 }

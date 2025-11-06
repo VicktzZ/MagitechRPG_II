@@ -6,8 +6,12 @@ export class Notification {
     userId: string;
     title: string;
     content: string;
-    timestamp: Date = new Date();
+    timestamp: string = new Date().toISOString();
     read: boolean = false;
     type: string = 'info';
     link?: string;
+
+    constructor(notification?: Partial<Notification>) {
+        Object.assign(this, notification)
+    }
 }

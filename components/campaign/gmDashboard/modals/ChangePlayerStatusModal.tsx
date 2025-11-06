@@ -4,7 +4,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { charsheetService } from '@services';
-import { useSnackbar } from '@node_modules/notistack';
+import { useSnackbar } from 'notistack';
 import { type CharsheetDTO } from '@models/dtos';
 
 const playerStatusSchema = z.object({
@@ -18,13 +18,15 @@ const playerStatusSchema = z.object({
         log: z.number().int().min(0),
         sab: z.number().int().min(0),
         car: z.number().int().min(0),
+    }),
+    stats: z.object({
         lp: z.number().int().min(0),
         mp: z.number().int().min(0),
-        ap: z.number().int().min(0)
+        ap: z.number().int().min(0),
+        maxLp: z.number().int().min(0),
+        maxMp: z.number().int().min(0),
+        maxAp: z.number().int().min(0)
     }),
-    maxLp: z.number().int().min(0),
-    maxMp: z.number().int().min(0),
-    maxAp: z.number().int().min(0),
     money: z.string().transform(val => parseInt(val)).refine(val => !isNaN(val) && val >= 0, { message: 'O valor deve ser um número válido e maior ou igual a 0' })
 });
 
@@ -84,7 +86,7 @@ function ChangePlayerStatusModal({ open, onClose, charsheet }: { open: boolean, 
                 data: {
                     ...charsheet,
                     ...processedData
-                } as unknown as Charsheet
+                } as unknown as CharsheetDTO
             });
     
             enqueueSnackbar('Status do jogador atualizado com sucesso!', { variant: 'success' });
@@ -269,7 +271,7 @@ function ChangePlayerStatusModal({ open, onClose, charsheet }: { open: boolean, 
                             </Grid>
                             <Grid item xs={12} sm={3}>
                                 <Controller
-                                    name="attributes.lp"
+                                    name="stats.lp"
                                     control={control}
                                     render={({ field }) => (
                                         <TextField
@@ -278,8 +280,8 @@ function ChangePlayerStatusModal({ open, onClose, charsheet }: { open: boolean, 
                                             label="Pontos de Vida (LP)"
                                             type="number"
                                             margin="normal"
-                                            error={!!errors.attributes?.lp}
-                                            helperText={errors.attributes?.lp?.message}
+                                            error={!!errors.stats?.lp}
+                                            helperText={errors.stats?.lp?.message}
                                         />
                                     )}
                                 />
@@ -303,7 +305,7 @@ function ChangePlayerStatusModal({ open, onClose, charsheet }: { open: boolean, 
                             </Grid>
                             <Grid item xs={12} sm={6}>
                                 <Controller
-                                    name="attributes.mp"
+                                    name="stats.mp"
                                     control={control}
                                     render={({ field }) => (
                                         <TextField
@@ -312,15 +314,15 @@ function ChangePlayerStatusModal({ open, onClose, charsheet }: { open: boolean, 
                                             label="Pontos de Mana (MP)"
                                             type="number"
                                             margin="normal"
-                                            error={!!errors.attributes?.mp}
-                                            helperText={errors.attributes?.mp?.message}
+                                            error={!!errors.stats?.mp}
+                                            helperText={errors.stats?.mp?.message}
                                         />
                                     )}
                                 />
                             </Grid>
                             <Grid item xs={12} sm={6}>
                                 <Controller
-                                    name="attributes.ap"
+                                    name="stats.ap"
                                     control={control}
                                     render={({ field }) => (
                                         <TextField
@@ -329,8 +331,8 @@ function ChangePlayerStatusModal({ open, onClose, charsheet }: { open: boolean, 
                                             label="Pontos de Armadura (AP)"
                                             type="number"
                                             margin="normal"
-                                            error={!!errors.attributes?.ap}
-                                            helperText={errors.attributes?.ap?.message}
+                                            error={!!errors.stats?.ap}
+                                            helperText={errors.stats?.ap?.message}
                                         />
                                     )}
                                 />

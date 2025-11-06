@@ -1,7 +1,6 @@
-import type { FirestoreFilter, FirestoreOrderBy } from './types';
+import type { FirestoreFilter, FirestoreOrderBy } from '@models/types/firestoreRealtime';
 
 export const QueryBuilder = {
-    // Filtros comuns
     where: (field: string, operator: any, value: any): FirestoreFilter => ({
         field,
         operator,
@@ -68,7 +67,6 @@ export const QueryBuilder = {
         value: values
     }),
 
-    // Ordenação
     orderBy: (field: string, direction: 'asc' | 'desc' = 'asc'): FirestoreOrderBy => ({
         field,
         direction

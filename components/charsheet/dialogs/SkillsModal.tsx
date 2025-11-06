@@ -171,20 +171,17 @@ export default function SkillsModal({ open, onClose }: { open: boolean, onClose:
                                     magicPower={item}
                                     id={item.id}
                                     isAdding={(() => {
-                                        // Verificar se o usuário já possui esta habilidade
                                         const currentPowers = getValues().skills.powers || [];
                                         return !currentPowers.some(existingPower => 
                                             existingPower.name === item.nome && existingPower.type === 'Poder Mágico'
                                         );
                                     })()}
                                     onIconClick={(() => {
-                                        // Verificar se o usuário já possui esta habilidade
                                         const currentPowers = getValues().skills.powers || [];
                                         const alreadyHasPower = currentPowers.some(existingPower => 
                                             existingPower.name === item.nome && existingPower.type === 'Poder Mágico'
                                         );
                                         
-                                        // Retornar a função de adicionar ou remover conforme o caso
                                         return alreadyHasPower 
                                             ? () => removePower(item) 
                                             : handleAddItem;

@@ -2,10 +2,10 @@
 
 import { CampaignOptionsModal, CampaingCard } from '@components/campaign';
 import { Box, Button, Grid, Skeleton, Typography, useMediaQuery, useTheme } from '@mui/material';
-import { useUserCampaigns } from '@services/firestore/hooks';
 import { useSession } from 'next-auth/react';
 import { useState, type ReactElement } from 'react';
 import { motion } from 'framer-motion';
+import { useUserCampaigns } from '@hooks/useUserCampaigns';
 
 export default function CampaignPage(): ReactElement {
     const { data: session } = useSession();
@@ -17,7 +17,6 @@ export default function CampaignPage(): ReactElement {
     const matches = useMediaQuery(theme.breakpoints.down('md'))
 
     const { data: allCampaigns, loading } = useUserCampaigns(userId);
-    console.log(allCampaigns);
 
     return (
         <Box display='flex' flexDirection='column' gap={3} p={2}>

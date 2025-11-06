@@ -8,7 +8,7 @@ export class Class {
     @IsString() description: string
 
     @IsObject()
-        attributes: {
+        stats: {
             lp: number
             mp: number
             ap: number

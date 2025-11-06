@@ -20,7 +20,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     const sendMessage = async (newMessage: Message, scrollToBottom: () => void = () => {}) => {
         const messageWithTimestamp = {
             ...newMessage,
-            timestamp: new Date(),
+            timestamp: new Date().toISOString(),
             tempId: Date.now().toString(),
             isPending: true
         }

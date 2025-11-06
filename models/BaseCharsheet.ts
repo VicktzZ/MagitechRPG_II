@@ -16,13 +16,15 @@ export class BaseCharsheet {
     @IsString() playerName: string;
     @IsString() userId: string;
     @IsString() @MaxLength(50) name: string;
-    @IsString() age: number;
     @IsString() class: ClassNames;
+    @IsString() race: string;
     @IsString() lineage: LineageNames;
     @IsString() anotacoes: string = '';
     @IsString() elementalMastery: string = '';
     @IsString() subclass: Subclass['name'];
+    @IsString() createdAt: string = new Date().toISOString();
 
+    @IsNumber() age: number;
     @IsNumber() ORMLevel: number = 0;
     @IsNumber() displacement: number = 9;
     @IsNumber() spellSpace: number = 0;
@@ -43,15 +45,15 @@ export class BaseCharsheet {
 
     @ValidateNested()
     @Type(() => Expertises) 
-        expertises: Expertises = new Expertises();
+        expertises: Expertises;
 
     @ValidateNested({ each: true })
     @Type(() => Inventory)
-        inventory: Inventory = new Inventory();
+        inventory: Inventory;
 
     @ValidateNested()
     @Type(() => Attributes)
-        attributes: Attributes = new Attributes();
+        attributes: Attributes;
 
     @ValidateNested({ each: true })
     @Type(() => Passive)
@@ -60,15 +62,15 @@ export class BaseCharsheet {
 
     @ValidateNested()
     @Type(() => Stats)
-        stats: Stats = new Stats();
+        stats: Stats;
 
     @ValidateNested()
     @Type(() => Modificators)
-        mods: Modificators = new Modificators();
+        mods: Modificators;
     
     @ValidateNested()
     @Type(() => Points)
-        points: Points = new Points();
+        points: Points;
 
     @IsObject() capacity: {
         cargo: number;
@@ -93,10 +95,14 @@ export class BaseCharsheet {
             stats: {
                 maxLp: number;
                 maxMp: number;
+                maxAp: number;
+                lp: number;
+                mp: number;
+                ap: number;
             }
         }>;
 
-    constructor(charsheet?: BaseCharsheet) {
+    constructor(charsheet?: Partial<BaseCharsheet>) {
         Object.assign(this, charsheet)
     }
 }

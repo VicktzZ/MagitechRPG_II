@@ -60,6 +60,10 @@ export type ItemTypes =
 export interface SessionAttributes {
     maxLp: number
     maxMp: number
+    maxAp: number
+    lp: number
+    mp: number
+    ap: number
 }
 
 export interface SessionInfo {

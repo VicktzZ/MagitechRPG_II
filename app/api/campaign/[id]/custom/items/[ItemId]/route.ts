@@ -1,7 +1,6 @@
-import { updateDoc } from '@firebase/firestore';
-import { getCollectionDoc } from '@models/docs';
 import { CreateCustomItemDTO } from '@models/dtos';
 import type { Campaign } from '@models/entities/Campaign';
+import { campaignRepository } from '@repositories';
 import { findCampaignByCodeOrId } from '@utils/helpers/findCampaignByCodeOrId';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
@@ -18,20 +17,25 @@ export async function DELETE(req: Request, { params }: { params: { id: string, I
             return Response.json({ message: 'BAD REQUEST', errors }, { status: 400 });
         }
 
-        const { type } = dto;
+        const { type } = body;
         const campaign = await findCampaignByCodeOrId(id);
 
         if (!campaign) {
             return Response.json({ message: 'Campanha não encontrada' }, { status: 404 });
         }
         
-        const fieldPath = `custom.items.${type}`;
         const itemsArray = (campaign.custom?.items?.[type as keyof Campaign['custom']['items']] || []) as Array<{ id: string }>;
-        
         const updatedItems = itemsArray.filter(item => item.id !== ItemId);
 
-        await updateDoc(getCollectionDoc('campaigns', campaign.id), {
-            [fieldPath]: updatedItems
+        await campaignRepository.update({
+            ...campaign,
+            custom: {
+                ...campaign.custom,
+                items: {
+                    ...campaign.custom?.items,
+                    [type]: updatedItems
+                }
+            }
         });
         
         return Response.json({ type, ItemId });

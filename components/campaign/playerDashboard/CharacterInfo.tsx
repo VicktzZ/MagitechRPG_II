@@ -33,9 +33,9 @@ export default function CharacterInfo({ avatar }: CharacterInfoProps): ReactElem
     const { charsheet, updateCharsheet } = useCampaignCurrentCharsheetContext();
     
     const [ currentAttributes, setCurrentAttributes ] = useState({
-        lp: charsheet.attributes.lp,
-        mp: charsheet.attributes.mp,
-        ap: charsheet.attributes.ap
+        lp: charsheet.stats.lp,
+        mp: charsheet.stats.mp,
+        ap: charsheet.stats.ap
     });
 
     const setAttribute = (attr: 'lp' | 'mp' | 'ap', num: number, max?: number) => {
@@ -52,17 +52,17 @@ export default function CharacterInfo({ avatar }: CharacterInfoProps): ReactElem
 
         // Atualizar no Firestore em tempo real
         updateCharsheet({
-            attributes: {
-                ...charsheet.attributes,
+            stats: {
+                ...charsheet.stats,
                 [attr]: newValue
             }
         });
     }
 
-    const lpPercent = (currentAttributes.lp / charsheet.attributes.maxLp) * 100;
-    const mpPercent = (currentAttributes.mp / charsheet.attributes.maxMp) * 100;
-    const apPercent = (currentAttributes.ap / charsheet.attributes.maxAp) * 100;
-    const attributes = Object.entries(charsheet.attributes).filter(([ key ]) => ![ 'lp', 'mp', 'ap' ].includes(key));
+    const lpPercent = (currentAttributes.lp / charsheet.stats.maxLp) * 100;
+    const mpPercent = (currentAttributes.mp / charsheet.stats.maxMp) * 100;
+    const apPercent = (currentAttributes.ap / charsheet.stats.maxAp) * 100;
+    const attributes = Object.entries(charsheet.stats).filter(([ key ]) => ![ 'lp', 'mp', 'ap' ].includes(key));
 
     function AttributeBar({ attributeValue }: { attributeValue: number }) {
         const bars = [];
@@ -212,12 +212,12 @@ export default function CharacterInfo({ avatar }: CharacterInfoProps): ReactElem
                     }}
                 />
                 <Typography variant="caption">
-                    {currentAttributes.lp}/{charsheet.attributes.maxLp}
+                    {currentAttributes.lp}/{charsheet.stats.maxLp}
                 </Typography>
                 <Box display='flex' alignItems='center' gap={1}>
                     <Button variant="contained" size="small" onClick={() => setAttribute('lp', 1)}>+1</Button>
                     <Button variant="contained" size="small" onClick={() => setAttribute('lp', -1)}>-1</Button>
-                    <Button variant="contained" size="small" onClick={() => setAttribute('lp', 0, charsheet.attributes.maxLp)}>MAX</Button>
+                    <Button variant="contained" size="small" onClick={() => setAttribute('lp', 0, charsheet.stats.maxLp)}>MAX</Button>
                 </Box>
                 <Grid item xs={12} md={4}>
                     <Box>
@@ -235,13 +235,13 @@ export default function CharacterInfo({ avatar }: CharacterInfoProps): ReactElem
                             }}
                         />
                         <Typography variant="caption">
-                            {currentAttributes.mp}/{charsheet.attributes.maxMp}
+                            {currentAttributes.mp}/{charsheet.stats.maxMp}
                         </Typography>
                     </Box>
                     <Box display='flex' alignItems='center' gap={1}>
                         <Button variant="contained" size="small" onClick={() => setAttribute('mp', 1)}>+1</Button>
                         <Button variant="contained" size="small" onClick={() => setAttribute('mp', -1)}>-1</Button>
-                        <Button variant="contained" size="small" onClick={() => setAttribute('mp', 0, charsheet.attributes.maxMp)}>MAX</Button>
+                        <Button variant="contained" size="small" onClick={() => setAttribute('mp', 0, charsheet.stats.maxMp)}>MAX</Button>
                     </Box>
                 </Grid>
                 <Grid item xs={12} md={4}>
@@ -260,12 +260,12 @@ export default function CharacterInfo({ avatar }: CharacterInfoProps): ReactElem
                             }}
                         />
                         <Typography variant="caption">
-                            {currentAttributes.ap}/{charsheet.attributes.maxAp}
+                            {currentAttributes.ap}/{charsheet.stats.maxAp}
                         </Typography>
                         <Box display='flex' alignItems='center' gap={1}>
                             <Button variant="contained" size="small" onClick={() => setAttribute('ap', 1)}>+1</Button>
                             <Button variant="contained" size="small" onClick={() => setAttribute('ap', -1)}>-1</Button>
-                            <Button variant="contained" size="small" onClick={() => setAttribute('ap', 0, charsheet.attributes.maxAp)}>MAX</Button>
+                            <Button variant="contained" size="small" onClick={() => setAttribute('ap', 0, charsheet.stats.maxAp)}>MAX</Button>
                         </Box>
                     </Box>
                 </Grid>

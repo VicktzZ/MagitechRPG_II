@@ -154,7 +154,7 @@ export function Inventory (): ReactElement {
             const bonus = rarityValues || 0;
 
             return (
-                <Grid key={`${weapon.name}${index}`} item xs={12} sm={6} md={4} lg={3}>
+                <Grid key={`${weapon.name}-${index}`} item xs={12} sm={6} md={4} lg={3}>
                     <InventoryItem
                         item={weapon}
                         type="weapon"

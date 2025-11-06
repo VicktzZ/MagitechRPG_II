@@ -1,7 +1,5 @@
 /* eslint-disable @typescript-eslint/promise-function-async */
-import { updateDoc } from '@firebase/firestore';
-import { getCollectionDoc } from '@models/docs';
-import { userRepository } from '@repositories';
+import { campaignRepository, userRepository } from '@repositories';
 import { chunk } from '@utils/helpers/chunk';
 import { findCampaignByCodeOrId } from '@utils/helpers/findCampaignByCodeOrId';
 import type { NextRequest } from 'next/server';
@@ -50,16 +48,14 @@ export async function DELETE(req: NextRequest, { params }: { params: id }): Prom
 
         const updatedPlayers = campaign.players.filter(p => p.userId !== userId);
         const updatedSessionUsers = campaign.session.users.filter(u => u !== userId);
-
-        console.log({
-            updatedPlayers,
-            updatedSessionUsers,
-            session: campaign.session
-        })
         
-        await updateDoc(getCollectionDoc('campaigns', campaign.id), {
+        await campaignRepository.update({
+            ...campaign,
             players: updatedPlayers,
-            'session.users': updatedSessionUsers
+            session: {
+                ...campaign.session,
+                users: updatedSessionUsers
+            }
         });
 
         return Response.json({ message: 'USER REMOVED FROM CAMPAIGN' });

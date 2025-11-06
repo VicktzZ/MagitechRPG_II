@@ -25,17 +25,18 @@ export async function GET(req: NextRequest): Promise<Response> {
 export async function POST(req: NextRequest): Promise<Response> {
     try {
         const body: CharsheetDTO = await req.json();
-        const dto = plainToInstance(CharsheetDTO, body);
-        const errors = await validate(dto);
+        const dto = plainToInstance(CharsheetDTO, body, { excludeExtraneousValues: true });
+        const errors = await validate(dto, { skipMissingProperties: true }); // Remover em produção
         
         if (errors.length > 0) {
+            console.log(errors);
             return Response.json({ message: 'BAD REQUEST', errors }, { status: 400 });
         }
 
-        const newCharsheet = new Charsheet(dto);
+        const newCharsheet = new Charsheet(body as any);
 
-        newCharsheet.skills.powers = dto.skills.powers.map((power) => power?.id ?? '');
-        newCharsheet.spells = dto.spells.map((spell) => spell?.id ?? ''); 
+        newCharsheet.skills.powers = body.skills.powers?.map((power) => power?.id ?? '');
+        newCharsheet.spells = body.spells?.map((spell) => spell?.id ?? ''); 
         
         const createdCharsheet = await charsheetRepository.create(newCharsheet);
     

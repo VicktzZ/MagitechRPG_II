@@ -1,5 +1,5 @@
 import type { Message, Expertises, Session, Note, Skill, Creature, Weapon, Armor, Item } from '@models';
-import type { Charsheet, Spell, User } from '@models/entities';
+import type { Campaign, Charsheet, Spell, User } from '@models/entities';
 
 // export interface SessionModel {
 //     sessionCode: string
@@ -19,27 +19,7 @@ import type { Charsheet, Spell, User } from '@models/entities';
 // }
 
 export interface CampaignData {
-    campaign: {
-        id: string,
-        admin: string[],
-        campaignCode: string,
-        title: string,
-        description: string,
-        players: Player[],
-        session: Session,
-        custom: {
-            items: {
-                weapon: Weapon[],
-                armor: Armor[],
-                item: Item[]
-            },
-            magias: Spell[],
-            creatures: Creature[],
-            skills: Skill[]
-        },
-        myCharsheet: Charsheet | null,
-        notes: Note[]
-    },
+    campaign: Campaign,
     users: {
         admin: User[],
         players: User[],

@@ -4,7 +4,7 @@ import { CampaignDTO } from '@models/dtos';
 import { validate } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
 import type { NextRequest } from 'next/server';
-import type { Campaign } from '@models/entities';
+import { Campaign } from '@models/entities';
 
 export async function GET(req: NextRequest): Promise<Response> {
     try {
@@ -55,7 +55,8 @@ export async function POST(req: Request): Promise<Response> {
             return Response.json({ message: 'BAD REQUEST', errors }, { status: 400 });
         }
         
-        const createdCampaign = await campaignRepository.create(dto as Campaign);
+        const newCampaign = new Campaign(dto);
+        const createdCampaign = await campaignRepository.create(newCampaign);
         
         return Response.json(createdCampaign, { status: 201 });
     } catch (error: any) {

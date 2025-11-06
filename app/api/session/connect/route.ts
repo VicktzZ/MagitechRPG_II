@@ -1,17 +1,14 @@
-import { campaignRepository, charsheetRepository } from '@repositories';
-import { FieldValue } from 'firebase-admin/firestore';
-import { pusherServer } from '@utils/pusher';
 import { PusherEvent } from '@enums';
-import { validate } from 'class-validator';
-import { plainToInstance } from 'class-transformer';
-import { getCollectionDoc } from '@models/docs';
-import { updateDoc } from '@node_modules/@firebase/firestore/dist';
 import { JoinCampaignDTO } from '@models/dtos';
 import type { SessionInfo } from '@models/types/misc';
+import { campaignRepository, charsheetRepository } from '@repositories';
+import { pusherServer } from '@utils/pusher';
+import { plainToInstance } from 'class-transformer';
+import { validate } from 'class-validator';
 
 export async function POST(req: Request): Promise<Response> {
     try {
-        const body = await req.json();
+        const body: JoinCampaignDTO = await req.json();
         const dto = plainToInstance(JoinCampaignDTO, body);
         const errors = await validate(dto);
 
@@ -19,60 +16,78 @@ export async function POST(req: Request): Promise<Response> {
             return Response.json({ message: 'BAD REQUEST', errors }, { status: 400 });
         }
 
-        const { campaignCode, userId, isGM } = dto;
+        const { campaignCode, userId, isGM, charsheetId } = body;
 
         let campaign = await campaignRepository.whereEqualTo('campaignCode', campaignCode).findOne();
         if (!campaign) { 
             return Response.json({ message: 'Campanha não encontrada' }, { status: 400 });
         }
 
-        const campaignDocRef = getCollectionDoc('campaigns', campaign.id);
         const updatePayload: Record<string, any> = {};
 
         if (!campaign.session.users.includes(userId)) {
-            updatePayload['session.users'] = FieldValue.arrayUnion(userId);
+            updatePayload['session'] = {
+                users: [
+                    ...campaign.session.users,
+                    userId
+                ]
+            };
         }
 
         if (!isGM) {
-            const userCharsheet = await charsheetRepository.whereEqualTo('userId', userId).findOne();
+            const userCharsheet = await charsheetRepository.whereEqualTo('id', charsheetId).findOne();
             if (!userCharsheet) {
                 return Response.json({ message: 'Charsheet não encontrada' }, { status: 400 });
             }
 
-            const { id: charsheetId } = userCharsheet;
-            const isPlayer = campaign.players?.some(player => player.userId === userId);
+            const isAlreadyPlayer = campaign.players?.some(player => player.userId === userId);
 
-            if (!isPlayer) {
-                updatePayload['players'] = FieldValue.arrayUnion({ userId, charsheetId });
+            if (!isAlreadyPlayer) {
+                updatePayload['players'] = [
+                    ...campaign.players,
+                    { userId, charsheetId }
+                ];
             }
 
             const sessionInfo: SessionInfo = {
                 campaignCode,
                 stats: {
                     maxLp: userCharsheet.stats.maxLp,
-                    maxMp: userCharsheet.stats.maxMp
+                    maxMp: userCharsheet.stats.maxMp,
+                    maxAp: userCharsheet.stats.maxAp,
+                    lp: userCharsheet.session.find(s => s.campaignCode === campaignCode)?.stats.lp ?? userCharsheet.stats.lp,
+                    mp: userCharsheet.session.find(s => s.campaignCode === campaignCode)?.stats.mp ?? userCharsheet.stats.mp,
+                    ap: userCharsheet.session.find(s => s.campaignCode === campaignCode)?.stats.ap ?? userCharsheet.stats.ap
                 }
             };
 
-            await updateDoc(getCollectionDoc('charsheets', charsheetId), {
-                session: FieldValue.arrayUnion(sessionInfo)
+            const userSession = [ ...userCharsheet.session.filter(s => s.campaignCode !== campaignCode), sessionInfo ];
+
+            await charsheetRepository.update({
+                ...userCharsheet,
+                session: userSession
             });
 
             await pusherServer.trigger(
-                campaignCode,
+                `presence-${campaignCode}`,
                 PusherEvent.USER_ENTER,
                 {
                     userId,
                     name: userCharsheet.name,
-                    id: charsheetId,
-                    currentCharsheet: userCharsheet
+                    id: charsheetId
                 }
             );
         }
 
         if (Object.keys(updatePayload).length > 0) {
-            await updateDoc(campaignDocRef, updatePayload);
-            campaign = await campaignRepository.findById(campaign.id);
+            await campaignRepository.update({
+                ...campaign,
+                ...updatePayload
+            });
+        }
+
+        if (isGM) {
+            campaign = await campaignRepository.whereEqualTo('campaignCode', campaignCode).findOne();
         }
 
         return Response.json({ campaign });

@@ -27,7 +27,7 @@ import type { Charsheet } from '@models/entities'
 
 function Attributes(): ReactElement {
     const { control, setValue, getValues, formState: { errors }, reset } = useFormContext<Charsheet>()
-    const [ multiplier, setMultiplier ] = useState<number>(1)
+    const [ multiplier, setMultiplier ] = useState<string>('1')
     
     const theme = useTheme()
     const matches = useMediaQuery(theme.breakpoints.down('md'))
@@ -64,6 +64,12 @@ function Attributes(): ReactElement {
         const classe = charsheet.class
         return classColor?.[classe as keyof typeof classColor] ?? theme.palette.primary.main
     }, [ charsheet.class ])
+
+    const multiplierValue = useMemo(() => {
+        const v = parseInt(multiplier);
+        if (Number.isNaN(v)) return 1;
+        return Math.min(10, Math.max(1, v));
+    }, [ multiplier ])
 
     const attributePoints = useCallback((attributeName: 'vig' | 'des' | 'foc' | 'log' | 'sab' | 'car') => {
         
@@ -156,12 +162,12 @@ function Attributes(): ReactElement {
             const updatedPoints = getValues('points.attributes');
 
             const possibleIncrements = Math.min(
-                multiplier,
+                multiplierValue,
                 updatedPoints,
                 30 - updatedAttribute
             );
 
-            if (possibleIncrements > 0 && (updatedAttribute < 10 || disabled)) {
+            if (possibleIncrements > 0) {
                 if (updatedAttribute < 30) {
                     const newAttributeValue = updatedAttribute + possibleIncrements;
                     const newPointsValue = updatedPoints - possibleIncrements;
@@ -171,14 +177,14 @@ function Attributes(): ReactElement {
                     modAttribute('increment', possibleIncrements)
                 }
             }
-        }, [ attributeName, getValues, multiplier, setValue, disabled ])
+        }, [ attributeName, getValues, multiplierValue, setValue ])
 
         const onDecrement = useCallback(() => {
             const updatedAttribute = getValues(`attributes.${attributeName}`);
             const updatedPoints = getValues('points.attributes');
             
             const possibleDecrements = Math.min(
-                multiplier,
+                multiplierValue,
                 updatedAttribute
             );
 
@@ -190,10 +196,10 @@ function Attributes(): ReactElement {
                 setValue('points.attributes', newPointsValue);
                 modAttribute('decrement', possibleDecrements)
             }
-        }, [ attributeName, getValues, multiplier, setValue ])
+        }, [ attributeName, getValues, multiplierValue, setValue ])
 
         return { onIncrement, onDecrement }
-    }, [ charsheet, getValues, setValue, reset, disabled, multiplier ])
+    }, [ charsheet, getValues, setValue, reset, disabled, multiplierValue ])
 
     const vig = useWatch({
         control,
@@ -242,18 +248,18 @@ function Attributes(): ReactElement {
             attributesRef.current.foc = foc
             attributesRef.current.des = des
         } else {
-            baseLP = (races[race as keyof typeof races]?.attributes.lp || 0) +
-                (classesModel[classe as keyof typeof classesModel]?.attributes.lp || 0) +
+            baseLP = (races[race as keyof typeof races]?.stats.lp || 0) +
+                (classesModel[classe as keyof typeof classesModel]?.stats.lp || 0) +
                 (vig || 0)
             baseMaxLP = baseLP
     
-            baseMP = (races[race as keyof typeof races]?.attributes.mp || 0) +
-                (classesModel[classe as keyof typeof classesModel]?.attributes.mp || 0) +
+            baseMP = (races[race as keyof typeof races]?.stats.mp || 0) +
+                (classesModel[classe as keyof typeof classesModel]?.stats.mp || 0) +
                 (foc || 0)
             baseMaxMP = baseMP
     
-            baseAP = (races[race as keyof typeof races]?.attributes.ap || 0) +
-                (classesModel[classe as keyof typeof classesModel]?.attributes.ap || 0) +
+            baseAP = (races[race as keyof typeof races]?.stats.ap || 0) +
+                (classesModel[classe as keyof typeof classesModel]?.stats.ap || 0) +
                 (Math.floor(des / 10) || 0)
             baseMaxAP = baseAP
         }
@@ -269,7 +275,7 @@ function Attributes(): ReactElement {
     // Case race 'Humano'
     useEffect(() => {
         if (charsheet.id) return
-        let pointsAttributes = charsheet.points.attributes + (races[race as keyof typeof races]?.attributes.pda || 0)
+        let pointsAttributes = charsheet.points.attributes + (races[race as keyof typeof races]?.stats.pda || 0)
        
         if (raceRef.current && raceRef.current === 'Humano') {
             pointsAttributes = charsheet.points.attributes - 5
@@ -596,10 +602,14 @@ function Attributes(): ReactElement {
                                         }}
                                         value={multiplier}
                                         onChange={(e) => {
-                                            const value = parseInt(e.target.value);
-                                            if (!isNaN(value) && value >= 1 && value <= 10) {
-                                                setMultiplier(value);
+                                            const v = e.target.value;
+                                            if (v === '' || /^\d{0,2}$/.test(v)) {
+                                                setMultiplier(v);
                                             }
+                                        }}
+                                        onBlur={() => {
+                                            // Normaliza para um valor válido entre 1 e 10
+                                            setMultiplier(String(multiplierValue));
                                         }}
                                         sx={{ 
                                             '& .MuiOutlinedInput-root': {

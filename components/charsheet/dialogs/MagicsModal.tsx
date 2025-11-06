@@ -133,7 +133,7 @@ export default function SpellsModal({ open, onClose }: { open: boolean, onClose:
                             fetchFunction={async (params) => await spellService.fetch(params)}
                             addFunction={addSpell}
                             validateAdd={validateAdd}
-                            successMessage={(spell) => `Magia ${spell.nome} adicionada!`}
+                            successMessage={(spell) => `Magia ${spell.name} adicionada!`}
                             errorMessage={(err) => err.message || 'Erro ao adicionar magia'}
                             filterOptions={getValues('level') < 15 ? elements : [ ...elements, ...specialElements ]}
                             sortOptions={[ 'Nível', 'Elemento', 'Alfabética' ]}

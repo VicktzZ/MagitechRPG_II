@@ -1,14 +1,12 @@
 /* eslint-disable @typescript-eslint/prefer-nullish-coalescing */
 import { PusherEvent } from '@enums';
-import { pusherServer } from '@utils/pusher';
-import { findCampaignByCodeOrId } from '@utils/helpers/findCampaignByCodeOrId';
-import { arrayUnion, updateDoc } from 'firebase/firestore';
-import { getCollectionDoc } from '@models/docs';
-import type { NextRequest } from 'next/server';
-import { v4 as uuidv4 } from 'uuid';
-import { validate } from 'class-validator';
-import { plainToInstance } from 'class-transformer';
 import { Message } from '@models';
+import { campaignRepository } from '@repositories';
+import { findCampaignByCodeOrId } from '@utils/helpers/findCampaignByCodeOrId';
+import { pusherServer } from '@utils/pusher';
+import { plainToInstance } from 'class-transformer';
+import { validate } from 'class-validator';
+import type { NextRequest } from 'next/server';
 
 interface id { id: string }
 
@@ -18,7 +16,7 @@ export async function POST(
 ): Promise<Response> {
     try {
         const { id } = params;
-        const body = await req.json();
+        const body: Message = await req.json();
 
         const dto = plainToInstance(Message, body);
         const errors = await validate(dto);
@@ -26,15 +24,20 @@ export async function POST(
             return Response.json({ message: 'BAD REQUEST', errors }, { status: 400 });
         }
 
-        const messageWithId = { ...dto, id: uuidv4() };
-
+        let messageWithId = new Message(dto);
+        messageWithId = { ...messageWithId }
         const campaign = await findCampaignByCodeOrId(id);
+        
         if (!campaign) {
             return Response.json({ error: 'Campanha não encontrada' }, { status: 404 });
         }
 
-        await updateDoc(getCollectionDoc('campaigns', campaign.id), {
-            'session.messages': arrayUnion(messageWithId)
+        await campaignRepository.update({
+            ...campaign,
+            session: {
+                ...campaign.session,
+                messages: [ ...campaign.session.messages || [], messageWithId ]
+            }
         });
 
         await pusherServer.trigger(

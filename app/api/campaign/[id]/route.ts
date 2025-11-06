@@ -19,7 +19,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
         return Response.json({ message: 'FORBIDDEN', error: error.message }, { status: 403 });
     }
 }
-
+ 
 export async function DELETE(_req: Request, { params }: { params: { id: string } }): Promise<Response> {
     try {
         const { id } = params;

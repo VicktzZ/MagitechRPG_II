@@ -2,6 +2,9 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 'use client';
 
+import { elementColor as elementColors, toastDefault } from '@constants';
+import { CharsheetDTO } from '@models/dtos';
+import type { Spell } from '@models/entities';
 import {
     AddCircle,
     AutoAwesome,
@@ -11,7 +14,7 @@ import {
     FilterList,
     HourglassBottom,
     ManageSearch
-} from '@mui/icons-material'
+} from '@mui/icons-material';
 import {
     alpha,
     Badge,
@@ -28,23 +31,21 @@ import {
     Typography,
     useMediaQuery,
     useTheme
-} from '@mui/material'
-import { motion, AnimatePresence } from 'framer-motion'
-import { useFormContext, useWatch } from 'react-hook-form'
-import { memo, useCallback, useMemo, useState } from 'react'
-import { Magic } from '.';
-import SpellsModal from './dialogs/MagicsModal'
+} from '@mui/material';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useSnackbar } from 'notistack';
-import { toastDefault, elementColor as elementColors } from '@constants';
-import type { Spell } from '@models/entities';
+import { memo, useCallback, useMemo, useState } from 'react';
+import { useFormContext, useWatch } from 'react-hook-form';
+import { Magic } from '.';
+import MagicsModal from './dialogs/MagicsModal';
 
 /**
- * Componente Magics
+ * Componente Spells
  * 
  * Gerencia e exibe todas as magias do personagem com interface moderna e animações
  */
 
-const Magics = memo(() => {
+const Spells = memo(() => {
     // Estados locais
     const [ open, setOpen ] = useState(false)
     const [ filterOpen, setFilterOpen ] = useState(false)
@@ -52,33 +53,33 @@ const Magics = memo(() => {
     const [ sortType, setSortType ] = useState<'elemento' | 'level' | 'name'>('name')
 
     // Hooks e contexto
-    const { control, setValue, getValues } = useFormContext<Charsheet>()
+    const { control, setValue, getValues } = useFormContext<CharsheetDTO>()
     const { enqueueSnackbar, closeSnackbar } = useSnackbar()
     const theme = useTheme()
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
 
-    const magics = useWatch({ control, name: 'magics' })
+    const spells = useWatch({ control, name: 'spells' })
     
     const points = useWatch({ control, name: 'points' })
-    const magicsSpace = useWatch({ control, name: 'magicsSpace' })
+    const spellSpace = useWatch({ control, name: 'spellSpace' })
 
     // Ordena e filtra as magias
-    const filteredMagics = useMemo(() => {
-        if (!magics?.length) return []
+    const filteredSpells = useMemo(() => {
+        if (!spells?.length) return []
 
-        let filtered = [ ...magics ]
+        let filtered = [ ...spells ]
 
         // Aplica filtro de elemento se estiver ativo
         if (elementFilter) {
             filtered = filtered.filter(magic =>
-                magic.elemento.toUpperCase() === elementFilter.toUpperCase()
+                magic.element.toUpperCase() === elementFilter.toUpperCase()
             )
         }
 
         // Ordena as magias conforme critério selecionado
         switch (sortType) {
         case 'elemento':
-            filtered.sort((a, b) => a.elemento.localeCompare(b.elemento))
+            filtered.sort((a, b) => a.element.localeCompare(b.element))
             break
         case 'level':
             filtered.sort((a, b) => ((b ).level ?? 0) - ((a ).level ?? 0))
@@ -90,51 +91,51 @@ const Magics = memo(() => {
         }
 
         return filtered
-    }, [ magics, elementFilter, sortType ])
+    }, [ spells, elementFilter, sortType ])
 
     // Extrai elementos únicos para os filtros
     const uniqueElements = useMemo(() => {
-        if (!magics?.length) return []
-        const elements = new Set(magics.map(magic => magic.elemento?.toUpperCase()))
+        if (!spells?.length) return []
+        const elements = new Set(spells.map(magic => magic.element?.toUpperCase()))
         return Array.from(elements)
-    }, [ magics ])
+    }, [ spells ])
 
     // Estatísticas para o painel superior
-    const magicsStats = useMemo(() => {
-        if (!magics?.length) {
+    const spellsStats = useMemo(() => {
+        if (!spells?.length) {
             return { count: 0, elementDistribution: {} }
         }
 
         // Contagem de elementos
         const elementDistribution: Record<string, number> = {}
-        magics.forEach(magic => {
-            const element = magic.elemento?.toUpperCase()
+        spells.forEach(magic => {
+            const element = magic.element?.toUpperCase()
             elementDistribution[element] = (elementDistribution[element] || 0) + 1
         })
 
         return {
-            count: magics.length,
+            count: spells.length,
             elementDistribution
         }
-    }, [ magics ])
+    }, [ spells ])
 
     const handleRemoveMagic = useCallback((magicId: string, magicName: string) => {
-        const currentMagics = [ ...magics ]
-        const magicIndex = currentMagics.findIndex(m => m.id === magicId)
+        const currentSpells = [ ...spells ]
+        const magicIndex = currentSpells.findIndex(m => m.id === magicId)
 
         if (magicIndex !== -1) {
-            currentMagics.splice(magicIndex, 1)
+            currentSpells.splice(magicIndex, 1)
 
-            setValue('magics', currentMagics, { shouldValidate: true })
-            setValue('points.magics', points.magics + 1, { shouldValidate: true })
-            setValue('magicsSpace', magicsSpace + 1, { shouldValidate: true })
+            setValue('spells', currentSpells, { shouldValidate: true })
+            setValue('points.spells', points.spells + 1, { shouldValidate: true })
+            setValue('spellSpace', spellSpace + 1, { shouldValidate: true })
 
             enqueueSnackbar(`Magia ${magicName} removida!`, {
                 ...toastDefault('itemDeleted', 'success'),
                 action: () => <Close sx={{ cursor: 'pointer' }} onClick={() => { closeSnackbar(magicName) }} />
             })
         }
-    }, [ magics, points, magicsSpace, enqueueSnackbar, closeSnackbar, setValue ])
+    }, [ spells, points, spellSpace, enqueueSnackbar, closeSnackbar, setValue ])
 
     const renderMagicCard = useCallback((magic: Spell) => {
 
@@ -174,8 +175,8 @@ const Magics = memo(() => {
         )
     }, [ handleRemoveMagic, theme.palette.primary.main ])
 
-    const magicsList = useMemo(() => {
-        if (!filteredMagics?.length) {
+    const spellsList = useMemo(() => {
+        if (!filteredSpells?.length) {
             // Estado vazio com mensagem contextual
             const emptyMessage = elementFilter
                 ? `Nenhuma magia de elemento ${elementFilter} encontrada.`
@@ -231,8 +232,8 @@ const Magics = memo(() => {
         if (sortType === 'elemento') {
             const groupedByElement: Record<string, Spell[]> = {}
 
-            filteredMagics.forEach(magic => {
-                const element = magic.elemento.toUpperCase()
+            filteredSpells.forEach(magic => {
+                const element = magic.element.toUpperCase()
                 if (!groupedByElement[element]) groupedByElement[element] = []
                 groupedByElement[element].push(magic)
             })
@@ -270,8 +271,8 @@ const Magics = memo(() => {
         }
 
         // Renderiza lista normal
-        return filteredMagics.map(magic => renderMagicCard(magic))
-    }, [ filteredMagics, renderMagicCard, elementFilter, sortType, theme, elementColors ])
+        return filteredSpells.map(magic => renderMagicCard(magic))
+    }, [ filteredSpells, renderMagicCard, elementFilter, sortType, theme, elementColors ])
 
     return (
         <>
@@ -316,7 +317,7 @@ const Magics = memo(() => {
                     {/* Título e botão de adicionar */}
                     <Stack direction="row" alignItems="center" gap={1.5}>
                         <Badge
-                            badgeContent={magicsStats.count}
+                            badgeContent={spellsStats.count}
                             color="primary"
                             max={99}
                             sx={{
@@ -349,7 +350,7 @@ const Magics = memo(() => {
                                 color="text.secondary"
                                 sx={{ display: 'block' }}
                             >
-                                {`${magics?.length ?? 0} de ${magics?.length ?? 0 + getValues().attributes.log + 1} espaços utilizados`}
+                                {`${spells?.length ?? 0} de ${spells?.length ?? 0 + getValues().attributes.log + 1} espaços utilizados`}
                             </Typography>
                         </Box>
                     </Stack>
@@ -380,7 +381,7 @@ const Magics = memo(() => {
                             <IconButton
                                 onClick={() => { setOpen(true) }}
                                 color="primary"
-                                disabled={magicsSpace === 0 || points.magics === 0}
+                                disabled={spellSpace === 0 || points.magics === 0}
                                 sx={{
                                     borderRadius: 1.5,
                                     bgcolor: alpha(theme.palette.primary.main, 0.1),
@@ -419,7 +420,7 @@ const Magics = memo(() => {
                         </Typography>
                         <Stack direction="row" alignItems="baseline" spacing={0.5}>
                             <Typography fontWeight="bold" sx={{ fontSize: '1.1rem' }}>
-                                {magicsSpace}
+                                {spellSpace}
                             </Typography>
                             <Tooltip title="Aumenta com Lógica">
                                 <Typography variant="caption" color="text.secondary">
@@ -515,7 +516,7 @@ const Magics = memo(() => {
                                                 sx={{ borderRadius: 1.5 }}
                                             />
                                             {uniqueElements.map(element => {
-                                                const count = magicsStats.elementDistribution[element] || 0;
+                                                const count = spellsStats.elementDistribution[element] || 0;
                                                 const elementColor = (elementColors as any)[element?.toUpperCase()] || theme.palette.primary.main;
 
                                                 return (
@@ -560,7 +561,7 @@ const Magics = memo(() => {
                     minHeight: '300px',
                     display: 'flex',
                     flexDirection: 'column',
-                    justifyContent: filteredMagics?.length ? 'flex-start' : 'center',
+                    justifyContent: filteredSpells?.length ? 'flex-start' : 'center',
                     alignItems: 'center'
                 }}
             >
@@ -571,13 +572,13 @@ const Magics = memo(() => {
                     sx={{ width: '100%' }}
                 >
                     <AnimatePresence mode="popLayout">
-                        {magicsList}
+                        {spellsList}
                     </AnimatePresence>
                 </Grid>
             </Paper>
 
             {/* Modal para adicionar magias */}
-            <SpellsModal
+            <MagicsModal
                 open={open}
                 onClose={() => { setOpen(false) }}
             />
@@ -585,5 +586,5 @@ const Magics = memo(() => {
     )
 })
 
-Magics.displayName = 'Magics'
-export default Magics
+Spells.displayName = 'Spells'
+export default Spells

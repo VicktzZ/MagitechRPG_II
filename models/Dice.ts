@@ -9,7 +9,7 @@ export class Dice {
     @IsString() name: string
     @IsString() description?: string
     @IsArray() dices: DiceConfig[]
-    @IsString() createdAt: Date = new Date()
+    @IsString() createdAt: string = new Date().toISOString()
     
     @IsArray() 
     @IsOptional() 

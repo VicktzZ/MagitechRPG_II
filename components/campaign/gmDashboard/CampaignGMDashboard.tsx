@@ -3,24 +3,23 @@
 'use client'
 
 import { useCampaignContext } from '@contexts';
-import {
-    Box,
-    Paper,
-    Snackbar,
-    Typography,
-    Stack,
-    useTheme,
-    Skeleton
-} from '@mui/material'
-import { useQueryClient } from '@tanstack/react-query'
+import { useFirestoreRealtime } from '@hooks/useFirestoreRealtime';
 import {
     People,
     SupervisorAccount
-} from '@mui/icons-material'
-import { type ReactElement, useMemo } from 'react'
-import PlayerCard from './PlayerCard'
-import { useCharsheetsRealtime } from '@services/firestore/hooks';
+} from '@mui/icons-material';
+import {
+    Box,
+    Paper,
+    Skeleton,
+    Snackbar,
+    Stack,
+    Typography,
+    useTheme
+} from '@mui/material';
 import { blue, green, orange, purple } from '@mui/material/colors';
+import { type ReactElement, useMemo } from 'react';
+import PlayerCard from './PlayerCard';
 
 // Componente Section reutilizável
 interface SectionProps {
@@ -76,18 +75,13 @@ export default function CampaignGMDashboard(): ReactElement | null {
     
     const theme = useTheme();
     
-    const queryClient = useQueryClient()
+    // const queryClient = useQueryClient()
 
-    // 🔥 Buscar charsheets dos jogadores em tempo real usando Firestore
-    const { data: playerCharsheets, loading: isPlayerCharsheetsPending } = useCharsheetsRealtime({
-        filters: charsheets.length > 0 ? [
+    const { data: playerCharsheets, loading: isPlayerCharsheetsPending } = useFirestoreRealtime('charsheet', {
+        filters: [
             { field: 'id', operator: 'in', value: charsheets.map(f => f.id) }
-        ] : undefined,
-        onChange: async () => {
-            console.log('[GM Dashboard] Invalidando cache e forçando refetch')
-            await queryClient.invalidateQueries({ queryKey: [ 'playerCharsheets', charsheets.map(f => f.id) ] })
-            await queryClient.refetchQueries({ queryKey: [ 'playerCharsheets', charsheets.map(f => f.id) ] })
-        }
+        ],
+        enabled: charsheets.length > 0
     })
 
     const players = useMemo(() => {
@@ -258,7 +252,7 @@ export default function CampaignGMDashboard(): ReactElement | null {
                                     {playerCharsheets.map(charsheet => (
                                         <PlayerCard
                                             key={charsheet.id}
-                                            charsheet={charsheet }
+                                            charsheet={charsheet}
                                         />
                                     ))}
                                 </Box>

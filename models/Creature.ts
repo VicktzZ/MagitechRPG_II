@@ -27,15 +27,15 @@ export class Creature {
 
     @ValidateNested()
     @Type(() => Attributes)
-        attributes: Attributes = new Attributes()
+        attributes: Attributes;
     
     @ValidateNested()
     @Type(() => Stats)
-        stats: Stats = new Stats()
+        stats: Stats;
 
     @ValidateNested()
     @Type(() => Expertises)
-        expertises: Expertises = new Expertises()
+        expertises: Expertises;
 
     constructor(creature?: Creature) {
         Object.assign(this, creature)

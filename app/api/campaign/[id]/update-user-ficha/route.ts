@@ -6,7 +6,7 @@ import { validate } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
 import { type Charsheet } from '@models/entities';
 
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+export async function PATCH(req: Request, { params }: { params: { id: string } }) {
     try {
         const body: CharsheetDTO = await req.json();
         const charsheetId = body.id;

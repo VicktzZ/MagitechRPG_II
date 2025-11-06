@@ -1,9 +1,11 @@
+import { red, blue, orange, teal, deepPurple, green } from '@mui/material/colors';
+import generateEntryCode from '@utils/generateEntryCode';
 import { type Expertises, type Race } from '@models';
 import { type Charsheet } from '@models/entities';
-import { type ClassNames, type LineageNames } from '@models/types/string';
-import { red, blue, orange, teal, deepPurple, green } from '@node_modules/@mui/material/colors';
+import type { FinancialCondition, Gender, SubclassNames, ClassNames, LineageNames } from '@models/types/string';
+import { CharsheetDTO } from '@models/dtos';
 
-export const expertisesDefaultValue: keyof Expertises = {
+export const expertisesDefaultValue: Expertises = {
     'Agilidade': { value: 0, defaultAttribute: 'des' },
     'Atletismo': { value: 0, defaultAttribute: 'vig' },
     'Competência': { value: 0, defaultAttribute: 'log' },
@@ -43,7 +45,8 @@ export const expertisesDefaultValue: keyof Expertises = {
     'Vontade': { value: 0, defaultAttribute: 'foc' }
 }
 
-export const charsheetModel: Charsheet = {
+export const charsheet: CharsheetDTO = {
+    id: '',
     playerName: '',
     mode: 'Classic',
     name: '',
@@ -51,19 +54,20 @@ export const charsheetModel: Charsheet = {
     class: '' as ClassNames,
     race: '' as Race['name'],
     lineage: '' as LineageNames,
-    elementalMastery: '' as unknown as Element,
+    elementalMastery: '',
     gender: '' as Gender,
-    financialCondition: '' as unknown as FinancialCondition,
+    financialCondition: '' as FinancialCondition,
     traits: [],
     displacement: 9,
     level: 0,
     anotacoes: '',
+    createdAt: new Date().toISOString(),
     ORMLevel: 1,
-    magics: [],
-    magicsSpace: 1,
+    spells: [],
+    spellSpace: 1,
     mpLimit: 0,
     overall: 0,
-    subclass: '',
+    subclass: '' as SubclassNames,
     ammoCounter: {
         current: 0,
         max: 0
@@ -90,7 +94,10 @@ export const charsheetModel: Charsheet = {
                 kind: 'Especial',
                 rarity: 'Comum',
                 weight: 0.2,
-                effects: [ 'Celular multiúso da UFEM.' ]
+                effects: [ 'Celular multiúso da UFEM.' ],
+                type: 'item',
+                quantity: 1,
+                id: `smartphone-${generateEntryCode(12, 'lower')}`
             },
             {
                 name: 'ORM',
@@ -99,7 +106,10 @@ export const charsheetModel: Charsheet = {
                 rarity: 'Especial',
                 level: 1,
                 weight: 0.1,
-                effects: [ 'Dispositivo utilizado para manipulação de magículas e sequências mágicas.' ]
+                effects: [ 'Dispositivo utilizado para manipulação de magículas e sequências mágicas.' ],
+                type: 'item',
+                quantity: 1,
+                id: `orm-${generateEntryCode(12, 'lower')}`
             }
         ],
         weapons: [
@@ -119,7 +129,11 @@ export const charsheetModel: Charsheet = {
                     critValue: '4d6',
                     critChance: 20,
                     effectType: 'Impactante'
-                }
+                },
+                type: 'weapon',
+                accessories: [],
+                id: `retrogradable_staff-${generateEntryCode(12, 'lower')}`,
+                quantity: 1
             }
         ],
         armors: [
@@ -131,7 +145,11 @@ export const charsheetModel: Charsheet = {
                 rarity: 'Comum',
                 weight: 0.5,
                 value: 5,
-                displacementPenalty: 0
+                displacementPenalty: 0,
+                type: 'weapon',
+                accessories: [],
+                id: `uniform-${generateEntryCode(12, 'lower')}`,
+                quantity: 1
             }
         ],
         money: 0
@@ -147,18 +165,20 @@ export const charsheetModel: Charsheet = {
     },
 
     attributes: {
-        lp: 0,
-        mp: 0,
-        ap: 5,
-        maxLp: 0,
-        maxMp: 0,
-        maxAp: 5,
         car: 0,
         vig: 0,
         des: 0,
         foc: 0,
         log: 0,
         sab: 0
+    },
+    stats: {
+        lp: 0,
+        mp: 0,
+        ap: 5,
+        maxLp: 0,
+        maxMp: 0,
+        maxAp: 5
     },
     mods: {
         attributes: {
@@ -174,8 +194,11 @@ export const charsheetModel: Charsheet = {
     dices: [],
     passives: [], 
     userId: '',
-    status: []
+    status: [],
+    session: []
 }
+
+export const charsheetModel = new CharsheetDTO(charsheet)
 
 export const attributeIcons = {
     vig: {

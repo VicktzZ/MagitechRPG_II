@@ -1,37 +1,39 @@
+import type { FirestoreOnChange } from '@models/types/firestoreRealtime';
 import type { CampaignData } from '@models/types/session';
-import {
-    useCampaignRealtime,
-    useCharsheetsRealtime,
-    useUsersRealtime
-} from '@services/firestore/hooks';
 import { useMemo } from 'react';
+import { useFirestoreRealtime } from './useFirestoreRealtime';
 
 interface UseCampaignDataOptions {
     campaignCode: string;
     userId?: string;
+    onChange?: FirestoreOnChange
 }
 
 export function useCampaignData({
     campaignCode,
-    userId
+    userId,
+    onChange
 }: UseCampaignDataOptions): CampaignData | null {
-    const { data: campaign, loading } = useCampaignRealtime({
+    const { data: campaign, loading } = useFirestoreRealtime('campaign', {
         filters: [
             { field: 'campaignCode', operator: '==', value: campaignCode }
-        ]
+        ],
+        onChange(type, doc) {
+            onChange?.(type, doc);
+        }
     });
 
     const c = useMemo(() => campaign?.[0], [ campaign ])
 
-    const { data: campaignCharsheets } = useCharsheetsRealtime({
-        enabled: !loading && !!c,
+    const { data: campaignCharsheets } = useFirestoreRealtime('charsheet', {
+        enabled: !loading && !!c && c.players.length > 0,
         filters: [
             { field: 'id', operator: 'in', value: c?.players.map(p => p.charsheetId) }
         ]
     });
 
-    const { data: campaignUsers } = useUsersRealtime({
-        enabled: !loading && !!c,
+    const { data: campaignUsers } = useFirestoreRealtime('user', {
+        enabled: !loading && !!c && (c.players.length > 0 || c.admin.length > 0),
         filters: [
             { field: 'id', operator: 'in', value: [ ...(c?.players.map(p => p.userId) || []), ...(c?.admin || []) ] }
         ]
@@ -45,7 +47,7 @@ export function useCampaignData({
         ) || [];
 
         const playerUsers = campaignUsers?.filter(user =>
-            !c.admin?.includes(user.id ?? ' ')
+            !c.admin?.includes(user.id ?? '')
         ) || [];
 
         const isUserGM = c.admin?.includes(userId ?? '') || false;
