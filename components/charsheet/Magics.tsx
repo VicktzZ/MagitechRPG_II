@@ -238,7 +238,7 @@ const Spells = memo(() => {
                 groupedByElement[element].push(magic)
             })
 
-            return Object.entries(groupedByElement).map(([ element, spells ]) => (
+            return Object.entries(groupedByElement).map(([ element, s ]) => (
                 <Box key={element} sx={{ width: '100%', mb: 3 }}>
                     <Box
                         sx={{
@@ -255,7 +255,7 @@ const Spells = memo(() => {
                         </Typography>
                         <Chip
                             size="small"
-                            label={spells.length}
+                            label={s.length}
                             sx={{
                                 bgcolor: alpha((elementColors as any)[element.toUpperCase()] || theme.palette.primary.main, 0.2),
                                 color: (elementColors as any)[element.toUpperCase()] || theme.palette.primary.main,
@@ -264,7 +264,7 @@ const Spells = memo(() => {
                         />
                     </Box>
                     <Grid container spacing={2}>
-                        {spells.map((magic) => renderMagicCard(magic))}
+                        {s.map((magic) => renderMagicCard(magic))}
                     </Grid>
                 </Box>
             ))
