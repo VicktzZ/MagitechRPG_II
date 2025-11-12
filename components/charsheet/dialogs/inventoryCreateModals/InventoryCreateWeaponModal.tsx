@@ -87,12 +87,12 @@ export const InventoryCreateWeaponModal = memo(({
             )
         },
         { header: 'Geral', options: [ { value: 'Nenhum', label: 'Nenhum' } ] },
-        { header: 'Corpo a corpo', options: mapArrayToOptions(deafultWeapons.melee.map(item => item.name).sort()) },
-        { header: 'Longo alcance', options: mapArrayToOptions(deafultWeapons.ranged.map(item => item.name).sort()) },
-        { header: 'Mágico', options: mapArrayToOptions(deafultWeapons.magic.map(item => item.name).sort()) },
-        { header: 'Balística', options: mapArrayToOptions(deafultWeapons.ballistic.map(item => item.name).sort()) },
-        { header: 'Energia', options: mapArrayToOptions(deafultWeapons.energy.map(item => item.name).sort()) },
-        { header: 'Especial', options: mapArrayToOptions(deafultWeapons.special.map(item => item.name).sort()) }
+        { header: 'Corpo a corpo', options: mapArrayToOptions(deafultWeapons.melee.map(item => item.name).sort() as string[]) },
+        { header: 'Longo alcance', options: mapArrayToOptions(deafultWeapons.ranged.map(item => item.name).sort() as string[]) },
+        { header: 'Mágico', options: mapArrayToOptions(deafultWeapons.magic.map(item => item.name).sort() as string[]) },
+        { header: 'Balística', options: mapArrayToOptions(deafultWeapons.ballistic.map(item => item.name).sort() as string[]) },
+        { header: 'Energia', options: mapArrayToOptions(deafultWeapons.energy.map(item => item.name).sort() as string[]) },
+        { header: 'Especial', options: mapArrayToOptions(deafultWeapons.special.map(item => item.name).sort() as string[]) }
     ], [ campaign.custom.items.weapon ]);
 
     const setDefaultWeapon = (weaponName: string) => {
