@@ -192,7 +192,7 @@ export default function CharsheetComponent(): ReactElement {
         }
 
         try {
-            const response = await updateCharsheet({ id: values.id, data: charsheetDto })
+            const response = await updateCharsheet({ id: values.id, data: values })
 
             closeSnackbar('loadingFetch')
 

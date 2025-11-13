@@ -463,10 +463,10 @@ export default function Skills(): ReactElement {
                                 <Typography variant='subtitle1' color='text.secondary'>
                                     {selectedSkill.type}
                                     {selectedSkill.origin && ` • ${selectedSkill.origin}`}
-                                    {(selectedSkill.level || selectedSkill.level === 0) && (
-                                        selectedSkill.level === 0 
+                                    {(selectedSkill?.level || selectedSkill?.level === 0) && (
+                                        selectedSkill?.level === 0 
                                             ? ' • Poder de Classe'
-                                            : ` • Nível ${selectedSkill.level}`
+                                            : ` • Nível ${selectedSkill?.level}`
                                     )}
                                 </Typography>
                             </Box>
