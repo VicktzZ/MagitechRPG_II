@@ -98,7 +98,6 @@ export default function CampaignGMDashboard(): ReactElement | null {
         })
     }, [ users, playerCharsheets ])
 
-    // Estatísticas da campanha
     const campaignStats = useMemo(() => {
         const totalPlayers = players?.length ?? 0;
         const activePlayers = players?.filter(p => p.charsheet).length ?? 0;

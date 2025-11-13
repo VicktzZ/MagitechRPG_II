@@ -563,16 +563,6 @@ export default function SessionChat() {
                                             fontWeight: 600
                                         }}
                                     />
-                                    <Chip 
-                                        label="Ao vivo"
-                                        size="small"
-                                        sx={{
-                                            bgcolor: green[500],
-                                            color: 'white',
-                                            fontWeight: 600,
-                                            animation: 'pulse 2s infinite'
-                                        }}
-                                    />
                                 </Stack>
                             </Box>
                         </Stack>

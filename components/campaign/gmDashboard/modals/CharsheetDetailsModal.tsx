@@ -26,6 +26,7 @@ import { elementColor } from '@constants';
 import { Edit } from '@mui/icons-material';
 import ChangePlayerStatusModal from './ChangePlayerStatusModal';
 import type { CharsheetDTO } from '@models/dtos';
+import { useFirestoreRealtime } from '@hooks/useFirestoreRealtime';
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -73,6 +74,12 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet }: Char
         changePlayerSpellsModalOpen: false,
         changePlayerInventoryModalOpen: false,
         changePlayerAbilitiesModalOpen: false
+    })
+
+    const { data: spells } = useFirestoreRealtime('spell', {
+        filters: [
+            { field: 'id', operator: 'in', value: charsheet.spells }
+        ]
     })
 
     const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
@@ -148,7 +155,7 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet }: Char
                                             </TableRow>
                                             <TableRow>
                                                 <TableCell>Raça</TableCell>
-                                                <TableCell>{typeof charsheet.race === 'string' ? charsheet.race : charsheet.race.name}</TableCell>
+                                                <TableCell>{charsheet.race}</TableCell>
                                             </TableRow>
                                             <TableRow>
                                                 <TableCell>Gênero</TableCell>
@@ -223,7 +230,7 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet }: Char
                                             </TableRow>
                                             <TableRow>
                                                 <TableCell>Traços</TableCell>
-                                                <TableCell>{charsheet.traits?.map((trait) => trait.name).join(', ') || 'Nenhum'}</TableCell>
+                                                <TableCell>{charsheet.traits.join(', ') || 'Nenhum'}</TableCell>
                                             </TableRow>
                                         </TableBody>
                                     </Table>
@@ -270,39 +277,39 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet }: Char
                                     <TableRow>
                                         <TableCell>Atributo</TableCell>
                                         <TableCell>Valor</TableCell>
-                                        <TableCell>Bônus</TableCell>
+                                        <TableCell>Modificador</TableCell>
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
                                     <TableRow>
-                                        <TableCell>Destreza (DES)</TableCell>
-                                        <TableCell>{charsheet.stats.des}</TableCell>
-                                        <TableCell>{Math.floor((charsheet.stats.des - 10) / 2)}</TableCell>
+                                        <TableCell>Vigor (VIG)</TableCell>
+                                        <TableCell>{charsheet.attributes.vig}</TableCell>
+                                        <TableCell>{charsheet.mods.attributes.vig}</TableCell>
                                     </TableRow>
                                     <TableRow>
-                                        <TableCell>Vigor (VIG)</TableCell>
-                                        <TableCell>{charsheet.stats.vig}</TableCell>
-                                        <TableCell>{Math.floor((charsheet.stats.vig - 10) / 2)}</TableCell>
+                                        <TableCell>Destreza (DES)</TableCell>
+                                        <TableCell>{charsheet.attributes.des}</TableCell>
+                                        <TableCell>{charsheet.mods.attributes.des}</TableCell>
                                     </TableRow>
                                     <TableRow>
                                         <TableCell>Lógica (LOG)</TableCell>
-                                        <TableCell>{charsheet.stats.log}</TableCell>
-                                        <TableCell>{Math.floor((charsheet.stats.log - 10) / 2)}</TableCell>
+                                        <TableCell>{charsheet.attributes.log}</TableCell>
+                                        <TableCell>{charsheet.mods.attributes.log}</TableCell>
                                     </TableRow>
                                     <TableRow>
                                         <TableCell>Sabedoria (SAB)</TableCell>
-                                        <TableCell>{charsheet.stats.sab}</TableCell>
-                                        <TableCell>{Math.floor((charsheet.stats.sab - 10) / 2)}</TableCell>
+                                        <TableCell>{charsheet.attributes.sab}</TableCell>
+                                        <TableCell>{charsheet.mods.attributes.sab}</TableCell>
                                     </TableRow>
                                     <TableRow>
                                         <TableCell>Foco (FOC)</TableCell>
-                                        <TableCell>{charsheet.stats.foc}</TableCell>
-                                        <TableCell>{Math.floor((charsheet.stats.foc - 10) / 2)}</TableCell>
+                                        <TableCell>{charsheet.attributes.foc}</TableCell>
+                                        <TableCell>{charsheet.mods.attributes.foc}</TableCell>
                                     </TableRow>
                                     <TableRow>
                                         <TableCell>Carisma (CAR)</TableCell>
-                                        <TableCell>{charsheet.stats.car}</TableCell>
-                                        <TableCell>{Math.floor((charsheet.stats.car - 10) / 2)}</TableCell>
+                                        <TableCell>{charsheet.attributes.car}</TableCell>
+                                        <TableCell>{charsheet.mods.attributes.car}</TableCell>
                                     </TableRow>
                                 </TableBody>
                             </Table>
@@ -318,21 +325,15 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet }: Char
                                         <TableCell>Perícia</TableCell>
                                         <TableCell>Valor</TableCell>
                                         <TableCell>Atributo</TableCell>
-                                        <TableCell>Total</TableCell>
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
-                                    {Object.entries(charsheet.expertises).map(([ name, expertise ]) => {
-                                        const attrValue = expertise.defaultAttribute 
-                                            ? Math.floor((charsheet.stats[expertise.defaultAttribute as keyof typeof charsheet.stats] - 10) / 2)
-                                            : 0;    
-                                        
+                                    {Object.entries(charsheet.expertises).sort((a, b) => b[1].value - a[1].value).map(([ name, expertise ]) => {
                                         return (
                                             <TableRow key={name}>
                                                 <TableCell>{name}</TableCell>
                                                 <TableCell>{expertise.value}</TableCell>
                                                 <TableCell>{expertise.defaultAttribute?.toUpperCase() || '—'}</TableCell>
-                                                <TableCell>{expertise.value + attrValue}</TableCell>
                                             </TableRow>
                                         );
                                     })}
@@ -538,14 +539,14 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet }: Char
                                     <TableHead>
                                         <TableRow>
                                             <TableCell>Nome</TableCell>
-                                            <TableCell>Element</TableCell>
-                                            <TableCell>MpCompCost de Mana</TableCell>
+                                            <TableCell>Elemento</TableCell>
+                                            <TableCell>Custo de Mana</TableCell>
                                             <TableCell>Nível</TableCell>
                                             <TableCell>Descrição</TableCell>
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>
-                                        {charsheet.spells?.map((spell, index) => (
+                                        {spells?.map((spell, index) => (
                                             <TableRow key={index}>
                                                 <TableCell>
                                                     <Box sx={{ display: 'flex', flexDirection: 'column' }}>
