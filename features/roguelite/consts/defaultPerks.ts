@@ -163,35 +163,35 @@ export const defaultPerks: Record<RarityType, Array<Perk<any>>> = {
             description: 'Quando você está sangrando, causa 2d4 de dano de fogo adicional por ataque.',
             rarity: 'Incomum',
             perkType: PerkTypeEnum.SKILL,
-            weight: 25,
+            weight: 25
         },
         {
             name: 'Resiliência Congelada',
             description: 'Você se move normalmente mesmo sob efeito de congelamento, mas perde -3 LP por mada movimento.',
             rarity: 'Incomum',
             perkType: PerkTypeEnum.SKILL,
-            weight: 20,
+            weight: 20
         },
         {
             name: 'Fúria Concentrada',
             description: 'Quando está com medo, ganha +3 em ataques mas não pode fugir do combate.',
             rarity: 'Incomum',
             perkType: PerkTypeEnum.SKILL,
-            weight: 15,
+            weight: 15
         },
         {
             name: 'Reciclagem Mágica',
             description: 'Magias de nível 1 ou inferiores que falham retornam 50% do custo de mana.',
             rarity: 'Incomum',
             perkType: PerkTypeEnum.SKILL,
-            weight: 20,
+            weight: 20
         },
         {
             name: 'Precisão Cirúrgica',
             description: 'Críticos com armas de precisão (Rifle de Atirador e Arco) causam sangramento simples',
             rarity: 'Incomum',
             perkType: PerkTypeEnum.SKILL,
-            weight: 20,
+            weight: 20
         },
         {
             name: 'Sinergia de Destreza',
@@ -329,63 +329,63 @@ export const defaultPerks: Record<RarityType, Array<Perk<any>>> = {
             description: 'Ao liberar, ganhe PV temporários e dano extra de Raio em ataques corpo-a-corpo. 5 PV e +1d6 de dano POR Nível de Mantra acumulado.',
             rarity: 'Raro',
             perkType: PerkTypeEnum.SKILL,
-            weight: 12,
+            weight: 12
         },
         {
             name: 'Mantra de Agni',
             description: 'Ao liberar, cria explosão de fogo sagrado. 3d8 de dano multiplicado pelos Níveis de Mantra acumulados em área.',
             rarity: 'Raro',
             perkType: PerkTypeEnum.SKILL,
-            weight: 12,
+            weight: 12
         },
         {
             name: 'Mantra de Shanti',
             description: 'Ao liberar, onda de energia calmingante. Inimigos fazem teste de Vontade. Se falharem, ficam Atordoados por rodadas igual aos Níveis de Mantra.',
             rarity: 'Raro',
             perkType: PerkTypeEnum.SKILL,
-            weight: 12,
+            weight: 12
         },
         {
             name: 'Com Sorte',
             description: 'Você pode rerolar os perks que vieram uma vez toda vez que for obter uma recompensa',
             rarity: 'Raro',
             perkType: PerkTypeEnum.BONUS,
-            weight: 40,
+            weight: 40
         },
         {
             name: 'Corpo em Chamas',
             description: 'Você se torna imune a queimadura e inimigos que o atacarem sofrem 2d6 de dano de fogo.',
             rarity: 'Raro',
             perkType: PerkTypeEnum.SKILL,
-            weight: 25,
+            weight: 25
         },
         {
             name: 'Mente Fria',
             description: 'Quando congelado, ganha +5 em testes mentais mas não pode realizar ações físicas.',
             rarity: 'Raro',
             perkType: PerkTypeEnum.SKILL,
-            weight: 20,
+            weight: 20
         },
         {
             name: 'Canalizador de Dor',
             description: 'Converta 50% do dano recebido em bônus de ataque no próximo turno (máximo +10).',
             rarity: 'Raro',
             perkType: PerkTypeEnum.SKILL,
-            weight: 15,
+            weight: 15
         },
         {
             name: 'Adaptador Rápido',
             description: 'Reduz duração de estados negativos em 1 turno, mas estados positivos duram 1 turno a menos.',
             rarity: 'Raro',
             perkType: PerkTypeEnum.SKILL,
-            weight: 20,
+            weight: 20
         },
         {
-            name: "Evolução Elemental",
-            description: "Desbloqueia o estágio 2 ou 3 de uma magia selecionada.",
+            name: 'Evolução Elemental',
+            description: 'Desbloqueia o estágio 2 ou 3 de uma magia selecionada.',
             rarity: 'Raro',
             perkType: PerkTypeEnum.BONUS,
-            weight: 75,
+            weight: 75
         },
         {
             name: 'Mestre de Perícias',
@@ -413,7 +413,7 @@ export const defaultPerks: Record<RarityType, Array<Perk<any>>> = {
             description: 'Ao escolher, dá o acessório "{accessory.toUpperCase()}".',
             rarity: 'Raro',
             perkType: PerkTypeEnum.EXPERTISE,
-            weight: 30,
+            weight: 30
         },
         {
             name: 'Substituição de Perícias',
@@ -442,7 +442,7 @@ export const defaultPerks: Record<RarityType, Array<Perk<any>>> = {
             rarity: 'Épico',
             perkType: PerkTypeEnum.BONUS,
             weight: 25
-        },
+        }
     ],
     Épico: [
         {
@@ -450,35 +450,35 @@ export const defaultPerks: Record<RarityType, Array<Perk<any>>> = {
             description: 'Enquanto canaliza Mantra, aliados a até 5m ganham +2 em testes de RES. Física e regeneram 1d4 PV por turno.',
             rarity: 'Épico',
             perkType: PerkTypeEnum.SKILL,
-            weight: 8,
+            weight: 8
         },
         {
             name: 'Indecisão',
             description: 'Períodos de escolha agora contém 6 vantagens ao invés de 5.',
             rarity: 'Épico',
             perkType: PerkTypeEnum.BONUS,
-            weight: 30,
+            weight: 30
         },
         {
             name: 'Foco Inabalável',
             description: 'Ganhe +5 em testes de Concentração para manter Mantra. Enquanto canaliza, ganhe +2 em Reflexos e RES. Mental.',
             rarity: 'Épico',
             perkType: PerkTypeEnum.SKILL,
-            weight: 8,
+            weight: 8
         },
         {
             name: 'Conversor Vital',
             description: 'Uma vez por turno, pode converter 10 LP extras em 5 MP extras ou 2 AP extras. A conversão preserva as regras de decaimento originais.',
             rarity: 'Épico',
             perkType: PerkTypeEnum.SKILL,
-            weight: 15,
+            weight: 15
         },
         {
             name: 'Metamorfose Elemental',
             description: 'Ao sofrer dano elemental, ganha resistência a esse elemento (Recebe metade do dano) por 3 turnos, mas vulnerabilidade ao oposto.',
             rarity: 'Épico',
             perkType: PerkTypeEnum.SKILL,
-            weight: 25,
+            weight: 25
         },
         {
             name: 'Sintetizador de Estados',
@@ -500,7 +500,7 @@ export const defaultPerks: Record<RarityType, Array<Perk<any>>> = {
             description: 'Cada magia conjurada aumenta o dano da próxima em +10%, acumulando até +50%.',
             rarity: 'Épico',
             perkType: PerkTypeEnum.SKILL,
-            weight: 20,
+            weight: 20
         },
         {
             name: 'Regeneração Celular',
@@ -524,7 +524,7 @@ export const defaultPerks: Record<RarityType, Array<Perk<any>>> = {
             perkType: PerkTypeEnum.SKILL,
             weight: 20
         },
-         {
+        {
             name: 'Evolução Elemental II',
             description: 'Desbloqueia o estágio "MAESTRIA" de uma magia nível 4.',
             rarity: 'Épico',
@@ -560,7 +560,7 @@ export const defaultPerks: Record<RarityType, Array<Perk<any>>> = {
                     description: 'Duas perícias com resultados mínimos de 10'
                 }
             ]
-        },
+        }
     ],
     Lendário: [
         {
@@ -589,14 +589,14 @@ export const defaultPerks: Record<RarityType, Array<Perk<any>>> = {
             description: 'Reduz todo dano recebido em -4 pontos e ganha +30 de vida máxima. Inimigos têm 50% de chance de atacar você em vez de aliados.',
             rarity: 'Lendário',
             perkType: PerkTypeEnum.STATS,
-            weight: 25,
+            weight: 25
         },
         {
             name: 'Muralha Viva',
             description: 'Você pode se tornar imóvel e impassável por 1 minuto. Durante este tempo, você recebe -15 dano mas não pode atacar ou se mover.',
             rarity: 'Lendário',
             perkType: PerkTypeEnum.SKILL,
-            weight: 20,
+            weight: 20
         },
         {
             name: 'Guardião Supremo',
@@ -611,7 +611,7 @@ export const defaultPerks: Record<RarityType, Array<Perk<any>>> = {
             rarity: 'Lendário',
             perkType: PerkTypeEnum.SKILL,
             weight: 20
-        },
+        }
     ],
     Único: [
         {
@@ -664,7 +664,7 @@ export const defaultPerks: Record<RarityType, Array<Perk<any>>> = {
                 }
             ]
         },
-         {
+        {
             name: 'Nexus Vital',
             description: '50% do dano que você sofre é redistribuído igualmente entre todos os inimigos em 10m.',
             rarity: 'Lendário',
@@ -706,7 +706,7 @@ export const defaultPerks: Record<RarityType, Array<Perk<any>>> = {
                     description: '+2 em todas as 38 perícias'
                 }
             ]
-        },
+        }
     ],
     Mágico: [
         {
@@ -756,7 +756,7 @@ export const defaultPerks: Record<RarityType, Array<Perk<any>>> = {
                     description: 'Sofre 25% do dano das próprias magias'
                 }
             ]
-        },
+        }
     ],
     Amaldiçoado: [
         {
@@ -764,7 +764,7 @@ export const defaultPerks: Record<RarityType, Array<Perk<any>>> = {
             description: 'Quando abaixo de 25% de vida, todos os seus ataques são críticos automaticamente, mas você morre se receber qualquer dano.',
             rarity: 'Lendário',
             perkType: PerkTypeEnum.SKILL,
-            weight: 25,
+            weight: 25
         },
         {
             name: 'Toque Vampírico',
@@ -934,7 +934,7 @@ export const defaultPerks: Record<RarityType, Array<Perk<any>>> = {
                 }
             ]
         }
-    ],
+    ]
 }
 
 /**

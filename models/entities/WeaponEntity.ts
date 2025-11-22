@@ -1,4 +1,4 @@
-import { Collection } from "fireorm";
+import { Collection } from 'fireorm';
 
 @Collection('weapons')
 export class WeaponEntity {
@@ -22,13 +22,13 @@ export class WeaponEntity {
         critChance: number;
         effectType: string;
     };
+
     weight: number;
     value: number;
     quantity: number;
     space?: string;
     rogueliteRarity?: string;
     levelRequired?: number;
-    
 
     constructor(weapon?: WeaponEntity) {
         Object.assign(this, weapon);

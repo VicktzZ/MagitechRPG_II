@@ -94,7 +94,7 @@ export function PerkCard({
     armor,
     attributes
 }: PerkCardProps) {
-    const borderColor = useMemo(() => rarityColor[rarity], [rarity])
+    const borderColor = useMemo(() => rarityColor[rarity], [ rarity ])
     const ref = useRef<HTMLDivElement>(null)
 
     const onMove: React.MouseEventHandler<HTMLDivElement> = e => {
@@ -349,18 +349,18 @@ export function PerkCard({
                                         {(weapon.effect as any)?.originalValue || weapon.effect?.value || '-'}
                                         {(weapon.effect as any)?.damageBonus &&
                                             (weapon.effect as any).damageBonus > 0 && (
-                                                <Typography
-                                                    component="span"
-                                                    sx={{
-                                                        color: '#4ade80',
-                                                        fontSize: '0.75rem',
-                                                        ml: 0.5,
-                                                        fontWeight: 600
-                                                    }}
-                                                >
+                                            <Typography
+                                                component="span"
+                                                sx={{
+                                                    color: '#4ade80',
+                                                    fontSize: '0.75rem',
+                                                    ml: 0.5,
+                                                    fontWeight: 600
+                                                }}
+                                            >
                                                     (+{(weapon.effect as any).damageBonus})
-                                                </Typography>
-                                            )}
+                                            </Typography>
+                                        )}
                                     </Typography>
                                 </Box>
                             </Grid>
@@ -707,98 +707,98 @@ export function PerkCard({
                     perkType !== PerkTypeEnum.ARMOR &&
                     attributes &&
                     attributes.length > 0 && (
-                        <Box sx={{ mt: 1 }}>
-                            {/* Seção especial para cards de perícia com bônus */}
-                            {(attributes as any).some((attr: any) => attr.label === 'Bônus') && (
-                                <Box sx={{ mb: 1 }}>
+                    <Box sx={{ mt: 1 }}>
+                        {/* Seção especial para cards de perícia com bônus */}
+                        {(attributes as any).some((attr: any) => attr.label === 'Bônus') && (
+                            <Box sx={{ mb: 1 }}>
+                                <Typography
+                                    variant="caption"
+                                    sx={{
+                                        color: borderColor,
+                                        fontWeight: 700,
+                                        fontSize: '0.7rem',
+                                        textTransform: 'uppercase',
+                                        letterSpacing: 0.5,
+                                        mb: 0.5
+                                    }}
+                                >
+                                        Bônus de Perícia
+                                </Typography>
+                                <Box
+                                    sx={{
+                                        px: 1,
+                                        py: 0.75,
+                                        borderRadius: 1,
+                                        border: `2px solid ${borderColor}`,
+                                        bgcolor: `${borderColor}15`,
+                                        textAlign: 'center',
+                                        mb: 1
+                                    }}
+                                >
+                                    <Typography
+                                        variant="h6"
+                                        sx={{
+                                            color: '#ffffff',
+                                            fontWeight: 800,
+                                            fontSize: '1.1rem',
+                                            textShadow: `0 0 10px ${borderColor}`
+                                        }}
+                                    >
+                                        {(attributes as any).find((attr: any) => attr.label === 'Bônus')?.value}
+                                    </Typography>
                                     <Typography
                                         variant="caption"
                                         sx={{
-                                            color: borderColor,
-                                            fontWeight: 700,
-                                            fontSize: '0.7rem',
-                                            textTransform: 'uppercase',
-                                            letterSpacing: 0.5,
-                                            mb: 0.5
+                                            color: '#e0e0e0',
+                                            fontSize: '0.65rem',
+                                            mt: 0.25
                                         }}
                                     >
-                                        Bônus de Perícia
-                                    </Typography>
-                                    <Box
-                                        sx={{
-                                            px: 1,
-                                            py: 0.75,
-                                            borderRadius: 1,
-                                            border: `2px solid ${borderColor}`,
-                                            bgcolor: `${borderColor}15`,
-                                            textAlign: 'center',
-                                            mb: 1
-                                        }}
-                                    >
-                                        <Typography
-                                            variant="h6"
-                                            sx={{
-                                                color: '#ffffff',
-                                                fontWeight: 800,
-                                                fontSize: '1.1rem',
-                                                textShadow: `0 0 10px ${borderColor}`
-                                            }}
-                                        >
-                                            {(attributes as any).find((attr: any) => attr.label === 'Bônus')?.value}
-                                        </Typography>
-                                        <Typography
-                                            variant="caption"
-                                            sx={{
-                                                color: '#e0e0e0',
-                                                fontSize: '0.65rem',
-                                                mt: 0.25
-                                            }}
-                                        >
                                             Adicionado a uma perícia aleatória
-                                        </Typography>
-                                    </Box>
+                                    </Typography>
                                 </Box>
-                            )}
+                            </Box>
+                        )}
 
-                            <Grid container spacing={0.5} columns={{ xs: 8, sm: 12 }}>
-                                {attributes
-                                    .filter(attr => attr.label !== 'Bônus') // Remove bônus da lista geral
-                                    .map((attr, i) => (
-                                        <Grid key={i} item xs={4} sm={4} md={4}>
-                                            <Box
+                        <Grid container spacing={0.5} columns={{ xs: 8, sm: 12 }}>
+                            {attributes
+                                .filter(attr => attr.label !== 'Bônus') // Remove bônus da lista geral
+                                .map((attr, i) => (
+                                    <Grid key={i} item xs={4} sm={4} md={4}>
+                                        <Box
+                                            sx={{
+                                                px: 0.75,
+                                                py: 0.5,
+                                                borderRadius: 1,
+                                                border: `1px solid ${borderColor}55`,
+                                                bgcolor: `${borderColor}12`
+                                            }}
+                                        >
+                                            <Typography
+                                                variant="caption"
                                                 sx={{
-                                                    px: 0.75,
-                                                    py: 0.5,
-                                                    borderRadius: 1,
-                                                    border: `1px solid ${borderColor}55`,
-                                                    bgcolor: `${borderColor}12`
+                                                    color: borderColor,
+                                                    fontWeight: 700
                                                 }}
                                             >
-                                                <Typography
-                                                    variant="caption"
-                                                    sx={{
-                                                        color: borderColor,
-                                                        fontWeight: 700
-                                                    }}
-                                                >
-                                                    {attr.label}
-                                                </Typography>
-                                                <Typography
-                                                    variant="body2"
-                                                    sx={{
-                                                        color: '#e8e8e8',
-                                                        fontWeight: 600,
-                                                        fontSize: '0.8rem'
-                                                    }}
-                                                >
-                                                    {attr.value}
-                                                </Typography>
-                                            </Box>
-                                        </Grid>
-                                    ))}
-                            </Grid>
-                        </Box>
-                    )}
+                                                {attr.label}
+                                            </Typography>
+                                            <Typography
+                                                variant="body2"
+                                                sx={{
+                                                    color: '#e8e8e8',
+                                                    fontWeight: 600,
+                                                    fontSize: '0.8rem'
+                                                }}
+                                            >
+                                                {attr.value}
+                                            </Typography>
+                                        </Box>
+                                    </Grid>
+                                ))}
+                        </Grid>
+                    </Box>
+                )}
             </CardContent>
         </Card>
     )

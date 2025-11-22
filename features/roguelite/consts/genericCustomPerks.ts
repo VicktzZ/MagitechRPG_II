@@ -3,77 +3,77 @@ import type { Perk } from '../models';
 
 const curaInstantanea = [
     {
-        "name": "Cura instantânea",
-        "description": "Cura 10 de LP.",
-        "rarity": "Comum",
-        "perkType": PerkTypeEnum.STATS,
-        "weight": 70,
-        "effects": [
+        'name': 'Cura instantânea',
+        'description': 'Cura 10 de LP.',
+        'rarity': 'Comum',
+        'perkType': PerkTypeEnum.STATS,
+        'weight': 70,
+        'effects': [
             {
-                "type": "heal",
-                "target": "lp",
-                "value": 10,
-                "description": "Cura instantânea de 10 pontos de vida"
+                'type': 'heal',
+                'target': 'lp',
+                'value': 10,
+                'description': 'Cura instantânea de 10 pontos de vida'
             }
         ]
     },
     {
-        "name": "Cura instantânea II",
-        "description": "Cura 15 de LP.",
-        "rarity": "Incomum",
-        "perkType": PerkTypeEnum.STATS,
-        "weight": 60,
-        "effects": [
+        'name': 'Cura instantânea II',
+        'description': 'Cura 15 de LP.',
+        'rarity': 'Incomum',
+        'perkType': PerkTypeEnum.STATS,
+        'weight': 60,
+        'effects': [
             {
-                "type": "heal",
-                "target": "lp",
-                "value": 15,
-                "description": "Cura instantânea de 15 pontos de vida"
+                'type': 'heal',
+                'target': 'lp',
+                'value': 15,
+                'description': 'Cura instantânea de 15 pontos de vida'
             }
         ]
     },
     {
-        "name": "Cura instantânea III",
-        "description": "Cura 20 de LP.",
-        "rarity": "Raro",
-        "perkType": PerkTypeEnum.STATS,
-        "weight": 50,
-        "effects": [
+        'name': 'Cura instantânea III',
+        'description': 'Cura 20 de LP.',
+        'rarity': 'Raro',
+        'perkType': PerkTypeEnum.STATS,
+        'weight': 50,
+        'effects': [
             {
-                "type": "heal",
-                "target": "lp",
-                "value": 20,
-                "description": "Cura instantânea de 20 pontos de vida"
+                'type': 'heal',
+                'target': 'lp',
+                'value': 20,
+                'description': 'Cura instantânea de 20 pontos de vida'
             }
         ]
     },
     {
-        "name": "Cura instantânea IV",
-        "description": "Cura 25 de LP.",
-        "rarity": "Épico",
-        "perkType": PerkTypeEnum.STATS,
-        "weight": 40,
-        "effects": [
+        'name': 'Cura instantânea IV',
+        'description': 'Cura 25 de LP.',
+        'rarity': 'Épico',
+        'perkType': PerkTypeEnum.STATS,
+        'weight': 40,
+        'effects': [
             {
-                "type": "heal",
-                "target": "lp",
-                "value": 25,
-                "description": "Cura instantânea de 25 pontos de vida"
+                'type': 'heal',
+                'target': 'lp',
+                'value': 25,
+                'description': 'Cura instantânea de 25 pontos de vida'
             }
         ]
     },
     {
-        "name": "Cura instantânea V",
-        "description": "Cura 30 de LP.",
-        "rarity": "Lendário",
-        "perkType": PerkTypeEnum.STATS,
-        "weight": 30,
-        "effects": [
+        'name': 'Cura instantânea V',
+        'description': 'Cura 30 de LP.',
+        'rarity': 'Lendário',
+        'perkType': PerkTypeEnum.STATS,
+        'weight': 30,
+        'effects': [
             {
-                "type": "heal",
-                "target": "lp",
-                "value": 30,
-                "description": "Cura instantânea de 30 pontos de vida"
+                'type': 'heal',
+                'target': 'lp',
+                'value': 30,
+                'description': 'Cura instantânea de 30 pontos de vida'
             }
         ]
     }
@@ -81,77 +81,77 @@ const curaInstantanea = [
 
 const manaInstantanea = [
     {
-        "name": "Mana instantânea",
-        "description": "Restaura 5 de MP.",
-        "rarity": "Comum",
-        "perkType": PerkTypeEnum.STATS,
-        "weight": 70,
-        "effects": [
+        'name': 'Mana instantânea',
+        'description': 'Restaura 5 de MP.',
+        'rarity': 'Comum',
+        'perkType': PerkTypeEnum.STATS,
+        'weight': 70,
+        'effects': [
             {
-                "type": "heal",
-                "target": "mp",
-                "value": 5,
-                "description": "Restaura instantânea de 5 pontos de mana"
+                'type': 'heal',
+                'target': 'mp',
+                'value': 5,
+                'description': 'Restaura instantânea de 5 pontos de mana'
             }
         ]
     },
     {
-        "name": "Mana instantânea II",
-        "description": "Restaura 10 de MP.",
-        "rarity": "Incomum",
-        "perkType": PerkTypeEnum.STATS,
-        "weight": 60,
-        "effects": [
+        'name': 'Mana instantânea II',
+        'description': 'Restaura 10 de MP.',
+        'rarity': 'Incomum',
+        'perkType': PerkTypeEnum.STATS,
+        'weight': 60,
+        'effects': [
             {
-                "type": "heal",
-                "target": "mp",
-                "value": 10,
-                "description": "Restaura instantânea de 10 pontos de mana"
+                'type': 'heal',
+                'target': 'mp',
+                'value': 10,
+                'description': 'Restaura instantânea de 10 pontos de mana'
             }
         ]
     },
     {
-        "name": "Mana instantânea III",
-        "description": "Restaura 15 de MP.",
-        "rarity": "Raro",
-        "perkType": PerkTypeEnum.STATS,
-        "weight": 50,
-        "effects": [
+        'name': 'Mana instantânea III',
+        'description': 'Restaura 15 de MP.',
+        'rarity': 'Raro',
+        'perkType': PerkTypeEnum.STATS,
+        'weight': 50,
+        'effects': [
             {
-                "type": "heal",
-                "target": "mp",
-                "value": 15,
-                "description": "Restaura instantânea de 15 pontos de mana"
+                'type': 'heal',
+                'target': 'mp',
+                'value': 15,
+                'description': 'Restaura instantânea de 15 pontos de mana'
             }
         ]
     },
     {
-        "name": "Mana instantânea IV",
-        "description": "Restaura 20 de MP.",
-        "rarity": "Épico",
-        "perkType": PerkTypeEnum.STATS,
-        "weight": 40,
-        "effects": [
+        'name': 'Mana instantânea IV',
+        'description': 'Restaura 20 de MP.',
+        'rarity': 'Épico',
+        'perkType': PerkTypeEnum.STATS,
+        'weight': 40,
+        'effects': [
             {
-                "type": "heal",
-                "target": "mp",
-                "value": 20,
-                "description": "Restaura instantânea de 20 pontos de mana"
+                'type': 'heal',
+                'target': 'mp',
+                'value': 20,
+                'description': 'Restaura instantânea de 20 pontos de mana'
             }
         ]
     },
     {
-        "name": "Mana instantânea V",
-        "description": "Restaura 25 de MP.",
-        "rarity": "Lendário",
-        "perkType": PerkTypeEnum.STATS,
-        "weight": 30,
-        "effects": [
+        'name': 'Mana instantânea V',
+        'description': 'Restaura 25 de MP.',
+        'rarity': 'Lendário',
+        'perkType': PerkTypeEnum.STATS,
+        'weight': 30,
+        'effects': [
             {
-                "type": "heal",
-                "target": "mp",
-                "value": 25,
-                "description": "Restaura instantânea de 25 pontos de mana"
+                'type': 'heal',
+                'target': 'mp',
+                'value': 25,
+                'description': 'Restaura instantânea de 25 pontos de mana'
             }
         ]
     }
@@ -159,77 +159,77 @@ const manaInstantanea = [
 
 const acrescimoFinanceiro = [
     {
-        "name": "Acréscimo Financeiro",
-        "description": "Adiciona +10 de dinheiro",
-        "rarity": "Comum",
-        "perkType": PerkTypeEnum.BONUS,
-        "weight": 75,
-        "effects": [
+        'name': 'Acréscimo Financeiro',
+        'description': 'Adiciona +10 de dinheiro',
+        'rarity': 'Comum',
+        'perkType': PerkTypeEnum.BONUS,
+        'weight': 75,
+        'effects': [
             {
-                "type": "add",
-                "target": "money",
-                "value": 10,
-                "description": "Adiciona +10 de dinheiro"
+                'type': 'add',
+                'target': 'money',
+                'value': 10,
+                'description': 'Adiciona +10 de dinheiro'
             }
         ]
     },
     {
-        "name": "Acréscimo Financeiro II",
-        "description": "Adiciona +25 de dinheiro",
-        "rarity": "Incomum",
-        "perkType": PerkTypeEnum.BONUS,
-        "weight": 65,
-        "effects": [
+        'name': 'Acréscimo Financeiro II',
+        'description': 'Adiciona +25 de dinheiro',
+        'rarity': 'Incomum',
+        'perkType': PerkTypeEnum.BONUS,
+        'weight': 65,
+        'effects': [
             {
-                "type": "add",
-                "target": "money",
-                "value": 25,
-                "description": "Adiciona +25 de dinheiro"
+                'type': 'add',
+                'target': 'money',
+                'value': 25,
+                'description': 'Adiciona +25 de dinheiro'
             }
         ]
     },
     {
-        "name": "Acréscimo Financeiro III",
-        "description": "Adiciona +50 de dinheiro",
-        "rarity": "Raro",
-        "perkType": PerkTypeEnum.BONUS,
-        "weight": 55,
-        "effects": [
+        'name': 'Acréscimo Financeiro III',
+        'description': 'Adiciona +50 de dinheiro',
+        'rarity': 'Raro',
+        'perkType': PerkTypeEnum.BONUS,
+        'weight': 55,
+        'effects': [
             {
-                "type": "add",
-                "target": "money",
-                "value": 50,
-                "description": "Adiciona +50 de dinheiro"
+                'type': 'add',
+                'target': 'money',
+                'value': 50,
+                'description': 'Adiciona +50 de dinheiro'
             }
         ]
     },
     {
-        "name": "Acréscimo Financeiro IV",
-        "description": "Adiciona +100 de dinheiro",
-        "rarity": "Épico",
-        "perkType": PerkTypeEnum.BONUS,
-        "weight": 45,
-        "effects": [
+        'name': 'Acréscimo Financeiro IV',
+        'description': 'Adiciona +100 de dinheiro',
+        'rarity': 'Épico',
+        'perkType': PerkTypeEnum.BONUS,
+        'weight': 45,
+        'effects': [
             {
-                "type": "add",
-                "target": "money",
-                "value": 100,
-                "description": "Adiciona +100 de dinheiro"
+                'type': 'add',
+                'target': 'money',
+                'value': 100,
+                'description': 'Adiciona +100 de dinheiro'
             }
         ]
     },
     {
-        "name": "Acréscimo Financeiro V",
-        "description": "Adiciona +200 de dinheiro",
-        "rarity": "Lendário",
-        "perkType": PerkTypeEnum.BONUS,
-        "weight": 35,
-        "effects": [
+        'name': 'Acréscimo Financeiro V',
+        'description': 'Adiciona +200 de dinheiro',
+        'rarity': 'Lendário',
+        'perkType': PerkTypeEnum.BONUS,
+        'weight': 35,
+        'effects': [
             {
-                "type": "add",
-                "target": "money",
-                "value": 200,
-                "description": "Adiciona +200 de dinheiro"
+                'type': 'add',
+                'target': 'money',
+                'value': 200,
+                'description': 'Adiciona +200 de dinheiro'
             }
         ]
     }
@@ -315,10 +315,8 @@ const especializacao = [
                 description: 'Aumenta em +5 o bônus de {expertise}'
             }
         ]
-    },
+    }
 ]
-
-
 
 export const genericCustomPerks: Record<string, Perk> = [
     ...manaInstantanea,
@@ -492,7 +490,7 @@ export const genericCustomPerks: Record<string, Perk> = [
         description: 'Coloca todas suas magias no estágio máximo, porém não pode mais atacar com armas.',
         rarity: 'Amaldiçoado',
         perkType: PerkTypeEnum.SKILL,
-        weight: 25,
+        weight: 25
     },
     { 
         name: 'Redução Mágica',
@@ -566,4 +564,3 @@ export const genericCustomPerks: Record<string, Perk> = [
         weight: 40
     }
 ];
-

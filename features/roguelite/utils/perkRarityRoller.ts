@@ -4,10 +4,9 @@ import { defaultItems } from '@constants/defaultItems'
 import { defaultWeapons } from '@constants/defaultWeapons'
 import { skills } from '@constants/skills'
 import { PerkTypeEnum } from '@enums/rogueliteEnum'
-import type { Armor, Item, Weapon } from '@models'
+import type { Armor, Weapon } from '@models'
 import type { RarityType } from '@models/types/string'
-import type { Skill } from '@models/Skill'
-import { Perk } from '../models'
+import { type Perk } from '../models'
 import { defaultPerks } from '../consts/defaultPerks'
 
 // Probabilidades base por raridade (soma 100)
@@ -62,7 +61,7 @@ export function rollRarity(rng: RandomSeed, level?: number): RarityType {
  * @param rng - Função RNG
  * @returns Perk selecionado ou undefined se lista vazia
  */
-function selectPerkByWeight<T>(perks: (() => Perk<T>)[], rng: RandomSeed): Perk<T> | undefined {
+function selectPerkByWeight<T>(perks: Array<() => Perk<T>>, rng: RandomSeed): Perk<T> | undefined {
     if (perks.length === 0) return undefined
     if (perks.length === 1) return perks[0]() // Executa a função para obter o perk
     
@@ -132,9 +131,9 @@ interface PerkFilters {
     types?: PerkTypeEnum[]
 }
 
-export function rollRandomPerks(seed: string, level?: number, filters?: PerkFilters): Perk<any>[] {
+export function rollRandomPerks(seed: string, level?: number, filters?: PerkFilters): Array<Perk<any>> {
     const rng = create(seed)
-    const result: Perk<any>[] = []
+    const result: Array<Perk<any>> = []
 
     // Coleções de todos os itens
     const allWeapons = [
@@ -158,7 +157,7 @@ export function rollRandomPerks(seed: string, level?: number, filters?: PerkFilt
     ].filter(skill => {
         // Se a habilidade não tem nível definido ou o nível do usuário não foi informado,
         // ela pode aparecer normalmente como perk.
-        if (!("level" in skill) || skill.level == null || level == null) return true
+        if (!('level' in skill) || skill.level == null || level == null) return true
 
         // Regra: habilidades com nível superior ao nível do usuário NÃO podem ser sorteadas.
         return skill.level <= level
@@ -193,7 +192,6 @@ export function rollRandomPerks(seed: string, level?: number, filters?: PerkFilt
         const baseItem = allItemsCombined[Math.floor(rng(allItemsCombined.length))]
         let rarity: RarityType
         let processedData = baseItem
-        const perk = new Perk()
 
         // Regra 1: Habilidades de "Linhagem", "Profissão" ou "Raça" são sempre "Comum"
         if (baseItem.perkType === PerkTypeEnum.SKILL) {
@@ -236,7 +234,7 @@ export function rollRandomPerks(seed: string, level?: number, filters?: PerkFilt
                 case 20:
                     // Restrição: Único só disponível nível ≥10
                     skillRarity = (level != null && level >= 10) ? 'Único' : 
-                                  (level != null && level >= 5) ? 'Lendário' : 'Épico'
+                        (level != null && level >= 5) ? 'Lendário' : 'Épico'
                     break
                 default:
                     // Para outros níveis, usa raridade normal
@@ -363,7 +361,7 @@ export function rollRandomPerks(seed: string, level?: number, filters?: PerkFilt
                 description: skillData.description ?? 'Uma habilidade especial obtida no modo Roguelite.',
                 type: skillData.type,
                 origin: skillData.origin,
-                effects: [expertiseBonus] // Array de números conforme o tipo Skill
+                effects: [ expertiseBonus ] // Array de números conforme o tipo Skill
             }
         })
     }
@@ -420,7 +418,7 @@ function getExpertiseBonus(rarity: RarityType): number {
 /**
  * Verifica se o item tem rogueliteRarity e aplica restrições de nível
  */
-function getItemRarity(baseItem: any, rolledRarity: RarityType, userLevel?: number): RarityType {
+function getItemRarity(baseItem: any, rolledRarity: RarityType ): RarityType {
     // Se o item não tem rogueliteRarity, usa a raridade rolada
     if (!baseItem.rogueliteRarity) return rolledRarity
     

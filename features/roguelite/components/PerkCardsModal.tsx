@@ -11,7 +11,6 @@ import { Box, Button, FormControl, Grid, IconButton, InputLabel, MenuItem, Selec
 import { useMemo, useState } from 'react'
 import type { RarityType } from '@models/types/string'
 import PerkCard from './PerkCard'
-import { Weapon } from '@components/charsheet/subcomponents/Weapon'
 
 interface PerkCardsModalProps {
     open: boolean
@@ -20,13 +19,13 @@ interface PerkCardsModalProps {
 }
 
 export function PerkCardsModal({ open, seed, level }: PerkCardsModalProps) {
-    const [rerollKey, setRerollKey] = useState(0)
-    const [isVisible, setIsVisible] = useState(true)
-    const [selectedRarity, setSelectedRarity] = useState<RarityType | ''>('')
-    const [selectedType, setSelectedType] = useState<PerkTypeEnum | ''>('')
+    const [ rerollKey, setRerollKey ] = useState(0)
+    const [ isVisible, setIsVisible ] = useState(true)
+    const [ selectedRarity, setSelectedRarity ] = useState<RarityType | ''>('')
+    const [ selectedType, setSelectedType ] = useState<PerkTypeEnum | ''>('')
 
     // Opções de raridade disponíveis
-    const rarityOptions: RarityType[] = ['Comum', 'Incomum', 'Raro', 'Épico', 'Lendário', 'Único', 'Mágico', 'Amaldiçoado', 'Especial']
+    const rarityOptions: RarityType[] = [ 'Comum', 'Incomum', 'Raro', 'Épico', 'Lendário', 'Único', 'Mágico', 'Amaldiçoado', 'Especial' ]
 
     // Opções de tipo disponíveis
     const typeOptions = Object.values(PerkTypeEnum)
@@ -36,12 +35,12 @@ export function PerkCardsModal({ open, seed, level }: PerkCardsModalProps) {
 
         // Constrói filtros baseados nas seleções
         const filters = {
-            rarities: selectedRarity ? [selectedRarity] : undefined,
-            types: selectedType ? [selectedType] : undefined
+            rarities: selectedRarity ? [ selectedRarity ] : undefined,
+            types: selectedType ? [ selectedType ] : undefined
         }
 
         return rollRandomPerks(finalSeed, level, filters)
-    }, [seed, rerollKey, level, selectedRarity, selectedType])
+    }, [ seed, rerollKey, level, selectedRarity, selectedType ])
 
     const handleReroll = () => {
         setRerollKey(prev => prev + 1)
@@ -53,14 +52,14 @@ export function PerkCardsModal({ open, seed, level }: PerkCardsModalProps) {
 
     const getIcon = (rarity: string) => {
         switch (iconForRarity(rarity as any)) {
-            case 'AutoAwesome':
-                return <AutoAwesomeIcon />
-            case 'LocalFireDepartment':
-                return <LocalFireDepartmentIcon />
-            case 'Whatshot':
-                return <WhatshotIcon />
-            default:
-                return <AutoAwesomeIcon />
+        case 'AutoAwesome':
+            return <AutoAwesomeIcon />
+        case 'LocalFireDepartment':
+            return <LocalFireDepartmentIcon />
+        case 'Whatshot':
+            return <WhatshotIcon />
+        default:
+            return <AutoAwesomeIcon />
         }
     }
 
@@ -272,7 +271,7 @@ export function PerkCardsModal({ open, seed, level }: PerkCardsModalProps) {
                                             subtitle={(() => {
                                                 switch (perk.perkType) {
                                                 case PerkTypeEnum.ITEM:
-                                                    const itemKind = (perk.data as any)?.kind;
+                                                    const itemKind = (perk.data )?.kind;
                                                     if (itemKind === 'Padrão') {
                                                         return 'Item Padrão';
                                                     }
@@ -300,7 +299,7 @@ export function PerkCardsModal({ open, seed, level }: PerkCardsModalProps) {
                                                     return `Habilidade de ${skillType}`;
                                                 default:
                                                     return perk.perkType;
-                                            }
+                                                }
                                             })()}
                                             description={perk.description}
                                             rarity={perk.rarity}
@@ -308,10 +307,10 @@ export function PerkCardsModal({ open, seed, level }: PerkCardsModalProps) {
                                             element={undefined}
                                             icon={getIcon(perk.rarity)}
                                             weapon={
-                                                perk.perkType === PerkTypeEnum.WEAPON ? (perk.data as any) : undefined
+                                                perk.perkType === PerkTypeEnum.WEAPON ? (perk.data ) : undefined
                                             }
                                             armor={
-                                                perk.perkType === PerkTypeEnum.ARMOR ? (perk.data as any) : undefined
+                                                perk.perkType === PerkTypeEnum.ARMOR ? (perk.data ) : undefined
                                             }
                                             attributes={
                                                 perk.perkType === PerkTypeEnum.SKILL
@@ -319,34 +318,34 @@ export function PerkCardsModal({ open, seed, level }: PerkCardsModalProps) {
                                                         const attrs = [
                                                             {
                                                                 label: 'Tipo',
-                                                                value: (perk.data as any)?.type === 'Habilidade' ? 'Bônus' : (perk.data as any)?.type ?? 'Bônus'
+                                                                value: (perk.data )?.type === 'Habilidade' ? 'Bônus' : (perk.data )?.type ?? 'Bônus'
                                                             }
                                                         ];
 
                                                         // Adiciona origem apenas se existir
-                                                        if ((perk.data as any)?.origin) {
+                                                        if ((perk.data )?.origin) {
                                                             attrs.push({
                                                                 label: 'Origem',
-                                                                value: (perk.data as any).origin
+                                                                value: (perk.data ).origin
                                                             });
                                                         }
 
                                                         // Adiciona bônus se aplicável
-                                                        if ((perk.data as any)?.type === 'Bônus' &&
-                                                            (perk.data as any)?.effects &&
-                                                            (perk.data as any)?.effects.length > 0) {
+                                                        if ((perk.data )?.type === 'Bônus' &&
+                                                            (perk.data )?.effects &&
+                                                            (perk.data )?.effects.length > 0) {
                                                             attrs.push({
                                                                 label: 'Bônus',
-                                                                value: `+${(perk.data as any)?.effects[0]
-                                                                    } perícia`
+                                                                value: `+${(perk.data )?.effects[0]
+                                                                } perícia`
                                                             });
                                                         }
 
                                                         // Adiciona nível se existir
-                                                        if ((perk.data as any)?.level) {
+                                                        if ((perk.data )?.level) {
                                                             attrs.push({
                                                                 label: 'Nível',
-                                                                value: (perk.data as any).level
+                                                                value: (perk.data ).level
                                                             });
                                                         }
 
@@ -357,26 +356,26 @@ export function PerkCardsModal({ open, seed, level }: PerkCardsModalProps) {
                                                             const attrs = [];
 
                                                             // Adiciona tipo se existir
-                                                            if ((perk.data as any)?.kind) {
+                                                            if ((perk.data )?.kind) {
                                                                 attrs.push({
                                                                     label: 'Tipo',
-                                                                    value: (perk.data as any).kind
+                                                                    value: (perk.data ).kind
                                                                 });
                                                             }
 
                                                             // Adiciona espaço se for Equipamento e existir
-                                                            if ((perk.data as any)?.kind === 'Equipamento' && (perk.data as any)?.space) {
+                                                            if ((perk.data )?.kind === 'Equipamento' && (perk.data )?.space) {
                                                                 attrs.push({
                                                                     label: 'Espaço',
-                                                                    value: (perk.data as any).space
+                                                                    value: (perk.data ).space
                                                                 });
                                                             }
 
                                                             // Adiciona peso se existir
-                                                            if ((perk.data as any)?.weight !== undefined) {
+                                                            if ((perk.data )?.weight !== undefined) {
                                                                 attrs.push({
                                                                     label: 'Peso',
-                                                                    value: `${(perk.data as any).weight} kg`
+                                                                    value: `${(perk.data ).weight} kg`
                                                                 });
                                                             }
 

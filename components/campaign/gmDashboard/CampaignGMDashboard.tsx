@@ -20,8 +20,6 @@ import {
 import { blue, green, orange, purple } from '@mui/material/colors';
 import { type ReactElement, useMemo } from 'react';
 import PlayerCard from './PlayerCard';
-import PerkCards from '../../../features/roguelite/components/roguelite/PerkCards';
-import PerkCardsModal from '../../../features/roguelite/components/PerkCardsModal';
 
 interface SectionProps {
     title: string;

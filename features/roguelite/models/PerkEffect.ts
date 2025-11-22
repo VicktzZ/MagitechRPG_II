@@ -1,8 +1,7 @@
 import { IsNumber, IsString, IsOptional } from 'class-validator';
-import type { Charsheet } from '@models/entities/Charsheet';
 
 // Tipo que representa todos os caminhos possíveis de propriedades do Charsheet
-type CharsheetPaths = {
+interface CharsheetPaths {
     // Propriedades diretas do BaseCharsheet
     id: string;
     playerName: string;
@@ -96,7 +95,7 @@ type CharsheetPaths = {
             ap: number;
         }
     }>;
-};
+}
 
 export class PerkEffect {
     @IsString() type: 'heal' | 'damage' | 'add' | 'set' | 'multiply' | 'percentage';
