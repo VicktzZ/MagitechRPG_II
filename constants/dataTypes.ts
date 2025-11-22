@@ -13,7 +13,12 @@ const damages: DamageType[] = [
     'Eletricidade',
     'Trevas',
     'Luz',
-    'Não-elemental'
+    'Não-elemental',
+    'Sangue',
+    'Radiação',
+    'Tóxico',
+    'Psíquico',
+    'Vácuo'
 ]
 
 const weaponKind = [
@@ -129,6 +134,7 @@ const weaponScientificAccessories: WeaponAccesoriesType[] = [
     'Pente estendido',
     'Ponta de tungstênio',
     'Ponta oca',
+    'Polímero Treliçado',
     'Silenciador'
 ]
 
@@ -136,6 +142,7 @@ const weaponMagicalAccessories: WeaponAccesoriesType[] = [
     'CNT',
     'Chip mágico',
     'Correntes mágicas',
+    'Polímero Treliçado',
     'Switch Elemental',
     'Repetidor',
     'Paralisante',

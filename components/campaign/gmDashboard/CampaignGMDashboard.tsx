@@ -20,8 +20,9 @@ import {
 import { blue, green, orange, purple } from '@mui/material/colors';
 import { type ReactElement, useMemo } from 'react';
 import PlayerCard from './PlayerCard';
+import PerkCards from '../../../features/roguelite/components/roguelite/PerkCards';
+import PerkCardsModal from '../../../features/roguelite/components/PerkCardsModal';
 
-// Componente Section reutilizável
 interface SectionProps {
     title: string;
     icon: React.ReactElement;
@@ -258,9 +259,11 @@ export default function CampaignGMDashboard(): ReactElement | null {
                             )}
                         </Box>
                     </Section>
+
+                    {/* teste */}
+                    {/* <PerkCards /> */}
                 </Stack>
             </Box>
-
             <Snackbar />
         </Box>
     )

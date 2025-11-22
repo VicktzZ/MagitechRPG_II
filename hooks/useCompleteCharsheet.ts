@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/prefer-nullish-coalescing */
 import type { CharsheetDTO, SpellDTO } from '@models/dtos';
-import { QueryBuilder } from '@utils/queryBuilder';
 import { useMemo } from 'react';
 import { useFirestoreRealtime } from './useFirestoreRealtime';
+import { useQuery } from '@tanstack/react-query';
 
 interface UseCompleteCharsheetOptions {
     charsheetId: string;
@@ -19,14 +19,18 @@ export function useCompleteCharsheet({
     charsheetId,
     enabled = true
 }: UseCompleteCharsheetOptions): UseCompleteCharsheetResult {
-    const { data, loading: charsheetLoading, error: charsheetError } = useFirestoreRealtime('charsheet', {
-        filters: [ QueryBuilder.equals('id', charsheetId) ]
+    const { data, isPending: charsheetLoading, error: charsheetError } = useQuery({
+        queryKey: [ 'charsheet', charsheetId ],
+        queryFn: async () => {
+            const response = await fetch(`/api/charsheet/${charsheetId}`);
+            if (!response.ok) throw new Error('Failed to fetch charsheet');
+            return await response.json();
+        },
+        enabled: enabled && !!charsheetId
     });
 
-    const charsheet = useMemo(() => data?.[0] || null, [ data ]);
+    const charsheet = useMemo(() => data || null, [ data ]);
 
-    // Spells podem vir como objetos completos ou apenas IDs. Separa para buscar só o que falta.
-    // Pode vir como SpellDTO[] OU string[]; tratamos como unknown[] e refinamos
     const spellsInput = useMemo<unknown[]>(() => (charsheet?.spells as unknown[]) ?? [], [ charsheet?.spells ]);
     const spellObjects = useMemo<SpellDTO[]>(
         () => spellsInput.filter((s: any): s is SpellDTO => typeof s === 'object' && s !== null && 'name' in s),
@@ -49,8 +53,6 @@ export function useCompleteCharsheet({
         enabled: enabled && spellIdsToFetch.length > 0 && spellIdsToFetch.length <= 10
     });
 
-    // Powers (skills.powers) também podem vir como objetos ou IDs
-    // Pode vir como Array<Partial<Skill>> OU string[]; tratamos como unknown[] e refinamos
     const powersInput = useMemo<unknown[]>(() => (charsheet?.skills?.powers as unknown[]) ?? [], [ charsheet?.skills?.powers ]);
     const powerObjects = useMemo<any[]>(
         () => powersInput.filter((p: any): p is any => typeof p === 'object' && p !== null && 'name' in p),
@@ -75,7 +77,7 @@ export function useCompleteCharsheet({
     const completeCharsheet = useMemo((): CharsheetDTO | null => {
         if (!charsheet || !enabled) return null;
 
-        const charsheetWithRelations: CharsheetDTO = { ...charsheet } as any;
+        const charsheetWithRelations: CharsheetDTO = { ...charsheet };
 
         // Monta spells finais: mantém objetos existentes e adiciona os buscados; remove IDs não resolvidos
         {

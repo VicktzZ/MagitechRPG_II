@@ -8,7 +8,7 @@ import { useSnackbar } from 'notistack';
 import { FormProvider, useForm } from 'react-hook-form';
 import { FormMultiSelect, FormSelect, FormTextField } from './fields';
 import InventoryCreateModalWrapper, { mapArrayToOptions, type ItemFormData } from './InventoryCreateModalWrapper';
-import { deafultWeapons, defaultWeapon } from '@constants/defaultWeapons';
+import { defaultWeapons, defaultWeapon } from '@constants/defaultWeapons';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { weaponSchema,  type WeaponFormFields  } from '@schemas/itemsSchemas';
 import { useCharsheetForm } from '@contexts/CharsheetFormProvider';
@@ -87,16 +87,16 @@ export const InventoryCreateWeaponModal = memo(({
             )
         },
         { header: 'Geral', options: [ { value: 'Nenhum', label: 'Nenhum' } ] },
-        { header: 'Corpo a corpo', options: mapArrayToOptions(deafultWeapons.melee.map(item => item.name).sort() as string[]) },
-        { header: 'Longo alcance', options: mapArrayToOptions(deafultWeapons.ranged.map(item => item.name).sort() as string[]) },
-        { header: 'Mágico', options: mapArrayToOptions(deafultWeapons.magic.map(item => item.name).sort() as string[]) },
-        { header: 'Balística', options: mapArrayToOptions(deafultWeapons.ballistic.map(item => item.name).sort() as string[]) },
-        { header: 'Energia', options: mapArrayToOptions(deafultWeapons.energy.map(item => item.name).sort() as string[]) },
-        { header: 'Especial', options: mapArrayToOptions(deafultWeapons.special.map(item => item.name).sort() as string[]) }
+        { header: 'Corpo a corpo', options: mapArrayToOptions(defaultWeapons.melee.map(item => item.name).sort() as string[]) },
+        { header: 'Longo alcance', options: mapArrayToOptions(defaultWeapons.ranged.map(item => item.name).sort() as string[]) },
+        { header: 'Mágico', options: mapArrayToOptions(defaultWeapons.magic.map(item => item.name).sort() as string[]) },
+        { header: 'Balística', options: mapArrayToOptions(defaultWeapons.ballistic.map(item => item.name).sort() as string[]) },
+        { header: 'Energia', options: mapArrayToOptions(defaultWeapons.energy.map(item => item.name).sort() as string[]) },
+        { header: 'Especial', options: mapArrayToOptions(defaultWeapons.special.map(item => item.name).sort() as string[]) }
     ], [ campaign.custom.items.weapon ]);
 
     const setDefaultWeapon = (weaponName: string) => {
-        const allWeapons = Object.values(deafultWeapons).flat();
+        const allWeapons = Object.values(defaultWeapons).flat();
         const weapon = allWeapons.find(item => item.name === weaponName);
         const campaignWeapon = campaign.custom.items.weapon?.find(item => item.name === weaponName);
         const w = weapon ?? campaignWeapon;

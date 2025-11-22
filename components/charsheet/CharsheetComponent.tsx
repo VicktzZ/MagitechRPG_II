@@ -84,7 +84,7 @@ function Section({ title, icon, children, action, sx }: {
 }
 
 export default function CharsheetComponent(): ReactElement {
-    const form = useFormContext<Charsheet>()
+    const form = useFormContext<CharsheetDTO>()
     const charsheet = form.getValues()
     const { data: session } = useSession()
     const queryClient = useQueryClient()

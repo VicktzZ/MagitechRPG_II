@@ -1077,7 +1077,6 @@ export const skills: {
             }
         ]
     },
-    bonus: [],
     occupation: [
         {
             'name': 'Memorável',
@@ -1254,6 +1253,64 @@ export const skills: {
             'description': 'Sendo um ser de pura magia, sua essência é maleável. Você pode gastar 1 MP adicional ao conjurar uma magia para aumentar seu alcance em um grau (Curto para Padrão, Padrão para Médio, etc.) ou para adicionar +2 à DT (Dificuldade de Teste) de um teste de resistência do alvo contra sua magia.',
             'type': 'Raça',
             'origin': 'Magia-viva'
+        }
+    ],
+    bonus: [
+        {
+            name: 'Linguagem Universal',
+            description: 'Você pode se comunicar em qualquer língua que exista.',
+            type: 'Talento',
+            rarity: 'Comum',
+            origin: 'Bônus'
+        },
+        {
+            name: 'Memoria Eidética',
+            description: 'Você se lembra de tudo que vê, ouve ou lê com perfeição. Nunca falha em testes para lembrar informações previamente obtidas.',
+            type: 'Talento',
+            rarity: 'Raro',
+            origin: 'Bônus'
+        },
+        {
+            name: 'Sangue Frio',
+            description: 'Você é imune a efeitos de medo e pânico.',
+            type: 'Talento',
+            rarity: 'Raro',
+            origin: 'Bônus'
+        },
+        {
+            name: 'Voz Hipnótica',
+            description: 'Sua voz tem qualidade cativante. Uma vez por dia, você pode tentar influenciar alguém com uma sugestão simples. O alvo faz um teste de RES Mental com desvantagem.',
+            type: 'Talento',
+            rarity: 'Incomum',
+            origin: 'Bônus'
+        },
+        {
+            name: 'Sortudo',
+            description: 'Uma vez por cena, você pode rerolar qualquer teste que falhou, mantendo o novo resultado. Essa habilidade não pode ser usada em testes de resistência contra morte.',
+            type: 'Talento',
+            rarity: 'Raro',
+            origin: 'Bônus'
+        },
+        {
+            name: 'Curador Espiritual',
+            description: 'Você pode canalizar energia espiritual para curar. Uma vez por dia, você pode tocar um aliado (ou si mesmo) e restaurar 2d6 PVs.',
+            type: 'Talento',
+            rarity: 'Incomum',
+            origin: 'Bônus'
+        },
+        {
+            name: 'Comunhão Animal',
+            description: 'Você pode se comunicar telepaticamente com animais e entender suas emoções básicas. Animais naturalmente tendem a confiar em você.',
+            type: 'Talento',
+            rarity: 'Comum',
+            origin: 'Bônus'
+        },
+        {
+            name: 'Burro de Carga',
+            description: 'Você pode carregar o dobro do peso normal sem penalidades.',
+            type: 'Talento',
+            rarity: 'Raro',
+            origin: 'Bônus'
         }
     ]
 }

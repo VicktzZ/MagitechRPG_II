@@ -66,7 +66,6 @@ export const elementColor = {
     'GELO': blue[300],
     'METAL': grey[500],
     'LUZ': amber[400],
-    'TOXINA': green[600],
     'TREVAS': blueGrey[400],
     'NÃO-ELEMENTAL': grey[100],
     
@@ -74,7 +73,8 @@ export const elementColor = {
     'VÁCUO': '#555',
     'PSÍQUICO': pink[500],
     'RADIAÇÃO': purple[500],
-    'EXPLOSÃO': amber[900]
+    'EXPLOSÃO': amber[900],
+    'TÓXICO': green[600]
 }
 
 export const rarityColor: Record<RarityType, string> = {

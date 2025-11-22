@@ -49,6 +49,7 @@ licenses
 
 # windsurf
 .windsurfrules
+.windsurf
 
 # PWA files
 **/public/sw.js

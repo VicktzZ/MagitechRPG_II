@@ -1,6 +1,6 @@
 import { IsArray, IsNumber, IsObject, IsOptional, IsString } from 'class-validator';
 import { BaseItem } from './BaseItem';
-import type { AmmoType, DamageType, RangeType, WeaponAccesoriesType, WeaponType, WeaponCategory } from '@models/types/string';
+import type { AmmoType, DamageType, RangeType, WeaponAccesoriesType, WeaponType, WeaponCategory, WeaponKind } from '@models/types/string';
 import type { Attributes } from './Attributes';
 import type { ItemTypes } from './types/misc';
 
@@ -12,6 +12,10 @@ export class Weapon extends BaseItem {
     @IsString() hit: keyof Attributes;
     @IsString() ammo: AmmoType | 'Não consome' = 'Não consome';
     @IsString() bonus: string;
+
+    @IsString()
+    @IsOptional()
+        weaponKind?: WeaponKind;
     
     @IsNumber() 
     @IsOptional()

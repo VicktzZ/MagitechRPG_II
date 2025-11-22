@@ -48,8 +48,8 @@ export const InventoryCreateItemModal = memo(({
             )
         },
         { header: 'Geral', options: [ { value: 'Nenhum', label: 'Nenhum' } ] },
-        { header: 'Científico', options: mapArrayToOptions(defaultItems.cientificos.map((item: Item) => item.name).sort()) },
-        { header: 'Mágico', options: mapArrayToOptions(defaultItems.magicos.map((item: Item) => item.name).sort()) }
+        { header: 'Científico', options: mapArrayToOptions(defaultItems.scientific.map((item: Item) => item.name).sort()) },
+        { header: 'Mágico', options: mapArrayToOptions(defaultItems.magical.map((item: Item) => item.name).sort()) }
     ], [ campaign.custom.items.item ]);
 
     function setDefaultItem(itemName: string) {

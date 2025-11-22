@@ -291,7 +291,7 @@ const MagicSchema = z.object({
     type: z.string().min(1, 'O tipo da magia é obrigatório'),
     execution: z.string().min(1, 'A execução da magia é obrigatória'),
     range: z.string().min(1, 'O alcance da magia é obrigatório'),
-    stages: z.array(z.string()).default([]),
+    stages: z.array(z.string().or(z.null())).default([]),
     mastery: z.string().optional()
 })
 
@@ -328,12 +328,12 @@ const ExpertisesSchema = z.record(ExpertiseValueSchema).superRefine((expertises,
 const SessionInfoSchema = z.object({
     campaignCode: z.string(),
     stats: z.object({
-        maxLp: z.number().int().min(0, 'LP máximo não pode ser negativo'),
-        maxMp: z.number().int().min(0, 'MP máximo não pode ser negativo'),
-        maxAp: z.number().int().min(0, 'AP máximo não pode ser negativo'),
-        lp: z.number().int().min(0, 'LP não pode ser negativo'),
-        mp: z.number().int().min(0, 'MP não pode ser negativo'),
-        ap: z.number().int().min(0, 'AP não pode ser negativo')
+        maxLp: z.number().int().min(0, 'LP máximo não pode ser negativo').optional(),
+        maxMp: z.number().int().min(0, 'MP máximo não pode ser negativo').optional(),
+        maxAp: z.number().int().min(0, 'AP máximo não pode ser negativo').optional(),
+        lp: z.number().int().min(0, 'LP não pode ser negativo').optional(),
+        mp: z.number().int().min(0, 'MP não pode ser negativo').optional(),
+        ap: z.number().int().min(0, 'AP não pode ser negativo').optional()
     })
 })
 

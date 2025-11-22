@@ -1,11 +1,42 @@
 export type FinancialCondition = 'Miserável' | 'Pobre' | 'Estável' | 'Rico'
 export type Gender = 'Masculino' | 'Feminino' | 'Não-binário' | 'Outro' | 'Não definido'
 export type UpperCaseAttributes = 'DES' | 'VIG' | 'LOG' | 'SAB' | 'FOC' | 'CAR'
-export type ItemType = 'Especial' | 'Utilidade' | 'Consumível' | 'Item Chave' | 'Munição' | 'Capacidade' | 'Padrão'
+export type ItemType = 'Especial' | 'Utilidade' | 'Consumível' | 'Item Chave' | 'Munição' | 'Capacidade' | 'Padrão' | 'Arremessável' | 'Equipamento'
 export type RarityType = 'Comum' | 'Incomum' | 'Raro' | 'Épico' | 'Lendário' | 'Único' | 'Mágico' | 'Especial' | 'Amaldiçoado'
 export type WeaponType = `Arremessável (${ThrowableRangeType})` | 'Duas mãos' | 'Padrão' | 'Automática' | 'Semi-automática'
 export type ArmorType = 'Padrão' | 'Total' | DamageType
 export type DamageType = 'Cortante' | 'Impactante' | 'Perfurante' | 'Explosivo' | Element
+export type EquipamentSpace = 'Não Ocupa' | 'Botas' | 'Colar' | 'Amuleto' | 'Anel' | 'Cinto' | 'Peitoral' | 'Capacete' | 'Costas' | 'Luvas' | 'Pernas'
+
+export type WeaponKind = 
+    'Arma de Haste' |
+    'Espada' |
+    'Adaga' |
+    'Adagas Duplas' |
+    'Arma de Energia' |
+    'Arma de Concussão' |
+    'Foice' |
+    'Escudo' |
+    'Machado' |
+    'Arma de Fogo' |
+    'Lança' |
+    'Martelo' |
+    'Arma Explosiva' |
+    'Arco' | 
+    'Soqueira' | 
+    'Pistola' | 
+    'Pistola de Energia' |
+    'Metralhadora' |  
+    'Metralhadora de Energia' |
+    'Submetralhadora' | 
+    'Submetralhadora de Energia' |
+    'Espingarda' | 
+    'Espingarda de Energia' |
+    'Fuzil' |
+    'Fuzil de Energia' |
+    'Rifle de Atirador' |
+    'Rifle de Atirador de Energia'
+
 export type ClassNames =
     'Combatente' |
     'Especialista' |
@@ -180,7 +211,8 @@ export type WeaponScientificAccesoriesType =
     'Cabo de borracha' |
     'Lanterna' |
     'Espinhos/Lâmina de Tungstênio' |
-    'Cano/Lâmina Estriada' 
+    'Cano/Lâmina Estriada' |
+    'Polímero Treliçado'
 
 export type WeaponMagicalAccesoriesType = 
     'Switch Elemental' |
@@ -194,6 +226,7 @@ export type WeaponMagicalAccesoriesType =
 export type ArmorScientificAccesoriesType = 
     'Revestimento de Tungstênio' |
     'Polímero de Estireno' |
+    'Polímero Treliçado' |
     'Exoesqueleto mecânico' |
     'DCA' |
     'Sistema de Temperamento' |
@@ -222,6 +255,7 @@ export type Element =
     'Sangue' |
     'Radiação' |
     'Explosão' |
+    'Tóxico' |
     'Psíquico' |
     'Vácuo'
 

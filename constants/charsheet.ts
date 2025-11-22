@@ -11,6 +11,7 @@ export const expertisesDefaultValue: Expertises = {
     'Comunicação': { value: 0, defaultAttribute: 'car' },
     'Condução': { value: 0, defaultAttribute: 'des' },
     'Conhecimento': { value: 0, defaultAttribute: 'sab' },
+    'Concentração': { value: 0, defaultAttribute: 'foc' },
     'Controle': { value: 0, defaultAttribute: 'vig' },
     'Criatividade': { value: 0, defaultAttribute: 'log' },
     'Culinária': { value: 0, defaultAttribute: 'des' },

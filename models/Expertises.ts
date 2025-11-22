@@ -19,6 +19,7 @@ export class Expertises {
     @IsObject() 'Condução': Expertise = new Expertise('des');
     @IsObject() 'Conhecimento': Expertise = new Expertise('sab');
     @IsObject() 'Controle': Expertise = new Expertise('vig');
+    @IsObject() 'Concentração': Expertise = new Expertise('foc');
     @IsObject() 'Criatividade': Expertise = new Expertise('log');
     @IsObject() 'Culinária': Expertise = new Expertise('des');
     @IsObject() 'Diplomacia': Expertise = new Expertise('car');

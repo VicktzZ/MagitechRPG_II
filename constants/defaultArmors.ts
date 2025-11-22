@@ -1,6 +1,6 @@
 import type { Armor } from '@models'
 
-export const deafultArmors: Record<'leve' | 'pesada', Array<Partial<Armor>>> = {
+export const defaultArmors: Record<'leve' | 'pesada', Array<Partial<Armor>>> = {
     leve: [
         {
             name: 'Colete balístico (leve)',

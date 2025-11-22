@@ -25,9 +25,10 @@ import InventorySection from './InventorySection';
 import MoneyAndAmmo from './MoneyAndAmmo';
 import PlayerHeader from './PlayerHeader';
 import SpellsSection from './SpellsSection';
+import { PerkCardsModal } from '@features/roguelite/components';
 
 export default function CampaignPlayerDashboard(): ReactElement | null {
-    const { users, isUserGM } = useCampaignContext();
+    const { users, isUserGM, campaign } = useCampaignContext();
     const { charsheet } = useCampaignCurrentCharsheetContext()
 
     if (!charsheet || isUserGM) return null;
@@ -139,6 +140,9 @@ export default function CampaignPlayerDashboard(): ReactElement | null {
                             </Section>
                         </Box>
                     </Stack>
+                    {campaign.mode === 'Roguelite' && (
+                        <PerkCardsModal open={true} level={charsheet.level} />
+                    )}
                 </Box>
             )}
         </Box>

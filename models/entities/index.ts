@@ -4,3 +4,8 @@ export { Notification } from './Notification';
 export { Power } from './Power';
 export { Spell } from './Spell';
 export { User } from './User';
+export { Perk } from './Perk';
+export { ItemEntity } from './ItemEntity';
+export { ArmorEntity } from './ArmorEntity';
+export { WeaponEntity } from './WeaponEntity';
+export { SkillEntity } from './SkillEntity';

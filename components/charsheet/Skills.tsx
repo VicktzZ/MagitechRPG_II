@@ -288,6 +288,7 @@ export default function Skills(): ReactElement {
     
     // Verifica se a habilidade selecionada é um poder mágico e corresponde à maestria elemental
     const canShowMasteryDescription = useMemo(() => {
+        console.log({ selectedSkill, elementalMastery })
         if (!selectedSkill || !elementalMastery || selectedSkill.type !== 'Poder Mágico') return false
         return selectedSkill.element === elementalMastery?.toUpperCase()
     }, [ selectedSkill, elementalMastery ])

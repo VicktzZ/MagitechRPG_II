@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsArray, IsEnum, IsNumber, IsObject, IsString, MaxLength, ValidateNested } from 'class-validator';
+import { IsArray, IsEnum, IsNumber, IsObject, IsOptional, IsString, MaxLength, ValidateNested } from 'class-validator';
 import { Attributes } from './Attributes';
 import { Expertises } from './Expertises';
 import { Inventory } from './Inventory';
@@ -89,8 +89,9 @@ export class BaseCharsheet {
         };
 
     @IsArray() 
+    @IsOptional()
     @IsObject({ each: true })
-        session: Array<{
+        session?: Array<{
             campaignCode: string;
             stats: {
                 maxLp: number;
