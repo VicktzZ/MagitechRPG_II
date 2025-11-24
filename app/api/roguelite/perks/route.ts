@@ -1,14 +1,16 @@
-import { NextRequest, NextResponse } from "next/server";
-import { perkRepository, weaponRepository, itemRepository, armorRepository, spellRepository, powerRepository, skillRepository } from "@repositories";
-import { Perk } from "@models/entities";
-import { calculatePowerRarity, calculateSkillRarity } from "@utils/calculatePerksRarity";
-import { PerkTypeEnum } from "@enums/rogueliteEnum";
+/* eslint-disable @typescript-eslint/prefer-nullish-coalescing */
+
+import { type NextRequest, NextResponse } from 'next/server';
+import { perkRepository, weaponRepository, itemRepository, armorRepository, spellRepository, powerRepository, skillRepository } from '@repositories';
+import { Perk } from '@models/entities';
+import { calculatePowerRarity, calculateSkillRarity } from '@utils/calculatePerksRarity';
+import { PerkTypeEnum } from '@enums/rogueliteEnum';
 
 export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     
     const collections = searchParams.get('collections')?.split(',').map(c => c.trim()) || 
-        ['perks', 'powers', 'items', 'armors', 'spells', 'weapons', 'skills'];
+        [ 'perks', 'powers', 'items', 'armors', 'spells', 'weapons', 'skills' ];
     const perkType = searchParams.get('perkType');
     const levelRequired = searchParams.get('levelRequired');
     const rarity = searchParams.get('rarity');

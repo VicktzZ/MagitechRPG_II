@@ -41,7 +41,7 @@ export interface EnemyModifier {
     icon?: string
 }
 
-export const defaultEnemyModifiers: Record<RarityType, (() => EnemyModifier)[]> = {
+export const defaultEnemyModifiers: Record<RarityType, Array<() => EnemyModifier>> = {
     Comum: [
         () => ({
             id: 'damage_boost_minor',
@@ -76,7 +76,7 @@ export const defaultEnemyModifiers: Record<RarityType, (() => EnemyModifier)[]> 
             rarity: 'Comum',
             modifierType: EnemyModifierType.RESISTANCE,
             effect: {
-                resistanceTypes: ['Cortante', 'Impactante', 'Perfurante'],
+                resistanceTypes: [ 'Cortante', 'Impactante', 'Perfurante' ],
                 resistanceAmount: 0.25
             },
             duration: 'combat',
@@ -159,7 +159,7 @@ export const defaultEnemyModifiers: Record<RarityType, (() => EnemyModifier)[]> 
             rarity: 'Raro',
             modifierType: EnemyModifierType.STATUS_IMMUNITY,
             effect: {
-                immunityTypes: ['sangramento', 'envenenamento', 'queimadura', 'congelamento', 'paralisia', 'confusão', 'sono', 'medo']
+                immunityTypes: [ 'sangramento', 'envenenamento', 'queimadura', 'congelamento', 'paralisia', 'confusão', 'sono', 'medo' ]
             },
             duration: 'combat',
             stackable: false,
@@ -240,7 +240,7 @@ export const defaultEnemyModifiers: Record<RarityType, (() => EnemyModifier)[]> 
             rarity: 'Épico',
             modifierType: EnemyModifierType.RESISTANCE,
             effect: {
-                resistanceTypes: ['Fogo', 'Água', 'Terra', 'Ar', 'Eletricidade', 'Luz', 'Trevas'],
+                resistanceTypes: [ 'Fogo', 'Água', 'Terra', 'Ar', 'Eletricidade', 'Luz', 'Trevas' ],
                 resistanceAmount: 0.5
             },
             duration: 'combat',
@@ -387,8 +387,8 @@ export function getRandomEnemyModifier(difficulty: number = 1): EnemyModifier | 
     if (!modifiers || modifiers.length === 0) return null
     
     // Ajuste baseado na dificuldade
-    const availableModifiers = modifiers.filter(mod => {
-        const modRarityIndex = ['Comum', 'Incomum', 'Raro', 'Épico', 'Lendário', 'Mágico', 'Especial', 'Amaldiçoado', 'Único'].indexOf(rarity)
+    const availableModifiers = modifiers.filter(() => {
+        const modRarityIndex = [ 'Comum', 'Incomum', 'Raro', 'Épico', 'Lendário', 'Mágico', 'Especial', 'Amaldiçoado', 'Único' ].indexOf(rarity)
         return modRarityIndex <= difficulty + 2 // Permite modificadores até 2 níveis acima da dificuldade
     })
     
@@ -452,7 +452,7 @@ export function combineModifierEffects(modifiers: EnemyModifier[]): EnemyModifie
         
         // Combina imunidades (união)
         if (effect.immunityTypes) {
-            combined.immunityTypes = [...(combined.immunityTypes || []), ...effect.immunityTypes].filter((v, i, a) => a.indexOf(v) === i)
+            combined.immunityTypes = [ ...(combined.immunityTypes || []), ...effect.immunityTypes ].filter((v, i, a) => a.indexOf(v) === i)
         }
         
         // Combina resistências (mantém a maior)

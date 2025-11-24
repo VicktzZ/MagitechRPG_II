@@ -1,3 +1,4 @@
+// @eslint-disable @typescript-eslint/no-use-before-define
 import { create, type RandomSeed } from 'random-seed'
 import { genericCustomPerks } from '../consts/genericCustomPerks'
 import { Perk } from '../models'
@@ -110,7 +111,7 @@ function selectRandomExpertise(rng: RandomSeed): string {
     const totalWeight = Object.values(EXPERTISE_WEIGHTS).reduce((sum, weight) => sum + weight, 0)
     let roll = rng(totalWeight)
     
-    for (const [expertise, weight] of Object.entries(EXPERTISE_WEIGHTS)) {
+    for (const [ expertise, weight ] of Object.entries(EXPERTISE_WEIGHTS)) {
         roll -= weight
         if (roll <= 0) {
             return expertise
@@ -132,5 +133,5 @@ export function getAvailableCustomPerks(): string[] {
  * Obtém todas as expertises disponíveis
  */
 export function getAllExpertises(): string[] {
-    return [...ALL_EXPERTISES]
+    return [ ...ALL_EXPERTISES ]
 }

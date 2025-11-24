@@ -12,16 +12,16 @@ export function calculatePowerRarity(preRequisites?: string): string {
     const level = parseInt(levelMatch[1]);
     
     switch (level) {
-        case 1:
-            return 'Incomum';
-        case 2:
-            return 'Raro';
-        case 3:
-            return 'Épico';
-        case 4:
-            return 'Lendário';
-        default:
-            return level >= 5 ? 'Lendário' : 'Incomum';
+    case 1:
+        return 'Incomum';
+    case 2:
+        return 'Raro';
+    case 3:
+        return 'Épico';
+    case 4:
+        return 'Lendário';
+    default:
+        return level >= 5 ? 'Lendário' : 'Incomum';
     }
 }
 
@@ -60,5 +60,5 @@ export function calculateSkillRarity(
     }
     
     // Para os demais tipos, manter a raridade existente
-    return existingRarity || 'Comum';
+    return existingRarity ?? 'Comum';
 }
