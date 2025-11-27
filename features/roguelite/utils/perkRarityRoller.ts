@@ -11,7 +11,7 @@ import { type Perk } from '../models'
 import { defaultPerks } from '../consts/defaultPerks'
 
 // Probabilidades base por raridade (soma 100)
-function getRarityWeights (level?: number): Record<RarityType, number> {
+export function getRarityWeights (level?: number): Record<RarityType, number> {
     if (!level) {
         return {
             Comum: 60,
@@ -62,12 +62,12 @@ export function rollRarity(rng: RandomSeed, level?: number): RarityType {
  * @param rng - Função RNG
  * @returns Perk selecionado ou undefined se lista vazia
  */
-function selectPerkByWeight<T>(perks: Array<() => Perk<T>>, rng: RandomSeed): Perk<T> | undefined {
+function selectPerkByWeight<T>(perks: Array<Perk<T>>, rng: RandomSeed): Perk<T> | undefined {
     if (perks.length === 0) return undefined
-    if (perks.length === 1) return perks[0]() // Executa a função para obter o perk
+    if (perks.length === 1) return perks[0]
     
     // Gera instâncias dos perks para calcular pesos
-    const perkInstances = perks.map(perkFn => perkFn())
+    const perkInstances = perks
     
     // Calcula peso total (padrão 50 se não definido)
     const totalWeight = perkInstances.reduce((sum, perk) => sum + (perk.weight ?? 50), 0)
@@ -132,7 +132,7 @@ interface PerkFilters {
     types?: PerkTypeEnum[]
 }
 
-export function rollRandomPerks(seed: string, level?: number, filters?: PerkFilters): Array<Perk<any>> {
+export function rollRandomPerks(seed: string, level?: number, filters?: PerkFilters, perkAmount: number = 5): Array<Perk<any>> {
     const rng = create(seed)
     const result: Array<Perk<any>> = []
 
@@ -172,7 +172,7 @@ export function rollRandomPerks(seed: string, level?: number, filters?: PerkFilt
         ...allSkills.map(item => ({ ...item, perkType: PerkTypeEnum.SKILL, rarity: undefined }))
     ]
 
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < perkAmount; i++) {
         // Primeiro rola a raridade para decidir se usa defaultPerk
         const rolledRarity = rollRarity(rng, level)
         

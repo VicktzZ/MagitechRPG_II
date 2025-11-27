@@ -1,29 +1,48 @@
 /* eslint-disable no-case-declarations */
 import { PerkTypeEnum } from '@enums/rogueliteEnum'
-import { iconForRarity, rollRandomPerks } from '@features/roguelite/utils'
+import { iconForRarity } from '@features/roguelite/utils'
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
 import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment'
 import ShuffleIcon from '@mui/icons-material/Shuffle'
 import VisibilityIcon from '@mui/icons-material/Visibility'
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff'
 import WhatshotIcon from '@mui/icons-material/Whatshot'
-import { Box, Button, FormControl, Grid, IconButton, InputLabel, MenuItem, Select, Typography } from '@mui/material'
-import { useMemo, useState } from 'react'
+import { Box, Button, CircularProgress, FormControl, Grid, IconButton, InputLabel, MenuItem, Select, Typography } from '@mui/material'
+import { useEffect, useState } from 'react'
 import type { RarityType } from '@models/types/string'
 import PerkCard from './PerkCard'
 import { Weapon } from '@components/charsheet/subcomponents/Weapon'
+import { create as createRandom } from 'random-seed'
 
 interface PerkCardsModalProps {
     open: boolean
     seed?: string
     level?: number // nível do personagem para ajustar pesos de raridade
+    perkAmount?: number
 }
 
-export function PerkCardsModal({ open, seed, level }: PerkCardsModalProps) {
-    const [rerollKey, setRerollKey] = useState(0)
+export function PerkCardsModal({ open, seed, level, perkAmount = 5 }: PerkCardsModalProps) {
+    // Gerar ou obter seed fixa do localStorage
+    const [userSeed, setUserSeed] = useState<string>(() => {
+        if (typeof window !== 'undefined') {
+            let storedSeed = localStorage.getItem('roguelite-user-seed')
+            if (!storedSeed) {
+                storedSeed = Math.random().toString(36).substring(2, 15)
+                localStorage.setItem('roguelite-user-seed', storedSeed)
+            }
+            return storedSeed
+        }
+        return Math.random().toString(36).substring(2, 15)
+    })
+    
+    const [rollCount, setRollCount] = useState(0)
     const [isVisible, setIsVisible] = useState(true)
     const [selectedRarity, setSelectedRarity] = useState<RarityType | ''>('')
     const [selectedType, setSelectedType] = useState<PerkTypeEnum | ''>('')
+    const [allPerks, setAllPerks] = useState<any[]>([])
+    const [rolled, setRolled] = useState<any[]>([])
+    const [loading, setLoading] = useState(false)
+    const [error, setError] = useState<string | null>(null)
 
     // Opções de raridade disponíveis
     const rarityOptions: RarityType[] = ['Comum', 'Incomum', 'Raro', 'Épico', 'Lendário', 'Único', 'Mágico', 'Amaldiçoado', 'Especial']
@@ -31,20 +50,100 @@ export function PerkCardsModal({ open, seed, level }: PerkCardsModalProps) {
     // Opções de tipo disponíveis
     const typeOptions = Object.values(PerkTypeEnum)
 
-    const rolled = useMemo(() => {
-        const finalSeed = seed ?? `reroll-${rerollKey}-${Date.now()}`
+    // Função para buscar perks da API (sem seed para maximizar cache)
+    const fetchPerks = async (rarityToUse?: string, typeToUse?: string) => {
+        setLoading(true)
+        setError(null)
+        
+        try {
+            const params = new URLSearchParams()
+            
+            if (rarityToUse) {
+                params.append('rarity', rarityToUse)
+            }
+            
+            if (typeToUse) {
+                params.append('perkType', typeToUse)
+            }
 
-        // Constrói filtros baseados nas seleções
-        const filters = {
-            rarities: selectedRarity ? [selectedRarity] : undefined,
-            types: selectedType ? [selectedType] : undefined
+            // Adicionar nível do usuário para filtragem e ajuste de raridade
+            if (level !== undefined) {
+                params.append('level', level.toString())
+            }
+
+            const response = await fetch(`/api/roguelite/perks?${params}`)
+            
+            if (!response.ok) {
+                throw new Error('Erro ao buscar perks')
+            }
+            
+            const result = await response.json()
+            
+            // API retorna { data: [...], _query: {...} } quando há filtros
+            // ou objeto com collections quando não há filtros
+            let perks: any[] = []
+            
+            if (Array.isArray(result)) {
+                perks = result
+            } else if (result.data) {
+                perks = result.data
+            } else {
+                // Unificar todas as collections em array único
+                Object.values(result).forEach((value: any) => {
+                    if (Array.isArray(value)) {
+                        perks.push(...value)
+                    }
+                })
+            }
+            
+            setAllPerks(perks)
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Erro desconhecido')
+            setAllPerks([])
+            setRolled([])
+        } finally {
+            setLoading(false)
         }
+    }
 
-        return rollRandomPerks(finalSeed, level, filters)
-    }, [seed, rerollKey, level, selectedRarity, selectedType])
+    // Função para fazer shuffle client-side com seed fixa
+    const shufflePerks = (perks: any[], count: number, seed: string, rollNumber: number) => {
+        if (perks.length <= count) return perks
+        
+        // Criar seed combinada: userSeed + rollNumber
+        const combinedSeed = `${seed}-${rollNumber}`
+        const rng = createRandom(combinedSeed)
+        
+        // Fisher-Yates shuffle com seed
+        const shuffled = [...perks]
+        for (let i = shuffled.length - 1; i > 0; i--) {
+            const randomIndex = Math.floor(rng.random() * (i + 1))
+            const temp = shuffled[i]
+            shuffled[i] = shuffled[randomIndex]
+            shuffled[randomIndex] = temp
+        }
+        
+        return shuffled.slice(0, count)
+    }
+
+    // Buscar perks quando o modal abre ou filtros mudam
+    useEffect(() => {
+        if (open) {
+            fetchPerks(selectedRarity || undefined, selectedType || undefined)
+        }
+    }, [open, selectedRarity, selectedType])
+
+    // Fazer shuffle quando os dados são carregados ou muda o rollCount
+    useEffect(() => {
+        if (allPerks.length > 0) {
+            const shuffled = shufflePerks(allPerks, perkAmount, userSeed, rollCount)
+            setRolled(shuffled)
+        }
+    }, [allPerks, rollCount, perkAmount, userSeed])
 
     const handleReroll = () => {
-        setRerollKey(prev => prev + 1)
+        // Incrementar roll count para nova variação com mesma seed
+        setRollCount(prev => prev + 1)
     }
 
     const toggleVisibility = () => {
@@ -244,17 +343,52 @@ export function PerkCardsModal({ open, seed, level }: PerkCardsModalProps) {
                                 justifyContent: 'center'
                             }}
                         >
-                            <Grid
-                                container
-                                spacing={{ xs: 1.5, sm: 2, md: 2.5 }}
-                                justifyContent="center"
-                                alignItems="center"
-                                sx={{
-                                    maxWidth: '1600px',
-                                    width: '100%'
-                                }}
-                            >
-                                {rolled.map((perk, idx) => (
+                            {loading ? (
+                                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                                    <CircularProgress size={60} sx={{ color: 'white' }} />
+                                    <Typography variant="h6" color="white">
+                                        Buscando vantagens...
+                                    </Typography>
+                                </Box>
+                            ) : error ? (
+                                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                                    <Typography variant="h6" color="error">
+                                        Erro ao carregar perks
+                                    </Typography>
+                                    <Typography variant="body2" color="rgba(255, 255, 255, 0.7)">
+                                        {error}
+                                    </Typography>
+                                    <Button
+                                        variant="outlined"
+                                        onClick={handleReroll}
+                                        sx={{
+                                            color: 'white',
+                                            borderColor: 'rgba(255, 255, 255, 0.3)',
+                                            '&:hover': {
+                                                borderColor: 'rgba(255, 255, 255, 0.5)',
+                                                bgcolor: 'rgba(255, 255, 255, 0.1)'
+                                            }
+                                        }}
+                                    >
+                                        Tentar novamente
+                                    </Button>
+                                </Box>
+                            ) : (
+                                <Grid
+                                    container
+                                    spacing={{ xs: 1.5, sm: 2, md: 2.5 }}
+                                    justifyContent="center"
+                                    alignItems="center"
+                                    sx={{
+                                        maxWidth: '1600px',
+                                        width: '100%'
+                                    }}
+                                >
+                                    {rolled.map((perk, idx) => {
+                                    // Debug: Log para verificar estrutura dos dados
+                                    console.log('Perk data:', perk);
+                                    
+                                    return (
                                     <Grid
                                         key={idx}
                                         item
@@ -268,11 +402,11 @@ export function PerkCardsModal({ open, seed, level }: PerkCardsModalProps) {
                                         alignItems="center"
                                     >
                                         <PerkCard
-                                            title={perk.name}
+                                            title={perk.name || perk.title || 'Sem nome'}
                                             subtitle={(() => {
                                                 switch (perk.perkType) {
                                                 case PerkTypeEnum.ITEM:
-                                                    const itemKind = (perk.data as any)?.kind;
+                                                    const itemKind = (perk.data as any)?.kind || (perk as any)?.kind;
                                                     if (itemKind === 'Padrão') {
                                                         return 'Item Padrão';
                                                     }
@@ -287,107 +421,158 @@ export function PerkCardsModal({ open, seed, level }: PerkCardsModalProps) {
                                                     }
                                                     return itemKind || 'Item';
                                                 case PerkTypeEnum.WEAPON:
-                                                    const w = perk.data
-                                                    const wCateg = w.categ.split('(')[1].slice(0, -1)
-                                                    return w.weaponKind ? (w.weaponKind + ` (${wCateg})`) : w.categ;
+                                                    const w = perk.data || perk;
+                                                    const wCateg = w?.categ?.split('(')?.[1]?.slice(0, -1) || w?.categ;
+                                                    return w?.weaponKind ? (w.weaponKind + ` (${wCateg})`) : w?.categ || 'Arma';
                                                 case PerkTypeEnum.EXPERTISE:
-                                                    return `Bônus em ${perk.effects?.[0].expertiseName}`;
+                                                    return `Bônus em ${perk.effects?.[0]?.expertiseName || 'Perícia'}`;
                                                 case PerkTypeEnum.SKILL:
-                                                    const skillType = perk.data?.type;
+                                                    const skillType = (perk.data as any)?.type || (perk as any)?.type;
                                                     if (!skillType) {
                                                         return 'Poder Mágico';
                                                     }
                                                     return `Habilidade de ${skillType}`;
+                                                case PerkTypeEnum.SPELL:
+                                                    const spellElement = (perk.data as any)?.element || (perk as any)?.element || 'Neutro';
+                                                    const spellLevel = (perk.data as any)?.level || (perk as any)?.level || 1;
+                                                    return `Magia de ${spellElement} (Nível ${spellLevel})`;
                                                 default:
                                                     return perk.perkType;
                                             }
                                             })()}
-                                            description={perk.description}
-                                            rarity={perk.rarity}
+                                            description={
+                                                perk.perkType === PerkTypeEnum.SPELL 
+                                                    ? ((perk.data as any)?.stages?.[0] || (perk as any)?.stages?.[0] || perk.description || 'Sem descrição')
+                                                    : (perk.description || 'Sem descrição')
+                                            }
+                                            rarity={perk.rarity || 'Comum'}
                                             perkType={perk.perkType}
-                                            element={undefined}
-                                            icon={getIcon(perk.rarity)}
+                                            element={perk.element}
+                                            icon={getIcon(perk.rarity || 'Comum')}
                                             weapon={
-                                                perk.perkType === PerkTypeEnum.WEAPON ? (perk.data as any) : undefined
+                                                perk.perkType === PerkTypeEnum.WEAPON ? (perk.data || perk) : undefined
                                             }
                                             armor={
-                                                perk.perkType === PerkTypeEnum.ARMOR ? (perk.data as any) : undefined
+                                                perk.perkType === PerkTypeEnum.ARMOR ? (perk.data || perk) : undefined
                                             }
                                             attributes={
-                                                perk.perkType === PerkTypeEnum.SKILL
+                                                perk.perkType === PerkTypeEnum.SPELL
                                                     ? (() => {
-                                                        const attrs = [
-                                                            {
+                                                        const spellData = (perk.data as any) || perk;
+                                                        const attrs = [];
+
+                                                        // Tipo de magia
+                                                        if (spellData?.type) {
+                                                            attrs.push({
                                                                 label: 'Tipo',
-                                                                value: (perk.data as any)?.type === 'Habilidade' ? 'Bônus' : (perk.data as any)?.type ?? 'Bônus'
-                                                            }
-                                                        ];
-
-                                                        // Adiciona origem apenas se existir
-                                                        if ((perk.data as any)?.origin) {
-                                                            attrs.push({
-                                                                label: 'Origem',
-                                                                value: (perk.data as any).origin
+                                                                value: spellData.type
                                                             });
                                                         }
 
-                                                        // Adiciona bônus se aplicável
-                                                        if ((perk.data as any)?.type === 'Bônus' &&
-                                                            (perk.data as any)?.effects &&
-                                                            (perk.data as any)?.effects.length > 0) {
+                                                        // Alcance
+                                                        if (spellData?.range) {
                                                             attrs.push({
-                                                                label: 'Bônus',
-                                                                value: `+${(perk.data as any)?.effects[0]
-                                                                    } perícia`
+                                                                label: 'Alcance',
+                                                                value: spellData.range
                                                             });
                                                         }
 
-                                                        // Adiciona nível se existir
-                                                        if ((perk.data as any)?.level) {
+                                                        // Execução
+                                                        if (spellData?.execution) {
                                                             attrs.push({
-                                                                label: 'Nível',
-                                                                value: (perk.data as any).level
+                                                                label: 'Execução',
+                                                                value: spellData.execution
                                                             });
                                                         }
 
-                                                        return attrs;
+
+                                                        // Custo de mana
+                                                        if (spellData?.mpCost !== undefined) {
+                                                            attrs.push({
+                                                                label: 'Custo',
+                                                                value: `${spellData.mpCost} MP`
+                                                            });
+                                                        }
+
+                                                        return attrs.length > 0 ? attrs : undefined;
                                                     })()
-                                                    : perk.perkType === PerkTypeEnum.ITEM
+                                                    : perk.perkType === PerkTypeEnum.SKILL
                                                         ? (() => {
-                                                            const attrs = [];
-
-                                                            // Adiciona tipo se existir
-                                                            if ((perk.data as any)?.kind) {
-                                                                attrs.push({
+                                                            const skillData = (perk.data as any) || perk;
+                                                            const attrs = [
+                                                                {
                                                                     label: 'Tipo',
-                                                                    value: (perk.data as any).kind
-                                                                });
-                                                            }
+                                                                    value: skillData?.type === 'Habilidade' ? 'Bônus' : skillData?.type ?? 'Bônus'
+                                                                }
+                                                            ];
 
-                                                            // Adiciona espaço se for Equipamento e existir
-                                                            if ((perk.data as any)?.kind === 'Equipamento' && (perk.data as any)?.space) {
+                                                            // Adiciona origem apenas se existir
+                                                            if (skillData?.origin) {
                                                                 attrs.push({
-                                                                    label: 'Espaço',
-                                                                    value: (perk.data as any).space
+                                                                    label: 'Origem',
+                                                                    value: skillData.origin
                                                                 });
                                                             }
 
-                                                            // Adiciona peso se existir
-                                                            if ((perk.data as any)?.weight !== undefined) {
+                                                            // Adiciona bônus se aplicável
+                                                            if (skillData?.type === 'Bônus' &&
+                                                                skillData?.effects &&
+                                                                skillData?.effects.length > 0) {
                                                                 attrs.push({
-                                                                    label: 'Peso',
-                                                                    value: `${(perk.data as any).weight} kg`
+                                                                    label: 'Bônus',
+                                                                    value: `+${skillData?.effects[0]} perícia`
                                                                 });
                                                             }
 
-                                                            return attrs.length > 0 ? attrs : undefined;
+                                                            // Adiciona nível se existir
+                                                            if (skillData?.level) {
+                                                                attrs.push({
+                                                                    label: 'Nível',
+                                                                    value: skillData.level
+                                                                });
+                                                            }
+
+                                                            return attrs;
                                                         })()
-                                                        : undefined
+                                                        : perk.perkType === PerkTypeEnum.ITEM
+                                                            ? (() => {
+                                                                const itemData = (perk.data as any) || perk;
+                                                                const attrs = [];
+
+                                                                // Adiciona tipo se existir
+                                                                if (itemData?.kind) {
+                                                                    attrs.push({
+                                                                        label: 'Tipo',
+                                                                        value: itemData.kind
+                                                                    });
+                                                                }
+
+                                                                // Adiciona espaço se for Equipamento e existir
+                                                                if (itemData?.kind === 'Equipamento' && itemData?.space) {
+                                                                    attrs.push({
+                                                                        label: 'Espaço',
+                                                                        value: itemData.space
+                                                                    });
+                                                                }
+
+                                                                // Adiciona peso se existir
+                                                                if (itemData?.weight !== undefined) {
+                                                                    attrs.push({
+                                                                        label: 'Peso',
+                                                                        value: `${itemData.weight} kg`
+                                                                    });
+                                                                }
+
+                                                                return attrs.length > 0 ? attrs : undefined;
+                                                            })()
+                                                            : undefined
                                             }
                                         />
                                     </Grid>
-                                ))}
-                            </Grid>
+                                    );
+                                })}
+                                </Grid>
+                            )}
                         </Box>
                     </Box>
                 </Box>

@@ -79,7 +79,8 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet }: Char
     const { data: spells } = useFirestoreRealtime('spell', {
         filters: [
             { field: 'id', operator: 'in', value: charsheet.spells }
-        ]
+        ],
+        enabled: charsheet.spells.length > 0
     })
 
     const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {

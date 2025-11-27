@@ -259,9 +259,6 @@ export default function CampaignGMDashboard(): ReactElement | null {
                             )}
                         </Box>
                     </Section>
-
-                    {/* teste */}
-                    {/* <PerkCards /> */}
                 </Stack>
             </Box>
             <Snackbar />

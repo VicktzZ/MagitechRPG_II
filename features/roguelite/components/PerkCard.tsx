@@ -346,21 +346,15 @@ export function PerkCard({
                                         variant="body2"
                                         sx={{ color: '#e8e8e8', fontWeight: 700, fontSize: '0.8rem' }}
                                     >
-                                        {(weapon.effect as any)?.originalValue || weapon.effect?.value || '-'}
-                                        {(weapon.effect as any)?.damageBonus &&
-                                            (weapon.effect as any).damageBonus > 0 && (
-                                                <Typography
-                                                    component="span"
-                                                    sx={{
-                                                        color: '#4ade80',
-                                                        fontSize: '0.75rem',
-                                                        ml: 0.5,
-                                                        fontWeight: 600
-                                                    }}
-                                                >
-                                                    (+{(weapon.effect as any).damageBonus})
-                                                </Typography>
-                                            )}
+                                        {(weapon.effect as any)?.displayValue ? (
+                                            <span
+                                                dangerouslySetInnerHTML={{
+                                                    __html: (weapon.effect as any).displayValue
+                                                }}
+                                            />
+                                        ) : (
+                                            (weapon.effect as any)?.originalValue || weapon.effect?.value || '-'
+                                        )}
                                     </Typography>
                                 </Box>
                             </Grid>
@@ -390,19 +384,14 @@ export function PerkCard({
                                         variant="body2"
                                         sx={{ color: '#e8e8e8', fontWeight: 700, fontSize: '0.8rem' }}
                                     >
-                                        {weapon.effect?.critValue ?? '-'}
-                                        {(weapon.effect as any)?.critBonus && (weapon.effect as any).critBonus > 0 && (
-                                            <Typography
-                                                component="span"
-                                                sx={{
-                                                    color: '#f59e0b',
-                                                    fontSize: '0.75rem',
-                                                    ml: 0.5,
-                                                    fontWeight: 600
+                                        {(weapon.effect as any)?.displayCritValue ? (
+                                            <span
+                                                dangerouslySetInnerHTML={{
+                                                    __html: (weapon.effect as any).displayCritValue
                                                 }}
-                                            >
-                                                (+{(weapon.effect as any).critBonus})
-                                            </Typography>
+                                            />
+                                        ) : (
+                                            weapon.effect?.critValue ?? '-'
                                         )}
                                         {weapon.effect?.critChance != null ? ` (${weapon.effect.critChance})` : ''}
                                     </Typography>
@@ -695,6 +684,107 @@ export function PerkCard({
                                         sx={{ color: '#e8e8e8', fontWeight: 600, fontSize: '0.8rem' }}
                                     >
                                         {armor.weight != null ? `${armor.weight} kg` : '-'}
+                                    </Typography>
+                                </Box>
+                            </Grid>
+                        </Grid>
+                    </Box>
+                )}
+
+                {perkType === PerkTypeEnum.SPELL && (
+                    <Box sx={{ mt: 1 }}>
+                        <Grid container spacing={0.5} columns={{ xs: 8, sm: 12 }}>
+                          
+                            {/* Tipo */}
+                            <Grid item xs={4} sm={4} md={4}>
+                                <Box
+                                    sx={{
+                                        px: 0.75,
+                                        py: 0.5,
+                                        borderRadius: 1,
+                                        border: `1px solid ${borderColor}55`,
+                                        bgcolor: `${borderColor}12`
+                                    }}
+                                >
+                                    <Typography
+                                        variant="caption"
+                                        sx={{
+                                            color: borderColor,
+                                            fontWeight: 700,
+                                            letterSpacing: 0.3,
+                                            fontSize: '0.65rem'
+                                        }}
+                                    >
+                                        Tipo
+                                    </Typography>
+                                    <Typography
+                                        variant="body2"
+                                        sx={{ color: '#e8e8e8', fontWeight: 600, fontSize: '0.8rem' }}
+                                    >
+                                        {(attributes as any)?.find((attr: any) => attr.label === 'Tipo')?.value || 
+                                         (attributes as any)?.find((attr: any) => attr.label === 'type')?.value || '-'}
+                                    </Typography>
+                                </Box>
+                            </Grid>
+                            {/* Alcance */}
+                            <Grid item xs={4} sm={4} md={4}>
+                                <Box
+                                    sx={{
+                                        px: 0.75,
+                                        py: 0.5,
+                                        borderRadius: 1,
+                                        border: `1px solid ${borderColor}55`,
+                                        bgcolor: `${borderColor}12`
+                                    }}
+                                >
+                                    <Typography
+                                        variant="caption"
+                                        sx={{
+                                            color: borderColor,
+                                            fontWeight: 700,
+                                            letterSpacing: 0.3,
+                                            fontSize: '0.65rem'
+                                        }}
+                                    >
+                                        Alcance
+                                    </Typography>
+                                    <Typography
+                                        variant="body2"
+                                        sx={{ color: '#e8e8e8', fontWeight: 600, fontSize: '0.8rem' }}
+                                    >
+                                        {(attributes as any)?.find((attr: any) => attr.label === 'Alcance')?.value || 
+                                         (attributes as any)?.find((attr: any) => attr.label === 'alcance')?.value || '-'}
+                                    </Typography>
+                                </Box>
+                            </Grid>
+                            {/* Execução */}
+                            <Grid item xs={4} sm={4} md={4}>
+                                <Box
+                                    sx={{
+                                        px: 0.75,
+                                        py: 0.5,
+                                        borderRadius: 1,
+                                        border: `1px solid ${borderColor}55`,
+                                        bgcolor: `${borderColor}12`
+                                    }}
+                                >
+                                    <Typography
+                                        variant="caption"
+                                        sx={{
+                                            color: borderColor,
+                                            fontWeight: 700,
+                                            letterSpacing: 0.3,
+                                            fontSize: '0.65rem'
+                                        }}
+                                    >
+                                        Execução
+                                    </Typography>
+                                    <Typography
+                                        variant="body2"
+                                        sx={{ color: '#e8e8e8', fontWeight: 600, fontSize: '0.8rem' }}
+                                    >
+                                        {(attributes as any)?.find((attr: any) => attr.label === 'Execução')?.value || 
+                                         (attributes as any)?.find((attr: any) => attr.label === 'execução')?.value || '-'}
                                     </Typography>
                                 </Box>
                             </Grid>
