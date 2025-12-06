@@ -30,7 +30,7 @@ import {
     useTheme
 } from '@mui/material';
 import { blue, green, orange, purple, red } from '@mui/material/colors';
-import { type ReactElement, useState } from 'react';
+import React, { type ReactElement, useState, useEffect } from 'react';
 
 export default function MoneyAndAmmo(): ReactElement {
     const { charsheet, updateCharsheet } = useCampaignCurrentCharsheetContext();
@@ -41,6 +41,14 @@ export default function MoneyAndAmmo(): ReactElement {
         current: charsheet.ammoCounter.current,
         max: charsheet.ammoCounter.max
     });
+
+    // Estado local para dinheiro - sincroniza com charsheet
+    const [ money, setMoney ] = useState(charsheet.inventory?.money ?? 0);
+    
+    // Sincroniza o estado local quando o charsheet muda (atualização externa)
+    useEffect(() => {
+        setMoney(charsheet.inventory?.money ?? 0);
+    }, [charsheet.inventory?.money]);
 
     const ammoPercent = (ammo.current / ammo.max) * 100;
 
@@ -207,9 +215,10 @@ export default function MoneyAndAmmo(): ReactElement {
                             }}
                         >
                             <TextField
-                                defaultValue={charsheet.inventory.money}
+                                value={money}
                                 onChange={(e) => {
                                     const value = parseFloat(e.target.value) || 0;
+                                    setMoney(value);
                                     // 🔥 Atualizar no Firestore em tempo real
                                     updateCharsheet({
                                         inventory: {

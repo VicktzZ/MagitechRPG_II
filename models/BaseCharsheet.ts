@@ -100,7 +100,14 @@ export class BaseCharsheet {
                 lp: number;
                 mp: number;
                 ap: number;
-            }
+            };
+            perks?: Array<{
+                id: string;
+                rarity: string;
+                name: string;
+                description: string;
+                perkType: string;
+            }>;
         }>;
 
     constructor(charsheet?: Partial<BaseCharsheet>) {

@@ -1,5 +1,5 @@
 export const cache = new Map<string, { data: any; timestamp: number }>();
-export const CACHE_TTL = 5 * 60 * 1000; // 5 minutos
+export const CACHE_TTL = 60 * 60 * 1000; // 5 minutos
 
 /**
  * Gera chave de cache baseada nos parâmetros da query
@@ -12,7 +12,11 @@ export function generateCacheKey(collections: string[], filters: any): string {
             levelRequired: filters.levelRequired,
             rarity: filters.rarity,
             seed: filters.seed,
-            perkAmount: filters.perkAmount
+            perkAmount: filters.perkAmount,
+            level: filters.level,
+            element: filters.element,
+            spellLevel: filters.spellLevel,
+            execution: filters.execution
         }
     };
     return JSON.stringify(key);

@@ -77,6 +77,34 @@ export const elementColor = {
     'TÓXICO': green[600]
 }
 
+/**
+ * Cores vibrantes para cards de magia - mais saturadas e distintas
+ */
+export const spellElementColor: Record<string, string> = {
+    // Elementos básicos
+    'FOGO': '#ff4d2a',           // Laranja-vermelho vibrante
+    'ÁGUA': '#00b8ff',           // Azul ciano brilhante
+    'AR': '#a8e6ff',             // Azul celeste claro (diferente de água)
+    'TERRA': '#8b5a2b',          // Marrom terra (diferente de verde)
+    'ELETRICIDADE': '#ffeb3b',   // Amarelo elétrico
+    'LUZ': '#fff176',            // Amarelo dourado claro
+    'TREVAS': '#7c4dff',         // Roxo profundo
+    'NÃO-ELEMENTAL': '#90a4ae',  // Lilás mágico (não branco!)
+    
+    // Elementos especiais
+    'SANGUE': '#b71c1c',         // Vermelho sangue escuro
+    'VÁCUO': '#4b2bda',          // Roxo escuro profundo
+    'PSÍQUICO': '#e040fb',       // Magenta vibrante
+    'RADIAÇÃO': '#76ff03',       // Verde neon radioativo
+    'EXPLOSÃO': '#ff6d00',       // Laranja explosivo
+    'TÓXICO': '#00e676',         // Verde tóxico brilhante
+    
+    // Extras
+    'GELO': '#4fc3f7',           // Azul gelo
+    'PLANTA': '#69f0ae',         // Verde natureza
+    'METAL': '#90a4ae'           // Cinza metálico
+}
+
 export const rarityColor: Record<RarityType, string> = {
     'Comum': grey[400],
     'Incomum': green[400],

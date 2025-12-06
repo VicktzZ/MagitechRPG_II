@@ -26,3 +26,16 @@ export enum PerkTypeEnum {
     'RADIAÇÃO' = 'RADIAÇÃO',
     'PSÍQUICO' = 'PSÍQUICO'
 }
+
+// Tipos de habilidades (skill.type)
+export enum SkillTypeEnum {
+    CLASSE = 'Classe',
+    LINHAGEM = 'Linhagem',
+    PROFISSAO = 'Profissão',
+    TALENTO = 'Talento',
+    RACA = 'Raça',
+    SUBCLASSE = 'Subclasse',
+    PODER_MAGICO = 'Poder Mágico',
+    BONUS = 'Bônus',
+    EXCLUSIVO = 'Exclusivo'
+}

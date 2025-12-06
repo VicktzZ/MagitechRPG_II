@@ -8,6 +8,7 @@ import { alpha, Box, Button, CardContent, Chip, Grid, IconButton, Paper, Stack, 
 import { useState, type ReactElement } from 'react';
 import { motion } from 'framer-motion';
 import { elementColor } from '@constants';
+import { calculateExtraManaCost } from '@utils/roguelite';
 import { MagicPower } from './MagicPower';
 import { RPGIcon } from '@components/misc';
 import type { Power, Spell } from '@models/entities';
@@ -92,26 +93,7 @@ function MagicSpell({
     const handleStageChange = (stage: 0 | 1 | 2): void => {
         setActiveStage(stage);
         setDescription(magic.stages[stage]!);
-
-        // Cálculo do custo adicional de MP baseado no nível da magia e estágio
-        let extraCost = 0;
-        const magicLevel = Number(magic.level);
-
-        if (magicLevel === 4) {
-            if (stage === 1) extraCost = 4;
-            else if (stage === 2) extraCost = 9;
-        } else if (magicLevel === 3) {
-            if (stage === 1) extraCost = 2;
-            else if (stage === 2) extraCost = 5;
-        } else if (magicLevel === 2) {
-            if (stage === 1) extraCost = 2;
-            else if (stage === 2) extraCost = 4;
-        } else {
-            if (stage === 1) extraCost = 1;
-            else if (stage === 2) extraCost = 2;
-        }
-
-        setExtraManaCost(extraCost);
+        setExtraManaCost(calculateExtraManaCost(Number(magic.level), stage));
     };
 
     // Animações

@@ -1,7 +1,7 @@
 export { Creature } from './Creature';
 export { Item } from './Item';
 export { Message } from './Message';
-export { Session } from './Session';
+export { Session, type PerkFilters } from './Session';
 export { Weapon } from './Weapon';
 export { Armor } from './Armor';
 export { Skill } from './Skill';

@@ -2,7 +2,6 @@
 import type { CharsheetDTO, SpellDTO } from '@models/dtos';
 import { useMemo } from 'react';
 import { useFirestoreRealtime } from './useFirestoreRealtime';
-import { useQuery } from '@tanstack/react-query';
 
 interface UseCompleteCharsheetOptions {
     charsheetId: string;
@@ -19,17 +18,17 @@ export function useCompleteCharsheet({
     charsheetId,
     enabled = true
 }: UseCompleteCharsheetOptions): UseCompleteCharsheetResult {
-    const { data, isPending: charsheetLoading, error: charsheetError } = useQuery({
-        queryKey: [ 'charsheet', charsheetId ],
-        queryFn: async () => {
-            const response = await fetch(`/api/charsheet/${charsheetId}`);
-            if (!response.ok) throw new Error('Failed to fetch charsheet');
-            return await response.json();
-        },
+    // Usar realtime para o charsheet principal
+    const { 
+        data: charsheetData, 
+        loading: charsheetLoading, 
+        error: charsheetError 
+    } = useFirestoreRealtime('charsheet', {
+        filters: charsheetId ? [{ field: 'id', operator: '==', value: charsheetId }] : undefined,
         enabled: enabled && !!charsheetId
     });
 
-    const charsheet = useMemo(() => data || null, [ data ]);
+    const charsheet = useMemo(() => charsheetData?.[0] || null, [charsheetData]);
 
     const spellsInput = useMemo<unknown[]>(() => (charsheet?.spells as unknown[]) ?? [], [ charsheet?.spells ]);
     const spellObjects = useMemo<SpellDTO[]>(

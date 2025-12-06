@@ -49,16 +49,20 @@ export async function POST(req: Request): Promise<Response> {
                 ];
             }
 
+            // Preserva os perks existentes da sessão atual
+            const existingSession = userCharsheet.session.find(s => s.campaignCode === campaignCode);
+            
             const sessionInfo: SessionInfo = {
                 campaignCode,
                 stats: {
                     maxLp: userCharsheet.stats.maxLp,
                     maxMp: userCharsheet.stats.maxMp,
                     maxAp: userCharsheet.stats.maxAp,
-                    lp: userCharsheet.session.find(s => s.campaignCode === campaignCode)?.stats.lp ?? userCharsheet.stats.lp,
-                    mp: userCharsheet.session.find(s => s.campaignCode === campaignCode)?.stats.mp ?? userCharsheet.stats.mp,
-                    ap: userCharsheet.session.find(s => s.campaignCode === campaignCode)?.stats.ap ?? userCharsheet.stats.ap
-                }
+                    lp: existingSession?.stats.lp ?? userCharsheet.stats.lp,
+                    mp: existingSession?.stats.mp ?? userCharsheet.stats.mp,
+                    ap: existingSession?.stats.ap ?? userCharsheet.stats.ap
+                },
+                perks: existingSession?.perks || [] // Preserva os perks adquiridos, usa array vazio se não houver
             };
 
             const userSession = [ ...userCharsheet.session.filter(s => s.campaignCode !== campaignCode), sessionInfo ];
