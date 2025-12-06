@@ -66,9 +66,18 @@ export interface SessionAttributes {
     ap: number
 }
 
+export interface SessionPerk {
+    id: string
+    rarity: string
+    name: string
+    description: string
+    perkType: string
+}
+
 export interface SessionInfo {
     campaignCode: string
     stats: SessionAttributes
+    perks?: SessionPerk[]
 }
 
 export interface MergedItems<T extends 'Leve' | 'Pesada'> {

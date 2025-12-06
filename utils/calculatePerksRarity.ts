@@ -60,5 +60,5 @@ export function calculateSkillRarity(
     }
     
     // Para os demais tipos, manter a raridade existente
-    return existingRarity || 'Comum';
+    return existingRarity ?? 'Comum';
 }
