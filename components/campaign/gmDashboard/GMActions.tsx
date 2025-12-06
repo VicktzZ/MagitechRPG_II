@@ -112,9 +112,9 @@ export default function GMActions(): ReactElement {
         'Fogo', 'Água', 'Ar', 'Terra', 'Eletricidade', 'Luz', 'Trevas', 'Não-Elemental',
         'Sangue', 'Vácuo', 'Psíquico', 'Radiação', 'Explosão', 'Tóxico', 'Gelo', 'Planta', 'Metal'
     ]
-    const spellLevelOptions = ['1', '2', '3', '4']
-    const executionOptions = ['Livre', 'Completa', 'Padrão', 'Movimento', 'Reação', 'Bônus']
-    const itemKindOptions = ['Especial', 'Utilidade', 'Consumível', 'Item Chave', 'Munição', 'Capacidade', 'Padrão', 'Arremessável', 'Equipamento']
+    const spellLevelOptions = [ '1', '2', '3', '4' ]
+    const executionOptions = [ 'Livre', 'Completa', 'Padrão', 'Movimento', 'Reação', 'Bônus' ]
+    const itemKindOptions = [ 'Especial', 'Utilidade', 'Consumível', 'Item Chave', 'Munição', 'Capacidade', 'Padrão', 'Arremessável', 'Equipamento' ]
     const skillTypeOptions = [
         { value: SkillTypeEnum.CLASSE, label: 'Classe' },
         { value: SkillTypeEnum.LINHAGEM, label: 'Linhagem' },
@@ -956,7 +956,7 @@ export default function GMActions(): ReactElement {
                                     ? 'rgba(76, 175, 80, 0.1)' 
                                     : 'rgba(158, 158, 158, 0.1)',
                                 borderRadius: 2,
-                                border: `1px solid`,
+                                border: '1px solid',
                                 borderColor: campaign.shop?.isOpen ? green[500] : 'divider'
                             }}
                         >
@@ -1029,7 +1029,7 @@ export default function GMActions(): ReactElement {
                                         onClick={() => {
                                             const newRarities = shopConfig.rarities.includes(rarity)
                                                 ? shopConfig.rarities.filter(r => r !== rarity)
-                                                : [...shopConfig.rarities, rarity]
+                                                : [ ...shopConfig.rarities, rarity ]
                                             setShopConfig(prev => ({ ...prev, rarities: newRarities }))
                                         }}
                                         sx={{
@@ -1066,7 +1066,7 @@ export default function GMActions(): ReactElement {
                                         onClick={() => {
                                             const newTypes = shopConfig.types.includes(type.value)
                                                 ? shopConfig.types.filter(t => t !== type.value)
-                                                : [...shopConfig.types, type.value]
+                                                : [ ...shopConfig.types, type.value ]
                                             setShopConfig(prev => ({ ...prev, types: newTypes }))
                                         }}
                                         sx={{
@@ -1103,7 +1103,7 @@ export default function GMActions(): ReactElement {
                                         onClick={() => {
                                             const newKinds = shopConfig.itemKinds.includes(kind)
                                                 ? shopConfig.itemKinds.filter(k => k !== kind)
-                                                : [...shopConfig.itemKinds, kind]
+                                                : [ ...shopConfig.itemKinds, kind ]
                                             setShopConfig(prev => ({ ...prev, itemKinds: newKinds }))
                                         }}
                                         sx={{
@@ -1133,7 +1133,7 @@ export default function GMActions(): ReactElement {
                     </Button>
                     {campaign.shop?.isOpen ? (
                         <Button
-                            onClick={() => handleToggleShop(false)}
+                            onClick={async () => await handleToggleShop(false)}
                             variant="contained"
                             disabled={isUpdatingShop}
                             startIcon={isUpdatingShop ? <CircularProgress size={20} /> : <StorefrontIcon />}
@@ -1143,7 +1143,7 @@ export default function GMActions(): ReactElement {
                         </Button>
                     ) : (
                         <Button
-                            onClick={() => handleToggleShop(true)}
+                            onClick={async () => await handleToggleShop(true)}
                             variant="contained"
                             disabled={isUpdatingShop}
                             startIcon={isUpdatingShop ? <CircularProgress size={20} /> : <StorefrontIcon />}

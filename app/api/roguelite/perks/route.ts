@@ -1,6 +1,6 @@
 import { Perk } from '@models/entities'
 import { perkRepository } from '@repositories'
-import { cache, generateCacheKey, generateETag, isCacheValid } from '@utils/cacheApi'
+import { cache, generateCacheKey, generateETag } from '@utils/cacheApi'
 import {
     generateRandomSeed,
     getCollectionsForPerkType,

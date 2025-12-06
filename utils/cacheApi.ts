@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
+
 export const cache = new Map<string, { data: any; timestamp: number }>();
 export const CACHE_TTL = 60 * 60 * 1000; // 5 minutos
 

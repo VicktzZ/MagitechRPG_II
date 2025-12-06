@@ -22,25 +22,18 @@ import {
     Chip,
     IconButton,
     TextField,
-    Switch,
-    FormControlLabel,
-    Divider,
     Alert,
     CircularProgress,
-    Tooltip,
-    Select,
-    MenuItem,
-    FormControl,
-    InputLabel
+    Tooltip
 } from '@mui/material';
 import { elementColor } from '@constants';
-import { Edit, Save, Cancel, Add, Delete } from '@mui/icons-material';
+import { Edit, Save, Cancel, Delete } from '@mui/icons-material';
 import ChangePlayerStatusModal from './ChangePlayerStatusModal';
 import type { CharsheetDTO } from '@models/dtos';
 import { useFirestoreRealtime } from '@hooks/useFirestoreRealtime';
 import { charsheetEntity } from '@utils/firestoreEntities';
 import { useSnackbar } from 'notistack';
-import { green, red, orange, blue } from '@mui/material/colors';
+import { green, red, orange } from '@mui/material/colors';
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -92,9 +85,9 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet }: Char
     });
 
     // Estados de edição
-    const [isEditing, setIsEditing] = useState(false);
-    const [isSaving, setIsSaving] = useState(false);
-    const [editedData, setEditedData] = useState<Partial<CharsheetDTO>>({});
+    const [ isEditing, setIsEditing ] = useState(false);
+    const [ isSaving, setIsSaving ] = useState(false);
+    const [ editedData, setEditedData ] = useState<Partial<CharsheetDTO>>({});
 
     // Inicializa os dados editáveis quando o modal abre
     useEffect(() => {
@@ -116,18 +109,18 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet }: Char
                 points: { ...charsheet.points },
                 inventory: { 
                     ...charsheet.inventory,
-                    weapons: [...(charsheet.inventory?.weapons || [])],
-                    armors: [...(charsheet.inventory?.armors || [])],
-                    items: [...(charsheet.inventory?.items || [])]
+                    weapons: [ ...(charsheet.inventory?.weapons || []) ],
+                    armors: [ ...(charsheet.inventory?.armors || []) ],
+                    items: [ ...(charsheet.inventory?.items || []) ]
                 },
                 skills: { ...charsheet.skills },
-                spells: [...(charsheet.spells || [])],
+                spells: [ ...(charsheet.spells || []) ],
                 displacement: charsheet.displacement,
                 spellSpace: charsheet.spellSpace,
                 elementalMastery: charsheet.elementalMastery
             });
         }
-    }, [open, charsheet]);
+    }, [ open, charsheet ]);
 
     // Função para salvar as alterações
     const handleSave = async () => {
@@ -638,7 +631,7 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet }: Char
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
-                                    {(['vig', 'des', 'log', 'sab', 'foc', 'car'] as const).map((attr) => {
+                                    {([ 'vig', 'des', 'log', 'sab', 'foc', 'car' ] as const).map((attr) => {
                                         const labels: Record<string, string> = {
                                             vig: 'Vigor (VIG)',
                                             des: 'Destreza (DES)',
@@ -745,7 +738,7 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet }: Char
                                                                 size="small" 
                                                                 color="error"
                                                                 onClick={() => {
-                                                                    const newWeapons = [...(editedData.inventory?.weapons || charsheet.inventory.weapons)];
+                                                                    const newWeapons = [ ...(editedData.inventory?.weapons || charsheet.inventory.weapons) ];
                                                                     newWeapons.splice(index, 1);
                                                                     updateNestedField('inventory.weapons', newWeapons);
                                                                 }}
@@ -787,7 +780,7 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet }: Char
                                                                 size="small" 
                                                                 color="error"
                                                                 onClick={() => {
-                                                                    const newArmors = [...(editedData.inventory?.armors || charsheet.inventory.armors)];
+                                                                    const newArmors = [ ...(editedData.inventory?.armors || charsheet.inventory.armors) ];
                                                                     newArmors.splice(index, 1);
                                                                     updateNestedField('inventory.armors', newArmors);
                                                                 }}
@@ -829,7 +822,7 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet }: Char
                                                                 size="small" 
                                                                 color="error"
                                                                 onClick={() => {
-                                                                    const newItems = [...(editedData.inventory?.items || charsheet.inventory.items)];
+                                                                    const newItems = [ ...(editedData.inventory?.items || charsheet.inventory.items) ];
                                                                     newItems.splice(index, 1);
                                                                     updateNestedField('inventory.items', newItems);
                                                                 }}
@@ -872,7 +865,7 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet }: Char
                                                                 size="small" 
                                                                 color="error"
                                                                 onClick={() => {
-                                                                    const newClassSkills = [...(editedData.skills?.class || charsheet.skills.class)];
+                                                                    const newClassSkills = [ ...(editedData.skills?.class || charsheet.skills.class) ];
                                                                     newClassSkills.splice(index, 1);
                                                                     updateNestedField('skills.class', newClassSkills);
                                                                 }}
@@ -911,7 +904,7 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet }: Char
                                                                     size="small" 
                                                                     color="error"
                                                                     onClick={() => {
-                                                                        const newSubclassSkills = [...(editedData.skills?.subclass || charsheet.skills.subclass)];
+                                                                        const newSubclassSkills = [ ...(editedData.skills?.subclass || charsheet.skills.subclass) ];
                                                                         newSubclassSkills.splice(index, 1);
                                                                         updateNestedField('skills.subclass', newSubclassSkills);
                                                                     }}
@@ -950,7 +943,7 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet }: Char
                                                                 size="small" 
                                                                 color="error"
                                                                 onClick={() => {
-                                                                    const newLineageSkills = [...(editedData.skills?.lineage || charsheet.skills.lineage)];
+                                                                    const newLineageSkills = [ ...(editedData.skills?.lineage || charsheet.skills.lineage) ];
                                                                     newLineageSkills.splice(index, 1);
                                                                     updateNestedField('skills.lineage', newLineageSkills);
                                                                 }}
@@ -989,7 +982,7 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet }: Char
                                                                     size="small" 
                                                                     color="error"
                                                                     onClick={() => {
-                                                                        const newBonusSkills = [...(editedData.skills?.bonus || charsheet.skills.bonus)];
+                                                                        const newBonusSkills = [ ...(editedData.skills?.bonus || charsheet.skills.bonus) ];
                                                                         newBonusSkills.splice(index, 1);
                                                                         updateNestedField('skills.bonus', newBonusSkills);
                                                                     }}
@@ -1087,7 +1080,7 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet }: Char
                                                             size="small" 
                                                             color="error"
                                                             onClick={() => {
-                                                                const newSpells = [...(editedData.spells || charsheet.spells)];
+                                                                const newSpells = [ ...(editedData.spells || charsheet.spells) ];
                                                                 newSpells.splice(index, 1);
                                                                 updateNestedField('spells', newSpells);
                                                             }}

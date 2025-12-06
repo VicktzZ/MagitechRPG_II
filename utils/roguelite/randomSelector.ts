@@ -11,12 +11,12 @@ export function selectRandomItems<T>(items: T[], count: number, seed: string): T
     if (items.length <= count) return items
     
     const rng = createRandom(seed)
-    const shuffled = [...items]
+    const shuffled = [ ...items ]
     
     // Fisher-Yates shuffle com seed
     for (let i = shuffled.length - 1; i > 0; i--) {
         const j = Math.floor(rng.random() * (i + 1));
-        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+        [ shuffled[i], shuffled[j] ] = [ shuffled[j], shuffled[i] ]
     }
     
     return shuffled.slice(0, count)

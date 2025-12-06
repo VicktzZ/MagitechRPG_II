@@ -44,7 +44,7 @@ export function PerkCard({
             return spellElementColor[elementKey] ?? rarityColor[rarity]
         }
         return rarityColor[rarity]
-    }, [perkType, element, rarity])
+    }, [ perkType, element, rarity ])
     
     // Para SPELLs, mostrar elemento no lugar da raridade
     const displayRarity = useMemo(() => {
@@ -52,7 +52,7 @@ export function PerkCard({
             return element.toUpperCase()
         }
         return rarity
-    }, [perkType, element, rarity])
+    }, [ perkType, element, rarity ])
     
     const ref = useRef<HTMLDivElement>(null)
 

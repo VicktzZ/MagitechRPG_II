@@ -40,7 +40,7 @@ import { useSnackbar } from 'notistack';
 import { red, blue, green, orange, grey } from '@mui/material/colors';
 import { type ReactElement, useState, useMemo } from 'react';
 import { useSession } from '@node_modules/next-auth/react';
-import { SessionPlayer } from '@features/roguelite/components';
+import { type SessionPlayer } from '@features/roguelite/components';
 import { SubstitutionModal } from '@features/roguelite/components/perkCardsModal/components/SubstitutionModal';
 
 type InventoryTab = 'all' | 'weapons' | 'armors' | 'items';
@@ -55,7 +55,7 @@ export default function InventorySection(): ReactElement {
     const [ searchQuery, setSearchQuery ] = useState('');
     
     // Estado para modal de doação
-    const [donationModal, setDonationModal] = useState<{
+    const [ donationModal, setDonationModal ] = useState<{
         open: boolean;
         item: any;
         type: 'weapon' | 'armor' | 'item';
@@ -67,7 +67,7 @@ export default function InventorySection(): ReactElement {
         const armorsWeight = charsheet.inventory.armors.reduce((acc, a) => acc + (a.weight || 0), 0);
         const itemsWeight = charsheet.inventory.items.reduce((acc, i) => acc + ((i.weight || 0) * (i.quantity || 1)), 0);
         return weaponsWeight + armorsWeight + itemsWeight;
-    }, [charsheet.inventory.weapons, charsheet.inventory.armors, charsheet.inventory.items]);
+    }, [ charsheet.inventory.weapons, charsheet.inventory.armors, charsheet.inventory.items ]);
 
     const totalItems = charsheet.inventory.weapons.length + charsheet.inventory.armors.length + charsheet.inventory.items.length;
     const capacityPercent = (calculateTotalWeight / charsheet.capacity.max) * 100;
@@ -101,7 +101,7 @@ export default function InventorySection(): ReactElement {
                 };
             })
             .filter(p => p.charsheetId);
-    }, [users.players, session?.user?.id, charsheets, campaign?.players]);
+    }, [ users.players, session?.user?.id, charsheets, campaign?.players ]);
 
     // Abre modal de doação
     const handleOpenDonationModal = (item: any, type: 'weapon' | 'armor' | 'item', e: React.MouseEvent) => {
@@ -134,7 +134,7 @@ export default function InventorySection(): ReactElement {
             if (result.success) {
                 // Remove o item do inventário do doador
                 const itemWeight = (donationModal.item.weight || 0) * (donationModal.item.quantity || 1);
-                let updatedInventory: any = {};
+                const updatedInventory: any = {};
 
                 switch (donationModal.type) {
                 case 'weapon':
@@ -155,7 +155,7 @@ export default function InventorySection(): ReactElement {
                         const newAP = Math.max(5, currentSessionAP - armorAPValue);
                         const newMaxAP = Math.max(5, currentSessionMaxAP - armorAPValue);
                         
-                        const updatedSessions = [...sessions];
+                        const updatedSessions = [ ...sessions ];
                         updatedSessions[sessionIndex] = {
                             ...sessionData,
                             stats: {
@@ -164,7 +164,7 @@ export default function InventorySection(): ReactElement {
                                 maxAp: newMaxAP
                             }
                         };
-                        updatedInventory['session'] = updatedSessions;
+                        updatedInventory.session = updatedSessions;
                     }
                     break;
                 }
@@ -204,7 +204,7 @@ export default function InventorySection(): ReactElement {
         e.stopPropagation(); // Evita expandir o accordion
         
         try {
-            let updatedInventory: any = {};
+            const updatedInventory: any = {};
             const itemWeight = (itemToDelete.weight || 0) * (itemToDelete.quantity || 1);
             
             switch (type) {
@@ -226,7 +226,7 @@ export default function InventorySection(): ReactElement {
                     const newAP = Math.max(5, currentSessionAP - armorAPValue);
                     const newMaxAP = Math.max(5, currentSessionMaxAP - armorAPValue);
                     
-                    const updatedSessions = [...sessions];
+                    const updatedSessions = [ ...sessions ];
                     updatedSessions[sessionIndex] = {
                         ...session,
                         stats: {
@@ -235,7 +235,7 @@ export default function InventorySection(): ReactElement {
                             maxAp: newMaxAP
                         }
                     };
-                    updatedInventory['session'] = updatedSessions;
+                    updatedInventory.session = updatedSessions;
                 }
                 break;
             }
@@ -568,7 +568,7 @@ export default function InventorySection(): ReactElement {
                             <Tooltip title="Remover do inventário">
                                 <IconButton
                                     size="small"
-                                    onClick={(e) => handleDeleteItem(item, type, e)}
+                                    onClick={async (e) => await handleDeleteItem(item, type, e)}
                                     sx={{
                                         color: red[400],
                                         '&:hover': {

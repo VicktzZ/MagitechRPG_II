@@ -4,7 +4,7 @@ import { calculatePowerRarity } from '@utils/calculatePerksRarity'
 import type { ProcessorFilters, ProcessedItem } from './types'
 
 export async function processPowers(filters: ProcessorFilters): Promise<ProcessedItem[]> {
-    let powers = await powerRepository.find()
+    const powers = await powerRepository.find()
     
     // Adicionar raridade calculada baseada nos pré-requisitos
     let processedPowers = powers.map(power => {

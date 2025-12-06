@@ -8,7 +8,7 @@ export async function processSkills(filters: ProcessorFilters): Promise<Processe
     
     console.log('[skillsProcessor] Total skills carregadas:', skills.length)
     console.log('[skillsProcessor] Filtros recebidos:', { skillTypes: filters.skillTypes, perkType: filters.perkType })
-    console.log('[skillsProcessor] Tipos únicos de skills:', [...new Set(skills.map((s: any) => s.type))])
+    console.log('[skillsProcessor] Tipos únicos de skills:', [ ...new Set(skills.map((s: any) => s.type)) ])
     
     // Filtrar skills por nível do usuário
     if (filters.userLevel !== undefined && filters.userLevel > 0) {

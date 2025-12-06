@@ -48,7 +48,7 @@ export default function MoneyAndAmmo(): ReactElement {
     // Sincroniza o estado local quando o charsheet muda (atualização externa)
     useEffect(() => {
         setMoney(charsheet.inventory?.money ?? 0);
-    }, [charsheet.inventory?.money]);
+    }, [ charsheet.inventory?.money ]);
 
     const ammoPercent = (ammo.current / ammo.max) * 100;
 

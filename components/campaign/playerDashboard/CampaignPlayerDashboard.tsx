@@ -45,14 +45,14 @@ export default function CampaignPlayerDashboard(): ReactElement | null {
         const userId = session?.user?.id
         const pendingUsers = campaign?.session?.pendingPerkUsers || []
         return !!(userId && pendingUsers.includes(userId))
-    }, [session?.user?.id, campaign?.session?.pendingPerkUsers])
+    }, [ session?.user?.id, campaign?.session?.pendingPerkUsers ])
 
     // Modal abre SOMENTE quando o usuário está na lista de pendentes
-    const [perkModalOpen, setPerkModalOpen] = useState(false)
+    const [ perkModalOpen, setPerkModalOpen ] = useState(false)
 
     // Estado para notificação de doação recebida
-    const [donationNotification, setDonationNotification] = useState<DonationNotification | null>(null)
-    const [processedNotificationIds, setProcessedNotificationIds] = useState<Set<string>>(new Set())
+    const [ donationNotification, setDonationNotification ] = useState<DonationNotification | null>(null)
+    const [ processedNotificationIds, setProcessedNotificationIds ] = useState<Set<string>>(new Set())
 
     // Efeito para abrir modal quando usuário tem perk pendente
     useEffect(() => {
@@ -61,7 +61,7 @@ export default function CampaignPlayerDashboard(): ReactElement | null {
         } else {
             setPerkModalOpen(false)
         }
-    }, [isUserPendingPerk])
+    }, [ isUserPendingPerk ])
 
     // Verifica se há notificações de doação não lidas
     useEffect(() => {
@@ -75,7 +75,7 @@ export default function CampaignPlayerDashboard(): ReactElement | null {
         const latestDonation = unreadDonations.length > 0 
             ? unreadDonations.sort((a: any, b: any) => 
                 new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
-              )[0]
+            )[0]
             : null
         
         if (latestDonation && !donationNotification) {
@@ -87,7 +87,7 @@ export default function CampaignPlayerDashboard(): ReactElement | null {
                 itemRarity: latestDonation.itemRarity
             })
         }
-    }, [charsheet?.notifications, processedNotificationIds, donationNotification])
+    }, [ charsheet?.notifications, processedNotificationIds, donationNotification ])
 
     // Prepara lista de jogadores da sessão (excluindo o jogador atual)
     const sessionPlayers: SessionPlayer[] = useMemo(() => {
@@ -151,7 +151,7 @@ export default function CampaignPlayerDashboard(): ReactElement | null {
         })
         
         return players
-    }, [users.players, session?.user?.id, charsheets, campaign?.players])
+    }, [ users.players, session?.user?.id, charsheets, campaign?.players ])
 
     const handlePerkSelected = async (perk: any, replacedItemId?: string) => {
         if (!charsheet?.id || !campaign?.campaignCode) return
@@ -198,7 +198,7 @@ export default function CampaignPlayerDashboard(): ReactElement | null {
             rarity: armor.rarity,
             ap: armor.ap
         }))
-    }), [charsheet?.spellSpace, charsheet?.spells, charsheet?.inventory?.weapons, charsheet?.inventory?.armors])
+    }), [ charsheet?.spellSpace, charsheet?.spells, charsheet?.inventory?.weapons, charsheet?.inventory?.armors ])
 
     const handleCloseModal = async () => {
         // Guarda referência antes de fechar
@@ -229,7 +229,7 @@ export default function CampaignPlayerDashboard(): ReactElement | null {
         const notificationId = donationNotification.id
         
         // Adiciona ao set de processados para evitar reabrir
-        setProcessedNotificationIds(prev => new Set([...prev, notificationId]))
+        setProcessedNotificationIds(prev => new Set([ ...prev, notificationId ]))
         
         // Limpa o estado local imediatamente
         setDonationNotification(null)
@@ -367,49 +367,49 @@ export default function CampaignPlayerDashboard(): ReactElement | null {
                             </Section>
                         </Box>
                     </Stack>
-                {/* Modal de Perks - aparece SOMENTE quando GM oferece e usuário está na lista */}
-                {isUserPendingPerk && (
-                    <PerkCardsModal 
-                        open={perkModalOpen} 
-                        level={charsheet.level}
-                        hideFilters={true}
-                        initialFilters={campaign.session?.perkFilters ? {
-                            rarities: campaign.session.perkFilters.rarities,
-                            type: campaign.session.perkFilters.type || undefined,
-                            element: campaign.session.perkFilters.element || undefined,
-                            spellLevel: campaign.session.perkFilters.spellLevel || undefined,
-                            execution: campaign.session.perkFilters.execution || undefined,
-                            itemKinds: campaign.session.perkFilters.itemKinds,
-                            skillTypes: campaign.session.perkFilters.skillTypes
-                        } : undefined}
-                        charsheetSpace={charsheetSpace}
-                        sessionPlayers={sessionPlayers}
-                        campaignId={campaign.id}
-                        currentCharsheetId={charsheet.id}
-                        currentPlayerName={charsheet.name}
-                        onPerkSelected={handlePerkSelected}
-                        onClose={handleCloseModal}
-                    />
-                )}
+                    {/* Modal de Perks - aparece SOMENTE quando GM oferece e usuário está na lista */}
+                    {isUserPendingPerk && (
+                        <PerkCardsModal 
+                            open={perkModalOpen} 
+                            level={charsheet.level}
+                            hideFilters={true}
+                            initialFilters={campaign.session?.perkFilters ? {
+                                rarities: campaign.session.perkFilters.rarities,
+                                type: campaign.session.perkFilters.type || undefined,
+                                element: campaign.session.perkFilters.element || undefined,
+                                spellLevel: campaign.session.perkFilters.spellLevel || undefined,
+                                execution: campaign.session.perkFilters.execution || undefined,
+                                itemKinds: campaign.session.perkFilters.itemKinds,
+                                skillTypes: campaign.session.perkFilters.skillTypes
+                            } : undefined}
+                            charsheetSpace={charsheetSpace}
+                            sessionPlayers={sessionPlayers}
+                            campaignId={campaign.id}
+                            currentCharsheetId={charsheet.id}
+                            currentPlayerName={charsheet.name}
+                            onPerkSelected={handlePerkSelected}
+                            onClose={handleCloseModal}
+                        />
+                    )}
                 
-                {/* Lista de perks adquiridos - apenas em Roguelite */}
-                {campaign.mode === 'Roguelite' && (
-                    <AcquiredPerks />
-                )}
+                    {/* Lista de perks adquiridos - apenas em Roguelite */}
+                    {campaign.mode === 'Roguelite' && (
+                        <AcquiredPerks />
+                    )}
 
-                {/* Modal de notificação de doação recebida */}
-                <DonationReceivedModal
-                    open={!!donationNotification}
-                    donation={donationNotification}
-                    onClose={handleCloseDonationModal}
-                />
+                    {/* Modal de notificação de doação recebida */}
+                    <DonationReceivedModal
+                        open={!!donationNotification}
+                        donation={donationNotification}
+                        onClose={handleCloseDonationModal}
+                    />
 
-                {/* Drawer de loja - apenas em Roguelite quando a loja está aberta */}
-                {campaign.mode === 'Roguelite' && (
-                    <ShopDrawer />
-                )}
-            </Box>
-        )}
-    </Box>
-);
+                    {/* Drawer de loja - apenas em Roguelite quando a loja está aberta */}
+                    {campaign.mode === 'Roguelite' && (
+                        <ShopDrawer />
+                    )}
+                </Box>
+            )}
+        </Box>
+    );
 }

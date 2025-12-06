@@ -3,7 +3,7 @@ import { itemRepository } from '@repositories'
 import type { ProcessorFilters, ProcessedItem } from './types'
 
 export async function processItems(filters: ProcessorFilters): Promise<ProcessedItem[]> {
-    let items = await itemRepository.find()
+    const items = await itemRepository.find()
     
     console.log('[itemsProcessor] filters recebidos:', {
         rarities: filters.rarities,
@@ -22,8 +22,8 @@ export async function processItems(filters: ProcessorFilters): Promise<Processed
     })
     
     console.log('[itemsProcessor] total antes de filtros:', processedItems.length)
-    console.log('[itemsProcessor] raridades únicas:', [...new Set(processedItems.map(i => i.rogueliteRarity))])
-    console.log('[itemsProcessor] kinds únicos:', [...new Set(processedItems.map(i => i.kind))])
+    console.log('[itemsProcessor] raridades únicas:', [ ...new Set(processedItems.map(i => i.rogueliteRarity)) ])
+    console.log('[itemsProcessor] kinds únicos:', [ ...new Set(processedItems.map(i => i.kind)) ])
     
     // Filtro por múltiplas raridades (multi-select)
     const hasRarities = filters.rarities && Array.isArray(filters.rarities) && filters.rarities.length > 0

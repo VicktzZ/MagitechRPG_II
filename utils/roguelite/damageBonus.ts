@@ -48,7 +48,7 @@ export function addDamageBonus(currentDamage: string, bonus: number): string {
     if (bonus <= 0) return currentDamage
     
     if (currentDamage.includes('+')) {
-        const [baseDamage, existingBonusStr] = currentDamage.split('+')
+        const [ baseDamage, existingBonusStr ] = currentDamage.split('+')
         const existingBonus = parseInt(existingBonusStr) || 0
         return `${baseDamage}+${existingBonus + bonus}`
     }
@@ -79,7 +79,7 @@ export function formatCompleteDamageWithBonus(
 ): string {
     if (!damageString.includes('+')) return damageString
     
-    const [baseDamage, bonusStr] = damageString.split('+')
+    const [ baseDamage, bonusStr ] = damageString.split('+')
     const bonus = parseInt(bonusStr) || 0
     
     return formatDamageWithBonus(baseDamage, bonus, isCritical)

@@ -32,7 +32,7 @@ export async function processArmors(filters: ProcessorFilters): Promise<Processe
     
     // Verificar se o GM especificou raridades específicas
     const hasSpecificRarities = (filters.rarities && filters.rarities.length > 0) || filters.rarity
-    const targetRarities = filters.rarities || (filters.rarity ? [filters.rarity] : null)
+    const targetRarities = filters.rarities || (filters.rarity ? [ filters.rarity ] : null)
     
     // Se o GM especificou raridades, aplicar a raridade desejada a TODAS as armaduras
     if (hasSpecificRarities && targetRarities) {
@@ -71,7 +71,7 @@ export async function processArmors(filters: ProcessorFilters): Promise<Processe
                     const roll = armorRng.random() * 100
                     let cumulative = 0
                     
-                    for (const [rarity, weight] of Object.entries(rarityWeights)) {
+                    for (const [ rarity, weight ] of Object.entries(rarityWeights)) {
                         if (rarity !== 'Comum') {
                             cumulative += weight
                             

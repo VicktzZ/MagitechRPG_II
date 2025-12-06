@@ -49,41 +49,6 @@ function findSessionIndex(charsheet: any, campaignCode: string): number {
 /**
  * Atualiza um valor na sessão da campanha
  */
-function updateSessionStat(
-    charsheet: any, 
-    campaignCode: string, 
-    statPath: string, 
-    newValue: number
-): Record<string, any> | null {
-    const sessions = charsheet?.session || []
-    const sessionIndex = findSessionIndex(charsheet, campaignCode)
-    
-    if (sessionIndex < 0) return null
-    
-    const currentSession = sessions[sessionIndex]
-    const updatedSessions = [...sessions]
-    
-    // Suporta paths como "stats.lp", "stats.maxLp", etc.
-    const pathParts = statPath.split('.')
-    
-    if (pathParts.length === 1) {
-        updatedSessions[sessionIndex] = {
-            ...currentSession,
-            [statPath]: newValue
-        }
-    } else if (pathParts[0] === 'stats') {
-        const statName = pathParts[1]
-        updatedSessions[sessionIndex] = {
-            ...currentSession,
-            stats: {
-                ...currentSession.stats,
-                [statName]: newValue
-            }
-        }
-    }
-    
-    return { session: updatedSessions }
-}
 
 /**
  * Aplica os efeitos de um perk ao charsheet
@@ -105,74 +70,74 @@ export function applyPerkEffects(options: ApplyEffectsOptions): ApplyEffectsResu
     const currentSession = sessionIndex >= 0 ? sessions[sessionIndex] : null
     
     for (const effect of effects) {
-        const { type, target, value, description } = effect
+        const { type, target, value  } = effect
         const numericValue = parseEffectValue(value)
         
         console.log(`[applyPerkEffects] Processando efeito: type=${type}, target=${target}, value=${value}`)
         
         try {
             switch (type) {
-                case 'add': {
-                    const result = processAddEffect(target, numericValue, currentCharsheet, currentSession, sessions, sessionIndex)
-                    if (result.update) {
-                        Object.assign(updates, result.update)
-                    }
-                    if (result.message) {
-                        messages.push(result.message)
-                    }
-                    break
+            case 'add': {
+                const result = processAddEffect(target, numericValue, currentCharsheet, currentSession, sessions, sessionIndex)
+                if (result.update) {
+                    Object.assign(updates, result.update)
                 }
-                
-                case 'multiply': {
-                    const result = processMultiplyEffect(target, numericValue, currentCharsheet, currentSession, sessions, sessionIndex)
-                    if (result.update) {
-                        Object.assign(updates, result.update)
-                    }
-                    if (result.message) {
-                        messages.push(result.message)
-                    }
-                    break
+                if (result.message) {
+                    messages.push(result.message)
                 }
+                break
+            }
                 
-                case 'heal': {
-                    const result = processHealEffect(target, numericValue, currentCharsheet, currentSession, sessions, sessionIndex)
-                    if (result.update) {
-                        Object.assign(updates, result.update)
-                    }
-                    if (result.message) {
-                        messages.push(result.message)
-                    }
-                    break
+            case 'multiply': {
+                const result = processMultiplyEffect(target, numericValue, currentCharsheet, currentSession, sessions, sessionIndex)
+                if (result.update) {
+                    Object.assign(updates, result.update)
                 }
-                
-                case 'reduce': {
-                    // Reduce é como multiply mas semanticamente diferente (valor < 1)
-                    const result = processMultiplyEffect(target, numericValue, currentCharsheet, currentSession, sessions, sessionIndex)
-                    if (result.update) {
-                        Object.assign(updates, result.update)
-                    }
-                    if (result.message) {
-                        messages.push(result.message.replace('multiplicado', 'reduzido'))
-                    }
-                    break
+                if (result.message) {
+                    messages.push(result.message)
                 }
+                break
+            }
                 
-                case 'set': {
-                    const result = processSetEffect(target, numericValue, currentCharsheet)
-                    if (result.update) {
-                        Object.assign(updates, result.update)
-                    }
-                    if (result.message) {
-                        messages.push(result.message)
-                    }
-                    break
+            case 'heal': {
+                const result = processHealEffect(target, numericValue, currentCharsheet, currentSession, sessions, sessionIndex)
+                if (result.update) {
+                    Object.assign(updates, result.update)
                 }
+                if (result.message) {
+                    messages.push(result.message)
+                }
+                break
+            }
                 
-                default:
-                    console.warn(`[applyPerkEffects] Tipo de efeito desconhecido: ${type}`)
+            case 'reduce': {
+                // Reduce é como multiply mas semanticamente diferente (valor < 1)
+                const result = processMultiplyEffect(target, numericValue, currentCharsheet, currentSession, sessions, sessionIndex)
+                if (result.update) {
+                    Object.assign(updates, result.update)
+                }
+                if (result.message) {
+                    messages.push(result.message.replace('multiplicado', 'reduzido'))
+                }
+                break
+            }
+                
+            case 'set': {
+                const result = processSetEffect(target, numericValue, currentCharsheet)
+                if (result.update) {
+                    Object.assign(updates, result.update)
+                }
+                if (result.message) {
+                    messages.push(result.message)
+                }
+                break
+            }
+                
+            default:
+                console.warn(`[applyPerkEffects] Tipo de efeito desconhecido: ${type}`)
             }
         } catch (error) {
-            console.error(`[applyPerkEffects] Erro ao processar efeito:`, error)
+            console.error('[applyPerkEffects] Erro ao processar efeito:', error)
         }
     }
     
@@ -295,7 +260,7 @@ function processAddEffect(
             else current = 0
         }
         
-        const updatedSessions = [...sessions]
+        const updatedSessions = [ ...sessions ]
         updatedSessions[sessionIndex] = {
             ...session,
             stats: {
@@ -355,7 +320,7 @@ function processMultiplyEffect(
         const statName = target.replace('stats.', '')
         const current = session?.stats?.[statName] || 0
         const newValue = Math.floor(current * value)
-        const updatedSessions = [...sessions]
+        const updatedSessions = [ ...sessions ]
         updatedSessions[sessionIndex] = {
             ...session,
             stats: {
@@ -409,7 +374,7 @@ function processHealEffect(
             const currentMaxLp = session?.stats?.maxLp || charsheet?.stats?.lp || 100
             const newMaxLp = currentMaxLp + value
             
-            const updatedSessions = [...sessions]
+            const updatedSessions = [ ...sessions ]
             updatedSessions[sessionIndex] = {
                 ...session,
                 stats: {
@@ -428,7 +393,7 @@ function processHealEffect(
             const newLp = Math.min(currentLp + value, maxLp)
             const healed = newLp - currentLp
             
-            const updatedSessions = [...sessions]
+            const updatedSessions = [ ...sessions ]
             updatedSessions[sessionIndex] = {
                 ...session,
                 stats: {
@@ -450,7 +415,7 @@ function processHealEffect(
             const currentMaxMp = session?.stats?.maxMp || charsheet?.stats?.mp || 50
             const newMaxMp = currentMaxMp + value
             
-            const updatedSessions = [...sessions]
+            const updatedSessions = [ ...sessions ]
             updatedSessions[sessionIndex] = {
                 ...session,
                 stats: {
@@ -469,7 +434,7 @@ function processHealEffect(
             const newMp = Math.min(currentMp + value, maxMp)
             const restored = newMp - currentMp
             
-            const updatedSessions = [...sessions]
+            const updatedSessions = [ ...sessions ]
             updatedSessions[sessionIndex] = {
                 ...session,
                 stats: {
@@ -490,7 +455,7 @@ function processHealEffect(
             const currentMaxAp = session?.stats?.maxAp || charsheet?.stats?.ap || 5
             const newMaxAp = currentMaxAp + value
             
-            const updatedSessions = [...sessions]
+            const updatedSessions = [ ...sessions ]
             updatedSessions[sessionIndex] = {
                 ...session,
                 stats: {
@@ -508,7 +473,7 @@ function processHealEffect(
             const newAp = Math.min(currentAp + value, maxAp)
             const restored = newAp - currentAp
             
-            const updatedSessions = [...sessions]
+            const updatedSessions = [ ...sessions ]
             updatedSessions[sessionIndex] = {
                 ...session,
                 stats: {
@@ -524,12 +489,12 @@ function processHealEffect(
     }
     
     // Fallback: trata como add genérico para stats na sessão
-    if (target.startsWith('stats.') || ['lp', 'mp', 'ap', 'maxLp', 'maxMp', 'maxAp'].includes(target)) {
+    if (target.startsWith('stats.') || [ 'lp', 'mp', 'ap', 'maxLp', 'maxMp', 'maxAp' ].includes(target)) {
         const statName = target.startsWith('stats.') ? target.replace('stats.', '') : target
         const current = session?.stats?.[statName] || 0
         const newValue = current + value
         
-        const updatedSessions = [...sessions]
+        const updatedSessions = [ ...sessions ]
         updatedSessions[sessionIndex] = {
             ...session,
             stats: {
@@ -551,8 +516,8 @@ function processHealEffect(
  */
 function processSetEffect(
     target: string,
-    value: number,
-    charsheet: any
+    value: number
+    
 ): EffectResult {
     return { 
         update: { [target]: value }, 

@@ -39,11 +39,11 @@ const elementOptions = [
     'Sangue', 'Vácuo', 'Psíquico', 'Radiação', 'Explosão', 'Tóxico', 'Gelo', 'Planta', 'Metal'
 ]
 
-const spellLevelOptions = ['1', '2', '3', '4']
+const spellLevelOptions = [ '1', '2', '3', '4' ]
 
-const executionOptions = ['Livre', 'Completa', 'Padrão', 'Movimento', 'Reação', 'Bônus']
+const executionOptions = [ 'Livre', 'Completa', 'Padrão', 'Movimento', 'Reação', 'Bônus' ]
 
-const itemKindOptions = ['Especial', 'Utilidade', 'Consumível', 'Item Chave', 'Munição', 'Capacidade', 'Padrão', 'Arremessável', 'Equipamento']
+const itemKindOptions = [ 'Especial', 'Utilidade', 'Consumível', 'Item Chave', 'Munição', 'Capacidade', 'Padrão', 'Arremessável', 'Equipamento' ]
 
 const selectSx = {
     color: 'white',

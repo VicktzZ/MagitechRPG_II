@@ -1,4 +1,4 @@
-import { Collection } from "fireorm";
+import { Collection } from 'fireorm';
 
 @Collection('armors')
 export class ArmorEntity {
@@ -17,7 +17,6 @@ export class ArmorEntity {
     space?: string;
     rogueliteRarity?: string;
     levelRequired?: number;
-
 
     constructor(armor?: ArmorEntity) {
         Object.assign(this, armor);

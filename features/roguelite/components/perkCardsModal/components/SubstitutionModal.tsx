@@ -102,12 +102,12 @@ export function SubstitutionModal({
     itemWeight = 0
 }: SubstitutionModalProps): ReactElement {
     const theme = useTheme()
-    const [selectedItemId, setSelectedItemId] = useState<string | null>(null)
-    const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null)
-    const [selectedCharsheetId, setSelectedCharsheetId] = useState<string | null>(null)
-    const [activeTab, setActiveTab] = useState(donateOnly ? 1 : 0) // Se donateOnly, inicia na aba de doação
-    const [donating, setDonating] = useState(false)
-    const [donationError, setDonationError] = useState<string | null>(null)
+    const [ selectedItemId, setSelectedItemId ] = useState<string | null>(null)
+    const [ selectedPlayerId, setSelectedPlayerId ] = useState<string | null>(null)
+    const [ selectedCharsheetId, setSelectedCharsheetId ] = useState<string | null>(null)
+    const [ activeTab, setActiveTab ] = useState(donateOnly ? 1 : 0) // Se donateOnly, inicia na aba de doação
+    const [ donating, setDonating ] = useState(false)
+    const [ donationError, setDonationError ] = useState<string | null>(null)
     const labels = typeLabels[type]
     
     // Peso real do item (usa itemWeight passado ou tenta pegar do newItem)
@@ -232,9 +232,6 @@ export function SubstitutionModal({
     }
     
     // Wrapper para compatibilidade
-    const isPlayerAtLimit = (player: SessionPlayer): boolean => {
-        return getPlayerLimitInfo(player).atLimit
-    }
 
     return (
         <Dialog
@@ -250,7 +247,7 @@ export function SubstitutionModal({
                     borderRadius: 3,
                     background: theme.palette.mode === 'dark'
                         ? 'linear-gradient(145deg, #1e293b 0%, #334155 100%)'
-                        : 'linear-gradient(145deg, #ffffff 0%, #f1f5f9 100%)',
+                        : 'linear-gradient(145deg, #ffffff 0%, #f1f5f9 100%)'
                 }
             }}
         >

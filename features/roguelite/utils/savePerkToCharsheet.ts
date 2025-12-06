@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/prefer-nullish-coalescing */
+
 import { PerkTypeEnum } from '@enums/rogueliteEnum'
 import type { Skill, Weapon, Armor, Item, Expertises } from '@models'
 import type { SpellDTO } from '@models/dtos/SpellDTO'
@@ -12,7 +14,7 @@ type ExpertiseName = keyof Expertises
  */
 function removeUndefined<T extends Record<string, any>>(obj: T): T {
     return Object.fromEntries(
-        Object.entries(obj).filter(([_, v]) => v !== undefined)
+        Object.entries(obj).filter(([ _, v ]) => v !== undefined)
     ) as T
 }
 
@@ -127,7 +129,7 @@ function perkToSkill(perk: any): Skill {
  */
 function perkToSpell(perk: any): SpellDTO {
     const data = perk.data || perk
-    const stages = data.stages || ['', '', '']
+    const stages = data.stages || [ '', '', '' ]
     
     return {
         id: data.id || crypto.randomUUID(),
@@ -138,7 +140,7 @@ function perkToSpell(perk: any): SpellDTO {
         type: data.type || 'Arcana',
         execution: data.execution || 'Padrão',
         range: data.range || 'Pessoal',
-        stages: [stages[0] || '', stages[1] || '', stages[2] || ''] as [string, string, string]
+        stages: [ stages[0] || '', stages[1] || '', stages[2] || '' ] as [string, string, string]
     }
 }
 
@@ -170,7 +172,6 @@ function extractPerkForSession(perk: any): { id: string; rarity: string; name: s
         perkType: perk.perkType || data.perkType || 'BONUS'
     }
 }
-
 
 /**
  * Salva um perk selecionado diretamente no Firestore
@@ -208,7 +209,7 @@ export async function savePerkToCharsheet(options: SavePerkOptions): Promise<Sav
                 const replacedWeapon = currentWeapons.find((w: any) => w.id === replacedItemId)
                 const weightDiff = (weapon.weight || 0) - (replacedWeapon?.weight || 0)
                 updateData = { 
-                    'inventory.weapons': [...filteredWeapons, weapon],
+                    'inventory.weapons': [ ...filteredWeapons, weapon ],
                     'capacity.cargo': parseFloat((currentCargo + weightDiff).toFixed(1))
                 }
                 field = 'inventory.weapons'
@@ -218,7 +219,7 @@ export async function savePerkToCharsheet(options: SavePerkOptions): Promise<Sav
             } else {
                 // Adição normal
                 updateData = { 
-                    'inventory.weapons': [...currentWeapons, weapon],
+                    'inventory.weapons': [ ...currentWeapons, weapon ],
                     'capacity.cargo': parseFloat((currentCargo + (weapon.weight || 0)).toFixed(1))
                 }
                 field = 'inventory.weapons'
@@ -248,13 +249,13 @@ export async function savePerkToCharsheet(options: SavePerkOptions): Promise<Sav
                 const apDiff = (armor.ap || 0) - (replacedArmor?.ap || 0)
                 
                 updateData = { 
-                    'inventory.armors': [...filteredArmors, armor],
+                    'inventory.armors': [ ...filteredArmors, armor ],
                     'capacity.cargo': parseFloat((currentCargo + weightDiff).toFixed(1))
                 }
                 
                 // Atualiza AP na sessão
                 if (sessionIndex >= 0) {
-                    const updatedSessions = [...sessions]
+                    const updatedSessions = [ ...sessions ]
                     updatedSessions[sessionIndex] = {
                         ...currentSession,
                         stats: {
@@ -275,13 +276,13 @@ export async function savePerkToCharsheet(options: SavePerkOptions): Promise<Sav
                 const armorAP = armor.ap || armor.value || 0
                 
                 updateData = { 
-                    'inventory.armors': [...currentArmors, armor],
+                    'inventory.armors': [ ...currentArmors, armor ],
                     'capacity.cargo': parseFloat((currentCargo + (armor.weight || 0)).toFixed(1))
                 }
                 
                 // Atualiza AP na sessão
                 if (sessionIndex >= 0) {
-                    const updatedSessions = [...sessions]
+                    const updatedSessions = [ ...sessions ]
                     updatedSessions[sessionIndex] = {
                         ...currentSession,
                         stats: {
@@ -308,14 +309,14 @@ export async function savePerkToCharsheet(options: SavePerkOptions): Promise<Sav
             // Itens do tipo "Capacidade" aumentam o peso máximo, não o cargo
             if (item.kind === 'Capacidade') {
                 updateData = { 
-                    'inventory.items': [...currentItems, item],
+                    'inventory.items': [ ...currentItems, item ],
                     'capacity.max': currentMaxCapacity + Math.abs(item.weight || 0)
                 }
                 resultMessage = `Item "${item.name}" adicionado! Capacidade máxima aumentada em ${Math.abs(item.weight || 0)}kg.`
             } else {
                 // Outros itens adicionam peso ao cargo
                 updateData = { 
-                    'inventory.items': [...currentItems, item],
+                    'inventory.items': [ ...currentItems, item ],
                     'capacity.cargo': parseFloat((currentCargo + (item.weight || 0)).toFixed(1))
                 }
                 resultMessage = `Item "${item.name}" adicionado ao inventário!`
@@ -328,7 +329,7 @@ export async function savePerkToCharsheet(options: SavePerkOptions): Promise<Sav
             const skill = perkToSkill(perk)
             const skillKey = getSkillKey(skill.type)
             const currentSkills = currentCharsheet?.skills?.[skillKey] || []
-            updateData = { [`skills.${skillKey}`]: [...currentSkills, skill] }
+            updateData = { [`skills.${skillKey}`]: [ ...currentSkills, skill ] }
             field = `skills.${skillKey}`
             resultMessage = `Habilidade "${skill.name}" adicionada!`
             break
@@ -342,14 +343,14 @@ export async function savePerkToCharsheet(options: SavePerkOptions): Promise<Sav
                 // Substituição: remove a magia antiga e adiciona a nova
                 const filteredSpells = currentSpells.filter((s: any) => s.id !== replacedItemId)
                 const replacedSpell = currentSpells.find((s: any) => s.id === replacedItemId)
-                updateData = { spells: [...filteredSpells, spell] }
+                updateData = { spells: [ ...filteredSpells, spell ] }
                 field = 'spells'
                 resultMessage = replacedSpell 
                     ? `Magia "${replacedSpell.name}" substituída por "${spell.name}"!`
                     : `Magia "${spell.name}" adicionada!`
             } else {
                 // Adição normal
-                updateData = { spells: [...currentSpells, spell] }
+                updateData = { spells: [ ...currentSpells, spell ] }
                 field = 'spells'
                 resultMessage = `Magia "${spell.name}" adicionada!`
             }
@@ -430,10 +431,10 @@ export async function savePerkToCharsheet(options: SavePerkOptions): Promise<Sav
             // Sessão existe - adiciona o perk ao array de perks (preservando stats atualizados)
             const currentSession = sessionsToUse[sessionIndex]
             const currentPerks = currentSession.perks || []
-            const updatedSessions = [...sessionsToUse]
+            const updatedSessions = [ ...sessionsToUse ]
             updatedSessions[sessionIndex] = {
                 ...currentSession,
-                perks: [...currentPerks, perkForSession]
+                perks: [ ...currentPerks, perkForSession ]
             }
             updateData.session = updatedSessions
         } else {
@@ -448,9 +449,9 @@ export async function savePerkToCharsheet(options: SavePerkOptions): Promise<Sav
                     mp: currentCharsheet?.stats?.mp || 50,
                     ap: currentCharsheet?.stats?.ap || 5
                 },
-                perks: [perkForSession]
+                perks: [ perkForSession ]
             }
-            updateData.session = [...sessionsToUse, newSession]
+            updateData.session = [ ...sessionsToUse, newSession ]
         }
 
         // Remove campos undefined antes de salvar no Firestore

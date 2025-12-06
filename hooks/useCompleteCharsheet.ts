@@ -24,11 +24,11 @@ export function useCompleteCharsheet({
         loading: charsheetLoading, 
         error: charsheetError 
     } = useFirestoreRealtime('charsheet', {
-        filters: charsheetId ? [{ field: 'id', operator: '==', value: charsheetId }] : undefined,
+        filters: charsheetId ? [ { field: 'id', operator: '==', value: charsheetId } ] : undefined,
         enabled: enabled && !!charsheetId
     });
 
-    const charsheet = useMemo(() => charsheetData?.[0] || null, [charsheetData]);
+    const charsheet = useMemo(() => charsheetData?.[0] || null, [ charsheetData ]);
 
     const spellsInput = useMemo<unknown[]>(() => (charsheet?.spells as unknown[]) ?? [], [ charsheet?.spells ]);
     const spellObjects = useMemo<SpellDTO[]>(

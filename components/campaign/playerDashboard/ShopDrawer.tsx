@@ -83,14 +83,14 @@ export default function ShopDrawer(): ReactElement | null {
         } finally {
             setIsLoading(false);
         }
-    }, [campaign?.id, isShopOpen]);
+    }, [ campaign?.id, isShopOpen ]);
 
     // Carrega itens quando abre o drawer
     useEffect(() => {
         if (drawerOpen && isShopOpen) {
             loadShopItems();
         }
-    }, [drawerOpen, isShopOpen, loadShopItems]);
+    }, [ drawerOpen, isShopOpen, loadShopItems ]);
 
     // Função para comprar item
     const handlePurchase = async (item: ShopItem) => {
@@ -169,24 +169,24 @@ export default function ShopDrawer(): ReactElement | null {
     const getTypeColor = (perkType: string, spellLevel?: number) => {
         const type = perkType?.toUpperCase() || '';
         switch (type) {
-            case 'WEAPON':
-            case 'ARMA': 
-                return { bg: red[100], color: red[800], label: '⚔️ Arma' };
-            case 'ARMOR':
-            case 'ARMADURA': 
-                return { bg: blue[100], color: blue[800], label: '🛡️ Armadura' };
-            case 'ITEM': 
-                return { bg: amber[100], color: amber[800], label: '📦 Item' };
-            case 'SKILL':
-            case 'HABILIDADE': 
-                return { bg: purple[100], color: purple[800], label: '⚡ Habilidade' };
-            case 'SPELL':
-            case 'MAGIA': 
-                return { bg: orange[100], color: orange[800], label: `✨ Magia${spellLevel ? ` Nv.${spellLevel}` : ''}` };
-            case 'UPGRADE': 
-                return { bg: green[100], color: green[800], label: '🔧 Acessório' };
-            default: 
-                return { bg: grey[100], color: grey[800], label: perkType };
+        case 'WEAPON':
+        case 'ARMA': 
+            return { bg: red[100], color: red[800], label: '⚔️ Arma' };
+        case 'ARMOR':
+        case 'ARMADURA': 
+            return { bg: blue[100], color: blue[800], label: '🛡️ Armadura' };
+        case 'ITEM': 
+            return { bg: amber[100], color: amber[800], label: '📦 Item' };
+        case 'SKILL':
+        case 'HABILIDADE': 
+            return { bg: purple[100], color: purple[800], label: '⚡ Habilidade' };
+        case 'SPELL':
+        case 'MAGIA': 
+            return { bg: orange[100], color: orange[800], label: `✨ Magia${spellLevel ? ` Nv.${spellLevel}` : ''}` };
+        case 'UPGRADE': 
+            return { bg: green[100], color: green[800], label: '🔧 Acessório' };
+        default: 
+            return { bg: grey[100], color: grey[800], label: perkType };
         }
     };
 
@@ -280,7 +280,7 @@ export default function ShopDrawer(): ReactElement | null {
                         />
                         <Tooltip title="Atualizar itens">
                             <IconButton 
-                                onClick={() => loadShopItems(true)} 
+                                onClick={async () => await loadShopItems(true)} 
                                 disabled={isLoading}
                                 sx={{ color: 'white' }}
                             >
@@ -319,7 +319,7 @@ export default function ShopDrawer(): ReactElement | null {
                                 Aguarde o mestre adicionar itens à loja.
                             </Typography>
                             <Button 
-                                onClick={() => loadShopItems(true)} 
+                                onClick={async () => await loadShopItems(true)} 
                                 startIcon={<Refresh />}
                                 sx={{ mt: 2 }}
                             >
@@ -433,7 +433,7 @@ export default function ShopDrawer(): ReactElement | null {
                                             <Button
                                                 variant="contained"
                                                 disabled={!canBuy || isPurchasing === item.id}
-                                                onClick={() => handlePurchase(item)}
+                                                onClick={async () => await handlePurchase(item)}
                                                 startIcon={isPurchasing === item.id ? <CircularProgress size={16} /> : <ShoppingCart />}
                                                 sx={{
                                                     flex: 2,

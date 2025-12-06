@@ -28,7 +28,6 @@ import {
 import { amber, blue, green, orange, purple, red } from '@mui/material/colors';
 import { type ReactElement, useMemo, useState } from 'react';
 import PlayerCard from './PlayerCard';
-import { PerkCardsModal } from '@features/roguelite/components';
 import { iconForRarity } from '@features/roguelite/utils';
 
 interface SectionProps {
@@ -142,34 +141,34 @@ export default function CampaignGMDashboard(): ReactElement | null {
                 perks
             };
         }).filter(p => p.perks.length > 0);
-    }, [campaign.mode, campaign.campaignCode, playerCharsheets]);
+    }, [ campaign.mode, campaign.campaignCode, playerCharsheets ]);
 
     // Função para obter cor por tipo de perk
     const getPerkTypeColor = (perkType: string) => {
         switch (perkType) {
-            case 'WEAPON': return { bg: red[100], color: red[800] };
-            case 'ARMOR': return { bg: blue[100], color: blue[800] };
-            case 'ITEM': return { bg: amber[100], color: amber[800] };
-            case 'SKILL': 
-            case 'HABILIDADE': return { bg: purple[100], color: purple[800] };
-            case 'SPELL': return { bg: orange[100], color: orange[800] };
-            case 'BONUS': return { bg: green[100], color: green[800] };
-            default: return { bg: 'grey.200', color: 'grey.800' };
+        case 'WEAPON': return { bg: red[100], color: red[800] };
+        case 'ARMOR': return { bg: blue[100], color: blue[800] };
+        case 'ITEM': return { bg: amber[100], color: amber[800] };
+        case 'SKILL': 
+        case 'HABILIDADE': return { bg: purple[100], color: purple[800] };
+        case 'SPELL': return { bg: orange[100], color: orange[800] };
+        case 'BONUS': return { bg: green[100], color: green[800] };
+        default: return { bg: 'grey.200', color: 'grey.800' };
         }
     };
 
     // Função para traduzir tipo de perk
     const getPerkTypeLabel = (perkType: string) => {
         switch (perkType) {
-            case 'WEAPON': return 'Arma';
-            case 'ARMOR': return 'Armadura';
-            case 'ITEM': return 'Item';
-            case 'SKILL':
-            case 'HABILIDADE': return 'Habilidade';
-            case 'SPELL': return 'Magia';
-            case 'BONUS': return 'Bônus';
-            case 'EXPERTISE': return 'Perícia';
-            default: return perkType;
+        case 'WEAPON': return 'Arma';
+        case 'ARMOR': return 'Armadura';
+        case 'ITEM': return 'Item';
+        case 'SKILL':
+        case 'HABILIDADE': return 'Habilidade';
+        case 'SPELL': return 'Magia';
+        case 'BONUS': return 'Bônus';
+        case 'EXPERTISE': return 'Perícia';
+        default: return perkType;
         }
     };
 

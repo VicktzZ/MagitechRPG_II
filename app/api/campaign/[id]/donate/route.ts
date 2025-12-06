@@ -1,4 +1,4 @@
-import { charsheetRepository, campaignRepository } from '@repositories'
+import { charsheetRepository } from '@repositories'
 import { findCampaignByCodeOrId } from '@utils/helpers/findCampaignByCodeOrId'
 
 interface DonateRequestBody {
@@ -112,13 +112,13 @@ export async function POST(
                 ...targetCharsheet,
                 inventory: {
                     ...targetCharsheet.inventory,
-                    weapons: [...currentWeapons, newItem]
+                    weapons: [ ...currentWeapons, newItem ]
                 },
                 capacity: {
                     ...targetCharsheet.capacity,
                     cargo: newCargo
                 },
-                notifications: [...currentNotifications, notification]
+                notifications: [ ...currentNotifications, notification ]
             })
         } else if (itemType === 'armor') {
             const currentArmors = targetCharsheet?.inventory?.armors || []
@@ -138,7 +138,7 @@ export async function POST(
                 const currentSessionAP = currentSession?.stats?.ap || 5
                 const currentSessionMaxAP = currentSession?.stats?.maxAp || 5
                 
-                updatedSessions = [...sessions]
+                updatedSessions = [ ...sessions ]
                 updatedSessions[sessionIndex] = {
                     ...currentSession,
                     stats: {
@@ -153,14 +153,14 @@ export async function POST(
                 ...targetCharsheet,
                 inventory: {
                     ...targetCharsheet.inventory,
-                    armors: [...currentArmors, newItem]
+                    armors: [ ...currentArmors, newItem ]
                 },
                 capacity: {
                     ...targetCharsheet.capacity,
                     cargo: newCargo
                 },
                 session: updatedSessions,
-                notifications: [...currentNotifications, notification]
+                notifications: [ ...currentNotifications, notification ]
             })
         } else if (itemType === 'item') {
             // Doação de item genérico
@@ -169,13 +169,13 @@ export async function POST(
                 ...targetCharsheet,
                 inventory: {
                     ...targetCharsheet.inventory,
-                    items: [...currentItems, newItem]
+                    items: [ ...currentItems, newItem ]
                 },
                 capacity: {
                     ...targetCharsheet.capacity,
                     cargo: newCargo
                 },
-                notifications: [...currentNotifications, notification]
+                notifications: [ ...currentNotifications, notification ]
             })
         }
 

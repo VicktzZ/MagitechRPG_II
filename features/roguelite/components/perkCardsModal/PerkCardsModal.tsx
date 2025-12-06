@@ -113,7 +113,7 @@ export function PerkCardsModal({
     } = usePerkCards({ open, level, perkAmount, initialFilters })
 
     // Estado para modal de substituição
-    const [substitutionModal, setSubstitutionModal] = useState<{
+    const [ substitutionModal, setSubstitutionModal ] = useState<{
         open: boolean
         type: SubstitutionType
         newItem: SubstitutableItem | null
@@ -178,7 +178,7 @@ export function PerkCardsModal({
         // Por padrão, sempre há espaço
         console.log('[checkSpaceAvailable] Tipo não verificado ou sem charsheetSpace - retornando hasSpace=true')
         return { hasSpace: true, type: 'spell', existingItems: [] }
-    }, [charsheetSpace])
+    }, [ charsheetSpace ])
 
     /**
      * Converte o perk para o formato de item substituível
@@ -213,7 +213,7 @@ export function PerkCardsModal({
         if (onClose) {
             onClose()
         }
-    }, [substitutionModal, onPerkSelected, onClose, finalizeSelection])
+    }, [ substitutionModal, onPerkSelected, onClose, finalizeSelection ])
 
     /**
      * Cancela a substituição - reseta estados mas NÃO incrementa seed
@@ -223,7 +223,7 @@ export function PerkCardsModal({
         // Reseta o estado de confirmação para permitir nova seleção
         // Mas NÃO incrementa o seed (usuário não completou o fluxo)
         resetConfirmation()
-    }, [resetConfirmation])
+    }, [ resetConfirmation ])
 
     /**
      * Lida com a doação de um item para outro jogador
@@ -267,7 +267,7 @@ export function PerkCardsModal({
             console.error('[PerkCardsModal] Erro ao doar:', error)
             return { success: false, message: 'Erro ao processar doação' }
         }
-    }, [campaignId, currentCharsheetId, currentPlayerName, substitutionModal.pendingPerk, finalizeSelection, onClose])
+    }, [ campaignId, currentCharsheetId, currentPlayerName, substitutionModal.pendingPerk, finalizeSelection, onClose ])
     
     const handleConfirm = async () => {
         const selectedPerk = await confirmSelection()
@@ -320,7 +320,7 @@ export function PerkCardsModal({
         if (onClose) {
             onClose()
         }
-    }, [finalizeSelection, onClose])
+    }, [ finalizeSelection, onClose ])
 
     if (!open) return null
 

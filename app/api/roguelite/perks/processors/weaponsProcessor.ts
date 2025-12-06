@@ -14,10 +14,9 @@ import type { ProcessorFilters, ProcessedItem } from './types'
 const HIGH_TIER_RARITIES = [ 'Mágico', 'Amaldiçoado', 'Especial' ]
 const MIN_LEVEL_FOR_HIGH_TIER = 10
 const MIN_DAMAGE_WEIGHT = 16
-const LEVEL_DAMAGE_MULTIPLIER = 3
 
 // Categorias de armas mágicas (requerem nível 10+)
-const MAGICAL_WEAPON_CATEGORIES = ['Arma Mágica (Leve)', 'Arma Mágica (Pesada)']
+const MAGICAL_WEAPON_CATEGORIES = [ 'Arma Mágica (Leve)', 'Arma Mágica (Pesada)' ]
 
 /**
  * Seleciona uma habilidade aleatória para armas com raridade "Único"
@@ -42,7 +41,7 @@ function addUniqueSkillToWeapon(weapon: any, rng: { random: () => number }): any
     return {
         ...weapon,
         description: (weapon.description || '') + skillDescription,
-        uniqueSkill: uniqueSkill // Armazena a habilidade separadamente para fácil acesso
+        uniqueSkill // Armazena a habilidade separadamente para fácil acesso
     }
 }
 
@@ -149,7 +148,7 @@ export async function processWeapons(filters: ProcessorFilters): Promise<Process
     
     // Verificar se o GM especificou raridades específicas
     const hasSpecificRarities = (filters.rarities && filters.rarities.length > 0) || filters.rarity
-    const targetRarities = filters.rarities || (filters.rarity ? [filters.rarity] : null)
+    const targetRarities = filters.rarities || (filters.rarity ? [ filters.rarity ] : null)
     
     // Aplicar restrições de nível/dano PRIMEIRO (antes de alterar raridades)
     // O bônus de dano da raridade NÃO interfere no peso de dano inicial (max 16)

@@ -46,7 +46,7 @@ export default function AcquiredPerks() {
     const { campaign } = useCampaignContext();
     const { charsheet } = useCampaignCurrentCharsheetContext();
     const theme = useTheme();
-    const [expanded, setExpanded] = useState(false);
+    const [ expanded, setExpanded ] = useState(false);
 
     const perks = useMemo(() => {
         if (!charsheet?.session || !campaign?.campaignCode) return [];
@@ -58,7 +58,7 @@ export default function AcquiredPerks() {
         console.log(sessionData)
         
         return sessionData?.perks || [];
-    }, [charsheet?.session, campaign?.campaignCode]);
+    }, [ charsheet?.session, campaign?.campaignCode ]);
 
     // Não mostrar se não for Roguelite ou não houver perks
     if (campaign?.mode !== 'Roguelite') return null;

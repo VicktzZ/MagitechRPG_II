@@ -157,7 +157,7 @@ function selectWeightedPerks(perks: any[], count: number, seed: string, rollNumb
             let roll = rng.random() * totalWeight
             let selectedRarity = 'Comum'
             
-            for (const [rarity, weight] of Object.entries(weights)) {
+            for (const [ rarity, weight ] of Object.entries(weights)) {
                 if (perksByRarity[rarity] && weight > 0) {
                     roll -= weight
                     if (roll <= 0) {
@@ -232,7 +232,7 @@ export function usePerkCards({ open, level, perkAmount = 5, initialFilters }: Us
                 setSelectedSkillTypes(initialFilters.skillTypes)
             }
         }
-    }, [initialFilters])
+    }, [ initialFilters ])
 
     const fetchPerks = useCallback(async (
         raritiesToUse?: RarityType[],
@@ -301,7 +301,7 @@ export function usePerkCards({ open, level, perkAmount = 5, initialFilters }: Us
                 })
             }
             
-            console.log('[usePerkCards] perks recebidos:', perks.length, 'raridades:', [...new Set(perks.map(p => p.rogueliteRarity))])
+            console.log('[usePerkCards] perks recebidos:', perks.length, 'raridades:', [ ...new Set(perks.map(p => p.rogueliteRarity)) ])
             setAllPerks(perks)
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Erro desconhecido')
@@ -344,7 +344,7 @@ export function usePerkCards({ open, level, perkAmount = 5, initialFilters }: Us
     useEffect(() => {
         if (allPerks.length > 0) {
             const shuffled = shufflePerks(allPerks, perkAmount, userSeed, rollCount, level)
-            console.log('[usePerkCards] shuffled:', shuffled.length, 'raridades:', [...new Set(shuffled.map(p => p.rogueliteRarity))])
+            console.log('[usePerkCards] shuffled:', shuffled.length, 'raridades:', [ ...new Set(shuffled.map(p => p.rogueliteRarity)) ])
             setRolled(shuffled)
             setError(null)
         } else if (!loading) {
@@ -379,7 +379,7 @@ export function usePerkCards({ open, level, perkAmount = 5, initialFilters }: Us
         // O estado de confirmação permanece até que o fluxo seja concluído externamente
         
         return selectedPerk
-    }, [selectedPerkIndex, rolled])
+    }, [ selectedPerkIndex, rolled ])
 
     /**
      * Finaliza o fluxo de seleção - chamado apenas quando todo o processo é concluído

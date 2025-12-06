@@ -147,13 +147,13 @@ export async function GET(
         // Nível 5-9: magias nível 1 e 2
         // Nível 10-14: magias nível 1, 2 e 3
         // Nível 15-20: magias nível 2, 3 e 4
-        let allowedSpellLevels: number[] = [1]
+        let allowedSpellLevels: number[] = [ 1 ]
         if (minLevel >= 15) {
-            allowedSpellLevels = [2, 3, 4]
+            allowedSpellLevels = [ 2, 3, 4 ]
         } else if (minLevel >= 10) {
-            allowedSpellLevels = [1, 2, 3]
+            allowedSpellLevels = [ 1, 2, 3 ]
         } else if (minLevel >= 5) {
-            allowedSpellLevels = [1, 2]
+            allowedSpellLevels = [ 1, 2 ]
         }
         
         console.log('[shop/items] Níveis dos jogadores:', { minLevel, maxLevel, averageLevel, allowedSpellLevels })
@@ -161,22 +161,22 @@ export async function GET(
         // Busca perks usando a lógica direta
         // Determina quais collections buscar baseado nos tipos configurados
         const typeToCollection: Record<string, string[]> = {
-            'WEAPON': ['weapons'],
-            'ARMOR': ['armors'],
-            'ITEM': ['items'],
-            'SPELL': ['spells'],
-            'SKILL': ['skills'],
-            'UPGRADE': ['perks'],
-            'BONUS': ['perks'],
-            'STATS': ['perks']
+            'WEAPON': [ 'weapons' ],
+            'ARMOR': [ 'armors' ],
+            'ITEM': [ 'items' ],
+            'SPELL': [ 'spells' ],
+            'SKILL': [ 'skills' ],
+            'UPGRADE': [ 'perks' ],
+            'BONUS': [ 'perks' ],
+            'STATS': [ 'perks' ]
         }
         
-        let collections: string[] = ['items', 'weapons', 'armors', 'spells', 'skills', 'perks']
+        let collections: string[] = [ 'items', 'weapons', 'armors', 'spells', 'skills', 'perks' ]
         
         // Se tipos específicos foram configurados, usa apenas essas collections
         if (config.types && config.types.length > 0) {
             collections = config.types.flatMap((t: string) => typeToCollection[t] || [])
-            collections = [...new Set(collections)] // Remove duplicatas
+            collections = [ ...new Set(collections) ] // Remove duplicatas
         }
         
         // Configura os filtros

@@ -64,8 +64,8 @@ const elementIcons: Record<string, React.ReactNode> = {
 }
 
 export function SpellCard({
-    title,
-    subtitle,
+    title
+    ,
     description,
     element,
     icon,
@@ -77,7 +77,7 @@ export function SpellCard({
     onClick
 }: SpellCardProps) {
     const ref = useRef<HTMLDivElement>(null)
-    const [currentStage, setCurrentStage] = useState(0)
+    const [ currentStage, setCurrentStage ] = useState(0)
     // Verificar se há múltiplos estágios válidos (não vazios)
     const hasMultipleStages = stages && stages.length > 1 && stages.some((stage, index) => index > 0 && stage && stage.trim() !== '')
     const currentDescription = stages?.[currentStage] ?? description
@@ -96,7 +96,7 @@ export function SpellCard({
             }
             return attr
         })
-    }, [attributes, mpCost, totalMpCost, extraCost])
+    }, [ attributes, mpCost, totalMpCost, extraCost ])
     const elementKey = element?.toUpperCase() ?? 'NÃO-ELEMENTAL'
     const color = useMemo(() => spellElementColor[elementKey] ?? '#b388ff', [ elementKey ])
     const isMaxLevel = Number(level) === 4
@@ -499,24 +499,24 @@ export function SpellCard({
                             // Sempre mostrar o estágio 1 (índice 0), mas só mostrar outros se forem válidos
                             if (index > 0 && (!stage || stage.trim() === '')) return null
                             return (
-                            <Box
-                                key={index}
-                                onClick={(e) => {
-                                    e.stopPropagation()
-                                    setCurrentStage(index)
-                                }}
-                                sx={{
-                                    width: currentStage === index ? 24 : 8,
-                                    height: 8,
-                                    borderRadius: 4,
-                                    background: currentStage === index ? color : `${color}44`,
-                                    cursor: 'pointer',
-                                    transition: 'all 200ms ease',
-                                    '&:hover': {
-                                        background: currentStage === index ? color : `${color}77`
-                                    }
-                                }}
-                            />
+                                <Box
+                                    key={index}
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        setCurrentStage(index)
+                                    }}
+                                    sx={{
+                                        width: currentStage === index ? 24 : 8,
+                                        height: 8,
+                                        borderRadius: 4,
+                                        background: currentStage === index ? color : `${color}44`,
+                                        cursor: 'pointer',
+                                        transition: 'all 200ms ease',
+                                        '&:hover': {
+                                            background: currentStage === index ? color : `${color}77`
+                                        }
+                                    }}
+                                />
                             )
                         })}
                         <Typography

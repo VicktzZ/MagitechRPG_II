@@ -50,7 +50,7 @@ export async function POST(
             )
         }
 
-        const results: { charsheetId: string; success: boolean; newLevel?: number; error?: string }[] = []
+        const results: Array<{ charsheetId: string; success: boolean; newLevel?: number; error?: string }> = []
 
         for (const charsheetId of charsheetIds) {
             try {
@@ -93,11 +93,11 @@ export async function POST(
                 // Perícias +1 cada
                 const currentExpertises = charsheet.expertises || {}
                 const updatedExpertises: Record<string, any> = {}
-                for (const [key, expertise] of Object.entries(currentExpertises)) {
+                for (const [ key, expertise ] of Object.entries(currentExpertises)) {
                     if (typeof expertise === 'object' && expertise !== null) {
                         updatedExpertises[key] = {
-                            ...(expertise as any),
-                            value: ((expertise as any).value || 0) + 1
+                            ...(expertise ),
+                            value: ((expertise ).value || 0) + 1
                         }
                     } else {
                         updatedExpertises[key] = expertise
@@ -124,7 +124,7 @@ export async function POST(
                 const sessions = charsheet.session || []
                 const sessionIndex = sessions.findIndex((s: any) => s.campaignCode === campaign.campaignCode)
                 
-                let updatedSessions = [...sessions]
+                const updatedSessions = [ ...sessions ]
                 if (sessionIndex >= 0) {
                     updatedSessions[sessionIndex] = {
                         ...updatedSessions[sessionIndex],

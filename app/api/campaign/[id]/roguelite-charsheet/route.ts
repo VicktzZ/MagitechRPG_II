@@ -180,7 +180,7 @@ export async function POST(
             },
             
             // Session para roguelite
-            session: [{
+            session: [ {
                 campaignCode: body.campaignCode,
                 stats: {
                     maxLp: 20,
@@ -191,7 +191,7 @@ export async function POST(
                     ap: 5
                 },
                 perks: []
-            }]
+            } ]
         };
 
         // Criar a ficha diretamente no Firestore (bypass class-validator)
