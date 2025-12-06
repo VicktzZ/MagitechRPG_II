@@ -8,7 +8,7 @@ import { savingSpinnerContext, useSavingSpinner } from './savingSpinnerContext';
 import { useCampaignContext } from './campaignContext';
 import { campaignCurrentCharsheetContext, useCampaignCurrentCharsheetContext } from './campaignCurrentCharsheetContext';
 import { ThemeProvider, useThemeContext } from './themeContext';
-import CharsheetFormProvider from './CharsheetFormProvider';
+import CharsheetFormProvider, { useCharsheetForm } from './CharsheetFormProvider';
 
 export {
     charsheetContext,
@@ -24,5 +24,6 @@ export {
     useCampaignCurrentCharsheetContext,
     ThemeProvider,
     useThemeContext,
-    CharsheetFormProvider
+    CharsheetFormProvider,
+    useCharsheetForm
 }

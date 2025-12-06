@@ -215,6 +215,16 @@ export default function PlayerCard({ charsheet }: { charsheet: Required<Charshee
                                 {charsheet.capacity.cargo}/{charsheet.capacity.max} kg
                             </Typography>
                         </Box>
+
+                        <Box className="stat">
+                            <Typography variant="body2" sx={{ fontSize: 16, fontWeight: 'bold' }}>
+                                🏃
+                            </Typography>
+                            <Typography variant="body2">
+                                {charsheet.displacement || 0}m
+                            </Typography>
+                        </Box>
+
                     </Box>
                 </Paper>
             </Grid>

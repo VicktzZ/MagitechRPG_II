@@ -1,3 +1,4 @@
+// @eslint-disable @typescript-eslint/no-use-before-define
 import { create, type RandomSeed } from 'random-seed'
 import { genericCustomPerks } from '../consts/genericCustomPerks'
 import { Perk } from '../models'

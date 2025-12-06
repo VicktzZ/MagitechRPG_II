@@ -1,4 +1,4 @@
-import type { Armor, Item, Note, Weapon } from '@models'
+import type { Armor, Item, Note, Weapon, PerkFilters } from '@models'
 import type { Campaign, Charsheet, User } from '@models/entities'
 import type { CampaignData } from '@models/types/session'
 import { Service } from '@utils/apiRequest'
@@ -24,6 +24,15 @@ class CampaignService extends Service<Campaign, 'code' | 'userId'> {
 
     async deleteCustomItem(campaignId: string, type: 'weapon' | 'armor' | 'item', itemId: string) {
         return (await this.delete({ param: `${campaignId}/custom/items/${itemId}`, body: type })).data
+    }
+
+    // Perk offering
+    async offerPerks(campaignId: string, userIds: string[], filters: PerkFilters) {
+        return (await this.post({ param: `${campaignId}/session/offer-perks`, body: { userIds, filters } })).data
+    }
+
+    async removePendingPerkUser(campaignId: string, userId: string) {
+        return (await this.post({ param: `${campaignId}/session/pending-perk-user`, body: { userId } })).data
     }
 }
 

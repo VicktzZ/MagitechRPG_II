@@ -387,7 +387,7 @@ export function getRandomEnemyModifier(difficulty: number = 1): EnemyModifier | 
     if (!modifiers || modifiers.length === 0) return null
     
     // Ajuste baseado na dificuldade
-    const availableModifiers = modifiers.filter( => {
+    const availableModifiers = modifiers.filter(() => {
         const modRarityIndex = [ 'Comum', 'Incomum', 'Raro', 'Épico', 'Lendário', 'Mágico', 'Especial', 'Amaldiçoado', 'Único' ].indexOf(rarity)
         return modRarityIndex <= difficulty + 2 // Permite modificadores até 2 níveis acima da dificuldade
     })

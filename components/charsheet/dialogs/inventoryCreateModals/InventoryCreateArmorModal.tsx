@@ -10,7 +10,7 @@ import InventoryCreateModalWrapper, { mapArrayToOptions } from './InventoryCreat
 import { zodResolver } from '@hookform/resolvers/zod';
 import { armorSchema } from './validationSchemas';
 import { useCharsheetForm } from '@contexts/CharsheetFormProvider';
-import { deafultArmors, defaultArmor } from '@constants/defaultArmors';
+import { defaultArmors, defaultArmor } from '@constants/defaultArmors';
 import type { Armor } from '@models';
 import { useCampaignContext } from '@contexts';
 import { campaignService } from '@services';
@@ -74,12 +74,12 @@ export const InventoryCreateArmorModal = memo(({
             )
         },
         { header: 'Geral', options: [ { value: 'Nenhum', label: 'Nenhum' } ] },
-        { header: 'Leve', options: mapArrayToOptions(deafultArmors.leve.map(item => item.name).sort()) },
-        { header: 'Pesada', options: mapArrayToOptions(deafultArmors.pesada.map(item => item.name).sort()) }
+        { header: 'Leve', options: mapArrayToOptions(defaultArmors.leve.map(item => item.name).sort()) },
+        { header: 'Pesada', options: mapArrayToOptions(defaultArmors.pesada.map(item => item.name).sort()) }
     ], [ campaign.custom.items.armor ]);
 
     function setDefaultArmor(armorName: string) {
-        const allArmors = Object.values(deafultArmors).flat();
+        const allArmors = Object.values(defaultArmors).flat();
         const armor = allArmors.find((a) => a.name === armorName);
         const campaignArmor = campaign.custom.items.armor?.find(item => item.name === armorName);
         const a = armor ?? campaignArmor;

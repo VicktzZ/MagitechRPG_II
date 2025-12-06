@@ -118,6 +118,8 @@
           "error",
           4
       ],
+      "@typescript-eslint/restrict-template-expressions": "off",
+      "@typescript-eslint/prefer-nullish-coalescing": "off",
       "@typescript-eslint/require-array-sort-compare": [
           "off",
           {
