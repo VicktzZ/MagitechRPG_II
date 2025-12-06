@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/prefer-nullish-coalescing */
+
 import { Perk } from '@models/entities'
 import { perkRepository } from '@repositories'
 import { cache, generateCacheKey, generateETag } from '@utils/cacheApi'
