@@ -1,4 +1,4 @@
-import { Collection } from "fireorm";
+import { Collection } from 'fireorm';
 
 @Collection('items')
 export class ItemEntity {

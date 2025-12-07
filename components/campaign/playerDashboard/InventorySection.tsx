@@ -2,7 +2,7 @@
 'use client';
 
 import { rarityColor } from '@constants';
-import { useCampaignCurrentCharsheetContext } from '@contexts';
+import { useCampaignContext, useCampaignCurrentCharsheetContext } from '@contexts';
 import type { RarityType } from '@models/types/string';
 import { 
     ExpandMore,
@@ -12,7 +12,9 @@ import {
     Warning,
     CheckCircle,
     AutoFixNormal,
-    Search
+    Search,
+    Delete,
+    CardGiftcard
 } from '@mui/icons-material';
 import { 
     Accordion, 
@@ -31,23 +33,238 @@ import {
     InputAdornment,
     Tabs,
     Tab,
-    Badge
+    Badge,
+    IconButton
 } from '@mui/material';
+import { useSnackbar } from 'notistack';
 import { red, blue, green, orange, grey } from '@mui/material/colors';
 import { type ReactElement, useState, useMemo } from 'react';
+import { useSession } from '@node_modules/next-auth/react';
+import { type SessionPlayer } from '@features/roguelite/components';
+import { SubstitutionModal } from '@features/roguelite/components/perkCardsModal/components/SubstitutionModal';
 
 type InventoryTab = 'all' | 'weapons' | 'armors' | 'items';
 
 export default function InventorySection(): ReactElement {
-    const { charsheet } = useCampaignCurrentCharsheetContext();
+    const { charsheet, updateCharsheet } = useCampaignCurrentCharsheetContext();
+    const { users, campaign, charsheets } = useCampaignContext();
+    const { data: session } = useSession();
     const theme = useTheme();
+    const { enqueueSnackbar } = useSnackbar();
     const [ activeTab, setActiveTab ] = useState<InventoryTab>('all');
     const [ searchQuery, setSearchQuery ] = useState('');
+    
+    // Estado para modal de doação
+    const [ donationModal, setDonationModal ] = useState<{
+        open: boolean;
+        item: any;
+        type: 'weapon' | 'armor' | 'item';
+    }>({ open: false, item: null, type: 'item' });
+
+    // Calcula o peso total do inventário dinamicamente
+    const calculateTotalWeight = useMemo(() => {
+        const weaponsWeight = charsheet.inventory.weapons.reduce((acc, w) => acc + (w.weight || 0), 0);
+        const armorsWeight = charsheet.inventory.armors.reduce((acc, a) => acc + (a.weight || 0), 0);
+        const itemsWeight = charsheet.inventory.items.reduce((acc, i) => acc + ((i.weight || 0) * (i.quantity || 1)), 0);
+        return weaponsWeight + armorsWeight + itemsWeight;
+    }, [ charsheet.inventory.weapons, charsheet.inventory.armors, charsheet.inventory.items ]);
 
     const totalItems = charsheet.inventory.weapons.length + charsheet.inventory.armors.length + charsheet.inventory.items.length;
-    const capacityPercent = (charsheet.capacity.cargo / charsheet.capacity.max) * 100;
+    const capacityPercent = (calculateTotalWeight / charsheet.capacity.max) * 100;
     const isOverloaded = capacityPercent > 100;
     const isNearLimit = capacityPercent > 80;
+
+    // Prepara lista de jogadores da sessão (excluindo o jogador atual)
+    const sessionPlayers: SessionPlayer[] = useMemo(() => {
+        const currentUserId = session?.user?.id;
+        const campaignPlayers = campaign?.players || [];
+        const allCharsheets = charsheets || [];
+        
+        return users.players
+            .filter(player => player.id !== currentUserId)
+            .map(player => {
+                const playerInCampaign = campaignPlayers.find((cp: any) => cp.userId === player.id);
+                const playerCharsheet = playerInCampaign 
+                    ? allCharsheets.find((cs: any) => cs.id === playerInCampaign.charsheetId)
+                    : undefined;
+                
+                return {
+                    odac: player.name || 'Jogador',
+                    name: playerCharsheet?.name || `Ficha de ${player.name || 'Jogador'}`,
+                    odacId: player.id,
+                    odacImage: player.image,
+                    charsheetId: playerCharsheet?.id || playerInCampaign?.charsheetId || '',
+                    weaponCount: playerCharsheet?.inventory?.weapons?.length || 0,
+                    armorCount: playerCharsheet?.inventory?.armors?.length || 0,
+                    currentCargo: playerCharsheet?.capacity?.cargo || 0,
+                    maxCargo: playerCharsheet?.capacity?.max || 0
+                };
+            })
+            .filter(p => p.charsheetId);
+    }, [ users.players, session?.user?.id, charsheets, campaign?.players ]);
+
+    // Abre modal de doação
+    const handleOpenDonationModal = (item: any, type: 'weapon' | 'armor' | 'item', e: React.MouseEvent) => {
+        e.stopPropagation();
+        setDonationModal({ open: true, item, type });
+    };
+
+    // Callback de doação
+    const handleDonate = async (targetPlayerId: string, targetCharsheetId: string): Promise<{ success: boolean; message: string }> => {
+        if (!donationModal.item || !campaign?.id) {
+            return { success: false, message: 'Dados insuficientes para doação' };
+        }
+
+        try {
+            const response = await fetch(`/api/campaign/${campaign.id}/donate`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    donorCharsheetId: charsheet.id,
+                    targetCharsheetId,
+                    targetUserId: targetPlayerId,
+                    itemType: donationModal.type,
+                    item: donationModal.item,
+                    donorName: charsheet.name || 'Um jogador'
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                // Remove o item do inventário do doador
+                const itemWeight = (donationModal.item.weight || 0) * (donationModal.item.quantity || 1);
+                const updatedInventory: any = {};
+
+                switch (donationModal.type) {
+                case 'weapon':
+                    updatedInventory['inventory.weapons'] = charsheet.inventory.weapons.filter(w => w.id !== donationModal.item.id);
+                    break;
+                case 'armor': {
+                    updatedInventory['inventory.armors'] = charsheet.inventory.armors.filter(a => a.id !== donationModal.item.id);
+                    // Decrementa AP ao doar armadura - atualiza na sessão correta
+                    const armorAPValue = donationModal.item.ap || donationModal.item.value || 0;
+                    const campaignCode = campaign?.campaignCode;
+                    const sessions = charsheet.session || [];
+                    const sessionIndex = sessions.findIndex((s: any) => s.campaignCode === campaignCode);
+                    
+                    if (sessionIndex >= 0) {
+                        const sessionData = sessions[sessionIndex];
+                        const currentSessionAP = sessionData.stats?.ap || 5;
+                        const currentSessionMaxAP = sessionData.stats?.maxAp || 5;
+                        const newAP = Math.max(5, currentSessionAP - armorAPValue);
+                        const newMaxAP = Math.max(5, currentSessionMaxAP - armorAPValue);
+                        
+                        const updatedSessions = [ ...sessions ];
+                        updatedSessions[sessionIndex] = {
+                            ...sessionData,
+                            stats: {
+                                ...sessionData.stats,
+                                ap: newAP,
+                                maxAp: newMaxAP
+                            }
+                        };
+                        updatedInventory.session = updatedSessions;
+                    }
+                    break;
+                }
+                case 'item': {
+                    updatedInventory['inventory.items'] = charsheet.inventory.items.filter(i => i.id !== donationModal.item.id);
+                    // Se o item for do tipo "Capacidade", diminui capacity.max ao invés de cargo
+                    if (donationModal.item.kind === 'Capacidade') {
+                        const currentMax = charsheet.capacity?.max || 0;
+                        const newMax = Math.max(0, currentMax - Math.abs(donationModal.item.weight || 0));
+                        updatedInventory['capacity.max'] = parseFloat(newMax.toFixed(1));
+                    }
+                    break;
+                }
+                }
+
+                // Atualiza inventário e peso (apenas para itens que não são de Capacidade)
+                if (donationModal.type !== 'item' || donationModal.item.kind !== 'Capacidade') {
+                    const newCargo = parseFloat(Math.max(0, charsheet.capacity.cargo - itemWeight).toFixed(1));
+                    updatedInventory['capacity.cargo'] = newCargo;
+                }
+
+                await updateCharsheet(updatedInventory);
+
+                enqueueSnackbar(result.message, { variant: 'success' });
+                setDonationModal({ open: false, item: null, type: 'item' });
+            }
+
+            return result;
+        } catch (error) {
+            console.error('Erro ao doar item:', error);
+            return { success: false, message: 'Erro ao processar doação' };
+        }
+    };
+
+    // Função para deletar item do inventário
+    const handleDeleteItem = async (itemToDelete: any, type: 'weapon' | 'armor' | 'item', e: React.MouseEvent) => {
+        e.stopPropagation(); // Evita expandir o accordion
+        
+        try {
+            const updatedInventory: any = {};
+            const itemWeight = (itemToDelete.weight || 0) * (itemToDelete.quantity || 1);
+            
+            switch (type) {
+            case 'weapon':
+                updatedInventory['inventory.weapons'] = charsheet.inventory.weapons.filter(w => w.id !== itemToDelete.id);
+                break;
+            case 'armor': {
+                updatedInventory['inventory.armors'] = charsheet.inventory.armors.filter(a => a.id !== itemToDelete.id);
+                // Decrementa AP ao remover armadura - atualiza na sessão correta
+                const armorAPValue = itemToDelete.ap || itemToDelete.value || 0;
+                const campaignCode = campaign?.campaignCode;
+                const sessions = charsheet.session || [];
+                const sessionIndex = sessions.findIndex((s: any) => s.campaignCode === campaignCode);
+                
+                if (sessionIndex >= 0) {
+                    const session = sessions[sessionIndex];
+                    const currentSessionAP = session.stats?.ap || 5;
+                    const currentSessionMaxAP = session.stats?.maxAp || 5;
+                    const newAP = Math.max(5, currentSessionAP - armorAPValue);
+                    const newMaxAP = Math.max(5, currentSessionMaxAP - armorAPValue);
+                    
+                    const updatedSessions = [ ...sessions ];
+                    updatedSessions[sessionIndex] = {
+                        ...session,
+                        stats: {
+                            ...session.stats,
+                            ap: newAP,
+                            maxAp: newMaxAP
+                        }
+                    };
+                    updatedInventory.session = updatedSessions;
+                }
+                break;
+            }
+            case 'item': {
+                updatedInventory['inventory.items'] = charsheet.inventory.items.filter(i => i.id !== itemToDelete.id);
+                // Se o item for do tipo "Capacidade", diminui capacity.max ao invés de cargo
+                if (itemToDelete.kind === 'Capacidade') {
+                    const currentMax = charsheet.capacity?.max || 0;
+                    const newMax = Math.max(0, currentMax - Math.abs(itemToDelete.weight || 0));
+                    updatedInventory['capacity.max'] = parseFloat(newMax.toFixed(1));
+                }
+                break;
+            }
+            }
+
+            // Atualiza inventário e peso (apenas para itens que não são de Capacidade)
+            if (type !== 'item' || itemToDelete.kind !== 'Capacidade') {
+                const newCargo = parseFloat(Math.max(0, charsheet.capacity.cargo - itemWeight).toFixed(1));
+                updatedInventory['capacity.cargo'] = newCargo;
+            }
+            
+            await updateCharsheet(updatedInventory);
+
+            enqueueSnackbar(`${itemToDelete.name} removido do inventário!`, { variant: 'success' });
+        } catch (error) {
+            console.error('Erro ao remover item:', error);
+            enqueueSnackbar('Erro ao remover item', { variant: 'error' });
+        }
+    };
 
     const getItemTypeConfig = (type: 'weapon' | 'armor' | 'item') => {
         switch (type) {
@@ -108,18 +325,18 @@ export default function InventorySection(): ReactElement {
                 return [
                     { label: 'Dano', value: item.effect.value, highlight: true },
                     { label: 'Crítico', value: `${item.effect.critValue} (${item.effect.critChance})` },
-                    { label: 'Tipo', value: item.kind },
+                    { label: 'Tipo', value: item.effect.effectType || item.kind },
                     { label: 'Categoria', value: item.categ },
-                    { label: 'Alcance', value: `${item.range === 'Corpo-a-corpo' ? 'Corpo-a-corpo' : item.range + 'm'}` },
+                    { label: 'Alcance', value: item.range === 'Corpo-a-corpo' ? 'Corpo-a-corpo' : item.range },
                     { label: 'Peso', value: `${item.weight} kg` }
                 ];
             case 'armor':
                 return [
-                    { label: 'Defesa', value: `+${item.value} AP`, highlight: true },
-                    { label: 'Tipo', value: item.kind },
-                    { label: 'Categoria', value: item.categ },
-                    { label: 'Penalidade', value: `${item.displacementPenalty}m` },
-                    { label: 'Peso', value: `${item.weight} kg` }
+                    { label: 'Defesa', value: `+${item.ap || item.value || 0} AP`, highlight: true },
+                    { label: 'Tipo', value: item.kind || '-' },
+                    { label: 'Categoria', value: item.categ || '-' },
+                    { label: 'Penalidade', value: `${item.displacementPenalty ?? 0}m` },
+                    { label: 'Peso', value: `${item.weight || 0} kg` }
                 ];
             case 'item':
                 return [
@@ -218,7 +435,7 @@ export default function InventorySection(): ReactElement {
                             )}
                             {type === 'armor' && (
                                 <Chip
-                                    label={`+${item.value} AP`}
+                                    label={`+${item.ap || item.value || 0} AP`}
                                     size="small"
                                     sx={{
                                         bgcolor: `${blue[500]}20`,
@@ -325,6 +542,45 @@ export default function InventorySection(): ReactElement {
                                 </Typography>
                             </Box>
                         )}
+                        
+                        {/* Botões de Ação */}
+                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 1 }}>
+                            {/* Botão de Doar */}
+                            {sessionPlayers.length > 0 && (
+                                <Tooltip title="Doar para outro jogador">
+                                    <IconButton
+                                        size="small"
+                                        onClick={(e) => handleOpenDonationModal(item, type, e)}
+                                        sx={{
+                                            color: blue[400],
+                                            '&:hover': {
+                                                bgcolor: `${blue[500]}15`,
+                                                color: blue[600]
+                                            }
+                                        }}
+                                    >
+                                        <CardGiftcard fontSize="small" />
+                                    </IconButton>
+                                </Tooltip>
+                            )}
+                            
+                            {/* Botão de Deletar */}
+                            <Tooltip title="Remover do inventário">
+                                <IconButton
+                                    size="small"
+                                    onClick={async (e) => await handleDeleteItem(item, type, e)}
+                                    sx={{
+                                        color: red[400],
+                                        '&:hover': {
+                                            bgcolor: `${red[500]}15`,
+                                            color: red[600]
+                                        }
+                                    }}
+                                >
+                                    <Delete fontSize="small" />
+                                </IconButton>
+                            </Tooltip>
+                        </Box>
                     </Stack>
                 </AccordionDetails>
             </Accordion>
@@ -402,7 +658,7 @@ export default function InventorySection(): ReactElement {
                                     <CheckCircle sx={{ color: green[600], fontSize: '1.2rem' }} />
                                 )}
                                 <Typography variant="body2" fontWeight={600}>
-                                    {charsheet.capacity.cargo}/{charsheet.capacity.max} kg
+                                    {calculateTotalWeight.toFixed(1)}/{charsheet.capacity.max} kg
                                 </Typography>
                             </Box>
                         </Tooltip>
@@ -534,6 +790,28 @@ export default function InventorySection(): ReactElement {
                     50% { opacity: 0.6; }
                 }
             `}</style>
+
+            {/* Modal de Doação */}
+            {donationModal.open && donationModal.item && (
+                <SubstitutionModal
+                    open={donationModal.open}
+                    type={donationModal.type}
+                    newItem={{
+                        id: donationModal.item.id,
+                        name: donationModal.item.name,
+                        description: donationModal.item.description || '',
+                        rarity: donationModal.item.rarity,
+                        weight: donationModal.item.weight
+                    }}
+                    existingItems={[]}
+                    sessionPlayers={sessionPlayers}
+                    onSubstitute={() => {}} // Não usado no modo donateOnly
+                    onDonate={handleDonate}
+                    onCancel={() => setDonationModal({ open: false, item: null, type: 'item' })}
+                    donateOnly={true}
+                    itemWeight={donationModal.item.weight || 0}
+                />
+            )}
         </Box>
     );
 }

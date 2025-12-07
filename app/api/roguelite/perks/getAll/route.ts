@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
-import { perkRepository, weaponRepository, itemRepository, armorRepository, spellRepository, powerRepository } from "@repositories";
+import { NextResponse } from 'next/server';
+import { perkRepository, weaponRepository, itemRepository, armorRepository, spellRepository, powerRepository } from '@repositories';
 
 export async function GET() {
     const perks = await perkRepository.find()

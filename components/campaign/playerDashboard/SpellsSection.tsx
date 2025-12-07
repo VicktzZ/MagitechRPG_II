@@ -4,11 +4,14 @@
 import { elementColor } from '@constants';
 import { useCampaignCurrentCharsheetContext } from '@contexts';
 import type { SpellDTO } from '@models/dtos';
+import { charsheetEntity } from '@utils/firestoreEntities';
+import { useSnackbar } from 'notistack';
 import {
     Air,
     AutoAwesome,
     Brightness2,
     Circle,
+    Delete,
     ExpandMore,
     FlashOn,
     LocalFireDepartment,
@@ -22,6 +25,7 @@ import {
     AccordionSummary,
     Box,
     Chip,
+    IconButton,
     Paper,
     Stack,
     Tooltip,
@@ -181,11 +185,25 @@ function SpellStage({ stage, description, spell }: SpellStageProps): ReactElemen
 export default function SpellsSection(): ReactElement {
     const { charsheet } = useCampaignCurrentCharsheetContext();
     const theme = useTheme();
+    const { enqueueSnackbar } = useSnackbar();
 
     const [ expandedSpell, setExpandedSpell ] = useState<string | false>(false)
 
     const handleSpellExpand = (spellName: string) => (event: React.SyntheticEvent, isExpanded: boolean) => {
         setExpandedSpell(isExpanded ? spellName : false)
+    }
+
+    const handleDeleteSpell = async (spellName: string) => {
+        if (!charsheet?.id) return;
+        
+        try {
+            const newSpells = charsheet.spells.filter(spell => spell.name !== spellName);
+            await charsheetEntity.update(charsheet.id, { spells: newSpells });
+            enqueueSnackbar('Magia excluída com sucesso!', { variant: 'success' });
+        } catch (error) {
+            console.error('Erro ao excluir magia:', error);
+            enqueueSnackbar('Erro ao excluir magia', { variant: 'error' });
+        }
     }
 
     const allSpells = charsheet.spells
@@ -216,11 +234,12 @@ export default function SpellsSection(): ReactElement {
                 }}
             >
                 <Stack spacing={3}>
-                    {/* Estatísticas por Nível */}
+                    {/* Header com Espaço de Magias */}
                     <Box 
                         sx={{
                             display: 'flex',
-                            justifyContent: 'space-around',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
                             p: 2,
                             bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
                             borderRadius: 2,
@@ -228,22 +247,38 @@ export default function SpellsSection(): ReactElement {
                             borderColor: 'divider'
                         }}
                     >
-                        {[ 1, 2, 3, 4 ].map(level => {
-                            const levelConfig = getSpellLevelColor(level);
-                            const count = spellsByLevel[level as keyof typeof spellsByLevel].length;
-                            return (
-                                <Stack key={level} alignItems="center" spacing={0.5}>
-                                    <Box display="flex" alignItems="center" gap={0.5}>
-                                        <Typography variant="h6" sx={{ color: levelConfig.color, fontWeight: 700 }}>
-                                            {count}
+                        {/* Espaço de Magias */}
+                        <Box sx={{ textAlign: 'center' }}>
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                                Espaço de Magias
+                            </Typography>
+                            <Chip
+                                label={`${allSpells.length} / ${charsheet.spellSpace || 0}`}
+                                color={allSpells.length >= (charsheet.spellSpace || 0) ? 'warning' : 'primary'}
+                                variant="filled"
+                                sx={{ fontWeight: 700, fontSize: '0.9rem' }}
+                            />
+                        </Box>
+
+                        {/* Estatísticas por Nível */}
+                        <Stack direction="row" spacing={3}>
+                            {[ 1, 2, 3, 4 ].map(level => {
+                                const levelConfig = getSpellLevelColor(level);
+                                const count = spellsByLevel[level as keyof typeof spellsByLevel].length;
+                                return (
+                                    <Stack key={level} alignItems="center" spacing={0.5}>
+                                        <Box display="flex" alignItems="center" gap={0.5}>
+                                            <Typography variant="h6" sx={{ color: levelConfig.color, fontWeight: 700 }}>
+                                                {count}
+                                            </Typography>
+                                        </Box>
+                                        <Typography variant="caption" color="text.secondary">
+                                            Nível {level}
                                         </Typography>
-                                    </Box>
-                                    <Typography variant="caption" color="text.secondary">
-                                        Nível {level}
-                                    </Typography>
-                                </Stack>
-                            );
-                        })}
+                                    </Stack>
+                                );
+                            })}
+                        </Stack>
                     </Box>
 
                     {/* Lista de Spells */}
@@ -351,7 +386,7 @@ export default function SpellsSection(): ReactElement {
                                                     </Box>
                                                 </Box>
                                                 
-                                                <Box display="flex" gap={1} flexWrap="wrap">
+                                                <Box display="flex" gap={1} flexWrap="wrap" alignItems="center">
                                                     <Tooltip title="Alcance">
                                                         <Chip 
                                                             label={spell.range} 
@@ -384,6 +419,19 @@ export default function SpellsSection(): ReactElement {
                                                                 fontWeight: 600
                                                             }}
                                                         />
+                                                    </Tooltip>
+                                                    <Tooltip title="Excluir Magia">
+                                                        <IconButton 
+                                                            size="small" 
+                                                            color="error"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleDeleteSpell(spell.name);
+                                                            }}
+                                                            sx={{ ml: 1 }}
+                                                        >
+                                                            <Delete fontSize="small" />
+                                                        </IconButton>
                                                     </Tooltip>
                                                 </Box>
                                             </AccordionSummary>

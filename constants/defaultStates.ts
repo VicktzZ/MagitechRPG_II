@@ -36,7 +36,7 @@ export const defaultStates: Record<string, State> = {
             damageType: 'fogo',
             expertisePenalties: {
                 'Agilidade': -2,
-                'Reflexos': -2,
+                'Reflexos': -2
             },
             removalConditions: {
                 expertiseTest: 'Medicina',
@@ -63,7 +63,7 @@ export const defaultStates: Record<string, State> = {
                 'Reflexos': -2,
                 'Pontaria': -2
             },
-            specialEffects: ['Metade do movimento'],
+            specialEffects: [ 'Metade do movimento' ],
             removalConditions: {
                 expertiseTest: 'Fortitude',
                 difficulty: 14,
@@ -86,7 +86,7 @@ export const defaultStates: Record<string, State> = {
             expertisePenalties: {
                 'Fortitude': -3,
                 'Força': -2,
-                'Vontade': -2,
+                'Vontade': -2
             },
             removalConditions: {
                 expertiseTest: 'Medicina',
@@ -113,7 +113,7 @@ export const defaultStates: Record<string, State> = {
                 'Força': -1,
                 'Vontade': -1
             },
-            specialEffects: ['Deixa rastro de sangue'],
+            specialEffects: [ 'Deixa rastro de sangue' ],
             removalConditions: {
                 expertiseTest: 'Medicina',
                 difficulty: 11,
@@ -139,7 +139,7 @@ export const defaultStates: Record<string, State> = {
                 'Reflexos': -6,
                 'Esquiva': -6
             },
-            specialEffects: ['Não pode se mover', 'Não pode realizar ações físicas', 'Vulnerável a ataques críticos'],
+            specialEffects: [ 'Não pode se mover', 'Não pode realizar ações físicas', 'Vulnerável a ataques críticos' ],
             removalConditions: {
                 expertiseTest: 'Fortitude',
                 difficulty: 16,
@@ -161,9 +161,9 @@ export const defaultStates: Record<string, State> = {
                 'Reflexos': -4,
                 'Agilidade': -3,
                 'Pontaria': -3,
-                'Percepção': -3,
+                'Percepção': -3
             },
-            specialEffects: ['Apenas uma ação por turno'],
+            specialEffects: [ 'Apenas uma ação por turno' ],
             removalConditions: {
                 expertiseTest: 'Fortitude',
                 difficulty: 13,
@@ -185,9 +185,9 @@ export const defaultStates: Record<string, State> = {
                 'Força': -2,
                 'Atletismo': -2,
                 'Fortitude': -2,
-                'Vontade': -1,
+                'Vontade': -1
             },
-            specialEffects: ['Vantagem em testes para dormir'],
+            specialEffects: [ 'Vantagem em testes para dormir' ],
             removalConditions: {
                 expertiseTest: 'Fortitude',
                 difficulty: 10,
@@ -211,7 +211,7 @@ export const defaultStates: Record<string, State> = {
                 'Liderança': -3,
                 'Magia': -2
             },
-            specialEffects: ['Desejo de fugir da fonte do medo'],
+            specialEffects: [ 'Desejo de fugir da fonte do medo' ],
             removalConditions: {
                 expertiseTest: 'Vontade',
                 difficulty: 14,
@@ -233,9 +233,9 @@ export const defaultStates: Record<string, State> = {
                 'Conhecimento': -3,
                 'Tática': -3,
                 'Investigação': -3,
-                'Percepção': -2,
+                'Percepção': -2
             },
-            specialEffects: ['50% de chance de atacar alvo errado'],
+            specialEffects: [ '50% de chance de atacar alvo errado' ],
             removalConditions: {
                 expertiseTest: 'Vontade',
                 difficulty: 12,
@@ -259,7 +259,7 @@ export const defaultStates: Record<string, State> = {
                 'Vontade': -2,
                 'Diplomacia': -2
             },
-            specialEffects: ['Trata fonte do charme como aliado', 'Resiste a atacar fonte'],
+            specialEffects: [ 'Trata fonte do charme como aliado', 'Resiste a atacar fonte' ],
             removalConditions: {
                 expertiseTest: 'Vontade',
                 difficulty: 15,
@@ -283,7 +283,7 @@ export const defaultStates: Record<string, State> = {
                 'Tática': -3,
                 'Vontade': -2
             },
-            specialEffects: ['+2 em testes de Força', 'Deve atacar inimigo mais próximo'],
+            specialEffects: [ '+2 em testes de Força', 'Deve atacar inimigo mais próximo' ],
             removalConditions: {
                 expertiseTest: 'Vontade',
                 difficulty: 13,
@@ -306,7 +306,7 @@ export const defaultStates: Record<string, State> = {
                 'Reflexos': -6,
                 'Vontade': -4
             },
-            specialEffects: ['Inconsciente', 'Vulnerável a ataques críticos', 'Acorda com dano ou barulho forte'],
+            specialEffects: [ 'Inconsciente', 'Vulnerável a ataques críticos', 'Acorda com dano ou barulho forte' ],
             removalConditions: {
                 expertiseTest: 'Fortitude',
                 difficulty: 11,
@@ -330,7 +330,7 @@ export const defaultStates: Record<string, State> = {
                 'Vontade': -2,
                 'RES Mágica': -2
             },
-            specialEffects: ['Falhas críticas em 1-2', 'Testes de má sorte'],
+            specialEffects: [ 'Falhas críticas em 1-2', 'Testes de má sorte' ],
             removalConditions: {
                 expertiseTest: 'RES Mágica',
                 difficulty: 16,
@@ -354,7 +354,7 @@ export const defaultStates: Record<string, State> = {
                 'Diplomacia': -2,
                 'Intimidação': -2
             },
-            specialEffects: ['Não pode conjurar magias com componente verbal'],
+            specialEffects: [ 'Não pode conjurar magias com componente verbal' ],
             removalConditions: {
                 expertiseTest: 'RES Mágica',
                 difficulty: 14,
@@ -376,8 +376,8 @@ export const defaultStates: Record<string, State> = {
                 'Magia': -6,
                 'RES Mágica': -4
             },
-            specialEffects: ['Não pode conjurar magias', 'Itens mágicos não funcionam', 'Protege contra magias'],
-            immunities: ['magia'],
+            specialEffects: [ 'Não pode conjurar magias', 'Itens mágicos não funcionam', 'Protege contra magias' ],
+            immunities: [ 'magia' ],
             removalConditions: {
                 expertiseTest: 'RES Mágica',
                 difficulty: 18,
@@ -401,7 +401,7 @@ export const defaultStates: Record<string, State> = {
                 'Magia': -2,
                 'RES Mágica': -2
             },
-            specialEffects: ['Drena 1 MP por turno', 'Causa fraqueza progressiva'],
+            specialEffects: [ 'Drena 1 MP por turno', 'Causa fraqueza progressiva' ],
             removalConditions: {
                 expertiseTest: 'Vontade',
                 difficulty: 15,
@@ -425,7 +425,7 @@ export const defaultStates: Record<string, State> = {
                 'Esquiva': -3,
                 'Pontaria': -2
             },
-            specialEffects: ['Metade do movimento', 'Iniciativa reduzida'],
+            specialEffects: [ 'Metade do movimento', 'Iniciativa reduzida' ],
             removalConditions: {
                 expertiseTest: 'Fortitude',
                 difficulty: 12,
@@ -449,7 +449,7 @@ export const defaultStates: Record<string, State> = {
                 'Esquiva': -5,
                 'Luta': -3
             },
-            specialEffects: ['Não pode se mover do local', 'Ações físicas com desvantagem'],
+            specialEffects: [ 'Não pode se mover do local', 'Ações físicas com desvantagem' ],
             removalConditions: {
                 expertiseTest: 'Força',
                 difficulty: 14,
@@ -473,7 +473,7 @@ export const defaultStates: Record<string, State> = {
                 'Pontaria': -2,
                 'Esquiva': -4
             },
-            specialEffects: ['Precisa gastar ação para se levantar', 'Vulnerável a ataques'],
+            specialEffects: [ 'Precisa gastar ação para se levantar', 'Vulnerável a ataques' ],
             removalConditions: {
                 expertiseTest: 'Agilidade',
                 difficulty: 10,
@@ -497,7 +497,7 @@ export const defaultStates: Record<string, State> = {
                 'Investigação': -3,
                 'Luta': -3
             },
-            specialEffects: ['Falha automática em testes visuais', 'Movimento com desvantagem'],
+            specialEffects: [ 'Falha automática em testes visuais', 'Movimento com desvantagem' ],
             removalConditions: {
                 expertiseTest: 'Medicina',
                 difficulty: 13,
@@ -521,7 +521,7 @@ export const defaultStates: Record<string, State> = {
                 'Diplomacia': -3,
                 'Intimidação': -2
             },
-            specialEffects: ['Falha automática em testes auditivos', 'Não pode ouvir avisos'],
+            specialEffects: [ 'Falha automática em testes auditivos', 'Não pode ouvir avisos' ],
             removalConditions: {
                 expertiseTest: 'Medicina',
                 difficulty: 12,
@@ -545,7 +545,7 @@ export const defaultStates: Record<string, State> = {
                 'Pontaria': -2,
                 'Tática': -2
             },
-            specialEffects: ['Dificuldade em determinar direções', 'Desvantagem em navegação'],
+            specialEffects: [ 'Dificuldade em determinar direções', 'Desvantagem em navegação' ],
             removalConditions: {
                 expertiseTest: 'Vontade',
                 difficulty: 11,
@@ -569,7 +569,7 @@ export const defaultStates: Record<string, State> = {
                 'Competência': -2,
                 'Reflexos': -2
             },
-            specialEffects: ['Itens tecnológicos têm 50% de falha', 'Interferência em comunicação'],
+            specialEffects: [ 'Itens tecnológicos têm 50% de falha', 'Interferência em comunicação' ],
             removalConditions: {
                 expertiseTest: 'Tecnologia',
                 difficulty: 14,
@@ -592,7 +592,7 @@ export const defaultStates: Record<string, State> = {
                 'Controle': -3,
                 'Vontade': -2
             },
-            specialEffects: ['20% de efeito mágico aleatório', 'Dano backlash em falhas'],
+            specialEffects: [ '20% de efeito mágico aleatório', 'Dano backlash em falhas' ],
             removalConditions: {
                 expertiseTest: 'RES Mágica',
                 difficulty: 15,
@@ -610,7 +610,7 @@ export const defaultStates: Record<string, State> = {
         description: 'Barreira mágica ou tecnológica protege o personagem contra danos.',
         category: 'magico',
         effects: {
-            specialEffects: ['Reduz 5 pontos de dano por ataque', 'Protege contra primeiro ataque crítico'],
+            specialEffects: [ 'Reduz 5 pontos de dano por ataque', 'Protege contra primeiro ataque crítico' ],
             removalConditions: {
                 turnsToEnd: 5
             }
@@ -631,7 +631,7 @@ export const defaultStates: Record<string, State> = {
                 'Percepção': 2,
                 'Vontade': 2
             },
-            specialEffects: ['Vantagem em testes de concentração'],
+            specialEffects: [ 'Vantagem em testes de concentração' ],
             removalConditions: {
                 turnsToEnd: 4
             }
@@ -653,7 +653,7 @@ export const defaultStates: Record<string, State> = {
                 'Reflexos': 2,
                 'Fortitude': 2
             },
-            specialEffects: ['Ignora penalidades de dor', '+10 PV temporários'],
+            specialEffects: [ 'Ignora penalidades de dor', '+10 PV temporários' ],
             removalConditions: {
                 turnsToEnd: 3
             }
