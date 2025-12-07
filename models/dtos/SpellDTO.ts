@@ -1,5 +1,5 @@
 import type { RangeType, Element } from '@models/types/string'
-import { IsNumber, IsString } from 'class-validator'
+import { IsArray, IsNumber, IsString } from 'class-validator'
 
 export class SpellDTO {
     @IsString() id?: string
@@ -10,7 +10,9 @@ export class SpellDTO {
     @IsString() type: string
     @IsString() execution: string
     @IsString() range: RangeType
-    @IsString() stages: [string, string, string]
+    @IsArray()
+    @IsString({ each: true })
+    stages: string[] = []
 
     constructor(spell?: SpellDTO) {
         Object.assign(this, spell);
