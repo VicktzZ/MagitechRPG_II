@@ -22,6 +22,7 @@ import {
 import StorefrontIcon from '@mui/icons-material/Storefront';
 import { green, orange, red } from '@mui/material/colors';
 import { useSnackbar } from 'notistack';
+import { PerkTypeEnum } from '@enums/rogueliteEnum';
 import type { PlayerInfo, ShopConfig, RarityType } from './types';
 import { RARITY_OPTIONS, DEFAULT_SHOP_CONFIG } from './constants';
 
@@ -88,27 +89,32 @@ export default function ShopDialog({
     const handleToggleShop = async (openShop: boolean) => {
         setIsUpdating(true);
         try {
-            await fetch(`/api/campaign/${campaignId}/shop`, {
+            const response = await fetch(`/api/campaign/${campaignId}/shop`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     isOpen: openShop,
-                    ...shopConfig
+                    config: openShop ? shopConfig : undefined
                 })
             });
 
-            enqueueSnackbar(openShop ? 'Loja aberta para os jogadores!' : 'Loja fechada.', { variant: 'success' });
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(result.error || 'Erro ao atualizar loja');
+            }
+
+            enqueueSnackbar(result.message || (openShop ? 'Loja aberta para os jogadores!' : 'Loja fechada.'), { variant: 'success' });
             
             if (openShop) {
                 await loadShopItems();
             }
             
-            if (!openShop) {
-                onClose();
-            }
+            // Forçar reload da página para atualizar o estado da campanha
+            window.location.reload();
         } catch (error) {
             console.error('Erro ao atualizar loja:', error);
-            enqueueSnackbar('Erro ao atualizar loja', { variant: 'error' });
+            enqueueSnackbar(error instanceof Error ? error.message : 'Erro ao atualizar loja', { variant: 'error' });
         } finally {
             setIsUpdating(false);
         }
@@ -226,6 +232,40 @@ export default function ShopDialog({
                                     }}
                                 />
                             ))}
+                        </Box>
+                    </Box>
+
+                    {/* Filtros de tipos de perks */}
+                    <Box>
+                        <Typography variant="subtitle2" sx={{ mb: 1, color: 'text.primary' }}>
+                            Tipos de itens permitidos (vazio = todos)
+                        </Typography>
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                            {Object.entries(PerkTypeEnum)
+                                .filter(([ key ]) => ![ 'FOGO', 'ÁGUA', 'AR', 'TERRA', 'ELETRICIDADE', 'LUZ', 'TREVAS', 'NÃO-ELEMENTAL', 'SANGUE', 'VÁCUO', 'EXPLOSÃO', 'TÓXICO', 'RADIAÇÃO', 'PSÍQUICO' ].includes(key))
+                                .map(([ key, value ]) => (
+                                    <Chip
+                                        key={key}
+                                        label={value}
+                                        size="small"
+                                        onClick={() => {
+                                            const newTypes = shopConfig.types.includes(value)
+                                                ? shopConfig.types.filter(t => t !== value)
+                                                : [...shopConfig.types, value];
+                                            setShopConfig(prev => ({ ...prev, types: newTypes }));
+                                        }}
+                                        sx={{
+                                            bgcolor: shopConfig.types.includes(value) 
+                                                ? 'rgba(33, 150, 243, 0.2)' 
+                                                : 'rgba(158, 158, 158, 0.2)',
+                                            color: shopConfig.types.includes(value) ? 'primary.light' : 'text.secondary',
+                                            fontWeight: shopConfig.types.includes(value) ? 600 : 400,
+                                            cursor: 'pointer',
+                                            border: '1px solid',
+                                            borderColor: shopConfig.types.includes(value) ? 'primary.main' : 'transparent'
+                                        }}
+                                    />
+                                ))}
                         </Box>
                     </Box>
 
