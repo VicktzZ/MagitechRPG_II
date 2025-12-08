@@ -73,6 +73,7 @@ function getIcon(rarity: string) {
 
 export function PerkCardsModal({ 
     open, 
+    seed,
     level, 
     perkAmount = 5, 
     hideFilters = false, 
@@ -110,7 +111,7 @@ export function PerkCardsModal({
         confirmSelection,
         finalizeSelection,
         resetConfirmation
-    } = usePerkCards({ open, level, perkAmount, initialFilters })
+    } = usePerkCards({ open, level, perkAmount, externalSeed: seed, initialFilters })
 
     // Estado para modal de substituição
     const [ substitutionModal, setSubstitutionModal ] = useState<{

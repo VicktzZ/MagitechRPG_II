@@ -8,6 +8,22 @@ import type { Item } from '../Item';
 import { Collection } from 'fireorm';
 import generateEntryCode from '@utils/generateEntryCode';
 import type { Skill, Dice } from '@models';
+import type { RarityType } from '@models/types/string';
+
+export interface ShopConfig {
+    isOpen: boolean;
+    itemCount: number;
+    rarities: RarityType[];
+    types: string[];
+    itemKinds: string[];
+    priceMultiplier: number;
+    items?: any[];
+    itemsGeneratedAt?: string;
+    lastUpdated?: string;
+    // Controle de visibilidade por jogador
+    visibleToAll?: boolean;
+    visibleToPlayers?: string[]; // IDs dos jogadores que podem ver a loja
+}
 
 @Collection('campaigns')
 export class Campaign {
@@ -42,6 +58,8 @@ export class Campaign {
                 item: []
             }
         };
+        
+    shop?: ShopConfig;
     
     constructor(campaign?: Partial<Campaign>) {
         Object.assign(this, campaign)

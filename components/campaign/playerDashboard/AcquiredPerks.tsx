@@ -1,11 +1,7 @@
 'use client';
 
 import { useCampaignContext, useCampaignCurrentCharsheetContext } from '@contexts';
-import {
-    AutoAwesome,
-    ExpandLess,
-    ExpandMore
-} from '@mui/icons-material';
+import { AutoAwesome, ExpandLess, ExpandMore } from '@mui/icons-material';
 import {
     Badge,
     Box,

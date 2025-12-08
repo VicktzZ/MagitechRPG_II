@@ -74,8 +74,9 @@ export async function DELETE(_req: Request, { params: { id } }: { params: id }):
 export async function PATCH(req: Request, { params: { id } }: { params: id }): Promise<Response> {
     try {
         const body: CharsheetDTO | DbCharsheet = await req.json();
-        const defaultDto = plainToInstance(CharsheetDTO, body, { excludeExtraneousValues: true });
-        const dbDto = plainToInstance(DbCharsheet, body, { excludeExtraneousValues: true });
+        // Não usar excludeExtraneousValues para não perder propriedades enviadas pelo cliente
+        const defaultDto = plainToInstance(CharsheetDTO, body);
+        const dbDto = plainToInstance(DbCharsheet, body);
 
         const defaultDtoErrors = await validate(defaultDto, { skipMissingProperties: true });
         const dbDtoErrors = await validate(dbDto, { skipMissingProperties: true });
@@ -89,12 +90,36 @@ export async function PATCH(req: Request, { params: { id } }: { params: id }): P
             return Response.json({ message: 'NOT FOUND' }, { status: 404 });
         }
 
-        const updatedCharsheet = new DbCharsheet({ ...defaultDto, id } as unknown as DbCharsheet);
+        // Converte spells de objetos para IDs para salvar no banco
+        let spellsToSave: string[] | null = null;
+        if (defaultDto.spells && defaultDto.spells.length > 0) {
+            spellsToSave = defaultDto.spells
+                .map(spell => spell.id || spell.name || '')
+                .filter(id => id.trim() !== ''); // Remove IDs vazios
+        }
 
-        await charsheetRepository.update(updatedCharsheet);
+        // Mantém valores existentes se não vierem no body
+        const traitsToSave = defaultDto.traits?.length ? defaultDto.traits : (charsheet.traits ?? []);
+        const ormLevelToSave = defaultDto.ORMLevel ?? charsheet.ORMLevel ?? 0;
+        const spellsFinal = spellsToSave !== null ? spellsToSave : (charsheet.spells ?? []);
+
+        const updatedCharsheet = new DbCharsheet({ 
+            ...charsheet, // preserva valores existentes
+            ...defaultDto, 
+            id,
+            ORMLevel: ormLevelToSave,
+            traits: traitsToSave,
+            spells: spellsFinal // Garante que spells seja array de strings
+        } as unknown as DbCharsheet);
+
+        // Firestore não aceita instâncias com protótipo customizado; converte para objeto plano
+        const plainCharsheet = JSON.parse(JSON.stringify(updatedCharsheet));
+
+        await charsheetRepository.update(plainCharsheet as DbCharsheet);
 
         return Response.json({ message: 'SUCCESS' });
     } catch (error: any) {
+        console.error('Erro ao atualizar charsheet:', error);
         return Response.json({ message: 'NOT FOUND', error: error.message }, { status: 404 });
     }
 }

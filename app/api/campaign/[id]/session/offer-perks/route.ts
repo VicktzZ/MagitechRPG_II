@@ -7,6 +7,7 @@ import type { PerkFilters } from '@models';
 interface OfferPerksBody {
     userIds: string[];
     filters: PerkFilters;
+    sharedSeed?: string;
 }
 
 export async function POST(req: Request, { params }: { params: { id: string } }) {
@@ -23,11 +24,12 @@ export async function POST(req: Request, { params }: { params: { id: string } })
             return Response.json({ message: 'Campanha não encontrada' }, { status: 404 });
         }
 
-        // Atualiza a session com os pending users e filtros
+        // Atualiza a session com os pending users, filtros e seed compartilhada
         const updatedSession = {
             ...campaign.session,
             pendingPerkUsers: body.userIds,
-            perkFilters: body.filters
+            perkFilters: body.filters,
+            sharedPerkSeed: body.sharedSeed || null
         };
 
         await campaignRepository.update({
@@ -39,10 +41,10 @@ export async function POST(req: Request, { params }: { params: { id: string } })
         await pusherServer.trigger(
             `presence-${campaign.campaignCode}`,
             PusherEvent.PERKS_OFFERED,
-            { userIds: body.userIds, filters: body.filters }
+            { userIds: body.userIds, filters: body.filters, sharedSeed: body.sharedSeed }
         );
 
-        return Response.json({ success: true, pendingPerkUsers: body.userIds });
+        return Response.json({ success: true, pendingPerkUsers: body.userIds, sharedSeed: body.sharedSeed });
     } catch (error) {
         console.error('Erro ao oferecer perks:', error);
         return Response.json({ message: 'Erro ao oferecer perks' }, { status: 500 });

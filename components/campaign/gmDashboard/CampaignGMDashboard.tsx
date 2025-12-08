@@ -8,7 +8,10 @@ import {
     CardGiftcard,
     ExpandMore,
     People,
-    SupervisorAccount
+    SupervisorAccount,
+    Pets,
+    Delete,
+    Edit
 } from '@mui/icons-material';
 import {
     Accordion,
@@ -17,6 +20,7 @@ import {
     Avatar,
     Box,
     Chip,
+    IconButton,
     Paper,
     Skeleton,
     Snackbar,
@@ -134,14 +138,19 @@ export default function CampaignGMDashboard(): ReactElement | null {
             const session = charsheet.session?.find((s: any) => s.campaignCode === campaign.campaignCode);
             const perks = session?.perks || [];
             
+            // Busca dados do usuário para pegar a foto
+            const user = users.players?.find(p => p.id === charsheet.userId);
+            
             return {
                 charsheetId: charsheet.id,
                 charsheetName: charsheet.name,
                 level: charsheet.level,
-                perks
+                perks,
+                userImage: user?.image || null,
+                userName: user?.name || charsheet.name
             };
         }).filter(p => p.perks.length > 0);
-    }, [ campaign.mode, campaign.campaignCode, playerCharsheets ]);
+    }, [ campaign.mode, campaign.campaignCode, playerCharsheets, users.players ]);
 
     // Função para obter cor por tipo de perk
     const getPerkTypeColor = (perkType: string) => {
@@ -394,23 +403,26 @@ export default function CampaignGMDashboard(): ReactElement | null {
                                                 >
                                                     <Box display="flex" alignItems="center" gap={2} width="100%">
                                                         <Avatar 
+                                                            src={player.userImage || undefined}
                                                             sx={{ 
-                                                                width: 36, 
-                                                                height: 36,
+                                                                width: 44, 
+                                                                height: 44,
                                                                 bgcolor: purple[100],
                                                                 color: purple[800],
-                                                                fontSize: '0.9rem',
-                                                                fontWeight: 700
+                                                                fontSize: '1rem',
+                                                                fontWeight: 700,
+                                                                border: '2px solid',
+                                                                borderColor: purple[300]
                                                             }}
                                                         >
-                                                            {player.charsheetName?.charAt(0)?.toUpperCase() || '?'}
+                                                            {!player.userImage && (player.charsheetName?.charAt(0)?.toUpperCase() || '?')}
                                                         </Avatar>
                                                         <Box flex={1}>
                                                             <Typography variant="subtitle1" fontWeight={600}>
                                                                 {player.charsheetName}
                                                             </Typography>
                                                             <Typography variant="caption" color="text.secondary">
-                                                                Nível {player.level}
+                                                                Nível {player.level} • {player.userName}
                                                             </Typography>
                                                         </Box>
                                                         <Chip 
@@ -451,11 +463,6 @@ export default function CampaignGMDashboard(): ReactElement | null {
                                                                     arrow
                                                                 >
                                                                     <Chip
-                                                                        icon={
-                                                                            <Typography sx={{ fontSize: '0.9rem', ml: 0.5 }}>
-                                                                                {iconForRarity(perk.rarity)}
-                                                                            </Typography>
-                                                                        }
                                                                         label={
                                                                             <Box display="flex" alignItems="center" gap={0.5}>
                                                                                 <Typography variant="caption" fontWeight={600}>
@@ -463,6 +470,16 @@ export default function CampaignGMDashboard(): ReactElement | null {
                                                                                 </Typography>
                                                                                 <Chip 
                                                                                     label={getPerkTypeLabel(perk.perkType)}
+                                                                                    size="small"
+                                                                                    sx={{ 
+                                                                                        height: 18,
+                                                                                        fontSize: '0.65rem',
+                                                                                        bgcolor: typeColor.bg,
+                                                                                        color: typeColor.color
+                                                                                    }}
+                                                                                />
+                                                                                <Chip 
+                                                                                    label={getPerkTypeLabel(perk.rarity)}
                                                                                     size="small"
                                                                                     sx={{ 
                                                                                         height: 18,
@@ -493,6 +510,96 @@ export default function CampaignGMDashboard(): ReactElement | null {
                                         ))}
                                     </Stack>
                                 )}
+                            </Box>
+                        </Section>
+                    )}
+
+                    {/* Seção de Criaturas Customizadas */}
+                    {campaign.custom?.creatures && campaign.custom.creatures.length > 0 && (
+                        <Section 
+                            title="Criaturas Customizadas" 
+                            icon={
+                                <Box 
+                                    sx={{
+                                        p: 1.5,
+                                        borderRadius: 2,
+                                        bgcolor: orange[100],
+                                        border: '2px solid',
+                                        borderColor: orange[200]
+                                    }}
+                                >
+                                    <Pets sx={{ color: orange[700], fontSize: '2rem' }} />
+                                </Box>
+                            }
+                        >
+                            <Box>
+                                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                                    Criaturas criadas para esta campanha
+                                </Typography>
+                                
+                                <Stack spacing={1}>
+                                    {campaign.custom.creatures.map((creature: any) => (
+                                        <Paper
+                                            key={creature.id}
+                                            sx={{
+                                                p: 2,
+                                                border: '1px solid',
+                                                borderColor: 'divider',
+                                                borderRadius: 2,
+                                                bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.01)'
+                                            }}
+                                        >
+                                            <Box display="flex" alignItems="center" justifyContent="space-between">
+                                                <Box display="flex" alignItems="center" gap={2}>
+                                                    <Avatar sx={{ bgcolor: orange[100], color: orange[800] }}>
+                                                        <Pets />
+                                                    </Avatar>
+                                                    <Box>
+                                                        <Typography variant="subtitle1" fontWeight={600}>
+                                                            {creature.name}
+                                                        </Typography>
+                                                        <Box display="flex" gap={0.5} mt={0.5}>
+                                                            <Chip 
+                                                                label={`Nível ${creature.level}`} 
+                                                                size="small" 
+                                                                sx={{ height: 20, fontSize: '0.65rem', bgcolor: green[100], color: green[800] }} 
+                                                            />
+                                                            <Chip 
+                                                                label={`LP: ${creature.stats?.lp || 0}`} 
+                                                                size="small" 
+                                                                sx={{ height: 20, fontSize: '0.65rem', bgcolor: red[100], color: red[800] }} 
+                                                            />
+                                                            <Chip 
+                                                                label={`MP: ${creature.stats?.mp || 0}`} 
+                                                                size="small" 
+                                                                sx={{ height: 20, fontSize: '0.65rem', bgcolor: blue[100], color: blue[800] }} 
+                                                            />
+                                                            {creature.skills?.length > 0 && (
+                                                                <Chip 
+                                                                    label={`${creature.skills.length} habilidade(s)`} 
+                                                                    size="small" 
+                                                                    sx={{ height: 20, fontSize: '0.65rem', bgcolor: purple[100], color: purple[800] }} 
+                                                                />
+                                                            )}
+                                                            {creature.spells?.length > 0 && (
+                                                                <Chip 
+                                                                    label={`${creature.spells.length} magia(s)`} 
+                                                                    size="small" 
+                                                                    sx={{ height: 20, fontSize: '0.65rem', bgcolor: amber[100], color: amber[800] }} 
+                                                                />
+                                                            )}
+                                                        </Box>
+                                                        {creature.description && (
+                                                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+                                                                {creature.description}
+                                                            </Typography>
+                                                        )}
+                                                    </Box>
+                                                </Box>
+                                            </Box>
+                                        </Paper>
+                                    ))}
+                                </Stack>
                             </Box>
                         </Section>
                     )}
