@@ -51,17 +51,28 @@ export async function POST(
                 break
             case 'addMoney':
                 // Adiciona dinheiro
-                const currentMoney = charsheet.inventory?.money || 0
+                if (!charsheet.inventory) {
+                    charsheet.inventory = { items: [], money: 0 }
+                }
+                const currentMoney = charsheet.inventory.money || 0
+                const newMoney = currentMoney + (amount || 0)
+                
                 updateData.inventory = {
                     ...charsheet.inventory,
-                    money: currentMoney + (amount || 0)
+                    items: charsheet.inventory.items || [],
+                    money: newMoney
                 }
+                console.log(`[AddMoney] Charsheet ${charsheetId}: ${currentMoney} + ${amount} = ${newMoney}`)
                 break
             default:
                 continue
             }
 
-            await charsheetRepository.update({ ...charsheet, ...updateData })
+            // Merge dos dados e conversão para objeto plano
+            const updatedCharsheet = { ...charsheet, ...updateData }
+            const plainCharsheet = JSON.parse(JSON.stringify(updatedCharsheet))
+            
+            await charsheetRepository.update(plainCharsheet)
             updatedCount++
         }
 

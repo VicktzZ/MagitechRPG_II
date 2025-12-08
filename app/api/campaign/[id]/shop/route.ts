@@ -7,6 +7,8 @@ interface ShopConfig {
     types: string[]
     itemKinds: string[]
     priceMultiplier: number
+    visibleToAll?: boolean
+    visibleToPlayers?: string[]
 }
 
 interface ShopBody {
@@ -43,6 +45,8 @@ export async function POST(
             types: config.types || [],
             itemKinds: config.itemKinds || [],
             priceMultiplier: config.priceMultiplier || 1.0,
+            visibleToAll: config.visibleToAll ?? true,
+            visibleToPlayers: config.visibleToPlayers || [],
             lastUpdated: new Date().toISOString(),
             items: [] // Será preenchido quando jogadores acessarem
         } : {
