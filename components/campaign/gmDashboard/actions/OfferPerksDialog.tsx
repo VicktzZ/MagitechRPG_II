@@ -288,10 +288,14 @@ export default function OfferPerksDialog({
                                         key={player.id}
                                         button
                                         onClick={() => togglePlayer(player.id)}
-                                        disabled={isOffering || !player.charsheet}
+                                        disabled={isOffering}
                                         selected={selectedPlayers.includes(player.id)}
                                     >
-                                        <Checkbox checked={selectedPlayers.includes(player.id)} size="small" />
+                                        <Checkbox 
+                                            checked={selectedPlayers.includes(player.id)} 
+                                            size="small"
+                                            disabled={isOffering}
+                                        />
                                         <ListItemAvatar>
                                             <Avatar src={player.avatar} sx={{ width: 32, height: 32 }} />
                                         </ListItemAvatar>
