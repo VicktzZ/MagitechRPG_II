@@ -27,8 +27,8 @@ class CampaignService extends Service<Campaign, 'code' | 'userId'> {
     }
 
     // Perk offering
-    async offerPerks(campaignId: string, userIds: string[], filters: PerkFilters) {
-        return (await this.post({ param: `${campaignId}/session/offer-perks`, body: { userIds, filters } })).data
+    async offerPerks(campaignId: string, userIds: string[], filters: PerkFilters, sharedSeed?: string) {
+        return (await this.post({ param: `${campaignId}/session/offer-perks`, body: { userIds, filters, sharedSeed } })).data
     }
 
     async removePendingPerkUser(campaignId: string, userId: string) {

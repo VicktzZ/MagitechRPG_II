@@ -104,6 +104,9 @@ export async function POST(
                     }
                 }
 
+                // Nível de ORM +1
+                const newORMLevel = (charsheet.ORMLevel || 0) + 1
+
                 // Espaços de magia +2
                 const newSpellSpace = (charsheet.spellSpace || 0) + 2
 
@@ -141,6 +144,7 @@ export async function POST(
                 // Aplica as atualizações
                 await charsheetEntity.update(charsheetId, {
                     level: newLevel,
+                    ORMLevel: newORMLevel,
                     attributes: updatedAttributes,
                     mods: updatedMods,
                     expertises: updatedExpertises,

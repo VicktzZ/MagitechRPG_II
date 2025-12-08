@@ -7,6 +7,7 @@ interface UsePerkCardsOptions {
     open: boolean
     level?: number
     perkAmount?: number
+    externalSeed?: string // Seed compartilhada do GM
     initialFilters?: {
         rarities?: string[]
         type?: string
@@ -191,8 +192,9 @@ function shufflePerks(perks: any[], count: number, seed: string, rollNumber: num
     return selectWeightedPerks(perks, count, seed, rollNumber, level)
 }
 
-export function usePerkCards({ open, level, perkAmount = 5, initialFilters }: UsePerkCardsOptions): UsePerkCardsReturn {
-    const [ userSeed ] = useState<string>(getOrCreateSeed)
+export function usePerkCards({ open, level, perkAmount = 5, externalSeed, initialFilters }: UsePerkCardsOptions): UsePerkCardsReturn {
+    // Usa seed externa (compartilhada) se fornecida, senão usa seed do usuário
+    const [ userSeed ] = useState<string>(() => externalSeed || getOrCreateSeed())
     const [ rollCount, setRollCount ] = useState(0)
     const [ isVisible, setIsVisible ] = useState(true)
     const [ selectedRarities, setSelectedRarities ] = useState<RarityType[]>(

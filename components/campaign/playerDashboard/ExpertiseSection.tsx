@@ -397,12 +397,13 @@ export default function ExpertiseSection(): ReactElement {
                                 sx={{
                                     display: 'grid',
                                     gridTemplateColumns: {
-                                        xs: '1fr',
+                                        xs: 'repeat(2, 1fr)',
                                         sm: 'repeat(2, 1fr)',
                                         md: 'repeat(3, 1fr)',
-                                        lg: 'repeat(5, 1fr)'
+                                        lg: 'repeat(4, 1fr)',
+                                        xl: 'repeat(5, 1fr)'
                                     },
-                                    gap: 2
+                                    gap: { xs: 1, sm: 2 }
                                 }}
                             >
                                 {filteredAndSortedExpertises.map(([ nome, expertise ]) => {

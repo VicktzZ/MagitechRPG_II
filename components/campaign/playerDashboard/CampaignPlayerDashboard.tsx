@@ -278,17 +278,11 @@ export default function CampaignPlayerDashboard(): ReactElement | null {
             ) : (
                 <Box 
                     sx={{
-                        maxWidth: {
-                            xs: '100%',
-                            lg: '1400px',
-                            xl: '1800px'
-                        },
+                        maxWidth: { xs: '100%', lg: '1400px', xl: '1800px' },
                         width: '100%',
                         mx: 'auto',
                         px: { xs: 2, md: 3, lg: 4 },
-                        '@media (min-width: 2000px)': {
-                            maxWidth: '95%'
-                        }
+                        '@media (min-width: 2000px)': { maxWidth: '95%' }
                     }}
                 >
                     {/* Header da Charsheet */}
@@ -297,80 +291,41 @@ export default function CampaignPlayerDashboard(): ReactElement | null {
                     {/* Grid Principal */}
                     <Stack spacing={4}>
                         {/* Passivas */}
-                        <Section
-                            title="Passivas"
-                            icon={<SelfImprovement sx={{ color: 'text.secondary' }} />}
-                        >
+                        <Section title="Passivas" icon={<SelfImprovement sx={{ color: 'text.secondary' }} />}>
                             <Passives realtime={true} />
                         </Section>
-                        
+
                         {/* Inventário e Habilidades */}
-                        <Box display='flex' gap={4}>
-
-                            {/* Inventário */}
-                            <Section 
-                                title="Inventário" 
-                                icon={<Inventory2 sx={{ color: 'success.main' }} />}
-                                sx={{ width: '60%' }}
-                            >
-                                <Box>
-                                    <InventorySection />
-                                </Box>
+                        <Box sx={{ display: 'flex', gap: { xs: 2, md: 4 }, flexDirection: { xs: 'column', md: 'row' } }}>
+                            <Section title="Inventário" icon={<Inventory2 sx={{ color: 'success.main' }} />} sx={{ width: { xs: '100%', md: '60%' } }}>
+                                <InventorySection />
                             </Section>
-
-                            {/* Habilidades */}
-                            <Section 
-                                title="Habilidades" 
-                                icon={<SportsMartialArts sx={{ color: 'primary.main' }} />}
-                                sx={{ width: '40%' }}
-                            >
-                                <Box>
-                                    <Skills />
-                                </Box>
+                            <Section title="Habilidades" icon={<SportsMartialArts sx={{ color: 'primary.main' }} />} sx={{ width: { xs: '100%', md: '40%' } }}>
+                                <Skills />
                             </Section>
                         </Box>
 
                         {/* Recursos e Magias */}
-                        <Box display='flex' gap={4}>
-                            {/* Recursos */}
-                            <Section 
-                                title="Recursos" 
-                                icon={<AttachMoney sx={{ color: 'warning.main' }} />}
-                                sx={{ width: '40%' }}
-                            >
-                                <Box>
-                                    <MoneyAndAmmo />
-                                </Box>
+                        <Box sx={{ display: 'flex', gap: { xs: 2, md: 4 }, flexDirection: { xs: 'column', md: 'row' } }}>
+                            <Section title="Recursos" icon={<AttachMoney sx={{ color: 'warning.main' }} />} sx={{ width: { xs: '100%', md: '40%' } }}>
+                                <MoneyAndAmmo />
                             </Section>
-
-                            {/* Magias */}
-                            <Section 
-                                title="Magias" 
-                                icon={<AutoAwesome sx={{ color: 'secondary.main' }} />}
-                                sx={{ width: '60%' }}
-                            >
-                                <Box>
-                                    <SpellsSection />
-                                </Box>
+                            <Section title="Magias" icon={<AutoAwesome sx={{ color: 'secondary.main' }} />} sx={{ width: { xs: '100%', md: '60%' } }}>
+                                <SpellsSection />
                             </Section>
                         </Box>
 
                         {/* Perícias */}
-                        <Box>
-                            <Section 
-                                title="Perícias" 
-                                icon={<Person sx={{ color: 'info.main' }} />}
-                            >
-                                <Box>
-                                    <ExpertiseSection />
-                                </Box>
-                            </Section>
-                        </Box>
+                        <Section title="Perícias" icon={<Person sx={{ color: 'info.main' }} />}>
+                            <ExpertiseSection />
+                        </Section>
                     </Stack>
+
                     {/* Modal de Perks - aparece SOMENTE quando GM oferece e usuário está na lista */}
                     {isUserPendingPerk && (
                         <PerkCardsModal 
                             open={perkModalOpen} 
+                            seed={campaign.session?.sharedPerkSeed || undefined}
                             level={charsheet.level}
                             hideFilters={true}
                             initialFilters={campaign.session?.perkFilters ? {
