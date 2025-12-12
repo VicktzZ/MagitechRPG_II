@@ -41,9 +41,9 @@ export default function MassActionDialog({
     campaignId 
 }: MassActionDialogProps) {
     const { enqueueSnackbar } = useSnackbar();
-    const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
-    const [amount, setAmount] = useState(100);
-    const [isLoading, setIsLoading] = useState(false);
+    const [ selectedPlayers, setSelectedPlayers ] = useState<string[]>([]);
+    const [ amount, setAmount ] = useState(100);
+    const [ isLoading, setIsLoading ] = useState(false);
 
     // Seleciona todos por padrão ao abrir
     useEffect(() => {
@@ -60,7 +60,7 @@ export default function MassActionDialog({
                 })));
             }
         }
-    }, [open, players, actionType]);
+    }, [ open, players, actionType ]);
 
     const handleAction = async () => {
         if (selectedPlayers.length === 0) {
@@ -112,34 +112,34 @@ export default function MassActionDialog({
         setSelectedPlayers(prev =>
             prev.includes(playerId)
                 ? prev.filter(id => id !== playerId)
-                : [...prev, playerId]
+                : [ ...prev, playerId ]
         );
     };
 
     const getIcon = () => {
         switch (actionType) {
-            case 'restoreLP': return <FavoriteIcon sx={{ color: red[500] }} />;
-            case 'restoreMP': return <BoltIcon sx={{ color: blue[500] }} />;
-            case 'addMoney': return <AttachMoneyIcon sx={{ color: green[500] }} />;
-            default: return null;
+        case 'restoreLP': return <FavoriteIcon sx={{ color: red[500] }} />;
+        case 'restoreMP': return <BoltIcon sx={{ color: blue[500] }} />;
+        case 'addMoney': return <AttachMoneyIcon sx={{ color: green[500] }} />;
+        default: return null;
         }
     };
 
     const getTitle = () => {
         switch (actionType) {
-            case 'restoreLP': return 'Restaurar LP';
-            case 'restoreMP': return 'Restaurar MP';
-            case 'addMoney': return 'Adicionar Dinheiro';
-            default: return '';
+        case 'restoreLP': return 'Restaurar LP';
+        case 'restoreMP': return 'Restaurar MP';
+        case 'addMoney': return 'Adicionar Dinheiro';
+        default: return '';
         }
     };
 
     const getButtonColor = () => {
         switch (actionType) {
-            case 'restoreLP': return red[600];
-            case 'restoreMP': return blue[600];
-            case 'addMoney': return green[600];
-            default: return 'primary.main';
+        case 'restoreLP': return red[600];
+        case 'restoreMP': return blue[600];
+        case 'addMoney': return green[600];
+        default: return 'primary.main';
         }
     };
 

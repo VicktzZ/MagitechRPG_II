@@ -34,9 +34,9 @@ interface LevelUpDialogProps {
 
 export default function LevelUpDialog({ open, onClose, players }: LevelUpDialogProps) {
     const { enqueueSnackbar } = useSnackbar();
-    const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
-    const [levelsToAdd, setLevelsToAdd] = useState(1);
-    const [isLevelingUp, setIsLevelingUp] = useState(false);
+    const [ selectedPlayers, setSelectedPlayers ] = useState<string[]>([]);
+    const [ levelsToAdd, setLevelsToAdd ] = useState(1);
+    const [ isLevelingUp, setIsLevelingUp ] = useState(false);
 
     const handleLevelUp = async () => {
         if (selectedPlayers.length === 0) {
@@ -80,7 +80,7 @@ export default function LevelUpDialog({ open, onClose, players }: LevelUpDialogP
         setSelectedPlayers(prev =>
             prev.includes(playerId)
                 ? prev.filter(id => id !== playerId)
-                : [...prev, playerId]
+                : [ ...prev, playerId ]
         );
     };
 

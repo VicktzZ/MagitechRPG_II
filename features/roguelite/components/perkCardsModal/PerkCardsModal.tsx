@@ -1,4 +1,4 @@
-import { Box, Button, Grid, Stack, Typography, keyframes } from '@mui/material'
+import { Box, Button, Grid, Stack, Typography, keyframes, useMediaQuery, useTheme } from '@mui/material'
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
 import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment'
 import WhatshotIcon from '@mui/icons-material/Whatshot'
@@ -86,6 +86,9 @@ export function PerkCardsModal({
     onPerkSelected, 
     onClose 
 }: PerkCardsModalProps) {
+    const theme = useTheme()
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
+
     const {
         isVisible,
         selectedRarities,
@@ -351,12 +354,19 @@ export function PerkCardsModal({
                     <Box
                         sx={{
                             display: 'flex',
-                            alignItems: 'center',
+                            flexDirection: { xs: 'column', md: 'row' },
+                            alignItems: { xs: 'flex-start', md: 'center' },
                             justifyContent: 'space-between',
-                            p: 2.5
+                            p: { xs: 1.5, sm: 2, md: 2.5 },
+                            gap: { xs: 1, md: 0 }
                         }}
                     >
-                        <Typography variant="h5" fontWeight={700} color="white">
+                        <Typography 
+                            variant={isMobile ? 'h6' : 'h5'} 
+                            fontWeight={700} 
+                            color="white"
+                            sx={{ fontSize: { xs: '1rem', sm: '1.25rem', md: '1.5rem' } }}
+                        >
                             Escolha sua vantagem
                         </Typography>
                         {!hideFilters && (
@@ -379,7 +389,7 @@ export function PerkCardsModal({
                     </Box>
 
                     {/* Content */}
-                    <Box sx={{ pt: 0, pb: 2, px: 2, flexGrow: 1, overflow: 'auto' }}>
+                    <Box sx={{ pt: 0, pb: { xs: 10, sm: 12 }, px: { xs: 1, sm: 2 }, flexGrow: 1, overflow: 'auto' }}>
                         <Box
                             sx={{
                                 width: '100%',
@@ -458,23 +468,29 @@ export function PerkCardsModal({
                         <Box
                             sx={{
                                 position: 'fixed',
-                                bottom: 32,
+                                bottom: { xs: 16, sm: 24, md: 32 },
                                 left: '50%',
                                 transform: 'translateX(-50%)',
-                                zIndex: 10000
+                                zIndex: 10000,
+                                width: { xs: 'calc(100% - 32px)', sm: 'auto' },
+                                maxWidth: { xs: '400px', sm: 'none' }
                             }}
                         >
-                            <Stack direction="row" spacing={2}>
+                            <Stack 
+                                direction="row" 
+                                spacing={{ xs: 1, sm: 2 }}
+                                sx={{ width: '100%', justifyContent: 'center' }}
+                            >
                                 {/* Botão de Recusar */}
                                 <Button
                                     variant="outlined"
-                                    size="large"
-                                    startIcon={<CancelIcon />}
+                                    size={isMobile ? 'medium' : 'large'}
+                                    startIcon={!isMobile && <CancelIcon />}
                                     onClick={handleDecline}
                                     sx={{
-                                        px: 3,
-                                        py: 1.5,
-                                        fontSize: '1rem',
+                                        px: { xs: 2, sm: 3 },
+                                        py: { xs: 1, sm: 1.5 },
+                                        fontSize: { xs: '0.85rem', sm: '1rem' },
                                         fontWeight: 600,
                                         borderRadius: 2,
                                         color: 'rgba(255, 255, 255, 0.7)',
@@ -482,6 +498,8 @@ export function PerkCardsModal({
                                         background: 'rgba(255, 255, 255, 0.05)',
                                         backdropFilter: 'blur(8px)',
                                         textTransform: 'none',
+                                        flex: { xs: 1, sm: 'none' },
+                                        minWidth: { xs: 0, sm: 'auto' },
                                         '&:hover': {
                                             borderColor: 'rgba(255, 100, 100, 0.6)',
                                             background: 'rgba(255, 100, 100, 0.1)',
@@ -489,20 +507,20 @@ export function PerkCardsModal({
                                         }
                                     }}
                                 >
-                                    Recusar
+                                    {isMobile ? <CancelIcon /> : 'Recusar'}
                                 </Button>
 
                                 {/* Botão de Confirmar (só aparece se tiver seleção) */}
                                 {selectedPerkIndex !== null && (
                                     <Button
                                         variant="outlined"
-                                        size="large"
-                                        startIcon={<CheckCircleIcon />}
+                                        size={isMobile ? 'medium' : 'large'}
+                                        startIcon={!isMobile && <CheckCircleIcon />}
                                         onClick={handleConfirm}
                                         sx={{
-                                            px: 4,
-                                            py: 1.5,
-                                            fontSize: '1rem',
+                                            px: { xs: 2, sm: 4 },
+                                            py: { xs: 1, sm: 1.5 },
+                                            fontSize: { xs: '0.85rem', sm: '1rem' },
                                             fontWeight: 600,
                                             borderRadius: 2,
                                             color: 'white',
@@ -510,13 +528,15 @@ export function PerkCardsModal({
                                             background: 'rgba(255, 255, 255, 0.1)',
                                             backdropFilter: 'blur(8px)',
                                             textTransform: 'none',
+                                            flex: { xs: 1, sm: 'none' },
+                                            minWidth: { xs: 0, sm: 'auto' },
                                             '&:hover': {
                                                 borderColor: 'rgba(255, 255, 255, 0.8)',
                                                 background: 'rgba(255, 255, 255, 0.15)'
                                             }
                                         }}
                                     >
-                                        Confirmar
+                                        {isMobile ? <CheckCircleIcon /> : 'Confirmar'}
                                     </Button>
                                 )}
                             </Stack>

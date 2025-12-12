@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { type NextRequest, NextResponse } from 'next/server'
 import { campaignRepository } from '@repositories'
 import { v4 as uuidv4 } from 'uuid'
 import type { Creature } from '@models/Creature'
@@ -66,7 +66,7 @@ export async function POST(
             ...campaign,
             custom: {
                 ...campaign.custom,
-                creatures: [...existingCreatures, newCreature]
+                creatures: [ ...existingCreatures, newCreature ]
             }
         }
 
@@ -171,7 +171,7 @@ export async function PUT(
             spells: body.spells ?? existingCreatures[creatureIndex].spells
         }
 
-        const updatedCreatures = [...existingCreatures]
+        const updatedCreatures = [ ...existingCreatures ]
         updatedCreatures[creatureIndex] = updatedCreature
 
         const updatedCampaign = {

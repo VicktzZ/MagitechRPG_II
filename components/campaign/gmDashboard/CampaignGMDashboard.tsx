@@ -9,9 +9,7 @@ import {
     ExpandMore,
     People,
     SupervisorAccount,
-    Pets,
-    Delete,
-    Edit
+    Pets
 } from '@mui/icons-material';
 import {
     Accordion,
@@ -20,7 +18,6 @@ import {
     Avatar,
     Box,
     Chip,
-    IconButton,
     Paper,
     Skeleton,
     Snackbar,
@@ -32,7 +29,6 @@ import {
 import { amber, blue, green, orange, purple, red } from '@mui/material/colors';
 import { type ReactElement, useMemo, useState } from 'react';
 import PlayerCard from './PlayerCard';
-import { iconForRarity } from '@features/roguelite/utils';
 
 interface SectionProps {
     title: string;

@@ -9,3 +9,4 @@ export { ItemEntity } from './ItemEntity';
 export { ArmorEntity } from './ArmorEntity';
 export { WeaponEntity } from './WeaponEntity';
 export { SkillEntity } from './SkillEntity';
+export { Job, type JobStatus, type JobLog } from './Job';

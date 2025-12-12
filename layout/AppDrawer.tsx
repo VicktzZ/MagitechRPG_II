@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
-import { Avatar, Box, Divider, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Typography, useTheme, alpha, Tooltip, IconButton, Dialog, DialogTitle, DialogContent, Grid, Pagination } from '@mui/material';
+import { Avatar, Box, Divider, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Typography, useTheme, alpha, Tooltip, IconButton, Dialog, DialogTitle, DialogContent, Grid, Pagination, Chip } from '@mui/material';
 
 import { type KeyboardEvent, type MouseEvent, type ReactElement, type ReactNode, useState } from 'react';
-import { Article, AutoStories, Home, Logout, Menu, Start, LightMode, DarkMode, Person } from '@mui/icons-material';
+import { Article, AutoStories, Home, Logout, Menu, Start, LightMode, DarkMode, Person, Build } from '@mui/icons-material';
 import { useThemeContext } from '@contexts';
 import { signOut, useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
@@ -180,6 +180,34 @@ export default function AppDrawer(): ReactElement {
                         </ListItem>
                     )}
                 </List>
+                {/* Seção Admin - apenas em DEV */}
+                {process.env.NEXT_PUBLIC_NODE_ENV === 'development' && (
+                    <>
+                        <Divider sx={{ my: 1.5, opacity: 0.4 }} />
+                        <Box sx={{ px: 2, mb: 1 }}>
+                            <Chip 
+                                label="DEV" 
+                                size="small" 
+                                sx={{ 
+                                    bgcolor: alpha(theme.palette.warning.main, 0.15),
+                                    color: theme.palette.warning.main,
+                                    fontWeight: 600,
+                                    fontSize: '0.65rem'
+                                }} 
+                            />
+                        </Box>
+                        <List sx={{ px: 1 }}>
+                            <ListItem disablePadding>
+                                <ListItemButton onClick={() => { router.push('/admin/jobs') }}>
+                                    <ListItemIcon>
+                                        <Build sx={{ color: theme.palette.warning.main }} />
+                                    </ListItemIcon>
+                                    <ListItemText primary='Admin: Jobs' />
+                                </ListItemButton>
+                            </ListItem>
+                        </List>
+                    </>
+                )}
             </Box>
             <Box 
                 sx={{

@@ -18,10 +18,10 @@ interface AddNoteDialogProps {
     campaignId: string;
 }
 
-export default function AddNoteDialog({ open, onClose, campaignId }: AddNoteDialogProps) {
+export default function AddNoteDialog({ open, onClose  }: AddNoteDialogProps) {
     const { enqueueSnackbar } = useSnackbar();
-    const [noteContent, setNoteContent] = useState('');
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [ noteContent, setNoteContent ] = useState('');
+    const [ isSubmitting, setIsSubmitting ] = useState(false);
 
     const handleSubmit = async () => {
         if (!noteContent.trim()) {

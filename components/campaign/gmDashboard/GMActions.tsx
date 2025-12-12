@@ -53,23 +53,23 @@ export default function GMActions(): ReactElement {
     const queryClient = useQueryClient();
 
     // Menu state
-    const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+    const [ anchorEl, setAnchorEl ] = useState<null | HTMLElement>(null);
     const menuOpen = Boolean(anchorEl);
 
     // Dialog states
-    const [addNoteDialogOpen, setAddNoteDialogOpen] = useState(false);
-    const [levelUpDialogOpen, setLevelUpDialogOpen] = useState(false);
-    const [rogueliteLevelUpDialogOpen, setRogueliteLevelUpDialogOpen] = useState(false);
-    const [addItemModalOpen, setAddItemModalOpen] = useState(false);
-    const [creatureDialogOpen, setCreatureDialogOpen] = useState(false);
-    const [offerPerksDialogOpen, setOfferPerksDialogOpen] = useState(false);
-    const [shopDialogOpen, setShopDialogOpen] = useState(false);
-    const [massActionDialogOpen, setMassActionDialogOpen] = useState(false);
-    const [massActionType, setMassActionType] = useState<MassActionType | null>(null);
+    const [ addNoteDialogOpen, setAddNoteDialogOpen ] = useState(false);
+    const [ levelUpDialogOpen, setLevelUpDialogOpen ] = useState(false);
+    const [ rogueliteLevelUpDialogOpen, setRogueliteLevelUpDialogOpen ] = useState(false);
+    const [ addItemModalOpen, setAddItemModalOpen ] = useState(false);
+    const [ creatureDialogOpen, setCreatureDialogOpen ] = useState(false);
+    const [ offerPerksDialogOpen, setOfferPerksDialogOpen ] = useState(false);
+    const [ shopDialogOpen, setShopDialogOpen ] = useState(false);
+    const [ massActionDialogOpen, setMassActionDialogOpen ] = useState(false);
+    const [ massActionType, setMassActionType ] = useState<MassActionType | null>(null);
 
     // Realtime charsheet data
     const { data: realtimeCharsheets } = useFirestoreRealtime('charsheet', {
-        filters: [{ field: 'id', operator: 'in', value: charsheets.map(c => c.id) }],
+        filters: [ { field: 'id', operator: 'in', value: charsheets.map(c => c.id) } ],
         enabled: charsheets.length > 0
     });
 
@@ -92,7 +92,7 @@ export default function GMActions(): ReactElement {
                 } : undefined
             };
         }) || [];
-    }, [users.players, campaign?.players, realtimeCharsheets]);
+    }, [ users.players, campaign?.players, realtimeCharsheets ]);
 
     // Menu handlers
     const handleOpenMenu = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -155,8 +155,8 @@ export default function GMActions(): ReactElement {
 
             await campaignService.addCustomItem(campaign.id, type, created);
             
-            await queryClient.invalidateQueries({ queryKey: ['campaignData', campaign.campaignCode] });
-            await queryClient.refetchQueries({ queryKey: ['campaignData', campaign.campaignCode] });
+            await queryClient.invalidateQueries({ queryKey: [ 'campaignData', campaign.campaignCode ] });
+            await queryClient.refetchQueries({ queryKey: [ 'campaignData', campaign.campaignCode ] });
 
             setAddItemModalOpen(false);
             enqueueSnackbar('Item customizado adicionado à campanha!', { variant: 'success' });

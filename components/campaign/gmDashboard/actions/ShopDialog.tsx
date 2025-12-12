@@ -23,7 +23,7 @@ import StorefrontIcon from '@mui/icons-material/Storefront';
 import { green, orange, red } from '@mui/material/colors';
 import { useSnackbar } from 'notistack';
 import { PerkTypeEnum } from '@enums/rogueliteEnum';
-import type { PlayerInfo, ShopConfig, RarityType } from './types';
+import type { PlayerInfo, ShopConfig } from './types';
 import { RARITY_OPTIONS, DEFAULT_SHOP_CONFIG } from './constants';
 
 interface ShopDialogProps {
@@ -42,10 +42,10 @@ export default function ShopDialog({
     existingShop
 }: ShopDialogProps) {
     const { enqueueSnackbar } = useSnackbar();
-    const [shopConfig, setShopConfig] = useState<ShopConfig>(DEFAULT_SHOP_CONFIG);
-    const [isUpdating, setIsUpdating] = useState(false);
-    const [shopItems, setShopItems] = useState<any[]>([]);
-    const [isLoadingItems, setIsLoadingItems] = useState(false);
+    const [ shopConfig, setShopConfig ] = useState<ShopConfig>(DEFAULT_SHOP_CONFIG);
+    const [ isUpdating, setIsUpdating ] = useState(false);
+    const [ shopItems, setShopItems ] = useState<any[]>([]);
+    const [ isLoadingItems, setIsLoadingItems ] = useState(false);
     const isShopOpen = existingShop?.isOpen ?? false;
 
     // Carrega configuração existente ao abrir
@@ -65,7 +65,7 @@ export default function ShopDialog({
                 loadShopItems();
             }
         }
-    }, [open, existingShop]);
+    }, [ open, existingShop ]);
 
     const loadShopItems = useCallback(async () => {
         setIsLoadingItems(true);
@@ -84,7 +84,7 @@ export default function ShopDialog({
         } finally {
             setIsLoadingItems(false);
         }
-    }, [campaignId]);
+    }, [ campaignId ]);
 
     const handleToggleShop = async (openShop: boolean) => {
         setIsUpdating(true);
@@ -110,8 +110,8 @@ export default function ShopDialog({
                 await loadShopItems();
             }
             
-            // Forçar reload da página para atualizar o estado da campanha
-            window.location.reload();
+            // Fecha o dialog após a ação
+            onClose();
         } catch (error) {
             console.error('Erro ao atualizar loja:', error);
             enqueueSnackbar(error instanceof Error ? error.message : 'Erro ao atualizar loja', { variant: 'error' });
@@ -217,8 +217,8 @@ export default function ShopDialog({
                                     onClick={() => {
                                         const newRarities = shopConfig.rarities.includes(rarity)
                                             ? shopConfig.rarities.filter(r => r !== rarity)
-                                            : [...shopConfig.rarities, rarity];
-                                        setShopConfig(prev => ({ ...prev, rarities: newRarities as RarityType[] }));
+                                            : [ ...shopConfig.rarities, rarity ];
+                                        setShopConfig(prev => ({ ...prev, rarities: newRarities  }));
                                     }}
                                     sx={{
                                         bgcolor: shopConfig.rarities.includes(rarity) 
@@ -251,7 +251,7 @@ export default function ShopDialog({
                                         onClick={() => {
                                             const newTypes = shopConfig.types.includes(value)
                                                 ? shopConfig.types.filter(t => t !== value)
-                                                : [...shopConfig.types, value];
+                                                : [ ...shopConfig.types, value ];
                                             setShopConfig(prev => ({ ...prev, types: newTypes }));
                                         }}
                                         sx={{
@@ -298,7 +298,7 @@ export default function ShopDialog({
                                                     ...prev,
                                                     visibleToPlayers: isSelected
                                                         ? prev.visibleToPlayers.filter(id => id !== player.id)
-                                                        : [...prev.visibleToPlayers, player.id]
+                                                        : [ ...prev.visibleToPlayers, player.id ]
                                                 }));
                                             }}
                                         >
@@ -383,7 +383,7 @@ export default function ShopDialog({
                 </Button>
                 {isShopOpen ? (
                     <Button
-                        onClick={() => handleToggleShop(false)}
+                        onClick={async () => await handleToggleShop(false)}
                         variant="contained"
                         disabled={isUpdating}
                         startIcon={isUpdating ? <CircularProgress size={20} /> : <StorefrontIcon />}
@@ -393,7 +393,7 @@ export default function ShopDialog({
                     </Button>
                 ) : (
                     <Button
-                        onClick={() => handleToggleShop(true)}
+                        onClick={async () => await handleToggleShop(true)}
                         variant="contained"
                         disabled={isUpdating}
                         startIcon={isUpdating ? <CircularProgress size={20} /> : <StorefrontIcon />}

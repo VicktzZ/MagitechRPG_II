@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import {
     Box,
     Button,
@@ -10,7 +10,6 @@ import {
     DialogActions,
     DialogContent,
     DialogTitle,
-    Divider,
     IconButton,
     List,
     ListItem,
@@ -18,7 +17,6 @@ import {
     Tab,
     Tabs,
     TextField,
-    Tooltip,
     Typography
 } from '@mui/material';
 import {
@@ -29,7 +27,7 @@ import {
     AutoFixHigh,
     Stars
 } from '@mui/icons-material';
-import { orange, blue, purple, green, red, amber, grey } from '@mui/material/colors';
+import { orange, blue, purple } from '@mui/material/colors';
 import { useSnackbar } from 'notistack';
 import { useCampaignContext } from '@contexts';
 
@@ -136,19 +134,19 @@ const skillTypes = [
     'Talento'
 ];
 
-const elements = ['Fogo', 'Água', 'Terra', 'Ar', 'Luz', 'Trevas', 'Arcano', 'Físico'];
+const elements = [ 'Fogo', 'Água', 'Terra', 'Ar', 'Luz', 'Trevas', 'Arcano', 'Físico' ];
 
 export default function CreatureCreator({ open, onClose, onSave, editingCreature }: CreatureCreatorProps) {
     const { campaign } = useCampaignContext();
     const { enqueueSnackbar } = useSnackbar();
     
-    const [creatureData, setCreatureData] = useState<CreatureData>(editingCreature || defaultCreature);
-    const [activeTab, setActiveTab] = useState(0);
-    const [isLoading, setIsLoading] = useState(false);
+    const [ creatureData, setCreatureData ] = useState<CreatureData>(editingCreature || defaultCreature);
+    const [ activeTab, setActiveTab ] = useState(0);
+    const [ isLoading, setIsLoading ] = useState(false);
     
     // Estados para adicionar skills/spells
-    const [newSkill, setNewSkill] = useState<Partial<SkillData>>({ name: '', description: '', type: 'Classe' });
-    const [newSpell, setNewSpell] = useState<Partial<SpellData>>({ name: '', description: '', level: 1, element: 'Arcano', cost: 1 });
+    const [ newSkill, setNewSkill ] = useState<Partial<SkillData>>({ name: '', description: '', type: 'Classe' });
+    const [ newSpell, setNewSpell ] = useState<Partial<SpellData>>({ name: '', description: '', level: 1, element: 'Arcano', cost: 1 });
 
     const handleSave = async () => {
         if (!creatureData.name.trim()) {
@@ -193,7 +191,7 @@ export default function CreatureCreator({ open, onClose, onSave, editingCreature
         
         setCreatureData(prev => ({
             ...prev,
-            skills: [...prev.skills, skill]
+            skills: [ ...prev.skills, skill ]
         }));
         setNewSkill({ name: '', description: '', type: 'Classe' });
     };
@@ -219,7 +217,7 @@ export default function CreatureCreator({ open, onClose, onSave, editingCreature
         
         setCreatureData(prev => ({
             ...prev,
-            spells: [...prev.spells, spell]
+            spells: [ ...prev.spells, spell ]
         }));
         setNewSpell({ name: '', description: '', level: 1, element: 'Arcano', cost: 1 });
     };
@@ -296,7 +294,7 @@ export default function CreatureCreator({ open, onClose, onSave, editingCreature
                                 Atributos
                             </Typography>
                             <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-                                {Object.entries(creatureData.attributes).map(([attr, value]) => (
+                                {Object.entries(creatureData.attributes).map(([ attr, value ]) => (
                                     <TextField
                                         key={attr}
                                         label={attr.toUpperCase()}

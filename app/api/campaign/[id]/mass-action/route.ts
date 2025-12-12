@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { type NextRequest, NextResponse } from 'next/server'
 import { campaignRepository, charsheetRepository } from '@repositories'
 import type { Charsheet } from '@models/entities'
 
