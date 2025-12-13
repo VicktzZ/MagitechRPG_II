@@ -3,13 +3,22 @@
 'use client'
 
 import { useCampaignContext } from '@contexts';
+import { useChatContext } from '@contexts/chatContext';
 import { useFirestoreRealtime } from '@hooks/useFirestoreRealtime';
 import {
     CardGiftcard,
     ExpandMore,
     People,
     SupervisorAccount,
-    Pets
+    Pets,
+    Person,
+    Delete as DeleteIcon,
+    Search as SearchIcon,
+    Edit as EditIcon,
+    Casino,
+    TrendingUp,
+    Star,
+    EmojiEvents
 } from '@mui/icons-material';
 import {
     Accordion,
@@ -18,6 +27,8 @@ import {
     Avatar,
     Box,
     Chip,
+    Button,
+    IconButton,
     Paper,
     Skeleton,
     Snackbar,
@@ -26,9 +37,11 @@ import {
     Typography,
     useTheme
 } from '@mui/material';
-import { amber, blue, green, orange, purple, red } from '@mui/material/colors';
+import { amber, blue, green, grey, orange, purple, red } from '@mui/material/colors';
+import { MessageType } from '@enums';
 import { type ReactElement, useMemo, useState } from 'react';
 import PlayerCard from './PlayerCard';
+import CreatureCreator from './CreatureCreator';
 
 interface SectionProps {
     title: string;
@@ -36,6 +49,57 @@ interface SectionProps {
     children: React.ReactNode;
     sx?: any;
 }
+
+const getGMExpertiseLevel = (value: number): 'novice' | 'trained' | 'expert' | 'master' | 'legendary' => {
+    if (value < 2) return 'novice';
+    if (value < 5) return 'trained';
+    if (value < 7) return 'expert';
+    if (value < 9) return 'master';
+    return 'legendary';
+};
+
+const getGMExpertiseConfig = (value: number) => {
+    const level = getGMExpertiseLevel(value);
+
+    switch (level) {
+    case 'novice':
+        return {
+            color: grey[600],
+            bg: grey[100],
+            label: 'Destreinado',
+            icon: Person
+        };
+    case 'trained':
+        return {
+            color: green[600],
+            bg: green[100],
+            label: 'Treinado',
+            icon: TrendingUp
+        };
+    case 'expert':
+        return {
+            color: blue[600],
+            bg: blue[100],
+            label: 'Especialista',
+            icon: Star
+        };
+    case 'master':
+        return {
+            color: purple[600],
+            bg: purple[100],
+            label: 'Mestre',
+            icon: EmojiEvents
+        };
+    case 'legendary':
+    default:
+        return {
+            color: orange[600],
+            bg: orange[100],
+            label: 'Lendário',
+            icon: Casino
+        };
+    }
+};
 
 function Section({ title, icon, children, sx }: SectionProps) {
     const theme = useTheme();
@@ -79,10 +143,14 @@ function Section({ title, icon, children, sx }: SectionProps) {
 }
 
 export default function CampaignGMDashboard(): ReactElement | null {
-    const { campaign, users, charsheets } = useCampaignContext()
+    const { campaign, users, charsheets, updateCampaign } = useCampaignContext()
+    const { handleSendMessage, setIsChatOpen, isChatOpen } = useChatContext()
     
     const theme = useTheme();
     const [ expandedPlayer, setExpandedPlayer ] = useState<string | false>(false);
+    const [ creatureModalOpen, setCreatureModalOpen ] = useState(false);
+    const [ selectedCreature, setSelectedCreature ] = useState<any | null>(null);
+    const [ selectedCreatureReadOnly, setSelectedCreatureReadOnly ] = useState(false);
     
     // const queryClient = useQueryClient()
 
@@ -124,6 +192,77 @@ export default function CampaignGMDashboard(): ReactElement | null {
             highestLevel
         };
     }, [ players, playerCharsheets ]);
+
+    const currentCreatureInTurn = useMemo(() => {
+        const combat: any = (campaign as any).session?.combat;
+        const creatures = campaign.custom?.creatures || [];
+
+        if (!combat?.isActive || !Array.isArray(combat.combatants) || combat.combatants.length === 0) {
+            return null;
+        }
+
+        const current = combat.combatants[combat.currentTurnIndex];
+        if (!current || current.type !== 'creature') return null;
+
+        const rawId: string = current.id;
+        let baseId: string = rawId;
+
+        const lastDashIndex = rawId?.lastIndexOf('-') ?? -1;
+        if (lastDashIndex > 0) {
+            const possibleBaseId = rawId.slice(0, lastDashIndex);
+            if (creatures.some((c: any) => c.id === possibleBaseId)) {
+                baseId = possibleBaseId;
+            }
+        }
+
+        const baseCreature = creatures.find((c: any) => c.id === baseId);
+        if (!baseCreature) return null;
+
+        return {
+            combatant: current,
+            creature: baseCreature
+        };
+    }, [ campaign.custom?.creatures, campaign.session?.combat ]);
+
+    const handleCreatureExpertiseRoll = async (expertiseName: string, expertise: any) => {
+        if (!currentCreatureInTurn) return;
+
+        const { creature, combatant } = currentCreatureInTurn as any;
+        const expertiseValue = Number(expertise?.value ?? 0) || 0;
+
+        const defaultAttrKey = expertise?.defaultAttribute as keyof typeof creature.attributes | null;
+        let numDice = 1;
+
+        if (defaultAttrKey) {
+            const attrValue = Number(creature.attributes?.[defaultAttrKey] ?? 0) || 0;
+            let attrMod = Math.floor((attrValue / 5) - 1);
+            if (!Number.isFinite(attrMod)) attrMod = 1;
+            numDice = attrMod;
+        }
+
+        if (!Number.isFinite(numDice) || numDice < 1) numDice = 1;
+
+        const rolls: number[] = [];
+        for (let i = 0; i < numDice; i++) {
+            rolls.push(Math.floor(Math.random() * 20) + 1);
+        }
+
+        const bestRoll = rolls.length > 1 ? Math.max(...rolls) : rolls[0];
+        const total = bestRoll + expertiseValue;
+        const rollPart = rolls.length > 1
+            ? `${rolls.join(', ')}: ${bestRoll}`
+            : `${bestRoll}`;
+
+        const creatureName = combatant?.name || creature.name || 'Criatura';
+
+        const text = `🎲 [${creatureName}] ${expertiseName.toUpperCase()} - ${numDice}d20${expertiseValue >= 0 ? '+' : ''}${expertiseValue}: [${rollPart}] = ${total}`;
+
+        await handleSendMessage(text, MessageType.EXPERTISE);
+
+        if (!isChatOpen) {
+            setIsChatOpen(true);
+        }
+    };
 
     // Extrai vantagens adquiridas por cada jogador (apenas para Roguelite)
     const playersWithPerks = useMemo(() => {
@@ -175,6 +314,64 @@ export default function CampaignGMDashboard(): ReactElement | null {
         case 'EXPERTISE': return 'Perícia';
         default: return perkType;
         }
+    };
+
+    // Função para deletar criatura customizada
+    const handleDeleteCreature = async (creatureId: string, creatureName: string) => {
+        if (!confirm(`Tem certeza que deseja excluir a criatura "${creatureName}"?`)) return;
+        
+        try {
+            const response = await fetch(`/api/campaign/${campaign.id}/custom/creatures`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ creatureId })
+            });
+            
+            if (!response.ok) {
+                throw new Error('Erro ao excluir criatura');
+            }
+            
+            // Atualiza o contexto da campanha
+            updateCampaign({
+                ...campaign,
+                custom: {
+                    ...campaign.custom,
+                    creatures: (campaign.custom?.creatures || []).filter((c: any) => c.id !== creatureId)
+                }
+            });
+        } catch (error) {
+            console.error('Erro ao deletar criatura:', error);
+            alert('Erro ao excluir criatura');
+        }
+    };
+
+    const handleViewCreature = (creature: any) => {
+        setSelectedCreature(creature);
+        setSelectedCreatureReadOnly(true);
+        setCreatureModalOpen(true);
+    };
+
+    const handleEditCreature = (creature: any) => {
+        setSelectedCreature(creature);
+        setSelectedCreatureReadOnly(false);
+        setCreatureModalOpen(true);
+    };
+
+    const handleCreatureSaved = async (creature: any) => {
+        const existingCreatures = campaign.custom?.creatures || [];
+        const index = existingCreatures.findIndex((c: any) => c.id === creature.id);
+
+        const updatedCreatures = index === -1
+            ? [ ...existingCreatures, creature ]
+            : existingCreatures.map((c: any) => c.id === creature.id ? { ...c, ...creature } : c);
+
+        await updateCampaign({
+            ...campaign,
+            custom: {
+                ...campaign.custom,
+                creatures: updatedCreatures
+            }
+        });
     };
 
     return (
@@ -510,6 +707,174 @@ export default function CampaignGMDashboard(): ReactElement | null {
                         </Section>
                     )}
 
+                    {/* Ficha da criatura em turno (combate ativo) */}
+                    {currentCreatureInTurn && (
+                        <Section 
+                            title="Criatura em Turno" 
+                            icon={
+                                <Box 
+                                    sx={{
+                                        p: 1.5,
+                                        borderRadius: 2,
+                                        bgcolor: orange[100],
+                                        border: '2px solid',
+                                        borderColor: orange[200]
+                                    }}
+                                >
+                                    <Pets sx={{ color: orange[700], fontSize: '2rem' }} />
+                                </Box>
+                            }
+                        >
+                            <Box>
+                                {(() => {
+                                    const { combatant, creature } = currentCreatureInTurn as any;
+                                    const expertisesEntries = Object.entries(creature.expertises || {});
+                                    console.log(creature)
+
+                                    return (
+                                        <Stack spacing={2}>
+                                            <Box display="flex" alignItems="center" gap={2}>
+                                                <Avatar sx={{ bgcolor: orange[100], color: orange[800] }}>
+                                                    <Pets />
+                                                </Avatar>
+                                                <Box>
+                                                    <Typography variant="subtitle1" fontWeight={700}>
+                                                        {combatant?.name || creature.name}
+                                                    </Typography>
+                                                    <Typography variant="caption" color="text.secondary">
+                                                        Nível {creature.level} • LP {creature.stats?.lp ?? 0}/{creature.stats?.maxLp ?? creature.stats?.lp ?? 0} • MP {creature.stats?.mp ?? 0}/{creature.stats?.maxMp ?? creature.stats?.mp ?? 0}
+                                                    </Typography>
+                                                </Box>
+                                            </Box>
+
+                                            {/* Lista de Perícias da Criatura */}
+                                            {expertisesEntries.length === 0 ? (
+                                                <Paper 
+                                                    sx={{ 
+                                                        p: 3, 
+                                                        textAlign: 'center',
+                                                        border: '2px dashed',
+                                                        borderColor: 'divider',
+                                                        bgcolor: 'transparent'
+                                                    }}
+                                                >
+                                                    <Typography variant="body2" color="text.secondary">
+                                                        Esta criatura não possui perícias configuradas.
+                                                    </Typography>
+                                                </Paper>
+                                            ) : (
+                                                <Box 
+                                                    sx={{
+                                                        display: 'grid',
+                                                        gridTemplateColumns: {
+                                                            xs: 'repeat(2, 1fr)',
+                                                            sm: 'repeat(3, 1fr)',
+                                                            md: 'repeat(4, 1fr)'
+                                                        },
+                                                        gap: 1.5
+                                                    }}
+                                                >
+                                                    {expertisesEntries.map(([ nome, expertise ]: any) => {
+                                                        const config = getGMExpertiseConfig(expertise.value ?? 0);
+                                                        const IconComponent = config.icon;
+
+                                                        return (
+                                                            <Button
+                                                                key={nome}
+                                                                fullWidth
+                                                                onClick={async () => await handleCreatureExpertiseRoll(nome, expertise)}
+                                                                sx={{
+                                                                    p: 1.5,
+                                                                    bgcolor: config.bg + '40',
+                                                                    border: '1px solid',
+                                                                    borderColor: config.color + '40',
+                                                                    borderRadius: 2,
+                                                                    justifyContent: 'flex-start',
+                                                                    textAlign: 'left',
+                                                                    textTransform: 'none',
+                                                                    '&:hover': {
+                                                                        bgcolor: config.bg + '60',
+                                                                        borderColor: config.color + '80',
+                                                                        transform: 'translateY(-2px)',
+                                                                        boxShadow: 3
+                                                                    }
+                                                                }}
+                                                            >
+                                                                <Stack spacing={1} width="100%">
+                                                                    <Box display="flex" alignItems="center" gap={1}>
+                                                                        <Box 
+                                                                            sx={{
+                                                                                p: 0.8,
+                                                                                borderRadius: 1,
+                                                                                bgcolor: config.color + '20',
+                                                                                border: '1px solid',
+                                                                                borderColor: config.color + '40'
+                                                                            }}
+                                                                        >
+                                                                            <IconComponent 
+                                                                                sx={{ 
+                                                                                    color: config.color,
+                                                                                    fontSize: '1.1rem'
+                                                                                }} 
+                                                                            />
+                                                                        </Box>
+                                                                        <Typography 
+                                                                            variant="subtitle2" 
+                                                                            sx={{ 
+                                                                                fontWeight: 600,
+                                                                                flex: 1
+                                                                            }}
+                                                                        >
+                                                                            {nome}
+                                                                        </Typography>
+                                                                    </Box>
+                                                                    <Box display="flex" gap={1} flexWrap="wrap" justifyContent="space-between">
+                                                                        <Chip 
+                                                                            label={`${expertise.value >= 0 ? '+' : ''}${expertise.value}`}
+                                                                            size="small"
+                                                                            sx={{
+                                                                                bgcolor: config.color,
+                                                                                color: 'white',
+                                                                                fontWeight: 700,
+                                                                                fontSize: '0.75rem'
+                                                                            }}
+                                                                        />
+                                                                        {expertise.defaultAttribute && (
+                                                                            <Chip 
+                                                                                label={(expertise.defaultAttribute as string).toUpperCase()}
+                                                                                size="small"
+                                                                                sx={{
+                                                                                    bgcolor: 'rgba(0,0,0,0.04)',
+                                                                                    fontWeight: 600,
+                                                                                    fontSize: '0.7rem'
+                                                                                }}
+                                                                            />
+                                                                        )}
+                                                                        <Chip 
+                                                                            label={getGMExpertiseLevel(expertise.value).replace(/^(\w)/, (_, c) => c.toUpperCase())}
+                                                                            size="small"
+                                                                            variant="outlined"
+                                                                            sx={{
+                                                                                borderColor: config.color + '60',
+                                                                                color: config.color,
+                                                                                fontWeight: 600,
+                                                                                fontSize: '0.7rem'
+                                                                            }}
+                                                                        />
+                                                                    </Box>
+                                                                </Stack>
+                                                            </Button>
+                                                        );
+                                                    })}
+                                                </Box>
+                                            )}
+                                        </Stack>
+                                    );
+                                })()}
+                            </Box>
+                        </Section>
+                    )}
+
                     {/* Seção de Criaturas Customizadas */}
                     {campaign.custom?.creatures && campaign.custom.creatures.length > 0 && (
                         <Section 
@@ -554,7 +919,7 @@ export default function CampaignGMDashboard(): ReactElement | null {
                                                         <Typography variant="subtitle1" fontWeight={600}>
                                                             {creature.name}
                                                         </Typography>
-                                                        <Box display="flex" gap={0.5} mt={0.5}>
+                                                        <Box display="flex" gap={0.5} mt={0.5} flexWrap="wrap">
                                                             <Chip 
                                                                 label={`Nível ${creature.level}`} 
                                                                 size="small" 
@@ -592,6 +957,53 @@ export default function CampaignGMDashboard(): ReactElement | null {
                                                         )}
                                                     </Box>
                                                 </Box>
+                                                <Box display="flex" alignItems="center" gap={0.5}>
+                                                    <Tooltip title="Ver detalhes da criatura">
+                                                        <IconButton
+                                                            size="small"
+                                                            onClick={() => handleViewCreature(creature)}
+                                                            sx={{ 
+                                                                color: blue[500],
+                                                                '&:hover': { 
+                                                                    bgcolor: blue[50],
+                                                                    color: blue[700]
+                                                                }
+                                                            }}
+                                                        >
+                                                            <SearchIcon fontSize="small" />
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                    <Tooltip title="Editar criatura">
+                                                        <IconButton
+                                                            size="small"
+                                                            onClick={() => handleEditCreature(creature)}
+                                                            sx={{ 
+                                                                color: purple[500],
+                                                                '&:hover': { 
+                                                                    bgcolor: purple[50],
+                                                                    color: purple[700]
+                                                                }
+                                                            }}
+                                                        >
+                                                            <EditIcon fontSize="small" />
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                    <Tooltip title="Excluir criatura">
+                                                        <IconButton
+                                                            size="small"
+                                                            onClick={() => handleDeleteCreature(creature.id, creature.name)}
+                                                            sx={{ 
+                                                                color: red[400],
+                                                                '&:hover': { 
+                                                                    bgcolor: red[50],
+                                                                    color: red[600]
+                                                                }
+                                                            }}
+                                                        >
+                                                            <DeleteIcon fontSize="small" />
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                </Box>
                                             </Box>
                                         </Paper>
                                     ))}
@@ -602,6 +1014,17 @@ export default function CampaignGMDashboard(): ReactElement | null {
                 </Stack>
             </Box>
             <Snackbar />
+
+            <CreatureCreator
+                open={creatureModalOpen}
+                onClose={() => {
+                    setCreatureModalOpen(false);
+                    setSelectedCreature(null);
+                }}
+                editingCreature={selectedCreature || undefined}
+                readOnly={selectedCreatureReadOnly}
+                onSave={handleCreatureSaved}
+            />
         </Box>
     )
 }

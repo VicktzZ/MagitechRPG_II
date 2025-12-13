@@ -14,10 +14,28 @@ export interface PlayerInfo {
             maxLp?: number;
             mp?: number;
             maxMp?: number;
+            agi?: number;
         };
         inventory?: {
             money?: number;
         };
+        attributes?: {
+            agi?: number;
+            des?: number;
+            for?: number;
+            int?: number;
+            sab?: number;
+            car?: number;
+        };
+        session?: Array<{
+            campaignCode: string;
+            stats?: {
+                lp?: number;
+                maxLp?: number;
+                mp?: number;
+                maxMp?: number;
+            };
+        }>;
     };
 }
 

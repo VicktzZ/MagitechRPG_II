@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
     Box,
     Button,
@@ -30,6 +30,12 @@ import {
 import { orange, blue, purple } from '@mui/material/colors';
 import { useSnackbar } from 'notistack';
 import { useCampaignContext } from '@contexts';
+import { Expertises, Expertise as ExpertiseModel } from '@models';
+import { ResourceListModal } from '@components/utils';
+import Magic from '@components/charsheet/subcomponents/Magic';
+import { poderService, magiaService } from '@services';
+import { elements, specialElements } from '@constants';
+import type { Power, Spell } from '@models/entities';
 
 interface CreatureData {
     id?: string;
@@ -77,6 +83,7 @@ interface CreatureCreatorProps {
     onClose: () => void;
     onSave?: (creature: CreatureData) => void;
     editingCreature?: CreatureData | null;
+    readOnly?: boolean;
 }
 
 const defaultCreature: CreatureData = {
@@ -90,37 +97,19 @@ const defaultCreature: CreatureData = {
     expertises: {}
 };
 
-const expertiseList = [
-    { key: 'acrobacia', name: 'Acrobacia', attr: 'des' },
-    { key: 'adestramento', name: 'Adestramento', attr: 'car' },
-    { key: 'artes', name: 'Artes', attr: 'car' },
-    { key: 'atletismo', name: 'Atletismo', attr: 'vig' },
-    { key: 'atualidades', name: 'Atualidades', attr: 'log' },
-    { key: 'ciencias', name: 'Ciências', attr: 'log' },
-    { key: 'crime', name: 'Crime', attr: 'des' },
-    { key: 'diplomacia', name: 'Diplomacia', attr: 'car' },
-    { key: 'enganacao', name: 'Enganação', attr: 'car' },
-    { key: 'fortitude', name: 'Fortitude', attr: 'vig' },
-    { key: 'furtividade', name: 'Furtividade', attr: 'des' },
-    { key: 'historia', name: 'História', attr: 'log' },
-    { key: 'iniciativa', name: 'Iniciativa', attr: 'des' },
-    { key: 'intimidacao', name: 'Intimidação', attr: 'car' },
-    { key: 'intuicao', name: 'Intuição', attr: 'sab' },
-    { key: 'investigacao', name: 'Investigação', attr: 'log' },
-    { key: 'luta', name: 'Luta', attr: 'vig' },
-    { key: 'medicina', name: 'Medicina', attr: 'sab' },
-    { key: 'natureza', name: 'Natureza', attr: 'sab' },
-    { key: 'ocultismo', name: 'Ocultismo', attr: 'log' },
-    { key: 'percepcao', name: 'Percepção', attr: 'sab' },
-    { key: 'pilotagem', name: 'Pilotagem', attr: 'des' },
-    { key: 'pontaria', name: 'Pontaria', attr: 'des' },
-    { key: 'profissao', name: 'Profissão', attr: 'log' },
-    { key: 'reflexos', name: 'Reflexos', attr: 'des' },
-    { key: 'religiao', name: 'Religião', attr: 'sab' },
-    { key: 'sobrevivencia', name: 'Sobrevivência', attr: 'sab' },
-    { key: 'tecnologia', name: 'Tecnologia', attr: 'log' },
-    { key: 'vontade', name: 'Vontade', attr: 'sab' }
-];
+// Lista de perícias baseada diretamente no modelo Expertises,
+// garantindo que seja sempre a mesma usada nas fichas
+const expertiseList = (() => {
+    const expertises = new Expertises();
+    return Object.entries(expertises).map(([ name, value ]) => {
+        const exp = value as ExpertiseModel;
+        return {
+            key: name,
+            name,
+            attr: exp.defaultAttribute ? exp.defaultAttribute.toUpperCase() : '-'
+        };
+    });
+})();
 
 const skillTypes = [
     'Poder Mágico',
@@ -134,19 +123,38 @@ const skillTypes = [
     'Talento'
 ];
 
-const elements = [ 'Fogo', 'Água', 'Terra', 'Ar', 'Luz', 'Trevas', 'Arcano', 'Físico' ];
-
-export default function CreatureCreator({ open, onClose, onSave, editingCreature }: CreatureCreatorProps) {
+export default function CreatureCreator({ open, onClose, onSave, editingCreature, readOnly }: CreatureCreatorProps) {
     const { campaign } = useCampaignContext();
     const { enqueueSnackbar } = useSnackbar();
+    const isReadOnly = !!readOnly;
     
     const [ creatureData, setCreatureData ] = useState<CreatureData>(editingCreature || defaultCreature);
     const [ activeTab, setActiveTab ] = useState(0);
     const [ isLoading, setIsLoading ] = useState(false);
+    const [ baseCreature, setBaseCreature ] = useState<CreatureData | null>(editingCreature || null);
+    const [ scalingLevel, setScalingLevel ] = useState<number>(editingCreature?.level || 1);
+    const [ scalingPlayers, setScalingPlayers ] = useState<number>(campaign.players?.length || 4);
+    const [ skillsModalOpen, setSkillsModalOpen ] = useState(false);
+    const [ spellsModalOpen, setSpellsModalOpen ] = useState(false);
     
     // Estados para adicionar skills/spells
     const [ newSkill, setNewSkill ] = useState<Partial<SkillData>>({ name: '', description: '', type: 'Classe' });
     const [ newSpell, setNewSpell ] = useState<Partial<SpellData>>({ name: '', description: '', level: 1, element: 'Arcano', cost: 1 });
+
+    useEffect(() => {
+        if (editingCreature) {
+            setBaseCreature(editingCreature);
+            setCreatureData(editingCreature);
+            setScalingLevel(editingCreature.level);
+        } else {
+            setBaseCreature(null);
+            setCreatureData(defaultCreature);
+            setScalingLevel(1);
+        }
+
+        const defaultPlayers = campaign.players?.length || 4;
+        setScalingPlayers(defaultPlayers || 4);
+    }, [ editingCreature, open, campaign.id ]);
 
     const handleSave = async () => {
         if (!creatureData.name.trim()) {
@@ -229,6 +237,99 @@ export default function CreatureCreator({ open, onClose, onSave, editingCreature
         }));
     };
 
+    const validateAddPowerForCreature = (_power: Power) => ({ isValid: true });
+
+    const handleAddPowerToCreature = async (power: Power) => {
+        const skill: SkillData = {
+            id: power.id ?? crypto.randomUUID(),
+            name: power.name,
+            description: power.description || '',
+            type: power.type || 'Poder Mágico'
+        };
+
+        setCreatureData(prev => {
+            const existing = prev.skills.filter(s => s.id !== skill.id);
+            return {
+                ...prev,
+                skills: [ ...existing, skill ]
+            };
+        });
+
+        return skill;
+    };
+
+    const validateAddSpellForCreature = (_spell: Spell) => ({ isValid: true });
+
+    const handleAddSpellToCreature = async (spell: Spell) => {
+        const mapped: SpellData = {
+            id: spell.id ?? crypto.randomUUID(),
+            name: spell.name,
+            description: Array.isArray(spell.stages) && spell.stages.length > 0 ? spell.stages[0] : '',
+            level: spell.level ?? 1,
+            element: spell.element as string,
+            cost: spell.mpCost ?? 0
+        };
+
+        setCreatureData(prev => {
+            const existing = prev.spells.filter(s => s.id !== mapped.id);
+            return {
+                ...prev,
+                spells: [ ...existing, mapped ]
+            };
+        });
+
+        return mapped;
+    };
+
+    const handleApplyScaling = () => {
+        if (!baseCreature) return;
+
+        const levelBase = baseCreature.level || 1;
+        const levelTarget = Math.max(1, Math.min(30, scalingLevel || levelBase));
+        const playersBase = 4;
+        const playersTarget = Math.max(1, scalingPlayers || playersBase);
+
+        const levelFactor = levelTarget / levelBase;
+        const playersFactor = playersTarget / playersBase;
+        let scale = levelFactor * playersFactor;
+        scale = Math.max(0.5, Math.min(3, scale));
+
+        const scaleNumber = (value: number, min: number, max: number) => {
+            const scaled = Math.round(value * scale);
+            return Math.max(min, Math.min(max, scaled));
+        };
+
+        const scaledAttributes = Object.entries(baseCreature.attributes).reduce((acc, [ key, value ]) => {
+            acc[key as keyof CreatureData['attributes']] = scaleNumber(value, 0, 30);
+            return acc;
+        }, { ...baseCreature.attributes } as CreatureData['attributes']);
+
+        const scaledStats = {
+            lp: scaleNumber(baseCreature.stats.lp, 1, Number.MAX_SAFE_INTEGER),
+            maxLp: scaleNumber(baseCreature.stats.maxLp, 1, Number.MAX_SAFE_INTEGER),
+            mp: scaleNumber(baseCreature.stats.mp, 0, Number.MAX_SAFE_INTEGER),
+            maxMp: scaleNumber(baseCreature.stats.maxMp, 0, Number.MAX_SAFE_INTEGER),
+            ap: scaleNumber(baseCreature.stats.ap, 0, Number.MAX_SAFE_INTEGER)
+        };
+
+        const scaledExpertises: CreatureData['expertises'] = {};
+        Object.entries(baseCreature.expertises || {}).forEach(([ key, value ]) => {
+            const baseValue = value?.value ?? 0;
+            scaledExpertises[key] = {
+                ...value,
+                value: scaleNumber(baseValue, 0, 20)
+            };
+        });
+
+        setCreatureData(prev => ({
+            ...prev,
+            level: levelTarget,
+            attributes: scaledAttributes,
+            stats: scaledStats,
+            expertises: scaledExpertises
+        }));
+    };
+
     const updateExpertise = (key: string, value: number) => {
         setCreatureData(prev => ({
             ...prev,
@@ -268,14 +369,21 @@ export default function CreatureCreator({ open, onClose, onSave, editingCreature
                                 onChange={(e) => setCreatureData(prev => ({ ...prev, name: e.target.value }))}
                                 fullWidth
                                 required
+                                disabled={isReadOnly}
                             />
                             <TextField
                                 label="Nível"
                                 type="number"
                                 value={creatureData.level}
-                                onChange={(e) => setCreatureData(prev => ({ ...prev, level: parseInt(e.target.value) || 1 }))}
+                                onChange={(e) => {
+                                    const raw = e.target.value;
+                                    const num = Number(raw);
+                                    const clamped = Math.min(30, Math.max(1, isNaN(num) ? 1 : num));
+                                    setCreatureData(prev => ({ ...prev, level: clamped }));
+                                }}
                                 inputProps={{ min: 1, max: 30 }}
                                 sx={{ width: 100 }}
+                                disabled={isReadOnly}
                             />
                         </Box>
 
@@ -286,6 +394,7 @@ export default function CreatureCreator({ open, onClose, onSave, editingCreature
                             multiline
                             rows={3}
                             fullWidth
+                            disabled={isReadOnly}
                         />
 
                         {/* Atributos */}
@@ -300,11 +409,17 @@ export default function CreatureCreator({ open, onClose, onSave, editingCreature
                                         label={attr.toUpperCase()}
                                         type="number"
                                         value={value}
-                                        onChange={(e) => setCreatureData(prev => ({
-                                            ...prev,
-                                            attributes: { ...prev.attributes, [attr]: parseInt(e.target.value) || 0 }
-                                        }))}
-                                        inputProps={{ min: -5, max: 20 }}
+                                        onChange={(e) => {
+                                            const raw = e.target.value;
+                                            const num = Number(raw);
+                                            const clamped = Math.min(30, Math.max(0, isNaN(num) ? 0 : num));
+                                            setCreatureData(prev => ({
+                                                ...prev,
+                                                attributes: { ...prev.attributes, [attr]: clamped }
+                                            }));
+                                        }}
+                                        inputProps={{ min: 0, max: 30 }}
+                                        disabled={isReadOnly}
                                         sx={{ width: 80 }}
                                     />
                                 ))}
@@ -329,6 +444,7 @@ export default function CreatureCreator({ open, onClose, onSave, editingCreature
                                         }));
                                     }}
                                     inputProps={{ min: 1 }}
+                                    disabled={isReadOnly}
                                     sx={{ width: 100 }}
                                 />
                                 <TextField
@@ -343,6 +459,7 @@ export default function CreatureCreator({ open, onClose, onSave, editingCreature
                                         }));
                                     }}
                                     inputProps={{ min: 0 }}
+                                    disabled={isReadOnly}
                                     sx={{ width: 100 }}
                                 />
                                 <TextField
@@ -354,16 +471,72 @@ export default function CreatureCreator({ open, onClose, onSave, editingCreature
                                         stats: { ...prev.stats, ap: parseInt(e.target.value) || 0 }
                                     }))}
                                     inputProps={{ min: 0 }}
+                                    disabled={isReadOnly}
                                     sx={{ width: 100 }}
                                 />
                             </Box>
                         </Box>
+
+                        {editingCreature && (
+                            <Box sx={{ border: '1px dashed', borderColor: 'divider', borderRadius: 2, p: 2, mt: 2 }}>
+                                <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 2 }}>
+                                    Ajuste por nível e jogadores
+                                </Typography>
+                                <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+                                    <TextField
+                                        label="Nível alvo"
+                                        type="number"
+                                        value={scalingLevel}
+                                        onChange={(e) => {
+                                            const raw = e.target.value;
+                                            const num = Number(raw);
+                                            const clamped = Math.min(30, Math.max(1, isNaN(num) ? 1 : num));
+                                            setScalingLevel(clamped);
+                                        }}
+                                        inputProps={{ min: 1, max: 30 }}
+                                        sx={{ width: 120 }}
+                                        disabled={isReadOnly}
+                                    />
+                                    <TextField
+                                        label="Qtd. jogadores"
+                                        type="number"
+                                        value={scalingPlayers}
+                                        onChange={(e) => {
+                                            const raw = e.target.value;
+                                            const num = Number(raw);
+                                            const clamped = Math.min(8, Math.max(1, isNaN(num) ? 4 : num));
+                                            setScalingPlayers(clamped);
+                                        }}
+                                        inputProps={{ min: 1, max: 8 }}
+                                        sx={{ width: 140 }}
+                                        disabled={isReadOnly}
+                                    />
+                                    <Button
+                                        variant="outlined"
+                                        onClick={handleApplyScaling}
+                                        disabled={isReadOnly || !baseCreature}
+                                    >
+                                        Aplicar ajuste
+                                    </Button>
+                                </Box>
+                            </Box>
+                        )}
                     </Box>
                 )}
 
                 {/* Tab: Habilidades */}
                 {activeTab === 1 && (
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                            <Button
+                                variant="outlined"
+                                size="small"
+                                onClick={() => setSkillsModalOpen(true)}
+                                disabled={isReadOnly}
+                            >
+                                Buscar do banco
+                            </Button>
+                        </Box>
                         {/* Adicionar habilidade */}
                         <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, p: 2 }}>
                             <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 2 }}>
@@ -376,6 +549,7 @@ export default function CreatureCreator({ open, onClose, onSave, editingCreature
                                     onChange={(e) => setNewSkill(prev => ({ ...prev, name: e.target.value }))}
                                     size="small"
                                     sx={{ flex: 1, minWidth: 150 }}
+                                    disabled={isReadOnly}
                                 />
                                 <TextField
                                     label="Tipo"
@@ -385,6 +559,7 @@ export default function CreatureCreator({ open, onClose, onSave, editingCreature
                                     size="small"
                                     SelectProps={{ native: true }}
                                     sx={{ width: 150 }}
+                                    disabled={isReadOnly}
                                 >
                                     {skillTypes.map(type => (
                                         <option key={type} value={type}>{type}</option>
@@ -393,7 +568,7 @@ export default function CreatureCreator({ open, onClose, onSave, editingCreature
                                 <Button 
                                     variant="contained" 
                                     onClick={addSkill}
-                                    disabled={!newSkill.name?.trim()}
+                                    disabled={isReadOnly || !newSkill.name?.trim()}
                                     startIcon={<Add />}
                                     sx={{ bgcolor: purple[600] }}
                                 >
@@ -408,6 +583,7 @@ export default function CreatureCreator({ open, onClose, onSave, editingCreature
                                 fullWidth
                                 multiline
                                 rows={2}
+                                disabled={isReadOnly}
                                 sx={{ mt: 1 }}
                             />
                         </Box>
@@ -427,7 +603,7 @@ export default function CreatureCreator({ open, onClose, onSave, editingCreature
                                         <ListItem 
                                             key={skill.id}
                                             secondaryAction={
-                                                <IconButton edge="end" onClick={() => removeSkill(skill.id)} color="error">
+                                                <IconButton edge="end" onClick={() => removeSkill(skill.id)} color="error" disabled={isReadOnly}>
                                                     <Delete fontSize="small" />
                                                 </IconButton>
                                             }
@@ -452,6 +628,16 @@ export default function CreatureCreator({ open, onClose, onSave, editingCreature
                 {/* Tab: Magias */}
                 {activeTab === 2 && (
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                            <Button
+                                variant="outlined"
+                                size="small"
+                                onClick={() => setSpellsModalOpen(true)}
+                                disabled={isReadOnly}
+                            >
+                                Buscar do banco
+                            </Button>
+                        </Box>
                         {/* Adicionar magia */}
                         <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, p: 2 }}>
                             <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 2 }}>
@@ -464,6 +650,7 @@ export default function CreatureCreator({ open, onClose, onSave, editingCreature
                                     onChange={(e) => setNewSpell(prev => ({ ...prev, name: e.target.value }))}
                                     size="small"
                                     sx={{ flex: 1, minWidth: 150 }}
+                                    disabled={isReadOnly}
                                 />
                                 <TextField
                                     label="Elemento"
@@ -473,6 +660,7 @@ export default function CreatureCreator({ open, onClose, onSave, editingCreature
                                     size="small"
                                     SelectProps={{ native: true }}
                                     sx={{ width: 120 }}
+                                    disabled={isReadOnly}
                                 >
                                     {elements.map(el => (
                                         <option key={el} value={el}>{el}</option>
@@ -486,6 +674,7 @@ export default function CreatureCreator({ open, onClose, onSave, editingCreature
                                     size="small"
                                     inputProps={{ min: 1, max: 5 }}
                                     sx={{ width: 80 }}
+                                    disabled={isReadOnly}
                                 />
                                 <TextField
                                     label="Custo MP"
@@ -495,11 +684,12 @@ export default function CreatureCreator({ open, onClose, onSave, editingCreature
                                     size="small"
                                     inputProps={{ min: 0 }}
                                     sx={{ width: 100 }}
+                                    disabled={isReadOnly}
                                 />
                                 <Button 
                                     variant="contained" 
                                     onClick={addSpell}
-                                    disabled={!newSpell.name?.trim()}
+                                    disabled={isReadOnly || !newSpell.name?.trim()}
                                     startIcon={<Add />}
                                     sx={{ bgcolor: blue[600] }}
                                 >
@@ -514,6 +704,7 @@ export default function CreatureCreator({ open, onClose, onSave, editingCreature
                                 fullWidth
                                 multiline
                                 rows={2}
+                                disabled={isReadOnly}
                                 sx={{ mt: 1 }}
                             />
                         </Box>
@@ -533,7 +724,7 @@ export default function CreatureCreator({ open, onClose, onSave, editingCreature
                                         <ListItem 
                                             key={spell.id}
                                             secondaryAction={
-                                                <IconButton edge="end" onClick={() => removeSpell(spell.id)} color="error">
+                                                <IconButton edge="end" onClick={() => removeSpell(spell.id)} color="error" disabled={isReadOnly}>
                                                     <Delete fontSize="small" />
                                                 </IconButton>
                                             }
@@ -599,6 +790,7 @@ export default function CreatureCreator({ open, onClose, onSave, editingCreature
                                         inputProps={{ min: 0, max: 10, style: { textAlign: 'center' } }}
                                         size="small"
                                         sx={{ width: 60 }}
+                                        disabled={isReadOnly}
                                     />
                                 </Box>
                             ))}
@@ -607,19 +799,71 @@ export default function CreatureCreator({ open, onClose, onSave, editingCreature
                 )}
             </DialogContent>
 
+            <ResourceListModal
+                title="Selecionar Habilidades"
+                open={skillsModalOpen}
+                onClose={() => setSkillsModalOpen(false)}
+                queryKey="magicPowers-creature"
+                fetchFunction={async (params) => await poderService.fetch(params)}
+                addFunction={handleAddPowerToCreature}
+                validateAdd={validateAddPowerForCreature}
+                successMessage={(power: Power) => `Habilidade ${power.name} adicionada à criatura!`}
+                errorMessage={(err: Error) => err.message || 'Erro ao adicionar habilidade'}
+                filterOptions={elements.map(element => element.toUpperCase())}
+                sortOptions={[ 'Elemento', 'Nome' ]}
+                initialSort={{ value: 'Nome', order: 'ASC' }}
+                renderResource={({ item, handleAddItem }) => (
+                    <Magic
+                        as="magic-power"
+                        key={item.id}
+                        magicPower={item}
+                        id={item.id}
+                        isAdding
+                        onIconClick={handleAddItem}
+                    />
+                )}
+            />
+
+            <ResourceListModal
+                title="Selecionar Magias"
+                open={spellsModalOpen}
+                onClose={() => setSpellsModalOpen(false)}
+                queryKey="spells-creature"
+                fetchFunction={async (params) => await magiaService.fetch(params)}
+                addFunction={handleAddSpellToCreature}
+                validateAdd={validateAddSpellForCreature}
+                successMessage={(spell: Spell) => `Magia ${spell.name} adicionada à criatura!`}
+                errorMessage={(err: Error) => err.message || 'Erro ao adicionar magia'}
+                filterOptions={[ ...elements, ...specialElements ]}
+                sortOptions={[ 'Nível', 'Elemento', 'Alfabética' ]}
+                initialSort={{ value: 'Nível', order: 'ASC' }}
+                renderResource={({ item, handleAddItem }) => (
+                    <Magic
+                        as="magic-spell"
+                        key={item.id}
+                        magic={item}
+                        id={item.id}
+                        isAdding
+                        onIconClick={handleAddItem}
+                    />
+                )}
+            />
+
             <DialogActions sx={{ p: 2, gap: 1 }}>
                 <Button onClick={onClose} disabled={isLoading} variant="outlined">
                     Cancelar
                 </Button>
-                <Button
-                    onClick={handleSave}
-                    variant="contained"
-                    disabled={!creatureData.name.trim() || isLoading}
-                    startIcon={isLoading ? <CircularProgress size={20} /> : <PetsIcon />}
-                    sx={{ bgcolor: orange[600], '&:hover': { bgcolor: orange[700] } }}
-                >
-                    {isLoading ? 'Salvando...' : (editingCreature ? 'Atualizar' : 'Criar Criatura')}
-                </Button>
+                {!isReadOnly && (
+                    <Button
+                        onClick={handleSave}
+                        variant="contained"
+                        disabled={!creatureData.name.trim() || isLoading}
+                        startIcon={isLoading ? <CircularProgress size={20} /> : <PetsIcon />}
+                        sx={{ bgcolor: orange[600], '&:hover': { bgcolor: orange[700] } }}
+                    >
+                        {isLoading ? 'Salvando...' : (editingCreature ? 'Atualizar' : 'Criar Criatura')}
+                    </Button>
+                )}
             </DialogActions>
         </Dialog>
     );

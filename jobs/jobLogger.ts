@@ -1,8 +1,44 @@
 import { jobRepository } from '@repositories';
 import { Job, type JobLog } from '@models/entities';
-import cronParser from 'cron-parser';
 
 const MAX_LOGS = 10;
+
+/**
+ * Calcula a próxima execução baseada em cron expression
+ * Implementação simples sem dependência externa
+ */
+function calculateNextRun(cronExpression: string): string {
+    // Parse simples para cron: "minuto hora dia mês diaSemana"
+    const parts = cronExpression.split(' ');
+    if (parts.length !== 5) return new Date().toISOString();
+    
+    const [ minute, hour ] = parts;
+    const now = new Date();
+    const next = new Date();
+    
+    // Define hora e minuto
+    next.setHours(parseInt(hour) || 0, parseInt(minute) || 0, 0, 0);
+    
+    // Se já passou hoje, agenda para amanhã
+    if (next <= now) {
+        next.setDate(next.getDate() + 1);
+    }
+    
+    return next.toISOString();
+}
+
+/**
+ * Remove propriedades undefined de um objeto (Firestore não aceita undefined)
+ */
+function removeUndefined<T extends Record<string, any>>(obj: T): T {
+    const result = { ...obj };
+    Object.keys(result).forEach(key => {
+        if (result[key] === undefined) {
+            delete result[key];
+        }
+    });
+    return result;
+}
 
 interface JobConfig {
     id: string;
@@ -36,7 +72,8 @@ export async function initializeJob(config: JobConfig): Promise<Job> {
             job.name = config.name;
             job.description = config.description;
             job.cronExpression = config.cronExpression;
-            await jobRepository.update(job);
+            const plainJob = JSON.parse(JSON.stringify(job));
+            await jobRepository.update(removeUndefined(plainJob));
         }
         
         // Calcula próxima execução
@@ -54,15 +91,13 @@ export async function initializeJob(config: JobConfig): Promise<Job> {
  */
 async function updateNextRun(jobId: string, cronExpression: string): Promise<void> {
     try {
-        const interval = cronParser.parseExpression(cronExpression, {
-            tz: 'America/Sao_Paulo'
-        });
-        const nextRun = interval.next().toISOString();
+        const nextRun = calculateNextRun(cronExpression);
         
         const job = await jobRepository.findById(jobId);
         if (job) {
             job.nextRun = nextRun;
-            await jobRepository.update(job);
+            const plainJob = JSON.parse(JSON.stringify(job));
+            await jobRepository.update(removeUndefined(plainJob));
         }
     } catch (error) {
         console.error('[JobLogger] Erro ao calcular próxima execução:', error);
@@ -80,7 +115,8 @@ export async function logJobStart(jobId: string): Promise<number> {
         if (job) {
             job.status = 'running';
             job.lastRun = new Date().toISOString();
-            await jobRepository.update(job);
+            const plainJob = JSON.parse(JSON.stringify(job));
+            await jobRepository.update(removeUndefined(plainJob));
         }
     } catch (error) {
         console.error('[JobLogger] Erro ao registrar início do job:', error);
@@ -105,21 +141,22 @@ export async function logJobSuccess(
         if (job) {
             job.status = 'success';
             job.lastDuration = duration;
-            job.lastError = undefined;
+            delete (job as any).lastError; // Remove lastError em vez de setar undefined
             job.successCount = (job.successCount || 0) + 1;
             
-            // Adiciona log
-            const log: JobLog = {
+            // Adiciona log (remove details se undefined)
+            const log: JobLog = removeUndefined({
                 timestamp: new Date().toISOString(),
                 status: 'success',
                 message,
                 duration,
                 details
-            };
+            }) as JobLog;
             
             job.logs = [ log, ...(job.logs || []).slice(0, MAX_LOGS - 1) ];
             
-            await jobRepository.update(job);
+            const plainJob = JSON.parse(JSON.stringify(job));
+            await jobRepository.update(removeUndefined(plainJob));
             
             // Atualiza próxima execução
             await updateNextRun(jobId, job.cronExpression);
@@ -151,18 +188,19 @@ export async function logJobError(
             job.lastError = errorMessage;
             job.errorCount = (job.errorCount || 0) + 1;
             
-            // Adiciona log
-            const log: JobLog = {
+            // Adiciona log (remove details se undefined)
+            const log: JobLog = removeUndefined({
                 timestamp: new Date().toISOString(),
                 status: 'error',
                 message: errorMessage,
                 duration,
                 details
-            };
+            }) as JobLog;
             
             job.logs = [ log, ...(job.logs || []).slice(0, MAX_LOGS - 1) ];
             
-            await jobRepository.update(job);
+            const plainJob = JSON.parse(JSON.stringify(job));
+            await jobRepository.update(removeUndefined(plainJob));
             
             // Atualiza próxima execução
             await updateNextRun(jobId, job.cronExpression);

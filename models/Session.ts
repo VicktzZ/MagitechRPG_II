@@ -1,5 +1,6 @@
 import { IsArray, IsOptional, IsString, ValidateNested } from 'class-validator';
 import { Message } from './Message';
+import { Combat } from './Combat';
 import { Type } from 'class-transformer';
 import type { PerkTypeEnum, SkillTypeEnum } from '@enums/rogueliteEnum';
 import type { RarityType } from './types/string';
@@ -34,6 +35,12 @@ export class Session {
     // Filtros configurados pelo GM para os perks oferecidos
     @IsOptional()
         perkFilters?: PerkFilters;
+
+    // Sistema de combate
+    @ValidateNested()
+    @IsOptional()
+    @Type(() => Combat)
+        combat?: Combat;
     
     constructor(session?: Session) {
         Object.assign(this, session)

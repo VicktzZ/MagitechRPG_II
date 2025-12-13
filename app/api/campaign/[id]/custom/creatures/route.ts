@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { campaignRepository } from '@repositories'
 import { v4 as uuidv4 } from 'uuid'
 import type { Creature } from '@models/Creature'
+import { Expertises } from '@models'
 
 export async function POST(
     request: NextRequest,
@@ -34,6 +35,29 @@ export async function POST(
             )
         }
 
+        // Inicializa perícias padrão a partir do modelo Expertises
+        const baseExpertises = new Expertises()
+
+        // Converte para objeto plano serializável pelo Firestore
+        const plainExpertises: Record<string, { value: number; defaultAttribute: any }> = {}
+
+        Object.entries(baseExpertises as any).forEach(([ key, expertise ]: any) => {
+            plainExpertises[key] = {
+                value: Number(expertise?.value ?? 0),
+                defaultAttribute: expertise?.defaultAttribute ?? null
+            }
+        })
+
+        // Aplica apenas os valores vindos do body, preservando o atributo padrão
+        if (body.expertises && typeof body.expertises === 'object') {
+            Object.entries(body.expertises).forEach(([ key, value ]: any) => {
+                if (Object.prototype.hasOwnProperty.call(plainExpertises, key)) {
+                    const newValue = Number(value?.value ?? 0)
+                    plainExpertises[key].value = Number.isFinite(newValue) ? newValue : 0
+                }
+            })
+        }
+
         // Cria a nova criatura com dados completos
         const newCreature: Partial<Creature> = {
             id: body.id || uuidv4(),
@@ -55,7 +79,7 @@ export async function POST(
                 maxMp: body.stats?.maxMp || body.stats?.mp || 5,
                 ap: body.stats?.ap || 0
             },
-            expertises: body.expertises || {},
+            expertises: plainExpertises,
             skills: body.skills || [],
             spells: body.spells || []
         }
