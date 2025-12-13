@@ -16,6 +16,7 @@ import FavoriteIcon from '@mui/icons-material/Favorite';
 import BoltIcon from '@mui/icons-material/Bolt';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import PetsIcon from '@mui/icons-material/Pets';
+import SportsKabaddiIcon from '@mui/icons-material/SportsKabaddi';
 
 import {
     Box,
@@ -42,6 +43,7 @@ import {
     OfferPerksDialog,
     ShopDialog,
     MassActionDialog,
+    CombatDialog,
     type PlayerInfo,
     type MassActionType
 } from './actions';
@@ -53,31 +55,63 @@ export default function GMActions(): ReactElement {
     const queryClient = useQueryClient();
 
     // Menu state
-    const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+    const [ anchorEl, setAnchorEl ] = useState<null | HTMLElement>(null);
     const menuOpen = Boolean(anchorEl);
 
     // Dialog states
-    const [addNoteDialogOpen, setAddNoteDialogOpen] = useState(false);
-    const [levelUpDialogOpen, setLevelUpDialogOpen] = useState(false);
-    const [rogueliteLevelUpDialogOpen, setRogueliteLevelUpDialogOpen] = useState(false);
-    const [addItemModalOpen, setAddItemModalOpen] = useState(false);
-    const [creatureDialogOpen, setCreatureDialogOpen] = useState(false);
-    const [offerPerksDialogOpen, setOfferPerksDialogOpen] = useState(false);
-    const [shopDialogOpen, setShopDialogOpen] = useState(false);
-    const [massActionDialogOpen, setMassActionDialogOpen] = useState(false);
-    const [massActionType, setMassActionType] = useState<MassActionType | null>(null);
+    const [ addNoteDialogOpen, setAddNoteDialogOpen ] = useState(false);
+    const [ levelUpDialogOpen, setLevelUpDialogOpen ] = useState(false);
+    const [ rogueliteLevelUpDialogOpen, setRogueliteLevelUpDialogOpen ] = useState(false);
+    const [ addItemModalOpen, setAddItemModalOpen ] = useState(false);
+    const [ creatureDialogOpen, setCreatureDialogOpen ] = useState(false);
+    const [ offerPerksDialogOpen, setOfferPerksDialogOpen ] = useState(false);
+    const [ shopDialogOpen, setShopDialogOpen ] = useState(false);
+    const [ massActionDialogOpen, setMassActionDialogOpen ] = useState(false);
+    const [ massActionType, setMassActionType ] = useState<MassActionType | null>(null);
+    const [ combatDialogOpen, setCombatDialogOpen ] = useState(false);
 
     // Realtime charsheet data
     const { data: realtimeCharsheets } = useFirestoreRealtime('charsheet', {
-        filters: [{ field: 'id', operator: 'in', value: charsheets.map(c => c.id) }],
+        filters: [ { field: 'id', operator: 'in', value: charsheets.map(c => c.id) } ],
         enabled: charsheets.length > 0
     });
 
-    // Memoized player list with charsheet data
+    // Memoized player list with charsheet data (usando stats da sessão quando disponível)
     const players: PlayerInfo[] = useMemo(() => {
+        console.log('[GMActions] Building players list:', {
+            usersPlayers: users.players?.length,
+            campaignPlayers: campaign?.players?.length,
+            realtimeCharsheets: realtimeCharsheets?.length,
+            sessionUsers: campaign?.session?.users?.length
+        });
+
         return users.players?.map(player => {
-            const playerInCampaign = campaign?.players?.find(p => p.odacId === player.id);
+            // campaign.players usa `userId`, não `odacId`
+            const playerInCampaign = campaign?.players?.find(p => 
+                (p as any).odacId === player.id || p.userId === player.id
+            );
             const charsheet = realtimeCharsheets?.find((c: any) => c.id === playerInCampaign?.charsheetId);
+            
+            // PRIORIDADE 1: Stats da sessão na charsheet (charsheet.session[].stats)
+            const charsheetSessionStats = charsheet?.session?.find(
+                (s: any) => s.campaignCode === campaign?.campaignCode
+            )?.stats;
+            
+            // PRIORIDADE 2: Stats da sessão na campanha (campaign.session.users[].stats)
+            const campaignSessionStats = (campaign?.session?.users as any[])?.find(
+                (u: any) => u.odacId === player.id || u.charsheetId === playerInCampaign?.charsheetId
+            )?.stats;
+            
+            console.log(`[GMActions] Player ${player.name}:`, {
+                playerId: player.id,
+                campaignCode: campaign?.campaignCode,
+                charsheetSessionStats,
+                campaignSessionStats,
+                charsheetStats: charsheet?.stats
+            });
+            
+            // Usa stats da sessão da charsheet > sessão da campanha > charsheet base
+            const finalStats = charsheetSessionStats || campaignSessionStats || charsheet?.stats;
             
             return {
                 id: player.id,
@@ -87,12 +121,13 @@ export default function GMActions(): ReactElement {
                     id: charsheet.id,
                     name: charsheet.name,
                     level: charsheet.level,
-                    stats: charsheet.stats,
-                    inventory: charsheet.inventory
+                    stats: finalStats,
+                    inventory: charsheet.inventory,
+                    attributes: charsheet.attributes
                 } : undefined
             };
         }) || [];
-    }, [users.players, campaign?.players, realtimeCharsheets]);
+    }, [ users.players, campaign?.players, realtimeCharsheets, campaign?.session?.users ]);
 
     // Menu handlers
     const handleOpenMenu = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -145,6 +180,11 @@ export default function GMActions(): ReactElement {
         handleCloseMenu();
     };
 
+    const openCombat = () => {
+        setCombatDialogOpen(true);
+        handleCloseMenu();
+    };
+
     // Custom item handler
     const handleAddCustomItem = async (created: Weapon | Armor | Item) => {
         try {
@@ -155,8 +195,8 @@ export default function GMActions(): ReactElement {
 
             await campaignService.addCustomItem(campaign.id, type, created);
             
-            await queryClient.invalidateQueries({ queryKey: ['campaignData', campaign.campaignCode] });
-            await queryClient.refetchQueries({ queryKey: ['campaignData', campaign.campaignCode] });
+            await queryClient.invalidateQueries({ queryKey: [ 'campaignData', campaign.campaignCode ] });
+            await queryClient.refetchQueries({ queryKey: [ 'campaignData', campaign.campaignCode ] });
 
             setAddItemModalOpen(false);
             enqueueSnackbar('Item customizado adicionado à campanha!', { variant: 'success' });
@@ -279,6 +319,25 @@ export default function GMActions(): ReactElement {
 
                 <Divider />
 
+                {/* Combate */}
+                <MenuItem onClick={openCombat} disabled={!isUserGM}>
+                    <ListItemIcon>
+                        <SportsKabaddiIcon fontSize="small" sx={{ color: red[500] }} />
+                    </ListItemIcon>
+                    <MenuItemText>
+                        {campaign.session?.combat?.isActive ? 'Gerenciar Combate' : 'Iniciar Combate'}
+                        {campaign.session?.combat?.isActive && (
+                            <Chip 
+                                label={`R${campaign.session.combat.round}`}
+                                size="small" 
+                                sx={{ ml: 1, height: 20, bgcolor: red[100], color: red[800] }}
+                            />
+                        )}
+                    </MenuItemText>
+                </MenuItem>
+
+                <Divider />
+
                 {/* Ações em Massa */}
                 <Typography variant="caption" sx={{ px: 2, py: 0.5, color: 'text.secondary' }}>
                     Ações em Massa
@@ -360,6 +419,17 @@ export default function GMActions(): ReactElement {
                 actionType={massActionType}
                 players={players}
                 campaignId={campaign.id}
+            />
+
+            <CombatDialog
+                open={combatDialogOpen}
+                onClose={() => setCombatDialogOpen(false)}
+                campaignId={campaign.id}
+                campaignCode={campaign.campaignCode}
+                players={players}
+                creatures={campaign.custom?.creatures || []}
+                charsheets={realtimeCharsheets || []}
+                existingCombat={campaign.session?.combat}
             />
         </Box>
     );

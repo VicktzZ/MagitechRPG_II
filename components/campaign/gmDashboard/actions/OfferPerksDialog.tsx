@@ -29,7 +29,7 @@ import LinkIcon from '@mui/icons-material/Link';
 import { purple } from '@mui/material/colors';
 import { useSnackbar } from 'notistack';
 import { campaignService } from '@services';
-import { PerkTypeEnum, SkillTypeEnum } from '@enums/rogueliteEnum';
+import { PerkTypeEnum, type SkillTypeEnum } from '@enums/rogueliteEnum';
 import type { PlayerInfo, PerkFilters, RarityType } from './types';
 import {
     RARITY_OPTIONS,
@@ -56,10 +56,10 @@ export default function OfferPerksDialog({
     campaignId 
 }: OfferPerksDialogProps) {
     const { enqueueSnackbar } = useSnackbar();
-    const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
-    const [isOffering, setIsOffering] = useState(false);
-    const [useSharedSeed, setUseSharedSeed] = useState(false);
-    const [perkFilters, setPerkFilters] = useState<PerkFilters>(DEFAULT_PERK_FILTERS as PerkFilters);
+    const [ selectedPlayers, setSelectedPlayers ] = useState<string[]>([]);
+    const [ isOffering, setIsOffering ] = useState(false);
+    const [ useSharedSeed, setUseSharedSeed ] = useState(false);
+    const [ perkFilters, setPerkFilters ] = useState<PerkFilters>(DEFAULT_PERK_FILTERS as PerkFilters);
 
     const handleOffer = async () => {
         if (selectedPlayers.length === 0) {
@@ -102,7 +102,7 @@ export default function OfferPerksDialog({
         setSelectedPlayers(prev =>
             prev.includes(playerId)
                 ? prev.filter(id => id !== playerId)
-                : [...prev, playerId]
+                : [ ...prev, playerId ]
         );
     };
 

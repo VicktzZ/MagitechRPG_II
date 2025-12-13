@@ -31,7 +31,8 @@ export enum PusherEvent {
     ITEM_ADDED = 'client-item_added',
     USER_EXIT = 'user:exit',
     PERKS_OFFERED = 'perks:offered',
-    PERK_USER_COMPLETED = 'perks:user_completed'
+    PERK_USER_COMPLETED = 'perks:user_completed',
+    COMBAT_UPDATED = 'combat:updated'
 }
 
 export enum SkillType {
@@ -64,5 +65,6 @@ export enum MessageType {
     DICE = 'dice',
     ERROR = 'error',
     SYSTEM = 'system',
-    EXPERTISE = 'expertise'
+    EXPERTISE = 'expertise',
+    COMBAT_LOG = 'combat_log'
 }

@@ -18,6 +18,47 @@ export function DiceMessage({ text, type }: DiceMessageProps) {
     const hasEmoji = text.startsWith('🎲')
     const messageText = (hasEmoji ? text.substring(2) : text).trim()
 
+    // Caso 0: Logs de combate - renderiza com formatação especial
+    if (type === MessageType.COMBAT_LOG) {
+        // Remove o emoji ⚔️ do início se houver
+        const cleanText = text.replace(/^⚔️\s*/, '').trim()
+        
+        // Converte markdown simples para elementos JSX
+        const renderFormattedText = (txt: string) => {
+            const parts = txt.split(/(\*\*[^*]+\*\*)/g)
+            return parts.map((part, i) => {
+                if (part.startsWith('**') && part.endsWith('**')) {
+                    return <strong key={i}>{part.slice(2, -2)}</strong>
+                }
+                // Quebra de linha
+                if (part.includes('\n')) {
+                    return part.split('\n').map((line, j) => (
+                        <span key={`${i}-${j}`}>
+                            {j > 0 && <br />}
+                            {line}
+                        </span>
+                    ))
+                }
+                return part
+            })
+        }
+
+        return (
+            <Box sx={{ wordBreak: 'break-word' }}>
+                <Typography 
+                    variant="body2" 
+                    component="div"
+                    sx={{ 
+                        lineHeight: 1.6,
+                        '& strong': { fontWeight: 700 }
+                    }}
+                >
+                    {renderFormattedText(cleanText)}
+                </Typography>
+            </Box>
+        )
+    }
+
     // Caso 1: Mensagens de perícia (mantém suporte anterior)
     if (type === MessageType.EXPERTISE) {
         let match: any = messageText.match(/(.+?)\s+-\s+(\d*d\d+)([+-]\d+)?:\s+\[([^\]]+)\]\s*=\s*(\d+)/i)
@@ -55,7 +96,7 @@ export function DiceMessage({ text, type }: DiceMessageProps) {
                         ({`${dice}${bonus || ''}`})
                     </Typography>
                     <Box flex={1} />
-                    <Chip size="small" label={`Total ${total}`} color="primary" variant="contained" />
+                    <Chip size="small" label={`Total ${total}`} color="primary" variant="filled" />
                     <Tooltip title={open ? 'Ocultar detalhes' : 'Ver detalhes'}>
                         <IconButton size="small" onClick={() => setOpen(v => !v)}>
                             <ExpandMore sx={{ transform: open ? 'rotate(180deg)' : 'rotate(0deg)', transition: '0.2s' }} />

@@ -12,7 +12,7 @@ export class SpellDTO {
     @IsString() range: RangeType
     @IsArray()
     @IsString({ each: true })
-    stages: string[] = []
+        stages: string[] = []
 
     constructor(spell?: SpellDTO) {
         Object.assign(this, spell);

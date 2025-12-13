@@ -2,6 +2,7 @@ export { Creature } from './Creature';
 export { Item } from './Item';
 export { Message } from './Message';
 export { Session, type PerkFilters } from './Session';
+export { Combat, Combatant, CombatLog, type CombatPhase, type CombatantType } from './Combat';
 export { Weapon } from './Weapon';
 export { Armor } from './Armor';
 export { Skill } from './Skill';

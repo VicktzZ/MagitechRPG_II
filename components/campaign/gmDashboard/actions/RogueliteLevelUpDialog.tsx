@@ -5,7 +5,6 @@ import {
     Avatar,
     Box,
     Button,
-    Checkbox,
     Chip,
     CircularProgress,
     Dialog,
@@ -38,8 +37,8 @@ export default function RogueliteLevelUpDialog({
     campaignId 
 }: RogueliteLevelUpDialogProps) {
     const { enqueueSnackbar } = useSnackbar();
-    const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
-    const [isLevelingUp, setIsLevelingUp] = useState(false);
+    const [ selectedPlayers, setSelectedPlayers ] = useState<string[]>([]);
+    const [ isLevelingUp, setIsLevelingUp ] = useState(false);
 
     const handleLevelUp = async () => {
         if (selectedPlayers.length === 0) {
@@ -87,7 +86,7 @@ export default function RogueliteLevelUpDialog({
         setSelectedPlayers(prev =>
             prev.includes(playerId)
                 ? prev.filter(id => id !== playerId)
-                : [...prev, playerId]
+                : [ ...prev, playerId ]
         );
     };
 
