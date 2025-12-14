@@ -110,22 +110,7 @@ export default function CombatStatus({
         userCombatant && 
         userCombatant.initiativeRoll === 0 &&
         !isGM;
-    
-    // Debug log
-    useEffect(() => {
-        if (combat?.isActive) {
-            console.log('[CombatStatus] Debug:', {
-                userCharsheetId,
-                sessionUserId: session?.user?.id,
-                isGM,
-                userCombatant: userCombatant?.name,
-                needsToRollInitiative,
-                combatPhase: combat.phase,
-                initiativeRoll: userCombatant?.initiativeRoll
-            });
-        }
-    }, [ combat, userCharsheetId, userCombatant, needsToRollInitiative ]);
-
+        
     // Função para obter LP/MP da sessão da charsheet para jogadores
     const getPlayerSessionStats = useCallback((combatantId: string, odacId?: string) => {
         // PRIORIDADE 1: Buscar de charsheet.session (a fonte correta)
