@@ -125,7 +125,14 @@ export function Weapon(props: ItemTyping<'weapon'>): ReactElement {
                             <Box display='flex' alignItems='center' gap={1}>
                                 <LocalFireDepartment fontSize="small" color="error" />
                                 <Typography variant="body2">
-                                    <strong>Tipo:</strong> {props.kind}
+                                    <strong>Modo de Uso:</strong> {props.kind}
+                                </Typography>
+                            </Box>
+
+                            <Box display='flex' alignItems='center' gap={1}>
+                                <CategoryOutlined fontSize="small" color="error" />
+                                <Typography variant="body2">
+                                    <strong>Tipo de Arma:</strong> {props.weaponKind || '—'}
                                 </Typography>
                             </Box>
 
@@ -154,13 +161,40 @@ export function Weapon(props: ItemTyping<'weapon'>): ReactElement {
                                 </Tooltip>
                             </Box>
 
-                            <Box display='flex' alignItems='center' gap={1}>
-                                <Star fontSize="small" color="error" />
-                                <Tooltip title={`Bônus de raridade (crítico): +${rarityWeaponBonuses[props.rarity] * 2}`}>
-                                    <Typography variant="body2">
-                                        <strong>Dano Crítico:</strong> {parseDamage.critical.display}
-                                    </Typography>
-                                </Tooltip>
+                            <Box display='flex' alignItems='center' justifyContent='space-between' gap={1}>
+                                <Box display='flex' alignItems='center' gap={1}>
+                                    <Star fontSize="small" color="error" />
+                                    <Tooltip title={`Bônus de raridade (crítico): +${rarityWeaponBonuses[props.rarity] * 2}`}>
+                                        <Typography variant="body2">
+                                            <strong>Dano Crítico:</strong> {parseDamage.critical.display}
+                                        </Typography>
+                                    </Tooltip>
+                                </Box>
+
+                                <Stack direction='row' spacing={0.5} flexWrap='wrap' justifyContent='flex-end'>
+                                    <Chip
+                                        size="small"
+                                        label={`Crítico ≥ ${props.effect?.critChance ?? 20}`}
+                                        sx={{
+                                            height: 18,
+                                            fontSize: '0.7rem',
+                                            backgroundColor: alpha(theme.palette.error.main, 0.06),
+                                            color: theme.palette.error.main
+                                        }}
+                                    />
+                                    {props.effect?.effectType && (
+                                        <Chip
+                                            size="small"
+                                            label={props.effect.effectType}
+                                            sx={{
+                                                height: 18,
+                                                fontSize: '0.7rem',
+                                                backgroundColor: alpha(theme.palette.error.main, 0.06),
+                                                color: theme.palette.error.main
+                                            }}
+                                        />
+                                    )}
+                                </Stack>
                             </Box>
                         </Stack>
                     </Collapse>
