@@ -51,7 +51,7 @@ export default function LevelUpDialog({ open, onClose, players }: LevelUpDialogP
                 .filter(Boolean) as string[];
 
             for (const charsheetId of charsheetIds) {
-                await charsheetService.levelUp(charsheetId, levelsToAdd);
+                await charsheetService.increaseLevel(charsheetId, levelsToAdd);
             }
 
             enqueueSnackbar(
