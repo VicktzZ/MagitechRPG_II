@@ -181,14 +181,7 @@ function extractPerkForSession(perk: any): { id: string; rarity: string; name: s
 export async function savePerkToCharsheet(options: SavePerkOptions): Promise<SavePerkResult> {
     const { perk, charsheetId, campaignCode, campaignMode, currentCharsheet, replacedItemId } = options
 
-    // Verifica se o mode da campanha é Roguelite
-    if (campaignMode && campaignMode !== 'Roguelite') {
-        return {
-            success: false,
-            field: '',
-            message: 'Perks só podem ser salvos em campanhas Roguelite'
-        }
-    }
+    // Removida a verificação de modo da campanha - perks podem ser salvos em qualquer campanha
 
     const { type } = extractPerkData(perk)
 
