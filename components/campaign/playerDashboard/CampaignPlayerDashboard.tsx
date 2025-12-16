@@ -359,10 +359,8 @@ export default function CampaignPlayerDashboard(): ReactElement | null {
                         onClose={handleCloseDonationModal}
                     />
 
-                    {/* Drawer de loja - apenas em Roguelite quando a loja está aberta */}
-                    {campaign.mode === 'Roguelite' && (
-                        <ShopDrawer />
-                    )}
+                    {/* Drawer de loja - disponível em qualquer campanha quando a loja está aberta */}
+                    <ShopDrawer />
                 </Box>
             )}
         </Box>

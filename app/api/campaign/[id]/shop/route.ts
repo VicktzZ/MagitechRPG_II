@@ -17,7 +17,7 @@ interface ShopBody {
 }
 
 /**
- * Endpoint para gerenciar a loja da campanha Roguelite
+ * Endpoint para gerenciar a loja da campanha
  */
 export async function POST(
     request: NextRequest,
