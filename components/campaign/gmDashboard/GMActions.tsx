@@ -270,6 +270,7 @@ export default function GMActions(): ReactElement {
                             />
                         </MenuItemText>
                     </MenuItem>
+                )}
 
                 <Divider />
 
