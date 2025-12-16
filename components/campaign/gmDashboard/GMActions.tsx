@@ -299,8 +299,7 @@ export default function GMActions(): ReactElement {
                     <MenuItemText>Oferecer Vantagens</MenuItemText>
                 </MenuItem>
 
-                {campaign.mode === 'Roguelite' && (
-                    <MenuItem onClick={openShop} disabled={!isUserGM}>
+                <MenuItem onClick={openShop} disabled={!isUserGM}>
                         <ListItemIcon>
                             <StorefrontIcon fontSize="small" />
                         </ListItemIcon>
@@ -315,7 +314,6 @@ export default function GMActions(): ReactElement {
                             )}
                         </MenuItemText>
                     </MenuItem>
-                )}
 
                 <Divider />
 
