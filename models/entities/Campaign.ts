@@ -17,6 +17,7 @@ export interface ShopConfig {
     types: string[];
     itemKinds: string[];
     priceMultiplier: number;
+    currency?: 'SCRAP' | 'YEN';
     items?: any[];
     itemsGeneratedAt?: string;
     lastUpdated?: string;

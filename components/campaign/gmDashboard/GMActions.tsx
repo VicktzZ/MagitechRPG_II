@@ -300,20 +300,20 @@ export default function GMActions(): ReactElement {
                 </MenuItem>
 
                 <MenuItem onClick={openShop} disabled={!isUserGM}>
-                        <ListItemIcon>
-                            <StorefrontIcon fontSize="small" />
-                        </ListItemIcon>
-                        <MenuItemText>
-                            Gerenciar Loja
-                            {campaign.shop?.isOpen && (
-                                <Chip 
-                                    label="Aberta" 
-                                    size="small" 
-                                    sx={{ ml: 1, height: 20, bgcolor: green[100], color: green[800] }}
-                                />
-                            )}
-                        </MenuItemText>
-                    </MenuItem>
+                    <ListItemIcon>
+                        <StorefrontIcon fontSize="small" />
+                    </ListItemIcon>
+                    <MenuItemText>
+                        Gerenciar Loja
+                        {campaign.shop?.isOpen && (
+                            <Chip 
+                                label="Aberta" 
+                                size="small" 
+                                sx={{ ml: 1, height: 20, bgcolor: green[100], color: green[800] }}
+                            />
+                        )}
+                    </MenuItemText>
+                </MenuItem>
 
                 <Divider />
 

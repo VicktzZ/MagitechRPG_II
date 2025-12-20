@@ -12,6 +12,59 @@ interface PerksCache {
 }
 let perksCache: PerksCache | null = null
 
+function normalizeTypeValue(value: unknown): string {
+    return String(value ?? '')
+        .trim()
+        .toUpperCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+}
+
+function toCanonicalPerkType(value: unknown): string {
+    const normalized = normalizeTypeValue(value)
+
+    switch (normalized) {
+    case 'WEAPON':
+    case 'ARMA':
+        return 'WEAPON'
+    case 'ARMOR':
+    case 'ARMADURA':
+        return 'ARMOR'
+    case 'ITEM':
+        return 'ITEM'
+    case 'SPELL':
+    case 'MAGIA':
+        return 'SPELL'
+    case 'SKILL':
+    case 'HABILIDADE':
+        return 'SKILL'
+    case 'BONUS':
+    case 'BONIFICACAO':
+        return 'BONUS'
+    case 'UPGRADE':
+    case 'APRIMORAMENTO':
+        return 'UPGRADE'
+    case 'ACCESSORY':
+    case 'ACESSORIO':
+        return 'ACCESSORY'
+    case 'EXPERTISE':
+    case 'PERICIA':
+        return 'EXPERTISE'
+    case 'STATS':
+        return 'STATS'
+    default:
+        return normalized
+    }
+}
+
+function isOriginalMagicalWeapon(perk: any): boolean {
+    const perkType = toCanonicalPerkType(perk?.perkType)
+    if (perkType !== 'WEAPON') return false
+
+    // Campo preenchido pelo weaponsProcessor; fallback para bases antigas
+    return perk?.originalRarity === 'Mágico' || perk?.rarity === 'Mágico'
+}
+
 function getCacheKey(collections: string[], filters: ProcessorFilters): string {
     return JSON.stringify({ collections: collections.sort(), filters })
 }
@@ -61,6 +114,51 @@ const SPELL_LEVEL_PRICES: Record<number, number> = {
 const ACCESSORY_PRICES: Record<string, number> = {
     'Científico': 100,
     'Mágico': 150
+}
+
+interface PriceParams {
+    perkType: string
+    rarity: string
+    spellLevel?: number | null
+    accessoryType?: string | null
+    playerLevel: number
+    priceMultiplier: number
+}
+
+/**
+ * Calcula o preço de um item na loja
+ * Fórmula: (preçoBase + (nível * 5)) * multiplicador
+ */
+function calculatePrice(params: PriceParams): number {
+    const { perkType, rarity, spellLevel, accessoryType, playerLevel, priceMultiplier } = params
+    
+    let basePrice = 10 // Preço padrão
+    
+    // Normaliza o tipo (suporta PT e EN)
+    const normalizedType = perkType.toUpperCase()
+    
+    // Determina preço base pelo tipo
+    if (normalizedType === 'SPELL' || normalizedType === 'MAGIA') {
+        // Magias: preço por nível
+        basePrice = SPELL_LEVEL_PRICES[spellLevel || 1] || 25
+    } else if (normalizedType === 'UPGRADE' || accessoryType) {
+        // Acessórios
+        if (accessoryType === 'Mágico' || accessoryType === 'Magico') {
+            basePrice = ACCESSORY_PRICES['Mágico']
+        } else {
+            basePrice = ACCESSORY_PRICES['Científico']
+        }
+    } else {
+        // Armas, itens, armaduras, habilidades: preço por raridade
+        basePrice = RARITY_PRICES[rarity] || 10
+    }
+    
+    // Aplica progressão: preço base + (nível * 5)
+    const levelBonus = Math.max(1, playerLevel) * 5
+    const finalPrice = basePrice + levelBonus
+    
+    // Aplica multiplicador do GM
+    return Math.round(finalPrice * priceMultiplier)
 }
 
 /**
@@ -161,21 +259,25 @@ export async function GET(
         // Busca perks usando a lógica direta
         // Determina quais collections buscar baseado nos tipos configurados
         const typeToCollection: Record<string, string[]> = {
-            'WEAPON': [ 'weapons' ],
-            'ARMOR': [ 'armors' ],
-            'ITEM': [ 'items' ],
-            'SPELL': [ 'spells' ],
-            'SKILL': [ 'skills' ],
-            'UPGRADE': [ 'perks' ],
-            'BONUS': [ 'perks' ],
-            'STATS': [ 'perks' ]
+            WEAPON: [ 'weapons' ],
+            ARMOR: [ 'armors' ],
+            ITEM: [ 'items' ],
+            SPELL: [ 'spells' ],
+            SKILL: [ 'skills' ],
+            UPGRADE: [ 'perks' ],
+            BONUS: [ 'perks' ],
+            STATS: [ 'perks' ],
+            ACCESSORY: [ 'perks' ],
+            EXPERTISE: [ 'perks' ]
         }
         
         let collections: string[] = [ 'items', 'weapons', 'armors', 'spells', 'skills', 'perks' ]
         
         // Se tipos específicos foram configurados, usa apenas essas collections
-        if (config.types && config.types.length > 0) {
-            collections = config.types.flatMap((t: string) => typeToCollection[t] || [])
+        const configuredTypes = config.types && Array.isArray(config.types) ? config.types : []
+        const canonicalConfiguredTypes = configuredTypes.map(toCanonicalPerkType).filter(Boolean)
+        if (canonicalConfiguredTypes.length > 0) {
+            collections = canonicalConfiguredTypes.flatMap((t: string) => typeToCollection[t] || [])
             collections = [ ...new Set(collections) ] // Remove duplicatas
         }
         
@@ -204,18 +306,33 @@ export async function GET(
             console.log('[shop/items] Perks encontrados:', allPerks.length)
             
             // Filtra magias pelos níveis permitidos baseado no nível mínimo dos jogadores
-            const filteredPerks = allPerks.filter((perk: any) => {
-                const perkType = (perk.perkType || '').toUpperCase()
-                
+            let filteredPerks = allPerks.filter((perk: any) => {
+                const perkType = toCanonicalPerkType(perk.perkType)
+
                 // Se for magia, verifica se o nível é permitido
-                if (perkType === 'SPELL' || perkType === 'MAGIA') {
+                if (perkType === 'SPELL') {
                     const spellLevel = perk.level || 1
                     return allowedSpellLevels.includes(spellLevel)
                 }
-                
+
                 // Outros tipos passam
                 return true
             })
+
+            // Se o GM configurou tipos, filtra de forma robusta (funciona para PT/EN)
+            if (canonicalConfiguredTypes.length > 0) {
+                filteredPerks = filteredPerks.filter((perk: any) => {
+                    const perkType = toCanonicalPerkType(perk.perkType)
+                    return canonicalConfiguredTypes.includes(perkType)
+                })
+            }
+
+            // Armas originalmente mágicas só aparecem se a raridade "Mágico" estiver selecionada
+            const configuredRarities = config.rarities && config.rarities.length > 0 ? config.rarities : null
+            const allowsMagicalOriginalWeapons = !configuredRarities || configuredRarities.includes('Mágico')
+            if (!allowsMagicalOriginalWeapons) {
+                filteredPerks = filteredPerks.filter((perk: any) => !isOriginalMagicalWeapon(perk))
+            }
             
             console.log('[shop/items] Perks após filtro de nível de magia:', filteredPerks.length)
             
@@ -248,8 +365,10 @@ export async function GET(
             const description = perk.description || perk.effect || perk.stages?.[0] || ''
             const rarity = perk.rogueliteRarity || perk.rarity || 'Comum'
             const perkType = perk.perkType || 'ITEM'
+            const canonicalPerkType = toCanonicalPerkType(perkType)
             const spellLevel = perk.level || 1
             const accessoryType = perk.accessoryType || null
+            const priceRarity = isOriginalMagicalWeapon(perk) ? 'Lendário' : rarity
             
             console.log(`[shop/items] Item ${index}: ${name} (${rarity}, ${perkType})`)
             
@@ -260,23 +379,21 @@ export async function GET(
                 perkType,
                 rarity,
                 price: calculatePrice({
-                    perkType,
-                    rarity,
-                    spellLevel: perkType === 'SPELL' ? spellLevel : null,
+                    perkType: canonicalPerkType,
+                    rarity: priceRarity,
+                    spellLevel: canonicalPerkType === 'SPELL' ? spellLevel : null,
                     accessoryType,
                     playerLevel: averageLevel,
                     priceMultiplier
                 })
             }
-            
-            // Adiciona spellLevel apenas para magias
-            if (perkType === 'SPELL') {
+
+            if (canonicalPerkType === 'SPELL') {
                 item.spellLevel = spellLevel
             }
-            
-            // Serializa o perk removendo funções e campos problemáticos
+
             item.data = JSON.parse(JSON.stringify(perk))
-            
+
             return item
         })
 
@@ -298,49 +415,4 @@ export async function GET(
             { status: 500 }
         )
     }
-}
-
-interface PriceParams {
-    perkType: string
-    rarity: string
-    spellLevel?: number | null
-    accessoryType?: string | null
-    playerLevel: number
-    priceMultiplier: number
-}
-
-/**
- * Calcula o preço de um item na loja
- * Fórmula: (preçoBase + (nível * 5)) * multiplicador
- */
-function calculatePrice(params: PriceParams): number {
-    const { perkType, rarity, spellLevel, accessoryType, playerLevel, priceMultiplier } = params
-    
-    let basePrice = 10 // Preço padrão
-    
-    // Normaliza o tipo (suporta PT e EN)
-    const normalizedType = perkType.toUpperCase()
-    
-    // Determina preço base pelo tipo
-    if (normalizedType === 'SPELL' || normalizedType === 'MAGIA') {
-        // Magias: preço por nível
-        basePrice = SPELL_LEVEL_PRICES[spellLevel || 1] || 25
-    } else if (normalizedType === 'UPGRADE' || accessoryType) {
-        // Acessórios
-        if (accessoryType === 'Mágico' || accessoryType === 'Magico') {
-            basePrice = ACCESSORY_PRICES['Mágico']
-        } else {
-            basePrice = ACCESSORY_PRICES['Científico']
-        }
-    } else {
-        // Armas, itens, armaduras, habilidades: preço por raridade
-        basePrice = RARITY_PRICES[rarity] || 10
-    }
-    
-    // Aplica progressão: preço base + (nível * 5)
-    const levelBonus = Math.max(1, playerLevel) * 5
-    const finalPrice = basePrice + levelBonus
-    
-    // Aplica multiplicador do GM
-    return Math.round(finalPrice * priceMultiplier)
 }

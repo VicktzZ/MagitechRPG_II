@@ -45,6 +45,7 @@ export interface ShopConfig {
     types: string[];
     itemKinds: string[];
     priceMultiplier: number;
+    currency?: 'SCRAP' | 'YEN';
     visibleToAll: boolean;
     visibleToPlayers: string[];
 }

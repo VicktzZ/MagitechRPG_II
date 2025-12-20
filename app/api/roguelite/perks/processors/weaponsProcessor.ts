@@ -176,18 +176,38 @@ export async function processWeapons(filters: ProcessorFilters): Promise<Process
     
     // Se o GM especificou raridades, aplicar a raridade desejada a TODAS as armas válidas
     if (hasSpecificRarities && targetRarities) {
+        // Armas originalmente mágicas só podem aparecer se "Mágico" estiver selecionado
+        const allowsMagicalOriginals = targetRarities.includes('Mágico')
+        if (!allowsMagicalOriginals) {
+            weapons = weapons.filter(weapon => (weapon as any)?.rarity !== 'Mágico')
+        }
+
         const weaponSeed = filters.seed ? `${filters.seed}-weapons-rarity` : 'default-weapons-rarity'
         const weaponRng = createSeededRng(weaponSeed)
         
         weapons = weapons.map(weapon => {
             const weaponObj = weapon as any
+            const originalRarity = weaponObj.rarity
+
+            // Mantém armas originalmente mágicas como "Mágico" quando permitido
+            if (originalRarity === 'Mágico' && allowsMagicalOriginals) {
+                return {
+                    ...weaponObj,
+                    rarity: 'Mágico',
+                    rogueliteRarity: 'Mágico',
+                    originalRarity: 'Mágico'
+                }
+            }
             
             // Escolher uma raridade aleatória dentre as selecionadas
             const randomIndex = Math.floor(weaponRng.random() * targetRarities.length)
             const targetRarity = targetRarities[randomIndex]
             
             // Aplicar a raridade desejada (com bônus de dano)
-            return upgradeWeaponRarity(weaponObj, targetRarity)
+            return {
+                ...upgradeWeaponRarity(weaponObj, targetRarity),
+                originalRarity
+            }
         })
     } else {
         // Comportamento padrão: ajustar raridade de armas comuns baseado no nível do usuário
@@ -198,6 +218,7 @@ export async function processWeapons(filters: ProcessorFilters): Promise<Process
             
             weapons = weapons.map(weapon => {
                 const weaponObj = weapon as any
+                const originalRarity = weaponObj.rarity
                 
                 // Se não tem rogueliteRarity, usar rarity como base
                 if (!weaponObj.rogueliteRarity && weaponObj.rarity) {
@@ -216,13 +237,19 @@ export async function processWeapons(filters: ProcessorFilters): Promise<Process
                             cumulative += weight
                             
                             if (roll <= cumulative) {
-                                return upgradeWeaponRarity(weaponObj, rarity)
+                                return {
+                                    ...upgradeWeaponRarity(weaponObj, rarity),
+                                    originalRarity
+                                }
                             }
                         }
                     }
                 }
                 
-                return weaponObj
+                return {
+                    ...weaponObj,
+                    originalRarity
+                }
             })
         }
         
