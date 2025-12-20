@@ -47,6 +47,7 @@ export const DEFAULT_SHOP_CONFIG = {
     types: [] as string[],
     itemKinds: [] as string[],
     priceMultiplier: 1.0,
+    currency: 'SCRAP' as const,
     visibleToAll: true,
     visibleToPlayers: [] as string[]
 };

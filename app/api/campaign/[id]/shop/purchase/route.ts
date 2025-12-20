@@ -59,6 +59,19 @@ export async function POST(
             )
         }
 
+        // Regra de limite de armas: apenas no modo Roguelite
+        const itemType = String(item.perkType || '').toUpperCase()
+        const isWeapon = itemType === 'WEAPON' || itemType === 'ARMA'
+        if (campaign.mode === 'Roguelite' && isWeapon) {
+            const currentWeapons = charsheet.inventory?.weapons || []
+            if (currentWeapons.length >= 2) {
+                return NextResponse.json(
+                    { error: 'Você já possui 2 armas' },
+                    { status: 400 }
+                )
+            }
+        }
+
         // Verifica dinheiro
         const currentMoney = charsheet.inventory?.money || 0
         if (currentMoney < item.price) {

@@ -7,6 +7,7 @@ interface ShopConfig {
     types: string[]
     itemKinds: string[]
     priceMultiplier: number
+    currency?: 'SCRAP' | 'YEN'
     visibleToAll?: boolean
     visibleToPlayers?: string[]
 }
@@ -45,6 +46,7 @@ export async function POST(
             types: config.types || [],
             itemKinds: config.itemKinds || [],
             priceMultiplier: config.priceMultiplier || 1.0,
+            currency: config.currency || 'SCRAP',
             visibleToAll: config.visibleToAll ?? true,
             visibleToPlayers: config.visibleToPlayers || [],
             lastUpdated: new Date().toISOString(),

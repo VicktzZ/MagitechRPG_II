@@ -60,6 +60,10 @@ export default function ShopDrawer(): ReactElement | null {
     // Verifica se a loja está aberta
     const isShopOpen = campaign?.shop?.isOpen ?? false;
 
+    const currency = campaign?.shop?.currency ?? 'SCRAP';
+    const currencySymbol = currency === 'YEN' ? '¥' : '¢';
+    const displayPrice = (price: number) => (currency === 'YEN' ? price * 1000 : price);
+
     // Carrega itens da loja
     const loadShopItems = useCallback(async (forceRefresh = false) => {
         if (!campaign?.id || !isShopOpen) return;
@@ -124,7 +128,7 @@ export default function ShopDrawer(): ReactElement | null {
                 // Remove item da lista da loja
                 setShopItems(prev => prev.filter(i => i.id !== item.id));
                 
-                enqueueSnackbar(`${item.name} comprado por ¢${item.price}!`, { variant: 'success' });
+                enqueueSnackbar(`${item.name} comprado por ${currencySymbol}${displayPrice(item.price)}!`, { variant: 'success' });
             } else {
                 enqueueSnackbar(result.error || 'Erro ao comprar item', { variant: 'error' });
             }
@@ -142,12 +146,13 @@ export default function ShopDrawer(): ReactElement | null {
     const currentMoney = charsheet?.inventory?.money ?? 0;
 
     // Verifica limites de inventário
-    const weaponCount = charsheet?.weapons?.length ?? 0;
-    const armorCount = charsheet?.armors?.length ?? 0;
+    const weaponCount = charsheet?.inventory?.weapons?.length ?? 0;
+    const armorCount = charsheet?.inventory?.armors?.length ?? 0;
     const spellCount = charsheet?.spells?.length ?? 0;
     const maxSpells = charsheet?.maxSpells ?? 5;
     
-    const canBuyWeapon = weaponCount < 2;
+    const isRoguelite = campaign?.mode === 'Roguelite';
+    const canBuyWeapon = !isRoguelite || weaponCount < 2;
     const canBuyArmor = armorCount < 1;
     const canBuySpell = spellCount < maxSpells;
 
@@ -271,22 +276,13 @@ export default function ShopDrawer(): ReactElement | null {
                     </Box>
                     <Box display="flex" alignItems="center" gap={1}>
                         <Chip 
-                            label={`¢${currentMoney.toFixed(0)}`}
+                            label={`${currencySymbol}${displayPrice(currentMoney).toFixed(0)}`}
                             sx={{ 
                                 bgcolor: 'rgba(255,255,255,0.2)', 
                                 color: 'white',
                                 fontWeight: 700
                             }}
                         />
-                        <Tooltip title="Atualizar itens">
-                            <IconButton 
-                                onClick={async () => await loadShopItems(true)} 
-                                disabled={isLoading}
-                                sx={{ color: 'white' }}
-                            >
-                                <Refresh />
-                            </IconButton>
-                        </Tooltip>
                         <IconButton onClick={() => setDrawerOpen(false)} sx={{ color: 'white' }}>
                             <Close />
                         </IconButton>
@@ -382,7 +378,7 @@ export default function ShopDrawer(): ReactElement | null {
                                                 </Box>
                                             </Box>
                                             <Chip 
-                                                label={`¢${item.price}`}
+                                                label={`${currencySymbol}${displayPrice(item.price)}`}
                                                 sx={{ 
                                                     bgcolor: canAfford ? green[100] : red[100], 
                                                     color: canAfford ? green[800] : red[800],
@@ -494,7 +490,7 @@ export default function ShopDrawer(): ReactElement | null {
                                 </Box>
                             </Box>
                             <Chip 
-                                label={`¢${selectedItem.price}`}
+                                label={`${currencySymbol}${displayPrice(selectedItem.price)}`}
                                 sx={{ 
                                     bgcolor: currentMoney >= selectedItem.price ? green[100] : red[100], 
                                     color: currentMoney >= selectedItem.price ? green[800] : red[800],
@@ -686,7 +682,7 @@ export default function ShopDrawer(): ReactElement | null {
                                 >
                                     {getItemRestriction(selectedItem) 
                                         ? 'Indisponível'
-                                        : `Comprar por ¢${selectedItem.price}`}
+                                        : `Comprar por ${currencySymbol}${displayPrice(selectedItem.price)}`}
                                 </Button>
                             </Box>
                         </DialogActions>

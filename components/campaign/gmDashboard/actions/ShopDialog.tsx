@@ -48,24 +48,9 @@ export default function ShopDialog({
     const [ isLoadingItems, setIsLoadingItems ] = useState(false);
     const isShopOpen = existingShop?.isOpen ?? false;
 
-    // Carrega configuração existente ao abrir
-    useEffect(() => {
-        if (open && existingShop) {
-            setShopConfig({
-                itemCount: existingShop.itemCount ?? 5,
-                rarities: existingShop.rarities ?? [],
-                types: existingShop.types ?? [],
-                itemKinds: existingShop.itemKinds ?? [],
-                priceMultiplier: existingShop.priceMultiplier ?? 1.0,
-                visibleToAll: existingShop.visibleToAll ?? true,
-                visibleToPlayers: existingShop.visibleToPlayers ?? []
-            });
-            
-            if (existingShop.isOpen) {
-                loadShopItems();
-            }
-        }
-    }, [ open, existingShop ]);
+    const currency = shopConfig.currency ?? 'SCRAP';
+    const currencySymbol = currency === 'YEN' ? '¥' : '¢';
+    const displayPrice = (price: number) => (currency === 'YEN' ? price * 1000 : price);
 
     const loadShopItems = useCallback(async () => {
         setIsLoadingItems(true);
@@ -85,6 +70,26 @@ export default function ShopDialog({
             setIsLoadingItems(false);
         }
     }, [ campaignId ]);
+
+    // Carrega configuração existente ao abrir
+    useEffect(() => {
+        if (open && existingShop) {
+            setShopConfig({
+                itemCount: existingShop.itemCount ?? 5,
+                rarities: existingShop.rarities ?? [],
+                types: existingShop.types ?? [],
+                itemKinds: existingShop.itemKinds ?? [],
+                priceMultiplier: existingShop.priceMultiplier ?? 1.0,
+                currency: existingShop.currency ?? DEFAULT_SHOP_CONFIG.currency,
+                visibleToAll: existingShop.visibleToAll ?? true,
+                visibleToPlayers: existingShop.visibleToPlayers ?? []
+            });
+            
+            if (existingShop.isOpen) {
+                loadShopItems();
+            }
+        }
+    }, [ open, existingShop ]);
 
     const handleToggleShop = async (openShop: boolean) => {
         setIsUpdating(true);
@@ -203,6 +208,38 @@ export default function ShopDialog({
                         />
                     </Box>
 
+                    <Box>
+                        <Typography variant="subtitle2" sx={{ mb: 1, color: 'text.primary' }}>
+                            Moeda da loja
+                        </Typography>
+                        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                            <Chip
+                                label="¢ Sucata"
+                                size="small"
+                                onClick={() => setShopConfig(prev => ({ ...prev, currency: 'SCRAP' }))}
+                                sx={{
+                                    cursor: 'pointer',
+                                    bgcolor: currency === 'SCRAP' ? 'rgba(76, 175, 80, 0.2)' : 'rgba(158, 158, 158, 0.2)',
+                                    color: currency === 'SCRAP' ? green[800] : 'text.secondary',
+                                    border: '1px solid',
+                                    borderColor: currency === 'SCRAP' ? green[500] : 'transparent'
+                                }}
+                            />
+                            <Chip
+                                label="¥ Ienes (x1000)"
+                                size="small"
+                                onClick={() => setShopConfig(prev => ({ ...prev, currency: 'YEN' }))}
+                                sx={{
+                                    cursor: 'pointer',
+                                    bgcolor: currency === 'YEN' ? 'rgba(76, 175, 80, 0.2)' : 'rgba(158, 158, 158, 0.2)',
+                                    color: currency === 'YEN' ? green[800] : 'text.secondary',
+                                    border: '1px solid',
+                                    borderColor: currency === 'YEN' ? green[500] : 'transparent'
+                                }}
+                            />
+                        </Box>
+                    </Box>
+
                     {/* Filtros de raridade */}
                     <Box>
                         <Typography variant="subtitle2" sx={{ mb: 1, color: 'text.primary' }}>
@@ -242,7 +279,22 @@ export default function ShopDialog({
                         </Typography>
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                             {Object.entries(PerkTypeEnum)
-                                .filter(([ key ]) => ![ 'FOGO', 'ÁGUA', 'AR', 'TERRA', 'ELETRICIDADE', 'LUZ', 'TREVAS', 'NÃO-ELEMENTAL', 'SANGUE', 'VÁCUO', 'EXPLOSÃO', 'TÓXICO', 'RADIAÇÃO', 'PSÍQUICO' ].includes(key))
+                                .filter(([ key ]) => ![
+                                    'FOGO',
+                                    'ÁGUA',
+                                    'AR',
+                                    'TERRA',
+                                    'ELETRICIDADE',
+                                    'LUZ',
+                                    'TREVAS',
+                                    'NÃO-ELEMENTAL',
+                                    'SANGUE',
+                                    'VÁCUO',
+                                    'EXPLOSÃO',
+                                    'TÓXICO',
+                                    'RADIAÇÃO',
+                                    'PSÍQUICO'
+                                ].includes(key))
                                 .map(([ key, value ]) => (
                                     <Chip
                                         key={key}
@@ -365,7 +417,7 @@ export default function ShopDialog({
                                                 </Box>
                                             </Box>
                                             <Chip 
-                                                label={`¢${item.price}`}
+                                                label={`${currencySymbol}${displayPrice(item.price)}`}
                                                 size="small"
                                                 sx={{ fontWeight: 700, bgcolor: green[100], color: green[800] }}
                                             />

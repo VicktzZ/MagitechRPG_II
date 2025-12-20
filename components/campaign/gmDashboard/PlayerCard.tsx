@@ -19,7 +19,7 @@ import {
     Typography
 } from '@mui/material'
 import { red } from '@mui/material/colors'
-import { campaignService, charsheetService, notificationService } from '@services'
+import { campaignService, notificationService } from '@services'
 import { enqueueSnackbar } from 'notistack'
 import { useState } from 'react'
 import { useCampaignContext } from '@contexts';
@@ -28,6 +28,7 @@ import { CharsheetDetailsModal } from './modals'
 import type { Armor, Item, Weapon } from '@models'
 import type { CharsheetDTO } from '@models/dtos'
 import useNumbersWithSpaces from '@hooks/useNumbersWithSpace'
+import { charsheetEntity } from '@utils/firestoreEntities'
 
 export default function PlayerCard({ charsheet }: { charsheet: Required<CharsheetDTO> }) {
     const { campaign, charsheets } = useCampaignContext()
@@ -56,32 +57,25 @@ export default function PlayerCard({ charsheet }: { charsheet: Required<Charshee
             // Verifica se é uma arma ou um item
             const isWeapon = 'hit' in item
             const isArmor = 'displacementPenalty' in item
-            const updatedInventory = isWeapon
-                ? {
-                    ...charsheet.inventory,
-                    weapons: [ ...charsheet.inventory.weapons, item ]
-                }
-                : isArmor
-                    ? {
-                        ...charsheet.inventory,
-                        armors: [ ...charsheet.inventory.armors, item ]
-                    }
-                    : {
-                        ...charsheet.inventory,
-                        items: [ ...charsheet.inventory.items, item ]
-                    }
+            const currentWeapons = charsheet.inventory?.weapons ?? []
+            const currentArmors = charsheet.inventory?.armors ?? []
+            const currentItems = charsheet.inventory?.items ?? []
 
-            const updatedCharsheet = await charsheetService.updateById({
-                id: charsheet.id,
-                data: {
-                    ...charsheet,
-                    inventory: updatedInventory
-                }
-            })
-
-            if (updatedCharsheet) {
-                enqueueSnackbar(`Item ${item.name} adicionado com sucesso!`, { variant: 'success' })
+            if (isWeapon) {
+                await charsheetEntity.update(charsheet.id, {
+                    'inventory.weapons': [ ...currentWeapons, item ]
+                } as any)
+            } else if (isArmor) {
+                await charsheetEntity.update(charsheet.id, {
+                    'inventory.armors': [ ...currentArmors, item ]
+                } as any)
+            } else {
+                await charsheetEntity.update(charsheet.id, {
+                    'inventory.items': [ ...currentItems, item ]
+                } as any)
             }
+
+            enqueueSnackbar(`Item ${item.name} adicionado com sucesso!`, { variant: 'success' })
         } catch (error) {
             console.error('Erro ao adicionar item:', error)
             enqueueSnackbar('Erro ao adicionar item!', { variant: 'error' })
