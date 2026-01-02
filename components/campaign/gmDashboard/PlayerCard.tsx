@@ -314,6 +314,11 @@ export default function PlayerCard({ charsheet }: { charsheet: Required<Charshee
                 open={charsheetDetailsOpen}
                 onClose={() => setCharsheetDetailsOpen(false)}
                 charsheet={charsheet}
+                campaign={{
+                    id: campaign.id,
+                    campaignCode: campaign.campaignCode,
+                    mode: campaign.mode
+                }}
             />
         </>
     )
