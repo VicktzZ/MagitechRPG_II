@@ -193,15 +193,19 @@ export default function CampaignGMDashboard(): ReactElement | null {
         };
     }, [ players, playerCharsheets ]);
 
+    // Obter criatura atualmente em turno (apenas para destaque)
     const currentCreatureInTurn = useMemo(() => {
         const combat: any = (campaign as any).session?.combat;
         const creatures = campaign.custom?.creatures || [];
+
 
         if (!combat?.isActive || !Array.isArray(combat.combatants) || combat.combatants.length === 0) {
             return null;
         }
 
         const current = combat.combatants[combat.currentTurnIndex];
+        
+        
         if (!current || current.type !== 'creature') return null;
 
         const rawId: string = current.id;
@@ -224,10 +228,54 @@ export default function CampaignGMDashboard(): ReactElement | null {
         };
     }, [ campaign.custom?.creatures, campaign.session?.combat ]);
 
-    const handleCreatureExpertiseRoll = async (expertiseName: string, expertise: any) => {
-        if (!currentCreatureInTurn) return;
+    // Obter TODAS as criaturas ativas no combate
+    const allCreaturesInCombat = useMemo(() => {
+        const combat: any = (campaign as any).session?.combat;
+        const creatures = campaign.custom?.creatures || [];
 
-        const { creature, combatant } = currentCreatureInTurn as any;
+        if (!combat?.isActive || !Array.isArray(combat.combatants) || combat.combatants.length === 0) {
+            return [];
+        }
+
+        return combat.combatants
+            .filter((combatant: any) => combatant.type === 'creature')
+            .map((combatant: any) => {
+                const rawId: string = combatant.id;
+                let baseId: string = rawId;
+
+                const lastDashIndex = rawId?.lastIndexOf('-') ?? -1;
+                if (lastDashIndex > 0) {
+                    const possibleBaseId = rawId.slice(0, lastDashIndex);
+                    if (creatures.some((c: any) => c.id === possibleBaseId)) {
+                        baseId = possibleBaseId;
+                    }
+                }
+
+                const baseCreature = creatures.find((c: any) => c.id === baseId);
+                if (!baseCreature) return null;
+
+                return {
+                    combatant,
+                    creature: baseCreature,
+                    isCurrentTurn: combat.combatants[combat.currentTurnIndex]?.id === combatant.id
+                };
+            })
+            .filter(Boolean);
+    }, [ campaign.custom?.creatures, campaign.session?.combat ]);
+
+    const handleCreatureExpertiseRoll = async (expertiseName: string, expertise: any, specificCreature?: any, specificCombatant?: any) => {
+        // Use criatura específica se fornecida, senão usa a atual em turno
+        let creature, combatant;
+        if (specificCreature && specificCombatant) {
+            creature = specificCreature;
+            combatant = specificCombatant;
+        } else if (currentCreatureInTurn) {
+            const data = currentCreatureInTurn as any;
+            creature = data.creature;
+            combatant = data.combatant;
+        } else {
+            return;
+        }
         const expertiseValue = Number(expertise?.value ?? 0) || 0;
 
         const defaultAttrKey = expertise?.defaultAttribute as keyof typeof creature.attributes | null;
@@ -707,10 +755,12 @@ export default function CampaignGMDashboard(): ReactElement | null {
                         </Section>
                     )}
 
-                    {/* Ficha da criatura em turno (combate ativo) */}
-                    {currentCreatureInTurn && (
+                    {/* Ficha das criaturas em combate (sempre visível durante combate) */}
+                    {(() => {
+                        return true;
+                    })() && allCreaturesInCombat.length > 0 && (
                         <Section 
-                            title="Criatura em Turno" 
+                            title="Criaturas em Combate" 
                             icon={
                                 <Box 
                                     sx={{
@@ -726,151 +776,200 @@ export default function CampaignGMDashboard(): ReactElement | null {
                             }
                         >
                             <Box>
-                                {(() => {
-                                    const { combatant, creature } = currentCreatureInTurn as any;
+                                {allCreaturesInCombat.map((creatureData: any, index: number) => {
+                                    if (!creatureData) return null;
+                                    const { combatant, creature, isCurrentTurn } = creatureData;
                                     const expertisesEntries = Object.entries(creature.expertises || {});
-                                    console.log(creature)
 
                                     return (
-                                        <Stack spacing={2}>
-                                            <Box display="flex" alignItems="center" gap={2}>
-                                                <Avatar sx={{ bgcolor: orange[100], color: orange[800] }}>
-                                                    <Pets />
-                                                </Avatar>
-                                                <Box>
-                                                    <Typography variant="subtitle1" fontWeight={700}>
-                                                        {combatant?.name || creature.name}
-                                                    </Typography>
-                                                    <Typography variant="caption" color="text.secondary">
-                                                        Nível {creature.level} • LP {creature.stats?.lp ?? 0}/{creature.stats?.maxLp ?? creature.stats?.lp ?? 0} • MP {creature.stats?.mp ?? 0}/{creature.stats?.maxMp ?? creature.stats?.mp ?? 0}
-                                                    </Typography>
+                                        <Paper
+                                            key={combatant.id}
+                                            sx={{
+                                                p: 2,
+                                                mb: index < allCreaturesInCombat.length - 1 ? 2 : 0,
+                                                border: isCurrentTurn ? '3px solid' : '1px solid',
+                                                borderColor: isCurrentTurn ? orange[500] : 'divider',
+                                                borderRadius: 2,
+                                                bgcolor: isCurrentTurn 
+                                                    ? theme.palette.mode === 'dark' ? orange[900] + '20' : orange[50]
+                                                    : theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.01)',
+                                                position: 'relative',
+                                                '&::before': isCurrentTurn ? {
+                                                    content: '"🎯 Vez desta criatura"',
+                                                    position: 'absolute',
+                                                    top: -12,
+                                                    left: 16,
+                                                    bgcolor: orange[500],
+                                                    color: 'white',
+                                                    px: 1.5,
+                                                    py: 0.5,
+                                                    borderRadius: 1,
+                                                    fontSize: '0.75rem',
+                                                    fontWeight: 600,
+                                                    zIndex: 1
+                                                } : {}
+                                            }}
+                                        >
+                                            <Stack spacing={2}>
+                                                <Box display="flex" alignItems="center" gap={2}>
+                                                    <Avatar sx={{ 
+                                                        bgcolor: isCurrentTurn ? orange[200] : orange[100], 
+                                                        color: isCurrentTurn ? orange[900] : orange[800],
+                                                        border: isCurrentTurn ? '2px solid' : 'none',
+                                                        borderColor: orange[500]
+                                                    }}>
+                                                        <Pets />
+                                                    </Avatar>
+                                                    <Box>
+                                                        <Typography variant="subtitle1" fontWeight={700}>
+                                                            {combatant?.name || creature.name}
+                                                            {isCurrentTurn && (
+                                                                <Chip 
+                                                                    label="EM TURNO" 
+                                                                    size="small" 
+                                                                    sx={{ 
+                                                                        ml: 1, 
+                                                                        bgcolor: orange[500], 
+                                                                        color: 'white',
+                                                                        fontWeight: 700,
+                                                                        fontSize: '0.65rem'
+                                                                    }} 
+                                                                />
+                                                            )}
+                                                        </Typography>
+                                                        <Typography variant="caption" color="text.secondary">
+                                                            Nível {creature.level} • LP {combatant.currentLp ?? creature.stats?.lp ?? 0}/{combatant.maxLp ?? creature.stats?.maxLp ?? creature.stats?.lp ?? 0} • MP {combatant.currentMp ?? creature.stats?.mp ?? 0}/{combatant.maxMp ?? creature.stats?.maxMp ?? creature.stats?.mp ?? 0}
+                                                        </Typography>
+                                                    </Box>
                                                 </Box>
-                                            </Box>
 
-                                            {/* Lista de Perícias da Criatura */}
-                                            {expertisesEntries.length === 0 ? (
-                                                <Paper 
-                                                    sx={{ 
-                                                        p: 3, 
-                                                        textAlign: 'center',
-                                                        border: '2px dashed',
-                                                        borderColor: 'divider',
-                                                        bgcolor: 'transparent'
-                                                    }}
-                                                >
-                                                    <Typography variant="body2" color="text.secondary">
-                                                        Esta criatura não possui perícias configuradas.
-                                                    </Typography>
-                                                </Paper>
-                                            ) : (
-                                                <Box 
-                                                    sx={{
-                                                        display: 'grid',
-                                                        gridTemplateColumns: {
-                                                            xs: 'repeat(2, 1fr)',
-                                                            sm: 'repeat(3, 1fr)',
-                                                            md: 'repeat(4, 1fr)'
-                                                        },
-                                                        gap: 1.5
-                                                    }}
-                                                >
-                                                    {expertisesEntries.map(([ nome, expertise ]: any) => {
-                                                        const config = getGMExpertiseConfig(expertise.value ?? 0);
-                                                        const IconComponent = config.icon;
+                                                {/* Lista de Perícias da Criatura */}
+                                                {expertisesEntries.length === 0 ? (
+                                                    <Paper 
+                                                        sx={{ 
+                                                            p: 2, 
+                                                            textAlign: 'center',
+                                                            border: '2px dashed',
+                                                            borderColor: 'divider',
+                                                            bgcolor: 'transparent'
+                                                        }}
+                                                    >
+                                                        <Typography variant="body2" color="text.secondary">
+                                                            Esta criatura não possui perícias configuradas.
+                                                        </Typography>
+                                                    </Paper>
+                                                ) : (
+                                                    <Box 
+                                                        sx={{
+                                                            display: 'grid',
+                                                            gridTemplateColumns: {
+                                                                xs: 'repeat(2, 1fr)',
+                                                                sm: 'repeat(3, 1fr)',
+                                                                md: 'repeat(4, 1fr)'
+                                                            },
+                                                            gap: 1.5
+                                                        }}
+                                                    >
+                                                        {expertisesEntries.map(([ nome, expertise ]: any) => {
+                                                            const config = getGMExpertiseConfig(expertise.value ?? 0);
+                                                            const IconComponent = config.icon;
 
-                                                        return (
-                                                            <Button
-                                                                key={nome}
-                                                                fullWidth
-                                                                onClick={async () => await handleCreatureExpertiseRoll(nome, expertise)}
-                                                                sx={{
-                                                                    p: 1.5,
-                                                                    bgcolor: config.bg + '40',
-                                                                    border: '1px solid',
-                                                                    borderColor: config.color + '40',
-                                                                    borderRadius: 2,
-                                                                    justifyContent: 'flex-start',
-                                                                    textAlign: 'left',
-                                                                    textTransform: 'none',
-                                                                    '&:hover': {
-                                                                        bgcolor: config.bg + '60',
-                                                                        borderColor: config.color + '80',
-                                                                        transform: 'translateY(-2px)',
-                                                                        boxShadow: 3
-                                                                    }
-                                                                }}
-                                                            >
-                                                                <Stack spacing={1} width="100%">
-                                                                    <Box display="flex" alignItems="center" gap={1}>
-                                                                        <Box 
-                                                                            sx={{
-                                                                                p: 0.8,
-                                                                                borderRadius: 1,
-                                                                                bgcolor: config.color + '20',
-                                                                                border: '1px solid',
-                                                                                borderColor: config.color + '40'
-                                                                            }}
-                                                                        >
-                                                                            <IconComponent 
+                                                            return (
+                                                                <Button
+                                                                    key={`${combatant.id}-${nome}`}
+                                                                    fullWidth
+                                                                    onClick={async () => await handleCreatureExpertiseRoll(nome, expertise, creature, combatant)}
+                                                                    disabled={false}
+                                                                    sx={{
+                                                                        p: 1.5,
+                                                                        bgcolor: config.bg + '40',
+                                                                        border: '1px solid',
+                                                                        borderColor: config.color + '40',
+                                                                        borderRadius: 2,
+                                                                        justifyContent: 'flex-start',
+                                                                        textAlign: 'left',
+                                                                        textTransform: 'none',
+                                                                        opacity: 1,
+                                                                        '&:hover': {
+                                                                            bgcolor: config.bg + '60',
+                                                                            borderColor: config.color + '80',
+                                                                            transform: 'translateY(-2px)',
+                                                                            boxShadow: 3
+                                                                        }
+                                                                    }}
+                                                                >
+                                                                    <Stack spacing={1} width="100%">
+                                                                        <Box display="flex" alignItems="center" gap={1}>
+                                                                            <Box 
+                                                                                sx={{
+                                                                                    p: 0.8,
+                                                                                    borderRadius: 1,
+                                                                                    bgcolor: config.color + '20',
+                                                                                    border: '1px solid',
+                                                                                    borderColor: config.color + '40'
+                                                                                }}
+                                                                            >
+                                                                                <IconComponent 
+                                                                                    sx={{ 
+                                                                                        color: config.color,
+                                                                                        fontSize: '1.1rem'
+                                                                                    }} 
+                                                                                />
+                                                                            </Box>
+                                                                            <Typography 
+                                                                                variant="subtitle2" 
                                                                                 sx={{ 
-                                                                                    color: config.color,
-                                                                                    fontSize: '1.1rem'
-                                                                                }} 
-                                                                            />
+                                                                                    fontWeight: 600,
+                                                                                    flex: 1
+                                                                                }}
+                                                                            >
+                                                                                {nome}
+                                                                            </Typography>
                                                                         </Box>
-                                                                        <Typography 
-                                                                            variant="subtitle2" 
-                                                                            sx={{ 
-                                                                                fontWeight: 600,
-                                                                                flex: 1
-                                                                            }}
-                                                                        >
-                                                                            {nome}
-                                                                        </Typography>
-                                                                    </Box>
-                                                                    <Box display="flex" gap={1} flexWrap="wrap" justifyContent="space-between">
-                                                                        <Chip 
-                                                                            label={`${expertise.value >= 0 ? '+' : ''}${expertise.value}`}
-                                                                            size="small"
-                                                                            sx={{
-                                                                                bgcolor: config.color,
-                                                                                color: 'white',
-                                                                                fontWeight: 700,
-                                                                                fontSize: '0.75rem'
-                                                                            }}
-                                                                        />
-                                                                        {expertise.defaultAttribute && (
+                                                                        <Box display="flex" gap={1} flexWrap="wrap" justifyContent="space-between">
                                                                             <Chip 
-                                                                                label={(expertise.defaultAttribute as string).toUpperCase()}
+                                                                                label={`${expertise.value >= 0 ? '+' : ''}${expertise.value}`}
                                                                                 size="small"
                                                                                 sx={{
-                                                                                    bgcolor: 'rgba(0,0,0,0.04)',
+                                                                                    bgcolor: config.color,
+                                                                                    color: 'white',
+                                                                                    fontWeight: 700,
+                                                                                    fontSize: '0.75rem'
+                                                                                }}
+                                                                            />
+                                                                            {expertise.defaultAttribute && (
+                                                                                <Chip 
+                                                                                    label={(expertise.defaultAttribute as string).toUpperCase()}
+                                                                                    size="small"
+                                                                                    sx={{
+                                                                                        bgcolor: 'rgba(0,0,0,0.04)',
+                                                                                        fontWeight: 600,
+                                                                                        fontSize: '0.7rem'
+                                                                                    }}
+                                                                                />
+                                                                            )}
+                                                                            <Chip 
+                                                                                label={getGMExpertiseLevel(expertise.value).replace(/^(\w)/, (_, c) => c.toUpperCase())}
+                                                                                size="small"
+                                                                                variant="outlined"
+                                                                                sx={{
+                                                                                    borderColor: config.color + '60',
+                                                                                    color: config.color,
                                                                                     fontWeight: 600,
                                                                                     fontSize: '0.7rem'
                                                                                 }}
                                                                             />
-                                                                        )}
-                                                                        <Chip 
-                                                                            label={getGMExpertiseLevel(expertise.value).replace(/^(\w)/, (_, c) => c.toUpperCase())}
-                                                                            size="small"
-                                                                            variant="outlined"
-                                                                            sx={{
-                                                                                borderColor: config.color + '60',
-                                                                                color: config.color,
-                                                                                fontWeight: 600,
-                                                                                fontSize: '0.7rem'
-                                                                            }}
-                                                                        />
-                                                                    </Box>
-                                                                </Stack>
-                                                            </Button>
-                                                        );
-                                                    })}
-                                                </Box>
-                                            )}
-                                        </Stack>
+                                                                        </Box>
+                                                                    </Stack>
+                                                                </Button>
+                                                            );
+                                                        })}
+                                                    </Box>
+                                                )}
+                                            </Stack>
+                                        </Paper>
                                     );
-                                })()}
+                                })}
                             </Box>
                         </Section>
                     )}
@@ -991,7 +1090,7 @@ export default function CampaignGMDashboard(): ReactElement | null {
                                                     <Tooltip title="Excluir criatura">
                                                         <IconButton
                                                             size="small"
-                                                            onClick={() => handleDeleteCreature(creature.id, creature.name)}
+                                                            onClick={async () => await handleDeleteCreature(creature.id, creature.name)}
                                                             sx={{ 
                                                                 color: red[400],
                                                                 '&:hover': { 

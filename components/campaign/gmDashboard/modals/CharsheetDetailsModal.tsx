@@ -69,9 +69,14 @@ interface CharsheetDetailsModalProps {
     open: boolean;
     onClose: () => void;
     charsheet: Required<CharsheetDTO>;
+    campaign?: {
+        id: string;
+        campaignCode: string;
+        mode: string;
+    };
 }
 
-export default function CharsheetDetailsModal({ open, onClose, charsheet }: CharsheetDetailsModalProps) {
+export default function CharsheetDetailsModal({ open, onClose, charsheet, campaign }: CharsheetDetailsModalProps) {
     const [ tabValue, setTabValue ] = useState(0);
     const { enqueueSnackbar } = useSnackbar();
 
@@ -92,6 +97,15 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet }: Char
     // Inicializa os dados editáveis quando o modal abre
     useEffect(() => {
         if (open && charsheet) {
+            // Para campanhas Roguelite, usar stats da sessão se disponível
+            let statsToUse = charsheet.stats;
+            if (campaign?.mode === 'Roguelite' && campaign.campaignCode && charsheet.session) {
+                const campaignSession = charsheet.session.find((s: any) => s.campaignCode === campaign.campaignCode);
+                if (campaignSession && campaignSession.stats) {
+                    statsToUse = campaignSession.stats;
+                }
+            }
+            
             setEditedData({
                 name: charsheet.name,
                 playerName: charsheet.playerName,
@@ -99,7 +113,7 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet }: Char
                 age: charsheet.age,
                 gender: charsheet.gender,
                 race: charsheet.race,
-                stats: { ...charsheet.stats },
+                stats: { ...statsToUse },
                 attributes: { ...charsheet.attributes },
                 expertises: { ...charsheet.expertises },
                 mods: { 
@@ -120,15 +134,93 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet }: Char
                 elementalMastery: charsheet.elementalMastery
             });
         }
-    }, [ open, charsheet ]);
+    }, [ open, charsheet, campaign ]);
+
+    // Helper para obter os stats corretos (sessão ou global)
+    const getDisplayStats = () => {
+        if (campaign?.mode === 'Roguelite' && campaign.campaignCode && charsheet.session) {
+            const campaignSession = charsheet.session.find((s: any) => s.campaignCode === campaign.campaignCode);
+            if (campaignSession && campaignSession.stats) {
+                return campaignSession.stats;
+            }
+        }
+        return charsheet.stats;
+    };
+
+    const displayStats = getDisplayStats();
+
+    // Helper para tratar valores de input number de forma adequada
+    const handleNumberInputChange = (path: string, inputValue: string) => {
+        // Se estiver vazio, permitir temporariamente (vai ser exibido como vazio)
+        if (inputValue === '') {
+            updateNestedField(path, '');
+        } else {
+            // Tentar converter para número, fallback para 0 se inválido
+            const numValue = parseInt(inputValue, 10);
+            updateNestedField(path, isNaN(numValue) ? 0 : numValue);
+        }
+    };
+
+    // Helper para obter valor do input de forma segura
+    const getInputValue = (value: any, fallback?: number): string => {
+        if (value === '' || value === null || value === undefined) {
+            return fallback !== undefined ? String(fallback) : '';
+        }
+        return String(value);
+    };
 
     // Função para salvar as alterações
     const handleSave = async () => {
         if (!charsheet?.id) return;
         
+        
+        // Limpa strings vazias nos dados antes de salvar
+        const cleanDataForSaving = (data: any): any => {
+            const cleaned = { ...data };
+            Object.keys(cleaned).forEach(key => {
+                if (cleaned[key] === '') {
+                    cleaned[key] = 0;
+                } else if (typeof cleaned[key] === 'object' && cleaned[key] !== null) {
+                    cleaned[key] = cleanDataForSaving(cleaned[key]);
+                }
+            });
+            return cleaned;
+        };
+
+        const cleanedData = cleanDataForSaving(editedData);
+        
+
         setIsSaving(true);
         try {
-            await charsheetEntity.update(charsheet.id, editedData);
+            // Para campanhas Roguelite, salvar stats na sessão específica da campanha
+            if (campaign?.mode === 'Roguelite' && campaign.campaignCode && charsheet.session) {
+                // Encontrar o índice da sessão da campanha atual
+                const campaignSessionIndex = charsheet.session.findIndex((s: any) => s.campaignCode === campaign.campaignCode);
+                
+                
+                if (campaignSessionIndex >= 0) {
+                    // Preparar dados para atualizar a sessão específica
+                    const updatedSession = [...charsheet.session];
+                    updatedSession[campaignSessionIndex] = {
+                        ...updatedSession[campaignSessionIndex],
+                        stats: cleanedData.stats
+                    };
+                    
+                    // Atualizar apenas a sessão (mantendo stats global intacto)
+                    await charsheetEntity.update(charsheet.id, {
+                        ...cleanedData,
+                        stats: charsheet.stats, // Mantém stats original
+                        session: updatedSession
+                    });
+                } else {
+                    // Fallback: salvar normalmente se não encontrar sessão
+                    await charsheetEntity.update(charsheet.id, cleanedData);
+                }
+            } else {
+                // Para campanhas normais, salvar stats diretamente
+                await charsheetEntity.update(charsheet.id, cleanedData);
+            }
+            
             enqueueSnackbar('Ficha atualizada com sucesso!', { variant: 'success' });
             setIsEditing(false);
         } catch (error) {
@@ -213,8 +305,8 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet }: Char
                                     <TextField
                                         size="small"
                                         type="number"
-                                        value={editedData.level || 0}
-                                        onChange={(e) => updateNestedField('level', parseInt(e.target.value) || 0)}
+                                        value={getInputValue(editedData.level, 0)}
+                                        onChange={(e) => handleNumberInputChange('level', e.target.value)}
                                         label="Nível"
                                         sx={{ width: 80 }}
                                     />
@@ -371,8 +463,8 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet }: Char
                                                         <TextField
                                                             size="small"
                                                             type="number"
-                                                            value={editedData.age ?? charsheet.age}
-                                                            onChange={(e) => updateNestedField('age', parseInt(e.target.value) || 0)}
+                                                            value={getInputValue(editedData.age, charsheet.age)}
+                                                            onChange={(e) => handleNumberInputChange('age', e.target.value)}
                                                             sx={{ width: 80 }}
                                                             InputProps={{ endAdornment: ' anos' }}
                                                         />
@@ -416,20 +508,20 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet }: Char
                                                             <TextField
                                                                 size="small"
                                                                 type="number"
-                                                                value={editedData.stats?.lp ?? charsheet.stats.lp}
-                                                                onChange={(e) => updateNestedField('stats.lp', parseInt(e.target.value) || 0)}
+                                                                value={getInputValue(editedData.stats?.lp, displayStats.lp)}
+                                                                onChange={(e) => handleNumberInputChange('stats.lp', e.target.value)}
                                                                 sx={{ width: 70 }}
                                                             />
                                                             /
                                                             <TextField
                                                                 size="small"
                                                                 type="number"
-                                                                value={editedData.stats?.maxLp ?? charsheet.stats.maxLp}
-                                                                onChange={(e) => updateNestedField('stats.maxLp', parseInt(e.target.value) || 0)}
+                                                                value={getInputValue(editedData.stats?.maxLp, displayStats.maxLp)}
+                                                                onChange={(e) => handleNumberInputChange('stats.maxLp', e.target.value)}
                                                                 sx={{ width: 70 }}
                                                             />
                                                         </Box>
-                                                    ) : `${charsheet.stats.lp}/${charsheet.stats.maxLp}`}
+                                                    ) : `${displayStats.lp}/${displayStats.maxLp}`}
                                                 </TableCell>
                                             </TableRow>
                                             <TableRow>
@@ -440,20 +532,20 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet }: Char
                                                             <TextField
                                                                 size="small"
                                                                 type="number"
-                                                                value={editedData.stats?.mp ?? charsheet.stats.mp}
-                                                                onChange={(e) => updateNestedField('stats.mp', parseInt(e.target.value) || 0)}
+                                                                value={getInputValue(editedData.stats?.mp, displayStats.mp)}
+                                                                onChange={(e) => handleNumberInputChange('stats.mp', e.target.value)}
                                                                 sx={{ width: 70 }}
                                                             />
                                                             /
                                                             <TextField
                                                                 size="small"
                                                                 type="number"
-                                                                value={editedData.stats?.maxMp ?? charsheet.stats.maxMp}
-                                                                onChange={(e) => updateNestedField('stats.maxMp', parseInt(e.target.value) || 0)}
+                                                                value={getInputValue(editedData.stats?.maxMp, displayStats.maxMp)}
+                                                                onChange={(e) => handleNumberInputChange('stats.maxMp', e.target.value)}
                                                                 sx={{ width: 70 }}
                                                             />
                                                         </Box>
-                                                    ) : `${charsheet.stats.mp}/${charsheet.stats.maxMp}`}
+                                                    ) : `${displayStats.mp}/${displayStats.maxMp}`}
                                                 </TableCell>
                                             </TableRow>
                                             <TableRow>
@@ -464,20 +556,20 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet }: Char
                                                             <TextField
                                                                 size="small"
                                                                 type="number"
-                                                                value={editedData.stats?.ap ?? charsheet.stats.ap}
-                                                                onChange={(e) => updateNestedField('stats.ap', parseInt(e.target.value) || 0)}
+                                                                value={getInputValue(editedData.stats?.ap, displayStats.ap)}
+                                                                onChange={(e) => handleNumberInputChange('stats.ap', e.target.value)}
                                                                 sx={{ width: 70 }}
                                                             />
                                                             /
                                                             <TextField
                                                                 size="small"
                                                                 type="number"
-                                                                value={editedData.stats?.maxAp ?? charsheet.stats.maxAp}
-                                                                onChange={(e) => updateNestedField('stats.maxAp', parseInt(e.target.value) || 0)}
+                                                                value={getInputValue(editedData.stats?.maxAp, displayStats.maxAp)}
+                                                                onChange={(e) => handleNumberInputChange('stats.maxAp', e.target.value)}
                                                                 sx={{ width: 70 }}
                                                             />
                                                         </Box>
-                                                    ) : `${charsheet.stats.ap}/${charsheet.stats.maxAp}`}
+                                                    ) : `${displayStats.ap}/${displayStats.maxAp}`}
                                                 </TableCell>
                                             </TableRow>
                                             <TableRow>
@@ -487,8 +579,8 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet }: Char
                                                         <TextField
                                                             size="small"
                                                             type="number"
-                                                            value={editedData.displacement ?? charsheet.displacement}
-                                                            onChange={(e) => updateNestedField('displacement', parseInt(e.target.value) || 0)}
+                                                            value={getInputValue(editedData.displacement, charsheet.displacement)}
+                                                            onChange={(e) => handleNumberInputChange('displacement', e.target.value)}
                                                             sx={{ width: 80 }}
                                                             InputProps={{ endAdornment: 'm' }}
                                                         />
@@ -506,8 +598,8 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet }: Char
                                                         <TextField
                                                             size="small"
                                                             type="number"
-                                                            value={editedData.inventory?.money ?? charsheet.inventory.money}
-                                                            onChange={(e) => updateNestedField('inventory.money', parseInt(e.target.value) || 0)}
+                                                            value={getInputValue(editedData.inventory?.money, charsheet.inventory.money)}
+                                                            onChange={(e) => handleNumberInputChange('inventory.money', e.target.value)}
                                                             sx={{ width: 100 }}
                                                             InputProps={{ startAdornment: '¢' }}
                                                         />
@@ -525,8 +617,8 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet }: Char
                                                         <TextField
                                                             size="small"
                                                             type="number"
-                                                            value={editedData.spellSpace ?? charsheet.spellSpace}
-                                                            onChange={(e) => updateNestedField('spellSpace', parseInt(e.target.value) || 0)}
+                                                            value={getInputValue(editedData.spellSpace, charsheet.spellSpace)}
+                                                            onChange={(e) => handleNumberInputChange('spellSpace', e.target.value)}
                                                             sx={{ width: 70 }}
                                                         />
                                                     ) : charsheet.spellSpace}
@@ -1144,7 +1236,7 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet }: Char
                                                 Total MP
                                             </Typography>
                                             <Typography variant="h6">
-                                                {charsheet.stats.mp}/{charsheet.stats.maxMp}
+                                                {displayStats.mp}/{displayStats.maxMp}
                                             </Typography>
                                         </Paper>
                                     </Grid>

@@ -158,6 +158,7 @@ export async function POST(
                 return NextResponse.json({ error: 'Não há combate ativo' }, { status: 400 })
             }
 
+
             combat.isActive = false
             combat.phase = 'ENDED'
             combat.endedAt = new Date().toISOString()
@@ -426,6 +427,8 @@ export async function POST(
             }
 
             const oldLp = target.currentLp || 0
+            
+
             target.currentLp = Math.max(0, oldLp - damage)
 
             // Se for jogador, atualiza na sessão (session.users[index].stats)
@@ -433,8 +436,11 @@ export async function POST(
                 const userIndex = (campaign.session.users as any[]).findIndex(
                     (u: any) => u.odacId === target.odacId || u.charsheetId === target.id
                 )
+                
+                
                 if (userIndex !== -1 && (campaign.session.users as any[])[userIndex]?.stats) {
                     (campaign.session.users as any[])[userIndex].stats.lp = target.currentLp
+                    
                 }
             }
 
@@ -474,6 +480,8 @@ export async function POST(
 
             const oldHp = healTarget.currentLp || 0
             const maxHp = healTarget.maxLp || 999
+            
+            
             healTarget.currentLp = Math.min(maxHp, oldHp + heal)
 
             // Se for jogador, atualiza na sessão (session.users[index].stats)
@@ -481,8 +489,11 @@ export async function POST(
                 const userIndex = (campaign.session.users as any[]).findIndex(
                     (u: any) => u.odacId === healTarget.odacId || u.charsheetId === healTarget.id
                 )
+                
+                
                 if (userIndex !== -1 && (campaign.session.users as any[])[userIndex]?.stats) {
                     (campaign.session.users as any[])[userIndex].stats.lp = healTarget.currentLp
+                    
                 }
             }
 
@@ -591,6 +602,8 @@ export async function POST(
 
         // Salva a campanha atualizada
         const plainCampaign = JSON.parse(JSON.stringify(campaign))
+        
+        
         await campaignRepository.update(plainCampaign)
 
         // Notifica os clientes via Pusher
@@ -641,6 +654,7 @@ export async function GET(
         if (!campaign) {
             return NextResponse.json({ error: 'Campanha não encontrada' }, { status: 404 })
         }
+
 
         return NextResponse.json({
             success: true,
