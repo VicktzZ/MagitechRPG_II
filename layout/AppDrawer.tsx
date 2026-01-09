@@ -1,14 +1,16 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
 import { Avatar, Box, Divider, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Typography, useTheme, alpha, Tooltip, IconButton, Dialog, DialogTitle, DialogContent, Grid, Pagination, Chip } from '@mui/material';
 
-import { type KeyboardEvent, type MouseEvent, type ReactElement, type ReactNode, useState } from 'react';
-import { Article, AutoStories, Home, Logout, Menu, Start, LightMode, DarkMode, Person, Build } from '@mui/icons-material';
+import { type KeyboardEvent, type MouseEvent, type ReactElement, type ReactNode, useState, useMemo } from 'react';
+import { Article, AutoStories, Home, Logout, Menu, Start, LightMode, DarkMode, Person, Build, WorkspacePremium } from '@mui/icons-material';
 import { useThemeContext } from '@contexts';
 import { signOut, useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import CustomIconButton from './CustomIconButton';
 import Image from 'next/image';
 import { useFirestoreRealtime } from '@hooks/useFirestoreRealtime';
+import { PlanBadge } from '@components/subscription';
+import type { User } from '@models/entities';
 
 export default function AppDrawer(): ReactElement {
     const theme = useTheme();
@@ -20,6 +22,15 @@ export default function AppDrawer(): ReactElement {
     const [ page, setPage ] = useState(1);
 
     const router = useRouter()
+    
+    // Buscar todos os usuários do Firestore em tempo real
+    const { data: allUsers } = useFirestoreRealtime('user');
+    
+    // Encontrar o usuário atual baseado na sessão
+    const currentUser = useMemo(() => {
+        if (!session?.user?.id || !allUsers) return null;
+        return (allUsers as User[]).find((u: User) => u.id === session.user.id) || null;
+    }, [session?.user?.id, allUsers]);
 
     const toggleDrawer =
         (openParam: boolean) =>
@@ -27,21 +38,21 @@ export default function AppDrawer(): ReactElement {
                 if (
                     event.type === 'keydown' &&
                     ((event as KeyboardEvent).key === 'Tab' ||
-                    (event as KeyboardEvent).key === 'Shift')
+                        (event as KeyboardEvent).key === 'Shift')
                 ) {
                     return;
                 }
 
                 setDrawerOpen(openParam)
-            };  
-    
+            };
+
     const { data: users } = useFirestoreRealtime('user');
 
     function handleImpersonate(u: any) {
         try {
             localStorage.setItem('userId', u.id);
             update({ user: { ...(session?.user ?? {}), id: u.id } });
-        } catch {}
+        } catch { }
         setUsersModalOpen(false);
         setDrawerOpen(false);
         router.push('/app');
@@ -75,14 +86,14 @@ export default function AppDrawer(): ReactElement {
         >
             <Box>
                 {/* Logo ou título do app */}
-                <Box 
-                    sx={{ 
-                        px: 2.5, 
-                        py: 2, 
-                        display: 'flex', 
-                        alignItems: 'center', 
+                <Box
+                    sx={{
+                        px: 2.5,
+                        py: 2,
+                        display: 'flex',
+                        alignItems: 'center',
                         justifyContent: 'space-between',
-                        mb: 1 
+                        mb: 1
                     }}
                 >
                     <Typography variant="h6" fontWeight={600} color="primary.main">
@@ -162,6 +173,14 @@ export default function AppDrawer(): ReactElement {
                         </ListItemButton>
                     </ListItem>
                     <ListItem disablePadding>
+                        <ListItemButton onClick={() => { router.push('/app/subscription/plans') }}>
+                            <ListItemIcon>
+                                <WorkspacePremium />
+                            </ListItemIcon>
+                            <ListItemText primary='Planos' />
+                        </ListItemButton>
+                    </ListItem>
+                    <ListItem disablePadding>
                         <ListItemButton onClick={() => { signOut({ callbackUrl: '/' }) }}>
                             <ListItemIcon>
                                 <Logout />
@@ -169,31 +188,21 @@ export default function AppDrawer(): ReactElement {
                             <ListItemText primary='Logout' />
                         </ListItemButton>
                     </ListItem>
-                    {process.env.NEXT_PUBLIC_NODE_ENV === 'development' && (
-                        <ListItem disablePadding>
-                            <ListItemButton onClick={() => setUsersModalOpen(true)}>
-                                <ListItemIcon>
-                                    <Person />
-                                </ListItemIcon>
-                                <ListItemText primary='Simular conta' />
-                            </ListItemButton>
-                        </ListItem>
-                    )}
                 </List>
                 {/* Seção Admin - apenas em DEV */}
                 {process.env.NEXT_PUBLIC_NODE_ENV === 'development' && (
                     <>
                         <Divider sx={{ my: 1.5, opacity: 0.4 }} />
                         <Box sx={{ px: 2, mb: 1 }}>
-                            <Chip 
-                                label="DEV" 
-                                size="small" 
-                                sx={{ 
+                            <Chip
+                                label="DEV"
+                                size="small"
+                                sx={{
                                     bgcolor: alpha(theme.palette.warning.main, 0.15),
                                     color: theme.palette.warning.main,
                                     fontWeight: 600,
                                     fontSize: '0.65rem'
-                                }} 
+                                }}
                             />
                         </Box>
                         <List sx={{ px: 1 }}>
@@ -205,16 +214,32 @@ export default function AppDrawer(): ReactElement {
                                     <ListItemText primary='Admin: Jobs' />
                                 </ListItemButton>
                             </ListItem>
+                            <ListItem disablePadding>
+                                <ListItemButton onClick={() => { router.push('/admin/subscriptions') }}>
+                                    <ListItemIcon>
+                                        <WorkspacePremium sx={{ color: theme.palette.warning.main }} />
+                                    </ListItemIcon>
+                                    <ListItemText primary='Admin: Planos' />
+                                </ListItemButton>
+                            </ListItem>
+                            <ListItem disablePadding>
+                                <ListItemButton onClick={() => setUsersModalOpen(true)}>
+                                    <ListItemIcon>
+                                        <Person sx={{ color: theme.palette.warning.main }} />
+                                    </ListItemIcon>
+                                    <ListItemText primary='Simular conta' />
+                                </ListItemButton>
+                            </ListItem>
                         </List>
                     </>
                 )}
             </Box>
-            <Box 
+            <Box
                 sx={{
-                    display: 'flex', 
-                    p: 2, 
-                    alignItems: 'center', 
-                    gap: 2,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    p: 2,
+                    gap: 1.5,
                     borderTop: '1px solid',
                     borderColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
                     mt: 1,
@@ -222,42 +247,76 @@ export default function AppDrawer(): ReactElement {
                     pt: 2
                 }}
             >
-                <Avatar 
-                    sx={{ 
-                        height: '2.5rem', 
-                        width: '2.5rem', 
-                        color: 'white', 
-                        bgcolor: theme.palette.primary.main,
-                        boxShadow: 1
-                    }}
-                >
-                    {
-                        (session?.user?.image !== 'undefined') && session?.user?.image ? (
-                            <Image
-                                height={250}
-                                width={250}
-                                style={{ height: '100%', width: '100%' }} 
-                                src={session?.user?.image ?? 'undefined'} 
-                                alt={session?.user?.name ?? 'User Avatar'} 
-                            />
-                        ) : session?.user?.name?.charAt(0).toUpperCase()
-                    }
-                </Avatar>
-                <Box>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                        {session?.user?.name}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                        {session?.user?.email}
-                    </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <Box sx={{ position: 'relative' }}>
+                        <Avatar
+                            sx={{
+                                height: '2.5rem',
+                                width: '2.5rem',
+                                color: 'white',
+                                bgcolor: theme.palette.primary.main,
+                                boxShadow: 1
+                            }}
+                        >
+                            {
+                                (session?.user?.image !== 'undefined') && session?.user?.image ? (
+                                    <Image
+                                        height={250}
+                                        width={250}
+                                        style={{ height: '100%', width: '100%' }}
+                                        src={session?.user?.image ?? 'undefined'}
+                                        alt={session?.user?.name ?? 'User Avatar'}
+                                    />
+                                ) : session?.user?.name?.charAt(0).toUpperCase()
+                            }
+                        </Avatar>
+                        {currentUser?.subscription && (
+                            <Tooltip title={currentUser.subscription.plan}>
+                                <Box
+                                    sx={{
+                                        position: 'absolute',
+                                        bottom: -2,
+                                        right: -2,
+                                        width: '1.1rem',
+                                        height: '1.1rem',
+                                        borderRadius: '50%',
+                                        bgcolor: 'background.paper',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        fontSize: '0.7rem',
+                                        boxShadow: 1,
+                                        border: `2px solid ${theme.palette.background.paper}`
+                                    }}
+                                >
+                                    {currentUser.subscription.plan === 'FREEMIUM' && '⚡'}
+                                    {currentUser.subscription.plan === 'PREMIUM' && '👑'}
+                                    {currentUser.subscription.plan === 'PREMIUM_PLUS' && '💎'}
+                                </Box>
+                            </Tooltip>
+                        )}
+                    </Box>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {session?.user?.name}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>
+                            {session?.user?.email}
+                        </Typography>
+                    </Box>
                 </Box>
+                {currentUser && currentUser.subscription && (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', mt: 1 }}>
+                        <PlanBadge user={currentUser} size="small" showIcon />
+                    </Box>
+                )}
             </Box>
         </Box>
     );
 
     return (
         <Box>
-            <CustomIconButton 
+            <CustomIconButton
                 onClick={toggleDrawer(true)}
                 sx={{
                     color: theme.palette.primary.main,
@@ -275,7 +334,7 @@ export default function AppDrawer(): ReactElement {
                 PaperProps={{
                     sx: {
                         borderRight: 'none',
-                        boxShadow: theme.palette.mode === 'dark' 
+                        boxShadow: theme.palette.mode === 'dark'
                             ? '0 8px 16px rgba(0,0,0,0.5)'
                             : '0 8px 16px rgba(0,0,0,0.1)'
                     }

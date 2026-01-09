@@ -38,6 +38,11 @@ import magitechIcon from '@public/assets/magitech_logo.png';
 import discordIcon from '@public/icons/discord_icon.svg';
 import googleIcon from '@public/icons/google_icon.svg';
 import Image from 'next/image';
+import { PlanBadge } from '@components/subscription';
+import { useFirestoreRealtime } from '@hooks/useFirestoreRealtime';
+import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
+import type { User } from '@models/entities';
+import { useMemo } from 'react';
 
 export default function LandingPageHeader(): ReactElement {
     const theme = useTheme();
@@ -49,6 +54,13 @@ export default function LandingPageHeader(): ReactElement {
     const [ open, setOpen ] = useState<boolean>(false);
     const [ mobileOpen, setMobileOpen ] = useState<boolean>(false);
     const [ scrolled, setScrolled ] = useState<boolean>(false);
+    
+    // Buscar todos os usuários e encontrar o atual
+    const { data: allUsers } = useFirestoreRealtime('user');
+    const currentUser = useMemo(() => {
+        if (!session?.user?.id || !allUsers) return null;
+        return allUsers.find((u: User) => u.id === session.user.id) as User || null;
+    }, [session?.user?.id, allUsers]);
 
     const handleClose = (): void => { setOpen(false) };
     const handleMobileMenuToggle = () => setMobileOpen(!mobileOpen);
@@ -105,6 +117,7 @@ export default function LandingPageHeader(): ReactElement {
         { label: 'Sobre', icon: <InfoIcon />, action: () => scrollToSection('sobre') },
         { label: 'Quem Somos', icon: <PersonIcon />, action: () => scrollToSection('quem-somos') },
         { label: 'Guia', icon: <MenuBookIcon />, action: () => scrollToSection('guia') },
+        { label: 'Planos', icon: <WorkspacePremiumIcon />, action: () => scrollToSection('planos') },
         { label: 'Doação', icon: <VolunteerActivismIcon />, action: () => scrollToSection('doacao') }
     ];
 
@@ -168,23 +181,28 @@ export default function LandingPageHeader(): ReactElement {
                 ) : (
                     <>
                         <ListItem sx={{ py: 2 }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-                                <Avatar sx={{ mr: 2 }}>
-                                    <Image
-                                        height={40}
-                                        width={40}
-                                        style={{ height: '100%', width: '100%' }} 
-                                        src={session.user?.image ?? ''}
-                                        alt={session.user?.name ?? 'User Avatar'}
-                                    />
-                                </Avatar>
-                                <Box>
-                                    <Typography variant="subtitle1" noWrap>
-                                        {session.user?.name}
-                                    </Typography>
-                                    <Typography variant="body2" color="text.secondary" sx={{ opacity: 0.7 }} noWrap>
-                                        {session.user?.email}
-                                    </Typography>
+                            <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%', gap: 1 }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                    <Avatar sx={{ mr: 2 }}>
+                                        <Image
+                                            height={40}
+                                            width={40}
+                                            style={{ height: '100%', width: '100%' }} 
+                                            src={session.user?.image ?? ''}
+                                            alt={session.user?.name ?? 'User Avatar'}
+                                        />
+                                    </Avatar>
+                                    <Box>
+                                        <Typography variant="subtitle1" noWrap>
+                                            {session.user?.name}
+                                        </Typography>
+                                        <Typography variant="body2" color="text.secondary" sx={{ opacity: 0.7 }} noWrap>
+                                            {session.user?.email}
+                                        </Typography>
+                                    </Box>
+                                </Box>
+                                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 0.5 }}>
+                                    <PlanBadge user={user} size="small" showIcon />
                                 </Box>
                             </Box>
                         </ListItem>
@@ -311,6 +329,10 @@ export default function LandingPageHeader(): ReactElement {
                                 </Box>
                             ) : session ? (
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                    {currentUser && currentUser.subscription && (
+                                        <PlanBadge user={currentUser} size="small" showIcon variant="outlined" />
+                                    )}
+                                    
                                     <Button
                                         variant="contained"
                                         onClick={() => router.push('/app')}
@@ -361,10 +383,19 @@ export default function LandingPageHeader(): ReactElement {
                                                 {session.user?.email}
                                             </Typography>
                                         </Box>
+                                        {currentUser && currentUser.subscription && (
+                                            <Box sx={{ px: 2, py: 1, display: 'flex', justifyContent: 'center' }}>
+                                                <PlanBadge user={currentUser} size="small" showIcon />
+                                            </Box>
+                                        )}
                                         <Divider />
                                         <MenuItem onClick={() => { router.push('/app'); handleClose(); }}>
                                             <GamepadIcon fontSize="small" sx={{ mr: 1 }} />
                                             Acessar Plataforma
+                                        </MenuItem>
+                                        <MenuItem onClick={() => { router.push('/app/subscription/plans'); handleClose(); }}>
+                                            <WorkspacePremiumIcon fontSize="small" sx={{ mr: 1 }} />
+                                            Ver Planos
                                         </MenuItem>
                                         <MenuItem onClick={() => { signOut({ callbackUrl: '/' }); handleClose(); }}>
                                             <LogoutIcon fontSize="small" sx={{ mr: 1 }} />

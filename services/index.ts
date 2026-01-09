@@ -7,6 +7,7 @@ import { sessionService } from './sessionService';
 import { userService } from './userService';
 import { messageService } from './messageService';
 import { notificationService } from './notificationService';
+import { subscriptionService } from './subscriptionService';
 
 export {
     campaignService,
@@ -17,5 +18,6 @@ export {
     pusherService,
     sessionService,
     notificationService,
-    userService
+    userService,
+    subscriptionService
 }

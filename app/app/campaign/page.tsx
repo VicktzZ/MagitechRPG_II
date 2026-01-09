@@ -6,6 +6,8 @@ import { useSession } from 'next-auth/react';
 import { useState, type ReactElement } from 'react';
 import { motion } from 'framer-motion';
 import { useUserCampaigns } from '@hooks/useUserCampaigns';
+import { SubscriptionGuard } from '@components/subscription';
+import { Permission } from '@enums/subscriptionEnum';
 
 export default function CampaignPage(): ReactElement {
     const { data: session } = useSession();
@@ -19,7 +21,8 @@ export default function CampaignPage(): ReactElement {
     const { data: allCampaigns, loading } = useUserCampaigns(userId);
 
     return (
-        <Box display='flex' flexDirection='column' gap={3} p={2}>
+        <SubscriptionGuard permission={Permission.ACCESS_CAMPAIGNS}>
+            <Box display='flex' flexDirection='column' gap={3} p={2}>
             <Box>
                 <Box display='flex' flexDirection='column' gap={2}>
                     <Box>
@@ -78,5 +81,6 @@ export default function CampaignPage(): ReactElement {
                 />
             </Box>
         </Box>
+        </SubscriptionGuard>
     );
 }
