@@ -5,6 +5,8 @@ import SpellsModal from './dialogs/MagicsModal';
 import Skills from './Skills';
 import Inventory from './Inventory';
 import Attributes from './Attributes';
+import DynamicAttributes from './DynamicAttributes';
+import DynamicCharacteristics from './DynamicCharacteristics';
 import Attribute from './subcomponents/Attribute';
 import Characteristics from './Characteristics';
 import Expertises from './Expertises';
@@ -22,6 +24,8 @@ export {
     Item,
     Passives,
     Attributes,
+    DynamicAttributes,
+    DynamicCharacteristics,
     CharsheetCard,
     Attribute,
     CreateItemModal as ItemModal,

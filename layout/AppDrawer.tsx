@@ -179,6 +179,16 @@ export default function AppDrawer(): ReactElement {
                             </ListItemButton>
                         </ListItem>
                     )}
+                    {process.env.NEXT_PUBLIC_NODE_ENV === 'development' && (
+                        <ListItem disablePadding>
+                            <ListItemButton onClick={() => { router.push('/admin/systems') }}>
+                                <ListItemIcon>
+                                    <Build />
+                                </ListItemIcon>
+                                <ListItemText primary='Sistemas' />
+                            </ListItemButton>
+                        </ListItem>
+                    )}
                 </List>
                 {/* Seção Admin - apenas em DEV */}
                 {process.env.NEXT_PUBLIC_NODE_ENV === 'development' && (

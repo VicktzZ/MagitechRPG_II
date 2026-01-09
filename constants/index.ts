@@ -3,6 +3,19 @@ import { amber, blue, blueGrey, cyan, deepPurple, green, grey, indigo, lightBlue
 import type { ItemAttributes } from '@models/types/item'
 import type { ClassNames, RarityType } from '@models/types/string'
 
+// Exporta o sistema padrão Magitech
+export { 
+    defaultMagitechSystem, 
+    defaultAttributes, 
+    defaultExpertises, 
+    defaultClasses, 
+    defaultSubclasses,
+    defaultRaces,
+    defaultLineages,
+    defaultOccupations,
+    defaultTraits
+} from './defaultMagitechSystem'
+
 /* eslint-disable max-len */
 export const intro = `agia. Algo que só era possível em contos de fadas agora é possível no final do século XXI graças a tecnologia. Depois da drástica queda de temperatura que o mundo sofreu em 2025, a fome subiu e a economia mundial quebrou, quando em 2030, a terceira guerra mundial eclodiu, como consequência dos atos anteriores. A guerra termonuclear reduziu a população mundial para 3 bilhões, além de deixar muitas partes do mundo inabitadas com uma radiação que só se dissiparia depois de séculos.
 

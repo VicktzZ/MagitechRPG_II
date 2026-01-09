@@ -62,6 +62,12 @@ export class Campaign {
         
     shop?: ShopConfig;
     
+    /**
+     * ID do sistema de RPG customizado usado nesta campanha.
+     * Se não definido, usa o sistema padrão Magitech.
+     */
+    systemId?: string;
+    
     constructor(campaign?: Partial<Campaign>) {
         Object.assign(this, campaign)
     }

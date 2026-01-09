@@ -21,7 +21,7 @@ import type { Attributes, Expertise as ExpertiseType, Expertises } from '@models
 import type { Charsheet } from '@models/entities';
 
 interface ExpertiseProps {
-    name: keyof Expertises;
+    name: keyof Expertises | string;
     expertise: ExpertiseType;
     diceQuantity: number;
     disabled: boolean;
@@ -30,6 +30,7 @@ interface ExpertiseProps {
         value: number;
     };
     onClick?: (value: number) => void;
+    customLabel?: string;
 }
 
 export default function Expertise({ 
@@ -37,7 +38,8 @@ export default function Expertise({
     expertise,
     disabled,
     edit,
-    onClick
+    onClick,
+    customLabel
 }: ExpertiseProps): ReactElement {
     const theme = useTheme();
     const matches = useMediaQuery(theme.breakpoints.down('md'));
@@ -118,7 +120,7 @@ export default function Expertise({
                     title={
                         <Box>
                             <Typography variant="subtitle2" fontWeight="bold">
-                                {name}
+                                {customLabel || (typeof name === 'string' ? name : String(name))}
                             </Typography>
                             <Typography variant="body2">
                                 Nível: {proficiencyLevel}
@@ -279,7 +281,7 @@ export default function Expertise({
                                         minHeight: matches ? '32px' : '40px'
                                     }}
                                 >
-                                    {name}
+                                    {customLabel || (typeof name === 'string' ? name : String(name))}
                                 </Typography>
                             </Box>
 

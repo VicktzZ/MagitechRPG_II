@@ -32,7 +32,19 @@ export class BaseCharsheet {
     @IsNumber() overall: number = 0;
     @IsNumber() level: number = 0;
 
-    @IsEnum([ 'Apocalypse', 'Classic' ]) mode: 'Apocalypse' | 'Classic' = 'Classic';
+    /**
+     * Modo da ficha. Pode ser 'Apocalypse', 'Classic', ou o nome de um sistema customizado.
+     */
+    @IsString() mode: string = 'Classic';
+    
+    /**
+     * ID do sistema de RPG customizado usado nesta ficha.
+     * Se não definido, usa o sistema padrão Magitech.
+     */
+    @IsString()
+    @IsOptional()
+        systemId?: string;
+
     @IsEnum([ 'Masculino', 'Feminino', 'Não-binário', 'Outro', 'Não definido' ]) gender: Gender;
     @IsEnum([ 'Miserável', 'Pobre', 'Estável', 'Rico' ]) financialCondition: FinancialCondition;
     

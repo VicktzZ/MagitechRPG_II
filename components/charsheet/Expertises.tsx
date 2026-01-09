@@ -6,19 +6,58 @@ import { Box, Button, Grid, Typography, useTheme, FormHelperText, type ButtonPro
 import { blue, green, grey, purple, yellow } from '@mui/material/colors';
 import { useFormContext, useWatch, type FieldError } from 'react-hook-form';
 import { useState, type ReactElement, useRef, useCallback, useMemo, useEffect } from 'react';
-import type { Charsheet } from '@models/entities';
+import type { Charsheet, RPGSystem } from '@models/entities';
 import type { Expertises as ExpertisesType } from '@models';
 
 // TODO: Ajustar limite de acordo com nível (5: Competente, 10: Experiente, 15: Especialista)
 export default function Expertises({ disabled }: { disabled?: boolean }): ReactElement {
-    const { control, setValue  , formState: { errors } } = useFormContext<Charsheet>()
+    const { control, setValue, getValues, formState: { errors } } = useFormContext<Charsheet>()
     const theme = useTheme()
+    const charsheet = getValues()
 
     const buttonRef = useRef<'add' | 'sub' | null>(null)
     
     const [ editValue, setEditValue ] = useState(0)
     const [ multiplier, setMultiplier ] = useState<number>(1)
+    const [ systemExpertises, setSystemExpertises ] = useState<RPGSystem['expertises'] | null>(null)
+    const [ loadingSystem, setLoadingSystem ] = useState(false)
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
+
+    // Carregar perícias do sistema se houver systemId
+    useEffect(() => {
+        if (charsheet.systemId) {
+            setLoadingSystem(true)
+            fetch(`/api/rpg-system/${charsheet.systemId}`)
+                .then(res => res.json())
+                .then((data: RPGSystem) => {
+                    if (data.expertises && data.expertises.length > 0) {
+                        setSystemExpertises(data.expertises)
+                        
+                        // Inicializar perícias customizadas
+                        const currentExpertises = getValues('expertises') || {}
+                        const newExpertises: any = { ...currentExpertises }
+                        let hasChanges = false
+                        
+                        // Adicionar perícias do sistema que não existem
+                        data.expertises.forEach(exp => {
+                            if (!newExpertises[exp.key]) {
+                                newExpertises[exp.key] = {
+                                    value: 0,
+                                    defaultAttribute: exp.defaultAttribute || 'sab'
+                                }
+                                hasChanges = true
+                            }
+                        })
+                        
+                        if (hasChanges) {
+                            setValue('expertises', newExpertises, { shouldValidate: false })
+                        }
+                    }
+                })
+                .catch(err => console.error('Erro ao carregar perícias do sistema:', err))
+                .finally(() => setLoadingSystem(false))
+        }
+    }, [ charsheet.systemId ])
 
     const points = useWatch<Charsheet, 'points.expertises'>({
         control,
@@ -48,10 +87,10 @@ export default function Expertises({ disabled }: { disabled?: boolean }): ReactE
         name: 'expertises'
     }) 
 
-    const handleExpertiseChange = useCallback((name: keyof ExpertisesType, newValue: number): void => {
+    const handleExpertiseChange = useCallback((name: keyof ExpertisesType | string, newValue: number): void => {
         if (!expertises || disabled) return;
         
-        const currentValue = expertises[name]?.value || 0;
+        const currentValue = expertises[name as keyof ExpertisesType]?.value || 0;
         
         // Verifica se está tentando adicionar pontos
         if (newValue > currentValue) {
@@ -119,6 +158,40 @@ export default function Expertises({ disabled }: { disabled?: boolean }): ReactE
 
     const renderExpertises = useMemo<ReactElement[]>(() => {
         if (!expertises) return [];
+        
+        // Se há perícias customizadas do sistema, renderizar apenas elas
+        if (systemExpertises && systemExpertises.length > 0) {
+            return systemExpertises.map((sysExpertise) => {
+                // Buscar ou criar expertise
+                let expertise = expertises[sysExpertise.key as keyof ExpertisesType]
+                
+                // Se não existir, criar temporariamente para renderização
+                if (!expertise) {
+                    expertise = {
+                        value: 0,
+                        defaultAttribute: sysExpertise.defaultAttribute || 'sab'
+                    }
+                }
+                
+                return (
+                    <Expertise 
+                        key={sysExpertise.key}
+                        name={sysExpertise.key}
+                        expertise={expertise}
+                        diceQuantity={0}
+                        disabled={disabled ?? false}
+                        edit={{
+                            isEditing: buttonRef.current !== null,
+                            value: editValue
+                        }}
+                        onClick={(value: number) => handleExpertiseChange(sysExpertise.key as any, value)}
+                        customLabel={sysExpertise.name}
+                    />
+                )
+            })
+        }
+        
+        // Caso contrário, renderizar perícias padrão do Magitech
         return Object.entries(expertises)
             .map(([ name, expertise ]) => {
                 if (!expertise) return null;
@@ -141,7 +214,7 @@ export default function Expertises({ disabled }: { disabled?: boolean }): ReactE
                 );
             })
             .filter((expertise): expertise is ReactElement => expertise !== null);
-    }, [ expertises, disabled, editValue, handleExpertiseChange ]);
+    }, [ expertises, disabled, editValue, handleExpertiseChange, systemExpertises ]);
     
     const renderErrors = (): ReactElement | null => {
         if (!errors.expertises) return null;

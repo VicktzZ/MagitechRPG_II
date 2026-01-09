@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-shadow */
 'use client';
 
-import { Attributes, Characteristics, CustomDices, Expertises, Inventory, Magics, Passives, Skills, SkillsModal } from '@components/charsheet';
+import { Attributes, DynamicAttributes, DynamicCharacteristics, Characteristics, CustomDices, Expertises, Inventory, Magics, Passives, Skills, SkillsModal } from '@components/charsheet';
 import { toastDefault } from '@constants';
-import { useAudio } from '@hooks';
+import { useAudio, useCharsheetSystem } from '@hooks';
 import { CustomIconButton, WarningModal } from '@layout';
 import type { CharsheetDTO } from '@models/dtos';
 import type { Charsheet } from '@models/entities';
@@ -89,6 +89,31 @@ export default function CharsheetComponent(): ReactElement {
     const { data: session } = useSession()
     const queryClient = useQueryClient()
     const audio = useAudio('/sounds/arcade-cyber-bling.wav')
+    
+    // Limpar itens padrão se houver systemId
+    useEffect(() => {
+        if (charsheet.systemId && !charsheet.id) {
+            // Verificar se há itens do Magitech e remover
+            const hasDefaultItems = charsheet.inventory?.items?.some(
+                item => item.name === 'Celular' || item.name === 'ORM'
+            )
+            const hasDefaultWeapons = charsheet.inventory?.weapons?.some(
+                weapon => weapon.name === 'Bastão Retrátil'
+            )
+            const hasDefaultArmors = charsheet.inventory?.armors?.some(
+                armor => armor.name === 'Uniforme da UFEM'
+            )
+            
+            if (hasDefaultItems || hasDefaultWeapons || hasDefaultArmors) {
+                form.setValue('inventory.items', [])
+                form.setValue('inventory.weapons', [])
+                form.setValue('inventory.armors', [])
+                form.setValue('spellSpace', 0)
+                form.setValue('ORMLevel', 0)
+                form.setValue('points.magics', 0)
+            }
+        }
+    }, [ charsheet.systemId, charsheet.id, form ])
 
     const changeGameMode = (): void => {
         const currentMode = form.getValues('mode')
@@ -280,16 +305,25 @@ export default function CharsheetComponent(): ReactElement {
                         )}
                     </Box>
                     
-                    <Stack direction="row" spacing={2} alignItems="center">
-                        <Button
-                            variant='contained'
-                            color={'terciary' as any}
-                            type='button'
-                            onClick={changeGameMode}
-                            disabled={!!form.getValues().id}
-                        >
-                            Modo de jogo: {form.getValues().mode}
-                        </Button>
+                    <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
+                        {/* Mostra o sistema */}
+                        <Chip 
+                            label={`Sistema: ${form.getValues().mode || 'Magitech RPG'}`}
+                            color="secondary"
+                            sx={{ fontWeight: 600 }}
+                        />
+                        {/* Botão de trocar modo - apenas para sistema padrão e nova ficha */}
+                        {!form.getValues('systemId') && !charsheet.id && (
+                            <Button
+                                variant='outlined'
+                                color={'terciary' as any}
+                                type='button'
+                                onClick={changeGameMode}
+                                size="small"
+                            >
+                                Trocar Modo
+                            </Button>
+                        )}
                         <Tooltip 
                             title={
                                 !isValid ? 'Preencha todos os campos obrigatórios' : 
@@ -374,7 +408,7 @@ export default function CharsheetComponent(): ReactElement {
                     <Stack spacing={3} sx={{ flex: 1 }}>
                         {/* Habilidades */}
                         <Section 
-                            title="Habilidades" 
+                            title="Habilidades"
                             icon={<SportsMartialArts sx={{ color: 'secondary.main' }} />}
                             action={
                                 <Tooltip title="Gerenciar habilidades">
@@ -397,7 +431,6 @@ export default function CharsheetComponent(): ReactElement {
                         >
                             <Box>
                                 <CustomDices />
-                                {/* // TODO: Incrementar sistema de personalização de rolagem de dados */ }
                             </Box>
                         </Section>
                         
@@ -427,7 +460,7 @@ export default function CharsheetComponent(): ReactElement {
 
                     {/* Habilidades */}
                     <Section 
-                        title="Habilidades" 
+                        title="Habilidades"
                         icon={<SportsMartialArts sx={{ color: 'secondary.main' }} />}
                         action={
                             <Tooltip title="Gerenciar habilidades">
@@ -450,7 +483,6 @@ export default function CharsheetComponent(): ReactElement {
                     >
                         <Box>
                             <CustomDices />
-                            {/* // TODO: Incrementar sistema de personalização de rolagem de dados */ }
                         </Box>
                     </Section>
 
@@ -502,7 +534,7 @@ export default function CharsheetComponent(): ReactElement {
 
             {/* Magias */}
             <Section 
-                title="Magias" 
+                title="Magias"
                 icon={<AutoAwesome sx={{ color: 'primary.main' }} />}
             >
                 <Magics />

@@ -19,20 +19,56 @@ export const useCharsheetForm = (): UseFormReturn<CharsheetDTO> => {
     return ctx!;
 };
 
-export default function CharsheetFormProvider({ children, formData }: { children: ReactElement, formData?: CharsheetDTO }) {
+export default function CharsheetFormProvider({ 
+    children, 
+    formData,
+    initialSystemId 
+}: { 
+    children: ReactElement, 
+    formData?: CharsheetDTO,
+    initialSystemId?: string
+}) {
     const { data: session } = useSession()
     const [ createCharsheetAutosave, setCreateCharsheetAutosave ] = useLocalStorage<CharsheetDTO | null>('create-charsheet-autosave')
     const pathname = usePathname();
     
-    const form = useForm<CharsheetDTO>({
-        mode: 'onChange',
-        defaultValues: {
+    // Criar defaults condicionalmente baseado no sistema
+    const getDefaultValues = () => {
+        const baseDefaults = {
             ...charsheetModel,
             ...createCharsheetAutosave,
             playerName: session?.user?.name,
             userId: session?.user?.id,
+            systemId: initialSystemId,
             ...formData
-        },
+        }
+        
+        // Se há sistema customizado, remover itens/armas/armadura padrão e ajustar pontos de magia
+        if (initialSystemId && !formData && !createCharsheetAutosave) {
+            return {
+                ...baseDefaults,
+                inventory: {
+                    ...baseDefaults.inventory,
+                    items: [],
+                    weapons: [],
+                    armors: [],
+                    money: 0
+                },
+                spellSpace: 0,
+                ORMLevel: 0,
+                points: {
+                    ...baseDefaults.points,
+                    magics: 0
+                }
+            }
+        }
+        
+        return baseDefaults
+    }
+    
+    const form = useForm<CharsheetDTO>({
+        mode: 'onChange',
+        defaultValues: getDefaultValues(),
         resolver: zodResolver(charsheetSchema),
         shouldFocusError: true,
         criteriaMode: 'all'
