@@ -5,6 +5,8 @@ import { validate } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
 import type { NextRequest } from 'next/server';
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(req: NextRequest): Promise<Response> {
     try {
         const userId = req.nextUrl.searchParams.get('userId');
