@@ -34,6 +34,29 @@ import { useSnackbar } from '@node_modules/notistack';
 import { useSession } from 'next-auth/react';
 import { campaignService } from '@services';
 
+/**
+ * Normaliza um valor que pode ser um array ou um objeto com chaves numéricas
+ * Converte Record<number, T> para T[]
+ */
+function normalizeToArray<T>(value: any): T[] {
+    if (!value) return [];
+    if (Array.isArray(value)) return value;
+    
+    // Se é um objeto com chaves numéricas, converter para array
+    if (typeof value === 'object') {
+        const keys = Object.keys(value);
+        const isNumericKeys = keys.every(key => !isNaN(Number(key)));
+        if (isNumericKeys) {
+            return keys
+                .map(key => Number(key))
+                .sort((a, b) => a - b)
+                .map(key => value[key]);
+        }
+    }
+    
+    return [];
+}
+
 export default function CampaignPlayerDashboard(): ReactElement | null {
     const { users, isUserGM, campaign, charsheets } = useCampaignContext();
     const { charsheet, updateCharsheet } = useCampaignCurrentCharsheetContext()
@@ -175,7 +198,7 @@ export default function CampaignPlayerDashboard(): ReactElement | null {
     // Prepara informações de espaço do charsheet para o modal de perks
     const charsheetSpace = useMemo(() => ({
         spellSpace: charsheet?.spellSpace || 0,
-        currentSpells: (charsheet?.spells || []).map(spell => ({
+        currentSpells: normalizeToArray(charsheet?.spells).map(spell => ({
             id: spell.id || crypto.randomUUID(),
             name: spell.name,
             description: spell.stages?.[0] || '',
@@ -183,7 +206,7 @@ export default function CampaignPlayerDashboard(): ReactElement | null {
             element: spell.element
         })),
         weaponSlots: 2, // Limite padrão de 2 armas
-        currentWeapons: (charsheet?.inventory?.weapons || []).map(weapon => ({
+        currentWeapons: normalizeToArray(charsheet?.inventory?.weapons).map(weapon => ({
             id: weapon.id || crypto.randomUUID(),
             name: weapon.name,
             description: weapon.description || weapon.effect || '',
@@ -191,7 +214,7 @@ export default function CampaignPlayerDashboard(): ReactElement | null {
             categ: weapon.categ
         })),
         armorSlots: 1, // Limite padrão de 1 armadura
-        currentArmors: (charsheet?.inventory?.armors || []).map(armor => ({
+        currentArmors: normalizeToArray(charsheet?.inventory?.armors).map(armor => ({
             id: armor.id || crypto.randomUUID(),
             name: armor.name,
             description: armor.description || armor.effect || '',
