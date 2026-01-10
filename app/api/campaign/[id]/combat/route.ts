@@ -56,21 +56,6 @@ function rollD20(): number {
 /**
  * Rola iniciativa com possível vantagem/desvantagem
  */
-function rollInitiative(advantageType: 'normal' | 'advantage' | 'disadvantage' = 'normal'): number {
-    const roll1 = rollD20()
-    
-    if (advantageType === 'normal') {
-        return roll1
-    }
-    
-    const roll2 = rollD20()
-    
-    if (advantageType === 'advantage') {
-        return Math.max(roll1, roll2)
-    } else {
-        return Math.min(roll1, roll2)
-    }
-}
 
 export async function POST(
     request: NextRequest,
@@ -158,7 +143,6 @@ export async function POST(
                 return NextResponse.json({ error: 'Não há combate ativo' }, { status: 400 })
             }
 
-
             combat.isActive = false
             combat.phase = 'ENDED'
             combat.endedAt = new Date().toISOString()
@@ -179,7 +163,7 @@ export async function POST(
                 return NextResponse.json({ error: 'Não é possível rolar iniciativa agora' }, { status: 400 })
             }
 
-            const { combatantId, advantageType = 'normal', value } = body
+            const { combatantId , value } = body
             
             // Busca combatente por id ou odacId (para jogadores)
             const combatant = combat.combatants.find(c => 
@@ -227,12 +211,13 @@ export async function POST(
 
                     const baseCreature = creatures.find((c: any) => c.id === baseId)
                     if (baseCreature) {
-                        const agiExpertise = (baseCreature.expertises as any)?.Agilidade
+                        const agiExpertise = (baseCreature.expertises )?.Agilidade
                         expertiseValue = Number(agiExpertise?.value ?? 0) || 0
 
                         const defaultAttrKey = (agiExpertise?.defaultAttribute ?? 'des') as string
                         const attrValue = Number(baseCreature.attributes?.[defaultAttrKey] ?? 0) || 0
-                        let attrMod = Math.floor((attrValue / 5) - 1)
+                        // Nova fórmula: 0=-1, 5=1, 10=2, 15=3, 20=4, 30+=5
+                        let attrMod = attrValue === 0 ? -1 : Math.min(5, Math.floor(attrValue / 5))
                         if (!Number.isFinite(attrMod) || attrMod < 1) attrMod = 1
                         numDice = attrMod
                     }
@@ -427,7 +412,6 @@ export async function POST(
             }
 
             const oldLp = target.currentLp || 0
-            
 
             target.currentLp = Math.max(0, oldLp - damage)
 
@@ -436,7 +420,6 @@ export async function POST(
                 const userIndex = (campaign.session.users as any[]).findIndex(
                     (u: any) => u.odacId === target.odacId || u.charsheetId === target.id
                 )
-                
                 
                 if (userIndex !== -1 && (campaign.session.users as any[])[userIndex]?.stats) {
                     (campaign.session.users as any[])[userIndex].stats.lp = target.currentLp
@@ -481,7 +464,6 @@ export async function POST(
             const oldHp = healTarget.currentLp || 0
             const maxHp = healTarget.maxLp || 999
             
-            
             healTarget.currentLp = Math.min(maxHp, oldHp + heal)
 
             // Se for jogador, atualiza na sessão (session.users[index].stats)
@@ -489,7 +471,6 @@ export async function POST(
                 const userIndex = (campaign.session.users as any[]).findIndex(
                     (u: any) => u.odacId === healTarget.odacId || u.charsheetId === healTarget.id
                 )
-                
                 
                 if (userIndex !== -1 && (campaign.session.users as any[])[userIndex]?.stats) {
                     (campaign.session.users as any[])[userIndex].stats.lp = healTarget.currentLp
@@ -603,7 +584,6 @@ export async function POST(
         // Salva a campanha atualizada
         const plainCampaign = JSON.parse(JSON.stringify(campaign))
         
-        
         await campaignRepository.update(plainCampaign)
 
         // Notifica os clientes via Pusher
@@ -654,7 +634,6 @@ export async function GET(
         if (!campaign) {
             return NextResponse.json({ error: 'Campanha não encontrada' }, { status: 404 })
         }
-
 
         return NextResponse.json({
             success: true,

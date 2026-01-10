@@ -54,7 +54,7 @@ export default function LandingPage(): ReactElement | null {
     const router = useRouter()
     
     // Função para lidar com cliques nos planos
-    const handlePlanClick = (plan?: SubscriptionPlan) => {
+    const handlePlanClick = () => {
         if (!session) {
             // Se não está logado, redireciona para autenticação
             router.push('/api/auth/signin')

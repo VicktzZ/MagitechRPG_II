@@ -179,7 +179,7 @@ function extractPerkForSession(perk: any): { id: string; rarity: string; name: s
  * @returns Promise com resultado da operação
  */
 export async function savePerkToCharsheet(options: SavePerkOptions): Promise<SavePerkResult> {
-    const { perk, charsheetId, campaignCode, campaignMode, currentCharsheet, replacedItemId } = options
+    const { perk, charsheetId, campaignCode , currentCharsheet, replacedItemId } = options
 
     // Removida a verificação de modo da campanha - perks podem ser salvos em qualquer campanha
 

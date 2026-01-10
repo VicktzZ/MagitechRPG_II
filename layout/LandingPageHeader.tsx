@@ -59,8 +59,8 @@ export default function LandingPageHeader(): ReactElement {
     const { data: allUsers } = useFirestoreRealtime('user');
     const currentUser = useMemo(() => {
         if (!session?.user?.id || !allUsers) return null;
-        return allUsers.find((u: User) => u.id === session.user.id) as User || null;
-    }, [session?.user?.id, allUsers]);
+        return allUsers.find((u: User) => u.id === session.user.id)! || null;
+    }, [ session?.user?.id, allUsers ]);
 
     const handleClose = (): void => { setOpen(false) };
     const handleMobileMenuToggle = () => setMobileOpen(!mobileOpen);
@@ -201,9 +201,11 @@ export default function LandingPageHeader(): ReactElement {
                                         </Typography>
                                     </Box>
                                 </Box>
-                                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 0.5 }}>
-                                    <PlanBadge user={user} size="small" showIcon />
-                                </Box>
+                                {currentUser && currentUser.subscription && (
+                                    <Box sx={{ display: 'flex', justifyContent: 'center', mt: 0.5 }}>
+                                        <PlanBadge user={currentUser} size="small" showIcon />
+                                    </Box>
+                                )}
                             </Box>
                         </ListItem>
                         <Divider sx={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }} />

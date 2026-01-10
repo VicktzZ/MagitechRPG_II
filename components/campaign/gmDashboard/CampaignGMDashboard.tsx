@@ -198,13 +198,11 @@ export default function CampaignGMDashboard(): ReactElement | null {
         const combat: any = (campaign as any).session?.combat;
         const creatures = campaign.custom?.creatures || [];
 
-
         if (!combat?.isActive || !Array.isArray(combat.combatants) || combat.combatants.length === 0) {
             return null;
         }
 
         const current = combat.combatants[combat.currentTurnIndex];
-        
         
         if (!current || current.type !== 'creature') return null;
 
@@ -283,7 +281,8 @@ export default function CampaignGMDashboard(): ReactElement | null {
 
         if (defaultAttrKey) {
             const attrValue = Number(creature.attributes?.[defaultAttrKey] ?? 0) || 0;
-            let attrMod = Math.floor((attrValue / 5) - 1);
+            // Nova fórmula: 0=-1, 5=1, 10=2, 15=3, 20=4, 30+=5
+            let attrMod = attrValue === 0 ? -1 : Math.min(5, Math.floor(attrValue / 5));
             if (!Number.isFinite(attrMod)) attrMod = 1;
             numDice = attrMod;
         }

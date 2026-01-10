@@ -40,6 +40,28 @@ import { Magic } from '.';
 import MagicsModal from './dialogs/MagicsModal';
 
 /**
+ * Normaliza um valor que pode ser um array ou um objeto com chaves numéricas
+ */
+function normalizeToArray<T>(value: any): T[] {
+    if (!value) return [];
+    if (Array.isArray(value)) return value;
+    
+    // Se é um objeto com chaves numéricas, converter para array
+    if (typeof value === 'object') {
+        const keys = Object.keys(value);
+        const isNumericKeys = keys.every(key => !isNaN(Number(key)));
+        if (isNumericKeys) {
+            return keys
+                .map(key => Number(key))
+                .sort((a, b) => a - b)
+                .map(key => value[key]);
+        }
+    }
+    
+    return [];
+}
+
+/**
  * Componente Spells
  * 
  * Gerencia e exibe todas as magias do personagem com interface moderna e animações
@@ -58,7 +80,8 @@ const Spells = memo(() => {
     const theme = useTheme()
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
 
-    const spells = useWatch({ control, name: 'spells' })
+    const spellsRaw = useWatch({ control, name: 'spells' })
+    const spells = useMemo(() => normalizeToArray(spellsRaw), [ spellsRaw ])
     
     const points = useWatch({ control, name: 'points' })
     const spellSpace = useWatch({ control, name: 'spellSpace' })
@@ -120,7 +143,7 @@ const Spells = memo(() => {
     }, [ spells ])
 
     const handleRemoveMagic = useCallback((magicId: string, magicName: string) => {
-        const currentSpells = [ ...spells ]
+        const currentSpells = normalizeToArray(spells)
         const magicIndex = currentSpells.findIndex(m => m.id === magicId)
 
         if (magicIndex !== -1) {

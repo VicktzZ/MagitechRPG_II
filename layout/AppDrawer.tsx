@@ -29,8 +29,8 @@ export default function AppDrawer(): ReactElement {
     // Encontrar o usuário atual baseado na sessão
     const currentUser = useMemo(() => {
         if (!session?.user?.id || !allUsers) return null;
-        return (allUsers as User[]).find((u: User) => u.id === session.user.id) || null;
-    }, [session?.user?.id, allUsers]);
+        return (allUsers ).find((u: User) => u.id === session.user.id) || null;
+    }, [ session?.user?.id, allUsers ]);
 
     const toggleDrawer =
         (openParam: boolean) =>

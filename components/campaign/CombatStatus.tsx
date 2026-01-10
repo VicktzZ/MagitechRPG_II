@@ -37,7 +37,7 @@ import { red, green, blue, orange, grey, yellow } from '@mui/material/colors';
 import { useSnackbar } from 'notistack';
 import { useCampaignContext } from '@contexts';
 import { useSession } from 'next-auth/react';
-import type { Combat, Combatant } from '@models';
+import type { Combat } from '@models';
 
 interface CombatStatusProps {
     campaignId: string;

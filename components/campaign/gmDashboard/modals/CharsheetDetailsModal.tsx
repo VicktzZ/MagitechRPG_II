@@ -26,14 +26,54 @@ import {
     CircularProgress,
     Tooltip
 } from '@mui/material';
-import { elementColor } from '@constants';
 import { Edit, Save, Cancel, Delete } from '@mui/icons-material';
 import ChangePlayerStatusModal from './ChangePlayerStatusModal';
 import type { CharsheetDTO } from '@models/dtos';
 import { useFirestoreRealtime } from '@hooks/useFirestoreRealtime';
 import { charsheetEntity } from '@utils/firestoreEntities';
 import { useSnackbar } from 'notistack';
-import { green, red, orange } from '@mui/material/colors';
+import { green, red, orange, blue, grey, brown, yellow, purple } from '@mui/material/colors';
+
+const elementColor: Record<string, string> = {
+    'FOGO': red[500],
+    'ÁGUA': blue[500],
+    'AR': grey[300],
+    'TERRA': brown[500],
+    'ELETRICIDADE': yellow[600],
+    'TREVAS': grey[900],
+    'LUZ': yellow[200],
+    'NÃO-ELEMENTAL': grey[400],
+    'SANGUE': red[900],
+    'RADIAÇÃO': green[500],
+    'TÓXICO': purple[500],
+    'PSÍQUICO': purple[300],
+    'VÁCUO': grey[600]
+};
+
+/**
+ * Normaliza um valor que pode ser um array ou um objeto com chaves numéricas
+ * Converte Record<number, T> para T[]
+ */
+function normalizeToArray<T>(value: any): T[] {
+    if (!value) return [];
+    if (Array.isArray(value)) return value;
+    
+    // Se é um objeto com chaves numéricas, converter para array
+    if (typeof value === 'object') {
+        const keys = Object.keys(value);
+        // Verificar se todas as chaves são números
+        const isNumericKeys = keys.every(key => !isNaN(Number(key)));
+        if (isNumericKeys) {
+            // Converter para array ordenado
+            return keys
+                .map(key => Number(key))
+                .sort((a, b) => a - b)
+                .map(key => value[key]);
+        }
+    }
+    
+    return [];
+}
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -97,15 +137,15 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet, campai
     // Inicializa os dados editáveis quando o modal abre
     useEffect(() => {
         if (open && charsheet) {
-            // Para campanhas Roguelite, usar stats da sessão se disponível
+            // SEMPRE usar stats da sessão da campanha atual (não stats globais)
             let statsToUse = charsheet.stats;
-            if (campaign?.mode === 'Roguelite' && campaign.campaignCode && charsheet.session) {
+            if (campaign?.campaignCode && charsheet.session) {
                 const campaignSession = charsheet.session.find((s: any) => s.campaignCode === campaign.campaignCode);
-                if (campaignSession && campaignSession.stats) {
+                if (campaignSession?.stats) {
                     statsToUse = campaignSession.stats;
                 }
             }
-            
+
             setEditedData({
                 name: charsheet.name,
                 playerName: charsheet.playerName,
@@ -116,19 +156,19 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet, campai
                 stats: { ...statsToUse },
                 attributes: { ...charsheet.attributes },
                 expertises: { ...charsheet.expertises },
-                mods: { 
+                mods: {
                     attributes: { ...charsheet.mods?.attributes },
                     expertises: { ...charsheet.mods?.expertises }
                 },
                 points: { ...charsheet.points },
-                inventory: { 
+                inventory: {
                     ...charsheet.inventory,
-                    weapons: [ ...(charsheet.inventory?.weapons || []) ],
-                    armors: [ ...(charsheet.inventory?.armors || []) ],
-                    items: [ ...(charsheet.inventory?.items || []) ]
+                    weapons: normalizeToArray(charsheet.inventory?.weapons),
+                    armors: normalizeToArray(charsheet.inventory?.armors),
+                    items: normalizeToArray(charsheet.inventory?.items)
                 },
                 skills: { ...charsheet.skills },
-                spells: [ ...(charsheet.spells || []) ],
+                spells: normalizeToArray(charsheet.spells),
                 displacement: charsheet.displacement,
                 spellSpace: charsheet.spellSpace,
                 elementalMastery: charsheet.elementalMastery
@@ -140,7 +180,7 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet, campai
     const getDisplayStats = () => {
         if (campaign?.mode === 'Roguelite' && campaign.campaignCode && charsheet.session) {
             const campaignSession = charsheet.session.find((s: any) => s.campaignCode === campaign.campaignCode);
-            if (campaignSession && campaignSession.stats) {
+            if (campaignSession?.stats) {
                 return campaignSession.stats;
             }
         }
@@ -172,8 +212,7 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet, campai
     // Função para salvar as alterações
     const handleSave = async () => {
         if (!charsheet?.id) return;
-        
-        
+
         // Limpa strings vazias nos dados antes de salvar
         const cleanDataForSaving = (data: any): any => {
             const cleaned = { ...data };
@@ -188,40 +227,41 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet, campai
         };
 
         const cleanedData = cleanDataForSaving(editedData);
-        
 
         setIsSaving(true);
         try {
-            // Para campanhas Roguelite, salvar stats na sessão específica da campanha
-            if (campaign?.mode === 'Roguelite' && campaign.campaignCode && charsheet.session) {
+            // SEMPRE salvar stats na sessão específica da campanha (não em stats globais)
+            if (campaign?.campaignCode && charsheet.session) {
                 // Encontrar o índice da sessão da campanha atual
                 const campaignSessionIndex = charsheet.session.findIndex((s: any) => s.campaignCode === campaign.campaignCode);
-                
-                
+
                 if (campaignSessionIndex >= 0) {
                     // Preparar dados para atualizar a sessão específica
-                    const updatedSession = [...charsheet.session];
+                    const updatedSession = [ ...charsheet.session ];
                     updatedSession[campaignSessionIndex] = {
                         ...updatedSession[campaignSessionIndex],
                         stats: cleanedData.stats
                     };
-                    
+
                     // Atualizar apenas a sessão (mantendo stats global intacto)
                     await charsheetEntity.update(charsheet.id, {
                         ...cleanedData,
-                        stats: charsheet.stats, // Mantém stats original
+                        stats: charsheet.stats, // Mantém stats globais originais
                         session: updatedSession
                     });
+                    
+                    enqueueSnackbar('Ficha atualizada com sucesso! (Stats da sessão)', { variant: 'success' });
                 } else {
                     // Fallback: salvar normalmente se não encontrar sessão
                     await charsheetEntity.update(charsheet.id, cleanedData);
+                    enqueueSnackbar('Ficha atualizada (stats globais)', { variant: 'warning' });
                 }
             } else {
-                // Para campanhas normais, salvar stats diretamente
+                // Se não há campanha ou sessão, salvar stats globalmente
                 await charsheetEntity.update(charsheet.id, cleanedData);
+                enqueueSnackbar('Ficha atualizada (sem sessão)', { variant: 'warning' });
             }
             
-            enqueueSnackbar('Ficha atualizada com sucesso!', { variant: 'success' });
             setIsEditing(false);
         } catch (error) {
             console.error('Erro ao salvar ficha:', error);
@@ -251,7 +291,7 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet, campai
             const newData = { ...prev };
             const keys = path.split('.');
             let current: any = newData;
-            
+
             for (let i = 0; i < keys.length - 1; i++) {
                 if (!current[keys[i]]) {
                     current[keys[i]] = {};
@@ -259,7 +299,7 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet, campai
                 current[keys[i]] = { ...current[keys[i]] };
                 current = current[keys[i]];
             }
-            
+
             current[keys[keys.length - 1]] = value;
             return newData;
         });
@@ -329,13 +369,13 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet, campai
                             )}
                         </Box>
                         <Box display="flex" alignItems="center" gap={1}>
-                            <Chip 
+                            <Chip
                                 label={`${charsheet.class as string} ${charsheet.subclass ? `/ ${charsheet.subclass as string}` : ''}`}
                                 color="primary"
                             />
                             {!isEditing ? (
                                 <Tooltip title="Editar ficha">
-                                    <IconButton 
+                                    <IconButton
                                         onClick={() => setIsEditing(true)}
                                         sx={{ bgcolor: orange[100], color: orange[800] }}
                                     >
@@ -345,7 +385,7 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet, campai
                             ) : (
                                 <Box display="flex" gap={0.5}>
                                     <Tooltip title="Cancelar">
-                                        <IconButton 
+                                        <IconButton
                                             onClick={handleCancelEdit}
                                             disabled={isSaving}
                                             sx={{ bgcolor: red[100], color: red[800] }}
@@ -354,7 +394,7 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet, campai
                                         </IconButton>
                                     </Tooltip>
                                     <Tooltip title="Salvar alterações">
-                                        <IconButton 
+                                        <IconButton
                                             onClick={handleSave}
                                             disabled={isSaving}
                                             sx={{ bgcolor: green[100], color: green[800] }}
@@ -383,7 +423,7 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet, campai
                             <Tab label="Spells" {...a11yProps(5)} />
                         </Tabs>
                     </Box>
-                    
+
                     {/* Informações Básicas */}
                     <TabPanel value={tabValue} index={0}>
                         <Grid container spacing={2}>
@@ -488,7 +528,7 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet, campai
                                 <Box display='flex' alignItems='center' sx={{ mb: '0.25em' }} gap={1}>
                                     <Typography variant="subtitle1">Status & Pontos</Typography>
                                     {!isEditing && (
-                                        <IconButton 
+                                        <IconButton
                                             size="small"
                                             color="primary"
                                             onClick={() => setModalStates({ ...modalStates, changePlayerStatusModalOpen: true })}
@@ -501,7 +541,7 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet, campai
                                     <Table size="small">
                                         <TableBody>
                                             <TableRow>
-                                                <TableCell>HP</TableCell>
+                                                <TableCell>LP (Pontos de Vida)</TableCell>
                                                 <TableCell>
                                                     {isEditing ? (
                                                         <Box display="flex" gap={0.5} alignItems="center">
@@ -659,9 +699,9 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet, campai
                                                     fullWidth
                                                 />
                                             ) : (
-                                                <Chip 
-                                                    label={`Atributos: ${charsheet.points.attributes}`} 
-                                                    color="primary" 
+                                                <Chip
+                                                    label={`Atributos: ${charsheet.points.attributes}`}
+                                                    color="primary"
                                                     variant="outlined"
                                                     sx={{ width: '100%' }}
                                                 />
@@ -678,9 +718,9 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet, campai
                                                     fullWidth
                                                 />
                                             ) : (
-                                                <Chip 
-                                                    label={`Perícias: ${charsheet.points.expertises}`} 
-                                                    color="secondary" 
+                                                <Chip
+                                                    label={`Perícias: ${charsheet.points.expertises}`}
+                                                    color="secondary"
                                                     variant="outlined"
                                                     sx={{ width: '100%' }}
                                                 />
@@ -697,9 +737,9 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet, campai
                                                     fullWidth
                                                 />
                                             ) : (
-                                                <Chip 
-                                                    label={`Habilidades: ${charsheet.points.skills}`} 
-                                                    color="info" 
+                                                <Chip
+                                                    label={`Habilidades: ${charsheet.points.skills}`}
+                                                    color="info"
                                                     variant="outlined"
                                                     sx={{ width: '100%' }}
                                                 />
@@ -805,7 +845,7 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet, campai
                     <TabPanel value={tabValue} index={3}>
                         <Grid container spacing={2}>
                             <Grid item xs={12} md={6}>
-                                <Typography variant="subtitle1" gutterBottom>Armas ({editedData.inventory?.weapons?.length || charsheet.inventory.weapons.length})</Typography>
+                                <Typography variant="subtitle1" gutterBottom>Armas ({normalizeToArray(editedData.inventory?.weapons || charsheet.inventory?.weapons).length})</Typography>
                                 <TableContainer component={Paper} variant="outlined" sx={{ maxHeight: 300, overflow: 'auto' }}>
                                     <Table size="small">
                                         <TableHead>
@@ -818,19 +858,20 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet, campai
                                             </TableRow>
                                         </TableHead>
                                         <TableBody>
-                                            {(editedData.inventory?.weapons || charsheet.inventory.weapons).map((weapon, index) => (
+                                            {normalizeToArray(editedData.inventory?.weapons || charsheet.inventory?.weapons).map((weapon, index) => (
                                                 <TableRow key={index}>
                                                     <TableCell>{weapon.name}</TableCell>
-                                                    <TableCell>{weapon.effect.value}</TableCell>
+                                                    <TableCell>{weapon.effect?.value || '-'}</TableCell>
                                                     <TableCell>{weapon.kind}</TableCell>
                                                     <TableCell>{weapon.categ}</TableCell>
                                                     {isEditing && (
                                                         <TableCell>
-                                                            <IconButton 
-                                                                size="small" 
+                                                            <IconButton
+                                                                size="small"
                                                                 color="error"
                                                                 onClick={() => {
-                                                                    const newWeapons = [ ...(editedData.inventory?.weapons || charsheet.inventory.weapons) ];
+                                                                    const currentWeapons = normalizeToArray(editedData.inventory?.weapons || charsheet.inventory?.weapons);
+                                                                    const newWeapons = [ ...currentWeapons ];
                                                                     newWeapons.splice(index, 1);
                                                                     updateNestedField('inventory.weapons', newWeapons);
                                                                 }}
@@ -845,9 +886,9 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet, campai
                                     </Table>
                                 </TableContainer>
                             </Grid>
-                            
+
                             <Grid item xs={12} md={6}>
-                                <Typography variant="subtitle1" gutterBottom>Armaduras ({editedData.inventory?.armors?.length || charsheet.inventory.armors.length})</Typography>
+                                <Typography variant="subtitle1" gutterBottom>Armaduras ({normalizeToArray(editedData.inventory?.armors || charsheet.inventory?.armors).length})</Typography>
                                 <TableContainer component={Paper} variant="outlined" sx={{ maxHeight: 300, overflow: 'auto' }}>
                                     <Table size="small">
                                         <TableHead>
@@ -860,7 +901,7 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet, campai
                                             </TableRow>
                                         </TableHead>
                                         <TableBody>
-                                            {(editedData.inventory?.armors || charsheet.inventory.armors).map((armor, index) => (
+                                            {normalizeToArray(editedData.inventory?.armors || charsheet.inventory?.armors).map((armor, index) => (
                                                 <TableRow key={index}>
                                                     <TableCell>{armor.name}</TableCell>
                                                     <TableCell>{armor.value}</TableCell>
@@ -868,11 +909,12 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet, campai
                                                     <TableCell>{armor.categ}</TableCell>
                                                     {isEditing && (
                                                         <TableCell>
-                                                            <IconButton 
-                                                                size="small" 
+                                                            <IconButton
+                                                                size="small"
                                                                 color="error"
                                                                 onClick={() => {
-                                                                    const newArmors = [ ...(editedData.inventory?.armors || charsheet.inventory.armors) ];
+                                                                    const currentArmors = normalizeToArray(editedData.inventory?.armors || charsheet.inventory?.armors);
+                                                                    const newArmors = [ ...currentArmors ];
                                                                     newArmors.splice(index, 1);
                                                                     updateNestedField('inventory.armors', newArmors);
                                                                 }}
@@ -887,9 +929,9 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet, campai
                                     </Table>
                                 </TableContainer>
                             </Grid>
-                            
+
                             <Grid item xs={12}>
-                                <Typography variant="subtitle1" gutterBottom>Itens ({editedData.inventory?.items?.length || charsheet.inventory.items.length})</Typography>
+                                <Typography variant="subtitle1" gutterBottom>Itens ({normalizeToArray(editedData.inventory?.items || charsheet.inventory?.items).length})</Typography>
                                 <TableContainer component={Paper} variant="outlined" sx={{ maxHeight: 300, overflow: 'auto' }}>
                                     <Table size="small">
                                         <TableHead>
@@ -902,7 +944,7 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet, campai
                                             </TableRow>
                                         </TableHead>
                                         <TableBody>
-                                            {(editedData.inventory?.items || charsheet.inventory.items).map((item, index) => (
+                                            {normalizeToArray(editedData.inventory?.items || charsheet.inventory?.items).map((item, index) => (
                                                 <TableRow key={index}>
                                                     <TableCell>{item.name}</TableCell>
                                                     <TableCell>{item.kind}</TableCell>
@@ -910,11 +952,12 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet, campai
                                                     <TableCell>{item.weight} kg</TableCell>
                                                     {isEditing && (
                                                         <TableCell>
-                                                            <IconButton 
-                                                                size="small" 
+                                                            <IconButton
+                                                                size="small"
                                                                 color="error"
                                                                 onClick={() => {
-                                                                    const newItems = [ ...(editedData.inventory?.items || charsheet.inventory.items) ];
+                                                                    const currentItems = normalizeToArray(editedData.inventory?.items || charsheet.inventory?.items);
+                                                                    const newItems = [ ...currentItems ];
                                                                     newItems.splice(index, 1);
                                                                     updateNestedField('inventory.items', newItems);
                                                                 }}
@@ -947,17 +990,18 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet, campai
                                             </TableRow>
                                         </TableHead>
                                         <TableBody>
-                                            {(editedData.skills?.class || charsheet.skills.class).map((skill, index) => (
+                                            {normalizeToArray(editedData.skills?.class || charsheet.skills.class).map((skill, index) => (
                                                 <TableRow key={index}>
                                                     <TableCell>{skill.name}</TableCell>
                                                     <TableCell>{skill.level ?? '—'}</TableCell>
                                                     {isEditing && (
                                                         <TableCell>
-                                                            <IconButton 
-                                                                size="small" 
+                                                            <IconButton
+                                                                size="small"
                                                                 color="error"
                                                                 onClick={() => {
-                                                                    const newClassSkills = [ ...(editedData.skills?.class || charsheet.skills.class) ];
+                                                                    const currentClassSkills = normalizeToArray(editedData.skills?.class || charsheet.skills.class);
+                                                                    const newClassSkills = [ ...currentClassSkills ];
                                                                     newClassSkills.splice(index, 1);
                                                                     updateNestedField('skills.class', newClassSkills);
                                                                 }}
@@ -972,7 +1016,7 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet, campai
                                     </Table>
                                 </TableContainer>
                             </Grid>
-                            
+
                             {(editedData.skills?.subclass || charsheet.skills.subclass).length > 0 && (
                                 <Grid item xs={12} md={6}>
                                     <Typography variant="subtitle1" gutterBottom>Habilidades de Subclasse ({editedData.skills?.subclass?.length || charsheet.skills.subclass.length})</Typography>
@@ -986,17 +1030,18 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet, campai
                                                 </TableRow>
                                             </TableHead>
                                             <TableBody>
-                                                {(editedData.skills?.subclass || charsheet.skills.subclass).map((skill, index) => (
+                                                {normalizeToArray(editedData.skills?.subclass || charsheet.skills.subclass).map((skill, index) => (
                                                     <TableRow key={index}>
                                                         <TableCell>{skill.name}</TableCell>
                                                         <TableCell>{skill.level ?? '—'}</TableCell>
                                                         {isEditing && (
                                                             <TableCell>
-                                                                <IconButton 
-                                                                    size="small" 
+                                                                <IconButton
+                                                                    size="small"
                                                                     color="error"
                                                                     onClick={() => {
-                                                                        const newSubclassSkills = [ ...(editedData.skills?.subclass || charsheet.skills.subclass) ];
+                                                                        const currentSubclassSkills = normalizeToArray(editedData.skills?.subclass || charsheet.skills.subclass);
+                                                                        const newSubclassSkills = [ ...currentSubclassSkills ];
                                                                         newSubclassSkills.splice(index, 1);
                                                                         updateNestedField('skills.subclass', newSubclassSkills);
                                                                     }}
@@ -1012,7 +1057,7 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet, campai
                                     </TableContainer>
                                 </Grid>
                             )}
-                            
+
                             <Grid item xs={12} md={6}>
                                 <Typography variant="subtitle1" gutterBottom>Habilidades de Linhagem ({editedData.skills?.lineage?.length || charsheet.skills.lineage?.length})</Typography>
                                 <TableContainer component={Paper} variant="outlined" sx={{ maxHeight: 200, overflow: 'auto' }}>
@@ -1025,17 +1070,18 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet, campai
                                             </TableRow>
                                         </TableHead>
                                         <TableBody>
-                                            {(editedData.skills?.lineage || charsheet.skills.lineage)?.map((skill, index) => (
+                                            {normalizeToArray(editedData.skills?.lineage || charsheet.skills.lineage).map((skill, index) => (
                                                 <TableRow key={index}>
                                                     <TableCell>{skill.name}</TableCell>
                                                     <TableCell>{skill.origin ?? '—'}</TableCell>
                                                     {isEditing && (
                                                         <TableCell>
-                                                            <IconButton 
-                                                                size="small" 
+                                                            <IconButton
+                                                                size="small"
                                                                 color="error"
                                                                 onClick={() => {
-                                                                    const newLineageSkills = [ ...(editedData.skills?.lineage || charsheet.skills.lineage) ];
+                                                                    const currentLineageSkills = normalizeToArray(editedData.skills?.lineage || charsheet.skills.lineage);
+                                                                    const newLineageSkills = [ ...currentLineageSkills ];
                                                                     newLineageSkills.splice(index, 1);
                                                                     updateNestedField('skills.lineage', newLineageSkills);
                                                                 }}
@@ -1050,7 +1096,7 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet, campai
                                     </Table>
                                 </TableContainer>
                             </Grid>
-                            
+
                             {(editedData.skills?.bonus || charsheet.skills.bonus)?.length > 0 && (
                                 <Grid item xs={12} md={6}>
                                     <Typography variant="subtitle1" gutterBottom>Habilidades Bônus ({editedData.skills?.bonus?.length || charsheet.skills.bonus?.length})</Typography>
@@ -1064,17 +1110,18 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet, campai
                                                 </TableRow>
                                             </TableHead>
                                             <TableBody>
-                                                {(editedData.skills?.bonus || charsheet.skills.bonus)?.map((skill, index) => (
+                                                {normalizeToArray(editedData.skills?.bonus || charsheet.skills.bonus).map((skill, index) => (
                                                     <TableRow key={index}>
                                                         <TableCell>{skill.name}</TableCell>
                                                         <TableCell>{skill.origin ?? '—'}</TableCell>
                                                         {isEditing && (
                                                             <TableCell>
-                                                                <IconButton 
-                                                                    size="small" 
+                                                                <IconButton
+                                                                    size="small"
                                                                     color="error"
                                                                     onClick={() => {
-                                                                        const newBonusSkills = [ ...(editedData.skills?.bonus || charsheet.skills.bonus) ];
+                                                                        const currentBonusSkills = normalizeToArray(editedData.skills?.bonus || charsheet.skills.bonus);
+                                                                        const newBonusSkills = [ ...currentBonusSkills ];
                                                                         newBonusSkills.splice(index, 1);
                                                                         updateNestedField('skills.bonus', newBonusSkills);
                                                                     }}
@@ -1103,7 +1150,7 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet, campai
                                 Total de Spells: {charsheet.spells?.length}
                             </Typography>
                         </Box>
-                        
+
                         {charsheet.spells?.length > 0 ? (
                             <TableContainer component={Paper} variant="outlined" sx={{ maxHeight: 400, overflow: 'auto' }}>
                                 <Table size="small">
@@ -1124,9 +1171,9 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet, campai
                                                     <Box sx={{ display: 'flex', flexDirection: 'column' }}>
                                                         <Typography variant="body2" fontWeight="bold">{spell?.name}</Typography>
                                                         {spell?.element && (
-                                                            <Chip 
-                                                                label={spell?.type} 
-                                                                size="small" 
+                                                            <Chip
+                                                                label={spell?.type}
+                                                                size="small"
                                                                 variant="outlined"
                                                                 sx={{ mt: 0.5, alignSelf: 'flex-start' }}
                                                             />
@@ -1134,12 +1181,12 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet, campai
                                                     </Box>
                                                 </TableCell>
                                                 <TableCell>
-                                                    <Chip 
-                                                        label={spell?.element} 
-                                                        size="small" 
-                                                        sx={{ 
-                                                            bgcolor: elementColor[spell?.element?.toUpperCase() as keyof typeof elementColor],
-                                                            color: spell?.element?.toUpperCase() === 'NÃO-ELEMENTAL' || spell?.element?.toUpperCase() === 'LUZ' ? 'black' : 'white' 
+                                                    <Chip
+                                                        label={spell?.element}
+                                                        size="small"
+                                                        sx={{
+                                                            bgcolor: elementColor[spell?.element?.toUpperCase() ],
+                                                            color: spell?.element?.toUpperCase() === 'NÃO-ELEMENTAL' || spell?.element?.toUpperCase() === 'LUZ' ? 'black' : 'white'
                                                         }}
                                                     />
                                                 </TableCell>
@@ -1168,11 +1215,12 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet, campai
                                                 </TableCell>
                                                 {isEditing && (
                                                     <TableCell>
-                                                        <IconButton 
-                                                            size="small" 
+                                                        <IconButton
+                                                            size="small"
                                                             color="error"
                                                             onClick={() => {
-                                                                const newSpells = [ ...(editedData.spells || charsheet.spells) ];
+                                                                const currentSpells = normalizeToArray(editedData.spells || charsheet.spells);
+                                                                const newSpells = [ ...currentSpells ];
                                                                 newSpells.splice(index, 1);
                                                                 updateNestedField('spells', newSpells);
                                                             }}
@@ -1193,7 +1241,7 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet, campai
                                 </Typography>
                             </Box>
                         )}
-                        
+
                         {charsheet.elementalMastery && charsheet.spells?.length > 0 && (
                             <Box sx={{ mt: 3 }}>
                                 <Typography variant="subtitle1" gutterBottom>
@@ -1216,7 +1264,7 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet, campai
                                                 Elements Dominantes
                                             </Typography>
                                             <Typography variant="body2">
-                                                {Array.from(new Set(charsheet.spells?.map(m => m.element))).join(', ')}
+                                                {Array.from(new Set(normalizeToArray(charsheet.spells).map(m => m.element))).join(', ')}
                                             </Typography>
                                         </Paper>
                                     </Grid>

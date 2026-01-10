@@ -7,6 +7,7 @@ import { processItems } from './itemsProcessor'
 import { processArmors } from './armorsProcessor'
 import { processSpells } from './spellsProcessor'
 import { processWeapons } from './weaponsProcessor'
+import { processExpertise } from './expertiseProcessor'
 
 export type { ProcessorFilters, ProcessedItem }
 
@@ -19,7 +20,8 @@ const COLLECTION_PROCESSORS: Record<Collection, ProcessorFn> = {
     items: processItems,
     armors: processArmors,
     spells: processSpells,
-    weapons: processWeapons
+    weapons: processWeapons,
+    expertise: processExpertise
 }
 
 /**
@@ -68,5 +70,6 @@ export {
     processItems,
     processArmors,
     processSpells,
-    processWeapons
+    processWeapons,
+    processExpertise
 }

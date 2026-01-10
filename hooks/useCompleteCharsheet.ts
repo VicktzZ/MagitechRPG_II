@@ -3,6 +3,29 @@ import type { CharsheetDTO, SpellDTO } from '@models/dtos';
 import { useMemo } from 'react';
 import { useFirestoreRealtime } from './useFirestoreRealtime';
 
+/**
+ * Normaliza um valor que pode ser um array ou um objeto com chaves numéricas
+ * Converte Record<number, T> para T[]
+ */
+function normalizeToArray<T>(value: any): T[] {
+    if (!value) return [];
+    if (Array.isArray(value)) return value;
+    
+    // Se é um objeto com chaves numéricas, converter para array
+    if (typeof value === 'object') {
+        const keys = Object.keys(value);
+        const isNumericKeys = keys.every(key => !isNaN(Number(key)));
+        if (isNumericKeys) {
+            return keys
+                .map(key => Number(key))
+                .sort((a, b) => a - b)
+                .map(key => value[key]);
+        }
+    }
+    
+    return [];
+}
+
 interface UseCompleteCharsheetOptions {
     charsheetId: string;
     enabled?: boolean;
@@ -30,7 +53,7 @@ export function useCompleteCharsheet({
 
     const charsheet = useMemo(() => charsheetData?.[0] || null, [ charsheetData ]);
 
-    const spellsInput = useMemo<unknown[]>(() => (charsheet?.spells as unknown[]) ?? [], [ charsheet?.spells ]);
+    const spellsInput = useMemo<unknown[]>(() => normalizeToArray(charsheet?.spells), [ charsheet?.spells ]);
     const spellObjects = useMemo<SpellDTO[]>(
         () => spellsInput.filter((s: any): s is SpellDTO => typeof s === 'object' && s !== null && 'name' in s),
         [ spellsInput ]
@@ -52,7 +75,7 @@ export function useCompleteCharsheet({
         enabled: enabled && spellIdsToFetch.length > 0 && spellIdsToFetch.length <= 10
     });
 
-    const powersInput = useMemo<unknown[]>(() => (charsheet?.skills?.powers as unknown[]) ?? [], [ charsheet?.skills?.powers ]);
+    const powersInput = useMemo<unknown[]>(() => normalizeToArray(charsheet?.skills?.powers), [ charsheet?.skills?.powers ]);
     const powerObjects = useMemo<any[]>(
         () => powersInput.filter((p: any): p is any => typeof p === 'object' && p !== null && 'name' in p),
         [ powersInput ]

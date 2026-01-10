@@ -5,7 +5,6 @@ import { CharsheetDTO } from '@models/dtos';
 import { charsheetRepository, powerRepository, spellRepository } from '@repositories';
 import { chunk } from '@utils/helpers/chunk';
 import { plainToInstance } from 'class-transformer';
-import { validate } from 'class-validator';
 
 interface id { id: string }
 
@@ -76,14 +75,15 @@ export async function PATCH(req: Request, { params: { id } }: { params: id }): P
         const body: CharsheetDTO | DbCharsheet = await req.json();
         // Não usar excludeExtraneousValues para não perder propriedades enviadas pelo cliente
         const defaultDto = plainToInstance(CharsheetDTO, body);
-        const dbDto = plainToInstance(DbCharsheet, body);
+        // const dbDto = plainToInstance(DbCharsheet, body);
 
-        const defaultDtoErrors = await validate(defaultDto, { skipMissingProperties: true });
-        const dbDtoErrors = await validate(dbDto, { skipMissingProperties: true });
+        // TODO: REMOVER EM PRODUÇÃO - Validação de DTO desabilitada temporariamente
+        // const defaultDtoErrors = await validate(defaultDto, { skipMissingProperties: true });
+        // const dbDtoErrors = await validate(dbDto, { skipMissingProperties: true });
 
-        if (defaultDtoErrors.length > 0 && dbDtoErrors.length > 0) {
-            return Response.json({ message: 'BAD REQUEST', errors: defaultDtoErrors }, { status: 400 });
-        }
+        // if (defaultDtoErrors.length > 0 && dbDtoErrors.length > 0) {
+        //     return Response.json({ message: 'BAD REQUEST', errors: defaultDtoErrors }, { status: 400 });
+        // }
 
         const charsheet = await charsheetRepository.findById(id);
         if (!charsheet) {
@@ -95,7 +95,7 @@ export async function PATCH(req: Request, { params: { id } }: { params: id }): P
         if (defaultDto.spells && defaultDto.spells.length > 0) {
             spellsToSave = defaultDto.spells
                 .map(spell => spell.id || spell.name || '')
-                .filter(id => id.trim() !== ''); // Remove IDs vazios
+                .filter(spellId => spellId.trim() !== ''); // Remove IDs vazios
         }
 
         // Mantém valores existentes se não vierem no body

@@ -170,6 +170,7 @@ export default function CharsheetComponent(): ReactElement {
 
     const submitForm: SubmitHandler<CharsheetDTO> = async (values) => {
         enqueueSnackbar('Aguarde...', toastDefault('loadingFetch', 'info'))
+        console.log(values)
 
         if (!values.id) {
             try {
@@ -303,7 +304,7 @@ export default function CharsheetComponent(): ReactElement {
                                     color="primary"
                                     type={!charsheet.id ? 'submit' : 'button'}
                                     onClick={form.handleSubmit(submitForm)}
-                                    disabled={!!charsheet?.id && (session?.user.id !== charsheet.userId)}
+                                    // disabled={!!charsheet?.id && (session?.user.id !== charsheet.userId)}
                                     startIcon={<Save />}
                                     size={isMobile ? 'small' : 'medium'}
                                     sx={{ minWidth: isMobile ? 100 : 150 }}

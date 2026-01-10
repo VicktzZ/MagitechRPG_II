@@ -29,8 +29,6 @@ import CasinoIcon from '@mui/icons-material/Casino';
 import SkipNextIcon from '@mui/icons-material/SkipNext';
 import StopIcon from '@mui/icons-material/Stop';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
-import AddIcon from '@mui/icons-material/Add';
-import RemoveCircleIcon from '@mui/icons-material/RemoveCircle';
 import PersonIcon from '@mui/icons-material/Person';
 import PetsIcon from '@mui/icons-material/Pets';
 import RefreshIcon from '@mui/icons-material/Refresh';
@@ -370,8 +368,8 @@ export default function CombatDialog({
                 <Box sx={{ maxHeight: 150, overflow: 'auto', border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
                     <List dense>
                         {creatures.map(creature => {
-                            const isSelected = selectedCreatures.includes(creature.id!);
-                            const quantity = creatureQuantities[creature.id!] ?? 1;
+                            const isSelected = selectedCreatures.includes(creature.id);
+                            const quantity = creatureQuantities[creature.id] ?? 1;
 
                             return (
                                 <ListItem
@@ -383,7 +381,7 @@ export default function CombatDialog({
                                             size="small"
                                             value={quantity}
                                             onChange={(e) => handleCreatureQuantityChange(
-                                                creature.id!,
+                                                creature.id,
                                                 parseInt(e.target.value, 10)
                                             )}
                                             inputProps={{ min: 1, max: 99 }}
@@ -395,7 +393,7 @@ export default function CombatDialog({
                                     <Checkbox
                                         checked={isSelected}
                                         size="small"
-                                        onChange={() => toggleCreature(creature.id!)}
+                                        onChange={() => toggleCreature(creature.id)}
                                     />
                                     <ListItemAvatar>
                                         <Avatar sx={{ width: 28, height: 28, bgcolor: red[500] }}>
@@ -550,7 +548,7 @@ export default function CombatDialog({
                                                         <Tooltip title={combatant.type === 'player' ? 'Forçar rolagem (se jogador não responder)' : 'Rolar Iniciativa'}>
                                                             <IconButton 
                                                                 size="small" 
-                                                                onClick={() => handleRollInitiative(combatant.id)}
+                                                                onClick={async () => await handleRollInitiative(combatant.id)}
                                                                 color="primary"
                                                             >
                                                                 <CasinoIcon />
