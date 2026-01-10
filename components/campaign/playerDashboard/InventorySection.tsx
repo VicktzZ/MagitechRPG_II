@@ -16,6 +16,29 @@ import {
     Delete,
     CardGiftcard
 } from '@mui/icons-material';
+
+/**
+ * Normaliza um valor que pode ser um array ou um objeto com chaves numéricas
+ * Converte Record<number, T> para T[]
+ */
+function normalizeToArray<T>(value: any): T[] {
+    if (!value) return [];
+    if (Array.isArray(value)) return value;
+    
+    // Se é um objeto com chaves numéricas, converter para array
+    if (typeof value === 'object') {
+        const keys = Object.keys(value);
+        const isNumericKeys = keys.every(key => !isNaN(Number(key)));
+        if (isNumericKeys) {
+            return keys
+                .map(key => Number(key))
+                .sort((a, b) => a - b)
+                .map(key => value[key]);
+        }
+    }
+    
+    return [];
+}
 import { 
     Accordion, 
     AccordionDetails, 
@@ -63,13 +86,19 @@ export default function InventorySection(): ReactElement {
 
     // Calcula o peso total do inventário dinamicamente
     const calculateTotalWeight = useMemo(() => {
-        const weaponsWeight = charsheet.inventory.weapons.reduce((acc, w) => acc + (w.weight || 0), 0);
-        const armorsWeight = charsheet.inventory.armors.reduce((acc, a) => acc + (a.weight || 0), 0);
-        const itemsWeight = charsheet.inventory.items.reduce((acc, i) => acc + ((i.weight || 0) * (i.quantity || 1)), 0);
+        const weapons = normalizeToArray(charsheet.inventory.weapons);
+        const armors = normalizeToArray(charsheet.inventory.armors);
+        const items = normalizeToArray(charsheet.inventory.items);
+        
+        const weaponsWeight = weapons.reduce((acc, w) => acc + (w.weight || 0), 0);
+        const armorsWeight = armors.reduce((acc, a) => acc + (a.weight || 0), 0);
+        const itemsWeight = items.reduce((acc, i) => acc + ((i.weight || 0) * (i.quantity || 1)), 0);
         return weaponsWeight + armorsWeight + itemsWeight;
     }, [ charsheet.inventory.weapons, charsheet.inventory.armors, charsheet.inventory.items ]);
 
-    const totalItems = charsheet.inventory.weapons.length + charsheet.inventory.armors.length + charsheet.inventory.items.length;
+    const totalItems = normalizeToArray(charsheet.inventory.weapons).length + 
+                      normalizeToArray(charsheet.inventory.armors).length + 
+                      normalizeToArray(charsheet.inventory.items).length;
     const capacityPercent = (calculateTotalWeight / charsheet.capacity.max) * 100;
     const isOverloaded = capacityPercent > 100;
     const isNearLimit = capacityPercent > 80;
@@ -138,10 +167,10 @@ export default function InventorySection(): ReactElement {
 
                 switch (donationModal.type) {
                 case 'weapon':
-                    updatedInventory['inventory.weapons'] = charsheet.inventory.weapons.filter(w => w.id !== donationModal.item.id);
+                    updatedInventory['inventory.weapons'] = normalizeToArray(charsheet.inventory.weapons).filter(w => w.id !== donationModal.item.id);
                     break;
                 case 'armor': {
-                    updatedInventory['inventory.armors'] = charsheet.inventory.armors.filter(a => a.id !== donationModal.item.id);
+                    updatedInventory['inventory.armors'] = normalizeToArray(charsheet.inventory.armors).filter(a => a.id !== donationModal.item.id);
                     // Decrementa AP ao doar armadura - atualiza na sessão correta
                     const armorAPValue = donationModal.item.ap || donationModal.item.value || 0;
                     const campaignCode = campaign?.campaignCode;
@@ -169,7 +198,7 @@ export default function InventorySection(): ReactElement {
                     break;
                 }
                 case 'item': {
-                    updatedInventory['inventory.items'] = charsheet.inventory.items.filter(i => i.id !== donationModal.item.id);
+                    updatedInventory['inventory.items'] = normalizeToArray(charsheet.inventory.items).filter(i => i.id !== donationModal.item.id);
                     // Se o item for do tipo "Capacidade", diminui capacity.max ao invés de cargo
                     if (donationModal.item.kind === 'Capacidade') {
                         const currentMax = charsheet.capacity?.max || 0;
@@ -209,10 +238,10 @@ export default function InventorySection(): ReactElement {
             
             switch (type) {
             case 'weapon':
-                updatedInventory['inventory.weapons'] = charsheet.inventory.weapons.filter(w => w.id !== itemToDelete.id);
+                updatedInventory['inventory.weapons'] = normalizeToArray(charsheet.inventory.weapons).filter(w => w.id !== itemToDelete.id);
                 break;
             case 'armor': {
-                updatedInventory['inventory.armors'] = charsheet.inventory.armors.filter(a => a.id !== itemToDelete.id);
+                updatedInventory['inventory.armors'] = normalizeToArray(charsheet.inventory.armors).filter(a => a.id !== itemToDelete.id);
                 // Decrementa AP ao remover armadura - atualiza na sessão correta
                 const armorAPValue = itemToDelete.ap || itemToDelete.value || 0;
                 const campaignCode = campaign?.campaignCode;
@@ -240,7 +269,7 @@ export default function InventorySection(): ReactElement {
                 break;
             }
             case 'item': {
-                updatedInventory['inventory.items'] = charsheet.inventory.items.filter(i => i.id !== itemToDelete.id);
+                updatedInventory['inventory.items'] = normalizeToArray(charsheet.inventory.items).filter(i => i.id !== itemToDelete.id);
                 // Se o item for do tipo "Capacidade", diminui capacity.max ao invés de cargo
                 if (itemToDelete.kind === 'Capacidade') {
                     const currentMax = charsheet.capacity?.max || 0;
@@ -282,13 +311,13 @@ export default function InventorySection(): ReactElement {
         let items: Array<{ item: any, type: 'weapon' | 'armor' | 'item' }> = [];
 
         if (activeTab === 'all' || activeTab === 'weapons') {
-            items = items.concat(charsheet.inventory.weapons.map(w => ({ item: w, type: 'weapon' as const })));
+            items = items.concat(normalizeToArray(charsheet.inventory.weapons).map(w => ({ item: w, type: 'weapon' as const })));
         }
         if (activeTab === 'all' || activeTab === 'armors') {
-            items = items.concat(charsheet.inventory.armors.map(a => ({ item: a, type: 'armor' as const })));
+            items = items.concat(normalizeToArray(charsheet.inventory.armors).map(a => ({ item: a, type: 'armor' as const })));
         }
         if (activeTab === 'all' || activeTab === 'items') {
-            items = items.concat(charsheet.inventory.items.map(i => ({ item: i, type: 'item' as const })));
+            items = items.concat(normalizeToArray(charsheet.inventory.items).map(i => ({ item: i, type: 'item' as const })));
         }
 
         // Filtro por busca
@@ -504,7 +533,7 @@ export default function InventorySection(): ReactElement {
                                     Acessórios
                                 </Typography>
                                 <Stack direction="row" spacing={1} flexWrap="wrap">
-                                    {item.accessories.map((acc: string, idx: number) => (
+                                    {normalizeToArray(item.accessories).map((acc: string, idx: number) => (
                                         <Chip
                                             key={idx}
                                             label={acc}

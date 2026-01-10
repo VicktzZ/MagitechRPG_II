@@ -213,20 +213,66 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet, campai
     const handleSave = async () => {
         if (!charsheet?.id) return;
 
-        // Limpa strings vazias nos dados antes de salvar
+        // Limpa e normaliza dados antes de salvar
         const cleanDataForSaving = (data: any): any => {
-            const cleaned = { ...data };
-            Object.keys(cleaned).forEach(key => {
-                if (cleaned[key] === '') {
+            if (data === null || data === undefined) return data;
+            
+            // Se é um array, retorna o array (não limpa recursivamente)
+            if (Array.isArray(data)) return data;
+            
+            // Se não é objeto, retorna como está
+            if (typeof data !== 'object') {
+                // Converte string vazia em 0 apenas para números
+                return data === '' ? 0 : data;
+            }
+            
+            // Se é objeto, limpa recursivamente
+            const cleaned: any = {};
+            Object.keys(data).forEach(key => {
+                const value = data[key];
+                
+                // Pula campos undefined ou null
+                if (value === undefined || value === null) {
+                    return;
+                }
+                
+                // Se é string vazia, converte para 0
+                if (value === '') {
                     cleaned[key] = 0;
-                } else if (typeof cleaned[key] === 'object' && cleaned[key] !== null) {
-                    cleaned[key] = cleanDataForSaving(cleaned[key]);
+                }
+                // Se é array, preserva
+                else if (Array.isArray(value)) {
+                    cleaned[key] = value;
+                }
+                // Se é objeto, limpa recursivamente
+                else if (typeof value === 'object') {
+                    cleaned[key] = cleanDataForSaving(value);
+                }
+                // Valores primitivos, mantém
+                else {
+                    cleaned[key] = value;
                 }
             });
             return cleaned;
         };
 
-        const cleanedData = cleanDataForSaving(editedData);
+        // Preparar dados limpos, removendo campos que não devem ser salvos
+        const dataToSave = {
+            name: editedData.name,
+            playerName: editedData.playerName,
+            level: editedData.level,
+            age: editedData.age,
+            gender: editedData.gender,
+            race: editedData.race,
+            attributes: editedData.attributes,
+            expertises: editedData.expertises,
+            mods: editedData.mods,
+            points: editedData.points,
+            displacement: editedData.displacement,
+            spellSpace: editedData.spellSpace
+        };
+
+        const cleanedData = cleanDataForSaving(dataToSave);
 
         setIsSaving(true);
         try {
