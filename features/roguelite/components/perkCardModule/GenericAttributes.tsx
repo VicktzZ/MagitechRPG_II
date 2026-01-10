@@ -9,7 +9,7 @@ interface ExpertiseBonusSectionProps {
 
 function ExpertiseBonusSection({ borderColor, bonusValue }: ExpertiseBonusSectionProps) {
     return (
-        <Box sx={{ mb: 1 }}>
+        <Box sx={{ mb: 1.5 }}>
             <Typography
                 variant="caption"
                 sx={{
@@ -18,29 +18,48 @@ function ExpertiseBonusSection({ borderColor, bonusValue }: ExpertiseBonusSectio
                     fontSize: '0.7rem',
                     textTransform: 'uppercase',
                     letterSpacing: 0.5,
-                    mb: 0.5
+                    mb: 0.5,
+                    display: 'block'
                 }}
             >
-                Bônus de Perícia
+                ⭐ Bônus de Perícia
             </Typography>
             <Box
                 sx={{
-                    px: 1,
-                    py: 0.75,
-                    borderRadius: 1,
-                    border: `2px solid ${borderColor}`,
-                    bgcolor: `${borderColor}15`,
+                    px: 2,
+                    py: 1.5,
+                    borderRadius: 2,
+                    border: `3px solid ${borderColor}`,
+                    bgcolor: `${borderColor}20`,
                     textAlign: 'center',
-                    mb: 1
+                    mb: 1,
+                    boxShadow: `0 0 20px ${borderColor}40, inset 0 0 20px ${borderColor}15`,
+                    position: 'relative',
+                    overflow: 'hidden',
+                    '&::before': {
+                        content: '""',
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        height: '2px',
+                        background: `linear-gradient(90deg, transparent, ${borderColor}, transparent)`,
+                        animation: 'shine 2s infinite'
+                    },
+                    '@keyframes shine': {
+                        '0%': { transform: 'translateX(-100%)' },
+                        '100%': { transform: 'translateX(100%)' }
+                    }
                 }}
             >
                 <Typography
-                    variant="h6"
+                    variant="h4"
                     sx={{
                         color: '#ffffff',
-                        fontWeight: 800,
-                        fontSize: '1.1rem',
-                        textShadow: `0 0 10px ${borderColor}`
+                        fontWeight: 900,
+                        fontSize: '2rem',
+                        textShadow: `0 0 20px ${borderColor}, 0 0 40px ${borderColor}80`,
+                        letterSpacing: 1
                     }}
                 >
                     {bonusValue}
@@ -49,11 +68,15 @@ function ExpertiseBonusSection({ borderColor, bonusValue }: ExpertiseBonusSectio
                     variant="caption"
                     sx={{
                         color: '#e0e0e0',
-                        fontSize: '0.65rem',
-                        mt: 0.25
+                        fontSize: '0.7rem',
+                        fontWeight: 600,
+                        mt: 0.5,
+                        display: 'block',
+                        textTransform: 'uppercase',
+                        letterSpacing: 0.5
                     }}
                 >
-                    Adicionado a uma perícia aleatória
+                    Pontos Adicionados
                 </Typography>
             </Box>
         </Box>

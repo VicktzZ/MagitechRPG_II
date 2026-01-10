@@ -1,10 +1,8 @@
 'use client';
 
 import { charsheetModel } from '@constants/charsheet';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { useSession } from 'next-auth/react';
 import { FormProvider, useForm } from 'react-hook-form';
-import { charsheetSchema } from '@schemas';
 import { createContext, useContext, useEffect } from 'react';
 import { useLocalStorage } from '@uidotdev/usehooks';
 import { usePathname } from 'next/navigation';
@@ -33,7 +31,8 @@ export default function CharsheetFormProvider({ children, formData }: { children
             userId: session?.user?.id,
             ...formData
         },
-        resolver: zodResolver(charsheetSchema),
+        // TODO: REMOVER EM PRODUÇÃO - Validação do Zod desabilitada temporariamente
+        // resolver: zodResolver(charsheetSchema), // TODO: Reabilitar validação em produção
         shouldFocusError: true,
         criteriaMode: 'all'
     })

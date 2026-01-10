@@ -11,6 +11,7 @@ export const TYPE_OPTIONS = [
     { value: PerkTypeEnum.ITEM, label: 'Item' },
     { value: PerkTypeEnum.SKILL, label: 'Habilidade' },
     { value: PerkTypeEnum.SPELL, label: 'Magia' },
+    { value: PerkTypeEnum.EXPERTISE, label: 'Perícia' },
     { value: PerkTypeEnum.BONUS, label: 'Bônus' },
     { value: PerkTypeEnum.UPGRADE, label: 'Upgrade' },
     { value: PerkTypeEnum.STATS, label: 'Stats' }

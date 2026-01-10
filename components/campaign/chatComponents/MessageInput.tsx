@@ -52,7 +52,7 @@ const MessageInput = memo(function MessageInput({ onSendMessage }: MessageInputP
                 fullWidth
                 multiline
                 maxRows={3}
-                placeholder=" Digite sua mensagem...\n\nXdY para dados\n#XdY para dados separados"
+                placeholder="Digite sua mensagem... (XdY para dados, #XdY para dados separados)"
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 onKeyPress={handleKeyPress}

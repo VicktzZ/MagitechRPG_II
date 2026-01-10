@@ -1,12 +1,12 @@
 'use client';
 
+import CharsheetFormProvider from '@contexts/CharsheetFormProvider';
 import { CharsheetComponent } from '@components/charsheet';
-import { CharsheetFormProvider } from '@contexts';
-import type { ReactElement } from 'react'
-export default function CharsheetPage(): ReactElement {
+
+export default function CreateCharsheetPage() {
     return (
         <CharsheetFormProvider>
             <CharsheetComponent />
         </CharsheetFormProvider>
-    )
+    );
 }

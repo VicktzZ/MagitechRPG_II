@@ -14,7 +14,8 @@ import {
     Typography, 
     alpha, 
     useMediaQuery,
-    type SxProps
+    type SxProps,
+    Grid
 } from '@mui/material'
 import { useState, type ReactElement, useEffect, useRef } from 'react'
 import { Animate, AnimateOnScroll, Parallax } from '@components/misc'
@@ -22,6 +23,7 @@ import VolunteerActivismIcon from '@mui/icons-material/VolunteerActivism'
 import AutoStoriesIcon from '@mui/icons-material/AutoStories'
 import HelpIcon from '@mui/icons-material/Help'
 import BookIcon from '@mui/icons-material/Book'
+import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium'
 import { intro, landingPageGrimoire, landingPageSynopse, BLOB_API } from '@constants'
 import { useTheme } from '@mui/material'
 import { useRouter } from 'next/navigation'
@@ -29,11 +31,14 @@ import magitechCapa from '@public/assets/magitech_capa.png'
 import magitechCapaGrimorio from '@public/assets/magitech_capa_grimorio.png'
 import profilePhoto from '@public/assets/profile_photo.jpg'
 import Image from 'next/image'
-import {  } from 'next-auth/react'
+import { useSession } from 'next-auth/react'
+import { PricingCard } from '@components/subscription'
+import { SubscriptionPlan } from '@enums/subscriptionEnum'
 
 export default function LandingPage(): ReactElement | null {
     const theme = useTheme()
     const matches = useMediaQuery(theme.breakpoints.down('md'))
+    const { data: session } = useSession()
     const [ bgIndex ] = useState(1)
     const [ deferredPrompt, setDeferredPrompt ] = useState<any>(null)
     const [ showButton, setShowButton ] = useState(false)
@@ -47,6 +52,17 @@ export default function LandingPage(): ReactElement | null {
     const bgTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
     const router = useRouter()
+    
+    // Função para lidar com cliques nos planos
+    const handlePlanClick = () => {
+        if (!session) {
+            // Se não está logado, redireciona para autenticação
+            router.push('/api/auth/signin')
+        } else {
+            // Se está logado, redireciona para a página de planos
+            router.push('/app/subscription/plans')
+        }
+    }
 
     const triggerGlitch = () => {
         const waitTime = Math.random() * 7000 + 3000;
@@ -1123,6 +1139,108 @@ export default function LandingPage(): ReactElement | null {
                             </Box>
                         </AnimateOnScroll>
                     </Box>
+                    
+                    <Box id="planos" mb={!matches ? 30 : 20}>
+                        <Box p={5} width="100%">
+                            <Typography variant="h3" fontFamily="WBZ" textAlign="center">
+                                Planos e Assinaturas
+                            </Typography>
+                            <Typography variant="body1" textAlign="center" mt={2} color="text.secondary">
+                                Escolha o plano perfeito para sua aventura no MagitechRPG
+                            </Typography>
+                        </Box>
+                        <AnimateOnScroll animateOnce animation="fadeInUp">
+                            <Box
+                                display="flex"
+                                flexDirection="column"
+                                alignItems="center"
+                                justifyContent="center"
+                                width="100%"
+                                gap={5}
+                            >
+                                <Grid container spacing={4} sx={{ maxWidth: 1400, mx: 'auto', px: !matches ? 4 : 2 }}>
+                                    <Grid item xs={12} md={4}>
+                                        <PricingCard 
+                                            plan={SubscriptionPlan.FREEMIUM}
+                                            onSelect={handlePlanClick}
+                                        />
+                                    </Grid>
+                                    <Grid item xs={12} md={4}>
+                                        <PricingCard 
+                                            plan={SubscriptionPlan.PREMIUM}
+                                            onSelect={handlePlanClick}
+                                        />
+                                    </Grid>
+                                    <Grid item xs={12} md={4}>
+                                        <PricingCard 
+                                            plan={SubscriptionPlan.PREMIUM_PLUS}
+                                            onSelect={handlePlanClick}
+                                        />
+                                    </Grid>
+                                </Grid>
+                                
+                                <Box 
+                                    display="flex" 
+                                    flexDirection="column" 
+                                    alignItems="center" 
+                                    gap={3}
+                                    mt={4}
+                                    p={4}
+                                    borderRadius={3}
+                                    sx={{
+                                        background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.05)}, ${alpha(theme.palette.secondary.main, 0.05)})`,
+                                        backdropFilter: 'blur(10px)',
+                                        border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+                                        maxWidth: 800
+                                    }}
+                                >
+                                    <WorkspacePremiumIcon 
+                                        sx={{ 
+                                            fontSize: '3rem', 
+                                            color: theme.palette.primary.main,
+                                            animation: 'pulse 2s infinite',
+                                            '@keyframes pulse': {
+                                                '0%': { transform: 'scale(1)', opacity: 1 },
+                                                '50%': { transform: 'scale(1.05)', opacity: 0.8 },
+                                                '100%': { transform: 'scale(1)', opacity: 1 }
+                                            }
+                                        }} 
+                                    />
+                                    <Typography variant="h5" fontWeight={700} textAlign="center" color="primary.main">
+                                        Desbloqueie Todo o Potencial do MagitechRPG
+                                    </Typography>
+                                    <Typography variant="body1" textAlign="center" color="text.secondary">
+                                        Com os planos Premium e Premium+, você tem acesso a recursos exclusivos como campanhas colaborativas,
+                                        sistemas de RPG customizados, acesso ao Discord exclusivo e muito mais!
+                                    </Typography>
+                                    <Button
+                                        variant="contained"
+                                        size="large"
+                                        startIcon={<WorkspacePremiumIcon />}
+                                        onClick={() => handlePlanClick()}
+                                        sx={{
+                                            mt: 2,
+                                            py: 1.5,
+                                            px: 4,
+                                            fontSize: '1.1rem',
+                                            fontWeight: 'bold',
+                                            borderRadius: 3,
+                                            boxShadow: theme.shadows[8],
+                                            background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+                                            transition: 'all 0.3s ease',
+                                            '&:hover': {
+                                                transform: 'translateY(-3px)',
+                                                boxShadow: theme.shadows[12]
+                                            }
+                                        }}
+                                    >
+                                        {session ? 'Ver Todos os Planos' : 'Fazer Login para Ver Planos'}
+                                    </Button>
+                                </Box>
+                            </Box>
+                        </AnimateOnScroll>
+                    </Box>
+                    
                     <Box id="doacao" mb={!matches ? 30 : 20}>
                         <Box p={5} width="100%">
                             <Typography variant="h3" fontFamily="WBZ" textAlign="center">

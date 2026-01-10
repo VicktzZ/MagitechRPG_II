@@ -31,6 +31,28 @@ import type { Skill } from '@models';
 
 type SkillsFilterType = 'all' | 'class' | 'subclass' | 'lineage' | 'powers' | 'bonus' | 'race'
 
+/**
+ * Normaliza um valor que pode ser um array ou um objeto com chaves numéricas
+ */
+function normalizeToArray<T>(value: any): T[] {
+    if (!value) return [];
+    if (Array.isArray(value)) return value;
+    
+    // Se é um objeto com chaves numéricas, converter para array
+    if (typeof value === 'object') {
+        const keys = Object.keys(value);
+        const isNumericKeys = keys.every(key => !isNaN(Number(key)));
+        if (isNumericKeys) {
+            return keys
+                .map(key => Number(key))
+                .sort((a, b) => a - b)
+                .map(key => value[key]);
+        }
+    }
+    
+    return [];
+}
+
 export default function Skills(): ReactElement {
     const { control, setValue, getValues, formState: { errors } } = useFormContext<CharsheetDTO>()
     const skillRef = useRef<EventTarget & HTMLSpanElement | null>()
@@ -254,18 +276,16 @@ export default function Skills(): ReactElement {
 
         if (skillsFilter === 'all') {
             return [
-                ...(formSkills?.class || []),
-                ...(formSkills?.subclass || []),
-                ...(formSkills?.bonus || []),
-                ...(formSkills?.powers || []),
-                ...(formSkills?.lineage || []),
-                ...(formSkills?.race || [])
+                ...normalizeToArray(formSkills?.class),
+                ...normalizeToArray(formSkills?.subclass),
+                ...normalizeToArray(formSkills?.bonus),
+                ...normalizeToArray(formSkills?.powers),
+                ...normalizeToArray(formSkills?.lineage),
+                ...normalizeToArray(formSkills?.race)
             ].map(renderSkill)
         } else {
-            const filteredSkills = formSkills[skillsFilter as keyof typeof formSkills] || []
-            return Array.isArray(filteredSkills) 
-                ? filteredSkills.map(renderSkill)
-                : []
+            const filteredSkills = formSkills?.[skillsFilter as keyof typeof formSkills]
+            return normalizeToArray(filteredSkills).map(renderSkill)
         }
     }, [ formSkills, skills, skillsFilter, getValues, setValue, handleSkillClick ])
     
