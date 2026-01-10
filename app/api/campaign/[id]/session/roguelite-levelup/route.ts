@@ -118,27 +118,48 @@ export async function POST(
                 const currentInventory = charsheet.inventory || { items: [], money: 0 }
                 const newMoney = (currentInventory.money || 0) + 250
 
-                // Stats: LP +10, MP +5 (e restaura ao novo máximo)
-                const currentStats = charsheet.stats || { lp: 100, mp: 50, ap: 6 }
-                const newMaxLp = (currentStats.lp || 100) + 10
-                const newMaxMp = (currentStats.mp || 50) + 5
-
-                // Atualiza a sessão da campanha com os novos stats
+                // Encontrar a sessão da campanha ANTES de calcular stats
                 const sessions = charsheet.session || []
                 const sessionIndex = sessions.findIndex((s: any) => s.campaignCode === campaign.campaignCode)
                 
+                // Obter stats atuais DA SESSÃO (não stats globais)
+                const currentSessionStats = sessionIndex >= 0 
+                    ? sessions[sessionIndex].stats 
+                    : charsheet.stats || { lp: 100, maxLp: 100, mp: 50, maxMp: 50, ap: 6, maxAp: 6 };
+                
+                // Stats: Aumentar MÁXIMOS em +10 LP e +5 MP, e restaurar aos novos máximos
+                const newMaxLp = (currentSessionStats.maxLp || currentSessionStats.lp || 100) + 10
+                const newMaxMp = (currentSessionStats.maxMp || currentSessionStats.mp || 50) + 5
+                const newMaxAp = currentSessionStats.maxAp || currentSessionStats.ap || 6  // AP não muda
+
+                // Atualiza a sessão da campanha com os novos stats
                 const updatedSessions = [ ...sessions ]
                 if (sessionIndex >= 0) {
                     updatedSessions[sessionIndex] = {
                         ...updatedSessions[sessionIndex],
                         stats: {
-                            ...updatedSessions[sessionIndex].stats,
+                            ...currentSessionStats,
                             maxLp: newMaxLp,
                             maxMp: newMaxMp,
-                            lp: newMaxLp, // Restaura ao máximo
-                            mp: newMaxMp  // Restaura ao máximo
+                            maxAp: newMaxAp,
+                            lp: newMaxLp, // Restaura ao novo máximo
+                            mp: newMaxMp, // Restaura ao novo máximo
+                            ap: newMaxAp  // Mantém AP
                         }
                     }
+                } else {
+                    // Se não existe sessão ainda, criar uma
+                    updatedSessions.push({
+                        campaignCode: campaign.campaignCode,
+                        stats: {
+                            maxLp: newMaxLp,
+                            maxMp: newMaxMp,
+                            maxAp: newMaxAp,
+                            lp: newMaxLp,
+                            mp: newMaxMp,
+                            ap: newMaxAp
+                        }
+                    })
                 }
 
                 // Aplica as atualizações
@@ -157,11 +178,9 @@ export async function POST(
                         ...currentInventory,
                         money: newMoney
                     },
-                    stats: {
-                        ...currentStats,
-                        lp: newMaxLp,
-                        mp: newMaxMp
-                    },
+                    // Stats globais permanecem inalterados
+                    // stats: charsheet.stats, // Não atualiza stats globais
+                    // Atualiza apenas a sessão específica da campanha
                     session: updatedSessions
                 })
 
