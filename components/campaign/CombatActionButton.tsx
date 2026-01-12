@@ -64,8 +64,8 @@ export default function CombatActionButton({
     const theme = useTheme();
     const isDarkMode = theme.palette.mode === 'dark';
 
-    // Função para obter LP/MP de charsheet.session (fonte correta)
-    const getPlayerSessionStats = (combatant: Combatant) => {
+    // Função para obter LP/MP de charsheet.stats
+    const getPlayerStats = (combatant: Combatant) => {
         if (combatant.type !== 'player') return null;
         
         // Busca o charsheet do combatente
@@ -73,20 +73,13 @@ export default function CombatActionButton({
             c.id === combatant.id || c.id === combatant.odacId
         );
         
-        if (charsheet) {
-            // Busca os stats na sessão da charsheet para esta campanha
-            const sessionData = charsheet.session?.find(
-                (s: any) => s.campaignCode === campaignCode
-            );
-            
-            if (sessionData?.stats) {
-                return {
-                    lp: sessionData.stats.lp ?? combatant.currentLp ?? 0,
-                    maxLp: sessionData.stats.maxLp ?? combatant.maxLp ?? 0,
-                    mp: sessionData.stats.mp ?? combatant.currentMp ?? 0,
-                    maxMp: sessionData.stats.maxMp ?? combatant.maxMp ?? 0
-                };
-            }
+        if (charsheet?.stats) {
+            return {
+                lp: charsheet.stats.lp ?? combatant.currentLp ?? 0,
+                maxLp: charsheet.stats.maxLp ?? combatant.maxLp ?? 0,
+                mp: charsheet.stats.mp ?? combatant.currentMp ?? 0,
+                maxMp: charsheet.stats.maxMp ?? combatant.maxMp ?? 0
+            };
         }
         
         return null;
@@ -261,9 +254,9 @@ export default function CombatActionButton({
                                 <List dense>
                                     {combat.combatants.map(combatant => {
                                         const isSelected = targetId === combatant.id;
-                                        const sessionStats = getPlayerSessionStats(combatant);
-                                        const currentLp = sessionStats?.lp ?? combatant.currentLp ?? 0;
-                                        const maxLp = sessionStats?.maxLp ?? combatant.maxLp ?? 1;
+                                        const playerStats = getPlayerStats(combatant);
+                                        const currentLp = playerStats?.lp ?? combatant.currentLp ?? 0;
+                                        const maxLp = playerStats?.maxLp ?? combatant.maxLp ?? 1;
                                         const lpPercent = (currentLp / maxLp) * 100;
                                         
                                         return (

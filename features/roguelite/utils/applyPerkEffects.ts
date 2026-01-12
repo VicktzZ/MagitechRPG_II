@@ -39,35 +39,18 @@ function parseEffectValue(value: number | string): number {
 }
 
 /**
- * Encontra o índice da sessão da campanha no charsheet
- */
-function findSessionIndex(charsheet: any, campaignCode: string): number {
-    const sessions = charsheet?.session || []
-    return sessions.findIndex((s: any) => s.campaignCode === campaignCode)
-}
-
-/**
- * Atualiza um valor na sessão da campanha
- */
-
-/**
  * Aplica os efeitos de um perk ao charsheet
  * @param options - Opções contendo effects, currentCharsheet e campaignCode
  * @returns Objeto com updates para o Firestore e mensagens de resultado
  */
 export function applyPerkEffects(options: ApplyEffectsOptions): ApplyEffectsResult {
-    const { effects, currentCharsheet, campaignCode } = options
+    const { effects, currentCharsheet } = options
     const updates: Record<string, any> = {}
     const messages: string[] = []
     
     if (!effects || !Array.isArray(effects) || effects.length === 0) {
         return { updates, messages }
     }
-    
-    // Encontra a sessão da campanha
-    const sessions = currentCharsheet?.session || []
-    const sessionIndex = findSessionIndex(currentCharsheet, campaignCode)
-    const currentSession = sessionIndex >= 0 ? sessions[sessionIndex] : null
     
     for (const effect of effects) {
         const { type, target, value  } = effect
@@ -78,7 +61,7 @@ export function applyPerkEffects(options: ApplyEffectsOptions): ApplyEffectsResu
         try {
             switch (type) {
             case 'add': {
-                const result = processAddEffect(target, numericValue, currentCharsheet, currentSession, sessions, sessionIndex)
+                const result = processAddEffect(target, numericValue, currentCharsheet)
                 if (result.update) {
                     Object.assign(updates, result.update)
                 }
@@ -89,7 +72,7 @@ export function applyPerkEffects(options: ApplyEffectsOptions): ApplyEffectsResu
             }
                 
             case 'multiply': {
-                const result = processMultiplyEffect(target, numericValue, currentCharsheet, currentSession, sessions, sessionIndex)
+                const result = processMultiplyEffect(target, numericValue, currentCharsheet)
                 if (result.update) {
                     Object.assign(updates, result.update)
                 }
@@ -100,7 +83,7 @@ export function applyPerkEffects(options: ApplyEffectsOptions): ApplyEffectsResu
             }
                 
             case 'heal': {
-                const result = processHealEffect(target, numericValue, currentCharsheet, currentSession, sessions, sessionIndex)
+                const result = processHealEffect(target, numericValue, currentCharsheet)
                 if (result.update) {
                     Object.assign(updates, result.update)
                 }
@@ -112,7 +95,7 @@ export function applyPerkEffects(options: ApplyEffectsOptions): ApplyEffectsResu
                 
             case 'reduce': {
                 // Reduce é como multiply mas semanticamente diferente (valor < 1)
-                const result = processMultiplyEffect(target, numericValue, currentCharsheet, currentSession, sessions, sessionIndex)
+                const result = processMultiplyEffect(target, numericValue, currentCharsheet)
                 if (result.update) {
                     Object.assign(updates, result.update)
                 }
@@ -123,7 +106,7 @@ export function applyPerkEffects(options: ApplyEffectsOptions): ApplyEffectsResu
             }
                 
             case 'set': {
-                const result = processSetEffect(target, numericValue, currentCharsheet)
+                const result = processSetEffect(target, numericValue)
                 if (result.update) {
                     Object.assign(updates, result.update)
                 }
@@ -158,10 +141,7 @@ interface EffectResult {
 function processAddEffect(
     target: string,
     value: number,
-    charsheet: any,
-    session: any,
-    sessions: any[],
-    sessionIndex: number
+    charsheet: any
 ): EffectResult {
     // Mapeamento de targets conhecidos
     const targetMappings: Record<string, () => EffectResult> = {
@@ -242,32 +222,11 @@ function processAddEffect(
         }
     }
     
-    // Stats na sessão (ex: "stats.lp", "stats.maxLp", "stats.mp", "stats.maxMp", "stats.ap")
-    if (target.startsWith('stats.') && session && sessionIndex >= 0) {
+    // Stats (ex: "stats.lp", "stats.maxLp", "stats.mp", "stats.maxMp", "stats.ap")
+    if (target.startsWith('stats.')) {
         const statName = target.replace('stats.', '')
-        
-        // Para stats de sessão, obtém o valor atual da sessão
-        // Fallback para o charsheet base se não existir na sessão
-        let current = session?.stats?.[statName]
-        if (current === undefined) {
-            // Tenta obter do charsheet base para maxLp, maxMp, etc
-            if (statName === 'maxLp') current = charsheet?.stats?.lp || 100
-            else if (statName === 'maxMp') current = charsheet?.stats?.mp || 50
-            else if (statName === 'maxAp') current = charsheet?.stats?.ap || 5
-            else if (statName === 'lp') current = session?.stats?.maxLp || charsheet?.stats?.lp || 100
-            else if (statName === 'mp') current = session?.stats?.maxMp || charsheet?.stats?.mp || 50
-            else if (statName === 'ap') current = session?.stats?.maxAp || charsheet?.stats?.ap || 5
-            else current = 0
-        }
-        
-        const updatedSessions = [ ...sessions ]
-        updatedSessions[sessionIndex] = {
-            ...session,
-            stats: {
-                ...session.stats,
-                [statName]: current + value
-            }
-        }
+        const currentStats = charsheet?.stats || {}
+        const current = currentStats[statName] || 0
         
         // Mensagem mais descritiva
         const labelMap: Record<string, string> = {
@@ -281,7 +240,7 @@ function processAddEffect(
         const label = labelMap[statName] || statName
         
         return { 
-            update: { session: updatedSessions }, 
+            update: { [`stats.${statName}`]: current + value }, 
             message: `+${value} ${label}` 
         }
     }
@@ -310,26 +269,15 @@ function processAddEffect(
 function processMultiplyEffect(
     target: string,
     value: number,
-    charsheet: any,
-    session: any,
-    sessions: any[],
-    sessionIndex: number
+    charsheet: any
 ): EffectResult {
-    // Stats na sessão
-    if (target.startsWith('stats.') && session && sessionIndex >= 0) {
+    // Stats
+    if (target.startsWith('stats.')) {
         const statName = target.replace('stats.', '')
-        const current = session?.stats?.[statName] || 0
+        const current = charsheet?.stats?.[statName] || 0
         const newValue = Math.floor(current * value)
-        const updatedSessions = [ ...sessions ]
-        updatedSessions[sessionIndex] = {
-            ...session,
-            stats: {
-                ...session.stats,
-                [statName]: newValue
-            }
-        }
         return { 
-            update: { session: updatedSessions }, 
+            update: { [`stats.${statName}`]: newValue }, 
             message: `${statName} multiplicado por ${value} (${current} → ${newValue})` 
         }
     }
@@ -351,14 +299,9 @@ function processMultiplyEffect(
 function processHealEffect(
     target: string,
     value: number,
-    charsheet: any,
-    session: any,
-    sessions: any[],
-    sessionIndex: number
+    charsheet: any
 ): EffectResult {
-    if (!session || sessionIndex < 0) {
-        return { update: null, message: null }
-    }
+    const stats = charsheet?.stats || {}
     
     // Normaliza o target removendo 'stats.' se presente
     const normalizedTarget = target.startsWith('stats.') ? target.replace('stats.', '') : target
@@ -371,38 +314,22 @@ function processHealEffect(
     if (baseStat === 'lp') {
         if (isMaxStat) {
             // Aumenta maxLp
-            const currentMaxLp = session?.stats?.maxLp || charsheet?.stats?.lp || 100
+            const currentMaxLp = stats.maxLp || stats.lp || 100
             const newMaxLp = currentMaxLp + value
             
-            const updatedSessions = [ ...sessions ]
-            updatedSessions[sessionIndex] = {
-                ...session,
-                stats: {
-                    ...session.stats,
-                    maxLp: newMaxLp
-                }
-            }
             return { 
-                update: { session: updatedSessions }, 
+                update: { 'stats.maxLp': newMaxLp }, 
                 message: `+${value} LP máximo (${currentMaxLp} → ${newMaxLp})` 
             }
         } else {
             // Cura LP (limitado ao máximo)
-            const currentLp = session?.stats?.lp || 0
-            const maxLp = session?.stats?.maxLp || charsheet?.stats?.lp || 100
+            const currentLp = stats.lp || 0
+            const maxLp = stats.maxLp || 100
             const newLp = Math.min(currentLp + value, maxLp)
             const healed = newLp - currentLp
             
-            const updatedSessions = [ ...sessions ]
-            updatedSessions[sessionIndex] = {
-                ...session,
-                stats: {
-                    ...session.stats,
-                    lp: newLp
-                }
-            }
             return { 
-                update: { session: updatedSessions }, 
+                update: { 'stats.lp': newLp }, 
                 message: `Curado ${healed} LP (${currentLp} → ${newLp})` 
             }
         }
@@ -412,38 +339,22 @@ function processHealEffect(
     if (baseStat === 'mp') {
         if (isMaxStat) {
             // Aumenta maxMp
-            const currentMaxMp = session?.stats?.maxMp || charsheet?.stats?.mp || 50
+            const currentMaxMp = stats.maxMp || stats.mp || 50
             const newMaxMp = currentMaxMp + value
             
-            const updatedSessions = [ ...sessions ]
-            updatedSessions[sessionIndex] = {
-                ...session,
-                stats: {
-                    ...session.stats,
-                    maxMp: newMaxMp
-                }
-            }
             return { 
-                update: { session: updatedSessions }, 
+                update: { 'stats.maxMp': newMaxMp }, 
                 message: `+${value} MP máximo (${currentMaxMp} → ${newMaxMp})` 
             }
         } else {
             // Restaura MP (limitado ao máximo)
-            const currentMp = session?.stats?.mp || 0
-            const maxMp = session?.stats?.maxMp || charsheet?.stats?.mp || 50
+            const currentMp = stats.mp || 0
+            const maxMp = stats.maxMp || 50
             const newMp = Math.min(currentMp + value, maxMp)
             const restored = newMp - currentMp
             
-            const updatedSessions = [ ...sessions ]
-            updatedSessions[sessionIndex] = {
-                ...session,
-                stats: {
-                    ...session.stats,
-                    mp: newMp
-                }
-            }
             return { 
-                update: { session: updatedSessions }, 
+                update: { 'stats.mp': newMp }, 
                 message: `Restaurado ${restored} MP (${currentMp} → ${newMp})` 
             }
         }
@@ -452,58 +363,34 @@ function processHealEffect(
     // AP ou maxAp
     if (baseStat === 'ap') {
         if (isMaxStat) {
-            const currentMaxAp = session?.stats?.maxAp || charsheet?.stats?.ap || 5
+            const currentMaxAp = stats.maxAp || stats.ap || 5
             const newMaxAp = currentMaxAp + value
             
-            const updatedSessions = [ ...sessions ]
-            updatedSessions[sessionIndex] = {
-                ...session,
-                stats: {
-                    ...session.stats,
-                    maxAp: newMaxAp
-                }
-            }
             return { 
-                update: { session: updatedSessions }, 
+                update: { 'stats.maxAp': newMaxAp }, 
                 message: `+${value} AP máximo (${currentMaxAp} → ${newMaxAp})` 
             }
         } else {
-            const currentAp = session?.stats?.ap || 0
-            const maxAp = session?.stats?.maxAp || charsheet?.stats?.ap || 5
+            const currentAp = stats.ap || 0
+            const maxAp = stats.maxAp || 5
             const newAp = Math.min(currentAp + value, maxAp)
             const restored = newAp - currentAp
             
-            const updatedSessions = [ ...sessions ]
-            updatedSessions[sessionIndex] = {
-                ...session,
-                stats: {
-                    ...session.stats,
-                    ap: newAp
-                }
-            }
             return { 
-                update: { session: updatedSessions }, 
+                update: { 'stats.ap': newAp }, 
                 message: `Restaurado ${restored} AP (${currentAp} → ${newAp})` 
             }
         }
     }
     
-    // Fallback: trata como add genérico para stats na sessão
+    // Fallback: trata como add genérico para stats
     if (target.startsWith('stats.') || [ 'lp', 'mp', 'ap', 'maxLp', 'maxMp', 'maxAp' ].includes(target)) {
         const statName = target.startsWith('stats.') ? target.replace('stats.', '') : target
-        const current = session?.stats?.[statName] || 0
+        const current = stats[statName] || 0
         const newValue = current + value
         
-        const updatedSessions = [ ...sessions ]
-        updatedSessions[sessionIndex] = {
-            ...session,
-            stats: {
-                ...session.stats,
-                [statName]: newValue
-            }
-        }
         return { 
-            update: { session: updatedSessions }, 
+            update: { [`stats.${statName}`]: newValue }, 
             message: `+${value} em ${statName} (${current} → ${newValue})` 
         }
     }
@@ -517,8 +404,16 @@ function processHealEffect(
 function processSetEffect(
     target: string,
     value: number
-    
 ): EffectResult {
+    // Stats
+    if (target.startsWith('stats.')) {
+        const statName = target.replace('stats.', '')
+        return { 
+            update: { [`stats.${statName}`]: value }, 
+            message: `${statName} definido para ${value}` 
+        }
+    }
+    
     return { 
         update: { [target]: value }, 
         message: `${target} definido para ${value}` 

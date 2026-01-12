@@ -109,14 +109,9 @@ interface CharsheetDetailsModalProps {
     open: boolean;
     onClose: () => void;
     charsheet: Required<CharsheetDTO>;
-    campaign?: {
-        id: string;
-        campaignCode: string;
-        mode: string;
-    };
 }
 
-export default function CharsheetDetailsModal({ open, onClose, charsheet, campaign }: CharsheetDetailsModalProps) {
+export default function CharsheetDetailsModal({ open, onClose, charsheet }: CharsheetDetailsModalProps) {
     const [ tabValue, setTabValue ] = useState(0);
     const { enqueueSnackbar } = useSnackbar();
 
@@ -137,15 +132,6 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet, campai
     // Inicializa os dados editáveis quando o modal abre
     useEffect(() => {
         if (open && charsheet) {
-            // SEMPRE usar stats da sessão da campanha atual (não stats globais)
-            let statsToUse = charsheet.stats;
-            if (campaign?.campaignCode && charsheet.session) {
-                const campaignSession = charsheet.session.find((s: any) => s.campaignCode === campaign.campaignCode);
-                if (campaignSession?.stats) {
-                    statsToUse = campaignSession.stats;
-                }
-            }
-
             setEditedData({
                 name: charsheet.name,
                 playerName: charsheet.playerName,
@@ -153,7 +139,7 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet, campai
                 age: charsheet.age,
                 gender: charsheet.gender,
                 race: charsheet.race,
-                stats: { ...statsToUse },
+                stats: { ...charsheet.stats },
                 attributes: { ...charsheet.attributes },
                 expertises: { ...charsheet.expertises },
                 mods: {
@@ -174,20 +160,10 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet, campai
                 elementalMastery: charsheet.elementalMastery
             });
         }
-    }, [ open, charsheet, campaign ]);
+    }, [ open, charsheet ]);
 
-    // Helper para obter os stats corretos (sessão ou global)
-    const getDisplayStats = () => {
-        if (campaign?.mode === 'Roguelite' && campaign.campaignCode && charsheet.session) {
-            const campaignSession = charsheet.session.find((s: any) => s.campaignCode === campaign.campaignCode);
-            if (campaignSession?.stats) {
-                return campaignSession.stats;
-            }
-        }
-        return charsheet.stats;
-    };
-
-    const displayStats = getDisplayStats();
+    // Stats do personagem
+    const displayStats = charsheet.stats;
 
     // Helper para tratar valores de input number de forma adequada
     const handleNumberInputChange = (path: string, inputValue: string) => {
@@ -256,7 +232,7 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet, campai
             return cleaned;
         };
 
-        // Preparar dados limpos, removendo campos que não devem ser salvos
+        // Preparar dados limpos
         const dataToSave = {
             name: editedData.name,
             playerName: editedData.playerName,
@@ -264,6 +240,7 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet, campai
             age: editedData.age,
             gender: editedData.gender,
             race: editedData.race,
+            stats: editedData.stats,
             attributes: editedData.attributes,
             expertises: editedData.expertises,
             mods: editedData.mods,
@@ -276,38 +253,8 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet, campai
 
         setIsSaving(true);
         try {
-            // SEMPRE salvar stats na sessão específica da campanha (não em stats globais)
-            if (campaign?.campaignCode && charsheet.session) {
-                // Encontrar o índice da sessão da campanha atual
-                const campaignSessionIndex = charsheet.session.findIndex((s: any) => s.campaignCode === campaign.campaignCode);
-
-                if (campaignSessionIndex >= 0) {
-                    // Preparar dados para atualizar a sessão específica
-                    const updatedSession = [ ...charsheet.session ];
-                    updatedSession[campaignSessionIndex] = {
-                        ...updatedSession[campaignSessionIndex],
-                        stats: cleanedData.stats
-                    };
-
-                    // Atualizar apenas a sessão (mantendo stats global intacto)
-                    await charsheetEntity.update(charsheet.id, {
-                        ...cleanedData,
-                        stats: charsheet.stats, // Mantém stats globais originais
-                        session: updatedSession
-                    });
-                    
-                    enqueueSnackbar('Ficha atualizada com sucesso! (Stats da sessão)', { variant: 'success' });
-                } else {
-                    // Fallback: salvar normalmente se não encontrar sessão
-                    await charsheetEntity.update(charsheet.id, cleanedData);
-                    enqueueSnackbar('Ficha atualizada (stats globais)', { variant: 'warning' });
-                }
-            } else {
-                // Se não há campanha ou sessão, salvar stats globalmente
-                await charsheetEntity.update(charsheet.id, cleanedData);
-                enqueueSnackbar('Ficha atualizada (sem sessão)', { variant: 'warning' });
-            }
-            
+            await charsheetEntity.update(charsheet.id, cleanedData);
+            enqueueSnackbar('Ficha atualizada com sucesso!', { variant: 'success' });
             setIsEditing(false);
         } catch (error) {
             console.error('Erro ao salvar ficha:', error);

@@ -111,43 +111,23 @@ export default function CombatStatus({
         userCombatant.initiativeRoll === 0 &&
         !isGM;
         
-    // Função para obter LP/MP da sessão da charsheet para jogadores
-    const getPlayerSessionStats = useCallback((combatantId: string, odacId?: string) => {
-        // PRIORIDADE 1: Buscar de charsheet.session (a fonte correta)
+    // Função para obter LP/MP da charsheet para jogadores
+    const getPlayerStats = useCallback((combatantId: string, odacId?: string) => {
         const charsheet = charsheets?.find((c: any) => 
             c.id === combatantId || c.id === odacId
         );
         
-        if (charsheet) {
-            const sessionData = charsheet.session?.find(
-                (s: any) => s.campaignCode === campaign?.campaignCode
-            );
-            
-            if (sessionData?.stats) {
-                return {
-                    lp: sessionData.stats.lp ?? 0,
-                    maxLp: sessionData.stats.maxLp ?? 0,
-                    mp: sessionData.stats.mp ?? 0,
-                    maxMp: sessionData.stats.maxMp ?? 0
-                };
-            }
-        }
-        
-        // PRIORIDADE 2: Fallback para campaign.session.users (legacy)
-        const playerSession = (campaign?.session?.users as any[])?.find(
-            (u: any) => u.odacId === combatantId || u.charsheetId === combatantId
-        );
-        if (playerSession?.stats) {
+        if (charsheet?.stats) {
             return {
-                lp: playerSession.stats.lp ?? 0,
-                maxLp: playerSession.stats.maxLp ?? 0,
-                mp: playerSession.stats.mp ?? 0,
-                maxMp: playerSession.stats.maxMp ?? 0
+                lp: charsheet.stats.lp ?? 0,
+                maxLp: charsheet.stats.maxLp ?? 0,
+                mp: charsheet.stats.mp ?? 0,
+                maxMp: charsheet.stats.maxMp ?? 0
             };
         }
         
         return null;
-    }, [ charsheets, campaign?.campaignCode, campaign?.session?.users ]);
+    }, [ charsheets ]);
 
     // Notifica quando é o turno do jogador
     useEffect(() => {
@@ -438,11 +418,11 @@ export default function CombatStatus({
                                 const isUser = combatant.id === userCharsheetId;
                                 
                                 // Obter stats da sessão para jogadores, do combatente para criaturas
-                                const sessionStats = isPlayer ? getPlayerSessionStats(combatant.id, combatant.odacId) : null;
-                                const currentLp = sessionStats?.lp ?? combatant.currentLp ?? 0;
-                                const maxLp = sessionStats?.maxLp ?? combatant.maxLp ?? 1;
-                                const currentMp = sessionStats?.mp ?? combatant.currentMp ?? 0;
-                                const maxMp = sessionStats?.maxMp ?? combatant.maxMp ?? 0;
+                                const playerStats = isPlayer ? getPlayerStats(combatant.id, combatant.odacId) : null;
+                                const currentLp = playerStats?.lp ?? combatant.currentLp ?? 0;
+                                const maxLp = playerStats?.maxLp ?? combatant.maxLp ?? 1;
+                                const currentMp = playerStats?.mp ?? combatant.currentMp ?? 0;
+                                const maxMp = playerStats?.maxMp ?? combatant.maxMp ?? 0;
                                 
                                 const lpPercent = (currentLp / maxLp) * 100;
                                 const mpPercent = maxMp > 0 ? (currentMp / maxMp) * 100 : 0;
@@ -692,9 +672,9 @@ export default function CombatStatus({
                                     const isPlayer = combatant.type === 'player';
                                     const showLpTarget = isPlayer || showEnemyLp;
                                     
-                                    const sessionStats = isPlayer ? getPlayerSessionStats(combatant.id, combatant.odacId) : null;
-                                    const currentLp = sessionStats?.lp ?? combatant.currentLp ?? 0;
-                                    const maxLp = sessionStats?.maxLp ?? combatant.maxLp ?? 1;
+                                    const playerStats = isPlayer ? getPlayerStats(combatant.id, combatant.odacId) : null;
+                                    const currentLp = playerStats?.lp ?? combatant.currentLp ?? 0;
+                                    const maxLp = playerStats?.maxLp ?? combatant.maxLp ?? 1;
                                     
                                     return (
                                         <Paper

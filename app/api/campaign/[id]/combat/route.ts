@@ -415,15 +415,17 @@ export async function POST(
 
             target.currentLp = Math.max(0, oldLp - damage)
 
-            // Se for jogador, atualiza na sessão (session.users[index].stats)
-            if (target.type === 'player' && campaign.session?.users) {
-                const userIndex = (campaign.session.users as any[]).findIndex(
-                    (u: any) => u.odacId === target.odacId || u.charsheetId === target.id
-                )
-                
-                if (userIndex !== -1 && (campaign.session.users as any[])[userIndex]?.stats) {
-                    (campaign.session.users as any[])[userIndex].stats.lp = target.currentLp
-                    
+            // Se for jogador, atualiza charsheet.stats diretamente
+            if (target.type === 'player') {
+                const charsheet = await charsheetRepository.findById(target.id)
+                if (charsheet) {
+                    await charsheetRepository.update({
+                        ...charsheet,
+                        stats: {
+                            ...charsheet.stats,
+                            lp: target.currentLp
+                        }
+                    })
                 }
             }
 
@@ -466,15 +468,17 @@ export async function POST(
             
             healTarget.currentLp = Math.min(maxHp, oldHp + heal)
 
-            // Se for jogador, atualiza na sessão (session.users[index].stats)
-            if (healTarget.type === 'player' && campaign.session?.users) {
-                const userIndex = (campaign.session.users as any[]).findIndex(
-                    (u: any) => u.odacId === healTarget.odacId || u.charsheetId === healTarget.id
-                )
-                
-                if (userIndex !== -1 && (campaign.session.users as any[])[userIndex]?.stats) {
-                    (campaign.session.users as any[])[userIndex].stats.lp = healTarget.currentLp
-                    
+            // Se for jogador, atualiza charsheet.stats diretamente
+            if (healTarget.type === 'player') {
+                const charsheet = await charsheetRepository.findById(healTarget.id)
+                if (charsheet) {
+                    await charsheetRepository.update({
+                        ...charsheet,
+                        stats: {
+                            ...charsheet.stats,
+                            lp: healTarget.currentLp
+                        }
+                    })
                 }
             }
 

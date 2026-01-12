@@ -171,30 +171,15 @@ export default function InventorySection(): ReactElement {
                     break;
                 case 'armor': {
                     updatedInventory['inventory.armors'] = normalizeToArray(charsheet.inventory.armors).filter(a => a.id !== donationModal.item.id);
-                    // Decrementa AP ao doar armadura - atualiza na sessão correta
+                    // Decrementa AP ao doar armadura
                     const armorAPValue = donationModal.item.ap || donationModal.item.value || 0;
-                    const campaignCode = campaign?.campaignCode;
-                    const sessions = charsheet.session || [];
-                    const sessionIndex = sessions.findIndex((s: any) => s.campaignCode === campaignCode);
+                    const currentAP = charsheet.stats?.ap || 5;
+                    const currentMaxAP = charsheet.stats?.maxAp || 5;
+                    const newAP = Math.max(5, currentAP - armorAPValue);
+                    const newMaxAP = Math.max(5, currentMaxAP - armorAPValue);
                     
-                    if (sessionIndex >= 0) {
-                        const sessionData = sessions[sessionIndex];
-                        const currentSessionAP = sessionData.stats?.ap || 5;
-                        const currentSessionMaxAP = sessionData.stats?.maxAp || 5;
-                        const newAP = Math.max(5, currentSessionAP - armorAPValue);
-                        const newMaxAP = Math.max(5, currentSessionMaxAP - armorAPValue);
-                        
-                        const updatedSessions = [ ...sessions ];
-                        updatedSessions[sessionIndex] = {
-                            ...sessionData,
-                            stats: {
-                                ...sessionData.stats,
-                                ap: newAP,
-                                maxAp: newMaxAP
-                            }
-                        };
-                        updatedInventory.session = updatedSessions;
-                    }
+                    updatedInventory['stats.ap'] = newAP;
+                    updatedInventory['stats.maxAp'] = newMaxAP;
                     break;
                 }
                 case 'item': {
@@ -242,30 +227,15 @@ export default function InventorySection(): ReactElement {
                 break;
             case 'armor': {
                 updatedInventory['inventory.armors'] = normalizeToArray(charsheet.inventory.armors).filter(a => a.id !== itemToDelete.id);
-                // Decrementa AP ao remover armadura - atualiza na sessão correta
+                // Decrementa AP ao remover armadura
                 const armorAPValue = itemToDelete.ap || itemToDelete.value || 0;
-                const campaignCode = campaign?.campaignCode;
-                const sessions = charsheet.session || [];
-                const sessionIndex = sessions.findIndex((s: any) => s.campaignCode === campaignCode);
+                const currentAP = charsheet.stats?.ap || 5;
+                const currentMaxAP = charsheet.stats?.maxAp || 5;
+                const newAP = Math.max(5, currentAP - armorAPValue);
+                const newMaxAP = Math.max(5, currentMaxAP - armorAPValue);
                 
-                if (sessionIndex >= 0) {
-                    const session = sessions[sessionIndex];
-                    const currentSessionAP = session.stats?.ap || 5;
-                    const currentSessionMaxAP = session.stats?.maxAp || 5;
-                    const newAP = Math.max(5, currentSessionAP - armorAPValue);
-                    const newMaxAP = Math.max(5, currentSessionMaxAP - armorAPValue);
-                    
-                    const updatedSessions = [ ...sessions ];
-                    updatedSessions[sessionIndex] = {
-                        ...session,
-                        stats: {
-                            ...session.stats,
-                            ap: newAP,
-                            maxAp: newMaxAP
-                        }
-                    };
-                    updatedInventory.session = updatedSessions;
-                }
+                updatedInventory['stats.ap'] = newAP;
+                updatedInventory['stats.maxAp'] = newMaxAP;
                 break;
             }
             case 'item': {

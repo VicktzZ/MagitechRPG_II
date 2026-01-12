@@ -41,7 +41,7 @@ export default function PlayerCard({ charsheet }: { charsheet: Required<Charshee
     const [ notificationTitle, setNotificationTitle ] = useState('')
     const [ notificationContent, setNotificationContent ] = useState('')
 
-    const sessionCharsheet = charsheet.session.find(s => s.campaignCode === campaign.campaignCode)
+    const stats = charsheet.stats
     const spacedMoney = useNumbersWithSpaces()
 
     const handlePlayerMenuClick = (event: React.MouseEvent<HTMLElement>) => {
@@ -173,21 +173,21 @@ export default function PlayerCard({ charsheet }: { charsheet: Required<Charshee
                         <Box className="stat">
                             <Favorite color="error" sx={{ fontSize: 16 }} />
                             <Typography variant="body2">
-                                {sessionCharsheet?.stats.lp}/{sessionCharsheet?.stats.maxLp}
+                                {stats?.lp}/{stats?.maxLp}
                             </Typography>
                         </Box>
 
                         <Box className="stat">
                             <Bolt color="info" sx={{ fontSize: 16 }} />
                             <Typography variant="body2">
-                                {sessionCharsheet?.stats.mp}/{sessionCharsheet?.stats.maxMp}
+                                {stats?.mp}/{stats?.maxMp}
                             </Typography>
                         </Box>
 
                         <Box className="stat">
                             <Shield color="success" sx={{ fontSize: 16 }} />
                             <Typography variant="body2">
-                                {sessionCharsheet?.stats.ap}/{sessionCharsheet?.stats.maxAp}
+                                {stats?.ap}/{stats?.maxAp}
                             </Typography>
                         </Box>
 
@@ -314,11 +314,6 @@ export default function PlayerCard({ charsheet }: { charsheet: Required<Charshee
                 open={charsheetDetailsOpen}
                 onClose={() => setCharsheetDetailsOpen(false)}
                 charsheet={charsheet}
-                campaign={{
-                    id: campaign.id,
-                    campaignCode: campaign.campaignCode,
-                    mode: campaign.mode
-                }}
             />
         </>
     )
