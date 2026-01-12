@@ -6,12 +6,12 @@ import { lineageItems } from '@constants/lineageOccupationItems';
 import { races } from '@constants/races';
 import { skills } from '@constants/skills';
 import { useAudio } from '@hooks';
-import type { Race } from '@models';
+import type { Race, RPGSystem } from '@models';
 import type { Charsheet } from '@models/entities';
 import type { ClassNames, LineageNames } from '@models/types/string';
 import { Box, FormControl, FormHelperText, InputLabel, MenuItem, Select, TextField, Typography, useMediaQuery, useTheme, type SelectChangeEvent } from '@mui/material';
 import { blue, green, red, yellow } from '@mui/material/colors';
-import { useCallback, useMemo, type ReactElement } from 'react';
+import { useCallback, useMemo, useState, useEffect, type ReactElement } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
 
 export default function Characteristics(): ReactElement {
@@ -22,26 +22,66 @@ export default function Characteristics(): ReactElement {
     const matches = useMediaQuery(theme.breakpoints.down('md'))
     const audio = useAudio('/sounds/cybernetic-technology-affirmation.wav')
     const disabled = !!charsheet.id
+    
+    // Estado para sistema customizado
+    const [ customSystem, setCustomSystem ] = useState<RPGSystem | null>(null)
+    const [ loadingSystem, setLoadingSystem ] = useState(false)
+    
+    // Carregar sistema se houver systemId
+    useEffect(() => {
+        if (charsheet.systemId) {
+            setLoadingSystem(true)
+            fetch(`/api/rpg-system/${charsheet.systemId}`)
+                .then(res => res.json())
+                .then((data: RPGSystem) => {
+                    setCustomSystem(data)
+                })
+                .catch(err => {
+                    console.error('Erro ao carregar sistema:', err)
+                    setCustomSystem(null)
+                })
+                .finally(() => setLoadingSystem(false))
+        } else {
+            setCustomSystem(null)
+        }
+    }, [ charsheet.systemId ])
+    
+    const isCustomSystem = !!customSystem
+    
+    // Labels dinâmicos baseados no sistema
+    const classLabel = customSystem?.conceptNames?.class || 'Classe de Mago'
+    const lineageLabel = customSystem?.conceptNames?.lineage || (charsheet.mode === 'Classic' ? 'Linhagem' : 'Profissão')
+    const raceLabel = customSystem?.conceptNames?.race || 'Raça'
 
     const setClass = (e: SelectChangeEvent<any>): void => {
         const previousClass = getValues('class') as ClassNames;
         const newClass = e.target.value as ClassNames;
         
-        // Remover pontos de expertise da classe anterior (se existir)
-        if (previousClass) {
-            const previousClassExpertisePoints = classesModel[previousClass]?.points?.expertises || 0;
-            const currentPoints = getValues('points.expertises');
-            setValue('points.expertises', currentPoints - previousClassExpertisePoints);
+        if (!isCustomSystem) {
+            // Lógica padrão Magitech
+            if (previousClass) {
+                const previousClassExpertisePoints = classesModel[previousClass]?.points?.expertises || 0;
+                const currentPoints = getValues('points.expertises');
+                setValue('points.expertises', currentPoints - previousClassExpertisePoints);
+            }
+            
+            const newClassExpertisePoints = classesModel[newClass]?.points?.expertises || 0;
+            const updatedPoints = getValues('points.expertises');
+            setValue('points.expertises', updatedPoints + newClassExpertisePoints);
+            
+            setValue('class', newClass, { shouldValidate: true });
+            setValue('skills.class', [ skills.class[newClass][0] ]);
+        } else {
+            // Sistema customizado
+            setValue('class', newClass, { shouldValidate: true });
+            
+            const customClass = customSystem?.classes?.find(c => c.name === newClass);
+            if (customClass?.skills && customClass.skills.length > 0) {
+                setValue('skills.class', [ customClass.skills[0] ] as any);
+            } else {
+                setValue('skills.class', []);
+            }
         }
-        
-        // Adicionar pontos de expertise da nova classe
-        const newClassExpertisePoints = classesModel[newClass]?.points?.expertises || 0;
-        const updatedPoints = getValues('points.expertises');
-        setValue('points.expertises', updatedPoints + newClassExpertisePoints);
-        
-        // Atualizar a classe e habilidade de classe
-        setValue('class', newClass, { shouldValidate: true });
-        setValue('skills.class', [ skills.class[newClass][0] ]);
         
         audio.play();
     }
@@ -49,6 +89,23 @@ export default function Characteristics(): ReactElement {
     const setLineage = (e: SelectChangeEvent<any>): void => {
         const previousLineage = getValues('lineage') as unknown as LineageNames;
         const selectedLineage = e.target.value;
+        
+        if (isCustomSystem) {
+            // Sistema customizado - lógica simplificada
+            setValue('lineage', selectedLineage, { shouldValidate: true });
+            
+            const customLineage = customSystem?.lineages?.find(l => l.name === selectedLineage);
+            if (customLineage?.skills && customLineage.skills.length > 0) {
+                setValue('skills.lineage', [ customLineage.skills[0] ] as any);
+            } else {
+                setValue('skills.lineage', []);
+            }
+            
+            audio.play();
+            return;
+        }
+        
+        // Lógica padrão Magitech
         const isClassicMode = charsheet.mode === 'Classic';
         const antecedentSkills = isClassicMode ? skills.lineage : skills.occupation;
         const antecedentItems = lineageItems[selectedLineage as keyof typeof lineageItems]
@@ -142,7 +199,20 @@ export default function Characteristics(): ReactElement {
     const setRace = (e: SelectChangeEvent<any>): void => {
         const selectedRace = e.target.value as Race['name'];
         setValue('race', selectedRace, { shouldValidate: true });
-        setValue('skills.race', [ skills.race.find(skill => skill.origin === selectedRace)! ])
+        
+        if (!isCustomSystem) {
+            // Lógica padrão Magitech
+            setValue('skills.race', [ skills.race.find(skill => skill.origin === selectedRace)! ])
+        } else {
+            // Sistema customizado
+            const customRace = customSystem?.races?.find(r => r.name === selectedRace);
+            if (customRace?.skills && customRace.skills.length > 0) {
+                setValue('skills.race', [ customRace.skills[0] ] as any);
+            } else {
+                setValue('skills.race', []);
+            }
+        }
+        
         audio.play();
     }
 
@@ -167,6 +237,23 @@ export default function Characteristics(): ReactElement {
     }, [])
 
     const lineages = useMemo(() => {
+        if (isCustomSystem && customSystem?.lineages && customSystem.lineages.length > 0) {
+            // Usar linhagens do sistema customizado
+            return customSystem.lineages.map((lineage) => (
+                <MenuItem key={lineage.name} value={lineage.name}>
+                    <Box>
+                        <Typography>{lineage.name}</Typography>
+                        {lineage.description && (
+                            <Typography variant='caption' color='text.secondary'>
+                                {lineage.description}
+                            </Typography>
+                        )}
+                    </Box>
+                </MenuItem>
+            ))
+        }
+        
+        // Usar linhagens padrão Magitech
         return Object.entries(charsheet.mode === 'Classic' ? lineageExpertises : occupationsExpertises).map(([ lineage, expertises ]) => (
             <MenuItem
                 key={lineage}
@@ -180,9 +267,26 @@ export default function Characteristics(): ReactElement {
                 </Box>
             </MenuItem>
         ))
-    }, [ charsheet.mode ])
+    }, [ charsheet.mode, isCustomSystem, customSystem, lineagePoints ])
 
     const classes = useMemo(() => {
+        if (isCustomSystem && customSystem?.classes && customSystem.classes.length > 0) {
+            // Usar classes do sistema customizado
+            return customSystem.classes.map(classe => (
+                <MenuItem key={classe.name} value={classe.name}>
+                    <Box>
+                        <Typography>{classe.name}</Typography>
+                        {classe.description && (
+                            <Typography variant='caption' color='text.secondary'>
+                                {classe.description}
+                            </Typography>
+                        )}
+                    </Box>
+                </MenuItem>
+            ))
+        }
+        
+        // Usar classes padrão Magitech
         return Object.keys(classesModel).map(classe => (
             <MenuItem key={classe} value={classe}>
                 <Box>
@@ -203,7 +307,7 @@ export default function Characteristics(): ReactElement {
                 </Box>
             </MenuItem>
         ))
-    }, [])
+    }, [ isCustomSystem, customSystem ])
 
     return (
         <Box display='flex' gap={3} width='100%'>
@@ -233,10 +337,10 @@ export default function Characteristics(): ReactElement {
                         control={control}
                         render={({ field, fieldState: { error } }) => (
                             <FormControl fullWidth error={!!error} disabled={disabled}>
-                                <InputLabel>Classe de Mago *</InputLabel>
+                                <InputLabel>{classLabel} *</InputLabel>
                                 <Select
                                     {...field}
-                                    label='Classe de Mago'
+                                    label={`${classLabel} *`}
                                     required
                                     fullWidth
                                     onChange={(e) => {
@@ -262,10 +366,10 @@ export default function Characteristics(): ReactElement {
                             control={control}
                             render={({ field, fieldState: { error } }) => (
                                 <FormControl sx={{ width: '50%' }} error={!!error} disabled={disabled}>
-                                    <InputLabel>{charsheet.mode === 'Classic' ? 'Linhagem' : 'Profissão'} *</InputLabel>
+                                    <InputLabel>{lineageLabel} *</InputLabel>
                                     <Select
                                         {...field}
-                                        label='Linhagem'
+                                        label={`${lineageLabel} *`}
                                         required
                                         fullWidth
                                         onChange={(e) => {
@@ -329,10 +433,10 @@ export default function Characteristics(): ReactElement {
                     control={control}
                     render={({ field, fieldState: { error } }) => (
                         <FormControl error={!!error} disabled={disabled}>
-                            <InputLabel>Raça *</InputLabel>
+                            <InputLabel>{raceLabel} *</InputLabel>
                             <Select
                                 {...field}
-                                label='Raça'
+                                label={`${raceLabel} *`}
                                 required
                                 fullWidth
                                 renderValue={selected => String(selected)}
@@ -341,37 +445,52 @@ export default function Characteristics(): ReactElement {
                                     field.onChange((e as SelectChangeEvent<any>).target.value)
                                 }}
                             >
-                                {Object.entries(races).map(([ raceName, raceData ]) => (
-                                    <MenuItem key={raceName} value={raceName}>
-                                        <Box display='flex' flexDirection='column'>
-                                            <Typography>{raceName}</Typography>
-                                            {raceName === 'Humano' ? (
-                                                <Typography variant='caption' color={green[500]}>+1 Ponto de Atributo</Typography>
-                                            ) : (
-                                                <>
-                                                    {raceData.stats.lp > 0 && (
-                                                        <Typography variant='caption' color={green[500]}>+{raceData.stats.lp} LP</Typography>
-                                                    )}
-                                                    {raceData.stats.lp < 0 && (
-                                                        <Typography variant='caption' color={red[500]}>{raceData.stats.lp} LP</Typography>
-                                                    )}
-                                                    {raceData.stats.mp > 0 && (
-                                                        <Typography variant='caption' color={green[500]}>+{raceData.stats.mp} MP</Typography>
-                                                    )}
-                                                    {raceData.stats.mp < 0 && (
-                                                        <Typography variant='caption' color={red[500]}>{raceData.stats.mp} MP</Typography>
-                                                    )}
-                                                    {raceData.stats.ap > 0 && (
-                                                        <Typography variant='caption' color={green[500]}>+{raceData.stats.ap} AP</Typography>
-                                                    )}
-                                                    {raceData.stats.ap < 0 && (
-                                                        <Typography variant='caption' color={red[500]}>{raceData.stats.ap} AP</Typography>
-                                                    )}
-                                                </>
-                                            )}
-                                        </Box>
-                                    </MenuItem>
-                                ))}
+                                {(isCustomSystem && customSystem?.races && customSystem.races.length > 0) ? (
+                                    customSystem.races.map(race => (
+                                        <MenuItem key={race.name} value={race.name}>
+                                            <Box display='flex' flexDirection='column'>
+                                                <Typography>{race.name}</Typography>
+                                                {race.description && (
+                                                    <Typography variant='caption' color='text.secondary'>
+                                                        {race.description}
+                                                    </Typography>
+                                                )}
+                                            </Box>
+                                        </MenuItem>
+                                    ))
+                                ) : (
+                                    Object.entries(races).map(([ raceName, raceData ]) => (
+                                        <MenuItem key={raceName} value={raceName}>
+                                            <Box display='flex' flexDirection='column'>
+                                                <Typography>{raceName}</Typography>
+                                                {raceName === 'Humano' ? (
+                                                    <Typography variant='caption' color={green[500]}>+1 Ponto de Atributo</Typography>
+                                                ) : (
+                                                    <>
+                                                        {raceData.stats.lp > 0 && (
+                                                            <Typography variant='caption' color={green[500]}>+{raceData.stats.lp} LP</Typography>
+                                                        )}
+                                                        {raceData.stats.lp < 0 && (
+                                                            <Typography variant='caption' color={red[500]}>{raceData.stats.lp} LP</Typography>
+                                                        )}
+                                                        {raceData.stats.mp > 0 && (
+                                                            <Typography variant='caption' color={green[500]}>+{raceData.stats.mp} MP</Typography>
+                                                        )}
+                                                        {raceData.stats.mp < 0 && (
+                                                            <Typography variant='caption' color={red[500]}>{raceData.stats.mp} MP</Typography>
+                                                        )}
+                                                        {raceData.stats.ap > 0 && (
+                                                            <Typography variant='caption' color={green[500]}>+{raceData.stats.ap} AP</Typography>
+                                                        )}
+                                                        {raceData.stats.ap < 0 && (
+                                                            <Typography variant='caption' color={red[500]}>{raceData.stats.ap} AP</Typography>
+                                                        )}
+                                                    </>
+                                                )}
+                                            </Box>
+                                        </MenuItem>
+                                    ))
+                                )}
                             </Select>
                             {error && (
                                 <FormHelperText error>{String(error.message)}</FormHelperText>
