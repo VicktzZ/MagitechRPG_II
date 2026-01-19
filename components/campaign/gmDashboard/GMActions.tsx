@@ -78,24 +78,13 @@ export default function GMActions(): ReactElement {
 
     // Memoized player list with charsheet data
     const players: PlayerInfo[] = useMemo(() => {
-        console.log('[GMActions] Building players list:', {
-            usersPlayers: users.players?.length,
-            campaignPlayers: campaign?.players?.length,
-            realtimeCharsheets: realtimeCharsheets?.length
-        });
-
         return users.players?.map(player => {
             // campaign.players usa `userId`, não `odacId`
             const playerInCampaign = campaign?.players?.find(p => 
                 (p as any).odacId === player.id || p.userId === player.id
             );
             const charsheet = realtimeCharsheets?.find((c: any) => c.id === playerInCampaign?.charsheetId);
-            
-            console.log(`[GMActions] Player ${player.name}:`, {
-                playerId: player.id,
-                charsheetStats: charsheet?.stats
-            });
-            
+
             return {
                 id: player.id,
                 name: player.name || 'Jogador',

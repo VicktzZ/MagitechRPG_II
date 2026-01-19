@@ -140,6 +140,7 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet }: Char
                 gender: charsheet.gender,
                 race: charsheet.race,
                 stats: { ...charsheet.stats },
+                capacity: { ...charsheet.capacity },
                 attributes: { ...charsheet.attributes },
                 expertises: { ...charsheet.expertises },
                 mods: {
@@ -164,6 +165,26 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet }: Char
 
     // Stats do personagem
     const displayStats = charsheet.stats;
+
+    // Helper para atualizar dados aninhados
+    const updateNestedField = (path: string, value: any) => {
+        setEditedData(prev => {
+            const newData = { ...prev };
+            const keys = path.split('.');
+            let current: any = newData;
+
+            for (let i = 0; i < keys.length - 1; i++) {
+                if (!current[keys[i]]) {
+                    current[keys[i]] = {};
+                }
+                current[keys[i]] = { ...current[keys[i]] };
+                current = current[keys[i]];
+            }
+
+            current[keys[keys.length - 1]] = value;
+            return newData;
+        });
+    };
 
     // Helper para tratar valores de input number de forma adequada
     const handleNumberInputChange = (path: string, inputValue: string) => {
@@ -241,10 +262,13 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet }: Char
             gender: editedData.gender,
             race: editedData.race,
             stats: editedData.stats,
+            capacity: editedData.capacity,
             attributes: editedData.attributes,
             expertises: editedData.expertises,
             mods: editedData.mods,
             points: editedData.points,
+            inventory: editedData.inventory,
+            skills: editedData.skills,
             displacement: editedData.displacement,
             spellSpace: editedData.spellSpace
         };
@@ -274,27 +298,14 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet }: Char
             level: charsheet.level,
             stats: { ...charsheet.stats },
             attributes: { ...charsheet.attributes },
-            inventory: { ...charsheet.inventory }
-        });
-    };
-
-    // Helper para atualizar dados aninhados
-    const updateNestedField = (path: string, value: any) => {
-        setEditedData(prev => {
-            const newData = { ...prev };
-            const keys = path.split('.');
-            let current: any = newData;
-
-            for (let i = 0; i < keys.length - 1; i++) {
-                if (!current[keys[i]]) {
-                    current[keys[i]] = {};
-                }
-                current[keys[i]] = { ...current[keys[i]] };
-                current = current[keys[i]];
-            }
-
-            current[keys[keys.length - 1]] = value;
-            return newData;
+            capacity: { ...charsheet.capacity },
+            inventory: {
+                ...charsheet.inventory,
+                weapons: normalizeToArray(charsheet.inventory?.weapons),
+                armors: normalizeToArray(charsheet.inventory?.armors),
+                items: normalizeToArray(charsheet.inventory?.items)
+            },
+            skills: { ...charsheet.skills }
         });
     };
 
@@ -622,7 +633,28 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet }: Char
                                             </TableRow>
                                             <TableRow>
                                                 <TableCell>Capacidade</TableCell>
-                                                <TableCell>{charsheet.capacity.cargo}/{charsheet.capacity.max} kg</TableCell>
+                                                <TableCell>
+                                                    {isEditing ? (
+                                                        <Box display="flex" gap={0.5} alignItems="center">
+                                                            <TextField
+                                                                size="small"
+                                                                type="number"
+                                                                value={getInputValue(editedData.capacity?.cargo, charsheet.capacity.cargo)}
+                                                                onChange={(e) => handleNumberInputChange('capacity.cargo', e.target.value)}
+                                                                sx={{ width: 70 }}
+                                                            />
+                                                            /
+                                                            <TextField
+                                                                size="small"
+                                                                type="number"
+                                                                value={getInputValue(editedData.capacity?.max, charsheet.capacity.max)}
+                                                                onChange={(e) => handleNumberInputChange('capacity.max', e.target.value)}
+                                                                sx={{ width: 70 }}
+                                                            />
+                                                            <Typography variant="caption" color="text.secondary">kg</Typography>
+                                                        </Box>
+                                                    ) : `${charsheet.capacity.cargo}/${charsheet.capacity.max} kg`}
+                                                </TableCell>
                                             </TableRow>
                                             <TableRow>
                                                 <TableCell>Dinheiro</TableCell>
@@ -979,6 +1011,7 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet }: Char
                                             <TableRow>
                                                 <TableCell>Nome</TableCell>
                                                 <TableCell>Nível</TableCell>
+                                                <TableCell>Descrição</TableCell>
                                                 {isEditing && <TableCell>Ações</TableCell>}
                                             </TableRow>
                                         </TableHead>
@@ -987,6 +1020,11 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet }: Char
                                                 <TableRow key={index}>
                                                     <TableCell>{skill.name}</TableCell>
                                                     <TableCell>{skill.level ?? '—'}</TableCell>
+                                                    <TableCell>
+                                                        <Typography variant="caption" color="text.secondary">
+                                                            {skill.description || '—'}
+                                                        </Typography>
+                                                    </TableCell>
                                                     {isEditing && (
                                                         <TableCell>
                                                             <IconButton
@@ -1019,6 +1057,7 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet }: Char
                                                 <TableRow>
                                                     <TableCell>Nome</TableCell>
                                                     <TableCell>Nível</TableCell>
+                                                    <TableCell>Descrição</TableCell>
                                                     {isEditing && <TableCell>Ações</TableCell>}
                                                 </TableRow>
                                             </TableHead>
@@ -1027,6 +1066,11 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet }: Char
                                                     <TableRow key={index}>
                                                         <TableCell>{skill.name}</TableCell>
                                                         <TableCell>{skill.level ?? '—'}</TableCell>
+                                                        <TableCell>
+                                                            <Typography variant="caption" color="text.secondary">
+                                                                {skill.description || '—'}
+                                                            </Typography>
+                                                        </TableCell>
                                                         {isEditing && (
                                                             <TableCell>
                                                                 <IconButton
@@ -1059,6 +1103,7 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet }: Char
                                             <TableRow>
                                                 <TableCell>Nome</TableCell>
                                                 <TableCell>Origem</TableCell>
+                                                <TableCell>Descrição</TableCell>
                                                 {isEditing && <TableCell>Ações</TableCell>}
                                             </TableRow>
                                         </TableHead>
@@ -1067,6 +1112,11 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet }: Char
                                                 <TableRow key={index}>
                                                     <TableCell>{skill.name}</TableCell>
                                                     <TableCell>{skill.origin ?? '—'}</TableCell>
+                                                    <TableCell>
+                                                        <Typography variant="caption" color="text.secondary">
+                                                            {skill.description || '—'}
+                                                        </Typography>
+                                                    </TableCell>
                                                     {isEditing && (
                                                         <TableCell>
                                                             <IconButton
@@ -1099,6 +1149,7 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet }: Char
                                                 <TableRow>
                                                     <TableCell>Nome</TableCell>
                                                     <TableCell>Origem</TableCell>
+                                                    <TableCell>Descrição</TableCell>
                                                     {isEditing && <TableCell>Ações</TableCell>}
                                                 </TableRow>
                                             </TableHead>
@@ -1107,6 +1158,11 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet }: Char
                                                     <TableRow key={index}>
                                                         <TableCell>{skill.name}</TableCell>
                                                         <TableCell>{skill.origin ?? '—'}</TableCell>
+                                                        <TableCell>
+                                                            <Typography variant="caption" color="text.secondary">
+                                                                {skill.description || '—'}
+                                                            </Typography>
+                                                        </TableCell>
                                                         {isEditing && (
                                                             <TableCell>
                                                                 <IconButton

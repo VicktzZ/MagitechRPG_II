@@ -379,6 +379,9 @@ export const charsheetSchema = z.object({
         }
     }),
     displacement: z.number().int().min(0, 'Deslocamento não pode ser negativo').default(0),
+    spellStages: z.record(z.coerce.number().int().min(1).max(3))
+        .optional()
+        .default({}),
     spells: z.array(MagicSchema)
         .min(1, 'Pelo menos uma magia deve ser definida')
         .default([]),

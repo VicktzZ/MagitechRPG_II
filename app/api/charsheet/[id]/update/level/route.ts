@@ -5,6 +5,22 @@ import type { Charsheet } from '@models/entities/Charsheet';
 import type { ClassNames } from '@models/types/string';
 import { charsheetRepository, notificationRepository } from '@repositories';
 
+function normalizeToArray<T>(value: any): T[] {
+    if (!value) return []
+    if (Array.isArray(value)) return value
+    if (typeof value === 'object') {
+        const keys = Object.keys(value)
+        const isNumericKeys = keys.every(key => !isNaN(Number(key)))
+        if (isNumericKeys) {
+            return keys
+                .map(key => Number(key))
+                .sort((a, b) => a - b)
+                .map(key => value[key])
+        }
+    }
+    return []
+}
+
 export async function POST(req: Request, { params }: { params: { id: string } }) {
     try {
         const { id } = params;
@@ -165,8 +181,8 @@ export async function POST(req: Request, { params }: { params: { id: string } })
             },
             skills: {
                 ...charsheet.skills,
-                class: [ ...charsheet.skills.class, ...newClassSkills ],
-                subclass: [ ...charsheet.skills.subclass, ...newSubclassSkills ]
+                class: [ ...normalizeToArray(charsheet.skills?.class), ...newClassSkills ],
+                subclass: [ ...normalizeToArray(charsheet.skills?.subclass), ...newSubclassSkills ]
             }
         };
 

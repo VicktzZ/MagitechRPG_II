@@ -30,6 +30,30 @@ import type { CharsheetDTO } from '@models/dtos'
 import useNumbersWithSpaces from '@hooks/useNumbersWithSpace'
 import { charsheetEntity } from '@utils/firestoreEntities'
 
+function normalizeToArray<T>(value: any): T[] {
+    if (!value) return []
+    if (Array.isArray(value)) return value
+    if (typeof value === 'object') {
+        const keys = Object.keys(value)
+        const isNumericKeys = keys.every(key => !isNaN(Number(key)))
+        if (isNumericKeys) {
+            return keys
+                .map(key => Number(key))
+                .sort((a, b) => a - b)
+                .map(key => value[key])
+        }
+
+        const values = Object.values(value)
+        const flattened = values.flatMap(v => {
+            if (Array.isArray(v)) return v
+            return [ v ]
+        })
+
+        return flattened.filter(v => v !== undefined && v !== null) as T[]
+    }
+    return []
+}
+
 export default function PlayerCard({ charsheet }: { charsheet: Required<CharsheetDTO> }) {
     const { campaign, charsheets } = useCampaignContext()
     const [ playerAnchorEl, setPlayerAnchorEl ] = useState<null | HTMLElement>(null)
@@ -57,9 +81,9 @@ export default function PlayerCard({ charsheet }: { charsheet: Required<Charshee
             // Verifica se é uma arma ou um item
             const isWeapon = 'hit' in item
             const isArmor = 'displacementPenalty' in item
-            const currentWeapons = charsheet.inventory?.weapons ?? []
-            const currentArmors = charsheet.inventory?.armors ?? []
-            const currentItems = charsheet.inventory?.items ?? []
+            const currentWeapons = normalizeToArray(charsheet.inventory?.weapons)
+            const currentArmors = normalizeToArray(charsheet.inventory?.armors)
+            const currentItems = normalizeToArray(charsheet.inventory?.items)
 
             if (isWeapon) {
                 await charsheetEntity.update(charsheet.id, {
