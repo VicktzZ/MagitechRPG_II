@@ -27,6 +27,7 @@ export async function POST(req: Request): Promise<Response> {
 
         if (!campaign.session.users.includes(userId)) {
             updatePayload['session'] = {
+                ...campaign.session,
                 users: [
                     ...campaign.session.users,
                     userId

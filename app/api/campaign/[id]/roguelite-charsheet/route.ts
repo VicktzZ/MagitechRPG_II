@@ -58,6 +58,8 @@ export async function POST(
             spellSpace: 2,
             mpLimit: 0,
             overall: 0,
+
+            spellStages: {},
             
             // Arrays vazios
             status: [],

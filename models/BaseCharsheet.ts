@@ -32,6 +32,10 @@ export class BaseCharsheet {
     @IsNumber() overall: number = 0;
     @IsNumber() level: number = 0;
 
+    @IsOptional()
+    @IsObject()
+        spellStages?: Record<string, number> = {};
+
     @IsEnum([ 'Apocalypse', 'Classic' ]) mode: 'Apocalypse' | 'Classic' = 'Classic';
     @IsEnum([ 'Masculino', 'Feminino', 'Não-binário', 'Outro', 'Não definido' ]) gender: Gender;
     @IsEnum([ 'Miserável', 'Pobre', 'Estável', 'Rico' ]) financialCondition: FinancialCondition;

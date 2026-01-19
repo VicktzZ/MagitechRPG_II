@@ -206,6 +206,27 @@ export default function SpellsSection(): ReactElement {
         }
     }
 
+    const handleSetSpellStage = async (spell: SpellDTO, stage: 1 | 2 | 3) => {
+        if (!charsheet?.id) return
+
+        const spellId = spell.id || spell.name
+        if (!spellId) return
+
+        try {
+            await charsheetEntity.update(charsheet.id, {
+                spellStages: {
+                    ...(charsheet.spellStages || {}),
+                    [spellId]: stage
+                }
+            } as any)
+
+            enqueueSnackbar(`Estágio da magia "${spell.name}" definido para ${stage}!`, { variant: 'success' })
+        } catch (error) {
+            console.error('Erro ao atualizar estágio da magia:', error)
+            enqueueSnackbar('Erro ao atualizar estágio da magia', { variant: 'error' })
+        }
+    }
+
     const allSpells = charsheet.spells
     const spellsByLevel = {
         1: allSpells.filter(spell => Number(spell.level) === 1),
@@ -305,6 +326,11 @@ export default function SpellsSection(): ReactElement {
                                 {allSpells.map(spell => {
                                     const ElementIcon = getElementIcon(spell.element);
                                     const levelConfig = getSpellLevelColor(Number(spell.level));
+                                    const spellId = spell.id || spell.name
+                                    const selectedStage = (charsheet.spellStages?.[spellId] as 1 | 2 | 3 | undefined) || 1
+                                    const availableStages: Array<1 | 2 | 3> = [ 1 ]
+                                    if (spell.stages?.[1]) availableStages.push(2)
+                                    if (spell.stages?.[2]) availableStages.push(3)
                                     
                                     return (
                                         <Accordion
@@ -438,9 +464,30 @@ export default function SpellsSection(): ReactElement {
                                             
                                             <AccordionDetails sx={{ p: 3 }}>
                                                 <Stack spacing={2}>
-                                                    {spell.stages?.[0] && <SpellStage spell={spell} stage={1} description={spell.stages?.[0]} />}
-                                                    {spell.stages?.[1] && <SpellStage spell={spell} stage={2} description={spell.stages?.[1]} />}
-                                                    {spell.stages?.[2] && <SpellStage spell={spell} stage={3} description={spell.stages?.[2]} />}
+                                                    <Box display="flex" gap={1} flexWrap="wrap" alignItems="center">
+                                                        <Typography variant="caption" color="text.secondary">Estágio ativo:</Typography>
+                                                        {availableStages.map(stage => (
+                                                            <Chip
+                                                                key={stage}
+                                                                label={`Estágio ${stage}`}
+                                                                size="small"
+                                                                clickable
+                                                                onClick={() => { void handleSetSpellStage(spell, stage) }}
+                                                                color={selectedStage === stage ? 'primary' : 'default'}
+                                                                variant={selectedStage === stage ? 'filled' : 'outlined'}
+                                                            />
+                                                        ))}
+                                                    </Box>
+
+                                                    {selectedStage === 1 && spell.stages?.[0] && (
+                                                        <SpellStage spell={spell} stage={1} description={spell.stages?.[0]} />
+                                                    )}
+                                                    {selectedStage === 2 && spell.stages?.[1] && (
+                                                        <SpellStage spell={spell} stage={2} description={spell.stages?.[1]} />
+                                                    )}
+                                                    {selectedStage === 3 && spell.stages?.[2] && (
+                                                        <SpellStage spell={spell} stage={3} description={spell.stages?.[2]} />
+                                                    )}
                                                 </Stack>
                                             </AccordionDetails>
                                         </Accordion>
