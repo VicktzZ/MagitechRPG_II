@@ -1,6 +1,6 @@
 'use client'
 
-import { useCampaignContext, useCampaignCurrentCharsheetContext } from '@contexts';
+import { useCampaignCurrentCharsheetContext } from '@contexts';
 import {
     Avatar,
     Box,
@@ -11,7 +11,6 @@ import {
     Typography
 } from '@mui/material';
 import Image from 'next/image';
-import { useMemo } from 'react';
 import { StatusBar } from './StatusBar';
 import { AttributeCard } from './AttributeCard';
 import type { Stats } from '@models';
@@ -27,23 +26,16 @@ const attributeConfig = {
 
 export default function PlayerHeader({ avatar }: { avatar: string | undefined }) {
     const { charsheet, updateCharsheet } = useCampaignCurrentCharsheetContext();
-    const { campaign: { campaignCode } } = useCampaignContext()
-    const session = useMemo(() => charsheet.session.find(s => s.campaignCode === campaignCode), [ charsheet.session, campaignCode ]);
 
-    if (!session) return null;
+    const stats = charsheet.stats;
 
     const updateStat = (stat: keyof Stats, delta: number) => {
+        const maxKey = `max${stat.charAt(0).toUpperCase() + stat.slice(1)}` as keyof Stats;
         updateCharsheet({
-            session: [
-                ...charsheet.session.filter(s => s.campaignCode !== campaignCode),
-                {
-                    ...session,
-                    stats: {
-                        ...session.stats,
-                        [stat]: Math.max(0, Math.min(session.stats[stat] + delta, session.stats[`max${stat.charAt(0).toUpperCase() + stat.slice(1)}`] * 2))
-                    }
-                }
-            ]
+            stats: {
+                ...stats,
+                [stat]: Math.max(0, Math.min((stats[stat] as number) + delta, (stats[maxKey] as number) * 2))
+            }
         });
     };
 
@@ -262,8 +254,8 @@ export default function PlayerHeader({ avatar }: { avatar: string | undefined })
                 <Box sx={{ mt: 1 }}>
                     <StatusBar
                         label="Pontos de Vida (LP)"
-                        current={session.stats.lp}
-                        max={session.stats.maxLp}
+                        current={stats.lp}
+                        max={stats.maxLp}
                         color="#ef4444"
                         icon="❤️"
                         onIncrease={(value) => updateStat('lp', value)}
@@ -272,8 +264,8 @@ export default function PlayerHeader({ avatar }: { avatar: string | undefined })
                     
                     <StatusBar
                         label="Pontos de Mana (MP)"
-                        current={session.stats.mp}
-                        max={session.stats.maxMp}
+                        current={stats.mp}
+                        max={stats.maxMp}
                         color="#3b82f6"
                         icon="✨"
                         onIncrease={(value) => updateStat('mp', value)}
@@ -282,8 +274,8 @@ export default function PlayerHeader({ avatar }: { avatar: string | undefined })
                     
                     <StatusBar
                         label="Pontos de Armadura (AP)"
-                        current={session.stats.ap}
-                        max={session.stats.maxAp}
+                        current={stats.ap}
+                        max={stats.maxAp}
                         color="#eab308"
                         icon="🛡️"
                         onIncrease={(value) => updateStat('ap', value)}

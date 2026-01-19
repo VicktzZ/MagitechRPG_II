@@ -102,8 +102,8 @@ export default function CombatDialog({
     const [ selectedCombatantForInit, setSelectedCombatantForInit ] = useState<string | null>(null);
     const [ showEnemyLp, setShowEnemyLp ] = useState(false);
 
-    // Função para obter stats do charsheet.session (a fonte correta)
-    const getPlayerSessionStats = useCallback((combatant: Combatant) => {
+    // Função para obter stats do charsheet
+    const getPlayerStats = useCallback((combatant: Combatant) => {
         if (combatant.type !== 'player') return null;
         
         // Busca o charsheet do combatente
@@ -111,25 +111,15 @@ export default function CombatDialog({
             c.id === combatant.id || c.id === combatant.odacId
         );
         
-        if (!charsheet) return null;
+        if (!charsheet?.stats) return null;
         
-        // Busca os stats na sessão da charsheet para esta campanha
-        const sessionData = charsheet.session?.find(
-            (s: any) => s.campaignCode === campaignCode
-        );
-        
-        if (sessionData?.stats) {
-            return {
-                lp: sessionData.stats.lp ?? combatant.currentLp ?? 0,
-                maxLp: sessionData.stats.maxLp ?? combatant.maxLp ?? 0,
-                mp: sessionData.stats.mp ?? combatant.currentMp ?? 0,
-                maxMp: sessionData.stats.maxMp ?? combatant.maxMp ?? 0
-            };
-        }
-        
-        // Fallback para stats do combatente
-        return null;
-    }, [ charsheets, campaignCode ]);
+        return {
+            lp: charsheet.stats.lp ?? combatant.currentLp ?? 0,
+            maxLp: charsheet.stats.maxLp ?? combatant.maxLp ?? 0,
+            mp: charsheet.stats.mp ?? combatant.currentMp ?? 0,
+            maxMp: charsheet.stats.maxMp ?? combatant.maxMp ?? 0
+        };
+    }, [ charsheets ]);
 
     // Carrega combate existente
     useEffect(() => {
@@ -506,10 +496,10 @@ export default function CombatDialog({
                                 const isCurrentTurn = combat.phase === 'ACTION' && index === combat.currentTurnIndex;
                                 const needsInitiative = combat.phase === 'INITIATIVE' && combatant.initiativeRoll === 0;
                                 
-                                // Obtém stats da sessão da charsheet para jogadores
-                                const sessionStats = combatant.type === 'player' ? getPlayerSessionStats(combatant) : null;
-                                const currentLp = sessionStats?.lp ?? combatant.currentLp ?? 0;
-                                const maxLp = sessionStats?.maxLp ?? combatant.maxLp ?? 1;
+                                // Obtém stats da charsheet para jogadores
+                                const playerStats = combatant.type === 'player' ? getPlayerStats(combatant) : null;
+                                const currentLp = playerStats?.lp ?? combatant.currentLp ?? 0;
+                                const maxLp = playerStats?.maxLp ?? combatant.maxLp ?? 1;
                                 const lpPercent = maxLp > 0 ? (currentLp / maxLp) * 100 : 0;
 
                                 return (

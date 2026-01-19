@@ -93,14 +93,6 @@ export class BaseCharsheet {
     @IsObject({ each: true })
         session?: Array<{
             campaignCode: string;
-            stats: {
-                maxLp: number;
-                maxMp: number;
-                maxAp: number;
-                lp: number;
-                mp: number;
-                ap: number;
-            };
             perks?: Array<{
                 id: string;
                 rarity: string;

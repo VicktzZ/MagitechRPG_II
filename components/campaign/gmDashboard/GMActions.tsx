@@ -76,13 +76,12 @@ export default function GMActions(): ReactElement {
         enabled: charsheets.length > 0
     });
 
-    // Memoized player list with charsheet data (usando stats da sessão quando disponível)
+    // Memoized player list with charsheet data
     const players: PlayerInfo[] = useMemo(() => {
         console.log('[GMActions] Building players list:', {
             usersPlayers: users.players?.length,
             campaignPlayers: campaign?.players?.length,
-            realtimeCharsheets: realtimeCharsheets?.length,
-            sessionUsers: campaign?.session?.users?.length
+            realtimeCharsheets: realtimeCharsheets?.length
         });
 
         return users.players?.map(player => {
@@ -92,26 +91,10 @@ export default function GMActions(): ReactElement {
             );
             const charsheet = realtimeCharsheets?.find((c: any) => c.id === playerInCampaign?.charsheetId);
             
-            // PRIORIDADE 1: Stats da sessão na charsheet (charsheet.session[].stats)
-            const charsheetSessionStats = charsheet?.session?.find(
-                (s: any) => s.campaignCode === campaign?.campaignCode
-            )?.stats;
-            
-            // PRIORIDADE 2: Stats da sessão na campanha (campaign.session.users[].stats)
-            const campaignSessionStats = (campaign?.session?.users as any[])?.find(
-                (u: any) => u.odacId === player.id || u.charsheetId === playerInCampaign?.charsheetId
-            )?.stats;
-            
             console.log(`[GMActions] Player ${player.name}:`, {
                 playerId: player.id,
-                campaignCode: campaign?.campaignCode,
-                charsheetSessionStats,
-                campaignSessionStats,
                 charsheetStats: charsheet?.stats
             });
-            
-            // Usa stats da sessão da charsheet > sessão da campanha > charsheet base
-            const finalStats = charsheetSessionStats || campaignSessionStats || charsheet?.stats;
             
             return {
                 id: player.id,
@@ -121,13 +104,13 @@ export default function GMActions(): ReactElement {
                     id: charsheet.id,
                     name: charsheet.name,
                     level: charsheet.level,
-                    stats: finalStats,
+                    stats: charsheet.stats,
                     inventory: charsheet.inventory,
                     attributes: charsheet.attributes
                 } : undefined
             };
         }) || [];
-    }, [ users.players, campaign?.players, realtimeCharsheets, campaign?.session?.users ]);
+    }, [ users.players, campaign?.players, realtimeCharsheets ]);
 
     // Menu handlers
     const handleOpenMenu = (event: React.MouseEvent<HTMLButtonElement>) => {
