@@ -61,6 +61,10 @@ function normalizeToArray<T>(value: any): T[] {
     return [];
 }
 
+function getSpellPointCost(level: number): 1 | 2 {
+    return level >= 3 ? 2 : 1
+}
+
 /**
  * Componente Spells
  * 
@@ -149,6 +153,8 @@ const Spells = memo(() => {
         const magicIndex = currentSpells.findIndex(m => m.id === magicId)
 
         if (magicIndex !== -1) {
+            const removedMagic = currentSpells[magicIndex]
+            const refundCost = getSpellPointCost(Number(removedMagic?.level ?? 1))
             currentSpells.splice(magicIndex, 1)
 
             const currentStages: Record<string, number> = spellStages || {}
@@ -160,7 +166,7 @@ const Spells = memo(() => {
             }
 
             setValue('spells', currentSpells, { shouldValidate: true })
-            setValue('points.spells', points.spells + 1, { shouldValidate: true })
+            setValue('points.magics', (points.magics ?? 0) + refundCost, { shouldValidate: true })
             setValue('spellSpace', spellSpace + 1, { shouldValidate: true })
 
             enqueueSnackbar(`Magia ${magicName} removida!`, {

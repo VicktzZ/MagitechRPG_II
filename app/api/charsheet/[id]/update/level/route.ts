@@ -75,14 +75,14 @@ export async function POST(req: Request, { params }: { params: { id: string } })
             }
 
             if (currentLevel % 4 === 0) {
+                magicPowerPoints++;
                 attributePoints += 12;
                 rewardsList.push('+12 pontos de atributo');
+                rewardsList.push('+1 ponto de poder mágico');
             }
 
             if (currentLevel % 5 === 0) {
-                magicPowerPoints++;
                 spellsPoints += 2;
-                rewardsList.push('+1 ponto de poder mágico');
                 rewardsList.push('+2 pontos de magia');
 
                 if (charsheet.race === 'Humano') {

@@ -19,13 +19,18 @@ export default function SpellsModal({ open, onClose }: { open: boolean, onClose:
     
     const invalidate = (message: string) => ({ isValid: false, errorMessage: message });
 
+    const getSpellPointCost = (level: number): 1 | 2 => {
+        return level >= 3 ? 2 : 1
+    }
+
     const validateAdd = (spell: Spell) => {
         const { ORMLevel, spellSpace, points } = getValues();
+        const cost = getSpellPointCost(Number(spell.level))
         
         if (ORMLevel < Number(spell.level)) {
             return invalidate('Seu nível de ORM não é suficiente para esta magia!');
         }
-        if (spellSpace < 1 || points.spells < 1) {
+        if (spellSpace < 1 || (points.magics ?? 0) < cost) {
             return invalidate('Você não tem mais espaço ou pontos de magia suficientes!');
         }
 
@@ -36,6 +41,7 @@ export default function SpellsModal({ open, onClose }: { open: boolean, onClose:
         const currentSpells = getValues('spells') || [];
         const currentPoints = getValues('points');
         const currentSpellsSpace = getValues('spellSpace');
+        const cost = getSpellPointCost(Number(spell.level))
         
         const newSpell = {
             ...spell,
@@ -43,9 +49,8 @@ export default function SpellsModal({ open, onClose }: { open: boolean, onClose:
         };
         
         setValue('spells', [ ...currentSpells, newSpell ], { shouldValidate: true });
-        setValue('points.magics', currentPoints.magics - 1, { shouldValidate: true });
+        setValue('points.magics', (currentPoints.magics ?? 0) - cost, { shouldValidate: true });
         setValue('spellSpace', currentSpellsSpace - 1, { shouldValidate: true });
-        console.log(getValues().spells)
 
         return newSpell;
     };
