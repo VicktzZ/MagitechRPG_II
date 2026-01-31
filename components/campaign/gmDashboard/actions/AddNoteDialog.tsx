@@ -11,6 +11,8 @@ import {
 } from '@mui/material';
 import NoteAddIcon from '@mui/icons-material/NoteAdd';
 import { useSnackbar } from 'notistack';
+import { campaignService } from '@services';
+import { Note } from '@models';
 
 interface AddNoteDialogProps {
     open: boolean;
@@ -18,7 +20,7 @@ interface AddNoteDialogProps {
     campaignId: string;
 }
 
-export default function AddNoteDialog({ open, onClose  }: AddNoteDialogProps) {
+export default function AddNoteDialog({ open, onClose, campaignId }: AddNoteDialogProps) {
     const { enqueueSnackbar } = useSnackbar();
     const [ noteContent, setNoteContent ] = useState('');
     const [ isSubmitting, setIsSubmitting ] = useState(false);
@@ -31,7 +33,8 @@ export default function AddNoteDialog({ open, onClose  }: AddNoteDialogProps) {
 
         setIsSubmitting(true);
         try {
-            // TODO: Implementar lógica de salvar nota
+            const newNote = new Note({ content: noteContent.trim() });
+            await campaignService.createNote(campaignId, newNote);
             enqueueSnackbar('Nota adicionada com sucesso!', { variant: 'success' });
             setNoteContent('');
             onClose();
