@@ -163,30 +163,16 @@ function ResourceListModal({
                                 label="Buscar"
                                 variant="outlined"
                                 size="small"
-                                // Usando defaultValue em vez de value para evitar que o React controle o input
-                                // Isso evita renderizações desnecessárias enquanto o usuário digita
-                                defaultValue={search}
-                                // Usar onBlur para atualizar a busca quando o usuário sair do campo
-                                onBlur={(e) => {
-                                    if (e.target.value !== search) {
-                                        setSearch(e.target.value);
-                                    }
-                                }}
-                                // Usar keyDown para permitir busca com Enter
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
                                 onKeyDown={(e) => {
                                     if (e.key === 'Enter') {
-                                        if (e.currentTarget.value !== search) {
-                                            setSearch(e.currentTarget.value);
-                                        }
-                                        // Remover foco do campo para evitar problemas
                                         e.currentTarget.blur();
                                     }
                                 }}
                                 sx={{ minWidth: '200px' }}
                                 autoComplete="off"
                                 id="resource-search-field"
-                                // Previne que o React redefina o input
-                                key="search-field-stable"
                             />
                             
                             {filterOptions?.length > 0 && (

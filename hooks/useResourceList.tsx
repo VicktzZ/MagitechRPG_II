@@ -103,7 +103,7 @@ export const useResourceList = <T extends Record<string, any>>(
         staleTime: 60000, // Aumentado para 1 minuto para evitar consultas desnecessárias
         gcTime: 300000, // 5 minutos de cache
         getNextPageParam: (lastPage) => lastPage.nextPage,
-        initialPageParam: 1,
+        initialPageParam: null,
         refetchOnWindowFocus: false, // Evita refetch quando a janela ganha foco
         refetchOnMount: false, // Evita refetch quando o componente é montado
         enabled: !isAllMode
