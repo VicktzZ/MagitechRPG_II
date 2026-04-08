@@ -556,7 +556,7 @@ export const skills: {
         'Aniquilador': [
             {
                 'name': 'Força Implacável',
-                'description': 'Seus ataques corpo a corpo se tornam tão avassaladores que destroem as defesas inimigas. Ao atacar, você pode gastar 5 MP para ignorar permanentemente 1d6 pontos de AP do alvo para cada ataque subsequente que você desferir contra ele neste combate. O efeito é cumulativo.',
+                'description': 'Seus ataques corpo a corpo se tornam tão avassaladores que destroem as defesas inimigas. Ao atacar, você pode gastar 7 MP para ignorar permanentemente 1d6 pontos de AP do alvo para cada ataque subsequente que você desferir contra ele neste combate. O efeito é cumulativo até 3x.',
                 'origin': 'Aniquilador',
                 'type': 'Subclasse',
                 'level': 10

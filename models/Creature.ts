@@ -6,6 +6,8 @@ import { Spell } from './entities/Spell'
 import { Expertises } from './Expertises'
 import { Skill } from './Skill'
 import { Stats } from './Stats'
+import type { Effect } from '@features/pipelines/types/effects'
+import type { Element } from './types/string'
 
 export class Creature {
     @IsString() id: string = uuidv4()
@@ -32,6 +34,12 @@ export class Creature {
     @ValidateNested()
     @Type(() => Stats)
         stats: Stats;
+    
+    @IsString() elementalMastery: Element = '' as unknown as Element;
+    
+    @IsArray()
+    @IsOptional()
+        effects: Effect[] = [];
 
     @ValidateNested()
     @Type(() => Expertises)

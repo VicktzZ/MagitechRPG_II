@@ -1,0 +1,1 @@
+export type EffectType = 'damage' | 'heal' | 'shield' | 'buff' | 'debuff' | 'status' | 'special';

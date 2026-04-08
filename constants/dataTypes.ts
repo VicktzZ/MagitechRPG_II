@@ -21,6 +21,41 @@ const damages: DamageType[] = [
     'Vácuo'
 ]
 
+export const effects: string[] = [
+    'Queimadura',
+    'Necrose',
+    'Sangramento',
+    'Envenenamento',
+    'Radiação',
+    'Regeneração',
+    
+    // Debuff
+    'Congelamento',
+    'Eletrização',
+    'Paralisia',
+    'Atordoamento',
+    'Silenciamento',
+    'Cegueira',
+    'Furtivo',
+    'Exaustão',
+    'Enfraquecimento',
+    'Vulnerável',
+    'Fragilidade',
+    'Incurável',
+    'Medo',
+
+    // Buff
+    'Velocidade',
+    'Invisível',
+    'Visão na Penumbra',
+    'Visão Verdadeira',
+    'Resistência',
+    'Sobrecura',
+    'Sobremana',
+    'Precisão',
+    'Evasão'
+]
+
 const weaponKind = [
     'Arremessável',
     'Duas mãos',

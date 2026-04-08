@@ -7,9 +7,10 @@ import { Modificators } from './Modificators';
 import { Points } from './Points';
 import { Stats } from './Stats';
 import { Dice } from './Dice';
-import type { ClassNames, FinancialCondition, Gender, LineageNames } from './types/string';
+import type { ClassNames, Element, FinancialCondition, Gender, LineageNames } from './types/string';
 import type { Subclass } from './Subclass';
 import { Passive } from './Passive';
+import type { Effect } from '@features/pipelines/types/effects';
 
 export class BaseCharsheet {
     @IsString() id: string;
@@ -20,7 +21,7 @@ export class BaseCharsheet {
     @IsString() race: string;
     @IsString() lineage: LineageNames;
     @IsString() anotacoes: string = '';
-    @IsString() elementalMastery: string = '';
+    @IsString() elementalMastery: Element = '' as unknown as Element;
     @IsString() subclass: Subclass['name'];
     @IsString() createdAt: string = new Date().toISOString();
 
@@ -75,6 +76,10 @@ export class BaseCharsheet {
     @ValidateNested()
     @Type(() => Points)
         points: Points;
+    
+    @IsArray()
+    @IsOptional()
+        effects: Effect[] = [];
 
     @IsObject() capacity: {
         cargo: number;
