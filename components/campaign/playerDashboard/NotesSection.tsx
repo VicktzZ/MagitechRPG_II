@@ -1,0 +1,169 @@
+/* eslint-disable max-len */
+/* eslint-disable react-hooks/rules-of-hooks */
+'use client';
+
+import { useCampaignCurrentCharsheetContext } from '@contexts';
+import {
+    Edit,
+    Notes,
+    Save
+} from '@mui/icons-material';
+import {
+    Box,
+    Chip,
+    Paper,
+    Stack,
+    TextField,
+    Typography,
+    useTheme
+} from '@mui/material';
+import { blue, green, grey } from '@mui/material/colors';
+import { useState, type ReactElement } from 'react';
+
+export default function NotesSection(): ReactElement {
+    const { charsheet, updateCharsheet } = useCampaignCurrentCharsheetContext();
+    const theme = useTheme();
+
+    const [ notes, setNotes ] = useState(charsheet?.anotacoes ?? '');
+    const [ isEditing, setIsEditing ] = useState(false);
+    
+    const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>): void => {
+        const newValue = e.target.value;
+        setNotes(newValue);
+    };
+
+    const handleFocus = () => {
+        setIsEditing(true);
+    };
+
+    const handleBlur = () => {
+        setIsEditing(false);
+        if (charsheet) {
+            updateCharsheet({ anotacoes: notes });
+        }
+    };
+
+    return (
+        <Box sx={{ width: '100%', height: '100%' }}>
+            <Paper 
+                elevation={2}
+                sx={{ 
+                    p: 3, 
+                    borderRadius: 3,
+                    background: theme.palette.mode === 'dark'
+                        ? 'linear-gradient(145deg, #1e293b 0%, #334155 100%)'
+                        : 'linear-gradient(145deg, #f8fafc 0%, #e2e8f0 100%)',
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    transition: 'all 0.3s ease',
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    '&:hover': {
+                        boxShadow: 4,
+                        transform: 'translateY(-2px)'
+                    }
+                }}
+            >
+                <Stack spacing={3} height="100%">
+                    {/* Header */}
+                    <Box display="flex" alignItems="center" justifyContent="space-between">
+                        <Box display="flex" alignItems="center" gap={2}>
+                            <Box 
+                                sx={{
+                                    p: 1.5,
+                                    borderRadius: 2,
+                                    bgcolor: grey[100],
+                                    border: '2px solid',
+                                    borderColor: grey[200]
+                                }}
+                            >
+                                <Notes sx={{ color: grey[700], fontSize: '2rem' }} />
+                            </Box>
+                            <Box>
+                                <Typography 
+                                    variant="h5" 
+                                    sx={{ 
+                                        fontWeight: 700,
+                                        color: 'primary.main',
+                                        mb: 0.5
+                                    }}
+                                >
+                                    Anotações Pessoais
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                    {notes.trim() ? 'Suas anotações e lembretes importantes' : 'Adicione suas anotações aqui'}
+                                </Typography>
+                            </Box>
+                        </Box>
+                        
+                        {/* Status de Edição */}
+                        <Box display="flex" alignItems="center" gap={1}>
+                            {isEditing ? (
+                                <Chip 
+                                    icon={<Edit />}
+                                    label="Editando"
+                                    size="small"
+                                    sx={{
+                                        bgcolor: blue[100],
+                                        color: blue[800],
+                                        fontWeight: 600
+                                    }}
+                                />
+                            ) : (
+                                <Chip 
+                                    icon={<Save />}
+                                    label="Salvo"
+                                    size="small"
+                                    sx={{
+                                        bgcolor: green[100],
+                                        color: green[800],
+                                        fontWeight: 600
+                                    }}
+                                />
+                            )}
+                        </Box>
+                    </Box>
+
+                    {/* Campo de Texto */}
+                    <Box flex={1}>
+                        <TextField
+                            fullWidth
+                            multiline
+                            rows={20}
+                            value={notes}
+                            onChange={handleChange}
+                            onFocus={handleFocus}
+                            onBlur={handleBlur}
+                            placeholder={'✍️ Escreva suas anotações aqui...\n\n• Lembretes importantes\n• Estratégias de combate\n• Informações sobre NPCs\n• Pistas e mistérios\n• Objetivos da sessão'}
+                            sx={{
+                                '& .MuiOutlinedInput-root': {
+                                    alignItems: 'flex-start',
+                                    padding: 2,
+                                    fontSize: '1rem',
+                                    lineHeight: 1.6,
+                                    '& textarea': {
+                                        height: '100% !important',
+                                        overflow: 'auto !important',
+                                        resize: 'none'
+                                    },
+                                    '& fieldset': {
+                                        borderColor: grey[300],
+                                        borderWidth: 2
+                                    },
+                                    '&:hover fieldset': {
+                                        borderColor: blue[400]
+                                    },
+                                    '&.Mui-focused fieldset': {
+                                        borderColor: blue[600],
+                                        borderWidth: 2
+                                    }
+                                }
+                            }}
+                        />
+                    </Box>
+                </Stack>
+            </Paper>
+        </Box>
+    );
+}

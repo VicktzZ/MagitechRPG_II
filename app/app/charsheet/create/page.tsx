@@ -1,0 +1,12 @@
+'use client';
+
+import CharsheetFormProvider from '@contexts/CharsheetFormProvider';
+import { CharsheetComponent } from '@components/charsheet';
+
+export default function CreateCharsheetPage() {
+    return (
+        <CharsheetFormProvider>
+            <CharsheetComponent />
+        </CharsheetFormProvider>
+    );
+}

@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    "target": "es2017",
+    "experimentalDecorators": true,
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "strictPropertyInitialization": false,
+    "noPropertyAccessFromIndexSignature": true,
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "baseUrl": ".",
+    "paths": {
+      "@*": ["./*"]
+    }
+  },
+  "include": ["*.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "public/index.js", "components/misc/rpg-icons/index.js", "app/api/socket/route.ts", "app/api/pusher/auth/route.ts", "components/campaign/Campa"],
+  "exclude": ["node_modules"]
+}
