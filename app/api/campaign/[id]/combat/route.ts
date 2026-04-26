@@ -1,8 +1,12 @@
 import { type NextRequest, NextResponse } from 'next/server'
-import { campaignRepository, charsheetRepository } from '@repositories'
-import { Combat, Combatant, CombatLog } from '@models'
+import { campaignRepository, charsheetRepository, combatEffectRepository } from '@repositories'
+import { Combat, Combatant, CombatLog, AppliedEffect } from '@models'
 import { pusherServer } from '@utils/pusher'
 import { PusherEvent } from '@enums'
+import { processEffectTicks, syncPlayerCharsheets } from '@utils/combat/processEffectTicks'
+import { getEffectDisplayName } from '@utils/combatEffectLabels'
+import { v4 as uuidv4 } from 'uuid'
+import { stripUndefined } from '@utils/firestore/stripUndefined'
 
 type CombatAction = 
     | 'start'           // Iniciar combate
@@ -14,6 +18,8 @@ type CombatAction =
     | 'apply_heal'      // Aplicar cura a um alvo
     | 'add_creature'    // Adicionar criatura ao combate
     | 'remove_combatant' // Remover combatente
+    | 'apply_effect'    // Aplicar efeito de pipeline a um combatente
+    | 'remove_effect'   // Remover efeito de pipeline de um combatente
 
 interface CombatRequest {
     action: CombatAction
@@ -44,6 +50,19 @@ interface CombatRequest {
     }>
     showEnemyLp?: boolean     // Se mostra LP dos inimigos para jogadores
     advantageType?: 'normal' | 'advantage' | 'disadvantage' // Para rolagem de iniciativa
+
+    // Para apply_effect / remove_effect
+    effectId?: string
+    level?: number
+    appliedEffectId?: string
+    appliedByName?: string
+    appliedById?: string
+    /** Sobrescreve o timing do efeito ao aplicar (sem mudar o catálogo) */
+    timingOverride?: 'turn' | 'round'
+    /** Sobrescreve a duração do efeito ao aplicar (sem mudar o catálogo) */
+    durationOverride?: number
+    /** Aplica o efeito como indefinido (só expira ao ser removido manualmente) */
+    indefiniteOverride?: boolean
 }
 
 /**
@@ -56,21 +75,6 @@ function rollD20(): number {
 /**
  * Rola iniciativa com possível vantagem/desvantagem
  */
-function rollInitiative(advantageType: 'normal' | 'advantage' | 'disadvantage' = 'normal'): number {
-    const roll1 = rollD20()
-    
-    if (advantageType === 'normal') {
-        return roll1
-    }
-    
-    const roll2 = rollD20()
-    
-    if (advantageType === 'advantage') {
-        return Math.max(roll1, roll2)
-    } else {
-        return Math.min(roll1, roll2)
-    }
-}
 
 export async function POST(
     request: NextRequest,
@@ -116,7 +120,8 @@ export async function POST(
                 currentLp: p.lp,
                 maxLp: p.maxLp,
                 currentMp: p.mp,
-                maxMp: p.maxMp
+                maxMp: p.maxMp,
+                effects: []
             }))
 
             // Cria combatentes a partir das criaturas
@@ -129,7 +134,8 @@ export async function POST(
                 currentLp: c.lp,
                 maxLp: c.maxLp,
                 currentMp: c.mp,
-                maxMp: c.maxMp
+                maxMp: c.maxMp,
+                effects: []
             }))
 
             combat.isActive = true
@@ -158,10 +164,16 @@ export async function POST(
                 return NextResponse.json({ error: 'Não há combate ativo' }, { status: 400 })
             }
 
-
             combat.isActive = false
             combat.phase = 'ENDED'
             combat.endedAt = new Date().toISOString()
+
+            // Limpa efeitos ativos ao encerrar combate
+            for (const c of combat.combatants) {
+                if (Array.isArray(c.effects) && c.effects.length > 0) {
+                    c.effects = []
+                }
+            }
 
             combat.logs.push(new CombatLog({
                 round: combat.round,
@@ -179,7 +191,7 @@ export async function POST(
                 return NextResponse.json({ error: 'Não é possível rolar iniciativa agora' }, { status: 400 })
             }
 
-            const { combatantId, advantageType = 'normal', value } = body
+            const { combatantId , value } = body
             
             // Busca combatente por id ou odacId (para jogadores)
             const combatant = combat.combatants.find(c => 
@@ -227,12 +239,13 @@ export async function POST(
 
                     const baseCreature = creatures.find((c: any) => c.id === baseId)
                     if (baseCreature) {
-                        const agiExpertise = (baseCreature.expertises as any)?.Agilidade
+                        const agiExpertise = (baseCreature.expertises )?.Agilidade
                         expertiseValue = Number(agiExpertise?.value ?? 0) || 0
 
                         const defaultAttrKey = (agiExpertise?.defaultAttribute ?? 'des') as string
                         const attrValue = Number(baseCreature.attributes?.[defaultAttrKey] ?? 0) || 0
-                        let attrMod = Math.floor((attrValue / 5) - 1)
+                        // Nova fórmula: 0=-1, 5=1, 10=2, 15=3, 20=4, 30+=5
+                        let attrMod = attrValue === 0 ? -1 : Math.min(5, Math.floor(attrValue / 5))
                         if (!Number.isFinite(attrMod) || attrMod < 1) attrMod = 1
                         numDice = attrMod
                     }
@@ -363,6 +376,19 @@ export async function POST(
                     actorName: 'Sistema',
                     message: `🔄 **Round ${combat.round}!**\nFase de Iniciativa — todos devem rolar novamente.`
                 }))
+
+                // Efeitos timing='turn' também decrementam quando o round reinicia
+                const nextCombatantId = combat.combatants[0]?.id
+                if (nextCombatantId) {
+                    const tickRes = processEffectTicks(combat, {
+                        type: 'turn_advance',
+                        newCombatantId: nextCombatantId,
+                        previousCombatantId: currentCombatant?.id
+                    })
+                    if (tickRes.charsheetsToSync.size > 0) {
+                        await syncPlayerCharsheets(combat, tickRes.charsheetsToSync)
+                    }
+                }
             } else {
                 // Próximo combatente que ainda não agiu
                 let nextIndex = (combat.currentTurnIndex + 1) % combat.combatants.length
@@ -403,6 +429,16 @@ export async function POST(
                         actorName: currentCombatant?.name || 'Sistema',
                         message: `➡️ **${currentCombatant?.name || 'Alguém'}** passou o turno.\n🎯 Vez de **${nextCombatant.name}**!`
                     }))
+
+                    // Processa tick de efeitos ao avançar o turno
+                    const tickRes = processEffectTicks(combat, {
+                        type: 'turn_advance',
+                        newCombatantId: nextCombatant.id,
+                        previousCombatantId: currentCombatant?.id
+                    })
+                    if (tickRes.charsheetsToSync.size > 0) {
+                        await syncPlayerCharsheets(combat, tickRes.charsheetsToSync)
+                    }
                 }
             }
 
@@ -427,20 +463,20 @@ export async function POST(
             }
 
             const oldLp = target.currentLp || 0
-            
 
             target.currentLp = Math.max(0, oldLp - damage)
 
-            // Se for jogador, atualiza na sessão (session.users[index].stats)
-            if (target.type === 'player' && campaign.session?.users) {
-                const userIndex = (campaign.session.users as any[]).findIndex(
-                    (u: any) => u.odacId === target.odacId || u.charsheetId === target.id
-                )
-                
-                
-                if (userIndex !== -1 && (campaign.session.users as any[])[userIndex]?.stats) {
-                    (campaign.session.users as any[])[userIndex].stats.lp = target.currentLp
-                    
+            // Se for jogador, atualiza charsheet.stats diretamente
+            if (target.type === 'player') {
+                const charsheet = await charsheetRepository.findById(target.id)
+                if (charsheet) {
+                    await charsheetRepository.update({
+                        ...charsheet,
+                        stats: {
+                            ...charsheet.stats,
+                            lp: target.currentLp
+                        }
+                    })
                 }
             }
 
@@ -481,19 +517,19 @@ export async function POST(
             const oldHp = healTarget.currentLp || 0
             const maxHp = healTarget.maxLp || 999
             
-            
             healTarget.currentLp = Math.min(maxHp, oldHp + heal)
 
-            // Se for jogador, atualiza na sessão (session.users[index].stats)
-            if (healTarget.type === 'player' && campaign.session?.users) {
-                const userIndex = (campaign.session.users as any[]).findIndex(
-                    (u: any) => u.odacId === healTarget.odacId || u.charsheetId === healTarget.id
-                )
-                
-                
-                if (userIndex !== -1 && (campaign.session.users as any[])[userIndex]?.stats) {
-                    (campaign.session.users as any[])[userIndex].stats.lp = healTarget.currentLp
-                    
+            // Se for jogador, atualiza charsheet.stats diretamente
+            if (healTarget.type === 'player') {
+                const charsheet = await charsheetRepository.findById(healTarget.id)
+                if (charsheet) {
+                    await charsheetRepository.update({
+                        ...charsheet,
+                        stats: {
+                            ...charsheet.stats,
+                            lp: healTarget.currentLp
+                        }
+                    })
                 }
             }
 
@@ -528,7 +564,8 @@ export async function POST(
                     type: 'creature',
                     initiativeBonus: creature.agility || 0,
                     currentLp: creature.lp,
-                    maxLp: creature.maxLp
+                    maxLp: creature.maxLp,
+                    effects: []
                 })
                 combat.combatants.push(combatant)
 
@@ -574,6 +611,156 @@ export async function POST(
             break
         }
 
+        case 'apply_effect': {
+            if (!combat.isActive) {
+                return NextResponse.json({ error: 'Não há combate ativo' }, { status: 400 })
+            }
+
+            const {
+                targetId,
+                effectId,
+                level = 1,
+                appliedByName,
+                appliedById,
+                timingOverride,
+                durationOverride,
+                indefiniteOverride
+            } = body
+
+            if (!targetId || !effectId) {
+                return NextResponse.json({ error: 'targetId e effectId são obrigatórios' }, { status: 400 })
+            }
+
+            const target = combat.combatants.find(c => c.id === targetId)
+            if (!target) {
+                return NextResponse.json({ error: 'Combatente alvo não encontrado' }, { status: 404 })
+            }
+
+            const effect = await combatEffectRepository.findById(effectId)
+            if (!effect) {
+                return NextResponse.json({ error: 'Efeito não encontrado no catálogo' }, { status: 404 })
+            }
+
+            // Se o efeito não usa níveis, força level=1
+            const usesLevels = effect.usesLevels !== false
+            const safeLevel = usesLevels ? Math.max(1, Math.floor(level)) : 1
+            const levelConfig = effect.levels?.[safeLevel - 1]
+            if (!levelConfig) {
+                return NextResponse.json({ error: `Nível ${safeLevel} não configurado neste efeito` }, { status: 400 })
+            }
+
+            if (!Array.isArray(target.effects)) target.effects = []
+
+            // Snapshot do efeito com possíveis overrides de timing
+            // `stripUndefined` garante que o Firestore não receba campos `undefined`.
+            const snapshot = stripUndefined(JSON.parse(JSON.stringify(effect)))
+            if (timingOverride === 'turn' || timingOverride === 'round') {
+                snapshot.timing = timingOverride
+            }
+            const effectiveTiming: 'turn' | 'round' = snapshot.timing
+
+            // Duração efetiva (override ou default do nível).
+            // Se `indefiniteOverride === true` ou o próprio nível é `indefinite`, tratamos como indefinido.
+            const effectIsIndefinite = indefiniteOverride === true || levelConfig.indefinite === true
+            const effectiveDuration = effectIsIndefinite
+                ? 0
+                : (
+                    typeof durationOverride === 'number'
+                    && Number.isFinite(durationOverride)
+                    && durationOverride > 0
+                )
+                    ? Math.max(1, Math.floor(durationOverride))
+                    : levelConfig.duration
+
+            const newApplied = new AppliedEffect(stripUndefined({
+                id: uuidv4(),
+                effectId: effect.id,
+                snapshot,
+                level: safeLevel,
+                remaining: effectiveDuration,
+                indefinite: effectIsIndefinite || undefined,
+                appliedAtRound: combat.round,
+                appliedByName,
+                appliedById
+            }))
+
+            target.effects.push(newApplied)
+
+            const fullName = getEffectDisplayName(effect, safeLevel)
+            const durationTxt = effectIsIndefinite
+                ? '∞ (indefinido)'
+                : `${effectiveDuration} ${effectiveTiming === 'turn' ? 'turno(s)' : 'rodada(s)'}`
+            const wasCustomized =
+                (timingOverride && timingOverride !== effect.timing)
+                || (!effectIsIndefinite && durationOverride && durationOverride !== levelConfig.duration)
+                || (indefiniteOverride === true && !levelConfig.indefinite)
+            const customTag = wasCustomized ? ' _(customizado)_' : ''
+
+            const formulaTxt = levelConfig.formula && levelConfig.formula !== '0'
+                ? `${levelConfig.formula} · `
+                : ''
+
+            combat.logs.push(new CombatLog({
+                round: combat.round,
+                type: 'effect_applied',
+                actorId: appliedById || 'gm',
+                actorName: appliedByName || 'GM',
+                targetId: target.id,
+                targetName: target.name,
+                message: `${effect.icon} **${target.name}** ganhou o efeito **${fullName}** (${formulaTxt}${durationTxt})${customTag}.`
+            }))
+
+            // timing='turn' aplica o primeiro tick imediatamente
+            if (effectiveTiming === 'turn') {
+                const tickRes = processEffectTicks(combat, {
+                    type: 'effect_applied',
+                    combatantId: target.id,
+                    appliedEffectId: newApplied.id
+                })
+                if (tickRes.charsheetsToSync.size > 0) {
+                    await syncPlayerCharsheets(combat, tickRes.charsheetsToSync)
+                }
+            }
+
+            break
+        }
+
+        case 'remove_effect': {
+            if (!combat.isActive) {
+                return NextResponse.json({ error: 'Não há combate ativo' }, { status: 400 })
+            }
+
+            const { targetId, appliedEffectId } = body
+            if (!targetId || !appliedEffectId) {
+                return NextResponse.json({ error: 'targetId e appliedEffectId são obrigatórios' }, { status: 400 })
+            }
+
+            const target = combat.combatants.find(c => c.id === targetId)
+            if (!target) {
+                return NextResponse.json({ error: 'Combatente alvo não encontrado' }, { status: 404 })
+            }
+
+            const idx = (target.effects || []).findIndex(e => e.id === appliedEffectId)
+            if (idx === -1) {
+                return NextResponse.json({ error: 'Efeito aplicado não encontrado' }, { status: 404 })
+            }
+
+            const removed = target.effects.splice(idx, 1)[0]
+            const fullName = removed.snapshot ? getEffectDisplayName(removed.snapshot, removed.level) : 'efeito'
+
+            combat.logs.push(new CombatLog({
+                round: combat.round,
+                type: 'effect_removed',
+                actorId: 'gm',
+                actorName: 'GM',
+                targetId: target.id,
+                targetName: target.name,
+                message: `🧹 Efeito **${fullName}** removido de **${target.name}**.`
+            }))
+
+            break
+        }
+
         default:
             return NextResponse.json({ error: 'Ação inválida' }, { status: 400 })
         }
@@ -602,7 +789,6 @@ export async function POST(
 
         // Salva a campanha atualizada
         const plainCampaign = JSON.parse(JSON.stringify(campaign))
-        
         
         await campaignRepository.update(plainCampaign)
 
@@ -635,7 +821,9 @@ function getActionMessage(action: CombatAction): string {
         apply_damage: 'Dano aplicado',
         apply_heal: 'Cura aplicada',
         add_creature: 'Criatura adicionada',
-        remove_combatant: 'Combatente removido'
+        remove_combatant: 'Combatente removido',
+        apply_effect: 'Efeito aplicado',
+        remove_effect: 'Efeito removido'
     }
     return messages[action] || 'Ação executada'
 }
@@ -654,7 +842,6 @@ export async function GET(
         if (!campaign) {
             return NextResponse.json({ error: 'Campanha não encontrada' }, { status: 404 })
         }
-
 
         return NextResponse.json({
             success: true,

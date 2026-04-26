@@ -68,3 +68,5 @@ export enum MessageType {
     EXPERTISE = 'expertise',
     COMBAT_LOG = 'combat_log'
 }
+
+export * from './subscriptionEnum';

@@ -11,7 +11,7 @@ import { useSession } from 'next-auth/react';
 import TestDialog from './TestDialog';
 import TestModal from './TestModal';
 import CombatStatus from './CombatStatus';
-import type { Attributes, Expertises, Message } from '@models';
+import type { Expertises, Message } from '@models';
 
 import { 
     MessageInput, 

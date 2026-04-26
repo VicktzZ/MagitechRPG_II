@@ -4,7 +4,7 @@
 
 import { PerkTypeEnum } from '@enums/rogueliteEnum'
 
-const ALL_COLLECTIONS = [ 'perks', 'powers', 'skills', 'items', 'armors', 'spells', 'weapons' ] as const
+const ALL_COLLECTIONS = [ 'perks', 'powers', 'skills', 'items', 'armors', 'spells', 'weapons', 'expertise' ] as const
 
 type Collection = typeof ALL_COLLECTIONS[number]
 
@@ -16,7 +16,7 @@ const PERK_TYPE_COLLECTIONS: Record<string, Collection[]> = {
     [PerkTypeEnum.ACCESSORY]: [ 'perks' ],
     [PerkTypeEnum.UPGRADE]: [ 'perks' ],
     [PerkTypeEnum.BONUS]: [ 'perks' ],
-    [PerkTypeEnum.EXPERTISE]: [ 'perks' ],
+    [PerkTypeEnum.EXPERTISE]: [ 'expertise' ],
     [PerkTypeEnum.SKILL]: [ 'perks', 'skills', 'powers' ],
     [PerkTypeEnum.SPELL]: [ 'spells' ]
 }

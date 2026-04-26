@@ -131,18 +131,29 @@ export default function RogueliteLevelUpDialog({
                             <Chip label="+2 Espaços de Magia" size="small" sx={{ bgcolor: 'primary.main', color: 'primary.contrastText' }} />
                             <Chip label="+2.0kg Capacidade" size="small" sx={{ bgcolor: amber[700], color: amber[50] }} />
                             <Chip label="+¢250 Dinheiro" size="small" sx={{ bgcolor: green[600], color: green[50] }} />
-                            <Chip label="+10 LP Máximo" size="small" sx={{ bgcolor: red[600], color: red[50] }} />
-                            <Chip label="+5 MP Máximo" size="small" sx={{ bgcolor: blue[500], color: blue[50] }} />
+                            <Chip label="+10 LP Máximo" size="small" sx={{ bgcolor: red[600], color: red[50], fontWeight: 'bold' }} />
+                            <Chip label="+5 MP Máximo" size="small" sx={{ bgcolor: blue[500], color: blue[50], fontWeight: 'bold' }} />
                         </Box>
                         <Typography 
                             variant="caption" 
                             sx={{ 
                                 color: (theme) => theme.palette.mode === 'dark' ? green[400] : green[700], 
                                 display: 'block', 
-                                mt: 1 
+                                mt: 1,
+                                fontWeight: 600
                             }}
                         >
-                            💡 LP e MP serão totalmente restaurados ao novo máximo
+                            ❤️ LP e MP máximos AUMENTAM e são totalmente restaurados
+                        </Typography>
+                        <Typography 
+                            variant="caption" 
+                            sx={{ 
+                                color: (theme) => theme.palette.mode === 'dark' ? blue[300] : blue[700], 
+                                display: 'block', 
+                                fontStyle: 'italic'
+                            }}
+                        >
+                            ⚠️ Stats são salvos na sessão da campanha, não globalmente
                         </Typography>
                     </Box>
 

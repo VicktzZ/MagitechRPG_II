@@ -21,7 +21,9 @@ import {
     Psychology,
     Save,
     SportsMartialArts,
-    Warning
+    Warning,
+    TrendingUp,
+    TrendingDown
 } from '@mui/icons-material';
 import {
     Alert,
@@ -138,6 +140,44 @@ export default function CharsheetComponent(): ReactElement {
     const isNotebook = useMediaQuery(theme.breakpoints.between('md', 'xl'))
     const submitAudio = useAudio('/sounds/sci-fi-interface-zoom.wav')
     const [ , setCreateCharsheetAutosave ] = useLocalStorage<Charsheet | null>('create-charsheet-autosave')
+    
+    // Funções de level up/down
+    const handleLevelUp = async () => {
+        if (!charsheet.id) {
+            enqueueSnackbar('Salve a ficha primeiro antes de subir de nível', toastDefault('warning', 'warning'))
+            return
+        }
+        
+        try {
+            await charsheetService.increaseLevel(charsheet.id, 1)
+            enqueueSnackbar('Nível aumentado com sucesso!', toastDefault('success', 'success'))
+            queryClient.invalidateQueries({ queryKey: [ 'charsheet', charsheet.id ] })
+            window.location.reload()
+        } catch (error: any) {
+            enqueueSnackbar(`Erro ao subir de nível: ${error.message}`, toastDefault('error', 'error'))
+        }
+    }
+    
+    const handleLevelDown = async () => {
+        if (!charsheet.id) {
+            enqueueSnackbar('Salve a ficha primeiro', toastDefault('warning', 'warning'))
+            return
+        }
+        
+        if (charsheet.level <= 0) {
+            enqueueSnackbar('Nível já está em 0', toastDefault('warning', 'warning'))
+            return
+        }
+        
+        try {
+            await charsheetService.increaseLevel(charsheet.id, -1)
+            enqueueSnackbar('Nível diminuído com sucesso!', toastDefault('success', 'success'))
+            queryClient.invalidateQueries({ queryKey: [ 'charsheet', charsheet.id ] })
+            window.location.reload()
+        } catch (error: any) {
+            enqueueSnackbar(`Erro ao diminuir nível: ${error.message}`, toastDefault('error', 'error'))
+        }
+    }
 
     const { mutateAsync: updateCharsheet } = useMutation({
         mutationFn: async ({ id, data }: { id: string, data: CharsheetDTO }) => await charsheetService.updateById({ id, data }),
@@ -195,6 +235,7 @@ export default function CharsheetComponent(): ReactElement {
 
     const submitForm: SubmitHandler<CharsheetDTO> = async (values) => {
         enqueueSnackbar('Aguarde...', toastDefault('loadingFetch', 'info'))
+        console.log(values)
 
         if (!values.id) {
             try {
@@ -337,7 +378,7 @@ export default function CharsheetComponent(): ReactElement {
                                     color="primary"
                                     type={!charsheet.id ? 'submit' : 'button'}
                                     onClick={form.handleSubmit(submitForm)}
-                                    disabled={!!charsheet?.id && (session?.user.id !== charsheet.userId)}
+                                    // disabled={!!charsheet?.id && (session?.user.id !== charsheet.userId)}
                                     startIcon={<Save />}
                                     size={isMobile ? 'small' : 'medium'}
                                     sx={{ minWidth: isMobile ? 100 : 150 }}

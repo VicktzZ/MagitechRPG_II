@@ -40,6 +40,32 @@ import { Magic } from '.';
 import MagicsModal from './dialogs/MagicsModal';
 
 /**
+ * Normaliza um valor que pode ser um array ou um objeto com chaves numéricas
+ */
+function normalizeToArray<T>(value: any): T[] {
+    if (!value) return [];
+    if (Array.isArray(value)) return value;
+    
+    // Se é um objeto com chaves numéricas, converter para array
+    if (typeof value === 'object') {
+        const keys = Object.keys(value);
+        const isNumericKeys = keys.every(key => !isNaN(Number(key)));
+        if (isNumericKeys) {
+            return keys
+                .map(key => Number(key))
+                .sort((a, b) => a - b)
+                .map(key => value[key]);
+        }
+    }
+    
+    return [];
+}
+
+function getSpellPointCost(level: number): 1 | 2 {
+    return level >= 3 ? 2 : 1
+}
+
+/**
  * Componente Spells
  * 
  * Gerencia e exibe todas as magias do personagem com interface moderna e animações
@@ -58,8 +84,11 @@ const Spells = memo(() => {
     const theme = useTheme()
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
 
-    const spells = useWatch({ control, name: 'spells' })
-    
+    const spellsRaw = useWatch({ control, name: 'spells' })
+    const spells = useMemo(() => normalizeToArray(spellsRaw), [ spellsRaw ])
+
+    const spellStages = useWatch({ control, name: 'spellStages' })
+
     const points = useWatch({ control, name: 'points' })
     const spellSpace = useWatch({ control, name: 'spellSpace' })
 
@@ -120,14 +149,24 @@ const Spells = memo(() => {
     }, [ spells ])
 
     const handleRemoveMagic = useCallback((magicId: string, magicName: string) => {
-        const currentSpells = [ ...spells ]
+        const currentSpells = normalizeToArray(spells)
         const magicIndex = currentSpells.findIndex(m => m.id === magicId)
 
         if (magicIndex !== -1) {
+            const removedMagic = currentSpells[magicIndex]
+            const refundCost = getSpellPointCost(Number(removedMagic?.level ?? 1))
             currentSpells.splice(magicIndex, 1)
 
+            const currentStages: Record<string, number> = spellStages || {}
+            if (magicId in currentStages) {
+                const restStages = Object.fromEntries(
+                    Object.entries(currentStages).filter(([ key ]) => key !== magicId)
+                ) as Record<string, number>
+                setValue('spellStages', restStages, { shouldValidate: true })
+            }
+
             setValue('spells', currentSpells, { shouldValidate: true })
-            setValue('points.spells', points.spells + 1, { shouldValidate: true })
+            setValue('points.magics', (points.magics ?? 0) + refundCost, { shouldValidate: true })
             setValue('spellSpace', spellSpace + 1, { shouldValidate: true })
 
             enqueueSnackbar(`Magia ${magicName} removida!`, {
@@ -135,14 +174,19 @@ const Spells = memo(() => {
                 action: () => <Close sx={{ cursor: 'pointer' }} onClick={() => { closeSnackbar(magicName) }} />
             })
         }
-    }, [ spells, points, spellSpace, enqueueSnackbar, closeSnackbar, setValue ])
+    }, [ spells, points, spellSpace, enqueueSnackbar, closeSnackbar, setValue, spellStages ])
 
     const renderMagicCard = useCallback((magic: Spell) => {
+        const selectedStage = Math.min(
+            3,
+            Math.max(1, Number((spellStages as any)?.[magic.id ?? ''] ?? 1))
+        )
 
         return (
             <Grid
                 item
                 key={magic.id ?? ''}
+
                 xs={12}
                 sm={6}
                 md={4}
@@ -168,12 +212,17 @@ const Spells = memo(() => {
                         as='magic-spell'
                         id={magic.id ?? ''}
                         magic={magic}
+                        selectedStage={selectedStage}
+                        onStageChange={(stage: 1 | 2 | 3) => {
+                            if (!magic.id) return
+                            setValue(`spellStages.${magic.id}` as any, stage, { shouldValidate: true })
+                        }}
                         onIconClick={() => { handleRemoveMagic(magic.id ?? '', magic.name) }}
                     />
                 </motion.div>
             </Grid>
         )
-    }, [ handleRemoveMagic, theme.palette.primary.main ])
+    }, [ handleRemoveMagic, setValue, spellStages ])
 
     const spellsList = useMemo(() => {
         if (!filteredSpells?.length) {

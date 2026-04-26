@@ -37,6 +37,12 @@ interface AttributeConfig {
     description: string
 }
 
+function calculateAttributeMod(attributeValue: number): number {
+    if (attributeValue <= 4) return -1
+    if (attributeValue <= 9) return 1
+    return 2 + Math.floor((attributeValue - 10) / 10)
+}
+
 const attributeIcons: Record<MainAttributes, AttributeConfig> = {
     vig: {
         color: red[500],
@@ -327,7 +333,15 @@ function Attribute({
             lineageBonus = 1
         }
         
-        setValue(`mods.attributes.${attributeName}`, Math.floor((attr / 5) - 1) + lineageBonus)
+        // Nova fórmula de modificadores:
+        // 0 pontos: -1 dado (desvantagem)
+        // 5 pontos: 1 dado
+        // 10 pontos: 2 dados
+        // 15 pontos: 3 dados
+        // 20 pontos: 4 dados
+        // 30+ pontos: 5 dados (máximo)
+        const baseMod = calculateAttributeMod(attr)
+        setValue(`mods.attributes.${attributeName}`, baseMod + lineageBonus)
         
         const difference = attr - previousAttributeValue.current
         

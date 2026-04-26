@@ -5,12 +5,13 @@
 
 import { Add, AutoAwesome, Close, Flare, LocalFireDepartment, Bolt, WaterDrop, Air, Grass, DarkMode, LightMode, Psychology, DoNotDisturb } from '@mui/icons-material';
 import { alpha, Box, Button, CardContent, Chip, Grid, IconButton, Paper, Stack, Tooltip, Typography, useTheme } from '@mui/material';
-import { useState, type ReactElement } from 'react';
+import { useEffect, useState, type ReactElement } from 'react';
 import { motion } from 'framer-motion';
 import { elementColor } from '@constants';
 import { calculateExtraManaCost } from '@utils/roguelite';
 import { MagicPower } from './MagicPower';
 import { RPGIcon } from '@components/misc';
+
 import type { Power, Spell } from '@models/entities';
 import { type Element } from '@models/types/string';
 
@@ -21,11 +22,14 @@ type MagicTyping<C extends 'magic-spell' | 'magic-power'> =
         id: string,
         isAdding?: boolean,
         onIconClick?: () => void,
+        selectedStage?: 1 | 2 | 3,
+        onStageChange?: (stage: 1 | 2 | 3) => void,
         disabled?: boolean
     }
     :
     {
         magicPower: Power,
+
         id: string,
         isAdding?: boolean,
         onIconClick?: () => void,
@@ -62,14 +66,18 @@ function MagicSpell({
     id,
     isAdding,
     onIconClick,
+    selectedStage,
+    onStageChange,
     disabled = false
 }: MagicTyping<'magic-spell'>): ReactElement {
     const theme = useTheme();
 
+    const initialStage = Math.min(2, Math.max(0, Number(selectedStage ?? 1) - 1)) as 0 | 1 | 2
+
     // Estados
-    const [ description, setDescription ] = useState<string>(magic.stages[0]);
-    const [ activeStage, setActiveStage ] = useState<number>(0);
-    const [ extraManaCost, setExtraManaCost ] = useState<number>(0);
+    const [ description, setDescription ] = useState<string>(magic.stages[initialStage] ?? magic.stages[0]);
+    const [ activeStage, setActiveStage ] = useState<number>(initialStage);
+    const [ extraManaCost, setExtraManaCost ] = useState<number>(calculateExtraManaCost(Number(magic.level), initialStage));
 
     // Elemento para cor/ícone
     const elemento = magic.element?.toUpperCase() as Element;
@@ -88,12 +96,20 @@ function MagicSpell({
         magic.element !== 'Psíquico' &&
         magic.element !== 'Radiação' &&
         magic.element !== 'Explosão'
+
+    useEffect(() => {
+        const nextStage = Math.min(2, Math.max(0, Number(selectedStage ?? 1) - 1)) as 0 | 1 | 2
+        setActiveStage(nextStage)
+        setDescription(magic.stages[nextStage] ?? magic.stages[0])
+        setExtraManaCost(calculateExtraManaCost(Number(magic.level), nextStage))
+    }, [ magic.level, magic.stages, selectedStage ])
     
     // Trocar entre estágios e calcular custos adicionais de MP
     const handleStageChange = (stage: 0 | 1 | 2): void => {
         setActiveStage(stage);
         setDescription(magic.stages[stage]!);
         setExtraManaCost(calculateExtraManaCost(Number(magic.level), stage));
+        onStageChange?.((stage + 1) as 1 | 2 | 3)
     };
 
     // Animações

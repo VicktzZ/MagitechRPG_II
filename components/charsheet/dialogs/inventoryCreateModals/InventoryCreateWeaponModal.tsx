@@ -124,6 +124,17 @@ export const InventoryCreateWeaponModal = memo(({
         const current = charsheetForm.getValues('inventory.weapons') ?? [];
         charsheetForm.setValue('inventory.weapons', [ ...current, payload ], { shouldValidate: true, shouldDirty: true });
         
+        // Atualizar capacity.cargo
+        const weapons = charsheetForm.getValues('inventory.weapons') ?? [];
+        const armors = charsheetForm.getValues('inventory.armors') ?? [];
+        const items = charsheetForm.getValues('inventory.items') ?? [];
+        const totalWeight = [
+            ...(Array.isArray(weapons) ? weapons : []),
+            ...(Array.isArray(armors) ? armors : []),
+            ...(Array.isArray(items) ? items : [])
+        ].reduce((sum, item) => sum + (Number(item.weight) || 0) * (Number(item.quantity) || 1), 0);
+        charsheetForm.setValue('capacity.cargo', totalWeight, { shouldValidate: true, shouldDirty: true });
+        
         enqueueSnackbar(`${payload.name} criado com sucesso!`, toastDefault('itemCreated', 'success'));
         action();
     }, [ enqueueSnackbar, action, charsheetForm ]);

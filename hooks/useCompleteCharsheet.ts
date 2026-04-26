@@ -1,7 +1,31 @@
 /* eslint-disable @typescript-eslint/prefer-nullish-coalescing */
 import type { CharsheetDTO, SpellDTO } from '@models/dtos';
 import { useMemo } from 'react';
+import { useFirestoreByIds } from './useFirestoreByIds';
 import { useFirestoreRealtime } from './useFirestoreRealtime';
+
+/**
+ * Normaliza um valor que pode ser um array ou um objeto com chaves numéricas
+ * Converte Record<number, T> para T[]
+ */
+function normalizeToArray<T>(value: any): T[] {
+    if (!value) return [];
+    if (Array.isArray(value)) return value;
+    
+    // Se é um objeto com chaves numéricas, converter para array
+    if (typeof value === 'object') {
+        const keys = Object.keys(value);
+        const isNumericKeys = keys.every(key => !isNaN(Number(key)));
+        if (isNumericKeys) {
+            return keys
+                .map(key => Number(key))
+                .sort((a, b) => a - b)
+                .map(key => value[key]);
+        }
+    }
+    
+    return [];
+}
 
 interface UseCompleteCharsheetOptions {
     charsheetId: string;
@@ -30,7 +54,7 @@ export function useCompleteCharsheet({
 
     const charsheet = useMemo(() => charsheetData?.[0] || null, [ charsheetData ]);
 
-    const spellsInput = useMemo<unknown[]>(() => (charsheet?.spells as unknown[]) ?? [], [ charsheet?.spells ]);
+    const spellsInput = useMemo<unknown[]>(() => normalizeToArray(charsheet?.spells), [ charsheet?.spells ]);
     const spellObjects = useMemo<SpellDTO[]>(
         () => spellsInput.filter((s: any): s is SpellDTO => typeof s === 'object' && s !== null && 'name' in s),
         [ spellsInput ]
@@ -44,15 +68,11 @@ export function useCompleteCharsheet({
         data: relatedSpells,
         loading: spellsLoading,
         error: spellsError
-    } = useFirestoreRealtime('spell', {
-        // Firestore 'in' suporta no máximo 10 itens. Se >10, evitamos a busca para não quebrar.
-        filters: spellIdsToFetch.length > 0 && spellIdsToFetch.length <= 10
-            ? [ { field: 'id', operator: 'in', value: spellIdsToFetch } ]
-            : undefined,
-        enabled: enabled && spellIdsToFetch.length > 0 && spellIdsToFetch.length <= 10
+    } = useFirestoreByIds('spell', spellIdsToFetch, {
+        enabled: enabled && spellIdsToFetch.length > 0
     });
 
-    const powersInput = useMemo<unknown[]>(() => (charsheet?.skills?.powers as unknown[]) ?? [], [ charsheet?.skills?.powers ]);
+    const powersInput = useMemo<unknown[]>(() => normalizeToArray(charsheet?.skills?.powers), [ charsheet?.skills?.powers ]);
     const powerObjects = useMemo<any[]>(
         () => powersInput.filter((p: any): p is any => typeof p === 'object' && p !== null && 'name' in p),
         [ powersInput ]
@@ -66,11 +86,8 @@ export function useCompleteCharsheet({
         data: relatedPowers,
         loading: powersLoading,
         error: powersError
-    } = useFirestoreRealtime('power', {
-        filters: powerIdsToFetch.length > 0 && powerIdsToFetch.length <= 10
-            ? [ { field: 'id', operator: 'in', value: powerIdsToFetch } ]
-            : undefined,
-        enabled: enabled && powerIdsToFetch.length > 0 && powerIdsToFetch.length <= 10
+    } = useFirestoreByIds('power', powerIdsToFetch, {
+        enabled: enabled && powerIdsToFetch.length > 0
     });
 
     const completeCharsheet = useMemo((): CharsheetDTO | null => {
@@ -110,11 +127,11 @@ export function useCompleteCharsheet({
         }
 
         return charsheetWithRelations;
-    }, [ charsheet, relatedSpells, relatedPowers, enabled ]);
+    }, [ charsheet, relatedSpells, relatedPowers, enabled, spellIdsToFetch, powerIdsToFetch, spellObjects, powerObjects ]);
 
     // Considera carregando enquanto ainda precisamos resolver IDs e estamos tentando buscar
-    const needsSpellFetch = enabled && spellIdsToFetch.length > 0 && spellIdsToFetch.length <= 10;
-    const needsPowerFetch = enabled && powerIdsToFetch.length > 0 && powerIdsToFetch.length <= 10;
+    const needsSpellFetch = enabled && spellIdsToFetch.length > 0;
+    const needsPowerFetch = enabled && powerIdsToFetch.length > 0;
     const loading = enabled ? (charsheetLoading || (needsSpellFetch && spellsLoading) || (needsPowerFetch && powersLoading)) : false;
     const error = charsheetError || spellsError || powersError;
 

@@ -118,28 +118,13 @@ export async function POST(
                 const currentInventory = charsheet.inventory || { items: [], money: 0 }
                 const newMoney = (currentInventory.money || 0) + 250
 
-                // Stats: LP +10, MP +5 (e restaura ao novo máximo)
-                const currentStats = charsheet.stats || { lp: 100, mp: 50, ap: 6 }
-                const newMaxLp = (currentStats.lp || 100) + 10
-                const newMaxMp = (currentStats.mp || 50) + 5
-
-                // Atualiza a sessão da campanha com os novos stats
-                const sessions = charsheet.session || []
-                const sessionIndex = sessions.findIndex((s: any) => s.campaignCode === campaign.campaignCode)
+                // Obter stats atuais do personagem
+                const currentStats = charsheet.stats || { lp: 100, maxLp: 100, mp: 50, maxMp: 50, ap: 6, maxAp: 6 }
                 
-                const updatedSessions = [ ...sessions ]
-                if (sessionIndex >= 0) {
-                    updatedSessions[sessionIndex] = {
-                        ...updatedSessions[sessionIndex],
-                        stats: {
-                            ...updatedSessions[sessionIndex].stats,
-                            maxLp: newMaxLp,
-                            maxMp: newMaxMp,
-                            lp: newMaxLp, // Restaura ao máximo
-                            mp: newMaxMp  // Restaura ao máximo
-                        }
-                    }
-                }
+                // Stats: Aumentar MÁXIMOS em +10 LP e +5 MP, e restaurar aos novos máximos
+                const newMaxLp = (currentStats.maxLp || currentStats.lp || 100) + 10
+                const newMaxMp = (currentStats.maxMp || currentStats.mp || 50) + 5
+                const newMaxAp = currentStats.maxAp || currentStats.ap || 6  // AP não muda
 
                 // Aplica as atualizações
                 await charsheetEntity.update(charsheetId, {
@@ -157,12 +142,16 @@ export async function POST(
                         ...currentInventory,
                         money: newMoney
                     },
+                    // Atualiza stats diretamente
                     stats: {
                         ...currentStats,
-                        lp: newMaxLp,
-                        mp: newMaxMp
-                    },
-                    session: updatedSessions
+                        maxLp: newMaxLp,
+                        maxMp: newMaxMp,
+                        maxAp: newMaxAp,
+                        lp: newMaxLp, // Restaura ao novo máximo
+                        mp: newMaxMp, // Restaura ao novo máximo
+                        ap: newMaxAp  // Mantém AP
+                    }
                 })
 
                 results.push({ charsheetId, success: true, newLevel })

@@ -30,7 +30,7 @@ import {
 import { orange, blue, purple } from '@mui/material/colors';
 import { useSnackbar } from 'notistack';
 import { useCampaignContext } from '@contexts';
-import { Expertises, Expertise as ExpertiseModel } from '@models';
+import { Expertises, type Expertise as ExpertiseModel } from '@models';
 import { ResourceListModal } from '@components/utils';
 import Magic from '@components/charsheet/subcomponents/Magic';
 import { poderService, magiaService } from '@services';
@@ -237,7 +237,7 @@ export default function CreatureCreator({ open, onClose, onSave, editingCreature
         }));
     };
 
-    const validateAddPowerForCreature = (_power: Power) => ({ isValid: true });
+    const validateAddPowerForCreature = () => ({ isValid: true });
 
     const handleAddPowerToCreature = async (power: Power) => {
         const skill: SkillData = {
@@ -258,7 +258,7 @@ export default function CreatureCreator({ open, onClose, onSave, editingCreature
         return skill;
     };
 
-    const validateAddSpellForCreature = (_spell: Spell) => ({ isValid: true });
+    const validateAddSpellForCreature = () => ({ isValid: true });
 
     const handleAddSpellToCreature = async (spell: Spell) => {
         const mapped: SpellData = {
@@ -299,10 +299,10 @@ export default function CreatureCreator({ open, onClose, onSave, editingCreature
             return Math.max(min, Math.min(max, scaled));
         };
 
-        const scaledAttributes = Object.entries(baseCreature.attributes).reduce((acc, [ key, value ]) => {
+        const scaledAttributes = Object.entries(baseCreature.attributes).reduce<CreatureData['attributes']>((acc, [ key, value ]) => {
             acc[key as keyof CreatureData['attributes']] = scaleNumber(value, 0, 30);
             return acc;
-        }, { ...baseCreature.attributes } as CreatureData['attributes']);
+        }, { ...baseCreature.attributes });
 
         const scaledStats = {
             lp: scaleNumber(baseCreature.stats.lp, 1, Number.MAX_SAFE_INTEGER),

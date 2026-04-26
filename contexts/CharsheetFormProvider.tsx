@@ -1,16 +1,16 @@
 'use client';
 
 import { charsheetModel } from '@constants/charsheet';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { useSession } from 'next-auth/react';
 import { FormProvider, useForm } from 'react-hook-form';
-import { charsheetSchema } from '@schemas';
 import { createContext, useContext, useEffect } from 'react';
 import { useLocalStorage } from '@uidotdev/usehooks';
 import { usePathname } from 'next/navigation';
 import type { ReactElement } from 'react';
 import type { UseFormReturn } from 'react-hook-form';
 import type { CharsheetDTO } from '@models/dtos';
+import { zodResolver } from '@node_modules/@hookform/resolvers/zod/dist';
+import { charsheetSchema } from '@schemas';
 
 export const CharsheetFormContext = createContext<UseFormReturn<CharsheetDTO> | null>(null);
 export const useCharsheetForm = (): UseFormReturn<CharsheetDTO> => {

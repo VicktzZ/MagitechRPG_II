@@ -5,6 +5,22 @@ import type { Charsheet } from '@models/entities/Charsheet';
 import type { ClassNames } from '@models/types/string';
 import { charsheetRepository, notificationRepository } from '@repositories';
 
+function normalizeToArray<T>(value: any): T[] {
+    if (!value) return []
+    if (Array.isArray(value)) return value
+    if (typeof value === 'object') {
+        const keys = Object.keys(value)
+        const isNumericKeys = keys.every(key => !isNaN(Number(key)))
+        if (isNumericKeys) {
+            return keys
+                .map(key => Number(key))
+                .sort((a, b) => a - b)
+                .map(key => value[key])
+        }
+    }
+    return []
+}
+
 export async function POST(req: Request, { params }: { params: { id: string } }) {
     try {
         const { id } = params;
@@ -59,14 +75,14 @@ export async function POST(req: Request, { params }: { params: { id: string } })
             }
 
             if (currentLevel % 4 === 0) {
+                magicPowerPoints++;
                 attributePoints += 12;
                 rewardsList.push('+12 pontos de atributo');
+                rewardsList.push('+1 ponto de poder mágico');
             }
 
             if (currentLevel % 5 === 0) {
-                magicPowerPoints++;
                 spellsPoints += 2;
-                rewardsList.push('+1 ponto de poder mágico');
                 rewardsList.push('+2 pontos de magia');
 
                 if (charsheet.race === 'Humano') {
@@ -145,21 +161,6 @@ export async function POST(req: Request, { params }: { params: { id: string } })
             }
         }
 
-        const updatedSessions = charsheet.session.map(session => {
-            return {
-                ...session,
-                stats: {
-                    ...session.stats,
-                    lp: newLp,
-                    mp: newMp,
-                    maxLp: newMaxLp,
-                    maxMp: newMaxMp,
-                    ap: charsheet.stats.ap,
-                    maxAp: charsheet.stats.maxAp
-                }
-            };
-        });
-
         const updatedCharsheet: Charsheet = {
             ...charsheet,
             level: newLevel,
@@ -180,10 +181,9 @@ export async function POST(req: Request, { params }: { params: { id: string } })
             },
             skills: {
                 ...charsheet.skills,
-                class: [ ...charsheet.skills.class, ...newClassSkills ],
-                subclass: [ ...charsheet.skills.subclass, ...newSubclassSkills ]
-            },
-            session: updatedSessions
+                class: [ ...normalizeToArray(charsheet.skills?.class), ...newClassSkills ],
+                subclass: [ ...normalizeToArray(charsheet.skills?.subclass), ...newSubclassSkills ]
+            }
         };
 
         await charsheetRepository.update(updatedCharsheet);

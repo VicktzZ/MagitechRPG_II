@@ -6,6 +6,8 @@ import { plainToInstance } from 'class-transformer';
 import type { NextRequest } from 'next/server';
 import { Campaign } from '@models/entities';
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(req: NextRequest): Promise<Response> {
     try {
         const campaignCode = req.nextUrl.searchParams.get('code');

@@ -3,12 +3,22 @@
 
 import { elementColor } from '@constants';
 import { useCampaignCurrentCharsheetContext } from '@contexts';
+import { useChatContext } from '@contexts/chatContext';
+import { MessageType } from '@enums';
+import { Message } from '@models';
 import type { SpellDTO } from '@models/dtos';
 import { charsheetEntity } from '@utils/firestoreEntities';
+import {
+    castSpell,
+    buildSpellCastMessage,
+    buildInsufficientMpMessage
+} from '@utils/combat/spellRoller';
 import { useSnackbar } from 'notistack';
+import { useSession } from 'next-auth/react';
 import {
     Air,
     AutoAwesome,
+    AutoFixHigh,
     Brightness2,
     Circle,
     Delete,
@@ -24,6 +34,7 @@ import {
     AccordionDetails,
     AccordionSummary,
     Box,
+    Button,
     Chip,
     IconButton,
     Paper,
@@ -87,9 +98,13 @@ interface SpellStageProps {
     stage: number
     description: string
     spell: SpellDTO
+    onCast?: (stage: 1 | 2 | 3) => void | Promise<void>
+    isCasting?: boolean
+    canCast?: boolean
+    currentMp?: number
 }
 
-function SpellStage({ stage, description, spell }: SpellStageProps): ReactElement {
+function SpellStage({ stage, description, spell, onCast, isCasting, canCast, currentMp }: SpellStageProps): ReactElement {
     let mpCost = Number(spell.mpCost)
     let extraCost: Record<string, number> = {
         'estágio 1': 0,
@@ -150,7 +165,7 @@ function SpellStage({ stage, description, spell }: SpellStageProps): ReactElemen
                 bgcolor: stageConfig.bg + '20'
             }}
         >
-            <Box display="flex" alignItems="center" justifyContent="space-between" mb={1.5}>
+            <Box display="flex" alignItems="center" justifyContent="space-between" mb={1.5} gap={1} flexWrap="wrap">
                 <Typography 
                     variant="h6" 
                     sx={{ 
@@ -160,14 +175,51 @@ function SpellStage({ stage, description, spell }: SpellStageProps): ReactElemen
                 >
                     {stage !== 4 ? `✨ Estágio ${stage}` : '🌟 Maestria'}
                 </Typography>
-                <Chip 
-                    label={`${mpCost} MP`}
-                    sx={{
-                        bgcolor: blue[100],
-                        color: blue[800],
-                        fontWeight: 600
-                    }}
-                />
+                <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
+                    <Tooltip
+                        title={typeof currentMp === 'number'
+                            ? `${currentMp} / custo ${mpCost} MP`
+                            : `Custo ${mpCost} MP`
+                        }
+                    >
+                        <Chip
+                            label={`${mpCost} MP`}
+                            sx={{
+                                bgcolor: blue[100],
+                                color: blue[800],
+                                fontWeight: 600
+                            }}
+                        />
+                    </Tooltip>
+                    {onCast && stage !== 4 && (
+                        <Tooltip title={canCast === false
+                            ? `MP insuficiente (precisa de ${mpCost})`
+                            : `Conjurar — gasta ${mpCost} MP`
+                        }>
+                            <span>
+                                <Button
+                                    size="small"
+                                    variant="contained"
+                                    startIcon={<AutoFixHigh fontSize="small" />}
+                                    disabled={isCasting || canCast === false}
+                                    onClick={() => { void onCast(stage as 1 | 2 | 3) }}
+                                    sx={{
+                                        bgcolor: stageConfig.color,
+                                        color: 'white',
+                                        fontWeight: 700,
+                                        textTransform: 'none',
+                                        '&:hover': {
+                                            bgcolor: stageConfig.color,
+                                            filter: 'brightness(0.9)'
+                                        }
+                                    }}
+                                >
+                                    Conjurar
+                                </Button>
+                            </span>
+                        </Tooltip>
+                    )}
+                </Box>
             </Box>
             <Typography 
                 variant="body2" 
@@ -183,11 +235,58 @@ function SpellStage({ stage, description, spell }: SpellStageProps): ReactElemen
 }
 
 export default function SpellsSection(): ReactElement {
-    const { charsheet } = useCampaignCurrentCharsheetContext();
+    const { charsheet, updateCharsheet } = useCampaignCurrentCharsheetContext();
+    const { handleSendMessage, setIsChatOpen, isChatOpen } = useChatContext();
+    const { data: session } = useSession();
     const theme = useTheme();
     const { enqueueSnackbar } = useSnackbar();
 
     const [ expandedSpell, setExpandedSpell ] = useState<string | false>(false)
+    const [ castingSpellId, setCastingSpellId ] = useState<string | null>(null)
+
+    const sendCombatChatMessage = async (text: string) => {
+        if (!session?.user) return;
+        await handleSendMessage(new Message({
+            text,
+            type: MessageType.COMBAT_LOG,
+            by: {
+                id: session.user.id ?? '',
+                name: session.user.name ?? '',
+                image: session.user.image ?? ''
+            },
+            timestamp: new Date().toISOString(),
+            isHTML: true
+        }));
+        if (!isChatOpen) setIsChatOpen(true);
+    };
+
+    const handleCastSpell = async (spell: SpellDTO, stage: 1 | 2 | 3) => {
+        if (!charsheet?.id) return;
+        const spellKey = spell.id || spell.name;
+        if (castingSpellId) return;
+
+        const result = castSpell(spell, stage);
+        const playerName = charsheet.name || session?.user?.name || 'Jogador';
+        const currentMp = Number(charsheet.stats?.mp ?? 0);
+
+        if (currentMp < result.mpCost) {
+            await sendCombatChatMessage(buildInsufficientMpMessage(playerName, spell, result.mpCost, currentMp));
+            enqueueSnackbar(`MP insuficiente para conjurar ${spell.name}`, { variant: 'warning' });
+            return;
+        }
+
+        try {
+            setCastingSpellId(spellKey);
+            const newMp = Math.max(0, currentMp - result.mpCost);
+            await updateCharsheet({ 'stats.mp': newMp } as any);
+            await sendCombatChatMessage(buildSpellCastMessage(playerName, result));
+        } catch (error) {
+            console.error('Erro ao conjurar magia:', error);
+            enqueueSnackbar('Erro ao conjurar magia', { variant: 'error' });
+        } finally {
+            setCastingSpellId(null);
+        }
+    }
 
     const handleSpellExpand = (spellName: string) => (event: React.SyntheticEvent, isExpanded: boolean) => {
         setExpandedSpell(isExpanded ? spellName : false)
@@ -203,6 +302,27 @@ export default function SpellsSection(): ReactElement {
         } catch (error) {
             console.error('Erro ao excluir magia:', error);
             enqueueSnackbar('Erro ao excluir magia', { variant: 'error' });
+        }
+    }
+
+    const handleSetSpellStage = async (spell: SpellDTO, stage: 1 | 2 | 3) => {
+        if (!charsheet?.id) return
+
+        const spellId = spell.id || spell.name
+        if (!spellId) return
+
+        try {
+            await charsheetEntity.update(charsheet.id, {
+                spellStages: {
+                    ...(charsheet.spellStages || {}),
+                    [spellId]: stage
+                }
+            } as any)
+
+            enqueueSnackbar(`Estágio da magia "${spell.name}" definido para ${stage}!`, { variant: 'success' })
+        } catch (error) {
+            console.error('Erro ao atualizar estágio da magia:', error)
+            enqueueSnackbar('Erro ao atualizar estágio da magia', { variant: 'error' })
         }
     }
 
@@ -305,6 +425,11 @@ export default function SpellsSection(): ReactElement {
                                 {allSpells.map(spell => {
                                     const ElementIcon = getElementIcon(spell.element);
                                     const levelConfig = getSpellLevelColor(Number(spell.level));
+                                    const spellId = spell.id || spell.name
+                                    const selectedStage = (charsheet.spellStages?.[spellId] as 1 | 2 | 3 | undefined) || 1
+                                    const availableStages: Array<1 | 2 | 3> = [ 1 ]
+                                    if (spell.stages?.[1]) availableStages.push(2)
+                                    if (spell.stages?.[2]) availableStages.push(3)
                                     
                                     return (
                                         <Accordion
@@ -438,9 +563,38 @@ export default function SpellsSection(): ReactElement {
                                             
                                             <AccordionDetails sx={{ p: 3 }}>
                                                 <Stack spacing={2}>
-                                                    {spell.stages?.[0] && <SpellStage spell={spell} stage={1} description={spell.stages?.[0]} />}
-                                                    {spell.stages?.[1] && <SpellStage spell={spell} stage={2} description={spell.stages?.[1]} />}
-                                                    {spell.stages?.[2] && <SpellStage spell={spell} stage={3} description={spell.stages?.[2]} />}
+                                                    <Box display="flex" gap={1} flexWrap="wrap" alignItems="center">
+                                                        <Typography variant="caption" color="text.secondary">Estágio ativo:</Typography>
+                                                        {availableStages.map(stage => (
+                                                            <Chip
+                                                                key={stage}
+                                                                label={`Estágio ${stage}`}
+                                                                size="small"
+                                                                clickable
+                                                                onClick={() => { void handleSetSpellStage(spell, stage) }}
+                                                                color={selectedStage === stage ? 'primary' : 'default'}
+                                                                variant={selectedStage === stage ? 'filled' : 'outlined'}
+                                                            />
+                                                        ))}
+                                                    </Box>
+
+                                                    {(() => {
+                                                        const description = spell.stages?.[selectedStage - 1]
+                                                        if (!description) return null
+                                                        const previewCost = castSpell(spell, selectedStage).mpCost
+                                                        const currentMp = Number(charsheet.stats?.mp ?? 0)
+                                                        return (
+                                                            <SpellStage
+                                                                spell={spell}
+                                                                stage={selectedStage}
+                                                                description={description}
+                                                                onCast={(stg) => handleCastSpell(spell, stg)}
+                                                                isCasting={castingSpellId === (spell.id || spell.name)}
+                                                                canCast={currentMp >= previewCost}
+                                                                currentMp={currentMp}
+                                                            />
+                                                        )
+                                                    })()}
                                                 </Stack>
                                             </AccordionDetails>
                                         </Accordion>

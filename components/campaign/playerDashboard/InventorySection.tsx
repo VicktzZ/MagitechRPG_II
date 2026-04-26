@@ -3,7 +3,17 @@
 
 import { rarityColor } from '@constants';
 import { useCampaignContext, useCampaignCurrentCharsheetContext } from '@contexts';
+import { useChatContext } from '@contexts/chatContext';
+import { MessageType } from '@enums';
 import type { RarityType } from '@models/types/string';
+import { Message, type Weapon } from '@models';
+import {
+    rollWeaponHit,
+    rollWeaponDamage,
+    buildHitMessageText,
+    buildDamageMessageText,
+    buildDamageErrorText
+} from '@utils/combat/weaponRoller';
 import { 
     ExpandMore,
     Inventory2,
@@ -14,8 +24,34 @@ import {
     AutoFixNormal,
     Search,
     Delete,
-    CardGiftcard
+    CardGiftcard,
+    Casino,
+    GpsFixed,
+    Bolt
 } from '@mui/icons-material';
+
+/**
+ * Normaliza um valor que pode ser um array ou um objeto com chaves numéricas
+ * Converte Record<number, T> para T[]
+ */
+function normalizeToArray<T>(value: any): T[] {
+    if (!value) return [];
+    if (Array.isArray(value)) return value;
+    
+    // Se é um objeto com chaves numéricas, converter para array
+    if (typeof value === 'object') {
+        const keys = Object.keys(value);
+        const isNumericKeys = keys.every(key => !isNaN(Number(key)));
+        if (isNumericKeys) {
+            return keys
+                .map(key => Number(key))
+                .sort((a, b) => a - b)
+                .map(key => value[key]);
+        }
+    }
+    
+    return [];
+}
 import { 
     Accordion, 
     AccordionDetails, 
@@ -37,7 +73,7 @@ import {
     IconButton
 } from '@mui/material';
 import { useSnackbar } from 'notistack';
-import { red, blue, green, orange, grey } from '@mui/material/colors';
+import { red, blue, green, orange, grey, purple } from '@mui/material/colors';
 import { type ReactElement, useState, useMemo } from 'react';
 import { useSession } from '@node_modules/next-auth/react';
 import { type SessionPlayer } from '@features/roguelite/components';
@@ -49,10 +85,45 @@ export default function InventorySection(): ReactElement {
     const { charsheet, updateCharsheet } = useCampaignCurrentCharsheetContext();
     const { users, campaign, charsheets } = useCampaignContext();
     const { data: session } = useSession();
+    const { handleSendMessage, setIsChatOpen, isChatOpen } = useChatContext();
     const theme = useTheme();
     const { enqueueSnackbar } = useSnackbar();
     const [ activeTab, setActiveTab ] = useState<InventoryTab>('all');
     const [ searchQuery, setSearchQuery ] = useState('');
+
+    const sendCombatChatMessage = async (text: string) => {
+        if (!session?.user) return;
+        await handleSendMessage(new Message({
+            text,
+            type: MessageType.COMBAT_LOG,
+            by: {
+                id: session.user.id ?? '',
+                name: session.user.name ?? '',
+                image: session.user.image ?? ''
+            },
+            timestamp: new Date().toISOString(),
+            isHTML: true
+        }));
+        if (!isChatOpen) setIsChatOpen(true);
+    };
+
+    const handleWeaponHit = async (weapon: Weapon, e: React.MouseEvent) => {
+        e.stopPropagation();
+        const hit = rollWeaponHit(weapon, charsheet);
+        const playerName = charsheet?.name || session?.user?.name || 'Jogador';
+        await sendCombatChatMessage(buildHitMessageText(playerName, weapon, hit));
+    };
+
+    const handleWeaponDamage = async (weapon: Weapon, isCritical: boolean, e: React.MouseEvent) => {
+        e.stopPropagation();
+        const result = rollWeaponDamage(weapon, isCritical);
+        const playerName = charsheet?.name || session?.user?.name || 'Jogador';
+        if (!result) {
+            await sendCombatChatMessage(buildDamageErrorText(weapon, isCritical));
+            return;
+        }
+        await sendCombatChatMessage(buildDamageMessageText(playerName, weapon, result));
+    };
     
     // Estado para modal de doação
     const [ donationModal, setDonationModal ] = useState<{
@@ -63,13 +134,19 @@ export default function InventorySection(): ReactElement {
 
     // Calcula o peso total do inventário dinamicamente
     const calculateTotalWeight = useMemo(() => {
-        const weaponsWeight = charsheet.inventory.weapons.reduce((acc, w) => acc + (w.weight || 0), 0);
-        const armorsWeight = charsheet.inventory.armors.reduce((acc, a) => acc + (a.weight || 0), 0);
-        const itemsWeight = charsheet.inventory.items.reduce((acc, i) => acc + ((i.weight || 0) * (i.quantity || 1)), 0);
+        const weapons = normalizeToArray(charsheet.inventory.weapons);
+        const armors = normalizeToArray(charsheet.inventory.armors);
+        const items = normalizeToArray(charsheet.inventory.items);
+        
+        const weaponsWeight = weapons.reduce((acc, w) => acc + (w.weight || 0), 0);
+        const armorsWeight = armors.reduce((acc, a) => acc + (a.weight || 0), 0);
+        const itemsWeight = items.reduce((acc, i) => acc + ((i.weight || 0) * (i.quantity || 1)), 0);
         return weaponsWeight + armorsWeight + itemsWeight;
     }, [ charsheet.inventory.weapons, charsheet.inventory.armors, charsheet.inventory.items ]);
 
-    const totalItems = charsheet.inventory.weapons.length + charsheet.inventory.armors.length + charsheet.inventory.items.length;
+    const totalItems = normalizeToArray(charsheet.inventory.weapons).length + 
+                      normalizeToArray(charsheet.inventory.armors).length + 
+                      normalizeToArray(charsheet.inventory.items).length;
     const capacityPercent = (calculateTotalWeight / charsheet.capacity.max) * 100;
     const isOverloaded = capacityPercent > 100;
     const isNearLimit = capacityPercent > 80;
@@ -138,38 +215,23 @@ export default function InventorySection(): ReactElement {
 
                 switch (donationModal.type) {
                 case 'weapon':
-                    updatedInventory['inventory.weapons'] = charsheet.inventory.weapons.filter(w => w.id !== donationModal.item.id);
+                    updatedInventory['inventory.weapons'] = normalizeToArray(charsheet.inventory.weapons).filter(w => w.id !== donationModal.item.id);
                     break;
                 case 'armor': {
-                    updatedInventory['inventory.armors'] = charsheet.inventory.armors.filter(a => a.id !== donationModal.item.id);
-                    // Decrementa AP ao doar armadura - atualiza na sessão correta
+                    updatedInventory['inventory.armors'] = normalizeToArray(charsheet.inventory.armors).filter(a => a.id !== donationModal.item.id);
+                    // Decrementa AP ao doar armadura
                     const armorAPValue = donationModal.item.ap || donationModal.item.value || 0;
-                    const campaignCode = campaign?.campaignCode;
-                    const sessions = charsheet.session || [];
-                    const sessionIndex = sessions.findIndex((s: any) => s.campaignCode === campaignCode);
+                    const currentAP = charsheet.stats?.ap || 5;
+                    const currentMaxAP = charsheet.stats?.maxAp || 5;
+                    const newAP = Math.max(5, currentAP - armorAPValue);
+                    const newMaxAP = Math.max(5, currentMaxAP - armorAPValue);
                     
-                    if (sessionIndex >= 0) {
-                        const sessionData = sessions[sessionIndex];
-                        const currentSessionAP = sessionData.stats?.ap || 5;
-                        const currentSessionMaxAP = sessionData.stats?.maxAp || 5;
-                        const newAP = Math.max(5, currentSessionAP - armorAPValue);
-                        const newMaxAP = Math.max(5, currentSessionMaxAP - armorAPValue);
-                        
-                        const updatedSessions = [ ...sessions ];
-                        updatedSessions[sessionIndex] = {
-                            ...sessionData,
-                            stats: {
-                                ...sessionData.stats,
-                                ap: newAP,
-                                maxAp: newMaxAP
-                            }
-                        };
-                        updatedInventory.session = updatedSessions;
-                    }
+                    updatedInventory['stats.ap'] = newAP;
+                    updatedInventory['stats.maxAp'] = newMaxAP;
                     break;
                 }
                 case 'item': {
-                    updatedInventory['inventory.items'] = charsheet.inventory.items.filter(i => i.id !== donationModal.item.id);
+                    updatedInventory['inventory.items'] = normalizeToArray(charsheet.inventory.items).filter(i => i.id !== donationModal.item.id);
                     // Se o item for do tipo "Capacidade", diminui capacity.max ao invés de cargo
                     if (donationModal.item.kind === 'Capacidade') {
                         const currentMax = charsheet.capacity?.max || 0;
@@ -209,38 +271,23 @@ export default function InventorySection(): ReactElement {
             
             switch (type) {
             case 'weapon':
-                updatedInventory['inventory.weapons'] = charsheet.inventory.weapons.filter(w => w.id !== itemToDelete.id);
+                updatedInventory['inventory.weapons'] = normalizeToArray(charsheet.inventory.weapons).filter(w => w.id !== itemToDelete.id);
                 break;
             case 'armor': {
-                updatedInventory['inventory.armors'] = charsheet.inventory.armors.filter(a => a.id !== itemToDelete.id);
-                // Decrementa AP ao remover armadura - atualiza na sessão correta
+                updatedInventory['inventory.armors'] = normalizeToArray(charsheet.inventory.armors).filter(a => a.id !== itemToDelete.id);
+                // Decrementa AP ao remover armadura
                 const armorAPValue = itemToDelete.ap || itemToDelete.value || 0;
-                const campaignCode = campaign?.campaignCode;
-                const sessions = charsheet.session || [];
-                const sessionIndex = sessions.findIndex((s: any) => s.campaignCode === campaignCode);
+                const currentAP = charsheet.stats?.ap || 5;
+                const currentMaxAP = charsheet.stats?.maxAp || 5;
+                const newAP = Math.max(5, currentAP - armorAPValue);
+                const newMaxAP = Math.max(5, currentMaxAP - armorAPValue);
                 
-                if (sessionIndex >= 0) {
-                    const session = sessions[sessionIndex];
-                    const currentSessionAP = session.stats?.ap || 5;
-                    const currentSessionMaxAP = session.stats?.maxAp || 5;
-                    const newAP = Math.max(5, currentSessionAP - armorAPValue);
-                    const newMaxAP = Math.max(5, currentSessionMaxAP - armorAPValue);
-                    
-                    const updatedSessions = [ ...sessions ];
-                    updatedSessions[sessionIndex] = {
-                        ...session,
-                        stats: {
-                            ...session.stats,
-                            ap: newAP,
-                            maxAp: newMaxAP
-                        }
-                    };
-                    updatedInventory.session = updatedSessions;
-                }
+                updatedInventory['stats.ap'] = newAP;
+                updatedInventory['stats.maxAp'] = newMaxAP;
                 break;
             }
             case 'item': {
-                updatedInventory['inventory.items'] = charsheet.inventory.items.filter(i => i.id !== itemToDelete.id);
+                updatedInventory['inventory.items'] = normalizeToArray(charsheet.inventory.items).filter(i => i.id !== itemToDelete.id);
                 // Se o item for do tipo "Capacidade", diminui capacity.max ao invés de cargo
                 if (itemToDelete.kind === 'Capacidade') {
                     const currentMax = charsheet.capacity?.max || 0;
@@ -282,13 +329,13 @@ export default function InventorySection(): ReactElement {
         let items: Array<{ item: any, type: 'weapon' | 'armor' | 'item' }> = [];
 
         if (activeTab === 'all' || activeTab === 'weapons') {
-            items = items.concat(charsheet.inventory.weapons.map(w => ({ item: w, type: 'weapon' as const })));
+            items = items.concat(normalizeToArray(charsheet.inventory.weapons).map(w => ({ item: w, type: 'weapon' as const })));
         }
         if (activeTab === 'all' || activeTab === 'armors') {
-            items = items.concat(charsheet.inventory.armors.map(a => ({ item: a, type: 'armor' as const })));
+            items = items.concat(normalizeToArray(charsheet.inventory.armors).map(a => ({ item: a, type: 'armor' as const })));
         }
         if (activeTab === 'all' || activeTab === 'items') {
-            items = items.concat(charsheet.inventory.items.map(i => ({ item: i, type: 'item' as const })));
+            items = items.concat(normalizeToArray(charsheet.inventory.items).map(i => ({ item: i, type: 'item' as const })));
         }
 
         // Filtro por busca
@@ -504,7 +551,7 @@ export default function InventorySection(): ReactElement {
                                     Acessórios
                                 </Typography>
                                 <Stack direction="row" spacing={1} flexWrap="wrap">
-                                    {item.accessories.map((acc: string, idx: number) => (
+                                    {normalizeToArray(item.accessories).map((acc: string, idx: number) => (
                                         <Chip
                                             key={idx}
                                             label={acc}
@@ -543,6 +590,81 @@ export default function InventorySection(): ReactElement {
                             </Box>
                         )}
                         
+                        {/* Ações de Combate (somente para armas) */}
+                        {type === 'weapon' && (
+                            <Box
+                                sx={{
+                                    display: 'flex',
+                                    flexWrap: 'wrap',
+                                    gap: 1,
+                                    p: 1.5,
+                                    borderRadius: 1.5,
+                                    bgcolor: theme.palette.mode === 'dark' ? '#0f172a' : '#f8fafc',
+                                    border: '1px dashed',
+                                    borderColor: red[500] + '40'
+                                }}
+                            >
+                                <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                    sx={{ width: '100%', mb: 0.5, display: 'flex', alignItems: 'center', gap: 0.5 }}
+                                >
+                                    <Casino fontSize="small" sx={{ fontSize: '0.9rem' }} /> Ações de combate
+                                </Typography>
+                                <Tooltip title={`Teste de acerto (${(item as Weapon).hit?.toUpperCase?.() ?? '?'})`}>
+                                    <Chip
+                                        icon={<GpsFixed sx={{ fontSize: '0.95rem !important' }} />}
+                                        label="Acerto"
+                                        size="small"
+                                        clickable
+                                        onClick={(e) => handleWeaponHit(item as Weapon, e)}
+                                        sx={{
+                                            bgcolor: blue[500] + '20',
+                                            color: blue[700],
+                                            fontWeight: 600,
+                                            border: '1px solid',
+                                            borderColor: blue[500] + '40',
+                                            '&:hover': { bgcolor: blue[500] + '35' }
+                                        }}
+                                    />
+                                </Tooltip>
+                                <Tooltip title={`Rolar dano (${item.effect?.value || '—'})`}>
+                                    <Chip
+                                        icon={<AutoFixNormal sx={{ fontSize: '0.95rem !important' }} />}
+                                        label={`Dano${item.effect?.value ? ` ${item.effect.value}` : ''}`}
+                                        size="small"
+                                        clickable
+                                        onClick={(e) => handleWeaponDamage(item as Weapon, false, e)}
+                                        sx={{
+                                            bgcolor: red[500] + '20',
+                                            color: red[700],
+                                            fontWeight: 600,
+                                            border: '1px solid',
+                                            borderColor: red[500] + '40',
+                                            '&:hover': { bgcolor: red[500] + '35' }
+                                        }}
+                                    />
+                                </Tooltip>
+                                <Tooltip title={`Rolar dano crítico (${item.effect?.critValue || '—'})`}>
+                                    <Chip
+                                        icon={<Bolt sx={{ fontSize: '0.95rem !important' }} />}
+                                        label={`Crítico${item.effect?.critValue ? ` ${item.effect.critValue}` : ''}`}
+                                        size="small"
+                                        clickable
+                                        onClick={(e) => handleWeaponDamage(item as Weapon, true, e)}
+                                        sx={{
+                                            bgcolor: purple[500] + '20',
+                                            color: purple[700],
+                                            fontWeight: 600,
+                                            border: '1px solid',
+                                            borderColor: purple[500] + '40',
+                                            '&:hover': { bgcolor: purple[500] + '35' }
+                                        }}
+                                    />
+                                </Tooltip>
+                            </Box>
+                        )}
+
                         {/* Botões de Ação */}
                         <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 1 }}>
                             {/* Botão de Doar */}

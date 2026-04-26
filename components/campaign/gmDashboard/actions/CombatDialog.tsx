@@ -29,17 +29,19 @@ import CasinoIcon from '@mui/icons-material/Casino';
 import SkipNextIcon from '@mui/icons-material/SkipNext';
 import StopIcon from '@mui/icons-material/Stop';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
-import AddIcon from '@mui/icons-material/Add';
-import RemoveCircleIcon from '@mui/icons-material/RemoveCircle';
 import PersonIcon from '@mui/icons-material/Person';
 import PetsIcon from '@mui/icons-material/Pets';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import { red, green, blue, orange, grey } from '@mui/material/colors';
 import { useSnackbar } from 'notistack';
 import { useChannel } from '@contexts/channelContext';
 import { PusherEvent } from '@enums';
 import type { PlayerInfo } from './types';
-import type { Creature } from '@models';
+import type { AppliedEffect, Creature } from '@models';
+import EffectBadges from './EffectBadges';
+import ApplyEffectDialog from './ApplyEffectDialog';
+import { campaignService } from '@services';
 
 interface CombatDialogProps {
     open: boolean;
@@ -67,6 +69,7 @@ interface Combatant {
     maxLp?: number;
     currentMp?: number;
     maxMp?: number;
+    effects?: AppliedEffect[];
 }
 
 interface Combat {
@@ -104,8 +107,20 @@ export default function CombatDialog({
     const [ selectedCombatantForInit, setSelectedCombatantForInit ] = useState<string | null>(null);
     const [ showEnemyLp, setShowEnemyLp ] = useState(false);
 
-    // Função para obter stats do charsheet.session (a fonte correta)
-    const getPlayerSessionStats = useCallback((combatant: Combatant) => {
+    // Aplicação de efeito
+    const [ applyEffectTarget, setApplyEffectTarget ] = useState<{ id: string; name: string } | null>(null);
+
+    const handleRemoveEffect = useCallback(async (combatantId: string, appliedEffectId: string) => {
+        try {
+            await campaignService.removeCombatEffect(campaignId, { targetId: combatantId, appliedEffectId });
+            enqueueSnackbar('Efeito removido', { variant: 'success' });
+        } catch (err: any) {
+            enqueueSnackbar(err?.response?.data?.error ?? 'Erro ao remover efeito', { variant: 'error' });
+        }
+    }, [ campaignId, enqueueSnackbar ]);
+
+    // Função para obter stats do charsheet
+    const getPlayerStats = useCallback((combatant: Combatant) => {
         if (combatant.type !== 'player') return null;
         
         // Busca o charsheet do combatente
@@ -113,25 +128,15 @@ export default function CombatDialog({
             c.id === combatant.id || c.id === combatant.odacId
         );
         
-        if (!charsheet) return null;
+        if (!charsheet?.stats) return null;
         
-        // Busca os stats na sessão da charsheet para esta campanha
-        const sessionData = charsheet.session?.find(
-            (s: any) => s.campaignCode === campaignCode
-        );
-        
-        if (sessionData?.stats) {
-            return {
-                lp: sessionData.stats.lp ?? combatant.currentLp ?? 0,
-                maxLp: sessionData.stats.maxLp ?? combatant.maxLp ?? 0,
-                mp: sessionData.stats.mp ?? combatant.currentMp ?? 0,
-                maxMp: sessionData.stats.maxMp ?? combatant.maxMp ?? 0
-            };
-        }
-        
-        // Fallback para stats do combatente
-        return null;
-    }, [ charsheets, campaignCode ]);
+        return {
+            lp: charsheet.stats.lp ?? combatant.currentLp ?? 0,
+            maxLp: charsheet.stats.maxLp ?? combatant.maxLp ?? 0,
+            mp: charsheet.stats.mp ?? combatant.currentMp ?? 0,
+            maxMp: charsheet.stats.maxMp ?? combatant.maxMp ?? 0
+        };
+    }, [ charsheets ]);
 
     // Carrega combate existente
     useEffect(() => {
@@ -370,8 +375,8 @@ export default function CombatDialog({
                 <Box sx={{ maxHeight: 150, overflow: 'auto', border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
                     <List dense>
                         {creatures.map(creature => {
-                            const isSelected = selectedCreatures.includes(creature.id!);
-                            const quantity = creatureQuantities[creature.id!] ?? 1;
+                            const isSelected = selectedCreatures.includes(creature.id);
+                            const quantity = creatureQuantities[creature.id] ?? 1;
 
                             return (
                                 <ListItem
@@ -383,7 +388,7 @@ export default function CombatDialog({
                                             size="small"
                                             value={quantity}
                                             onChange={(e) => handleCreatureQuantityChange(
-                                                creature.id!,
+                                                creature.id,
                                                 parseInt(e.target.value, 10)
                                             )}
                                             inputProps={{ min: 1, max: 99 }}
@@ -395,7 +400,7 @@ export default function CombatDialog({
                                     <Checkbox
                                         checked={isSelected}
                                         size="small"
-                                        onChange={() => toggleCreature(creature.id!)}
+                                        onChange={() => toggleCreature(creature.id)}
                                     />
                                     <ListItemAvatar>
                                         <Avatar sx={{ width: 28, height: 28, bgcolor: red[500] }}>
@@ -508,10 +513,10 @@ export default function CombatDialog({
                                 const isCurrentTurn = combat.phase === 'ACTION' && index === combat.currentTurnIndex;
                                 const needsInitiative = combat.phase === 'INITIATIVE' && combatant.initiativeRoll === 0;
                                 
-                                // Obtém stats da sessão da charsheet para jogadores
-                                const sessionStats = combatant.type === 'player' ? getPlayerSessionStats(combatant) : null;
-                                const currentLp = sessionStats?.lp ?? combatant.currentLp ?? 0;
-                                const maxLp = sessionStats?.maxLp ?? combatant.maxLp ?? 1;
+                                // Obtém stats da charsheet para jogadores
+                                const playerStats = combatant.type === 'player' ? getPlayerStats(combatant) : null;
+                                const currentLp = playerStats?.lp ?? combatant.currentLp ?? 0;
+                                const maxLp = playerStats?.maxLp ?? combatant.maxLp ?? 1;
                                 const lpPercent = maxLp > 0 ? (currentLp / maxLp) * 100 : 0;
 
                                 return (
@@ -550,7 +555,7 @@ export default function CombatDialog({
                                                         <Tooltip title={combatant.type === 'player' ? 'Forçar rolagem (se jogador não responder)' : 'Rolar Iniciativa'}>
                                                             <IconButton 
                                                                 size="small" 
-                                                                onClick={() => handleRollInitiative(combatant.id)}
+                                                                onClick={async () => await handleRollInitiative(combatant.id)}
                                                                 color="primary"
                                                             >
                                                                 <CasinoIcon />
@@ -592,35 +597,56 @@ export default function CombatDialog({
                                         </ListItemAvatar>
                                         <ListItemText 
                                             primary={
-                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
                                                     {combatant.name}
                                                     {isCurrentTurn && <Chip label="🎯" size="small" />}
+                                                    <Tooltip title="Aplicar efeito">
+                                                        <IconButton
+                                                            size="small"
+                                                            onClick={() => setApplyEffectTarget({ id: combatant.id, name: combatant.name })}
+                                                            sx={{ ml: 0.5 }}
+                                                        >
+                                                            <AutoFixHighIcon fontSize="small" />
+                                                        </IconButton>
+                                                    </Tooltip>
                                                 </Box>
                                             }
                                             secondary={
-                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                    <Typography variant="caption" component="span">
-                                                        LP: {currentLp}/{maxLp}
-                                                    </Typography>
-                                                    <LinearProgress 
-                                                        variant="determinate" 
-                                                        value={lpPercent}
-                                                        sx={{ 
-                                                            width: 60, 
-                                                            height: 6, 
-                                                            borderRadius: 1,
-                                                            bgcolor: grey[300],
-                                                            '& .MuiLinearProgress-bar': {
-                                                                bgcolor: lpPercent > 50 
-                                                                    ? green[500] 
-                                                                    : lpPercent > 25 
-                                                                        ? orange[500] 
-                                                                        : red[500]
-                                                            }
-                                                        }}
-                                                    />
+                                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                        <Typography variant="caption" component="span">
+                                                            LP: {currentLp}/{maxLp}
+                                                        </Typography>
+                                                        <LinearProgress 
+                                                            variant="determinate" 
+                                                            value={lpPercent}
+                                                            sx={{ 
+                                                                width: 60, 
+                                                                height: 6, 
+                                                                borderRadius: 1,
+                                                                bgcolor: grey[300],
+                                                                '& .MuiLinearProgress-bar': {
+                                                                    bgcolor: lpPercent > 50 
+                                                                        ? green[500] 
+                                                                        : lpPercent > 25 
+                                                                            ? orange[500] 
+                                                                            : red[500]
+                                                                }
+                                                            }}
+                                                        />
+                                                    </Box>
+                                                    {combatant.effects && combatant.effects.length > 0 && (
+                                                        <Box sx={{ mt: 0.5 }} onClick={e => e.stopPropagation()}>
+                                                            <EffectBadges
+                                                                effects={combatant.effects}
+                                                                canRemove
+                                                                onRemove={(id) => handleRemoveEffect(combatant.id, id)}
+                                                            />
+                                                        </Box>
+                                                    )}
                                                 </Box>
                                             }
+                                            secondaryTypographyProps={{ component: 'div' }}
                                         />
                                     </ListItem>
                                 );
@@ -752,6 +778,15 @@ export default function CombatDialog({
                     </Button>
                 )}
             </DialogActions>
+
+            <ApplyEffectDialog
+                open={!!applyEffectTarget}
+                onClose={() => setApplyEffectTarget(null)}
+                campaignId={campaignId}
+                target={applyEffectTarget}
+                appliedByName="GM"
+                onApplied={() => { void fetchCombat(); }}
+            />
         </Dialog>
     );
 }

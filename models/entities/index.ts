@@ -30,3 +30,4 @@ export {
     type ConceptNames,
     type MagicConfig
 } from './RPGSystem';
+export { CombatEffectEntity } from './CombatEffectEntity';

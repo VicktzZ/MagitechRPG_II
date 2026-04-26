@@ -26,8 +26,6 @@ export async function POST(
             )
         }
 
-        const campaignCode = campaign.campaignCode
-
         let updatedCount = 0
 
         for (const charsheetId of charsheetIds) {
@@ -36,62 +34,20 @@ export async function POST(
 
             const updateData: Partial<Charsheet> = {}
 
-            const sessions = charsheet.session || []
-            const sessionIndex = sessions.findIndex(s => s.campaignCode === campaignCode)
-            let updatedSessions = sessions
-
             switch (action) {
             case 'restoreLP': {
-                // Restaura LP ao máximo (stats base)
+                // Restaura LP ao máximo
                 updateData.stats = {
                     ...charsheet.stats,
                     lp: charsheet.stats?.maxLp || 0
                 }
-
-                // Também restaura LP na sessão da campanha, se existir
-                if (sessionIndex >= 0) {
-                    const currentSession = sessions[sessionIndex]
-                    const sessionStats = currentSession.stats || ({} as any)
-                    const maxLp = sessionStats.maxLp ?? charsheet.stats?.maxLp ?? 0
-
-                    updatedSessions = [ ...sessions ]
-                    updatedSessions[sessionIndex] = {
-                        ...currentSession,
-                        stats: {
-                            ...sessionStats,
-                            lp: maxLp,
-                            maxLp
-                        }
-                    }
-
-                    updateData.session = updatedSessions as any
-                }
                 break
             }
             case 'restoreMP': {
-                // Restaura MP ao máximo (stats base)
+                // Restaura MP ao máximo
                 updateData.stats = {
                     ...charsheet.stats,
                     mp: charsheet.stats?.maxMp || 0
-                }
-
-                // Também restaura MP na sessão da campanha, se existir
-                if (sessionIndex >= 0) {
-                    const currentSession = sessions[sessionIndex]
-                    const sessionStats = currentSession.stats || ({} as any)
-                    const maxMp = sessionStats.maxMp ?? charsheet.stats?.maxMp ?? 0
-
-                    updatedSessions = [ ...sessions ]
-                    updatedSessions[sessionIndex] = {
-                        ...currentSession,
-                        stats: {
-                            ...sessionStats,
-                            mp: maxMp,
-                            maxMp
-                        }
-                    }
-
-                    updateData.session = updatedSessions as any
                 }
                 break
             }

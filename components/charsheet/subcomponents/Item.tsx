@@ -37,6 +37,28 @@ import type { MergedItems } from '@models/types/misc'
 import type { Charsheet } from '@models/entities'
 import type { Inventory } from '@models'
 
+/**
+ * Converte um valor para string renderizável
+ * Trata arrays, objetos e valores primitivos
+ */
+function toRenderableString(value: any, defaultValue: string = 'N/A'): string {
+    if (!value) return defaultValue;
+    if (typeof value === 'string') return value;
+    if (typeof value === 'number') return String(value);
+    if (Array.isArray(value)) return value.join(', ');
+    if (typeof value === 'object') {
+        // Se é um objeto com propriedades simples, tentar formatar
+        try {
+            return Object.entries(value)
+                .map(([ key, val ]) => `${key}: ${val}`)
+                .join(', ');
+        } catch {
+            return defaultValue;
+        }
+    }
+    return defaultValue;
+}
+
 // TODO: ADICIONAR OPÇÃO PARA EDITAR ITENS
 function ItemComponent(props: ItemTyping<'item'>): ReactElement {
     const theme = useTheme()
@@ -132,7 +154,7 @@ function ItemComponent(props: ItemTyping<'item'>): ReactElement {
                         mb={1}
                     >
                         <Typography variant="body2" color="textSecondary" sx={{ fontStyle: props.effects ? 'normal' : 'italic' }}>
-                            {props.effects ?? 'Este item não possui efeitos especiais.'}
+                            {toRenderableString(props.effects, 'Este item não possui efeitos especiais.')}
                         </Typography>
                     </Box>
                 </Collapse>
@@ -467,7 +489,7 @@ function ItemWrapper({
                                         />
                                         <TextField
                                             label='Acessórios'
-                                            value={item.accessories ?? 'Nenhum'}
+                                            value={toRenderableString(item.accessories, 'Nenhum')}
                                             fullWidth
                                             InputProps={{ readOnly: true }}
                                             size="small"
@@ -483,7 +505,7 @@ function ItemWrapper({
                                         />
                                         <TextField
                                             label='Tipo de dano'
-                                            value={item.effect.effectType}
+                                            value={toRenderableString(item.effect?.effectType, 'N/A')}
                                             fullWidth
                                             InputProps={{ readOnly: true }}
                                             size="small"
@@ -515,7 +537,7 @@ function ItemWrapper({
                                         />
                                         <TextField
                                             label='Dano base'
-                                            value={item.effect.value}
+                                            value={toRenderableString(item.effect?.value, 'N/A')}
                                             fullWidth
                                             InputProps={{ readOnly: true }}
                                             size="small"
@@ -523,7 +545,7 @@ function ItemWrapper({
                                         />
                                         <TextField
                                             label='Dano crítico'
-                                            value={item.effect.critValue}
+                                            value={toRenderableString(item.effect?.critValue, 'N/A')}
                                             fullWidth
                                             InputProps={{ readOnly: true }}
                                             size="small"
@@ -542,7 +564,7 @@ function ItemWrapper({
                                         />
                                         <TextField
                                             label='Pontos de Armadura'
-                                            value={item.value ?? 'Nenhum'}
+                                            value={toRenderableString(item.value, 'Nenhum')}
                                             fullWidth
                                             InputProps={{ readOnly: true }}
                                             size="small"
@@ -577,7 +599,7 @@ function ItemWrapper({
                                     <>
                                         <TextField
                                             label='Quantidade'
-                                            value={item.quantity ?? 'Nenhum'}
+                                            value={toRenderableString(item.quantity, 'Nenhum')}
                                             fullWidth
                                             InputProps={{ readOnly: true }}
                                             size="small"
@@ -585,7 +607,7 @@ function ItemWrapper({
                                         />
                                         <TextField
                                             label='Raridade'
-                                            value={item.rarity ?? 'Nenhum'}
+                                            value={toRenderableString(item.rarity, 'Nenhum')}
                                             fullWidth
                                             InputProps={{ readOnly: true }}
                                             size="small"
@@ -593,7 +615,7 @@ function ItemWrapper({
                                         />
                                         <TextField
                                             label='Descrição'
-                                            value={item.effects ?? 'Nenhum'}
+                                            value={toRenderableString(item.effects, 'Nenhum')}
                                             fullWidth
                                             InputProps={{ readOnly: true }}
                                             size="small"

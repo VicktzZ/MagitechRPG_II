@@ -17,6 +17,7 @@ import BoltIcon from '@mui/icons-material/Bolt';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import PetsIcon from '@mui/icons-material/Pets';
 import SportsKabaddiIcon from '@mui/icons-material/SportsKabaddi';
+import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 
 import {
     Box,
@@ -44,6 +45,7 @@ import {
     ShopDialog,
     MassActionDialog,
     CombatDialog,
+    CombatEffectsCatalogDialog,
     type PlayerInfo,
     type MassActionType
 } from './actions';
@@ -69,6 +71,7 @@ export default function GMActions(): ReactElement {
     const [ massActionDialogOpen, setMassActionDialogOpen ] = useState(false);
     const [ massActionType, setMassActionType ] = useState<MassActionType | null>(null);
     const [ combatDialogOpen, setCombatDialogOpen ] = useState(false);
+    const [ effectsCatalogOpen, setEffectsCatalogOpen ] = useState(false);
 
     // Realtime charsheet data
     const { data: realtimeCharsheets } = useFirestoreRealtime('charsheet', {
@@ -76,43 +79,15 @@ export default function GMActions(): ReactElement {
         enabled: charsheets.length > 0
     });
 
-    // Memoized player list with charsheet data (usando stats da sessão quando disponível)
+    // Memoized player list with charsheet data
     const players: PlayerInfo[] = useMemo(() => {
-        console.log('[GMActions] Building players list:', {
-            usersPlayers: users.players?.length,
-            campaignPlayers: campaign?.players?.length,
-            realtimeCharsheets: realtimeCharsheets?.length,
-            sessionUsers: campaign?.session?.users?.length
-        });
-
         return users.players?.map(player => {
             // campaign.players usa `userId`, não `odacId`
             const playerInCampaign = campaign?.players?.find(p => 
                 (p as any).odacId === player.id || p.userId === player.id
             );
             const charsheet = realtimeCharsheets?.find((c: any) => c.id === playerInCampaign?.charsheetId);
-            
-            // PRIORIDADE 1: Stats da sessão na charsheet (charsheet.session[].stats)
-            const charsheetSessionStats = charsheet?.session?.find(
-                (s: any) => s.campaignCode === campaign?.campaignCode
-            )?.stats;
-            
-            // PRIORIDADE 2: Stats da sessão na campanha (campaign.session.users[].stats)
-            const campaignSessionStats = (campaign?.session?.users as any[])?.find(
-                (u: any) => u.odacId === player.id || u.charsheetId === playerInCampaign?.charsheetId
-            )?.stats;
-            
-            console.log(`[GMActions] Player ${player.name}:`, {
-                playerId: player.id,
-                campaignCode: campaign?.campaignCode,
-                charsheetSessionStats,
-                campaignSessionStats,
-                charsheetStats: charsheet?.stats
-            });
-            
-            // Usa stats da sessão da charsheet > sessão da campanha > charsheet base
-            const finalStats = charsheetSessionStats || campaignSessionStats || charsheet?.stats;
-            
+
             return {
                 id: player.id,
                 name: player.name || 'Jogador',
@@ -121,13 +96,13 @@ export default function GMActions(): ReactElement {
                     id: charsheet.id,
                     name: charsheet.name,
                     level: charsheet.level,
-                    stats: finalStats,
+                    stats: charsheet.stats,
                     inventory: charsheet.inventory,
                     attributes: charsheet.attributes
                 } : undefined
             };
         }) || [];
-    }, [ users.players, campaign?.players, realtimeCharsheets, campaign?.session?.users ]);
+    }, [ users.players, campaign?.players, realtimeCharsheets ]);
 
     // Menu handlers
     const handleOpenMenu = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -182,6 +157,11 @@ export default function GMActions(): ReactElement {
 
     const openCombat = () => {
         setCombatDialogOpen(true);
+        handleCloseMenu();
+    };
+
+    const openEffectsCatalog = () => {
+        setEffectsCatalogOpen(true);
         handleCloseMenu();
     };
 
@@ -334,6 +314,13 @@ export default function GMActions(): ReactElement {
                     </MenuItemText>
                 </MenuItem>
 
+                <MenuItem onClick={openEffectsCatalog} disabled={!isUserGM}>
+                    <ListItemIcon>
+                        <AutoFixHighIcon fontSize="small" sx={{ color: blue[500] }} />
+                    </ListItemIcon>
+                    <MenuItemText>Efeitos de Combate</MenuItemText>
+                </MenuItem>
+
                 <Divider />
 
                 {/* Ações em Massa */}
@@ -428,6 +415,12 @@ export default function GMActions(): ReactElement {
                 creatures={campaign.custom?.creatures || []}
                 charsheets={realtimeCharsheets || []}
                 existingCombat={campaign.session?.combat}
+            />
+
+            <CombatEffectsCatalogDialog
+                open={effectsCatalogOpen}
+                onClose={() => setEffectsCatalogOpen(false)}
+                campaignId={campaign.id}
             />
         </Box>
     );

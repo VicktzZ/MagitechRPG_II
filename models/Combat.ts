@@ -1,5 +1,6 @@
 import { IsArray, IsBoolean, IsNumber, IsOptional, IsString, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
+import { AppliedEffect } from './AppliedEffect';
 
 /**
  * Fases do combate
@@ -65,8 +66,16 @@ export class Combatant {
     @IsNumber()
         dexterity?: number; // Destreza (DES) para desempate de iniciativa
 
+    @ValidateNested({ each: true })
+    @Type(() => AppliedEffect)
+    @IsArray()
+        effects: AppliedEffect[] = [];
+
     constructor(combatant?: Partial<Combatant>) {
         Object.assign(this, combatant);
+        if (!Array.isArray(this.effects)) {
+            this.effects = [];
+        }
     }
 }
 
@@ -81,7 +90,7 @@ export class CombatLog {
         round: number;
 
     @IsString()
-        type: 'initiative' | 'damage' | 'heal' | 'action' | 'phase_change' | 'turn_pass';
+        type: 'initiative' | 'damage' | 'heal' | 'action' | 'phase_change' | 'turn_pass' | 'effect_applied' | 'effect_tick' | 'effect_expired' | 'effect_removed';
 
     @IsString()
         actorId: string;

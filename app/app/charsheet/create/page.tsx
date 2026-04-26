@@ -2,8 +2,7 @@
 
 import { CharsheetComponent } from '@components/charsheet';
 import SystemSelectionModal from '@components/charsheet/SystemSelectionModal';
-import { CharsheetFormProvider } from '@contexts';
-import { SelectedSystemProvider, useSelectedSystem } from '@contexts/SelectedSystemContext';
+import { CharsheetFormProvider, SelectedSystemProvider, useSelectedSystem } from '@contexts';
 import { Box, CircularProgress } from '@mui/material';
 import { useState, type ReactElement } from 'react'
 import type { RPGSystem } from '@models/entities';

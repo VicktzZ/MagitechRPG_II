@@ -45,6 +45,10 @@ export class BaseCharsheet {
     @IsOptional()
         systemId?: string;
 
+    @IsOptional()
+    @IsObject()
+        spellStages?: Record<string, number> = {};
+
     @IsEnum([ 'Masculino', 'Feminino', 'Não-binário', 'Outro', 'Não definido' ]) gender: Gender;
     @IsEnum([ 'Miserável', 'Pobre', 'Estável', 'Rico' ]) financialCondition: FinancialCondition;
     
@@ -105,14 +109,6 @@ export class BaseCharsheet {
     @IsObject({ each: true })
         session?: Array<{
             campaignCode: string;
-            stats: {
-                maxLp: number;
-                maxMp: number;
-                maxAp: number;
-                lp: number;
-                mp: number;
-                ap: number;
-            };
             perks?: Array<{
                 id: string;
                 rarity: string;

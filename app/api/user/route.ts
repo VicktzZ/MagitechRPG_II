@@ -4,6 +4,8 @@ import { validate } from 'class-validator';
 import { plainToInstance } from 'class-transformer'
 import { User } from '@models/entities';
 
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
     try {
         const users = await userRepository.find();
