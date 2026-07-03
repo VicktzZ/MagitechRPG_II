@@ -134,6 +134,15 @@ export class BaseCharsheet {
         customResources?: Record<string, number> = {};
 
     /**
+     * Máximo PESSOAL de cada recurso customizado (cresce com level-up,
+     * ex: Estresse Máx 10 → 12 no Cosmos RPG). Ausente = usa o max
+     * da definição do recurso no sistema.
+     */
+    @IsOptional()
+    @IsObject()
+        customResourceMaxes?: Record<string, number> = {};
+
+    /**
      * Profissão/ocupação escolhida em sistemas customizados.
      * (No Magitech modo Apocalypse, profissão usa o campo lineage.)
      */

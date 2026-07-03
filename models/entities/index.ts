@@ -31,7 +31,9 @@ export {
     type MagicConfig,
     type SystemProgressionLevel,
     type SkillPointRules,
-    type CustomResource
+    type CustomResource,
+    type ResourceThreshold,
+    type SymbolicResource
 } from './RPGSystem';
 export { CombatEffectEntity } from './CombatEffectEntity';
 export {

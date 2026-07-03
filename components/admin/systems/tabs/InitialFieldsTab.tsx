@@ -52,13 +52,13 @@ const defaultInitialFields: InitialFields = {
         enabled: true, 
         label: 'Gênero', 
         required: true, 
-        options: ['Masculino', 'Feminino', 'Não-binário', 'Outro', 'Não definido'] 
+        options: [ 'Masculino', 'Feminino', 'Não-binário', 'Outro', 'Não definido' ] 
     },
     financialCondition: { 
         enabled: true, 
         label: 'Condição Financeira', 
         required: false, 
-        options: ['Miserável', 'Pobre', 'Estável', 'Rico'] 
+        options: [ 'Miserável', 'Pobre', 'Estável', 'Rico' ] 
     },
     customInitialFields: []
 }
@@ -421,6 +421,67 @@ export function InitialFieldsTab({ system, updateSystem }: InitialFieldsTabProps
                                     ))}
                                 </Box>
                             </Box>
+                        )}
+                    </Paper>
+                </Grid>
+
+                {/* Moeda do sistema */}
+                <Grid item xs={12} md={6}>
+                    <Paper sx={{ p: 2 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                            <Typography variant="subtitle1" fontWeight={600}>
+                                🪙 {system.currency?.name || 'Dinheiro'}
+                            </Typography>
+                            <FormControlLabel
+                                control={
+                                    <Switch
+                                        checked={system.currency?.enabled ?? true}
+                                        onChange={(e) => updateSystem('currency', {
+                                            name: system.currency?.name || 'Dinheiro',
+                                            abbreviation: system.currency?.abbreviation,
+                                            enabled: e.target.checked
+                                        })}
+                                    />
+                                }
+                                label="Ativo"
+                            />
+                        </Box>
+                        {(system.currency?.enabled ?? true) ? (
+                            <Grid container spacing={2}>
+                                <Grid item xs={8}>
+                                    <TextField
+                                        fullWidth
+                                        size="small"
+                                        label="Nome da Moeda"
+                                        value={system.currency?.name || 'Dinheiro'}
+                                        onChange={(e) => updateSystem('currency', {
+                                            enabled: system.currency?.enabled ?? true,
+                                            abbreviation: system.currency?.abbreviation,
+                                            name: e.target.value
+                                        })}
+                                        placeholder="Ex: Créditos, Moedas de Ouro"
+                                    />
+                                </Grid>
+                                <Grid item xs={4}>
+                                    <TextField
+                                        fullWidth
+                                        size="small"
+                                        label="Símbolo"
+                                        value={system.currency?.abbreviation ?? ''}
+                                        onChange={(e) => updateSystem('currency', {
+                                            enabled: system.currency?.enabled ?? true,
+                                            name: system.currency?.name || 'Dinheiro',
+                                            abbreviation: e.target.value || undefined
+                                        })}
+                                        placeholder="Ex: ¢, CR"
+                                        inputProps={{ maxLength: 4 }}
+                                    />
+                                </Grid>
+                            </Grid>
+                        ) : (
+                            <Typography variant="body2" color="text.secondary">
+                                O campo de dinheiro não aparecerá nas fichas deste sistema.
+                            </Typography>
                         )}
                     </Paper>
                 </Grid>

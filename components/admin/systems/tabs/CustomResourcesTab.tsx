@@ -29,7 +29,7 @@ import {
 import AddIcon from '@mui/icons-material/Add'
 import EditIcon from '@mui/icons-material/Edit'
 import DeleteIcon from '@mui/icons-material/Delete'
-import type { CustomResource, RPGSystem } from '@models/entities'
+import type { CustomResource, ResourceThreshold, RPGSystem, SymbolicResource } from '@models/entities'
 
 interface CustomResourcesTabProps {
     system: Partial<RPGSystem>
@@ -64,20 +64,39 @@ export function CustomResourcesTab({ system, updateSystem }: CustomResourcesTabP
     const [ dialogOpen, setDialogOpen ] = useState(false)
     const [ editingIdx, setEditingIdx ] = useState<number | null>(null)
     const [ formData, setFormData ] = useState<CustomResource>(emptyResource())
-    const [ newThreshold, setNewThreshold ] = useState({ value: 0, label: '', color: '#f44336' })
+    const [ newThreshold, setNewThreshold ] = useState<ResourceThreshold>({ value: 0, label: '', color: '#f44336', mode: 'constant' })
+
+    // ── Recursos simbólicos (contadores em "Informações Gerais") ──
+    const symbolicResources = system.symbolicResources ?? []
+    const [ newSymbolic, setNewSymbolic ] = useState<SymbolicResource>({ key: '', name: '', abbreviation: '', defaultValue: 0 })
+
+    const addSymbolic = () => {
+        if (!newSymbolic.name.trim()) return
+        const key = toKey(newSymbolic.name)
+        if (symbolicResources.some(r => r.key === key)) return
+        updateSystem('symbolicResources', [
+            ...symbolicResources,
+            { ...newSymbolic, key, name: newSymbolic.name.trim() }
+        ])
+        setNewSymbolic({ key: '', name: '', abbreviation: '', defaultValue: 0 })
+    }
+
+    const removeSymbolic = (key: string) => {
+        updateSystem('symbolicResources', symbolicResources.filter(r => r.key !== key))
+    }
 
     // ── Handlers de lista ──────────────────────────────────────
     const openCreate = () => {
         setEditingIdx(null)
         setFormData(emptyResource())
-        setNewThreshold({ value: 0, label: '', color: '#f44336' })
+        setNewThreshold({ value: 0, label: '', color: '#f44336', mode: 'constant' })
         setDialogOpen(true)
     }
 
     const openEdit = (idx: number) => {
         setEditingIdx(idx)
         setFormData({ ...resources[idx], thresholds: [ ...(resources[idx].thresholds ?? []) ] })
-        setNewThreshold({ value: 0, label: '', color: '#f44336' })
+        setNewThreshold({ value: 0, label: '', color: '#f44336', mode: 'constant' })
         setDialogOpen(true)
     }
 
@@ -207,6 +226,87 @@ export function CustomResourcesTab({ system, updateSystem }: CustomResourcesTabP
                     ))}
                 </Box>
             )}
+
+            {/* ── Recursos Simbólicos ── */}
+            <Divider sx={{ my: 4 }} />
+            <Typography variant="h6" gutterBottom>Recursos Simbólicos</Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                Contadores simples exibidos em <strong>Informações Gerais</strong> da ficha, junto do dinheiro
+                (ex: &ldquo;Pedras do Nexus&rdquo;). Sem barra — apenas quantidade.
+            </Typography>
+
+            {symbolicResources.length > 0 && (
+                <Box display="flex" flexDirection="column" gap={1} mb={2}>
+                    {symbolicResources.map(res => (
+                        <Paper key={res.key} variant="outlined" sx={{ p: 1.5 }}>
+                            <Box display="flex" justifyContent="space-between" alignItems="center" gap={1}>
+                                <Box>
+                                    <Typography fontWeight="bold">
+                                        {res.name}
+                                        {res.abbreviation && (
+                                            <Typography component="span" variant="body2" color="text.secondary" ml={0.5}>
+                                                ({res.abbreviation})
+                                            </Typography>
+                                        )}
+                                    </Typography>
+                                    <Typography variant="caption" color="text.secondary">
+                                        key: <code>{res.key}</code> · inicial: {res.defaultValue ?? 0}
+                                    </Typography>
+                                </Box>
+                                <Tooltip title="Remover">
+                                    <IconButton size="small" color="error" onClick={() => removeSymbolic(res.key)}>
+                                        <DeleteIcon fontSize="small" />
+                                    </IconButton>
+                                </Tooltip>
+                            </Box>
+                        </Paper>
+                    ))}
+                </Box>
+            )}
+
+            <Grid container spacing={1} alignItems="center">
+                <Grid item xs={12} sm={4}>
+                    <TextField
+                        size="small"
+                        fullWidth
+                        label="Nome"
+                        value={newSymbolic.name}
+                        onChange={e => setNewSymbolic(prev => ({ ...prev, name: e.target.value }))}
+                        placeholder="Ex: Pedras do Nexus"
+                        onKeyDown={e => e.key === 'Enter' && addSymbolic()}
+                    />
+                </Grid>
+                <Grid item xs={5} sm={2}>
+                    <TextField
+                        size="small"
+                        fullWidth
+                        label="Abreviação"
+                        value={newSymbolic.abbreviation ?? ''}
+                        onChange={e => setNewSymbolic(prev => ({ ...prev, abbreviation: e.target.value }))}
+                        placeholder="PDN"
+                    />
+                </Grid>
+                <Grid item xs={4} sm={2}>
+                    <TextField
+                        size="small"
+                        fullWidth
+                        type="number"
+                        label="Qtd. inicial"
+                        value={newSymbolic.defaultValue ?? 0}
+                        onChange={e => setNewSymbolic(prev => ({ ...prev, defaultValue: parseInt(e.target.value) || 0 }))}
+                    />
+                </Grid>
+                <Grid item xs={3} sm={2}>
+                    <Button
+                        fullWidth
+                        variant="outlined"
+                        onClick={addSymbolic}
+                        disabled={!newSymbolic.name.trim()}
+                    >
+                        <AddIcon />
+                    </Button>
+                </Grid>
+            </Grid>
 
             {/* ── Dialog criar / editar ── */}
             <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
@@ -357,7 +457,13 @@ export function CustomResourcesTab({ system, updateSystem }: CustomResourcesTabP
                                     <TableBody>
                                         {(formData.thresholds ?? []).map((t, i) => (
                                             <TableRow key={i}>
-                                                <TableCell>{t.value}</TableCell>
+                                                <TableCell>
+                                                    {t.mode === 'max'
+                                                        ? `Máx${t.value !== 0 ? (t.value > 0 ? ` +${t.value}` : ` ${t.value}`) : ''}`
+                                                        : t.mode === 'min'
+                                                            ? `Mín${t.value !== 0 ? (t.value > 0 ? ` +${t.value}` : ` ${t.value}`) : ''}`
+                                                            : t.value}
+                                                </TableCell>
                                                 <TableCell>{t.label}</TableCell>
                                                 <TableCell>
                                                     <Box
@@ -383,18 +489,39 @@ export function CustomResourcesTab({ system, updateSystem }: CustomResourcesTabP
 
                             {/* Linha de adição de limiar */}
                             <Grid container spacing={1} alignItems="center">
-                                <Grid item xs={3}>
+                                <Grid item xs={6} sm={3}>
+                                    <FormControl fullWidth size="small">
+                                        <InputLabel>Base</InputLabel>
+                                        <Select
+                                            value={newThreshold.mode ?? 'constant'}
+                                            label="Base"
+                                            onChange={e => setNewThreshold(prev => ({
+                                                ...prev,
+                                                mode: e.target.value as ResourceThreshold['mode'],
+                                                value: 0
+                                            }))}
+                                        >
+                                            <MenuItem value="constant">Constante</MenuItem>
+                                            <MenuItem value="max">Máximo do personagem</MenuItem>
+                                            <MenuItem value="min">Mínimo do personagem</MenuItem>
+                                        </Select>
+                                    </FormControl>
+                                </Grid>
+                                <Grid item xs={6} sm={2}>
                                     <TextField
                                         size="small"
+                                        fullWidth
                                         type="number"
-                                        label="Valor"
+                                        label={newThreshold.mode === 'constant' || !newThreshold.mode ? 'Valor' : 'Ajuste (±)'}
                                         value={newThreshold.value}
                                         onChange={e => setNewThreshold(prev => ({ ...prev, value: parseInt(e.target.value) || 0 }))}
+                                        helperText={newThreshold.mode === 'max' ? 'Ex: -2 = máx−2' : undefined}
                                     />
                                 </Grid>
-                                <Grid item xs={5}>
+                                <Grid item xs={6} sm={3}>
                                     <TextField
                                         size="small"
+                                        fullWidth
                                         label="Rótulo"
                                         value={newThreshold.label}
                                         onChange={e => setNewThreshold(prev => ({ ...prev, label: e.target.value }))}
@@ -402,7 +529,7 @@ export function CustomResourcesTab({ system, updateSystem }: CustomResourcesTabP
                                         onKeyDown={e => e.key === 'Enter' && addThreshold()}
                                     />
                                 </Grid>
-                                <Grid item xs={2}>
+                                <Grid item xs={3} sm={2}>
                                     <Tooltip title="Cor do limiar">
                                         <input
                                             type="color"
@@ -412,7 +539,7 @@ export function CustomResourcesTab({ system, updateSystem }: CustomResourcesTabP
                                         />
                                     </Tooltip>
                                 </Grid>
-                                <Grid item xs={2}>
+                                <Grid item xs={3} sm={2}>
                                     <Button
                                         fullWidth
                                         variant="outlined"
@@ -424,6 +551,10 @@ export function CustomResourcesTab({ system, updateSystem }: CustomResourcesTabP
                                     </Button>
                                 </Grid>
                             </Grid>
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                                Limiares com base no <strong>máximo/mínimo do personagem</strong> acompanham a progressão
+                                (ex: pânico no Estresse máximo, que cresce de 10 para 12 com level-ups).
+                            </Typography>
                         </Box>
                     </Box>
                 </DialogContent>

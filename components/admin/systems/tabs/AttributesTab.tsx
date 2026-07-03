@@ -101,7 +101,7 @@ export function AttributesTab({ system, updateSystem }: AttributesTabProps) {
                 </Button>
             </Box>
 
-            {/* Pontos iniciais para distribuir entre atributos */}
+            {/* Pontos iniciais e limites de atributos */}
             <Paper sx={{ p: 2, mb: 3 }}>
                 <Grid container spacing={2} alignItems="center">
                     <Grid item xs={12} sm={4} md={3}>
@@ -120,6 +120,17 @@ export function AttributesTab({ system, updateSystem }: AttributesTabProps) {
                             }}
                             inputProps={{ min: 0 }}
                             helperText="Pontos para distribuir na criação da ficha. Vazio = padrão da aplicação."
+                        />
+                    </Grid>
+                    <Grid item xs={12} sm={5} md={4}>
+                        <TextField
+                            fullWidth
+                            size="small"
+                            label="Fórmula — Limite por Atributo"
+                            value={system.attributeCapFormula ?? ''}
+                            onChange={(e) => updateSystem('attributeCapFormula', e.target.value.trim() || (undefined as any))}
+                            placeholder="level"
+                            helperText='Máximo de pontos por atributo com "level" como variável (ex: level, level * 2). Vazio = sem limite por nível.'
                         />
                     </Grid>
                 </Grid>

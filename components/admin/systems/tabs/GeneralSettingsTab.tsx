@@ -13,7 +13,6 @@ import {
     Paper
 } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
-import DeleteIcon from '@mui/icons-material/Delete'
 import { useState } from 'react'
 import type { RPGSystem } from '@models/entities'
 
@@ -36,7 +35,10 @@ export function GeneralSettingsTab({ system, updateSystem }: GeneralSettingsTabP
         skill: 'Habilidade'
     }
 
-    const elements = system.elements || ['Fogo', 'Água', 'Ar', 'Terra', 'Luz', 'Trevas', 'Arcano']
+    const elements = system.elements || [ 'Fogo', 'Água', 'Ar', 'Terra', 'Luz', 'Trevas', 'Arcano' ]
+
+    // Elementos só fazem sentido em sistemas com magia ou maestria elemental
+    const usesElements = Boolean(system.enabledFields?.spells) || Boolean(system.enabledFields?.elementalMastery)
 
     const handleAddElement = () => {
         if (newElement.trim() && !elements.includes(newElement.trim())) {
@@ -191,43 +193,48 @@ export function GeneralSettingsTab({ system, updateSystem }: GeneralSettingsTabP
                     />
                 </Grid>
 
-                <Grid item xs={12}>
-                    <Divider sx={{ my: 2 }} />
-                    <Typography variant="h6" gutterBottom>
-                        Elementos Mágicos
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                        Configure os elementos disponíveis para magias no sistema.
-                    </Typography>
-                </Grid>
+                {/* Elementos só aparecem em sistemas com magia/maestria elemental */}
+                {usesElements && (
+                    <>
+                        <Grid item xs={12}>
+                            <Divider sx={{ my: 2 }} />
+                            <Typography variant="h6" gutterBottom>
+                                Elementos Mágicos
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                                Configure os elementos disponíveis para magias no sistema.
+                            </Typography>
+                        </Grid>
 
-                <Grid item xs={12}>
-                    <Paper variant="outlined" sx={{ p: 2 }}>
-                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-                            {elements.map((element) => (
-                                <Chip
-                                    key={element}
-                                    label={element}
-                                    onDelete={() => handleRemoveElement(element)}
-                                    color="primary"
-                                    variant="outlined"
-                                />
-                            ))}
-                        </Box>
-                        <Box sx={{ display: 'flex', gap: 1 }}>
-                            <TextField
-                                size="small"
-                                placeholder="Novo elemento..."
-                                value={newElement}
-                                onChange={(e) => setNewElement(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && handleAddElement()}
-                            />
-                            <IconButton color="primary" onClick={handleAddElement}>
-                                <AddIcon />
-                            </IconButton>
-                        </Box>
-                    </Paper>
-                </Grid>
+                        <Grid item xs={12}>
+                            <Paper variant="outlined" sx={{ p: 2 }}>
+                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+                                    {elements.map((element) => (
+                                        <Chip
+                                            key={element}
+                                            label={element}
+                                            onDelete={() => handleRemoveElement(element)}
+                                            color="primary"
+                                            variant="outlined"
+                                        />
+                                    ))}
+                                </Box>
+                                <Box sx={{ display: 'flex', gap: 1 }}>
+                                    <TextField
+                                        size="small"
+                                        placeholder="Novo elemento..."
+                                        value={newElement}
+                                        onChange={(e) => setNewElement(e.target.value)}
+                                        onKeyDown={(e) => e.key === 'Enter' && handleAddElement()}
+                                    />
+                                    <IconButton color="primary" onClick={handleAddElement}>
+                                        <AddIcon />
+                                    </IconButton>
+                                </Box>
+                            </Paper>
+                        </Grid>
+                    </>
+                )}
             </Grid>
         </Box>
     )

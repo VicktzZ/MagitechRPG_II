@@ -13,7 +13,6 @@ import {
     DialogTitle,
     DialogContent,
     DialogActions,
-    Tooltip,
     Chip,
     Accordion,
     AccordionSummary,
@@ -24,14 +23,38 @@ import {
     ListItemText,
     ListItemSecondaryAction,
     FormControlLabel,
-    Switch
+    Switch,
+    Autocomplete,
+    FormControl,
+    InputLabel,
+    Select,
+    MenuItem
 } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
 import EditIcon from '@mui/icons-material/Edit'
 import DeleteIcon from '@mui/icons-material/Delete'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import { v4 as uuidv4 } from 'uuid'
+import AddItemModal from '@layout/AddItemModal'
+import { defaultWeapons } from '@constants/defaultWeapons'
+import { defaultArmors } from '@constants/defaultArmors'
+import { defaultItems } from '@constants/defaultItems'
+import type { Armor, Item, Weapon } from '@models'
 import type { RPGSystem, SystemClass, SystemSubclass, SystemSkill } from '@models/entities'
+
+type GrantCategory = 'weapons' | 'armors' | 'items'
+
+const grantCategoryLabels: Record<GrantCategory, string> = {
+    weapons: 'Arma',
+    armors: 'Armadura',
+    items: 'Item'
+}
+
+const emptyGrantedItems = (): NonNullable<SystemClass['grantedItems']> => ({
+    weapons: [],
+    armors: [],
+    items: []
+})
 
 interface ClassesTabProps {
     system: Partial<RPGSystem>
@@ -86,6 +109,86 @@ export function ClassesTab({ system, updateSystem }: ClassesTabProps) {
     const classes = system.classes || []
     const subclasses = system.subclasses || []
     const conceptNames = system.conceptNames || { class: 'Classe', subclass: 'Subclasse', skill: 'Habilidade' }
+    const attributes = system.attributes || []
+    const expertises = system.expertises || []
+
+    // ── Concessões de itens da classe ──
+    const [ grantCategory, setGrantCategory ] = useState<GrantCategory>('weapons')
+    const [ grantItemName, setGrantItemName ] = useState<string>('')
+    const [ createItemModalOpen, setCreateItemModalOpen ] = useState(false)
+
+    // Catálogo disponível: itens base da aplicação + itens criados para o sistema
+    const catalogByCategory: Record<GrantCategory, Array<Partial<Weapon> | Partial<Armor> | Partial<Item>>> = {
+        weapons: [ ...Object.values(defaultWeapons).flat(), ...(system.customItems?.weapons ?? []) ],
+        armors: [ ...Object.values(defaultArmors).flat(), ...(system.customItems?.armors ?? []) ],
+        items: [ ...Object.values(defaultItems).flat(), ...(system.customItems?.items ?? []) ]
+    }
+
+    const grantedItems = classFormData.grantedItems ?? emptyGrantedItems()
+
+    const addGrantedItem = () => {
+        if (!grantItemName.trim()) return
+        const found = catalogByCategory[grantCategory].find(i => i.name === grantItemName)
+        if (!found) return
+        setClassFormData({
+            ...classFormData,
+            grantedItems: {
+                ...emptyGrantedItems(),
+                ...grantedItems,
+                [grantCategory]: [ ...grantedItems[grantCategory], found ]
+            }
+        })
+        setGrantItemName('')
+    }
+
+    const removeGrantedItem = (category: GrantCategory, idx: number) => {
+        setClassFormData({
+            ...classFormData,
+            grantedItems: {
+                ...emptyGrantedItems(),
+                ...grantedItems,
+                [category]: grantedItems[category].filter((_, i) => i !== idx)
+            }
+        })
+    }
+
+    // Cria um item novo: entra no catálogo do sistema E na concessão da classe
+    const handleCreateSystemItem = (created: Weapon | Armor | Item) => {
+        const isWeapon = (it: any): it is Weapon => it && 'hit' in it && 'effect' in it && 'ammo' in it
+        const isArmor = (it: any): it is Armor => it && 'displacementPenalty' in it && 'value' in it && 'categ' in it
+        const category: GrantCategory = isWeapon(created) ? 'weapons' : isArmor(created) ? 'armors' : 'items'
+
+        const customItems = {
+            weapons: [ ...(system.customItems?.weapons ?? []) ],
+            armors: [ ...(system.customItems?.armors ?? []) ],
+            items: [ ...(system.customItems?.items ?? []) ]
+        }
+        customItems[category] = [ ...customItems[category], created as any ]
+        updateSystem('customItems', customItems)
+
+        setClassFormData({
+            ...classFormData,
+            grantedItems: {
+                ...emptyGrantedItems(),
+                ...grantedItems,
+                [category]: [ ...grantedItems[category], created as any ]
+            }
+        })
+        setCreateItemModalOpen(false)
+    }
+
+    const handleGrantBonusChange = (
+        field: 'attributeBonus' | 'expertiseBonus',
+        key: string,
+        rawValue: string
+    ) => {
+        const numValue = parseInt(rawValue) || 0
+        const bonus = Object.fromEntries(
+            Object.entries(classFormData[field] ?? {}).filter(([ k ]) => k !== key)
+        )
+        if (numValue !== 0) bonus[key] = numValue
+        setClassFormData({ ...classFormData, [field]: bonus })
+    }
 
     // Class handlers
     const handleOpenClassDialog = (cls?: SystemClass) => {
@@ -456,14 +559,157 @@ export function ClassesTab({ system, updateSystem }: ClassesTabProps) {
                                 control={
                                     <Switch
                                         checked={classFormData.spellcasting?.enabled || false}
-                                        onChange={(e) => setClassFormData({ 
-                                            ...classFormData, 
-                                            spellcasting: { ...classFormData.spellcasting, enabled: e.target.checked } 
+                                        onChange={(e) => setClassFormData({
+                                            ...classFormData,
+                                            spellcasting: { ...classFormData.spellcasting, enabled: e.target.checked }
                                         })}
                                     />
                                 }
                                 label="É Conjurador"
                             />
+                        </Grid>
+
+                        {/* ── Concessões ao escolher a classe ── */}
+                        <Grid item xs={12}>
+                            <Divider sx={{ my: 1 }} />
+                            <Typography variant="subtitle1" fontWeight={600}>
+                                Concessões ao escolher a {conceptNames.class}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                                Pontos, bônus e itens aplicados automaticamente na criação da ficha.
+                                Todos os campos são independentes e opcionais.
+                            </Typography>
+                        </Grid>
+
+                        <Grid item xs={6} sm={3}>
+                            <TextField
+                                fullWidth
+                                size="small"
+                                type="number"
+                                label="Pts de Perícia"
+                                value={classFormData.expertisePoints ?? 0}
+                                onChange={(e) => setClassFormData({
+                                    ...classFormData,
+                                    expertisePoints: parseInt(e.target.value) || 0
+                                })}
+                                inputProps={{ min: 0 }}
+                            />
+                        </Grid>
+                        <Grid item xs={6} sm={3}>
+                            <TextField
+                                fullWidth
+                                size="small"
+                                type="number"
+                                label="Pts de Atributo"
+                                value={classFormData.attributePoints ?? 0}
+                                onChange={(e) => setClassFormData({
+                                    ...classFormData,
+                                    attributePoints: parseInt(e.target.value) || 0
+                                })}
+                                inputProps={{ min: 0 }}
+                            />
+                        </Grid>
+
+                        {attributes.length > 0 && (
+                            <>
+                                <Grid item xs={12}>
+                                    <Typography variant="subtitle2">Bônus de Atributos</Typography>
+                                </Grid>
+                                {attributes.map(attr => (
+                                    <Grid item xs={6} sm={4} md={2} key={attr.key}>
+                                        <TextField
+                                            fullWidth
+                                            size="small"
+                                            type="number"
+                                            label={attr.abbreviation}
+                                            value={classFormData.attributeBonus?.[attr.key] || ''}
+                                            onChange={(e) => handleGrantBonusChange('attributeBonus', attr.key, e.target.value)}
+                                            inputProps={{ min: -10, max: 10 }}
+                                        />
+                                    </Grid>
+                                ))}
+                            </>
+                        )}
+
+                        {expertises.length > 0 && (
+                            <>
+                                <Grid item xs={12}>
+                                    <Typography variant="subtitle2">Bônus de Perícias</Typography>
+                                </Grid>
+                                {expertises.map(exp => (
+                                    <Grid item xs={6} sm={4} md={2} key={exp.key}>
+                                        <TextField
+                                            fullWidth
+                                            size="small"
+                                            type="number"
+                                            label={exp.name.substring(0, 12)}
+                                            value={classFormData.expertiseBonus?.[exp.key] || ''}
+                                            onChange={(e) => handleGrantBonusChange('expertiseBonus', exp.key, e.target.value)}
+                                            inputProps={{ min: -10, max: 10 }}
+                                        />
+                                    </Grid>
+                                ))}
+                            </>
+                        )}
+
+                        {/* Itens concedidos */}
+                        <Grid item xs={12}>
+                            <Typography variant="subtitle2" sx={{ mb: 1 }}>Itens Iniciais</Typography>
+                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1 }}>
+                                {(Object.keys(grantedItems) as GrantCategory[]).flatMap(cat =>
+                                    grantedItems[cat].map((item, idx) => (
+                                        <Chip
+                                            key={`${cat}-${idx}`}
+                                            label={`${grantCategoryLabels[cat]}: ${item.name}`}
+                                            size="small"
+                                            onDelete={() => removeGrantedItem(cat, idx)}
+                                        />
+                                    ))
+                                )}
+                            </Box>
+                            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
+                                <FormControl size="small" sx={{ minWidth: 130 }}>
+                                    <InputLabel>Categoria</InputLabel>
+                                    <Select
+                                        value={grantCategory}
+                                        label="Categoria"
+                                        onChange={(e) => {
+                                            setGrantCategory(e.target.value as GrantCategory)
+                                            setGrantItemName('')
+                                        }}
+                                    >
+                                        <MenuItem value="weapons">Arma</MenuItem>
+                                        <MenuItem value="armors">Armadura</MenuItem>
+                                        <MenuItem value="items">Item</MenuItem>
+                                    </Select>
+                                </FormControl>
+                                <Autocomplete
+                                    size="small"
+                                    sx={{ minWidth: 240, flex: 1 }}
+                                    options={catalogByCategory[grantCategory].map(i => i.name ?? '').filter(Boolean)}
+                                    value={grantItemName || null}
+                                    onChange={(_, value) => setGrantItemName(value ?? '')}
+                                    renderInput={(params) => (
+                                        <TextField {...params} label="Buscar item existente..." />
+                                    )}
+                                />
+                                <Button
+                                    variant="outlined"
+                                    size="small"
+                                    onClick={addGrantedItem}
+                                    disabled={!grantItemName.trim()}
+                                    startIcon={<AddIcon />}
+                                >
+                                    Adicionar
+                                </Button>
+                                <Button
+                                    variant="text"
+                                    size="small"
+                                    onClick={() => setCreateItemModalOpen(true)}
+                                >
+                                    Criar novo item
+                                </Button>
+                            </Box>
                         </Grid>
                     </Grid>
                 </DialogContent>
@@ -560,6 +806,15 @@ export function ClassesTab({ system, updateSystem }: ClassesTabProps) {
                     </Button>
                 </DialogActions>
             </Dialog>
+
+            {/* Modal de criação de item customizado do sistema */}
+            <AddItemModal
+                modalOpen={createItemModalOpen}
+                setModalOpen={setCreateItemModalOpen}
+                disableDefaultCreate
+                title="Criar Item do Sistema"
+                onConfirm={handleCreateSystemItem}
+            />
         </Box>
     )
 }

@@ -124,7 +124,12 @@ const getDefaultSystem = (): Partial<RPGSystem> => ({
         classSkillCost: 1,
         otherSkillCost: 1
     },
-    customResources: []
+    customResources: [],
+    symbolicResources: [],
+    customItems: { weapons: [], armors: [], items: [] },
+    currency: { enabled: true, name: 'Dinheiro' },
+    // Limite de pontos por atributo baseado no nível (padrão: o próprio nível)
+    attributeCapFormula: 'level'
 })
 
 interface SystemBuilderProps {

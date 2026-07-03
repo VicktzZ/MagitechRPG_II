@@ -16,26 +16,7 @@ import {
 } from '@mui/material';
 import { useEffect, useState, type ReactElement } from 'react';
 import type { CustomResource, RPGSystem } from '@models/entities';
-
-function getActiveThreshold(
-    def: CustomResource,
-    value: number
-): { value: number; label: string; color: string } | undefined {
-    if (!def.thresholds || def.thresholds.length === 0) return undefined;
-
-    const midpoint = (def.min + def.max) / 2;
-    const isAscending = (def.defaultValue ?? def.max) < midpoint;
-
-    if (isAscending) {
-        return def.thresholds
-            .filter(t => value >= t.value)
-            .sort((a, b) => b.value - a.value)[0];
-    } else {
-        return def.thresholds
-            .filter(t => value <= t.value)
-            .sort((a, b) => a.value - b.value)[0];
-    }
-}
+import { getActiveResolvedThreshold, resolveThresholds } from '@utils/resourceThresholds';
 
 export default function CampaignCustomResources(): ReactElement | null {
     const { charsheet, updateCharsheet } = useCampaignCurrentCharsheetContext();
@@ -44,7 +25,7 @@ export default function CampaignCustomResources(): ReactElement | null {
     useEffect(() => {
         if (!charsheet?.systemId) return;
         fetch(`/api/rpg-system/${charsheet.systemId}`)
-            .then(res => res.json())
+            .then(async res => await res.json())
             .then((data: RPGSystem) => {
                 if (data.customResources && data.customResources.length > 0) {
                     setResourceDefs(data.customResources);
@@ -62,8 +43,12 @@ export default function CampaignCustomResources(): ReactElement | null {
             .catch(err => console.error('Erro ao carregar recursos do sistema:', err));
     }, [ charsheet?.systemId ]);
 
+    const personalMaxOf = (def: CustomResource): number =>
+        (charsheet?.customResourceMaxes )?.[def.key] ?? def.max;
+
     const handleChange = (key: string, rawValue: number, def: CustomResource) => {
-        const clamped = Math.max(def.min, Math.min(def.max, isNaN(rawValue) ? def.min : rawValue));
+        const maxVal = personalMaxOf(def);
+        const clamped = Math.max(def.min, Math.min(maxVal, isNaN(rawValue) ? def.min : rawValue));
         const updated: Record<string, number> = { ...(charsheet?.customResources ?? {}), [key]: clamped };
         updateCharsheet({ customResources: updated });
     };
@@ -90,10 +75,12 @@ export default function CampaignCustomResources(): ReactElement | null {
 
             <Box display="flex" flexDirection="column" gap={2.5}>
                 {resourceDefs.map(def => {
-                    const value = resources[def.key] ?? def.defaultValue ?? def.max;
-                    const range = def.max - def.min;
+                    const personalMax = personalMaxOf(def);
+                    const value = resources[def.key] ?? def.defaultValue ?? personalMax;
+                    const range = personalMax - def.min;
                     const pct = range > 0 ? ((value - def.min) / range) * 100 : 0;
-                    const activeThreshold = getActiveThreshold(def, value);
+                    const resolvedThresholds = resolveThresholds(def, personalMax);
+                    const activeThreshold = getActiveResolvedThreshold(def, value, personalMax);
                     const barColor = activeThreshold?.color ?? def.color ?? '#1976d2';
 
                     return (
@@ -155,13 +142,13 @@ export default function CampaignCustomResources(): ReactElement | null {
                                         onChange={e => handleChange(def.key, parseInt(e.target.value), def)}
                                         inputProps={{
                                             min: def.min,
-                                            max: def.max,
+                                            max: personalMax,
                                             style: { textAlign: 'center', padding: '4px 0', width: '52px' }
                                         }}
                                         sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1 } }}
                                     />
                                     <Typography variant="body2" color="text.secondary">
-                                        / {def.max}{def.type === 'percentage' ? '%' : ''}
+                                        / {personalMax}{def.type === 'percentage' ? '%' : ''}
                                     </Typography>
                                     <IconButton
                                         size="small"
@@ -189,10 +176,10 @@ export default function CampaignCustomResources(): ReactElement | null {
                                         }
                                     }}
                                 />
-                                {def.thresholds?.map(t => {
+                                {resolvedThresholds.map(t => {
                                     const tPct = range > 0 ? ((t.value - def.min) / range) * 100 : 0;
                                     return (
-                                        <Tooltip key={t.value} title={`${t.label}: ${t.value}`} arrow>
+                                        <Tooltip key={`${t.label}-${t.value}`} title={`${t.label}: ${t.value}`} arrow>
                                             <Box
                                                 position="absolute"
                                                 top={0}
@@ -213,13 +200,13 @@ export default function CampaignCustomResources(): ReactElement | null {
                             </Box>
 
                             {/* Threshold value labels below bar */}
-                            {def.thresholds && def.thresholds.length > 0 && (
+                            {resolvedThresholds.length > 0 && (
                                 <Box position="relative" height={18} mt={0.5}>
-                                    {def.thresholds.map(t => {
+                                    {resolvedThresholds.map(t => {
                                         const tPct = range > 0 ? ((t.value - def.min) / range) * 100 : 0;
                                         return (
                                             <Typography
-                                                key={t.value}
+                                                key={`${t.label}-${t.value}`}
                                                 variant="caption"
                                                 position="absolute"
                                                 left={`${tPct}%`}

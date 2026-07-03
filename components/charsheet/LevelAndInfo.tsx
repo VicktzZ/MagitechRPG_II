@@ -4,7 +4,7 @@ import { negativeTraits, positiveTraits } from '@constants/traits'
 import { useAudio } from '@hooks'
 import useNumbersWithSpaces from '@hooks/useNumbersWithSpace'
 import { AttachMoney, AutoAwesome, DirectionsRun, Psychology } from '@mui/icons-material'
-import { Box, Button, Chip, FormControl, InputLabel, ListSubheader, MenuItem, OutlinedInput, Select, TextField, Typography, useMediaQuery } from '@mui/material'
+import { Box, Button, Chip, FormControl, IconButton, InputLabel, ListSubheader, MenuItem, OutlinedInput, Select, TextField, Typography, useMediaQuery } from '@mui/material'
 import { alpha, useTheme } from '@mui/material/styles'
 import { green, orange, purple } from '@mui/material/colors'
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -100,12 +100,24 @@ export default function LevelAndInfo() {
     const isSubclassLocked = !!currentSubclass && !!charsheet.id
     const isElementalMasteryLocked = !!currentElementalMastery && !!charsheet.id
     
+    // Pool de traços: do sistema customizado quando existir, senão os do Magitech
+    const availableTraits = useCallback((): { positive: Trait[]; negative: Trait[] } => {
+        if (isCustomSystem && customSystem?.traits) {
+            return {
+                positive: (customSystem.traits.positive ?? []) as unknown as Trait[],
+                negative: (customSystem.traits.negative ?? []) as unknown as Trait[]
+            };
+        }
+        return { positive: positiveTraits, negative: negativeTraits };
+    }, [ isCustomSystem, customSystem ]);
+
     const handleTraitsChange = useCallback((selectedTraitNames: string[]): void => {
         const currentExpertises = { ...getValues('expertises') };
-        
+        const traitPool = availableTraits();
+
         const previousTraits = [ ...traitsRef.current ];
         const newTraits: Trait[] = [];
-        
+
         previousTraits.forEach(trait => {
             if (trait.target?.name && trait.value) {
                 const expertiseName = trait.target.name as keyof Expertises;
@@ -118,7 +130,7 @@ export default function LevelAndInfo() {
         });
 
         selectedTraitNames.forEach(traitName => {
-            const trait = [ ...positiveTraits, ...negativeTraits ].find(item => item.name === traitName);
+            const trait = [ ...traitPool.positive, ...traitPool.negative ].find(item => item.name === traitName);
             if (trait) {
                 if (trait.target?.name && trait.value !== undefined) {
                     const expertiseName = trait.target.name as keyof Expertises;
@@ -137,7 +149,7 @@ export default function LevelAndInfo() {
         setValue('expertises', currentExpertises, { shouldValidate: true });
         setValue('traits', selectedTraitNames as unknown as Trait[], { shouldValidate: true });
         audio?.play()
-    }, [ getValues, setValue, traitsRef ])
+    }, [ getValues, setValue, traitsRef, availableTraits ])
     
     // Handler para confirmar seleção de subclasse
     const handleSubclassConfirm = useCallback((subclass: Subclass['name']) => {
@@ -283,88 +295,169 @@ export default function LevelAndInfo() {
                             </Box>
                         </Box>
 
-                        {/* Dinheiro */}
-                        <Box
-                            sx={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 2,
-                                flexWrap: 'wrap',
-                                bgcolor: alpha(theme.palette.background.paper, 0.5),
-                                borderRadius: 2,
-                                p: 1.5,
-                                border: '1px solid',
-                                borderColor: alpha(theme.palette.divider, 0.2),
-                                transition: 'all 0.2s ease',
-                                '&:hover': {
-                                    bgcolor: alpha(theme.palette.background.paper, 0.8),
-                                    borderColor: alpha(green[500], 0.3)
-                                }
-                            }}
-                        >
+                        {/* Dinheiro — ocultável e renomeável em sistemas customizados */}
+                        {(!isCustomSystem || customSystem?.currency?.enabled !== false) && (
                             <Box
                                 sx={{
                                     display: 'flex',
                                     alignItems: 'center',
-                                    justifyContent: 'center',
-                                    width: 40,
-                                    height: 40,
-                                    borderRadius: '50%',
-                                    bgcolor: alpha(green[500], 0.1),
-                                    color: green[500]
+                                    gap: 2,
+                                    flexWrap: 'wrap',
+                                    bgcolor: alpha(theme.palette.background.paper, 0.5),
+                                    borderRadius: 2,
+                                    p: 1.5,
+                                    border: '1px solid',
+                                    borderColor: alpha(theme.palette.divider, 0.2),
+                                    transition: 'all 0.2s ease',
+                                    '&:hover': {
+                                        bgcolor: alpha(theme.palette.background.paper, 0.8),
+                                        borderColor: alpha(green[500], 0.3)
+                                    }
                                 }}
                             >
-                                <AttachMoney />
-                            </Box>
-                            <Box sx={{ flex: 1 }}>
-                                <Typography variant="caption" color="text.secondary" display="block">
-                                    Dinheiro
-                                </Typography>
-                                <Controller
-                                    name='inventory.money'
-                                    control={control}
-                                    rules={{
-                                        required: 'O valor é obrigatório',
-                                        min: { value: 0, message: 'O valor não pode ser negativo' },
-                                        validate: {
-                                            isNumber: (value) => !isNaN(Number(value)) || 'Deve ser um número válido'
-                                        }
+                                <Box
+                                    sx={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        width: 40,
+                                        height: 40,
+                                        borderRadius: '50%',
+                                        bgcolor: alpha(green[500], 0.1),
+                                        color: green[500]
                                     }}
-                                    render={({ field: { onChange , ...field }, fieldState: { error } }) => (
-                                        <Box display='flex' alignItems='center' gap={1} flexWrap='wrap'>
-                                            <Chip
-                                                color={error ? 'error' : 'success'}
-                                                label={`${getValues('mode') === 'Classic' ? '¥' : '¢'} ${numberWithSpaces(money || 0)}`}
-                                                size="small"
-                                                sx={{ fontWeight: 'bold', minWidth: '80px' }}
-                                            />
-                                            {charsheet.id && (
-                                                <TextField
-                                                    {...field}
-                                                    value={money}
-                                                    onChange={(e) => {
-                                                        const numValue = parseInt(e.target.value, 10) || 0;
-                                                        setValue('inventory.money', numValue);
-                                                        onChange(numValue);
-                                                    }}
-                                                    type='number'
-                                                    size='small'
-                                                    variant='outlined'
-                                                    placeholder='Digite o valor'
-                                                    error={!!error}
-                                                    helperText={error?.message}
-                                                    inputProps={{
-                                                        min: 0,
-                                                        onWheel: (e) => (e.target as HTMLElement).blur()
-                                                    }}
-                                                    sx={{ width: matches ? '120px' : '140px' }}
+                                >
+                                    <AttachMoney />
+                                </Box>
+                                <Box sx={{ flex: 1 }}>
+                                    <Typography variant="caption" color="text.secondary" display="block">
+                                        {(isCustomSystem && customSystem?.currency?.name) || 'Dinheiro'}
+                                    </Typography>
+                                    <Controller
+                                        name='inventory.money'
+                                        control={control}
+                                        rules={{
+                                            required: 'O valor é obrigatório',
+                                            min: { value: 0, message: 'O valor não pode ser negativo' },
+                                            validate: {
+                                                isNumber: (value) => !isNaN(Number(value)) || 'Deve ser um número válido'
+                                            }
+                                        }}
+                                        render={({ field: { onChange , ...field }, fieldState: { error } }) => (
+                                            <Box display='flex' alignItems='center' gap={1} flexWrap='wrap'>
+                                                <Chip
+                                                    color={error ? 'error' : 'success'}
+                                                    label={`${isCustomSystem
+                                                        ? (customSystem?.currency?.abbreviation ?? '')
+                                                        : (getValues('mode') === 'Classic' ? '¥' : '¢')
+                                                    } ${numberWithSpaces(money || 0)}`.trim()}
+                                                    size="small"
+                                                    sx={{ fontWeight: 'bold', minWidth: '80px' }}
                                                 />
-                                            )}
-                                        </Box>
-                                    )}
-                                />
+                                                {charsheet.id && (
+                                                    <TextField
+                                                        {...field}
+                                                        value={money}
+                                                        onChange={(e) => {
+                                                            const numValue = parseInt(e.target.value, 10) || 0;
+                                                            setValue('inventory.money', numValue);
+                                                            onChange(numValue);
+                                                        }}
+                                                        type='number'
+                                                        size='small'
+                                                        variant='outlined'
+                                                        placeholder='Digite o valor'
+                                                        error={!!error}
+                                                        helperText={error?.message}
+                                                        inputProps={{
+                                                            min: 0,
+                                                            onWheel: (e) => (e.target as HTMLElement).blur()
+                                                        }}
+                                                        sx={{ width: matches ? '120px' : '140px' }}
+                                                    />
+                                                )}
+                                            </Box>
+                                        )}
+                                    />
+                                </Box>
                             </Box>
-                        </Box>
+                        )}
+
+                        {/* Recursos simbólicos do sistema (ex: Pedras do Nexus) */}
+                        {isCustomSystem && (customSystem?.symbolicResources ?? []).map(resource => (
+                            <Box
+                                key={resource.key}
+                                sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 2,
+                                    flexWrap: 'wrap',
+                                    bgcolor: alpha(theme.palette.background.paper, 0.5),
+                                    borderRadius: 2,
+                                    p: 1.5,
+                                    border: '1px solid',
+                                    borderColor: alpha(theme.palette.divider, 0.2),
+                                    transition: 'all 0.2s ease',
+                                    '&:hover': {
+                                        bgcolor: alpha(theme.palette.background.paper, 0.8),
+                                        borderColor: alpha(purple[500], 0.3)
+                                    }
+                                }}
+                            >
+                                <Box
+                                    sx={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        width: 40,
+                                        height: 40,
+                                        borderRadius: '50%',
+                                        bgcolor: alpha(purple[500], 0.1),
+                                        color: purple[500]
+                                    }}
+                                >
+                                    <AutoAwesome />
+                                </Box>
+                                <Box sx={{ flex: 1 }}>
+                                    <Typography variant="caption" color="text.secondary" display="block">
+                                        {resource.name}
+                                        {resource.abbreviation ? ` (${resource.abbreviation})` : ''}
+                                    </Typography>
+                                    <Controller
+                                        name={`customResources.${resource.key}` as any}
+                                        control={control}
+                                        defaultValue={resource.defaultValue ?? 0}
+                                        render={({ field: { onChange, value } }) => {
+                                            const current = Number(value ?? resource.defaultValue ?? 0);
+                                            return (
+                                                <Box display='flex' alignItems='center' gap={1} flexWrap='wrap'>
+                                                    <IconButton
+                                                        size="small"
+                                                        onClick={() => onChange(Math.max(0, current - 1))}
+                                                        sx={{ width: 26, height: 26 }}
+                                                    >
+                                                        <Typography fontWeight="bold">−</Typography>
+                                                    </IconButton>
+                                                    <Chip
+                                                        color="secondary"
+                                                        label={numberWithSpaces(current)}
+                                                        size="small"
+                                                        sx={{ fontWeight: 'bold', minWidth: '60px' }}
+                                                    />
+                                                    <IconButton
+                                                        size="small"
+                                                        onClick={() => onChange(current + 1)}
+                                                        sx={{ width: 26, height: 26 }}
+                                                    >
+                                                        <Typography fontWeight="bold">+</Typography>
+                                                    </IconButton>
+                                                </Box>
+                                            );
+                                        }}
+                                    />
+                                </Box>
+                            </Box>
+                        ))}
                     </Box>
                 </Box>
 
@@ -460,6 +553,7 @@ export default function LevelAndInfo() {
                                                     audio.play()
                                                 }}
                                                 lineage={charsheet.lineage as unknown as Lineage['name']}
+                                                customTraits={isCustomSystem ? availableTraits() : undefined}
                                             />
                                         </Box>
                                     </>
@@ -719,8 +813,8 @@ export default function LevelAndInfo() {
                             </FormControl>
                         )}
 
-                        {/* Botão de Rolar Dados */}
-                        {!charsheet.id && (
+                        {/* Botão de Rolar Dados — some quando condição financeira desabilitada no sistema */}
+                        {!charsheet.id && (!isCustomSystem || customSystem?.enabledFields?.financialCondition) && (
                             <Button
                                 onClick={() => { setDiceModalOpen(true) }}
                                 variant='outlined'

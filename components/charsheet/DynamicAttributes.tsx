@@ -1,4 +1,5 @@
-import { Box, Chip, Typography, Grid, Paper } from '@mui/material';
+import { Add, Remove } from '@mui/icons-material';
+import { Box, Chip, IconButton, Typography, Grid, Paper } from '@mui/material';
 import { type ReactElement, useEffect } from 'react';
 import { Controller, useFormContext, useWatch } from 'react-hook-form';
 import type { Charsheet, RPGSystem } from '@models/entities';
@@ -83,19 +84,43 @@ export default function DynamicAttributes({ system }: DynamicAttributesProps): R
         }
     }, [ attributesValues, expertises, level, setValue, system, attributes ]);
 
-    // Inicializa os pontos de atributo do sistema na criação da ficha.
-    // Só aplica se nenhum ponto foi gasto ainda (atributos intactos nos defaults),
-    // para não sobrescrever progresso restaurado do autosave.
+    // Inicializa os pontos de atributo/perícia do sistema na criação da ficha.
+    // Só aplica se nada foi gasto ainda, para não sobrescrever progresso
+    // restaurado do autosave nem bônus concedidos por classe.
     useEffect(() => {
-        if (!system || disabled || system.initialAttributePoints == null) return;
-        const untouched = attributes.every(attr =>
-            (((getValues(`attributes.${attr.key}` as any) as unknown as number) || 0) === (attr.defaultValue || 0))
-        );
-        if (untouched && getValues('points.attributes') !== system.initialAttributePoints) {
-            setValue('points.attributes', system.initialAttributePoints);
+        if (!system || disabled) return;
+
+        if (system.initialAttributePoints != null) {
+            const untouched = attributes.every(attr =>
+                (((getValues(`attributes.${attr.key}` as any) as unknown as number) || 0) === (attr.defaultValue || 0))
+            );
+            if (untouched && getValues('points.attributes') !== system.initialAttributePoints) {
+                setValue('points.attributes', system.initialAttributePoints);
+            }
+        }
+
+        if (system.initialExpertisePoints != null) {
+            const expertisesUntouched = (system.expertises ?? []).every(exp =>
+                (((getValues(`expertises.${exp.key}` as any) )?.value) || 0) === 0
+            );
+            const noClassChosen = !getValues('class');
+            if (expertisesUntouched && noClassChosen && getValues('points.expertises') !== system.initialExpertisePoints) {
+                setValue('points.expertises', system.initialExpertisePoints);
+            }
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [ system, disabled ]);
+
+    /**
+     * Limite efetivo de um atributo: o menor entre o max estático do
+     * atributo e a fórmula por nível do sistema (ex: "level * 2").
+     */
+    const effectiveAttributeMax = (staticMax: number): number => {
+        const formula = system?.attributeCapFormula?.trim();
+        if (!formula) return staticMax;
+        const levelCap = evaluateFormula(formula, { level: Math.max(1, level || 1) }, staticMax);
+        return Math.min(staticMax, Math.max(0, levelCap));
+    };
 
     // Avalia fórmulas de stats iniciais (Vida/Mana/Armadura) na CRIAÇÃO da ficha.
     // Fichas salvas (disabled) nunca são recalculadas.
@@ -183,7 +208,7 @@ export default function DynamicAttributes({ system }: DynamicAttributesProps): R
                 <Grid container spacing={2}>
                     {attributes.map((attribute) => {
                         const min = attribute.minValue ?? 0;
-                        const max = attribute.maxValue ?? 999;
+                        const max = effectiveAttributeMax(attribute.maxValue ?? 999);
 
                         return (
                             <Grid item xs={12} sm={6} md={4} key={attribute.key}>
@@ -218,25 +243,44 @@ export default function DynamicAttributes({ system }: DynamicAttributesProps): R
                                         name={`attributes.${attribute.key}` as any}
                                         control={control}
                                         defaultValue={attribute.defaultValue || 0}
-                                        render={({ field: { value }, fieldState: { error } }) => (
-                                            <NumberField
-                                                value={(value as unknown as number) || 0}
-                                                onChange={(newValue) => changeAttribute(attribute.key, newValue, min, max)}
-                                                min={min}
-                                                max={max}
-                                                size="small"
-                                                fullWidth
-                                                disabled={disabled}
-                                                error={!!error}
-                                                helperText={
-                                                    error?.message ||
-                                                    (attribute.minValue !== undefined || attribute.maxValue !== undefined
-                                                        ? `Min: ${min}, Max: ${attribute.maxValue ?? '∞'}`
-                                                        : undefined
-                                                    )
-                                                }
-                                            />
-                                        )}
+                                        render={({ field: { value }, fieldState: { error } }) => {
+                                            const current = (value as unknown as number) || 0;
+                                            return (
+                                                <Box display="flex" alignItems="flex-start" gap={0.5}>
+                                                    <IconButton
+                                                        size="small"
+                                                        disabled={disabled || current <= min}
+                                                        onClick={() => changeAttribute(attribute.key, current - 1, min, max)}
+                                                        sx={{ mt: 0.5 }}
+                                                    >
+                                                        <Remove fontSize="small" />
+                                                    </IconButton>
+                                                    <NumberField
+                                                        value={current}
+                                                        onChange={(newValue) => changeAttribute(attribute.key, newValue, min, max)}
+                                                        min={min}
+                                                        max={max}
+                                                        size="small"
+                                                        fullWidth
+                                                        disabled={disabled}
+                                                        error={!!error}
+                                                        helperText={
+                                                            error?.message ||
+                                                            `Min: ${min}, Max: ${max >= 999 ? '∞' : max}`
+                                                        }
+                                                        inputProps={{ style: { textAlign: 'center' } }}
+                                                    />
+                                                    <IconButton
+                                                        size="small"
+                                                        disabled={disabled || current >= max || (attributePoints ?? 0) <= 0}
+                                                        onClick={() => changeAttribute(attribute.key, current + 1, min, max)}
+                                                        sx={{ mt: 0.5 }}
+                                                    >
+                                                        <Add fontSize="small" />
+                                                    </IconButton>
+                                                </Box>
+                                            );
+                                        }}
                                     />
                                 </Paper>
                             </Grid>

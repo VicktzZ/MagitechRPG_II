@@ -418,6 +418,8 @@ export const charsheetSchema = z.object({
     }),
     // Recursos customizados definidos pelo sistema (ex: Bateria, O2, Estresse no Cosmos RPG)
     customResources: z.record(z.number()).optional().default({}),
+    // Máximo pessoal de cada recurso customizado (cresce com level-up)
+    customResourceMaxes: z.record(z.number()).optional().default({}),
     // Profissão/ocupação de sistemas customizados (Magitech usa lineage no modo Apocalypse)
     occupation: z.string().optional().default(''),
     // Valores de campos iniciais customizados do sistema (ex: Altura, Peso)

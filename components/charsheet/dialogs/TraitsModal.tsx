@@ -38,9 +38,11 @@ interface TraitsModalProps {
     selectedTraits: string[];
     onTraitsChange: (traits: string[]) => void;
     lineage?: Lineage['name'];
+    /** Traços de sistema customizado — quando presente, substitui os do Magitech */
+    customTraits?: { positive: Trait[]; negative: Trait[] };
 }
 
-function TraitsModal({ open, onClose, selectedTraits, onTraitsChange, lineage }: TraitsModalProps) {
+function TraitsModal({ open, onClose, selectedTraits, onTraitsChange, lineage, customTraits }: TraitsModalProps) {
     const theme = useTheme();
     const matches = useMediaQuery(theme.breakpoints.down('md'));
     const [ tabIndex, setTabIndex ] = useState(0);
@@ -50,31 +52,36 @@ function TraitsModal({ open, onClose, selectedTraits, onTraitsChange, lineage }:
     const [ selectedNegative, setSelectedNegative ] = useState<string[]>([]);
     const [ selectedTraitDetails, setSelectedTraitDetails ] = useState<Trait | null>(null);
 
+    // Pool efetivo de traços: customizado quando fornecido, senão Magitech
+    const poolPositive = customTraits?.positive ?? positiveTraits;
+    const poolNegative = customTraits?.negative ?? negativeTraits;
+
     useEffect(() => {
         const positiveSelected = selectedTraits.filter(
-            trait => positiveTraits.some(pt => pt.name === trait)
+            trait => poolPositive.some(pt => pt.name === trait)
         );
         const negativeSelected = selectedTraits.filter(
-            trait => negativeTraits.some(nt => nt.name === trait)
+            trait => poolNegative.some(nt => nt.name === trait)
         );
 
         setSelectedPositive(positiveSelected);
         setSelectedNegative(negativeSelected);
 
         setPositiveTraitsData(
-            positiveTraits.map(trait => ({
+            poolPositive.map(trait => ({
                 ...trait,
                 selected: positiveSelected.includes(trait.name)
             }))
         );
 
         setNegativeTraitsData(
-            negativeTraits.map(trait => ({
+            poolNegative.map(trait => ({
                 ...trait,
                 selected: negativeSelected.includes(trait.name)
             }))
         );
-    }, [ selectedTraits ]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [ selectedTraits, customTraits ]);
 
     const areOppositeTraits = (positive: Trait | undefined, negative: Trait | undefined): boolean => {
         if (!positive || !negative) return false;
@@ -133,9 +140,9 @@ function TraitsModal({ open, onClose, selectedTraits, onTraitsChange, lineage }:
         }
 
         const traitDetails = isPositive
-            ? positiveTraits.find(t => t.name === trait.name)
-            : negativeTraits.find(t => t.name === trait.name);
-            
+            ? poolPositive.find(t => t.name === trait.name)
+            : poolNegative.find(t => t.name === trait.name);
+
         setSelectedTraitDetails(traitDetails ?? null);
     };
 
@@ -166,8 +173,8 @@ function TraitsModal({ open, onClose, selectedTraits, onTraitsChange, lineage }:
         const hasPositive = selectedPositive.length === 1;
         const hasNegative = selectedNegative.length === 1;
         
-        const positiveTrait = positiveTraits.find(pt => selectedPositive.includes(pt.name));
-        const negativeTrait = negativeTraits.find(nt => selectedNegative.includes(nt.name));
+        const positiveTrait = poolPositive.find(pt => selectedPositive.includes(pt.name));
+        const negativeTrait = poolNegative.find(nt => selectedNegative.includes(nt.name));
         const hasOppositeTraits = areOppositeTraits(positiveTrait, negativeTrait);
         
         if (hasPositive && hasNegative) {

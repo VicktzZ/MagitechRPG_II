@@ -66,10 +66,66 @@ export default function Characteristics(): ReactElement {
     const showOccupation = isCustomSystem && Boolean(customSystem?.enabledFields?.occupation)
     const customInitialFields = (isCustomSystem && customSystem?.initialFields?.customInitialFields) || []
 
+    /**
+     * Aplica (sign=1) ou reverte (sign=-1) as concessões de uma classe
+     * customizada: pontos, bônus de atributos/perícias e itens iniciais.
+     */
+    const applyCustomClassGrants = (cls: NonNullable<RPGSystem['classes']>[number], sign: 1 | -1): void => {
+        if (cls.expertisePoints) {
+            setValue('points.expertises', Math.max(0, (getValues('points.expertises') || 0) + sign * cls.expertisePoints));
+        }
+        if (cls.attributePoints) {
+            setValue('points.attributes', Math.max(0, (getValues('points.attributes') || 0) + sign * cls.attributePoints));
+        }
+
+        if (cls.attributeBonus) {
+            Object.entries(cls.attributeBonus).forEach(([ attrKey, bonus ]) => {
+                const current = (getValues(`attributes.${attrKey}` as any) as unknown as number) || 0;
+                setValue(`attributes.${attrKey}` as any, Math.max(0, current + sign * bonus) as any);
+            });
+        }
+
+        if (cls.expertiseBonus) {
+            Object.entries(cls.expertiseBonus).forEach(([ expKey, bonus ]) => {
+                const currentExpertise = getValues(`expertises.${expKey}` as any) ;
+                if (!currentExpertise) {
+                    if (sign > 0) {
+                        setValue(`expertises.${expKey}` as any, { value: bonus, defaultAttribute: null } as any);
+                    }
+                } else {
+                    setValue(`expertises.${expKey}.value` as any, Math.max(0, (currentExpertise.value || 0) + sign * bonus));
+                }
+            });
+        }
+
+        if (cls.grantedItems) {
+            const inventory = getValues('inventory');
+            const grantLists: Array<[ 'weapons' | 'armors' | 'items', any[] ]> = [
+                [ 'weapons', cls.grantedItems.weapons ?? [] ],
+                [ 'armors', cls.grantedItems.armors ?? [] ],
+                [ 'items', cls.grantedItems.items ?? [] ]
+            ];
+            grantLists.forEach(([ listKey, granted ]) => {
+                if (granted.length === 0) return;
+                let list = [ ...((inventory as any)?.[listKey] ?? []) ];
+                if (sign > 0) {
+                    list = [ ...list, ...granted.map(item => ({ ...item, id: crypto.randomUUID() })) ];
+                } else {
+                    // Remove uma ocorrência de cada item concedido (por nome)
+                    granted.forEach(item => {
+                        const idx = list.findIndex((i: any) => i.name === item.name);
+                        if (idx >= 0) list.splice(idx, 1);
+                    });
+                }
+                setValue(`inventory.${listKey}` as any, list as any);
+            });
+        }
+    };
+
     const setClass = (e: SelectChangeEvent<any>): void => {
         const previousClass = getValues('class') as ClassNames;
         const newClass = e.target.value as ClassNames;
-        
+
         if (!isCustomSystem) {
             // Lógica padrão Magitech
             if (previousClass) {
@@ -77,25 +133,36 @@ export default function Characteristics(): ReactElement {
                 const currentPoints = getValues('points.expertises');
                 setValue('points.expertises', currentPoints - previousClassExpertisePoints);
             }
-            
+
             const newClassExpertisePoints = classesModel[newClass]?.points?.expertises || 0;
             const updatedPoints = getValues('points.expertises');
             setValue('points.expertises', updatedPoints + newClassExpertisePoints);
-            
+
             setValue('class', newClass, { shouldValidate: true });
             setValue('skills.class', [ skills.class[newClass][0] ]);
         } else {
-            // Sistema customizado
+            // Sistema customizado — reverte concessões da classe anterior
+            const previousCustomClass = customSystem?.classes?.find(
+                c => c.name === previousClass || c.key === (previousClass as unknown as string)
+            );
+            if (previousCustomClass) {
+                applyCustomClassGrants(previousCustomClass, -1);
+            }
+
             setValue('class', newClass, { shouldValidate: true });
-            
+
             const customClass = customSystem?.classes?.find(c => c.name === newClass);
-            if (customClass?.skills && customClass.skills.length > 0) {
-                setValue('skills.class', [ customClass.skills[0] ] as any);
-            } else {
-                setValue('skills.class', []);
+
+            // Habilidades iniciais (sem requisito de nível); as com nível
+            // são concedidas automaticamente no level-up
+            const initialSkills = (customClass?.skills ?? []).filter(s => (s.level ?? 0) <= 0);
+            setValue('skills.class', initialSkills as any);
+
+            if (customClass) {
+                applyCustomClassGrants(customClass, 1);
             }
         }
-        
+
         audio.play();
     }
 

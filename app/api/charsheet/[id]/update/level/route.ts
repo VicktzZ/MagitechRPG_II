@@ -205,7 +205,7 @@ function calcCustomProgression(charsheet: Charsheet, system: RPGSystem, oldLevel
                 customResourceDeltas[key] = (customResourceDeltas[key] ?? 0) + bonus;
                 const resourceDef = system.customResources?.find(r => r.key === key);
                 const label = resourceDef?.name ?? key;
-                rewardsList.push(`+${bonus} ${label}`);
+                rewardsList.push(`+${bonus} ${label} (máximo)`);
             }
         }
 
@@ -327,12 +327,14 @@ export async function POST(req: Request, { params }: { params: { id: string } })
             // ── Caminho customizado (Cosmos RPG e outros sistemas com progressionTable) ──
             const result = calcCustomProgression(charsheet, system!, oldLevel, newLevel);
 
-            const updatedCustomResources = { ...(charsheet.customResources ?? {}) };
+            // Bônus de recursos aumentam o MÁXIMO PESSOAL do recurso
+            // (ex: Estresse Máx cresce de 10 para 12 com a progressão),
+            // sem alterar o valor atual do personagem.
+            const updatedCustomResourceMaxes = { ...(charsheet.customResourceMaxes ?? {}) };
             for (const [ key, delta ] of Object.entries(result.customResourceDeltas)) {
                 const resourceDef = system!.customResources?.find(r => r.key === key);
-                const currentVal = updatedCustomResources[key] ?? resourceDef?.defaultValue ?? 0;
-                const maxVal = resourceDef?.max ?? Infinity;
-                updatedCustomResources[key] = Math.min(currentVal + delta, maxVal);
+                const currentMax = updatedCustomResourceMaxes[key] ?? resourceDef?.max ?? 0;
+                updatedCustomResourceMaxes[key] = currentMax + delta;
             }
 
             const fb = result.fieldBonusDeltas;
@@ -366,7 +368,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
                     subclass: [ ...normalizeToArray<Skill>(charsheet.skills?.subclass), ...result.newSubclassSkills ],
                     bonus: [ ...normalizeToArray<Skill>(charsheet.skills?.bonus), ...result.newBonusSkills ]
                 },
-                customResources: updatedCustomResources
+                customResourceMaxes: updatedCustomResourceMaxes
             };
             rewardsList = result.rewardsList;
 

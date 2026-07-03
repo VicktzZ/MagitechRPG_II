@@ -1,4 +1,7 @@
 import { Collection } from 'fireorm';
+import type { Weapon } from '../Weapon';
+import type { Armor } from '../Armor';
+import type { Item } from '../Item';
 
 // ============================================
 // Tipos para configuração de campos iniciais
@@ -117,6 +120,21 @@ export interface SystemClass {
         ability?: string;
         spellSlots?: Record<number, number[]>;
     };
+    // ── Concessões ao escolher a classe na criação da ficha ──
+    /** Pontos de perícia extras concedidos pela classe */
+    expertisePoints?: number;
+    /** Pontos de atributo extras concedidos pela classe */
+    attributePoints?: number;
+    /** Bônus direto em atributos (key do atributo → valor) */
+    attributeBonus?: Record<string, number>;
+    /** Bônus direto em perícias (key da perícia → valor) */
+    expertiseBonus?: Record<string, number>;
+    /** Itens iniciais concedidos pela classe */
+    grantedItems?: {
+        weapons: Array<Partial<Weapon>>;
+        armors: Array<Partial<Armor>>;
+        items: Array<Partial<Item>>;
+    };
 }
 
 export interface SystemSubclass {
@@ -220,6 +238,19 @@ export interface SkillPointRules {
     maxPointsPerSkillFormula?: string; // Ex: "level * 2" — cap por perícia baseado no nível
 }
 
+export interface ResourceThreshold {
+    /**
+     * Valor do limiar. Quando `mode` é 'max' ou 'min', é um OFFSET
+     * relativo ao máximo/mínimo atual do personagem (ex: mode 'max' +
+     * value -2 → dispara em máx-2; value 0 → dispara no máximo).
+     */
+    value: number;
+    label: string;
+    color: string;
+    /** 'constant' (padrão) = valor fixo; 'max'/'min' = relativo ao limite do personagem */
+    mode?: 'constant' | 'max' | 'min';
+}
+
 export interface CustomResource {
     key: string;
     name: string;
@@ -230,11 +261,19 @@ export interface CustomResource {
     defaultValue?: number;
     formula?: string;             // Fórmula para valor inicial baseado em atributos
     color?: string;               // Cor da barra (hex ou nome CSS)
-    thresholds?: Array<{          // Limiares para efeitos visuais/mecânicos
-        value: number;
-        label: string;
-        color: string;
-    }>;
+    thresholds?: ResourceThreshold[]; // Limiares para efeitos visuais/mecânicos
+}
+
+/**
+ * Recurso simbólico/contável exibido em "Informações Gerais" da ficha,
+ * junto do dinheiro (ex: "Pedras do Nexus"). Sem barra — apenas contador.
+ */
+export interface SymbolicResource {
+    key: string;
+    name: string;
+    abbreviation?: string;
+    defaultValue?: number;
+    description?: string;
 }
 
 // ============================================
@@ -428,6 +467,37 @@ export class RPGSystem {
     // Pontos de atributo para distribuir na criação da ficha
     // (undefined = usa o padrão da aplicação)
     initialAttributePoints?: number;
+
+    // Pontos de perícia para distribuir na criação da ficha
+    // (undefined = usa o padrão da aplicação)
+    initialExpertisePoints?: number;
+
+    /**
+     * Fórmula do limite máximo de pontos por atributo, com "level" como
+     * variável (ex: "level", "level * 2", "level + 1").
+     * Vazio/undefined = sem limite por nível (usa apenas o max do atributo).
+     */
+    attributeCapFormula?: string;
+
+    /**
+     * Configuração da moeda do sistema. enabled=false remove o dinheiro
+     * da ficha; name/abbreviation renomeiam o conceito.
+     */
+    currency?: {
+        enabled: boolean;
+        name: string;
+        abbreviation?: string;
+    };
+
+    // Recursos simbólicos/contáveis exibidos em "Informações Gerais" (ex: Pedras do Nexus)
+    symbolicResources?: SymbolicResource[];
+
+    // Catálogo de itens criados para este sistema (usados nas concessões de classe)
+    customItems?: {
+        weapons: Array<Partial<Weapon>>;
+        armors: Array<Partial<Armor>>;
+        items: Array<Partial<Item>>;
+    };
 
     // Tabela de progressão por nível — se vazia, usa lógica legada do Magitech
     progressionTable: SystemProgressionLevel[] = [];
