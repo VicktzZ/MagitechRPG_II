@@ -3,6 +3,18 @@ export { Item } from './Item';
 export { Message } from './Message';
 export { Session, type PerkFilters } from './Session';
 export { Combat, Combatant, CombatLog, type CombatPhase, type CombatantType } from './Combat';
+export { AppliedEffect } from './AppliedEffect';
+export {
+    CombatEffect,
+    CombatEffectLevel,
+    CombatEffectModifier,
+    type CombatEffectCategory,
+    type CombatEffectTiming,
+    type CombatEffectElement,
+    type CombatEffectScope,
+    type CombatEffectCustomLabels,
+    type CombatEffectModifierKind
+} from './CombatEffect';
 export { Weapon } from './Weapon';
 export { Armor } from './Armor';
 export { Skill } from './Skill';

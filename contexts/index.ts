@@ -9,6 +9,9 @@ import { useCampaignContext } from './campaignContext';
 import { campaignCurrentCharsheetContext, useCampaignCurrentCharsheetContext } from './campaignCurrentCharsheetContext';
 import { ThemeProvider, useThemeContext } from './themeContext';
 import CharsheetFormProvider, { useCharsheetForm } from './CharsheetFormProvider';
+import { rpgSystemContext, useRPGSystemContext } from './rpgSystemContext';
+import { RPGSystemProvider } from './RPGSystemProvider';
+import { SelectedSystemProvider, useSelectedSystem } from './SelectedSystemContext';
 
 export {
     charsheetContext,
@@ -25,5 +28,10 @@ export {
     ThemeProvider,
     useThemeContext,
     CharsheetFormProvider,
-    useCharsheetForm
+    useCharsheetForm,
+    rpgSystemContext,
+    useRPGSystemContext,
+    RPGSystemProvider,
+    SelectedSystemProvider,
+    useSelectedSystem
 }

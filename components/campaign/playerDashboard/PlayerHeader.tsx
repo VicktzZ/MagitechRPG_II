@@ -1,6 +1,6 @@
 'use client'
 
-import { useCampaignCurrentCharsheetContext } from '@contexts';
+import { useCampaignContext, useCampaignCurrentCharsheetContext } from '@contexts';
 import {
     Avatar,
     Box,
@@ -14,6 +14,7 @@ import Image from 'next/image';
 import { StatusBar } from './StatusBar';
 import { AttributeCard } from './AttributeCard';
 import type { Stats } from '@models';
+import EffectBadges from '@components/campaign/gmDashboard/actions/EffectBadges';
 
 const attributeConfig = {
     vig: { icon: '💪', color: { bgcolor: 'rgba(239, 68, 68, 0.2)', border: '1px solid rgba(239, 68, 68, 0.4)' } },
@@ -26,8 +27,17 @@ const attributeConfig = {
 
 export default function PlayerHeader({ avatar }: { avatar: string | undefined }) {
     const { charsheet, updateCharsheet } = useCampaignCurrentCharsheetContext();
+    const { campaign } = useCampaignContext();
 
     const stats = charsheet.stats;
+
+    const combat = campaign?.session?.combat;
+    const myCombatant = combat?.isActive
+        ? combat.combatants?.find(c => c.id === charsheet.id || (c as any).odacId === charsheet.id)
+        : undefined;
+    const myEffects = myCombatant?.effects;
+    const isMyTurn = combat?.isActive && combat.phase === 'ACTION'
+        && combat.combatants?.[combat.currentTurnIndex]?.id === myCombatant?.id;
 
     const updateStat = (stat: keyof Stats, delta: number) => {
         const maxKey = `max${stat.charAt(0).toUpperCase() + stat.slice(1)}` as keyof Stats;
@@ -238,6 +248,37 @@ export default function PlayerHeader({ avatar }: { avatar: string | undefined })
                     </Grid>
                 </Grid>
             </Box>
+
+            {/* Efeitos de combate ativos */}
+            {myEffects && myEffects.length > 0 && (
+                <Box sx={{ mb: 2 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                        <Typography variant="caption" sx={{
+                            color: '#9ca3af',
+                            fontWeight: 600,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.05em',
+                            fontSize: '11px'
+                        }}>
+                            Efeitos Ativos
+                        </Typography>
+                        {isMyTurn && (
+                            <Chip
+                                label="Seu turno"
+                                size="small"
+                                sx={{
+                                    height: 18,
+                                    fontSize: '0.65rem',
+                                    bgcolor: 'rgba(59, 130, 246, 0.25)',
+                                    color: '#93c5fd',
+                                    border: '1px solid rgba(59, 130, 246, 0.5)'
+                                }}
+                            />
+                        )}
+                    </Box>
+                    <EffectBadges effects={myEffects} />
+                </Box>
+            )}
 
             {/* Terceira linha: Status */}
             <Box>

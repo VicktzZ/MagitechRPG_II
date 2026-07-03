@@ -33,11 +33,23 @@ export class BaseCharsheet {
     @IsNumber() overall: number = 0;
     @IsNumber() level: number = 0;
 
+    /**
+     * Modo da ficha. Pode ser 'Apocalypse', 'Classic', ou o nome de um sistema customizado.
+     */
+    @IsString() mode: string = 'Classic';
+    
+    /**
+     * ID do sistema de RPG customizado usado nesta ficha.
+     * Se não definido, usa o sistema padrão Magitech.
+     */
+    @IsString()
+    @IsOptional()
+        systemId?: string;
+
     @IsOptional()
     @IsObject()
         spellStages?: Record<string, number> = {};
 
-    @IsEnum([ 'Apocalypse', 'Classic' ]) mode: 'Apocalypse' | 'Classic' = 'Classic';
     @IsEnum([ 'Masculino', 'Feminino', 'Não-binário', 'Outro', 'Não definido' ]) gender: Gender;
     @IsEnum([ 'Miserável', 'Pobre', 'Estável', 'Rico' ]) financialCondition: FinancialCondition;
     
@@ -97,7 +109,7 @@ export class BaseCharsheet {
             max: 0
         };
 
-    @IsArray() 
+    @IsArray()
     @IsOptional()
     @IsObject({ each: true })
         session?: Array<{
@@ -110,6 +122,32 @@ export class BaseCharsheet {
                 perkType: string;
             }>;
         }>;
+
+    /**
+     * Recursos customizados definidos pelo sistema de RPG.
+     * Chave = key do CustomResource no RPGSystem.
+     * Valor = valor atual do recurso.
+     * Ex: { bateria: 85, o2: 60, estresse: 3 }
+     */
+    @IsOptional()
+    @IsObject()
+        customResources?: Record<string, number> = {};
+
+    /**
+     * Profissão/ocupação escolhida em sistemas customizados.
+     * (No Magitech modo Apocalypse, profissão usa o campo lineage.)
+     */
+    @IsString()
+    @IsOptional()
+        occupation?: string;
+
+    /**
+     * Valores dos campos iniciais customizados do sistema (ex: Altura, Peso).
+     * Chave = key do customInitialField no RPGSystem.
+     */
+    @IsOptional()
+    @IsObject()
+        customFields?: Record<string, string | number | boolean> = {};
 
     constructor(charsheet?: Partial<BaseCharsheet>) {
         Object.assign(this, charsheet)

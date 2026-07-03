@@ -1,7 +1,8 @@
-import type { Armor, Item, Note, Weapon, PerkFilters } from '@models'
+import type { Armor, Item, Note, Weapon, PerkFilters, CombatEffect } from '@models'
 import type { Campaign, Charsheet, User } from '@models/entities'
 import type { CampaignData } from '@models/types/session'
 import { Service } from '@utils/apiRequest'
+import type { CreateCombatEffectPayload } from './combatEffectService'
 
 class CampaignService extends Service<Campaign, 'code' | 'userId'> {
     async listByUser(userId: string) {
@@ -33,6 +34,64 @@ class CampaignService extends Service<Campaign, 'code' | 'userId'> {
 
     async removePendingPerkUser(campaignId: string, userId: string) {
         return (await this.post({ param: `${campaignId}/session/pending-perk-user`, body: { userId } })).data
+    }
+
+    // --- Combat Effects (catalogo + aplicação em combate) ---
+    async listEffects(campaignId: string, includeGlobal = true) {
+        const qs = includeGlobal ? '?includeGlobal=true' : ''
+        const res = (await this.get({ param: `${campaignId}/custom/effects${qs}` })).data as {
+            success: boolean
+            campaignEffects: CombatEffect[]
+            globalEffects: CombatEffect[]
+            effects: CombatEffect[]
+        }
+        return res
+    }
+
+    async createCampaignEffect(campaignId: string, payload: CreateCombatEffectPayload & { cloneFromId?: string }) {
+        return (await this.post({ param: `${campaignId}/custom/effects`, body: payload })).data as {
+            success: boolean
+            effect: CombatEffect
+        }
+    }
+
+    async updateCampaignEffect(campaignId: string, effectId: string, patch: Partial<CreateCombatEffectPayload>) {
+        return (await this.patch({ param: `${campaignId}/custom/effects/${effectId}`, body: patch })).data as {
+            success: boolean
+            effect: CombatEffect
+        }
+    }
+
+    async deleteCampaignEffect(campaignId: string, effectId: string) {
+        return (await this.delete({ param: `${campaignId}/custom/effects/${effectId}` })).data as {
+            success: boolean
+        }
+    }
+
+    async applyCombatEffect(campaignId: string, payload: {
+        targetId: string
+        effectId: string
+        level: number
+        appliedByName?: string
+        appliedById?: string
+        /** Sobrescreve o timing default do efeito (sem afetar o catálogo) */
+        timingOverride?: 'turn' | 'round'
+        /** Sobrescreve a duração default do nível (sem afetar o catálogo) */
+        durationOverride?: number
+        /** Aplica o efeito como indefinido (só expira ao ser removido manualmente) */
+        indefiniteOverride?: boolean
+    }) {
+        return (await this.post({
+            param: `${campaignId}/combat`,
+            body: { action: 'apply_effect', ...payload }
+        })).data
+    }
+
+    async removeCombatEffect(campaignId: string, payload: { targetId: string; appliedEffectId: string }) {
+        return (await this.post({
+            param: `${campaignId}/combat`,
+            body: { action: 'remove_effect', ...payload }
+        })).data
     }
 }
 

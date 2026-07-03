@@ -188,6 +188,26 @@ export default function AppDrawer(): ReactElement {
                             <ListItemText primary='Logout' />
                         </ListItemButton>
                     </ListItem>
+                    {process.env.NEXT_PUBLIC_NODE_ENV === 'development' && (
+                        <ListItem disablePadding>
+                            <ListItemButton onClick={() => setUsersModalOpen(true)}>
+                                <ListItemIcon>
+                                    <Person />
+                                </ListItemIcon>
+                                <ListItemText primary='Simular conta' />
+                            </ListItemButton>
+                        </ListItem>
+                    )}
+                    {process.env.NEXT_PUBLIC_NODE_ENV === 'development' && (
+                        <ListItem disablePadding>
+                            <ListItemButton onClick={() => { router.push('/admin/systems') }}>
+                                <ListItemIcon>
+                                    <Build />
+                                </ListItemIcon>
+                                <ListItemText primary='Sistemas' />
+                            </ListItemButton>
+                        </ListItem>
+                    )}
                 </List>
                 {/* Seção Admin - apenas em DEV */}
                 {process.env.NEXT_PUBLIC_NODE_ENV === 'development' && (
@@ -305,7 +325,7 @@ export default function AppDrawer(): ReactElement {
                         </Typography>
                     </Box>
                 </Box>
-                {currentUser && currentUser.subscription && (
+                {currentUser?.subscription && (
                     <Box sx={{ display: 'flex', justifyContent: 'center', mt: 1 }}>
                         <PlanBadge user={currentUser} size="small" showIcon />
                     </Box>

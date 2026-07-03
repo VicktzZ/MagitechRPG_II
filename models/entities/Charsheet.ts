@@ -13,13 +13,15 @@ export class Charsheet extends BaseCharsheet {
         bonus: Skill[];
         powers: string[];
         race: Skill[];
+        occupation?: Skill[];
     } = {
             lineage: [],
             class: [],
             subclass: [],
             bonus: [],
             powers: [],
-            race: []
+            race: [],
+            occupation: []
         };
         
     spells: string[] = [];

@@ -7,6 +7,8 @@ import { sessionService } from './sessionService';
 import { userService } from './userService';
 import { messageService } from './messageService';
 import { notificationService } from './notificationService';
+import { rpgSystemService } from './rpgSystemService';
+import { combatEffectService } from './combatEffectService';
 import { subscriptionService } from './subscriptionService';
 
 export {
@@ -19,5 +21,7 @@ export {
     sessionService,
     notificationService,
     userService,
+    rpgSystemService,
+    combatEffectService,
     subscriptionService
 }

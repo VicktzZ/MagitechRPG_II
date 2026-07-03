@@ -6,25 +6,79 @@ import { Box, Button, Grid, Typography, useTheme, FormHelperText, type ButtonPro
 import { blue, green, grey, purple, yellow } from '@mui/material/colors';
 import { useFormContext, useWatch, type FieldError } from 'react-hook-form';
 import { useState, type ReactElement, useRef, useCallback, useMemo, useEffect } from 'react';
-import type { Charsheet } from '@models/entities';
+import type { Charsheet, RPGSystem, SkillPointRules } from '@models/entities';
 import type { Expertises as ExpertisesType } from '@models';
+import { evaluateFormula } from '@utils/formulaEvaluator';
 
-// TODO: Ajustar limite de acordo com nível (5: Competente, 10: Experiente, 15: Especialista)
 export default function Expertises({ disabled }: { disabled?: boolean }): ReactElement {
-    const { control, setValue  , formState: { errors } } = useFormContext<Charsheet>()
+    const { control, setValue, getValues, formState: { errors } } = useFormContext<Charsheet>()
     const theme = useTheme()
+    const charsheet = getValues()
 
     const buttonRef = useRef<'add' | 'sub' | null>(null)
     
     const [ editValue, setEditValue ] = useState(0)
     const [ multiplier, setMultiplier ] = useState<number>(1)
+    const [ systemExpertises, setSystemExpertises ] = useState<RPGSystem['expertises'] | null>(null)
+    const [ skillPointRules, setSkillPointRules ] = useState<SkillPointRules | null>(null)
+    const [ loadingSystem, setLoadingSystem ] = useState(false)
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
+
+    // Carregar perícias do sistema se houver systemId
+    useEffect(() => {
+        if (charsheet.systemId) {
+            setLoadingSystem(true)
+            fetch(`/api/rpg-system/${charsheet.systemId}`)
+                .then(res => res.json())
+                .then((data: RPGSystem) => {
+                    if (data.expertises && data.expertises.length > 0) {
+                        setSystemExpertises(data.expertises)
+                        
+                        // Inicializar perícias customizadas
+                        const currentExpertises = getValues('expertises') || {}
+                        const newExpertises: any = { ...currentExpertises }
+                        let hasChanges = false
+                        
+                        // Adicionar perícias do sistema que não existem
+                        data.expertises.forEach(exp => {
+                            if (!newExpertises[exp.key]) {
+                                newExpertises[exp.key] = {
+                                    value: 0,
+                                    defaultAttribute: exp.defaultAttribute || 'sab'
+                                }
+                                hasChanges = true
+                            }
+                        })
+                        
+                        if (hasChanges) {
+                            setValue('expertises', newExpertises, { shouldValidate: false })
+                        }
+                    }
+                    if (data.skillPointRules) {
+                        setSkillPointRules(data.skillPointRules)
+                    }
+                })
+                .catch(err => console.error('Erro ao carregar perícias do sistema:', err))
+                .finally(() => setLoadingSystem(false))
+        }
+    }, [ charsheet.systemId ])
 
     const points = useWatch<Charsheet, 'points.expertises'>({
         control,
         name: 'points.expertises' as const,
         defaultValue: 0
-    }) 
+    })
+
+    const charsheetLevel = useWatch<Charsheet, 'level'>({
+        control,
+        name: 'level',
+        defaultValue: 1
+    })
+
+    const maxPerSkill = useMemo<number>(() => {
+        if (!skillPointRules?.maxPointsPerSkillFormula) return 10;
+        return Math.max(1, evaluateFormula(skillPointRules.maxPointsPerSkillFormula, { level: charsheetLevel || 1 }, 10));
+    }, [ skillPointRules, charsheetLevel ]);
 
     // Atualiza editValue quando o multiplicador muda e um botão está ativo
     // Também considera os pontos disponíveis para não permitir incrementos impossíveis
@@ -48,50 +102,47 @@ export default function Expertises({ disabled }: { disabled?: boolean }): ReactE
         name: 'expertises'
     }) 
 
-    const handleExpertiseChange = useCallback((name: keyof ExpertisesType, newValue: number): void => {
+    const handleExpertiseChange = useCallback((name: keyof ExpertisesType | string, newValue: number): void => {
         if (!expertises || disabled) return;
-        
-        const currentValue = expertises[name]?.value || 0;
-        
-        // Verifica se está tentando adicionar pontos
+
+        const currentValue = expertises[name as keyof ExpertisesType]?.value || 0;
+        const skillCost = skillPointRules?.classSkillCost ?? 1;
+
         if (newValue > currentValue) {
             const requestedDifference = newValue - currentValue;
-            
-            // Se não há pontos disponíveis, cancela a operação
+
             if (points <= 0) {
                 setEditValue(0);
                 buttonRef.current = null;
                 return;
             }
-            
-            // Se há pontos suficientes, usa a diferença solicitada
-            // Se não há pontos suficientes, usa todos os pontos disponíveis
-            const actualDifference = Math.min(requestedDifference, points);
+
+            const maxAffordableRanks = Math.floor(points / skillCost);
+            const roomLeftForCap = Math.max(0, maxPerSkill - currentValue);
+            const actualDifference = Math.min(requestedDifference, maxAffordableRanks, roomLeftForCap);
+
+            if (actualDifference <= 0) {
+                setEditValue(0);
+                buttonRef.current = null;
+                return;
+            }
+
             const finalValue = currentValue + actualDifference;
-            
-            // Atualiza os pontos disponíveis
-            setValue('points.expertises', points - actualDifference, { shouldValidate: true });
-            // Atualiza o valor da perícia
+            const pointsToSpend = actualDifference * skillCost;
+
+            setValue('points.expertises', points - pointsToSpend, { shouldValidate: true });
             setValue(`expertises.${name}.value`, finalValue, { shouldValidate: true });
         } else if (newValue < currentValue) {
-            // Se o novo valor seria negativo ou o multiplicador é maior que o valor atual,
-            // zera a perícia e devolve todos os pontos
             if (newValue < 0 || Math.abs(newValue - currentValue) > currentValue) {
-                // Devolve todos os pontos da perícia
-                setValue('points.expertises', points + currentValue, { shouldValidate: true });
-                // Zera a perícia
+                setValue('points.expertises', points + currentValue * skillCost, { shouldValidate: true });
                 setValue(`expertises.${name}.value`, 0, { shouldValidate: true });
             } else {
-                // Comportamento normal: devolve a diferença
                 const difference = currentValue - newValue;
-                setValue('points.expertises', points + difference, { shouldValidate: true });
+                setValue('points.expertises', points + difference * skillCost, { shouldValidate: true });
                 setValue(`expertises.${name}.value`, newValue, { shouldValidate: true });
             }
         }
-        
-        // Não limpa o estado de edição para permitir continuar adicionando/subtraindo pontos
-        // O usuário terá que clicar novamente no botão ativo para sair do modo de edição
-    }, [ disabled, expertises, setValue, points ]);
+    }, [ disabled, expertises, setValue, points, skillPointRules, maxPerSkill ]);
     
     function ExpertiseButton({ children, type }: { children: ReactElement, type: 'add' | 'sub' } & ButtonProps): ReactElement {
         const isActive = buttonRef.current === type;
@@ -119,6 +170,41 @@ export default function Expertises({ disabled }: { disabled?: boolean }): ReactE
 
     const renderExpertises = useMemo<ReactElement[]>(() => {
         if (!expertises) return [];
+        
+        // Se há perícias customizadas do sistema, renderizar apenas elas
+        if (systemExpertises && systemExpertises.length > 0) {
+            return systemExpertises.map((sysExpertise) => {
+                // Buscar ou criar expertise
+                let expertise = expertises[sysExpertise.key as keyof ExpertisesType]
+                
+                // Se não existir, criar temporariamente para renderização
+                if (!expertise) {
+                    expertise = {
+                        value: 0,
+                        defaultAttribute: sysExpertise.defaultAttribute || 'sab'
+                    }
+                }
+                
+                return (
+                    <Expertise
+                        key={sysExpertise.key}
+                        name={sysExpertise.key}
+                        expertise={expertise}
+                        diceQuantity={0}
+                        disabled={disabled ?? false}
+                        edit={{
+                            isEditing: buttonRef.current !== null,
+                            value: editValue
+                        }}
+                        onClick={(value: number) => handleExpertiseChange(sysExpertise.key as any, value)}
+                        customLabel={sysExpertise.name}
+                        maxValue={maxPerSkill}
+                    />
+                )
+            })
+        }
+        
+        // Caso contrário, renderizar perícias padrão do Magitech
         return Object.entries(expertises)
             .map(([ name, expertise ]) => {
                 if (!expertise) return null;
@@ -126,7 +212,7 @@ export default function Expertises({ disabled }: { disabled?: boolean }): ReactE
                 const expertiseName = name as keyof ExpertisesType;
                 
                 return (
-                    <Expertise 
+                    <Expertise
                         key={name}
                         name={expertiseName}
                         expertise={expertise}
@@ -137,11 +223,12 @@ export default function Expertises({ disabled }: { disabled?: boolean }): ReactE
                             value: editValue
                         }}
                         onClick={(value: number) => handleExpertiseChange(expertiseName, value)}
+                        maxValue={maxPerSkill}
                     />
                 );
             })
             .filter((expertise): expertise is ReactElement => expertise !== null);
-    }, [ expertises, disabled, editValue, handleExpertiseChange ]);
+    }, [ expertises, disabled, editValue, handleExpertiseChange, systemExpertises, maxPerSkill ]);
     
     const renderErrors = (): ReactElement | null => {
         if (!errors.expertises) return null;

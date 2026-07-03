@@ -1,9 +1,12 @@
 import type { CampaignData } from '@models/types/session'
-import type { Campaign } from '@models/entities'
+import type { Campaign, RPGSystem } from '@models/entities'
 import { createContext, useContext } from 'react'
 
 export interface CampaignContextValue extends CampaignData {
     updateCampaign: (data: Partial<Campaign>) => Promise<void>
+    rpgSystem: RPGSystem | null
+    loadingSystem: boolean
+    isDefaultSystem: boolean
 }
 
 export const campaignContext = createContext<CampaignContextValue>({
@@ -40,7 +43,10 @@ export const campaignContext = createContext<CampaignContextValue>({
     },
     charsheets: [],
     isUserGM: false,
-    updateCampaign: async () => {}
+    updateCampaign: async () => {},
+    rpgSystem: null,
+    loadingSystem: false,
+    isDefaultSystem: true
 })
 
 export const useCampaignContext = (): CampaignContextValue => useContext(campaignContext)

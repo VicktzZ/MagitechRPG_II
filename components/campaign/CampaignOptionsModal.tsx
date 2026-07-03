@@ -1,10 +1,10 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 'use client';
 
-import { Backdrop, CircularProgress, FormControl, InputLabel, MenuItem, Select, TextField, useTheme } from '@mui/material';
+import { Backdrop, CircularProgress, FormControl, InputLabel, MenuItem, Select, TextField, useTheme, Divider, Chip } from '@mui/material';
 import { Typography } from '@mui/material';
 import { Box, Modal } from '@mui/material';
-import { useState, type ReactElement } from 'react';
+import { useState, useEffect, type ReactElement } from 'react';
 import { useSnackbar } from 'notistack';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
@@ -12,7 +12,7 @@ import { Button } from '@mui/material';
 import { campaignService } from '@services';
 import { useMutation } from '@tanstack/react-query';
 import generateEntryCode from '@utils/generateEntryCode';
-import type { Campaign } from '@models/entities';
+import type { Campaign, RPGSystem } from '@models/entities';
 
 export default function CampaignOptionsModal({
     open,
@@ -29,10 +29,32 @@ export default function CampaignOptionsModal({
     const [ campaignProps, setCampaignProps ] = useState<Partial<Campaign>>({
         title: '',
         description: '',
-        mode: 'Classic'
+        mode: 'Classic',
+        systemId: undefined
     });
+    const [ availableSystems, setAvailableSystems ] = useState<RPGSystem[]>([]);
+    const [ loadingSystems, setLoadingSystems ] = useState(false);
 
     const { enqueueSnackbar } = useSnackbar();
+
+    // Carrega sistemas disponíveis quando o modal abre para criação
+    useEffect(() => {
+        if (open && contentType === 'create' && session?.user?.id) {
+            const fetchSystems = async () => {
+                setLoadingSystems(true);
+                try {
+                    const response = await fetch(`/api/rpg-system?userId=${session.user.id}`);
+                    const data = await response.json();
+                    setAvailableSystems(data);
+                } catch (error) {
+                    console.error('Erro ao carregar sistemas:', error);
+                } finally {
+                    setLoadingSystems(false);
+                }
+            };
+            fetchSystems();
+        }
+    }, [ open, contentType, session?.user?.id ]);
     const theme = useTheme();
     const router = useRouter();
     const { mutateAsync, isPending } = useMutation({
@@ -66,6 +88,7 @@ export default function CampaignOptionsModal({
                 title: campaignProps.title ?? '',
                 description: campaignProps.description ?? '',
                 mode: campaignProps.mode ?? 'Classic',
+                systemId: campaignProps.systemId,
                 players: [],
                 notes: [],
                 custom: {
@@ -162,6 +185,38 @@ export default function CampaignOptionsModal({
                                                 <MenuItem value="" disabled>Selecione um modo</MenuItem>
                                                 <MenuItem value='Classic'>Classic</MenuItem>
                                                 <MenuItem value='Roguelite'>Roguelite</MenuItem>
+                                            </Select>
+                                        </FormControl>
+
+                                        <Divider sx={{ my: 1 }}>
+                                            <Chip label="Sistema de RPG" size="small" />
+                                        </Divider>
+
+                                        <FormControl fullWidth>
+                                            <InputLabel>Sistema</InputLabel>
+                                            <Select
+                                                fullWidth
+                                                label='Sistema'
+                                                value={campaignProps.systemId || ''}
+                                                onChange={(e) => { setCampaignProps(state => ({ ...state, systemId: e.target.value || undefined })); }}
+                                                disabled={loadingSystems}
+                                            >
+                                                <MenuItem value="">
+                                                    <em>Magitech RPG (Padrão)</em>
+                                                </MenuItem>
+                                                {availableSystems.map((system) => (
+                                                    <MenuItem key={system.id} value={system.id}>
+                                                        {system.name}
+                                                        {system.isPublic && (
+                                                            <Chip 
+                                                                label="Público" 
+                                                                size="small" 
+                                                                sx={{ ml: 1 }} 
+                                                                color="info"
+                                                            />
+                                                        )}
+                                                    </MenuItem>
+                                                ))}
                                             </Select>
                                         </FormControl>
                                     </>

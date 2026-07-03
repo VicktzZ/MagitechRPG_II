@@ -38,6 +38,7 @@ import { useSnackbar } from 'notistack';
 import { useCampaignContext } from '@contexts';
 import { useSession } from 'next-auth/react';
 import type { Combat } from '@models';
+import EffectBadges from './gmDashboard/actions/EffectBadges';
 
 interface CombatStatusProps {
     campaignId: string;
@@ -529,6 +530,13 @@ export default function CombatStatus({
                                                             </Typography>
                                                         </Box>
                                                     )}
+                                                </Box>
+                                            )}
+
+                                            {/* Badges de efeitos ativos */}
+                                            {combatant.effects && combatant.effects.length > 0 && (
+                                                <Box sx={{ mt: 0.5 }}>
+                                                    <EffectBadges effects={combatant.effects} size="small" dense />
                                                 </Box>
                                             )}
                                         </Box>

@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { campaignEntity, charsheetEntity } from '@utils/firestoreEntities'
 import { savePerkToCharsheet } from '@features/roguelite/utils'
+import { recordCampaignStats } from '@utils/campaignStatsHelper'
 
 interface PurchaseBody {
     charsheetId: string
@@ -40,6 +41,13 @@ export async function POST(
             return NextResponse.json(
                 { error: 'Campanha não encontrada' },
                 { status: 404 }
+            )
+        }
+
+        if (campaign.status === 'finished') {
+            return NextResponse.json(
+                { error: 'Campanha finalizada — a loja está bloqueada' },
+                { status: 403 }
             )
         }
 
@@ -133,6 +141,26 @@ export async function POST(
         await campaignEntity.update(campaignId, {
             'shop.items': updatedShopItems
         })
+
+        // Estatísticas: compra na loja
+        const purchaseInc: Record<string, number> = {
+            'resources.moneySpent': item.price,
+            'resources.itemsPurchased': 1,
+            'progression.perksGained': 1
+        }
+        const perkTypeUpper = String(item.perkType || '').toUpperCase()
+        if (perkTypeUpper.includes('MAGIA') || perkTypeUpper.includes('SPELL')) {
+            purchaseInc['progression.spellsLearned'] = 1
+        }
+        if (perkTypeUpper.includes('HABILIDADE') || perkTypeUpper.includes('SKILL') || perkTypeUpper.includes('PODER')) {
+            purchaseInc['progression.skillsGained'] = 1
+        }
+        await recordCampaignStats(campaign.id, [ {
+            charsheetId,
+            userId: charsheet.userId,
+            charsheetName: charsheet.name,
+            inc: purchaseInc
+        } ])
 
         return NextResponse.json({
             success: true,

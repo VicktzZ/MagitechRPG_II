@@ -3,7 +3,17 @@
 
 import { rarityColor } from '@constants';
 import { useCampaignContext, useCampaignCurrentCharsheetContext } from '@contexts';
+import { useChatContext } from '@contexts/chatContext';
+import { MessageType } from '@enums';
 import type { RarityType } from '@models/types/string';
+import { Message, type Weapon } from '@models';
+import {
+    rollWeaponHit,
+    rollWeaponDamage,
+    buildHitMessageText,
+    buildDamageMessageText,
+    buildDamageErrorText
+} from '@utils/combat/weaponRoller';
 import { 
     ExpandMore,
     Inventory2,
@@ -14,7 +24,10 @@ import {
     AutoFixNormal,
     Search,
     Delete,
-    CardGiftcard
+    CardGiftcard,
+    Casino,
+    GpsFixed,
+    Bolt
 } from '@mui/icons-material';
 
 /**
@@ -60,7 +73,7 @@ import {
     IconButton
 } from '@mui/material';
 import { useSnackbar } from 'notistack';
-import { red, blue, green, orange, grey } from '@mui/material/colors';
+import { red, blue, green, orange, grey, purple } from '@mui/material/colors';
 import { type ReactElement, useState, useMemo } from 'react';
 import { useSession } from '@node_modules/next-auth/react';
 import { type SessionPlayer } from '@features/roguelite/components';
@@ -72,10 +85,45 @@ export default function InventorySection(): ReactElement {
     const { charsheet, updateCharsheet } = useCampaignCurrentCharsheetContext();
     const { users, campaign, charsheets } = useCampaignContext();
     const { data: session } = useSession();
+    const { handleSendMessage, setIsChatOpen, isChatOpen } = useChatContext();
     const theme = useTheme();
     const { enqueueSnackbar } = useSnackbar();
     const [ activeTab, setActiveTab ] = useState<InventoryTab>('all');
     const [ searchQuery, setSearchQuery ] = useState('');
+
+    const sendCombatChatMessage = async (text: string) => {
+        if (!session?.user) return;
+        await handleSendMessage(new Message({
+            text,
+            type: MessageType.COMBAT_LOG,
+            by: {
+                id: session.user.id ?? '',
+                name: session.user.name ?? '',
+                image: session.user.image ?? ''
+            },
+            timestamp: new Date().toISOString(),
+            isHTML: true
+        }));
+        if (!isChatOpen) setIsChatOpen(true);
+    };
+
+    const handleWeaponHit = async (weapon: Weapon, e: React.MouseEvent) => {
+        e.stopPropagation();
+        const hit = rollWeaponHit(weapon, charsheet);
+        const playerName = charsheet?.name || session?.user?.name || 'Jogador';
+        await sendCombatChatMessage(buildHitMessageText(playerName, weapon, hit));
+    };
+
+    const handleWeaponDamage = async (weapon: Weapon, isCritical: boolean, e: React.MouseEvent) => {
+        e.stopPropagation();
+        const result = rollWeaponDamage(weapon, isCritical);
+        const playerName = charsheet?.name || session?.user?.name || 'Jogador';
+        if (!result) {
+            await sendCombatChatMessage(buildDamageErrorText(weapon, isCritical));
+            return;
+        }
+        await sendCombatChatMessage(buildDamageMessageText(playerName, weapon, result));
+    };
     
     // Estado para modal de doação
     const [ donationModal, setDonationModal ] = useState<{
@@ -542,6 +590,81 @@ export default function InventorySection(): ReactElement {
                             </Box>
                         )}
                         
+                        {/* Ações de Combate (somente para armas) */}
+                        {type === 'weapon' && (
+                            <Box
+                                sx={{
+                                    display: 'flex',
+                                    flexWrap: 'wrap',
+                                    gap: 1,
+                                    p: 1.5,
+                                    borderRadius: 1.5,
+                                    bgcolor: theme.palette.mode === 'dark' ? '#0f172a' : '#f8fafc',
+                                    border: '1px dashed',
+                                    borderColor: red[500] + '40'
+                                }}
+                            >
+                                <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                    sx={{ width: '100%', mb: 0.5, display: 'flex', alignItems: 'center', gap: 0.5 }}
+                                >
+                                    <Casino fontSize="small" sx={{ fontSize: '0.9rem' }} /> Ações de combate
+                                </Typography>
+                                <Tooltip title={`Teste de acerto (${(item as Weapon).hit?.toUpperCase?.() ?? '?'})`}>
+                                    <Chip
+                                        icon={<GpsFixed sx={{ fontSize: '0.95rem !important' }} />}
+                                        label="Acerto"
+                                        size="small"
+                                        clickable
+                                        onClick={(e) => handleWeaponHit(item as Weapon, e)}
+                                        sx={{
+                                            bgcolor: blue[500] + '20',
+                                            color: blue[700],
+                                            fontWeight: 600,
+                                            border: '1px solid',
+                                            borderColor: blue[500] + '40',
+                                            '&:hover': { bgcolor: blue[500] + '35' }
+                                        }}
+                                    />
+                                </Tooltip>
+                                <Tooltip title={`Rolar dano (${item.effect?.value || '—'})`}>
+                                    <Chip
+                                        icon={<AutoFixNormal sx={{ fontSize: '0.95rem !important' }} />}
+                                        label={`Dano${item.effect?.value ? ` ${item.effect.value}` : ''}`}
+                                        size="small"
+                                        clickable
+                                        onClick={(e) => handleWeaponDamage(item as Weapon, false, e)}
+                                        sx={{
+                                            bgcolor: red[500] + '20',
+                                            color: red[700],
+                                            fontWeight: 600,
+                                            border: '1px solid',
+                                            borderColor: red[500] + '40',
+                                            '&:hover': { bgcolor: red[500] + '35' }
+                                        }}
+                                    />
+                                </Tooltip>
+                                <Tooltip title={`Rolar dano crítico (${item.effect?.critValue || '—'})`}>
+                                    <Chip
+                                        icon={<Bolt sx={{ fontSize: '0.95rem !important' }} />}
+                                        label={`Crítico${item.effect?.critValue ? ` ${item.effect.critValue}` : ''}`}
+                                        size="small"
+                                        clickable
+                                        onClick={(e) => handleWeaponDamage(item as Weapon, true, e)}
+                                        sx={{
+                                            bgcolor: purple[500] + '20',
+                                            color: purple[700],
+                                            fontWeight: 600,
+                                            border: '1px solid',
+                                            borderColor: purple[500] + '40',
+                                            '&:hover': { bgcolor: purple[500] + '35' }
+                                        }}
+                                    />
+                                </Tooltip>
+                            </Box>
+                        )}
+
                         {/* Botões de Ação */}
                         <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 1 }}>
                             {/* Botão de Doar */}

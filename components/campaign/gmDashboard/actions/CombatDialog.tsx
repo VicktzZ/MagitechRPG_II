@@ -32,12 +32,16 @@ import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import PersonIcon from '@mui/icons-material/Person';
 import PetsIcon from '@mui/icons-material/Pets';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import { red, green, blue, orange, grey } from '@mui/material/colors';
 import { useSnackbar } from 'notistack';
 import { useChannel } from '@contexts/channelContext';
 import { PusherEvent } from '@enums';
 import type { PlayerInfo } from './types';
-import type { Creature } from '@models';
+import type { AppliedEffect, Creature } from '@models';
+import EffectBadges from './EffectBadges';
+import ApplyEffectDialog from './ApplyEffectDialog';
+import { campaignService } from '@services';
 
 interface CombatDialogProps {
     open: boolean;
@@ -65,6 +69,7 @@ interface Combatant {
     maxLp?: number;
     currentMp?: number;
     maxMp?: number;
+    effects?: AppliedEffect[];
 }
 
 interface Combat {
@@ -101,6 +106,18 @@ export default function CombatDialog({
     const [ initiativeValue, setInitiativeValue ] = useState<number>(0);
     const [ selectedCombatantForInit, setSelectedCombatantForInit ] = useState<string | null>(null);
     const [ showEnemyLp, setShowEnemyLp ] = useState(false);
+
+    // Aplicação de efeito
+    const [ applyEffectTarget, setApplyEffectTarget ] = useState<{ id: string; name: string } | null>(null);
+
+    const handleRemoveEffect = useCallback(async (combatantId: string, appliedEffectId: string) => {
+        try {
+            await campaignService.removeCombatEffect(campaignId, { targetId: combatantId, appliedEffectId });
+            enqueueSnackbar('Efeito removido', { variant: 'success' });
+        } catch (err: any) {
+            enqueueSnackbar(err?.response?.data?.error ?? 'Erro ao remover efeito', { variant: 'error' });
+        }
+    }, [ campaignId, enqueueSnackbar ]);
 
     // Função para obter stats do charsheet
     const getPlayerStats = useCallback((combatant: Combatant) => {
@@ -580,35 +597,56 @@ export default function CombatDialog({
                                         </ListItemAvatar>
                                         <ListItemText 
                                             primary={
-                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
                                                     {combatant.name}
                                                     {isCurrentTurn && <Chip label="🎯" size="small" />}
+                                                    <Tooltip title="Aplicar efeito">
+                                                        <IconButton
+                                                            size="small"
+                                                            onClick={() => setApplyEffectTarget({ id: combatant.id, name: combatant.name })}
+                                                            sx={{ ml: 0.5 }}
+                                                        >
+                                                            <AutoFixHighIcon fontSize="small" />
+                                                        </IconButton>
+                                                    </Tooltip>
                                                 </Box>
                                             }
                                             secondary={
-                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                    <Typography variant="caption" component="span">
-                                                        LP: {currentLp}/{maxLp}
-                                                    </Typography>
-                                                    <LinearProgress 
-                                                        variant="determinate" 
-                                                        value={lpPercent}
-                                                        sx={{ 
-                                                            width: 60, 
-                                                            height: 6, 
-                                                            borderRadius: 1,
-                                                            bgcolor: grey[300],
-                                                            '& .MuiLinearProgress-bar': {
-                                                                bgcolor: lpPercent > 50 
-                                                                    ? green[500] 
-                                                                    : lpPercent > 25 
-                                                                        ? orange[500] 
-                                                                        : red[500]
-                                                            }
-                                                        }}
-                                                    />
+                                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                        <Typography variant="caption" component="span">
+                                                            LP: {currentLp}/{maxLp}
+                                                        </Typography>
+                                                        <LinearProgress 
+                                                            variant="determinate" 
+                                                            value={lpPercent}
+                                                            sx={{ 
+                                                                width: 60, 
+                                                                height: 6, 
+                                                                borderRadius: 1,
+                                                                bgcolor: grey[300],
+                                                                '& .MuiLinearProgress-bar': {
+                                                                    bgcolor: lpPercent > 50 
+                                                                        ? green[500] 
+                                                                        : lpPercent > 25 
+                                                                            ? orange[500] 
+                                                                            : red[500]
+                                                                }
+                                                            }}
+                                                        />
+                                                    </Box>
+                                                    {combatant.effects && combatant.effects.length > 0 && (
+                                                        <Box sx={{ mt: 0.5 }} onClick={e => e.stopPropagation()}>
+                                                            <EffectBadges
+                                                                effects={combatant.effects}
+                                                                canRemove
+                                                                onRemove={(id) => handleRemoveEffect(combatant.id, id)}
+                                                            />
+                                                        </Box>
+                                                    )}
                                                 </Box>
                                             }
+                                            secondaryTypographyProps={{ component: 'div' }}
                                         />
                                     </ListItem>
                                 );
@@ -740,6 +778,15 @@ export default function CombatDialog({
                     </Button>
                 )}
             </DialogActions>
+
+            <ApplyEffectDialog
+                open={!!applyEffectTarget}
+                onClose={() => setApplyEffectTarget(null)}
+                campaignId={campaignId}
+                target={applyEffectTarget}
+                appliedByName="GM"
+                onApplied={() => { void fetchCombat(); }}
+            />
         </Dialog>
     );
 }

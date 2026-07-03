@@ -1,4 +1,4 @@
-import { Campaign, Charsheet, Notification, Power, Spell, User, Perk, ItemEntity, ArmorEntity, WeaponEntity, SkillEntity, Job } from '@models/entities';
+import { Campaign, CampaignStats, Charsheet, Notification, Power, Spell, User, Perk, ItemEntity, ArmorEntity, WeaponEntity, SkillEntity, Job, RPGSystem, CombatEffectEntity } from '@models/entities';
 import { initFirebaseAdmin } from '@utils/initializeFireOrm';
 import { getRepository } from 'fireorm';
 
@@ -16,3 +16,6 @@ export const armorRepository = getRepository(ArmorEntity);
 export const weaponRepository = getRepository(WeaponEntity);
 export const skillRepository = getRepository(SkillEntity);
 export const jobRepository = getRepository(Job);
+export const rpgSystemRepository = getRepository(RPGSystem);
+export const combatEffectRepository = getRepository(CombatEffectEntity);
+export const campaignStatsRepository = getRepository(CampaignStats);

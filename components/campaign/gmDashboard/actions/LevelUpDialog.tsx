@@ -24,15 +24,17 @@ import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import { blue, green } from '@mui/material/colors';
 import { useSnackbar } from 'notistack';
 import { charsheetService } from '@services';
+import { postCampaignStats, type StatsEntry } from '@utils/campaignStatsClient';
 import type { PlayerInfo } from './types';
 
 interface LevelUpDialogProps {
     open: boolean;
     onClose: () => void;
     players: PlayerInfo[];
+    campaignId?: string;
 }
 
-export default function LevelUpDialog({ open, onClose, players }: LevelUpDialogProps) {
+export default function LevelUpDialog({ open, onClose, players, campaignId }: LevelUpDialogProps) {
     const { enqueueSnackbar } = useSnackbar();
     const [ selectedPlayers, setSelectedPlayers ] = useState<string[]>([]);
     const [ levelsToAdd, setLevelsToAdd ] = useState(1);
@@ -52,6 +54,21 @@ export default function LevelUpDialog({ open, onClose, players }: LevelUpDialogP
 
             for (const charsheetId of charsheetIds) {
                 await charsheetService.increaseLevel(charsheetId, levelsToAdd);
+            }
+
+            // Estatísticas: níveis ganhos + maior nível atingido
+            if (campaignId) {
+                const statsEntries: StatsEntry[] = selectedPlayers
+                    .map(playerId => players.find(p => p.id === playerId))
+                    .filter(p => p?.charsheet?.id)
+                    .map(p => ({
+                        charsheetId: p!.charsheet!.id,
+                        userId: p!.id,
+                        charsheetName: p!.charsheet!.name,
+                        inc: { 'progression.levelsGained': levelsToAdd },
+                        max: { 'progression.highestLevel': (p!.charsheet!.level ?? 0) + levelsToAdd }
+                    }));
+                postCampaignStats(campaignId, statsEntries);
             }
 
             enqueueSnackbar(

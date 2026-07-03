@@ -21,7 +21,7 @@ import type { Attributes, Expertise as ExpertiseType, Expertises } from '@models
 import type { Charsheet } from '@models/entities';
 
 interface ExpertiseProps {
-    name: keyof Expertises;
+    name: keyof Expertises | string;
     expertise: ExpertiseType;
     diceQuantity: number;
     disabled: boolean;
@@ -30,14 +30,18 @@ interface ExpertiseProps {
         value: number;
     };
     onClick?: (value: number) => void;
+    customLabel?: string;
+    maxValue?: number;
 }
 
-export default function Expertise({ 
+export default function Expertise({
     name,
     expertise,
     disabled,
     edit,
-    onClick
+    onClick,
+    customLabel,
+    maxValue = 10
 }: ExpertiseProps): ReactElement {
     const theme = useTheme();
     const matches = useMediaQuery(theme.breakpoints.down('md'));
@@ -77,7 +81,7 @@ export default function Expertise({
             // Permite incrementar pontos em perícias negativas e respeita os limites máximos
             if (edit.value > 0 && expertise.value < 0) {
                 onClick(newValue);
-            } else if (getValues().id ? newValue >= 0 && newValue <= 10 : newValue >= 0 && newValue <= 3) {
+            } else if (getValues().id ? newValue >= 0 && newValue <= maxValue : newValue >= 0 && newValue <= Math.min(maxValue, 3)) {
                 onClick(newValue);
             }
         }
@@ -86,7 +90,7 @@ export default function Expertise({
     const getEditPreview = useCallback((): number => {
         if (!edit?.isEditing) return expertise.value;
         const newValue = expertise.value + edit.value;
-        return Math.max(0, Math.min(10, newValue));
+        return Math.max(0, Math.min(maxValue, newValue));
     }, [ edit, expertise.value ]);
 
     const isEditing = edit?.isEditing ?? false;
@@ -118,7 +122,7 @@ export default function Expertise({
                     title={
                         <Box>
                             <Typography variant="subtitle2" fontWeight="bold">
-                                {name}
+                                {customLabel || (typeof name === 'string' ? name : String(name))}
                             </Typography>
                             <Typography variant="body2">
                                 Nível: {proficiencyLevel}
@@ -279,7 +283,7 @@ export default function Expertise({
                                         minHeight: matches ? '32px' : '40px'
                                     }}
                                 >
-                                    {name}
+                                    {customLabel || (typeof name === 'string' ? name : String(name))}
                                 </Typography>
                             </Box>
 

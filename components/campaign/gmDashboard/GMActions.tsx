@@ -17,6 +17,10 @@ import BoltIcon from '@mui/icons-material/Bolt';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import PetsIcon from '@mui/icons-material/Pets';
 import SportsKabaddiIcon from '@mui/icons-material/SportsKabaddi';
+import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
+import FlagIcon from '@mui/icons-material/Flag';
+import ReplayIcon from '@mui/icons-material/Replay';
+import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 
 import {
     Box,
@@ -44,10 +48,13 @@ import {
     ShopDialog,
     MassActionDialog,
     CombatDialog,
+    CombatEffectsCatalogDialog,
+    FinishCampaignDialog,
     type PlayerInfo,
     type MassActionType
 } from './actions';
 import CreatureCreator from './CreatureCreator';
+import CampaignStatsModal from '../CampaignStatsModal';
 
 export default function GMActions(): ReactElement {
     const { campaign, isUserGM, users, charsheets } = useCampaignContext();
@@ -69,6 +76,12 @@ export default function GMActions(): ReactElement {
     const [ massActionDialogOpen, setMassActionDialogOpen ] = useState(false);
     const [ massActionType, setMassActionType ] = useState<MassActionType | null>(null);
     const [ combatDialogOpen, setCombatDialogOpen ] = useState(false);
+    const [ effectsCatalogOpen, setEffectsCatalogOpen ] = useState(false);
+    const [ finishDialogOpen, setFinishDialogOpen ] = useState(false);
+    const [ statsModalOpen, setStatsModalOpen ] = useState(false);
+    const [ isReopening, setIsReopening ] = useState(false);
+
+    const isFinished = campaign.status === 'finished';
 
     // Realtime charsheet data
     const { data: realtimeCharsheets } = useFirestoreRealtime('charsheet', {
@@ -155,6 +168,40 @@ export default function GMActions(): ReactElement {
     const openCombat = () => {
         setCombatDialogOpen(true);
         handleCloseMenu();
+    };
+
+    const openEffectsCatalog = () => {
+        setEffectsCatalogOpen(true);
+        handleCloseMenu();
+    };
+
+    const openFinishDialog = () => {
+        setFinishDialogOpen(true);
+        handleCloseMenu();
+    };
+
+    const openStatsModal = () => {
+        setStatsModalOpen(true);
+        handleCloseMenu();
+    };
+
+    const handleReopenCampaign = async () => {
+        handleCloseMenu();
+        setIsReopening(true);
+        try {
+            const response = await fetch(`/api/campaign/${campaign.id}/finish`, { method: 'DELETE' });
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.error || 'Erro ao reabrir campanha');
+            }
+            enqueueSnackbar('Campanha reaberta!', { variant: 'success' });
+            await queryClient.invalidateQueries({ queryKey: [ 'campaignData', campaign.campaignCode ] });
+        } catch (error: any) {
+            console.error('Erro ao reabrir campanha:', error);
+            enqueueSnackbar(error.message || 'Erro ao reabrir campanha', { variant: 'error' });
+        } finally {
+            setIsReopening(false);
+        }
     };
 
     // Custom item handler
@@ -306,6 +353,13 @@ export default function GMActions(): ReactElement {
                     </MenuItemText>
                 </MenuItem>
 
+                <MenuItem onClick={openEffectsCatalog} disabled={!isUserGM}>
+                    <ListItemIcon>
+                        <AutoFixHighIcon fontSize="small" sx={{ color: blue[500] }} />
+                    </ListItemIcon>
+                    <MenuItemText>Efeitos de Combate</MenuItemText>
+                </MenuItem>
+
                 <Divider />
 
                 {/* Ações em Massa */}
@@ -333,6 +387,32 @@ export default function GMActions(): ReactElement {
                     </ListItemIcon>
                     <MenuItemText>Adicionar Dinheiro</MenuItemText>
                 </MenuItem>
+
+                <Divider />
+
+                {/* Ciclo de vida da campanha */}
+                <MenuItem onClick={openStatsModal}>
+                    <ListItemIcon>
+                        <EmojiEventsIcon fontSize="small" sx={{ color: orange[400] }} />
+                    </ListItemIcon>
+                    <MenuItemText>Ver Estatísticas da Campanha</MenuItemText>
+                </MenuItem>
+
+                {!isFinished ? (
+                    <MenuItem onClick={openFinishDialog} disabled={!isUserGM}>
+                        <ListItemIcon>
+                            <FlagIcon fontSize="small" sx={{ color: orange[600] }} />
+                        </ListItemIcon>
+                        <MenuItemText>Finalizar Campanha</MenuItemText>
+                    </MenuItem>
+                ) : (
+                    <MenuItem onClick={handleReopenCampaign} disabled={!isUserGM || isReopening}>
+                        <ListItemIcon>
+                            <ReplayIcon fontSize="small" sx={{ color: green[500] }} />
+                        </ListItemIcon>
+                        <MenuItemText>Reabrir Campanha</MenuItemText>
+                    </MenuItem>
+                )}
             </Menu>
 
             {/* Dialogs */}
@@ -346,6 +426,7 @@ export default function GMActions(): ReactElement {
                 open={levelUpDialogOpen}
                 onClose={() => setLevelUpDialogOpen(false)}
                 players={players}
+                campaignId={campaign.id}
             />
 
             <RogueliteLevelUpDialog
@@ -400,6 +481,30 @@ export default function GMActions(): ReactElement {
                 creatures={campaign.custom?.creatures || []}
                 charsheets={realtimeCharsheets || []}
                 existingCombat={campaign.session?.combat}
+            />
+
+            <CombatEffectsCatalogDialog
+                open={effectsCatalogOpen}
+                onClose={() => setEffectsCatalogOpen(false)}
+                campaignId={campaign.id}
+            />
+
+            <FinishCampaignDialog
+                open={finishDialogOpen}
+                onClose={() => setFinishDialogOpen(false)}
+                campaignId={campaign.id}
+                campaignTitle={campaign.title}
+                onFinished={async () => {
+                    await queryClient.invalidateQueries({ queryKey: [ 'campaignData', campaign.campaignCode ] });
+                    setStatsModalOpen(true);
+                }}
+            />
+
+            <CampaignStatsModal
+                open={statsModalOpen}
+                onClose={() => setStatsModalOpen(false)}
+                campaignId={campaign.id}
+                campaignTitle={campaign.title}
             />
         </Box>
     );

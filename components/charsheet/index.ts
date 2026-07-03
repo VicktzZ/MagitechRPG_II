@@ -5,6 +5,7 @@ import SpellsModal from './dialogs/MagicsModal';
 import Skills from './Skills';
 import Inventory from './Inventory';
 import Attributes from './Attributes';
+import DynamicAttributes from './DynamicAttributes';
 import Attribute from './subcomponents/Attribute';
 import Characteristics from './Characteristics';
 import Expertises from './Expertises';
@@ -16,12 +17,14 @@ import CreateItemModal from './dialogs/inventoryCreateModals/CreateItemModal';
 import CustomDices from './CustomDices';
 import LevelAndInfo from './LevelAndInfo';
 import Passives from './subcomponents/Passives';
+import CustomResources from './CustomResources';
 
 export {
     Expertise,
     Item,
     Passives,
     Attributes,
+    DynamicAttributes,
     CharsheetCard,
     Attribute,
     CreateItemModal as ItemModal,
@@ -35,5 +38,6 @@ export {
     Magics,
     Skills,
     LevelAndInfo,
-    SpellsModal as MagicsModal
+    SpellsModal as MagicsModal,
+    CustomResources
 }

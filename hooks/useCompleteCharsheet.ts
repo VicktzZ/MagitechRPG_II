@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/prefer-nullish-coalescing */
 import type { CharsheetDTO, SpellDTO } from '@models/dtos';
 import { useMemo } from 'react';
+import { useFirestoreByIds } from './useFirestoreByIds';
 import { useFirestoreRealtime } from './useFirestoreRealtime';
 
 /**
@@ -67,12 +68,8 @@ export function useCompleteCharsheet({
         data: relatedSpells,
         loading: spellsLoading,
         error: spellsError
-    } = useFirestoreRealtime('spell', {
-        // Firestore 'in' suporta no máximo 10 itens. Se >10, evitamos a busca para não quebrar.
-        filters: spellIdsToFetch.length > 0 && spellIdsToFetch.length <= 10
-            ? [ { field: 'id', operator: 'in', value: spellIdsToFetch } ]
-            : undefined,
-        enabled: enabled && spellIdsToFetch.length > 0 && spellIdsToFetch.length <= 10
+    } = useFirestoreByIds('spell', spellIdsToFetch, {
+        enabled: enabled && spellIdsToFetch.length > 0
     });
 
     const powersInput = useMemo<unknown[]>(() => normalizeToArray(charsheet?.skills?.powers), [ charsheet?.skills?.powers ]);
@@ -89,11 +86,8 @@ export function useCompleteCharsheet({
         data: relatedPowers,
         loading: powersLoading,
         error: powersError
-    } = useFirestoreRealtime('power', {
-        filters: powerIdsToFetch.length > 0 && powerIdsToFetch.length <= 10
-            ? [ { field: 'id', operator: 'in', value: powerIdsToFetch } ]
-            : undefined,
-        enabled: enabled && powerIdsToFetch.length > 0 && powerIdsToFetch.length <= 10
+    } = useFirestoreByIds('power', powerIdsToFetch, {
+        enabled: enabled && powerIdsToFetch.length > 0
     });
 
     const completeCharsheet = useMemo((): CharsheetDTO | null => {
@@ -133,11 +127,11 @@ export function useCompleteCharsheet({
         }
 
         return charsheetWithRelations;
-    }, [ charsheet, relatedSpells, relatedPowers, enabled ]);
+    }, [ charsheet, relatedSpells, relatedPowers, enabled, spellIdsToFetch, powerIdsToFetch, spellObjects, powerObjects ]);
 
     // Considera carregando enquanto ainda precisamos resolver IDs e estamos tentando buscar
-    const needsSpellFetch = enabled && spellIdsToFetch.length > 0 && spellIdsToFetch.length <= 10;
-    const needsPowerFetch = enabled && powerIdsToFetch.length > 0 && powerIdsToFetch.length <= 10;
+    const needsSpellFetch = enabled && spellIdsToFetch.length > 0;
+    const needsPowerFetch = enabled && powerIdsToFetch.length > 0;
     const loading = enabled ? (charsheetLoading || (needsSpellFetch && spellsLoading) || (needsPowerFetch && powersLoading)) : false;
     const error = charsheetError || spellsError || powersError;
 

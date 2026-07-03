@@ -10,6 +10,7 @@ import { FormProvider, useForm } from 'react-hook-form';
 import { CampaignGMDashboard, CampaignHeader, CampaignNotes, CampaignPlayerDashboard, SessionChat } from '.';
 import type { CharsheetDTO } from '@models/dtos';
 import GMActions from './gmDashboard/GMActions';
+import CampaignFinishedBanner from './CampaignFinishedBanner';
 
 export default function CampaignComponent(): ReactElement {
     const { isUserGM, campaign: { campaignCode }, charsheets  } = useCampaignContext();
@@ -56,6 +57,7 @@ export default function CampaignComponent(): ReactElement {
     const content = (
         <>
             <CampaignHeader />
+            <CampaignFinishedBanner />
             <Box sx={{
                 display: 'flex',
                 position: 'relative',

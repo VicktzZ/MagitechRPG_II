@@ -146,7 +146,8 @@ const SkillsSchema = z.object({
         { message: 'Poderes não podem ter nomes duplicados' }
     ),
     lineage: z.array(SkillSchema).optional().default([]),
-    race: z.array(SkillSchema).optional().default([])
+    race: z.array(SkillSchema).optional().default([]),
+    occupation: z.array(SkillSchema).optional().default([])
 })
 
 const AmmoCounterSchema = z.object({
@@ -299,18 +300,8 @@ const ExpertiseValueSchema = z.object({
     value: z.number().int().min(-10, 'O valor da perícia não pode ser menor que -10')
         .max(10, 'O valor máximo para uma perícia é 10')
         .default(0),
-    defaultAttribute: z.union([
-        z.enum([ 'vig', 'des', 'foc', 'log', 'sab', 'car' ]),
-        z.null()
-    ]).optional().nullable().refine((value) => {
-        if (value === null) {
-            return true;
-        }
-        return typeof value === 'string';
-    }, {
-        message: 'O atributo base deve ser um valor válido ou nulo',
-        path: [ 'defaultAttribute' ]
-    })
+    // Aceita qualquer string para suportar atributos de sistemas customizados (ex: rac, tec, con)
+    defaultAttribute: z.string().nullable().optional()
 })
 
 const ExpertisesSchema = z.record(ExpertiseValueSchema).superRefine((expertises, ctx) => {
@@ -345,10 +336,11 @@ export const charsheetSchema = z.object({
     userId: z.string().min(1, 'ID do usuário é obrigatório'),
     name: z.string().min(1, 'O nome do personagem é obrigatório'),
     createdAt: z.string().default(new Date().toISOString()),
+    systemId: z.string().optional(),
     age: z.coerce.number().int().min(0, 'A idade deve ser um número positivo'),
-    class: Classes.min(1, 'Classe é obrigatória'),
-    race: Races.min(1, 'Raça é obrigatória'),
-    lineage: z.string().min(1, 'A linhagem é obrigatória'),
+    class: Classes.optional().default(''),
+    race: Races.optional().default(''),
+    lineage: z.string().optional().default(''),
     ORMLevel: z.number().int().min(0, 'Nível de ORM não pode ser negativo').default(0),
     inventory: z.object({
         items: z.array(InventoryItemSchema).optional().default([]).refine(
@@ -382,26 +374,18 @@ export const charsheetSchema = z.object({
     spellStages: z.record(z.coerce.number().int().min(1).max(3))
         .optional()
         .default({}),
-    spells: z.array(MagicSchema)
-        .min(1, 'Pelo menos uma magia deve ser definida')
-        .default([]),
+    spells: z.array(MagicSchema).default([]),
     anotacoes: z.string().optional(),
     spellSpace: z.number().int().min(0, 'Espaço de magias não pode ser negativo').default(0),
     mpLimit: z.number().int().min(0, 'Limite de MP não pode ser negativo').default(0),
     overall: z.number().int().min(0, 'Overall não pode ser negativo').default(0),
-    gender: z.string()
-        .min(1, 'Gênero é obrigatório')
-        .refine(v => Genders.options.includes(v as any), {
-            message: `Gênero inválido. Opções válidas: ${Genders.options.join(', ')}`
-        }),
-    elementalMastery: Elements,
+    // Gênero: valida contra o enum do Magitech, mas aceita qualquer string para sistemas customizados
+    gender: z.string().optional().default('Não definido'),
+    elementalMastery: z.string().optional().default(''),
     level: z.number().int().min(0, 'Nível não pode ser negativo').default(0),
     subclass: z.string().optional(),
-    financialCondition: z.string()
-        .min(1, 'Condição financeira é obrigatória')
-        .refine(v => FinancialConditions.options.includes(v as any), {
-            message: `Condição financeira inválida. Opções válidas: ${FinancialConditions.options.join(', ')}`
-        }),
+    // Condição financeira: opcional para sistemas que não a utilizam
+    financialCondition: z.string().optional().default(''),
     expertises: ExpertisesSchema.default({}).refine(
         expertises => {
             // Garante que todas as perícias tenham valores válidos
@@ -417,7 +401,7 @@ export const charsheetSchema = z.object({
             path: [ 'expertises' ]
         }
     ),
-    traits: z.array(z.string()).min(2, 'Pelo menos dois traços devem ser definidos (positivo e negativo)').default([]),
+    traits: z.array(z.string()).default([]),
     session: z.array(SessionInfoSchema).optional().default([]),
     skills: SkillsSchema,
     points: PointsSchema,
@@ -431,7 +415,13 @@ export const charsheetSchema = z.object({
     mods: ModsSchema.default({
         attributes: { des: 0, vig: 0, log: 0, sab: 0, foc: 0, car: 0 },
         discount: -10
-    })
+    }),
+    // Recursos customizados definidos pelo sistema (ex: Bateria, O2, Estresse no Cosmos RPG)
+    customResources: z.record(z.number()).optional().default({}),
+    // Profissão/ocupação de sistemas customizados (Magitech usa lineage no modo Apocalypse)
+    occupation: z.string().optional().default(''),
+    // Valores de campos iniciais customizados do sistema (ex: Altura, Peso)
+    customFields: z.record(z.union([ z.string(), z.number(), z.boolean() ])).optional().default({})
 })
 
 // Tipo inferido do schema

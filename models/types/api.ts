@@ -17,7 +17,9 @@ export type ApiRoutes =
     '/connect' |
     '/session/disconnect' |
     '/disconnect' |
-    '/user'
+    '/user' |
+    '/rpg-system' |
+    '/rpg-system'
 
 export interface ApiParams<K extends string = '', L = unknown> { queryParams?: QueryParamsDto<K>, param?: string, body?: L }
 export type ApiBaseRequestType<T, K extends string = '', L = unknown> = (params?: ApiParams<K, L>) => Promise<AxiosResponse<T>>

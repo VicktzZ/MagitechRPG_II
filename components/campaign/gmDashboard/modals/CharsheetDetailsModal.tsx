@@ -30,6 +30,7 @@ import { Edit, Save, Cancel, Delete } from '@mui/icons-material';
 import ChangePlayerStatusModal from './ChangePlayerStatusModal';
 import type { CharsheetDTO } from '@models/dtos';
 import { useFirestoreRealtime } from '@hooks/useFirestoreRealtime';
+import { useFirestoreByIds } from '@hooks/useFirestoreByIds';
 import { charsheetEntity } from '@utils/firestoreEntities';
 import { useSnackbar } from 'notistack';
 import { green, red, orange, blue, grey, brown, yellow, purple } from '@mui/material/colors';
@@ -309,12 +310,13 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet }: Char
         });
     };
 
-    const { data: spells } = useFirestoreRealtime('spell', {
-        filters: [
-            { field: 'id', operator: 'in', value: charsheet.spells }
-        ],
-        enabled: charsheet.spells.length > 0
+    const charsheetSpellsList = normalizeToArray<any>(charsheet.spells);
+    const charsheetSpellIds: string[] = charsheetSpellsList.filter((s: any): s is string => typeof s === 'string');
+    const charsheetSpellObjects: any[] = charsheetSpellsList.filter((s: any) => typeof s === 'object' && s !== null);
+    const { data: fetchedSpells } = useFirestoreByIds('spell', charsheetSpellIds, {
+        enabled: charsheetSpellIds.length > 0
     });
+    const spells = [ ...charsheetSpellObjects, ...(fetchedSpells ?? []) ];
 
     const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
         setTabValue(newValue);

@@ -61,6 +61,22 @@ export class Campaign {
         };
         
     shop?: ShopConfig;
+
+    /**
+     * ID do sistema de RPG customizado usado nesta campanha.
+     * Se não definido, usa o sistema padrão Magitech.
+     */
+    systemId?: string;
+
+    /**
+     * Estado da campanha. 'finished' = arquivada: sessões bloqueadas,
+     * estatísticas congeladas. Pode ser reaberta pelo mestre.
+     * undefined = 'active' (compatibilidade com campanhas antigas).
+     */
+    status?: 'active' | 'finished';
+
+    /** Data de finalização da campanha */
+    finishedAt?: string;
     
     constructor(campaign?: Partial<Campaign>) {
         Object.assign(this, campaign)

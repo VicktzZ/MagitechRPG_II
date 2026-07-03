@@ -21,10 +21,10 @@ import {
 } from '@mui/material';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { useState, type ReactElement } from 'react';
+import { useState, useEffect, type ReactElement } from 'react';
 import { campaignContext, type CampaignContextValue } from './campaignContext';
 import { campaignEntity } from '@utils/firestoreEntities';
-import type { Campaign } from '@models/entities';
+import type { Campaign, RPGSystem } from '@models/entities';
 import { useSnackbar } from 'notistack';
 
 export function CampaignProvider({ children, code }: { children: ReactElement, code: string }) {
@@ -44,10 +44,43 @@ export function CampaignProvider({ children, code }: { children: ReactElement, c
         gender: 'Não definido' as 'Masculino' | 'Feminino' | 'Não-binário' | 'Outro' | 'Não definido'
     });
 
+    // Estado do sistema de RPG customizado
+    const [ rpgSystem, setRpgSystem ] = useState<RPGSystem | null>(null);
+    const [ loadingSystem, setLoadingSystem ] = useState(false);
+
     const campaignData = useCampaignData({
         campaignCode: code,
         userId: session?.user?.id
     });
+
+    // Carrega o sistema de RPG quando a campanha tem um systemId
+    useEffect(() => {
+        async function loadRPGSystem() {
+            if (!campaignData?.campaign?.systemId) {
+                setRpgSystem(null);
+                return;
+            }
+
+            setLoadingSystem(true);
+            try {
+                const response = await fetch(`/api/rpg-system/${campaignData.campaign.systemId}`);
+                if (response.ok) {
+                    const system = await response.json();
+                    setRpgSystem(system);
+                } else {
+                    console.error('Sistema de RPG não encontrado');
+                    setRpgSystem(null);
+                }
+            } catch (error) {
+                console.error('Erro ao carregar sistema de RPG:', error);
+                setRpgSystem(null);
+            } finally {
+                setLoadingSystem(false);
+            }
+        }
+
+        loadRPGSystem();
+    }, [ campaignData?.campaign?.systemId ]);
 
     const { data: charsheetsResponse, loading } = useFirestoreRealtime('charsheet', {
         filters: [
@@ -133,7 +166,10 @@ export function CampaignProvider({ children, code }: { children: ReactElement, c
             updateCampaign: async (data: Partial<Campaign>) => {
                 if (!campaignData.campaign.id) return;
                 await campaignEntity.update(campaignData.campaign.id, data);
-            }
+            },
+            rpgSystem,
+            loadingSystem,
+            isDefaultSystem: !campaignData.campaign.systemId
         };
 
         return (

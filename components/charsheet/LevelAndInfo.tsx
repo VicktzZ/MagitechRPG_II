@@ -7,7 +7,7 @@ import { AttachMoney, AutoAwesome, DirectionsRun, Psychology } from '@mui/icons-
 import { Box, Button, Chip, FormControl, InputLabel, ListSubheader, MenuItem, OutlinedInput, Select, TextField, Typography, useMediaQuery } from '@mui/material'
 import { alpha, useTheme } from '@mui/material/styles'
 import { green, orange, purple } from '@mui/material/colors'
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Controller, useFormContext, useWatch } from 'react-hook-form'
 import ElementalMasteryModal from './dialogs/ElementalMasteryModal'
 import SubclassModal from './dialogs/SubclassModal'
@@ -17,6 +17,7 @@ import { skills } from '@constants/skills'
 import type { CharsheetDTO } from '@models/dtos'
 import type { Class, Expertises, Lineage, Subclass, Trait } from '@models'
 import { type Element } from '@models/types/string'
+import type { RPGSystem } from '@models/entities'
 
 export default function LevelAndInfo() {
     const { control, getValues, setValue , formState: { errors } } = useFormContext<CharsheetDTO>()
@@ -25,6 +26,7 @@ export default function LevelAndInfo() {
     const [ subclassModalOpen, setSubclassModalOpen ] = useState<boolean>(false)
     const [ elementalMasteryModalOpen, setElementalMasteryModalOpen ] = useState<boolean>(false)
     const [ selectedSubclass, setSelectedSubclass ] = useState<Subclass['name'] | null>(null)
+    const [ customSystem, setCustomSystem ] = useState<RPGSystem | null>(null)
     const traitsRef = useRef<Trait[]>([])
     const audio = useAudio('/sounds/sci-fi-positive-notification.wav')
     const audio2 = useAudio('/sounds/fast-sci-fi-bleep.wav')
@@ -36,6 +38,19 @@ export default function LevelAndInfo() {
     const currentElementalMastery = useWatch({ control, name: 'elementalMastery' })
     const numberWithSpaces = useNumbersWithSpaces()
     const charsheet = getValues()
+
+    useEffect(() => {
+        if (charsheet.systemId) {
+            fetch(`/api/rpg-system/${charsheet.systemId}`)
+                .then(async res => await res.json())
+                .then((data: RPGSystem) => setCustomSystem(data))
+                .catch(() => setCustomSystem(null))
+        } else {
+            setCustomSystem(null)
+        }
+    }, [ charsheet.systemId ])
+
+    const isCustomSystem = !!customSystem
 
     const theme = useTheme()
     const matches = useMediaQuery(theme.breakpoints.down('md'))
@@ -49,11 +64,39 @@ export default function LevelAndInfo() {
     const getAvailableSubclasses = useCallback((): Partial<Record<Subclass['name'], { description: string; }>> => {
         if (!playerClass) return {}
         const classKey = typeof playerClass === 'string' ? playerClass : playerClass.name
+
+        // Sistema customizado: subclasses do sistema, filtradas pela classe da ficha
+        // (parentClass pode referenciar a key OU o name da classe)
+        if (isCustomSystem && customSystem?.subclasses && customSystem.subclasses.length > 0) {
+            const customClass = customSystem.classes?.find(c => c.name === classKey || c.key === classKey)
+            const filtered = customSystem.subclasses.filter(sub =>
+                sub.parentClass === classKey ||
+                (customClass && (sub.parentClass === customClass.key || sub.parentClass === customClass.name))
+            )
+            const result: Record<string, { description: string }> = {}
+            filtered.forEach(sub => {
+                result[sub.name] = { description: sub.description || '' }
+            })
+            return result as Partial<Record<Subclass['name'], { description: string }>>
+        }
+
         return subclasses[classKey as Class['name']] || {}
-    }, [ playerClass ])
+    }, [ playerClass, isCustomSystem, customSystem ])
     
-    // Verifica se os campos podem ser editados (nível >= 10 e não salvos ainda)
-    const canEditMasteryFields = level >= 10 && !charsheet.id
+    // Nível de desbloqueio das especializações: customizado usa unlockLevel das subclasses do sistema
+    const specializationUnlockLevel = (() => {
+        if (isCustomSystem && customSystem?.subclasses && customSystem.subclasses.length > 0) {
+            const levels = customSystem.subclasses.map(s => s.unlockLevel ?? 10)
+            return Math.min(...levels)
+        }
+        return 10
+    })()
+
+    // Sistemas antigos sem o campo: mostrar por padrão (?? true)
+    const showSubclassSection = !isCustomSystem || (customSystem?.enabledFields?.subclass ?? true)
+
+    // Verifica se os campos podem ser editados (nível de desbloqueio atingido e não salvos ainda)
+    const canEditMasteryFields = level >= specializationUnlockLevel && !charsheet.id
     const isSubclassLocked = !!currentSubclass && !!charsheet.id
     const isElementalMasteryLocked = !!currentElementalMastery && !!charsheet.id
     
@@ -100,11 +143,22 @@ export default function LevelAndInfo() {
     const handleSubclassConfirm = useCallback((subclass: Subclass['name']) => {
         if (subclass) {
             setValue('subclass', subclass, { shouldValidate: true, shouldDirty: true })
-            setValue('skills.subclass', [ skills.subclass[subclass][0] ])
+
+            if (isCustomSystem) {
+                // Sistema customizado: habilidades vêm do sistema, não das constants
+                const customSubclass = customSystem?.subclasses?.find(s => s.name === subclass)
+                if (customSubclass?.skills && customSubclass.skills.length > 0) {
+                    setValue('skills.subclass', [ customSubclass.skills[0] ] as any)
+                } else {
+                    setValue('skills.subclass', [])
+                }
+            } else {
+                setValue('skills.subclass', [ skills.subclass[subclass][0] ])
+            }
             setSelectedSubclass(null)
         }
         audio2?.play()
-    }, [ selectedSubclass, setValue, audio2 ])
+    }, [ selectedSubclass, setValue, audio2, isCustomSystem, customSystem ])
 
     return (
         <Box display='flex' flexDirection={matches ? 'column' : 'row'} gap={matches ? 2 : 3}>
@@ -135,24 +189,27 @@ export default function LevelAndInfo() {
                             control={control}
                             render={({ field }) => (
                                 <LevelProgress
-                                    amount={20}
+                                    amount={customSystem?.maxLevel ?? 20}
                                     title='Nível de Personagem'
                                     level={field.value}
                                 />
                             )}
                         />
-                        <Controller
-                            name='ORMLevel'
-                            control={control}
-                            render={({ field }) => (
-                                <LevelProgress
-                                    barWidth={matches ? '4rem' : '6rem'}
-                                    amount={4}
-                                    title='Nível de ORM'
-                                    level={field.value}
-                                />
-                            )}
-                        />
+                        {/* ORM é conceito do Magitech — oculto em sistemas customizados */}
+                        {!isCustomSystem && (
+                            <Controller
+                                name='ORMLevel'
+                                control={control}
+                                render={({ field }) => (
+                                    <LevelProgress
+                                        barWidth={matches ? '4rem' : '6rem'}
+                                        amount={4}
+                                        title='Nível de ORM'
+                                        level={field.value}
+                                    />
+                                )}
+                            />
+                        )}
                     </Box>
 
                     {/* Informações Gerais */}
@@ -415,8 +472,8 @@ export default function LevelAndInfo() {
                             )}
                         </FormControl>
 
-                        {/* Maestria Elemental - Só aparece a partir do nível 10 */}
-                        {level >= 10 && (
+                        {/* Especializações - aparecem a partir do nível de desbloqueio do sistema */}
+                        {level >= specializationUnlockLevel && (
                             <>
                                 <Typography
                                     variant="subtitle1"
@@ -429,232 +486,238 @@ export default function LevelAndInfo() {
                                         mt: 2
                                     }}
                                 >
-                                    Especializações (Nível 10+)
+                                    Especializações (Nível {specializationUnlockLevel}+)
                                 </Typography>
 
                                 {/* Maestria Elemental */}
-                                <Box
-                                    sx={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: 2,
-                                        flexWrap: 'wrap',
-                                        bgcolor: alpha(theme.palette.background.paper, 0.5),
-                                        borderRadius: 2,
-                                        p: 1.5,
-                                        border: '1px solid',
-                                        borderColor: alpha(theme.palette.divider, 0.2),
-                                        transition: 'all 0.2s ease',
-                                        '&:hover': {
-                                            bgcolor: alpha(theme.palette.background.paper, 0.8),
-                                            borderColor: alpha(purple[500], 0.3)
-                                        }
-                                    }}
-                                >
+                                {(!isCustomSystem || customSystem?.enabledFields?.elementalMastery) && (
                                     <Box
                                         sx={{
                                             display: 'flex',
                                             alignItems: 'center',
-                                            justifyContent: 'center',
-                                            width: 40,
-                                            height: 40,
-                                            borderRadius: '50%',
-                                            bgcolor: alpha(purple[500], 0.1),
-                                            color: purple[500]
+                                            gap: 2,
+                                            flexWrap: 'wrap',
+                                            bgcolor: alpha(theme.palette.background.paper, 0.5),
+                                            borderRadius: 2,
+                                            p: 1.5,
+                                            border: '1px solid',
+                                            borderColor: alpha(theme.palette.divider, 0.2),
+                                            transition: 'all 0.2s ease',
+                                            '&:hover': {
+                                                bgcolor: alpha(theme.palette.background.paper, 0.8),
+                                                borderColor: alpha(purple[500], 0.3)
+                                            }
                                         }}
                                     >
-                                        <AutoAwesome />
-                                    </Box>
-                                    <Box sx={{ flex: 1 }}>
-                                        <Typography variant="caption" color="text.secondary" display="block">
+                                        <Box
+                                            sx={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                width: 40,
+                                                height: 40,
+                                                borderRadius: '50%',
+                                                bgcolor: alpha(purple[500], 0.1),
+                                                color: purple[500]
+                                            }}
+                                        >
+                                            <AutoAwesome />
+                                        </Box>
+                                        <Box sx={{ flex: 1 }}>
+                                            <Typography variant="caption" color="text.secondary" display="block">
                                             Maestria Elemental
-                                        </Typography>
-                                        <Controller
-                                            name='elementalMastery'
-                                            control={control}
-                                            render={({ field }) => (
-                                                <FormControl fullWidth size="small" disabled={!(isElementalMasteryLocked || !canEditMasteryFields)}>
-                                                    <Select
-                                                        {...field}
-                                                        displayEmpty
-                                                        value={field.value || ''}
-                                                        onChange={() => {
+                                            </Typography>
+                                            <Controller
+                                                name='elementalMastery'
+                                                control={control}
+                                                render={({ field }) => (
+                                                    <FormControl fullWidth size="small" disabled={!(isElementalMasteryLocked || !canEditMasteryFields)}>
+                                                        <Select
+                                                            {...field}
+                                                            displayEmpty
+                                                            value={field.value || ''}
+                                                            onChange={() => {
                                                             // Ao clicar no select, abre o modal de seleção de maestria elemental
-                                                            setElementalMasteryModalOpen(true)
-                                                        }}
-                                                        sx={{
-                                                            '& .MuiSelect-select': {
-                                                                py: 0.5,
-                                                                fontSize: '0.875rem'
-                                                            }
-                                                        }}
-                                                    >
-                                                        <MenuItem value="" disabled>
-                                                            <em>Selecione um elemento</em>
-                                                        </MenuItem>
-                                                        {elementalOptions.map((element) => (
-                                                            <MenuItem key={element} value={element}>
-                                                                {element}
+                                                                setElementalMasteryModalOpen(true)
+                                                            }}
+                                                            sx={{
+                                                                '& .MuiSelect-select': {
+                                                                    py: 0.5,
+                                                                    fontSize: '0.875rem'
+                                                                }
+                                                            }}
+                                                        >
+                                                            <MenuItem value="" disabled>
+                                                                <em>Selecione um elemento</em>
                                                             </MenuItem>
-                                                        ))}
-                                                    </Select>
-                                                </FormControl>
-                                            )}
-                                        />
-                                        {level < 10 && (
-                                            <Typography variant="caption" color="text.disabled" display="block" mt={0.5}>
+                                                            {elementalOptions.map((element) => (
+                                                                <MenuItem key={element} value={element}>
+                                                                    {element}
+                                                                </MenuItem>
+                                                            ))}
+                                                        </Select>
+                                                    </FormControl>
+                                                )}
+                                            />
+                                            {level < 10 && (
+                                                <Typography variant="caption" color="text.disabled" display="block" mt={0.5}>
                                                 Disponível a partir do nível 10
-                                            </Typography>
-                                        )}
-                                        {isElementalMasteryLocked && (
-                                            <Typography variant="caption" color="warning.main" display="block" mt={0.5}>
+                                                </Typography>
+                                            )}
+                                            {isElementalMasteryLocked && (
+                                                <Typography variant="caption" color="warning.main" display="block" mt={0.5}>
                                                 🔒 Maestria não pode ser alterada
-                                            </Typography>
-                                        )}
+                                                </Typography>
+                                            )}
+                                        </Box>
                                     </Box>
-                                </Box>
+                                )}
 
                                 {/* Subclasse */}
-                                <Box
-                                    sx={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: 2,
-                                        flexWrap: 'wrap',
-                                        bgcolor: alpha(theme.palette.background.paper, 0.5),
-                                        borderRadius: 2,
-                                        p: 1.5,
-                                        border: '1px solid',
-                                        borderColor: alpha(theme.palette.divider, 0.2),
-                                        transition: 'all 0.2s ease',
-                                        '&:hover': {
-                                            bgcolor: alpha(theme.palette.background.paper, 0.8),
-                                            borderColor: alpha(orange[500], 0.3)
-                                        }
-                                    }}
-                                >
+                                {showSubclassSection && (
                                     <Box
                                         sx={{
                                             display: 'flex',
                                             alignItems: 'center',
-                                            justifyContent: 'center',
-                                            width: 40,
-                                            height: 40,
-                                            borderRadius: '50%',
-                                            bgcolor: alpha(orange[500], 0.1),
-                                            color: orange[500]
+                                            gap: 2,
+                                            flexWrap: 'wrap',
+                                            bgcolor: alpha(theme.palette.background.paper, 0.5),
+                                            borderRadius: 2,
+                                            p: 1.5,
+                                            border: '1px solid',
+                                            borderColor: alpha(theme.palette.divider, 0.2),
+                                            transition: 'all 0.2s ease',
+                                            '&:hover': {
+                                                bgcolor: alpha(theme.palette.background.paper, 0.8),
+                                                borderColor: alpha(orange[500], 0.3)
+                                            }
                                         }}
                                     >
-                                        <Psychology />
-                                    </Box>
-                                    <Box sx={{ flex: 1 }}>
-                                        <Typography variant="caption" color="text.secondary" display="block">
+                                        <Box
+                                            sx={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                width: 40,
+                                                height: 40,
+                                                borderRadius: '50%',
+                                                bgcolor: alpha(orange[500], 0.1),
+                                                color: orange[500]
+                                            }}
+                                        >
+                                            <Psychology />
+                                        </Box>
+                                        <Box sx={{ flex: 1 }}>
+                                            <Typography variant="caption" color="text.secondary" display="block">
                                             Subclasse
-                                        </Typography>
-                                        <Controller
-                                            name='subclass'
-                                            control={control}
-                                            render={({ field }) => (
-                                                <FormControl fullWidth size="small" disabled={!(isSubclassLocked || !canEditMasteryFields)}>
-                                                    <Select
-                                                        {...field}
-                                                        displayEmpty
-                                                        value={typeof field.value === 'string' ? field.value : field.value?.name || ''}
-                                                        onChange={() => {
+                                            </Typography>
+                                            <Controller
+                                                name='subclass'
+                                                control={control}
+                                                render={({ field }) => (
+                                                    <FormControl fullWidth size="small" disabled={!(isSubclassLocked || !canEditMasteryFields)}>
+                                                        <Select
+                                                            {...field}
+                                                            displayEmpty
+                                                            value={typeof field.value === 'string' ? field.value : field.value?.name || ''}
+                                                            onChange={() => {
                                                             // Ao clicar no select, abre o modal de seleção de subclasse
-                                                            setSubclassModalOpen(true)
-                                                        }}
-                                                        sx={{
-                                                            '& .MuiSelect-select': {
-                                                                py: 0.5,
-                                                                fontSize: '0.875rem'
-                                                            }
-                                                        }}
-                                                    >
-                                                        <MenuItem value="" disabled>
-                                                            <em>Selecione uma subclasse</em>
-                                                        </MenuItem>
-                                                        {Object.entries(getAvailableSubclasses()).map(([ name ]) => (
-                                                            <MenuItem key={name} value={name}>
-                                                                {name}
+                                                                setSubclassModalOpen(true)
+                                                            }}
+                                                            sx={{
+                                                                '& .MuiSelect-select': {
+                                                                    py: 0.5,
+                                                                    fontSize: '0.875rem'
+                                                                }
+                                                            }}
+                                                        >
+                                                            <MenuItem value="" disabled>
+                                                                <em>Selecione uma subclasse</em>
                                                             </MenuItem>
-                                                        ))}
-                                                    </Select>
-                                                </FormControl>
-                                            )}
-                                        />
-                                        {level < 10 && (
-                                            <Typography variant="caption" color="text.disabled" display="block" mt={0.5}>
-                                                Disponível a partir do nível 10
-                                            </Typography>
-                                        )}
-                                        {isSubclassLocked && (
-                                            <Typography variant="caption" color="warning.main" display="block" mt={0.5}>
-                                                🔒 Subclasse não pode ser alterada
-                                            </Typography>
-                                        )}
-                                        {currentSubclass && (
-                                            <Chip
-                                                label={typeof currentSubclass === 'string' ? currentSubclass : currentSubclass.name}
-                                                size="small"
-                                                color="primary"
-                                                sx={{ mt: 0.5, fontWeight: 'bold' }}
+                                                            {Object.entries(getAvailableSubclasses()).map(([ name ]) => (
+                                                                <MenuItem key={name} value={name}>
+                                                                    {name}
+                                                                </MenuItem>
+                                                            ))}
+                                                        </Select>
+                                                    </FormControl>
+                                                )}
                                             />
-                                        )}
+                                            {level < specializationUnlockLevel && (
+                                                <Typography variant="caption" color="text.disabled" display="block" mt={0.5}>
+                                                Disponível a partir do nível {specializationUnlockLevel}
+                                                </Typography>
+                                            )}
+                                            {isSubclassLocked && (
+                                                <Typography variant="caption" color="warning.main" display="block" mt={0.5}>
+                                                🔒 Subclasse não pode ser alterada
+                                                </Typography>
+                                            )}
+                                            {currentSubclass && (
+                                                <Chip
+                                                    label={typeof currentSubclass === 'string' ? currentSubclass : currentSubclass.name}
+                                                    size="small"
+                                                    color="primary"
+                                                    sx={{ mt: 0.5, fontWeight: 'bold' }}
+                                                />
+                                            )}
+                                        </Box>
                                     </Box>
-                                </Box>
+                                )}
                             </>
                         )}
 
                         {/* Condição Financeira */}
-                        <FormControl fullWidth size={matches ? 'small' : 'medium'}>
-                            <InputLabel>Condição financeira *</InputLabel>
-                            <Controller
-                                name='financialCondition'
-                                control={control}
-                                render={({ field }) => (
-                                    <Select
-                                        {...field}
-                                        label='Condição financeira'
-                                        required
-                                        disabled={!!charsheet.id}
-                                        fullWidth
-                                        error={!!errors.financialCondition}
-                                        onChange={(e) => {
-                                            field.onChange(e)
+                        {(!isCustomSystem || customSystem?.enabledFields?.financialCondition) && (
+                            <FormControl fullWidth size={matches ? 'small' : 'medium'}>
+                                <InputLabel>Condição financeira *</InputLabel>
+                                <Controller
+                                    name='financialCondition'
+                                    control={control}
+                                    render={({ field }) => (
+                                        <Select
+                                            {...field}
+                                            label='Condição financeira'
+                                            required
+                                            disabled={!!charsheet.id}
+                                            fullWidth
+                                            error={!!errors.financialCondition}
+                                            onChange={(e) => {
+                                                field.onChange(e)
                                             
-                                            const moneyValue = {
-                                                'Miserável': charsheet.mode === 'Classic' ? 10_000 : 10,
-                                                'Pobre': charsheet.mode === 'Classic' ? 30_000 : 30,
-                                                'Estável': charsheet.mode === 'Classic' ? 100_000 : 100,
-                                                'Rico': charsheet.mode === 'Classic' ? 300_000 : 300
-                                            }
+                                                const moneyValue = {
+                                                    'Miserável': charsheet.mode === 'Classic' ? 10_000 : 10,
+                                                    'Pobre': charsheet.mode === 'Classic' ? 30_000 : 30,
+                                                    'Estável': charsheet.mode === 'Classic' ? 100_000 : 100,
+                                                    'Rico': charsheet.mode === 'Classic' ? 300_000 : 300
+                                                }
                                             
-                                            const selectedCondition = e.target.value as keyof typeof moneyValue
-                                            if (moneyValue[selectedCondition]) {
-                                                setValue('inventory.money', moneyValue[selectedCondition])
-                                            }
+                                                const selectedCondition = e.target.value as keyof typeof moneyValue
+                                                if (moneyValue[selectedCondition]) {
+                                                    setValue('inventory.money', moneyValue[selectedCondition])
+                                                }
 
-                                            audio.play()
-                                        }}
-                                    >
-                                        <ListSubheader>{'< 6'}</ListSubheader>
-                                        <MenuItem value='Miserável'>Miserável</MenuItem>
-                                        <ListSubheader>6 - 12</ListSubheader>
-                                        <MenuItem value='Pobre'>Pobre</MenuItem>
-                                        <ListSubheader>12 - 17</ListSubheader>
-                                        <MenuItem value='Estável'>Estável</MenuItem>
-                                        <ListSubheader>{'> 17'}</ListSubheader>
-                                        <MenuItem value='Rico'>Rico</MenuItem>
-                                    </Select>
+                                                audio.play()
+                                            }}
+                                        >
+                                            <ListSubheader>{'< 6'}</ListSubheader>
+                                            <MenuItem value='Miserável'>Miserável</MenuItem>
+                                            <ListSubheader>6 - 12</ListSubheader>
+                                            <MenuItem value='Pobre'>Pobre</MenuItem>
+                                            <ListSubheader>12 - 17</ListSubheader>
+                                            <MenuItem value='Estável'>Estável</MenuItem>
+                                            <ListSubheader>{'> 17'}</ListSubheader>
+                                            <MenuItem value='Rico'>Rico</MenuItem>
+                                        </Select>
+                                    )}
+                                />
+                                {errors.financialCondition && (
+                                    <Typography color='error' variant='caption' display='block' mt={0.5}>
+                                        {errors.financialCondition.message}
+                                    </Typography>
                                 )}
-                            />
-                            {errors.financialCondition && (
-                                <Typography color='error' variant='caption' display='block' mt={0.5}>
-                                    {errors.financialCondition.message}
-                                </Typography>
-                            )}
-                        </FormControl>
+                            </FormControl>
+                        )}
 
                         {/* Botão de Rolar Dados */}
                         {!charsheet.id && (
@@ -705,6 +768,14 @@ export default function LevelAndInfo() {
                 onClose={() => setSubclassModalOpen(false)}
                 currentClass={playerClass as Class['name']}
                 onConfirm={(subclass) => handleSubclassConfirm(subclass)}
+                customSubclasses={isCustomSystem ? (() => {
+                    const classKey = typeof playerClass === 'string' ? playerClass : (playerClass as any)?.name
+                    const customClass = customSystem?.classes?.find(c => c.name === classKey || c.key === classKey)
+                    return customSystem?.subclasses?.filter(sub =>
+                        sub.parentClass === classKey ||
+                        (customClass && (sub.parentClass === customClass.key || sub.parentClass === customClass.name))
+                    ) || []
+                })() : undefined}
             />
 
             {/* Modal de Maestria Elemental */}
