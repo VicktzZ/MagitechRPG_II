@@ -144,6 +144,7 @@ export const defaultRaces: SystemRace[] = skills.race.map(skill => ({
 export const defaultLineages: SystemLineage[] = skills.lineage.map(skill => ({
     key: skill.origin.toLowerCase().replace(/\s/g, '_'),
     name: skill.origin,
+    conceptName: 'Linhagem',
     skills: [ {
         id: crypto.randomUUID?.() || Math.random().toString(36).substring(7),
         name: skill.name,
@@ -159,6 +160,7 @@ export const defaultLineages: SystemLineage[] = skills.lineage.map(skill => ({
 export const defaultOccupations: SystemOccupation[] = skills.occupation.map(skill => ({
     key: skill.origin.toLowerCase().replace(/\s/g, '_'),
     name: skill.origin,
+    conceptName: 'Profissão',
     skills: [ {
         id: crypto.randomUUID?.() || Math.random().toString(36).substring(7),
         name: skill.name,
@@ -194,10 +196,40 @@ export const defaultTraits = {
  * Configuração completa do sistema padrão Magitech RPG
  * Pode ser usado como template para criar novos sistemas
  */
-export const defaultMagitechSystem: Omit<RPGSystem, 'id' | 'creatorId' | 'createdAt' | 'updatedAt'> = {
+export const defaultMagitechSystem: Partial<RPGSystem> = {
     name: 'Magitech RPG',
     description: 'O sistema padrão de Magitech RPG, com todas as classes, raças, linhagens e habilidades do jogo base.',
     isPublic: true,
+    conceptNames: {
+        lineage: 'Linhagem',
+        occupation: 'Profissão',
+        class: 'Classe',
+        subclass: 'Subclasse',
+        race: 'Raça',
+        trait: 'Traço',
+        spell: 'Magia',
+        skill: 'Habilidade'
+    },
+    initialFields: {
+        life: { enabled: true, label: 'Vida', required: true, defaultValue: 10, formula: 'VIG * 2 + 10' },
+        mana: { enabled: true, label: 'Mana', required: true, defaultValue: 10, formula: 'FOC * 2 + 10' },
+        armor: { enabled: true, label: 'Armadura', required: false, defaultValue: 0 },
+        age: { enabled: true, label: 'Idade', required: true, min: 1, max: 999 },
+        gender: {
+            enabled: true,
+            label: 'Gênero',
+            required: true,
+            options: [ 'Masculino', 'Feminino', 'Não-binário', 'Outro', 'Não definido' ]
+        },
+        financialCondition: {
+            enabled: true,
+            label: 'Condição Financeira',
+            required: false,
+            options: [ 'Miserável', 'Pobre', 'Estável', 'Rico' ]
+        },
+        customInitialFields: []
+    },
+    elements: [ 'Fogo', 'Água', 'Ar', 'Terra', 'Luz', 'Trevas', 'Arcano' ],
     enabledFields: {
         traits: true,
         lineage: true,
@@ -232,5 +264,12 @@ export const defaultMagitechSystem: Omit<RPGSystem, 'id' | 'creatorId' | 'create
         mpName: 'MP',
         apName: 'AP',
         customPoints: []
-    }
+    },
+    maxLevel: 20,
+    progressionTable: [],
+    skillPointRules: {
+        classSkillCost: 1,
+        otherSkillCost: 1
+    },
+    customResources: []
 };

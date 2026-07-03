@@ -1,14 +1,17 @@
-import { Box, TextField, Typography, Grid, Paper } from '@mui/material';
+import { Box, Chip, Typography, Grid, Paper } from '@mui/material';
 import { type ReactElement, useEffect } from 'react';
 import { Controller, useFormContext, useWatch } from 'react-hook-form';
 import type { Charsheet, RPGSystem } from '@models/entities';
+import { LinearProgressWithLabel } from '@layout';
+import { NumberField } from '@components/misc';
+import { evaluateFormula } from '@utils/formulaEvaluator';
 
 interface DynamicAttributesProps {
     system: RPGSystem | null;
 }
 
 export default function DynamicAttributes({ system }: DynamicAttributesProps): ReactElement {
-    const { control, setValue, getValues, formState: { errors } } = useFormContext<Charsheet>();
+    const { control, setValue, getValues } = useFormContext<Charsheet>();
     const charsheet = getValues();
     const disabled = !!charsheet.id;
 
@@ -19,6 +22,30 @@ export default function DynamicAttributes({ system }: DynamicAttributesProps): R
     const attributesValues = useWatch({ control, name: 'attributes' });
     const expertises = useWatch({ control, name: 'expertises' });
     const level = useWatch({ control, name: 'level' });
+    const attributePoints = useWatch({ control, name: 'points.attributes' });
+
+    /**
+     * Altera um atributo gastando/devolvendo pontos de atributo.
+     * O aumento é limitado pelos pontos disponíveis; a redução devolve pontos.
+     */
+    const changeAttribute = (attrKey: string, requested: number, min: number, max: number) => {
+        const current = (getValues(`attributes.${attrKey}` as any) as unknown as number) || 0;
+        const clamped = Math.min(max, Math.max(min, requested));
+        const available = getValues('points.attributes') || 0;
+
+        let next = clamped;
+        const delta = clamped - current;
+        if (delta > available) {
+            // Não há pontos suficientes — sobe só o que dá
+            next = current + available;
+        }
+
+        const spent = next - current;
+        if (spent === 0) return;
+
+        setValue(`attributes.${attrKey}` as any, next as any);
+        setValue('points.attributes', available - spent);
+    };
 
     useEffect(() => {
         if (system && attributes.length > 0) {
@@ -56,79 +83,167 @@ export default function DynamicAttributes({ system }: DynamicAttributesProps): R
         }
     }, [ attributesValues, expertises, level, setValue, system, attributes ]);
 
+    // Inicializa os pontos de atributo do sistema na criação da ficha.
+    // Só aplica se nenhum ponto foi gasto ainda (atributos intactos nos defaults),
+    // para não sobrescrever progresso restaurado do autosave.
+    useEffect(() => {
+        if (!system || disabled || system.initialAttributePoints == null) return;
+        const untouched = attributes.every(attr =>
+            (((getValues(`attributes.${attr.key}` as any) as unknown as number) || 0) === (attr.defaultValue || 0))
+        );
+        if (untouched && getValues('points.attributes') !== system.initialAttributePoints) {
+            setValue('points.attributes', system.initialAttributePoints);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [ system, disabled ]);
+
+    // Avalia fórmulas de stats iniciais (Vida/Mana/Armadura) na CRIAÇÃO da ficha.
+    // Fichas salvas (disabled) nunca são recalculadas.
+    useEffect(() => {
+        if (!system || disabled || !system.initialFields) return;
+
+        const vars: Record<string, number> = { level: level || 1 };
+        attributes.forEach(attr => {
+            const value = (attributesValues as any)?.[attr.key] || 0;
+            vars[attr.abbreviation] = value;
+            vars[attr.key] = value;
+        });
+
+        const applyStat = (
+            cfg: { enabled: boolean; defaultValue: number; formula?: string } | undefined,
+            currentKey: 'stats.lp' | 'stats.mp' | 'stats.ap',
+            maxKey: 'stats.maxLp' | 'stats.maxMp' | 'stats.maxAp'
+        ) => {
+            if (!cfg) return;
+            if (!cfg.enabled) {
+                setValue(maxKey, 0);
+                setValue(currentKey, 0);
+                return;
+            }
+            const result = cfg.formula
+                ? Math.max(0, evaluateFormula(cfg.formula, vars, cfg.defaultValue ?? 0))
+                : (cfg.defaultValue ?? 0);
+            setValue(maxKey, result);
+            setValue(currentKey, result);
+        };
+
+        applyStat(system.initialFields.life, 'stats.lp', 'stats.maxLp');
+        applyStat(system.initialFields.mana, 'stats.mp', 'stats.maxMp');
+        applyStat(system.initialFields.armor, 'stats.ap', 'stats.maxAp');
+    }, [ attributesValues, level, system, disabled ]);
+
     if (system && attributes.length > 0) {
+        // Labels e visibilidade das barras de stats guiadas pelo sistema
+        // (pointsConfig consolidado; fallback para initialFields em sistemas antigos)
+        const statBars: Array<{ label: string; currentKey: 'stats.lp' | 'stats.mp' | 'stats.ap'; maxKey: 'stats.maxLp' | 'stats.maxMp' | 'stats.maxAp'; color: 'error' | 'info' | 'warning' }> = [];
+        const hasLP = system.pointsConfig?.hasLP ?? system.initialFields?.life?.enabled ?? true;
+        const hasMP = system.pointsConfig?.hasMP ?? system.initialFields?.mana?.enabled ?? true;
+        const hasAP = system.pointsConfig?.hasAP ?? system.initialFields?.armor?.enabled ?? true;
+        if (hasLP) statBars.push({ label: system.pointsConfig?.lpName || system.initialFields?.life?.label || 'LP', currentKey: 'stats.lp', maxKey: 'stats.maxLp', color: 'error' });
+        if (hasMP) statBars.push({ label: system.pointsConfig?.mpName || system.initialFields?.mana?.label || 'MP', currentKey: 'stats.mp', maxKey: 'stats.maxMp', color: 'info' });
+        if (hasAP) statBars.push({ label: system.pointsConfig?.apName || system.initialFields?.armor?.label || 'AP', currentKey: 'stats.ap', maxKey: 'stats.maxAp', color: 'warning' });
+
         // Renderizar atributos customizados (sem ícones, só nomes)
         return (
-            <Grid container spacing={2}>
-                {attributes.map((attribute) => (
-                    <Grid item xs={12} sm={6} md={4} key={attribute.key}>
-                        <Paper 
-                            elevation={1}
-                            sx={{ 
-                                p: 2,
-                                borderRadius: 2,
-                                border: '1px solid',
-                                borderColor: 'divider',
-                                transition: 'all 0.2s ease',
-                                '&:hover': {
-                                    borderColor: 'primary.main',
-                                    boxShadow: 2
-                                }
-                            }}
-                        >
-                            <Typography 
-                                variant="subtitle2" 
-                                fontWeight={600}
-                                color="primary.main"
-                                mb={1}
-                            >
-                                {attribute.name} ({attribute.abbreviation})
-                            </Typography>
-                            {attribute.description && (
-                                <Typography variant="caption" color="text.secondary" display="block" mb={1}>
-                                    {attribute.description}
-                                </Typography>
-                            )}
+            <Box display="flex" flexDirection="column" gap={2}>
+                {statBars.length > 0 && (
+                    <Box display="flex" flexDirection="column" gap={1.5}>
+                        {statBars.map(bar => (
                             <Controller
-                                name={`attributes.${attribute.key}` as any}
+                                key={bar.currentKey}
+                                name={bar.currentKey}
                                 control={control}
-                                defaultValue={attribute.defaultValue || 0}
-                                render={({ field: { onChange, value, ...field }, fieldState: { error } }) => (
-                                    <TextField
-                                        {...field}
-                                        value={value || 0}
-                                        onChange={(e) => {
-                                            const numValue = parseInt(e.target.value) || 0;
-                                            const min = attribute.minValue ?? 0;
-                                            const max = attribute.maxValue ?? 999;
-                                            const clampedValue = Math.min(max, Math.max(min, numValue));
-                                            onChange(clampedValue);
-                                        }}
-                                        type="number"
-                                        size="small"
-                                        fullWidth
-                                        disabled={disabled}
-                                        error={!!error}
-                                        helperText={
-                                            error?.message || 
-                                            (attribute.minValue !== undefined || attribute.maxValue !== undefined 
-                                                ? `Min: ${attribute.minValue ?? 0}, Max: ${attribute.maxValue ?? '∞'}`
-                                                : undefined
-                                            )
-                                        }
-                                        InputProps={{
-                                            inputProps: {
-                                                min: attribute.minValue ?? 0,
-                                                max: attribute.maxValue ?? 999
-                                            }
-                                        }}
+                                render={({ field }) => (
+                                    <LinearProgressWithLabel
+                                        label={bar.label}
+                                        minvalue={field.value || 0}
+                                        maxvalue={getValues(bar.maxKey) || 0}
+                                        color={bar.color}
                                     />
                                 )}
                             />
-                        </Paper>
-                    </Grid>
-                ))}
-            </Grid>
+                        ))}
+                    </Box>
+                )}
+                {/* Pontos de atributo disponíveis (somente na criação) */}
+                {!disabled && (
+                    <Box display="flex" alignItems="center" gap={1}>
+                        <Typography variant="body2" color="text.secondary">
+                            Pontos de Atributo:
+                        </Typography>
+                        <Chip
+                            label={attributePoints ?? 0}
+                            color={(attributePoints ?? 0) > 0 ? 'warning' : 'success'}
+                            size="small"
+                            sx={{ fontWeight: 'bold' }}
+                        />
+                    </Box>
+                )}
+
+                <Grid container spacing={2}>
+                    {attributes.map((attribute) => {
+                        const min = attribute.minValue ?? 0;
+                        const max = attribute.maxValue ?? 999;
+
+                        return (
+                            <Grid item xs={12} sm={6} md={4} key={attribute.key}>
+                                <Paper
+                                    elevation={1}
+                                    sx={{
+                                        p: 2,
+                                        borderRadius: 2,
+                                        border: '1px solid',
+                                        borderColor: 'divider',
+                                        transition: 'all 0.2s ease',
+                                        '&:hover': {
+                                            borderColor: 'primary.main',
+                                            boxShadow: 2
+                                        }
+                                    }}
+                                >
+                                    <Typography
+                                        variant="subtitle2"
+                                        fontWeight={600}
+                                        color="primary.main"
+                                        mb={1}
+                                    >
+                                        {attribute.name} ({attribute.abbreviation})
+                                    </Typography>
+                                    {attribute.description && (
+                                        <Typography variant="caption" color="text.secondary" display="block" mb={1}>
+                                            {attribute.description}
+                                        </Typography>
+                                    )}
+                                    <Controller
+                                        name={`attributes.${attribute.key}` as any}
+                                        control={control}
+                                        defaultValue={attribute.defaultValue || 0}
+                                        render={({ field: { value }, fieldState: { error } }) => (
+                                            <NumberField
+                                                value={(value as unknown as number) || 0}
+                                                onChange={(newValue) => changeAttribute(attribute.key, newValue, min, max)}
+                                                min={min}
+                                                max={max}
+                                                size="small"
+                                                fullWidth
+                                                disabled={disabled}
+                                                error={!!error}
+                                                helperText={
+                                                    error?.message ||
+                                                    (attribute.minValue !== undefined || attribute.maxValue !== undefined
+                                                        ? `Min: ${min}, Max: ${attribute.maxValue ?? '∞'}`
+                                                        : undefined
+                                                    )
+                                                }
+                                            />
+                                        )}
+                                    />
+                                </Paper>
+                            </Grid>
+                        );
+                    })}
+                </Grid>
+            </Box>
         );
     }
 

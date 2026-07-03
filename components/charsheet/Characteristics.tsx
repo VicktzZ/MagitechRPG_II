@@ -6,10 +6,11 @@ import { lineageItems } from '@constants/lineageOccupationItems';
 import { races } from '@constants/races';
 import { skills } from '@constants/skills';
 import { useAudio } from '@hooks';
-import type { Race, RPGSystem } from '@models';
-import type { Charsheet } from '@models/entities';
+import type { Race } from '@models';
+import type { Charsheet, RPGSystem } from '@models/entities';
 import type { ClassNames, LineageNames } from '@models/types/string';
 import { Box, FormControl, FormHelperText, InputLabel, MenuItem, Select, TextField, Typography, useMediaQuery, useTheme, type SelectChangeEvent } from '@mui/material';
+import { NumberField } from '@components/misc';
 import { blue, green, red, yellow } from '@mui/material/colors';
 import { useCallback, useMemo, useState, useEffect, type ReactElement } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
@@ -25,14 +26,14 @@ export default function Characteristics(): ReactElement {
     
     // Estado para sistema customizado
     const [ customSystem, setCustomSystem ] = useState<RPGSystem | null>(null)
-    const [ loadingSystem, setLoadingSystem ] = useState(false)
+    const [ , setLoadingSystem ] = useState(false)
     
     // Carregar sistema se houver systemId
     useEffect(() => {
         if (charsheet.systemId) {
             setLoadingSystem(true)
             fetch(`/api/rpg-system/${charsheet.systemId}`)
-                .then(res => res.json())
+                .then(async res => await res.json())
                 .then((data: RPGSystem) => {
                     setCustomSystem(data)
                 })
@@ -52,6 +53,18 @@ export default function Characteristics(): ReactElement {
     const classLabel = customSystem?.conceptNames?.class || 'Classe de Mago'
     const lineageLabel = customSystem?.conceptNames?.lineage || (charsheet.mode === 'Classic' ? 'Linhagem' : 'Profissão')
     const raceLabel = customSystem?.conceptNames?.race || 'Raça'
+    const occupationLabel = customSystem?.conceptNames?.occupation || 'Profissão'
+
+    // Opções de gênero e visibilidade de campos iniciais (sistemas customizados)
+    const genderOptions = (isCustomSystem && customSystem?.initialFields?.gender?.options?.length)
+        ? customSystem.initialFields.gender.options
+        : [ 'Masculino', 'Feminino', 'Não-binário', 'Outro', 'Não definido' ]
+    // Sistemas antigos sem initialFields: mostrar por padrão (?? true)
+    const showAge = !isCustomSystem || (customSystem?.initialFields?.age?.enabled ?? true)
+    const showGender = !isCustomSystem || (customSystem?.initialFields?.gender?.enabled ?? true)
+    // Profissão é opt-in: só aparece se explicitamente habilitada
+    const showOccupation = isCustomSystem && Boolean(customSystem?.enabledFields?.occupation)
+    const customInitialFields = (isCustomSystem && customSystem?.initialFields?.customInitialFields) || []
 
     const setClass = (e: SelectChangeEvent<any>): void => {
         const previousClass = getValues('class') as ClassNames;
@@ -216,6 +229,53 @@ export default function Characteristics(): ReactElement {
         audio.play();
     }
 
+    const setOccupation = (e: SelectChangeEvent<any>): void => {
+        const previousOccupation = getValues('occupation');
+        const selectedOccupation = e.target.value as string;
+
+        // Reverte bônus da profissão anterior
+        if (previousOccupation) {
+            const prevOcc = customSystem?.occupations?.find(o => o.name === previousOccupation);
+            if (prevOcc?.expertiseBonus) {
+                Object.entries(prevOcc.expertiseBonus).forEach(([ expKey, bonus ]) => {
+                    const current = (getValues(`expertises.${expKey}` as any) )?.value || 0;
+                    setValue(`expertises.${expKey}.value` as any, Math.max(0, current - bonus));
+                });
+            }
+            if (prevOcc?.startingMoney) {
+                setValue('inventory.money', Math.max(0, getValues('inventory.money') - prevOcc.startingMoney));
+            }
+        }
+
+        setValue('occupation', selectedOccupation, { shouldValidate: true });
+
+        const customOccupation = customSystem?.occupations?.find(o => o.name === selectedOccupation);
+        if (customOccupation?.skills && customOccupation.skills.length > 0) {
+            setValue('skills.occupation' as any, [ customOccupation.skills[0] ] as any);
+        } else {
+            setValue('skills.occupation' as any, [] as any);
+        }
+
+        // Aplica bônus de perícias da profissão
+        if (customOccupation?.expertiseBonus) {
+            Object.entries(customOccupation.expertiseBonus).forEach(([ expKey, bonus ]) => {
+                const currentExpertise = getValues(`expertises.${expKey}` as any) ;
+                if (!currentExpertise) {
+                    setValue(`expertises.${expKey}` as any, { value: bonus, defaultAttribute: null } as any);
+                } else {
+                    setValue(`expertises.${expKey}.value` as any, (currentExpertise.value || 0) + bonus);
+                }
+            });
+        }
+
+        // Dinheiro inicial
+        if (customOccupation?.startingMoney) {
+            setValue('inventory.money', getValues('inventory.money') + customOccupation.startingMoney);
+        }
+
+        audio.play();
+    }
+
     const lineagePoints = useCallback((expertises: ExpertisesOverrided): string => {
         let pointsStr = ''
         let testsStr = ''
@@ -360,7 +420,7 @@ export default function Characteristics(): ReactElement {
                         )}
                     />
 
-                    {!matches && (
+                    {!matches && (!isCustomSystem || customSystem?.enabledFields?.lineage) && (
                         <Controller
                             name='lineage'
                             control={control}
@@ -393,7 +453,7 @@ export default function Characteristics(): ReactElement {
                 </Box>
 
                 {/* Linhagem (mobile) */}
-                {matches && (
+                {matches && (!isCustomSystem || customSystem?.enabledFields?.lineage) && (
                     <Controller
                         name='lineage'
                         control={control}
@@ -423,141 +483,191 @@ export default function Characteristics(): ReactElement {
                         )}
                     />
                 )}
+
+                {/* Profissão/Ocupação (sistemas customizados) */}
+                {showOccupation && (
+                    <Controller
+                        name='occupation'
+                        control={control}
+                        render={({ field, fieldState: { error } }) => (
+                            <FormControl fullWidth error={!!error} disabled={disabled}>
+                                <InputLabel>{occupationLabel}</InputLabel>
+                                <Select
+                                    {...field}
+                                    value={field.value || ''}
+                                    label={occupationLabel}
+                                    fullWidth
+                                    onChange={(e) => {
+                                        setOccupation(e)
+                                        field.onChange((e as SelectChangeEvent<any>).target.value)
+                                    }}
+                                    MenuProps={{ sx: { maxHeight: '60vh' } }}
+                                    renderValue={value => (
+                                        <Typography>{value }</Typography>
+                                    )}
+                                >
+                                    {(customSystem?.occupations || []).map(occ => (
+                                        <MenuItem key={occ.key} value={occ.name}>
+                                            <Box>
+                                                <Typography>{occ.name}</Typography>
+                                                {occ.description && (
+                                                    <Typography variant='caption' color='text.secondary'>
+                                                        {occ.description}
+                                                    </Typography>
+                                                )}
+                                                {(occ.startingMoney ?? 0) > 0 && (
+                                                    <Typography variant='caption' color={green[500]} display='block'>
+                                                        +{occ.startingMoney} de dinheiro inicial
+                                                    </Typography>
+                                                )}
+                                            </Box>
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                                {error && (
+                                    <FormHelperText error>{String(error.message)}</FormHelperText>
+                                )}
+                            </FormControl>
+                        )}
+                    />
+                )}
             </Box>
 
             {/* Coluna direita */}
             <Box display='flex' flexDirection='column' gap={2} width='35%'>
                 {/* Raça */}
-                <Controller
-                    name='race'
-                    control={control}
-                    render={({ field, fieldState: { error } }) => (
-                        <FormControl error={!!error} disabled={disabled}>
-                            <InputLabel>{raceLabel} *</InputLabel>
-                            <Select
-                                {...field}
-                                label={`${raceLabel} *`}
-                                required
-                                fullWidth
-                                renderValue={selected => String(selected)}
-                                onChange={(e) => {
-                                    setRace(e)
-                                    field.onChange((e as SelectChangeEvent<any>).target.value)
-                                }}
-                            >
-                                {(isCustomSystem && customSystem?.races && customSystem.races.length > 0) ? (
-                                    customSystem.races.map(race => (
-                                        <MenuItem key={race.name} value={race.name}>
-                                            <Box display='flex' flexDirection='column'>
-                                                <Typography>{race.name}</Typography>
-                                                {race.description && (
-                                                    <Typography variant='caption' color='text.secondary'>
-                                                        {race.description}
-                                                    </Typography>
-                                                )}
-                                            </Box>
-                                        </MenuItem>
-                                    ))
-                                ) : (
-                                    Object.entries(races).map(([ raceName, raceData ]) => (
-                                        <MenuItem key={raceName} value={raceName}>
-                                            <Box display='flex' flexDirection='column'>
-                                                <Typography>{raceName}</Typography>
-                                                {raceName === 'Humano' ? (
-                                                    <Typography variant='caption' color={green[500]}>+1 Ponto de Atributo</Typography>
-                                                ) : (
-                                                    <>
-                                                        {raceData.stats.lp > 0 && (
-                                                            <Typography variant='caption' color={green[500]}>+{raceData.stats.lp} LP</Typography>
-                                                        )}
-                                                        {raceData.stats.lp < 0 && (
-                                                            <Typography variant='caption' color={red[500]}>{raceData.stats.lp} LP</Typography>
-                                                        )}
-                                                        {raceData.stats.mp > 0 && (
-                                                            <Typography variant='caption' color={green[500]}>+{raceData.stats.mp} MP</Typography>
-                                                        )}
-                                                        {raceData.stats.mp < 0 && (
-                                                            <Typography variant='caption' color={red[500]}>{raceData.stats.mp} MP</Typography>
-                                                        )}
-                                                        {raceData.stats.ap > 0 && (
-                                                            <Typography variant='caption' color={green[500]}>+{raceData.stats.ap} AP</Typography>
-                                                        )}
-                                                        {raceData.stats.ap < 0 && (
-                                                            <Typography variant='caption' color={red[500]}>{raceData.stats.ap} AP</Typography>
-                                                        )}
-                                                    </>
-                                                )}
-                                            </Box>
-                                        </MenuItem>
-                                    ))
-                                )}
-                            </Select>
-                            {error && (
-                                <FormHelperText error>{String(error.message)}</FormHelperText>
-                            )}
-                        </FormControl>
-                    )}
-                />
-
-                {/* Idade e Gênero (desktop) */}
-                <Box display='flex' gap={3}>
+                {(!isCustomSystem || customSystem?.enabledFields?.race) && (
                     <Controller
-                        name='age'
+                        name='race'
                         control={control}
-                        disabled={disabled}
-                        render={({ field: { onChange, ...field }, fieldState: { error } }) => (
-                            <TextField
-                                {...field}
-                                label='Idade'
-                                type='number'
-                                error={!!error}
-                                helperText={error?.message}
-                                required
-                                sx={{ width: !matches ? '50%' : '100%' }}
-                                inputProps={{ min: 0, onWheel: (e) => (e.target as HTMLElement).blur() }}
-                                onChange={(e) => {
-                                    const value = parseInt(e.target.value, 10) || 0;
-                                    onChange(value);
-                                }}
-                            />
+                        render={({ field, fieldState: { error } }) => (
+                            <FormControl error={!!error} disabled={disabled}>
+                                <InputLabel>{raceLabel} *</InputLabel>
+                                <Select
+                                    {...field}
+                                    label={`${raceLabel} *`}
+                                    required
+                                    fullWidth
+                                    renderValue={selected => String(selected)}
+                                    onChange={(e) => {
+                                        setRace(e)
+                                        field.onChange((e as SelectChangeEvent<any>).target.value)
+                                    }}
+                                >
+                                    {(isCustomSystem && customSystem?.races && customSystem.races.length > 0) ? (
+                                        customSystem.races.map(race => (
+                                            <MenuItem key={race.name} value={race.name}>
+                                                <Box display='flex' flexDirection='column'>
+                                                    <Typography>{race.name}</Typography>
+                                                    {race.description && (
+                                                        <Typography variant='caption' color='text.secondary'>
+                                                            {race.description}
+                                                        </Typography>
+                                                    )}
+                                                </Box>
+                                            </MenuItem>
+                                        ))
+                                    ) : (
+                                        Object.entries(races).map(([ raceName, raceData ]) => (
+                                            <MenuItem key={raceName} value={raceName}>
+                                                <Box display='flex' flexDirection='column'>
+                                                    <Typography>{raceName}</Typography>
+                                                    {raceName === 'Humano' ? (
+                                                        <Typography variant='caption' color={green[500]}>+1 Ponto de Atributo</Typography>
+                                                    ) : (
+                                                        <>
+                                                            {raceData.stats.lp > 0 && (
+                                                                <Typography variant='caption' color={green[500]}>+{raceData.stats.lp} LP</Typography>
+                                                            )}
+                                                            {raceData.stats.lp < 0 && (
+                                                                <Typography variant='caption' color={red[500]}>{raceData.stats.lp} LP</Typography>
+                                                            )}
+                                                            {raceData.stats.mp > 0 && (
+                                                                <Typography variant='caption' color={green[500]}>+{raceData.stats.mp} MP</Typography>
+                                                            )}
+                                                            {raceData.stats.mp < 0 && (
+                                                                <Typography variant='caption' color={red[500]}>{raceData.stats.mp} MP</Typography>
+                                                            )}
+                                                            {raceData.stats.ap > 0 && (
+                                                                <Typography variant='caption' color={green[500]}>+{raceData.stats.ap} AP</Typography>
+                                                            )}
+                                                            {raceData.stats.ap < 0 && (
+                                                                <Typography variant='caption' color={red[500]}>{raceData.stats.ap} AP</Typography>
+                                                            )}
+                                                        </>
+                                                    )}
+                                                </Box>
+                                            </MenuItem>
+                                        ))
+                                    )}
+                                </Select>
+                                {error && (
+                                    <FormHelperText error>{String(error.message)}</FormHelperText>
+                                )}
+                            </FormControl>
                         )}
                     />
+                )}
 
-                    {!matches && (
-                        <FormControl sx={{ width: '50%' }}>
-                            <InputLabel>Gênero *</InputLabel>
+                {/* Idade e Gênero (desktop) */}
+                {(showAge || showGender) && (
+                    <Box display='flex' gap={3}>
+                        {showAge && (
                             <Controller
-                                name='gender'
+                                name='age'
                                 control={control}
-                                render={({ field, fieldState: { error } }) => (
-                                    <>
-                                        <Select
-                                            {...field}
-                                            label='Gênero *'
-                                            error={!!error}
-                                            required
-                                            fullWidth
-                                        >
-                                            <MenuItem value='Masculino'>Masculino</MenuItem>
-                                            <MenuItem value='Feminino'>Feminino</MenuItem>
-                                            <MenuItem value='Não-binário'>Não-binário</MenuItem>
-                                            <MenuItem value='Outro'>Outro</MenuItem>
-                                            <MenuItem value='Não definido'>Não definido</MenuItem>
-                                        </Select>
-                                        {error && (
-                                            <FormHelperText error>{String(error.message)}</FormHelperText>
-                                        )}
-                                    </>
+                                disabled={disabled}
+                                render={({ field: { onChange, value }, fieldState: { error } }) => (
+                                    <NumberField
+                                        value={value || 0}
+                                        onChange={onChange}
+                                        min={customSystem?.initialFields?.age?.min ?? 0}
+                                        max={customSystem?.initialFields?.age?.max}
+                                        label={customSystem?.initialFields?.age?.label || 'Idade'}
+                                        error={!!error}
+                                        helperText={error?.message}
+                                        required
+                                        disabled={disabled}
+                                        sx={{ width: (!matches && showGender) ? '50%' : '100%' }}
+                                    />
                                 )}
                             />
-                        </FormControl>
-                    )}
-                </Box>
+                        )}
+
+                        {!matches && showGender && (
+                            <FormControl sx={{ width: showAge ? '50%' : '100%' }}>
+                                <InputLabel>{customSystem?.initialFields?.gender?.label || 'Gênero'} *</InputLabel>
+                                <Controller
+                                    name='gender'
+                                    control={control}
+                                    render={({ field, fieldState: { error } }) => (
+                                        <>
+                                            <Select
+                                                {...field}
+                                                label={`${customSystem?.initialFields?.gender?.label || 'Gênero'} *`}
+                                                error={!!error}
+                                                required
+                                                fullWidth
+                                            >
+                                                {genderOptions.map(option => (
+                                                    <MenuItem key={option} value={option}>{option}</MenuItem>
+                                                ))}
+                                            </Select>
+                                            {error && (
+                                                <FormHelperText error>{String(error.message)}</FormHelperText>
+                                            )}
+                                        </>
+                                    )}
+                                />
+                            </FormControl>
+                        )}
+                    </Box>
+                )}
 
                 {/* Gênero (mobile) */}
-                {matches && (
+                {matches && showGender && (
                     <FormControl sx={{ width: '100%' }}>
-                        <InputLabel>Gênero</InputLabel>
+                        <InputLabel>{customSystem?.initialFields?.gender?.label || 'Gênero'}</InputLabel>
                         <Controller
                             name='gender'
                             control={control}
@@ -565,16 +675,14 @@ export default function Characteristics(): ReactElement {
                                 <>
                                     <Select
                                         {...field}
-                                        label='Gênero *'
+                                        label={`${customSystem?.initialFields?.gender?.label || 'Gênero'} *`}
                                         error={!!error}
                                         required
                                         fullWidth
                                     >
-                                        <MenuItem value='Masculino'>Masculino</MenuItem>
-                                        <MenuItem value='Feminino'>Feminino</MenuItem>
-                                        <MenuItem value='Não-binário'>Não-binário</MenuItem>
-                                        <MenuItem value='Outro'>Outro</MenuItem>
-                                        <MenuItem value='Não definido'>Não definido</MenuItem>
+                                        {genderOptions.map(option => (
+                                            <MenuItem key={option} value={option}>{option}</MenuItem>
+                                        ))}
                                     </Select>
                                     {error && (
                                         <FormHelperText error>{String(error.message)}</FormHelperText>
@@ -584,6 +692,83 @@ export default function Characteristics(): ReactElement {
                         />
                     </FormControl>
                 )}
+
+                {/* Campos iniciais customizados do sistema (ex: Altura, Peso) */}
+                {customInitialFields.map(fieldDef => (
+                    <Controller
+                        key={fieldDef.key}
+                        name={`customFields.${fieldDef.key}` as any}
+                        control={control}
+                        render={({ field: { onChange, value, ...field }, fieldState: { error } }) => {
+                            if (fieldDef.type === 'select') {
+                                return (
+                                    <FormControl fullWidth error={!!error} disabled={disabled}>
+                                        <InputLabel>{fieldDef.label}{fieldDef.required ? ' *' : ''}</InputLabel>
+                                        <Select
+                                            {...field}
+                                            value={(value as string) ?? ''}
+                                            label={`${fieldDef.label}${fieldDef.required ? ' *' : ''}`}
+                                            onChange={(e) => onChange(e.target.value)}
+                                            fullWidth
+                                        >
+                                            {(fieldDef.options || []).map(option => (
+                                                <MenuItem key={option} value={option}>{option}</MenuItem>
+                                            ))}
+                                        </Select>
+                                        {error && <FormHelperText error>{String(error.message)}</FormHelperText>}
+                                    </FormControl>
+                                )
+                            }
+                            if (fieldDef.type === 'boolean') {
+                                return (
+                                    <FormControl fullWidth error={!!error} disabled={disabled}>
+                                        <InputLabel>{fieldDef.label}</InputLabel>
+                                        <Select
+                                            {...field}
+                                            value={value === true ? 'true' : value === false ? 'false' : ''}
+                                            label={fieldDef.label}
+                                            onChange={(e) => onChange(e.target.value === 'true')}
+                                            fullWidth
+                                        >
+                                            <MenuItem value='true'>Sim</MenuItem>
+                                            <MenuItem value='false'>Não</MenuItem>
+                                        </Select>
+                                    </FormControl>
+                                )
+                            }
+                            if (fieldDef.type === 'number') {
+                                return (
+                                    <NumberField
+                                        value={(value as number) || 0}
+                                        onChange={onChange}
+                                        min={fieldDef.min}
+                                        max={fieldDef.max}
+                                        allowDecimal
+                                        label={fieldDef.label}
+                                        required={fieldDef.required}
+                                        disabled={disabled}
+                                        error={!!error}
+                                        helperText={error?.message}
+                                        fullWidth
+                                    />
+                                )
+                            }
+                            return (
+                                <TextField
+                                    {...field}
+                                    value={(value as string) ?? ''}
+                                    label={fieldDef.label}
+                                    required={fieldDef.required}
+                                    disabled={disabled}
+                                    error={!!error}
+                                    helperText={error?.message}
+                                    fullWidth
+                                    onChange={(e) => onChange(e.target.value)}
+                                />
+                            )
+                        }}
+                    />
+                ))}
             </Box>
         </Box>
     )

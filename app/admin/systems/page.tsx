@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import {
     Box,
     Typography,
@@ -21,7 +21,8 @@ import {
     DialogTitle,
     DialogContent,
     DialogActions,
-    TextField
+    TextField,
+    InputAdornment
 } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
 import RefreshIcon from '@mui/icons-material/Refresh'
@@ -30,11 +31,15 @@ import DeleteIcon from '@mui/icons-material/Delete'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import PublicIcon from '@mui/icons-material/Public'
 import LockIcon from '@mui/icons-material/Lock'
+import DownloadIcon from '@mui/icons-material/Download'
+import UploadFileIcon from '@mui/icons-material/UploadFile'
+import SearchIcon from '@mui/icons-material/Search'
 import { green, grey } from '@mui/material/colors'
 import { useSnackbar } from 'notistack'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import type { RPGSystem } from '@models/entities'
+import { downloadSystemJson, parseSystemImport, SYSTEM_BUILDER_SEED_KEY } from '@utils/systemExportImport'
 
 export default function AdminSystemsPage() {
     const [ systems, setSystems ] = useState<RPGSystem[]>([])
@@ -43,6 +48,8 @@ export default function AdminSystemsPage() {
     const [ duplicateDialogOpen, setDuplicateDialogOpen ] = useState(false)
     const [ selectedSystem, setSelectedSystem ] = useState<RPGSystem | null>(null)
     const [ newSystemName, setNewSystemName ] = useState('')
+    const [ searchQuery, setSearchQuery ] = useState('')
+    const fileInputRef = useRef<HTMLInputElement>(null)
     const { enqueueSnackbar } = useSnackbar()
     const router = useRouter()
     const { data: session } = useSession()
@@ -124,6 +131,35 @@ export default function AdminSystemsPage() {
         return new Date(dateString).toLocaleString('pt-BR')
     }
 
+    const handleImportFile = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0]
+        // Permite re-importar o mesmo arquivo depois
+        event.target.value = ''
+        if (!file) return
+
+        const reader = new FileReader()
+        reader.onload = () => {
+            const result = parseSystemImport(String(reader.result ?? ''))
+            if (!result.ok) {
+                result.errors.forEach(err => enqueueSnackbar(err, { variant: 'error' }))
+                return
+            }
+            sessionStorage.setItem(SYSTEM_BUILDER_SEED_KEY, JSON.stringify(result.system))
+            router.push('/admin/systems/create?seed=1')
+        }
+        reader.onerror = () => enqueueSnackbar('Erro ao ler o arquivo', { variant: 'error' })
+        reader.readAsText(file)
+    }
+
+    const filteredSystems = useMemo(() => {
+        const q = searchQuery.trim().toLowerCase()
+        if (!q) return systems
+        return systems.filter(s =>
+            s.name?.toLowerCase().includes(q) ||
+            s.description?.toLowerCase().includes(q)
+        )
+    }, [ systems, searchQuery ])
+
     return (
         <Box sx={{ p: 4, maxWidth: 1400, mx: 'auto' }}>
             {/* Header */}
@@ -146,6 +182,20 @@ export default function AdminSystemsPage() {
                         Atualizar
                     </Button>
                     <Button
+                        variant="outlined"
+                        startIcon={<UploadFileIcon />}
+                        onClick={() => fileInputRef.current?.click()}
+                    >
+                        Importar
+                    </Button>
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept=".json,application/json"
+                        hidden
+                        onChange={handleImportFile}
+                    />
+                    <Button
                         variant="contained"
                         startIcon={<AddIcon />}
                         onClick={() => router.push('/admin/systems/create')}
@@ -154,6 +204,25 @@ export default function AdminSystemsPage() {
                     </Button>
                 </Box>
             </Box>
+
+            {/* Busca */}
+            {systems.length > 0 && (
+                <TextField
+                    fullWidth
+                    size="small"
+                    placeholder="Buscar por nome ou descrição..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    sx={{ mb: 3 }}
+                    InputProps={{
+                        startAdornment: (
+                            <InputAdornment position="start">
+                                <SearchIcon fontSize="small" />
+                            </InputAdornment>
+                        )
+                    }}
+                />
+            )}
 
             {loading ? (
                 <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
@@ -180,7 +249,7 @@ export default function AdminSystemsPage() {
                             </TableRow>
                         </TableHead>
                         <TableBody>
-                            {systems.map((system) => (
+                            {filteredSystems.map((system) => (
                                 <TableRow key={system.id} hover>
                                     <TableCell>
                                         <Typography variant="subtitle2" fontWeight={600}>
@@ -248,6 +317,14 @@ export default function AdminSystemsPage() {
                                                 }}
                                             >
                                                 <ContentCopyIcon />
+                                            </IconButton>
+                                        </Tooltip>
+                                        <Tooltip title="Exportar JSON">
+                                            <IconButton
+                                                color="success"
+                                                onClick={() => downloadSystemJson(system)}
+                                            >
+                                                <DownloadIcon />
                                             </IconButton>
                                         </Tooltip>
                                         <Tooltip title="Deletar">

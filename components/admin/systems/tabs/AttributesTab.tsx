@@ -101,6 +101,30 @@ export function AttributesTab({ system, updateSystem }: AttributesTabProps) {
                 </Button>
             </Box>
 
+            {/* Pontos iniciais para distribuir entre atributos */}
+            <Paper sx={{ p: 2, mb: 3 }}>
+                <Grid container spacing={2} alignItems="center">
+                    <Grid item xs={12} sm={4} md={3}>
+                        <TextField
+                            fullWidth
+                            size="small"
+                            type="number"
+                            label="Pontos de Atributo Iniciais"
+                            value={system.initialAttributePoints ?? ''}
+                            onChange={(e) => {
+                                const raw = e.target.value
+                                updateSystem(
+                                    'initialAttributePoints',
+                                    raw === '' ? (undefined as any) : Math.max(0, parseInt(raw) || 0)
+                                )
+                            }}
+                            inputProps={{ min: 0 }}
+                            helperText="Pontos para distribuir na criação da ficha. Vazio = padrão da aplicação."
+                        />
+                    </Grid>
+                </Grid>
+            </Paper>
+
             {attributes.length === 0 ? (
                 <Paper sx={{ p: 4, textAlign: 'center' }}>
                     <Typography color="text.secondary">

@@ -8,7 +8,8 @@ import {
     Inventory2,
     Person,
     SelfImprovement,
-    SportsMartialArts
+    SportsMartialArts,
+    Tune
 } from '@mui/icons-material';
 import {
     Backdrop,
@@ -26,6 +27,7 @@ import MoneyAndAmmo from './MoneyAndAmmo';
 import PlayerHeader from './PlayerHeader';
 import SpellsSection from './SpellsSection';
 import AcquiredPerks from './AcquiredPerks';
+import CampaignCustomResources from './CampaignCustomResources';
 import ShopDrawer from './ShopDrawer';
 import { PerkCardsModal, type SessionPlayer } from '@features/roguelite/components';
 import { savePerkToCharsheet } from '@features/roguelite/utils';
@@ -337,6 +339,13 @@ export default function CampaignPlayerDashboard(): ReactElement | null {
                                 <SpellsSection />
                             </Section>
                         </Box>
+
+                        {/* Recursos customizados do sistema (ex: Bateria, O2, Estresse) */}
+                        {charsheet.systemId && (
+                            <Section title="Recursos do Sistema" icon={<Tune sx={{ color: 'warning.main' }} />}>
+                                <CampaignCustomResources />
+                            </Section>
+                        )}
 
                         {/* Perícias */}
                         <Section title="Perícias" icon={<Person sx={{ color: 'info.main' }} />}>

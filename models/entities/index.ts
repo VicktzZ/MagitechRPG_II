@@ -10,24 +10,27 @@ export { ArmorEntity } from './ArmorEntity';
 export { WeaponEntity } from './WeaponEntity';
 export { SkillEntity } from './SkillEntity';
 export { Job, type JobStatus, type JobLog } from './Job';
-export { 
-    RPGSystem, 
-    type SystemAttribute, 
-    type SystemExpertise, 
-    type SystemSkill, 
+export {
+    RPGSystem,
+    type SystemAttribute,
+    type SystemExpertise,
+    type SystemSkill,
     type SystemSpell,
-    type SystemClass, 
-    type SystemSubclass, 
-    type SystemRace, 
-    type SystemLineage, 
-    type SystemTrait, 
+    type SystemClass,
+    type SystemSubclass,
+    type SystemRace,
+    type SystemLineage,
+    type SystemTrait,
     type SystemOccupation,
-    type EnabledFields, 
-    type DiceRules, 
+    type EnabledFields,
+    type DiceRules,
     type PointsConfig,
     type InitialFields,
     type InitialFieldConfig,
     type ConceptNames,
-    type MagicConfig
+    type MagicConfig,
+    type SystemProgressionLevel,
+    type SkillPointRules,
+    type CustomResource
 } from './RPGSystem';
 export { CombatEffectEntity } from './CombatEffectEntity';

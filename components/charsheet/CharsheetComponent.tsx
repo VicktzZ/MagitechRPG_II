@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-shadow */
 'use client';
 
-import { Attributes, DynamicAttributes, DynamicCharacteristics, Characteristics, CustomDices, Expertises, Inventory, Magics, Passives, Skills, SkillsModal } from '@components/charsheet';
+import { Attributes, CustomResources, DynamicAttributes, Characteristics, CustomDices, Expertises, Inventory, LevelAndInfo, Magics, Passives, Skills, SkillsModal } from '@components/charsheet';
 import { toastDefault } from '@constants';
 import { useAudio, useCharsheetSystem } from '@hooks';
 import { CustomIconButton, WarningModal } from '@layout';
@@ -88,6 +88,7 @@ function Section({ title, icon, children, action, sx }: {
 export default function CharsheetComponent(): ReactElement {
     const form = useFormContext<CharsheetDTO>()
     const charsheet = form.getValues()
+    const { system } = useCharsheetSystem(charsheet.systemId)
     const { data: session } = useSession()
     const queryClient = useQueryClient()
     const audio = useAudio('/sounds/arcade-cyber-bling.wav')
@@ -347,9 +348,9 @@ export default function CharsheetComponent(): ReactElement {
                     </Box>
                     
                     <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
-                        {/* Mostra o sistema */}
-                        <Chip 
-                            label={`Sistema: ${form.getValues().mode || 'Magitech RPG'}`}
+                        {/* Mostra o sistema (nome do sistema customizado, ou modo Magitech) */}
+                        <Chip
+                            label={`Sistema: ${system?.name || form.getValues().mode || 'Magitech RPG'}`}
                             color="secondary"
                             sx={{ fontWeight: 600 }}
                         />
@@ -420,12 +421,15 @@ export default function CharsheetComponent(): ReactElement {
             )}
 
             {/* Características */}
-            <Section 
-                title="Características" 
+            <Section
+                title="Características"
                 icon={<ArticleRounded sx={{ color: 'primary.main' }} />}
             >
                 <Characteristics />
             </Section>
+
+            {/* Recursos customizados (ex: Bateria, O2, Estresse no Cosmos RPG) */}
+            <CustomResources />
 
             {/* Grid de Atributos e Habilidades */}
             {/* Layout para Desktop: duas colunas lado a lado */}
@@ -437,11 +441,14 @@ export default function CharsheetComponent(): ReactElement {
                 >
                     {/* Coluna Esquerda - Atributos */}
                     <Stack spacing={3} sx={{ flex: 1 }}>
-                        <Section 
-                            title="Atributos" 
+                        <Section
+                            title="Atributos"
                             icon={<Equalizer sx={{ color: 'warning.main' }} />}
                         >
-                            <Attributes />
+                            <Box>
+                                <DynamicAttributes system={system} />
+                                {system && <LevelAndInfo />}
+                            </Box>
                         </Section>
                     </Stack>
 
@@ -492,11 +499,14 @@ export default function CharsheetComponent(): ReactElement {
             {(isTablet || isNotebook) && (
                 <Stack spacing={3} sx={{ width: '100%' }}>
                     {/* Atributos */}
-                    <Section 
-                        title="Atributos" 
+                    <Section
+                        title="Atributos"
                         icon={<Equalizer sx={{ color: 'warning.main' }} />}
                     >
-                        <Attributes />
+                        <Box>
+                            <DynamicAttributes system={system} />
+                            {system && <LevelAndInfo />}
+                        </Box>
                     </Section>
 
                     {/* Habilidades */}
@@ -573,13 +583,15 @@ export default function CharsheetComponent(): ReactElement {
                 </Box>
             </Section>
 
-            {/* Magias */}
-            <Section 
-                title="Magias"
-                icon={<AutoAwesome sx={{ color: 'primary.main' }} />}
-            >
-                <Magics />
-            </Section>
+            {/* Magias — oculto para sistemas com spells desabilitado */}
+            {(!system || system.enabledFields?.spells !== false) && (
+                <Section
+                    title="Magias"
+                    icon={<AutoAwesome sx={{ color: 'primary.main' }} />}
+                >
+                    <Magics />
+                </Section>
+            )}
 
             {/* Anotações */}
             <Section 

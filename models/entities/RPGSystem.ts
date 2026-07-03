@@ -72,6 +72,13 @@ export interface SystemSkill {
     duration?: string;
     range?: string;
     prerequisites?: string[];
+    /**
+     * Restringe a habilidade a uma classe (key ou name).
+     * Usado em habilidades gerais (system.skills): no level-up, a habilidade
+     * é concedida automaticamente se `level` foi atingido e a classe da ficha
+     * corresponde. Vazio/undefined = qualquer classe.
+     */
+    requiredClass?: string;
 }
 
 export interface SystemSpell {
@@ -184,6 +191,50 @@ export interface SystemTrait {
         kind: 'attribute' | 'expertise' | 'custom';
         name: string;
     };
+}
+
+// ============================================
+// Tipos para progressão e recursos customizados
+// ============================================
+
+export interface SystemProgressionLevel {
+    level: number;
+    label?: string;               // "Recruta", "Veterano", "Especialista"...
+    hpBonus: number;              // HP ganho ao atingir este nível (stats.maxLp)
+    skillPoints: number;          // Pontos de perícia ganhos (points.expertises)
+    attributePoints?: number;     // Pontos de atributo ganhos (points.attributes)
+    unlocksClassAbility?: boolean; // Se este nível desbloqueia habilidade de classe
+    customResourceBonuses?: Record<string, number>; // Bônus em recursos customizados
+    /**
+     * Bônus genéricos para outros campos da charsheet.
+     * Chaves suportadas: 'mp' (stats.maxMp), 'ap' (stats.maxAp),
+     * 'magicPoints' (points.magics), 'spellSpaces' (spellSpace)
+     */
+    fieldBonuses?: Record<string, number>;
+    customLabel?: string;         // Texto exibido na notificação de level-up
+}
+
+export interface SkillPointRules {
+    classSkillCost: number;       // Custo por ponto em perícias de classe (padrão: 1)
+    otherSkillCost: number;       // Custo por ponto em outras perícias (padrão: 1)
+    maxPointsPerSkillFormula?: string; // Ex: "level * 2" — cap por perícia baseado no nível
+}
+
+export interface CustomResource {
+    key: string;
+    name: string;
+    abbreviation?: string;
+    type: 'percentage' | 'counter' | 'gauge';
+    min: number;
+    max: number;
+    defaultValue?: number;
+    formula?: string;             // Fórmula para valor inicial baseado em atributos
+    color?: string;               // Cor da barra (hex ou nome CSS)
+    thresholds?: Array<{          // Limiares para efeitos visuais/mecânicos
+        value: number;
+        label: string;
+        color: string;
+    }>;
 }
 
 // ============================================
@@ -370,6 +421,25 @@ export class RPGSystem {
         initialMagicPoints: 0,
         hasSpellSystem: true
     };
+
+    // Nível máximo do sistema (padrão 20; Cosmos RPG usa 5)
+    maxLevel: number = 20;
+
+    // Pontos de atributo para distribuir na criação da ficha
+    // (undefined = usa o padrão da aplicação)
+    initialAttributePoints?: number;
+
+    // Tabela de progressão por nível — se vazia, usa lógica legada do Magitech
+    progressionTable: SystemProgressionLevel[] = [];
+
+    // Regras de custo de pontos de perícia
+    skillPointRules: SkillPointRules = {
+        classSkillCost: 1,
+        otherSkillCost: 1,
+    };
+
+    // Recursos customizados além de LP/MP/AP (ex: Bateria, O2, Estresse)
+    customResources: CustomResource[] = [];
 
     constructor(system?: Partial<RPGSystem>) {
         Object.assign(this, system);

@@ -8,8 +8,10 @@ import RPGIcon from './rpg-icons'
 import DiceRollModal from './DiceRollModal'
 import { DiceMessage } from './DiceMessage'
 import { SavingSpinner } from './SavingSpinner'
+import NumberField from './NumberField'
 
 export {
+    NumberField,
     AnimateOnScroll,
     Parallax,
     ParallaxBackground,

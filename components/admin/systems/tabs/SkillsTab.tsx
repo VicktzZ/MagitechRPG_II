@@ -32,6 +32,7 @@ import EditIcon from '@mui/icons-material/Edit'
 import DeleteIcon from '@mui/icons-material/Delete'
 import SearchIcon from '@mui/icons-material/Search'
 import { v4 as uuidv4 } from 'uuid'
+import { NumberField } from '@components/misc'
 import type { RPGSystem, SystemSkill } from '@models/entities'
 
 interface SkillsTabProps {
@@ -65,6 +66,8 @@ export function SkillsTab({ system, updateSystem }: SkillsTabProps) {
 
     const skills = system.skills || []
     const conceptNames = system.conceptNames || { skill: 'Habilidade' }
+    const systemClasses = system.classes || []
+    const classLabel = system.conceptNames?.class || 'Classe'
 
     // Tipos únicos de habilidades
     const skillTypes = [ ...new Set(skills.map(s => s.type)) ].sort()
@@ -187,6 +190,7 @@ export function SkillsTab({ system, updateSystem }: SkillsTabProps) {
                                 <TableCell><strong>Nome</strong></TableCell>
                                 <TableCell><strong>Tipo</strong></TableCell>
                                 <TableCell><strong>Nível</strong></TableCell>
+                                <TableCell><strong>{classLabel}</strong></TableCell>
                                 <TableCell><strong>Custo</strong></TableCell>
                                 <TableCell><strong>Cooldown</strong></TableCell>
                                 <TableCell align="center"><strong>Ações</strong></TableCell>
@@ -211,6 +215,16 @@ export function SkillsTab({ system, updateSystem }: SkillsTabProps) {
                                     </TableCell>
                                     <TableCell>
                                         {skill.level ? <Chip label={skill.level} size="small" /> : '-'}
+                                    </TableCell>
+                                    <TableCell>
+                                        {skill.requiredClass
+                                            ? <Chip
+                                                label={systemClasses.find(c => c.key === skill.requiredClass)?.name || skill.requiredClass}
+                                                size="small"
+                                                color="primary"
+                                                variant="outlined"
+                                            />
+                                            : '-'}
                                     </TableCell>
                                     <TableCell>{skill.cost || '-'}</TableCell>
                                     <TableCell>{skill.cooldown || '-'}</TableCell>
@@ -270,14 +284,37 @@ export function SkillsTab({ system, updateSystem }: SkillsTabProps) {
                             />
                         </Grid>
                         <Grid item xs={6} sm={3}>
-                            <TextField
+                            <NumberField
                                 fullWidth
-                                type="number"
                                 label="Nível Requerido"
                                 value={formData.level || 0}
-                                onChange={(e) => setFormData({ ...formData, level: parseInt(e.target.value) || 0 })}
+                                onChange={(level) => setFormData({ ...formData, level })}
+                                min={0}
+                                helperText="Concedida automaticamente no level-up"
                             />
                         </Grid>
+                        {systemClasses.length > 0 && (
+                            <Grid item xs={12} sm={6}>
+                                <FormControl fullWidth>
+                                    <InputLabel>{classLabel} Requerida</InputLabel>
+                                    <Select
+                                        value={formData.requiredClass || ''}
+                                        label={`${classLabel} Requerida`}
+                                        onChange={(e) => setFormData({
+                                            ...formData,
+                                            requiredClass: e.target.value || undefined
+                                        })}
+                                    >
+                                        <MenuItem value="">
+                                            <em>Qualquer {classLabel.toLowerCase()}</em>
+                                        </MenuItem>
+                                        {systemClasses.map(cls => (
+                                            <MenuItem key={cls.key} value={cls.key}>{cls.name}</MenuItem>
+                                        ))}
+                                    </Select>
+                                </FormControl>
+                            </Grid>
+                        )}
                         <Grid item xs={12}>
                             <TextField
                                 fullWidth
@@ -289,12 +326,12 @@ export function SkillsTab({ system, updateSystem }: SkillsTabProps) {
                             />
                         </Grid>
                         <Grid item xs={6} sm={3}>
-                            <TextField
+                            <NumberField
                                 fullWidth
-                                type="number"
                                 label="Custo"
                                 value={formData.cost || 0}
-                                onChange={(e) => setFormData({ ...formData, cost: parseInt(e.target.value) || 0 })}
+                                onChange={(cost) => setFormData({ ...formData, cost })}
+                                min={0}
                             />
                         </Grid>
                         <Grid item xs={6} sm={3}>

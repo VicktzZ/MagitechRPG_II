@@ -26,17 +26,20 @@ import PsychologyIcon from '@mui/icons-material/Psychology';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import { blue, orange } from '@mui/material/colors';
 import type { Class, Subclass } from '@models';
+import type { SystemSubclass } from '@models/entities';
 
 interface SubclassModalProps {
     open: boolean;
     onClose: () => void;
     currentClass: Class['name'] | null;
     onConfirm: (subclass: Subclass['name']) => void;
+    /** Subclasses de sistema customizado — quando presente, substitui as constants do Magitech */
+    customSubclasses?: SystemSubclass[];
 }
 
 const obj = {}
 
-function SubclassModal({ open, onClose, currentClass, onConfirm }: SubclassModalProps) {
+function SubclassModal({ open, onClose, currentClass, onConfirm, customSubclasses }: SubclassModalProps) {
     const theme = useTheme();
     const matches = useMediaQuery(theme.breakpoints.down('md'));
     const [ selectedSubclass, setSelectedSubclass ] = useState<Subclass['name'] | null>(null);
@@ -44,14 +47,21 @@ function SubclassModal({ open, onClose, currentClass, onConfirm }: SubclassModal
 
     // Ao inicializar, carregar as subclasses disponíveis para a classe atual
     useEffect(() => {
-        if (currentClass) {
+        if (customSubclasses && customSubclasses.length > 0) {
+            // Sistema customizado: já vem filtrado pela classe
+            const result: Record<string, { description: string }> = {};
+            customSubclasses.forEach(sub => {
+                result[sub.name] = { description: sub.description || '' };
+            });
+            setAvailableSubclasses(result as Partial<Record<Subclass['name'], { description: string }>>);
+        } else if (currentClass) {
             setAvailableSubclasses(subclasses[currentClass] || obj as Partial<Record<Subclass['name'], { description: string }>>);
         } else {
             setAvailableSubclasses(obj as Partial<Record<Subclass['name'], { description: string }>>);
         }
         // Resetar a seleção quando a classe mudar
         setSelectedSubclass(null);
-    }, [ currentClass ]);
+    }, [ currentClass, customSubclasses ]);
 
     // Manipular seleção de subclasse
     const handleSubclassSelect = (subclassName: Subclass['name']) => {
@@ -69,6 +79,9 @@ function SubclassModal({ open, onClose, currentClass, onConfirm }: SubclassModal
     // Buscar habilidades da subclasse selecionada
     const getSubclassSkills = () => {
         if (!selectedSubclass) return [];
+        if (customSubclasses && customSubclasses.length > 0) {
+            return customSubclasses.find(s => s.name === selectedSubclass)?.skills || [];
+        }
         return skills.subclass[selectedSubclass as keyof typeof skills.subclass] || [];
     };
 

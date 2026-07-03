@@ -35,47 +35,58 @@ export function FieldsConfigTab({ system, updateSystem }: FieldsConfigTabProps) 
         skill: 'Habilidade'
     }
 
+    const cn = {
+        class: conceptNames.class || 'Classe',
+        subclass: conceptNames.subclass || 'Subclasse',
+        race: conceptNames.race || 'Raça',
+        lineage: conceptNames.lineage || 'Linhagem',
+        occupation: conceptNames.occupation || 'Profissão',
+        trait: conceptNames.trait || 'Traço',
+        spell: conceptNames.spell || 'Magia',
+        skill: conceptNames.skill || 'Habilidade',
+    }
+
     const fieldOptions: FieldOption[] = [
         {
             key: 'class',
-            label: conceptNames.class + 's',
-            description: `Permite escolher uma ${conceptNames.class.toLowerCase()} para o personagem`,
+            label: cn.class + 's',
+            description: `Permite escolher uma ${cn.class.toLowerCase()} para o personagem`,
             icon: '⚔️'
         },
         {
             key: 'subclass',
-            label: conceptNames.subclass + 's',
-            description: `Permite escolher uma ${conceptNames.subclass.toLowerCase()}/especialização`,
+            label: cn.subclass + 's',
+            description: `Permite escolher uma ${cn.subclass.toLowerCase()}/especialização`,
             icon: '🎖️'
         },
         {
             key: 'race',
-            label: conceptNames.race + 's',
-            description: `Permite escolher uma ${conceptNames.race.toLowerCase()} para o personagem`,
+            label: cn.race + 's',
+            description: `Permite escolher uma ${cn.race.toLowerCase()} para o personagem`,
             icon: '👥'
         },
         {
             key: 'lineage',
-            label: conceptNames.lineage + 's',
-            description: `Permite escolher uma ${conceptNames.lineage.toLowerCase()}/origem`,
+            label: cn.lineage + 's',
+            description: `Permite escolher uma ${cn.lineage.toLowerCase()}/origem`,
             icon: '🏠'
         },
         {
             key: 'occupation',
-            label: conceptNames.occupation + 's',
-            description: `Permite escolher uma ${conceptNames.occupation.toLowerCase()}/ocupação`,
+            label: cn.occupation + 's',
+            description: `Permite escolher uma ${cn.occupation.toLowerCase()}/ocupação`,
             icon: '💼'
         },
         {
             key: 'traits',
-            label: conceptNames.trait + 's',
-            description: `Permite escolher ${conceptNames.trait.toLowerCase()}s positivos e negativos`,
+            label: cn.trait + 's',
+            description: `Permite escolher ${cn.trait.toLowerCase()}s positivos e negativos`,
             icon: '✨'
         },
         {
             key: 'spells',
-            label: conceptNames.spell + 's',
-            description: `Habilita o sistema de ${conceptNames.spell.toLowerCase()}s`,
+            label: cn.spell + 's',
+            description: `Habilita o sistema de ${cn.spell.toLowerCase()}s`,
             icon: '🔮'
         },
         {

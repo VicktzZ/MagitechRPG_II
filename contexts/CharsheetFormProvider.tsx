@@ -9,7 +9,7 @@ import { usePathname } from 'next/navigation';
 import type { ReactElement } from 'react';
 import type { UseFormReturn } from 'react-hook-form';
 import type { CharsheetDTO } from '@models/dtos';
-import { zodResolver } from '@node_modules/@hookform/resolvers/zod/dist';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { charsheetSchema } from '@schemas';
 
 export const CharsheetFormContext = createContext<UseFormReturn<CharsheetDTO> | null>(null);
