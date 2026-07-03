@@ -7,6 +7,7 @@ import { useChannel } from '@contexts/channelContext';
 import { useChatContext } from '@contexts/chatContext';
 import { MessageType, PusherEvent } from '@enums';
 import { charsheetService } from '@services';
+import { postCampaignStats } from '@utils/campaignStatsClient';
 import { useSession } from 'next-auth/react';
 import TestDialog from './TestDialog';
 import TestModal from './TestModal';
@@ -95,6 +96,9 @@ export default function SessionChat() {
         };
 
         channel?.trigger(PusherEvent.TEST_REQUEST, testRequest);
+
+        // Estatística: mestre solicitou um teste
+        postCampaignStats(campaign.id, [ { gm: true, inc: { testsRequested: 1 } } ]);
 
         if (!data.isVisible) {
             setSnackbarMessage('Teste solicitado. Aguardando respostas...');
@@ -204,6 +208,28 @@ export default function SessionChat() {
                 },
                 showResult: currentTest.showResult
             });
+        }
+
+        // ── Estatísticas do teste ──
+        if (userCharsheetId) {
+            const naturalRolls = expertiseResult?.rolls ?? roll.result;
+            const usedRoll = expertiseResult?.finalRoll ?? naturalRolls[0];
+            const totalResult = expertiseResult?.total ?? roll.result.reduce((a, b) => a + b, 0);
+
+            const inc: Record<string, number> = {
+                'dice.totalRolls': 1,
+                [success ? 'dice.testsPassed' : 'dice.testsFailed']: 1
+            };
+            if (usedRoll === 20) inc['dice.criticalHits'] = 1;
+            if (usedRoll === 1) inc['dice.criticalFailures'] = 1;
+
+            postCampaignStats(campaign.id, [ {
+                charsheetId: userCharsheetId,
+                userId: session.user.id,
+                inc,
+                max: { 'dice.highestRoll': totalResult },
+                expertiseUsed: currentTest.expertise || undefined
+            } ]);
         }
     };
 

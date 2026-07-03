@@ -1,5 +1,6 @@
 import { charsheetRepository } from '@repositories'
 import { findCampaignByCodeOrId } from '@utils/helpers/findCampaignByCodeOrId'
+import { recordCampaignStats, type StatsEntry } from '@utils/campaignStatsHelper'
 
 interface DonateRequestBody {
     donorCharsheetId: string
@@ -36,6 +37,14 @@ export async function POST(
             return Response.json(
                 { success: false, message: 'Dados incompletos para doação' },
                 { status: 400 }
+            )
+        }
+
+        const donateCampaign = await findCampaignByCodeOrId(campaignId)
+        if (donateCampaign?.status === 'finished') {
+            return Response.json(
+                { success: false, message: 'Campanha finalizada — doações bloqueadas' },
+                { status: 403 }
             )
         }
 
@@ -124,9 +133,8 @@ export async function POST(
             const currentArmors = targetCharsheet?.inventory?.armors || []
             const armorAP = item.ap || item.value || 0
             
-            // Busca a campanha para obter o campaignCode
-            const campaign = await findCampaignByCodeOrId(campaignId)
-            const campaignCode = campaign?.campaignCode
+            // Usa a campanha já buscada para obter o campaignCode
+            const campaignCode = donateCampaign?.campaignCode
             
             // Encontra a sessão correta do destinatário
             const sessions = targetCharsheet?.session || []
@@ -183,6 +191,27 @@ export async function POST(
             itemName: item.name,
             to: targetCharsheet.name
         })
+
+        // Estatísticas: doação de item
+        if (donateCampaign) {
+            const donateEntries: StatsEntry[] = [ {
+                charsheetId: targetCharsheetId,
+                userId: targetUserId || targetCharsheet.userId,
+                charsheetName: targetCharsheet.name,
+                inc: { 'resources.itemsReceived': 1 }
+            } ]
+            if (donorCharsheetId) {
+                donateEntries.push({
+                    charsheetId: donorCharsheetId,
+                    charsheetName: donorName,
+                    inc: { 'resources.itemsDonated': 1 }
+                })
+            } else {
+                // Doação vinda do mestre
+                donateEntries.push({ gm: true, inc: { itemsGiven: 1 } })
+            }
+            await recordCampaignStats(donateCampaign.id, donateEntries)
+        }
 
         return Response.json({
             success: true,

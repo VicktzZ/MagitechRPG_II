@@ -34,3 +34,14 @@ export {
     type CustomResource
 } from './RPGSystem';
 export { CombatEffectEntity } from './CombatEffectEntity';
+export {
+    CampaignStats,
+    emptyPlayerStats,
+    emptyGMStats,
+    type PlayerCampaignStats,
+    type PlayerCombatStats,
+    type PlayerDiceStats,
+    type PlayerResourceStats,
+    type PlayerProgressionStats,
+    type GMCampaignStats
+} from './CampaignStats';

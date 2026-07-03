@@ -9,6 +9,7 @@ export { default as CombatDialog } from './CombatDialog';
 export { default as ApplyEffectDialog } from './ApplyEffectDialog';
 export { default as CombatEffectsCatalogDialog } from './CombatEffectsCatalogDialog';
 export { default as EffectBadges } from './EffectBadges';
+export { default as FinishCampaignDialog } from './FinishCampaignDialog';
 
 // Types
 export * from './types';

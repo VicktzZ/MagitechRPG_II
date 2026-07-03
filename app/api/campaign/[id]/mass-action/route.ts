@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { campaignRepository, charsheetRepository } from '@repositories'
 import type { Charsheet } from '@models/entities'
+import { recordCampaignStats, type StatsEntry } from '@utils/campaignStatsHelper'
 
 export async function POST(
     request: NextRequest,
@@ -26,7 +27,15 @@ export async function POST(
             )
         }
 
+        if (campaign.status === 'finished') {
+            return NextResponse.json(
+                { error: 'Campanha finalizada — ações em massa bloqueadas' },
+                { status: 403 }
+            )
+        }
+
         let updatedCount = 0
+        const statsEntries: StatsEntry[] = []
 
         for (const charsheetId of charsheetIds) {
             const charsheet = await charsheetRepository.findById(charsheetId)
@@ -37,9 +46,19 @@ export async function POST(
             switch (action) {
             case 'restoreLP': {
                 // Restaura LP ao máximo
+                const restoredLp = (charsheet.stats?.maxLp || 0) - (charsheet.stats?.lp || 0)
                 updateData.stats = {
                     ...charsheet.stats,
                     lp: charsheet.stats?.maxLp || 0
+                }
+                if (restoredLp > 0) {
+                    statsEntries.push({ gm: true, inc: { healingDone: restoredLp } })
+                    statsEntries.push({
+                        charsheetId,
+                        userId: charsheet.userId,
+                        charsheetName: charsheet.name,
+                        inc: { 'combat.healingReceived': restoredLp }
+                    })
                 }
                 break
             }
@@ -58,11 +77,20 @@ export async function POST(
                 }
                 const currentMoney = charsheet.inventory.money || 0
                 const newMoney = currentMoney + (amount || 0)
-                
+
                 updateData.inventory = {
                     ...charsheet.inventory,
                     items: charsheet.inventory.items || [],
                     money: newMoney
+                }
+                if ((amount || 0) > 0) {
+                    statsEntries.push({ gm: true, inc: { moneyGiven: amount } })
+                    statsEntries.push({
+                        charsheetId,
+                        userId: charsheet.userId,
+                        charsheetName: charsheet.name,
+                        inc: { 'resources.moneyEarned': amount }
+                    })
                 }
                 console.log(`[AddMoney] Charsheet ${charsheetId}: ${currentMoney} + ${amount} = ${newMoney}`)
                 break
@@ -73,9 +101,13 @@ export async function POST(
             // Merge dos dados e conversão para objeto plano
             const updatedCharsheet = { ...charsheet, ...updateData }
             const plainCharsheet = JSON.parse(JSON.stringify(updatedCharsheet))
-            
+
             await charsheetRepository.update(plainCharsheet)
             updatedCount++
+        }
+
+        if (statsEntries.length > 0) {
+            await recordCampaignStats(campaignId, statsEntries)
         }
 
         const actionMessages = {

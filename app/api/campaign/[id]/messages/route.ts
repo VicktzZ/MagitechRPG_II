@@ -27,9 +27,13 @@ export async function POST(
         let messageWithId = new Message(dto);
         messageWithId = { ...messageWithId }
         const campaign = await findCampaignByCodeOrId(id);
-        
+
         if (!campaign) {
             return Response.json({ error: 'Campanha não encontrada' }, { status: 404 });
+        }
+
+        if (campaign.status === 'finished') {
+            return Response.json({ error: 'Campanha finalizada — o chat está bloqueado' }, { status: 403 });
         }
 
         await campaignRepository.update({

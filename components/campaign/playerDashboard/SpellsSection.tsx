@@ -2,8 +2,9 @@
 'use client'
 
 import { elementColor } from '@constants';
-import { useCampaignCurrentCharsheetContext } from '@contexts';
+import { useCampaignCurrentCharsheetContext, useCampaignContext } from '@contexts';
 import { useChatContext } from '@contexts/chatContext';
+import { postCampaignStats } from '@utils/campaignStatsClient';
 import { MessageType } from '@enums';
 import { Message } from '@models';
 import type { SpellDTO } from '@models/dtos';
@@ -236,6 +237,7 @@ function SpellStage({ stage, description, spell, onCast, isCasting, canCast, cur
 
 export default function SpellsSection(): ReactElement {
     const { charsheet, updateCharsheet } = useCampaignCurrentCharsheetContext();
+    const { campaign } = useCampaignContext();
     const { handleSendMessage, setIsChatOpen, isChatOpen } = useChatContext();
     const { data: session } = useSession();
     const theme = useTheme();
@@ -280,6 +282,17 @@ export default function SpellsSection(): ReactElement {
             const newMp = Math.max(0, currentMp - result.mpCost);
             await updateCharsheet({ 'stats.mp': newMp } as any);
             await sendCombatChatMessage(buildSpellCastMessage(playerName, result));
+
+            // Estatísticas: magia conjurada + MP gasto
+            postCampaignStats(campaign.id, [ {
+                charsheetId: charsheet.id,
+                userId: session?.user?.id,
+                charsheetName: charsheet.name,
+                inc: {
+                    'resources.spellsCast': 1,
+                    'resources.mpSpent': result.mpCost
+                }
+            } ]);
         } catch (error) {
             console.error('Erro ao conjurar magia:', error);
             enqueueSnackbar('Erro ao conjurar magia', { variant: 'error' });

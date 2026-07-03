@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { charsheetEntity, campaignEntity } from '@utils/firestoreEntities'
+import { recordCampaignStats, type StatsEntry } from '@utils/campaignStatsHelper'
 
 interface RogueliteLevelUpBody {
     charsheetIds: string[]
@@ -50,7 +51,15 @@ export async function POST(
             )
         }
 
+        if (campaign.status === 'finished') {
+            return NextResponse.json(
+                { error: 'Campanha finalizada — evolução bloqueada' },
+                { status: 403 }
+            )
+        }
+
         const results: Array<{ charsheetId: string; success: boolean; newLevel?: number; error?: string }> = []
+        const statsEntries: StatsEntry[] = []
 
         for (const charsheetId of charsheetIds) {
             try {
@@ -155,10 +164,25 @@ export async function POST(
                 })
 
                 results.push({ charsheetId, success: true, newLevel })
+
+                statsEntries.push({
+                    charsheetId,
+                    userId: charsheet.userId,
+                    charsheetName: charsheet.name,
+                    inc: {
+                        'progression.levelsGained': 5,
+                        'resources.moneyEarned': 250
+                    },
+                    max: { 'progression.highestLevel': newLevel }
+                })
             } catch (error) {
                 console.error(`Erro ao evoluir charsheet ${charsheetId}:`, error)
                 results.push({ charsheetId, success: false, error: 'Erro interno' })
             }
+        }
+
+        if (statsEntries.length > 0) {
+            await recordCampaignStats(campaignId, statsEntries)
         }
 
         const successCount = results.filter(r => r.success).length

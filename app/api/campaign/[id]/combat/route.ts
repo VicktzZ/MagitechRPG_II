@@ -7,6 +7,7 @@ import { processEffectTicks, syncPlayerCharsheets } from '@utils/combat/processE
 import { getEffectDisplayName } from '@utils/combatEffectLabels'
 import { v4 as uuidv4 } from 'uuid'
 import { stripUndefined } from '@utils/firestore/stripUndefined'
+import { recordCampaignStats, type StatsEntry } from '@utils/campaignStatsHelper'
 
 type CombatAction = 
     | 'start'           // Iniciar combate
@@ -90,6 +91,13 @@ export async function POST(
             return NextResponse.json({ error: 'Campanha não encontrada' }, { status: 404 })
         }
 
+        if (campaign.status === 'finished') {
+            return NextResponse.json({ error: 'Campanha finalizada — ações de combate bloqueadas' }, { status: 403 })
+        }
+
+        // Eventos de estatística acumulados durante a ação
+        const statsEntries: StatsEntry[] = []
+
         // Inicializa combat se não existir
         if (!campaign.session) {
             campaign.session = { users: [], messages: [] } as any
@@ -155,6 +163,8 @@ export async function POST(
                 actorName: 'Sistema',
                 message: `⚔️ **Combate iniciado!**\nRound 1 — Fase de Iniciativa\n${combat.combatants.length} combatentes participando.`
             }))
+
+            statsEntries.push({ gm: true, inc: { combatsStarted: 1 } })
 
             break
         }
@@ -294,6 +304,16 @@ export async function POST(
                 message: `🎲 **${combatant.name}** rolou iniciativa: ${numDice}d20 (${rollsDisplay}) + ${expertiseValue} AGI = **${combatant.initiativeTotal}**`
             }))
 
+            if (combatant.type === 'player') {
+                statsEntries.push({
+                    charsheetId: combatant.id,
+                    userId: combatant.odacId,
+                    charsheetName: combatant.name,
+                    inc: { 'dice.totalRolls': 1 },
+                    max: { 'dice.highestRoll': combatant.initiativeTotal }
+                })
+            }
+
             break
         }
 
@@ -361,6 +381,7 @@ export async function POST(
             if (allActed) {
                 // Novo round - volta para iniciativa
                 combat.round++
+                statsEntries.push({ gm: true, inc: { combatRoundsRun: 1 } })
                 combat.combatants.forEach(c => {
                     c.hasActed = false
                     c.initiativeRoll = 0
@@ -403,6 +424,7 @@ export async function POST(
                 // Se todos já agiram (fallback de segurança)
                 if (attempts >= maxAttempts) {
                     combat.round++
+                    statsEntries.push({ gm: true, inc: { combatRoundsRun: 1 } })
                     combat.combatants.forEach(c => {
                         c.hasActed = false
                         c.initiativeRoll = 0
@@ -482,7 +504,7 @@ export async function POST(
 
             // Mensagem de dano - não revela LP restante para ninguém
             const damageMessage = `⚔️ **${attacker?.name || 'Desconhecido'}** causou **${damage} de dano** em **${target.name}**!`
-            
+
             combat.logs.push(new CombatLog({
                 round: combat.round,
                 type: 'damage',
@@ -493,6 +515,32 @@ export async function POST(
                 value: damage,
                 message: damageMessage
             }))
+
+            // ── Estatísticas de dano ──
+            const wasDowned = oldLp > 0 && target.currentLp === 0
+            if (target.type === 'player') {
+                const inc: Record<string, number> = { 'combat.damageTaken': damage }
+                if (wasDowned) inc['combat.knockouts'] = 1
+                statsEntries.push({
+                    charsheetId: target.id,
+                    userId: target.odacId,
+                    charsheetName: target.name,
+                    inc
+                })
+            }
+            if (attacker?.type === 'player') {
+                const inc: Record<string, number> = { 'combat.damageDealt': damage }
+                if (target.type === 'creature' && wasDowned) inc['combat.kills'] = 1
+                statsEntries.push({
+                    charsheetId: attacker.id,
+                    userId: attacker.odacId,
+                    charsheetName: attacker.name,
+                    inc
+                })
+            } else {
+                // Dano causado por criatura ou pelo mestre diretamente
+                statsEntries.push({ gm: true, inc: { damageDealt: damage } })
+            }
 
             break
         }
@@ -535,7 +583,7 @@ export async function POST(
 
             // Mensagem de cura - não revela LP restante para ninguém
             const healMessage = `💚 **${healer?.name || 'Desconhecido'}** curou **${heal} de LP** em **${healTarget.name}**!`
-            
+
             combat.logs.push(new CombatLog({
                 round: combat.round,
                 type: 'heal',
@@ -546,6 +594,29 @@ export async function POST(
                 value: heal,
                 message: healMessage
             }))
+
+            // ── Estatísticas de cura (valor efetivo, respeitando o LP máximo) ──
+            const effectiveHeal = healTarget.currentLp - oldHp
+            if (effectiveHeal > 0) {
+                if (healTarget.type === 'player') {
+                    statsEntries.push({
+                        charsheetId: healTarget.id,
+                        userId: healTarget.odacId,
+                        charsheetName: healTarget.name,
+                        inc: { 'combat.healingReceived': effectiveHeal }
+                    })
+                }
+                if (healer?.type === 'player') {
+                    statsEntries.push({
+                        charsheetId: healer.id,
+                        userId: healer.odacId,
+                        charsheetName: healer.name,
+                        inc: { 'combat.healingDone': effectiveHeal }
+                    })
+                } else {
+                    statsEntries.push({ gm: true, inc: { healingDone: effectiveHeal } })
+                }
+            }
 
             break
         }
@@ -576,6 +647,10 @@ export async function POST(
                     actorName: 'Sistema',
                     message: `➕ **${creature.name}** entrou no combate!`
                 }))
+            }
+
+            if (newCreatures.length > 0) {
+                statsEntries.push({ gm: true, inc: { creaturesAdded: newCreatures.length } })
             }
 
             break
@@ -722,6 +797,8 @@ export async function POST(
                 }
             }
 
+            statsEntries.push({ gm: true, inc: { effectsApplied: 1 } })
+
             break
         }
 
@@ -789,8 +866,13 @@ export async function POST(
 
         // Salva a campanha atualizada
         const plainCampaign = JSON.parse(JSON.stringify(campaign))
-        
+
         await campaignRepository.update(plainCampaign)
+
+        // Registra estatísticas da campanha (não bloqueia o fluxo em caso de erro)
+        if (statsEntries.length > 0) {
+            await recordCampaignStats(campaign.id, statsEntries)
+        }
 
         // Notifica os clientes via Pusher
         await pusherServer.trigger(
