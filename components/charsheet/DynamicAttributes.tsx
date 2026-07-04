@@ -108,6 +108,20 @@ export default function DynamicAttributes({ system }: DynamicAttributesProps): R
                 setValue('points.expertises', system.initialExpertisePoints);
             }
         }
+
+        // Peso/carga inicial do sistema — aplica só com inventário intocado
+        if (system.weightConfig) {
+            const inventory = getValues('inventory');
+            const inventoryEmpty =
+                (inventory?.items?.length ?? 0) === 0 &&
+                (inventory?.weapons?.length ?? 0) === 0 &&
+                (inventory?.armors?.length ?? 0) === 0;
+            const targetMax = system.weightConfig.initialMax;
+            const targetCargo = system.weightConfig.initialCargo ?? 0;
+            if (inventoryEmpty && getValues('capacity.max') !== targetMax) {
+                setValue('capacity', { cargo: targetCargo, max: targetMax });
+            }
+        }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [ system, disabled ]);
 

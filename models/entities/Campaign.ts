@@ -1,7 +1,7 @@
 import type { Note } from '../Note';
 import type { Power } from './Power';
 import type { Session } from '../Session';
-import type { CampaignShip } from '../Ship';
+import type { CampaignWidget } from '../CampaignWidget';
 import type { Creature } from '../Creature';
 import type { Weapon } from '../Weapon';
 import type { Armor } from '../Armor';
@@ -70,10 +70,11 @@ export class Campaign {
     systemId?: string;
 
     /**
-     * Nave/veículo compartilhado da campanha — widget visível a todos os
-     * jogadores, administrado pelo mestre (ex: nave do Cosmos RPG).
+     * Widget genérico compartilhado da campanha — painel flutuante visível
+     * a todos os jogadores, administrado pelo mestre. Pode representar uma
+     * nave, um local (taverna), um objetivo a defender etc.
      */
-    ship?: CampaignShip;
+    widget?: CampaignWidget;
 
     /**
      * Estado da campanha. 'finished' = arquivada: sessões bloqueadas,

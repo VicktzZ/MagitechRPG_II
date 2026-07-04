@@ -486,6 +486,63 @@ export function InitialFieldsTab({ system, updateSystem }: InitialFieldsTabProps
                     </Paper>
                 </Grid>
 
+                {/* Peso / Carga do inventário */}
+                <Grid item xs={12} md={6}>
+                    <Paper sx={{ p: 2 }}>
+                        <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
+                            ⚖️ Peso / Carga
+                        </Typography>
+                        <Grid container spacing={2}>
+                            <Grid item xs={4}>
+                                <TextField
+                                    fullWidth
+                                    size="small"
+                                    label="Conceito/Unidade"
+                                    value={system.weightConfig?.unit ?? 'kg'}
+                                    onChange={(e) => updateSystem('weightConfig', {
+                                        initialMax: system.weightConfig?.initialMax ?? 5,
+                                        initialCargo: system.weightConfig?.initialCargo,
+                                        unit: e.target.value
+                                    })}
+                                    placeholder="kg, slots..."
+                                    helperText="Vazio = número simbólico"
+                                />
+                            </Grid>
+                            <Grid item xs={4}>
+                                <TextField
+                                    fullWidth
+                                    size="small"
+                                    type="number"
+                                    label="Peso Inicial"
+                                    value={system.weightConfig?.initialCargo ?? 0}
+                                    onChange={(e) => updateSystem('weightConfig', {
+                                        unit: system.weightConfig?.unit ?? 'kg',
+                                        initialMax: system.weightConfig?.initialMax ?? 5,
+                                        initialCargo: Math.max(0, parseFloat(e.target.value) || 0)
+                                    })}
+                                    inputProps={{ min: 0, step: 'any' }}
+                                />
+                            </Grid>
+                            <Grid item xs={4}>
+                                <TextField
+                                    fullWidth
+                                    size="small"
+                                    type="number"
+                                    label="Capacidade Máxima"
+                                    value={system.weightConfig?.initialMax ?? 5}
+                                    onChange={(e) => updateSystem('weightConfig', {
+                                        unit: system.weightConfig?.unit ?? 'kg',
+                                        initialCargo: system.weightConfig?.initialCargo,
+                                        initialMax: Math.max(0, parseFloat(e.target.value) || 0)
+                                    })}
+                                    inputProps={{ min: 0, step: 'any' }}
+                                    helperText="Inicial da ficha"
+                                />
+                            </Grid>
+                        </Grid>
+                    </Paper>
+                </Grid>
+
                 {/* Campos Customizados */}
                 <Grid item xs={12}>
                     <Divider sx={{ my: 2 }} />

@@ -512,6 +512,17 @@ export class RPGSystem {
         abbreviation?: string;
     };
 
+    /**
+     * Configuração de peso/carga do inventário.
+     * unit: conceito exibido ("kg", "slots", "" = número simbólico).
+     * initialCargo/initialMax: peso inicial e capacidade máxima da ficha.
+     */
+    weightConfig?: {
+        unit: string;
+        initialCargo?: number;
+        initialMax: number;
+    };
+
     // Recursos simbólicos/contáveis exibidos em "Informações Gerais" (ex: Pedras do Nexus)
     symbolicResources?: SymbolicResource[];
 

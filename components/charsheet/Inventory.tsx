@@ -32,6 +32,7 @@ import {
 import { blue, green, red } from '@mui/material/colors';
 import { useMemo, useState, type ReactElement } from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
+import { useCharsheetSystem } from '@hooks';
 
 const redFilter = 'invert(16%) sepia(44%) saturate(6989%) hue-rotate(352deg) brightness(97%) contrast(82%)'
 
@@ -61,15 +62,19 @@ function normalizeToArray<T>(value: any): T[] {
 // TODO: ACRESCENTAR ITENS DE LINHAGEM (ao mudar)
 // TODO: INCREMENTAR SISTEMAS DE NÍVEIS (3) PARA ITENS
 export function Inventory (): ReactElement {
-    const { control } = useFormContext<Charsheet>()
-    
+    const { control, getValues } = useFormContext<Charsheet>()
+
     const theme = useTheme()
     const matches = useMediaQuery(theme.breakpoints.down('md'))
-    
+
     // Observa os valores relevantes do formulário
     const inventory = useWatch({ control, name: 'inventory' })
     const expertises = useWatch({ control, name: 'expertises' })
     const capacity = useWatch({ control, name: 'capacity' })
+
+    // Unidade de peso do sistema customizado (ex: "kg", "slots", "" = simbólico)
+    const { system: customSystem } = useCharsheetSystem(getValues('systemId'))
+    const weightUnit = customSystem ? (customSystem.weightConfig?.unit ?? '') : 'kg'
     
     const [ modalOpen, setModalOpen ] = useState<boolean>(false)
 
@@ -347,7 +352,9 @@ export function Inventory (): ReactElement {
                                         fontWeight="bold"
                                         color={`${getCapacityColor()}.main`}
                                     >
-                                        {capacity ? `${capacity.cargo}/${capacity.max} kg` : '0/0 kg'}
+                                        {capacity
+                                            ? `${capacity.cargo}/${capacity.max}${weightUnit ? ` ${weightUnit}` : ''}`
+                                            : `0/0${weightUnit ? ` ${weightUnit}` : ''}`}
                                     </Typography>
                                 </Stack>
                             </Paper>

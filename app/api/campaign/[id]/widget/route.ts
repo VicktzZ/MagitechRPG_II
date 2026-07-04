@@ -2,10 +2,10 @@ import type { NextRequest } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { campaignRepository } from '@repositories';
 import { findCampaignByCodeOrId } from '@utils/helpers/findCampaignByCodeOrId';
-import type { CampaignShip } from '@models';
+import type { CampaignWidget } from '@models';
 
 /**
- * GET /api/campaign/[id]/ship — retorna a nave da campanha (membros).
+ * GET /api/campaign/[id]/widget — retorna o widget da campanha.
  */
 export async function GET(
     req: NextRequest,
@@ -16,15 +16,15 @@ export async function GET(
         if (!campaign) {
             return Response.json({ message: 'NOT FOUND' }, { status: 404 });
         }
-        return Response.json(campaign.ship ?? null);
+        return Response.json(campaign.widget ?? null);
     } catch (error: any) {
         return Response.json({ message: 'ERROR', error: error.message }, { status: 500 });
     }
 }
 
 /**
- * PUT /api/campaign/[id]/ship — substitui/atualiza a nave (SOMENTE MESTRE).
- * Body: { ship: CampaignShip | null }  (null remove a nave)
+ * PUT /api/campaign/[id]/widget — substitui/atualiza o widget (SOMENTE MESTRE).
+ * Body: { widget: CampaignWidget | null }  (null remove o widget)
  */
 export async function PUT(
     req: NextRequest,
@@ -42,35 +42,35 @@ export async function PUT(
         }
 
         if (!campaign.admin?.includes(session.user.id)) {
-            return Response.json({ message: 'FORBIDDEN', error: 'Apenas o mestre pode administrar a nave' }, { status: 403 });
+            return Response.json({ message: 'FORBIDDEN', error: 'Apenas o mestre pode administrar o widget' }, { status: 403 });
         }
 
         if (campaign.status === 'finished') {
             return Response.json({ message: 'FORBIDDEN', error: 'Campanha finalizada' }, { status: 403 });
         }
 
-        const body: { ship: CampaignShip | null } = await req.json();
+        const body: { widget: CampaignWidget | null } = await req.json();
 
-        const ship = body.ship
-            ? { ...body.ship, updatedAt: new Date().toISOString() }
+        const widget = body.widget
+            ? { ...body.widget, updatedAt: new Date().toISOString() }
             : undefined;
 
         // JSON round-trip para remover campos undefined (Firestore não aceita)
-        const plain = JSON.parse(JSON.stringify({ ...campaign, ship: ship ?? null }));
-        if (plain.ship === null) delete plain.ship;
+        const plain = JSON.parse(JSON.stringify({ ...campaign, widget: widget ?? null }));
+        if (plain.widget === null) delete plain.widget;
 
         await campaignRepository.update(plain);
 
-        return Response.json({ message: 'OK', ship: ship ?? null });
+        return Response.json({ message: 'OK', widget: widget ?? null });
     } catch (error: any) {
         return Response.json({ message: 'ERROR', error: error.message }, { status: 500 });
     }
 }
 
 /**
- * PATCH /api/campaign/[id]/ship — ajustes rápidos por MEMBROS da campanha:
- * valores de recursos (combustível etc) e quantidades do estoque compartilhado.
- * Body: { resourceId?: string; cargoId?: string; delta: number }
+ * PATCH /api/campaign/[id]/widget — ajustes rápidos por MEMBROS da campanha:
+ * valores de recursos e quantidades do estoque compartilhado.
+ * Body: { resourceId?: string; stockId?: string; delta: number }
  */
 export async function PATCH(
     req: NextRequest,
@@ -98,36 +98,36 @@ export async function PATCH(
             return Response.json({ message: 'FORBIDDEN', error: 'Campanha finalizada' }, { status: 403 });
         }
 
-        if (!campaign.ship) {
-            return Response.json({ message: 'NOT FOUND', error: 'Esta campanha não possui nave' }, { status: 404 });
+        if (!campaign.widget) {
+            return Response.json({ message: 'NOT FOUND', error: 'Esta campanha não possui widget' }, { status: 404 });
         }
 
-        const body: { resourceId?: string; cargoId?: string; delta: number } = await req.json();
+        const body: { resourceId?: string; stockId?: string; delta: number } = await req.json();
         const delta = Number(body.delta) || 0;
-        if (delta === 0) return Response.json({ message: 'OK', ship: campaign.ship });
+        if (delta === 0) return Response.json({ message: 'OK', widget: campaign.widget });
 
-        const ship: CampaignShip = { ...campaign.ship };
+        const widget: CampaignWidget = { ...campaign.widget };
 
         if (body.resourceId) {
-            ship.resources = (ship.resources ?? []).map(r => {
+            widget.resources = (widget.resources ?? []).map(r => {
                 if (r.id !== body.resourceId) return r;
                 const next = r.value + delta;
                 const clamped = Math.max(0, r.max !== undefined && r.max !== null ? Math.min(r.max, next) : next);
                 return { ...r, value: clamped };
             });
-        } else if (body.cargoId) {
-            ship.cargo = (ship.cargo ?? [])
-                .map(c => c.id === body.cargoId ? { ...c, quantity: Math.max(0, c.quantity + delta) } : c);
+        } else if (body.stockId) {
+            widget.stock = (widget.stock ?? [])
+                .map(s => s.id === body.stockId ? { ...s, quantity: Math.max(0, s.quantity + delta) } : s);
         } else {
-            return Response.json({ message: 'BAD REQUEST', error: 'resourceId ou cargoId obrigatório' }, { status: 400 });
+            return Response.json({ message: 'BAD REQUEST', error: 'resourceId ou stockId obrigatório' }, { status: 400 });
         }
 
-        ship.updatedAt = new Date().toISOString();
+        widget.updatedAt = new Date().toISOString();
 
-        const plain = JSON.parse(JSON.stringify({ ...campaign, ship }));
+        const plain = JSON.parse(JSON.stringify({ ...campaign, widget }));
         await campaignRepository.update(plain);
 
-        return Response.json({ message: 'OK', ship });
+        return Response.json({ message: 'OK', widget });
     } catch (error: any) {
         return Response.json({ message: 'ERROR', error: error.message }, { status: 500 });
     }

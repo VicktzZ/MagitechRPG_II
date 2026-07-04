@@ -11,7 +11,7 @@ import { CampaignGMDashboard, CampaignHeader, CampaignNotes, CampaignPlayerDashb
 import type { CharsheetDTO } from '@models/dtos';
 import GMActions from './gmDashboard/GMActions';
 import CampaignFinishedBanner from './CampaignFinishedBanner';
-import ShipWidget from './ship/ShipWidget';
+import CampaignWidgetPanel from './widget/CampaignWidgetPanel';
 
 export default function CampaignComponent(): ReactElement {
     const { isUserGM, campaign: { campaignCode }, charsheets  } = useCampaignContext();
@@ -74,8 +74,6 @@ export default function CampaignComponent(): ReactElement {
                             <GMActions />
                         </Box>
                     )}
-                    {/* Nave da campanha — visível a todos os jogadores */}
-                    <ShipWidget />
                     <CampaignNotes />
                     {isUserGM ? (
                         <CampaignGMDashboard />
@@ -85,6 +83,8 @@ export default function CampaignComponent(): ReactElement {
                 </Box>
             </Box>
             <SessionChat />
+            {/* Widget da campanha — painel flutuante visível a todos (estilo pop-up de combate) */}
+            <CampaignWidgetPanel />
         </>
     );
 

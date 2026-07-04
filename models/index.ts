@@ -37,13 +37,16 @@ export { Subclass } from './Subclass';
 export { Occupation } from './Occupation';
 export { Class } from './Class';
 export {
-    createDefaultShip,
-    type CampaignShip,
-    type ShipComponent,
-    type ShipComponentStatus,
-    type ShipResource,
-    type ShipCargoItem,
-    type ShipAlert,
-    type ShipAlertSeverity,
-    type ShipLogEntry
-} from './Ship';
+    createWidgetFromPreset,
+    widgetPresetInfo,
+    type CampaignWidget,
+    type CampaignWidgetLabels,
+    type WidgetPreset,
+    type WidgetPart,
+    type WidgetPartStatus,
+    type WidgetResource,
+    type WidgetStockItem,
+    type WidgetAlert,
+    type WidgetAlertSeverity,
+    type WidgetLogEntry
+} from './CampaignWidget';
