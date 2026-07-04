@@ -1,6 +1,7 @@
 import { rpgSystemRepository } from '@repositories';
 import type { NextRequest } from 'next/server';
 import { getServerSession } from 'next-auth';
+import { authOptions } from '@app/api/auth/[...nextauth]/route';
 import { RPGSystem } from '@models/entities';
 import { isAdminEmail } from '@utils/adminCheck';
 
@@ -26,7 +27,7 @@ export async function PUT(
     { params }: { params: { id: string } }
 ): Promise<Response> {
     try {
-        const session = await getServerSession();
+        const session = await getServerSession(authOptions);
         if (!session?.user) {
             return Response.json({ message: 'UNAUTHORIZED', error: 'Não autorizado' }, { status: 401 });
         }
@@ -67,7 +68,7 @@ export async function PATCH(
     { params }: { params: { id: string } }
 ): Promise<Response> {
     try {
-        const session = await getServerSession();
+        const session = await getServerSession(authOptions);
         if (!session?.user) {
             return Response.json({ message: 'UNAUTHORIZED', error: 'Não autorizado' }, { status: 401 });
         }
@@ -107,7 +108,7 @@ export async function DELETE(
     { params }: { params: { id: string } }
 ): Promise<Response> {
     try {
-        const session = await getServerSession();
+        const session = await getServerSession(authOptions);
         if (!session?.user) {
             return Response.json({ message: 'UNAUTHORIZED', error: 'Não autorizado' }, { status: 401 });
         }

@@ -1,13 +1,13 @@
 import { userRepository } from '@repositories';
 import type { JWT } from 'next-auth/jwt';
-import type { Session } from 'next-auth';
+import type { NextAuthOptions, Session } from 'next-auth';
 import NextAuth from 'next-auth/next';
 import DiscordProvider from 'next-auth/providers/discord';
 import GoogleProvider from 'next-auth/providers/google';
 import { AdminProvider } from './adminProvider';
 import { User } from '@models/entities';
 
-const handler = NextAuth({
+export const authOptions: NextAuthOptions = {
     providers: [
         GoogleProvider({
             clientId: process.env.GOOGLE_CLIENT_ID,
@@ -103,6 +103,8 @@ const handler = NextAuth({
             return token;
         }
     }
-});
+};
+
+const handler = NextAuth(authOptions);
 
 export { handler as GET, handler as POST };

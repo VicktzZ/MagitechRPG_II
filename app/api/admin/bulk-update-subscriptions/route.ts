@@ -1,6 +1,7 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
+import { authOptions } from '@app/api/auth/[...nextauth]/route';
 import * as admin from 'firebase-admin';
 import { SubscriptionPlan, SubscriptionStatus } from '@enums/subscriptionEnum';
 import { isAdminEmail } from '@utils/adminCheck';
@@ -21,7 +22,7 @@ const db = admin.firestore();
  */
 export async function POST(request: NextRequest) {
     try {
-        const session = await getServerSession();
+        const session = await getServerSession(authOptions);
     
         if (!session?.user) {
             return NextResponse.json(

@@ -1,5 +1,6 @@
 import type { NextRequest } from 'next/server';
 import { getServerSession } from 'next-auth';
+import { authOptions } from '@app/api/auth/[...nextauth]/route';
 import { campaignStatsRepository } from '@repositories';
 import { findCampaignByCodeOrId } from '@utils/helpers/findCampaignByCodeOrId';
 import { recordCampaignStats, type StatsEntry } from '@utils/campaignStatsHelper';
@@ -14,7 +15,7 @@ export async function GET(
     { params }: { params: { id: string } }
 ): Promise<Response> {
     try {
-        const session = await getServerSession();
+        const session = await getServerSession(authOptions);
         if (!session?.user) {
             return Response.json({ message: 'UNAUTHORIZED', error: 'Não autorizado' }, { status: 401 });
         }
@@ -57,7 +58,7 @@ export async function POST(
     { params }: { params: { id: string } }
 ): Promise<Response> {
     try {
-        const session = await getServerSession();
+        const session = await getServerSession(authOptions);
         if (!session?.user) {
             return Response.json({ message: 'UNAUTHORIZED', error: 'Não autorizado' }, { status: 401 });
         }

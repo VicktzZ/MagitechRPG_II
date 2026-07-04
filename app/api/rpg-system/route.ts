@@ -1,6 +1,7 @@
 import { rpgSystemRepository } from '@repositories';
 import type { NextRequest } from 'next/server';
 import { getServerSession } from 'next-auth';
+import { authOptions } from '@app/api/auth/[...nextauth]/route';
 import { RPGSystem } from '@models/entities';
 
 export async function GET(req: NextRequest): Promise<Response> {
@@ -51,7 +52,7 @@ export async function GET(req: NextRequest): Promise<Response> {
 
 export async function POST(req: Request): Promise<Response> {
     try {
-        const session = await getServerSession();
+        const session = await getServerSession(authOptions);
         if (!session?.user) {
             return Response.json({ message: 'UNAUTHORIZED', error: 'Não autorizado' }, { status: 401 });
         }
