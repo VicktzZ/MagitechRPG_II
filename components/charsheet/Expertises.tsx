@@ -6,9 +6,10 @@ import { Box, Button, Grid, Typography, useTheme, FormHelperText, type ButtonPro
 import { blue, green, grey, purple, yellow } from '@mui/material/colors';
 import { useFormContext, useWatch, type FieldError } from 'react-hook-form';
 import { useState, type ReactElement, useRef, useCallback, useMemo, useEffect } from 'react';
-import type { Charsheet, RPGSystem, SkillPointRules } from '@models/entities';
+import type { Charsheet, RPGSystem, SkillPointRules, SystemAttribute } from '@models/entities';
 import type { Expertises as ExpertisesType } from '@models';
 import { evaluateFormula } from '@utils/formulaEvaluator';
+import { computeAttributeInfluence } from '@utils/systemLookups';
 
 export default function Expertises({ disabled }: { disabled?: boolean }): ReactElement {
     const { control, setValue, getValues, formState: { errors } } = useFormContext<Charsheet>()
@@ -21,7 +22,8 @@ export default function Expertises({ disabled }: { disabled?: boolean }): ReactE
     const [ multiplier, setMultiplier ] = useState<number>(1)
     const [ systemExpertises, setSystemExpertises ] = useState<RPGSystem['expertises'] | null>(null)
     const [ skillPointRules, setSkillPointRules ] = useState<SkillPointRules | null>(null)
-    const [ loadingSystem, setLoadingSystem ] = useState(false)
+    const [ systemAttributes, setSystemAttributes ] = useState<SystemAttribute[] | null>(null)
+    const [ , setLoadingSystem ] = useState(false)
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
 
     // Carregar perícias do sistema se houver systemId
@@ -29,7 +31,7 @@ export default function Expertises({ disabled }: { disabled?: boolean }): ReactE
         if (charsheet.systemId) {
             setLoadingSystem(true)
             fetch(`/api/rpg-system/${charsheet.systemId}`)
-                .then(res => res.json())
+                .then(async res => await res.json())
                 .then((data: RPGSystem) => {
                     if (data.expertises && data.expertises.length > 0) {
                         setSystemExpertises(data.expertises)
@@ -56,6 +58,9 @@ export default function Expertises({ disabled }: { disabled?: boolean }): ReactE
                     }
                     if (data.skillPointRules) {
                         setSkillPointRules(data.skillPointRules)
+                    }
+                    if (data.attributes && data.attributes.length > 0) {
+                        setSystemAttributes(data.attributes)
                     }
                 })
                 .catch(err => console.error('Erro ao carregar perícias do sistema:', err))
@@ -173,10 +178,12 @@ export default function Expertises({ disabled }: { disabled?: boolean }): ReactE
         
         // Se há perícias customizadas do sistema, renderizar apenas elas
         if (systemExpertises && systemExpertises.length > 0) {
+            const attributesValues = getValues('attributes') as unknown as Record<string, number> | undefined
+
             return systemExpertises.map((sysExpertise) => {
                 // Buscar ou criar expertise
                 let expertise = expertises[sysExpertise.key as keyof ExpertisesType]
-                
+
                 // Se não existir, criar temporariamente para renderização
                 if (!expertise) {
                     expertise = {
@@ -184,7 +191,14 @@ export default function Expertises({ disabled }: { disabled?: boolean }): ReactE
                         defaultAttribute: sysExpertise.defaultAttribute || 'sab'
                     }
                 }
-                
+
+                // Influência do atributo vinculado (vantagem/soma) e rótulo legível
+                const attrDef = systemAttributes?.find(a =>
+                    a.key === sysExpertise.defaultAttribute || a.name === sysExpertise.defaultAttribute
+                )
+                const attrValue = attrDef ? (attributesValues?.[attrDef.key] ?? 0) : 0
+                const influence = computeAttributeInfluence(attrDef, attrValue, charsheetLevel || 1)
+
                 return (
                     <Expertise
                         key={sysExpertise.key}
@@ -199,6 +213,8 @@ export default function Expertises({ disabled }: { disabled?: boolean }): ReactE
                         onClick={(value: number) => handleExpertiseChange(sysExpertise.key as any, value)}
                         customLabel={sysExpertise.name}
                         maxValue={maxPerSkill}
+                        attributeLabel={attrDef ? attrDef.abbreviation : (sysExpertise.defaultAttribute ? undefined : 'Nenhum')}
+                        customInfluence={influence}
                     />
                 )
             })
@@ -228,7 +244,7 @@ export default function Expertises({ disabled }: { disabled?: boolean }): ReactE
                 );
             })
             .filter((expertise): expertise is ReactElement => expertise !== null);
-    }, [ expertises, disabled, editValue, handleExpertiseChange, systemExpertises, maxPerSkill ]);
+    }, [ expertises, disabled, editValue, handleExpertiseChange, systemExpertises, maxPerSkill, systemAttributes, charsheetLevel ]);
     
     const renderErrors = (): ReactElement | null => {
         if (!errors.expertises) return null;

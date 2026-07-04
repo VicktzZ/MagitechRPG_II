@@ -40,9 +40,13 @@ interface TraitsModalProps {
     lineage?: Lineage['name'];
     /** Traços de sistema customizado — quando presente, substitui os do Magitech */
     customTraits?: { positive: Trait[]; negative: Trait[] };
+    /** Resolve o rótulo legível do alvo (key → nome do atributo/perícia) */
+    resolveTargetLabel?: (target: Trait['target']) => string;
 }
 
-function TraitsModal({ open, onClose, selectedTraits, onTraitsChange, lineage, customTraits }: TraitsModalProps) {
+function TraitsModal({ open, onClose, selectedTraits, onTraitsChange, lineage, customTraits, resolveTargetLabel }: TraitsModalProps) {
+    const targetLabel = (target: Trait['target']): string =>
+        resolveTargetLabel?.(target) || target.name;
     const theme = useTheme();
     const matches = useMediaQuery(theme.breakpoints.down('md'));
     const [ tabIndex, setTabIndex ] = useState(0);
@@ -179,7 +183,7 @@ function TraitsModal({ open, onClose, selectedTraits, onTraitsChange, lineage, c
         
         if (hasPositive && hasNegative) {
             if (hasOppositeTraits) {
-                const target = positiveTrait?.target.name ?? '';
+                const target = positiveTrait ? targetLabel(positiveTrait.target) : '';
                 const targetType = positiveTrait?.target.kind === 'attribute' ? 'atributo' : 'perícia';
                 return { 
                     valid: false, 
@@ -338,7 +342,7 @@ function TraitsModal({ open, onClose, selectedTraits, onTraitsChange, lineage, c
                                         >
                                             <ListItemText
                                                 primary={trait.name}
-                                                secondary={`+${trait.value} ${trait.target.name}`}
+                                                secondary={`+${trait.value} ${targetLabel(trait.target)}`}
                                                 primaryTypographyProps={{
                                                     fontWeight: trait.selected ? 'bold' : 'normal'
                                                 }}
@@ -381,7 +385,7 @@ function TraitsModal({ open, onClose, selectedTraits, onTraitsChange, lineage, c
                                         >
                                             <ListItemText
                                                 primary={trait.name}
-                                                secondary={`${trait.value} ${trait.target.name}`}
+                                                secondary={`${trait.value} ${targetLabel(trait.target)}`}
                                                 primaryTypographyProps={{
                                                     fontWeight: trait.selected ? 'bold' : 'normal'
                                                 }}
@@ -417,7 +421,7 @@ function TraitsModal({ open, onClose, selectedTraits, onTraitsChange, lineage, c
                                     
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
                                         <Chip
-                                            label={`${selectedTraitDetails.value > 0 ? '+' : ''}${selectedTraitDetails.value} ${selectedTraitDetails.target.name}`}
+                                            label={`${selectedTraitDetails.value > 0 ? '+' : ''}${selectedTraitDetails.value} ${targetLabel(selectedTraitDetails.target)}`}
                                             color={selectedTraitDetails.value > 0 ? 'success' : 'error'}
                                             size="small"
                                         />
@@ -448,9 +452,9 @@ function TraitsModal({ open, onClose, selectedTraits, onTraitsChange, lineage, c
                                     >
                                         <Typography>
                                             {selectedTraitDetails.value > 0 ? (
-                                                <>Aumenta <strong>{selectedTraitDetails.value}</strong> {selectedTraitDetails.target.kind === 'attribute' ? 'ponto' : 'pontos'} {selectedTraitDetails.target.kind === 'attribute' ? 'no atributo' : 'na perícia'} <strong>{selectedTraitDetails.target.name}</strong>.</>
+                                                <>Aumenta <strong>{selectedTraitDetails.value}</strong> {selectedTraitDetails.target.kind === 'attribute' ? 'ponto' : 'pontos'} {selectedTraitDetails.target.kind === 'attribute' ? 'no atributo' : 'na perícia'} <strong>{targetLabel(selectedTraitDetails.target)}</strong>.</>
                                             ) : (
-                                                <>Reduz <strong>{Math.abs(selectedTraitDetails.value)}</strong> {selectedTraitDetails.target.kind === 'attribute' ? 'ponto' : 'pontos'} {selectedTraitDetails.target.kind === 'attribute' ? 'no atributo' : 'na perícia'} <strong>{selectedTraitDetails.target.name}</strong>.</>
+                                                <>Reduz <strong>{Math.abs(selectedTraitDetails.value)}</strong> {selectedTraitDetails.target.kind === 'attribute' ? 'ponto' : 'pontos'} {selectedTraitDetails.target.kind === 'attribute' ? 'no atributo' : 'na perícia'} <strong>{targetLabel(selectedTraitDetails.target)}</strong>.</>
                                             )}
                                         </Typography>
                                     </Paper>
@@ -473,9 +477,9 @@ function TraitsModal({ open, onClose, selectedTraits, onTraitsChange, lineage, c
                                             <InfoOutlinedIcon color="info" sx={{ mt: 0.2 }} />
                                             <Typography>
                                                 {selectedTraitDetails.value > 0 ? (
-                                                    <>Seu personagem se destaca por ser <strong>{selectedTraitDetails.name.toLowerCase()}</strong>, o que proporciona uma vantagem significativa em situações que exigem <strong>{selectedTraitDetails.target.name}</strong>.</>
+                                                    <>Seu personagem se destaca por ser <strong>{selectedTraitDetails.name.toLowerCase()}</strong>, o que proporciona uma vantagem significativa em situações que exigem <strong>{targetLabel(selectedTraitDetails.target)}</strong>.</>
                                                 ) : (
-                                                    <>Seu personagem tem dificuldades por ser <strong>{selectedTraitDetails.name.toLowerCase()}</strong>, o que representa uma desvantagem em situações que exigem <strong>{selectedTraitDetails.target.name}</strong>.</>
+                                                    <>Seu personagem tem dificuldades por ser <strong>{selectedTraitDetails.name.toLowerCase()}</strong>, o que representa uma desvantagem em situações que exigem <strong>{targetLabel(selectedTraitDetails.target)}</strong>.</>
                                                 )}
                                             </Typography>
                                         </Box>

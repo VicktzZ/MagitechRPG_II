@@ -36,3 +36,14 @@ export { Lineage } from './Lineage';
 export { Subclass } from './Subclass';
 export { Occupation } from './Occupation';
 export { Class } from './Class';
+export {
+    createDefaultShip,
+    type CampaignShip,
+    type ShipComponent,
+    type ShipComponentStatus,
+    type ShipResource,
+    type ShipCargoItem,
+    type ShipAlert,
+    type ShipAlertSeverity,
+    type ShipLogEntry
+} from './Ship';

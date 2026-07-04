@@ -21,6 +21,7 @@ import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import FlagIcon from '@mui/icons-material/Flag';
 import ReplayIcon from '@mui/icons-material/Replay';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
+import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
 
 import {
     Box,
@@ -55,6 +56,7 @@ import {
 } from './actions';
 import CreatureCreator from './CreatureCreator';
 import CampaignStatsModal from '../CampaignStatsModal';
+import ShipManagerDialog from '../ship/ShipManagerDialog';
 
 export default function GMActions(): ReactElement {
     const { campaign, isUserGM, users, charsheets } = useCampaignContext();
@@ -79,6 +81,7 @@ export default function GMActions(): ReactElement {
     const [ effectsCatalogOpen, setEffectsCatalogOpen ] = useState(false);
     const [ finishDialogOpen, setFinishDialogOpen ] = useState(false);
     const [ statsModalOpen, setStatsModalOpen ] = useState(false);
+    const [ shipManagerOpen, setShipManagerOpen ] = useState(false);
     const [ isReopening, setIsReopening ] = useState(false);
 
     const isFinished = campaign.status === 'finished';
@@ -308,6 +311,22 @@ export default function GMActions(): ReactElement {
                     <MenuItemText>Adicionar Criatura</MenuItemText>
                 </MenuItem>
 
+                <MenuItem onClick={() => { setShipManagerOpen(true); handleCloseMenu(); }} disabled={!isUserGM}>
+                    <ListItemIcon>
+                        <RocketLaunchIcon fontSize="small" sx={{ color: blue[400] }} />
+                    </ListItemIcon>
+                    <MenuItemText>
+                        {campaign.ship ? 'Administrar Nave' : 'Criar Nave da Campanha'}
+                        {campaign.ship?.enabled && (
+                            <Chip
+                                label={campaign.ship.name}
+                                size="small"
+                                sx={{ ml: 1, height: 18, fontSize: '0.65rem' }}
+                            />
+                        )}
+                    </MenuItemText>
+                </MenuItem>
+
                 <Divider />
 
                 {/* Vantagens e Loja */}
@@ -505,6 +524,11 @@ export default function GMActions(): ReactElement {
                 onClose={() => setStatsModalOpen(false)}
                 campaignId={campaign.id}
                 campaignTitle={campaign.title}
+            />
+
+            <ShipManagerDialog
+                open={shipManagerOpen}
+                onClose={() => setShipManagerOpen(false)}
             />
         </Box>
     );

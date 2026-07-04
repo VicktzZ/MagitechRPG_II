@@ -1,6 +1,7 @@
 import type { Note } from '../Note';
 import type { Power } from './Power';
 import type { Session } from '../Session';
+import type { CampaignShip } from '../Ship';
 import type { Creature } from '../Creature';
 import type { Weapon } from '../Weapon';
 import type { Armor } from '../Armor';
@@ -67,6 +68,12 @@ export class Campaign {
      * Se não definido, usa o sistema padrão Magitech.
      */
     systemId?: string;
+
+    /**
+     * Nave/veículo compartilhado da campanha — widget visível a todos os
+     * jogadores, administrado pelo mestre (ex: nave do Cosmos RPG).
+     */
+    ship?: CampaignShip;
 
     /**
      * Estado da campanha. 'finished' = arquivada: sessões bloqueadas,

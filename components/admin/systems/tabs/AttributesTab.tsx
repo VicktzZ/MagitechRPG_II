@@ -14,7 +14,11 @@ import {
     DialogContent,
     DialogActions,
     Tooltip,
-    Chip
+    Chip,
+    FormControl,
+    InputLabel,
+    Select,
+    MenuItem
 } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
 import EditIcon from '@mui/icons-material/Edit'
@@ -248,6 +252,120 @@ export function AttributesTab({ system, updateSystem }: AttributesTabProps) {
                                 placeholder="Descreva o que este atributo representa..."
                             />
                         </Grid>
+
+                        <Grid item xs={6} sm={3}>
+                            <TextField
+                                fullWidth
+                                type="number"
+                                label="Valor Mínimo"
+                                value={formData.minValue ?? ''}
+                                onChange={(e) => setFormData({
+                                    ...formData,
+                                    minValue: e.target.value === '' ? undefined : parseInt(e.target.value) || 0
+                                })}
+                                helperText="Vazio = 0"
+                            />
+                        </Grid>
+                        <Grid item xs={6} sm={3}>
+                            <TextField
+                                fullWidth
+                                type="number"
+                                label="Valor Máximo"
+                                value={formData.maxValue ?? ''}
+                                onChange={(e) => setFormData({
+                                    ...formData,
+                                    maxValue: e.target.value === '' ? undefined : parseInt(e.target.value) || 0
+                                })}
+                                helperText="Vazio = sem limite"
+                            />
+                        </Grid>
+
+                        {/* ── Influência nos testes de perícias vinculadas ── */}
+                        <Grid item xs={12}>
+                            <Typography variant="subtitle1" fontWeight={600} sx={{ mt: 1 }}>
+                                Influência nos Testes
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                                Como o valor deste atributo afeta TODOS os testes de perícias vinculadas a ele.
+                            </Typography>
+                        </Grid>
+                        <Grid item xs={12} sm={5}>
+                            <FormControl fullWidth size="small">
+                                <InputLabel>Modo</InputLabel>
+                                <Select
+                                    value={formData.testInfluence?.mode ?? 'none'}
+                                    label="Modo"
+                                    onChange={(e) => setFormData({
+                                        ...formData,
+                                        testInfluence: {
+                                            ...formData.testInfluence,
+                                            mode: e.target.value as 'none' | 'advantage' | 'sum'
+                                        }
+                                    })}
+                                >
+                                    <MenuItem value="none">Nenhuma</MenuItem>
+                                    <MenuItem value="advantage">Vantagem — mais dados (pega o melhor)</MenuItem>
+                                    <MenuItem value="sum">Soma — bônus fixo no resultado</MenuItem>
+                                </Select>
+                            </FormControl>
+                        </Grid>
+                        {(formData.testInfluence?.mode ?? 'none') !== 'none' && (
+                            <Grid item xs={12} sm={7}>
+                                <TextField
+                                    fullWidth
+                                    size="small"
+                                    label="Fórmula"
+                                    value={formData.testInfluence?.formula ?? ''}
+                                    onChange={(e) => setFormData({
+                                        ...formData,
+                                        testInfluence: {
+                                            mode: formData.testInfluence?.mode ?? 'sum',
+                                            ...formData.testInfluence,
+                                            formula: e.target.value
+                                        }
+                                    })}
+                                    placeholder="attr / 2"
+                                    helperText='Variáveis: "attr" (valor do atributo) e "level". Vazio = attr (1 para 1). Ex: attr / 5 = +1 a cada 5 pontos.'
+                                />
+                            </Grid>
+                        )}
+                        {(formData.testInfluence?.mode ?? 'none') !== 'none' &&
+                            formData.maxValue !== undefined && formData.maxValue > 0 && formData.maxValue <= 30 && (
+                            <Grid item xs={12}>
+                                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+                                    Ajuste manual por ponto (opcional — sobrepõe a fórmula no valor correspondente; vazio = usa a fórmula):
+                                </Typography>
+                                <Grid container spacing={1}>
+                                    {Array.from({ length: formData.maxValue + 1 }, (_, i) => i).map(point => (
+                                        <Grid item xs={3} sm={2} md={1.5 as any} key={point}>
+                                            <TextField
+                                                fullWidth
+                                                size="small"
+                                                type="number"
+                                                label={`${point} pt`}
+                                                value={formData.testInfluence?.manualMap?.[String(point)] ?? ''}
+                                                onChange={(e) => {
+                                                    const raw = e.target.value
+                                                    const manualMap = Object.fromEntries(
+                                                        Object.entries(formData.testInfluence?.manualMap ?? {})
+                                                            .filter(([ k ]) => k !== String(point))
+                                                    )
+                                                    if (raw !== '') manualMap[String(point)] = parseInt(raw) || 0
+                                                    setFormData({
+                                                        ...formData,
+                                                        testInfluence: {
+                                                            mode: formData.testInfluence?.mode ?? 'sum',
+                                                            ...formData.testInfluence,
+                                                            manualMap
+                                                        }
+                                                    })
+                                                }}
+                                            />
+                                        </Grid>
+                                    ))}
+                                </Grid>
+                            </Grid>
+                        )}
                     </Grid>
                 </DialogContent>
                 <DialogActions>

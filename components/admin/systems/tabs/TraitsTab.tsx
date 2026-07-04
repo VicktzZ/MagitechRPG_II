@@ -25,6 +25,7 @@ import AddIcon from '@mui/icons-material/Add'
 import EditIcon from '@mui/icons-material/Edit'
 import DeleteIcon from '@mui/icons-material/Delete'
 import type { RPGSystem, SystemTrait } from '@models/entities'
+import { resolveTraitTargetLabel } from '@utils/systemLookups'
 
 interface TraitsTabProps {
     system: Partial<RPGSystem>
@@ -89,7 +90,7 @@ export function TraitsTab({ system, updateSystem }: TraitsTabProps) {
     }
 
     const getTargetOptions = () => {
-        const options: { value: string; label: string; kind: 'attribute' | 'expertise' | 'custom' }[] = []
+        const options: Array<{ value: string; label: string; kind: 'attribute' | 'expertise' | 'custom' }> = []
         
         attributes.forEach(attr => {
             options.push({ value: attr.key, label: `${attr.abbreviation} - ${attr.name}`, kind: 'attribute' })
@@ -150,8 +151,8 @@ export function TraitsTab({ system, updateSystem }: TraitsTabProps) {
                                                 size="small"
                                                 color={trait.value > 0 ? 'success' : 'error'}
                                             />
-                                            <Chip 
-                                                label={trait.target.name || 'Custom'}
+                                            <Chip
+                                                label={resolveTraitTargetLabel(system as any, trait.target) || 'Custom'}
                                                 size="small"
                                                 variant="outlined"
                                             />

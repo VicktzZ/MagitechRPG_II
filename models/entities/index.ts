@@ -33,7 +33,8 @@ export {
     type SkillPointRules,
     type CustomResource,
     type ResourceThreshold,
-    type SymbolicResource
+    type SymbolicResource,
+    type AttributeTestInfluence
 } from './RPGSystem';
 export { CombatEffectEntity } from './CombatEffectEntity';
 export {

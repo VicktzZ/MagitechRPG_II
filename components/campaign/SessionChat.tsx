@@ -8,6 +8,7 @@ import { useChatContext } from '@contexts/chatContext';
 import { MessageType, PusherEvent } from '@enums';
 import { charsheetService } from '@services';
 import { postCampaignStats } from '@utils/campaignStatsClient';
+import { computeAttributeInfluence, findSystemAttribute } from '@utils/systemLookups';
 import { useSession } from 'next-auth/react';
 import TestDialog from './TestDialog';
 import TestModal from './TestModal';
@@ -22,7 +23,7 @@ import {
 } from './chatComponents';
 
 export default function SessionChat() {
-    const { campaign, updateCampaign } = useCampaignContext();
+    const { campaign, updateCampaign, rpgSystem } = useCampaignContext();
     const { data: session } = useSession();
     const { channel } = useChannel();
 
@@ -125,19 +126,34 @@ export default function SessionChat() {
                     if (charsheet) {
                         const expertise = charsheet.expertises[currentTest.expertise as keyof Expertises];
                         expertiseBonus = expertise.value;
-                        baseAttribute = expertise.defaultAttribute?.toLowerCase();
-                        baseAttributeValue = baseAttribute ? ((charsheet.attributes as any)?.[baseAttribute] ?? 0) : 0;
 
                         let numDice = 1;
                         let useWorst = false;
+                        let attributeFlatBonus = 0;
 
-                        if (baseAttributeValue === -1) {
-                            numDice = 2;
-                            useWorst = true;
-                        } else if (baseAttributeValue >= 3) {
-                            numDice = 2;
-                        } else if (baseAttributeValue >= 5) {
-                            numDice = 3;
+                        if (rpgSystem && charsheet.systemId) {
+                            // Sistema customizado: influência configurada no atributo
+                            // (vantagem = mais dados; soma = bônus fixo)
+                            const attrDef = findSystemAttribute(rpgSystem, expertise.defaultAttribute as unknown as string);
+                            baseAttribute = attrDef?.key ?? null;
+                            baseAttributeValue = attrDef ? ((charsheet.attributes as any)?.[attrDef.key] ?? 0) : 0;
+
+                            const influence = computeAttributeInfluence(attrDef, baseAttributeValue, charsheet.level || 1);
+                            numDice = 1 + influence.extraDice;
+                            attributeFlatBonus = influence.bonus;
+                        } else {
+                            // Magitech legado
+                            baseAttribute = expertise.defaultAttribute?.toLowerCase();
+                            baseAttributeValue = baseAttribute ? ((charsheet.attributes as any)?.[baseAttribute] ?? 0) : 0;
+
+                            if (baseAttributeValue === -1) {
+                                numDice = 2;
+                                useWorst = true;
+                            } else if (baseAttributeValue >= 3) {
+                                numDice = 2;
+                            } else if (baseAttributeValue >= 5) {
+                                numDice = 3;
+                            }
                         }
 
                         const rolls: number[] = [];
@@ -153,7 +169,7 @@ export default function SessionChat() {
                         expertiseResult = {
                             rolls,
                             finalRoll,
-                            total: finalRoll + expertiseBonus
+                            total: finalRoll + expertiseBonus + attributeFlatBonus
                         };
                     }
                 } catch (error) {

@@ -32,6 +32,10 @@ interface ExpertiseProps {
     onClick?: (value: number) => void;
     customLabel?: string;
     maxValue?: number;
+    /** Rótulo legível do atributo vinculado (sistemas customizados: abreviação em vez da key) */
+    attributeLabel?: string;
+    /** Influência do atributo vinculado calculada pelo sistema customizado */
+    customInfluence?: { extraDice: number; bonus: number };
 }
 
 export default function Expertise({
@@ -41,7 +45,9 @@ export default function Expertise({
     edit,
     onClick,
     customLabel,
-    maxValue = 10
+    maxValue = 10,
+    attributeLabel,
+    customInfluence
 }: ExpertiseProps): ReactElement {
     const theme = useTheme();
     const matches = useMediaQuery(theme.breakpoints.down('md'));
@@ -98,15 +104,19 @@ export default function Expertise({
     const color = determinateColor();
     const proficiencyLevel = getProficiencyLevel();
     const attr: keyof Attributes = expertise.defaultAttribute;
-    const attrModifier = getValues().mods.attributes[attr] || 0;
-    
-    // Determinar se é vantagem, desvantagem ou normal com base no modificador do atributo
-    const isAdvantage = attrModifier > 0;
-    const isDisadvantage = attrModifier < 0;
-    
-    // Determinar quantidade de dados baseada na regra:
-    // -1: Desvantagem (2 dados), 0: Normal (1 dado), +1: Vantagem (2 dados), >+1: Vantagem (múltiplos dados)
-    const diceQuantity = attrModifier < 0 ? 2 : attrModifier + 1;
+    const attrModifier = customInfluence ? 0 : (getValues().mods?.attributes?.[attr] || 0);
+
+    // Determinar se é vantagem, desvantagem ou normal
+    // Sistemas customizados: influência configurada no atributo (vantagem/soma)
+    const isAdvantage = customInfluence ? customInfluence.extraDice > 0 : attrModifier > 0;
+    const isDisadvantage = customInfluence ? false : attrModifier < 0;
+
+    // Quantidade de dados:
+    // - Custom: 1 + dados extras da influência do atributo
+    // - Magitech: -1: Desvantagem (2 dados), 0: Normal (1 dado), +N: Vantagem (N+1 dados)
+    const diceQuantity = customInfluence
+        ? 1 + customInfluence.extraDice
+        : (attrModifier < 0 ? 2 : attrModifier + 1);
 
     return (
         <>
@@ -131,8 +141,18 @@ export default function Expertise({
                                 Valor: {expertise.value}
                             </Typography>
                             <Typography variant="body2">
-                                Atributo: {expertise.defaultAttribute?.toUpperCase() ?? 'Nenhum'}
+                                Atributo: {attributeLabel ?? expertise.defaultAttribute?.toUpperCase() ?? 'Nenhum'}
                             </Typography>
+                            {customInfluence && customInfluence.bonus > 0 && (
+                                <Typography variant="body2" color="success.main">
+                                    Bônus do atributo: +{customInfluence.bonus}
+                                </Typography>
+                            )}
+                            {customInfluence && customInfluence.extraDice > 0 && (
+                                <Typography variant="body2" color="info.main">
+                                    Vantagem: {1 + customInfluence.extraDice} dados
+                                </Typography>
+                            )}
                             {isEditing && (
                                 <Typography variant="body2" color="warning.main">
                                     Novo valor: {previewValue}
@@ -342,18 +362,20 @@ export default function Expertise({
 
             {/* Modal de rolagem de dados */}
             {open && (
-                <DiceRollModal 
+                <DiceRollModal
                     open={open}
                     onClose={() => setOpen(false)}
-                    bonus={[ expertise.value ]}
+                    bonus={customInfluence && customInfluence.bonus > 0
+                        ? [ expertise.value, customInfluence.bonus ]
+                        : [ expertise.value ]}
                     isDisadvantage={isDisadvantage}
                     isAdvantage={isAdvantage}
                     visibleBaseAttribute
                     visibleDices
                     roll={{
-                        name,
+                        name: customLabel ?? name,
                         dice: 20,
-                        attribute: expertise.defaultAttribute,
+                        attribute: (attributeLabel ?? expertise.defaultAttribute) as any,
                         quantity: diceQuantity
                     }}
                 />

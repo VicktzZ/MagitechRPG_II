@@ -14,6 +14,7 @@ import SubclassModal from './dialogs/SubclassModal'
 import TraitsModal from './dialogs/TraitsModal'
 import LevelProgress from './subcomponents/LevelProgress'
 import { skills } from '@constants/skills'
+import { resolveTraitTargetLabel } from '@utils/systemLookups'
 import type { CharsheetDTO } from '@models/dtos'
 import type { Class, Expertises, Lineage, Subclass, Trait } from '@models'
 import { type Element } from '@models/types/string'
@@ -118,34 +119,38 @@ export default function LevelAndInfo() {
         const previousTraits = [ ...traitsRef.current ];
         const newTraits: Trait[] = [];
 
-        previousTraits.forEach(trait => {
-            if (trait.target?.name && trait.value) {
+        // Aplica o efeito de um traço: perícia via objeto local,
+        // atributo diretamente no form (suporta keys de sistemas customizados)
+        const applyTraitEffect = (trait: Trait, sign: 1 | -1) => {
+            if (!trait.target?.name || !trait.value) return;
+            const delta = sign * trait.value;
+
+            if (trait.target.kind === 'attribute') {
+                const attrKey = trait.target.name;
+                const currentValue = (getValues(`attributes.${attrKey}` as any) as unknown as number) || 0;
+                setValue(`attributes.${attrKey}` as any, Math.max(0, currentValue + delta) as any);
+            } else {
                 const expertiseName = trait.target.name as keyof Expertises;
                 const currentValue = currentExpertises[expertiseName]?.value || 0;
                 currentExpertises[expertiseName] = {
                     ...currentExpertises[expertiseName],
-                    value: Math.max(0, currentValue - trait.value)
-                } ;
+                    value: Math.max(0, currentValue + delta)
+                };
             }
-        });
+        };
+
+        previousTraits.forEach(trait => applyTraitEffect(trait, -1));
 
         selectedTraitNames.forEach(traitName => {
             const trait = [ ...traitPool.positive, ...traitPool.negative ].find(item => item.name === traitName);
             if (trait) {
-                if (trait.target?.name && trait.value !== undefined) {
-                    const expertiseName = trait.target.name as keyof Expertises;
-                    const currentValue = currentExpertises[expertiseName]?.value || 0;
-                    currentExpertises[expertiseName] = {
-                        ...currentExpertises[expertiseName],
-                        value: currentValue + trait.value
-                    } ;
-                }
+                applyTraitEffect(trait, 1);
                 newTraits.push(trait);
             }
         });
-        
+
         traitsRef.current = newTraits;
-        
+
         setValue('expertises', currentExpertises, { shouldValidate: true });
         setValue('traits', selectedTraitNames as unknown as Trait[], { shouldValidate: true });
         audio?.play()
@@ -554,6 +559,9 @@ export default function LevelAndInfo() {
                                                 }}
                                                 lineage={charsheet.lineage as unknown as Lineage['name']}
                                                 customTraits={isCustomSystem ? availableTraits() : undefined}
+                                                resolveTargetLabel={isCustomSystem
+                                                    ? (target) => resolveTraitTargetLabel(customSystem, target)
+                                                    : undefined}
                                             />
                                         </Box>
                                     </>

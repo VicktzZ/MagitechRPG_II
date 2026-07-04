@@ -40,6 +40,27 @@ export interface InitialFields {
 // Tipos para atributos e perícias
 // ============================================
 
+/**
+ * Como o valor de um atributo influencia TODOS os testes de perícias
+ * vinculadas a ele.
+ * - 'advantage': mais dados rolados (pega o melhor)
+ * - 'sum': bônus fixo somado ao resultado
+ * - 'none': sem influência
+ */
+export interface AttributeTestInfluence {
+    mode: 'none' | 'advantage' | 'sum';
+    /**
+     * Fórmula com as variáveis "attr" (valor do atributo) e "level".
+     * Ex: "attr / 2" = a cada 2 pontos, +1. Vazio = "attr" (1 para 1).
+     */
+    formula?: string;
+    /**
+     * Ajuste manual por valor do atributo (chave = valor do atributo,
+     * valor = dados extras/bônus). Tem prioridade sobre a fórmula.
+     */
+    manualMap?: Record<string, number>;
+}
+
 export interface SystemAttribute {
     key: string;
     name: string;
@@ -48,6 +69,8 @@ export interface SystemAttribute {
     defaultValue?: number;
     minValue?: number;
     maxValue?: number;
+    /** Influência do atributo nos testes de perícias vinculadas */
+    testInfluence?: AttributeTestInfluence;
 }
 
 export interface SystemExpertise {
