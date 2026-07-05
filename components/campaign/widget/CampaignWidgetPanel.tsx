@@ -26,6 +26,7 @@ import HistoryEduIcon from '@mui/icons-material/HistoryEdu';
 import Inventory2Icon from '@mui/icons-material/Inventory2';
 import { amber, blue, green, grey, orange, red } from '@mui/material/colors';
 import { useCampaignContext } from '@contexts';
+import { useChatContext } from '@contexts/chatContext';
 import { useSnackbar } from 'notistack';
 import type { CampaignWidget, WidgetPartStatus } from '@models';
 import WidgetManagerDialog from './WidgetManagerDialog';
@@ -92,6 +93,7 @@ function ResourceBar({ label, value, max, color, unit, icon }: {
 export default function CampaignWidgetPanel(): ReactElement | null {
     const theme = useTheme();
     const { campaign, isUserGM } = useCampaignContext();
+    const { isChatOpen } = useChatContext();
     const { enqueueSnackbar } = useSnackbar();
     const [ expanded, setExpanded ] = useState(true);
     const [ managerOpen, setManagerOpen ] = useState(false);
@@ -135,15 +137,18 @@ export default function CampaignWidgetPanel(): ReactElement | null {
             sx={{
                 position: 'fixed',
                 bottom: 80,
-                right: 16,
+                // Desloca para a esquerda do chat (400px + gap) quando ele está aberto,
+                // para o widget continuar visível ao lado em vez de ficar coberto
+                right: isChatOpen ? 416 : 16,
                 width: 370,
-                maxWidth: 'calc(100vw - 32px)',
+                maxWidth: isChatOpen ? 'calc(100vw - 432px)' : 'calc(100vw - 32px)',
                 zIndex: 1200,
                 overflow: 'hidden',
                 border: '2px solid',
                 borderColor: dangerAlerts.length > 0 ? red[500] : theme.palette.primary.main,
                 borderRadius: 2,
                 bgcolor: 'background.paper',
+                transition: 'right 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
                 ...(dangerAlerts.length > 0 && {
                     animation: 'widget-alert-pulse 2s infinite',
                     '@keyframes widget-alert-pulse': {
