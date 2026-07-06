@@ -187,6 +187,7 @@ export default function SingleWidgetPanel({ widget, campaignId, isUserGM, isFini
     const [ transferQty, setTransferQty ] = useState(1);
     const [ transferBusy, setTransferBusy ] = useState(false);
     const [ craftOpen, setCraftOpen ] = useState(false);
+    const [ craftRecipesModalOpen, setCraftRecipesModalOpen ] = useState(false);
     const [ craftMultipliers, setCraftMultipliers ] = useState<Record<string, number>>({});
     const [ multiplierMenu, setMultiplierMenu ] = useState<{ recipeId: string; anchor: HTMLElement } | null>(null);
     const [ poolsOpen, setPoolsOpen ] = useState(false);
@@ -203,6 +204,8 @@ export default function SingleWidgetPanel({ widget, campaignId, isUserGM, isFini
 
     const hasCharsheet = !!charsheet?.id;
     const ownItems = charsheet?.inventory?.items ?? [];
+    /** Ausente/true = comportamento padrão (jogadores podem ajustar recursos e estoque diretamente). */
+    const canManageResources = isUserGM || widget.playersCanManageResources !== false;
 
     const patch = async (payload: Record<string, unknown>) => {
         if (isFinished) return;
@@ -552,12 +555,14 @@ export default function SingleWidgetPanel({ widget, campaignId, isUserGM, isFini
                                             unit={resource.unit}
                                             color={resource.color || blue[400]}
                                         />
-                                        <AdjustRow
-                                            value={resource.value}
-                                            max={resource.max}
-                                            disabled={isFinished}
-                                            onChange={async (v) => await adjustResource(resource.id, v)}
-                                        />
+                                        {canManageResources && (
+                                            <AdjustRow
+                                                value={resource.value}
+                                                max={resource.max}
+                                                disabled={isFinished}
+                                                onChange={async (v) => await adjustResource(resource.id, v)}
+                                            />
+                                        )}
                                     </Box>
                                 ))}
                             </Box>
@@ -591,12 +596,16 @@ export default function SingleWidgetPanel({ widget, campaignId, isUserGM, isFini
                                             <Chip label={item.quantity} size="small" sx={{ height: 18, fontWeight: 700, fontSize: '0.65rem' }} />
                                             {!isFinished && (
                                                 <>
-                                                    <IconButton size="small" sx={{ p: 0.15 }} onClick={async () => await adjustStock(item.id, -1)}>
-                                                        <RemoveIcon sx={{ fontSize: 12 }} />
-                                                    </IconButton>
-                                                    <IconButton size="small" sx={{ p: 0.15 }} onClick={async () => await adjustStock(item.id, 1)}>
-                                                        <AddIcon sx={{ fontSize: 12 }} />
-                                                    </IconButton>
+                                                    {canManageResources && (
+                                                        <>
+                                                            <IconButton size="small" sx={{ p: 0.15 }} onClick={async () => await adjustStock(item.id, -1)}>
+                                                                <RemoveIcon sx={{ fontSize: 12 }} />
+                                                            </IconButton>
+                                                            <IconButton size="small" sx={{ p: 0.15 }} onClick={async () => await adjustStock(item.id, 1)}>
+                                                                <AddIcon sx={{ fontSize: 12 }} />
+                                                            </IconButton>
+                                                        </>
+                                                    )}
                                                     {hasCharsheet && (
                                                         <Tooltip title="Retirar para o meu inventário">
                                                             <IconButton size="small" sx={{ p: 0.15 }} onClick={() => openWithdraw(item)}>
@@ -824,115 +833,153 @@ export default function SingleWidgetPanel({ widget, campaignId, isUserGM, isFini
                             </Box>
                             <Collapse in={craftOpen}>
                                 <Box display="flex" flexDirection="column" gap={0.75} mt={0.75}>
-                                    {widget.recipes.map(recipe => {
-                                        const multiplier = getMultiplier(recipe.id);
-                                        const missingInputs = recipe.inputs.filter(input => {
-                                            const stockItem = widget.stock.find(s => s.name.toLowerCase() === input.stockName.toLowerCase());
-                                            return !stockItem || stockItem.quantity < input.quantity * multiplier;
-                                        });
-                                        const missingResources = (recipe.resourceCosts ?? []).filter(cost => {
-                                            const resource = widget.resources.find(r => r.id === cost.resourceId);
-                                            return !resource || resource.value < cost.amount * multiplier;
-                                        });
-                                        const outputKind = recipe.output.kind ?? 'item';
-                                        const noDestination = (outputKind !== 'item' || widget.showStock === false) && !hasCharsheet;
-                                        const noDestinationMsg = outputKind !== 'item'
-                                            ? 'Armas/armaduras vão para o inventário pessoal — entre com uma ficha para fabricar'
-                                            : 'Este widget não possui estoque próprio — entre com uma ficha para fabricar';
-                                        const canCraft = missingInputs.length === 0 && missingResources.length === 0 && !noDestination;
-                                        return (
-                                            <Paper key={recipe.id} variant="outlined" sx={{ p: 1 }}>
-                                                <Box display="flex" alignItems="center" justifyContent="space-between" gap={1}>
-                                                    <Typography variant="caption" fontWeight={700}>
-                                                        {recipe.name}
-                                                        {outputKind !== 'item' && (
-                                                            <Chip
-                                                                label={outputKind === 'weapon' ? 'Arma' : 'Armadura'}
-                                                                size="small"
-                                                                sx={{ ml: 0.5, height: 14, fontSize: '0.55rem' }}
-                                                            />
-                                                        )}
+                                    {(widget.craftLog?.length ?? 0) > 0 && (
+                                        <Box display="flex" flexDirection="column" gap={0.5}>
+                                            <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                                                Últimas Fabricações
+                                            </Typography>
+                                            {widget.craftLog!.slice(0, 5).map(entry => (
+                                                <Box key={entry.id} display="flex" justifyContent="space-between" gap={1}>
+                                                    <Typography variant="caption" color="text.secondary" noWrap>
+                                                        <strong>{entry.userName}</strong> fabricou {entry.recipeName} x{entry.quantity}
                                                     </Typography>
-                                                    <Box display="flex" alignItems="center" gap={0.5}>
-                                                        <Tooltip title={noDestination ? noDestinationMsg : ''}>
-                                                            <span>
-                                                                <Button
-                                                                    size="small"
-                                                                    variant="outlined"
-                                                                    disabled={isFinished || noDestination}
-                                                                    onClick={(e) => setMultiplierMenu({ recipeId: recipe.id, anchor: e.currentTarget })}
-                                                                    sx={{ minWidth: 0, px: 0.75, fontSize: '0.65rem', py: 0.25 }}
-                                                                >
-                                                                    {multiplier}x
-                                                                </Button>
-                                                            </span>
-                                                        </Tooltip>
-                                                        <Tooltip title={noDestination ? noDestinationMsg : ''}>
-                                                            <span>
-                                                                <Button
-                                                                    size="small"
-                                                                    variant="contained"
-                                                                    disabled={!canCraft || isFinished}
-                                                                    onClick={async () => await craft(recipe.id)}
-                                                                    sx={{ minWidth: 0, fontSize: '0.65rem', py: 0.25 }}
-                                                                >
-                                                                    Fabricar
-                                                                </Button>
-                                                            </span>
-                                                        </Tooltip>
-                                                    </Box>
-                                                </Box>
-                                                {recipe.description && (
-                                                    <Typography variant="caption" color="text.secondary" display="block">
-                                                        {recipe.description}
+                                                    <Typography variant="caption" color="text.secondary" flexShrink={0}>
+                                                        {new Date(entry.timestamp).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
                                                     </Typography>
-                                                )}
-                                                <Box display="flex" flexWrap="wrap" gap={0.5} mt={0.5}>
-                                                    {recipe.inputs.map(input => {
-                                                        const insufficient = missingInputs.includes(input);
-                                                        return (
-                                                            <Chip
-                                                                key={input.id}
-                                                                label={`${input.stockName} x${input.quantity * multiplier}`}
-                                                                size="small"
-                                                                sx={{
-                                                                    height: 18, fontSize: '0.6rem',
-                                                                    bgcolor: insufficient ? alpha(red[500], 0.15) : alpha(green[500], 0.15),
-                                                                    color: insufficient ? red[700] : green[800]
-                                                                }}
-                                                            />
-                                                        );
-                                                    })}
-                                                    {(recipe.resourceCosts ?? []).map(cost => {
-                                                        const resource = widget.resources.find(r => r.id === cost.resourceId);
-                                                        const insufficient = missingResources.includes(cost);
-                                                        return (
-                                                            <Chip
-                                                                key={cost.id}
-                                                                label={`${resource?.name ?? '?'} -${cost.amount * multiplier}`}
-                                                                size="small"
-                                                                sx={{
-                                                                    height: 18, fontSize: '0.6rem',
-                                                                    bgcolor: insufficient ? alpha(red[500], 0.15) : alpha(blue[500], 0.15),
-                                                                    color: insufficient ? red[700] : blue[800]
-                                                                }}
-                                                            />
-                                                        );
-                                                    })}
-                                                    <Chip
-                                                        label={`→ ${recipe.output.name} x${recipe.output.quantity * multiplier}`}
-                                                        size="small"
-                                                        variant="outlined"
-                                                        sx={{ height: 18, fontSize: '0.6rem' }}
-                                                    />
                                                 </Box>
-                                            </Paper>
-                                        );
-                                    })}
+                                            ))}
+                                        </Box>
+                                    )}
+                                    <Button
+                                        size="small"
+                                        variant="outlined"
+                                        startIcon={<ScienceIcon fontSize="small" />}
+                                        onClick={() => setCraftRecipesModalOpen(true)}
+                                        sx={{ alignSelf: 'flex-start', fontSize: '0.7rem' }}
+                                    >
+                                        Ver Receitas Disponíveis ({widget.recipes.length})
+                                    </Button>
                                 </Box>
                             </Collapse>
                         </Box>
                     )}
+
+                    {/* ── Modal: catálogo completo de receitas ── */}
+                    <Dialog open={craftRecipesModalOpen} onClose={() => setCraftRecipesModalOpen(false)} maxWidth="xs" fullWidth>
+                        <DialogTitle>Receitas Disponíveis</DialogTitle>
+                        <DialogContent dividers>
+                            <Box display="flex" flexDirection="column" gap={0.75}>
+                                {widget.recipes.map(recipe => {
+                                    const multiplier = getMultiplier(recipe.id);
+                                    const missingInputs = recipe.inputs.filter(input => {
+                                        const stockItem = widget.stock.find(s => s.name.toLowerCase() === input.stockName.toLowerCase());
+                                        return !stockItem || stockItem.quantity < input.quantity * multiplier;
+                                    });
+                                    const missingResources = (recipe.resourceCosts ?? []).filter(cost => {
+                                        const resource = widget.resources.find(r => r.id === cost.resourceId);
+                                        return !resource || resource.value < cost.amount * multiplier;
+                                    });
+                                    const outputKind = recipe.output.kind ?? 'item';
+                                    const noDestination = (outputKind !== 'item' || widget.showStock === false) && !hasCharsheet;
+                                    const noDestinationMsg = outputKind !== 'item'
+                                        ? 'Armas/armaduras vão para o inventário pessoal — entre com uma ficha para fabricar'
+                                        : 'Este widget não possui estoque próprio — entre com uma ficha para fabricar';
+                                    const canCraft = missingInputs.length === 0 && missingResources.length === 0 && !noDestination;
+                                    return (
+                                        <Paper key={recipe.id} variant="outlined" sx={{ p: 1 }}>
+                                            <Box display="flex" alignItems="center" justifyContent="space-between" gap={1}>
+                                                <Typography variant="caption" fontWeight={700}>
+                                                    {recipe.name}
+                                                    {outputKind !== 'item' && (
+                                                        <Chip
+                                                            label={outputKind === 'weapon' ? 'Arma' : 'Armadura'}
+                                                            size="small"
+                                                            sx={{ ml: 0.5, height: 14, fontSize: '0.55rem' }}
+                                                        />
+                                                    )}
+                                                </Typography>
+                                                <Box display="flex" alignItems="center" gap={0.5}>
+                                                    <Tooltip title={noDestination ? noDestinationMsg : ''}>
+                                                        <span>
+                                                            <Button
+                                                                size="small"
+                                                                variant="outlined"
+                                                                disabled={isFinished || noDestination}
+                                                                onClick={(e) => setMultiplierMenu({ recipeId: recipe.id, anchor: e.currentTarget })}
+                                                                sx={{ minWidth: 0, px: 0.75, fontSize: '0.65rem', py: 0.25 }}
+                                                            >
+                                                                {multiplier}x
+                                                            </Button>
+                                                        </span>
+                                                    </Tooltip>
+                                                    <Tooltip title={noDestination ? noDestinationMsg : ''}>
+                                                        <span>
+                                                            <Button
+                                                                size="small"
+                                                                variant="contained"
+                                                                disabled={!canCraft || isFinished}
+                                                                onClick={async () => await craft(recipe.id)}
+                                                                sx={{ minWidth: 0, fontSize: '0.65rem', py: 0.25 }}
+                                                            >
+                                                                Fabricar
+                                                            </Button>
+                                                        </span>
+                                                    </Tooltip>
+                                                </Box>
+                                            </Box>
+                                            {recipe.description && (
+                                                <Typography variant="caption" color="text.secondary" display="block">
+                                                    {recipe.description}
+                                                </Typography>
+                                            )}
+                                            <Box display="flex" flexWrap="wrap" gap={0.5} mt={0.5}>
+                                                {recipe.inputs.map(input => {
+                                                    const insufficient = missingInputs.includes(input);
+                                                    return (
+                                                        <Chip
+                                                            key={input.id}
+                                                            label={`${input.stockName} x${input.quantity * multiplier}`}
+                                                            size="small"
+                                                            sx={{
+                                                                height: 18, fontSize: '0.6rem',
+                                                                bgcolor: insufficient ? alpha(red[500], 0.15) : alpha(green[500], 0.15),
+                                                                color: insufficient ? red[700] : green[800]
+                                                            }}
+                                                        />
+                                                    );
+                                                })}
+                                                {(recipe.resourceCosts ?? []).map(cost => {
+                                                    const resource = widget.resources.find(r => r.id === cost.resourceId);
+                                                    const insufficient = missingResources.includes(cost);
+                                                    return (
+                                                        <Chip
+                                                            key={cost.id}
+                                                            label={`${resource?.name ?? '?'} -${cost.amount * multiplier}`}
+                                                            size="small"
+                                                            sx={{
+                                                                height: 18, fontSize: '0.6rem',
+                                                                bgcolor: insufficient ? alpha(red[500], 0.15) : alpha(blue[500], 0.15),
+                                                                color: insufficient ? red[700] : blue[800]
+                                                            }}
+                                                        />
+                                                    );
+                                                })}
+                                                <Chip
+                                                    label={`→ ${recipe.output.name} x${recipe.output.quantity * multiplier}`}
+                                                    size="small"
+                                                    variant="outlined"
+                                                    sx={{ height: 18, fontSize: '0.6rem' }}
+                                                />
+                                            </Box>
+                                        </Paper>
+                                    );
+                                })}
+                            </Box>
+                        </DialogContent>
+                        <DialogActions>
+                            <Button onClick={() => setCraftRecipesModalOpen(false)}>Fechar</Button>
+                        </DialogActions>
+                    </Dialog>
 
                     <Menu
                         anchorEl={multiplierMenu?.anchor ?? null}

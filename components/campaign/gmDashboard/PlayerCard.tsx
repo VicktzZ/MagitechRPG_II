@@ -81,12 +81,19 @@ export default function PlayerCard({ charsheet }: { charsheet: Required<Charshee
 
     const handleAddItem = async (item: Weapon | Item | Armor) => {
         try {
+            // Busca a ficha mais recente do servidor em vez de usar a prop (que pode
+            // estar desatualizada) — evita sobrescrever itens adicionados por outra
+            // ação (ex: outro "adicionar item" ou depósito de widget) enquanto esta
+            // tela estava aberta.
+            const freshCharsheet = await charsheetEntity.findById(charsheet.id)
+            const inventory = freshCharsheet?.inventory ?? charsheet.inventory
+
             // Verifica se é uma arma ou um item
             const isWeapon = 'hit' in item
             const isArmor = 'displacementPenalty' in item
-            const currentWeapons = normalizeToArray(charsheet.inventory?.weapons)
-            const currentArmors = normalizeToArray(charsheet.inventory?.armors)
-            const currentItems = normalizeToArray(charsheet.inventory?.items)
+            const currentWeapons = normalizeToArray(inventory?.weapons)
+            const currentArmors = normalizeToArray(inventory?.armors)
+            const currentItems = normalizeToArray(inventory?.items)
 
             if (isWeapon) {
                 await charsheetEntity.update(charsheet.id, {

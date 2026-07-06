@@ -30,6 +30,10 @@ const FinancialConditions = z.enum([
 ])
 
 // Schemas para objetos aninhados
+// catchall permite atributos de sistemas customizados (chaves além de
+// vig/des/foc/log/sab/car) sobreviverem à validação — sem ele, o Zod
+// descartaria silenciosamente qualquer chave não listada, zerando os
+// atributos de sistemas customizados a cada submit.
 const AttributesSchema = z.object({
     vig: z.number().int().min(0).max(30, 'O valor máximo para atributos é 30')
         .refine(val => val >= 0 && val <= 30, {
@@ -66,7 +70,7 @@ const AttributesSchema = z.object({
             message: 'Carisma deve estar entre 0 e 30'
         })
         .default(0)
-})
+}).catchall(z.number().int())
 
 // Stats separados conforme BaseCharsheet
 const StatsSchema = z.object({
@@ -207,7 +211,7 @@ const ModsSchema = z.object({
         sab: z.number().int().default(0),
         foc: z.number().int().default(0),
         car: z.number().int().default(0)
-    }),
+    }).catchall(z.number().int()),
     discount: z.number().int().default(-10)
 })
 

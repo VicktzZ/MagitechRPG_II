@@ -175,7 +175,13 @@ export default function Expertises({ disabled }: { disabled?: boolean }): ReactE
 
     const renderExpertises = useMemo<ReactElement[]>(() => {
         if (!expertises) return [];
-        
+
+        // Sistema customizado: usa exclusivamente as perícias definidas nele —
+        // mesmo que ainda não tenha nenhuma, nunca cai para os padrões do Magitech.
+        if (charsheet.systemId && (!systemExpertises || systemExpertises.length === 0)) {
+            return [];
+        }
+
         // Se há perícias customizadas do sistema, renderizar apenas elas
         if (systemExpertises && systemExpertises.length > 0) {
             const attributesValues = getValues('attributes') as unknown as Record<string, number> | undefined
@@ -244,7 +250,7 @@ export default function Expertises({ disabled }: { disabled?: boolean }): ReactE
                 );
             })
             .filter((expertise): expertise is ReactElement => expertise !== null);
-    }, [ expertises, disabled, editValue, handleExpertiseChange, systemExpertises, maxPerSkill, systemAttributes, charsheetLevel ]);
+    }, [ expertises, disabled, editValue, handleExpertiseChange, systemExpertises, maxPerSkill, systemAttributes, charsheetLevel, charsheet.systemId ]);
     
     const renderErrors = (): ReactElement | null => {
         if (!errors.expertises) return null;

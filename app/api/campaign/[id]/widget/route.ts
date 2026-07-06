@@ -112,9 +112,8 @@ export async function PATCH(
             return Response.json({ message: 'NOT FOUND' }, { status: 404 });
         }
 
-        const isMember =
-            campaign.admin?.includes(session.user.id) ||
-            campaign.players?.some(p => p.userId === session.user.id);
+        const isGM = campaign.admin?.includes(session.user.id) ?? false;
+        const isMember = isGM || campaign.players?.some(p => p.userId === session.user.id);
         if (!isMember) {
             return Response.json({ message: 'FORBIDDEN', error: 'Você não participa desta campanha' }, { status: 403 });
         }
@@ -137,6 +136,14 @@ export async function PATCH(
             const clamped = Math.max(0, max !== undefined && max !== null ? Math.min(max, next) : next);
             return isNaN(clamped) ? current : clamped;
         };
+
+        if (
+            (body.action === 'adjustResource' || body.action === 'adjustStock') &&
+            widget.playersCanManageResources === false &&
+            !isGM
+        ) {
+            return Response.json({ message: 'FORBIDDEN', error: 'Apenas o mestre pode administrar recursos e estoque deste widget' }, { status: 403 });
+        }
 
         switch (body.action) {
         case 'adjustResource': {
@@ -409,6 +416,16 @@ export async function PATCH(
                 const cost = (recipe.resourceCosts ?? []).find(c => c.resourceId === r.id);
                 return cost ? { ...r, value: r.value - cost.amount * multiplier } : r;
             });
+            widget.craftLog = [
+                {
+                    id: crypto.randomUUID(),
+                    recipeName: recipe.name,
+                    quantity: outputQty,
+                    userName: session.user.name || 'Alguém',
+                    timestamp: new Date().toISOString()
+                },
+                ...(widget.craftLog ?? [])
+            ].slice(0, 30);
             break;
         }
         case 'poolTransaction': {

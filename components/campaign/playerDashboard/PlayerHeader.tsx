@@ -12,29 +12,9 @@ import {
 } from '@mui/material';
 import Image from 'next/image';
 import { StatusBar } from './StatusBar';
-import { AttributeCard } from './AttributeCard';
 import type { Stats } from '@models';
 import EffectBadges from '@components/campaign/gmDashboard/actions/EffectBadges';
 import { useCharsheetSystem } from '@hooks/useCharsheetSystem';
-
-const attributeConfig = {
-    vig: { icon: '💪', color: { bgcolor: 'rgba(239, 68, 68, 0.2)', border: '1px solid rgba(239, 68, 68, 0.4)' } },
-    foc: { icon: '🎯', color: { bgcolor: 'rgba(59, 130, 246, 0.2)', border: '1px solid rgba(59, 130, 246, 0.4)' } },
-    des: { icon: '⚡', color: { bgcolor: 'rgba(234, 179, 8, 0.2)', border: '1px solid rgba(234, 179, 8, 0.4)' } },
-    log: { icon: '🧠', color: { bgcolor: 'rgba(6, 182, 212, 0.2)', border: '1px solid rgba(6, 182, 212, 0.4)' } },
-    sab: { icon: '🔮', color: { bgcolor: 'rgba(168, 85, 247, 0.2)', border: '1px solid rgba(168, 85, 247, 0.4)' } },
-    car: { icon: '🌟', color: { bgcolor: 'rgba(34, 197, 94, 0.2)', border: '1px solid rgba(34, 197, 94, 0.4)' } }
-};
-
-// Paleta cíclica de ícones/cores para atributos de sistemas customizados (sem config própria)
-const customAttributeStyles = [
-    { icon: '💪', color: { bgcolor: 'rgba(239, 68, 68, 0.2)', border: '1px solid rgba(239, 68, 68, 0.4)' } },
-    { icon: '🎯', color: { bgcolor: 'rgba(59, 130, 246, 0.2)', border: '1px solid rgba(59, 130, 246, 0.4)' } },
-    { icon: '⚡', color: { bgcolor: 'rgba(234, 179, 8, 0.2)', border: '1px solid rgba(234, 179, 8, 0.4)' } },
-    { icon: '🧠', color: { bgcolor: 'rgba(6, 182, 212, 0.2)', border: '1px solid rgba(6, 182, 212, 0.4)' } },
-    { icon: '🔮', color: { bgcolor: 'rgba(168, 85, 247, 0.2)', border: '1px solid rgba(168, 85, 247, 0.4)' } },
-    { icon: '🌟', color: { bgcolor: 'rgba(34, 197, 94, 0.2)', border: '1px solid rgba(34, 197, 94, 0.4)' } }
-];
 
 export default function PlayerHeader({ avatar }: { avatar: string | undefined }) {
     const { charsheet, updateCharsheet } = useCampaignCurrentCharsheetContext();
@@ -42,8 +22,6 @@ export default function PlayerHeader({ avatar }: { avatar: string | undefined })
     const { system: customSystem } = useCharsheetSystem(charsheet?.systemId);
 
     const stats = charsheet.stats;
-    const customAttributes = customSystem?.attributes ?? [];
-    const hasCustomAttributes = customAttributes.length > 0;
 
     const hasLP = !customSystem || (customSystem.pointsConfig?.hasLP ?? customSystem.initialFields?.life?.enabled ?? true);
     const hasMP = !customSystem || (customSystem.pointsConfig?.hasMP ?? customSystem.initialFields?.mana?.enabled ?? true);
@@ -158,87 +136,7 @@ export default function PlayerHeader({ avatar }: { avatar: string | undefined })
 
             {/* Segunda linha: Atributos */}
             <Box sx={{ mb: 2 }}>
-                <Typography variant="caption" sx={{
-                    color: '#9ca3af',
-                    fontWeight: 600,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em',
-                    fontSize: '11px',
-                    mb: 1
-                }}>
-                    Atributos Principais
-                </Typography>
-                <Grid container spacing={1} sx={{ mt: 0.5 }}>
-                    {hasCustomAttributes ? (
-                        customAttributes.map((attribute, idx) => {
-                            const style = customAttributeStyles[idx % customAttributeStyles.length];
-                            const value = (charsheet.attributes as unknown as Record<string, number>)?.[attribute.key] ?? 0;
-                            return (
-                                <Grid item xs={6} sm={4} md={2} key={attribute.key}>
-                                    <AttributeCard
-                                        label={attribute.abbreviation || attribute.name}
-                                        value={value}
-                                        icon={style.icon}
-                                        iconColor={style.color}
-                                    />
-                                </Grid>
-                            );
-                        })
-                    ) : (
-                        <>
-                            <Grid item xs={6} sm={4} md={2}>
-                                <AttributeCard
-                                    label="VIG"
-                                    value={charsheet.attributes.vig}
-                                    icon={attributeConfig.vig.icon}
-                                    iconColor={attributeConfig.vig.color}
-                                />
-                            </Grid>
-                            <Grid item xs={6} sm={4} md={2}>
-                                <AttributeCard
-                                    label="FOC"
-                                    value={charsheet.attributes.foc}
-                                    icon={attributeConfig.foc.icon}
-                                    iconColor={attributeConfig.foc.color}
-                                />
-                            </Grid>
-                            <Grid item xs={6} sm={4} md={2}>
-                                <AttributeCard
-                                    label="DES"
-                                    value={charsheet.attributes.des}
-                                    icon={attributeConfig.des.icon}
-                                    iconColor={attributeConfig.des.color}
-                                />
-                            </Grid>
-                            <Grid item xs={6} sm={4} md={2}>
-                                <AttributeCard
-                                    label="LOG"
-                                    value={charsheet.attributes.log}
-                                    icon={attributeConfig.log.icon}
-                                    iconColor={attributeConfig.log.color}
-                                />
-                            </Grid>
-                            <Grid item xs={6} sm={4} md={2}>
-                                <AttributeCard
-                                    label="SAB"
-                                    value={charsheet.attributes.sab}
-                                    icon={attributeConfig.sab.icon}
-                                    iconColor={attributeConfig.sab.color}
-                                />
-                            </Grid>
-                            <Grid item xs={6} sm={4} md={2}>
-                                <AttributeCard
-                                    label="CAR"
-                                    value={charsheet.attributes.car}
-                                    icon={attributeConfig.car.icon}
-                                    iconColor={attributeConfig.car.color}
-                                />
-                            </Grid>
-                        </>
-                    )}
-                </Grid>
-                
-                <Grid container spacing={1} sx={{ mt: 1.5 }}>
+                <Grid container spacing={1}>
                     {!customSystem && (
                         <Grid item xs={12} sm={4}>
                             <Paper sx={{

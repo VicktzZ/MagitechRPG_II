@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState, type ReactElement } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 import {
     Accordion,
     AccordionDetails,
@@ -84,10 +84,81 @@ const bountyStatusOptions: Array<{ value: WidgetBountyStatus; label: string }> =
     { value: 'done', label: 'Concluída' }
 ];
 
+/**
+ * Mescla uma lista de itens (por id) de três fontes — o snapshot original
+ * (quando o dialog foi aberto), a edição local do mestre e o estado mais
+ * recente do servidor — para que ações de jogadores (depósitos, crafting,
+ * fundos etc.) feitas enquanto o dialog estava aberto não sejam perdidas.
+ *
+ * - Existe em local E fresh: mantém os campos de config do mestre, mas usa
+ *   os `runtimeFields` do servidor (ex: quantidade, valor).
+ * - Só em local: item novo criado pelo mestre nesta sessão — mantém.
+ * - Só em fresh e não estava no baseline: item novo criado por um jogador
+ *   enquanto o dialog estava aberto — mantém (é o bug original).
+ * - Só em fresh e já estava no baseline: o mestre removeu deliberadamente
+ *   no dialog — respeita a remoção.
+ */
+function threeWayMergeById<T extends { id: string }>(
+    baseline: T[],
+    local: T[],
+    fresh: T[],
+    runtimeFields: Array<keyof T>
+): T[] {
+    const baselineIds = new Set(baseline.map(i => i.id));
+    const freshById = new Map(fresh.map(i => [ i.id, i ]));
+    const localById = new Map(local.map(i => [ i.id, i ]));
+    const allIds = new Set([ ...freshById.keys(), ...localById.keys() ]);
+
+    const result: T[] = [];
+    allIds.forEach(id => {
+        const freshItem = freshById.get(id);
+        const localItem = localById.get(id);
+
+        if (localItem && freshItem) {
+            const merged = { ...localItem };
+            runtimeFields.forEach(field => { merged[field] = freshItem[field]; });
+            result.push(merged);
+        } else if (localItem && !freshItem) {
+            result.push(localItem);
+        } else if (!localItem && freshItem && !baselineIds.has(id)) {
+            result.push(freshItem);
+        }
+        // !localItem && freshItem && baselineIds.has(id) → removido deliberadamente pelo mestre
+    });
+    return result;
+}
+
+/** Aplica o merge de 3 vias em todas as seções do widget que jogadores podem alterar. */
+function mergeWidgetForSave(
+    baseline: CampaignWidget | undefined,
+    local: CampaignWidget,
+    fresh: CampaignWidget | undefined
+): CampaignWidget {
+    if (!fresh) return local; // widget novo, criado pelo mestre nesta sessão — nada a mesclar
+
+    return {
+        ...local,
+        integrity: fresh.integrity,
+        secondary: fresh.secondary,
+        // craftLog é somente-leitura no dialog do mestre (só o servidor grava ao craftar) — usa sempre o mais recente.
+        craftLog: fresh.craftLog ?? local.craftLog,
+        resources: threeWayMergeById(baseline?.resources ?? [], local.resources, fresh.resources, [ 'value' ]),
+        stock: threeWayMergeById(baseline?.stock ?? [], local.stock, fresh.stock, [ 'quantity' ]),
+        pools: threeWayMergeById(baseline?.pools ?? [], local.pools, fresh.pools, [ 'value', 'history' ]),
+        bounties: threeWayMergeById(
+            baseline?.bounties ?? [], local.bounties, fresh.bounties,
+            [ 'status', 'claimedByCharsheetId', 'claimedByName' ]
+        ),
+        clocks: threeWayMergeById(baseline?.clocks ?? [], local.clocks, fresh.clocks, [ 'current' ])
+    };
+}
+
 export default function WidgetManagerDialog({ open, onClose, initialWidgetId }: WidgetManagerDialogProps): ReactElement {
     const { campaign } = useCampaignContext();
     const { enqueueSnackbar } = useSnackbar();
     const [ widgets, setWidgets ] = useState<CampaignWidget[]>([]);
+    /** Snapshot imutável de quando o dialog foi aberto — usado para o merge de 3 vias ao salvar. */
+    const baselineRef = useRef<CampaignWidget[]>([]);
     const [ activeId, setActiveId ] = useState<string | null>(null);
     const [ addingPreset, setAddingPreset ] = useState(false);
     const [ saving, setSaving ] = useState(false);
@@ -100,6 +171,7 @@ export default function WidgetManagerDialog({ open, onClose, initialWidgetId }: 
     useEffect(() => {
         if (open) {
             const clone: CampaignWidget[] = campaign.widgets ? JSON.parse(JSON.stringify(campaign.widgets)) : [];
+            baselineRef.current = JSON.parse(JSON.stringify(clone));
             setWidgets(clone);
             setActiveId(initialWidgetId && clone.some(w => w.id === initialWidgetId) ? initialWidgetId : (clone[0]?.id ?? null));
             setAddingPreset(clone.length === 0);
@@ -203,10 +275,20 @@ export default function WidgetManagerDialog({ open, onClose, initialWidgetId }: 
     const persistWidgets = async (list: CampaignWidget[]): Promise<boolean> => {
         setSaving(true);
         try {
+            // Busca o estado mais recente do servidor antes de salvar — evita que
+            // ações de jogadores (depósitos, crafting, fundos etc.) feitas enquanto
+            // este dialog estava aberto sejam sobrescritas pelo snapshot antigo.
+            const freshRes = await fetch(`/api/campaign/${campaign.id}/widget`);
+            const freshWidgets: CampaignWidget[] = freshRes.ok ? await freshRes.json() : [];
+            const freshById = new Map(freshWidgets.map(w => [ w.id, w ]));
+            const baselineById = new Map(baselineRef.current.map(w => [ w.id, w ]));
+
+            const merged = list.map(w => mergeWidgetForSave(baselineById.get(w.id), w, freshById.get(w.id)));
+
             const response = await fetch(`/api/campaign/${campaign.id}/widget`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ widgets: list })
+                body: JSON.stringify({ widgets: merged })
             });
             if (!response.ok) {
                 const data = await response.json();
@@ -381,6 +463,22 @@ export default function WidgetManagerDialog({ open, onClose, initialWidgetId }: 
                                             value={widget.description ?? ''}
                                             onChange={(e) => patch({ description: e.target.value })}
                                         />
+                                    </Grid>
+                                    <Grid item xs={12}>
+                                        <FormControlLabel
+                                            control={
+                                                <Switch
+                                                    checked={widget.playersCanManageResources !== false}
+                                                    onChange={(e) => patch({ playersCanManageResources: e.target.checked })}
+                                                />
+                                            }
+                                            label="Jogadores podem ajustar recursos e estoque diretamente"
+                                        />
+                                        <Typography variant="caption" color="text.secondary" display="block">
+                                            Se desativado, somente o mestre pode alterar o valor dos recursos e a
+                                            quantidade do estoque — jogadores ainda podem depositar/retirar itens do
+                                            próprio inventário normalmente.
+                                        </Typography>
                                     </Grid>
                                 </Grid>
                             </AccordionDetails>

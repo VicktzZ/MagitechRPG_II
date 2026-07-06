@@ -54,6 +54,7 @@ export {
     type WidgetRecipeInput,
     type WidgetRecipeResourceCost,
     type WidgetRecipeOutput,
+    type WidgetCraftLogEntry,
     type WidgetPool,
     type WidgetPoolEntry,
     type WidgetBounty,

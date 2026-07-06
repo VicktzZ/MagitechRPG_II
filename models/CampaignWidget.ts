@@ -96,6 +96,15 @@ export interface WidgetRecipe {
     output: WidgetRecipeOutput;
 }
 
+/** Registro de uma fabricação concluída — histórico exibido no painel (últimas 5) */
+export interface WidgetCraftLogEntry {
+    id: string;
+    recipeName: string;
+    quantity: number;
+    userName: string;
+    timestamp: string;
+}
+
 /** Lançamento no histórico de um fundo comum */
 export interface WidgetPoolEntry {
     id: string;
@@ -193,8 +202,19 @@ export interface CampaignWidget {
     /** Unidade exibida junto à capacidade do estoque (ex: "kg", "un.") */
     stockWeightUnit?: string;
 
+    /**
+     * Se jogadores comuns (não-mestre) podem ajustar o valor dos recursos e a
+     * quantidade do estoque diretamente (+/-). Ausente/true = comportamento
+     * padrão (permitido). false = somente o mestre pode ajustar — jogadores
+     * ainda podem depositar/retirar itens do próprio inventário normalmente.
+     */
+    playersCanManageResources?: boolean;
+
     /** Receitas de crafting (beta) — "outras funcionalidades" */
     recipes: WidgetRecipe[];
+
+    /** Histórico das últimas fabricações concluídas por jogadores — mais recente primeiro */
+    craftLog?: WidgetCraftLogEntry[];
 
     /** Fundos comuns (beta) — pools genéricos com histórico de contribuições */
     pools: WidgetPool[];
@@ -246,7 +266,9 @@ function base(): Omit<CampaignWidget, 'labels'> {
         showStock: true,
         stockMaxWeight: undefined,
         stockWeightUnit: 'kg',
+        playersCanManageResources: true,
         recipes: [],
+        craftLog: [],
         pools: [],
         bounties: [],
         clocks: [],
