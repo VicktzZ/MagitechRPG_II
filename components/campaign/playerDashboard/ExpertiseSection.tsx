@@ -32,21 +32,45 @@ import {
 } from '@mui/icons-material'
 import { blue, green, grey, purple, orange, red } from '@mui/material/colors'
 import { useSession } from 'next-auth/react'
-import { type ReactElement, useState, useMemo } from 'react'
-import type { Expertises } from '@models';
+import { type ReactElement, useState, useMemo, useEffect } from 'react'
+import type { RPGSystem, SystemAttribute } from '@models/entities';
 
 type ExpertiseLevel = 'all' | 'novice' | 'trained' | 'expert' | 'master' | 'legendary';
 type SortOrder = 'alpha-asc' | 'alpha-desc' | 'value-asc' | 'value-desc';
+
+interface ExpertiseEntry {
+    key: string;
+    label: string;
+    value: number;
+    defaultAttribute?: string;
+    attributeLabel?: string;
+}
 
 export default function ExpertiseSection(): ReactElement {
     const { charsheet } = useCampaignCurrentCharsheetContext();
     const theme = useTheme();
     const [ filterLevel, setFilterLevel ] = useState<ExpertiseLevel>('all');
     const [ sortOrder, setSortOrder ] = useState<SortOrder>('alpha-asc');
+    const [ systemExpertises, setSystemExpertises ] = useState<RPGSystem['expertises'] | null>(null);
+    const [ systemAttributes, setSystemAttributes ] = useState<SystemAttribute[] | null>(null);
 
     const expertises = charsheet.expertises
     const { handleSendMessage, setIsChatOpen, isChatOpen } = useChatContext()
     const { data: session } = useSession()
+
+    // Carrega as perícias/atributos do sistema customizado (se houver), para
+    // mostrar SOMENTE as perícias do sistema (não as padrão do Magitech) com
+    // nomes resolvidos em vez das keys internas.
+    useEffect(() => {
+        if (!charsheet.systemId) return;
+        fetch(`/api/rpg-system/${charsheet.systemId}`)
+            .then(async res => await res.json())
+            .then((data: RPGSystem) => {
+                if (data.expertises && data.expertises.length > 0) setSystemExpertises(data.expertises);
+                if (data.attributes && data.attributes.length > 0) setSystemAttributes(data.attributes);
+            })
+            .catch(err => console.error('Erro ao carregar perícias do sistema:', err));
+    }, [ charsheet.systemId ]);
 
     const getExpertiseLevel = (value: number): ExpertiseLevel => {
         if (value < 2) return 'novice';
@@ -56,45 +80,64 @@ export default function ExpertiseSection(): ReactElement {
         return 'legendary';
     };
 
-    const filteredAndSortedExpertises = useMemo(() => {
-        let entries = Object.entries(expertises);
-
-        if (filterLevel !== 'all') {
-            entries = entries.filter(([ , exp ]) => {
-                const level = getExpertiseLevel(exp.value);
-                return level === filterLevel;
+    const entries = useMemo<ExpertiseEntry[]>(() => {
+        if (systemExpertises && systemExpertises.length > 0) {
+            return systemExpertises.map(sysExp => {
+                const stored = expertises[sysExp.key as keyof typeof expertises];
+                const defaultAttribute = stored?.defaultAttribute ?? sysExp.defaultAttribute ?? undefined;
+                const attrDef = systemAttributes?.find(a => a.key === defaultAttribute || a.name === defaultAttribute);
+                return {
+                    key: sysExp.key,
+                    label: sysExp.name,
+                    value: stored?.value ?? 0,
+                    defaultAttribute,
+                    attributeLabel: attrDef?.abbreviation ?? defaultAttribute?.toUpperCase()
+                };
             });
         }
 
-        entries.sort((a, b) => {
+        return Object.entries(expertises).map(([ key, exp ]) => ({
+            key,
+            label: key,
+            value: exp?.value ?? 0,
+            defaultAttribute: exp?.defaultAttribute,
+            attributeLabel: exp?.defaultAttribute?.toUpperCase()
+        }));
+    }, [ expertises, systemExpertises, systemAttributes ]);
+
+    const filteredAndSortedExpertises = useMemo(() => {
+        let list = [ ...entries ];
+
+        if (filterLevel !== 'all') {
+            list = list.filter(e => getExpertiseLevel(e.value) === filterLevel);
+        }
+
+        list.sort((a, b) => {
             switch (sortOrder) {
             case 'alpha-asc':
-                return a[0].localeCompare(b[0]);
+                return a.label.localeCompare(b.label);
             case 'alpha-desc':
-                return b[0].localeCompare(a[0]);
+                return b.label.localeCompare(a.label);
             case 'value-asc':
-                return a[1].value - b[1].value;
+                return a.value - b.value;
             case 'value-desc':
-                return b[1].value - a[1].value;
+                return b.value - a.value;
             default:
                 return 0;
             }
         });
 
-        return entries;
-    }, [ expertises, filterLevel, sortOrder ]);
-    
-    const expertiseStats = useMemo(() => {
-        const allEntries = Object.entries(expertises);
-        return {
-            total: allEntries.length,
-            novice: allEntries.filter(([ , exp ]) => exp.value < 2).length,
-            trained: allEntries.filter(([ , exp ]) => exp.value >= 2 && exp.value < 5).length,
-            expert: allEntries.filter(([ , exp ]) => exp.value >= 5 && exp.value < 7).length,
-            master: allEntries.filter(([ , exp ]) => exp.value >= 7 && exp.value < 9).length,
-            legendary: allEntries.filter(([ , exp ]) => exp.value >= 9).length
-        };
-    }, [ expertises ]);
+        return list;
+    }, [ entries, filterLevel, sortOrder ]);
+
+    const expertiseStats = useMemo(() => ({
+        total: entries.length,
+        novice: entries.filter(e => e.value < 2).length,
+        trained: entries.filter(e => e.value >= 2 && e.value < 5).length,
+        expert: entries.filter(e => e.value >= 5 && e.value < 7).length,
+        master: entries.filter(e => e.value >= 7 && e.value < 9).length,
+        legendary: entries.filter(e => e.value >= 9).length
+    }), [ entries ]);
 
     const getExpertiseConfig = (value: number) => {
         if (value < 2) {
@@ -146,12 +189,11 @@ export default function ExpertiseSection(): ReactElement {
         return colors[attr] || grey[600]
     }
 
-    const handleExpertiseClick = async (expertiseName: keyof Expertises) => {
-        const expertise = charsheet.expertises[expertiseName]
-        const expertiseValue = expertise.value
+    const handleExpertiseClick = async (entry: ExpertiseEntry) => {
+        const expertiseValue = entry.value
 
         // Determina quantos d20s rolar baseado nos mods do atributo padrão da perícia
-        const attrKey = (expertise.defaultAttribute ?? '') as keyof typeof charsheet.mods.attributes
+        const attrKey = (entry.defaultAttribute ?? '') as keyof typeof charsheet.mods.attributes
         let numDice = Number(charsheet.mods?.attributes?.[attrKey] ?? 1)
         if (!Number.isFinite(numDice) || numDice < 1) numDice = 1
 
@@ -167,11 +209,11 @@ export default function ExpertiseSection(): ReactElement {
         const total = roll + expertiseValue
 
         // Formata os rolls para exibição de uma forma que possamos reconhecer depois
-        const rollPart = rolls.length > 1 ? 
-            `${rolls.join(', ')}: ${roll}` : 
+        const rollPart = rolls.length > 1 ?
+            `${rolls.join(', ')}: ${roll}` :
             `${roll}`
 
-        const text = `🎲 ${(expertiseName as string).toUpperCase()} - ${numDice}d20${expertiseValue >= 0 ? '+' : ''}${expertiseValue}: [${rollPart}] = ${total}`
+        const text = `🎲 ${entry.label.toUpperCase()} - ${numDice}d20${expertiseValue >= 0 ? '+' : ''}${expertiseValue}: [${rollPart}] = ${total}`
         
         // Envia a mensagem diretamente
         if (session?.user) {
@@ -406,19 +448,19 @@ export default function ExpertiseSection(): ReactElement {
                                     gap: { xs: 1, sm: 2 }
                                 }}
                             >
-                                {filteredAndSortedExpertises.map(([ nome, expertise ]) => {
-                                    const config = getExpertiseConfig(expertise.value);
+                                {filteredAndSortedExpertises.map((entry) => {
+                                    const config = getExpertiseConfig(entry.value);
                                     const IconComponent = config.icon;
-                                    
+
                                     return (
-                                        <Tooltip 
-                                            key={nome}
-                                            title={`Clique para rolar ${nome} (${config.label})`}
+                                        <Tooltip
+                                            key={entry.key}
+                                            title={`Clique para rolar ${entry.label} (${config.label})`}
                                             placement="top"
                                         >
                                             <Button
                                                 fullWidth
-                                                onClick={async () => await handleExpertiseClick(nome as keyof Expertises)}
+                                                onClick={async () => await handleExpertiseClick(entry)}
                                                 elevation={1}
                                                 sx={{
                                                     p: 2.5,
@@ -455,21 +497,21 @@ export default function ExpertiseSection(): ReactElement {
                                                                 }} 
                                                             />
                                                         </Box>
-                                                        <Typography 
-                                                            variant="subtitle1" 
-                                                            sx={{ 
+                                                        <Typography
+                                                            variant="subtitle1"
+                                                            sx={{
                                                                 fontWeight: 600,
                                                                 color: 'text.primary',
                                                                 flex: 1
                                                             }}
                                                         >
-                                                            {nome}
+                                                            {entry.label}
                                                         </Typography>
                                                     </Box>
-                                                    
+
                                                     <Box display="flex" gap={1} flexWrap="wrap" justifyContent="space-between">
-                                                        <Chip 
-                                                            label={`${expertise.value >= 0 ? '+' : ''}${expertise.value}`}
+                                                        <Chip
+                                                            label={`${entry.value >= 0 ? '+' : ''}${entry.value}`}
                                                             size="small"
                                                             sx={{
                                                                 bgcolor: config.color,
@@ -478,16 +520,18 @@ export default function ExpertiseSection(): ReactElement {
                                                                 fontSize: '0.8rem'
                                                             }}
                                                         />
-                                                        <Chip 
-                                                            label={expertise.defaultAttribute?.toUpperCase()}
-                                                            size="small"
-                                                            sx={{
-                                                                bgcolor: getAttributeColor(expertise.defaultAttribute?.toUpperCase()) + '20',
-                                                                color: getAttributeColor(expertise.defaultAttribute?.toUpperCase()),
-                                                                fontWeight: 600,
-                                                                fontSize: '0.75rem'
-                                                            }}
-                                                        />
+                                                        {entry.attributeLabel && (
+                                                            <Chip
+                                                                label={entry.attributeLabel}
+                                                                size="small"
+                                                                sx={{
+                                                                    bgcolor: getAttributeColor(entry.attributeLabel) + '20',
+                                                                    color: getAttributeColor(entry.attributeLabel),
+                                                                    fontWeight: 600,
+                                                                    fontSize: '0.75rem'
+                                                                }}
+                                                            />
+                                                        )}
                                                         <Chip 
                                                             label={config.label}
                                                             size="small"

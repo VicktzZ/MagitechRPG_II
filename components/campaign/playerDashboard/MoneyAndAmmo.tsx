@@ -31,11 +31,16 @@ import {
 } from '@mui/material';
 import { blue, green, orange, purple, red } from '@mui/material/colors';
 import React, { type ReactElement, useState, useEffect } from 'react';
+import { useCharsheetSystem } from '@hooks/useCharsheetSystem';
 
 export default function MoneyAndAmmo(): ReactElement {
     const { charsheet, updateCharsheet } = useCampaignCurrentCharsheetContext();
     const theme = useTheme();
-    
+    const { system: customSystem } = useCharsheetSystem(charsheet?.systemId);
+    const showCurrency = !customSystem || customSystem.currency?.enabled !== false;
+    const currencyLabel = customSystem?.currency?.name ?? 'Dinheiro';
+    const currencyAbbreviation = customSystem?.currency?.abbreviation ?? (charsheet.mode === 'Classic' ? '¥' : '¢');
+
     const [ ammo, setAmmo ] = useState<AmmoControl>({
         type: AmmoType.BULLET,
         current: charsheet.ammoCounter.current,
@@ -154,110 +159,112 @@ export default function MoneyAndAmmo(): ReactElement {
     return (
         <Box sx={{ width: '100%' }}>
             <Stack spacing={3}>
-                {/* Seção de Dinheiro */}
-                <Paper 
-                    elevation={2}
-                    sx={{ 
-                        p: 3, 
-                        borderRadius: 3,
-                        background: theme.palette.mode === 'dark'
-                            ? 'linear-gradient(145deg, #1e293b 0%, #334155 100%)'
-                            : 'linear-gradient(145deg, #f8fafc 0%, #e2e8f0 100%)',
-                        border: '1px solid',
-                        borderColor: 'divider',
-                        transition: 'all 0.3s ease',
-                        '&:hover': {
-                            boxShadow: 4,
-                            transform: 'translateY(-2px)'
-                        }
-                    }}
-                >
-                    <Stack spacing={2}>
-                        <Box display="flex" alignItems="center" gap={2}>
-                            <Box 
-                                sx={{
-                                    p: 1.5,
-                                    borderRadius: 2,
-                                    bgcolor: green[100],
-                                    border: '2px solid',
-                                    borderColor: green[200]
-                                }}
-                            >
-                                <AttachMoney sx={{ color: green[700], fontSize: '2rem' }} />
-                            </Box>
-                            <Box flex={1}>
-                                <Typography 
-                                    variant="h5" 
-                                    sx={{ 
-                                        fontWeight: 700,
-                                        color: 'primary.main',
-                                        mb: 0.5
+                {/* Seção de Dinheiro — some quando o sistema desabilita moeda */}
+                {showCurrency && (
+                    <Paper
+                        elevation={2}
+                        sx={{
+                            p: 3,
+                            borderRadius: 3,
+                            background: theme.palette.mode === 'dark'
+                                ? 'linear-gradient(145deg, #1e293b 0%, #334155 100%)'
+                                : 'linear-gradient(145deg, #f8fafc 0%, #e2e8f0 100%)',
+                            border: '1px solid',
+                            borderColor: 'divider',
+                            transition: 'all 0.3s ease',
+                            '&:hover': {
+                                boxShadow: 4,
+                                transform: 'translateY(-2px)'
+                            }
+                        }}
+                    >
+                        <Stack spacing={2}>
+                            <Box display="flex" alignItems="center" gap={2}>
+                                <Box
+                                    sx={{
+                                        p: 1.5,
+                                        borderRadius: 2,
+                                        bgcolor: green[100],
+                                        border: '2px solid',
+                                        borderColor: green[200]
                                     }}
                                 >
-                                    {charsheet.mode === 'Classic' ? '¥ ' : '¢ '}Dinheiro
-                                </Typography>
-                                <Typography variant="body2" color="text.secondary">
+                                    <AttachMoney sx={{ color: green[700], fontSize: '2rem' }} />
+                                </Box>
+                                <Box flex={1}>
+                                    <Typography
+                                        variant="h5"
+                                        sx={{
+                                            fontWeight: 700,
+                                            color: 'primary.main',
+                                            mb: 0.5
+                                        }}
+                                    >
+                                        {currencyAbbreviation} {currencyLabel}
+                                    </Typography>
+                                    <Typography variant="body2" color="text.secondary">
                                     Recursos financeiros do personagem
-                                </Typography>
+                                    </Typography>
+                                </Box>
                             </Box>
-                        </Box>
-                        
-                        <Box 
-                            sx={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 2,
-                                p: 2,
-                                bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
-                                borderRadius: 2,
-                                border: '1px solid',
-                                borderColor: 'divider'
-                            }}
-                        >
-                            <TextField
-                                value={money}
-                                onChange={(e) => {
-                                    const value = parseFloat(e.target.value) || 0;
-                                    setMoney(value);
-                                    // 🔥 Atualizar no Firestore em tempo real
-                                    updateCharsheet({
-                                        inventory: {
-                                            ...charsheet.inventory,
-                                            money: value
+
+                            <Box
+                                sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 2,
+                                    p: 2,
+                                    bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
+                                    borderRadius: 2,
+                                    border: '1px solid',
+                                    borderColor: 'divider'
+                                }}
+                            >
+                                <TextField
+                                    value={money}
+                                    onChange={(e) => {
+                                        const value = parseFloat(e.target.value) || 0;
+                                        setMoney(value);
+                                        // 🔥 Atualizar no Firestore em tempo real
+                                        updateCharsheet({
+                                            inventory: {
+                                                ...charsheet.inventory,
+                                                money: value
+                                            }
+                                        });
+                                    }}
+                                    type="number"
+                                    variant="outlined"
+                                    size="medium"
+                                    inputProps={{ min: 0, step: 0.1 }}
+                                    sx={{
+                                        flex: 1,
+                                        '& .MuiOutlinedInput-root': {
+                                            '& fieldset': {
+                                                borderColor: green[300]
+                                            },
+                                            '&:hover fieldset': {
+                                                borderColor: green[500]
+                                            },
+                                            '&.Mui-focused fieldset': {
+                                                borderColor: green[600]
+                                            }
                                         }
-                                    });
-                                }}
-                                type="number"
-                                variant="outlined"
-                                size="medium"
-                                inputProps={{ min: 0, step: 0.1 }}
-                                sx={{ 
-                                    flex: 1,
-                                    '& .MuiOutlinedInput-root': {
-                                        '& fieldset': {
-                                            borderColor: green[300]
-                                        },
-                                        '&:hover fieldset': {
-                                            borderColor: green[500]
-                                        },
-                                        '&.Mui-focused fieldset': {
-                                            borderColor: green[600]
-                                        }
-                                    }
-                                }}
-                            />
-                            <Chip 
-                                label="Créditos" 
-                                sx={{ 
-                                    bgcolor: green[100],
-                                    color: green[800],
-                                    fontWeight: 600,
-                                    fontSize: '0.9rem'
-                                }}
-                            />
-                        </Box>
-                    </Stack>
-                </Paper>
+                                    }}
+                                />
+                                <Chip
+                                    label={currencyAbbreviation}
+                                    sx={{
+                                        bgcolor: green[100],
+                                        color: green[800],
+                                        fontWeight: 600,
+                                        fontSize: '0.9rem'
+                                    }}
+                                />
+                            </Box>
+                        </Stack>
+                    </Paper>
+                )}
 
                 {/* Seção de Munição */}
                 <Paper 

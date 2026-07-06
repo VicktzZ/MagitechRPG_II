@@ -12,9 +12,13 @@ import type { CharsheetDTO } from '@models/dtos';
 import GMActions from './gmDashboard/GMActions';
 import CampaignFinishedBanner from './CampaignFinishedBanner';
 import CampaignWidgetPanel from './widget/CampaignWidgetPanel';
+import DevViewSwitcher from './DevViewSwitcher';
+
+const DEV_MODE = process.env.NEXT_PUBLIC_NODE_ENV === 'development';
 
 export default function CampaignComponent(): ReactElement {
-    const { isUserGM, campaign: { campaignCode }, charsheets  } = useCampaignContext();
+    const { isUserGM, campaign, charsheets  } = useCampaignContext();
+    const { campaignCode } = campaign;
     const [ charsheetId, setCharsheetId ] = useState<string>(typeof window !== 'undefined' ? (localStorage.getItem('currentCharsheet') ?? '') : '');
     const userId = typeof window !== 'undefined' ? (localStorage.getItem('userId') ?? '') : '';
 
@@ -31,7 +35,24 @@ export default function CampaignComponent(): ReactElement {
         }
     }, [ isUserGM, charsheets, userId, charsheetId ]);
 
-    const { data: charsheet, loading } = useCompleteCharsheet({ charsheetId });
+    // MODO DEV: permite ao mestre pré-visualizar a campanha como jogador,
+    // usando uma ficha da própria conta anexada como jogador de teste.
+    const [ devPreviewCharsheetId, setDevPreviewCharsheetId ] = useState<string | null>(() => {
+        if (!DEV_MODE || !isUserGM || typeof window === 'undefined') return null;
+        return sessionStorage.getItem(`devPreview:${campaign.id}`);
+    });
+
+    const handleDevPreviewChange = (id: string | null) => {
+        setDevPreviewCharsheetId(id);
+        if (typeof window === 'undefined') return;
+        if (id) sessionStorage.setItem(`devPreview:${campaign.id}`, id);
+        else sessionStorage.removeItem(`devPreview:${campaign.id}`);
+    };
+
+    const effectiveIsUserGM = isUserGM && !devPreviewCharsheetId;
+    const effectiveCharsheetId = devPreviewCharsheetId || charsheetId;
+
+    const { data: charsheet, loading } = useCompleteCharsheet({ charsheetId: effectiveCharsheetId });
 
     useEffect(() => {
         enqueueSnackbar('Você entrou na campanha!', { variant: 'success' }) 
@@ -69,13 +90,21 @@ export default function CampaignComponent(): ReactElement {
                 <Box sx={{
                     width: '100%'
                 }}>
-                    {isUserGM && (
+                    {DEV_MODE && isUserGM && (
+                        <DevViewSwitcher
+                            campaignId={campaign.id}
+                            userId={userId}
+                            activeCharsheetId={devPreviewCharsheetId}
+                            onChange={handleDevPreviewChange}
+                        />
+                    )}
+                    {effectiveIsUserGM && (
                         <Box sx={{ display: 'flex', mb: 2 }}>
                             <GMActions />
                         </Box>
                     )}
                     <CampaignNotes />
-                    {isUserGM ? (
+                    {effectiveIsUserGM ? (
                         <CampaignGMDashboard />
                     ) : (
                         <CampaignPlayerDashboard />
@@ -88,7 +117,7 @@ export default function CampaignComponent(): ReactElement {
         </>
     );
 
-    if (isUserGM) {
+    if (effectiveIsUserGM) {
         return content;
     }
 

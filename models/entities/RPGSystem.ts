@@ -487,6 +487,12 @@ export class RPGSystem {
     // Nível máximo do sistema (padrão 20; Cosmos RPG usa 5)
     maxLevel: number = 20;
 
+    /**
+     * Nível inicial de uma ficha recém-criada neste sistema.
+     * Undefined/0 = comportamento padrão (ficha começa no nível 0).
+     */
+    startingLevel?: number;
+
     // Pontos de atributo para distribuir na criação da ficha
     // (undefined = usa o padrão da aplicação)
     initialAttributePoints?: number;

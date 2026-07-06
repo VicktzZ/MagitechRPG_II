@@ -78,12 +78,17 @@ import { type ReactElement, useState, useMemo } from 'react';
 import { useSession } from '@node_modules/next-auth/react';
 import { type SessionPlayer } from '@features/roguelite/components';
 import { SubstitutionModal } from '@features/roguelite/components/perkCardsModal/components/SubstitutionModal';
+import { useCharsheetSystem } from '@hooks/useCharsheetSystem';
 
 type InventoryTab = 'all' | 'weapons' | 'armors' | 'items';
 
 export default function InventorySection(): ReactElement {
     const { charsheet, updateCharsheet } = useCampaignCurrentCharsheetContext();
     const { users, campaign, charsheets } = useCampaignContext();
+    // Unidade de peso do sistema customizado (ex: "kg", "slots", "" = simbólico)
+    const { system: customSystem } = useCharsheetSystem(charsheet.systemId);
+    const weightUnit = customSystem ? (customSystem.weightConfig?.unit ?? '') : 'kg';
+    const weightUnitSuffix = weightUnit ? ` ${weightUnit}` : '';
     const { data: session } = useSession();
     const { handleSendMessage, setIsChatOpen, isChatOpen } = useChatContext();
     const theme = useTheme();
@@ -375,7 +380,7 @@ export default function InventorySection(): ReactElement {
                     { label: 'Tipo', value: item.effect.effectType || item.kind },
                     { label: 'Categoria', value: item.categ },
                     { label: 'Alcance', value: item.range === 'Corpo-a-corpo' ? 'Corpo-a-corpo' : item.range },
-                    { label: 'Peso', value: `${item.weight} kg` }
+                    { label: 'Peso', value: `${item.weight}${weightUnitSuffix}` }
                 ];
             case 'armor':
                 return [
@@ -383,12 +388,12 @@ export default function InventorySection(): ReactElement {
                     { label: 'Tipo', value: item.kind || '-' },
                     { label: 'Categoria', value: item.categ || '-' },
                     { label: 'Penalidade', value: `${item.displacementPenalty ?? 0}m` },
-                    { label: 'Peso', value: `${item.weight || 0} kg` }
+                    { label: 'Peso', value: `${item.weight || 0}${weightUnitSuffix}` }
                 ];
             case 'item':
                 return [
                     { label: 'Tipo', value: item.kind },
-                    { label: 'Peso', value: `${item.weight} kg` },
+                    { label: 'Peso', value: `${item.weight}${weightUnitSuffix}` },
                     { label: 'Quantidade', value: `x${item.quantity ?? 1}`, highlight: true }
                 ];
             }
@@ -780,7 +785,7 @@ export default function InventorySection(): ReactElement {
                                     <CheckCircle sx={{ color: green[600], fontSize: '1.2rem' }} />
                                 )}
                                 <Typography variant="body2" fontWeight={600}>
-                                    {calculateTotalWeight.toFixed(1)}/{charsheet.capacity.max} kg
+                                    {calculateTotalWeight.toFixed(1)}/{charsheet.capacity.max}{weightUnitSuffix}
                                 </Typography>
                             </Box>
                         </Tooltip>

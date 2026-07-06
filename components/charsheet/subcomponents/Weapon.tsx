@@ -16,12 +16,18 @@ import {
 } from '@mui/icons-material'
 import type { ItemTyping } from '@models/types/item'
 import type { Roll } from '@models/types/misc'
+import { useFormContext } from 'react-hook-form'
+import type { Charsheet } from '@models/entities'
+import { useCharsheetSystem } from '@hooks/useCharsheetSystem'
 
 // TODO: CORRIGIR BUG DE ROLAGEM DE DADO
 export function Weapon(props: ItemTyping<'weapon'>): ReactElement {
     const theme = useTheme()
     const [ open, setOpen ] = useState(false)
     const [ showStats, setShowStats ] = useState(false)
+    const { getValues } = useFormContext<Charsheet>()
+    const { system: customSystem } = useCharsheetSystem(getValues('systemId'))
+    const weightUnit = customSystem ? (customSystem.weightConfig?.unit ?? '') : 'kg'
     const [ rollState  ] = useState<Roll>({
         name: 'Acerto',
         dice: 20,
@@ -111,7 +117,7 @@ export function Weapon(props: ItemTyping<'weapon'>): ReactElement {
                         <Chip
                             icon={<FitnessCenter />}
                             size="small"
-                            label={`${props.weight}kg`}
+                            label={`${props.weight}${weightUnit ? ` ${weightUnit}` : ''}`}
                             sx={{
                                 backgroundColor: alpha(theme.palette.error.main, 0.1),
                                 '& .MuiChip-icon': { color: theme.palette.error.main }

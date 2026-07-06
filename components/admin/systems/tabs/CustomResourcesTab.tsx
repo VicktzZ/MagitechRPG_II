@@ -399,7 +399,20 @@ export function CustomResourcesTab({ system, updateSystem }: CustomResourcesTabP
                                     label="Valor padrão"
                                     value={formData.defaultValue ?? ''}
                                     onChange={e => setField('defaultValue', parseInt(e.target.value) || 0)}
-                                    helperText="Inicial na ficha"
+                                    helperText="Inicial na ficha (usado se não houver fórmula)"
+                                />
+                            </Grid>
+                            <Grid item xs={12}>
+                                <TextField
+                                    fullWidth
+                                    label="Fórmula (opcional)"
+                                    value={formData.formula ?? ''}
+                                    onChange={e => setField('formula', e.target.value || undefined)}
+                                    placeholder="Ex: EST / 2 + 10"
+                                    helperText={
+                                        'Calcula o valor máximo/inicial na criação, usando abreviações dos atributos e "level" ' +
+                                        'como variáveis. Recalcula ao vivo enquanto a ficha está sendo criada; vazio = usa "Valor padrão".'
+                                    }
                                 />
                             </Grid>
                         </Grid>

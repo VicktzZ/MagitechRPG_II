@@ -29,6 +29,7 @@ import type { Armor, Item, Weapon } from '@models'
 import type { CharsheetDTO } from '@models/dtos'
 import useNumbersWithSpaces from '@hooks/useNumbersWithSpace'
 import { charsheetEntity } from '@utils/firestoreEntities'
+import { useCharsheetSystem } from '@hooks/useCharsheetSystem'
 
 function normalizeToArray<T>(value: any): T[] {
     if (!value) return []
@@ -56,6 +57,8 @@ function normalizeToArray<T>(value: any): T[] {
 
 export default function PlayerCard({ charsheet }: { charsheet: Required<CharsheetDTO> }) {
     const { campaign, charsheets } = useCampaignContext()
+    const { system: customSystem } = useCharsheetSystem(charsheet.systemId)
+    const weightUnit = customSystem ? (customSystem.weightConfig?.unit ?? '') : 'kg'
     const [ playerAnchorEl, setPlayerAnchorEl ] = useState<null | HTMLElement>(null)
     const [ addItemModalOpen, setAddItemModalOpen ] = useState(false)
     const [ removeUserDialogOpen, setRemoveUserDialogOpen ] = useState(false)
@@ -230,7 +233,7 @@ export default function PlayerCard({ charsheet }: { charsheet: Required<Charshee
                         <Box className="stat">
                             <Backpack sx={{ fontSize: 16, color: 'gray' }} />
                             <Typography variant="body2">
-                                {charsheet.capacity.cargo}/{charsheet.capacity.max} kg
+                                {charsheet.capacity.cargo}/{charsheet.capacity.max}{weightUnit ? ` ${weightUnit}` : ''}
                             </Typography>
                         </Box>
 

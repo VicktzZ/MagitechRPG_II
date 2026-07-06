@@ -118,7 +118,7 @@ export function ProgressionTab({ system, updateSystem }: ProgressionTabProps) {
                 Configure o nível máximo, o custo de pontos de perícia e as recompensas de cada nível do sistema.
             </Typography>
 
-            {/* ── Nível máximo ── */}
+            {/* ── Nível máximo e inicial ── */}
             <Grid container spacing={3} sx={{ mb: 1 }}>
                 <Grid item xs={12} sm={4} md={3}>
                     <TextField
@@ -129,6 +129,17 @@ export function ProgressionTab({ system, updateSystem }: ProgressionTabProps) {
                         onChange={e => handleMaxLevelChange(e.target.value)}
                         inputProps={{ min: 1, max: 100 }}
                         helperText="Entre 1 e 100"
+                    />
+                </Grid>
+                <Grid item xs={12} sm={4} md={3}>
+                    <NumberField
+                        fullWidth
+                        label="Nível Inicial"
+                        min={0}
+                        max={maxLevel}
+                        value={system.startingLevel ?? 0}
+                        onChange={(v) => updateSystem('startingLevel', v > 0 ? v : undefined)}
+                        helperText="Nível de fichas recém-criadas (padrão: 0)"
                     />
                 </Grid>
             </Grid>

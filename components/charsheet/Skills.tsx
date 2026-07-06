@@ -28,6 +28,7 @@ import { skills } from '@constants/skills';
 import type { CharsheetDTO } from '@models/dtos';
 import type { Power } from '@models/entities';
 import type { Skill } from '@models';
+import { useCharsheetSystem } from '@hooks/useCharsheetSystem';
 
 type SkillsFilterType = 'all' | 'class' | 'subclass' | 'lineage' | 'powers' | 'bonus' | 'race'
 
@@ -77,6 +78,25 @@ export default function Skills(): ReactElement {
         control,
         name: 'elementalMastery'
     })
+
+    // Sistema customizado — filtros de origem que não se aplicam ao sistema ficam ocultos
+    const systemId = useWatch({ control, name: 'systemId' })
+    const { system: customSystem } = useCharsheetSystem(systemId)
+    const showRace = !customSystem || customSystem.enabledFields?.race
+    const showLineage = !customSystem || customSystem.enabledFields?.lineage
+    const showSubclass = !customSystem || customSystem.enabledFields?.subclass
+    const showPowers = !customSystem || customSystem.enabledFields?.spells
+
+    // Some volta para "Todos" se o filtro ativo deixar de estar disponível
+    useEffect(() => {
+        const hiddenFilters: Partial<Record<SkillsFilterType, boolean>> = {
+            race: !showRace,
+            lineage: !showLineage,
+            subclass: !showSubclass,
+            powers: !showPowers
+        }
+        if (hiddenFilters[skillsFilter]) setSkillsFilter('all')
+    }, [ showRace, showLineage, showSubclass, showPowers ])
 
     const filterBtnStyle: SxProps = useMemo(() => ({
         '&.MuiChip-root': {
@@ -277,17 +297,17 @@ export default function Skills(): ReactElement {
         if (skillsFilter === 'all') {
             return [
                 ...normalizeToArray(formSkills?.class),
-                ...normalizeToArray(formSkills?.subclass),
+                ...(showSubclass ? normalizeToArray(formSkills?.subclass) : []),
                 ...normalizeToArray(formSkills?.bonus),
-                ...normalizeToArray(formSkills?.powers),
-                ...normalizeToArray(formSkills?.lineage),
-                ...normalizeToArray(formSkills?.race)
+                ...(showPowers ? normalizeToArray(formSkills?.powers) : []),
+                ...(showLineage ? normalizeToArray(formSkills?.lineage) : []),
+                ...(showRace ? normalizeToArray(formSkills?.race) : [])
             ].map(renderSkill)
         } else {
             const filteredSkills = formSkills?.[skillsFilter as keyof typeof formSkills]
             return normalizeToArray(filteredSkills).map(renderSkill)
         }
-    }, [ formSkills, skills, skillsFilter, getValues, setValue, handleSkillClick ])
+    }, [ formSkills, skills, skillsFilter, getValues, setValue, handleSkillClick, showRace, showLineage, showSubclass, showPowers ])
     
     // Exibe erros de validação se houver
     const renderErrors = () => {
@@ -380,30 +400,38 @@ export default function Skills(): ReactElement {
                     sx={filterBtnStyle} 
                     color={skillsFilter === 'class' ? 'primary' : 'default'}
                 />
-                <Chip 
-                    label='Subclasse' 
-                    onClick={() => setSkillsFilter('subclass')} 
-                    sx={filterBtnStyle} 
-                    color={skillsFilter === 'subclass' ? 'primary' : 'default'}
-                />
-                <Chip 
-                    label='Raça' 
-                    onClick={() => setSkillsFilter('race')} 
-                    sx={filterBtnStyle} 
-                    color={skillsFilter === 'race' ? 'primary' : 'default'}
-                />
-                <Chip 
-                    label='Linhagem' 
-                    onClick={() => setSkillsFilter('lineage')} 
-                    sx={filterBtnStyle} 
-                    color={skillsFilter === 'lineage' ? 'primary' : 'default'}
-                />
-                <Chip 
-                    label='Poderes' 
-                    onClick={() => setSkillsFilter('powers')} 
-                    sx={filterBtnStyle} 
-                    color={skillsFilter === 'powers' ? 'primary' : 'default'}
-                />
+                {showSubclass && (
+                    <Chip
+                        label='Subclasse'
+                        onClick={() => setSkillsFilter('subclass')}
+                        sx={filterBtnStyle}
+                        color={skillsFilter === 'subclass' ? 'primary' : 'default'}
+                    />
+                )}
+                {showRace && (
+                    <Chip
+                        label='Raça'
+                        onClick={() => setSkillsFilter('race')}
+                        sx={filterBtnStyle}
+                        color={skillsFilter === 'race' ? 'primary' : 'default'}
+                    />
+                )}
+                {showLineage && (
+                    <Chip
+                        label='Linhagem'
+                        onClick={() => setSkillsFilter('lineage')}
+                        sx={filterBtnStyle}
+                        color={skillsFilter === 'lineage' ? 'primary' : 'default'}
+                    />
+                )}
+                {showPowers && (
+                    <Chip
+                        label='Poderes'
+                        onClick={() => setSkillsFilter('powers')}
+                        sx={filterBtnStyle}
+                        color={skillsFilter === 'powers' ? 'primary' : 'default'}
+                    />
+                )}
                 <Chip 
                     label='Bônus' 
                     onClick={() => setSkillsFilter('bonus')} 

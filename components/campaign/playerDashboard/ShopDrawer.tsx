@@ -33,6 +33,7 @@ import { type ReactElement, useState, useEffect, useCallback } from 'react';
 import { useSnackbar } from 'notistack';
 import { rarityColor } from '@constants';
 import type { RarityType } from '@models/types/string';
+import { useCharsheetSystem } from '@hooks/useCharsheetSystem';
 
 interface ShopItem {
     id: string
@@ -50,6 +51,8 @@ export default function ShopDrawer(): ReactElement | null {
     const { charsheet, updateCharsheet } = useCampaignCurrentCharsheetContext();
     const { enqueueSnackbar } = useSnackbar();
     const theme = useTheme();
+    const { system: customSystem } = useCharsheetSystem(charsheet?.systemId);
+    const weightUnit = customSystem ? (customSystem.weightConfig?.unit ?? '') : 'kg';
     
     const [ drawerOpen, setDrawerOpen ] = useState(false);
     const [ shopItems, setShopItems ] = useState<ShopItem[]>([]);
@@ -587,7 +590,7 @@ export default function ShopDrawer(): ReactElement | null {
                                         {selectedItem.data.weight !== undefined && (selectedItem.perkType?.toUpperCase() !== 'SKILL' && selectedItem.perkType?.toUpperCase() !== 'HABILIDADE') && (
                                             <Box>
                                                 <Typography variant="caption" color="text.secondary">Peso</Typography>
-                                                <Typography variant="body2" fontWeight={600}>{safeRender(selectedItem.data.weight)}kg</Typography>
+                                                <Typography variant="body2" fontWeight={600}>{safeRender(selectedItem.data.weight)}{weightUnit ? ` ${weightUnit}` : ''}</Typography>
                                             </Box>
                                         )}
 

@@ -25,6 +25,7 @@ import type { Charsheet } from '@models/entities';
 import { useRouter } from 'next/navigation';
 import { useSnackbar } from 'notistack';
 import { useState, type ReactElement } from 'react';
+import { useCharsheetSystem } from '@hooks/useCharsheetSystem';
 
 export default function CharsheetCard({ charsheet, onClick, disableDeleteButton }: { charsheet: Charsheet, onClick?: () => void, disableDeleteButton?: boolean }): ReactElement {
     const theme = useTheme()
@@ -33,6 +34,14 @@ export default function CharsheetCard({ charsheet, onClick, disableDeleteButton 
     const { enqueueSnackbar, closeSnackbar } = useSnackbar()
 
     const [ openModal, setOpenModal ] = useState<boolean>(false)
+
+    const { system, loading: systemLoading, isDefaultSystem } = useCharsheetSystem(charsheet.systemId)
+    // Evita "flash" de campos que serão escondidos assim que o sistema carregar
+    const fieldsReady = isDefaultSystem || (!systemLoading && !!system)
+    const showClass = fieldsReady && (isDefaultSystem || !!system?.enabledFields?.class)
+    const showLineage = fieldsReady && (isDefaultSystem || !!system?.enabledFields?.lineage)
+    const showRace = fieldsReady && (isDefaultSystem || !!system?.enabledFields?.race)
+    const showCurrency = fieldsReady && (isDefaultSystem || system?.currency?.enabled !== false)
 
     const deleteCharsheet = (): void => {
         (async () => {
@@ -133,17 +142,17 @@ export default function CharsheetCard({ charsheet, onClick, disableDeleteButton 
                                         {charsheet.level}
                                     </Typography>
                                 </Box>
-                                <Typography 
-                                    variant='caption' 
-                                    sx={{ 
-                                        px: 1, 
-                                        py: 0.2, 
+                                <Typography
+                                    variant='caption'
+                                    sx={{
+                                        px: 1,
+                                        py: 0.2,
                                         borderRadius: 1,
-                                        bgcolor: theme.palette.mode === 'dark' 
-                                            ? 'rgba(144, 202, 249, 0.08)' 
+                                        bgcolor: theme.palette.mode === 'dark'
+                                            ? 'rgba(144, 202, 249, 0.08)'
                                             : 'rgba(25, 118, 210, 0.08)',
-                                        color: theme.palette.mode === 'dark' 
-                                            ? 'rgba(144, 202, 249, 0.9)' 
+                                        color: theme.palette.mode === 'dark'
+                                            ? 'rgba(144, 202, 249, 0.9)'
                                             : theme.palette.primary.main,
                                         fontWeight: 500
                                     }}
@@ -151,6 +160,20 @@ export default function CharsheetCard({ charsheet, onClick, disableDeleteButton 
                                     {charsheet.mode}
                                 </Typography>
                             </Box>
+                            {!isDefaultSystem && (
+                                <Typography
+                                    variant='caption'
+                                    sx={{
+                                        display: 'block',
+                                        mt: 0.3,
+                                        color: theme.palette.text.secondary,
+                                        fontWeight: 500,
+                                        fontStyle: 'italic'
+                                    }}
+                                >
+                                    {systemLoading ? 'Carregando sistema…' : `Sistema: ${system?.name ?? 'Desconhecido'}`}
+                                </Typography>
+                            )}
                         </Box>
                     </Box>
 
@@ -166,72 +189,80 @@ export default function CharsheetCard({ charsheet, onClick, disableDeleteButton 
                                 {charsheet.gender}
                             </Typography>
                         </Box>
-                        
-                        <Box display='flex' justifyContent='space-between' alignItems='center'>
-                            <Typography variant='body2' color='text.secondary' sx={{ fontWeight: 500 }}>
-                                Classe:
-                            </Typography>
-                            <Typography variant='body2' sx={{ fontWeight: 600, color: theme.palette.info.main }}>  
-                                {charsheet.class as string}
-                            </Typography>
-                        </Box>
 
-                        <Box display='flex' justifyContent='space-between' alignItems='center'>
-                            <Typography variant='body2' color='text.secondary' sx={{ fontWeight: 500 }}>
-                                Linhagem:
-                            </Typography>
-                            <Typography 
-                                variant='body2' 
-                                sx={{ 
-                                    fontWeight: 600, 
-                                    textAlign: 'right',
-                                    maxWidth: '60%',
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis',
-                                    whiteSpace: 'nowrap'
-                                }}
-                            >
-                                {charsheet.lineage as unknown as string}
-                            </Typography>
-                        </Box>
+                        {showClass && (
+                            <Box display='flex' justifyContent='space-between' alignItems='center'>
+                                <Typography variant='body2' color='text.secondary' sx={{ fontWeight: 500 }}>
+                                    Classe:
+                                </Typography>
+                                <Typography variant='body2' sx={{ fontWeight: 600, color: theme.palette.info.main }}>
+                                    {charsheet.class as string}
+                                </Typography>
+                            </Box>
+                        )}
 
-                        <Box display='flex' justifyContent='space-between' alignItems='center'>
-                            <Typography variant='body2' color='text.secondary' sx={{ fontWeight: 500 }}>
-                                Raça:
-                            </Typography>
-                            <Typography variant='body2' sx={{ fontWeight: 600, color: theme.palette.success.main }}>  
-                                {charsheet.race as string}
-                            </Typography>
-                        </Box>
+                        {showLineage && (
+                            <Box display='flex' justifyContent='space-between' alignItems='center'>
+                                <Typography variant='body2' color='text.secondary' sx={{ fontWeight: 500 }}>
+                                    Linhagem:
+                                </Typography>
+                                <Typography
+                                    variant='body2'
+                                    sx={{
+                                        fontWeight: 600,
+                                        textAlign: 'right',
+                                        maxWidth: '60%',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        whiteSpace: 'nowrap'
+                                    }}
+                                >
+                                    {charsheet.lineage as unknown as string}
+                                </Typography>
+                            </Box>
+                        )}
+
+                        {showRace && (
+                            <Box display='flex' justifyContent='space-between' alignItems='center'>
+                                <Typography variant='body2' color='text.secondary' sx={{ fontWeight: 500 }}>
+                                    Raça:
+                                </Typography>
+                                <Typography variant='body2' sx={{ fontWeight: 600, color: theme.palette.success.main }}>
+                                    {charsheet.race as string}
+                                </Typography>
+                            </Box>
+                        )}
                     </Stack>
 
                     <Divider sx={{ opacity: 0.4 }} />
 
                     {/* Footer com Dinheiro e Ação */}
                     <Box display='flex' justifyContent='space-between' alignItems='center'>
-                        <Box 
-                            display='flex' 
-                            alignItems='center' 
-                            sx={{
-                                px: 0.8,
-                                py: 0.2,
-                                bgcolor: theme.palette.mode === 'dark' ? 'rgba(255, 167, 38, 0.15)' : 'rgba(255, 167, 38, 0.08)',
-                                borderRadius: 1.5,
-                                gap: 0.5
-                            }}
-                        >
-                            <AttachMoney sx={{ fontSize: '1rem', color: 'warning.main' }} />
-                            <Typography 
-                                variant='body1' 
-                                sx={{ 
-                                    fontWeight: 600,
-                                    color: 'warning.main'
+                        {showCurrency ? (
+                            <Box
+                                display='flex'
+                                alignItems='center'
+                                sx={{
+                                    px: 0.8,
+                                    py: 0.2,
+                                    bgcolor: theme.palette.mode === 'dark' ? 'rgba(255, 167, 38, 0.15)' : 'rgba(255, 167, 38, 0.08)',
+                                    borderRadius: 1.5,
+                                    gap: 0.5
                                 }}
                             >
-                                {charsheet.mode === 'Classic' ? '¥' : '¢'}{charsheet.inventory.money}
-                            </Typography>
-                        </Box>
-                        
+                                <AttachMoney sx={{ fontSize: '1rem', color: 'warning.main' }} />
+                                <Typography
+                                    variant='body1'
+                                    sx={{
+                                        fontWeight: 600,
+                                        color: 'warning.main'
+                                    }}
+                                >
+                                    {system?.currency?.abbreviation ?? (charsheet.mode === 'Classic' ? '¥' : '¢')}{charsheet.inventory.money}
+                                </Typography>
+                            </Box>
+                        ) : <Box />}
+
                         <Box display='flex' alignItems='center' gap={1}>
                             {!disableDeleteButton && (
                                 <Tooltip title='Deletar Charsheet'>

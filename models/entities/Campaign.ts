@@ -70,11 +70,11 @@ export class Campaign {
     systemId?: string;
 
     /**
-     * Widget genérico compartilhado da campanha — painel flutuante visível
-     * a todos os jogadores, administrado pelo mestre. Pode representar uma
-     * nave, um local (taverna), um objetivo a defender etc.
+     * Widgets genéricos compartilhados da campanha — painéis flutuantes visíveis
+     * a todos os jogadores, administrados pelo mestre. Podem representar naves,
+     * locais (tavernas), objetivos a defender etc. Até MAX_CAMPAIGN_WIDGETS por campanha.
      */
-    widget?: CampaignWidget;
+    widgets?: CampaignWidget[];
 
     /**
      * Estado da campanha. 'finished' = arquivada: sessões bloqueadas,

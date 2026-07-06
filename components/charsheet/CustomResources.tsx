@@ -15,26 +15,31 @@ import {
 } from '@mui/material';
 import { useEffect, useState, type ReactElement } from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
-import type { Charsheet, CustomResource, RPGSystem } from '@models/entities';
+import type { Charsheet, CustomResource, RPGSystem, SystemAttribute } from '@models/entities';
 import { getActiveResolvedThreshold, resolveThresholds } from '@utils/resourceThresholds';
+import { evaluateFormula } from '@utils/formulaEvaluator';
 
 export default function CustomResources(): ReactElement | null {
     const { control, setValue, getValues } = useFormContext<Charsheet>();
     const charsheet = getValues();
+    const disabled = !!charsheet.id;
     const [ resourceDefs, setResourceDefs ] = useState<CustomResource[]>([]);
+    const [ systemAttributes, setSystemAttributes ] = useState<SystemAttribute[]>([]);
 
     useEffect(() => {
         if (!charsheet.systemId) return;
         fetch(`/api/rpg-system/${charsheet.systemId}`)
             .then(async res => await res.json())
             .then((data: RPGSystem) => {
+                setSystemAttributes(data.attributes ?? []);
                 if (data.customResources && data.customResources.length > 0) {
                     setResourceDefs(data.customResources);
                     const current = getValues('customResources') ?? {};
                     const updated = { ...current };
                     let changed = false;
                     data.customResources.forEach(r => {
-                        if (updated[r.key] === undefined) {
+                        // Recursos com fórmula são calculados ao vivo pelo efeito abaixo
+                        if (!r.formula && updated[r.key] === undefined) {
                             updated[r.key] = r.defaultValue ?? r.max;
                             changed = true;
                         }
@@ -56,6 +61,45 @@ export default function CustomResources(): ReactElement | null {
         name: 'customResourceMaxes',
         defaultValue: {}
     });
+
+    const attributesValues = useWatch({ control, name: 'attributes' });
+    const level = useWatch({ control, name: 'level' });
+
+    // Recalcula ao vivo o valor/máximo dos recursos com fórmula, enquanto a
+    // ficha ainda está sendo criada (mesmo padrão de Vida/Mana/Armadura em
+    // DynamicAttributes). Após salva, os valores ficam congelados.
+    useEffect(() => {
+        if (disabled || resourceDefs.length === 0) return;
+
+        const vars: Record<string, number> = { level: level || 1 };
+        systemAttributes.forEach(attr => {
+            const value = (attributesValues as any)?.[attr.key] || 0;
+            vars[attr.abbreviation] = value;
+            vars[attr.key] = value;
+        });
+
+        const currentResources = { ...(getValues('customResources') ?? {}) };
+        const currentMaxes = { ...(getValues('customResourceMaxes') ?? {}) };
+        let changed = false;
+
+        resourceDefs.forEach(def => {
+            if (!def.formula?.trim()) return;
+            const result = Math.max(def.min, evaluateFormula(def.formula, vars, def.defaultValue ?? def.max));
+            if (currentMaxes[def.key] !== result) {
+                currentMaxes[def.key] = result;
+                changed = true;
+            }
+            if (currentResources[def.key] !== result) {
+                currentResources[def.key] = result;
+                changed = true;
+            }
+        });
+
+        if (changed) {
+            setValue('customResourceMaxes', currentMaxes);
+            setValue('customResources', currentResources);
+        }
+    }, [ disabled, resourceDefs, systemAttributes, attributesValues, level ]);
 
     const personalMaxOf = (def: CustomResource): number =>
         customResourceMaxes?.[def.key] ?? def.max;

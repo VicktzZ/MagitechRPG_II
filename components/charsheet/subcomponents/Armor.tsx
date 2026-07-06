@@ -3,10 +3,16 @@ import { useTheme, Box, Paper, alpha, Stack, Typography, IconButton, LinearProgr
 import { ArrowDropUp, ArrowDropDown, CategoryOutlined, Speed, FitnessCenter, Shield, Star, InfoOutlined } from '@mui/icons-material'
 import { type ReactElement, useState, useMemo } from 'react'
 import type { ItemTyping } from '@models/types/item'
+import { useFormContext } from 'react-hook-form'
+import type { Charsheet } from '@models/entities'
+import { useCharsheetSystem } from '@hooks/useCharsheetSystem'
 
 export function Armor(props: ItemTyping<'armor'>): ReactElement {
     const theme = useTheme()
     const [ showStats, setShowStats ] = useState(false)
+    const { getValues } = useFormContext<Charsheet>()
+    const { system: customSystem } = useCharsheetSystem(getValues('systemId'))
+    const weightUnit = customSystem ? (customSystem.weightConfig?.unit ?? '') : 'kg'
 
     // Calcula o bônus de raridade para armadura
     const rarityBonus = useMemo(() => {
@@ -99,7 +105,7 @@ export function Armor(props: ItemTyping<'armor'>): ReactElement {
                     <Chip
                         icon={<FitnessCenter />}
                         size="small"
-                        label={`${props.weight}kg`}
+                        label={`${props.weight}${weightUnit ? ` ${weightUnit}` : ''}`}
                         sx={{
                             backgroundColor: alpha(theme.palette.info.main, 0.1),
                             '& .MuiChip-icon': { color: theme.palette.info.main }

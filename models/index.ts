@@ -39,6 +39,7 @@ export { Class } from './Class';
 export {
     createWidgetFromPreset,
     widgetPresetInfo,
+    MAX_CAMPAIGN_WIDGETS,
     type CampaignWidget,
     type CampaignWidgetLabels,
     type WidgetPreset,
@@ -48,5 +49,14 @@ export {
     type WidgetStockItem,
     type WidgetAlert,
     type WidgetAlertSeverity,
-    type WidgetLogEntry
+    type WidgetLogEntry,
+    type WidgetRecipe,
+    type WidgetRecipeInput,
+    type WidgetRecipeResourceCost,
+    type WidgetRecipeOutput,
+    type WidgetPool,
+    type WidgetPoolEntry,
+    type WidgetBounty,
+    type WidgetBountyStatus,
+    type WidgetClock
 } from './CampaignWidget';

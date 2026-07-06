@@ -31,6 +31,7 @@ import { useFormContext } from 'react-hook-form'
 import { ItemWrapperModal } from '../dialogs/ItemWrapperModal'
 import { Armor } from './Armor'
 import { Weapon } from './Weapon'
+import { useCharsheetSystem } from '@hooks/useCharsheetSystem'
 
 import type { ItemTyping } from '@models/types/item'
 import type { MergedItems } from '@models/types/misc'
@@ -63,6 +64,9 @@ function toRenderableString(value: any, defaultValue: string = 'N/A'): string {
 function ItemComponent(props: ItemTyping<'item'>): ReactElement {
     const theme = useTheme()
     const [ showDescription, setShowDescription ] = useState(false)
+    const { getValues } = useFormContext<Charsheet>()
+    const { system: customSystem } = useCharsheetSystem(getValues('systemId'))
+    const weightUnit = customSystem ? (customSystem.weightConfig?.unit ?? '') : 'kg'
 
     // Formata a quantidade se existir
     const formattedQuantity = useMemo(() => {
@@ -122,7 +126,7 @@ function ItemComponent(props: ItemTyping<'item'>): ReactElement {
                     </Badge>
 
                     <Badge
-                        badgeContent={`${props.weight}kg`}
+                        badgeContent={`${props.weight}${weightUnit ? ` ${weightUnit}` : ''}`}
                         color="default"
                         sx={{
                             '& .MuiBadge-badge': {
@@ -195,6 +199,8 @@ function ItemWrapper({
 }): ReactElement {
     const theme = useTheme()
     const { getValues, setValue } = useFormContext<Charsheet>()
+    const { system: customSystem } = useCharsheetSystem(getValues('systemId'))
+    const weightUnit = customSystem ? (customSystem.weightConfig?.unit ?? '') : 'kg'
 
     const [ open, setOpen ] = useState(false)
     const [ , setShowTooltip ] = useState(false)
@@ -650,7 +656,7 @@ function ItemWrapper({
                                             `Esta arma causa ${item.effect.value} de dano base e ${item.effect.critValue} de dano crítico.` :
                                             itemType === 'armor' ?
                                                 `Esta armadura oferece ${item.value} pontos de proteção com penalidade de deslocamento de ${item.displacementPenalty}.` :
-                                                `Este item possui ${item.quantity ?? 1} unidade(s) e pesa ${item.weight}kg por unidade.`
+                                                `Este item possui ${item.quantity ?? 1} unidade(s) e pesa ${item.weight}${weightUnit ? ` ${weightUnit}` : ''} por unidade.`
                                         }
                                     </Typography>
                                 </Box>

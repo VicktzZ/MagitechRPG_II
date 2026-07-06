@@ -316,10 +316,10 @@ export default function GMActions(): ReactElement {
                         <WidgetsIcon fontSize="small" sx={{ color: blue[400] }} />
                     </ListItemIcon>
                     <MenuItemText>
-                        {campaign.widget ? 'Administrar Widget' : 'Criar Widget da Campanha'}
-                        {campaign.widget?.enabled && (
+                        {(campaign.widgets?.length ?? 0) > 0 ? 'Administrar Widgets' : 'Criar Widget da Campanha'}
+                        {(campaign.widgets?.length ?? 0) > 0 && (
                             <Chip
-                                label={campaign.widget.name}
+                                label={campaign.widgets!.length}
                                 size="small"
                                 sx={{ ml: 1, height: 18, fontSize: '0.65rem' }}
                             />

@@ -35,6 +35,7 @@ import { DonationReceivedModal, type DonationNotification } from '@features/rogu
 import { useSnackbar } from '@node_modules/notistack';
 import { useSession } from 'next-auth/react';
 import { campaignService } from '@services';
+import { useCharsheetSystem } from '@hooks/useCharsheetSystem';
 
 /**
  * Normaliza um valor que pode ser um array ou um objeto com chaves numéricas
@@ -60,10 +61,12 @@ function normalizeToArray<T>(value: any): T[] {
 }
 
 export default function CampaignPlayerDashboard(): ReactElement | null {
-    const { users, isUserGM, campaign, charsheets } = useCampaignContext();
+    const { users, campaign, charsheets } = useCampaignContext();
     const { charsheet, updateCharsheet } = useCampaignCurrentCharsheetContext()
     const { data: session } = useSession()
     const { enqueueSnackbar } = useSnackbar()
+    const { system: customSystem } = useCharsheetSystem(charsheet?.systemId)
+    const showSpells = !customSystem || (customSystem.enabledFields?.spells ?? true)
 
     // Verifica se o usuário está na lista de pending perks
     const isUserPendingPerk = useMemo(() => {
@@ -274,7 +277,7 @@ export default function CampaignPlayerDashboard(): ReactElement | null {
         }
     }
 
-    if (!charsheet || isUserGM) return null;
+    if (!charsheet) return null;
     
     const charsheetUser = users.players.find(player => player.id === charsheet.userId);
     const avatar = charsheetUser?.image ?? '/assets/default-avatar.jpg';
@@ -332,12 +335,14 @@ export default function CampaignPlayerDashboard(): ReactElement | null {
 
                         {/* Recursos e Magias */}
                         <Box sx={{ display: 'flex', gap: { xs: 2, md: 4 }, flexDirection: { xs: 'column', md: 'row' } }}>
-                            <Section title="Recursos" icon={<AttachMoney sx={{ color: 'warning.main' }} />} sx={{ width: { xs: '100%', md: '40%' } }}>
+                            <Section title="Recursos" icon={<AttachMoney sx={{ color: 'warning.main' }} />} sx={{ width: { xs: '100%', md: showSpells ? '40%' : '100%' } }}>
                                 <MoneyAndAmmo />
                             </Section>
-                            <Section title="Magias" icon={<AutoAwesome sx={{ color: 'secondary.main' }} />} sx={{ width: { xs: '100%', md: '60%' } }}>
-                                <SpellsSection />
-                            </Section>
+                            {showSpells && (
+                                <Section title="Magias" icon={<AutoAwesome sx={{ color: 'secondary.main' }} />} sx={{ width: { xs: '100%', md: '60%' } }}>
+                                    <SpellsSection />
+                                </Section>
+                            )}
                         </Box>
 
                         {/* Recursos customizados do sistema (ex: Bateria, O2, Estresse) */}

@@ -34,6 +34,7 @@ import { useFirestoreByIds } from '@hooks/useFirestoreByIds';
 import { charsheetEntity } from '@utils/firestoreEntities';
 import { useSnackbar } from 'notistack';
 import { green, red, orange, blue, grey, brown, yellow, purple } from '@mui/material/colors';
+import { useCharsheetSystem } from '@hooks/useCharsheetSystem';
 
 const elementColor: Record<string, string> = {
     'FOGO': red[500],
@@ -115,6 +116,8 @@ interface CharsheetDetailsModalProps {
 export default function CharsheetDetailsModal({ open, onClose, charsheet }: CharsheetDetailsModalProps) {
     const [ tabValue, setTabValue ] = useState(0);
     const { enqueueSnackbar } = useSnackbar();
+    const { system: customSystem } = useCharsheetSystem(charsheet.systemId);
+    const weightUnit = customSystem ? (customSystem.weightConfig?.unit ?? '') : 'kg';
 
     const [ modalStates, setModalStates ] = useState({
         changePlayerStatusModalOpen: false,
@@ -653,9 +656,9 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet }: Char
                                                                 onChange={(e) => handleNumberInputChange('capacity.max', e.target.value)}
                                                                 sx={{ width: 70 }}
                                                             />
-                                                            <Typography variant="caption" color="text.secondary">kg</Typography>
+                                                            {weightUnit && <Typography variant="caption" color="text.secondary">{weightUnit}</Typography>}
                                                         </Box>
-                                                    ) : `${charsheet.capacity.cargo}/${charsheet.capacity.max} kg`}
+                                                    ) : `${charsheet.capacity.cargo}/${charsheet.capacity.max}${weightUnit ? ` ${weightUnit}` : ''}`}
                                                 </TableCell>
                                             </TableRow>
                                             <TableRow>
@@ -976,7 +979,7 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet }: Char
                                                     <TableCell>{item.name}</TableCell>
                                                     <TableCell>{item.kind}</TableCell>
                                                     <TableCell>{item.quantity ?? 1}</TableCell>
-                                                    <TableCell>{item.weight} kg</TableCell>
+                                                    <TableCell>{item.weight}{weightUnit ? ` ${weightUnit}` : ''}</TableCell>
                                                     {isEditing && (
                                                         <TableCell>
                                                             <IconButton

@@ -90,6 +90,10 @@ export default function DynamicAttributes({ system }: DynamicAttributesProps): R
     useEffect(() => {
         if (!system || disabled) return;
 
+        if (system.startingLevel != null && (getValues('level') || 0) === 0) {
+            setValue('level', system.startingLevel);
+        }
+
         if (system.initialAttributePoints != null) {
             const untouched = attributes.every(attr =>
                 (((getValues(`attributes.${attr.key}` as any) as unknown as number) || 0) === (attr.defaultValue || 0))
@@ -204,8 +208,8 @@ export default function DynamicAttributes({ system }: DynamicAttributesProps): R
                         ))}
                     </Box>
                 )}
-                {/* Pontos de atributo disponíveis (somente na criação) */}
-                {!disabled && (
+                {/* Pontos de atributo disponíveis — na criação, ou após ganhar pontos em level-up */}
+                {(!disabled || (attributePoints ?? 0) > 0) && (
                     <Box display="flex" alignItems="center" gap={1}>
                         <Typography variant="body2" color="text.secondary">
                             Pontos de Atributo:
@@ -223,6 +227,9 @@ export default function DynamicAttributes({ system }: DynamicAttributesProps): R
                     {attributes.map((attribute) => {
                         const min = attribute.minValue ?? 0;
                         const max = effectiveAttributeMax(attribute.maxValue ?? 999);
+                        // Trava a edição só quando a ficha já existe E não há pontos de
+                        // atributo disponíveis (ex: ganhos num level-up) para gastar.
+                        const attributesLocked = disabled && (attributePoints ?? 0) <= 0;
 
                         return (
                             <Grid item xs={12} sm={6} md={4} key={attribute.key}>
@@ -263,7 +270,7 @@ export default function DynamicAttributes({ system }: DynamicAttributesProps): R
                                                 <Box display="flex" alignItems="flex-start" gap={0.5}>
                                                     <IconButton
                                                         size="small"
-                                                        disabled={disabled || current <= min}
+                                                        disabled={attributesLocked || current <= min}
                                                         onClick={() => changeAttribute(attribute.key, current - 1, min, max)}
                                                         sx={{ mt: 0.5 }}
                                                     >
@@ -276,7 +283,7 @@ export default function DynamicAttributes({ system }: DynamicAttributesProps): R
                                                         max={max}
                                                         size="small"
                                                         fullWidth
-                                                        disabled={disabled}
+                                                        disabled={attributesLocked}
                                                         error={!!error}
                                                         helperText={
                                                             error?.message ||
@@ -286,7 +293,7 @@ export default function DynamicAttributes({ system }: DynamicAttributesProps): R
                                                     />
                                                     <IconButton
                                                         size="small"
-                                                        disabled={disabled || current >= max || (attributePoints ?? 0) <= 0}
+                                                        disabled={attributesLocked || current >= max || (attributePoints ?? 0) <= 0}
                                                         onClick={() => changeAttribute(attribute.key, current + 1, min, max)}
                                                         sx={{ mt: 0.5 }}
                                                     >

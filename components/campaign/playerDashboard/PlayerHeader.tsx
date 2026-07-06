@@ -15,6 +15,7 @@ import { StatusBar } from './StatusBar';
 import { AttributeCard } from './AttributeCard';
 import type { Stats } from '@models';
 import EffectBadges from '@components/campaign/gmDashboard/actions/EffectBadges';
+import { useCharsheetSystem } from '@hooks/useCharsheetSystem';
 
 const attributeConfig = {
     vig: { icon: '💪', color: { bgcolor: 'rgba(239, 68, 68, 0.2)', border: '1px solid rgba(239, 68, 68, 0.4)' } },
@@ -25,11 +26,38 @@ const attributeConfig = {
     car: { icon: '🌟', color: { bgcolor: 'rgba(34, 197, 94, 0.2)', border: '1px solid rgba(34, 197, 94, 0.4)' } }
 };
 
+// Paleta cíclica de ícones/cores para atributos de sistemas customizados (sem config própria)
+const customAttributeStyles = [
+    { icon: '💪', color: { bgcolor: 'rgba(239, 68, 68, 0.2)', border: '1px solid rgba(239, 68, 68, 0.4)' } },
+    { icon: '🎯', color: { bgcolor: 'rgba(59, 130, 246, 0.2)', border: '1px solid rgba(59, 130, 246, 0.4)' } },
+    { icon: '⚡', color: { bgcolor: 'rgba(234, 179, 8, 0.2)', border: '1px solid rgba(234, 179, 8, 0.4)' } },
+    { icon: '🧠', color: { bgcolor: 'rgba(6, 182, 212, 0.2)', border: '1px solid rgba(6, 182, 212, 0.4)' } },
+    { icon: '🔮', color: { bgcolor: 'rgba(168, 85, 247, 0.2)', border: '1px solid rgba(168, 85, 247, 0.4)' } },
+    { icon: '🌟', color: { bgcolor: 'rgba(34, 197, 94, 0.2)', border: '1px solid rgba(34, 197, 94, 0.4)' } }
+];
+
 export default function PlayerHeader({ avatar }: { avatar: string | undefined }) {
     const { charsheet, updateCharsheet } = useCampaignCurrentCharsheetContext();
     const { campaign } = useCampaignContext();
+    const { system: customSystem } = useCharsheetSystem(charsheet?.systemId);
 
     const stats = charsheet.stats;
+    const customAttributes = customSystem?.attributes ?? [];
+    const hasCustomAttributes = customAttributes.length > 0;
+
+    const hasLP = !customSystem || (customSystem.pointsConfig?.hasLP ?? customSystem.initialFields?.life?.enabled ?? true);
+    const hasMP = !customSystem || (customSystem.pointsConfig?.hasMP ?? customSystem.initialFields?.mana?.enabled ?? true);
+    const hasAP = !customSystem || (customSystem.pointsConfig?.hasAP ?? customSystem.initialFields?.armor?.enabled ?? true);
+    const lpLabel = customSystem?.pointsConfig?.lpName || customSystem?.initialFields?.life?.label || 'Vida';
+    const mpLabel = customSystem?.pointsConfig?.mpName || customSystem?.initialFields?.mana?.label || 'Mana';
+    const apLabel = customSystem?.pointsConfig?.apName || customSystem?.initialFields?.armor?.label || 'Armadura';
+
+    const showLineage = !customSystem || customSystem.enabledFields?.lineage;
+    const infoLineParts = [
+        showLineage ? charsheet.lineage : null,
+        charsheet.gender,
+        `${charsheet.age} anos`
+    ].filter(Boolean);
 
     const combat = campaign?.session?.combat;
     const myCombatant = combat?.isActive
@@ -122,7 +150,7 @@ export default function PlayerHeader({ avatar }: { avatar: string | undefined })
                         borderTop: '1px solid rgba(71, 85, 105, 0.5)'
                     }}>
                         <Typography variant="caption" sx={{ color: '#9ca3af', fontSize: { xs: '10px', sm: '11px' } }}>
-                            {charsheet.lineage} • {charsheet.gender} • {charsheet.age} anos
+                            {infoLineParts.join(' • ')}
                         </Typography>
                     </Box>
                 </Box>
@@ -141,75 +169,96 @@ export default function PlayerHeader({ avatar }: { avatar: string | undefined })
                     Atributos Principais
                 </Typography>
                 <Grid container spacing={1} sx={{ mt: 0.5 }}>
-                    <Grid item xs={6} sm={4} md={2}>
-                        <AttributeCard
-                            label="VIG"
-                            value={charsheet.attributes.vig}
-                            icon={attributeConfig.vig.icon}
-                            iconColor={attributeConfig.vig.color}
-                        />
-                    </Grid>
-                    <Grid item xs={6} sm={4} md={2}>
-                        <AttributeCard
-                            label="FOC"
-                            value={charsheet.attributes.foc}
-                            icon={attributeConfig.foc.icon}
-                            iconColor={attributeConfig.foc.color}
-                        />
-                    </Grid>
-                    <Grid item xs={6} sm={4} md={2}>
-                        <AttributeCard
-                            label="DES"
-                            value={charsheet.attributes.des}
-                            icon={attributeConfig.des.icon}
-                            iconColor={attributeConfig.des.color}
-                        />
-                    </Grid>
-                    <Grid item xs={6} sm={4} md={2}>
-                        <AttributeCard
-                            label="LOG"
-                            value={charsheet.attributes.log}
-                            icon={attributeConfig.log.icon}
-                            iconColor={attributeConfig.log.color}
-                        />
-                    </Grid>
-                    <Grid item xs={6} sm={4} md={2}>
-                        <AttributeCard
-                            label="SAB"
-                            value={charsheet.attributes.sab}
-                            icon={attributeConfig.sab.icon}
-                            iconColor={attributeConfig.sab.color}
-                        />
-                    </Grid>
-                    <Grid item xs={6} sm={4} md={2}>
-                        <AttributeCard
-                            label="CAR"
-                            value={charsheet.attributes.car}
-                            icon={attributeConfig.car.icon}
-                            iconColor={attributeConfig.car.color}
-                        />
-                    </Grid>
+                    {hasCustomAttributes ? (
+                        customAttributes.map((attribute, idx) => {
+                            const style = customAttributeStyles[idx % customAttributeStyles.length];
+                            const value = (charsheet.attributes as unknown as Record<string, number>)?.[attribute.key] ?? 0;
+                            return (
+                                <Grid item xs={6} sm={4} md={2} key={attribute.key}>
+                                    <AttributeCard
+                                        label={attribute.abbreviation || attribute.name}
+                                        value={value}
+                                        icon={style.icon}
+                                        iconColor={style.color}
+                                    />
+                                </Grid>
+                            );
+                        })
+                    ) : (
+                        <>
+                            <Grid item xs={6} sm={4} md={2}>
+                                <AttributeCard
+                                    label="VIG"
+                                    value={charsheet.attributes.vig}
+                                    icon={attributeConfig.vig.icon}
+                                    iconColor={attributeConfig.vig.color}
+                                />
+                            </Grid>
+                            <Grid item xs={6} sm={4} md={2}>
+                                <AttributeCard
+                                    label="FOC"
+                                    value={charsheet.attributes.foc}
+                                    icon={attributeConfig.foc.icon}
+                                    iconColor={attributeConfig.foc.color}
+                                />
+                            </Grid>
+                            <Grid item xs={6} sm={4} md={2}>
+                                <AttributeCard
+                                    label="DES"
+                                    value={charsheet.attributes.des}
+                                    icon={attributeConfig.des.icon}
+                                    iconColor={attributeConfig.des.color}
+                                />
+                            </Grid>
+                            <Grid item xs={6} sm={4} md={2}>
+                                <AttributeCard
+                                    label="LOG"
+                                    value={charsheet.attributes.log}
+                                    icon={attributeConfig.log.icon}
+                                    iconColor={attributeConfig.log.color}
+                                />
+                            </Grid>
+                            <Grid item xs={6} sm={4} md={2}>
+                                <AttributeCard
+                                    label="SAB"
+                                    value={charsheet.attributes.sab}
+                                    icon={attributeConfig.sab.icon}
+                                    iconColor={attributeConfig.sab.color}
+                                />
+                            </Grid>
+                            <Grid item xs={6} sm={4} md={2}>
+                                <AttributeCard
+                                    label="CAR"
+                                    value={charsheet.attributes.car}
+                                    icon={attributeConfig.car.icon}
+                                    iconColor={attributeConfig.car.color}
+                                />
+                            </Grid>
+                        </>
+                    )}
                 </Grid>
                 
                 <Grid container spacing={1} sx={{ mt: 1.5 }}>
-                    <Grid item xs={12} sm={4}>
-                        <Paper sx={{
-                            bgcolor: 'rgba(71, 85, 105, 0.3)',
-                            border: '1px solid rgba(71, 85, 105, 0.3)',
-                            borderRadius: 1,
-                            p: 1,
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center'
-                        }}>
-                            <Typography sx={{ fontSize: { xs: '9px', sm: '10px' }, color: '#9ca3af', textTransform: 'uppercase', fontWeight: 600 }}>
-                                Limite MP
-                            </Typography>
-                            <Typography sx={{ fontSize: { xs: '12px', sm: '14px' }, fontWeight: 700, color: '#22d3ee' }}>
-                                {charsheet.mpLimit}
-                            </Typography>
-                        </Paper>
-                    </Grid>
+                    {!customSystem && (
+                        <Grid item xs={12} sm={4}>
+                            <Paper sx={{
+                                bgcolor: 'rgba(71, 85, 105, 0.3)',
+                                border: '1px solid rgba(71, 85, 105, 0.3)',
+                                borderRadius: 1,
+                                p: 1,
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center'
+                            }}>
+                                <Typography sx={{ fontSize: { xs: '9px', sm: '10px' }, color: '#9ca3af', textTransform: 'uppercase', fontWeight: 600 }}>
+                                    Limite MP
+                                </Typography>
+                                <Typography sx={{ fontSize: { xs: '12px', sm: '14px' }, fontWeight: 700, color: '#22d3ee' }}>
+                                    {charsheet.mpLimit}
+                                </Typography>
+                            </Paper>
+                        </Grid>
+                    )}
                     <Grid item xs={12} sm={4}>
                         <Paper sx={{
                             bgcolor: 'rgba(71, 85, 105, 0.3)',
@@ -293,35 +342,41 @@ export default function PlayerHeader({ avatar }: { avatar: string | undefined })
                     Status
                 </Typography>
                 <Box sx={{ mt: 1 }}>
-                    <StatusBar
-                        label="Pontos de Vida (LP)"
-                        current={stats.lp}
-                        max={stats.maxLp}
-                        color="#ef4444"
-                        icon="❤️"
-                        onIncrease={(value) => updateStat('lp', value)}
-                        onDecrease={(value) => updateStat('lp', -value)}
-                    />
-                    
-                    <StatusBar
-                        label="Pontos de Mana (MP)"
-                        current={stats.mp}
-                        max={stats.maxMp}
-                        color="#3b82f6"
-                        icon="✨"
-                        onIncrease={(value) => updateStat('mp', value)}
-                        onDecrease={(value) => updateStat('mp', -value)}
-                    />
-                    
-                    <StatusBar
-                        label="Pontos de Armadura (AP)"
-                        current={stats.ap}
-                        max={stats.maxAp}
-                        color="#eab308"
-                        icon="🛡️"
-                        onIncrease={(value) => updateStat('ap', value)}
-                        onDecrease={(value) => updateStat('ap', -value)}
-                    />
+                    {hasLP && (
+                        <StatusBar
+                            label={customSystem ? lpLabel : 'Pontos de Vida (LP)'}
+                            current={stats.lp}
+                            max={stats.maxLp}
+                            color="#ef4444"
+                            icon="❤️"
+                            onIncrease={(value) => updateStat('lp', value)}
+                            onDecrease={(value) => updateStat('lp', -value)}
+                        />
+                    )}
+
+                    {hasMP && (
+                        <StatusBar
+                            label={customSystem ? mpLabel : 'Pontos de Mana (MP)'}
+                            current={stats.mp}
+                            max={stats.maxMp}
+                            color="#3b82f6"
+                            icon="✨"
+                            onIncrease={(value) => updateStat('mp', value)}
+                            onDecrease={(value) => updateStat('mp', -value)}
+                        />
+                    )}
+
+                    {hasAP && (
+                        <StatusBar
+                            label={customSystem ? apLabel : 'Pontos de Armadura (AP)'}
+                            current={stats.ap}
+                            max={stats.maxAp}
+                            color="#eab308"
+                            icon="🛡️"
+                            onIncrease={(value) => updateStat('ap', value)}
+                            onDecrease={(value) => updateStat('ap', -value)}
+                        />
+                    )}
                 </Box>
             </Box>
         </Paper>
