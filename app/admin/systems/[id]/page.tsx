@@ -2,13 +2,18 @@
 
 import { useState, useEffect } from 'react'
 import { SystemBuilder } from '@components/admin/systems/SystemBuilder'
-import { Box, Typography, Button, CircularProgress, Alert } from '@mui/material'
+import { Box, Typography, Button, CircularProgress, Alert, Container } from '@mui/material'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import { useRouter } from 'next/navigation'
+import { useSession } from 'next-auth/react'
 import type { RPGSystem } from '@models/entities'
+import { useCustomSystemsAccess } from '@hooks/useSubscription'
+import { isAdminEmail } from '@utils/adminCheck'
 
 export default function EditSystemPage({ params }: { params: { id: string } }) {
     const router = useRouter()
+    const { data: session } = useSession()
+    const { canEdit: canAccessCustomSystems } = useCustomSystemsAccess()
     const [ system, setSystem ] = useState<RPGSystem | null>(null)
     const [ loading, setLoading ] = useState(true)
     const [ error, setError ] = useState<string | null>(null)
@@ -31,6 +36,21 @@ export default function EditSystemPage({ params }: { params: { id: string } }) {
 
         fetchSystem()
     }, [ params.id ])
+
+    const hasAccess = canAccessCustomSystems || isAdminEmail(session?.user?.email)
+
+    if (!hasAccess) {
+        return (
+            <Container maxWidth="md" sx={{ py: 8 }}>
+                <Alert severity="error">
+                    <Typography variant="h6" gutterBottom>🔒 Acesso Negado</Typography>
+                    <Typography variant="body2">
+                        Você não tem permissões para acessar esta página. A edição de sistemas customizados é exclusiva para assinantes do plano Premium+.
+                    </Typography>
+                </Alert>
+            </Container>
+        )
+    }
 
     if (loading) {
         return (

@@ -9,13 +9,17 @@ import { useRouter } from 'next/navigation';
 import CustomIconButton from './CustomIconButton';
 import Image from 'next/image';
 import { useFirestoreRealtime } from '@hooks/useFirestoreRealtime';
+import { useCustomSystemsAccess } from '@hooks/useSubscription';
 import { PlanBadge } from '@components/subscription';
+import { isAdminEmail } from '@utils/adminCheck';
 import type { User } from '@models/entities';
 
 export default function AppDrawer(): ReactElement {
     const theme = useTheme();
     const { data: session, update } = useSession();
     const { themeMode, toggleTheme } = useThemeContext();
+    const { canCreate: canAccessCustomSystems } = useCustomSystemsAccess();
+    const canAccessSystems = canAccessCustomSystems || isAdminEmail(session?.user?.email);
     
     const [ drawerOpen, setDrawerOpen ] = useState<boolean>(false);
     const [ usersModalOpen, setUsersModalOpen ] = useState(false);
@@ -198,7 +202,7 @@ export default function AppDrawer(): ReactElement {
                             </ListItemButton>
                         </ListItem>
                     )}
-                    {process.env.NEXT_PUBLIC_NODE_ENV === 'development' && (
+                    {canAccessSystems && (
                         <ListItem disablePadding>
                             <ListItemButton onClick={() => { router.push('/admin/systems') }}>
                                 <ListItemIcon>

@@ -2,14 +2,17 @@
 
 import { Suspense, useEffect, useState } from 'react'
 import { SystemBuilder } from '@components/admin/systems/SystemBuilder'
-import { Box, Typography, Button, Paper, Grid, CircularProgress } from '@mui/material'
+import { Box, Typography, Button, Paper, Grid, CircularProgress, Container, Alert } from '@mui/material'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import NoteAddIcon from '@mui/icons-material/NoteAdd'
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { useSession } from 'next-auth/react'
 import type { RPGSystem } from '@models/entities'
 import { defaultMagitechSystem } from '@constants/defaultMagitechSystem'
 import { SYSTEM_BUILDER_SEED_KEY } from '@utils/systemExportImport'
+import { useCustomSystemsAccess } from '@hooks/useSubscription'
+import { isAdminEmail } from '@utils/adminCheck'
 
 function CreateSystemContent() {
     const searchParams = useSearchParams()
@@ -106,6 +109,22 @@ function CreateSystemContent() {
 
 export default function CreateSystemPage() {
     const router = useRouter()
+    const { data: session } = useSession()
+    const { canCreate: canAccessCustomSystems } = useCustomSystemsAccess()
+    const hasAccess = canAccessCustomSystems || isAdminEmail(session?.user?.email)
+
+    if (!hasAccess) {
+        return (
+            <Container maxWidth="md" sx={{ py: 8 }}>
+                <Alert severity="error">
+                    <Typography variant="h6" gutterBottom>🔒 Acesso Negado</Typography>
+                    <Typography variant="body2">
+                        Você não tem permissões para acessar esta página. A criação de sistemas customizados é exclusiva para assinantes do plano Premium+.
+                    </Typography>
+                </Alert>
+            </Container>
+        )
+    }
 
     return (
         <Box sx={{ p: 4, maxWidth: 1400, mx: 'auto' }}>

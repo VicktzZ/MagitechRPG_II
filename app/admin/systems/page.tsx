@@ -22,7 +22,8 @@ import {
     DialogContent,
     DialogActions,
     TextField,
-    InputAdornment
+    InputAdornment,
+    Container
 } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
 import RefreshIcon from '@mui/icons-material/Refresh'
@@ -40,8 +41,11 @@ import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import type { RPGSystem } from '@models/entities'
 import { downloadSystemJson, parseSystemImport, SYSTEM_BUILDER_SEED_KEY } from '@utils/systemExportImport'
+import { useCustomSystemsAccess } from '@hooks/useSubscription'
+import { isAdminEmail } from '@utils/adminCheck'
 
 export default function AdminSystemsPage() {
+    const { canCreate: canAccessCustomSystems } = useCustomSystemsAccess()
     const [ systems, setSystems ] = useState<RPGSystem[]>([])
     const [ loading, setLoading ] = useState(true)
     const [ deleteDialogOpen, setDeleteDialogOpen ] = useState(false)
@@ -159,6 +163,21 @@ export default function AdminSystemsPage() {
             s.description?.toLowerCase().includes(q)
         )
     }, [ systems, searchQuery ])
+
+    const hasAccess = canAccessCustomSystems || isAdminEmail(session?.user?.email)
+
+    if (!hasAccess) {
+        return (
+            <Container maxWidth="md" sx={{ py: 8 }}>
+                <Alert severity="error">
+                    <Typography variant="h6" gutterBottom>🔒 Acesso Negado</Typography>
+                    <Typography variant="body2">
+                        Você não tem permissões para acessar esta página. A criação de sistemas customizados é exclusiva para assinantes do plano Premium+.
+                    </Typography>
+                </Alert>
+            </Container>
+        )
+    }
 
     return (
         <Box sx={{ p: 4, maxWidth: 1400, mx: 'auto' }}>
