@@ -29,6 +29,7 @@ import {
 import AddIcon from '@mui/icons-material/Add'
 import EditIcon from '@mui/icons-material/Edit'
 import DeleteIcon from '@mui/icons-material/Delete'
+import CloseIcon from '@mui/icons-material/Close'
 import type { CustomResource, ResourceThreshold, RPGSystem, SymbolicResource } from '@models/entities'
 
 interface CustomResourcesTabProps {
@@ -65,6 +66,7 @@ export function CustomResourcesTab({ system, updateSystem }: CustomResourcesTabP
     const [ editingIdx, setEditingIdx ] = useState<number | null>(null)
     const [ formData, setFormData ] = useState<CustomResource>(emptyResource())
     const [ newThreshold, setNewThreshold ] = useState<ResourceThreshold>({ value: 0, label: '', color: '#f44336', mode: 'constant' })
+    const [ editingThresholdIdx, setEditingThresholdIdx ] = useState<number | null>(null)
 
     // ── Recursos simbólicos (contadores em "Informações Gerais") ──
     const symbolicResources = system.symbolicResources ?? []
@@ -90,6 +92,7 @@ export function CustomResourcesTab({ system, updateSystem }: CustomResourcesTabP
         setEditingIdx(null)
         setFormData(emptyResource())
         setNewThreshold({ value: 0, label: '', color: '#f44336', mode: 'constant' })
+        setEditingThresholdIdx(null)
         setDialogOpen(true)
     }
 
@@ -97,6 +100,7 @@ export function CustomResourcesTab({ system, updateSystem }: CustomResourcesTabP
         setEditingIdx(idx)
         setFormData({ ...resources[idx], thresholds: [ ...(resources[idx].thresholds ?? []) ] })
         setNewThreshold({ value: 0, label: '', color: '#f44336', mode: 'constant' })
+        setEditingThresholdIdx(null)
         setDialogOpen(true)
     }
 
@@ -125,14 +129,31 @@ export function CustomResourcesTab({ system, updateSystem }: CustomResourcesTabP
         setFormData(prev => ({ ...prev, [key]: value }))
     }
 
-    const addThreshold = () => {
+    const saveThreshold = () => {
         if (!newThreshold.label.trim()) return
-        setFormData(prev => ({
-            ...prev,
-            thresholds: [ ...(prev.thresholds ?? []), { ...newThreshold } ]
-                .sort((a, b) => a.value - b.value)
-        }))
+        setFormData(prev => {
+            const thresholds = [ ...(prev.thresholds ?? []) ]
+            if (editingThresholdIdx !== null) {
+                thresholds[editingThresholdIdx] = { ...newThreshold }
+            } else {
+                thresholds.push({ ...newThreshold })
+            }
+            return { ...prev, thresholds: thresholds.sort((a, b) => a.value - b.value) }
+        })
         setNewThreshold(prev => ({ ...prev, value: 0, label: '' }))
+        setEditingThresholdIdx(null)
+    }
+
+    const editThreshold = (idx: number) => {
+        const threshold = formData.thresholds?.[idx]
+        if (!threshold) return
+        setNewThreshold({ ...threshold })
+        setEditingThresholdIdx(idx)
+    }
+
+    const cancelEditThreshold = () => {
+        setNewThreshold(prev => ({ ...prev, value: 0, label: '' }))
+        setEditingThresholdIdx(null)
     }
 
     const removeThreshold = (idx: number) => {
@@ -140,6 +161,8 @@ export function CustomResourcesTab({ system, updateSystem }: CustomResourcesTabP
             ...prev,
             thresholds: prev.thresholds?.filter((_, i) => i !== idx) ?? []
         }))
+        if (editingThresholdIdx === idx) cancelEditThreshold()
+        else if (editingThresholdIdx !== null && idx < editingThresholdIdx) setEditingThresholdIdx(editingThresholdIdx - 1)
     }
 
     // ── Render ─────────────────────────────────────────────────
@@ -469,7 +492,7 @@ export function CustomResourcesTab({ system, updateSystem }: CustomResourcesTabP
                                     </TableHead>
                                     <TableBody>
                                         {(formData.thresholds ?? []).map((t, i) => (
-                                            <TableRow key={i}>
+                                            <TableRow key={i} selected={editingThresholdIdx === i}>
                                                 <TableCell>
                                                     {t.mode === 'max'
                                                         ? `Máx${t.value !== 0 ? (t.value > 0 ? ` +${t.value}` : ` ${t.value}`) : ''}`
@@ -490,6 +513,9 @@ export function CustomResourcesTab({ system, updateSystem }: CustomResourcesTabP
                                                     />
                                                 </TableCell>
                                                 <TableCell padding="none">
+                                                    <IconButton size="small" onClick={() => editThreshold(i)}>
+                                                        <EditIcon fontSize="small" />
+                                                    </IconButton>
                                                     <IconButton size="small" color="error" onClick={() => removeThreshold(i)}>
                                                         <DeleteIcon fontSize="small" />
                                                     </IconButton>
@@ -539,7 +565,7 @@ export function CustomResourcesTab({ system, updateSystem }: CustomResourcesTabP
                                         value={newThreshold.label}
                                         onChange={e => setNewThreshold(prev => ({ ...prev, label: e.target.value }))}
                                         placeholder="Ex: Hipóxia"
-                                        onKeyDown={e => e.key === 'Enter' && addThreshold()}
+                                        onKeyDown={e => e.key === 'Enter' && saveThreshold()}
                                     />
                                 </Grid>
                                 <Grid item xs={3} sm={2}>
@@ -552,18 +578,32 @@ export function CustomResourcesTab({ system, updateSystem }: CustomResourcesTabP
                                         />
                                     </Tooltip>
                                 </Grid>
-                                <Grid item xs={3} sm={2}>
+                                <Grid item xs={editingThresholdIdx !== null ? 2 : 3} sm={2}>
                                     <Button
                                         fullWidth
                                         variant="outlined"
                                         size="small"
-                                        onClick={addThreshold}
+                                        onClick={saveThreshold}
                                         disabled={!newThreshold.label.trim()}
                                     >
-                                        <AddIcon fontSize="small" />
+                                        {editingThresholdIdx !== null ? <EditIcon fontSize="small" /> : <AddIcon fontSize="small" />}
                                     </Button>
                                 </Grid>
+                                {editingThresholdIdx !== null && (
+                                    <Grid item xs={1}>
+                                        <Tooltip title="Cancelar edição">
+                                            <IconButton size="small" onClick={cancelEditThreshold}>
+                                                <CloseIcon fontSize="small" />
+                                            </IconButton>
+                                        </Tooltip>
+                                    </Grid>
+                                )}
                             </Grid>
+                            {editingThresholdIdx !== null && (
+                                <Typography variant="caption" color="primary" sx={{ display: 'block', mt: 1 }}>
+                                    Editando limiar &ldquo;{formData.thresholds?.[editingThresholdIdx]?.label}&rdquo; — clique no ícone de edição para salvar as alterações.
+                                </Typography>
+                            )}
                             <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
                                 Limiares com base no <strong>máximo/mínimo do personagem</strong> acompanham a progressão
                                 (ex: pânico no Estresse máximo, que cresce de 10 para 12 com level-ups).

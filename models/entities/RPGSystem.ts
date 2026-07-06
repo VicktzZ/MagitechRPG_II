@@ -59,6 +59,13 @@ export interface AttributeTestInfluence {
      * valor = dados extras/bônus). Tem prioridade sobre a fórmula.
      */
     manualMap?: Record<string, number>;
+    /**
+     * Concede dados de vantagem extras a cada N pontos do atributo,
+     * empilhando com o modo principal (ex: modo "sum" + vantagem a cada
+     * 5 pontos = bônus fixo E dado extra ao atingir 5 pontos no atributo).
+     * Vazio/undefined = nenhuma vantagem extra além do modo principal.
+     */
+    advantageEveryNPoints?: number;
 }
 
 export interface SystemAttribute {
@@ -507,6 +514,15 @@ export class RPGSystem {
      * Vazio/undefined = sem limite por nível (usa apenas o max do atributo).
      */
     attributeCapFormula?: string;
+
+    /**
+     * Limite absoluto de pontos por atributo, aplicado independente do
+     * "Valor Máximo" de cada atributo — teto que a fórmula por nível
+     * (attributeCapFormula) nunca ultrapassa. Ex: fórmula "(level + 6) / 2"
+     * com limite 5 → nível 1 = 3, nível 3 = 4, nível 4+ = 5 (teto).
+     * Vazio/undefined = sem teto global (usa apenas o max de cada atributo).
+     */
+    attributeCapAbsoluteLimit?: number;
 
     /**
      * Configuração da moeda do sistema. enabled=false remove o dinheiro

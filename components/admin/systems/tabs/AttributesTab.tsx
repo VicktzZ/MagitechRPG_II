@@ -25,6 +25,7 @@ import EditIcon from '@mui/icons-material/Edit'
 import DeleteIcon from '@mui/icons-material/Delete'
 import { v4 as uuidv4 } from 'uuid'
 import type { RPGSystem, SystemAttribute } from '@models/entities'
+import { evaluateFormula } from '@utils/formulaEvaluator'
 
 interface AttributesTabProps {
     system: Partial<RPGSystem>
@@ -137,6 +138,47 @@ export function AttributesTab({ system, updateSystem }: AttributesTabProps) {
                             helperText='Máximo de pontos por atributo com "level" como variável (ex: level, level * 2). Vazio = sem limite por nível.'
                         />
                     </Grid>
+                    <Grid item xs={12} sm={3} md={2}>
+                        <TextField
+                            fullWidth
+                            size="small"
+                            type="number"
+                            label="Limite Absoluto"
+                            value={system.attributeCapAbsoluteLimit ?? ''}
+                            onChange={(e) => {
+                                const raw = e.target.value
+                                updateSystem(
+                                    'attributeCapAbsoluteLimit',
+                                    raw === '' ? (undefined as any) : Math.max(0, parseInt(raw) || 0)
+                                )
+                            }}
+                            inputProps={{ min: 0 }}
+                            helperText="Teto que a fórmula nunca ultrapassa. Vazio = sem teto global."
+                        />
+                    </Grid>
+                    {system.attributeCapFormula?.trim() && (
+                        <Grid item xs={12}>
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                                Prévia do limite por nível (1 a 10):
+                            </Typography>
+                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                {Array.from({ length: 10 }, (_, i) => i + 1).map(lvl => {
+                                    const raw = evaluateFormula(system.attributeCapFormula!, { level: lvl }, 0)
+                                    const capped = system.attributeCapAbsoluteLimit != null
+                                        ? Math.min(raw, system.attributeCapAbsoluteLimit)
+                                        : raw
+                                    return (
+                                        <Chip
+                                            key={lvl}
+                                            size="small"
+                                            variant="outlined"
+                                            label={`Nv${lvl}: ${capped}`}
+                                        />
+                                    )
+                                })}
+                            </Box>
+                        </Grid>
+                    )}
                 </Grid>
             </Paper>
 
@@ -329,6 +371,28 @@ export function AttributesTab({ system, updateSystem }: AttributesTabProps) {
                                 />
                             </Grid>
                         )}
+                        <Grid item xs={12} sm={(formData.testInfluence?.mode ?? 'none') === 'none' ? 12 : 5}>
+                            <TextField
+                                fullWidth
+                                size="small"
+                                type="number"
+                                label="Vantagem extra a cada N pontos"
+                                value={formData.testInfluence?.advantageEveryNPoints ?? ''}
+                                onChange={(e) => {
+                                    const raw = e.target.value
+                                    setFormData({
+                                        ...formData,
+                                        testInfluence: {
+                                            mode: formData.testInfluence?.mode ?? 'none',
+                                            ...formData.testInfluence,
+                                            advantageEveryNPoints: raw === '' ? undefined : Math.max(1, parseInt(raw) || 1)
+                                        }
+                                    })
+                                }}
+                                inputProps={{ min: 1 }}
+                                helperText="Empilha com o modo acima. Ex: 5 = +1 dado extra a cada 5 pontos do atributo. Vazio = nenhuma."
+                            />
+                        </Grid>
                         {(formData.testInfluence?.mode ?? 'none') !== 'none' &&
                             formData.maxValue !== undefined && formData.maxValue > 0 && formData.maxValue <= 30 && (
                             <Grid item xs={12}>

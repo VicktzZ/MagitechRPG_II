@@ -131,13 +131,20 @@ export default function DynamicAttributes({ system }: DynamicAttributesProps): R
 
     /**
      * Limite efetivo de um atributo: o menor entre o max estático do
-     * atributo e a fórmula por nível do sistema (ex: "level * 2").
+     * atributo, a fórmula por nível do sistema (ex: "level * 2") e o
+     * teto absoluto global (attributeCapAbsoluteLimit), que a fórmula
+     * nunca ultrapassa independente do nível.
      */
     const effectiveAttributeMax = (staticMax: number): number => {
         const formula = system?.attributeCapFormula?.trim();
-        if (!formula) return staticMax;
-        const levelCap = evaluateFormula(formula, { level: Math.max(1, level || 1) }, staticMax);
-        return Math.min(staticMax, Math.max(0, levelCap));
+        const absoluteLimit = system?.attributeCapAbsoluteLimit;
+        let max = staticMax;
+        if (formula) {
+            const levelCap = evaluateFormula(formula, { level: Math.max(1, level || 1) }, staticMax);
+            max = Math.min(max, Math.max(0, levelCap));
+        }
+        if (absoluteLimit != null) max = Math.min(max, absoluteLimit);
+        return max;
     };
 
     // Avalia fórmulas de stats iniciais (Vida/Mana/Armadura) na CRIAÇÃO da ficha.

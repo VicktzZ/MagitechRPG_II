@@ -62,19 +62,30 @@ export function computeAttributeInfluence(
     level = 1
 ): { extraDice: number; bonus: number } {
     const influence = attrDef?.testInfluence;
-    if (!influence || influence.mode === 'none') return { extraDice: 0, bonus: 0 };
+    if (!influence) return { extraDice: 0, bonus: 0 };
 
-    const manual = influence.manualMap?.[String(attrValue)];
-    const amount = typeof manual === 'number'
-        ? manual
-        : evaluateFormula(
-            influence.formula?.trim() || 'attr',
-            { attr: attrValue, level: Math.max(1, level) },
-            0
-        );
+    let extraDice = 0;
+    let bonus = 0;
 
-    const safeAmount = Math.max(0, Math.floor(amount));
-    return influence.mode === 'advantage'
-        ? { extraDice: safeAmount, bonus: 0 }
-        : { extraDice: 0, bonus: safeAmount };
+    if (influence.mode !== 'none') {
+        const manual = influence.manualMap?.[String(attrValue)];
+        const amount = typeof manual === 'number'
+            ? manual
+            : evaluateFormula(
+                influence.formula?.trim() || 'attr',
+                { attr: attrValue, level: Math.max(1, level) },
+                0
+            );
+
+        const safeAmount = Math.max(0, Math.floor(amount));
+        if (influence.mode === 'advantage') extraDice += safeAmount;
+        else bonus += safeAmount;
+    }
+
+    // Vantagem extra empilhável, independente do modo principal (ex: "sum" + vantagem a cada 5 pontos).
+    if (influence.advantageEveryNPoints && influence.advantageEveryNPoints > 0) {
+        extraDice += Math.max(0, Math.floor(attrValue / influence.advantageEveryNPoints));
+    }
+
+    return { extraDice, bonus };
 }
