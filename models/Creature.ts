@@ -15,6 +15,12 @@ export class Creature {
     @IsString() description: string
     @IsNumber() level: number = 0
 
+    /** Categoria da criatura (ex: Fera, Humanoide, Morto-vivo) — livre */
+    @IsString() @IsOptional() type?: string
+
+    /** URL de imagem/retrato da criatura */
+    @IsString() @IsOptional() imageUrl?: string
+
     @ValidateNested({ each: true })
     @Type(() => Skill)
     @IsArray()

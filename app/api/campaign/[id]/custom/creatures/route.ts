@@ -1,7 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { campaignRepository } from '@repositories'
 import { v4 as uuidv4 } from 'uuid'
-import type { Creature } from '@models/Creature'
 import { Expertises } from '@models'
 
 export async function POST(
@@ -35,43 +34,45 @@ export async function POST(
             )
         }
 
-        // Inicializa perícias padrão a partir do modelo Expertises
-        const baseExpertises = new Expertises()
-
-        // Converte para objeto plano serializável pelo Firestore
+        // Perícias: se o cliente enviou (suporta sistemas customizados com perícias
+        // próprias), persiste as chaves enviadas preservando a defaultAttribute;
+        // senão, inicializa a partir do modelo Magitech padrão.
         const plainExpertises: Record<string, { value: number; defaultAttribute: any }> = {}
 
-        Object.entries(baseExpertises as any).forEach(([ key, expertise ]: any) => {
-            plainExpertises[key] = {
-                value: Number(expertise?.value ?? 0),
-                defaultAttribute: expertise?.defaultAttribute ?? null
-            }
-        })
-
-        // Aplica apenas os valores vindos do body, preservando o atributo padrão
-        if (body.expertises && typeof body.expertises === 'object') {
+        if (body.expertises && typeof body.expertises === 'object' && Object.keys(body.expertises).length > 0) {
             Object.entries(body.expertises).forEach(([ key, value ]: any) => {
-                if (Object.prototype.hasOwnProperty.call(plainExpertises, key)) {
-                    const newValue = Number(value?.value ?? 0)
-                    plainExpertises[key].value = Number.isFinite(newValue) ? newValue : 0
+                const newValue = Number(value?.value ?? 0)
+                plainExpertises[key] = {
+                    value: Number.isFinite(newValue) ? newValue : 0,
+                    defaultAttribute: value?.defaultAttribute ?? null
+                }
+            })
+        } else {
+            const baseExpertises = new Expertises()
+            Object.entries(baseExpertises as any).forEach(([ key, expertise ]: any) => {
+                plainExpertises[key] = {
+                    value: Number(expertise?.value ?? 0),
+                    defaultAttribute: expertise?.defaultAttribute ?? null
                 }
             })
         }
 
+        // Atributos: aceita chaves arbitrárias (sistemas customizados); se nada
+        // vier, usa os 6 atributos padrão do Magitech em 0.
+        const plainAttributes: Record<string, number> =
+            body.attributes && typeof body.attributes === 'object' && Object.keys(body.attributes).length > 0
+                ? Object.fromEntries(Object.entries(body.attributes).map(([ k, v ]: any) => [ k, Number(v) || 0 ]))
+                : { vig: 0, des: 0, log: 0, car: 0, sab: 0, foc: 0 }
+
         // Cria a nova criatura com dados completos
-        const newCreature: Partial<Creature> = {
+        const newCreature: any = {
             id: body.id || uuidv4(),
             name: body.name.trim(),
             description: body.description || '',
+            type: body.type?.trim() || '',
+            imageUrl: body.imageUrl?.trim() || '',
             level: body.level || 1,
-            attributes: {
-                vig: body.attributes?.vig || 0,
-                des: body.attributes?.des || 0,
-                log: body.attributes?.log || 0,
-                car: body.attributes?.car || 0,
-                sab: body.attributes?.sab || 0,
-                foc: body.attributes?.foc || 0
-            },
+            attributes: plainAttributes,
             stats: {
                 lp: body.stats?.lp || 10,
                 maxLp: body.stats?.maxLp || body.stats?.lp || 10,
@@ -187,6 +188,8 @@ export async function PUT(
             ...existingCreatures[creatureIndex],
             name: body.name?.trim() || existingCreatures[creatureIndex].name,
             description: body.description ?? existingCreatures[creatureIndex].description,
+            type: body.type ?? existingCreatures[creatureIndex].type ?? '',
+            imageUrl: body.imageUrl ?? existingCreatures[creatureIndex].imageUrl ?? '',
             level: body.level ?? existingCreatures[creatureIndex].level,
             attributes: body.attributes ?? existingCreatures[creatureIndex].attributes,
             stats: body.stats ?? existingCreatures[creatureIndex].stats,

@@ -1009,18 +1009,26 @@ export default function CampaignGMDashboard(): ReactElement | null {
                                         >
                                             <Box display="flex" alignItems="center" justifyContent="space-between">
                                                 <Box display="flex" alignItems="center" gap={2}>
-                                                    <Avatar sx={{ bgcolor: orange[100], color: orange[800] }}>
+                                                    <Avatar
+                                                        src={creature.imageUrl || undefined}
+                                                        sx={{ bgcolor: orange[100], color: orange[800] }}
+                                                    >
                                                         <Pets />
                                                     </Avatar>
                                                     <Box>
                                                         <Typography variant="subtitle1" fontWeight={600}>
                                                             {creature.name}
+                                                            {creature.type && (
+                                                                <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 1 }}>
+                                                                    {creature.type}
+                                                                </Typography>
+                                                            )}
                                                         </Typography>
                                                         <Box display="flex" gap={0.5} mt={0.5} flexWrap="wrap">
-                                                            <Chip 
-                                                                label={`Nível ${creature.level}`} 
-                                                                size="small" 
-                                                                sx={{ height: 20, fontSize: '0.65rem', bgcolor: green[100], color: green[800] }} 
+                                                            <Chip
+                                                                label={`Nível ${creature.level}`}
+                                                                size="small"
+                                                                sx={{ height: 20, fontSize: '0.65rem', bgcolor: green[100], color: green[800] }}
                                                             />
                                                             <Chip 
                                                                 label={`LP: ${creature.stats?.lp || 0}`} 
