@@ -1,6 +1,6 @@
 'use client';
 
-import { forwardRef } from 'react';
+import { forwardRef, memo, useMemo } from 'react';
 import {
     Avatar,
     Box,
@@ -28,11 +28,24 @@ interface MessageListProps {
     onScroll: () => void;
 }
 
-const MessageList = forwardRef<HTMLDivElement, MessageListProps>(function MessageList(
+const MessageList = memo(forwardRef<HTMLDivElement, MessageListProps>(function MessageList(
     { messages, currentUserId, adminIds, onScroll },
     ref
 ) {
     const theme = useTheme();
+
+    // useMemo em vez de .sort() direto no render: .sort() muta o array e é
+    // O(n log n) — refazer isso em TODO render (ex: ao só abrir/fechar o
+    // chat, sem nenhuma mensagem nova) é desperdício, especialmente com
+    // muitas mensagens.
+    const sortedMessages = useMemo(
+        () => [ ...messages ].sort((a, b) => {
+            const timeA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+            const timeB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+            return timeA - timeB;
+        }),
+        [ messages ]
+    );
 
     return (
         <Box 
@@ -83,12 +96,7 @@ const MessageList = forwardRef<HTMLDivElement, MessageListProps>(function Messag
                     </Typography>
                 </Box>
             ) : (
-                messages
-                    .sort((a, b) => {
-                        const timeA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
-                        const timeB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
-                        return timeA - timeB;
-                    })
+                sortedMessages
                     .map((msg, index) => {
                         const isOwnMessage = msg.by.id === currentUserId;
                         const isGM = adminIds?.includes(msg.by.id);
@@ -248,6 +256,6 @@ const MessageList = forwardRef<HTMLDivElement, MessageListProps>(function Messag
             )}
         </Box>
     );
-});
+}));
 
 export default MessageList;

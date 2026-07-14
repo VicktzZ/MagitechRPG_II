@@ -1,6 +1,6 @@
 'use client';
 
-import { type ReactElement } from 'react';
+import { memo, type ReactElement } from 'react';
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Typography } from '@mui/material';
 import { rollDice } from '@utils/diceRoller';
 
@@ -11,7 +11,7 @@ interface TestDialogProps {
     dt: number;
 }
 
-export default function TestDialog({ open, onClose, onRollComplete, dt }: TestDialogProps): ReactElement {
+function TestDialog({ open, onClose, onRollComplete, dt }: TestDialogProps): ReactElement {
     const handleRoll = () => {
         const roll = rollDice('1d20');
         const success = (roll?.total ?? 0) >= dt;
@@ -39,3 +39,5 @@ export default function TestDialog({ open, onClose, onRollComplete, dt }: TestDi
         </Dialog>
     );
 }
+
+export default memo(TestDialog);

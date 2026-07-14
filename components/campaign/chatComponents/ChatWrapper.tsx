@@ -28,14 +28,20 @@ const ChatWrapper = memo(function ChatWrapper({
     return (
         <Box sx={{
             position: 'fixed',
-            right: isChatOpen ? 0 : -400,
+            right: 0,
             top: 0,
             height: '100vh',
             width: '400px',
+            // transform em vez de animar `right`: `right` dispara reflow de
+            // layout a cada frame (o painel é fixed, mas o navegador ainda
+            // recalcula posição/composição); transform é só compositor/GPU,
+            // o que elimina o travamento da animação com o chat cheio de mensagens.
+            transform: `translateX(${isChatOpen ? 0 : 400}px)`,
+            willChange: 'transform',
             background: theme.palette.mode === 'dark'
                 ? 'linear-gradient(145deg, #1e293b 0%, #334155 100%)'
                 : 'linear-gradient(145deg, #f8fafc 0%, #e2e8f0 100%)',
-            transition: 'right 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+            transition: 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
             borderLeft: '2px solid',
             borderColor: 'primary.main',
             zIndex: 1300,

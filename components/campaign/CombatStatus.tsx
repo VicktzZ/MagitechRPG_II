@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import {
     Box,
     Paper,
@@ -47,11 +47,11 @@ interface CombatStatusProps {
     onActionComplete?: () => void;
 }
 
-export default function CombatStatus({ 
-    campaignId, 
-    combat, 
+function CombatStatus({
+    campaignId,
+    combat,
     userCharsheetId,
-    onActionComplete 
+    onActionComplete
 }: CombatStatusProps) {
     const { enqueueSnackbar } = useSnackbar();
     const { data: session } = useSession();
@@ -762,3 +762,5 @@ export default function CombatStatus({
         </>
     );
 }
+
+export default memo(CombatStatus);

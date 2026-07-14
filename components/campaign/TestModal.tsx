@@ -22,7 +22,7 @@ import {
     MenuItem,
     InputLabel
 } from '@mui/material';
-import { useState } from 'react';
+import { memo, useState } from 'react';
 import { useCampaignContext } from '@contexts';
 import type { TestData } from '@models/types/session';
 import type { Campaign } from '@models/entities';
@@ -44,7 +44,7 @@ const expertisesList: Array<keyof Expertises> = [
     'RES Mental', 'Sorte', 'Sobrevivência', 'Tecnologia', 'Vontade'
 ];
 
-export default function TestModal({ open, onClose, onConfirm, campaign }: TestModalProps) {
+function TestModal({ open, onClose, onConfirm, campaign }: TestModalProps) {
     const [ dt, setDt ] = useState('');
     const [ expertise, setExpertise ] = useState<keyof Expertises | ''>('');
     const [ isGroupTest, setIsGroupTest ] = useState(true);
@@ -218,3 +218,5 @@ export default function TestModal({ open, onClose, onConfirm, campaign }: TestMo
         </Dialog>
     );
 }
+
+export default memo(TestModal);

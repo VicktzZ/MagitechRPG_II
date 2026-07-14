@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Paper, Snackbar } from '@mui/material';
 import { useCampaignContext } from '@contexts';
 import { useCampaignMessages } from '@contexts/campaignContext';
@@ -50,29 +50,35 @@ export default function SessionChat() {
     const isAdmin = session?.user && campaign.admin?.includes(session.user.id);
     const userCharsheetId = campaign.players?.find(p => p.userId === session?.user?.id)?.charsheetId;
 
-    const scrollToBottom = () => {
-        if (shouldAutoScroll && messagesEndRef.current) {
+    // Ref para não precisar de `shouldAutoScroll` nas deps de callbacks
+    // estáveis (handleScroll/scrollToBottom são passados como props para
+    // filhos memoizados — reconstruir a cada mudança de estado quebraria o memo).
+    const shouldAutoScrollRef = useRef(shouldAutoScroll);
+    shouldAutoScrollRef.current = shouldAutoScroll;
+
+    const scrollToBottom = useCallback(() => {
+        if (shouldAutoScrollRef.current && messagesEndRef.current) {
             messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
         }
-    };
+    }, []);
 
-    const handleScroll = () => {
+    const handleScroll = useCallback(() => {
         if (chatBoxRef.current) {
             const { scrollTop, scrollHeight, clientHeight } = chatBoxRef.current;
             const isAtBottom = Math.abs(scrollHeight - clientHeight - scrollTop) < 50;
             setShouldAutoScroll(isAtBottom);
         }
-    };
-    
+    }, []);
+
     // A persistência acontece dentro de sendMsg (ChatProvider → API), que já
     // faz o append no servidor. O updateCampaign extra que existia aqui
     // gravava a mensagem uma SEGUNDA vez (por isso a deduplicação abaixo) e
     // sobrescrevia mensagens concorrentes de outros jogadores.
-    const sendMessage = async (newMessage: Message) => {
+    const sendMessage = useCallback(async (newMessage: Message) => {
         await sendMsg(newMessage, scrollToBottom);
-    };
+    }, [ sendMsg, scrollToBottom ]);
 
-    const handleTestConfirm = (data: any) => {
+    const handleTestConfirm = useCallback((data: any) => {
         if (!session?.user) return;
 
         const testRequest: any = {
@@ -93,9 +99,9 @@ export default function SessionChat() {
             setSnackbarSeverity('success');
             setSnackbarOpen(true);
         }
-    };
+    }, [ session?.user, channel, campaign.id ]);
 
-    const handleTestRollComplete = async (success: boolean, roll: { dice: string, result: number[] }) => {
+    const handleTestRollComplete = useCallback(async (success: boolean, roll: { dice: string, result: number[] }) => {
         setIsTestDialogOpen(false);
 
         if (!currentTest || !session?.user) return;
@@ -234,25 +240,26 @@ export default function SessionChat() {
                 expertiseUsed: currentTest.expertise || undefined
             } ]);
         }
-    };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [ currentTest, session, campaign.players, campaign.id, rpgSystem, sendMessage, channel, userCharsheetId ]);
 
-    const handleTestResult = (data: { 
-        success: boolean, 
-        playerName: string, 
+    const handleTestResult = useCallback((data: {
+        success: boolean,
+        playerName: string,
         roll: { dice: string, result: number[] },
-        showResult: boolean 
+        showResult: boolean
     }) => {
         if (!isAdmin) return;
 
         const rollText = ` ${data.playerName} rolou ${data.roll.dice}: [${data.roll.result.join(', ')}] = ${data.roll.result.reduce((a, b) => a + b, 0)}`;
-        const resultText = data.showResult ? 
-            `\n${data.success ? ' ' : ' '} ${data.playerName} ${data.success ? 'passou' : 'não passou'} no teste!` : 
+        const resultText = data.showResult ?
+            `\n${data.success ? ' ' : ' '} ${data.playerName} ${data.success ? 'passou' : 'não passou'} no teste!` :
             '';
 
         setSnackbarMessage(rollText + resultText);
         setSnackbarSeverity(data.showResult ? (data.success ? 'success' : 'error') : 'info');
         setSnackbarOpen(true);
-    };
+    }, [ isAdmin ]);
 
     // Sincroniza mensagens do Firestore (contexto dedicado — não re-renderiza
     // o resto da página da campanha a cada mensagem)
@@ -328,7 +335,17 @@ export default function SessionChat() {
             channel.unbind(PusherEvent.TEST_RESULT, handleTestResultPusher);
             channel.unbind(PusherEvent.COMBAT_UPDATED, handleCombatUpdated);
         };
-    }, [ channel, session?.user?.id, campaign, updateCampaign ]);
+    }, [ channel, session?.user?.id, campaign, updateCampaign, handleTestResult ]);
+
+    // Handlers estáveis para os modais — evita recriar props de componentes
+    // memoizados (TestModal/TestDialog) a cada render do SessionChat.
+    const openTestModal = useCallback(() => setIsTestModalOpen(true), []);
+    const closeTestModal = useCallback(() => setIsTestModalOpen(false), []);
+    const closeTestDialog = useCallback(() => {
+        setIsTestDialogOpen(false);
+        setCurrentTest(null);
+    }, []);
+    const closeSnackbar = useCallback(() => setSnackbarOpen(false), []);
 
     return (
         <ChatWrapper 
@@ -347,12 +364,12 @@ export default function SessionChat() {
                     borderRadius: 0
                 }}
             >
-                <ChatHeader 
+                <ChatHeader
                     messageCount={messages.length}
                     isAdmin={!!isAdmin}
                     combat={campaign.session?.combat as any}
                     campaignId={campaign.id}
-                    onTestClick={() => setIsTestModalOpen(true)}
+                    onTestClick={openTestModal}
                 />
 
                 <MessageList
@@ -362,7 +379,7 @@ export default function SessionChat() {
                     adminIds={campaign.admin || []}
                     onScroll={handleScroll}
                 />
-                
+
                 <div ref={messagesEndRef} style={{ height: 0 }} />
 
                 <MessageInput onSendMessage={handleSendMessage} />
@@ -370,17 +387,14 @@ export default function SessionChat() {
                 {/* Modais e Snackbar */}
                 <TestModal
                     open={isTestModalOpen}
-                    onClose={() => { setIsTestModalOpen(false); }}
+                    onClose={closeTestModal}
                     onConfirm={handleTestConfirm}
                     campaign={campaign}
                 />
 
                 <TestDialog
                     open={isTestDialogOpen}
-                    onClose={() => {
-                        setIsTestDialogOpen(false);
-                        setCurrentTest(null);
-                    }}
+                    onClose={closeTestDialog}
                     dt={currentTest?.dt ?? 0}
                     onRollComplete={handleTestRollComplete}
                 />
@@ -388,11 +402,11 @@ export default function SessionChat() {
                 <Snackbar
                     open={snackbarOpen}
                     autoHideDuration={6000}
-                    onClose={() => { setSnackbarOpen(false); }}
+                    onClose={closeSnackbar}
                     anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
                 >
                     <Alert
-                        onClose={() => { setSnackbarOpen(false); }}
+                        onClose={closeSnackbar}
                         severity={snackbarSeverity}
                         sx={{ width: '100%' }}
                     >

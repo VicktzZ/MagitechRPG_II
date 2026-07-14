@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import {
     Box,
     Button,
@@ -25,7 +26,7 @@ interface ChatHeaderProps {
     onTestClick: () => void;
 }
 
-export default function ChatHeader({
+function ChatHeader({
     messageCount,
     isAdmin,
     combat,
@@ -142,3 +143,5 @@ export default function ChatHeader({
         </Paper>
     );
 }
+
+export default memo(ChatHeader);
