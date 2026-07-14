@@ -96,10 +96,14 @@ export default function GMActions(): ReactElement {
     const players: PlayerInfo[] = useMemo(() => {
         return users.players?.map(player => {
             // campaign.players usa `userId`, não `odacId`
-            const playerInCampaign = campaign?.players?.find(p => 
+            const playerInCampaign = campaign?.players?.find(p =>
                 (p as any).odacId === player.id || p.userId === player.id
             );
             const charsheet = realtimeCharsheets?.find((c: any) => c.id === playerInCampaign?.charsheetId);
+            // Vantagens adquiridas nesta campanha (sessão correspondente ao campaignCode)
+            const campaignPerks = charsheet?.session?.find(
+                (s: any) => s.campaignCode === campaign.campaignCode
+            )?.perks ?? [];
 
             return {
                 id: player.id,
@@ -111,11 +115,12 @@ export default function GMActions(): ReactElement {
                     level: charsheet.level,
                     stats: charsheet.stats,
                     inventory: charsheet.inventory,
-                    attributes: charsheet.attributes
+                    attributes: charsheet.attributes,
+                    perks: campaignPerks
                 } : undefined
             };
         }) || [];
-    }, [ users.players, campaign?.players, realtimeCharsheets ]);
+    }, [ users.players, campaign?.players, campaign.campaignCode, realtimeCharsheets ]);
 
     // Menu handlers
     const handleOpenMenu = (event: React.MouseEvent<HTMLButtonElement>) => {

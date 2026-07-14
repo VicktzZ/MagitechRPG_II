@@ -46,18 +46,17 @@ export default function AcquiredPerks() {
 
     const perks = useMemo(() => {
         if (!charsheet?.session || !campaign?.campaignCode) return [];
-        
+
         const sessionData = charsheet.session.find(
             (s: any) => s.campaignCode === campaign.campaignCode
         );
 
-        console.log(sessionData)
-        
         return sessionData?.perks || [];
     }, [ charsheet?.session, campaign?.campaignCode ]);
 
-    // Não mostrar se não for Roguelite ou não houver perks
-    if (campaign?.mode !== 'Roguelite') return null;
+    // Vantagens podem ser oferecidas em qualquer modo. No Roguelite o painel fica
+    // sempre visível; nos demais modos só aparece quando há vantagens recebidas.
+    if (campaign?.mode !== 'Roguelite' && perks.length === 0) return null;
 
     return (
         <Paper

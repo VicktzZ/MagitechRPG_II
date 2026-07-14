@@ -1,6 +1,15 @@
 import type { PerkFilters } from '@models';
 import type { RarityType } from '@models/types/string';
 
+/** Vantagem adquirida por um jogador (formato salvo em charsheet.session[].perks) */
+export interface AcquiredPerk {
+    id?: string;
+    name: string;
+    rarity?: string;
+    description?: string;
+    perkType?: string;
+}
+
 export interface PlayerInfo {
     id: string;
     name: string;
@@ -36,6 +45,8 @@ export interface PlayerInfo {
                 maxMp?: number;
             };
         }>;
+        /** Vantagens adquiridas nesta campanha (extraídas da sessão correspondente) */
+        perks?: AcquiredPerk[];
     };
 }
 

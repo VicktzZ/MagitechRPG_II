@@ -8,12 +8,14 @@ import {
     Checkbox,
     Chip,
     CircularProgress,
+    Collapse,
     Dialog,
     DialogActions,
     DialogContent,
     DialogTitle,
     Divider,
     FormControl,
+    IconButton,
     InputLabel,
     List,
     ListItem,
@@ -22,10 +24,15 @@ import {
     MenuItem,
     OutlinedInput,
     Select,
+    Stack,
+    Tooltip,
     Typography
 } from '@mui/material';
 import CardGiftcardIcon from '@mui/icons-material/CardGiftcard';
 import LinkIcon from '@mui/icons-material/Link';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import { purple } from '@mui/material/colors';
 import { useSnackbar } from 'notistack';
 import { campaignService } from '@services';
@@ -41,6 +48,28 @@ import {
     SKILL_TYPE_OPTIONS,
     DEFAULT_PERK_FILTERS
 } from './constants';
+
+const PERK_RARITY_COLORS: Record<string, string> = {
+    'Comum': '#9e9e9e',
+    'Incomum': '#4caf50',
+    'Raro': '#2196f3',
+    'Épico': '#9c27b0',
+    'Lendário': '#ff9800',
+    'Único': '#f44336',
+    'Mágico': '#00bcd4',
+    'Amaldiçoado': '#880e4f',
+    'Especial': '#ffd700'
+};
+
+const PERK_TYPE_LABELS: Record<string, string> = {
+    'WEAPON': 'Arma',
+    'ARMOR': 'Armadura',
+    'ITEM': 'Item',
+    'SKILL': 'Habilidade',
+    'SPELL': 'Magia',
+    'BONUS': 'Bônus',
+    'EXPERTISE': 'Perícia'
+};
 
 interface OfferPerksDialogProps {
     open: boolean;
@@ -60,6 +89,16 @@ export default function OfferPerksDialog({
     const [ isOffering, setIsOffering ] = useState(false);
     const [ useSharedSeed, setUseSharedSeed ] = useState(false);
     const [ perkFilters, setPerkFilters ] = useState<PerkFilters>(DEFAULT_PERK_FILTERS as PerkFilters);
+    // Jogadores cuja lista de vantagens adquiridas está expandida
+    const [ expandedPerks, setExpandedPerks ] = useState<string[]>([]);
+
+    const toggleExpandPerks = (playerId: string) => {
+        setExpandedPerks(prev =>
+            prev.includes(playerId)
+                ? prev.filter(id => id !== playerId)
+                : [ ...prev, playerId ]
+        );
+    };
 
     const handleOffer = async () => {
         if (selectedPlayers.length === 0) {
@@ -93,6 +132,7 @@ export default function OfferPerksDialog({
             setSelectedPlayers([]);
             setPerkFilters(DEFAULT_PERK_FILTERS as PerkFilters);
             setUseSharedSeed(false);
+            setExpandedPerks([]);
             onClose();
         }
     };
@@ -273,7 +313,7 @@ export default function OfferPerksDialog({
 
                     {/* Seleção de Jogadores */}
                     <Box>
-                        <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+                        <Box display="flex" justifyContent="space-between" alignItems="center" mb={0.5}>
                             <Typography variant="subtitle2" fontWeight={600}>
                                 Selecionar Jogadores ({selectedPlayers.length} selecionado{selectedPlayers.length !== 1 ? 's' : ''})
                             </Typography>
@@ -281,33 +321,120 @@ export default function OfferPerksDialog({
                                 Selecionar Todos
                             </Button>
                         </Box>
-                        <Box sx={{ maxHeight: 280, overflow: 'auto', border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
-                            <List dense>
-                                {players.map(player => (
-                                    <ListItem
-                                        key={player.id}
-                                        button
-                                        onClick={() => togglePlayer(player.id)}
-                                        disabled={isOffering}
-                                        selected={selectedPlayers.includes(player.id)}
-                                    >
-                                        <Checkbox 
-                                            checked={selectedPlayers.includes(player.id)} 
-                                            size="small"
-                                            disabled={isOffering}
-                                        />
-                                        <ListItemAvatar>
-                                            <Avatar src={player.avatar} sx={{ width: 32, height: 32 }} />
-                                        </ListItemAvatar>
-                                        <ListItemText 
-                                            primary={player.charsheet?.name || player.name}
-                                            secondary={`Nível ${player.charsheet?.level || 0}`}
-                                        />
-                                        {selectedPlayers.includes(player.id) && (
-                                            <Chip label="Selecionado" size="small" color="secondary" />
-                                        )}
-                                    </ListItem>
-                                ))}
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
+                            <AutoAwesomeIcon sx={{ fontSize: '0.9rem', color: purple[400] }} />
+                            O contador mostra as vantagens que cada jogador já recebeu nesta campanha — clique para ver quais.
+                        </Typography>
+                        <Box sx={{ maxHeight: 300, overflow: 'auto', border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
+                            <List dense disablePadding>
+                                {players.map(player => {
+                                    const perks = player.charsheet?.perks ?? [];
+                                    const isExpanded = expandedPerks.includes(player.id);
+                                    const isSelected = selectedPlayers.includes(player.id);
+                                    return (
+                                        <Box key={player.id}>
+                                            <ListItem
+                                                button
+                                                onClick={() => togglePlayer(player.id)}
+                                                disabled={isOffering}
+                                                selected={isSelected}
+                                            >
+                                                <Checkbox
+                                                    checked={isSelected}
+                                                    size="small"
+                                                    disabled={isOffering}
+                                                />
+                                                <ListItemAvatar>
+                                                    <Avatar src={player.avatar} sx={{ width: 32, height: 32 }} />
+                                                </ListItemAvatar>
+                                                <ListItemText
+                                                    primary={player.charsheet?.name || player.name}
+                                                    secondary={`Nível ${player.charsheet?.level || 0}`}
+                                                />
+                                                <Tooltip title={perks.length > 0 ? 'Ver vantagens recebidas' : 'Nenhuma vantagem recebida ainda'}>
+                                                    <Chip
+                                                        icon={<AutoAwesomeIcon sx={{ fontSize: '0.85rem !important' }} />}
+                                                        label={perks.length}
+                                                        size="small"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            if (perks.length > 0) toggleExpandPerks(player.id);
+                                                        }}
+                                                        sx={{
+                                                            mr: 0.5,
+                                                            bgcolor: perks.length > 0 ? purple[50] : 'action.hover',
+                                                            color: perks.length > 0 ? purple[700] : 'text.secondary',
+                                                            cursor: perks.length > 0 ? 'pointer' : 'default',
+                                                            fontWeight: 600,
+                                                            '& .MuiChip-icon': { color: perks.length > 0 ? purple[500] : 'text.disabled' }
+                                                        }}
+                                                    />
+                                                </Tooltip>
+                                                {perks.length > 0 && (
+                                                    <IconButton
+                                                        size="small"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            toggleExpandPerks(player.id);
+                                                        }}
+                                                    >
+                                                        {isExpanded ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
+                                                    </IconButton>
+                                                )}
+                                            </ListItem>
+                                            {perks.length > 0 && (
+                                                <Collapse in={isExpanded} timeout="auto" unmountOnExit>
+                                                    <Box sx={{ pl: 7, pr: 2, pb: 1 }}>
+                                                        <Stack spacing={0.5}>
+                                                            {perks.map((perk, idx) => {
+                                                                const color = PERK_RARITY_COLORS[perk.rarity ?? 'Comum'] ?? PERK_RARITY_COLORS['Comum'];
+                                                                return (
+                                                                    <Tooltip
+                                                                        key={perk.id || idx}
+                                                                        title={perk.description || 'Sem descrição'}
+                                                                        placement="left"
+                                                                        arrow
+                                                                    >
+                                                                        <Box
+                                                                            sx={{
+                                                                                display: 'flex',
+                                                                                alignItems: 'center',
+                                                                                gap: 1,
+                                                                                p: 0.75,
+                                                                                borderRadius: 1,
+                                                                                borderLeft: '3px solid',
+                                                                                borderColor: color,
+                                                                                bgcolor: 'action.hover'
+                                                                            }}
+                                                                        >
+                                                                            <Typography
+                                                                                variant="body2"
+                                                                                sx={{ flex: 1, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                                                                            >
+                                                                                {perk.name}
+                                                                            </Typography>
+                                                                            <Chip
+                                                                                label={PERK_TYPE_LABELS[perk.perkType ?? ''] || perk.perkType || 'Bônus'}
+                                                                                size="small"
+                                                                                sx={{ height: 18, fontSize: '0.6rem', bgcolor: `${color}20`, color }}
+                                                                            />
+                                                                            <Chip
+                                                                                label={perk.rarity || 'Comum'}
+                                                                                size="small"
+                                                                                variant="outlined"
+                                                                                sx={{ height: 18, fontSize: '0.6rem', borderColor: `${color}80`, color }}
+                                                                            />
+                                                                        </Box>
+                                                                    </Tooltip>
+                                                                );
+                                                            })}
+                                                        </Stack>
+                                                    </Box>
+                                                </Collapse>
+                                            )}
+                                        </Box>
+                                    );
+                                })}
                             </List>
                         </Box>
                     </Box>

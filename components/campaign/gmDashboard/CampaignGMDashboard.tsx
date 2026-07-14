@@ -307,18 +307,21 @@ export default function CampaignGMDashboard(): ReactElement | null {
         }
     };
 
-    // Extrai vantagens adquiridas por cada jogador (apenas para Roguelite)
+    // Extrai vantagens adquiridas por cada jogador. Vantagens podem ser
+    // oferecidas em QUALQUER modo de campanha (não só Roguelite), então esta
+    // visão não é mais restrita ao Roguelite — o mestre precisa ver o que cada
+    // jogador recebeu independentemente do modo.
     const playersWithPerks = useMemo(() => {
-        if (campaign.mode !== 'Roguelite' || !playerCharsheets) return [];
-        
+        if (!playerCharsheets) return [];
+
         return playerCharsheets.map(charsheet => {
             // Busca a sessão da campanha atual
             const session = charsheet.session?.find((s: any) => s.campaignCode === campaign.campaignCode);
             const perks = session?.perks || [];
-            
+
             // Busca dados do usuário para pegar a foto
             const user = users.players?.find(p => p.id === charsheet.userId);
-            
+
             return {
                 charsheetId: charsheet.id,
                 charsheetName: charsheet.name,
@@ -328,7 +331,7 @@ export default function CampaignGMDashboard(): ReactElement | null {
                 userName: user?.name || charsheet.name
             };
         }).filter(p => p.perks.length > 0);
-    }, [ campaign.mode, campaign.campaignCode, playerCharsheets, users.players ]);
+    }, [ campaign.campaignCode, playerCharsheets, users.players ]);
 
     // Função para obter cor por tipo de perk
     const getPerkTypeColor = (perkType: string) => {
@@ -571,12 +574,13 @@ export default function CampaignGMDashboard(): ReactElement | null {
                         </Box>
                     </Section>
 
-                    {/* Seção de Vantagens Adquiridas (apenas Roguelite) */}
-                    {campaign.mode === 'Roguelite' && (
-                        <Section 
-                            title="Vantagens Adquiridas" 
+                    {/* Seção de Vantagens Adquiridas — visível no Roguelite (sempre) ou
+                        em qualquer modo quando algum jogador já recebeu vantagens */}
+                    {(campaign.mode === 'Roguelite' || playersWithPerks.length > 0) && (
+                        <Section
+                            title="Vantagens Adquiridas"
                             icon={
-                                <Box 
+                                <Box
                                     sx={{
                                         p: 1.5,
                                         borderRadius: 2,
@@ -591,7 +595,7 @@ export default function CampaignGMDashboard(): ReactElement | null {
                         >
                             <Box>
                                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                                    Vantagens obtidas pelos jogadores durante a campanha Roguelite
+                                    Vantagens obtidas por cada jogador nesta campanha
                                 </Typography>
                                 
                                 {isPlayerCharsheetsPending ? (
