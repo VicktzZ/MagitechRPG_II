@@ -4,7 +4,6 @@
 
 import { useCampaignContext } from '@contexts';
 import { useChatContext } from '@contexts/chatContext';
-import { useFirestoreRealtime } from '@hooks/useFirestoreRealtime';
 import {
     CardGiftcard,
     ExpandMore,
@@ -42,6 +41,7 @@ import { MessageType } from '@enums';
 import { type ReactElement, useMemo, useState } from 'react';
 import PlayerCard from './PlayerCard';
 import CreatureCreator from './CreatureCreator';
+import type { CharsheetDTO } from '@models/dtos';
 
 interface SectionProps {
     title: string;
@@ -152,14 +152,10 @@ export default function CampaignGMDashboard(): ReactElement | null {
     const [ selectedCreature, setSelectedCreature ] = useState<any | null>(null);
     const [ selectedCreatureReadOnly, setSelectedCreatureReadOnly ] = useState(false);
     
-    // const queryClient = useQueryClient()
-
-    const { data: playerCharsheets, loading: isPlayerCharsheetsPending } = useFirestoreRealtime('charsheet', {
-        filters: [
-            { field: 'id', operator: 'in', value: charsheets.map(f => f.id) }
-        ],
-        enabled: charsheets.length > 0
-    })
+    // As fichas já chegam em tempo real pelo campaignContext (useCampaignData) —
+    // assinar de novo aqui duplicava o listener do Firestore para os mesmos docs.
+    const playerCharsheets = charsheets;
+    const isPlayerCharsheetsPending = campaign.players.length > 0 && charsheets.length === 0;
 
     const players = useMemo(() => {
         return users.players?.map(player => {
@@ -378,9 +374,9 @@ export default function CampaignGMDashboard(): ReactElement | null {
                 throw new Error('Erro ao excluir criatura');
             }
             
-            // Atualiza o contexto da campanha
+            // Atualiza apenas o campo custom — espalhar a campanha inteira
+            // sobrescreveria session.messages e apagaria o chat.
             updateCampaign({
-                ...campaign,
                 custom: {
                     ...campaign.custom,
                     creatures: (campaign.custom?.creatures || []).filter((c: any) => c.id !== creatureId)
@@ -413,7 +409,6 @@ export default function CampaignGMDashboard(): ReactElement | null {
             : existingCreatures.map((c: any) => c.id === creature.id ? { ...c, ...creature } : c);
 
         await updateCampaign({
-            ...campaign,
             custom: {
                 ...campaign.custom,
                 creatures: updatedCreatures
@@ -568,7 +563,7 @@ export default function CampaignGMDashboard(): ReactElement | null {
                                     {playerCharsheets.map(charsheet => (
                                         <PlayerCard
                                             key={charsheet.id}
-                                            charsheet={charsheet}
+                                            charsheet={charsheet as unknown as Required<CharsheetDTO>}
                                         />
                                     ))}
                                 </Box>

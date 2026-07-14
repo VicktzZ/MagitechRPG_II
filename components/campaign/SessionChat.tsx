@@ -3,8 +3,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { Alert, Paper, Snackbar } from '@mui/material';
 import { useCampaignContext } from '@contexts';
+import { useCampaignMessages } from '@contexts/campaignContext';
 import { useChannel } from '@contexts/channelContext';
-import { useChatContext } from '@contexts/chatContext';
+import { useChatContext, useChatMessages } from '@contexts/chatContext';
 import { MessageType, PusherEvent } from '@enums';
 import { charsheetService } from '@services';
 import { postCampaignStats } from '@utils/campaignStatsClient';
@@ -24,6 +25,7 @@ import {
 
 export default function SessionChat() {
     const { campaign, updateCampaign, rpgSystem } = useCampaignContext();
+    const persistedMessages = useCampaignMessages();
     const { data: session } = useSession();
     const { channel } = useChannel();
 
@@ -40,11 +42,10 @@ export default function SessionChat() {
     const {
         isChatOpen,
         setIsChatOpen,
-        messages,
-        setMessages,
         sendMessage: sendMsg,
         handleSendMessage
     } = useChatContext();
+    const { messages, setMessages } = useChatMessages();
 
     const isAdmin = session?.user && campaign.admin?.includes(session.user.id);
     const userCharsheetId = campaign.players?.find(p => p.userId === session?.user?.id)?.charsheetId;
@@ -63,26 +64,12 @@ export default function SessionChat() {
         }
     };
     
+    // A persistência acontece dentro de sendMsg (ChatProvider → API), que já
+    // faz o append no servidor. O updateCampaign extra que existia aqui
+    // gravava a mensagem uma SEGUNDA vez (por isso a deduplicação abaixo) e
+    // sobrescrevia mensagens concorrentes de outros jogadores.
     const sendMessage = async (newMessage: Message) => {
-        sendMsg(newMessage, scrollToBottom);
-        try {
-            const currentMessages = campaign?.session?.messages ?? [];
-            const currentUsers = campaign?.session?.users ?? [];
-            const toPersist: any = { ...newMessage };
-            delete toPersist.isPending;
-            delete toPersist.tempId;
-            if (toPersist.timestamp instanceof Date) {
-                toPersist.timestamp = toPersist.timestamp.toISOString();
-            }
-            await updateCampaign({
-                session: {
-                    users: currentUsers,
-                    messages: [ ...currentMessages, toPersist ]
-                } as any
-            });
-        } catch (e) {
-            console.error('[SessionChat] Falha ao persistir mensagem no Firestore:', e);
-        }
+        await sendMsg(newMessage, scrollToBottom);
     };
 
     const handleTestConfirm = (data: any) => {
@@ -267,9 +254,10 @@ export default function SessionChat() {
         setSnackbarOpen(true);
     };
 
-    // Sincroniza mensagens do Firestore
+    // Sincroniza mensagens do Firestore (contexto dedicado — não re-renderiza
+    // o resto da página da campanha a cada mensagem)
     useEffect(() => {
-        const list = campaign?.session?.messages ?? [];
+        const list = persistedMessages ?? [];
         if (Array.isArray(list)) {
             const unique: any[] = [];
             const seen = new Set<string>();
@@ -283,7 +271,7 @@ export default function SessionChat() {
         } else {
             setMessages([]);
         }
-    }, [ campaign?.session?.messages ]);
+    }, [ persistedMessages ]);
 
     // Scroll to bottom quando mensagens carregam
     useEffect(() => {
@@ -323,16 +311,12 @@ export default function SessionChat() {
             handleTestResult(data);
         };
 
-        // Handler para atualização de combate em tempo real
+        // Handler para atualização de combate em tempo real.
+        // Dot-path: atualiza SOMENTE session.combat — espalhar a campanha
+        // inteira sobrescreveria session.messages (e apagaria o chat).
         const handleCombatUpdated = (data: { combat: any, action: string }) => {
             console.log('[SessionChat] Combate atualizado via Pusher:', data.action);
-            updateCampaign({
-                ...campaign,
-                session: {
-                    ...campaign.session,
-                    combat: data.combat
-                }
-            });
+            updateCampaign({ 'session.combat': data.combat } as any);
         };
 
         channel.bind(PusherEvent.TEST_REQUEST, handleTestRequest);

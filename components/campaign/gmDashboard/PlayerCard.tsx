@@ -21,7 +21,7 @@ import {
 import { red } from '@mui/material/colors'
 import { campaignService, notificationService } from '@services'
 import { enqueueSnackbar } from 'notistack'
-import { useState } from 'react'
+import { memo, useState } from 'react'
 import { useCampaignContext } from '@contexts';
 import { TextField } from '@mui/material'
 import { CharsheetDetailsModal } from './modals'
@@ -55,7 +55,9 @@ function normalizeToArray<T>(value: any): T[] {
     return []
 }
 
-export default function PlayerCard({ charsheet }: { charsheet: Required<CharsheetDTO> }) {
+// memo: com as referências de ficha estabilizadas por item (useStableArrayItems),
+// só o card do jogador cuja ficha mudou re-renderiza.
+function PlayerCard({ charsheet }: { charsheet: Required<CharsheetDTO> }) {
     const { campaign, charsheets } = useCampaignContext()
     const { system: customSystem } = useCharsheetSystem(charsheet.systemId)
     const weightUnit = customSystem ? (customSystem.weightConfig?.unit ?? '') : 'kg'
@@ -344,7 +346,7 @@ export default function PlayerCard({ charsheet }: { charsheet: Required<Charshee
             />
 
             {/* Modal de Detalhes da Charsheet */}
-            <CharsheetDetailsModal 
+            <CharsheetDetailsModal
                 open={charsheetDetailsOpen}
                 onClose={() => setCharsheetDetailsOpen(false)}
                 charsheet={charsheet}
@@ -352,3 +354,5 @@ export default function PlayerCard({ charsheet }: { charsheet: Required<Charshee
         </>
     )
 }
+
+export default memo(PlayerCard)

@@ -4,7 +4,7 @@
 import type { Campaign, Charsheet, Power, Spell, User, Notification } from '@models/entities';
 import type { FirestoreQueryOptions, RealtimeOptions } from '@models/types/firestoreRealtime';
 import { campaignEntity, charsheetEntity, notificationEntity, powerEntity, spellEntity, userEntity, type FirestoreEntity } from '@utils/firestoreEntities';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 interface EntityNameToType {
     charsheet: Charsheet;
@@ -36,7 +36,11 @@ export function useFirestoreRealtime<T extends EntityName>(
     const [ data, setData ] = useState<EntityType[]>([]);
     const [ loading, setLoading ] = useState(true);
     const [ error, setError ] = useState<Error | null>(null);
-    
+    // Serialização do último payload entregue — descarta snapshots sem mudança
+    // real (eco local de escrita, resolução de serverTimestamp etc.), que
+    // criariam novos arrays idênticos e re-renderizariam toda a árvore.
+    const lastPayloadRef = useRef<string | null>(null);
+
     // Remova o type assertion desnecessário
     const entity = firestoreEntities[entityName] as unknown as FirestoreEntity<EntityType>;
 
@@ -54,18 +58,24 @@ export function useFirestoreRealtime<T extends EntityName>(
 
     useEffect(() => {
         if (options.enabled === false) {
+            lastPayloadRef.current = null;
             setData([]);
             setLoading(false);
             return;
         }
 
+        lastPayloadRef.current = null;
         setLoading(true);
         setError(null);
 
         const unsubscribe = entity.subscribe(
             stableOptions,
             (newData) => {
-                setData(newData);
+                const serialized = JSON.stringify(newData);
+                if (lastPayloadRef.current !== serialized) {
+                    lastPayloadRef.current = serialized;
+                    setData(newData);
+                }
                 setLoading(false);
             }
         );

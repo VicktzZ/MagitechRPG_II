@@ -5,7 +5,7 @@ import { useCompleteCharsheet } from '@hooks/useCompleteCharsheet';
 import { Backdrop, Box, CircularProgress } from '@mui/material';
 import { sessionService } from '@services';
 import { enqueueSnackbar } from 'notistack';
-import { useEffect, useState, type ReactElement } from 'react';
+import { useEffect, useMemo, useState, type ReactElement } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 import { CampaignGMDashboard, CampaignHeader, CampaignNotes, CampaignPlayerDashboard, SessionChat } from '.';
 import type { CharsheetDTO } from '@models/dtos';
@@ -75,6 +75,10 @@ export default function CampaignComponent(): ReactElement {
         defaultValues: charsheet!,
         values: charsheet!
     });
+
+    // Objeto memoizado — inline ({{ charsheet }}) criava um valor novo a cada
+    // render e re-renderizava todos os consumidores do contexto da ficha atual.
+    const currentCharsheetValue = useMemo(() => ({ charsheet: charsheet! }), [ charsheet ]);
     
     const content = (
         <>
@@ -131,7 +135,7 @@ export default function CampaignComponent(): ReactElement {
 
     return (
         <FormProvider {...form}>
-            <campaignCurrentCharsheetContext.Provider value={{ charsheet: charsheet! }}>
+            <campaignCurrentCharsheetContext.Provider value={currentCharsheetValue}>
                 {content}
             </campaignCurrentCharsheetContext.Provider>
         </FormProvider>

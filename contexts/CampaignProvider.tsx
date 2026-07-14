@@ -21,8 +21,8 @@ import {
 } from '@mui/material';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { useState, useEffect, type ReactElement } from 'react';
-import { campaignContext, type CampaignContextValue } from './campaignContext';
+import { useState, useEffect, useMemo, useCallback, type ReactElement } from 'react';
+import { campaignContext, campaignMessagesContext, type CampaignContextValue } from './campaignContext';
 import { campaignEntity } from '@utils/firestoreEntities';
 import type { Campaign, RPGSystem } from '@models/entities';
 import { useSnackbar } from 'notistack';
@@ -48,7 +48,7 @@ export function CampaignProvider({ children, code }: { children: ReactElement, c
     const [ rpgSystem, setRpgSystem ] = useState<RPGSystem | null>(null);
     const [ loadingSystem, setLoadingSystem ] = useState(false);
 
-    const campaignData = useCampaignData({
+    const { data: campaignData, messages } = useCampaignData({
         campaignCode: code,
         userId: session?.user?.id
     });
@@ -92,6 +92,26 @@ export function CampaignProvider({ children, code }: { children: ReactElement, c
     const isRogueliteMode = campaignData?.campaign?.mode === 'Roguelite';
 
     usePusher(code, isUserGM, session)
+
+    // Contexto principal memoizado: só muda quando a campanha (sem mensagens),
+    // fichas, usuários ou sistema realmente mudam — nunca por estado local
+    // deste provider (formulário roguelite, seleção de ficha etc.).
+    const updateCampaign = useCallback(async (data: Partial<Campaign>) => {
+        const id = campaignData?.campaign?.id;
+        if (!id) return;
+        await campaignEntity.update(id, data);
+    }, [ campaignData?.campaign?.id ]);
+
+    const contextValue = useMemo((): CampaignContextValue | null => {
+        if (!campaignData) return null;
+        return {
+            ...campaignData,
+            updateCampaign,
+            rpgSystem,
+            loadingSystem,
+            isDefaultSystem: !campaignData.campaign.systemId
+        };
+    }, [ campaignData, updateCampaign, rpgSystem, loadingSystem ]);
 
     // Função para criar ficha roguelite
     const handleCreateRogueliteCharsheet = async () => {
@@ -158,23 +178,17 @@ export function CampaignProvider({ children, code }: { children: ReactElement, c
         )
     }
 
-    if (!!campaignData && (isUserGM || !!campaignData.charsheets.find(c => c.userId === session?.user?.id) || campaignData.charsheets.map(c => c.id).includes(charsheetId)) || charsheetId) {
-        localStorage.setItem('currentCharsheet', (charsheetId || campaignData.charsheets.find(f => f.userId === session?.user?.id)?.id) ?? '');
+    const hasOwnCharsheet = !!campaignData.charsheets.find(c => c.userId === session?.user?.id);
+    const hasSelectedCharsheet = campaignData.charsheets.map(c => c.id).includes(charsheetId);
 
-        const value: CampaignContextValue = {
-            ...campaignData,
-            updateCampaign: async (data: Partial<Campaign>) => {
-                if (!campaignData.campaign.id) return;
-                await campaignEntity.update(campaignData.campaign.id, data);
-            },
-            rpgSystem,
-            loadingSystem,
-            isDefaultSystem: !campaignData.campaign.systemId
-        };
+    if (contextValue && (isUserGM || hasOwnCharsheet || hasSelectedCharsheet || !!charsheetId)) {
+        localStorage.setItem('currentCharsheet', (charsheetId || campaignData?.charsheets.find(f => f.userId === session?.user?.id)?.id) ?? '');
 
         return (
-            <campaignContext.Provider value={value}>
-                {children}
+            <campaignContext.Provider value={contextValue}>
+                <campaignMessagesContext.Provider value={messages}>
+                    {children}
+                </campaignMessagesContext.Provider>
             </campaignContext.Provider>
         )
     } else if (isRogueliteMode) {

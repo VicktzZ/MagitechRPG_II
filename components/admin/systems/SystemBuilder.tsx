@@ -26,6 +26,7 @@ import { useSession } from 'next-auth/react'
 import type { RPGSystem, PointsConfig } from '@models/entities'
 import { validateSystemForSave, type SystemWarning } from '@utils/systemValidation'
 import { downloadSystemJson } from '@utils/systemExportImport'
+import { invalidateCharsheetSystemCache } from '@hooks/useCharsheetSystem'
 
 import { GeneralSettingsTab } from './tabs/GeneralSettingsTab'
 import { InitialFieldsTab } from './tabs/InitialFieldsTab'
@@ -238,6 +239,11 @@ export function SystemBuilder({ initialData }: SystemBuilderProps) {
             if (!response.ok) {
                 const data = await response.json()
                 throw new Error(data.error || 'Erro ao salvar sistema')
+            }
+
+            // Invalida o cache em memória do sistema para os hooks useCharsheetSystem
+            if (isEditing && initialData?.id) {
+                invalidateCharsheetSystemCache(initialData.id)
             }
 
             enqueueSnackbar(

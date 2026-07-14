@@ -1,11 +1,11 @@
 import { messageService } from '@services'
 import { useCampaignContext } from './campaignContext'
-import { useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { createDiceMessage, rollDice, rollSeparateDice } from '@utils/diceRoller'
 import { MessageType } from '@enums'
 import { enqueueSnackbar } from 'notistack'
-import { chatContext } from './chatContext'
+import { chatContext, chatMessagesContext } from './chatContext'
 import { useMediaQuery, type Theme } from '@mui/material'
 import type { TempMessage } from '@models/types/session'
 import type { Message } from '@models'
@@ -17,7 +17,9 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     const [ isChatOpen, setIsChatOpen ] = useState(!isMobile)
     const [ messages, setMessages ] = useState<TempMessage[]>([])
 
-    const sendMessage = async (newMessage: Message, scrollToBottom: () => void = () => {}) => {
+    const campaignCode = campaign.campaignCode
+
+    const sendMessage = useCallback(async (newMessage: Message, scrollToBottom: () => void = () => {}) => {
         const messageWithTimestamp = {
             ...newMessage,
             timestamp: new Date().toISOString(),
@@ -29,7 +31,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         setTimeout(scrollToBottom, 100)
 
         try {
-            const response = await messageService.sendMessage(campaign.campaignCode, messageWithTimestamp)
+            const response = await messageService.sendMessage(campaignCode, messageWithTimestamp)
 
             if (!response) {
                 console.error('Erro ao enviar mensagem')
@@ -48,9 +50,9 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
             setMessages(prev => prev.filter(m => m.tempId !== messageWithTimestamp.tempId))
             return false
         }
-    }
+    }, [ campaignCode ])
 
-    const handleSendMessage = async (textOrMessage: string | Message, type?: MessageType) => {
+    const handleSendMessage = useCallback(async (textOrMessage: string | Message, type?: MessageType) => {
         if (!textOrMessage) return
 
         let success = true
@@ -108,20 +110,27 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         if (!success) {
             enqueueSnackbar('Erro ao enviar mensagem', { variant: 'error' })
         }
-    }
+    }, [ sendMessage, session?.user?.id, session?.user?.name, session?.user?.image ])
+
+    // Ações estáveis num contexto; mensagens (voláteis) noutro — consumidores
+    // que só enviam mensagens/alternam o chat não re-renderizam a cada mensagem.
+    const actionsValue = useMemo(() => ({
+        isChatOpen,
+        setIsChatOpen,
+        sendMessage,
+        handleSendMessage
+    }), [ isChatOpen, sendMessage, handleSendMessage ])
+
+    const messagesValue = useMemo(() => ({
+        messages,
+        setMessages
+    }), [ messages ])
 
     return (
-        <chatContext.Provider
-            value={{
-                isChatOpen,
-                setIsChatOpen,
-                messages,
-                setMessages,
-                sendMessage,
-                handleSendMessage
-            }}
-        >
-            {children}
+        <chatContext.Provider value={actionsValue}>
+            <chatMessagesContext.Provider value={messagesValue}>
+                {children}
+            </chatMessagesContext.Provider>
         </chatContext.Provider>
     )
 }
