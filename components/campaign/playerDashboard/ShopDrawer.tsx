@@ -48,7 +48,7 @@ interface ShopItem {
 
 export default function ShopDrawer(): ReactElement | null {
     const { campaign } = useCampaignContext();
-    const { charsheet, updateCharsheet } = useCampaignCurrentCharsheetContext();
+    const { charsheet } = useCampaignCurrentCharsheetContext();
     const { enqueueSnackbar } = useSnackbar();
     const theme = useTheme();
     const { system: customSystem } = useCharsheetSystem(charsheet?.systemId);
@@ -123,11 +123,9 @@ export default function ShopDrawer(): ReactElement | null {
             const result = await response.json();
 
             if (result.success) {
-                // Atualiza dinheiro localmente
-                await updateCharsheet({
-                    'inventory.money': currentMoney - item.price
-                });
-                
+                // O dinheiro já é descontado pelo servidor (a ficha atualiza em tempo real).
+                // Regravar aqui usava um saldo possivelmente desatualizado.
+
                 // Remove item da lista da loja
                 setShopItems(prev => prev.filter(i => i.id !== item.id));
                 

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
     Dialog,
     DialogTitle,
@@ -132,11 +132,15 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet }: Char
     const [ isEditing, setIsEditing ] = useState(false);
     const [ isSaving, setIsSaving ] = useState(false);
     const [ editedData, setEditedData ] = useState<Partial<CharsheetDTO>>({});
+    // Snapshot da ficha no início da edição: base para salvar só o que o mestre alterou
+    const baselineDataRef = useRef<Partial<CharsheetDTO>>({});
 
-    // Inicializa os dados editáveis quando o modal abre
+    // Inicializa os dados editáveis quando o modal abre e acompanha as atualizações
+    // em tempo real da ficha — mas NÃO durante a edição, senão qualquer ação do
+    // jogador (ex: gastar MP) apagava as alterações ainda não salvas do mestre
     useEffect(() => {
-        if (open && charsheet) {
-            setEditedData({
+        if (open && charsheet && !isEditing) {
+            const snapshot: Partial<CharsheetDTO> = {
                 name: charsheet.name,
                 playerName: charsheet.playerName,
                 level: charsheet.level,
@@ -163,9 +167,11 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet }: Char
                 displacement: charsheet.displacement,
                 spellSpace: charsheet.spellSpace,
                 elementalMastery: charsheet.elementalMastery
-            });
+            };
+            baselineDataRef.current = snapshot;
+            setEditedData(snapshot);
         }
-    }, [ open, charsheet ]);
+    }, [ open, charsheet, isEditing ]);
 
     // Stats do personagem
     const displayStats = charsheet.stats;
@@ -258,30 +264,55 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet }: Char
         };
 
         // Preparar dados limpos
-        const dataToSave = {
-            name: editedData.name,
-            playerName: editedData.playerName,
-            level: editedData.level,
-            age: editedData.age,
-            gender: editedData.gender,
-            race: editedData.race,
-            stats: editedData.stats,
-            capacity: editedData.capacity,
-            attributes: editedData.attributes,
-            expertises: editedData.expertises,
-            mods: editedData.mods,
-            points: editedData.points,
-            inventory: editedData.inventory,
-            skills: editedData.skills,
-            displacement: editedData.displacement,
-            spellSpace: editedData.spellSpace
-        };
+        const pickEditableFields = (data: Partial<CharsheetDTO>) => ({
+            name: data.name,
+            playerName: data.playerName,
+            level: data.level,
+            age: data.age,
+            gender: data.gender,
+            race: data.race,
+            stats: data.stats,
+            capacity: data.capacity,
+            attributes: data.attributes,
+            expertises: data.expertises,
+            mods: data.mods,
+            points: data.points,
+            inventory: data.inventory,
+            skills: data.skills,
+            // Editáveis no modal, mas antes não eram salvos
+            spells: data.spells,
+            elementalMastery: data.elementalMastery,
+            displacement: data.displacement,
+            spellSpace: data.spellSpace
+        });
 
-        const cleanedData = cleanDataForSaving(dataToSave);
+        const cleanedData = cleanDataForSaving(pickEditableFields(editedData));
+        const cleanedBaseline = cleanDataForSaving(pickEditableFields(baselineDataRef.current));
+
+        // Grava só os campos que o mestre alterou (por caminho, ex: 'stats.lp'),
+        // para não sobrescrever o que o jogador mudou enquanto a edição estava aberta
+        const isPlainObject = (value: unknown): value is Record<string, unknown> =>
+            value !== null && typeof value === 'object' && !Array.isArray(value);
+        const changes: Record<string, unknown> = {};
+        const collectChanges = (base: unknown, next: unknown, path: string) => {
+            if (isPlainObject(next) && isPlainObject(base)) {
+                Object.keys(next).forEach(key => collectChanges(base[key], next[key], path ? `${path}.${key}` : key));
+                return;
+            }
+            if (JSON.stringify(base) !== JSON.stringify(next)) {
+                changes[path] = next;
+            }
+        };
+        collectChanges(cleanedBaseline, cleanedData, '');
+
+        if (Object.keys(changes).length === 0) {
+            setIsEditing(false);
+            return;
+        }
 
         setIsSaving(true);
         try {
-            await charsheetEntity.update(charsheet.id, cleanedData);
+            await charsheetEntity.update(charsheet.id, changes as any);
             enqueueSnackbar('Ficha atualizada com sucesso!', { variant: 'success' });
             setIsEditing(false);
         } catch (error) {

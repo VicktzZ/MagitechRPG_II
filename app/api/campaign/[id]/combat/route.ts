@@ -3,7 +3,7 @@ import { campaignRepository, charsheetRepository, combatEffectRepository } from 
 import { Combat, Combatant, CombatLog, AppliedEffect } from '@models'
 import { pusherServer } from '@utils/pusher'
 import { PusherEvent } from '@enums'
-import { processEffectTicks, syncPlayerCharsheets } from '@utils/combat/processEffectTicks'
+import { processEffectTicks, refreshPlayerCombatantsLp, syncPlayerCharsheets } from '@utils/combat/processEffectTicks'
 import { getEffectDisplayName } from '@utils/combatEffectLabels'
 import { v4 as uuidv4 } from 'uuid'
 import { stripUndefined } from '@utils/firestore/stripUndefined'
@@ -107,6 +107,11 @@ export async function POST(
         }
 
         const combat = campaign.session.combat
+
+        // Ações que alteram LP partem do LP atual das fichas, não do snapshot do início do combate
+        if (combat.isActive && [ 'next_turn', 'apply_damage', 'apply_heal', 'apply_effect' ].includes(action)) {
+            await refreshPlayerCombatantsLp(combat)
+        }
 
         switch (action) {
         case 'start': {
@@ -565,7 +570,8 @@ export async function POST(
             const oldHp = healTarget.currentLp || 0
             const maxHp = healTarget.maxLp || 999
             
-            healTarget.currentLp = Math.min(maxHp, oldHp + heal)
+            // Cura nunca reduz o LP (ex: jogador com LP acima do máximo por overheal)
+            healTarget.currentLp = Math.max(oldHp, Math.min(maxHp, oldHp + heal))
 
             // Se for jogador, atualiza charsheet.stats diretamente
             if (healTarget.type === 'player') {

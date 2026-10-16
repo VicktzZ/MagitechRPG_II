@@ -26,9 +26,9 @@ export async function POST(
     try {
         const { id: campaignId } = await params
         const body: PurchaseBody = await request.json()
-        const { charsheetId, itemId, item } = body
+        const { charsheetId, itemId } = body
 
-        if (!charsheetId || !itemId || !item) {
+        if (!charsheetId || !itemId) {
             return NextResponse.json(
                 { error: 'Dados incompletos' },
                 { status: 400 }
@@ -67,6 +67,18 @@ export async function POST(
             )
         }
 
+        // Verifica se o item ainda está disponível na loja. Preço e dados vêm SEMPRE
+        // do item salvo na campanha — nunca do corpo da requisição (antes o cliente
+        // podia enviar qualquer preço, inclusive 0, ou qualquer item)
+        const shopItems = campaign.shop?.items || []
+        const item = shopItems.find((i: any) => i.id === itemId) as PurchaseBody['item'] | undefined
+        if (!item) {
+            return NextResponse.json(
+                { error: 'Item não disponível na loja' },
+                { status: 400 }
+            )
+        }
+
         // Regra de limite de armas: apenas no modo Roguelite
         const itemType = String(item.perkType || '').toUpperCase()
         const isWeapon = itemType === 'WEAPON' || itemType === 'ARMA'
@@ -81,20 +93,11 @@ export async function POST(
         }
 
         // Verifica dinheiro
+        const itemPrice = Number(item.price) || 0
         const currentMoney = charsheet.inventory?.money || 0
-        if (currentMoney < item.price) {
+        if (currentMoney < itemPrice) {
             return NextResponse.json(
                 { error: 'Dinheiro insuficiente' },
-                { status: 400 }
-            )
-        }
-
-        // Verifica se o item ainda está disponível na loja
-        const shopItems = campaign.shop?.items || []
-        const shopItem = shopItems.find((i: any) => i.id === itemId)
-        if (!shopItem) {
-            return NextResponse.json(
-                { error: 'Item não disponível na loja' },
                 { status: 400 }
             )
         }
@@ -131,7 +134,7 @@ export async function POST(
         }
 
         // Deduz o dinheiro
-        const newMoney = currentMoney - item.price
+        const newMoney = currentMoney - itemPrice
         await charsheetEntity.update(charsheetId, {
             'inventory.money': newMoney
         })
@@ -144,7 +147,7 @@ export async function POST(
 
         // Estatísticas: compra na loja
         const purchaseInc: Record<string, number> = {
-            'resources.moneySpent': item.price,
+            'resources.moneySpent': itemPrice,
             'resources.itemsPurchased': 1,
             'progression.perksGained': 1
         }

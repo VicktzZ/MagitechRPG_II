@@ -1,93 +1,120 @@
 import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Grid, Tab, Tabs, TextField } from '@mui/material';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { charsheetService } from '@services';
+import { charsheetEntity } from '@utils/firestoreEntities';
 import { useSnackbar } from 'notistack';
 import { type CharsheetDTO } from '@models/dtos';
 
+// Os TextFields numéricos devolvem string: z.coerce converte para número
+// (antes z.number()/z.string() faziam a validação falhar e o formulário não salvava)
 const playerStatusSchema = z.object({
     name: z.string().min(1, 'Nome é obrigatório'),
     race: z.string().min(1, 'Raça é obrigatória'),
     traits: z.string().refine(val => !val.includes(',  '), { message: 'Os traços devem ser separados por apenas uma vírgula e um espaço' }),
     attributes: z.object({
-        vig: z.number().int().min(0),
-        des: z.number().int().min(0),
-        foc: z.number().int().min(0),
-        log: z.number().int().min(0),
-        sab: z.number().int().min(0),
-        car: z.number().int().min(0)
+        vig: z.coerce.number().int().min(0),
+        des: z.coerce.number().int().min(0),
+        foc: z.coerce.number().int().min(0),
+        log: z.coerce.number().int().min(0),
+        sab: z.coerce.number().int().min(0),
+        car: z.coerce.number().int().min(0)
     }),
     stats: z.object({
-        lp: z.number().int().min(0),
-        mp: z.number().int().min(0),
-        ap: z.number().int().min(0),
-        maxLp: z.number().int().min(0),
-        maxMp: z.number().int().min(0),
-        maxAp: z.number().int().min(0)
+        lp: z.coerce.number().int().min(0),
+        mp: z.coerce.number().int().min(0),
+        ap: z.coerce.number().int().min(0),
+        maxLp: z.coerce.number().int().min(0),
+        maxMp: z.coerce.number().int().min(0),
+        maxAp: z.coerce.number().int().min(0)
     }),
-    money: z.string().transform(val => parseInt(val)).refine(val => !isNaN(val) && val >= 0, { message: 'O valor deve ser um número válido e maior ou igual a 0' })
+    money: z.coerce.number({ invalid_type_error: 'O valor deve ser um número válido e maior ou igual a 0' })
+        .min(0, 'O valor deve ser um número válido e maior ou igual a 0')
 });
 
 type PlayerStatusFormData = z.infer<typeof playerStatusSchema>;
+
+function buildDefaultValues(charsheet: Required<CharsheetDTO>): PlayerStatusFormData {
+    return {
+        name: charsheet.name,
+        race: charsheet.race as unknown as string,
+        traits: (charsheet.traits ?? [])
+            .map((trait: any) => (typeof trait === 'string' ? trait : trait?.name))
+            .filter(Boolean)
+            .join(', '),
+        attributes: {
+            vig: Number(charsheet.attributes?.vig ?? 0),
+            des: Number(charsheet.attributes?.des ?? 0),
+            foc: Number(charsheet.attributes?.foc ?? 0),
+            log: Number(charsheet.attributes?.log ?? 0),
+            sab: Number(charsheet.attributes?.sab ?? 0),
+            car: Number(charsheet.attributes?.car ?? 0)
+        },
+        stats: {
+            lp: Number(charsheet.stats?.lp ?? 0),
+            mp: Number(charsheet.stats?.mp ?? 0),
+            ap: Number(charsheet.stats?.ap ?? 0),
+            maxLp: Number(charsheet.stats?.maxLp ?? 0),
+            maxMp: Number(charsheet.stats?.maxMp ?? 0),
+            maxAp: Number(charsheet.stats?.maxAp ?? 0)
+        },
+        money: Number(charsheet.inventory?.money ?? 0)
+    };
+}
 
 function ChangePlayerStatusModal({ open, onClose, charsheet }: { open: boolean, onClose: () => void, charsheet: Required<CharsheetDTO> }) {
     const [ tabValue, setTabValue ] = useState(0);
     const { enqueueSnackbar } = useSnackbar();
 
-    const defaultValues = {
-        name: charsheet.name,
-        race: charsheet.race as unknown as string,
-        traits: charsheet.traits.join(', '),
-        attributes: {
-            vig: Number(charsheet.attributes?.vig),
-            des: Number(charsheet.attributes?.des),
-            foc: Number(charsheet.attributes?.foc),
-            log: Number(charsheet.attributes?.log),
-            sab: Number(charsheet.attributes?.sab),
-            car: Number(charsheet.attributes?.car)
-        },
-        stats: {
-            lp: Number(charsheet.stats?.lp),
-            mp: Number(charsheet.stats?.mp),
-            ap: Number(charsheet.stats?.ap),
-            maxLp: Number(charsheet.stats.maxLp),
-            maxMp: Number(charsheet.stats.maxMp),
-            maxAp: Number(charsheet.stats.maxAp)
-        },
-        money: Number(charsheet.inventory.money)
-    };  
+    // Valores exibidos ao abrir o modal: base para gravar só o que o mestre alterou
+    const baselineRef = useRef<PlayerStatusFormData>(buildDefaultValues(charsheet));
 
-    const { control, handleSubmit, formState: { errors } } = useForm<PlayerStatusFormData>({
+    const { control, handleSubmit, reset, formState: { errors } } = useForm<PlayerStatusFormData>({
         resolver: zodResolver(playerStatusSchema),
-        defaultValues
+        defaultValues: baselineRef.current
     });
+
+    // O componente fica montado com o modal fechado: recarrega os dados atuais
+    // da ficha a cada abertura (antes exibia — e regravava — valores antigos)
+    useEffect(() => {
+        if (!open) return;
+        const values = buildDefaultValues(charsheet);
+        baselineRef.current = values;
+        reset(values);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [ open ]);
 
     const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
         setTabValue(newValue);
     };
 
     const onSubmit = async (data: PlayerStatusFormData) => {
-        const { money, ...rest } = data;
-        
-        const processedData = {
-            ...rest,
-            traits: rest.traits.split(',').map(trait => trait.trim()).filter(Boolean),
-            inventory: {
-                ...charsheet.inventory,
-                money
-            }
-        };
+        const baseline = baselineRef.current;
+        // Grava só os campos alterados (por caminho), sem regravar a ficha inteira:
+        // evita sobrescrever o que o jogador mudou com o modal aberto
+        const changes: Record<string, unknown> = {};
+
+        if (data.name !== baseline.name) changes['name'] = data.name;
+        if (data.race !== baseline.race) changes['race'] = data.race;
+        if (data.traits !== baseline.traits) {
+            changes['traits'] = data.traits.split(',').map(trait => trait.trim()).filter(Boolean);
+        }
+        (Object.keys(data.attributes) as Array<keyof PlayerStatusFormData['attributes']>).forEach(key => {
+            if (data.attributes[key] !== baseline.attributes[key]) changes[`attributes.${key}`] = data.attributes[key];
+        });
+        (Object.keys(data.stats) as Array<keyof PlayerStatusFormData['stats']>).forEach(key => {
+            if (data.stats[key] !== baseline.stats[key]) changes[`stats.${key}`] = data.stats[key];
+        });
+        if (data.money !== baseline.money) changes['inventory.money'] = data.money;
+
+        if (Object.keys(changes).length === 0) {
+            onClose();
+            return;
+        }
 
         try {
-            await charsheetService.updateById({
-                id: charsheet.id,
-                data: {
-                    ...charsheet,
-                    ...processedData
-                } as unknown as CharsheetDTO
-            });
+            await charsheetEntity.update(charsheet.id, changes as any);
     
             enqueueSnackbar('Status do jogador atualizado com sucesso!', { variant: 'success' });
         } catch (error) {
