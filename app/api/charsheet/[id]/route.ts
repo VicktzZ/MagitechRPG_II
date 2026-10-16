@@ -5,16 +5,15 @@ import { CharsheetDTO } from '@models/dtos';
 import { charsheetRepository, powerRepository, spellRepository } from '@repositories';
 import { chunk } from '@utils/helpers/chunk';
 import { plainToInstance } from 'class-transformer';
+import { handleRouteError, readJsonBody, requireCharsheetAccess, requireUser } from '@utils/api';
 
 interface id { id: string }
 
 export async function GET(_req: Request, { params: { id } }: { params: id }): Promise<Response> {
     try {
-        const charsheet = await charsheetRepository.findById(id);
-
-        if (!charsheet) {
-            return Response.json({ message: 'NOT FOUND' }, { status: 404 });
-        }
+        const user = await requireUser();
+        // Dono, mestre de uma campanha onde a ficha joga ou colega de campanha
+        const { charsheet } = await requireCharsheetAccess(id, user, 'read');
 
         // Criar o DTO a partir da entidade
         const charsheetDto = plainToInstance(CharsheetDTO, charsheet);
@@ -52,27 +51,29 @@ export async function GET(_req: Request, { params: { id } }: { params: id }): Pr
         }
 
         return Response.json(charsheetDto);
-    } catch (error: any) {
-        return Response.json({ message: 'INTERNAL SERVER ERROR', error: error.message }, { status: 500 });
+    } catch (error) {
+        return handleRouteError(error, 'Erro ao buscar ficha');
     }
 }
 
 export async function DELETE(_req: Request, { params: { id } }: { params: id }): Promise<Response> {
     try {
-        const charsheet = await charsheetRepository.findById(id);
-        if (!charsheet) {
-            return Response.json({ message: 'NOT FOUND' }, { status: 404 });
-        }
+        const user = await requireUser();
+        await requireCharsheetAccess(id, user, 'owner');
         await charsheetRepository.delete(id);
         return Response.json({ message: 'SUCCESS' });
-    } catch (error: any) {
-        return Response.json({ message: 'BAD REQUEST', error: error.message }, { status: 400 });
+    } catch (error) {
+        return handleRouteError(error, 'Erro ao remover ficha');
     }
 }
 
 export async function PATCH(req: Request, { params: { id } }: { params: id }): Promise<Response> {
     try {
-        const body: CharsheetDTO | DbCharsheet = await req.json();
+        const user = await requireUser();
+        // Dono da ficha ou mestre de uma campanha onde ela joga
+        const { charsheet } = await requireCharsheetAccess(id, user, 'write');
+
+        const body: CharsheetDTO | DbCharsheet = await readJsonBody(req);
         // Não usar excludeExtraneousValues para não perder propriedades enviadas pelo cliente
         const defaultDto = plainToInstance(CharsheetDTO, body);
         // const dbDto = plainToInstance(DbCharsheet, body);
@@ -84,11 +85,6 @@ export async function PATCH(req: Request, { params: { id } }: { params: id }): P
         // if (defaultDtoErrors.length > 0 && dbDtoErrors.length > 0) {
         //     return Response.json({ message: 'BAD REQUEST', errors: defaultDtoErrors }, { status: 400 });
         // }
-
-        const charsheet = await charsheetRepository.findById(id);
-        if (!charsheet) {
-            return Response.json({ message: 'NOT FOUND' }, { status: 404 });
-        }
 
         // Converte spells de objetos para IDs para salvar no banco.
         // - A ficha pode chegar com spells já como IDs (string) — ex: edição do mestre
@@ -112,6 +108,8 @@ export async function PATCH(req: Request, { params: { id } }: { params: id }): P
             ...charsheet, // preserva valores existentes
             ...defaultDto, 
             id,
+            // O dono nunca muda por edição
+            userId: charsheet.userId,
             ORMLevel: ormLevelToSave,
             traits: traitsToSave,
             spells: spellsFinal // Garante que spells seja array de strings
@@ -123,8 +121,7 @@ export async function PATCH(req: Request, { params: { id } }: { params: id }): P
         await charsheetRepository.update(plainCharsheet as DbCharsheet);
 
         return Response.json({ message: 'SUCCESS' });
-    } catch (error: any) {
-        console.error('Erro ao atualizar charsheet:', error);
-        return Response.json({ message: 'NOT FOUND', error: error.message }, { status: 404 });
+    } catch (error) {
+        return handleRouteError(error, 'Erro ao atualizar ficha');
     }
 }

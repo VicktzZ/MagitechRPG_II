@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { campaignEntity, charsheetEntity } from '@utils/firestoreEntities'
 import { savePerkToCharsheet } from '@features/roguelite/utils'
 import { recordCampaignStats } from '@utils/campaignStatsHelper'
+import { assertId, campaignHasCharsheet, forbidden, handleRouteError, readJsonBody, requireCampaignMember, requireUser } from '@utils/api'
 
 interface PurchaseBody {
     charsheetId: string
@@ -22,10 +23,14 @@ interface PurchaseBody {
 export async function POST(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
-): Promise<NextResponse> {
+): Promise<Response> {
     try {
-        const { id: campaignId } = await params
-        const body: PurchaseBody = await request.json()
+        const { id } = await params
+        const user = await requireUser()
+        const { campaign: authorizedCampaign, isGM } = await requireCampaignMember(id, user)
+        const campaignId = authorizedCampaign.id
+
+        const body: PurchaseBody = await readJsonBody(request)
         const { charsheetId, itemId } = body
 
         if (!charsheetId || !itemId) {
@@ -33,6 +38,13 @@ export async function POST(
                 { error: 'Dados incompletos' },
                 { status: 400 }
             )
+        }
+        assertId(charsheetId, 'charsheetId')
+
+        // Só compra com uma ficha desta campanha — a própria (ou qualquer uma, se for o mestre)
+        const isOwnSheet = authorizedCampaign.players?.some(p => p.charsheetId === charsheetId && p.userId === user.id)
+        if (!campaignHasCharsheet(authorizedCampaign, charsheetId) || (!isOwnSheet && !isGM)) {
+            throw forbidden('Você só pode comprar com o seu próprio personagem')
         }
 
         // Verifica campanha
@@ -173,10 +185,6 @@ export async function POST(
         })
 
     } catch (error) {
-        console.error('Erro ao comprar item:', error)
-        return NextResponse.json(
-            { error: 'Erro interno do servidor' },
-            { status: 500 }
-        )
+        return handleRouteError(error, 'Erro ao comprar item')
     }
 }

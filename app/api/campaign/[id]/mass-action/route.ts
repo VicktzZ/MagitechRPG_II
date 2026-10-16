@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server'
-import { campaignRepository, charsheetRepository } from '@repositories'
+import { charsheetRepository } from '@repositories'
+import { assertCharsheetsInCampaign, assertIdList, handleRouteError, readJsonBody, requireCampaignGM, requireUser } from '@utils/api'
 import type { Charsheet } from '@models/entities'
 import { recordCampaignStats, type StatsEntry } from '@utils/campaignStatsHelper'
 
@@ -8,24 +9,26 @@ export async function POST(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { id: campaignId } = await params
-        const { action, charsheetIds, amount } = await request.json()
+        const { id } = await params
+        const user = await requireUser()
+        const { campaign } = await requireCampaignGM(id, user)
+        const campaignId = campaign.id
 
-        if (!campaignId || !action || !charsheetIds?.length) {
+        const { action, charsheetIds: rawCharsheetIds, amount } = await readJsonBody(request)
+
+        if (!action || !rawCharsheetIds?.length) {
             return NextResponse.json(
                 { error: 'Parâmetros inválidos' },
                 { status: 400 }
             )
         }
-
-        // Verifica se a campanha existe
-        const campaign = await campaignRepository.findById(campaignId)
-        if (!campaign) {
-            return NextResponse.json(
-                { error: 'Campanha não encontrada' },
-                { status: 404 }
-            )
+        if (amount !== undefined && (typeof amount !== 'number' || !Number.isFinite(amount) || Math.abs(amount) > 1_000_000)) {
+            return NextResponse.json({ error: 'Quantia inválida' }, { status: 400 })
         }
+
+        // Só fichas de jogadores desta campanha
+        const charsheetIds = assertIdList(rawCharsheetIds, 'charsheetIds')
+        assertCharsheetsInCampaign(campaign, charsheetIds)
 
         if (campaign.status === 'finished') {
             return NextResponse.json(
@@ -123,10 +126,6 @@ export async function POST(
         })
 
     } catch (error) {
-        console.error('Erro ao executar ação em massa:', error)
-        return NextResponse.json(
-            { error: 'Erro interno do servidor' },
-            { status: 500 }
-        )
+        return handleRouteError(error, 'Erro ao executar ação em massa')
     }
 }

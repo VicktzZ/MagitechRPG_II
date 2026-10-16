@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@app/api/auth/[...nextauth]/route';
 import { campaignRepository, charsheetRepository } from '@repositories';
 import { findCampaignByCodeOrId } from '@utils/helpers/findCampaignByCodeOrId';
+import { handleRouteError, readJsonBody, requireCampaignMember, requireUser } from '@utils/api';
 import { MAX_CAMPAIGN_WIDGETS, type CampaignWidget } from '@models';
 
 /**
@@ -13,13 +14,11 @@ export async function GET(
     { params }: { params: { id: string } }
 ): Promise<Response> {
     try {
-        const campaign = await findCampaignByCodeOrId(params.id);
-        if (!campaign) {
-            return Response.json({ message: 'NOT FOUND' }, { status: 404 });
-        }
+        const user = await requireUser();
+        const { campaign } = await requireCampaignMember(params.id, user);
         return Response.json(campaign.widgets ?? []);
-    } catch (error: any) {
-        return Response.json({ message: 'ERROR', error: error.message }, { status: 500 });
+    } catch (error) {
+        return handleRouteError(error);
     }
 }
 
@@ -50,7 +49,7 @@ export async function PUT(
             return Response.json({ message: 'FORBIDDEN', error: 'Campanha finalizada' }, { status: 403 });
         }
 
-        const body: { widgets: CampaignWidget[] } = await req.json();
+        const body: { widgets: CampaignWidget[] } = await readJsonBody(req);
 
         if (!Array.isArray(body.widgets)) {
             return Response.json({ message: 'BAD REQUEST', error: 'widgets deve ser uma lista' }, { status: 400 });
@@ -68,8 +67,8 @@ export async function PUT(
         await campaignRepository.update(plain);
 
         return Response.json({ message: 'OK', widgets });
-    } catch (error: any) {
-        return Response.json({ message: 'ERROR', error: error.message }, { status: 500 });
+    } catch (error) {
+        return handleRouteError(error);
     }
 }
 
@@ -123,7 +122,7 @@ export async function PATCH(
         }
 
         const widgets = campaign.widgets ?? [];
-        const body: PatchBody = await req.json();
+        const body: PatchBody = await readJsonBody(req);
         const widgetIndex = widgets.findIndex(w => w.id === body.widgetId);
         if (widgetIndex === -1) {
             return Response.json({ message: 'NOT FOUND', error: 'Widget não encontrado' }, { status: 404 });
@@ -520,7 +519,7 @@ export async function PATCH(
         await campaignRepository.update(plain);
 
         return Response.json({ message: 'OK', widget });
-    } catch (error: any) {
-        return Response.json({ message: 'ERROR', error: error.message }, { status: 500 });
+    } catch (error) {
+        return handleRouteError(error);
     }
 }

@@ -60,11 +60,18 @@ export const authOptions: NextAuthOptions = {
             }
         },
 
-        signIn: async ({ profile, user }) => {
+        signIn: async ({ profile, user, account }) => {
             try {
                 const p: any = profile ?? user;
                 const email = p?.email?.toLowerCase();
-                
+
+                // A conta do app é identificada pelo e-mail. Sem exigir e-mail verificado,
+                // alguém poderia criar uma conta no Discord/Google com o e-mail de outra
+                // pessoa (sem confirmar) e entrar como ela — inclusive como admin.
+                if (!email) return false;
+                if (account?.provider === 'discord' && p?.verified !== true) return false;
+                if (account?.provider === 'google' && p?.email_verified !== true) return false;
+
                 const existingUser = await userRepository
                     .whereEqualTo('email', email)
                     .findOne();

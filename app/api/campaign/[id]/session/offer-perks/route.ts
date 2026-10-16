@@ -1,6 +1,6 @@
 import { PusherEvent } from '@enums';
 import { campaignRepository } from '@repositories';
-import { findCampaignByCodeOrId } from '@utils/helpers/findCampaignByCodeOrId';
+import { assertIdList, assertMaxLength, forbidden, handleRouteError, readJsonBody, requireCampaignGM, requireUser } from '@utils/api';
 import { pusherServer } from '@utils/pusher';
 import type { PerkFilters } from '@models';
 
@@ -13,15 +13,14 @@ interface OfferPerksBody {
 export async function POST(req: Request, { params }: { params: { id: string } }) {
     try {
         const { id } = params;
-        const body: OfferPerksBody = await req.json();
+        const user = await requireUser();
+        const { campaign } = await requireCampaignGM(id, user);
+        const body: OfferPerksBody = await readJsonBody(req);
 
-        if (!body.userIds || !Array.isArray(body.userIds) || body.userIds.length === 0) {
-            return Response.json({ message: 'Lista de usuários é obrigatória' }, { status: 400 });
-        }
-
-        const campaign = await findCampaignByCodeOrId(id);
-        if (!campaign) {
-            return Response.json({ message: 'Campanha não encontrada' }, { status: 404 });
+        const userIds = assertIdList(body.userIds, 'userIds');
+        assertMaxLength(body.sharedSeed, 200, 'sharedSeed');
+        if (userIds.some(uid => !campaign.players?.some(p => p.userId === uid))) {
+            throw forbidden('Só é possível oferecer perks a jogadores desta campanha');
         }
 
         // Atualiza a session com os pending users, filtros e seed compartilhada
@@ -46,7 +45,6 @@ export async function POST(req: Request, { params }: { params: { id: string } })
 
         return Response.json({ success: true, pendingPerkUsers: body.userIds, sharedSeed: body.sharedSeed });
     } catch (error) {
-        console.error('Erro ao oferecer perks:', error);
-        return Response.json({ message: 'Erro ao oferecer perks' }, { status: 500 });
+        return handleRouteError(error, 'Erro ao oferecer perks');
     }
 }

@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@app/api/auth/[...nextauth]/route';
 import { campaignRepository, charsheetRepository } from '@repositories';
 import { findCampaignByCodeOrId } from '@utils/helpers/findCampaignByCodeOrId';
+import { handleRouteError, readJsonBody } from '@utils/api';
 
 /**
  * POST/DELETE /api/campaign/[id]/dev-test-player — SOMENTE AMBIENTE DE DESENVOLVIMENTO.
@@ -33,7 +34,7 @@ export async function POST(
             return Response.json({ message: 'FORBIDDEN', error: 'Apenas o mestre pode anexar fichas de teste' }, { status: 403 });
         }
 
-        const body: { charsheetId?: string } = await req.json();
+        const body: { charsheetId?: string } = await readJsonBody(req);
         if (!body.charsheetId) {
             return Response.json({ message: 'BAD REQUEST', error: 'charsheetId obrigatório' }, { status: 400 });
         }
@@ -53,8 +54,8 @@ export async function POST(
         }
 
         return Response.json({ message: 'OK', charsheetId: charsheet.id });
-    } catch (error: any) {
-        return Response.json({ message: 'ERROR', error: error.message }, { status: 500 });
+    } catch (error) {
+        return handleRouteError(error);
     }
 }
 
@@ -81,7 +82,7 @@ export async function DELETE(
             return Response.json({ message: 'FORBIDDEN', error: 'Apenas o mestre pode remover fichas de teste' }, { status: 403 });
         }
 
-        const body: { charsheetId?: string } = await req.json();
+        const body: { charsheetId?: string } = await readJsonBody(req);
         if (!body.charsheetId) {
             return Response.json({ message: 'BAD REQUEST', error: 'charsheetId obrigatório' }, { status: 400 });
         }
@@ -90,7 +91,7 @@ export async function DELETE(
         await campaignRepository.update({ ...campaign, players });
 
         return Response.json({ message: 'OK' });
-    } catch (error: any) {
-        return Response.json({ message: 'ERROR', error: error.message }, { status: 500 });
+    } catch (error) {
+        return handleRouteError(error);
     }
 }

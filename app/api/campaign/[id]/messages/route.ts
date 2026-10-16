@@ -2,13 +2,21 @@
 import { PusherEvent } from '@enums';
 import { Message } from '@models';
 import { campaignRepository } from '@repositories';
-import { findCampaignByCodeOrId } from '@utils/helpers/findCampaignByCodeOrId';
 import { pusherServer } from '@utils/pusher';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import type { NextRequest } from 'next/server';
+import { assertMaxLength, handleRouteError, readJsonBody, requireCampaignMember, requireUser, TEXT_LIMITS } from '@utils/api';
 
 interface id { id: string }
+
+/** Identidade fixa do bot de dados — o cliente não escolhe nome/imagem de "bot" */
+const DICE_BOT = {
+    id: 'dice-roller-bot',
+    name: 'Dice Roller',
+    image: '/assets/dice-roller-bot.jpg',
+    isBot: true
+};
 
 export async function POST(
     req: Request,
@@ -16,9 +24,20 @@ export async function POST(
 ): Promise<Response> {
     try {
         const { id } = params;
-        const body: Message = await req.json();
+        const user = await requireUser();
+        const { campaign } = await requireCampaignMember(id, user);
 
-        const dto = plainToInstance(Message, body);
+        const body: Message = await readJsonBody(req, { maxBytes: 64 * 1024 });
+        assertMaxLength(body.text, TEXT_LIMITS.chatMessage, 'text');
+        assertMaxLength(body.type, TEXT_LIMITS.name, 'type');
+
+        // O autor é sempre quem está logado. O selo de mestre no chat é derivado
+        // de campaign.admin pelo id, então trocar o id seria se passar por outra pessoa.
+        const by = body.by?.isBot
+            ? DICE_BOT
+            : { id: user.id, name: user.name, image: user.image ?? '' };
+
+        const dto = plainToInstance(Message, { ...body, by });
         const errors = await validate(dto);
         if (errors.length > 0) {
             return Response.json({ message: 'BAD REQUEST', errors }, { status: 400 });
@@ -26,11 +45,6 @@ export async function POST(
 
         let messageWithId = new Message(dto);
         messageWithId = { ...messageWithId }
-        const campaign = await findCampaignByCodeOrId(id);
-
-        if (!campaign) {
-            return Response.json({ error: 'Campanha não encontrada' }, { status: 404 });
-        }
 
         if (campaign.status === 'finished') {
             return Response.json({ error: 'Campanha finalizada — o chat está bloqueado' }, { status: 403 });
@@ -45,15 +59,14 @@ export async function POST(
         });
 
         await pusherServer.trigger(
-            `presence-${campaign.campaignCode}`, 
-            PusherEvent.NEW_MESSAGE, 
+            `presence-${campaign.campaignCode}`,
+            PusherEvent.NEW_MESSAGE,
             messageWithId
         );
 
         return Response.json(messageWithId, { status: 200 });
     } catch (error) {
-        console.error('Erro ao salvar mensagem:', error);
-        return Response.json({ error: 'Erro interno do servidor' }, { status: 500 });
+        return handleRouteError(error, 'Erro ao salvar mensagem');
     }
 }
 
@@ -62,16 +75,11 @@ export async function GET(
     { params }: { params: id }
 ): Promise<Response> {
     try {
-        const { id } = params;
-
-        const campaign = await findCampaignByCodeOrId(id);
-        if (!campaign) {
-            return Response.json({ error: 'Campanha não encontrada' }, { status: 404 });
-        }
+        const user = await requireUser();
+        const { campaign } = await requireCampaignMember(params.id, user);
 
         return Response.json(campaign?.session?.messages || [], { status: 200 });
     } catch (error) {
-        console.error('Erro ao buscar mensagens:', error);
-        return Response.json({ error: 'Erro interno do servidor' }, { status: 500 });
+        return handleRouteError(error, 'Erro ao buscar mensagens');
     }
 }

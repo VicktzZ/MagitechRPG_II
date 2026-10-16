@@ -5,6 +5,7 @@ import type { Charsheet } from '@models/entities/Charsheet';
 import type { RPGSystem } from '@models/entities/RPGSystem';
 import type { ClassNames } from '@models/types/string';
 import { charsheetRepository, notificationRepository, rpgSystemRepository } from '@repositories';
+import { handleRouteError, readJsonBody, requireCharsheetAccess, requireUser } from '@utils/api';
 
 function normalizeToArray<T>(value: any): T[] {
     if (!value) return []
@@ -293,12 +294,14 @@ function calcCustomProgression(charsheet: Charsheet, system: RPGSystem, oldLevel
 export async function POST(req: Request, { params }: { params: { id: string } }) {
     try {
         const { id } = params;
-        const body: { level: number } = await req.json();
-        const { level } = body;
+        const user = await requireUser();
+        // Dono da ficha ou mestre de uma campanha onde ela joga
+        const { charsheet } = await requireCharsheetAccess(id, user, 'write');
 
-        const charsheet = await charsheetRepository.findById(id);
-        if (!charsheet) {
-            return Response.json({ message: 'Charsheet não encontrada' }, { status: 404 });
+        const body: { level: number } = await readJsonBody(req);
+        const { level } = body;
+        if (!Number.isInteger(level)) {
+            return Response.json({ message: 'BAD REQUEST', error: 'level deve ser um número inteiro' }, { status: 400 });
         }
 
         // Carrega o sistema customizado se existir
@@ -420,8 +423,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
         });
 
         return Response.json(updatedCharsheet);
-    } catch (error: any) {
-        console.error('Erro ao atualizar nível:', error);
-        return Response.json({ message: 'Erro ao atualizar nível', error: error.message }, { status: 500 });
+    } catch (error) {
+        return handleRouteError(error, 'Erro ao atualizar nível');
     }
 }

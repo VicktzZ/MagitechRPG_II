@@ -8,6 +8,17 @@ import { getEffectDisplayName } from '@utils/combatEffectLabels'
 import { v4 as uuidv4 } from 'uuid'
 import { stripUndefined } from '@utils/firestore/stripUndefined'
 import { recordCampaignStats, type StatsEntry } from '@utils/campaignStatsHelper'
+import { badRequest, forbidden, handleRouteError, readJsonBody, requireCampaignMember, requireUser } from '@utils/api'
+
+/** Ações que conduzem o combate — exclusivas do mestre */
+const GM_ONLY_ACTIONS: CombatAction[] = [
+    'start', 'end', 'set_initiative', 'add_creature', 'remove_combatant', 'apply_effect', 'remove_effect'
+]
+
+/** Ações de jogador que só valem no turno do próprio personagem */
+const OWN_TURN_ACTIONS: CombatAction[] = [ 'next_turn', 'apply_damage', 'apply_heal' ]
+
+const KNOWN_ACTIONS: CombatAction[] = [ ...GM_ONLY_ACTIONS, ...OWN_TURN_ACTIONS, 'roll_initiative' ]
 
 type CombatAction = 
     | 'start'           // Iniciar combate
@@ -82,13 +93,21 @@ export async function POST(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { id: campaignId } = await params
-        const body: CombatRequest = await request.json()
+        const { id } = await params
+        const user = await requireUser()
+        const { campaign, isGM } = await requireCampaignMember(id, user)
+
+        const body: CombatRequest = await readJsonBody(request)
         const { action } = body
 
-        const campaign = await campaignRepository.findById(campaignId)
-        if (!campaign) {
-            return NextResponse.json({ error: 'Campanha não encontrada' }, { status: 404 })
+        if (!KNOWN_ACTIONS.includes(action)) {
+            throw badRequest('Ação de combate desconhecida')
+        }
+        if (body.value !== undefined && (typeof body.value !== 'number' || !Number.isFinite(body.value) || Math.abs(body.value) > 100_000)) {
+            throw badRequest('Valor inválido')
+        }
+        if (!isGM && GM_ONLY_ACTIONS.includes(action)) {
+            throw forbidden('Apenas o mestre pode fazer isso no combate')
         }
 
         if (campaign.status === 'finished') {
@@ -107,6 +126,25 @@ export async function POST(
         }
 
         const combat = campaign.session.combat
+
+        if (!isGM) {
+            // Combatente de jogador pertence ao usuário se a ficha dele está na campanha
+            const ownsCombatant = (c?: Combatant) => Boolean(c && c.type === 'player' && (
+                c.odacId === user.id ||
+                campaign.players?.some(p => p.userId === user.id && p.charsheetId === c.id)
+            ))
+
+            if (action === 'roll_initiative') {
+                const target = combat.combatants?.find(c => c.id === body.combatantId || c.odacId === body.combatantId)
+                if (target && !ownsCombatant(target)) {
+                    throw forbidden('Você só pode rolar a iniciativa do seu personagem')
+                }
+            }
+
+            if (OWN_TURN_ACTIONS.includes(action) && !ownsCombatant(combat.combatants?.[combat.currentTurnIndex])) {
+                throw forbidden('Não é o turno do seu personagem')
+            }
+        }
 
         // Ações que alteram LP partem do LP atual das fichas, não do snapshot do início do combate
         if (combat.isActive && [ 'next_turn', 'apply_damage', 'apply_heal', 'apply_effect' ].includes(action)) {
@@ -894,8 +932,7 @@ export async function POST(
         })
 
     } catch (error) {
-        console.error('[Combat API] Erro:', error)
-        return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
+        return handleRouteError(error, 'Erro ao executar ação de combate')
     }
 }
 
@@ -924,12 +961,9 @@ export async function GET(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { id: campaignId } = await params
-
-        const campaign = await campaignRepository.findById(campaignId)
-        if (!campaign) {
-            return NextResponse.json({ error: 'Campanha não encontrada' }, { status: 404 })
-        }
+        const { id } = await params
+        const user = await requireUser()
+        const { campaign } = await requireCampaignMember(id, user)
 
         return NextResponse.json({
             success: true,
@@ -938,7 +972,6 @@ export async function GET(
         })
 
     } catch (error) {
-        console.error('[Combat API] Erro ao buscar combate:', error)
-        return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
+        return handleRouteError(error, 'Erro ao buscar combate')
     }
 }

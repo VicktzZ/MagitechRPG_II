@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { charsheetEntity, campaignEntity } from '@utils/firestoreEntities'
 import { recordCampaignStats, type StatsEntry } from '@utils/campaignStatsHelper'
+import { assertCharsheetsInCampaign, assertIdList, handleRouteError, readJsonBody, requireCampaignGM, requireUser } from '@utils/api'
 
 interface RogueliteLevelUpBody {
     charsheetIds: string[]
@@ -22,18 +23,24 @@ interface RogueliteLevelUpBody {
 export async function POST(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
-): Promise<NextResponse> {
+): Promise<Response> {
     try {
-        const { id: campaignId } = await params
-        const body: RogueliteLevelUpBody = await request.json()
-        const { charsheetIds } = body
+        const { id } = await params
+        const user = await requireUser()
+        // Evoluir personagens é ação do mestre, e só sobre fichas desta campanha
+        const { campaign: authorizedCampaign } = await requireCampaignGM(id, user)
+        const campaignId = authorizedCampaign.id
 
-        if (!charsheetIds || charsheetIds.length === 0) {
+        const body: RogueliteLevelUpBody = await readJsonBody(request)
+
+        if (!body.charsheetIds || body.charsheetIds.length === 0) {
             return NextResponse.json(
                 { error: 'Nenhum charsheet selecionado' },
                 { status: 400 }
             )
         }
+        const charsheetIds = assertIdList(body.charsheetIds, 'charsheetIds')
+        assertCharsheetsInCampaign(authorizedCampaign, charsheetIds)
 
         // Verifica se a campanha existe e é Roguelite
         const campaign = await campaignEntity.findById(campaignId)
@@ -195,10 +202,6 @@ export async function POST(
         })
 
     } catch (error) {
-        console.error('Erro no roguelite-levelup:', error)
-        return NextResponse.json(
-            { error: 'Erro interno do servidor' },
-            { status: 500 }
-        )
+        return handleRouteError(error, 'Erro ao evoluir personagens')
     }
 }

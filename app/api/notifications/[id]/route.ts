@@ -1,42 +1,48 @@
 import { notificationRepository } from '@repositories';
-import { NotificationDTO } from '@models/dtos';
-import { plainToInstance } from 'class-transformer';
-import { validate } from 'class-validator';
-import type { Notification } from '@models/entities';  
+import { assertId, badRequest, forbidden, handleRouteError, notFound, readJsonBody, requireUser } from '@utils/api';
 
+/** Marca a notificação como lida/não lida. Só o destinatário (ou admin). */
 export async function PATCH(req: Request, { params }: { params: { id: string } }) {
     try {
-        const { id } = params;
-        const body: NotificationDTO = await req.json();
-        const dto = plainToInstance(NotificationDTO, body, { excludeExtraneousValues: true });
-        const errors = await validate(dto, { skipMissingProperties: true, whitelist: false });
+        const user = await requireUser();
+        const id = assertId(params.id);
+        const body = await readJsonBody<{ read?: unknown }>(req);
 
-        if (errors.length > 0) {
-            return Response.json({ message: 'BAD REQUEST', errors }, { status: 400 });
+        if (typeof body.read !== 'boolean') {
+            throw badRequest('"read" deve ser verdadeiro ou falso');
         }
 
-        await notificationRepository.update({ ...dto, id } as Notification);
-        
+        const notification = await notificationRepository.findById(id);
+        if (!notification) throw notFound('Notificação não encontrada');
+        if (notification.userId !== user.id && !user.isAdmin) {
+            throw forbidden('Você só pode alterar suas próprias notificações');
+        }
+
+        await notificationRepository.update({ ...notification, read: body.read });
+
         return Response.json({ message: 'SUCCESS' });
     } catch (error) {
-        console.error('Erro ao atualizar notificação:', error);
-        return Response.json({ message: 'Erro ao atualizar notificação' }, { status: 500 });
+        return handleRouteError(error, 'Erro ao atualizar notificação');
     }
 }
 
+/** Lista as notificações do usuário `id` (o parâmetro é o ID do usuário). */
 export async function GET(_req: Request, { params }: { params: { id: string } }) {
     try {
-        const { id } = params;
-        
+        const user = await requireUser();
+        const userId = assertId(params.id);
+        if (userId !== user.id && !user.isAdmin) {
+            throw forbidden('Você só pode ver suas próprias notificações');
+        }
+
         const notifications = await notificationRepository
-            .whereEqualTo('userId', id)
+            .whereEqualTo('userId', userId)
             .orderByDescending('timestamp')
             .limit(50)
             .find();
-            
+
         return Response.json(notifications);
     } catch (error) {
-        console.error('Erro ao buscar notificações:', error);
-        return Response.json({ message: 'Erro ao buscar notificações' }, { status: 500 });
+        return handleRouteError(error, 'Erro ao buscar notificações');
     }
 }

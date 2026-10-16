@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { jobRepository } from '@repositories'
 import { cleanupNotifications } from '@jobs/cleanupNotifications'
+import { assertId, handleRouteError, requireAdminOrApiKey } from '@utils/api'
 
 // Mapa de funções de jobs disponíveis
 const JOB_FUNCTIONS: Record<string, () => Promise<void>> = {
@@ -14,7 +15,7 @@ const JOB_FUNCTIONS: Record<string, () => Promise<void>> = {
 export async function POST(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
-): Promise<NextResponse> {
+): Promise<Response> {
     // Verifica se está em ambiente de desenvolvimento
     if (process.env.NODE_ENV !== 'development') {
         return NextResponse.json(
@@ -24,7 +25,8 @@ export async function POST(
     }
 
     try {
-        const { id: jobId } = await params
+        await requireAdminOrApiKey(request)
+        const jobId = assertId((await params).id)
         
         // Verifica se o job existe
         const job = await jobRepository.findById(jobId)
@@ -64,10 +66,6 @@ export async function POST(
         })
 
     } catch (error) {
-        console.error('[API Admin Jobs] Erro ao executar job:', error)
-        return NextResponse.json(
-            { error: 'Erro interno do servidor' },
-            { status: 500 }
-        )
+        return handleRouteError(error, 'Erro ao executar job')
     }
 }
