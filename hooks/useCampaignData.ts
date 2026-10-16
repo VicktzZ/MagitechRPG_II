@@ -1,6 +1,8 @@
 import type { FirestoreOnChange } from '@models/types/firestoreRealtime';
 import type { CampaignData } from '@models/types/session';
 import type { Message } from '@models';
+import type { User } from '@models/entities';
+import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import { useFirestoreRealtime } from './useFirestoreRealtime';
 import { useStableArrayItems, useStableValue } from './useStableValue';
@@ -29,10 +31,25 @@ export function useCampaignData({
     userId,
     onChange
 }: UseCampaignDataOptions): UseCampaignDataResult {
+    // O código vira o ID pela API (o código é o convite da campanha). Com o ID, a
+    // campanha é lida direto pelo documento: as regras do Firestore não deixam
+    // listar/consultar a coleção de campanhas, só ler uma campanha conhecida.
+    const { data: campaignRef } = useQuery({
+        queryKey: [ 'campaign-ref', campaignCode ],
+        queryFn: async () => {
+            const response = await fetch(`/api/campaign/${encodeURIComponent(campaignCode)}`);
+            if (!response.ok) throw new Error(`Campanha não encontrada (${response.status})`);
+            return await response.json() as { id: string };
+        },
+        enabled: !!campaignCode,
+        staleTime: Infinity,
+        retry: 1
+    });
+    const campaignId = campaignRef?.id;
+
     const { data: campaign, loading } = useFirestoreRealtime('campaign', {
-        filters: [
-            { field: 'campaignCode', operator: '==', value: campaignCode }
-        ],
+        filters: campaignId ? [ { field: 'id', operator: '==', value: campaignId } ] : undefined,
+        enabled: !!campaignId,
         onChange(type, doc) {
             onChange?.(type, doc);
         }
@@ -47,11 +64,21 @@ export function useCampaignData({
         ]
     });
 
-    const { data: campaignUsers } = useFirestoreRealtime('user', {
-        enabled: !loading && !!c && (c.players.length > 0 || c.admin.length > 0),
-        filters: [
-            { field: 'id', operator: 'in', value: [ ...(c?.players.map(p => p.userId) || []), ...(c?.admin || []) ] }
-        ]
+    // Perfis públicos (id, nome, imagem) dos membros vêm da API — os documentos
+    // `users` têm e-mail e assinatura e só são legíveis pelo próprio dono.
+    // Recarrega quando alguém entra ou sai da campanha.
+    const memberIds = useMemo(
+        () => [ ...new Set([ ...(c?.players.map(p => p.userId) ?? []), ...(c?.admin ?? []) ]) ].sort(),
+        [ c?.players, c?.admin ]
+    );
+    const { data: campaignUsers } = useQuery({
+        queryKey: [ 'campaign-users', c?.id, memberIds.join(',') ],
+        queryFn: async () => {
+            const response = await fetch(`/api/campaign/${c.id}/users`);
+            if (!response.ok) throw new Error(`Erro ao buscar membros da campanha (${response.status})`);
+            return await response.json() as User[];
+        },
+        enabled: !loading && !!c && memberIds.length > 0
     });
 
     // Estabilidade referencial item a item: uma mudança na ficha de UM jogador

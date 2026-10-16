@@ -5,6 +5,7 @@ import type { Campaign, Charsheet, Notification, Power, Spell, User } from '@mod
 import { campaignEntity, charsheetEntity, notificationEntity, powerEntity, spellEntity, userEntity, type FirestoreEntity } from '@utils/firestoreEntities';
 import type { Unsubscribe } from '@firebase/firestore';
 import { useEffect, useMemo, useState } from 'react';
+import { useFirebaseAuth } from './useFirebaseAuth';
 
 interface EntityNameToType {
     charsheet: Charsheet;
@@ -62,6 +63,9 @@ export function useFirestoreByIds<T extends EntityName>(
 
     const entity = firestoreEntities[entityName] as unknown as FirestoreEntity<EntityType>;
 
+    // Listeners só depois que o navegador estiver autenticado no Firebase (as regras exigem login)
+    const { ready: authReady, uid: firebaseUid } = useFirebaseAuth();
+
     const stableIds = useMemo(() => {
         const unique = Array.from(new Set(ids.filter(id => typeof id === 'string' && id.trim() !== '')));
         unique.sort();
@@ -77,6 +81,11 @@ export function useFirestoreByIds<T extends EntityName>(
             setData([]);
             setLoading(false);
             setError(null);
+            return;
+        }
+
+        if (!authReady) {
+            setLoading(true);
             return;
         }
 
@@ -121,7 +130,7 @@ export function useFirestoreByIds<T extends EntityName>(
         return () => {
             unsubscribers.forEach(unsub => unsub?.());
         };
-    }, [ entity, stableIds, enabled ]);
+    }, [ entity, stableIds, enabled, authReady, firebaseUid ]);
 
     return { data, loading, error };
 }

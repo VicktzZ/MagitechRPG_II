@@ -1,5 +1,8 @@
 import { NextResponse, type NextRequest } from 'next/server'
-import { campaignEntity } from '@utils/firestoreEntities'
+// Admin SDK no servidor: o SDK do navegador aqui não tem usuário autenticado e
+// seria recusado pelas regras do Firestore
+import { adminGetDoc, adminUpdateDoc } from '@utils/firestore/adminDocs'
+import type { Campaign } from '@models/entities'
 import { assertIdList, badRequest, handleRouteError, readJsonBody, requireCampaignGM, requireCampaignMember, requireUser } from '@utils/api'
 
 /** Lista opcional de textos curtos (raridades, tipos, categorias) */
@@ -77,7 +80,7 @@ export async function POST(
             lastUpdated: new Date().toISOString()
         }
 
-        await campaignEntity.update(campaignId, {
+        await adminUpdateDoc('campaigns', campaignId, {
             shop: shopData
         })
 
@@ -104,7 +107,7 @@ export async function GET(
         const user = await requireUser()
         const { campaign: authorizedCampaign } = await requireCampaignMember(id, user)
 
-        const campaign = await campaignEntity.findById(authorizedCampaign.id)
+        const campaign = await adminGetDoc<Campaign>('campaigns', authorizedCampaign.id)
         if (!campaign) {
             return NextResponse.json(
                 { error: 'Campanha não encontrada' },

@@ -39,10 +39,8 @@ import discordIcon from '@public/icons/discord_icon.svg';
 import googleIcon from '@public/icons/google_icon.svg';
 import Image from 'next/image';
 import { PlanBadge } from '@components/subscription';
-import { useFirestoreRealtime } from '@hooks/useFirestoreRealtime';
+import { useCurrentUserDoc } from '@hooks/useCurrentUserDoc';
 import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
-import type { User } from '@models/entities';
-import { useMemo } from 'react';
 
 export default function LandingPageHeader(): ReactElement {
     const theme = useTheme();
@@ -56,11 +54,8 @@ export default function LandingPageHeader(): ReactElement {
     const [ scrolled, setScrolled ] = useState<boolean>(false);
     
     // Buscar todos os usuários e encontrar o atual
-    const { data: allUsers } = useFirestoreRealtime('user');
-    const currentUser = useMemo(() => {
-        if (!session?.user?.id || !allUsers) return null;
-        return allUsers.find((u: User) => u.id === session.user.id)! || null;
-    }, [ session?.user?.id, allUsers ]);
+    // Só o próprio documento (antes a landing page baixava todos os usuários, com e-mails)
+    const { user: currentUser } = useCurrentUserDoc();
 
     const handleClose = (): void => { setOpen(false) };
     const handleMobileMenuToggle = () => setMobileOpen(!mobileOpen);
@@ -201,7 +196,7 @@ export default function LandingPageHeader(): ReactElement {
                                         </Typography>
                                     </Box>
                                 </Box>
-                                {currentUser && currentUser.subscription && (
+                                {currentUser?.subscription && (
                                     <Box sx={{ display: 'flex', justifyContent: 'center', mt: 0.5 }}>
                                         <PlanBadge user={currentUser} size="small" showIcon />
                                     </Box>
@@ -331,7 +326,7 @@ export default function LandingPageHeader(): ReactElement {
                                 </Box>
                             ) : session ? (
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                    {currentUser && currentUser.subscription && (
+                                    {currentUser?.subscription && (
                                         <PlanBadge user={currentUser} size="small" showIcon variant="outlined" />
                                     )}
                                     
@@ -385,7 +380,7 @@ export default function LandingPageHeader(): ReactElement {
                                                 {session.user?.email}
                                             </Typography>
                                         </Box>
-                                        {currentUser && currentUser.subscription && (
+                                        {currentUser?.subscription && (
                                             <Box sx={{ px: 2, py: 1, display: 'flex', justifyContent: 'center' }}>
                                                 <PlanBadge user={currentUser} size="small" showIcon />
                                             </Box>

@@ -1,5 +1,8 @@
 import { NextResponse, type NextRequest } from 'next/server'
-import { campaignEntity, charsheetEntity } from '@utils/firestoreEntities'
+// Admin SDK no servidor: o SDK do navegador aqui não tem usuário autenticado e
+// seria recusado pelas regras do Firestore
+import { adminGetDoc, adminUpdateDoc } from '@utils/firestore/adminDocs'
+import type { Campaign, Charsheet } from '@models/entities'
 import { processCollectionsFlat, type ProcessorFilters } from '@app/api/roguelite/perks/processors'
 import { selectRandomItems, generateRandomSeed } from '@utils/roguelite'
 import { handleRouteError, requireCampaignMember, requireUser } from '@utils/api'
@@ -175,7 +178,7 @@ export async function GET(
         const { campaign: authorizedCampaign, isGM } = await requireCampaignMember(id, user)
         const campaignId = authorizedCampaign.id
 
-        const campaign = await campaignEntity.findById(campaignId)
+        const campaign = await adminGetDoc<Campaign>('campaigns', campaignId)
         if (!campaign) {
             return NextResponse.json(
                 { error: 'Campanha não encontrada' },
@@ -229,7 +232,7 @@ export async function GET(
             
             for (const csId of charsheetIds) {
                 try {
-                    const cs = await charsheetEntity.findById(csId)
+                    const cs = await adminGetDoc<Charsheet>('charsheets', csId)
                     if (cs?.level !== undefined) {
                         playerLevels.push(cs.level)
                     }
@@ -403,7 +406,7 @@ export async function GET(
         })
 
         // Salva itens na campanha
-        await campaignEntity.update(campaignId, {
+        await adminUpdateDoc('campaigns', campaignId, {
             'shop.items': formattedItems,
             'shop.itemsGeneratedAt': new Date().toISOString()
         })

@@ -32,6 +32,8 @@ declare global {
             ALLOWED_ORIGINS?: string
             /** Chave secreta (≥ 32 caracteres) para automações chamarem rotas /api/admin via header x-api-key */
             INTERNAL_API_KEY?: string
+            /** "true" para o navegador usar os emuladores locais do Firebase (Firestore :8080, Auth :9099) */
+            NEXT_PUBLIC_FIREBASE_EMULATORS?: string
             VERCEL_URL?: string
             VERCEL_PROJECT_PRODUCTION_URL?: string
         }

@@ -43,6 +43,9 @@ next-env.d.ts
 firestore.indexes.json
 firebase.json
 firebase-debug.log
+firestore-debug.log
+auth-debug.log
+tests/firestore-rules/node_modules
 
 # others
 licenses

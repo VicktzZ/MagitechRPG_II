@@ -22,6 +22,26 @@ import {
 import { campaignCollection, charsheetCollection, notificationsCollection, powersCollection, spellsCollection, userCollection } from '@models/docs';
 import type { Campaign, Charsheet, Notification, Power, Spell, User } from '@models/entities';
 import type { FirestoreQueryOptions, RealtimeOptions } from '@models/types/firestoreRealtime';
+import { waitForFirebaseAuth } from './firebaseAuth';
+
+/**
+ * Se a consulta só filtra pelo campo `id` (== ou in), devolve os IDs.
+ * Essas consultas são feitas como leituras de documento por ID: as regras do
+ * Firestore liberam ler um documento conhecido pelo ID, mas não listar a
+ * coleção inteira — e uma consulta `where('id', 'in', ...)` conta como listagem.
+ */
+function extractIdLookup(options: FirestoreQueryOptions): string[] | null {
+    const filters = options.filters ?? [];
+    if (filters.length !== 1 || options.orderBy?.length || options.pagination) return null;
+
+    const [ filter ] = filters;
+    if (filter.field !== 'id') return null;
+    if (filter.operator === '==' && typeof filter.value === 'string') return [ filter.value ];
+    if (filter.operator === 'in' && Array.isArray(filter.value)) {
+        return [ ...new Set(filter.value.filter((v: unknown): v is string => typeof v === 'string' && v !== '')) ];
+    }
+    return null;
+}
 
 export class FirestoreEntity<T extends DocumentData = DocumentData> {
     collection: CollectionReference<T>;
@@ -32,6 +52,7 @@ export class FirestoreEntity<T extends DocumentData = DocumentData> {
 
     async findById(id: string): Promise<T | null> {
         try {
+            await waitForFirebaseAuth();
             const docSnap = await getDoc(doc(this.collection, id));
             return docSnap.exists() ? docSnap.data() : null;
         } catch (error) {
@@ -42,6 +63,7 @@ export class FirestoreEntity<T extends DocumentData = DocumentData> {
 
     async update(id: string, data: Partial<T>): Promise<void> {
         try {
+            await waitForFirebaseAuth();
             const docRef = doc(this.collection, id);
             await updateDoc(docRef, {
                 ...data,
@@ -86,6 +108,15 @@ export class FirestoreEntity<T extends DocumentData = DocumentData> {
 
     async find(options: FirestoreQueryOptions = {}): Promise<T[]> {
         try {
+            await waitForFirebaseAuth();
+
+            const ids = extractIdLookup(options);
+            if (ids) {
+                const snaps = await Promise.all(ids.map(async id => await getDoc(doc(this.collection, id))));
+                const found = snaps.filter(snap => snap.exists()).map(snap => ({ id: snap.id, ...snap.data() }) as T);
+                return options.limit ? found.slice(0, options.limit) : found;
+            }
+
             const q = this.buildQuery(options);
             const querySnapshot = await getDocs(q);
             return querySnapshot.docs.map(doc => ({
@@ -120,6 +151,7 @@ export class FirestoreEntity<T extends DocumentData = DocumentData> {
 
     async exists(id: string): Promise<boolean> {
         try {
+            await waitForFirebaseAuth();
             const docSnap = await getDoc(doc(this.collection, id));
             return docSnap.exists();
         } catch (error) {
@@ -133,6 +165,9 @@ export class FirestoreEntity<T extends DocumentData = DocumentData> {
         callback: (data: T[]) => void
     ): Unsubscribe {
         try {
+            const ids = extractIdLookup(options);
+            if (ids) return this.subscribeByIds(ids, options, callback);
+
             const q = this.buildQuery(options);
 
             return onSnapshot(
@@ -166,6 +201,60 @@ export class FirestoreEntity<T extends DocumentData = DocumentData> {
             console.error('Erro ao criar subscription:', error);
             throw error;
         }
+    }
+
+    /**
+     * Equivalente realtime de `where('id', 'in', ids)` feito com um listener
+     * por documento. Entrega a lista agregada (na ordem dos IDs) depois que
+     * todos responderam pela primeira vez e, daí em diante, a cada mudança.
+     */
+    private subscribeByIds(
+        ids: string[],
+        options: RealtimeOptions<T>,
+        callback: (data: T[]) => void
+    ): Unsubscribe {
+        if (ids.length === 0) {
+            const empty: T[] = [];
+            callback(empty);
+            options.onNext?.(empty);
+            return () => {};
+        }
+
+        const results = new Map<string, T>();
+        const responded = new Set<string>();
+
+        const emit = () => {
+            if (responded.size < ids.length) return;
+            const data = ids.map(id => results.get(id)).filter((item): item is T => item !== undefined);
+            callback(data);
+            options.onNext?.(data);
+        };
+
+        const unsubscribers = ids.map(id => onSnapshot(
+            doc(this.collection, id),
+            (snapshot) => {
+                const existed = results.has(id);
+                if (snapshot.exists()) {
+                    results.set(id, { id: snapshot.id, ...snapshot.data() } as T);
+                    options.onChange?.(existed ? 'modified' : 'added', snapshot);
+                } else if (existed) {
+                    results.delete(id);
+                    options.onChange?.('removed', snapshot);
+                }
+                responded.add(id);
+                emit();
+            },
+            (error) => {
+                // Sem permissão / inexistente: trata como ausente para não travar o carregamento dos demais
+                console.error(`[FirestoreEntity] Erro na subscription de ${this.collection.id}/${id}:`, error);
+                options.onError?.(error);
+                results.delete(id);
+                responded.add(id);
+                emit();
+            }
+        ));
+
+        return () => { unsubscribers.forEach(unsubscribe => { unsubscribe(); }); };
     }
 
     subscribeToDocument(

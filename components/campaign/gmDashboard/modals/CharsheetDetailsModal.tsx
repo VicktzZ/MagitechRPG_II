@@ -31,7 +31,7 @@ import ChangePlayerStatusModal from './ChangePlayerStatusModal';
 import type { CharsheetDTO } from '@models/dtos';
 import { useFirestoreRealtime } from '@hooks/useFirestoreRealtime';
 import { useFirestoreByIds } from '@hooks/useFirestoreByIds';
-import { charsheetEntity } from '@utils/firestoreEntities';
+import { charsheetService } from '@services';
 import { useSnackbar } from 'notistack';
 import { green, red, orange, blue, grey, brown, yellow, purple } from '@mui/material/colors';
 import { useCharsheetSystem } from '@hooks/useCharsheetSystem';
@@ -312,7 +312,7 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet }: Char
 
         setIsSaving(true);
         try {
-            await charsheetEntity.update(charsheet.id, changes as any);
+            await charsheetService.updateFields(charsheet.id, changes as any);
             enqueueSnackbar('Ficha atualizada com sucesso!', { variant: 'success' });
             setIsEditing(false);
         } catch (error) {

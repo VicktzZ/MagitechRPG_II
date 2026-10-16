@@ -47,10 +47,10 @@ import { useSession } from 'next-auth/react';
 
 export default function AdminSubscriptionsPage() {
     const { data: session } = useSession();
-    const { data: allUsers, loading } = useFirestoreRealtime('user');
-  
     // Verificar se o usuário atual é admin
     const isAdmin = isAdminEmail(session?.user?.email);
+    // Listar todos os usuários é permitido só para administradores (regras do Firestore)
+    const { data: allUsers, loading } = useFirestoreRealtime('user', { enabled: isAdmin });
     const [ selectedUsers, setSelectedUsers ] = useState<string[]>([]);
     const [ selectedPlan, setSelectedPlan ] = useState<SubscriptionPlan>(SubscriptionPlan.FREEMIUM);
     const [ searchQuery, setSearchQuery ] = useState('');

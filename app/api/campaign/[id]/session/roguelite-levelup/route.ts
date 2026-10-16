@@ -1,5 +1,8 @@
 import { NextResponse, type NextRequest } from 'next/server'
-import { charsheetEntity, campaignEntity } from '@utils/firestoreEntities'
+// Admin SDK no servidor: o SDK do navegador aqui não tem usuário autenticado e
+// seria recusado pelas regras do Firestore
+import { adminGetDoc, adminUpdateDoc } from '@utils/firestore/adminDocs'
+import type { Campaign, Charsheet } from '@models/entities'
 import { recordCampaignStats, type StatsEntry } from '@utils/campaignStatsHelper'
 import { assertCharsheetsInCampaign, assertIdList, handleRouteError, readJsonBody, requireCampaignGM, requireUser } from '@utils/api'
 
@@ -43,7 +46,7 @@ export async function POST(
         assertCharsheetsInCampaign(authorizedCampaign, charsheetIds)
 
         // Verifica se a campanha existe e é Roguelite
-        const campaign = await campaignEntity.findById(campaignId)
+        const campaign = await adminGetDoc<Campaign>('campaigns', campaignId)
         if (!campaign) {
             return NextResponse.json(
                 { error: 'Campanha não encontrada' },
@@ -70,7 +73,7 @@ export async function POST(
 
         for (const charsheetId of charsheetIds) {
             try {
-                const charsheet = await charsheetEntity.findById(charsheetId)
+                const charsheet = await adminGetDoc<Charsheet>('charsheets', charsheetId)
                 if (!charsheet) {
                     results.push({ charsheetId, success: false, error: 'Charsheet não encontrada' })
                     continue
@@ -143,7 +146,7 @@ export async function POST(
                 const newMaxAp = currentStats.maxAp || currentStats.ap || 6  // AP não muda
 
                 // Aplica as atualizações
-                await charsheetEntity.update(charsheetId, {
+                await adminUpdateDoc('charsheets', charsheetId, {
                     level: newLevel,
                     ORMLevel: newORMLevel,
                     attributes: updatedAttributes,
