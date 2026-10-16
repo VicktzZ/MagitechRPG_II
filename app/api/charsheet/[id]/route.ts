@@ -90,12 +90,17 @@ export async function PATCH(req: Request, { params: { id } }: { params: id }): P
             return Response.json({ message: 'NOT FOUND' }, { status: 404 });
         }
 
-        // Converte spells de objetos para IDs para salvar no banco
+        // Converte spells de objetos para IDs para salvar no banco.
+        // - A ficha pode chegar com spells já como IDs (string) — ex: edição do mestre
+        //   sobre os dados crus do Firestore —, que devem ser mantidos (antes viravam '' e eram apagados).
+        // - Uma lista vazia é uma alteração válida (o jogador removeu todas as magias);
+        //   só preserva as magias salvas quando o campo não veio no body.
         let spellsToSave: string[] | null = null;
-        if (defaultDto.spells && defaultDto.spells.length > 0) {
-            spellsToSave = defaultDto.spells
-                .map(spell => spell.id || spell.name || '')
-                .filter(spellId => spellId.trim() !== ''); // Remove IDs vazios
+        const rawSpells = (body as { spells?: unknown }).spells;
+        if (Array.isArray(rawSpells)) {
+            spellsToSave = rawSpells
+                .map((spell: any) => (typeof spell === 'string' ? spell : (spell?.id || spell?.name || '')))
+                .filter((spellId: string) => spellId.trim() !== ''); // Remove IDs vazios
         }
 
         // Mantém valores existentes se não vierem no body

@@ -71,14 +71,16 @@ function Attributes(): ReactElement {
         return Math.min(10, Math.max(1, v));
     }, [ multiplier ])
 
+    // Valores dos atributos ao carregar a ficha. Em fichas já salvas, só é
+    // possível devolver pontos gastos nesta edição (não abaixo do valor salvo).
+    // Cópia: getValues devolve o objeto interno do form, que o setValue altera.
+    const [ initialAttributes ] = useState(() => ({ ...getValues('attributes') }))
+
     const attributePoints = useCallback((attributeName: 'vig' | 'des' | 'foc' | 'log' | 'sab' | 'car') => {
-        
-        const modAttribute = (operation: 'increment' | 'decrement', changeAmount: number) => {
-            const currentAttributeValue = getValues(`attributes.${attributeName}`);
-            
-            const newValue = operation === 'increment' ? currentAttributeValue : currentAttributeValue - changeAmount;
-            const oldValue = operation === 'increment' ? newValue - changeAmount : newValue + changeAmount;
-            
+        const attributeFloor = disabled ? (initialAttributes?.[attributeName] || 0) : 0
+
+        // Aplica a diferença dos bônus derivados entre o valor antigo e o novo do atributo
+        const modAttribute = (oldValue: number, newValue: number) => {
             switch(attributeName) {
             case 'vig':
                 const oldVigBonus = Number((oldValue * 0.5).toFixed(1));
@@ -127,18 +129,18 @@ function Attributes(): ReactElement {
                 if (logBonusDiff !== 0) {
                     const currentSpellSpace = getValues('spellSpace');
                     const newSpellSpace = currentSpellSpace + logBonusDiff;
-                    setValue('spellSpace', newSpellSpace);
-                    
-                    // A cada 10 níveis adicionados, adicione +1 ponto em "points.skills"
-                    const oldLogSkillBonus = Math.floor(oldValue / 10);
-                    const newLogSkillBonus = Math.floor(newValue / 10);
-                    const logSkillBonusDiff = newLogSkillBonus - oldLogSkillBonus;
-                    
-                    if (logSkillBonusDiff !== 0) {
-                        const currentSkillPoints = getValues('points.skills');
-                        const newSkillPoints = currentSkillPoints + logSkillBonusDiff;
-                        setValue('points.skills', newSkillPoints);
-                    }
+                    setValue('spellSpace', newSpellSpace, { shouldValidate: true });
+                }
+
+                // A cada 10 níveis adicionados, adicione +1 ponto em "points.skills"
+                const oldLogSkillBonus = Math.floor(oldValue / 10);
+                const newLogSkillBonus = Math.floor(newValue / 10);
+                const logSkillBonusDiff = newLogSkillBonus - oldLogSkillBonus;
+
+                if (logSkillBonusDiff !== 0) {
+                    const currentSkillPoints = getValues('points.skills');
+                    const newSkillPoints = currentSkillPoints + logSkillBonusDiff;
+                    setValue('points.skills', newSkillPoints);
                 }
                 break;
                 
@@ -174,7 +176,7 @@ function Attributes(): ReactElement {
                     
                     setValue(`attributes.${attributeName}`, newAttributeValue);
                     setValue('points.attributes', newPointsValue);
-                    modAttribute('increment', possibleIncrements)
+                    modAttribute(updatedAttribute, newAttributeValue)
                 }
             }
         }, [ attributeName, getValues, multiplierValue, setValue ])
@@ -182,23 +184,23 @@ function Attributes(): ReactElement {
         const onDecrement = useCallback(() => {
             const updatedAttribute = getValues(`attributes.${attributeName}`);
             const updatedPoints = getValues('points.attributes');
-            
+
             const possibleDecrements = Math.min(
                 multiplierValue,
-                updatedAttribute
+                updatedAttribute - attributeFloor
             );
 
             if (possibleDecrements > 0) {
                 const newAttributeValue = updatedAttribute - possibleDecrements;
                 const newPointsValue = updatedPoints + possibleDecrements;
-                
+
                 setValue(`attributes.${attributeName}`, newAttributeValue);
                 setValue('points.attributes', newPointsValue);
-                modAttribute('decrement', possibleDecrements)
+                modAttribute(updatedAttribute, newAttributeValue)
             }
-        }, [ attributeName, getValues, multiplierValue, setValue ])
+        }, [ attributeName, attributeFloor, getValues, multiplierValue, setValue ])
 
-        return { onIncrement, onDecrement }
+        return { onIncrement, onDecrement, attributeFloor }
     }, [ charsheet, getValues, setValue, reset, disabled, multiplierValue ])
 
     const vig = useWatch({
@@ -272,17 +274,20 @@ function Attributes(): ReactElement {
         setValue('stats.maxAp', baseMaxAP)
     }, [ vig, des, foc, race, classe ])
 
-    // Case race 'Humano'
+    // Pontos de atributo extras da raça (ex: 'Humano'): aplica só a diferença
+    // quando a raça muda — ao montar (ex: rascunho restaurado) nada é alterado
     useEffect(() => {
         if (charsheet.id) return
-        let pointsAttributes = charsheet.points.attributes + (races[race as keyof typeof races]?.stats.pda || 0)
-       
-        if (raceRef.current && raceRef.current === 'Humano') {
-            pointsAttributes = charsheet.points.attributes - 5
-        }
-
-        setValue('points.attributes', pointsAttributes)
+        const previousRace = raceRef.current
         raceRef.current = race
+        if (previousRace === race) return
+
+        const racePoints = (raceName: typeof race) => races[raceName as keyof typeof races]?.stats.pda || 0
+        const diff = racePoints(race) - racePoints(previousRace)
+
+        if (diff !== 0) {
+            setValue('points.attributes', getValues('points.attributes') + diff)
+        }
     }, [ race ])
     
     return (
@@ -641,7 +646,7 @@ function Attributes(): ReactElement {
                             <Box display='flex' flexDirection='column' width='100%' gap={1}>
                                 {[ 'vig', 'foc', 'des', 'log', 'sab', 'car' ].map((attr) => {
                                     const attributeName = attr as 'vig' | 'foc' | 'des' | 'log' | 'sab' | 'car'
-                                    const { onIncrement, onDecrement } = attributePoints(attributeName)
+                                    const { onIncrement, onDecrement, attributeFloor } = attributePoints(attributeName)
 
                                     return (
                                         <Controller
@@ -666,6 +671,7 @@ function Attributes(): ReactElement {
                                                     <Attribute
                                                         onIncrement={onIncrement}
                                                         onDecrement={onDecrement}
+                                                        minValue={attributeFloor}
                                                         attributeName={attributeName}
                                                         attributeValue={field.value}
                                                         error={errors.attributes?.[attributeName]?.message}

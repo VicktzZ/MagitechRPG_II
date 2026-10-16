@@ -99,12 +99,15 @@ function Attribute({
     attributeValue,
     onIncrement,
     onDecrement,
+    minValue = 0,
     error
 }: { 
     attributeName: MainAttributes,
     attributeValue: number
     onIncrement?: () => void
     onDecrement?: () => void
+    /** Valor mínimo até onde o atributo pode ser reduzido (devolvendo pontos) */
+    minValue?: number
     error?: string
 }) {
     const theme = useTheme()
@@ -114,7 +117,6 @@ function Attribute({
     const { setValue, control, getValues } = useFormContext<Charsheet>()
     const charsheet = getValues()
 
-    const initialAttributeValue = useRef(attributeValue)
     const previousAttributeValue = useRef(attributeValue)
 
     const Bar = useMemo(() => {
@@ -299,14 +301,14 @@ function Attribute({
                     variant="outlined" 
                     size="small"
                     onClick={onDecrement}
-                    disabled={attributeValue <= 0 || initialAttributeValue.current === attributeValue}
+                    disabled={attributeValue <= Math.max(0, minValue)}
                     sx={buttonStyle}
                 >
                     -
                 </Button>
             </Box>
         )
-    }, [ isSmall, config.color, attributeValue, onIncrement, onDecrement, getControlButtonSize ])
+    }, [ isSmall, config.color, attributeValue, minValue, onIncrement, onDecrement, getControlButtonSize ])
 
     const attr = useWatch({
         control,

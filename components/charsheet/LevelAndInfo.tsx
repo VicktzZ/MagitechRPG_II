@@ -7,7 +7,7 @@ import { AttachMoney, AutoAwesome, DirectionsRun, Psychology } from '@mui/icons-
 import { Box, Button, Chip, FormControl, IconButton, InputLabel, ListSubheader, MenuItem, OutlinedInput, Select, TextField, Typography, useMediaQuery } from '@mui/material'
 import { alpha, useTheme } from '@mui/material/styles'
 import { green, orange, purple } from '@mui/material/colors'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Controller, useFormContext, useWatch } from 'react-hook-form'
 import ElementalMasteryModal from './dialogs/ElementalMasteryModal'
 import SubclassModal from './dialogs/SubclassModal'
@@ -28,7 +28,6 @@ export default function LevelAndInfo() {
     const [ elementalMasteryModalOpen, setElementalMasteryModalOpen ] = useState<boolean>(false)
     const [ selectedSubclass, setSelectedSubclass ] = useState<Subclass['name'] | null>(null)
     const [ customSystem, setCustomSystem ] = useState<RPGSystem | null>(null)
-    const traitsRef = useRef<Trait[]>([])
     const audio = useAudio('/sounds/sci-fi-positive-notification.wav')
     const audio2 = useAudio('/sounds/fast-sci-fi-bleep.wav')
     
@@ -115,12 +114,20 @@ export default function LevelAndInfo() {
     const handleTraitsChange = useCallback((selectedTraitNames: string[]): void => {
         const currentExpertises = { ...getValues('expertises') };
         const traitPool = availableTraits();
+        const findTrait = (traitName: string) =>
+            [ ...traitPool.positive, ...traitPool.negative ].find(item => item.name === traitName);
 
-        const previousTraits = [ ...traitsRef.current ];
-        const newTraits: Trait[] = [];
+        // Traços atuais vêm do próprio formulário (e não de um ref em memória),
+        // para que um rascunho restaurado também tenha seus efeitos revertidos
+        const currentTraitValues = (getValues('traits') ?? []) as unknown[];
+        const previousTraits = currentTraitValues
+            .map(t => findTrait(typeof t === 'string' ? t : (t as Trait)?.name))
+            .filter((t): t is Trait => !!t);
 
         // Aplica o efeito de um traço: perícia via objeto local,
-        // atributo diretamente no form (suporta keys de sistemas customizados)
+        // atributo diretamente no form (suporta keys de sistemas customizados).
+        // Sem limitar em 0: a reversão precisa ser exata, senão marcar/desmarcar
+        // um traço negativo gerava pontos.
         const applyTraitEffect = (trait: Trait, sign: 1 | -1) => {
             if (!trait.target?.name || !trait.value) return;
             const delta = sign * trait.value;
@@ -128,13 +135,13 @@ export default function LevelAndInfo() {
             if (trait.target.kind === 'attribute') {
                 const attrKey = trait.target.name;
                 const currentValue = (getValues(`attributes.${attrKey}` as any) as unknown as number) || 0;
-                setValue(`attributes.${attrKey}` as any, Math.max(0, currentValue + delta) as any);
+                setValue(`attributes.${attrKey}` as any, (currentValue + delta) as any);
             } else {
                 const expertiseName = trait.target.name as keyof Expertises;
                 const currentValue = currentExpertises[expertiseName]?.value || 0;
                 currentExpertises[expertiseName] = {
                     ...currentExpertises[expertiseName],
-                    value: Math.max(0, currentValue + delta)
+                    value: currentValue + delta
                 };
             }
         };
@@ -142,19 +149,16 @@ export default function LevelAndInfo() {
         previousTraits.forEach(trait => applyTraitEffect(trait, -1));
 
         selectedTraitNames.forEach(traitName => {
-            const trait = [ ...traitPool.positive, ...traitPool.negative ].find(item => item.name === traitName);
+            const trait = findTrait(traitName);
             if (trait) {
                 applyTraitEffect(trait, 1);
-                newTraits.push(trait);
             }
         });
-
-        traitsRef.current = newTraits;
 
         setValue('expertises', currentExpertises, { shouldValidate: true });
         setValue('traits', selectedTraitNames as unknown as Trait[], { shouldValidate: true });
         audio?.play()
-    }, [ getValues, setValue, traitsRef, availableTraits ])
+    }, [ getValues, setValue, availableTraits ])
     
     // Handler para confirmar seleção de subclasse
     const handleSubclassConfirm = useCallback((subclass: Subclass['name']) => {
