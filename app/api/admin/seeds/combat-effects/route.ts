@@ -1,5 +1,6 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, type NextRequest } from 'next/server'
 import { seedCombatEffects } from '@scripts/seedCombatEffects'
+import { handleRouteError, requireAdminOrApiKey } from '@utils/api'
 
 /**
  * Popula o catálogo global de efeitos de combate com os presets do sistema.
@@ -8,7 +9,7 @@ import { seedCombatEffects } from '@scripts/seedCombatEffects'
  * Disponível em GET (conveniência — basta abrir no navegador) e POST (para invocar via script/curl).
  * Restrito a ambiente de desenvolvimento para manter o padrão dos outros endpoints de admin.
  */
-async function runSeed(): Promise<NextResponse> {
+async function runSeed(request: NextRequest): Promise<Response> {
     if (process.env.NODE_ENV !== 'development') {
         return NextResponse.json(
             { error: 'Endpoint disponível apenas em ambiente de desenvolvimento' },
@@ -17,6 +18,7 @@ async function runSeed(): Promise<NextResponse> {
     }
 
     try {
+        await requireAdminOrApiKey(request)
         const result = await seedCombatEffects()
         return NextResponse.json({
             success: true,
@@ -24,18 +26,14 @@ async function runSeed(): Promise<NextResponse> {
             ...result
         })
     } catch (error) {
-        console.error('[Seed Combat Effects] Erro:', error)
-        return NextResponse.json(
-            { error: 'Erro ao popular efeitos pré-definidos', details: (error as Error).message },
-            { status: 500 }
-        )
+        return handleRouteError(error, 'Erro ao popular efeitos pré-definidos')
     }
 }
 
-export async function GET(): Promise<NextResponse> {
-    return runSeed()
+export async function GET(request: NextRequest): Promise<Response> {
+    return await runSeed(request)
 }
 
-export async function POST(): Promise<NextResponse> {
-    return runSeed()
+export async function POST(request: NextRequest): Promise<Response> {
+    return await runSeed(request)
 }

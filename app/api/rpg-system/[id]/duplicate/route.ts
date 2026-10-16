@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@app/api/auth/[...nextauth]/route';
 import { RPGSystem } from '@models/entities';
 import { isAdminEmail } from '@utils/adminCheck';
+import { assertId, assertMaxLength, handleRouteError, readJsonBody, TEXT_LIMITS } from '@utils/api';
 
 export async function POST(
     req: NextRequest,
@@ -15,14 +16,15 @@ export async function POST(
             return Response.json({ message: 'UNAUTHORIZED', error: 'Não autorizado' }, { status: 401 });
         }
 
-        const body = await req.json();
+        const body = await readJsonBody(req);
         const { name } = body;
 
         if (!name) {
             return Response.json({ message: 'Name is required' }, { status: 400 });
         }
+        assertMaxLength(name, TEXT_LIMITS.title, 'name');
 
-        const existingSystem = await rpgSystemRepository.findById(params.id);
+        const existingSystem = await rpgSystemRepository.findById(assertId(params.id));
 
         if (!existingSystem) {
             return Response.json({ message: 'NOT FOUND' }, { status: 404 });
@@ -48,7 +50,7 @@ export async function POST(
         const createdSystem = await rpgSystemRepository.create(duplicatedSystem);
 
         return Response.json(createdSystem, { status: 201 });
-    } catch (error: any) {
-        return Response.json({ message: 'BAD REQUEST', error: error.message }, { status: 400 });
+    } catch (error) {
+        return handleRouteError(error);
     }
 }

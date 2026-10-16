@@ -9,6 +9,9 @@ class CampaignService extends Service<Campaign, 'code' | 'userId'> {
         return (await this.get({ param: `?userId=${encodeURIComponent(userId)}` })).data as unknown as { asGm: Array<{ id: string, code: string }>, asPlayer: Array<{ id: string, code: string }> };
     }
 
+    /** Atualização parcial da campanha pelo mestre ({ "session.combat": ..., custom: ... }) */
+    async updateFields(campaignId: string, fields: Record<string, unknown>) { return (await this.patch({ param: `${campaignId}/fields`, body: { fields } })).data }
+
     async getCampaignUsers(campaignId: string): Promise<User[]> { return await this.fetch({ param: `${campaignId}/users` }) as unknown as User[] }
     async createNote(campaignId: string, note: Note) { return (await this.post({ param: `${campaignId}/notes`, body: note })).data }
     async updateNote(campaignId: string, noteId: string, content: string) { return (await this.patch({ param: `${campaignId}/notes`, body: { noteId, content } })).data }

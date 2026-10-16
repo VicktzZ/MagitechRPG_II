@@ -1,11 +1,12 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, type NextRequest } from 'next/server'
 import { jobRepository } from '@repositories'
+import { handleRouteError, requireAdminOrApiKey } from '@utils/api'
 
 /**
  * GET /api/admin/jobs
  * Retorna lista de todos os jobs e seus status
  */
-export async function GET(): Promise<NextResponse> {
+export async function GET(request: NextRequest): Promise<Response> {
     // Verifica se está em ambiente de desenvolvimento
     if (process.env.NODE_ENV !== 'development') {
         return NextResponse.json(
@@ -15,6 +16,7 @@ export async function GET(): Promise<NextResponse> {
     }
 
     try {
+        await requireAdminOrApiKey(request)
         const jobs = await jobRepository.find()
         
         // Calcula tempo restante para próxima execução
@@ -48,10 +50,6 @@ export async function GET(): Promise<NextResponse> {
         })
 
     } catch (error) {
-        console.error('[API Admin Jobs] Erro ao buscar jobs:', error)
-        return NextResponse.json(
-            { error: 'Erro interno do servidor' },
-            { status: 500 }
-        )
+        return handleRouteError(error, 'Erro ao buscar jobs')
     }
 }

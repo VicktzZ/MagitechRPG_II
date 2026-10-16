@@ -9,6 +9,7 @@ import { useRouter } from 'next/navigation';
 import CustomIconButton from './CustomIconButton';
 import Image from 'next/image';
 import { useFirestoreRealtime } from '@hooks/useFirestoreRealtime';
+import { useCurrentUserDoc } from '@hooks/useCurrentUserDoc';
 import { useCustomSystemsAccess } from '@hooks/useSubscription';
 import { PlanBadge } from '@components/subscription';
 import { isAdminEmail } from '@utils/adminCheck';
@@ -28,13 +29,10 @@ export default function AppDrawer(): ReactElement {
     const router = useRouter()
     
     // Buscar todos os usuários do Firestore em tempo real
-    const { data: allUsers } = useFirestoreRealtime('user');
+    const { user: currentUserDoc } = useCurrentUserDoc();
     
     // Encontrar o usuário atual baseado na sessão
-    const currentUser = useMemo(() => {
-        if (!session?.user?.id || !allUsers) return null;
-        return (allUsers ).find((u: User) => u.id === session.user.id) || null;
-    }, [ session?.user?.id, allUsers ]);
+    const currentUser = useMemo((): User | null => currentUserDoc, [ currentUserDoc ]);
 
     const toggleDrawer =
         (openParam: boolean) =>
@@ -50,7 +48,11 @@ export default function AppDrawer(): ReactElement {
                 setDrawerOpen(openParam)
             };
 
-    const { data: users } = useFirestoreRealtime('user');
+    // Lista de usuários do seletor de personificação (somente dev). Só administradores
+    // podem listar a coleção `users` nas regras do Firestore.
+    const { data: users } = useFirestoreRealtime('user', {
+        enabled: process.env.NEXT_PUBLIC_NODE_ENV === 'development' && isAdminEmail(session?.user?.email) && usersModalOpen
+    });
 
     function handleImpersonate(u: any) {
         try {

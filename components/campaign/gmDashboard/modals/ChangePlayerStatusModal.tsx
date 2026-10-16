@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { charsheetEntity } from '@utils/firestoreEntities';
+import { charsheetService } from '@services';
 import { useSnackbar } from 'notistack';
 import { type CharsheetDTO } from '@models/dtos';
 
@@ -114,7 +114,7 @@ function ChangePlayerStatusModal({ open, onClose, charsheet }: { open: boolean, 
         }
 
         try {
-            await charsheetEntity.update(charsheet.id, changes as any);
+            await charsheetService.updateFields(charsheet.id, changes as any);
     
             enqueueSnackbar('Status do jogador atualizado com sucesso!', { variant: 'success' });
         } catch (error) {

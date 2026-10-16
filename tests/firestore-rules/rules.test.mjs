@@ -1,0 +1,158 @@
+// Testes das regras do Firestore (../../firestore.rules) contra o emulador.
+// Rodar: npm install && npm test   (nesta pasta; precisa de Java para o emulador)
+import { after, before, beforeEach, describe, it } from 'node:test';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { assertFails, assertSucceeds, initializeTestEnvironment } from '@firebase/rules-unit-testing';
+import { collection, deleteDoc, doc, getDoc, getDocs, orderBy, query, setDoc, updateDoc, where } from 'firebase/firestore';
+
+const rulesPath = fileURLToPath(new URL('../../firestore.rules', import.meta.url));
+
+let env;
+const db = (uid, claims = {}) => (uid ? env.authenticatedContext(uid, claims) : env.unauthenticatedContext()).firestore();
+const anon = () => db(null);
+const alice = () => db('alice');
+const bob = () => db('bob');
+const admin = () => db('admin1', { admin: true });
+
+before(async () => {
+    env = await initializeTestEnvironment({
+        projectId: 'demo-magitech',
+        firestore: { rules: readFileSync(rulesPath, 'utf8') }
+    });
+});
+
+after(async () => {
+    await env?.cleanup();
+});
+
+beforeEach(async () => {
+    await env.clearFirestore();
+    await env.withSecurityRulesDisabled(async ctx => {
+        const fs = ctx.firestore();
+        await setDoc(doc(fs, 'users/alice'), { id: 'alice', email: 'alice@example.com', subscription: { plan: 'FREEMIUM' } });
+        await setDoc(doc(fs, 'users/bob'), { id: 'bob', email: 'bob@example.com' });
+        await setDoc(doc(fs, 'charsheets/sheetA'), { id: 'sheetA', userId: 'alice', name: 'Aria', inventory: { money: 10 } });
+        await setDoc(doc(fs, 'charsheets/sheetB'), { id: 'sheetB', userId: 'bob', name: 'Borin' });
+        await setDoc(doc(fs, 'campaigns/camp1'), { id: 'camp1', campaignCode: 'ABCD1234', admin: [ 'bob' ], players: [ { userId: 'alice', charsheetId: 'sheetA' } ] });
+        await setDoc(doc(fs, 'notifications/n1'), { id: 'n1', userId: 'alice', title: 'oi', timestamp: '2026-01-01' });
+        await setDoc(doc(fs, 'notifications/n2'), { id: 'n2', userId: 'bob', title: 'oi', timestamp: '2026-01-01' });
+        await setDoc(doc(fs, 'spells/s1'), { id: 's1', name: 'Bola de Fogo' });
+        await setDoc(doc(fs, 'powers/p1'), { id: 'p1', name: 'Poder' });
+        await setDoc(doc(fs, 'rpg_systems/sys1'), { id: 'sys1', isPublic: false });
+        await setDoc(doc(fs, 'campaign_stats/st1'), { campaignId: 'camp1' });
+        await setDoc(doc(fs, 'jobs/j1'), { name: 'job' });
+    });
+});
+
+describe('anônimo (sem login no Firebase)', () => {
+    it('não lê nada', async () => {
+        for (const path of [ 'users/alice', 'charsheets/sheetA', 'campaigns/camp1', 'notifications/n1', 'spells/s1' ]) {
+            await assertFails(getDoc(doc(anon(), path)));
+        }
+        await assertFails(getDocs(collection(anon(), 'users')));
+    });
+
+    it('não escreve nada', async () => {
+        await assertFails(updateDoc(doc(anon(), 'charsheets/sheetA'), { name: 'x' }));
+        await assertFails(deleteDoc(doc(anon(), 'campaigns/camp1')));
+        await assertFails(setDoc(doc(anon(), 'users/hacker'), { email: 'x' }));
+    });
+});
+
+describe('users', () => {
+    it('cada um lê só o próprio documento', async () => {
+        await assertSucceeds(getDoc(doc(alice(), 'users/alice')));
+        await assertFails(getDoc(doc(alice(), 'users/bob')));
+    });
+
+    it('ninguém além de admin lista a coleção (e-mails, assinaturas)', async () => {
+        await assertFails(getDocs(collection(alice(), 'users')));
+        await assertFails(getDocs(query(collection(alice(), 'users'), where('id', 'in', [ 'alice', 'bob' ]))));
+        await assertSucceeds(getDocs(collection(admin(), 'users')));
+    });
+
+    it('usuário não altera o próprio documento (ex.: se dar plano pago)', async () => {
+        await assertFails(updateDoc(doc(alice(), 'users/alice'), { 'subscription.plan': 'PREMIUM_PLUS' }));
+        await assertFails(setDoc(doc(alice(), 'users/novo'), { email: 'x' }));
+    });
+});
+
+describe('charsheets', () => {
+    it('qualquer logado abre uma ficha pelo ID (mestre/colegas de campanha)', async () => {
+        await assertSucceeds(getDoc(doc(bob(), 'charsheets/sheetA')));
+    });
+
+    it('listar só as próprias fichas', async () => {
+        await assertSucceeds(getDocs(query(collection(alice(), 'charsheets'), where('userId', '==', 'alice'), orderBy('name'))));
+        await assertFails(getDocs(query(collection(bob(), 'charsheets'), where('userId', '==', 'alice'))));
+        await assertFails(getDocs(collection(bob(), 'charsheets')));
+    });
+
+    it('dono edita a própria ficha', async () => {
+        await assertSucceeds(updateDoc(doc(alice(), 'charsheets/sheetA'), { 'inventory.money': 20 }));
+    });
+
+    it('dono não troca o dono nem o id', async () => {
+        await assertFails(updateDoc(doc(alice(), 'charsheets/sheetA'), { userId: 'bob' }));
+        await assertFails(updateDoc(doc(alice(), 'charsheets/sheetA'), { id: 'outra' }));
+    });
+
+    it('ninguém edita a ficha de outra pessoa direto (mestre usa a API)', async () => {
+        await assertFails(updateDoc(doc(bob(), 'charsheets/sheetA'), { 'inventory.money': 999 }));
+    });
+
+    it('criar e apagar fichas só pela API', async () => {
+        await assertFails(setDoc(doc(alice(), 'charsheets/nova'), { id: 'nova', userId: 'alice' }));
+        await assertFails(deleteDoc(doc(alice(), 'charsheets/sheetA')));
+    });
+});
+
+describe('campaigns', () => {
+    it('logado lê uma campanha pelo ID', async () => {
+        await assertSucceeds(getDoc(doc(alice(), 'campaigns/camp1')));
+    });
+
+    it('não dá para listar/consultar campanhas (nem pelo código)', async () => {
+        await assertFails(getDocs(collection(alice(), 'campaigns')));
+        await assertFails(getDocs(query(collection(alice(), 'campaigns'), where('campaignCode', '==', 'ABCD1234'))));
+        await assertSucceeds(getDocs(collection(admin(), 'campaigns')));
+    });
+
+    it('nem o mestre escreve direto (só pela API)', async () => {
+        await assertFails(updateDoc(doc(bob(), 'campaigns/camp1'), { 'session.combat': {} }));
+        await assertFails(updateDoc(doc(alice(), 'campaigns/camp1'), { admin: [ 'alice' ] }));
+        await assertFails(deleteDoc(doc(bob(), 'campaigns/camp1')));
+    });
+});
+
+describe('notifications', () => {
+    it('lê só as próprias', async () => {
+        await assertSucceeds(getDocs(query(collection(alice(), 'notifications'), where('userId', '==', 'alice'), orderBy('timestamp', 'desc'))));
+        await assertSucceeds(getDoc(doc(alice(), 'notifications/n1')));
+        await assertFails(getDoc(doc(alice(), 'notifications/n2')));
+        await assertFails(getDocs(query(collection(alice(), 'notifications'), where('userId', '==', 'bob'))));
+        await assertFails(getDocs(collection(alice(), 'notifications')));
+    });
+
+    it('não escreve direto', async () => {
+        await assertFails(updateDoc(doc(alice(), 'notifications/n1'), { read: true }));
+        await assertFails(setDoc(doc(alice(), 'notifications/n3'), { userId: 'bob', title: 'spam' }));
+    });
+});
+
+describe('catálogos e coleções internas', () => {
+    it('magias e poderes: leitura para logados, sem escrita', async () => {
+        await assertSucceeds(getDocs(collection(alice(), 'spells')));
+        await assertSucceeds(getDoc(doc(alice(), 'powers/p1')));
+        await assertFails(updateDoc(doc(alice(), 'spells/s1'), { name: 'x' }));
+        await assertFails(setDoc(doc(admin(), 'powers/p2'), { name: 'x' }));
+    });
+
+    it('coleções sem regra ficam só para o servidor', async () => {
+        for (const path of [ 'rpg_systems/sys1', 'campaign_stats/st1', 'jobs/j1' ]) {
+            await assertFails(getDoc(doc(alice(), path)));
+            await assertFails(getDoc(doc(admin(), path)));
+        }
+    });
+});

@@ -3,9 +3,11 @@ import type { NextRequest } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@app/api/auth/[...nextauth]/route';
 import { RPGSystem } from '@models/entities';
+import { assertId, assertMaxLength, forbidden, handleRouteError, readJsonBody, requireUser, TEXT_LIMITS } from '@utils/api';
 
 export async function GET(req: NextRequest): Promise<Response> {
     try {
+        const user = await requireUser();
         const userId = req.nextUrl.searchParams.get('userId');
         const isPublic = req.nextUrl.searchParams.get('isPublic');
         const creatorId = req.nextUrl.searchParams.get('creatorId');
@@ -18,16 +20,22 @@ export async function GET(req: NextRequest): Promise<Response> {
             return Response.json(systems);
         }
 
-        // Lista sistemas de um criador específico
+        // Lista sistemas de um criador específico — os privados só para o próprio criador
         if (creatorId) {
+            assertId(creatorId, 'creatorId');
             const systems = await rpgSystemRepository
                 .whereEqualTo('creatorId', creatorId)
                 .find();
-            return Response.json(systems);
+            const canSeePrivate = creatorId === user.id || user.isAdmin;
+            return Response.json(canSeePrivate ? systems : systems.filter(s => s.isPublic));
         }
 
         // Lista sistemas disponíveis para um usuário (públicos + do próprio usuário)
         if (userId) {
+            assertId(userId, 'userId');
+            if (userId !== user.id && !user.isAdmin) {
+                throw forbidden('Você só pode listar os seus próprios sistemas');
+            }
             const [ publicSystems, userSystems ] = await Promise.all([
                 rpgSystemRepository.whereEqualTo('isPublic', true).find(),
                 rpgSystemRepository.whereEqualTo('creatorId', userId).find()
@@ -42,11 +50,14 @@ export async function GET(req: NextRequest): Promise<Response> {
         }
 
         // Lista todos (apenas para admin)
+        if (!user.isAdmin) {
+            throw forbidden('Apenas administradores podem listar todos os sistemas');
+        }
         const allSystems = await rpgSystemRepository.find();
         return Response.json(allSystems);
 
-    } catch (error: any) {
-        return Response.json({ message: 'ERROR', error: error.message }, { status: 500 });
+    } catch (error) {
+        return handleRouteError(error);
     }
 }
 
@@ -57,7 +68,9 @@ export async function POST(req: Request): Promise<Response> {
             return Response.json({ message: 'UNAUTHORIZED', error: 'Não autorizado' }, { status: 401 });
         }
 
-        const body = await req.json();
+        const body = await readJsonBody(req);
+        assertMaxLength(body.name, TEXT_LIMITS.title, 'name');
+        assertMaxLength(body.description, TEXT_LIMITS.description, 'description');
 
         // creatorId sempre vem da sessão — nunca do body
         const { creatorId: _creatorId, id: _id, ...rest } = body;
@@ -72,7 +85,7 @@ export async function POST(req: Request): Promise<Response> {
         const createdSystem = await rpgSystemRepository.create(newSystem);
 
         return Response.json(createdSystem, { status: 201 });
-    } catch (error: any) {
-        return Response.json({ message: 'BAD REQUEST', error: error.message }, { status: 400 });
+    } catch (error) {
+        return handleRouteError(error);
     }
 }

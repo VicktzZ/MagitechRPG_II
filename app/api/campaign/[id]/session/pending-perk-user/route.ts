@@ -1,6 +1,6 @@
 import { PusherEvent } from '@enums';
 import { campaignRepository } from '@repositories';
-import { findCampaignByCodeOrId } from '@utils/helpers/findCampaignByCodeOrId';
+import { assertId, forbidden, handleRouteError, readJsonBody, requireCampaignMember, requireUser } from '@utils/api';
 import { pusherServer } from '@utils/pusher';
 
 interface RemovePendingUserBody {
@@ -11,15 +11,18 @@ interface RemovePendingUserBody {
 export async function POST(req: Request, { params }: { params: { id: string } }) {
     try {
         const { id } = params;
-        const body: RemovePendingUserBody = await req.json();
+        const user = await requireUser();
+        const { campaign, isGM } = await requireCampaignMember(id, user);
+        const body: RemovePendingUserBody = await readJsonBody(req);
 
         if (!body.userId) {
             return Response.json({ message: 'UserId é obrigatório' }, { status: 400 });
         }
+        assertId(body.userId, 'userId');
 
-        const campaign = await findCampaignByCodeOrId(id);
-        if (!campaign) {
-            return Response.json({ message: 'Campanha não encontrada' }, { status: 404 });
+        // Jogador só sai da própria pendência (após escolher o perk); o mestre, de qualquer um
+        if (!isGM && body.userId !== user.id) {
+            throw forbidden('Você só pode concluir a sua própria escolha de perks');
         }
 
         // Remove o usuário da lista de pending
@@ -48,7 +51,6 @@ export async function POST(req: Request, { params }: { params: { id: string } })
 
         return Response.json({ success: true, remainingUsers: updatedPending });
     } catch (error) {
-        console.error('Erro ao remover usuário pendente:', error);
-        return Response.json({ message: 'Erro ao remover usuário pendente' }, { status: 500 });
+        return handleRouteError(error, 'Erro ao remover usuário pendente');
     }
 }

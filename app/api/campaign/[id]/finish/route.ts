@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@app/api/auth/[...nextauth]/route';
 import { campaignRepository } from '@repositories';
 import { findCampaignByCodeOrId } from '@utils/helpers/findCampaignByCodeOrId';
+import { handleRouteError } from '@utils/api';
 
 /**
  * POST /api/campaign/[id]/finish
@@ -37,8 +38,8 @@ export async function POST(
         await campaignRepository.update(campaign);
 
         return Response.json({ message: 'OK', finishedAt: campaign.finishedAt });
-    } catch (error: any) {
-        return Response.json({ message: 'ERROR', error: error.message }, { status: 500 });
+    } catch (error) {
+        return handleRouteError(error);
     }
 }
 
@@ -73,7 +74,7 @@ export async function DELETE(
         await campaignRepository.update(campaign);
 
         return Response.json({ message: 'OK' });
-    } catch (error: any) {
-        return Response.json({ message: 'ERROR', error: error.message }, { status: 500 });
+    } catch (error) {
+        return handleRouteError(error);
     }
 }

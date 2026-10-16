@@ -1,7 +1,11 @@
 import { NextResponse, type NextRequest } from 'next/server'
-import { campaignEntity, charsheetEntity } from '@utils/firestoreEntities'
+// Admin SDK no servidor: o SDK do navegador aqui não tem usuário autenticado e
+// seria recusado pelas regras do Firestore
+import { adminGetDoc, adminUpdateDoc } from '@utils/firestore/adminDocs'
+import type { Campaign, Charsheet } from '@models/entities'
 import { savePerkToCharsheet } from '@features/roguelite/utils'
 import { recordCampaignStats } from '@utils/campaignStatsHelper'
+import { assertId, campaignHasCharsheet, forbidden, handleRouteError, readJsonBody, requireCampaignMember, requireUser } from '@utils/api'
 
 interface PurchaseBody {
     charsheetId: string
@@ -22,10 +26,14 @@ interface PurchaseBody {
 export async function POST(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
-): Promise<NextResponse> {
+): Promise<Response> {
     try {
-        const { id: campaignId } = await params
-        const body: PurchaseBody = await request.json()
+        const { id } = await params
+        const user = await requireUser()
+        const { campaign: authorizedCampaign, isGM } = await requireCampaignMember(id, user)
+        const campaignId = authorizedCampaign.id
+
+        const body: PurchaseBody = await readJsonBody(request)
         const { charsheetId, itemId } = body
 
         if (!charsheetId || !itemId) {
@@ -34,9 +42,16 @@ export async function POST(
                 { status: 400 }
             )
         }
+        assertId(charsheetId, 'charsheetId')
+
+        // Só compra com uma ficha desta campanha — a própria (ou qualquer uma, se for o mestre)
+        const isOwnSheet = authorizedCampaign.players?.some(p => p.charsheetId === charsheetId && p.userId === user.id)
+        if (!campaignHasCharsheet(authorizedCampaign, charsheetId) || (!isOwnSheet && !isGM)) {
+            throw forbidden('Você só pode comprar com o seu próprio personagem')
+        }
 
         // Verifica campanha
-        const campaign = await campaignEntity.findById(campaignId)
+        const campaign = await adminGetDoc<Campaign>('campaigns', campaignId)
         if (!campaign) {
             return NextResponse.json(
                 { error: 'Campanha não encontrada' },
@@ -59,7 +74,7 @@ export async function POST(
         }
 
         // Verifica charsheet
-        const charsheet = await charsheetEntity.findById(charsheetId)
+        const charsheet = await adminGetDoc<Charsheet>('charsheets', charsheetId)
         if (!charsheet) {
             return NextResponse.json(
                 { error: 'Personagem não encontrado' },
@@ -123,7 +138,8 @@ export async function POST(
             charsheetId,
             campaignCode: campaign.campaignCode,
             campaignMode: campaign.mode,
-            currentCharsheet: charsheet
+            currentCharsheet: charsheet,
+            updateCharsheet: async (sheetId, fields) => { await adminUpdateDoc('charsheets', sheetId, fields) }
         })
 
         if (!result.success) {
@@ -135,13 +151,13 @@ export async function POST(
 
         // Deduz o dinheiro
         const newMoney = currentMoney - itemPrice
-        await charsheetEntity.update(charsheetId, {
+        await adminUpdateDoc('charsheets', charsheetId, {
             'inventory.money': newMoney
         })
 
         // Remove o item da loja
         const updatedShopItems = shopItems.filter((i: any) => i.id !== itemId)
-        await campaignEntity.update(campaignId, {
+        await adminUpdateDoc('campaigns', campaignId, {
             'shop.items': updatedShopItems
         })
 
@@ -173,10 +189,6 @@ export async function POST(
         })
 
     } catch (error) {
-        console.error('Erro ao comprar item:', error)
-        return NextResponse.json(
-            { error: 'Erro interno do servidor' },
-            { status: 500 }
-        )
+        return handleRouteError(error, 'Erro ao comprar item')
     }
 }

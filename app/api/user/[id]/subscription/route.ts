@@ -5,6 +5,7 @@ import { authOptions } from '@app/api/auth/[...nextauth]/route';
 import * as admin from 'firebase-admin';
 import { SubscriptionPlan, SubscriptionStatus } from '@enums/subscriptionEnum';
 import { isAdminEmail } from '@utils/adminCheck';
+import { assertId, assertMaxLength, handleRouteError, readJsonBody, TEXT_LIMITS } from '@utils/api';
 
 if (!admin.apps.length) {
     admin.initializeApp({
@@ -32,19 +33,23 @@ export async function PATCH(
             );
         }
 
-        const userId = params.id;
-        const body = await request.json();
-        const { plan, paymentData } = body;
-
-        // Verificar se o usuário é admin ou está atualizando sua própria assinatura
-        const isAdmin = isAdminEmail(session.user.email);
-
-        if (session.user.id !== userId && !isAdmin) {
+        // Trocar de plano sem pagamento seria um upgrade gratuito: só administradores
+        // alteram planos por aqui (o fluxo de pagamento deve gravar a assinatura no servidor)
+        if (!isAdminEmail(session.user.email)) {
             return NextResponse.json(
-                { error: 'Você só pode atualizar sua própria assinatura' },
+                { error: 'Apenas administradores podem alterar planos de assinatura' },
                 { status: 403 }
             );
         }
+
+        const userId = assertId(params.id);
+        const body = await readJsonBody(request);
+        const { plan, paymentData } = body;
+
+        if (!Object.values(SubscriptionPlan).includes(plan)) {
+            return NextResponse.json({ error: 'Plano inválido' }, { status: 400 });
+        }
+        assertMaxLength(paymentData?.paymentMethod, TEXT_LIMITS.name, 'paymentData.paymentMethod');
 
         // Buscar usuário atual
         const userRef = db.collection('users').doc(userId);
@@ -104,14 +109,7 @@ export async function PATCH(
         });
 
     } catch (error) {
-        console.error('Erro ao atualizar assinatura:', error);
-        return NextResponse.json(
-            { 
-                error: 'Erro ao atualizar assinatura',
-                details: error instanceof Error ? error.message : String(error)
-            },
-            { status: 500 }
-        );
+        return handleRouteError(error, 'Erro ao atualizar assinatura');
     }
 }
 
@@ -133,7 +131,7 @@ export async function GET(
             );
         }
 
-        const userId = params.id;
+        const userId = assertId(params.id);
 
         // Verificar se o usuário é admin ou está acessando sua própria assinatura
         const isAdmin = isAdminEmail(session.user.email);
@@ -165,13 +163,6 @@ export async function GET(
         });
 
     } catch (error) {
-        console.error('Erro ao obter assinatura:', error);
-        return NextResponse.json(
-            { 
-                error: 'Erro ao obter assinatura',
-                details: error instanceof Error ? error.message : String(error)
-            },
-            { status: 500 }
-        );
+        return handleRouteError(error, 'Erro ao obter assinatura');
     }
 }

@@ -5,6 +5,7 @@ import { authOptions } from '@app/api/auth/[...nextauth]/route';
 import * as admin from 'firebase-admin';
 import { SubscriptionPlan, SubscriptionStatus } from '@enums/subscriptionEnum';
 import { isAdminEmail } from '@utils/adminCheck';
+import { assertId, assertMaxLength, handleRouteError, readJsonBody, TEXT_LIMITS } from '@utils/api';
 
 if (!admin.apps.length) {
     admin.initializeApp({
@@ -32,7 +33,7 @@ export async function PATCH(
             );
         }
 
-        const userId = params.id;
+        const userId = assertId(params.id);
 
         // Verificar se o usuário é admin ou está cancelando sua própria assinatura
         const isAdmin = isAdminEmail(session.user.email);
@@ -44,8 +45,9 @@ export async function PATCH(
             );
         }
 
-        const body = await request.json();
+        const body = await readJsonBody(request, { optional: true });
         const { reason } = body;
+        assertMaxLength(reason, TEXT_LIMITS.shortText, 'reason');
 
         // Buscar usuário atual
         const userRef = db.collection('users').doc(userId);
@@ -70,7 +72,7 @@ export async function PATCH(
                 status: SubscriptionStatus.CANCELLED,
                 cancelledAt: now.toISOString(),
                 autoRenew: false,
-                cancellationReason: reason
+                cancellationReason: reason ?? null
             }
         };
 
@@ -101,13 +103,6 @@ export async function PATCH(
         });
 
     } catch (error) {
-        console.error('Erro ao cancelar assinatura:', error);
-        return NextResponse.json(
-            { 
-                error: 'Erro ao cancelar assinatura',
-                details: error instanceof Error ? error.message : String(error)
-            },
-            { status: 500 }
-        );
+        return handleRouteError(error, 'Erro ao cancelar assinatura');
     }
 }

@@ -4,21 +4,24 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@app/api/auth/[...nextauth]/route';
 import { RPGSystem } from '@models/entities';
 import { isAdminEmail } from '@utils/adminCheck';
+import { assertId, assertMaxLength, handleRouteError, readJsonBody, TEXT_LIMITS } from '@utils/api';
 
 export async function GET(
     req: NextRequest,
     { params }: { params: { id: string } }
 ): Promise<Response> {
     try {
-        const system = await rpgSystemRepository.findById(params.id);
+        // Sistemas privados são lidos por ID (não listáveis): jogadores de uma
+        // campanha precisam carregar o sistema do mestre
+        const system = await rpgSystemRepository.findById(assertId(params.id));
 
         if (!system) {
             return Response.json({ message: 'NOT FOUND' }, { status: 404 });
         }
 
         return Response.json(system);
-    } catch (error: any) {
-        return Response.json({ message: 'NOT FOUND', error: error.message }, { status: 404 });
+    } catch (error) {
+        return handleRouteError(error);
     }
 }
 
@@ -32,8 +35,10 @@ export async function PUT(
             return Response.json({ message: 'UNAUTHORIZED', error: 'Não autorizado' }, { status: 401 });
         }
 
-        const body = await req.json();
-        const existingSystem = await rpgSystemRepository.findById(params.id);
+        const body = await readJsonBody(req);
+        assertMaxLength(body.name, TEXT_LIMITS.title, 'name');
+        assertMaxLength(body.description, TEXT_LIMITS.description, 'description');
+        const existingSystem = await rpgSystemRepository.findById(assertId(params.id));
 
         if (!existingSystem) {
             return Response.json({ message: 'NOT FOUND' }, { status: 404 });
@@ -58,8 +63,8 @@ export async function PUT(
         await rpgSystemRepository.update(updatedSystem);
 
         return Response.json(updatedSystem);
-    } catch (error: any) {
-        return Response.json({ message: 'BAD REQUEST', error: error.message }, { status: 400 });
+    } catch (error) {
+        return handleRouteError(error);
     }
 }
 
@@ -73,8 +78,10 @@ export async function PATCH(
             return Response.json({ message: 'UNAUTHORIZED', error: 'Não autorizado' }, { status: 401 });
         }
 
-        const body = await req.json();
-        const existingSystem = await rpgSystemRepository.findById(params.id);
+        const body = await readJsonBody(req);
+        assertMaxLength(body.name, TEXT_LIMITS.title, 'name');
+        assertMaxLength(body.description, TEXT_LIMITS.description, 'description');
+        const existingSystem = await rpgSystemRepository.findById(assertId(params.id));
 
         if (!existingSystem) {
             return Response.json({ message: 'NOT FOUND' }, { status: 404 });
@@ -98,8 +105,8 @@ export async function PATCH(
         await rpgSystemRepository.update(updatedSystem);
 
         return Response.json(updatedSystem);
-    } catch (error: any) {
-        return Response.json({ message: 'BAD REQUEST', error: error.message }, { status: 400 });
+    } catch (error) {
+        return handleRouteError(error);
     }
 }
 
@@ -113,7 +120,7 @@ export async function DELETE(
             return Response.json({ message: 'UNAUTHORIZED', error: 'Não autorizado' }, { status: 401 });
         }
 
-        const existingSystem = await rpgSystemRepository.findById(params.id);
+        const existingSystem = await rpgSystemRepository.findById(assertId(params.id));
 
         if (!existingSystem) {
             return Response.json({ message: 'NOT FOUND' }, { status: 404 });
@@ -126,7 +133,7 @@ export async function DELETE(
         await rpgSystemRepository.delete(params.id);
 
         return Response.json({ message: 'DELETED' });
-    } catch (error: any) {
-        return Response.json({ message: 'BAD REQUEST', error: error.message }, { status: 400 });
+    } catch (error) {
+        return handleRouteError(error);
     }
 }

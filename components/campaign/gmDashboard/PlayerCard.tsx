@@ -19,7 +19,7 @@ import {
     Typography
 } from '@mui/material'
 import { red } from '@mui/material/colors'
-import { campaignService, notificationService } from '@services'
+import { campaignService, charsheetService, notificationService } from '@services'
 import { enqueueSnackbar } from 'notistack'
 import { memo, useState } from 'react'
 import { useCampaignContext } from '@contexts';
@@ -98,15 +98,15 @@ function PlayerCard({ charsheet }: { charsheet: Required<CharsheetDTO> }) {
             const currentItems = normalizeToArray(inventory?.items)
 
             if (isWeapon) {
-                await charsheetEntity.update(charsheet.id, {
+                await charsheetService.updateFields(charsheet.id, {
                     'inventory.weapons': [ ...currentWeapons, item ]
                 } as any)
             } else if (isArmor) {
-                await charsheetEntity.update(charsheet.id, {
+                await charsheetService.updateFields(charsheet.id, {
                     'inventory.armors': [ ...currentArmors, item ]
                 } as any)
             } else {
-                await charsheetEntity.update(charsheet.id, {
+                await charsheetService.updateFields(charsheet.id, {
                     'inventory.items': [ ...currentItems, item ]
                 } as any)
             }

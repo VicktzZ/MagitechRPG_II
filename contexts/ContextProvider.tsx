@@ -1,6 +1,7 @@
 'use client';
 
 import { SavingSpinner } from '@components/misc';
+import { FirebaseAuthBridge } from '@components/misc/FirebaseAuthBridge';
 import { charsheetModel } from '@constants/charsheet';
 import { channelContext, charsheetContext, savingSpinnerContext, ThemeProvider, userContext, useThemeContext } from '@contexts';
 import type { Charsheet } from '@models/entities';
@@ -76,6 +77,7 @@ function ThemedApp({
                     <savingSpinnerContext.Provider value={{ isSaving, showSavingSpinner: setIsSaving }}>
                         <MuiThemeProvider theme={currentTheme}>
                             <SessionProvider>
+                                <FirebaseAuthBridge />
                                 <CssBaseline />
                                 <SavingSpinner />
                                 {children}

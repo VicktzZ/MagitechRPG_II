@@ -1,7 +1,6 @@
 import { useContext, useMemo } from 'react';
 import { userContext } from '@contexts/userContext';
-import { useSession } from 'next-auth/react';
-import { useFirestoreRealtime } from '@hooks/useFirestoreRealtime';
+import { useCurrentUserDoc } from '@hooks/useCurrentUserDoc';
 import type { User } from '@models/entities';
 import { 
     Permission, 
@@ -33,23 +32,13 @@ import type { PermissionCheck } from '@models/types/subscription';
  */
 export function useSubscription() {
     const { user: contextUser } = useContext(userContext);
-    const { data: session } = useSession();
-    const { data: allUsers } = useFirestoreRealtime('user');
-  
-    // Tentar buscar usuário do contexto primeiro, senão buscar do Firestore
-    const user = useMemo(() => {
-        if (contextUser?.subscription) {
-            return contextUser as User;
-        }
-    
-        // Se não tem no contexto, buscar do Firestore
-        if (session?.user?.id && allUsers) {
-            const firestoreUser = allUsers.find((u: User) => u.id === session.user.id);
-            return firestoreUser! || null;
-        }
-    
-        return null;
-    }, [ contextUser, session?.user?.id, allUsers ]);
+    // Tenta o usuário do contexto primeiro; senão, o próprio documento no Firestore
+    const { user: firestoreUser } = useCurrentUserDoc();
+
+    const user = useMemo(
+        () => (contextUser?.subscription ? contextUser as User : firestoreUser),
+        [ contextUser, firestoreUser ]
+    );
 
     const subscriptionData = useMemo(() => {
         if (!user?.subscription) {
@@ -94,16 +83,12 @@ export function useSubscription() {
  */
 export function usePermission(permission: Permission): PermissionCheck {
     const { user: contextUser } = useContext(userContext);
-    const { data: session } = useSession();
-    const { data: allUsers } = useFirestoreRealtime('user');
-  
-    const user = useMemo(() => {
-        if (contextUser?.subscription) return contextUser as User;
-        if (session?.user?.id && allUsers) {
-            return allUsers.find((u: User) => u.id === session.user.id)! || null;
-        }
-        return null;
-    }, [ contextUser, session?.user?.id, allUsers ]);
+    const { user: firestoreUser } = useCurrentUserDoc();
+
+    const user = useMemo(
+        () => (contextUser?.subscription ? contextUser as User : firestoreUser),
+        [ contextUser, firestoreUser ]
+    );
 
     return useMemo(() => {
         return checkPermission(user, permission);
@@ -115,16 +100,12 @@ export function usePermission(permission: Permission): PermissionCheck {
  */
 export function usePermissions(permissions: Permission[]) {
     const { user: contextUser } = useContext(userContext);
-    const { data: session } = useSession();
-    const { data: allUsers } = useFirestoreRealtime('user');
-  
-    const user = useMemo(() => {
-        if (contextUser?.subscription) return contextUser as User;
-        if (session?.user?.id && allUsers) {
-            return allUsers.find((u: User) => u.id === session.user.id)! || null;
-        }
-        return null;
-    }, [ contextUser, session?.user?.id, allUsers ]);
+    const { user: firestoreUser } = useCurrentUserDoc();
+
+    const user = useMemo(
+        () => (contextUser?.subscription ? contextUser as User : firestoreUser),
+        [ contextUser, firestoreUser ]
+    );
 
     return useMemo(() => {
         return {
@@ -140,16 +121,12 @@ export function usePermissions(permissions: Permission[]) {
  */
 export function useCampaignAccess() {
     const { user: contextUser } = useContext(userContext);
-    const { data: session } = useSession();
-    const { data: allUsers } = useFirestoreRealtime('user');
-  
-    const user = useMemo(() => {
-        if (contextUser?.subscription) return contextUser as User;
-        if (session?.user?.id && allUsers) {
-            return allUsers.find((u: User) => u.id === session.user.id)! || null;
-        }
-        return null;
-    }, [ contextUser, session?.user?.id, allUsers ]);
+    const { user: firestoreUser } = useCurrentUserDoc();
+
+    const user = useMemo(
+        () => (contextUser?.subscription ? contextUser as User : firestoreUser),
+        [ contextUser, firestoreUser ]
+    );
 
     return useMemo(() => {
         const access = canAccessCampaigns(user);
@@ -169,16 +146,12 @@ export function useCampaignAccess() {
  */
 export function useCustomSystemsAccess() {
     const { user: contextUser } = useContext(userContext);
-    const { data: session } = useSession();
-    const { data: allUsers } = useFirestoreRealtime('user');
-  
-    const user = useMemo(() => {
-        if (contextUser?.subscription) return contextUser as User;
-        if (session?.user?.id && allUsers) {
-            return allUsers.find((u: User) => u.id === session.user.id)! || null;
-        }
-        return null;
-    }, [ contextUser, session?.user?.id, allUsers ]);
+    const { user: firestoreUser } = useCurrentUserDoc();
+
+    const user = useMemo(
+        () => (contextUser?.subscription ? contextUser as User : firestoreUser),
+        [ contextUser, firestoreUser ]
+    );
 
     return useMemo(() => {
         const access = canCreateCustomSystems(user);
@@ -197,16 +170,12 @@ export function useCustomSystemsAccess() {
  */
 export function useDiscordAccess() {
     const { user: contextUser } = useContext(userContext);
-    const { data: session } = useSession();
-    const { data: allUsers } = useFirestoreRealtime('user');
-  
-    const user = useMemo(() => {
-        if (contextUser?.subscription) return contextUser as User;
-        if (session?.user?.id && allUsers) {
-            return allUsers.find((u: User) => u.id === session.user.id)! || null;
-        }
-        return null;
-    }, [ contextUser, session?.user?.id, allUsers ]);
+    const { user: firestoreUser } = useCurrentUserDoc();
+
+    const user = useMemo(
+        () => (contextUser?.subscription ? contextUser as User : firestoreUser),
+        [ contextUser, firestoreUser ]
+    );
 
     return useMemo(() => {
         return {
@@ -223,16 +192,12 @@ export function useDiscordAccess() {
  */
 export function usePlanChange() {
     const { user: contextUser } = useContext(userContext);
-    const { data: session } = useSession();
-    const { data: allUsers } = useFirestoreRealtime('user');
-  
-    const user = useMemo(() => {
-        if (contextUser?.subscription) return contextUser as User;
-        if (session?.user?.id && allUsers) {
-            return allUsers.find((u: User) => u.id === session.user.id)! || null;
-        }
-        return null;
-    }, [ contextUser, session?.user?.id, allUsers ]);
+    const { user: firestoreUser } = useCurrentUserDoc();
+
+    const user = useMemo(
+        () => (contextUser?.subscription ? contextUser as User : firestoreUser),
+        [ contextUser, firestoreUser ]
+    );
 
     return useMemo(() => {
         return {

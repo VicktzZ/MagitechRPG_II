@@ -2,21 +2,19 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { campaignRepository } from '@repositories'
 import { v4 as uuidv4 } from 'uuid'
 import { Expertises } from '@models'
+import { assertMaxLength, handleRouteError, readJsonBody, requireCampaignGM, requireCampaignMember, requireUser, TEXT_LIMITS } from '@utils/api'
 
 export async function POST(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { id: campaignId } = await params
-        const body = await request.json()
+        const { id } = await params
+        const user = await requireUser()
+        // Criaturas customizadas são criadas pelo mestre
+        const { campaign } = await requireCampaignGM(id, user)
 
-        if (!campaignId) {
-            return NextResponse.json(
-                { error: 'ID da campanha é obrigatório' },
-                { status: 400 }
-            )
-        }
+        const body = await readJsonBody(request)
 
         if (!body.name?.trim()) {
             return NextResponse.json(
@@ -24,15 +22,8 @@ export async function POST(
                 { status: 400 }
             )
         }
-
-        // Busca a campanha
-        const campaign = await campaignRepository.findById(campaignId)
-        if (!campaign) {
-            return NextResponse.json(
-                { error: 'Campanha não encontrada' },
-                { status: 404 }
-            )
-        }
+        assertMaxLength(body.name, TEXT_LIMITS.name, 'name')
+        assertMaxLength(body.description, TEXT_LIMITS.description, 'description')
 
         // Perícias: se o cliente enviou (suporta sistemas customizados com perícias
         // próprias), persiste as chaves enviadas preservando a defaultAttribute;
@@ -104,11 +95,7 @@ export async function POST(
         })
 
     } catch (error) {
-        console.error('Erro ao criar criatura:', error)
-        return NextResponse.json(
-            { error: 'Erro interno do servidor' },
-            { status: 500 }
-        )
+        return handleRouteError(error, 'Erro ao criar criatura')
     }
 }
 
@@ -117,22 +104,9 @@ export async function GET(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { id: campaignId } = await params
-
-        if (!campaignId) {
-            return NextResponse.json(
-                { error: 'ID da campanha é obrigatório' },
-                { status: 400 }
-            )
-        }
-
-        const campaign = await campaignRepository.findById(campaignId)
-        if (!campaign) {
-            return NextResponse.json(
-                { error: 'Campanha não encontrada' },
-                { status: 404 }
-            )
-        }
+        const { id } = await params
+        const user = await requireUser()
+        const { campaign } = await requireCampaignMember(id, user)
 
         const creatures = campaign.custom?.creatures || []
 
@@ -142,11 +116,7 @@ export async function GET(
         })
 
     } catch (error) {
-        console.error('Erro ao buscar criaturas:', error)
-        return NextResponse.json(
-            { error: 'Erro interno do servidor' },
-            { status: 500 }
-        )
+        return handleRouteError(error, 'Erro ao buscar criaturas')
     }
 }
 
@@ -155,23 +125,20 @@ export async function PUT(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { id: campaignId } = await params
-        const body = await request.json()
+        const { id } = await params
+        const user = await requireUser()
+        const { campaign } = await requireCampaignGM(id, user)
 
-        if (!campaignId || !body.id) {
+        const body = await readJsonBody(request)
+
+        if (!body.id) {
             return NextResponse.json(
                 { error: 'IDs são obrigatórios' },
                 { status: 400 }
             )
         }
-
-        const campaign = await campaignRepository.findById(campaignId)
-        if (!campaign) {
-            return NextResponse.json(
-                { error: 'Campanha não encontrada' },
-                { status: 404 }
-            )
-        }
+        assertMaxLength(body.name, TEXT_LIMITS.name, 'name')
+        assertMaxLength(body.description, TEXT_LIMITS.description, 'description')
 
         const existingCreatures = campaign.custom?.creatures || []
         const creatureIndex = existingCreatures.findIndex((c: any) => c.id === body.id)
@@ -218,11 +185,7 @@ export async function PUT(
         })
 
     } catch (error) {
-        console.error('Erro ao atualizar criatura:', error)
-        return NextResponse.json(
-            { error: 'Erro interno do servidor' },
-            { status: 500 }
-        )
+        return handleRouteError(error, 'Erro ao atualizar criatura')
     }
 }
 
@@ -231,21 +194,16 @@ export async function DELETE(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { id: campaignId } = await params
-        const { creatureId } = await request.json()
+        const { id } = await params
+        const user = await requireUser()
+        const { campaign } = await requireCampaignGM(id, user)
 
-        if (!campaignId || !creatureId) {
+        const { creatureId } = await readJsonBody(request)
+
+        if (!creatureId) {
             return NextResponse.json(
                 { error: 'IDs são obrigatórios' },
                 { status: 400 }
-            )
-        }
-
-        const campaign = await campaignRepository.findById(campaignId)
-        if (!campaign) {
-            return NextResponse.json(
-                { error: 'Campanha não encontrada' },
-                { status: 404 }
             )
         }
 
@@ -268,10 +226,6 @@ export async function DELETE(
         })
 
     } catch (error) {
-        console.error('Erro ao remover criatura:', error)
-        return NextResponse.json(
-            { error: 'Erro interno do servidor' },
-            { status: 500 }
-        )
+        return handleRouteError(error, 'Erro ao remover criatura')
     }
 }

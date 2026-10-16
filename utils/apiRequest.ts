@@ -54,10 +54,11 @@ export class ApiInstance<T> {
     constructor(baseURL: ApiRoutes) {
         const instance = axios.create({
             baseURL: '/api' + baseURL,
+            // A API é autenticada pelo cookie de sessão do NextAuth (enviado
+            // automaticamente em requisições same-origin). Não há chave no cliente:
+            // qualquer valor NEXT_PUBLIC_* fica visível no bundle do navegador.
             headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${process.env.NEXT_PUBLIC_API_KEY}`
-                // TODO: Implementar autenticação e segurança
+                'Content-Type': 'application/json'
             }
         })
 

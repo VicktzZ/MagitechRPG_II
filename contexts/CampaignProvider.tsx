@@ -23,7 +23,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, useMemo, useCallback, type ReactElement } from 'react';
 import { campaignContext, campaignMessagesContext, type CampaignContextValue } from './campaignContext';
-import { campaignEntity } from '@utils/firestoreEntities';
+import { campaignService } from '@services';
 import type { Campaign, RPGSystem } from '@models/entities';
 import { useSnackbar } from 'notistack';
 
@@ -99,7 +99,8 @@ export function CampaignProvider({ children, code }: { children: ReactElement, c
     const updateCampaign = useCallback(async (data: Partial<Campaign>) => {
         const id = campaignData?.campaign?.id;
         if (!id) return;
-        await campaignEntity.update(id, data);
+        // Pela API (somente mestre): clientes não escrevem direto em `campaigns` nas regras do Firestore
+        await campaignService.updateFields(id, data as Record<string, unknown>);
     }, [ campaignData?.campaign?.id ]);
 
     const contextValue = useMemo((): CampaignContextValue | null => {

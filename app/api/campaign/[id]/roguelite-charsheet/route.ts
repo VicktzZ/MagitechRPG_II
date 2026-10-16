@@ -1,5 +1,6 @@
 import { charsheetRepository, campaignRepository } from '@repositories';
 import type { NextRequest } from 'next/server';
+import { assertMaxLength, findCampaignOrThrow, handleRouteError, readJsonBody, requireUser, TEXT_LIMITS } from '@utils/api';
 
 interface RogueliteCharsheetBody {
     name: string;
@@ -17,13 +18,29 @@ export async function POST(
 ): Promise<Response> {
     try {
         const { id: campaignId } = await params;
-        const body: RogueliteCharsheetBody = await req.json();
+        const user = await requireUser();
+        const requestBody: RogueliteCharsheetBody = await readJsonBody(req);
 
-        // Buscar a campanha
-        const campaign = await campaignRepository.findById(campaignId);
-        if (!campaign) {
-            return Response.json({ message: 'Campanha não encontrada' }, { status: 404 });
+        // Buscar a campanha (o código da campanha funciona como convite)
+        const campaign = await findCampaignOrThrow(campaignId);
+
+        assertMaxLength(requestBody.name, TEXT_LIMITS.name, 'name');
+        assertMaxLength(requestBody.playerName, TEXT_LIMITS.name, 'playerName');
+        assertMaxLength(requestBody.race, TEXT_LIMITS.name, 'race');
+        assertMaxLength(requestBody.gender, TEXT_LIMITS.name, 'gender');
+        // Campos de formulário podem chegar como texto ("18")
+        const age = requestBody.age === undefined ? undefined : Number(requestBody.age);
+        if (age !== undefined && !Number.isFinite(age)) {
+            return Response.json({ message: 'BAD REQUEST', error: 'age deve ser um número' }, { status: 400 });
         }
+
+        // A ficha é sempre de quem está logado e da campanha da URL — nunca do body
+        const body: RogueliteCharsheetBody = {
+            ...requestBody,
+            ...(age !== undefined ? { age } : {}),
+            userId: user.id,
+            campaignCode: campaign.campaignCode
+        };
 
         // Verificar se o usuário já está na campanha
         const existingPlayer = campaign.players.find(p => p.userId === body.userId);
@@ -211,8 +228,7 @@ export async function POST(
             charsheet: createdCharsheet,
             message: 'Ficha roguelite criada com sucesso'
         }, { status: 201 });
-    } catch (error: any) {
-        console.error('Erro ao criar ficha roguelite:', error);
-        return Response.json({ message: 'Erro ao criar ficha', error: error.message }, { status: 500 });
+    } catch (error) {
+        return handleRouteError(error, 'Erro ao criar ficha roguelite');
     }
 }
