@@ -21,40 +21,49 @@ import {
     useTheme
 } from '@mui/material';
 import { useSnackbar } from 'notistack';
-import { type ReactElement, useCallback, useEffect, useMemo, useState, memo } from 'react';
+import { type ReactElement, Fragment, useCallback, useEffect, useMemo, useState, memo } from 'react';
 import { useInView } from 'react-intersection-observer';
 
 import { toastDefault } from '@constants';
 import { useResourceList } from '@hooks/useResourceList';
 import { CustomMenu } from '@layout';
 import type { ResourceListModalProps } from '@models/types/components';
+import { collectFilterOptions } from '@utils/filterSelection';
 
-/** Botão de filtro com menu de múltipla seleção (checkboxes) */
-function MultiSelectFilter({
-    label,
-    options,
-    selected,
-    onToggle,
-    onClear
-}: {
+/** Seção (lista de checkboxes) de um menu de filtro */
+interface FilterSection {
     label: string;
     options: string[];
     selected: string[];
     onToggle: (value: string) => void;
     onClear: () => void;
+}
+
+/**
+ * Botão de filtro com menu de múltipla seleção (checkboxes). Aceita mais de uma seção
+ * no mesmo menu (ex: "Tipo" e "Subtipo"), lado a lado em telas largas e empilhadas nas
+ * estreitas, cada uma com a sua rolagem; o contador do botão soma as marcadas.
+ */
+function MultiSelectFilter({
+    label,
+    sections
+}: {
+    label: string;
+    sections: FilterSection[];
 }): ReactElement {
     const [ anchorEl, setAnchorEl ] = useState<HTMLElement | null>(null);
     const open = Boolean(anchorEl);
+    const totalSelected = sections.reduce((total, section) => total + section.selected.length, 0);
 
     return (
         <>
             <Button
-                variant={selected.length > 0 ? 'contained' : 'outlined'}
+                variant={totalSelected > 0 ? 'contained' : 'outlined'}
                 size="small"
                 onClick={(e) => setAnchorEl(e.currentTarget)}
                 endIcon={<ArrowDropDown />}
             >
-                {label}{selected.length > 0 ? ` (${selected.length})` : ''}
+                {label}{totalSelected > 0 ? ` (${totalSelected})` : ''}
             </Button>
             <Popover
                 open={open}
@@ -64,38 +73,56 @@ function MultiSelectFilter({
                 transformOrigin={{ vertical: 'top', horizontal: 'left' }}
                 slotProps={{ paper: { sx: { borderRadius: 2, mt: 0.5 } } }}
             >
-                <Box sx={{ p: 1.5, minWidth: 220, maxHeight: 320, overflowY: 'auto' }}>
-                    <Box display="flex" justifyContent="space-between" alignItems="center" mb={0.5} gap={1}>
-                        <Typography variant="subtitle2">{label}</Typography>
-                        {selected.length > 0 && (
-                            <Button size="small" onClick={onClear} sx={{ minWidth: 'auto' }}>
-                                Limpar
-                            </Button>
-                        )}
-                    </Box>
-                    <Divider sx={{ mb: 1 }} />
-                    {options.length === 0 ? (
-                        <Typography variant="body2" color="text.secondary" sx={{ px: 1, py: 1 }}>
-                            Nenhuma opção disponível.
-                        </Typography>
-                    ) : (
-                        <FormGroup>
-                            {options.map(option => (
-                                <FormControlLabel
-                                    key={option}
-                                    sx={{ mr: 0 }}
-                                    control={
-                                        <Checkbox
-                                            size="small"
-                                            checked={selected.includes(option)}
-                                            onChange={() => onToggle(option)}
-                                        />
-                                    }
-                                    label={<Typography variant="body2">{option}</Typography>}
-                                />
-                            ))}
-                        </FormGroup>
-                    )}
+                <Box
+                    sx={{
+                        p: 1.5,
+                        display: 'flex',
+                        flexDirection: { xs: 'column', sm: 'row' },
+                        gap: 1.5,
+                        maxHeight: { xs: '70vh', sm: 'none' },
+                        overflowY: { xs: 'auto', sm: 'visible' }
+                    }}
+                >
+                    {sections.map((section, index) => (
+                        <Fragment key={section.label}>
+                            {index > 0 && (
+                                <Divider flexItem orientation="vertical" sx={{ display: { xs: 'none', sm: 'block' } }} />
+                            )}
+                            <Box sx={{ minWidth: 200, maxHeight: { sm: 340 }, overflowY: { sm: 'auto' } }}>
+                                <Box display="flex" justifyContent="space-between" alignItems="center" mb={0.5} gap={1}>
+                                    <Typography variant="subtitle2">{section.label}</Typography>
+                                    {section.selected.length > 0 && (
+                                        <Button size="small" onClick={section.onClear} sx={{ minWidth: 'auto' }}>
+                                            Limpar
+                                        </Button>
+                                    )}
+                                </Box>
+                                <Divider sx={{ mb: 1 }} />
+                                {section.options.length === 0 ? (
+                                    <Typography variant="body2" color="text.secondary" sx={{ px: 1, py: 1 }}>
+                                        Nenhuma opção disponível.
+                                    </Typography>
+                                ) : (
+                                    <FormGroup>
+                                        {section.options.map(option => (
+                                            <FormControlLabel
+                                                key={option}
+                                                sx={{ mr: 0 }}
+                                                control={
+                                                    <Checkbox
+                                                        size="small"
+                                                        checked={section.selected.includes(option)}
+                                                        onChange={() => section.onToggle(option)}
+                                                    />
+                                                }
+                                                label={<Typography variant="body2">{option}</Typography>}
+                                            />
+                                        ))}
+                                    </FormGroup>
+                                )}
+                            </Box>
+                        </Fragment>
+                    ))}
                 </Box>
             </Popover>
         </>
@@ -130,6 +157,7 @@ function ResourceListModal({
 
     const {
         items,
+        loadedItems,
         isLoading,
         isError,
         error,
@@ -140,6 +168,8 @@ function ResourceListModal({
         clearFilters,
         toggleSecondaryFilter,
         clearSecondaryFilters,
+        toggleSubFilter,
+        clearSubFilters,
         setSort,
         setButtonSelected,
         addItem,
@@ -147,6 +177,7 @@ function ResourceListModal({
         search,
         filters,
         secondaryFilters,
+        subFilters,
         sort,
         buttonSelected
     } = useResourceList({
@@ -161,21 +192,22 @@ function ResourceListModal({
         addFunction,
         validateAdd,
         sortFieldMap,
-        getSecondaryFilterValue: secondaryFilter?.getValue
+        getSecondaryFilterValue: secondaryFilter?.getValue,
+        getSubFilterValue: secondaryFilter?.subFilter?.getValue
     });
 
+    // As opções saem dos itens carregados (e não dos já filtrados), para que marcar uma
+    // opção não faça as outras sumirem. As fixas vêm primeiro; as demais, achadas nos itens, depois.
     const secondaryOptions = useMemo(() => {
         if (!secondaryFilter) return [];
-        if (secondaryFilter.options) return secondaryFilter.options;
+        return collectFilterOptions(loadedItems, secondaryFilter.getValue, secondaryFilter.options);
+    }, [ secondaryFilter, loadedItems ]);
 
-        const unique = new Set<string>();
-        items.forEach(item => {
-            const value = secondaryFilter.getValue(item);
-            if (value) unique.add(value);
-        });
-
-        return Array.from(unique).sort((a, b) => a.localeCompare(b, 'pt-BR'));
-    }, [ secondaryFilter, items ]);
+    const subFilterOptions = useMemo(() => {
+        const subFilter = secondaryFilter?.subFilter;
+        if (!subFilter) return [];
+        return collectFilterOptions(loadedItems, subFilter.getValue, subFilter.options);
+    }, [ secondaryFilter, loadedItems ]);
 
     const { ref: loadMoreRef, inView } = useInView({
         threshold: 0.5, // Aumentado para evitar carregamentos prematuros
@@ -245,12 +277,13 @@ function ResourceListModal({
         }
     }, [ addItem, enqueueSnackbar, closeSnackbar ]);
 
-    const hasActiveFilters = filters.length > 0 || secondaryFilters.length > 0;
+    const hasActiveFilters = filters.length > 0 || secondaryFilters.length > 0 || subFilters.length > 0;
 
     const handleClearAllFilters = useCallback(() => {
         clearFilters();
         clearSecondaryFilters();
-    }, [ clearFilters, clearSecondaryFilters ]);
+        clearSubFilters();
+    }, [ clearFilters, clearSecondaryFilters, clearSubFilters ]);
 
     const renderContent = () => {
         if (buttonSelected.create) {
@@ -292,20 +325,35 @@ function ResourceListModal({
                     {filterOptions?.length > 0 && (
                         <MultiSelectFilter
                             label={filterLabel}
-                            options={filterOptions}
-                            selected={filters}
-                            onToggle={toggleFilter}
-                            onClear={clearFilters}
+                            sections={[ {
+                                label: filterLabel,
+                                options: filterOptions,
+                                selected: filters,
+                                onToggle: toggleFilter,
+                                onClear: clearFilters
+                            } ]}
                         />
                     )}
 
                     {secondaryFilter && (
                         <MultiSelectFilter
                             label={secondaryFilter.label}
-                            options={secondaryOptions}
-                            selected={secondaryFilters}
-                            onToggle={toggleSecondaryFilter}
-                            onClear={clearSecondaryFilters}
+                            sections={[
+                                {
+                                    label: secondaryFilter.label,
+                                    options: secondaryOptions,
+                                    selected: secondaryFilters,
+                                    onToggle: toggleSecondaryFilter,
+                                    onClear: clearSecondaryFilters
+                                },
+                                ...(secondaryFilter.subFilter ? [ {
+                                    label: secondaryFilter.subFilter.label,
+                                    options: subFilterOptions,
+                                    selected: subFilters,
+                                    onToggle: toggleSubFilter,
+                                    onClear: clearSubFilters
+                                } ] : [])
+                            ]}
                         />
                     )}
 
@@ -363,6 +411,16 @@ function ResourceListModal({
                                 size="small"
                                 onDelete={() => toggleSecondaryFilter(value)}
                                 color="secondary"
+                                variant="outlined"
+                            />
+                        ))}
+                        {subFilters.map(value => (
+                            <Chip
+                                key={`sub-${value}`}
+                                label={`${secondaryFilter?.subFilter?.label ?? 'Subtipo'}: ${value}`}
+                                size="small"
+                                onDelete={() => toggleSubFilter(value)}
+                                color="info"
                                 variant="outlined"
                             />
                         ))}
@@ -439,7 +497,7 @@ function ResourceListModal({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [
         buttonSelected, items, isLoading, hasNextPage, isFetchingNextPage,
-        search, filters, secondaryFilters, sort, secondaryOptions
+        search, filters, secondaryFilters, subFilters, sort, secondaryOptions, subFilterOptions
     ]);
 
     return (

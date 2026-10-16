@@ -9,7 +9,7 @@ import { Box, Backdrop } from '@mui/material';
 import type { Spell } from '@models/entities';
 import type { ReactElement } from 'react';
 import type { CharsheetDTO } from '@models/dtos';
-import { getSpellCategory } from '@utils/spellCategory';
+import { SPELL_TYPE_FILTER } from '@utils/spellCategory';
 
 import Magic from '../subcomponents/Magic';
 
@@ -143,10 +143,7 @@ export default function SpellsModal({ open, onClose }: { open: boolean, onClose:
                             errorMessage={(err) => err.message || 'Erro ao adicionar magia'}
                             filterOptions={getValues('level') < 15 ? elements : [ ...elements, ...specialElements ]}
                             filterLabel="Elemento"
-                            secondaryFilter={{
-                                label: 'Tipo',
-                                getValue: (spell: Spell) => getSpellCategory(spell.type)
-                            }}
+                            secondaryFilter={SPELL_TYPE_FILTER}
                             sortOptions={[ 'Nível', 'Elemento', 'Alfabética' ]}
                             renderResource={({ item, handleAddItem }) => {
                                 const currentSpells = getValues('spells') || [];

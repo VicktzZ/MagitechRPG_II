@@ -6,6 +6,7 @@ import { Close } from '@mui/icons-material';
 import { toastDefault } from '@constants';
 import { useDebounce } from '@uidotdev/usehooks';
 import type { UseResourceListOptions, UseResourceListReturn } from '@models/types/hooks';
+import { filterBySelections } from '@utils/filterSelection';
 
 const DEFAULT_SORT_FIELD_MAP: Record<string, string> = {
     'Alfabética': 'name',
@@ -22,6 +23,7 @@ export const useResourceList = <T extends Record<string, any>>(
         initialSearch = '',
         initialFilters = [],
         initialSecondaryFilters = [],
+        initialSubFilters = [],
         initialSort = { value: 'Nível', order: 'ASC' as const },
         pageSize = 20,
         queryKey,
@@ -31,7 +33,8 @@ export const useResourceList = <T extends Record<string, any>>(
         successMessage = (item) => `Item ${item['name'] || item['nome']} adicionado com sucesso!`,
         errorMessage = (error) => error.message || 'Ocorreu um erro ao adicionar o item.',
         sortFieldMap,
-        getSecondaryFilterValue
+        getSecondaryFilterValue,
+        getSubFilterValue
     } = options;
 
     const { enqueueSnackbar, closeSnackbar } = useSnackbar();
@@ -43,6 +46,7 @@ export const useResourceList = <T extends Record<string, any>>(
 
     const [ filters, setFilters ] = useState<string[]>(initialFilters);
     const [ secondaryFilters, setSecondaryFilters ] = useState<string[]>(initialSecondaryFilters);
+    const [ subFilters, setSubFilters ] = useState<string[]>(initialSubFilters);
     const [ sort, setSort ] = useState(initialSort);
     const [ buttonSelected, setButtonSelected ] = useState({
         add: true,
@@ -61,6 +65,12 @@ export const useResourceList = <T extends Record<string, any>>(
     }, []);
 
     const clearSecondaryFilters = useCallback(() => setSecondaryFilters([]), []);
+
+    const toggleSubFilter = useCallback((value: string) => {
+        setSubFilters(prev => prev.includes(value) ? prev.filter(v => v !== value) : [ ...prev, value ]);
+    }, []);
+
+    const clearSubFilters = useCallback(() => setSubFilters([]), []);
 
     // Sempre pagina via cursor, com ou sem filtro aplicado — o filtro de
     // elemento(s) é resolvido no servidor (whereIn/whereEqualTo).
@@ -154,9 +164,10 @@ export const useResourceList = <T extends Record<string, any>>(
         }
     });
 
-    // Achatando a lista de páginas, removendo duplicatas, ordenando e
-    // aplicando o segundo filtro (resolvido no cliente, ex: categoria da magia)
-    const items = useMemo(() => {
+    // Achatando a lista de páginas, removendo duplicatas e ordenando. Esta é a lista
+    // "carregada": as opções do segundo filtro e do subfiltro saem dela, para que marcar
+    // uma opção não faça as demais sumirem do menu.
+    const loadedItems = useMemo(() => {
         if (!infData?.pages) return [];
 
         const allItems = infData.pages.flatMap((page) => page.data || []);
@@ -194,15 +205,15 @@ export const useResourceList = <T extends Record<string, any>>(
             });
         }
 
-        if (secondaryFilters.length > 0 && getSecondaryFilterValue) {
-            uniqueItems = uniqueItems.filter(item => {
-                const value = getSecondaryFilterValue(item);
-                return value !== undefined && secondaryFilters.includes(value);
-            });
-        }
-
         return uniqueItems;
-    }, [ infData, sort.value, sort.order, sortFieldMap, secondaryFilters, getSecondaryFilterValue ]);
+    }, [ infData, sort.value, sort.order, sortFieldMap ]);
+
+    // Segundo filtro (ex: Tipo) e subfiltro (ex: Subtipo), resolvidos no cliente. Combinam
+    // por E; cada um é OU entre as opções marcadas. Se só um deles estiver ativo, filtra sozinho.
+    const items = useMemo(() => filterBySelections(loadedItems, [
+        { getValue: getSecondaryFilterValue, selected: secondaryFilters },
+        { getValue: getSubFilterValue, selected: subFilters }
+    ]), [ loadedItems, secondaryFilters, subFilters, getSecondaryFilterValue, getSubFilterValue ]);
 
     // Referência para controlar o tempo da última chamada
     const lastFetchRef = useRef(0);
@@ -226,11 +237,13 @@ export const useResourceList = <T extends Record<string, any>>(
         search,
         filters,
         secondaryFilters,
+        subFilters,
         sort,
         buttonSelected,
 
         // Dados
         items,
+        loadedItems,
         isLoading,
         isError,
         error: error as any,
@@ -243,6 +256,8 @@ export const useResourceList = <T extends Record<string, any>>(
         clearFilters,
         toggleSecondaryFilter,
         clearSecondaryFilters,
+        toggleSubFilter,
+        clearSubFilters,
         setSort,
         setButtonSelected,
         addItem,
