@@ -22,6 +22,7 @@ import { Assessment, InfoOutlined, LocalFireDepartment } from '@mui/icons-materi
 import { classColor } from '@constants'
 import { classesModel } from '@constants/classes'
 import { races } from '@constants/races'
+import { getMpLimit } from '@utils/mpLimit'
 import { Attribute, LevelAndInfo } from '.'
 import type { Charsheet } from '@models/entities'
 
@@ -476,20 +477,25 @@ function Attributes(): ReactElement {
 
                                 {/* Estatísticas gerais */}
                                 <Box sx={{ mt: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 1.5, bgcolor: 'background.paper' }}>
-                                    {/* Limite de MP Diário */}
+                                    {/* Limite de MP por turno */}
                                     <Box display="flex" alignItems="center" mb={1}>
-                                        <Tooltip title="Máximo de pontos de magia que podem ser gastos diariamente">
+                                        <Tooltip title="Máximo de MP que pode ser gasto em magias entre o início do seu turno e o início do próximo">
                                             <LocalFireDepartment color="primary" fontSize="small" sx={{ mr: 1 }} />
                                         </Tooltip>
                                         <Box flexGrow={1}>
                                             <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.2 }}>
-                                                Limite de MP Diário
+                                                Limite de MP por Turno
                                             </Typography>
                                             <Box sx={{ display: 'flex', alignItems: 'center' }}>
                                                 <Typography variant="body1" fontWeight="medium">
-                                                    {getValues('stats.maxMp') + getValues('attributes.foc') * 2 + getValues('level')}
+                                                    {getMpLimit({
+                                                        level: getValues('level'),
+                                                        ORMLevel: getValues('ORMLevel'),
+                                                        attributes: { foc },
+                                                        mpLimit: getValues('mpLimit')
+                                                    })}
                                                 </Typography>
-                                                <Tooltip title="Base + Foco * 2 + Nível">
+                                                <Tooltip title="⌈(Nível + Foco) ÷ 2⌉ + Nível de ORM (+ bônus de perks)">
                                                     <InfoOutlined fontSize="inherit" sx={{ ml: 0.5, opacity: 0.6, fontSize: '0.875rem' }} />
                                                 </Tooltip>
                                             </Box>

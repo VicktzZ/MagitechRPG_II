@@ -87,3 +87,7 @@ export function buildSpellCastMessage(playerName: string, result: SpellCastResul
 export function buildInsufficientMpMessage(playerName: string, spell: SpellDTO, mpCost: number, currentMp: number): string {
     return `❌ ${playerName} tentou conjurar **${spell.name}** mas possui apenas ${currentMp} MP (precisa de ${mpCost}).`;
 }
+
+export function buildMpLimitExceededMessage(playerName: string, spell: SpellDTO, mpCost: number, spent: number, limit: number): string {
+    return `⛔ ${playerName} tentou conjurar **${spell.name}** (${mpCost} MP), mas já gastou ${spent} de ${limit} MP neste turno. O mestre pode liberar o limite.`;
+}

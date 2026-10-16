@@ -96,6 +96,25 @@ class CampaignService extends Service<Campaign, 'code' | 'userId'> {
             body: { action: 'remove_effect', ...payload }
         })).data
     }
+
+    /**
+     * Registra MP gasto em magia no turno do combatente. O servidor recusa (409,
+     * code MP_LIMIT_EXCEEDED) o que passar do limite por turno. Valor negativo estorna.
+     */
+    async spendCombatMp(campaignId: string, payload: { combatantId: string; value: number }) {
+        return (await this.post({
+            param: `${campaignId}/combat`,
+            body: { action: 'spend_mp', ...payload }
+        })).data
+    }
+
+    /** Mestre: libera (true) ou restabelece (false) o limite de MP por turno de um jogador */
+    async setCombatMpLimitOverride(campaignId: string, payload: { combatantId: string; enabled: boolean }) {
+        return (await this.post({
+            param: `${campaignId}/combat`,
+            body: { action: 'set_mp_limit_override', ...payload }
+        })).data
+    }
 }
 
 export const campaignService = new CampaignService('/campaign')

@@ -9,16 +9,18 @@ import { v4 as uuidv4 } from 'uuid'
 import { stripUndefined } from '@utils/firestore/stripUndefined'
 import { recordCampaignStats, type StatsEntry } from '@utils/campaignStatsHelper'
 import { badRequest, forbidden, handleRouteError, readJsonBody, requireCampaignMember, requireUser } from '@utils/api'
+import { evaluateMpSpend, getMpLimit, isMpLimitEnforced } from '@utils/mpLimit'
 
 /** Ações que conduzem o combate — exclusivas do mestre */
 const GM_ONLY_ACTIONS: CombatAction[] = [
-    'start', 'end', 'set_initiative', 'add_creature', 'remove_combatant', 'apply_effect', 'remove_effect'
+    'start', 'end', 'set_initiative', 'add_creature', 'remove_combatant', 'apply_effect', 'remove_effect',
+    'set_mp_limit_override'
 ]
 
 /** Ações de jogador que só valem no turno do próprio personagem */
 const OWN_TURN_ACTIONS: CombatAction[] = [ 'next_turn', 'apply_damage', 'apply_heal' ]
 
-const KNOWN_ACTIONS: CombatAction[] = [ ...GM_ONLY_ACTIONS, ...OWN_TURN_ACTIONS, 'roll_initiative' ]
+const KNOWN_ACTIONS: CombatAction[] = [ ...GM_ONLY_ACTIONS, ...OWN_TURN_ACTIONS, 'roll_initiative', 'spend_mp' ]
 
 type CombatAction = 
     | 'start'           // Iniciar combate
@@ -32,6 +34,8 @@ type CombatAction =
     | 'remove_combatant' // Remover combatente
     | 'apply_effect'    // Aplicar efeito de pipeline a um combatente
     | 'remove_effect'   // Remover efeito de pipeline de um combatente
+    | 'spend_mp'        // Registrar MP gasto em magia (valida o limite por turno; valor negativo estorna)
+    | 'set_mp_limit_override' // Mestre libera/restabelece o limite de MP por turno de um jogador
 
 interface CombatRequest {
     action: CombatAction
@@ -75,6 +79,19 @@ interface CombatRequest {
     durationOverride?: number
     /** Aplica o efeito como indefinido (só expira ao ser removido manualmente) */
     indefiniteOverride?: boolean
+
+    /** Para set_mp_limit_override: true libera o limite, false restabelece */
+    enabled?: boolean
+}
+
+/**
+ * Começa o turno de um combatente: o MP gasto em magias volta a 0 e a liberação do
+ * limite pelo mestre acaba (a janela do limite vai do início do turno ao início do próximo).
+ */
+function startMpLimitWindow(combatant?: Combatant): void {
+    if (!combatant) return
+    combatant.mpSpentThisTurn = 0
+    combatant.mpLimitOverride = false
 }
 
 /**
@@ -138,6 +155,13 @@ export async function POST(
                 const target = combat.combatants?.find(c => c.id === body.combatantId || c.odacId === body.combatantId)
                 if (target && !ownsCombatant(target)) {
                     throw forbidden('Você só pode rolar a iniciativa do seu personagem')
+                }
+            }
+
+            if (action === 'spend_mp') {
+                const target = combat.combatants?.find(c => c.id === body.combatantId || c.odacId === body.combatantId)
+                if (target && !ownsCombatant(target)) {
+                    throw forbidden('Você só pode gastar MP do seu personagem')
                 }
             }
 
@@ -226,6 +250,7 @@ export async function POST(
                 if (Array.isArray(c.effects) && c.effects.length > 0) {
                     c.effects = []
                 }
+                startMpLimitWindow(c)
             }
 
             combat.logs.push(new CombatLog({
@@ -384,6 +409,7 @@ export async function POST(
             })
             combat.phase = 'ACTION'
             combat.currentTurnIndex = 0
+            startMpLimitWindow(combat.combatants[0])
 
             // Formata a ordem de iniciativa de forma legível
             const orderLines = combat.combatants.map((c, i) => 
@@ -487,6 +513,7 @@ export async function POST(
                     combat.currentTurnIndex = nextIndex
 
                     const nextCombatant = combat.combatants[nextIndex]
+                    startMpLimitWindow(nextCombatant)
                     combat.logs.push(new CombatLog({
                         round: combat.round,
                         type: 'turn_pass',
@@ -882,12 +909,86 @@ export async function POST(
             break
         }
 
+        case 'spend_mp': {
+            if (!combat.isActive) {
+                return NextResponse.json({ error: 'Não há combate ativo' }, { status: 400 })
+            }
+
+            const { combatantId, value: amount } = body
+            if (typeof amount !== 'number' || !Number.isInteger(amount) || amount === 0 || Math.abs(amount) > 1000) {
+                throw badRequest('Valor de MP inválido')
+            }
+
+            const combatant = combat.combatants.find(c => c.id === combatantId || c.odacId === combatantId)
+            if (!combatant) {
+                return NextResponse.json({ error: 'Combatente não encontrado' }, { status: 404 })
+            }
+
+            // Criaturas não têm ficha, então não têm limite de MP por turno
+            if (combatant.type !== 'player') {
+                return NextResponse.json({ success: true, combat, enforced: false })
+            }
+
+            const sheet = await charsheetRepository.findById(combatant.id)
+            const enforced = sheet ? isMpLimitEnforced(sheet, campaign.mode) : false
+            const decision = evaluateMpSpend({
+                spent: combatant.mpSpentThisTurn ?? 0,
+                amount,
+                limit: sheet ? getMpLimit(sheet) : 0,
+                enforced,
+                override: combatant.mpLimitOverride
+            })
+
+            if (!decision.allowed) {
+                return NextResponse.json({
+                    error: decision.message,
+                    code: 'MP_LIMIT_EXCEEDED',
+                    spent: decision.spent,
+                    limit: decision.limit
+                }, { status: 409 })
+            }
+
+            combatant.mpSpentThisTurn = decision.spent
+
+            break
+        }
+
+        case 'set_mp_limit_override': {
+            if (!combat.isActive) {
+                return NextResponse.json({ error: 'Não há combate ativo' }, { status: 400 })
+            }
+
+            const { combatantId, enabled } = body
+            const combatant = combat.combatants.find(c => c.id === combatantId || c.odacId === combatantId)
+            if (!combatant || combatant.type !== 'player') {
+                return NextResponse.json({ error: 'Jogador não encontrado no combate' }, { status: 404 })
+            }
+
+            const allow = enabled !== false
+            combatant.mpLimitOverride = allow
+
+            combat.logs.push(new CombatLog({
+                round: combat.round,
+                type: 'action',
+                actorId: 'gm',
+                actorName: 'Mestre',
+                targetId: combatant.id,
+                targetName: combatant.name,
+                message: allow
+                    ? `🔓 O mestre liberou o limite de MP por turno de **${combatant.name}** até o início do próximo turno dele.`
+                    : `🔒 O limite de MP por turno de **${combatant.name}** foi restabelecido.`
+            }))
+
+            break
+        }
+
         default:
             return NextResponse.json({ error: 'Ação inválida' }, { status: 400 })
         }
 
-        // Adiciona o último log como mensagem no chat (se houver)
-        if (combat.logs.length > 0) {
+        // Adiciona o último log como mensagem no chat (se houver). `spend_mp` não gera log:
+        // sem esta guarda o último log antigo seria repostado a cada conjuração.
+        if (action !== 'spend_mp' && combat.logs.length > 0) {
             const lastLog = combat.logs[combat.logs.length - 1]
             const combatMessage = {
                 id: crypto.randomUUID(),
@@ -948,7 +1049,9 @@ function getActionMessage(action: CombatAction): string {
         add_creature: 'Criatura adicionada',
         remove_combatant: 'Combatente removido',
         apply_effect: 'Efeito aplicado',
-        remove_effect: 'Efeito removido'
+        remove_effect: 'Efeito removido',
+        spend_mp: 'MP registrado',
+        set_mp_limit_override: 'Limite de MP atualizado'
     }
     return messages[action] || 'Ação executada'
 }
