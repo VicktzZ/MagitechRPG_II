@@ -16,8 +16,17 @@ class BaseRequest<T> {
             }
             
             if (config?.queryParams) {
-                const queryString = new URLSearchParams(config.queryParams as Record<string, string>).toString();
-                url += `?${queryString}`;
+                // Remove chaves undefined/null antes de montar a query string: o
+                // construtor de URLSearchParams as converte em texto literal
+                // ("undefined"/"null"), o que corrompe silenciosamente filtros
+                // no servidor (ex: cursor=undefined sendo tratado como cursor real).
+                const cleanParams = Object.fromEntries(
+                    Object.entries(config.queryParams).filter(([ , value ]) => value !== undefined && value !== null)
+                );
+                const queryString = new URLSearchParams(cleanParams as Record<string, string>).toString();
+                if (queryString) {
+                    url += `?${queryString}`;
+                }
             }
 
             console.log({ requestUrl: url, method: requestMethod, baseURL: instance.defaults.baseURL });
