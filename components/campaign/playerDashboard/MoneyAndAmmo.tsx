@@ -55,7 +55,16 @@ export default function MoneyAndAmmo(): ReactElement {
         setMoney(charsheet.inventory?.money ?? 0);
     }, [ charsheet.inventory?.money ]);
 
-    const ammoPercent = (ammo.current / ammo.max) * 100;
+    // Mantém a munição em sincronia com alterações externas (mestre, outra aba/dispositivo)
+    useEffect(() => {
+        setAmmo(prev => ({
+            ...prev,
+            current: charsheet.ammoCounter?.current ?? 0,
+            max: charsheet.ammoCounter?.max ?? 0
+        }));
+    }, [ charsheet.ammoCounter?.current, charsheet.ammoCounter?.max ]);
+
+    const ammoPercent = ammo.max > 0 ? (ammo.current / ammo.max) * 100 : 0;
 
     const handleAmmoChange = (type: 'increment' | 'decrement') => {
         setAmmo(prev => {
@@ -225,13 +234,12 @@ export default function MoneyAndAmmo(): ReactElement {
                                     onChange={(e) => {
                                         const value = parseFloat(e.target.value) || 0;
                                         setMoney(value);
-                                        // 🔥 Atualizar no Firestore em tempo real
+                                        // 🔥 Atualizar no Firestore em tempo real — só o dinheiro:
+                                        // gravar o inventário inteiro sobrescrevia itens recebidos
+                                        // ao mesmo tempo (loja, doação, mestre)
                                         updateCharsheet({
-                                            inventory: {
-                                                ...charsheet.inventory,
-                                                money: value
-                                            }
-                                        });
+                                            'inventory.money': value
+                                        } as any);
                                     }}
                                     type="number"
                                     variant="outlined"

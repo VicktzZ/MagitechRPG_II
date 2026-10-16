@@ -65,13 +65,19 @@ export async function POST(
             armorsCount: targetCharsheet.inventory?.armors?.length || 0
         })
 
-        // Verifica limites de peso do destinatário
+        // Verifica limites de peso do destinatário.
+        // O peso considera a quantidade (o doador perde peso × quantidade) e itens
+        // de "Capacidade" aumentam o peso máximo em vez de ocupar carga
+        const isCapacityItem = itemType === 'item' && item.kind === 'Capacidade'
         const currentCargo = targetCharsheet?.capacity?.cargo || 0
         const maxCargo = targetCharsheet?.capacity?.max || 0
-        const itemWeight = item.weight || 0
-        const newCargo = parseFloat((currentCargo + itemWeight).toFixed(1))
+        const itemWeight = (Number(item.weight) || 0) * (Number(item.quantity) || 1)
+        const newCargo = isCapacityItem ? currentCargo : parseFloat((currentCargo + itemWeight).toFixed(1))
+        const newMaxCargo = isCapacityItem
+            ? parseFloat((maxCargo + Math.abs(Number(item.weight) || 0)).toFixed(1))
+            : maxCargo
         
-        if (maxCargo > 0 && newCargo > maxCargo) {
+        if (!isCapacityItem && maxCargo > 0 && newCargo > maxCargo) {
             return Response.json(
                 { success: false, message: `${targetCharsheet.name || 'O jogador'} não possui capacidade de peso suficiente. (${currentCargo.toFixed(1)}+${itemWeight}>${maxCargo}kg)` },
                 { status: 400 }
@@ -181,7 +187,8 @@ export async function POST(
                 },
                 capacity: {
                     ...targetCharsheet.capacity,
-                    cargo: newCargo
+                    cargo: newCargo,
+                    max: newMaxCargo
                 },
                 notifications: [ ...currentNotifications, notification ]
             })

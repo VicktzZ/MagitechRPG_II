@@ -305,12 +305,37 @@ export default function SpellsSection(): ReactElement {
         setExpandedSpell(isExpanded ? spellName : false)
     }
 
-    const handleDeleteSpell = async (spellName: string) => {
+    // Fora do Roguelite, `spellSpace` guarda os espaços LIVRES (a criação da ficha
+    // desconta 1 por magia aprendida); no Roguelite ele é a capacidade total.
+    const isRoguelite = campaign?.mode === 'Roguelite';
+
+    const handleDeleteSpell = async (spellToDelete: SpellDTO) => {
         if (!charsheet?.id) return;
         
         try {
-            const newSpells = charsheet.spells.filter(spell => spell.name !== spellName);
-            await charsheetEntity.update(charsheet.id, { spells: newSpells });
+            // Remove só a magia clicada (por id) — filtrar por nome apagava
+            // todas as cópias com o mesmo nome
+            const spellKey = spellToDelete.id || spellToDelete.name;
+            const index = charsheet.spells.findIndex(spell => (spell.id || spell.name) === spellKey);
+            if (index === -1) return;
+
+            const newSpells = charsheet.spells.filter((_, i) => i !== index);
+            const update: Record<string, unknown> = { spells: newSpells };
+
+            const currentStages = charsheet.spellStages || {};
+            if (spellKey in currentStages) {
+                update['spellStages'] = Object.fromEntries(
+                    Object.entries(currentStages).filter(([ key ]) => key !== spellKey)
+                );
+            }
+
+            // Mesma regra da ficha: excluir devolve o espaço e o ponto de magia
+            if (!isRoguelite) {
+                update['spellSpace'] = (charsheet.spellSpace || 0) + 1;
+                update['points.magics'] = (charsheet.points?.magics ?? 0) + (Number(spellToDelete.level) >= 3 ? 2 : 1);
+            }
+
+            await charsheetEntity.update(charsheet.id, update as any);
             enqueueSnackbar('Magia excluída com sucesso!', { variant: 'success' });
         } catch (error) {
             console.error('Erro ao excluir magia:', error);
@@ -340,6 +365,9 @@ export default function SpellsSection(): ReactElement {
     }
 
     const allSpells = charsheet.spells
+    const totalSpellSlots = isRoguelite
+        ? (charsheet.spellSpace || 0)
+        : allSpells.length + Math.max(0, charsheet.spellSpace || 0)
     const spellsByLevel = {
         1: allSpells.filter(spell => Number(spell.level) === 1),
         2: allSpells.filter(spell => Number(spell.level) === 2),
@@ -386,8 +414,8 @@ export default function SpellsSection(): ReactElement {
                                 Espaço de Magias
                             </Typography>
                             <Chip
-                                label={`${allSpells.length} / ${charsheet.spellSpace || 0}`}
-                                color={allSpells.length >= (charsheet.spellSpace || 0) ? 'warning' : 'primary'}
+                                label={`${allSpells.length} / ${totalSpellSlots}`}
+                                color={allSpells.length >= totalSpellSlots ? 'warning' : 'primary'}
                                 variant="filled"
                                 sx={{ fontWeight: 700, fontSize: '0.9rem' }}
                             />
@@ -564,7 +592,7 @@ export default function SpellsSection(): ReactElement {
                                                             color="error"
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
-                                                                handleDeleteSpell(spell.name);
+                                                                void handleDeleteSpell(spell);
                                                             }}
                                                             sx={{ ml: 1 }}
                                                         >

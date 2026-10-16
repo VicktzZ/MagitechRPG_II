@@ -67,36 +67,50 @@ export default function Characteristics(): ReactElement {
     const customInitialFields = (isCustomSystem && customSystem?.initialFields?.customInitialFields) || []
 
     /**
-     * Aplica (sign=1) ou reverte (sign=-1) as concessões de uma classe
-     * customizada: pontos, bônus de atributos/perícias e itens iniciais.
+     * Aplica (sign=1) ou reverte (sign=-1) bônus diretos de atributos/perícias.
+     * A reversão é exata (sem limitar em 0): limitar "perdoava" pontos já
+     * gastos e permitia ganhar pontos infinitos trocando a escolha.
      */
-    const applyCustomClassGrants = (cls: NonNullable<RPGSystem['classes']>[number], sign: 1 | -1): void => {
-        if (cls.expertisePoints) {
-            setValue('points.expertises', Math.max(0, (getValues('points.expertises') || 0) + sign * cls.expertisePoints));
-        }
-        if (cls.attributePoints) {
-            setValue('points.attributes', Math.max(0, (getValues('points.attributes') || 0) + sign * cls.attributePoints));
-        }
-
-        if (cls.attributeBonus) {
-            Object.entries(cls.attributeBonus).forEach(([ attrKey, bonus ]) => {
+    const applyBonusMaps = (
+        bonuses: { attributeBonus?: Record<string, number>; expertiseBonus?: Record<string, number> },
+        sign: 1 | -1
+    ): void => {
+        if (bonuses.attributeBonus) {
+            Object.entries(bonuses.attributeBonus).forEach(([ attrKey, bonus ]) => {
                 const current = (getValues(`attributes.${attrKey}` as any) as unknown as number) || 0;
-                setValue(`attributes.${attrKey}` as any, Math.max(0, current + sign * bonus) as any);
+                setValue(`attributes.${attrKey}` as any, (current + sign * bonus) as any);
             });
         }
 
-        if (cls.expertiseBonus) {
-            Object.entries(cls.expertiseBonus).forEach(([ expKey, bonus ]) => {
+        if (bonuses.expertiseBonus) {
+            Object.entries(bonuses.expertiseBonus).forEach(([ expKey, bonus ]) => {
                 const currentExpertise = getValues(`expertises.${expKey}` as any) ;
                 if (!currentExpertise) {
                     if (sign > 0) {
                         setValue(`expertises.${expKey}` as any, { value: bonus, defaultAttribute: null } as any);
                     }
                 } else {
-                    setValue(`expertises.${expKey}.value` as any, Math.max(0, (currentExpertise.value || 0) + sign * bonus));
+                    setValue(`expertises.${expKey}.value` as any, (currentExpertise.value || 0) + sign * bonus);
                 }
             });
         }
+    };
+
+    /**
+     * Aplica (sign=1) ou reverte (sign=-1) as concessões de uma classe
+     * customizada: pontos, bônus de atributos/perícias e itens iniciais.
+     * Pontos podem ficar negativos ao reverter (pontos já gastos): a validação
+     * da ficha avisa "você gastou X ponto(s) a mais".
+     */
+    const applyCustomClassGrants = (cls: NonNullable<RPGSystem['classes']>[number], sign: 1 | -1): void => {
+        if (cls.expertisePoints) {
+            setValue('points.expertises', (getValues('points.expertises') || 0) + sign * cls.expertisePoints, { shouldValidate: true });
+        }
+        if (cls.attributePoints) {
+            setValue('points.attributes', (getValues('points.attributes') || 0) + sign * cls.attributePoints, { shouldValidate: true });
+        }
+
+        applyBonusMaps(cls, sign);
 
         if (cls.grantedItems) {
             const inventory = getValues('inventory');
@@ -171,10 +185,20 @@ export default function Characteristics(): ReactElement {
         const selectedLineage = e.target.value;
         
         if (isCustomSystem) {
-            // Sistema customizado - lógica simplificada
+            // Sistema customizado: reverte os bônus da linhagem anterior e aplica os da nova
+            const previousCustomLineage = customSystem?.lineages?.find(
+                l => l.name === (previousLineage as unknown as string) || l.key === (previousLineage as unknown as string)
+            );
+            if (previousCustomLineage) {
+                applyBonusMaps(previousCustomLineage, -1);
+            }
+
             setValue('lineage', selectedLineage, { shouldValidate: true });
             
             const customLineage = customSystem?.lineages?.find(l => l.name === selectedLineage);
+            if (customLineage) {
+                applyBonusMaps(customLineage, 1);
+            }
             if (customLineage?.skills && customLineage.skills.length > 0) {
                 setValue('skills.lineage', [ customLineage.skills[0] ] as any);
             } else {
@@ -201,7 +225,8 @@ export default function Characteristics(): ReactElement {
                     const currentExpertise = getValues(`expertises.${ex}`) as any;
                     const currentValue = currentExpertise?.value || 0;
                     
-                    setValue(`expertises.${ex}.value`, Math.max(0, currentValue - bonus));
+                    // Reversão exata: limitar em 0 permitia gerar pontos trocando de linhagem
+                    setValue(`expertises.${ex}.value`, currentValue - bonus);
                 });
             }
             
@@ -227,10 +252,10 @@ export default function Characteristics(): ReactElement {
         setValue('lineage', selectedLineage, { shouldValidate: true });
         setValue('skills.lineage', [ antecedentSkills.find(skill => skill.origin === selectedLineage)! ]);
         
-        // Adicionar itens da nova linhagem
+        // Adicionar itens da nova linhagem (cópias: não muta o array do formulário)
         if (antecedentItems) {
-            const currentItems = getValues('inventory.items');
-            const currentWeapons = getValues('inventory.weapons');
+            const currentItems = [ ...(getValues('inventory.items') ?? []) ];
+            const currentWeapons = [ ...(getValues('inventory.weapons') ?? []) ];
             
             antecedentItems.forEach(item => {
                 if (item.type === 'weapon') {
@@ -266,11 +291,11 @@ export default function Characteristics(): ReactElement {
             setValue('points.expertises', currentPoints + lineageBonus.points);
         }
 
-        // Bônus de linhagem
+        // Bônus de linhagem (lê o valor atual do formulário, não o snapshot do render)
         if (selectedLineage === 'Artista') {
-            setValue('mods.attributes.car', (charsheet.mods.attributes.car || 0) + 1);
+            setValue('mods.attributes.car', (getValues('mods.attributes.car') || 0) + 1);
         } else if (previousLineage === 'Artista') {
-            setValue('mods.attributes.car', Math.max(0, (charsheet.mods.attributes.car || 0) - 1));
+            setValue('mods.attributes.car', (getValues('mods.attributes.car') || 0) - 1);
         }
 
         audio.play();
@@ -306,7 +331,7 @@ export default function Characteristics(): ReactElement {
             if (prevOcc?.expertiseBonus) {
                 Object.entries(prevOcc.expertiseBonus).forEach(([ expKey, bonus ]) => {
                     const current = (getValues(`expertises.${expKey}` as any) )?.value || 0;
-                    setValue(`expertises.${expKey}.value` as any, Math.max(0, current - bonus));
+                    setValue(`expertises.${expKey}.value` as any, current - bonus);
                 });
             }
             if (prevOcc?.startingMoney) {
@@ -639,8 +664,10 @@ export default function Characteristics(): ReactElement {
                                             <MenuItem key={raceName} value={raceName}>
                                                 <Box display='flex' flexDirection='column'>
                                                     <Typography>{raceName}</Typography>
-                                                    {raceName === 'Humano' ? (
-                                                        <Typography variant='caption' color={green[500]}>+1 Ponto de Atributo</Typography>
+                                                    {raceData.stats.pda > 0 ? (
+                                                        <Typography variant='caption' color={green[500]}>
+                                                            +{raceData.stats.pda} {raceData.stats.pda === 1 ? 'Ponto' : 'Pontos'} de Atributo
+                                                        </Typography>
                                                     ) : (
                                                         <>
                                                             {raceData.stats.lp > 0 && (

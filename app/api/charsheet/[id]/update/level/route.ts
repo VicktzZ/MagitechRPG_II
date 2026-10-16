@@ -28,7 +28,11 @@ function normalizeToArray<T>(value: any): T[] {
 // ─────────────────────────────────────────────
 function calcMagitechProgression(charsheet: Charsheet, oldLevel: number, newLevel: number) {
     const classRewards = levelDefaultRewards[charsheet.class as ClassNames];
-    let newORMLevel = newLevel % 5 === 0 ? Math.min(4, Math.floor(newLevel / 5)) : charsheet.ORMLevel;
+    // ORM parte do nível atual e sobe 1 a cada múltiplo de 5 cruzado (máx. 4).
+    // Antes, saltos de vários níveis terminando em múltiplo de 5 partiam de
+    // floor(nível/5) e ainda somavam +1 por múltiplo (ex: 1→15 resultava em ORM 6).
+    // O Math.min também corrige fichas que já ficaram acima de 4 por esse bug.
+    let newORMLevel = Math.min(4, charsheet.ORMLevel ?? 0);
 
     let lpMpRewards = 0;
     let testPoints = 0;
@@ -77,7 +81,7 @@ function calcMagitechProgression(charsheet: Charsheet, oldLevel: number, newLeve
                 rewardsList.push('+2 pontos de perícia (bônus de raça "Humano")');
             }
 
-            if (currentLevel !== 20) {
+            if (currentLevel !== 20 && newORMLevel < 4) {
                 newORMLevel++;
                 rewardsList.push(`+ORM nível ${newORMLevel} Atingido!`);
             }
@@ -374,16 +378,12 @@ export async function POST(req: Request, { params }: { params: { id: string } })
 
         } else {
             // ── Caminho legado Magitech (sem progressionTable ou sem systemId) ──
-            const newORMLevel = newLevel % 5 === 0
-                ? Math.min(4, Math.floor(newLevel / 5))
-                : charsheet.ORMLevel;
-
             const result = calcMagitechProgression(charsheet, oldLevel, newLevel);
 
             updatedCharsheet = {
                 ...charsheet,
                 level: newLevel,
-                ORMLevel: result.newORMLevel ?? newORMLevel,
+                ORMLevel: result.newORMLevel,
                 stats: {
                     ...charsheet.stats,
                     lp: result.newLp,

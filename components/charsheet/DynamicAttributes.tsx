@@ -1,11 +1,12 @@
 import { Add, Remove } from '@mui/icons-material';
 import { Box, Chip, IconButton, Typography, Grid, Paper } from '@mui/material';
-import { type ReactElement, useEffect } from 'react';
+import { type ReactElement, useEffect, useMemo, useState } from 'react';
 import { Controller, useFormContext, useWatch } from 'react-hook-form';
 import type { Charsheet, RPGSystem } from '@models/entities';
 import { LinearProgressWithLabel } from '@layout';
 import { NumberField } from '@components/misc';
 import { evaluateFormula } from '@utils/formulaEvaluator';
+import { computeOriginBonuses } from '@utils/originBonuses';
 
 interface DynamicAttributesProps {
     system: RPGSystem | null;
@@ -24,6 +25,31 @@ export default function DynamicAttributes({ system }: DynamicAttributesProps): R
     const expertises = useWatch({ control, name: 'expertises' });
     const level = useWatch({ control, name: 'level' });
     const attributePoints = useWatch({ control, name: 'points.attributes' });
+    const [ charsheetClass, lineage, occupation, traits ] = useWatch<Charsheet>({
+        control,
+        name: [ 'class', 'lineage', 'occupation', 'traits' ]
+    }) as [ string, string, string, unknown[] ];
+
+    // Valores ao carregar a ficha: em fichas já salvas, só é possível devolver
+    // pontos gastos nesta edição (não abaixo do valor salvo).
+    // Cópia: getValues devolve o objeto interno do form, que o setValue altera.
+    const [ initialAttributes ] = useState<Record<string, number>>(() => ({
+        ...(getValues('attributes') as unknown as Record<string, number> | undefined)
+    }));
+
+    // Bônus de origem (classe, linhagem, traços) não foram comprados com pontos
+    // e por isso não podem ser devolvidos como pontos de atributo.
+    const originAttributeBonuses = useMemo(() => (
+        system
+            ? computeOriginBonuses({ class: charsheetClass, lineage, occupation, traits }, system).attributes
+            : {}
+    ), [ system, charsheetClass, lineage, occupation, traits ]);
+
+    const attributeFloor = (attrKey: string, minValue: number): number => {
+        const originFloor = minValue + Math.max(0, originAttributeBonuses[attrKey] ?? 0);
+        if (!disabled) return originFloor;
+        return Math.max(originFloor, initialAttributes[attrKey] ?? minValue);
+    };
 
     /**
      * Altera um atributo gastando/devolvendo pontos de atributo.
@@ -232,7 +258,7 @@ export default function DynamicAttributes({ system }: DynamicAttributesProps): R
 
                 <Grid container spacing={2}>
                     {attributes.map((attribute) => {
-                        const min = attribute.minValue ?? 0;
+                        const min = attributeFloor(attribute.key, attribute.minValue ?? 0);
                         const max = effectiveAttributeMax(attribute.maxValue ?? 999);
                         // Trava a edição só quando a ficha já existe E não há pontos de
                         // atributo disponíveis (ex: ganhos num level-up) para gastar.

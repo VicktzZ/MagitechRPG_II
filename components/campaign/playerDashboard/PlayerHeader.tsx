@@ -47,12 +47,11 @@ export default function PlayerHeader({ avatar }: { avatar: string | undefined })
 
     const updateStat = (stat: keyof Stats, delta: number) => {
         const maxKey = `max${stat.charAt(0).toUpperCase() + stat.slice(1)}` as keyof Stats;
+        // Atualiza só o campo alterado: gravar o objeto `stats` inteiro sobrescrevia
+        // alterações simultâneas do mestre (ex: dano aplicado no LP enquanto o jogador gasta MP)
         updateCharsheet({
-            stats: {
-                ...stats,
-                [stat]: Math.max(0, Math.min((stats[stat] as number) + delta, (stats[maxKey] as number) * 2))
-            }
-        });
+            [`stats.${stat}`]: Math.max(0, Math.min(stats[stat] + delta, stats[maxKey] * 2))
+        } as any);
     };
 
     return (

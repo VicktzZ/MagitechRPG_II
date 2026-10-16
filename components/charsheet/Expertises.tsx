@@ -10,6 +10,7 @@ import type { Charsheet, RPGSystem, SkillPointRules, SystemAttribute } from '@mo
 import type { Expertises as ExpertisesType } from '@models';
 import { evaluateFormula } from '@utils/formulaEvaluator';
 import { computeAttributeInfluence } from '@utils/systemLookups';
+import { computeOriginBonuses } from '@utils/originBonuses';
 
 export default function Expertises({ disabled }: { disabled?: boolean }): ReactElement {
     const { control, setValue, getValues, formState: { errors } } = useFormContext<Charsheet>()
@@ -23,6 +24,7 @@ export default function Expertises({ disabled }: { disabled?: boolean }): ReactE
     const [ systemExpertises, setSystemExpertises ] = useState<RPGSystem['expertises'] | null>(null)
     const [ skillPointRules, setSkillPointRules ] = useState<SkillPointRules | null>(null)
     const [ systemAttributes, setSystemAttributes ] = useState<SystemAttribute[] | null>(null)
+    const [ customSystem, setCustomSystem ] = useState<RPGSystem | null>(null)
     const [ , setLoadingSystem ] = useState(false)
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
 
@@ -33,6 +35,7 @@ export default function Expertises({ disabled }: { disabled?: boolean }): ReactE
             fetch(`/api/rpg-system/${charsheet.systemId}`)
                 .then(async res => await res.json())
                 .then((data: RPGSystem) => {
+                    setCustomSystem(data)
                     if (data.expertises && data.expertises.length > 0) {
                         setSystemExpertises(data.expertises)
                         
@@ -107,6 +110,35 @@ export default function Expertises({ disabled }: { disabled?: boolean }): ReactE
         name: 'expertises'
     }) 
 
+    // Valores das perícias ao carregar a ficha: em fichas já salvas, só é
+    // possível devolver pontos gastos nesta edição (não abaixo do valor salvo).
+    // Guarda só os números: getValues devolve o objeto interno do form, que o setValue altera.
+    const [ initialExpertiseValues ] = useState<Record<string, number>>(() => Object.fromEntries(
+        Object.entries((getValues('expertises') ?? {}) as unknown as Record<string, { value?: number } | undefined>)
+            .map(([ key, expertise ]) => [ key, expertise?.value ?? 0 ])
+    ))
+
+    const [ charsheetClass, lineage, occupation, traits, mode ] = useWatch<Charsheet>({
+        control,
+        name: [ 'class', 'lineage', 'occupation', 'traits', 'mode' ]
+    }) as [ string, string, string, unknown[], string ]
+
+    // Bônus concedidos pela origem (classe, linhagem/profissão, traços).
+    // Não foram comprados com pontos, então não podem ser devolvidos como pontos.
+    const originBonuses = useMemo(() => {
+        if (charsheet.systemId && !customSystem) return { attributes: {}, expertises: {} }
+        return computeOriginBonuses(
+            { class: charsheetClass, lineage, occupation, traits, mode },
+            charsheet.systemId ? customSystem : null
+        )
+    }, [ charsheet.systemId, customSystem, charsheetClass, lineage, occupation, traits, mode ])
+
+    const expertiseFloor = useCallback((name: string): number => {
+        const originFloor = originBonuses.expertises[name] ?? 0
+        if (!charsheet.id) return originFloor
+        return Math.max(originFloor, initialExpertiseValues[name] ?? 0)
+    }, [ originBonuses, charsheet.id, initialExpertiseValues ])
+
     const handleExpertiseChange = useCallback((name: keyof ExpertisesType | string, newValue: number): void => {
         if (!expertises || disabled) return;
 
@@ -138,16 +170,17 @@ export default function Expertises({ disabled }: { disabled?: boolean }): ReactE
             setValue('points.expertises', points - pointsToSpend, { shouldValidate: true });
             setValue(`expertises.${name}.value`, finalValue, { shouldValidate: true });
         } else if (newValue < currentValue) {
-            if (newValue < 0 || Math.abs(newValue - currentValue) > currentValue) {
-                setValue('points.expertises', points + currentValue * skillCost, { shouldValidate: true });
-                setValue(`expertises.${name}.value`, 0, { shouldValidate: true });
-            } else {
-                const difference = currentValue - newValue;
-                setValue('points.expertises', points + difference * skillCost, { shouldValidate: true });
-                setValue(`expertises.${name}.value`, newValue, { shouldValidate: true });
-            }
+            // Só devolve pontos que foram gastos: nunca abaixo dos bônus de origem
+            // (senão trocar a origem gerava pontos infinitos) nem abaixo de 0
+            const minAllowed = Math.min(currentValue, Math.max(0, expertiseFloor(name)));
+            const finalValue = Math.max(newValue, minAllowed);
+            if (finalValue >= currentValue) return;
+
+            const difference = currentValue - finalValue;
+            setValue('points.expertises', points + difference * skillCost, { shouldValidate: true });
+            setValue(`expertises.${name}.value`, finalValue, { shouldValidate: true });
         }
-    }, [ disabled, expertises, setValue, points, skillPointRules, maxPerSkill ]);
+    }, [ disabled, expertises, setValue, points, skillPointRules, maxPerSkill, expertiseFloor ]);
     
     function ExpertiseButton({ children, type }: { children: ReactElement, type: 'add' | 'sub' } & ButtonProps): ReactElement {
         const isActive = buttonRef.current === type;
