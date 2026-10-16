@@ -2,17 +2,21 @@
 /**
  * Lote de magias de RECUPERAÇÃO DE MANA (MP).
  *
- * Convenções (espelham as magias já cadastradas):
+ * Convenções (conferidas contra o catálogo real de 361 magias):
  *  - `element` em MAIÚSCULAS (é assim que o banco guarda e que a API filtra);
  *  - `type` no formato "Categoria (detalhe)" — a categoria alimenta o filtro "Tipo" do modal;
+ *  - `execution`: Padrão, Completa, Livre, Reação ou Movimento (o catálogo não usa "Bônus");
+ *  - `range`: Pessoal, Toque, Curto, Médio ou Longo;
  *  - `stages` sempre com 3 entradas (Estágio 1/2/3; no nível 4 o 3º é a Maestria);
  *  - o custo exibido de cada estágio é `mpCost` + custo extra do estágio
- *    (ver `calculateExtraManaCost`): N1 +1/+2, N2 +2/+4, N3 +2/+5, N4 +4/+9.
+ *    (ver `calculateExtraManaCost`): N1 +1/+2, N2 +2/+4, N3 +2/+5, N4 +4/+9;
+ *  - texto no mesmo vocabulário das magias existentes: "turnos", "combate", metros ("4,5m").
  *
- * Balanceamento: toda recuperação é condicionada (gatilho, limite por rodada/cena
- * ou custo em LP), para que nenhuma magia vire uma fonte infinita de MP.
- * Cada estágio tem no máximo UMA expressão de dados (XdY), porque `castSpell`
- * rola todas as encontradas no texto e soma o resultado.
+ * Balanceamento: toda recuperação é condicionada (gatilho, limite por turno/combate
+ * ou custo em LP), para que nenhuma magia vire uma fonte infinita de MP. Os valores
+ * ficam abaixo dos das magias de MP já existentes (ex.: Bateria Humana, Jardim do Éden).
+ * Cada estágio tem no máximo UMA expressão de dados (XdY), porque `castSpell` rola
+ * todas as encontradas no texto e soma o resultado.
  */
 export interface SeedSpell {
     id: string
@@ -40,9 +44,9 @@ export const MANA_RECOVERY_SPELLS: SeedSpell[] = [
         execution: 'Reação',
         range: 'Curto',
         stages: [
-            'Quando um inimigo realizar um ataque contra você e você desviar dele com sucesso, você recupera 3 MP. Só pode ser usada uma vez por rodada.',
-            'Quando um inimigo realizar um ataque contra você e você desviar dele com sucesso, você recupera 4 MP e pode se deslocar até 3m sem provocar reações. Só pode ser usada uma vez por rodada.',
-            'Quando você ou um aliado em alcance desviar com sucesso de um ataque, você recupera 6 MP e cada aliado em alcance recupera 3 MP. Só pode ser usada uma vez por rodada.'
+            'Quando um inimigo realizar um ataque contra você e você desviar dele com sucesso, você recupera 3 MP. Só pode ser usada uma vez por turno.',
+            'Quando um inimigo realizar um ataque contra você e você desviar dele com sucesso, você recupera 4 MP e pode se deslocar até 3m sem provocar reações. Só pode ser usada uma vez por turno.',
+            'Quando você ou um aliado em alcance desviar com sucesso de um ataque, você recupera 6 MP e cada aliado em alcance recupera 3 MP. Só pode ser usada uma vez por turno.'
         ]
     },
     {
@@ -61,18 +65,18 @@ export const MANA_RECOVERY_SPELLS: SeedSpell[] = [
         ]
     },
     {
-        id: 'seed-mp-gota-de-orvalho',
+        id: 'seed-mp-cisterna-arcana',
         element: 'ÁGUA',
-        name: 'Gota de Orvalho',
+        name: 'Cisterna Arcana',
         level: 1,
         mpCost: 1,
-        type: 'Suporte (imediato)',
-        execution: 'Bônus',
-        range: 'Curto',
+        type: 'Utilidade (sustentado)',
+        execution: 'Movimento',
+        range: 'Pessoal',
         stages: [
-            'Você toca um aliado com uma gota de energia condensada e ele recupera 2 MP. Um mesmo aliado só pode ser afetado por esta magia uma vez por cena.',
-            'Até dois aliados em alcance recuperam 2 MP cada. Um mesmo aliado só pode ser afetado por esta magia uma vez por cena.',
-            'Até três aliados em alcance recuperam 3 MP cada. Um mesmo aliado só pode ser afetado por esta magia uma vez por cena.'
+            'Você cria uma pequena cisterna de água arcana ao seu lado, que dura 3 turnos. Sempre que você conjurar uma magia durante esse tempo, 1 MP do custo dela flui para a cisterna (máximo de 3 MP acumulados). Ao fim da duração, você bebe a água e recupera os MP acumulados.',
+            'A cisterna dura 4 turnos e 2 MP do custo de cada magia que você conjurar fluem para ela (máximo de 6 MP acumulados). Ao fim da duração, você bebe a água e recupera os MP acumulados.',
+            'A cisterna dura 5 turnos e 2 MP do custo de cada magia que você conjurar fluem para ela (máximo de 9 MP acumulados). Ao fim da duração, você ou um aliado adjacente bebe a água e recupera os MP acumulados. Se for um aliado, você também recupera 2 MP.'
         ]
     },
     {
@@ -82,12 +86,12 @@ export const MANA_RECOVERY_SPELLS: SeedSpell[] = [
         level: 1,
         mpCost: 1,
         type: 'Encantamento (conjurado)',
-        execution: 'Bônus',
-        range: 'Curto',
+        execution: 'Movimento',
+        range: 'Pessoal',
         stages: [
-            'Seu corpo se torna um capacitor por 3 rodadas. Uma vez por rodada, quando você sofrer dano, você recupera 1 MP.',
-            'O efeito dura 4 rodadas. Uma vez por rodada, quando você sofrer dano, você recupera 2 MP.',
-            'O efeito dura 5 rodadas. Uma vez por rodada, quando você sofrer dano, você recupera 2 MP e o atacante sofre 1 de dano elétrico.'
+            'Seu corpo se torna um capacitor por 3 turnos. Uma vez por turno, quando você sofrer dano, você recupera 1 MP.',
+            'O efeito dura 4 turnos. Uma vez por turno, quando você sofrer dano, você recupera 2 MP.',
+            'O efeito dura 5 turnos. Uma vez por turno, quando você sofrer dano, você recupera 2 MP e o atacante sofre 1 de dano elétrico.'
         ]
     },
     {
@@ -96,13 +100,13 @@ export const MANA_RECOVERY_SPELLS: SeedSpell[] = [
         name: 'Pedra de Foco',
         level: 1,
         mpCost: 1,
-        type: 'Utilidade (conjurado)',
+        type: 'Transmutação (conjurado)',
         execution: 'Completa',
-        range: 'Curto',
+        range: 'Pessoal',
         stages: [
-            'Você se concentra em uma pedra comum, canalizando a energia do solo para si, e recupera 3 MP. Só pode ser usada uma vez por cena.',
-            'Você recupera 5 MP. Só pode ser usada uma vez por cena e você não pode usar Reações até o início do seu próximo turno.',
-            'Você recupera 7 MP e cada aliado adjacente à pedra recupera 2 MP. Só pode ser usada uma vez por cena e você não pode usar Reações até o início do seu próximo turno.'
+            'Você transmuta uma pedra comum em um cristal de foco e o absorve, recuperando 3 MP. Só pode ser usada uma vez por combate.',
+            'O cristal é maior e você recupera 5 MP. Só pode ser usada uma vez por combate e você não pode usar Reações até o início do seu próximo turno.',
+            'O cristal se parte em dois: você recupera 7 MP e um aliado adjacente recupera 2 MP. Só pode ser usada uma vez por combate e você não pode usar Reações até o início do seu próximo turno.'
         ]
     },
 
@@ -114,14 +118,14 @@ export const MANA_RECOVERY_SPELLS: SeedSpell[] = [
         element: 'LUZ',
         name: 'Prisma Refletor',
         level: 2,
-        mpCost: 3,
+        mpCost: 4,
         type: 'Defesa (imediato)',
         execution: 'Reação',
         range: 'Médio',
         stages: [
-            'Quando você ou um aliado em alcance for alvo de uma magia inimiga, você ergue um prisma que refrata parte da energia: o dano sofrido é reduzido em 3 e você recupera 2 MP. Só pode ser usada uma vez por rodada.',
-            'Quando você ou um aliado em alcance for alvo de uma magia inimiga, o dano sofrido é reduzido em 5 e você recupera 4 MP. Só pode ser usada uma vez por rodada.',
-            'Quando você ou um aliado em alcance for alvo de uma magia inimiga, o dano sofrido é reduzido em 8, você recupera 6 MP e o alvo da magia recupera 2 MP. Só pode ser usada uma vez por rodada.'
+            'Quando você ou um aliado em alcance for alvo de uma magia inimiga, você ergue um prisma que refrata parte da energia: o dano sofrido é reduzido em 3 e você recupera 3 MP. Só pode ser usada uma vez por turno.',
+            'Quando você ou um aliado em alcance for alvo de uma magia inimiga, o dano sofrido é reduzido em 5 e você recupera 5 MP. Só pode ser usada uma vez por turno.',
+            'Quando você ou um aliado em alcance for alvo de uma magia inimiga, o dano sofrido é reduzido em 8, você recupera 7 MP e o alvo da magia recupera 2 MP. Só pode ser usada uma vez por turno.'
         ]
     },
     {
@@ -129,29 +133,29 @@ export const MANA_RECOVERY_SPELLS: SeedSpell[] = [
         element: 'ÁGUA',
         name: 'Maré Cheia',
         level: 2,
-        mpCost: 3,
-        type: 'Encantamento (conjurado)',
+        mpCost: 4,
+        type: 'Encantamento (sustentado)',
         execution: 'Padrão',
         range: 'Médio',
         stages: [
-            'Você faz uma maré arcana subir em uma área de 3m de raio, que dura 2 rodadas. No início de cada rodada, o aliado dentro da área com menos MP recupera 1 MP.',
-            'A área tem 6m de raio e dura 3 rodadas. No início de cada rodada, o aliado dentro da área com menos MP recupera 2 MP.',
-            'A área tem 6m de raio e dura 3 rodadas. No início de cada rodada, os dois aliados dentro da área com menos MP recuperam 3 MP cada.'
+            'Você faz uma maré arcana subir em uma área de 3m de raio, que dura 2 turnos. No início de cada um dos seus turnos, o aliado dentro da área com menos MP recupera 2 MP.',
+            'A área tem 6m de raio e dura 3 turnos. No início de cada um dos seus turnos, o aliado dentro da área com menos MP recupera 3 MP.',
+            'A área tem 6m de raio e dura 4 turnos. No início de cada um dos seus turnos, os dois aliados dentro da área com menos MP recuperam 3 MP cada.'
         ]
     },
     {
-        id: 'seed-mp-dreno-de-sombra',
-        element: 'TREVAS',
-        name: 'Dreno de Sombra',
+        id: 'seed-mp-chama-piloto',
+        element: 'FOGO',
+        name: 'Chama Piloto',
         level: 2,
-        mpCost: 3,
-        type: 'Ataque (imediato)',
-        execution: 'Padrão',
-        range: 'Curto',
+        mpCost: 4,
+        type: 'Encantamento (contínuo)',
+        execution: 'Movimento',
+        range: 'Pessoal',
         stages: [
-            'Tentáculos de sombra sugam a energia do alvo, causando 2d6 de dano de trevas. Você recupera MP igual à metade do dano causado (arredondado para baixo, máximo de 3).',
-            'Os tentáculos causam 3d6 de dano de trevas. Você recupera MP igual à metade do dano causado (arredondado para baixo, máximo de 5).',
-            'Os tentáculos causam 4d6 de dano de trevas. Você recupera MP igual à metade do dano causado (arredondado para baixo, máximo de 8). Se o alvo possuir MP, ele também perde 2 MP.'
+            'Você acende uma chama-piloto sobre o ombro, que dura 3 turnos. Uma vez por turno, ao conjurar uma magia de Fogo, você recupera 2 MP.',
+            'A chama dura 4 turnos. Uma vez por turno, ao conjurar uma magia de Fogo, você recupera 3 MP.',
+            'A chama dura 5 turnos. Uma vez por turno, ao conjurar uma magia de Fogo, você recupera 3 MP. Aliados a até 4,5m de você que conjurarem uma magia de Fogo também recuperam 1 MP (uma vez por turno cada).'
         ]
     },
     {
@@ -159,7 +163,7 @@ export const MANA_RECOVERY_SPELLS: SeedSpell[] = [
         element: 'NÃO-ELEMENTAL',
         name: 'Transvase Arcano',
         level: 2,
-        mpCost: 3,
+        mpCost: 4,
         type: 'Suporte (imediato)',
         execution: 'Padrão',
         range: 'Curto',
@@ -174,29 +178,29 @@ export const MANA_RECOVERY_SPELLS: SeedSpell[] = [
         element: 'ELETRICIDADE',
         name: 'Sobrecarga Controlada',
         level: 2,
-        mpCost: 3,
+        mpCost: 4,
         type: 'Utilidade (imediato)',
-        execution: 'Bônus',
-        range: 'Curto',
+        execution: 'Livre',
+        range: 'Pessoal',
         stages: [
-            'Você libera uma descarga controlada contra o próprio corpo: sofre 1d4 de dano elétrico (ignora AP) e recupera 5 MP. Só pode ser usada uma vez por cena.',
-            'Você sofre 1d6 de dano elétrico (ignora AP) e recupera 8 MP. Só pode ser usada uma vez por cena.',
-            'Você sofre 1d8 de dano elétrico (ignora AP) e recupera 11 MP. Só pode ser usada uma vez por cena e pode ser aplicada a um aliado voluntário em alcance em vez de a você.'
+            'Você libera uma descarga controlada contra o próprio corpo: sofre 1d4 de dano elétrico (ignora AP) e recupera 5 MP. Só pode ser usada uma vez por combate.',
+            'Você sofre 1d6 de dano elétrico (ignora AP) e recupera 8 MP. Só pode ser usada uma vez por combate.',
+            'Você sofre 1d8 de dano elétrico (ignora AP) e recupera 11 MP. Só pode ser usada uma vez por combate e pode ser aplicada a um aliado voluntário adjacente a você em vez de a você.'
         ]
     },
     {
-        id: 'seed-mp-pira-de-cinzas',
-        element: 'FOGO',
-        name: 'Pira de Cinzas',
+        id: 'seed-mp-sombra-glutona',
+        element: 'TREVAS',
+        name: 'Sombra Glutona',
         level: 2,
-        mpCost: 3,
-        type: 'Encantamento (conjurado)',
+        mpCost: 4,
+        type: 'Controle (sustentado)',
         execution: 'Padrão',
         range: 'Médio',
         stages: [
-            'Você acende uma pira de cinzas em uma área de 3m de raio por 3 rodadas. Sempre que um inimigo dentro da pira sofrer dano de fogo, você recupera 1 MP (máximo de 2 MP por rodada).',
-            'A pira dura 4 rodadas. Sempre que um inimigo dentro dela sofrer dano de fogo, você recupera 1 MP (máximo de 3 MP por rodada), e inimigos que entrarem na pira pela primeira vez sofrem 3 de dano de fogo.',
-            'A pira tem 6m de raio e dura 4 rodadas. Sempre que um inimigo dentro dela sofrer dano de fogo, você recupera 2 MP (máximo de 4 MP por rodada), e inimigos que entrarem na pira pela primeira vez sofrem 3 de dano de fogo.'
+            'Você estende uma sombra faminta em uma área de 3m de raio, que dura 3 turnos. Sempre que um inimigo conjurar uma magia dentro da sombra, você recupera MP igual ao nível dessa magia (máximo de 3 MP por turno).',
+            'A sombra tem 4,5m de raio e dura 4 turnos. Sempre que um inimigo conjurar uma magia dentro dela, você recupera MP igual ao nível dessa magia + 1 (máximo de 5 MP por turno).',
+            'A sombra tem 6m de raio e dura 5 turnos. Sempre que um inimigo conjurar uma magia dentro dela, você recupera MP igual ao dobro do nível dessa magia (máximo de 8 MP por turno) e o conjurador perde 2 MP.'
         ]
     },
 
@@ -213,24 +217,24 @@ export const MANA_RECOVERY_SPELLS: SeedSpell[] = [
         execution: 'Padrão',
         range: 'Médio',
         stages: [
-            'Você ancora um núcleo de calor e pressão no solo, criando uma zona de 3m de raio que dura 3 rodadas. No fim do turno de cada aliado dentro da zona que não tenha se movido durante aquele turno, ele recupera 2 MP.',
-            'A zona tem 6m de raio e dura 4 rodadas. Aliados que não se moveram durante o turno recuperam 3 MP no fim dele e recebem +2 de AP temporário até o início do turno seguinte.',
-            'A zona tem 6m de raio e dura 5 rodadas. Aliados que não se moveram durante o turno recuperam 4 MP no fim dele e recebem +3 de AP temporário até o início do turno seguinte. Se você estiver dentro da zona, recupera 2 MP adicionais por rodada.'
+            'Você ancora um núcleo de calor e pressão no solo, criando uma zona de 3m de raio que dura 3 turnos. No fim do turno de cada aliado dentro da zona que não tenha se movido durante aquele turno, ele recupera 2 MP.',
+            'A zona tem 6m de raio e dura 4 turnos. Aliados que não se moveram durante o turno recuperam 3 MP no fim dele e recebem +2 de AP temporário até o início do turno seguinte.',
+            'A zona tem 6m de raio e dura 5 turnos. Aliados que não se moveram durante o turno recuperam 4 MP no fim dele e recebem +3 de AP temporário até o início do turno seguinte. Se você estiver dentro da zona, recupera 2 MP adicionais por turno.'
         ]
     },
     {
-        id: 'seed-mp-sifao-mental',
+        id: 'seed-mp-reserva-subconsciente',
         element: 'PSÍQUICO',
-        name: 'Sifão Mental',
+        name: 'Reserva Subconsciente',
         level: 3,
         mpCost: 6,
-        type: 'Ataque (imediato)',
-        execution: 'Padrão',
-        range: 'Médio',
+        type: 'Mentalização (conjurado)',
+        execution: 'Livre',
+        range: 'Pessoal',
         stages: [
-            'Você invade a mente do alvo e suga sua energia mágica: ele sofre 3d6 de dano psíquico e perde 3 MP, que você recupera. Se o alvo não possuir MP, você recupera apenas 1 MP.',
-            'O alvo sofre 4d6 de dano psíquico e perde 5 MP, que você recupera. Se o alvo não possuir MP, você recupera 2 MP.',
-            'O alvo sofre 5d6 de dano psíquico e perde 8 MP, que você recupera. Se o alvo não possuir MP, você recupera 4 MP. Se o MP do alvo chegar a 0, ele não pode conjurar magias até o fim do próximo turno dele.'
+            'Você isola uma reserva de energia no seu subconsciente por 3 turnos. Na primeira vez em que seu MP chegar a 0 durante esse tempo, a reserva se libera e você recupera 8 MP imediatamente, sem gastar ação.',
+            'A reserva dura 4 turnos e libera 12 MP na primeira vez em que o seu MP chegar a 0.',
+            'A reserva dura 5 turnos e libera 16 MP na primeira vez em que o seu MP chegar a 0. Além disso, um aliado adjacente a você, à sua escolha, recupera 4 MP.'
         ]
     },
     {
@@ -239,13 +243,13 @@ export const MANA_RECOVERY_SPELLS: SeedSpell[] = [
         name: 'Pacto Carmesim',
         level: 3,
         mpCost: 6,
-        type: 'Encantamento (conjurado)',
-        execution: 'Bônus',
-        range: 'Curto',
+        type: 'Encantamento (contínuo)',
+        execution: 'Movimento',
+        range: 'Pessoal',
         stages: [
-            'Você sela um pacto de sangue por 3 rodadas. Uma vez por rodada, você pode sacrificar 10% do seu LP máximo (ignora AP) para recuperar 5 MP.',
-            'O pacto dura 4 rodadas. Uma vez por rodada, você pode sacrificar 10% do seu LP máximo (ignora AP) para recuperar 8 MP.',
-            'O pacto dura 5 rodadas. Uma vez por rodada, você pode sacrificar 15% do seu LP máximo (ignora AP) para recuperar 12 MP. Se estiver com menos da metade do seu LP máximo, você recupera 3 MP adicionais.'
+            'Você sela um pacto de sangue por 3 turnos. Uma vez por turno, você pode sacrificar 10% do seu LP máximo (ignora AP) para recuperar 5 MP.',
+            'O pacto dura 4 turnos. Uma vez por turno, você pode sacrificar 10% do seu LP máximo (ignora AP) para recuperar 8 MP.',
+            'O pacto dura 5 turnos. Uma vez por turno, você pode sacrificar 15% do seu LP máximo (ignora AP) para recuperar 12 MP. Se estiver com menos da metade do seu LP máximo, você recupera 3 MP adicionais.'
         ]
     },
     {
@@ -269,13 +273,28 @@ export const MANA_RECOVERY_SPELLS: SeedSpell[] = [
         name: 'Fluxo Perpétuo',
         level: 3,
         mpCost: 6,
-        type: 'Utilidade (conjurado)',
+        type: 'Utilidade (contínuo)',
         execution: 'Movimento',
-        range: 'Curto',
+        range: 'Pessoal',
         stages: [
-            'Você se funde ao fluxo do vento por 3 rodadas. Ao final de cada deslocamento seu de pelo menos 6m durante o seu turno, você recupera 2 MP (uma vez por rodada).',
-            'O efeito dura 4 rodadas. Ao final de cada deslocamento seu de pelo menos 6m durante o seu turno, você recupera 3 MP (uma vez por rodada) e seu deslocamento aumenta em 3m.',
-            'O efeito dura 5 rodadas. Ao final de cada deslocamento seu de pelo menos 6m durante o seu turno, você recupera 3 MP (uma vez por rodada) e seu deslocamento aumenta em 3m. Aliados que terminarem o deslocamento deles a até 3m de você recuperam 2 MP (uma vez por rodada cada).'
+            'Você se funde ao fluxo do vento por 3 turnos. Ao final de cada deslocamento seu de pelo menos 6m durante o seu turno, você recupera 2 MP (uma vez por turno).',
+            'O efeito dura 4 turnos. Ao final de cada deslocamento seu de pelo menos 6m durante o seu turno, você recupera 3 MP (uma vez por turno) e seu deslocamento aumenta em 3m.',
+            'O efeito dura 5 turnos. Ao final de cada deslocamento seu de pelo menos 6m durante o seu turno, você recupera 3 MP (uma vez por turno) e seu deslocamento aumenta em 3m. Aliados que terminarem o deslocamento a até 3m de você recuperam 2 MP (uma vez por turno cada).'
+        ]
+    },
+    {
+        id: 'seed-mp-arco-voltaico',
+        element: 'ELETRICIDADE',
+        name: 'Arco Voltaico',
+        level: 3,
+        mpCost: 6,
+        type: 'Ataque (imediato)',
+        execution: 'Padrão',
+        range: 'Médio',
+        stages: [
+            'Um arco elétrico atinge um alvo, causando 3d6 de dano elétrico, e salta para até dois outros inimigos a até 4,5m do alvo anterior, causando metade do dano a cada um. Você recupera 2 MP por inimigo atingido além do primeiro.',
+            'O arco causa 4d6 de dano elétrico e salta para até três outros inimigos. Você recupera 3 MP por inimigo atingido além do primeiro.',
+            'O arco causa 5d6 de dano elétrico e salta para até quatro outros inimigos. Você recupera 4 MP por inimigo atingido além do primeiro.'
         ]
     },
 
@@ -288,13 +307,13 @@ export const MANA_RECOVERY_SPELLS: SeedSpell[] = [
         name: 'Fenda Devoradora',
         level: 4,
         mpCost: 10,
-        type: 'Defesa (imediato)',
+        type: 'Anulação (imediato)',
         execution: 'Reação',
         range: 'Médio',
         stages: [
             'Quando uma magia inimiga de nível 2 ou inferior tiver você ou um aliado em alcance como alvo, você abre uma fenda no vazio que a engole: a magia é anulada e você recupera MP igual à metade do custo base dela.',
             'Funciona contra magias de nível 3 ou inferior. A magia é anulada e você recupera MP igual ao custo base dela.',
-            'Funciona contra qualquer magia. A magia é anulada e você recupera MP igual ao dobro do custo base dela (máximo de 20 MP). A fenda permanece até o fim da rodada e anula também a próxima magia inimiga, sem recuperar MP.'
+            'Funciona contra qualquer magia. A magia é anulada e você recupera MP igual ao dobro do custo base dela (máximo de 20 MP). A fenda permanece até o fim do turno e anula também a próxima magia inimiga, sem recuperar MP.'
         ]
     },
     {
@@ -303,13 +322,13 @@ export const MANA_RECOVERY_SPELLS: SeedSpell[] = [
         name: 'Decaimento Benigno',
         level: 4,
         mpCost: 10,
-        type: 'Encantamento (conjurado)',
+        type: 'Encantamento (sustentado)',
         execution: 'Padrão',
         range: 'Longo',
         stages: [
-            'Você irradia uma zona de decaimento de 6m de raio por 3 rodadas. No início de cada rodada, inimigos dentro da zona sofrem 1d4 de dano de radiação e cada aliado dentro dela recupera 2 MP.',
-            'A zona dura 4 rodadas. No início de cada rodada, inimigos dentro da zona sofrem 2d4 de dano de radiação e cada aliado dentro dela recupera 3 MP.',
-            'A zona tem 9m de raio e dura 5 rodadas. No início de cada rodada, inimigos dentro da zona sofrem 3d4 de dano de radiação, cada aliado dentro dela recupera 4 MP e você recupera 1 MP por inimigo na zona (máximo de 5).'
+            'Você irradia uma zona de decaimento de 6m de raio por 3 turnos. No início de cada um dos seus turnos, inimigos dentro da zona sofrem 1d4 de dano de radiação e cada aliado dentro dela recupera 2 MP.',
+            'A zona dura 4 turnos. No início de cada um dos seus turnos, inimigos dentro da zona sofrem 2d4 de dano de radiação e cada aliado dentro dela recupera 3 MP.',
+            'A zona tem 9m de raio e dura 5 turnos. No início de cada um dos seus turnos, inimigos dentro da zona sofrem 3d4 de dano de radiação, cada aliado dentro dela recupera 4 MP e você recupera 1 MP por inimigo na zona (máximo de 5).'
         ]
     },
     {
@@ -333,13 +352,13 @@ export const MANA_RECOVERY_SPELLS: SeedSpell[] = [
         name: 'Convergência Zepta',
         level: 4,
         mpCost: 12,
-        type: 'Suporte (conjurado)',
+        type: 'Suporte (sustentado)',
         execution: 'Padrão',
         range: 'Longo',
         stages: [
-            'Você sincroniza os Zeptachips de todos os aliados em alcance por 3 rodadas. Uma vez por rodada, cada aliado sincronizado que conjurar uma magia recupera 1 MP (máximo de 4 MP por rodada no total).',
-            'A sincronia dura 4 rodadas. Uma vez por rodada, cada aliado sincronizado que conjurar uma magia recupera 2 MP (máximo de 6 MP por rodada no total).',
-            'A sincronia dura 5 rodadas. Uma vez por rodada, cada aliado sincronizado que conjurar uma magia recupera 3 MP (máximo de 8 MP por rodada no total) e você recupera 1 MP sempre que um aliado se beneficiar.'
+            'Você sincroniza os Zeptachips de todos os aliados em alcance por 3 turnos. Uma vez por turno, cada aliado sincronizado que conjurar uma magia recupera 1 MP (máximo de 4 MP por turno no total).',
+            'A sincronia dura 4 turnos. Uma vez por turno, cada aliado sincronizado que conjurar uma magia recupera 2 MP (máximo de 6 MP por turno no total).',
+            'A sincronia dura 5 turnos. Uma vez por turno, cada aliado sincronizado que conjurar uma magia recupera 3 MP (máximo de 8 MP por turno no total) e você recupera 1 MP sempre que um aliado se beneficiar.'
         ]
     }
 ]
