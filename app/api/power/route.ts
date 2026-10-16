@@ -11,10 +11,18 @@ export async function GET(req: NextRequest): Promise<Response> {
     try {
         const search = limitQueryString(req.nextUrl.searchParams.get('search'));
         const order = req.nextUrl.searchParams.get('order')?.toLowerCase() || 'asc';
-        const filter = limitQueryString(req.nextUrl.searchParams.get('filter'), 50);
+        const elementsParam = limitQueryString(req.nextUrl.searchParams.get('elements'), 200);
+        const legacyFilter = limitQueryString(req.nextUrl.searchParams.get('filter'), 50);
         // Teto de página para ninguém pedir a coleção inteira de uma vez
         const limit = clampInt(req.nextUrl.searchParams.get('limit'), 1, 100, 20);
         const cursor = limitQueryString(req.nextUrl.searchParams.get('cursor'), 200); // cursor pelo nome
+
+        // Firestore limita cláusulas "in" a 10 valores
+        const elements = (elementsParam
+            ? elementsParam.split(',').map(e => e.trim()).filter(Boolean)
+            : (legacyFilter && legacyFilter !== 'Nenhum' ? [ legacyFilter ] : []))
+            .slice(0, 10)
+            .map(e => e.toUpperCase());
 
         // Busca um item a mais para saber se há próxima página
         let query = powerRepository.limit(limit + 1);
@@ -27,10 +35,11 @@ export async function GET(req: NextRequest): Promise<Response> {
                 .whereLessThan('name', `${trimmedSearch}\uf8ff`);
         }
 
-        // Aplicar filtro de elemento
-        const trimmedFilter = filter?.trim();
-        if (trimmedFilter && trimmedFilter !== 'Nenhum') {
-            query = query.whereEqualTo('element', trimmedFilter.toUpperCase());
+        // Aplicar filtro de elemento(s) — múltipla seleção via whereIn
+        if (elements.length === 1) {
+            query = query.whereEqualTo('element', elements[0]);
+        } else if (elements.length > 1) {
+            query = query.whereIn('element', elements);
         }
 
         // Ordenação SEMPRE por name para compatibilidade com cursor e busca

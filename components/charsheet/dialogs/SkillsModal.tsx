@@ -424,6 +424,7 @@ export default function SkillsModal({ open, onClose }: { open: boolean, onClose:
                         successMessage={(power) => `Poder Mágico ${power.nome} adicionado!`}
                         errorMessage={(err) => err.message || 'Erro ao adicionar poder mágico'}
                         filterOptions={elements.map(element => element.toUpperCase())}
+                        filterLabel="Elemento"
                         sortOptions={[ 'Elemento', 'Nome' ]}
                         initialSort={{ value: 'Nome', order: 'ASC' }}
                         renderResource={({ item, handleAddItem }) => (

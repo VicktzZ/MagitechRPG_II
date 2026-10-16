@@ -51,6 +51,7 @@ import { ResourceListModal } from '@components/utils';
 import Magic from '@components/charsheet/subcomponents/Magic';
 import { poderService, magiaService } from '@services';
 import { elements, specialElements } from '@constants';
+import { getSpellCategory } from '@utils/spellCategory';
 import type { Power, Spell, RPGSystem } from '@models/entities';
 
 interface CreatureData {
@@ -1007,6 +1008,7 @@ export default function CreatureCreator({ open, onClose, onSave, editingCreature
                 successMessage={(power: Power) => `Habilidade ${power.name} adicionada à criatura!`}
                 errorMessage={(err: Error) => err.message || 'Erro ao adicionar habilidade'}
                 filterOptions={elements.map(element => element.toUpperCase())}
+                filterLabel="Elemento"
                 sortOptions={[ 'Elemento', 'Nome' ]}
                 initialSort={{ value: 'Nome', order: 'ASC' }}
                 renderResource={({ item, handleAddItem }) => (
@@ -1032,6 +1034,11 @@ export default function CreatureCreator({ open, onClose, onSave, editingCreature
                 successMessage={(spell: Spell) => `Magia ${spell.name} adicionada à criatura!`}
                 errorMessage={(err: Error) => err.message || 'Erro ao adicionar magia'}
                 filterOptions={[ ...elements, ...specialElements ]}
+                filterLabel="Elemento"
+                secondaryFilter={{
+                    label: 'Tipo',
+                    getValue: (spell: Spell) => getSpellCategory(spell.type)
+                }}
                 sortOptions={[ 'Nível', 'Elemento', 'Alfabética' ]}
                 initialSort={{ value: 'Nível', order: 'ASC' }}
                 renderResource={({ item, handleAddItem }) => (
