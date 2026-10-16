@@ -54,7 +54,8 @@ export interface UseResourceListParams {
 
 export interface UseResourceListOptions<T> {
     initialSearch?: string;
-    initialFilter?: string;
+    initialFilters?: string[];
+    initialSecondaryFilters?: string[];
     initialSort?: {
         value: string;
         order: 'ASC' | 'DESC';
@@ -66,11 +67,16 @@ export interface UseResourceListOptions<T> {
     validateAdd?: (item: T, currentData: any) => { isValid: boolean; errorMessage?: string };
     successMessage?: (item: T) => string;
     errorMessage?: (error: Error) => string;
+    /** Mapeia o rótulo de ordenação exibido para o campo real da entidade (ex: { Nível: 'level' }) */
+    sortFieldMap?: Record<string, string>;
+    /** Extrai o valor do segundo filtro (aplicado no cliente), ex: categoria da magia */
+    getSecondaryFilterValue?: (item: T) => string | undefined;
 }
 
 export interface UseResourceListReturn<T> {
     search: string;
-    filter: string;
+    filters: string[];
+    secondaryFilters: string[];
     sort: {
         value: string;
         order: 'ASC' | 'DESC';
@@ -86,9 +92,12 @@ export interface UseResourceListReturn<T> {
     error: any;
     hasNextPage: boolean;
     isFetchingNextPage: boolean;
-    
+
     setSearch: (value: string) => void;
-    setFilter: React.Dispatch<React.SetStateAction<string>>;
+    toggleFilter: (value: string) => void;
+    clearFilters: () => void;
+    toggleSecondaryFilter: (value: string) => void;
+    clearSecondaryFilters: () => void;
     setSort: React.Dispatch<React.SetStateAction<{ value: string; order: 'ASC' | 'DESC' }>>;
     setButtonSelected: React.Dispatch<React.SetStateAction<{ add: boolean; create: boolean; remove: boolean }>>;
     addItem: (item: T) => void;
