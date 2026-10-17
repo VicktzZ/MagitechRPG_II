@@ -59,16 +59,22 @@ Decisões dadas pelo dono do projeto:
 
 - **Só tema escuro** (sem alternância). **Âmbar** é a única cor de ação; ciano só para mana e informação;
   `secondary` é neutro. Elementos e raridades são marcas (ponto, glifo, filete), não fundo cheio de cartão.
-- **Fontes "tech-arcano"**: Chakra Petch nos títulos (`font.display`), IBM Plex Sans no texto (`font.text`)
-  e IBM Plex Mono nos números (`font.mono`). As **fontes dos dados** (`font.dice`, `diceFont(lados)`,
-  arquivos em `public/fonts/rpg`) são para resultados de rolagem.
+- **Fontes "tech-arcano"**: Chakra Petch nos títulos (`font.display`, h1 a h4 do tema), IBM Plex Sans no texto
+  (`font.text`) e IBM Plex Mono nos números (`font.mono`), carregadas de `public/fonts/fonts.css`. As **fontes dos
+  dados** (`font.dice`, `diceFont(lados)`, `public/fonts/rpg`) são para resultados de rolagem; cada uma é de
+  símbolos (um caractere vira um glifo), então só mostram um dado que cabe em um glifo (d4 a d10 e d12 até 10);
+  total, somas e d20 ficam na mono.
+- **Fontes só com licença comprovada** para uso comercial: ao adicionar uma, registre-a em
+  `public/fonts/LICENSES.md` (o teste `themes/__tests__/fonts.test.ts` confere). Já removidas por falta de
+  licença: Sakana, WBZ, Apocalypse, Robus, Dark Future, Future Millennium, Ysgarth, A Goblin Appears e os
+  símbolos WoD (`magics*.ttf`). As fontes dos dados (dPoly) ainda precisam de confirmação da licença.
 - Substituir as artes geradas por IA (hero da landing em cdn.leonardo.ai, fundos em parallax).
 - Componente novo usa tokens ou o tema, nunca hex/rgba solto, gradiente, brilho colorido ou animação infinita.
   `sx={{ borderRadius: 1 | 2 | 3 }}` = 4 | 8 | 12px (`shape.borderRadius` do tema vale 4).
 - Contraste: texto ≥ 4,5:1 e marcas ≥ 3:1 sobre as superfícies que citam (`themes/__tests__/tokens.test.ts`
   falha se um token novo ou alterado não passar).
 
-Plano em fases: 1 tokens e tema (feita) · 3 tipografia (carregar as fontes com pesos reais, tirar a ponte
-"Inter", migrar `fontFamily="Sakana"`, rolagens com a fonte dos dados) · 4 efeitos (remover gradientes,
-brilhos, pulsos e vidro; regra de ESLint contra hex solto; `prefers-reduced-motion`) · depois as seções,
-começando pela landing.
+Plano em fases: 1 tokens e tema (feita) · 3 tipografia (fontes carregadas, fontes sem licença removidas e
+`fontFamily` migrado; faltam as rolagens com a fonte dos dados e o `html font-size: 12px`) · 4 efeitos (remover
+gradientes, brilhos, pulsos e vidro; regra de ESLint contra hex solto; `prefers-reduced-motion`) · depois as
+seções, começando pela landing.

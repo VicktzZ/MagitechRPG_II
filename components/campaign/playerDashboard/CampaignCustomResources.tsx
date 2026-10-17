@@ -1,6 +1,7 @@
 'use client';
 
 import { useCampaignCurrentCharsheetContext } from '@contexts';
+import { font } from '@themes/tokens'
 import { Add, Remove, Tune } from '@mui/icons-material';
 import {
     alpha,
@@ -69,7 +70,7 @@ export default function CampaignCustomResources(): ReactElement | null {
         >
             <Box display="flex" alignItems="center" gap={1} mb={2}>
                 <Tune sx={{ color: 'warning.main' }} />
-                <Typography variant="h6" fontFamily="Sakana">Recursos</Typography>
+                <Typography variant="h6" fontFamily={font.display}>Recursos</Typography>
             </Box>
             <Divider sx={{ mb: 2 }} />
 

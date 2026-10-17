@@ -4,6 +4,7 @@
 // TODO: !IMPORTANTE - Colocar autenticação em Firebase
 
 import { Footer, LandingPageHeader } from '@layout'
+import { font } from '@themes/tokens'
 import { 
     Avatar, 
     Box, 
@@ -201,7 +202,7 @@ export default function LandingPage(): ReactElement | null {
                     }}
                 >
                     <Typography 
-                        fontFamily="Apocalypse" 
+                        fontFamily={font.display} 
                         variant="h2" 
                         color="primary.main" 
                         sx={{ 
@@ -431,7 +432,7 @@ export default function LandingPage(): ReactElement | null {
                                     >
                                         <Typography
                                             fontSize={!matches ? '11rem' : '7rem'}
-                                            fontFamily="Apocalypse"
+                                            fontFamily={font.display}
                                             sx={{
                                                 position: 'relative',
                                                 lineHeight: 0.9,
@@ -557,7 +558,7 @@ export default function LandingPage(): ReactElement | null {
                                     <Typography
                                         color="#eee"
                                         fontSize="1.5rem"
-                                        fontFamily="Inter"
+                                        fontFamily={font.text}
                                         sx={{ 
                                             textShadow: '0 2px 10px rgba(0, 0, 0, 0.9)',
                                             textAlign: 'center',
@@ -694,7 +695,7 @@ export default function LandingPage(): ReactElement | null {
                 <Box height="8rem" />
                 <Container sx={{ p: 5, gap: 3 }}>
                     <Box id="sobre" mb={!matches ? 30 : 20}>
-                        <Typography variant="h3" fontFamily="WBZ" textAlign="center" p={5} width="100%">
+                        <Typography variant="h3" fontFamily={font.display} textAlign="center" p={5} width="100%">
                             Sobre
                         </Typography>
                         <AnimateOnScroll animateOnce animation={!matches ? 'fadeInDown' : 'fadeInLeft'}>
@@ -915,7 +916,7 @@ export default function LandingPage(): ReactElement | null {
                         </AnimateOnScroll>
                         <Box>
                             <Box width="100%">
-                                <Typography variant="h3" fontFamily="WBZ" textAlign="center" p={5} width="100%">
+                                <Typography variant="h3" fontFamily={font.display} textAlign="center" p={5} width="100%">
                                     Quem somos
                                 </Typography>
                             </Box>
@@ -961,7 +962,7 @@ export default function LandingPage(): ReactElement | null {
 
                     <Box id="guia" mb={!matches ? 30 : 20}>
                         <Box p={5} width="100%">
-                            <Typography variant="h3" fontFamily="WBZ" textAlign="center">
+                            <Typography variant="h3" fontFamily={font.display} textAlign="center">
                                     Obtenha o Guia de Regras
                             </Typography>
                         </Box>
@@ -1006,7 +1007,7 @@ export default function LandingPage(): ReactElement | null {
                                     />
                                 </Box>
                                 <Box display="flex" gap={1} height="100%" width={!matches ? '50%' : '100%'}>
-                                    <Typography position="relative" bottom="1.5rem" fontSize="4rem" fontFamily="WBZ">
+                                    <Typography position="relative" bottom="1.5rem" fontSize="4rem" fontFamily={font.display}>
                                         E
                                     </Typography>
                                     <Box display="flex" gap={5} flexDirection="column" justifyContent="space-between">
@@ -1055,7 +1056,7 @@ export default function LandingPage(): ReactElement | null {
                             }}
                         >
                             <Typography
-                                fontFamily="Apocalypse"
+                                fontFamily={font.display}
                                 variant={!matches ? 'h1' : 'h2'}
                                 position="relative"
                                 top={!matches ? '15rem' : '9rem'}
@@ -1072,7 +1073,7 @@ export default function LandingPage(): ReactElement | null {
                 <Container sx={{ p: 5, gap: 3 }}>
                     <Box mb={!matches ? 30 : 20}>
                         <Box p={5} width="100%">
-                            <Typography variant="h3" fontFamily="WBZ" textAlign="center">
+                            <Typography variant="h3" fontFamily={font.display} textAlign="center">
                                 Obtenha o Grimorio
                             </Typography>
                         </Box>
@@ -1089,7 +1090,7 @@ export default function LandingPage(): ReactElement | null {
                                 gap={5}
                             >
                                 <Box display="flex" gap={1} height="100%" width={!matches ? '50%' : '100%'}>
-                                    <Typography position="relative" bottom="1.5rem" fontSize="4rem" fontFamily="WBZ">
+                                    <Typography position="relative" bottom="1.5rem" fontSize="4rem" fontFamily={font.display}>
                                         M
                                     </Typography>
                                     <Box display="flex" gap={5} flexDirection="column" justifyContent="space-between">
@@ -1142,7 +1143,7 @@ export default function LandingPage(): ReactElement | null {
                     
                     <Box id="planos" mb={!matches ? 30 : 20}>
                         <Box p={5} width="100%">
-                            <Typography variant="h3" fontFamily="WBZ" textAlign="center">
+                            <Typography variant="h3" fontFamily={font.display} textAlign="center">
                                 Planos e Assinaturas
                             </Typography>
                             <Typography variant="body1" textAlign="center" mt={2} color="text.secondary">
@@ -1243,7 +1244,7 @@ export default function LandingPage(): ReactElement | null {
                     
                     <Box id="doacao" mb={!matches ? 30 : 20}>
                         <Box p={5} width="100%">
-                            <Typography variant="h3" fontFamily="WBZ" textAlign="center">
+                            <Typography variant="h3" fontFamily={font.display} textAlign="center">
                                 Apoie o Projeto
                             </Typography>
                         </Box>
@@ -1380,7 +1381,7 @@ export default function LandingPage(): ReactElement | null {
                         bgcolor="background.default"
                     >
                         <Box p={10} width="100%">
-                            <Typography variant="h3" fontFamily="WBZ" textAlign="center">
+                            <Typography variant="h3" fontFamily={font.display} textAlign="center">
                                 Sinopse
                             </Typography>
                         </Box>
@@ -1394,7 +1395,7 @@ export default function LandingPage(): ReactElement | null {
                                 gap={5}
                             >
                                 <Box display="flex" gap={1}>
-                                    <Typography position="relative" bottom="1.5rem" fontSize="4rem" fontFamily="WBZ">
+                                    <Typography position="relative" bottom="1.5rem" fontSize="4rem" fontFamily={font.display}>
                                         M
                                     </Typography>
                                     <Typography whiteSpace="pre-wrap">{intro}</Typography>

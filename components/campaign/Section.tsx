@@ -1,4 +1,5 @@
 import { Box, Divider, Paper, type SxProps, Typography } from '@mui/material';
+import { font } from '@themes/tokens'
 import type { ReactElement } from 'react';
 
 export default function Section({ title, icon, children, action, sx }: { 
@@ -24,7 +25,7 @@ export default function Section({ title, icon, children, action, sx }: {
             <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
                 <Box display="flex" alignItems="center" gap={1}>
                     {icon}
-                    {title && <Typography variant="h6" fontFamily="Sakana">{title}</Typography>}
+                    {title && <Typography variant="h6" fontFamily={font.display}>{title}</Typography>}
                 </Box>
                 {action}
             </Box>

@@ -4,7 +4,7 @@ import '@public/global.css'
 
 import { type ReactElement } from 'react';
 import ContextProvider from '@contexts/ContextProvider';
-import { color } from '@themes/tokens';
+import { color, font } from '@themes/tokens';
 import { startJobs } from '@jobs'
 // TODO: Adicionar useSuspenseQuery
 
@@ -35,7 +35,7 @@ export default function RootLayout({
                 WebkitBoxSizing: 'border-box',
                 MozBoxSizing: 'border-box',
                 color: color.ink,
-                fontFamily: 'Inter'
+                fontFamily: font.text
             }}>
                 <ContextProvider>
                     {children}

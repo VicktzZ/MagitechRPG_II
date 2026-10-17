@@ -84,11 +84,11 @@ export const rarity = {
 
 /**
  * Famílias de fonte. Tech-arcano: Chakra Petch nos títulos, IBM Plex Sans no texto e IBM Plex Mono
- * nos números. O "Inter" ao fim de cada pilha é a ponte até as novas fontes serem carregadas.
+ * nos números. Os arquivos e as licenças (OFL) ficam em `public/fonts`, carregados por `fonts.css`.
  */
 export const font = {
-    display: '"Chakra Petch", "Inter", system-ui, sans-serif',
-    text: '"IBM Plex Sans", "Inter", system-ui, sans-serif',
+    display: '"Chakra Petch", system-ui, sans-serif',
+    text: '"IBM Plex Sans", system-ui, sans-serif',
     mono: '"IBM Plex Mono", ui-monospace, SFMono-Regular, monospace',
     /**
      * Fontes dos dados (public/fonts/rpg, registradas em fonts.css): um glifo por dado, não um número.

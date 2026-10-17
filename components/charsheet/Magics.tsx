@@ -3,6 +3,7 @@
 'use client';
 
 import { elementColor as elementColors, toastDefault } from '@constants';
+import { font } from '@themes/tokens'
 import { type CharsheetDTO } from '@models/dtos';
 import type { Spell } from '@models/entities';
 import {
@@ -385,7 +386,7 @@ const Spells = memo(() => {
                         </Badge>
                         <Box>
                             <Typography
-                                fontFamily='Sakana'
+                                fontFamily={font.display}
                                 variant={isMobile ? 'h5' : 'h4'}
                                 sx={{
                                     lineHeight: 1,

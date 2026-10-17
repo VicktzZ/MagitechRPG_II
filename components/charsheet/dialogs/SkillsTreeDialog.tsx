@@ -1,6 +1,7 @@
 'use client'
 
 import { Dialog, DialogContent, DialogTitle, Box, Typography, Paper, Grid, IconButton, Tooltip } from '@mui/material'
+import { font } from '@themes/tokens'
 import { Close } from '@mui/icons-material'
 import { skills } from '@constants/skills'
 import { blue, green, indigo, orange, pink, purple, red, yellow } from '@mui/material/colors'
@@ -42,7 +43,8 @@ function SkillNode({ skill, isUnlocked = false, skillClass, icon, size = 2.5 }: 
                     bgcolor: isUnlocked ? skillColors[skillClass ] : 'background.paper',
                     color: isUnlocked ? 'primary.contrastText' : 'text.primary',
                     cursor: 'pointer',
-                    fontFamily: 'Runes',
+                    fontFamily: font.display,
+                    fontWeight: 600,
                     fontSize: `${size}rem`,
                     transition: 'all 0.2s',
                     '&:hover': {
@@ -98,7 +100,7 @@ function ClassSkillTree({ charsheet }: { charsheet: Required<Charsheet> }) {
                     skill={skillLevels[0]}
                     skillClass={charsheet.class as keyof typeof skills.class}
                     isUnlocked={charsheet.level >= 0}
-                    icon='X'
+                    icon='0'
                 />
             </Box>
 
@@ -129,13 +131,13 @@ function ClassSkillTree({ charsheet }: { charsheet: Required<Charsheet> }) {
                     skill={skillLevels[1]}
                     skillClass={charsheet.class as keyof typeof skills.class}
                     isUnlocked={charsheet.level >= 1}
-                    icon='a'
+                    icon='1'
                 />
                 <SkillNode
                     skill={skillLevels[5]}
                     skillClass={charsheet.class as keyof typeof skills.class}
                     isUnlocked={charsheet.level >= 5}
-                    icon='c'
+                    icon='5'
                 />
             </Box>
 
@@ -178,7 +180,7 @@ function ClassSkillTree({ charsheet }: { charsheet: Required<Charsheet> }) {
                         skillClass={charsheet.class as keyof typeof skills.class}
                         isUnlocked={charsheet.level >= 10}
                         size={3}
-                        icon='7'
+                        icon='10'
                     />
                 </Box>
                 <Box
@@ -200,7 +202,7 @@ function ClassSkillTree({ charsheet }: { charsheet: Required<Charsheet> }) {
                         skillClass={charsheet.class as keyof typeof skills.class}
                         isUnlocked={charsheet.level >= 15}
                         size={3}
-                        icon='f'
+                        icon='15'
                     />
                 </Box>
             </Box>
@@ -225,7 +227,7 @@ function ClassSkillTree({ charsheet }: { charsheet: Required<Charsheet> }) {
                     skillClass={charsheet.class as keyof typeof skills.class}
                     isUnlocked={charsheet.level >= 20}
                     size={3}
-                    icon='B'
+                    icon='20'
                 />
             </Box>
         </Box>
@@ -264,7 +266,7 @@ function SubclassSkillTree({ charsheet }: { charsheet: Required<Charsheet> }) {
                     skill={skillLevels[10]}
                     skillClass={charsheet.class as keyof typeof skills.class}
                     isUnlocked={charsheet.level >= 10}
-                    icon='g'
+                    icon='10'
                 />
             </Box>
 
@@ -287,7 +289,7 @@ function SubclassSkillTree({ charsheet }: { charsheet: Required<Charsheet> }) {
                     skill={skillLevels[15]}
                     skillClass={charsheet.class as keyof typeof skills.class}
                     isUnlocked={charsheet.level >= 15}
-                    icon='h'
+                    icon='15'
                 />
             </Box>
 
@@ -310,7 +312,7 @@ function SubclassSkillTree({ charsheet }: { charsheet: Required<Charsheet> }) {
                     skill={skillLevels[20]}
                     skillClass={charsheet.class as keyof typeof skills.class}
                     isUnlocked={charsheet.level >= 20}
-                    icon='i'
+                    icon='20'
                 />
             </Box>
         </Box>
@@ -358,7 +360,7 @@ export default function SkillsTreeDialog({ open, onClose, charsheet }: SkillsTre
                         {/* Lado esquerdo - Classe */}
                         <Grid item xs={12} md={charsheet.subclass ? 6 : 12}>
                             <Box sx={{ textAlign: 'center', mb: 4 }}>
-                                <Typography fontFamily='Sakana' variant="h4">
+                                <Typography fontFamily={font.display} variant="h4">
                                     {charsheet.class as string}
                                 </Typography>
                             </Box>
@@ -369,7 +371,7 @@ export default function SkillsTreeDialog({ open, onClose, charsheet }: SkillsTre
                         {charsheet.subclass && (
                             <Grid item xs={12} md={6}>
                                 <Box sx={{ textAlign: 'center', mb: 4 }}>
-                                    <Typography fontFamily='Sakana' variant="h4">
+                                    <Typography fontFamily={font.display} variant="h4">
                                         {charsheet.subclass as string}
                                     </Typography>
                                 </Box>
