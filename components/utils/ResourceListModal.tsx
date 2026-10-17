@@ -132,6 +132,22 @@ function MultiSelectFilter({
 /** Quantos itens a grade desenha por vez; o resto entra conforme a rolagem se aproxima do fim */
 const RENDER_STEP = 48;
 
+/** Espaço entre os itens da grade, em px */
+const GRID_GAP_PX = 12;
+
+/**
+ * Colunas da grade: quantas couberem com largura mínima `minWidth`, e no máximo `maxColumns` (em
+ * telas muito largas os itens crescem em vez de a lista ganhar mais colunas)
+ */
+const getGridColumns = (minWidth: number, maxColumns?: number): string => {
+    const min = `min(100%, ${minWidth}px)`;
+    const columnWidth = maxColumns
+        ? `max(${min}, calc((100% - ${(maxColumns - 1) * GRID_GAP_PX}px) / ${maxColumns}))`
+        : min;
+
+    return `repeat(auto-fill, minmax(${columnWidth}, 1fr))`;
+};
+
 /**
  * Célula da lista. É memoizada para que digitar na busca, marcar filtros ou chegar uma página nova
  * não redesenhe os itens que já estão na tela (cada item pode ser um cartão pesado).
@@ -165,6 +181,7 @@ function ResourceListModal({
     title,
     renderResource,
     itemMinWidth,
+    itemMaxColumns,
     pageSize = 20,
     initialSearch = '',
     initialFilters = [],
@@ -498,8 +515,8 @@ function ResourceListModal({
                             <Box
                                 sx={{
                                     display: 'grid',
-                                    gridTemplateColumns: `repeat(auto-fill, minmax(min(100%, ${itemMinWidth}px), 1fr))`,
-                                    gap: 1.5,
+                                    gridTemplateColumns: getGridColumns(itemMinWidth, itemMaxColumns),
+                                    gap: `${GRID_GAP_PX}px`,
                                     alignItems: 'stretch'
                                 }}
                             >

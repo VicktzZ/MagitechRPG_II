@@ -145,7 +145,8 @@ export default function SpellsModal({ open, onClose }: { open: boolean, onClose:
                             filterLabel="Elemento"
                             secondaryFilter={SPELL_TYPE_FILTER}
                             sortOptions={[ 'Nível', 'Elemento', 'Alfabética' ]}
-                            itemMinWidth={300}
+                            itemMinWidth={360}
+                            itemMaxColumns={5}
                             renderResource={({ item, handleAddItem }) => {
                                 const currentSpells = getValues('spells') || [];
                                 const alreadyAdded = currentSpells.some(m => m.id === item.id);

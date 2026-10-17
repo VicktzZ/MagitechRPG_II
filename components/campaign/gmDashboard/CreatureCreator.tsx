@@ -1038,7 +1038,8 @@ export default function CreatureCreator({ open, onClose, onSave, editingCreature
                 secondaryFilter={SPELL_TYPE_FILTER}
                 sortOptions={[ 'Nível', 'Elemento', 'Alfabética' ]}
                 initialSort={{ value: 'Nível', order: 'ASC' }}
-                itemMinWidth={300}
+                itemMinWidth={360}
+                itemMaxColumns={5}
                 renderResource={({ item, handleAddItem }) => (
                     <Magic
                         as="magic-spell"

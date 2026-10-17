@@ -109,6 +109,19 @@ export function getSpellSubtypes(type?: string | null): string[] {
     return unique(subtypes);
 }
 
+/** Magia de execução Reação (aceita variações de caixa/acento, como "reação") */
+const isReactionExecution = (execution?: string | null): boolean => normalizeKey(execution ?? '') === 'reacao';
+
+/**
+ * Subtipos de uma magia para o filtro "Subtipo": os do `type` e, para toda magia de execução
+ * Reação, também "Reação". No catálogo só algumas reações têm "(Reação)" no `type`; a maioria é
+ * "(imediato)" com execução Reação, e todas devem aparecer ao filtrar por Reação.
+ */
+export function getSpellFilterSubtypes(spell: { type?: string | null; execution?: string | null }): string[] {
+    const subtypes = getSpellSubtypes(spell.type);
+    return isReactionExecution(spell.execution) ? unique([ ...subtypes, 'Reação' ]) : subtypes;
+}
+
 /**
  * Configuração dos filtros "Tipo" e "Subtipo" para listas de magias
  * (ver `SecondaryFilterConfig` em models/types/components.ts).
@@ -119,7 +132,7 @@ export const SPELL_TYPE_FILTER = {
     options: SPELL_CATEGORIES,
     subFilter: {
         label: 'Subtipo',
-        getValue: (spell: { type?: string | null }) => getSpellSubtypes(spell.type),
+        getValue: getSpellFilterSubtypes,
         options: SPELL_SUBTYPES
     }
 };

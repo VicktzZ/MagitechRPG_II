@@ -49,6 +49,8 @@ export interface ResourceListModalProps<T extends Record<string, any>> {
      * colunas possível e o item deve ocupar toda a célula; sem ela, usa 1/2/3 colunas fixas centralizadas.
      */
     itemMinWidth?: number;
+    /** Com `itemMinWidth`: máximo de colunas, para os itens crescerem em telas muito largas em vez de multiplicar as colunas */
+    itemMaxColumns?: number;
     pageSize?: number;
     title?: string;
     initialSearch?: string;

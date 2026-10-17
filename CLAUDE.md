@@ -17,6 +17,9 @@ Definições dadas pelo dono do projeto:
 - **imediato** — definição ainda não fornecida (presumivelmente o oposto de conjurado: resolve
   na hora, sem duração em turnos). Perguntar antes de reclassificar magias para/de "imediato".
 
+Magias de reação têm `execution: 'Reação'`; no catálogo quase todas são `(imediato)` no `type` (só
+duas têm `(Reação)`). Por isso o filtro "Subtipo → Reação" também lista toda magia de execução Reação.
+
 ## Convenções do catálogo de magias (conferidas no Firestore real, coleção `spells`)
 
 - `element` em MAIÚSCULAS (`FOGO`, `ÁGUA`, `NÃO-ELEMENTAL`, `PSÍQUICO`...). A API filtra assim.

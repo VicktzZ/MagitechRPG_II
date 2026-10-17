@@ -2,6 +2,7 @@ import { filterBySelections } from '../filterSelection'
 import {
     getSpellCategories,
     getSpellCategory,
+    getSpellFilterSubtypes,
     getSpellSubtypes,
     SPELL_TYPE_FILTER
 } from '../spellCategory'
@@ -68,6 +69,38 @@ describe('getSpellSubtypes — variações reais do catálogo', () => {
         expect(getSpellSubtypes('Ataque ()')).toEqual([])
         expect(getSpellSubtypes(undefined)).toEqual([])
         expect(getSpellSubtypes(null)).toEqual([])
+    })
+})
+
+describe('getSpellFilterSubtypes — Reação vem também da execução', () => {
+    it('reação com "(imediato)" no type entra em Imediato e em Reação', () => {
+        expect(getSpellFilterSubtypes({ type: 'Defesa (imediato)', execution: 'Reação' })).toEqual([ 'Imediato', 'Reação' ])
+    })
+
+    it('não duplica quando o type já diz Reação', () => {
+        expect(getSpellFilterSubtypes({ type: 'Defesa (Reação)', execution: 'Reação' })).toEqual([ 'Reação' ])
+    })
+
+    it('aceita a execução sem acento ou em minúsculas', () => {
+        expect(getSpellFilterSubtypes({ type: 'Ataque (imediato)', execution: 'reacao' })).toContain('Reação')
+    })
+
+    it('outras execuções não ganham subtipo', () => {
+        expect(getSpellFilterSubtypes({ type: 'Ataque (imediato)', execution: 'Padrão' })).toEqual([ 'Imediato' ])
+        expect(getSpellFilterSubtypes({ type: 'Ataque', execution: undefined })).toEqual([])
+    })
+
+    it('o filtro "Reação" lista as reações do catálogo e as novas, e não as outras', () => {
+        const spells = [
+            { name: 'Nova', type: 'Controle (imediato)', execution: 'Reação' },
+            { name: 'Antiga com subtipo', type: 'Defesa (Reação)', execution: 'Reação' },
+            { name: 'Antiga imediata', type: 'Defesa (imediato)', execution: 'Reação' },
+            { name: 'Comum', type: 'Ataque (imediato)', execution: 'Padrão' }
+        ]
+        const result = filterBySelections(spells, [
+            { getValue: SPELL_TYPE_FILTER.subFilter.getValue, selected: [ 'Reação' ] }
+        ]).map(s => s.name)
+        expect(result).toEqual([ 'Nova', 'Antiga com subtipo', 'Antiga imediata' ])
     })
 })
 
