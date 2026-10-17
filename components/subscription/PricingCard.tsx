@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { PlanIcon } from './PlanIcon';
 import {
     Card,
     CardContent,
@@ -51,6 +52,7 @@ export function PricingCard({
         <Card
             sx={{
                 position: 'relative',
+                overflow: 'visible',
                 height: '100%',
                 display: 'flex',
                 flexDirection: 'column',
@@ -91,7 +93,7 @@ export function PricingCard({
                         variant="h2"
                         sx={{ fontSize: '3rem', mb: 1 }}
                     >
-                        {metadata.icon}
+                        <PlanIcon plan={plan} />
                     </Typography>
                     <Typography
                         variant="h5"

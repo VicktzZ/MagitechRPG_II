@@ -1,24 +1,25 @@
 'use client';
 
-import { Box } from '@mui/material'
+import LogoMark from '@components/misc/LogoMark'
+import { Box, Typography } from '@mui/material'
+import { font } from '@themes/tokens'
 import React, { type ReactElement } from 'react'
-
-import logo from '@public/assets/magitech_logo_written.png'
-import Image from 'next/image'
 
 export default function Logo(): ReactElement {
     return (
-        <Box onClick={() => { location.href = '/' }} sx={{ cursor: 'pointer' }} display='flex' gap={2} alignItems='center'>
-            <Image 
-                height={0} 
-                width={0} 
-                src={logo} 
-                alt='logo'
-                style={{
-                    width: '7.5rem',
-                    height: '7.5rem'
-                }} 
-            />
+        <Box
+            component="a"
+            href="/"
+            aria-label="Magitech RPG, página inicial"
+            sx={{ cursor: 'pointer', color: 'text.primary', textDecoration: 'none' }}
+            display="flex"
+            gap={1.5}
+            alignItems="center"
+        >
+            <LogoMark size={44} />
+            <Typography component="span" sx={{ fontFamily: font.display, fontWeight: 600, fontSize: '1.25rem', letterSpacing: '0.16em' }}>
+                MAGITECH
+            </Typography>
         </Box>
     )
 }

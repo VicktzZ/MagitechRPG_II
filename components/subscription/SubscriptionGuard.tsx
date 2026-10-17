@@ -1,6 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import { PlanIcon } from './PlanIcon';
 import React from 'react';
 import {
     Box,
@@ -112,7 +113,7 @@ export function SubscriptionGuard({
                         <CardContent sx={{ p: 4 }}>
                             <Box sx={{ textAlign: 'center', mb: 3 }}>
                                 <Typography variant="h2" sx={{ mb: 1 }}>
-                                    {currentPlanMetadata.icon}
+                                    <PlanIcon plan={currentPlan} />
                                 </Typography>
                                 <Typography variant="h5" sx={{ fontWeight: 'bold', color: currentPlanMetadata.color }}>
                   Seu Plano Atual
@@ -194,7 +195,7 @@ export function SubscriptionGuard({
                         <CardContent sx={{ p: 4, pt: 5 }}>
                             <Box sx={{ textAlign: 'center', mb: 3 }}>
                                 <Typography variant="h2" sx={{ mb: 1 }}>
-                                    {requiredPlanMetadata.icon}
+                                    <PlanIcon plan={requiredPlan!} />
                                 </Typography>
                                 <Typography variant="h5" sx={{ fontWeight: 'bold', color: requiredPlanMetadata.color }}>
                   Plano Necessário

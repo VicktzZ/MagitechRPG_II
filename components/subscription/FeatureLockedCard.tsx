@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { PlanIcon } from './PlanIcon';
 import {
     Card,
     CardContent,
@@ -113,7 +114,7 @@ export function FeatureLockedCard({
             <CardContent sx={{ p: 3 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
                     <Typography variant="h2" sx={{ fontSize: '2rem' }}>
-                        {planMetadata.icon}
+                        <PlanIcon plan={requiredPlan} />
                     </Typography>
                     <Typography variant="h6" sx={{ fontWeight: 'bold', color: planMetadata.color }}>
                         {featureName}

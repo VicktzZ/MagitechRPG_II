@@ -34,7 +34,8 @@ import { getProviders, signIn, signOut, useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, type ReactElement } from 'react';
 
-import magitechIcon from '@public/assets/magitech_logo.png';
+import magitechIcon from '@public/icons/magitech_logo.svg';
+import LogoMark from '@components/misc/LogoMark';
 import discordIcon from '@public/icons/discord_icon.svg';
 import googleIcon from '@public/icons/google_icon.svg';
 import Image from 'next/image';
@@ -247,13 +248,7 @@ export default function LandingPageHeader(): ReactElement {
                 <Toolbar sx={{ py: 1, px: { xs: 1, md: 2 } }}>
                     {/* Logo */}
                     <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
-                        <Image 
-                            src={magitechIcon} 
-                            alt="MagitechRPG" 
-                            width={40} 
-                            height={40} 
-                            style={{ marginRight: '0.5rem' }} 
-                        />
+                        <Box sx={{ mr: 1, color: 'text.primary', display: 'flex' }}><LogoMark size={40} title="MagitechRPG" /></Box>
                         <Typography 
                             variant="h6" 
                             component="div" 
