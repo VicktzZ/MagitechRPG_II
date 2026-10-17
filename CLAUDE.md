@@ -34,8 +34,10 @@ quase todas são `(imediato)` no `type`. Duas (Rajada Refletora, Retribuição C
 - No máximo UMA expressão de dados (`XdY`) por estágio: `castSpell` rola todas as que achar no texto.
 - Antes de criar magias, ler o catálogo para não repetir conceito e seguir o vocabulário real.
 
-Lotes já criados: `scripts/data/manaRecoverySpells.ts` (ids `seed-mp-*`) e
-`scripts/data/reactionSpells.ts` (ids `seed-rx-*`). Usar `scripts/seedSpellBatch.ts` para gravar
+Lotes já criados: `scripts/data/manaRecoverySpells.ts` (ids `seed-mp-*`),
+`scripts/data/reactionSpells.ts` (ids `seed-rx-*`) e `scripts/data/charismaSpells.ts` (ids `seed-car-*`,
+magias que usam o atributo Carisma: testes das perícias de CAR contra a Resistência Mental do alvo e o
+"modificador de CAR" como número). Usar `scripts/seedSpellBatch.ts` para gravar
 (upsert idempotente por id fixo). Gravação direta no Firestore de produção só com liberação
 explícita do dono: criar apenas ids novos, abortar se houver colisão de id ou nome, e reler para conferir.
 Para alterar um lote já gravado, conferir antes que os documentos ainda estão na versão anterior do
