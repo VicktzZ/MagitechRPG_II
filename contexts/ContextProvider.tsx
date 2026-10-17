@@ -6,6 +6,7 @@ import { charsheetModel } from '@constants/charsheet';
 import { channelContext, charsheetContext, savingSpinnerContext, userContext } from '@contexts';
 import type { Charsheet } from '@models/entities';
 import { CssBaseline, ThemeProvider as MuiThemeProvider } from '@mui/material';
+import { MotionConfig } from 'framer-motion';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import theme from '@themes/theme';
 import { SessionProvider } from 'next-auth/react';
@@ -72,12 +73,14 @@ function ThemedApp({
                 <charsheetContext.Provider value={{ charsheet, setCharsheet }}>
                     <savingSpinnerContext.Provider value={{ isSaving, showSavingSpinner: setIsSaving }}>
                         <MuiThemeProvider theme={theme}>
-                            <SessionProvider>
-                                <FirebaseAuthBridge />
-                                <CssBaseline />
-                                <SavingSpinner />
-                                {children}
-                            </SessionProvider>
+                            <MotionConfig reducedMotion="user">
+                                <SessionProvider>
+                                    <FirebaseAuthBridge />
+                                    <CssBaseline />
+                                    <SavingSpinner />
+                                    {children}
+                                </SessionProvider>
+                            </MotionConfig>
                         </MuiThemeProvider>
                     </savingSpinnerContext.Provider>
                 </charsheetContext.Provider>

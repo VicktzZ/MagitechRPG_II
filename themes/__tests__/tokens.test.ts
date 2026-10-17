@@ -1,5 +1,5 @@
 import theme from '../theme'
-import { color, diceFont, element, font, radius, rarity } from '../tokens'
+import { color, diceFont, element, font, radius, rarity, shadow } from '../tokens'
 
 /** Luminância relativa (WCAG 2.x) de uma cor `#rrggbb` */
 const luminance = (hex: string): number => {
@@ -152,6 +152,17 @@ describe('tema do MUI gerado dos tokens', () => {
         expect(theme.shape.borderRadius).toBe(radius.sm)
         expect(theme.shape.borderRadius * 2).toBe(radius.md)
         expect(theme.shape.borderRadius * 3).toBe(radius.lg)
+    })
+
+    it('só a camada flutuante tem sombra: cartões planos, menus e modais com shadow.overlay', () => {
+        expect(theme.shadows).toHaveLength(25)
+        for (const elevation of [ 0, 1, 2, 4, 6 ]) expect(theme.shadows[elevation]).toBe(shadow.none)
+        for (const elevation of [ 8, 16, 24 ]) expect(theme.shadows[elevation]).toBe(shadow.overlay)
+    })
+
+    it('o Paper não tem o gradiente de elevação do modo escuro', () => {
+        const paper = theme.components?.MuiPaper?.styleOverrides as { root: { backgroundImage: string } }
+        expect(paper.root.backgroundImage).toBe('none')
     })
 
     it('a fonte de texto do tema é a IBM Plex Sans', () => {
