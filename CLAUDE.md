@@ -12,8 +12,10 @@ Definições dadas pelo dono do projeto:
 - **sustentado** — para manter a magia ativa o conjurador paga **metade do custo de MP** dela
   a cada turno, como **ação livre**, até parar de pagar ou perder a concentração.
   Não usar "sustentado" só porque a magia dura vários turnos: isso é "contínuo".
-- **imediato** e **conjurado** — definições ainda não fornecidas. Não presumir o significado;
-  perguntar antes de reclassificar magias entre esses subtipos.
+- **conjurado** — a magia só é executada no **próximo turno** do conjurador (rodada seguinte).
+  Não usar para magia que resolve na hora nem para magia que só dura vários turnos.
+- **imediato** — definição ainda não fornecida (presumivelmente o oposto de conjurado: resolve
+  na hora, sem duração em turnos). Perguntar antes de reclassificar magias para/de "imediato".
 
 ## Convenções do catálogo de magias (conferidas no Firestore real, coleção `spells`)
 

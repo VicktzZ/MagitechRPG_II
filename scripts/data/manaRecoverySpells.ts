@@ -89,7 +89,7 @@ export const MANA_RECOVERY_SPELLS: SeedSpell[] = [
         name: 'Capacitor Vivo',
         level: 1,
         mpCost: 1,
-        type: 'Encantamento (conjurado)',
+        type: 'Encantamento (contínuo)',
         execution: 'Movimento',
         range: 'Pessoal',
         stages: [
@@ -217,7 +217,7 @@ export const MANA_RECOVERY_SPELLS: SeedSpell[] = [
         name: 'Núcleo Geotérmico',
         level: 3,
         mpCost: 6,
-        type: 'Encantamento (conjurado)',
+        type: 'Encantamento (contínuo)',
         execution: 'Padrão',
         range: 'Médio',
         stages: [
@@ -232,7 +232,7 @@ export const MANA_RECOVERY_SPELLS: SeedSpell[] = [
         name: 'Reserva Subconsciente',
         level: 3,
         mpCost: 6,
-        type: 'Mentalização (conjurado)',
+        type: 'Mentalização (contínuo)',
         execution: 'Livre',
         range: 'Pessoal',
         stages: [
