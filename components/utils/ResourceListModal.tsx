@@ -464,6 +464,31 @@ function ResourceListModal({
                     </Stack>
                 )}
 
+                {/* Contador de cada busca (texto e/ou filtros). Com busca ativa tudo é carregado, então o número
+                    é o total; enquanto carrega, mostra o andamento em vez de um número parcial. */}
+                {isFiltering && (
+                    <Box
+                        role="status"
+                        aria-live="polite"
+                        display="flex"
+                        alignItems="center"
+                        gap={1}
+                        px={{ xs: 0, sm: 1 }}
+                        data-testid="results-counter"
+                    >
+                        {isLoading || isLoadingAll ? (
+                            <>
+                                <CircularProgress size={14} />
+                                <Typography variant="body2" color="text.secondary">Buscando resultados...</Typography>
+                            </>
+                        ) : (
+                            <Typography variant="body2" color="text.secondary">
+                                Resultados encontrados: <Box component="strong" color="text.primary">{items.length}</Box>
+                            </Typography>
+                        )}
+                    </Box>
+                )}
+
                 {items.length === 0 && !isLoading && !isLoadingAll ? (
                     <Box textAlign="center" py={6}>
                         <Typography variant="body1" color="text.secondary">
@@ -523,14 +548,12 @@ function ResourceListModal({
                             </Grid>
                         )}
 
-                        {/* Com filtro ativo tudo é carregado de uma vez: só mostra o progresso. Sem filtro, o
-                            elemento de referência abaixo dispara o scroll infinito. */}
-                        {isLoading || isLoadingAll ? (
+                        {/* Com filtro ativo tudo é carregado de uma vez e o andamento aparece no contador. Sem
+                            filtro, o elemento de referência abaixo dispara o scroll infinito. */}
+                        {!isFiltering && isLoading ? (
                             <Box display="flex" justifyContent="center" alignItems="center" gap={1} p={2}>
                                 <CircularProgress size={18} />
-                                <Typography variant="body2" color="text.secondary">
-                                    {isFiltering ? 'Carregando todos os resultados...' : 'Carregando...'}
-                                </Typography>
+                                <Typography variant="body2" color="text.secondary">Carregando...</Typography>
                             </Box>
                         ) : (hasHiddenItems || (!isFiltering && hasNextPage)) && (
                             <Box ref={loadMoreRef} display="flex" justifyContent="center" p={2} minHeight={56}>
