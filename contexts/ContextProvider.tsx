@@ -3,12 +3,11 @@
 import { SavingSpinner } from '@components/misc';
 import { FirebaseAuthBridge } from '@components/misc/FirebaseAuthBridge';
 import { charsheetModel } from '@constants/charsheet';
-import { channelContext, charsheetContext, savingSpinnerContext, ThemeProvider, userContext, useThemeContext } from '@contexts';
+import { channelContext, charsheetContext, savingSpinnerContext, userContext } from '@contexts';
 import type { Charsheet } from '@models/entities';
 import { CssBaseline, ThemeProvider as MuiThemeProvider } from '@mui/material';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import darkTheme from '@themes/defaultTheme';
-import lightTheme from '@themes/lightTheme';
+import theme from '@themes/theme';
 import { SessionProvider } from 'next-auth/react';
 import { SnackbarProvider } from 'notistack';
 import type { Channel, PresenceChannel } from 'pusher-js';
@@ -67,15 +66,12 @@ interface ThemedAppProps {
 function ThemedApp({
     charsheet, setCharsheet, user, setUser, isSaving, setIsSaving, channel, setChannel, children
 }: ThemedAppProps): ReactElement {
-    const { themeMode } = useThemeContext();
-    const currentTheme = themeMode === 'dark' ? darkTheme : lightTheme;
-
     return (
         <channelContext.Provider value={{ channel: channel as PresenceChannel, setChannel: setChannel as Dispatch<SetStateAction<PresenceChannel | null>> }}>
             <userContext.Provider value={{ user, setUser }}>
                 <charsheetContext.Provider value={{ charsheet, setCharsheet }}>
                     <savingSpinnerContext.Provider value={{ isSaving, showSavingSpinner: setIsSaving }}>
-                        <MuiThemeProvider theme={currentTheme}>
+                        <MuiThemeProvider theme={theme}>
                             <SessionProvider>
                                 <FirebaseAuthBridge />
                                 <CssBaseline />
@@ -99,20 +95,18 @@ export default function ContextProvider({ children }: { children: ReactNode }): 
     return (
         <QueryClientProvider client={queryClient}>
             <SnackbarProvider maxSnack={3}>
-                <ThemeProvider>
-                    <ThemedApp
-                        charsheet={charsheet}
-                        setCharsheet={setCharsheet}
-                        user={user}
-                        setUser={setUser}
-                        isSaving={isSaving}
-                        setIsSaving={setIsSaving}
-                        channel={channel}
-                        setChannel={setChannel}
-                    >
-                        {children}
-                    </ThemedApp>
-                </ThemeProvider>
+                <ThemedApp
+                    charsheet={charsheet}
+                    setCharsheet={setCharsheet}
+                    user={user}
+                    setUser={setUser}
+                    isSaving={isSaving}
+                    setIsSaving={setIsSaving}
+                    channel={channel}
+                    setChannel={setChannel}
+                >
+                    {children}
+                </ThemedApp>
             </SnackbarProvider>
         </QueryClientProvider>
     )

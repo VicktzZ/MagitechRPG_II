@@ -33,24 +33,9 @@ import { useFirestoreRealtime } from '@hooks/useFirestoreRealtime';
 import { useFirestoreByIds } from '@hooks/useFirestoreByIds';
 import { charsheetService } from '@services';
 import { useSnackbar } from 'notistack';
-import { green, red, orange, blue, grey, brown, yellow, purple } from '@mui/material/colors';
+import { green, red, orange } from '@mui/material/colors';
+import { elementColor } from '@constants';
 import { useCharsheetSystem } from '@hooks/useCharsheetSystem';
-
-const elementColor: Record<string, string> = {
-    'FOGO': red[500],
-    'ÁGUA': blue[500],
-    'AR': grey[300],
-    'TERRA': brown[500],
-    'ELETRICIDADE': yellow[600],
-    'TREVAS': grey[900],
-    'LUZ': yellow[200],
-    'NÃO-ELEMENTAL': grey[400],
-    'SANGUE': red[900],
-    'RADIAÇÃO': green[500],
-    'TÓXICO': purple[500],
-    'PSÍQUICO': purple[300],
-    'VÁCUO': grey[600]
-};
 
 /**
  * Normaliza um valor que pode ser um array ou um objeto com chaves numéricas
@@ -1334,7 +1319,7 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet }: Char
                                 </Typography>
                                 <Grid container spacing={2}>
                                     <Grid item xs={12} sm={6} md={3}>
-                                        <Paper sx={{ p: 2, textAlign: 'center', bgcolor: 'background.paper2' }}>
+                                        <Paper sx={{ p: 2, textAlign: 'center', bgcolor: 'background.raised' }}>
                                             <Typography variant="subtitle2" gutterBottom>
                                                 MpCompCost Médio
                                             </Typography>
@@ -1344,7 +1329,7 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet }: Char
                                         </Paper>
                                     </Grid>
                                     <Grid item xs={12} sm={6} md={3}>
-                                        <Paper sx={{ p: 2, textAlign: 'center', bgcolor: 'background.paper2' }}>
+                                        <Paper sx={{ p: 2, textAlign: 'center', bgcolor: 'background.raised' }}>
                                             <Typography variant="subtitle2" gutterBottom>
                                                 Elements Dominantes
                                             </Typography>
@@ -1354,7 +1339,7 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet }: Char
                                         </Paper>
                                     </Grid>
                                     <Grid item xs={12} sm={6} md={3}>
-                                        <Paper sx={{ p: 2, textAlign: 'center', bgcolor: 'background.paper2' }}>
+                                        <Paper sx={{ p: 2, textAlign: 'center', bgcolor: 'background.raised' }}>
                                             <Typography variant="subtitle2" gutterBottom>
                                                 Maestria
                                             </Typography>
@@ -1364,7 +1349,7 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet }: Char
                                         </Paper>
                                     </Grid>
                                     <Grid item xs={12} sm={6} md={3}>
-                                        <Paper sx={{ p: 2, textAlign: 'center', bgcolor: 'background.paper2' }}>
+                                        <Paper sx={{ p: 2, textAlign: 'center', bgcolor: 'background.raised' }}>
                                             <Typography variant="subtitle2" gutterBottom>
                                                 Total MP
                                             </Typography>

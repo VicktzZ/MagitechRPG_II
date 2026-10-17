@@ -47,3 +47,28 @@ lote (senão alguém editou à mão), sobrescrever só os ids do lote e reler pa
 Janela: do início do turno do personagem ao início do próximo (reações contam); recuperar MP não
 devolve limite; ao exceder, a conjuração é bloqueada e o mestre pode liberar. Não vale no Roguelite
 nem em sistemas customizados.
+
+## Design system
+
+Fonte única de cor, tipografia, espaço, raio, sombra e movimento: `themes/tokens.ts`. O tema do MUI
+(`themes/theme.ts`) e os mapas de domínio em `@constants` (`elementColor`, `spellElementColor`, `rarityColor`)
+são gerados dele. O arquivo `themes/mui.d.ts` só declara as camadas extras de `palette.background`
+(`raised`, `overlay`); não o chame de `theme.d.ts` (o TypeScript ignora um `.d.ts` com o mesmo nome de um `.ts`).
+
+Decisões dadas pelo dono do projeto:
+
+- **Só tema escuro** (sem alternância). **Âmbar** é a única cor de ação; ciano só para mana e informação;
+  `secondary` é neutro. Elementos e raridades são marcas (ponto, glifo, filete), não fundo cheio de cartão.
+- **Fontes "tech-arcano"**: Chakra Petch nos títulos (`font.display`), IBM Plex Sans no texto (`font.text`)
+  e IBM Plex Mono nos números (`font.mono`). As **fontes dos dados** (`font.dice`, `diceFont(lados)`,
+  arquivos em `public/fonts/rpg`) são para resultados de rolagem.
+- Substituir as artes geradas por IA (hero da landing em cdn.leonardo.ai, fundos em parallax).
+- Componente novo usa tokens ou o tema, nunca hex/rgba solto, gradiente, brilho colorido ou animação infinita.
+  `sx={{ borderRadius: 1 | 2 | 3 }}` = 4 | 8 | 12px (`shape.borderRadius` do tema vale 4).
+- Contraste: texto ≥ 4,5:1 e marcas ≥ 3:1 sobre as superfícies que citam (`themes/__tests__/tokens.test.ts`
+  falha se um token novo ou alterado não passar).
+
+Plano em fases: 1 tokens e tema (feita) · 3 tipografia (carregar as fontes com pesos reais, tirar a ponte
+"Inter", migrar `fontFamily="Sakana"`, rolagens com a fonte dos dados) · 4 efeitos (remover gradientes,
+brilhos, pulsos e vidro; regra de ESLint contra hex solto; `prefers-reduced-motion`) · depois as seções,
+começando pela landing.

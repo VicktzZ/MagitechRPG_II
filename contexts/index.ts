@@ -7,7 +7,6 @@ import { chatContext } from './chatContext';
 import { savingSpinnerContext, useSavingSpinner } from './savingSpinnerContext';
 import { useCampaignContext } from './campaignContext';
 import { campaignCurrentCharsheetContext, useCampaignCurrentCharsheetContext } from './campaignCurrentCharsheetContext';
-import { ThemeProvider, useThemeContext } from './themeContext';
 import CharsheetFormProvider, { useCharsheetForm } from './CharsheetFormProvider';
 import { rpgSystemContext, useRPGSystemContext } from './rpgSystemContext';
 import { RPGSystemProvider } from './RPGSystemProvider';
@@ -25,8 +24,6 @@ export {
     useCampaignContext,
     campaignCurrentCharsheetContext,
     useCampaignCurrentCharsheetContext,
-    ThemeProvider,
-    useThemeContext,
     CharsheetFormProvider,
     useCharsheetForm,
     rpgSystemContext,

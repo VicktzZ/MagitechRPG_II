@@ -81,7 +81,7 @@ export default function CampaignNotes(): ReactElement {
                                 height: NOTE_HEIGHT, 
                                 display: 'flex', 
                                 flexDirection: 'column',
-                                bgcolor: 'background.paper3'
+                                bgcolor: 'background.default'
                             }}
                         >
                             <CardContent 

@@ -1,9 +1,8 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
-import { Avatar, Box, Divider, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Typography, useTheme, alpha, Tooltip, IconButton, Dialog, DialogTitle, DialogContent, Grid, Pagination, Chip } from '@mui/material';
+import { Avatar, Box, Divider, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Typography, useTheme, alpha, Tooltip, Dialog, DialogTitle, DialogContent, Grid, Pagination, Chip } from '@mui/material';
 
 import { type KeyboardEvent, type MouseEvent, type ReactElement, type ReactNode, useState, useMemo } from 'react';
-import { Article, AutoStories, Home, Logout, Menu, Start, LightMode, DarkMode, Person, Build, WorkspacePremium } from '@mui/icons-material';
-import { useThemeContext } from '@contexts';
+import { Article, AutoStories, Home, Logout, Menu, Start, Person, Build, WorkspacePremium } from '@mui/icons-material';
 import { signOut, useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import CustomIconButton from './CustomIconButton';
@@ -18,7 +17,6 @@ import type { User } from '@models/entities';
 export default function AppDrawer(): ReactElement {
     const theme = useTheme();
     const { data: session, update } = useSession();
-    const { themeMode, toggleTheme } = useThemeContext();
     const { canCreate: canAccessCustomSystems } = useCustomSystemsAccess();
     const canAccessSystems = canAccessCustomSystems || isAdminEmail(session?.user?.email);
     
@@ -105,26 +103,6 @@ export default function AppDrawer(): ReactElement {
                     <Typography variant="h6" fontWeight={600} color="primary.main">
                         MagitechRPG
                     </Typography>
-                    <Tooltip title={themeMode === 'dark' ? 'Mudar para tema claro' : 'Mudar para tema escuro'}>
-                        <IconButton
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                toggleTheme();
-                            }}
-                            sx={{
-                                color: theme.palette.primary.main,
-                                bgcolor: alpha(theme.palette.primary.main, 0.08),
-                                '&:hover': {
-                                    bgcolor: alpha(theme.palette.primary.main, 0.15)
-                                },
-                                transition: 'all 0.2s ease-in-out',
-                                borderRadius: 1.5
-                            }}
-                            size="small"
-                        >
-                            {themeMode === 'dark' ? <LightMode fontSize="small" /> : <DarkMode fontSize="small" />}
-                        </IconButton>
-                    </Tooltip>
                 </Box>
                 <List sx={{ px: 1 }}>
                     <ListItem disablePadding onClick={() => { router.push('/app') }}>

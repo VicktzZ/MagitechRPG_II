@@ -205,7 +205,7 @@ export default function CharacterInfo({ avatar }: CharacterInfoProps): ReactElem
                     sx={{
                         height: 10,
                         borderRadius: 5,
-                        bgcolor: 'background.paper3',
+                        bgcolor: 'background.default',
                         '& .MuiLinearProgress-bar': {
                             bgcolor: 'error.main'
                         }
@@ -228,7 +228,7 @@ export default function CharacterInfo({ avatar }: CharacterInfoProps): ReactElem
                             sx={{
                                 height: 10,
                                 borderRadius: 5,
-                                bgcolor: 'background.paper3',
+                                bgcolor: 'background.default',
                                 '& .MuiLinearProgress-bar': {
                                     bgcolor: 'primary.main'
                                 }
@@ -253,7 +253,7 @@ export default function CharacterInfo({ avatar }: CharacterInfoProps): ReactElem
                             sx={{
                                 height: 10,
                                 borderRadius: 5,
-                                bgcolor: 'background.paper3',
+                                bgcolor: 'background.default',
                                 '& .MuiLinearProgress-bar': {
                                     bgcolor: 'warning.main'
                                 }
@@ -273,7 +273,7 @@ export default function CharacterInfo({ avatar }: CharacterInfoProps): ReactElem
 
             {/* Atributos e Traços */}
             <Grid item xs={12} md={6}>
-                <Paper sx={{ p: 2, bgcolor: 'background.paper2', borderRadius: 2, minHeight: '100%', display: 'flex', gap: 3 }}>
+                <Paper sx={{ p: 2, bgcolor: 'background.raised', borderRadius: 2, minHeight: '100%', display: 'flex', gap: 3 }}>
                     <Box>
                         <Typography variant="h6" gutterBottom>
                             Atributos
@@ -335,9 +335,9 @@ export default function CharacterInfo({ avatar }: CharacterInfoProps): ReactElem
                                     label={trait as unknown as string}
                                     variant="outlined"
                                     sx={{
-                                        bgcolor: 'background.paper3',
+                                        bgcolor: 'background.default',
                                         '&:hover': {
-                                            bgcolor: 'background.paper4'
+                                            bgcolor: 'background.default'
                                         }
                                     }}
                                 />

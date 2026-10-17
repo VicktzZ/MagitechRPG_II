@@ -227,7 +227,7 @@ export default function CampaignOptionsModal({
                                 <Box display='flex' alignItems='center' gap={1.5}>
                                     <Button
                                         onClick={contentType === 'join' ? joinCampaign : createCampaign}
-                                        color={'terciary' as any}
+                                        color='primary'
                                         variant='contained'
                                     >{contentType === 'join' ? 'Ingressar' : 'Criar'}</Button>
                                 </Box>

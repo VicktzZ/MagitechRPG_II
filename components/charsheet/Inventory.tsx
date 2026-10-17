@@ -286,7 +286,7 @@ export function Inventory (): ReactElement {
                     sx={{ 
                         p: matches ? 2 : 3,
                         borderRadius: 2,
-                        bgcolor: 'background.paper3',
+                        bgcolor: 'background.default',
                         border: '1px solid',
                         borderColor: 'divider'
                     }}

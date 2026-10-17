@@ -176,7 +176,7 @@ function TestModal({ open, onClose, onConfirm, campaign }: TestModalProps) {
                         <List sx={{ 
                             maxHeight: 200, 
                             overflow: 'auto',
-                            bgcolor: 'background.paper2',
+                            bgcolor: 'background.raised',
                             borderRadius: 1
                         }}>
                             {users.players.map(player => {

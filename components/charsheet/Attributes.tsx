@@ -320,7 +320,7 @@ function Attributes(): ReactElement {
                         gap: 2,
                         p: matches ? 1 : 2,
                         borderRadius: 2,
-                        bgcolor: 'background.paper3',
+                        bgcolor: 'background.default',
                         border: '1px solid',
                         borderColor: 'divider'
                     }}
@@ -591,7 +591,7 @@ function Attributes(): ReactElement {
                         sx={{
                             p: matches ? 1 : 2,
                             borderRadius: 2,
-                            bgcolor: 'background.paper3',
+                            bgcolor: 'background.default',
                             border: '1px solid',
                             borderColor: 'divider'
                         }}

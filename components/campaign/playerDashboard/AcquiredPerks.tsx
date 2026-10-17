@@ -15,18 +15,9 @@ import {
     useTheme
 } from '@mui/material';
 import { useMemo, useState } from 'react';
+import { rarityColor } from '@constants';
 
-const rarityColors: Record<string, string> = {
-    'Comum': '#9e9e9e',
-    'Incomum': '#4caf50',
-    'Raro': '#2196f3',
-    'Épico': '#9c27b0',
-    'Lendário': '#ff9800',
-    'Único': '#f44336',
-    'Mágico': '#00bcd4',
-    'Amaldiçoado': '#880e4f',
-    'Especial': '#ffd700'
-};
+const rarityColors: Record<string, string> = rarityColor;
 
 const perkTypeLabels: Record<string, string> = {
     'WEAPON': 'Arma',
