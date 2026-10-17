@@ -22,10 +22,9 @@ export default function Footer(): ReactElement {
         <Box 
             component="footer" 
             sx={{ 
-                bgcolor: alpha(theme.palette.background.paper, 0.5), 
+                bgcolor: 'background.paper', 
                 pt: 6,
                 pb: 3,
-                backdropFilter: 'blur(10px)',
                 borderTop: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`
             }}
         >
@@ -116,7 +115,7 @@ export default function Footer(): ReactElement {
                                     height: '2px',
                                     bottom: '-6px',
                                     left: 0,
-                                    background: `linear-gradient(90deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`
+                                    bgcolor: 'primary.main'
                                 }
                             }}
                         >
@@ -229,7 +228,7 @@ export default function Footer(): ReactElement {
                                     height: '2px',
                                     bottom: '-6px',
                                     left: 0,
-                                    background: `linear-gradient(90deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`
+                                    bgcolor: 'primary.main'
                                 }
                             }}
                         >

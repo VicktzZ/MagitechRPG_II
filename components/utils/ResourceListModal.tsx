@@ -590,7 +590,7 @@ function ResourceListModal({
                         maxHeight: '95vh',
                         bgcolor: 'background.paper',
                         borderRadius: 2,
-                        boxShadow: 24,
+                        boxShadow: theme.shadows[24],
                         p: { xs: 2, sm: 3 },
                         display: 'flex',
                         flexDirection: 'column',

@@ -125,7 +125,6 @@ export default function LandingPageHeader(): ReactElement {
                 sx: {
                     width: 280,
                     backgroundColor: 'background.paper',
-                    backgroundImage: 'linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.9))',
                     color: 'white'
                 }
             }}
@@ -239,10 +238,9 @@ export default function LandingPageHeader(): ReactElement {
             elevation={0}
             sx={{
                 transition: 'all 0.3s ease',
-                background: scrolled ? 'rgba(0, 0, 0, 0.85)' : 'rgba(0, 0, 0, 0.5)',
-                backdropFilter: 'blur(10px)',
-                boxShadow: scrolled ? '0 4px 20px rgba(0, 0, 0, 0.4)' : 'none',
-                borderBottom: scrolled ? '1px solid rgba(255, 255, 255, 0.15)' : 'none'
+                bgcolor: 'background.paper',
+                borderBottom: scrolled ? '1px solid' : 'none',
+                borderColor: 'divider'
             }}
         >
             <Container maxWidth="xl">
@@ -262,9 +260,7 @@ export default function LandingPageHeader(): ReactElement {
                             sx={{ 
                                 fontWeight: 700, 
                                 display: { xs: 'none', sm: 'block' },
-                                background: 'linear-gradient(90deg, #64B5F6 0%, #9575CD 100%)',
-                                WebkitBackgroundClip: 'text',
-                                WebkitTextFillColor: 'transparent'
+                                color: 'text.primary'
                             }}
                         >
                             MagitechRPG
@@ -283,7 +279,6 @@ export default function LandingPageHeader(): ReactElement {
                                     sx={{ 
                                         opacity: 0.9,
                                         '&:hover': { opacity: 1 },
-                                        textShadow: '0 0 10px rgba(255, 255, 255, 0.5)',
                                         backgroundColor: 'rgba(255, 255, 255, 0.15)',
                                         borderRadius: '8px',
                                         px: 2

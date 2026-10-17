@@ -68,8 +68,7 @@ export default function SubscriptionSuccessPage() {
                 sx={{
                     p: 6,
                     textAlign: 'center',
-                    background: (theme) =>
-                        `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.success.main}15 100%)`,
+                    bgcolor: 'background.paper',
                     position: 'relative',
                     overflow: 'hidden'
                 }}
@@ -102,13 +101,7 @@ export default function SubscriptionSuccessPage() {
                     sx={{
                         fontSize: 120,
                         color: 'success.main',
-                        mb: 3,
-                        animation: 'pulse 2s infinite',
-                        '@keyframes pulse': {
-                            '0%': { transform: 'scale(1)' },
-                            '50%': { transform: 'scale(1.05)' },
-                            '100%': { transform: 'scale(1)' }
-                        }
+                        mb: 3
                     }}
                 />
         

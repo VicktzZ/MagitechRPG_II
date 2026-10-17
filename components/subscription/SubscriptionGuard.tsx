@@ -28,6 +28,7 @@ import { useRouter } from 'next/navigation';
 import type { Permission } from '@enums/subscriptionEnum';
 import { SubscriptionPlanMetadata } from '@enums/subscriptionEnum';
 import { usePermission, useSubscription } from '@hooks';
+import { color } from '@themes/tokens';
 
 interface SubscriptionGuardProps {
   children: ReactNode;
@@ -163,10 +164,8 @@ export function SubscriptionGuard({
                             flex: 1,
                             position: 'relative',
                             border: 3,
-                            borderColor: requiredPlanMetadata.color,
-                            boxShadow: 8,
-                            background: (theme) =>
-                                `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(requiredPlanMetadata.color, 0.1)} 100%)`
+                            borderColor: color.amberLine,
+                            bgcolor: color.amberSubtle
                         }}
                     >
                         {/* Badge "Necessário" */}
@@ -247,12 +246,7 @@ export function SubscriptionGuard({
                                     sx={{
                                         py: 1.5,
                                         fontSize: '1.1rem',
-                                        fontWeight: 'bold',
-                                        bgcolor: requiredPlanMetadata.color,
-                                        '&:hover': {
-                                            bgcolor: requiredPlanMetadata.color,
-                                            filter: 'brightness(0.9)'
-                                        }
+                                        fontWeight: 'bold'
                                     }}
                                 >
                   Fazer Upgrade para {requiredPlanMetadata.name}

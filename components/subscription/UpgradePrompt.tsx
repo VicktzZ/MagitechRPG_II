@@ -7,6 +7,7 @@ import {
     Button,
     Card,
     CardContent,
+    Divider,
     List,
     ListItem,
     ListItemIcon,
@@ -23,6 +24,7 @@ import {
 import { useRouter } from 'next/navigation';
 import type { Permission, SubscriptionPlan } from '@enums/subscriptionEnum';
 import { SubscriptionPlanMetadata } from '@enums/subscriptionEnum';
+import { color } from '@themes/tokens';
 
 interface UpgradePromptProps {
   requiredPlan: SubscriptionPlan;
@@ -69,10 +71,9 @@ export function UpgradePrompt({
                     border: 1,
                     borderColor: () => alpha(planMetadata.color, 0.3),
                     cursor: 'pointer',
-                    transition: 'all 0.2s',
+                    transition: 'border-color 120ms, background-color 120ms',
                     '&:hover': {
-                        bgcolor: () => alpha(planMetadata.color, 0.15),
-                        transform: 'translateY(-2px)'
+                        bgcolor: () => alpha(planMetadata.color, 0.15)
                     }
                 }}
                 onClick={handleUpgrade}
@@ -91,8 +92,8 @@ export function UpgradePrompt({
             <Card
                 sx={{
                     border: 2,
-                    borderColor: planMetadata.color,
-                    bgcolor: () => alpha(planMetadata.color, 0.05)
+                    borderColor: color.amberLine,
+                    bgcolor: color.amberSubtle
                 }}
             >
                 <CardContent sx={{ p: 3, '&:last-child': { pb: 3 } }}>
@@ -125,13 +126,6 @@ export function UpgradePrompt({
                             size="small"
                             onClick={handleUpgrade}
                             fullWidth
-                            sx={{
-                                bgcolor: planMetadata.color,
-                                '&:hover': {
-                                    bgcolor: planMetadata.color,
-                                    filter: 'brightness(0.9)'
-                                }
-                            }}
                         >
               Assinar {planMetadata.priceFormatted}
                         </Button>
@@ -154,10 +148,8 @@ export function UpgradePrompt({
             sx={{
                 position: 'relative',
                 border: 3,
-                borderColor: planMetadata.color,
-                boxShadow: 8,
-                background: (theme) =>
-                    `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(planMetadata.color, 0.1)} 100%)`
+                borderColor: color.amberLine,
+                bgcolor: color.amberSubtle
             }}
         >
             {/* Badge "Necessário" */}
@@ -249,12 +241,7 @@ export function UpgradePrompt({
                         sx={{
                             py: 1.5,
                             fontSize: '1.1rem',
-                            fontWeight: 'bold',
-                            bgcolor: planMetadata.color,
-                            '&:hover': {
-                                bgcolor: planMetadata.color,
-                                filter: 'brightness(0.9)'
-                            }
+                            fontWeight: 'bold'
                         }}
                     >
             Assinar {planMetadata.name} - {planMetadata.priceFormatted}

@@ -196,12 +196,7 @@ export default function CheckoutPage() {
                             sx={{
                                 py: 2,
                                 fontSize: '1.1rem',
-                                fontWeight: 'bold',
-                                bgcolor: planMetadata.color,
-                                '&:hover': {
-                                    bgcolor: planMetadata.color,
-                                    filter: 'brightness(0.9)'
-                                }
+                                fontWeight: 'bold'
                             }}
                         >
                             {loading ? (

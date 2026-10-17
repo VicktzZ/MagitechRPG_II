@@ -16,8 +16,7 @@ export default function Logo(): ReactElement {
                 alt='logo'
                 style={{
                     width: '7.5rem',
-                    height: '7.5rem',
-                    filter: 'drop-shadow(6px 6px 3px rgba(0, 0, 0, .7))' 
+                    height: '7.5rem'
                 }} 
             />
         </Box>
