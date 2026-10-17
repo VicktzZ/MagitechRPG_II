@@ -1,4 +1,5 @@
 import { type SxProps, useTheme, Modal, Zoom, Paper, alpha, Box, Avatar, Typography, IconButton } from '@mui/material'
+import { font } from '@themes/tokens'
 import { Close } from '@mui/icons-material'
 import type { ReactElement } from 'react'
 import { itemAttributes } from '@constants'
@@ -70,7 +71,7 @@ export function ItemWrapperModal({
                             </Avatar>
                             <Typography
                                 variant='h6'
-                                fontFamily='Sakana'
+                                fontFamily={font.display}
                                 color={itemAttr.color}
                                 sx={{ textShadow: `0 0 10px ${alpha(itemAttr.color, 0.3)}` }}
                             >

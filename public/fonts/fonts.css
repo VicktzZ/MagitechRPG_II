@@ -1,59 +1,85 @@
+/*
+ * Fontes do design system (ver `themes/tokens.ts`). Chakra Petch (títulos), IBM Plex Sans (texto) e
+ * IBM Plex Mono (números) são SIL Open Font License 1.1 (OFL-*.txt nesta pasta). Subconjunto latin,
+ * que cobre o português. Só entram aqui fontes com licença comprovada para uso comercial.
+ */
+
 @font-face {
-    font-family: DarkFuture;
-    src: url(Dark\ Future\ Italic.ttf);
+    font-family: 'Chakra Petch';
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url(chakra-petch-latin-500-normal.woff2) format('woff2');
 }
 
 @font-face {
-    font-family: KarmaFut;
-    src: url(KARMAFUT.ttf);
+    font-family: 'Chakra Petch';
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url(chakra-petch-latin-600-normal.woff2) format('woff2');
 }
 
 @font-face {
-    font-family: FM;
-    src: url(FutureMillennium.ttf);
+    font-family: 'Chakra Petch';
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url(chakra-petch-latin-700-normal.woff2) format('woff2');
 }
 
 @font-face {
-    font-family: Robus;
-    src: url(Robus\ Demo.otf);
+    font-family: 'IBM Plex Sans';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url(ibm-plex-sans-latin-400-normal.woff2) format('woff2');
 }
 
 @font-face {
-    font-family: WBZ;
-    src: url(TheWildBreathOfZelda-15Lv.ttf);
+    font-family: 'IBM Plex Sans';
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url(ibm-plex-sans-latin-500-normal.woff2) format('woff2');
 }
 
 @font-face {
-    font-family: Ysgarth;
-    src: url(Ysgarth-ZVWjq.ttf);
+    font-family: 'IBM Plex Sans';
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url(ibm-plex-sans-latin-600-normal.woff2) format('woff2');
 }
 
 @font-face {
-    font-family: Appears;
-    src: url(AGoblinAppears-o2aV.ttf);
+    font-family: 'IBM Plex Sans';
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url(ibm-plex-sans-latin-700-normal.woff2) format('woff2');
 }
 
 @font-face {
-    font-family: Poppins;
-    src: url(Poppins-Medium.ttf);
+    font-family: 'IBM Plex Mono';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url(ibm-plex-mono-latin-400-normal.woff2) format('woff2');
 }
 
 @font-face {
-    font-family: Inter;
-    src: url(Inter-Regular.ttf);
+    font-family: 'IBM Plex Mono';
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url(ibm-plex-mono-latin-500-normal.woff2) format('woff2');
 }
 
-@font-face {
-    font-family: Apocalypse;
-    src: url(Apocalypse-grunge.ttf)
-}
-
-@font-face {
-    font-family: Sakana;
-    src: url(Sakana.ttf)
-}
-
-/* RPG Assets */
+/*
+ * Fontes dos dados (dPoly, de Neale Davidson): um glifo por dado. A licença de uso comercial ainda
+ * precisa ser confirmada com o autor; o arquivo não traz texto de licença.
+ */
 
 @font-face {
     font-family: D4;
@@ -83,9 +109,4 @@
 @font-face {
     font-family: D20;
     src: url(rpg/D20.ttf);
-}
-
-@font-face {
-    font-family: Runes;
-    src: url(rpg/magics.ttf);
 }

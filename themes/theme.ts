@@ -52,8 +52,15 @@ const theme = createTheme({
     // Raio base de 4px: `borderRadius: 1` = sm (4px), `2` = md (8px), `3` = lg (12px)
     shape: { borderRadius: 4 },
 
+    // Títulos de página, modal e seção (h1 a h4) em Chakra Petch; h5 e h6 seguem o texto, em 600
     typography: {
-        fontFamily: font.text
+        fontFamily: font.text,
+        h1: { fontFamily: font.display, fontWeight: 600 },
+        h2: { fontFamily: font.display, fontWeight: 600 },
+        h3: { fontFamily: font.display, fontWeight: 600 },
+        h4: { fontFamily: font.display, fontWeight: 600 },
+        h5: { fontWeight: 600 },
+        h6: { fontWeight: 600 }
     },
 
     components: {

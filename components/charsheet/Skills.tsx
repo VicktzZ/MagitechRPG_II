@@ -13,6 +13,7 @@ import {
     Button
 } from '@mui/material'
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh'
+import { font } from '@themes/tokens'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
     useState, 
@@ -502,8 +503,8 @@ export default function Skills(): ReactElement {
                         <Box display='flex' flexDirection='column' gap={2}>
                             <Box>
                                 <Typography 
-                                    fontWeight={900} 
-                                    fontFamily='Inter' 
+                                    fontWeight={700} 
+                                    fontFamily={font.display} 
                                     variant='h4'
                                     color='primary.main'
                                 >

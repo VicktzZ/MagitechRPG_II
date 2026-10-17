@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { itemAttributes, rarityColor, toastDefault } from '@constants'
+import { font } from '@themes/tokens'
 import { WarningModal } from '@layout'
 import {
     ArrowDropDown,
@@ -341,7 +342,7 @@ function ItemWrapper({
                     }}
                 >
                     <Typography
-                        fontFamily='Sakana'
+                        fontFamily={font.display}
                         width='100%'
                         textAlign='center'
                         fontSize="1rem"
