@@ -2,7 +2,11 @@ import { filterBySelections } from '../filterSelection'
 import {
     getSpellCategories,
     getSpellCategory,
+    getSpellExecution,
     getSpellSubtypes,
+    SPELL_EXECUTION_FILTER,
+    SPELL_FILTERS,
+    SPELL_SUBTYPES,
     SPELL_TYPE_FILTER
 } from '../spellCategory'
 
@@ -45,7 +49,6 @@ describe('getSpellSubtypes — variações reais do catálogo', () => {
         [ 'Encantamento (Contínuo)', [ 'Contínuo' ] ],
         [ 'Defesa (Sustentada)', [ 'Sustentado' ] ],
         [ 'Transmutação (sustentado)', [ 'Sustentado' ] ],
-        [ 'Defesa (Reação)', [ 'Reação' ] ],
         [ 'Ataque (completo)', [ 'Completo' ] ],
         [ 'Ataque (Invocação)', [ 'Invocação' ] ],
         [ 'Ataque (Área)', [ 'Área' ] ]
@@ -68,6 +71,82 @@ describe('getSpellSubtypes — variações reais do catálogo', () => {
         expect(getSpellSubtypes('Ataque ()')).toEqual([])
         expect(getSpellSubtypes(undefined)).toEqual([])
         expect(getSpellSubtypes(null)).toEqual([])
+    })
+})
+
+describe('Reação é execução, não subtipo', () => {
+    it('"(Reação)" no type não vira subtipo', () => {
+        expect(getSpellSubtypes('Defesa (Reação)')).toEqual([])
+        expect(getSpellSubtypes('Ataque (Reação)')).toEqual([])
+        expect(getSpellSubtypes('Defesa (imediato/Reação)')).toEqual([ 'Imediato' ])
+    })
+
+    it('Reação não está na lista de subtipos do filtro', () => {
+        expect(SPELL_SUBTYPES).not.toContain('Reação')
+    })
+})
+
+describe('getSpellExecution', () => {
+    it.each([
+        [ 'Padrão', 'Padrão' ],
+        [ 'padrão', 'Padrão' ],
+        [ 'Reação', 'Reação' ],
+        [ 'reacao', 'Reação' ],
+        [ ' Completa ', 'Completa' ],
+        [ 'Movimento', 'Movimento' ],
+        [ 'Livre', 'Livre' ],
+        [ 'bônus', 'Bônus' ]
+    ])('%s → %s', (execution, expected) => {
+        expect(getSpellExecution(execution)).toEqual([ expected ])
+    })
+
+    it('sem execução devolve lista vazia', () => {
+        expect(getSpellExecution(undefined)).toEqual([])
+        expect(getSpellExecution(null)).toEqual([])
+        expect(getSpellExecution('  ')).toEqual([])
+    })
+
+    it('a lista do filtro cobre as execuções do catálogo', () => {
+        expect(SPELL_EXECUTION_FILTER.options).toEqual([ 'Padrão', 'Completa', 'Movimento', 'Livre', 'Reação' ])
+    })
+})
+
+describe('filtro Execução combinado com Tipo e Subtipo', () => {
+    const spells = [
+        { name: 'Nova reação', type: 'Controle (imediato)', execution: 'Reação' },
+        { name: 'Antiga com (Reação)', type: 'Defesa (Reação)', execution: 'Reação' },
+        { name: 'Defesa imediata reativa', type: 'Defesa (imediato)', execution: 'Reação' },
+        { name: 'Defesa padrão', type: 'Defesa (imediato)', execution: 'Padrão' },
+        { name: 'Ataque minúsculo', type: 'Ataque (conjurado)', execution: 'padrão' },
+        { name: 'Ataque completo', type: 'Ataque (imediato)', execution: 'Completa' }
+    ]
+    const [ typeMenu, executionMenu ] = SPELL_FILTERS
+    const apply = (types: string[], subtypes: string[], executions: string[]) => filterBySelections(spells, [
+        { getValue: typeMenu.getValue, selected: types },
+        { getValue: SPELL_TYPE_FILTER.subFilter.getValue, selected: subtypes },
+        { getValue: executionMenu.getValue, selected: executions }
+    ]).map(s => s.name)
+
+    it('só Execução = Reação lista todas as reações, com ou sem "(Reação)" no type', () => {
+        expect(apply([], [], [ 'Reação' ])).toEqual([ 'Nova reação', 'Antiga com (Reação)', 'Defesa imediata reativa' ])
+    })
+
+    it('"padrão" em minúsculas conta como Padrão', () => {
+        expect(apply([], [], [ 'Padrão' ])).toEqual([ 'Defesa padrão', 'Ataque minúsculo' ])
+    })
+
+    it('várias execuções: OU entre elas', () => {
+        expect(apply([], [], [ 'Padrão', 'Completa' ])).toEqual([ 'Defesa padrão', 'Ataque minúsculo', 'Ataque completo' ])
+    })
+
+    it('Execução + Tipo + Subtipo: precisa passar pelos três', () => {
+        expect(apply([ 'Defesa' ], [ 'Imediato' ], [ 'Reação' ])).toEqual([ 'Defesa imediata reativa' ])
+        expect(apply([ 'Defesa' ], [ 'Imediato' ], [ 'Padrão' ])).toEqual([ 'Defesa padrão' ])
+        expect(apply([ 'Ataque' ], [], [ 'Reação' ])).toEqual([])
+    })
+
+    it('só o Subtipo continua funcionando sozinho', () => {
+        expect(apply([], [ 'Imediato' ], [])).toEqual([ 'Nova reação', 'Defesa imediata reativa', 'Defesa padrão', 'Ataque completo' ])
     })
 })
 

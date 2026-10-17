@@ -41,14 +41,19 @@ export interface ResourceListModalProps<T extends Record<string, any>> {
     sortOptions: string[];
     /** Mapeia o rótulo de ordenação exibido para o campo real da entidade */
     sortFieldMap?: Record<string, string>;
-    /** Segundo filtro opcional (com subfiltro opcional), multi-seleção, resolvido no cliente (ex: Tipo e Subtipo da magia) */
-    secondaryFilter?: SecondaryFilterConfig<T>;
+    /**
+     * Filtros extras, multi-seleção, resolvidos no cliente. Cada um vira um botão com menu (e um
+     * subfiltro opcional no mesmo menu), ex: Tipo (com Subtipo) e Execução da magia. Combinam por E.
+     */
+    secondaryFilters?: Array<SecondaryFilterConfig<T>>;
     renderResource: ({ item, handleAddItem }: { item: T, handleAddItem?: () => void }) => ReactElement;
     /**
      * Largura mínima (px) de cada item. Quando informada, a lista vira uma grade que encaixa o máximo de
      * colunas possível e o item deve ocupar toda a célula; sem ela, usa 1/2/3 colunas fixas centralizadas.
      */
     itemMinWidth?: number;
+    /** Com `itemMinWidth`: máximo de colunas, para os itens crescerem em telas muito largas em vez de multiplicar as colunas */
+    itemMaxColumns?: number;
     pageSize?: number;
     title?: string;
     initialSearch?: string;

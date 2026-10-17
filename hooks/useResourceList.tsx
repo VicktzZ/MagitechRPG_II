@@ -6,7 +6,7 @@ import { Close } from '@mui/icons-material';
 import { toastDefault } from '@constants';
 import { useDebounce } from '@uidotdev/usehooks';
 import type { UseResourceListOptions, UseResourceListReturn } from '@models/types/hooks';
-import { filterBySelections } from '@utils/filterSelection';
+import { filterBySelections, type ClientFilter } from '@utils/filterSelection';
 
 const DEFAULT_SORT_FIELD_MAP: Record<string, string> = {
     'Alfabética': 'name',
@@ -19,14 +19,16 @@ const DEFAULT_SORT_FIELD_MAP: Record<string, string> = {
 // Maior página que a API aceita (as rotas limitam `limit` a 100)
 const MAX_PAGE_SIZE = 100;
 
+// Identidade estável: um `[]` novo a cada renderização refaria a filtragem dos itens
+const NO_CLIENT_FILTERS: Array<ClientFilter<any>> = [];
+
 export const useResourceList = <T extends Record<string, any>>(
     options: UseResourceListOptions<T>
 ): UseResourceListReturn<T> => {
     const {
         initialSearch = '',
         initialFilters = [],
-        initialSecondaryFilters = [],
-        initialSubFilters = [],
+        initialClientSelections = {},
         initialSort = { value: 'Nível', order: 'ASC' as const },
         pageSize = 20,
         queryKey,
@@ -36,8 +38,7 @@ export const useResourceList = <T extends Record<string, any>>(
         successMessage = (item) => `Item ${item['name'] || item['nome']} adicionado com sucesso!`,
         errorMessage = (error) => error.message || 'Ocorreu um erro ao adicionar o item.',
         sortFieldMap,
-        getSecondaryFilterValue,
-        getSubFilterValue
+        clientFilters = NO_CLIENT_FILTERS
     } = options;
 
     const { enqueueSnackbar, closeSnackbar } = useSnackbar();
@@ -48,8 +49,7 @@ export const useResourceList = <T extends Record<string, any>>(
     const debouncedSearch = useDebounce(search, 600);
 
     const [ filters, setFilters ] = useState<string[]>(initialFilters);
-    const [ secondaryFilters, setSecondaryFilters ] = useState<string[]>(initialSecondaryFilters);
-    const [ subFilters, setSubFilters ] = useState<string[]>(initialSubFilters);
+    const [ clientSelections, setClientSelections ] = useState<Record<string, string[]>>(initialClientSelections);
     const [ sort, setSort ] = useState(initialSort);
     const [ buttonSelected, setButtonSelected ] = useState({
         add: true,
@@ -63,22 +63,24 @@ export const useResourceList = <T extends Record<string, any>>(
 
     const clearFilters = useCallback(() => setFilters([]), []);
 
-    const toggleSecondaryFilter = useCallback((value: string) => {
-        setSecondaryFilters(prev => prev.includes(value) ? prev.filter(v => v !== value) : [ ...prev, value ]);
+    const toggleClientFilter = useCallback((key: string, value: string) => {
+        setClientSelections(prev => {
+            const current = prev[key] ?? [];
+            return { ...prev, [key]: current.includes(value) ? current.filter(v => v !== value) : [ ...current, value ] };
+        });
     }, []);
 
-    const clearSecondaryFilters = useCallback(() => setSecondaryFilters([]), []);
-
-    const toggleSubFilter = useCallback((value: string) => {
-        setSubFilters(prev => prev.includes(value) ? prev.filter(v => v !== value) : [ ...prev, value ]);
+    const clearClientFilter = useCallback((key: string) => {
+        setClientSelections(prev => ({ ...prev, [key]: [] }));
     }, []);
 
-    const clearSubFilters = useCallback(() => setSubFilters([]), []);
+    const clearClientFilters = useCallback(() => setClientSelections({}), []);
 
     // Com qualquer filtro (busca, elemento, tipo, subtipo) o catálogo é carregado inteiro, em
     // páginas grandes encadeadas: os filtros de tipo/subtipo são resolvidos no cliente e, como
     // o catálogo é pequeno, não vale a pena paginar o resultado. Sem filtro, pagina (scroll infinito).
-    const isFiltering = debouncedSearch.trim() !== '' || filters.length > 0 || secondaryFilters.length > 0 || subFilters.length > 0;
+    const hasClientSelection = Object.values(clientSelections).some(selected => selected.length > 0);
+    const isFiltering = debouncedSearch.trim() !== '' || filters.length > 0 || hasClientSelection;
     const requestPageSize = isFiltering ? MAX_PAGE_SIZE : pageSize;
 
     // Sempre pagina via cursor — o filtro de elemento(s) é resolvido no servidor (whereIn/whereEqualTo).
@@ -227,12 +229,12 @@ export const useResourceList = <T extends Record<string, any>>(
         return uniqueItems;
     }, [ infData, sort.value, sort.order, sortFieldMap ]);
 
-    // Segundo filtro (ex: Tipo) e subfiltro (ex: Subtipo), resolvidos no cliente. Combinam
-    // por E; cada um é OU entre as opções marcadas. Se só um deles estiver ativo, filtra sozinho.
-    const items = useMemo(() => filterBySelections(loadedItems, [
-        { getValue: getSecondaryFilterValue, selected: secondaryFilters },
-        { getValue: getSubFilterValue, selected: subFilters }
-    ]), [ loadedItems, secondaryFilters, subFilters, getSecondaryFilterValue, getSubFilterValue ]);
+    // Filtros do cliente (ex: Tipo, Subtipo, Execução). Combinam por E; cada um é OU entre as
+    // opções marcadas. Se só um deles estiver ativo, filtra sozinho.
+    const items = useMemo(() => filterBySelections(loadedItems, clientFilters.map(filter => ({
+        getValue: filter.getValue,
+        selected: clientSelections[filter.key] ?? []
+    }))), [ loadedItems, clientFilters, clientSelections ]);
 
     // Sem ressalvas de tempo: `isFetchingNextPage` já impede chamadas simultâneas
     const loadMore = useCallback(() => {
@@ -245,8 +247,7 @@ export const useResourceList = <T extends Record<string, any>>(
         // Estados
         search,
         filters,
-        secondaryFilters,
-        subFilters,
+        clientSelections,
         sort,
         buttonSelected,
 
@@ -265,10 +266,9 @@ export const useResourceList = <T extends Record<string, any>>(
         setSearch,
         toggleFilter,
         clearFilters,
-        toggleSecondaryFilter,
-        clearSecondaryFilters,
-        toggleSubFilter,
-        clearSubFilters,
+        toggleClientFilter,
+        clearClientFilter,
+        clearClientFilters,
         setSort,
         setButtonSelected,
         addItem,
