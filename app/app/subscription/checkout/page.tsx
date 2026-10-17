@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { PlanIcon } from '@components/subscription/PlanIcon';
 import {
     Container,
     Box,
@@ -12,8 +13,15 @@ import {
     Alert,
     CircularProgress,
     Card,
-    CardContent
+    CardContent,
+    List,
+    ListItem,
+    ListItemIcon,
+    ListItemText
 } from '@mui/material';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import LockIcon from '@mui/icons-material/Lock';
+import SecurityIcon from '@mui/icons-material/Security';
 
 import { useRouter, useSearchParams } from 'next/navigation';
 import { SubscriptionPlan, SubscriptionPlanMetadata } from '@enums/subscriptionEnum';
@@ -225,7 +233,7 @@ export default function CheckoutPage() {
 
                             <Box sx={{ my: 3 }}>
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                                    <Typography variant="h2">{planMetadata.icon}</Typography>
+                                    <Typography variant="h2" component="span" sx={{ display: 'flex' }}><PlanIcon plan={selectedPlan} /></Typography>
                                     <Box>
                                         <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
                                             {planMetadata.displayName}

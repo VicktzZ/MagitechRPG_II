@@ -1,3 +1,5 @@
+import { color } from '../themes/tokens'
+
 /**
  * Enum para os planos de assinatura disponíveis
  */
@@ -70,7 +72,7 @@ export const SubscriptionPlanMetadata = {
             'Sem acesso ao Discord exclusivo',
             'Não é possível criar sistemas customizados'
         ],
-        color: '#9E9E9E',
+        color: color.inkMuted,
         icon: '⚡',
         popular: false
     },
@@ -106,7 +108,7 @@ export const SubscriptionPlanMetadata = {
             'Não é possível criar sistemas de RPG customizados',
             'Sem cargo VIP no Discord'
         ],
-        color: '#2196F3',
+        color: color.amber,
         icon: '👑',
         popular: true,
         badge: 'MAIS POPULAR'
@@ -147,7 +149,7 @@ export const SubscriptionPlanMetadata = {
             Permission.PRIORITY_SUPPORT
         ],
         limitations: [],
-        color: '#9C27B0',
+        color: color.ink,
         icon: '💎',
         popular: false,
         badge: 'MELHOR VALOR'

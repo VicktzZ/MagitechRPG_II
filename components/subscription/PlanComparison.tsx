@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { PlanIcon } from './PlanIcon';
 import {
     Box,
     Typography,
@@ -167,7 +168,7 @@ export function PlanComparison() {
                     return (
                         <Paper key={plan} sx={{ mb: 3, p: 2 }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                                <Typography variant="h4">{metadata.icon}</Typography>
+                                <Typography variant="h4" component="span" sx={{ display: 'flex' }}><PlanIcon plan={plan} /></Typography>
                                 <Box>
                                     <Typography variant="h6" sx={{ fontWeight: 'bold', color: metadata.color }}>
                                         {metadata.displayName}
@@ -236,7 +237,7 @@ export function PlanComparison() {
                                         }}
                                     >
                                         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-                                            <Typography variant="h4">{metadata.icon}</Typography>
+                                            <Typography variant="h4" component="span" sx={{ display: 'flex' }}><PlanIcon plan={plan} /></Typography>
                                             <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
                                                 {metadata.displayName}
                                             </Typography>

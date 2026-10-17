@@ -68,7 +68,11 @@ Decisões dadas pelo dono do projeto:
   `public/fonts/LICENSES.md` (o teste `themes/__tests__/fonts.test.ts` confere). Já removidas por falta de
   licença: Sakana, WBZ, Apocalypse, Robus, Dark Future, Future Millennium, Ysgarth, A Goblin Appears e os
   símbolos WoD (`magics*.ttf`). As fontes dos dados (dPoly) ainda precisam de confirmação da licença.
-- Substituir as artes geradas por IA (hero da landing em cdn.leonardo.ai, fundos em parallax).
+- **Sem arte gerada por IA nem imagem hospedada fora do projeto.** A landing (`app/page.tsx`, componentes em
+  `components/landing`) mostra o produto: ficha de exemplo com um cartão de magia real (Brasa Voraz), barras de LP/MP/AP
+  e uma rolagem com as fontes dos dados; as capas do Livro de Regras e do Grimório são SVG (`BookCover`). O logo é
+  `components/misc/LogoMark.tsx` (a marca vetorizada do PNG original, traço em `currentColor` e pontas em `cyan`;
+  `public/icons/magitech_logo.svg` é a versão estática).
 - Componente novo usa tokens ou o tema, nunca hex/rgba solto, gradiente, brilho colorido ou animação infinita.
   `sx={{ borderRadius: 1 | 2 | 3 }}` = 4 | 8 | 12px (`shape.borderRadius` do tema vale 4). Cartão é superfície plana
   (`background.raised`, borda `divider` de 1px) e no hover só a borda muda (`color.borderStrong`); sombra só em menu,
@@ -76,11 +80,21 @@ Decisões dadas pelo dono do projeto:
   gradiente, brilho, hover que levita, animação infinita, vidro e ícones de faíscas.
 - **Elemento é marca, não preenchimento**: use `<ElementIcon element={...} colored />` (`components/misc/ElementIcon.tsx`,
   13 glifos SVG) em vez de ícones do Material por elemento. O ícone de faíscas (`AutoAwesome`, `AutoFixHigh`, `Stars`,
-  `Flare`) e emoji de faísca não entram: magias em geral usam `AutoStories`, vantagens `Star`, planos `WorkspacePremium`.
+  `Flare`) e emoji não entram: magias em geral usam `AutoStories`, vantagens `Star`; planos usam `PlanIcon`
+  (`components/subscription`) e as cores de plano vêm dos tokens.
 - Contraste: texto ≥ 4,5:1 e marcas ≥ 3:1 sobre as superfícies que citam (`themes/__tests__/tokens.test.ts`
   falha se um token novo ou alterado não passar).
 
 Plano em fases: 1 tokens e tema (feita) · 3 tipografia (fontes carregadas, fontes sem licença removidas e
-`fontFamily` migrado; faltam as rolagens com a fonte dos dados e o `html font-size: 12px`) · 4 efeitos (feita, menos a
-landing `app/page.tsx`; sobram só os avisos de cor solta, que migram junto com cada seção) · depois as seções,
-começando pela landing.
+`fontFamily` migrado; faltam as rolagens com a fonte dos dados e o `html font-size: 12px`) · 4 efeitos (feita) ·
+5 landing (feita: arte de IA e assets de 20 MB removidos, logo em SVG) · depois as demais seções (ficha, cartões,
+dashboards), onde os avisos de cor solta do ESLint (hex e rgba) migram para tokens.
+
+## Ambiente de desenvolvimento
+
+Não rode `next dev` com as credenciais reais do Firebase: o layout chama `startJobs()` e isso grava o registro do job
+no Firestore de produção. Para ver telas localmente, suba com credenciais descartáveis (`NEXT_PUBLIC_FIREBASE_PROJECT_ID`,
+`FIREBASE_CLIENT_EMAIL` e `FIREBASE_PRIVATE_KEY` falsos, com uma chave RSA gerada na hora).
+
+Testes: o jest resolve os aliases do tsconfig (`@components`, `@themes`, `@constants`...) pelo `moduleNameMapper` de
+`jest.config.js`, e componentes de teste em `.tsx` renderizam no servidor com `react-dom/server`.

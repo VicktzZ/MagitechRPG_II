@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { PlanIcon } from './PlanIcon';
 import {
     Box,
     Typography,
@@ -179,7 +180,7 @@ export function UpgradePrompt({
                 {/* Header */}
                 <Box sx={{ textAlign: 'center', mb: 4 }}>
                     <Typography variant="h2" sx={{ mb: 2 }}>
-                        {planMetadata.icon}
+                        <PlanIcon plan={requiredPlan} />
                     </Typography>
                     <Typography variant="h4" sx={{ fontWeight: 'bold', color: planMetadata.color, mb: 1 }}>
                         {title}

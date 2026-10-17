@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { PlanIcon } from '@components/subscription/PlanIcon';
 import {
     Container,
     Box,
@@ -131,7 +132,7 @@ export default function ManageSubscriptionPage() {
                     <Paper sx={{ p: 4, mb: 3 }}>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3 }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                <Typography variant="h2">{planMetadata.icon}</Typography>
+                                <Typography variant="h2" component="span" sx={{ display: 'flex' }}><PlanIcon plan={currentPlan} /></Typography>
                                 <Box>
                                     <Typography variant="h5" sx={{ fontWeight: 'bold', color: planMetadata.color }}>
                                         {planMetadata.displayName}

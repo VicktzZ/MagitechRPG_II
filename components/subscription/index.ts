@@ -5,3 +5,4 @@ export { PlanBadge } from './PlanBadge';
 export { UpgradePrompt } from './UpgradePrompt';
 export { LockedFeatureButton } from './LockedFeatureButton';
 export { FeatureLockedCard } from './FeatureLockedCard';
+export { PlanIcon } from './PlanIcon';
