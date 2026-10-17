@@ -44,6 +44,11 @@ export interface ResourceListModalProps<T extends Record<string, any>> {
     /** Segundo filtro opcional (com subfiltro opcional), multi-seleção, resolvido no cliente (ex: Tipo e Subtipo da magia) */
     secondaryFilter?: SecondaryFilterConfig<T>;
     renderResource: ({ item, handleAddItem }: { item: T, handleAddItem?: () => void }) => ReactElement;
+    /**
+     * Largura mínima (px) de cada item. Quando informada, a lista vira uma grade que encaixa o máximo de
+     * colunas possível e o item deve ocupar toda a célula; sem ela, usa 1/2/3 colunas fixas centralizadas.
+     */
+    itemMinWidth?: number;
     pageSize?: number;
     title?: string;
     initialSearch?: string;

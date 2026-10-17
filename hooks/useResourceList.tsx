@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/prefer-nullish-coalescing */
-import { useCallback, useMemo, useState, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSnackbar } from 'notistack';
 import { Close } from '@mui/icons-material';
@@ -15,6 +15,9 @@ const DEFAULT_SORT_FIELD_MAP: Record<string, string> = {
     'Custo': 'mpCost',
     'Elemento': 'element'
 };
+
+// Maior página que a API aceita (as rotas limitam `limit` a 100)
+const MAX_PAGE_SIZE = 100;
 
 export const useResourceList = <T extends Record<string, any>>(
     options: UseResourceListOptions<T>
@@ -72,8 +75,13 @@ export const useResourceList = <T extends Record<string, any>>(
 
     const clearSubFilters = useCallback(() => setSubFilters([]), []);
 
-    // Sempre pagina via cursor, com ou sem filtro aplicado — o filtro de
-    // elemento(s) é resolvido no servidor (whereIn/whereEqualTo).
+    // Com qualquer filtro (busca, elemento, tipo, subtipo) o catálogo é carregado inteiro, em
+    // páginas grandes encadeadas: os filtros de tipo/subtipo são resolvidos no cliente e, como
+    // o catálogo é pequeno, não vale a pena paginar o resultado. Sem filtro, pagina (scroll infinito).
+    const isFiltering = debouncedSearch.trim() !== '' || filters.length > 0 || secondaryFilters.length > 0 || subFilters.length > 0;
+    const requestPageSize = isFiltering ? MAX_PAGE_SIZE : pageSize;
+
+    // Sempre pagina via cursor — o filtro de elemento(s) é resolvido no servidor (whereIn/whereEqualTo).
     const fetchItems = useCallback(
         async ({ pageParam = null }: { pageParam?: string | null }) => {
             const params = {
@@ -82,7 +90,7 @@ export const useResourceList = <T extends Record<string, any>>(
                     elements: filters.join(','),
                     sort: sort.value,
                     order: sort.order,
-                    limit: pageSize.toString(),
+                    limit: requestPageSize.toString(),
                     cursor: pageParam || undefined
                 }
             };
@@ -95,7 +103,7 @@ export const useResourceList = <T extends Record<string, any>>(
             };
         },
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [ debouncedSearch, filters, sort, pageSize, fetchFunction ]
+        [ debouncedSearch, filters, sort, requestPageSize, fetchFunction ]
     );
 
     const {
@@ -103,11 +111,12 @@ export const useResourceList = <T extends Record<string, any>>(
         fetchNextPage,
         hasNextPage,
         isFetchingNextPage,
+        isFetchNextPageError,
         isLoading,
         isError,
         error
     } = useInfiniteQuery({
-        queryKey: [ queryKey, { search: debouncedSearch, filters, sort } ],
+        queryKey: [ queryKey, { search: debouncedSearch, filters, sort, isFiltering } ],
         queryFn: fetchItems,
         staleTime: 60000,
         gcTime: 300000,
@@ -116,6 +125,16 @@ export const useResourceList = <T extends Record<string, any>>(
         refetchOnWindowFocus: false,
         refetchOnMount: false
     });
+
+    // Em modo filtrado, busca as páginas restantes assim que a anterior chega. Para se uma
+    // página falhar, para não ficar repetindo a requisição.
+    useEffect(() => {
+        if (isFiltering && hasNextPage && !isFetchingNextPage && !isFetchNextPageError) {
+            fetchNextPage();
+        }
+    }, [ isFiltering, hasNextPage, isFetchingNextPage, isFetchNextPageError, fetchNextPage ]);
+
+    const isLoadingAll = isFiltering && !isFetchNextPageError && (Boolean(hasNextPage) || isFetchingNextPage);
 
     // Mutação para adicionar um item
     const { mutate: addItem } = useMutation({
@@ -215,18 +234,8 @@ export const useResourceList = <T extends Record<string, any>>(
         { getValue: getSubFilterValue, selected: subFilters }
     ]), [ loadedItems, secondaryFilters, subFilters, getSecondaryFilterValue, getSubFilterValue ]);
 
-    // Referência para controlar o tempo da última chamada
-    const lastFetchRef = useRef(0);
-
+    // Sem ressalvas de tempo: `isFetchingNextPage` já impede chamadas simultâneas
     const loadMore = useCallback(() => {
-        // Verifica se passou tempo suficiente desde a última chamada (500ms)
-        const now = Date.now();
-        if (now - lastFetchRef.current < 500) {
-            return;
-        }
-
-        lastFetchRef.current = now;
-
         if (hasNextPage && !isFetchingNextPage) {
             fetchNextPage();
         }
@@ -244,6 +253,8 @@ export const useResourceList = <T extends Record<string, any>>(
         // Dados
         items,
         loadedItems,
+        isFiltering,
+        isLoadingAll,
         isLoading,
         isError,
         error: error as any,

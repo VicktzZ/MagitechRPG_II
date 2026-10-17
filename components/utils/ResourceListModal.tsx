@@ -129,6 +129,25 @@ function MultiSelectFilter({
     );
 }
 
+/** Quantos itens a grade desenha por vez; o resto entra conforme a rolagem se aproxima do fim */
+const RENDER_STEP = 48;
+
+/**
+ * Célula da lista. É memoizada para que digitar na busca, marcar filtros ou chegar uma página nova
+ * não redesenhe os itens que já estão na tela (cada item pode ser um cartão pesado).
+ */
+const ResourceCell = memo(function ResourceCell({
+    item,
+    renderResource,
+    onAdd
+}: {
+    item: any;
+    renderResource: ResourceListModalProps<any>['renderResource'];
+    onAdd: (item: any) => void;
+}): ReactElement {
+    return renderResource({ item, handleAddItem: () => onAdd(item) });
+});
+
 function ResourceListModal({
     open,
     onClose,
@@ -145,6 +164,7 @@ function ResourceListModal({
     secondaryFilter,
     title,
     renderResource,
+    itemMinWidth,
     pageSize = 20,
     initialSearch = '',
     initialFilters = [],
@@ -158,6 +178,8 @@ function ResourceListModal({
     const {
         items,
         loadedItems,
+        isFiltering,
+        isLoadingAll,
         isLoading,
         isError,
         error,
@@ -209,26 +231,41 @@ function ResourceListModal({
         return collectFilterOptions(loadedItems, subFilter.getValue, subFilter.options);
     }, [ secondaryFilter, loadedItems ]);
 
+    // Rolagem da lista e janela de renderização: o fim da grade é observado com folga de 800px, então
+    // os próximos itens já estão desenhados quando a rolagem chega neles
+    const [ scrollEl, setScrollEl ] = useState<HTMLDivElement | null>(null);
+    const [ renderLimit, setRenderLimit ] = useState(RENDER_STEP);
+
     const { ref: loadMoreRef, inView } = useInView({
-        threshold: 0.5, // Aumentado para evitar carregamentos prematuros
-        triggerOnce: false,
-        delay: 300 // Adiciona um delay para evitar múltiplos disparos
+        root: scrollEl,
+        rootMargin: '0px 0px 800px 0px',
+        threshold: 0
     });
 
+    // Resultado diferente (busca, filtros, ordenação): volta ao topo e à primeira janela
     useEffect(() => {
-        let timeoutId: NodeJS.Timeout | null = null;
+        setRenderLimit(RENDER_STEP);
+        if (scrollEl) scrollEl.scrollTop = 0;
+    }, [ search, filters, secondaryFilters, subFilters, sort, scrollEl ]);
 
-        if (inView && hasNextPage && !isFetchingNextPage) {
-            // Usa um timeout para evitar múltiplas chamadas em sequência
-            timeoutId = setTimeout(() => {
+    const hasHiddenItems = renderLimit < items.length;
+    const visibleItems = hasHiddenItems ? items.slice(0, renderLimit) : items;
+
+    // Com o fim da grade à vista: primeiro desenha os itens que faltam; depois, só sem filtro, busca a
+    // próxima página (com filtro tudo já vem de uma vez). Repete a cada passo enquanto o fim seguir à vista.
+    useEffect(() => {
+        if (!inView) return undefined;
+
+        const timeoutId = setTimeout(() => {
+            if (hasHiddenItems) {
+                setRenderLimit(limit => limit + RENDER_STEP);
+            } else if (!isFiltering && hasNextPage && !isFetchingNextPage) {
                 loadMore();
-            }, 200);
-        }
+            }
+        }, 50);
 
-        return () => {
-            if (timeoutId) clearTimeout(timeoutId);
-        };
-    }, [ inView, hasNextPage, isFetchingNextPage, loadMore ]);
+        return () => clearTimeout(timeoutId);
+    }, [ inView, renderLimit, hasHiddenItems, isFiltering, hasNextPage, isFetchingNextPage, loadMore ]);
 
     const handleButtonClick = useCallback((type: 'add' | 'create') => {
         setButtonSelected({
@@ -427,7 +464,7 @@ function ResourceListModal({
                     </Stack>
                 )}
 
-                {items.length === 0 && !isLoading ? (
+                {items.length === 0 && !isLoading && !isLoadingAll ? (
                     <Box textAlign="center" py={6}>
                         <Typography variant="body1" color="text.secondary">
                             Nenhum item encontrado.
@@ -439,7 +476,7 @@ function ResourceListModal({
                         )}
                     </Box>
                 ) : (
-                    <Box sx={{
+                    <Box ref={setScrollEl} sx={{
                         overflowY: 'auto',
                         overflowX: 'hidden',
                         maxHeight: '70vh',
@@ -456,49 +493,61 @@ function ResourceListModal({
                             borderRadius: '3px'
                         }
                     }}>
-                        <Grid container spacing={2} justifyContent="center">
-                            {items.map((item, index) => {
-                                const itemId = item.id || index;
-
-                                return (
-                                    <Grid item xs={12} sm={6} md={4} key={itemId} sx={{ display: 'flex', justifyContent: 'center' }}>
-                                        {renderResource({
-                                            item,
-                                            handleAddItem: () => handleAddItem(item)
-                                        })}
-                                    </Grid>
-                                );
-                            })}
-
-                            {/* Elemento de referência para carregar mais */}
-                            {hasNextPage && (
-                                <Grid item xs={12} ref={loadMoreRef}>
-                                    <Box display="flex" justifyContent="center" p={2}>
-                                        {isFetchingNextPage ? (
-                                            <CircularProgress size={24} />
-                                        ) : (
-                                            <Typography variant="body2" color="text.secondary">
-                                                Carregando mais...
-                                            </Typography>
-                                        )}
+                        {itemMinWidth ? (
+                            // Grade densa: quantas colunas couberem, cada uma com no mínimo `itemMinWidth`
+                            <Box
+                                sx={{
+                                    display: 'grid',
+                                    gridTemplateColumns: `repeat(auto-fill, minmax(min(100%, ${itemMinWidth}px), 1fr))`,
+                                    gap: 1.5,
+                                    alignItems: 'stretch'
+                                }}
+                            >
+                                {visibleItems.map((item, index) => (
+                                    <Box key={item.id || index} sx={{ display: 'flex', minWidth: 0 }}>
+                                        <ResourceCell item={item} renderResource={renderResource} onAdd={handleAddItem} />
                                     </Box>
-                                </Grid>
-                            )}
-                        </Grid>
+                                ))}
+                            </Box>
+                        ) : (
+                            <Grid container spacing={2} justifyContent="center">
+                                {visibleItems.map((item, index) => {
+                                    const itemId = item.id || index;
+
+                                    return (
+                                        <Grid item xs={12} sm={6} md={4} key={itemId} sx={{ display: 'flex', justifyContent: 'center' }}>
+                                            <ResourceCell item={item} renderResource={renderResource} onAdd={handleAddItem} />
+                                        </Grid>
+                                    );
+                                })}
+                            </Grid>
+                        )}
+
+                        {/* Com filtro ativo tudo é carregado de uma vez: só mostra o progresso. Sem filtro, o
+                            elemento de referência abaixo dispara o scroll infinito. */}
+                        {isLoading || isLoadingAll ? (
+                            <Box display="flex" justifyContent="center" alignItems="center" gap={1} p={2}>
+                                <CircularProgress size={18} />
+                                <Typography variant="body2" color="text.secondary">
+                                    {isFiltering ? 'Carregando todos os resultados...' : 'Carregando...'}
+                                </Typography>
+                            </Box>
+                        ) : (hasHiddenItems || (!isFiltering && hasNextPage)) && (
+                            <Box ref={loadMoreRef} display="flex" justifyContent="center" p={2} minHeight={56}>
+                                {!isFiltering && !hasHiddenItems && (isFetchingNextPage ? (
+                                    <CircularProgress size={24} />
+                                ) : (
+                                    <Typography variant="body2" color="text.secondary">
+                                        Carregando mais...
+                                    </Typography>
+                                ))}
+                            </Box>
+                        )}
                     </Box>
                 )}
             </Box>
         );
     };
-
-    // Memoiza o conteúdo do modal para evitar re-renderizações desnecessárias
-    const modalContent = useMemo(() => {
-        return renderContent();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [
-        buttonSelected, items, isLoading, hasNextPage, isFetchingNextPage,
-        search, filters, secondaryFilters, subFilters, sort, secondaryOptions, subFilterOptions
-    ]);
 
     return (
         <>
@@ -564,16 +613,14 @@ function ResourceListModal({
                         </Button>
                     </Box>
 
-                    {isLoading && !items.length ? (
-                        <Box display="flex" justifyContent="center" p={4}>
-                            <CircularProgress />
-                        </Box>
-                    ) : isError ? (
+                    {/* O carregamento aparece só na área da lista: trocar o conteúdo inteiro desmontava a
+                        barra de filtros (fechando o menu aberto e tirando o foco da busca) a cada consulta nova. */}
+                    {isError ? (
                         <Box p={2} bgcolor={alpha(theme.palette.error.main, 0.1)} color="error.main" borderRadius={1}>
                             <Typography>Erro ao carregar os itens: {error?.message}</Typography>
                         </Box>
                     ) : (
-                        modalContent
+                        renderContent()
                     )}
                 </Box>
             </Modal>

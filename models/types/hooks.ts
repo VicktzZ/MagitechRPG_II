@@ -95,6 +95,10 @@ export interface UseResourceListReturn<T> {
     items: T[];
     /** Itens carregados antes do segundo filtro/subfiltro — base para montar as opções deles */
     loadedItems: T[];
+    /** Há busca ou filtro ativo: o catálogo é carregado inteiro em vez de paginado por scroll */
+    isFiltering: boolean;
+    /** Modo filtrado ainda buscando as páginas restantes */
+    isLoadingAll: boolean;
     isLoading: boolean;
     isError: boolean;
     error: any;

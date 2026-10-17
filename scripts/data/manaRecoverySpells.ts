@@ -104,7 +104,7 @@ export const MANA_RECOVERY_SPELLS: SeedSpell[] = [
         name: 'Pedra de Foco',
         level: 1,
         mpCost: 1,
-        type: 'Transmutação (conjurado)',
+        type: 'Transmutação (imediato)',
         execution: 'Completa',
         range: 'Pessoal',
         stages: [

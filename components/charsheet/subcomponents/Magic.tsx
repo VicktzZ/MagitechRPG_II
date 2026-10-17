@@ -4,7 +4,7 @@
 'use client';
 
 import { Add, AutoAwesome, Close, Flare, LocalFireDepartment, Bolt, WaterDrop, Air, Grass, DarkMode, LightMode, Psychology, DoNotDisturb } from '@mui/icons-material';
-import { alpha, Box, Button, CardContent, Chip, Grid, IconButton, Paper, Stack, Tooltip, Typography, useTheme } from '@mui/material';
+import { alpha, Box, Button, CardContent, Chip, Grid, IconButton, Paper, Stack, styled, Tooltip, Typography, useTheme } from '@mui/material';
 import { useEffect, useState, type ReactElement } from 'react';
 import { motion } from 'framer-motion';
 import { elementColor } from '@constants';
@@ -24,7 +24,9 @@ type MagicTyping<C extends 'magic-spell' | 'magic-power'> =
         onIconClick?: () => void,
         selectedStage?: 1 | 2 | 3,
         onStageChange?: (stage: 1 | 2 | 3) => void,
-        disabled?: boolean
+        disabled?: boolean,
+        /** Cartão enxuto para listas em grade (ex: modal de escolher magias) */
+        compact?: boolean
     }
     :
     {
@@ -498,6 +500,219 @@ function MagicSpell({
     );
 }
 
+/** Rótulo do botão de um estágio: no nível 4 o terceiro é a Maestria */
+const getStageLabel = (level: number, stage: 0 | 1 | 2): string =>
+    level === 4 && stage === 2 ? 'Maestria' : `Estágio ${stage + 1}`;
+
+/**
+ * Cartão enxuto, só com elementos HTML simples dentro de um único componente estilizado: numa lista
+ * de centenas de magias, dezenas de componentes MUI por cartão (cada `sx` é recalculado a cada
+ * renderização) travavam a tela ao filtrar. A cor do elemento chega por variáveis CSS.
+ */
+const CompactSpellCard = styled('div')(({ theme }) => ({
+    boxSizing: 'border-box',
+    width: '100%',
+    height: '100%',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 8,
+    padding: 12,
+    borderRadius: 8,
+    fontFamily: theme.typography.fontFamily,
+    color: theme.palette.text.primary,
+    border: '1px solid var(--el-35)',
+    borderLeft: '4px solid var(--el-85)',
+    background: `linear-gradient(145deg, var(--el-10), ${alpha(theme.palette.background.paper, 0.9)} 60%)`,
+    transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
+    '&:hover': { borderColor: 'var(--el-60)', boxShadow: '0 4px 16px var(--el-25)' },
+    '& .mc-header': { display: 'flex', alignItems: 'flex-start', gap: 8 },
+    '& .mc-icon': { display: 'flex', marginTop: 2, color: 'var(--el)' },
+    '& .mc-icon svg': { fontSize: 22 },
+    '& .mc-title': { flex: 1, minWidth: 0 },
+    '& .mc-name': {
+        fontSize: '1rem',
+        lineHeight: 1.2,
+        fontWeight: 700,
+        wordBreak: 'break-word',
+        display: '-webkit-box',
+        WebkitLineClamp: 2,
+        WebkitBoxOrient: 'vertical',
+        overflow: 'hidden'
+    },
+    '& .mc-sub': { fontSize: '0.75rem', lineHeight: 1.3, color: theme.palette.text.secondary },
+    '& .mc-chips': { display: 'flex', flexWrap: 'wrap', gap: 4 },
+    '& .mc-chip': {
+        display: 'inline-flex',
+        alignItems: 'center',
+        height: 20,
+        padding: '0 7px',
+        borderRadius: 10,
+        fontSize: '0.7rem',
+        fontWeight: 600,
+        whiteSpace: 'nowrap',
+        border: `1px solid ${alpha(theme.palette.text.primary, 0.35)}`
+    },
+    '& .mc-chip.level': { color: 'var(--el)', background: 'var(--el-15)', borderColor: 'transparent' },
+    '& .mc-chip.cost': { color: theme.palette.info.main, background: alpha(theme.palette.info.main, 0.15), borderColor: 'transparent' },
+    '& .mc-desc': {
+        flex: 1,
+        padding: 8,
+        borderRadius: 4,
+        borderLeft: '3px solid var(--el-70)',
+        background: 'var(--el-07)',
+        maxHeight: '9rem',
+        overflowY: 'auto',
+        scrollbarWidth: 'thin',
+        scrollbarColor: 'var(--el-60) transparent',
+        fontSize: '0.8rem',
+        lineHeight: 1.4,
+        whiteSpace: 'pre-wrap',
+        wordBreak: 'break-word'
+    },
+    '& .mc-footer': { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+    '& .mc-stages': { display: 'flex', flexWrap: 'wrap', gap: 4 },
+    '& .mc-stage': {
+        cursor: 'pointer',
+        padding: '2px 8px',
+        borderRadius: 4,
+        font: 'inherit',
+        fontSize: '0.7rem',
+        lineHeight: 1.5,
+        fontWeight: 500,
+        letterSpacing: '0.03em',
+        textTransform: 'uppercase',
+        color: 'var(--el)',
+        background: 'transparent',
+        border: '1px solid var(--el-50)',
+        '&:hover': { background: 'var(--el-10)', borderColor: 'var(--el-80)' },
+        '&:disabled': { opacity: 0.5, cursor: 'default' }
+    },
+    '& .mc-stage.active': { color: 'var(--el-contrast)', background: 'var(--el)', borderColor: 'var(--el)' },
+    '& .mc-action': {
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: 32,
+        height: 32,
+        padding: 0,
+        cursor: 'pointer',
+        borderRadius: '50%',
+        color: 'var(--act)',
+        background: 'var(--act-10)',
+        border: '1px solid var(--act-25)',
+        '&:hover': { background: 'var(--act-20)' }
+    }
+}));
+
+/**
+ * Versão enxuta do cartão de magia, para listas em grade (ex: modal de escolher magias): altura
+ * pelo conteúdo, informações em linhas curtas e sem animações contínuas.
+ */
+function MagicSpellCompact({
+    magic,
+    id,
+    isAdding,
+    onIconClick,
+    selectedStage,
+    onStageChange,
+    disabled = false
+}: MagicTyping<'magic-spell'>): ReactElement {
+    const theme = useTheme();
+
+    const [ activeStage, setActiveStage ] = useState<0 | 1 | 2>(
+        Math.min(2, Math.max(0, Number(selectedStage ?? 1) - 1)) as 0 | 1 | 2
+    );
+
+    useEffect(() => {
+        setActiveStage(Math.min(2, Math.max(0, Number(selectedStage ?? 1) - 1)) as 0 | 1 | 2);
+    }, [ selectedStage ]);
+
+    const elemento = String(magic.element ?? '').toUpperCase();
+    const color = elementColor[elemento as keyof typeof elementColor] || theme.palette.primary.main;
+    const elementIcon = elementIcons[elemento as keyof typeof elementIcons] ?? <AutoAwesome />;
+    const actionColor = isAdding ? theme.palette.success.main : theme.palette.error.main;
+
+    const level = Number(magic.level);
+    const extraManaCost = calculateExtraManaCost(level, activeStage);
+    const description = magic.stages[activeStage] ?? magic.stages[0];
+    const availableStages = ([ 0, 1, 2 ] as const).filter(stage => stage === 0 || Boolean(magic.stages[stage]));
+
+    const handleStageChange = (stage: 0 | 1 | 2): void => {
+        setActiveStage(stage);
+        onStageChange?.((stage + 1) as 1 | 2 | 3);
+    };
+
+    const cssVars = {
+        '--el': color,
+        '--el-07': alpha(color, 0.07),
+        '--el-10': alpha(color, 0.1),
+        '--el-15': alpha(color, 0.15),
+        '--el-25': alpha(color, 0.25),
+        '--el-35': alpha(color, 0.35),
+        '--el-50': alpha(color, 0.5),
+        '--el-60': alpha(color, 0.6),
+        '--el-70': alpha(color, 0.7),
+        '--el-80': alpha(color, 0.8),
+        '--el-85': alpha(color, 0.85),
+        '--el-contrast': elemento === 'AR' || elemento === 'NÃO-ELEMENTAL' ? '#111' : '#fff',
+        '--act': actionColor,
+        '--act-10': alpha(actionColor, 0.1),
+        '--act-20': alpha(actionColor, 0.2),
+        '--act-25': alpha(actionColor, 0.25)
+    } as React.CSSProperties;
+
+    return (
+        <CompactSpellCard data-id={id} style={cssVars}>
+            <div className="mc-header">
+                <span className="mc-icon" title={`Elemento: ${magic.element}`}>{elementIcon}</span>
+                <div className="mc-title">
+                    <div className="mc-name" title={magic.name}>{magic.name}</div>
+                    <div className="mc-sub">{magic.element} · {magic.type}</div>
+                </div>
+            </div>
+
+            <div className="mc-chips">
+                <span className="mc-chip level">Nível {magic.level}</span>
+                <span className="mc-chip cost">
+                    {Number(magic.mpCost) + extraManaCost} MP{extraManaCost > 0 ? ` (+${extraManaCost})` : ''}
+                </span>
+                <span className="mc-chip" title="Alcance">{magic.range}</span>
+                <span className="mc-chip" title="Execução">{magic.execution}</span>
+            </div>
+
+            <div className="mc-desc">{description}</div>
+
+            <div className="mc-footer">
+                <div className="mc-stages">
+                    {availableStages.map(stage => (
+                        <button
+                            key={stage}
+                            type="button"
+                            className={activeStage === stage ? 'mc-stage active' : 'mc-stage'}
+                            disabled={disabled}
+                            onClick={() => handleStageChange(stage)}
+                        >
+                            {getStageLabel(level, stage)}
+                        </button>
+                    ))}
+                </div>
+
+                {onIconClick && (
+                    <button
+                        type="button"
+                        className="mc-action"
+                        onClick={onIconClick}
+                        title={isAdding ? 'Adicionar magia' : 'Remover magia'}
+                        aria-label={isAdding ? 'Adicionar magia' : 'Remover magia'}
+                    >
+                        {isAdding ? <Add fontSize="small" /> : <Close fontSize="small" />}
+                    </button>
+                )}
+            </div>
+        </CompactSpellCard>
+    );
+}
+
 // Componente Magic que escolhe entre MagicSpell e MagicPower
 export default function Magic<C extends 'magic-spell' | 'magic-power'>({
     as,
@@ -506,6 +721,12 @@ export default function Magic<C extends 'magic-spell' | 'magic-power'>({
     as?: C
     disabled?: boolean
 } & MagicTyping<C>): ReactElement {
+    // O cartão enxuto preenche a célula da grade, então não passa pelo wrapper que centraliza
+    const spellProps = props as unknown as MagicTyping<'magic-spell'>;
+    if (as !== 'magic-power' && spellProps.compact) {
+        return <MagicSpellCompact {...spellProps} />;
+    }
+
     const Component = as === 'magic-power' ? MagicPower : MagicSpell;
 
     // Wrapper para garantir animação e estilo consistente
