@@ -91,8 +91,10 @@ export const font = {
     text: '"IBM Plex Sans", "Inter", system-ui, sans-serif',
     mono: '"IBM Plex Mono", ui-monospace, SFMono-Regular, monospace',
     /**
-     * Fontes dos dados (public/fonts/rpg): cada dígito vira a face do dado com aquele número e cada
-     * letra, a face preenchida. Para resultados de rolagem, um glifo por dado.
+     * Fontes dos dados (public/fonts/rpg, registradas em fonts.css): um glifo por dado, não um número.
+     * Os dígitos 0-9 viram a face do dado (d4: 1-4; d6, d8 e d10: pontos; d12 e d20: numeral, e no d12
+     * o 0 é o 10); as letras A-F são faces preenchidas e a-f faces de contorno, numeradas em sequência.
+     * Por isso o resultado de um d20 (1-20) e as somas não cabem num glifo e ficam na fonte mono.
      */
     dice: {
         d4: '"D4", "IBM Plex Mono", monospace',
