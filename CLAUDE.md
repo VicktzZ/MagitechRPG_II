@@ -17,8 +17,10 @@ Definições dadas pelo dono do projeto:
 - **imediato** — definição ainda não fornecida (presumivelmente o oposto de conjurado: resolve
   na hora, sem duração em turnos). Perguntar antes de reclassificar magias para/de "imediato".
 
-Magias de reação têm `execution: 'Reação'`; no catálogo quase todas são `(imediato)` no `type` (só
-duas têm `(Reação)`). Por isso o filtro "Subtipo → Reação" também lista toda magia de execução Reação.
+**Reação é uma execução, não um subtipo.** Magias de reação têm `execution: 'Reação'` e, no catálogo,
+quase todas são `(imediato)` no `type`. Duas (Rajada Refletora, Retribuição Cinética) têm `(Reação)` no
+`type`; o filtro de subtipo ignora esse texto. Para listar reações, usa-se o filtro "Execução"
+(Padrão, Completa, Movimento, Livre, Reação) do modal de magias.
 
 ## Convenções do catálogo de magias (conferidas no Firestore real, coleção `spells`)
 

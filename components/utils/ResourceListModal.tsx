@@ -28,7 +28,7 @@ import { toastDefault } from '@constants';
 import { useResourceList } from '@hooks/useResourceList';
 import { CustomMenu } from '@layout';
 import type { ResourceListModalProps } from '@models/types/components';
-import { collectFilterOptions } from '@utils/filterSelection';
+import { collectFilterOptions, getClientFilters } from '@utils/filterSelection';
 
 /** Seção (lista de checkboxes) de um menu de filtro */
 interface FilterSection {
@@ -132,6 +132,9 @@ function MultiSelectFilter({
 /** Quantos itens a grade desenha por vez; o resto entra conforme a rolagem se aproxima do fim */
 const RENDER_STEP = 48;
 
+/** Cores dos chips dos filtros do cliente, na ordem dos filtros (Tipo, Subtipo, Execução...) */
+const CLIENT_FILTER_CHIP_COLORS = [ 'secondary', 'info', 'warning', 'success' ] as const;
+
 /** Espaço entre os itens da grade, em px */
 const GRID_GAP_PX = 12;
 
@@ -177,7 +180,7 @@ function ResourceListModal({
     filterLabel = 'Filtro',
     sortOptions,
     sortFieldMap,
-    secondaryFilter,
+    secondaryFilters: secondaryFilterMenus,
     title,
     renderResource,
     itemMinWidth,
@@ -192,6 +195,9 @@ function ResourceListModal({
     const [ menuAnchor, setMenuAnchor ] = useState<HTMLElement | null>(null);
     const [ menuContent, setMenuContent ] = useState<ReactElement[]>([]);
 
+    // Filtros dos menus extras (cada menu: o principal e, se houver, o subfiltro), na ordem de exibição
+    const clientFilters = useMemo(() => getClientFilters(secondaryFilterMenus), [ secondaryFilterMenus ]);
+
     const {
         items,
         loadedItems,
@@ -205,18 +211,16 @@ function ResourceListModal({
         setSearch,
         toggleFilter,
         clearFilters,
-        toggleSecondaryFilter,
-        clearSecondaryFilters,
-        toggleSubFilter,
-        clearSubFilters,
+        toggleClientFilter,
+        clearClientFilter,
+        clearClientFilters,
         setSort,
         setButtonSelected,
         addItem,
         loadMore,
         search,
         filters,
-        secondaryFilters,
-        subFilters,
+        clientSelections,
         sort,
         buttonSelected
     } = useResourceList({
@@ -231,22 +235,23 @@ function ResourceListModal({
         addFunction,
         validateAdd,
         sortFieldMap,
-        getSecondaryFilterValue: secondaryFilter?.getValue,
-        getSubFilterValue: secondaryFilter?.subFilter?.getValue
+        clientFilters
     });
 
     // As opções saem dos itens carregados (e não dos já filtrados), para que marcar uma
     // opção não faça as outras sumirem. As fixas vêm primeiro; as demais, achadas nos itens, depois.
-    const secondaryOptions = useMemo(() => {
-        if (!secondaryFilter) return [];
-        return collectFilterOptions(loadedItems, secondaryFilter.getValue, secondaryFilter.options);
-    }, [ secondaryFilter, loadedItems ]);
+    const clientFilterOptions = useMemo(() => Object.fromEntries(
+        clientFilters.map(filter => [ filter.key, collectFilterOptions(loadedItems, filter.getValue, filter.options) ])
+    ), [ clientFilters, loadedItems ]);
 
-    const subFilterOptions = useMemo(() => {
-        const subFilter = secondaryFilter?.subFilter;
-        if (!subFilter) return [];
-        return collectFilterOptions(loadedItems, subFilter.getValue, subFilter.options);
-    }, [ secondaryFilter, loadedItems ]);
+    // Seção do menu de um filtro do cliente
+    const getFilterSection = (key: string, label: string): FilterSection => ({
+        label,
+        options: clientFilterOptions[key] ?? [],
+        selected: clientSelections[key] ?? [],
+        onToggle: (value) => toggleClientFilter(key, value),
+        onClear: () => clearClientFilter(key)
+    });
 
     // Rolagem da lista e janela de renderização: o fim da grade é observado com folga de 800px, então
     // os próximos itens já estão desenhados quando a rolagem chega neles
@@ -263,7 +268,7 @@ function ResourceListModal({
     useEffect(() => {
         setRenderLimit(RENDER_STEP);
         if (scrollEl) scrollEl.scrollTop = 0;
-    }, [ search, filters, secondaryFilters, subFilters, sort, scrollEl ]);
+    }, [ search, filters, clientSelections, sort, scrollEl ]);
 
     const hasHiddenItems = renderLimit < items.length;
     const visibleItems = hasHiddenItems ? items.slice(0, renderLimit) : items;
@@ -331,13 +336,12 @@ function ResourceListModal({
         }
     }, [ addItem, enqueueSnackbar, closeSnackbar ]);
 
-    const hasActiveFilters = filters.length > 0 || secondaryFilters.length > 0 || subFilters.length > 0;
+    const hasActiveFilters = filters.length > 0 || Object.values(clientSelections).some(selected => selected.length > 0);
 
     const handleClearAllFilters = useCallback(() => {
         clearFilters();
-        clearSecondaryFilters();
-        clearSubFilters();
-    }, [ clearFilters, clearSecondaryFilters, clearSubFilters ]);
+        clearClientFilters();
+    }, [ clearFilters, clearClientFilters ]);
 
     const renderContent = () => {
         if (buttonSelected.create) {
@@ -389,27 +393,16 @@ function ResourceListModal({
                         />
                     )}
 
-                    {secondaryFilter && (
+                    {secondaryFilterMenus?.map(menu => (
                         <MultiSelectFilter
-                            label={secondaryFilter.label}
+                            key={menu.label}
+                            label={menu.label}
                             sections={[
-                                {
-                                    label: secondaryFilter.label,
-                                    options: secondaryOptions,
-                                    selected: secondaryFilters,
-                                    onToggle: toggleSecondaryFilter,
-                                    onClear: clearSecondaryFilters
-                                },
-                                ...(secondaryFilter.subFilter ? [ {
-                                    label: secondaryFilter.subFilter.label,
-                                    options: subFilterOptions,
-                                    selected: subFilters,
-                                    onToggle: toggleSubFilter,
-                                    onClear: clearSubFilters
-                                } ] : [])
+                                getFilterSection(menu.label, menu.label),
+                                ...(menu.subFilter ? [ getFilterSection(`${menu.label}/${menu.subFilter.label}`, menu.subFilter.label) ] : [])
                             ]}
                         />
-                    )}
+                    ))}
 
                     {sortOptions?.length > 0 && (
                         <Stack direction="row" gap={1} alignItems="center">
@@ -458,26 +451,16 @@ function ResourceListModal({
                                 variant="outlined"
                             />
                         ))}
-                        {secondaryFilters.map(value => (
+                        {clientFilters.flatMap((filter, index) => (clientSelections[filter.key] ?? []).map(value => (
                             <Chip
-                                key={`secondary-${value}`}
-                                label={value}
+                                key={`${filter.key}-${value}`}
+                                label={`${filter.label}: ${value}`}
                                 size="small"
-                                onDelete={() => toggleSecondaryFilter(value)}
-                                color="secondary"
+                                onDelete={() => toggleClientFilter(filter.key, value)}
+                                color={CLIENT_FILTER_CHIP_COLORS[index % CLIENT_FILTER_CHIP_COLORS.length]}
                                 variant="outlined"
                             />
-                        ))}
-                        {subFilters.map(value => (
-                            <Chip
-                                key={`sub-${value}`}
-                                label={`${secondaryFilter?.subFilter?.label ?? 'Subtipo'}: ${value}`}
-                                size="small"
-                                onDelete={() => toggleSubFilter(value)}
-                                color="info"
-                                variant="outlined"
-                            />
-                        ))}
+                        )))}
                     </Stack>
                 )}
 

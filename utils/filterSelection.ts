@@ -59,3 +59,33 @@ export function collectFilterOptions<T>(
 
     return [ ...fixedOptions, ...Array.from(found).sort((a, b) => a.localeCompare(b, 'pt-BR')) ];
 }
+
+/** Config estrutural de um menu de filtro (ver `SecondaryFilterConfig` em models/types/components.ts) */
+interface FilterMenuLike<T> {
+    label: string;
+    getValue: (item: T) => FilterValue;
+    options?: string[];
+    subFilter?: { label: string; getValue: (item: T) => FilterValue; options?: string[] };
+}
+
+/** Um filtro resolvido no cliente: o principal de um menu ou o seu subfiltro */
+export interface ClientFilter<T> {
+    /** Identifica o filtro no estado: o rótulo do menu, ou "menu/subfiltro" para o subfiltro */
+    key: string;
+    label: string;
+    getValue: (item: T) => FilterValue;
+    options?: string[];
+}
+
+/** Lista, na ordem de exibição, os filtros de todos os menus (cada menu: principal e depois o subfiltro) */
+export function getClientFilters<T>(menus: Array<FilterMenuLike<T>> = []): Array<ClientFilter<T>> {
+    return menus.flatMap(menu => [
+        { key: menu.label, label: menu.label, getValue: menu.getValue, options: menu.options },
+        ...(menu.subFilter ? [ {
+            key: `${menu.label}/${menu.subFilter.label}`,
+            label: menu.subFilter.label,
+            getValue: menu.subFilter.getValue,
+            options: menu.subFilter.options
+        } ] : [])
+    ]);
+}

@@ -2,7 +2,7 @@ import type { User } from 'realm-web';
 import type { ApiParams } from './api';
 import type { UseQueryResult } from '@tanstack/react-query';
 import type { Power } from '@models/entities';
-import type { FilterValue } from '@utils/filterSelection';
+import type { ClientFilter } from '@utils/filterSelection';
 
 export interface UseSkillsOptions {
     initialSearch?: string;
@@ -56,8 +56,8 @@ export interface UseResourceListParams {
 export interface UseResourceListOptions<T> {
     initialSearch?: string;
     initialFilters?: string[];
-    initialSecondaryFilters?: string[];
-    initialSubFilters?: string[];
+    /** Opções marcadas de início em cada filtro do cliente, por `ClientFilter.key` */
+    initialClientSelections?: Record<string, string[]>;
     initialSort?: {
         value: string;
         order: 'ASC' | 'DESC';
@@ -71,17 +71,18 @@ export interface UseResourceListOptions<T> {
     errorMessage?: (error: Error) => string;
     /** Mapeia o rótulo de ordenação exibido para o campo real da entidade (ex: { Nível: 'level' }) */
     sortFieldMap?: Record<string, string>;
-    /** Extrai o(s) valor(es) do segundo filtro (aplicado no cliente), ex: categoria(s) da magia */
-    getSecondaryFilterValue?: (item: T) => FilterValue;
-    /** Extrai o(s) valor(es) do subfiltro (aplicado no cliente, em conjunto com o segundo filtro), ex: subtipo(s) da magia */
-    getSubFilterValue?: (item: T) => FilterValue;
+    /**
+     * Filtros resolvidos no cliente, depois da busca no servidor (ex: tipo, subtipo e execução da magia).
+     * Combinam por E; dentro de cada um, vale o OU entre as opções marcadas.
+     */
+    clientFilters?: Array<ClientFilter<T>>;
 }
 
 export interface UseResourceListReturn<T> {
     search: string;
     filters: string[];
-    secondaryFilters: string[];
-    subFilters: string[];
+    /** Opções marcadas em cada filtro do cliente, por `ClientFilter.key` */
+    clientSelections: Record<string, string[]>;
     sort: {
         value: string;
         order: 'ASC' | 'DESC';
@@ -91,9 +92,9 @@ export interface UseResourceListReturn<T> {
         create: boolean;
         remove: boolean;
     };
-    /** Itens exibidos: já com o segundo filtro e o subfiltro aplicados */
+    /** Itens exibidos: já com os filtros do cliente aplicados */
     items: T[];
-    /** Itens carregados antes do segundo filtro/subfiltro — base para montar as opções deles */
+    /** Itens carregados antes dos filtros do cliente — base para montar as opções deles */
     loadedItems: T[];
     /** Há busca ou filtro ativo: o catálogo é carregado inteiro em vez de paginado por scroll */
     isFiltering: boolean;
@@ -108,10 +109,9 @@ export interface UseResourceListReturn<T> {
     setSearch: (value: string) => void;
     toggleFilter: (value: string) => void;
     clearFilters: () => void;
-    toggleSecondaryFilter: (value: string) => void;
-    clearSecondaryFilters: () => void;
-    toggleSubFilter: (value: string) => void;
-    clearSubFilters: () => void;
+    toggleClientFilter: (key: string, value: string) => void;
+    clearClientFilter: (key: string) => void;
+    clearClientFilters: () => void;
     setSort: React.Dispatch<React.SetStateAction<{ value: string; order: 'ASC' | 'DESC' }>>;
     setButtonSelected: React.Dispatch<React.SetStateAction<{ add: boolean; create: boolean; remove: boolean }>>;
     addItem: (item: T) => void;

@@ -7,7 +7,9 @@
  *  - caixa diferente ("Imediato"/"imediato") e gênero ("contínua"/"contínuo");
  *  - combinações: "Ataque/Cura (imediato)" (duas categorias) e
  *    "Conjurado, Contínuo", "Imediato/Área" (dois subtipos);
- *  - sem subtipo ("Ataque") ou com texto sobrando depois do parêntese.
+ *  - sem subtipo ("Ataque") ou com texto sobrando depois do parêntese;
+ *  - "(Reação)" no `type` de duas magias: Reação é uma EXECUÇÃO (campo `execution`), não um
+ *    subtipo, então esse texto é ignorado aqui e o filtro "Execução" é que lista as reações.
  */
 
 /** Categorias conhecidas do catálogo. Categorias novas aparecem no filtro conforme são carregadas. */
@@ -39,7 +41,6 @@ export const SPELL_SUBTYPES = [
     'Contínuo',
     'Sustentado',
     'Área',
-    'Reação',
     'Completo',
     'Invocação'
 ];
@@ -103,27 +104,35 @@ export function getSpellSubtypes(type?: string | null): string[] {
     const subtypes = getSubtypeText(type)
         .split(/[/,]/)
         .map(part => part.trim())
-        .filter(Boolean)
+        .filter(part => Boolean(part) && normalizeKey(part) !== 'reacao')
         .map(part => SUBTYPE_ALIASES[normalizeKey(part)] ?? capitalize(part));
 
     return unique(subtypes);
 }
 
-/** Magia de execução Reação (aceita variações de caixa/acento, como "reação") */
-const isReactionExecution = (execution?: string | null): boolean => normalizeKey(execution ?? '') === 'reacao';
+/** Execuções do catálogo, na ordem em que aparecem no filtro "Execução" */
+export const SPELL_EXECUTIONS = [
+    'Padrão',
+    'Completa',
+    'Movimento',
+    'Livre',
+    'Reação'
+];
 
-/**
- * Subtipos de uma magia para o filtro "Subtipo": os do `type` e, para toda magia de execução
- * Reação, também "Reação". No catálogo só algumas reações têm "(Reação)" no `type`; a maioria é
- * "(imediato)" com execução Reação, e todas devem aparecer ao filtrar por Reação.
- */
-export function getSpellFilterSubtypes(spell: { type?: string | null; execution?: string | null }): string[] {
-    const subtypes = getSpellSubtypes(spell.type);
-    return isReactionExecution(spell.execution) ? unique([ ...subtypes, 'Reação' ]) : subtypes;
+/** Forma canônica das execuções, indexada pela chave sem acento/caixa (o catálogo tem "padrão" em minúsculas) */
+const EXECUTION_ALIASES: Record<string, string> = Object.fromEntries(
+    SPELL_EXECUTIONS.map(execution => [ normalizeKey(execution), execution ])
+);
+
+/** Execução de uma magia na forma canônica: "padrão" → ["Padrão"]. Sem execução devolve lista vazia. */
+export function getSpellExecution(execution?: string | null): string[] {
+    const text = execution?.trim();
+    if (!text) return [];
+    return [ EXECUTION_ALIASES[normalizeKey(text)] ?? capitalize(text) ];
 }
 
 /**
- * Configuração dos filtros "Tipo" e "Subtipo" para listas de magias
+ * Configuração do menu "Tipo" (com o subfiltro "Subtipo") para listas de magias
  * (ver `SecondaryFilterConfig` em models/types/components.ts).
  */
 export const SPELL_TYPE_FILTER = {
@@ -132,7 +141,17 @@ export const SPELL_TYPE_FILTER = {
     options: SPELL_CATEGORIES,
     subFilter: {
         label: 'Subtipo',
-        getValue: getSpellFilterSubtypes,
+        getValue: (spell: { type?: string | null }) => getSpellSubtypes(spell.type),
         options: SPELL_SUBTYPES
     }
 };
+
+/** Configuração do menu "Execução" para listas de magias */
+export const SPELL_EXECUTION_FILTER = {
+    label: 'Execução',
+    getValue: (spell: { execution?: string | null }) => getSpellExecution(spell.execution),
+    options: SPELL_EXECUTIONS
+};
+
+/** Menus de filtro das listas de magias, na ordem em que aparecem: Tipo (com Subtipo) e Execução */
+export const SPELL_FILTERS = [ SPELL_TYPE_FILTER, SPELL_EXECUTION_FILTER ];

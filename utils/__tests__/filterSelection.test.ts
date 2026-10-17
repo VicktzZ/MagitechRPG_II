@@ -1,6 +1,7 @@
 import {
     collectFilterOptions,
     filterBySelections,
+    getClientFilters,
     matchesSelection,
     toFilterValues
 } from '../filterSelection'
@@ -73,5 +74,25 @@ describe('collectFilterOptions', () => {
 
     it('não depende de os itens carregados cobrirem as opções fixas', () => {
         expect(collectFilterOptions([], () => undefined, [ 'z', 'k' ])).toEqual([ 'z', 'k' ])
+    })
+})
+
+describe('getClientFilters', () => {
+    const getValue = (item: { v: string }) => item.v
+
+    it('cada menu vira o filtro principal e, se houver, o subfiltro, na ordem', () => {
+        const filters = getClientFilters([
+            { label: 'Tipo', getValue, options: [ 'a' ], subFilter: { label: 'Subtipo', getValue, options: [ 'b' ] } },
+            { label: 'Execução', getValue }
+        ])
+
+        expect(filters.map(f => f.key)).toEqual([ 'Tipo', 'Tipo/Subtipo', 'Execução' ])
+        expect(filters.map(f => f.label)).toEqual([ 'Tipo', 'Subtipo', 'Execução' ])
+        expect(filters[1]?.options).toEqual([ 'b' ])
+    })
+
+    it('sem menus, lista vazia', () => {
+        expect(getClientFilters()).toEqual([])
+        expect(getClientFilters([])).toEqual([])
     })
 })
