@@ -324,14 +324,7 @@ export default function SingleWidgetPanel({ widget, campaignId, isUserGM, isFini
                 border: '2px solid',
                 borderColor: dangerAlerts.length > 0 ? red[500] : theme.palette.primary.main,
                 borderRadius: 2,
-                bgcolor: 'background.paper',
-                ...(dangerAlerts.length > 0 && {
-                    animation: 'widget-alert-pulse 2s infinite',
-                    '@keyframes widget-alert-pulse': {
-                        '0%, 100%': { boxShadow: `0 0 0 0 ${alpha(red[500], 0.4)}` },
-                        '50%': { boxShadow: `0 0 14px 3px ${alpha(red[500], 0.4)}` }
-                    }
-                })
+                bgcolor: 'background.paper'
             }}
         >
             {/* ── Header (sempre visível — clique colapsa) ── */}
@@ -467,7 +460,7 @@ export default function SingleWidgetPanel({ widget, campaignId, isUserGM, isFini
                                 <Box>
                                     <ResourceBar
                                         label={labels.secondary}
-                                        icon="✨"
+                                        icon="◆"
                                         value={widget.secondary}
                                         max={widget.maxSecondary}
                                         color={secondaryPct < 30 ? orange[400] : blue[400]}

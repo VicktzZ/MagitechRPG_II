@@ -258,8 +258,7 @@ export default function AppDrawer(): ReactElement {
                                 height: '2.5rem',
                                 width: '2.5rem',
                                 color: 'white',
-                                bgcolor: theme.palette.primary.main,
-                                boxShadow: 1
+                                bgcolor: theme.palette.primary.main
                             }}
                         >
                             {
@@ -289,7 +288,6 @@ export default function AppDrawer(): ReactElement {
                                         alignItems: 'center',
                                         justifyContent: 'center',
                                         fontSize: '0.7rem',
-                                        boxShadow: 1,
                                         border: `2px solid ${theme.palette.background.paper}`
                                     }}
                                 >
@@ -337,10 +335,7 @@ export default function AppDrawer(): ReactElement {
                 onClose={toggleDrawer(false)}
                 PaperProps={{
                     sx: {
-                        borderRight: 'none',
-                        boxShadow: theme.palette.mode === 'dark'
-                            ? '0 8px 16px rgba(0,0,0,0.5)'
-                            : '0 8px 16px rgba(0,0,0,0.1)'
+                        borderRight: 'none'
                     }
                 }}
             >

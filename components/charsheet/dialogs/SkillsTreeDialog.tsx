@@ -46,11 +46,6 @@ function SkillNode({ skill, isUnlocked = false, skillClass, icon, size = 2.5 }: 
                     fontFamily: font.display,
                     fontWeight: 600,
                     fontSize: `${size}rem`,
-                    transition: 'all 0.2s',
-                    '&:hover': {
-                        transform: 'scale(1.05)',
-                        bgcolor: isUnlocked ? skillColors[skillClass ] : 'background.paper'
-                    },
                     position: 'relative',
                     height: '7rem',
                     width: '7rem',

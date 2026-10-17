@@ -362,12 +362,11 @@ const DiceRollModal = memo(({
                         overflow: 'auto',
                         borderRadius: 2,
                         position: 'relative',
-                        background: `linear-gradient(180deg, ${alpha(theme.palette.background.paper, 0.95)} 0%, ${theme.palette.background.paper} 100%)`,
-                        backdropFilter: 'blur(10px)',
+                        bgcolor: 'background.paper',
                         border: `1px solid ${alpha(diceColor, 0.3)}`
                     }}
                 >
-                    {/* Header colorido */}
+                    {/* Cabeçalho com a cor do dado */}
                     <Box
                         display="flex"
                         justifyContent="space-between"
@@ -375,7 +374,7 @@ const DiceRollModal = memo(({
                         px={2.5}
                         py={1.5}
                         sx={{
-                            background: `linear-gradient(90deg, ${alpha(diceColor, 0.15)}, ${alpha(diceColor, 0.05)})`,
+                            bgcolor: 'background.raised',
                             borderBottom: `1px solid ${alpha(diceColor, 0.2)}`
                         }}
                     >
@@ -463,11 +462,6 @@ const DiceRollModal = memo(({
                                         height: 160,
                                         borderRadius: '50%',
                                         border: `2px dashed ${alpha(rollColor, 0.3)}`,
-                                        animation: 'spin 30s linear infinite',
-                                        '@keyframes spin': {
-                                            '0%': { transform: 'rotate(0deg)' },
-                                            '100%': { transform: 'rotate(360deg)' }
-                                        },
                                         zIndex: 0
                                     }}
                                 />
@@ -479,7 +473,6 @@ const DiceRollModal = memo(({
                                         fontWeight="bold"
                                         sx={{
                                             color: rollColor,
-                                            textShadow: `0 0 10px ${alpha(rollColor, 0.5)}`,
                                             mb: 1
                                         }}
                                     >
@@ -502,7 +495,7 @@ const DiceRollModal = memo(({
                             </Box>
                         </Fade>
 
-                        {/* Barra divisória com gradiente */}
+                        {/* Barra divisória */}
                         <Divider
                             sx={{
                                 '&::before, &::after': {

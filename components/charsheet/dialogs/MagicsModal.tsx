@@ -10,6 +10,7 @@ import type { Spell } from '@models/entities';
 import type { ReactElement } from 'react';
 import type { CharsheetDTO } from '@models/dtos';
 import { SPELL_FILTERS } from '@utils/spellCategory';
+import { shadow } from '@themes/tokens';
 
 import Magic from '../subcomponents/Magic';
 
@@ -126,7 +127,7 @@ export default function SpellsModal({ open, onClose }: { open: boolean, onClose:
                             maxHeight: '90vh',
                             overflow: 'hidden',
                             borderRadius: '12px',
-                            boxShadow: 24,
+                            boxShadow: shadow.overlay,
                             outline: 'none',
                             backgroundColor: 'background.paper'
                         }}

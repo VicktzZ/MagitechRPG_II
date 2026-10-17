@@ -32,7 +32,6 @@ export function ItemWrapperModal({
                 display: 'flex',
                 justifyContent: 'center',
                 alignItems: 'center',
-                backdropFilter: 'blur(4px)',
                 ...sx
             }}
         >
@@ -73,7 +72,6 @@ export function ItemWrapperModal({
                                 variant='h6'
                                 fontFamily={font.display}
                                 color={itemAttr.color}
-                                sx={{ textShadow: `0 0 10px ${alpha(itemAttr.color, 0.3)}` }}
                             >
                                 Detalhes do {itemAttr.label}
                             </Typography>

@@ -3,12 +3,13 @@ import { subclasses } from '@constants/subclasses'
 import { negativeTraits, positiveTraits } from '@constants/traits'
 import { useAudio } from '@hooks'
 import useNumbersWithSpaces from '@hooks/useNumbersWithSpace'
-import { AttachMoney, AutoAwesome, DirectionsRun, Psychology } from '@mui/icons-material'
+import { AttachMoney, DirectionsRun, Psychology, Star } from '@mui/icons-material'
 import { Box, Button, Chip, FormControl, IconButton, InputLabel, ListSubheader, MenuItem, OutlinedInput, Select, TextField, Typography, useMediaQuery } from '@mui/material'
 import { alpha, useTheme } from '@mui/material/styles'
 import { green, orange, purple } from '@mui/material/colors'
 import { useCallback, useEffect, useState } from 'react'
 import { Controller, useFormContext, useWatch } from 'react-hook-form'
+import ElementIcon from '@components/misc/ElementIcon'
 import ElementalMasteryModal from './dialogs/ElementalMasteryModal'
 import SubclassModal from './dialogs/SubclassModal'
 import TraitsModal from './dialogs/TraitsModal'
@@ -425,7 +426,7 @@ export default function LevelAndInfo() {
                                         color: purple[500]
                                     }}
                                 >
-                                    <AutoAwesome />
+                                    <Star />
                                 </Box>
                                 <Box sx={{ flex: 1 }}>
                                     <Typography variant="caption" color="text.secondary" display="block">
@@ -627,7 +628,7 @@ export default function LevelAndInfo() {
                                                 color: purple[500]
                                             }}
                                         >
-                                            <AutoAwesome />
+                                            <ElementIcon element={currentElementalMastery} colored={Boolean(currentElementalMastery)} />
                                         </Box>
                                         <Box sx={{ flex: 1 }}>
                                             <Typography variant="caption" color="text.secondary" display="block">

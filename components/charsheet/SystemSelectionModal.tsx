@@ -18,13 +18,14 @@ import {
 import {
     Public as PublicIcon,
     Lock as LockIcon,
-    AutoAwesome as MagicIcon,
+    AutoStories as MagicIcon,
     Category as SystemIcon,
     CheckCircle as CheckIcon
 } from '@mui/icons-material'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import type { RPGSystem } from '@models/entities'
+import { color, shadow } from '@themes/tokens'
 
 interface SystemSelectionModalProps {
     open: boolean
@@ -87,7 +88,7 @@ export default function SystemSelectionModal({ open, onSelect }: SystemSelection
                         maxHeight: '90vh',
                         bgcolor: 'background.paper',
                         borderRadius: 3,
-                        boxShadow: 24,
+                        boxShadow: shadow.overlay,
                         overflow: 'hidden',
                         display: 'flex',
                         flexDirection: 'column'
@@ -97,7 +98,7 @@ export default function SystemSelectionModal({ open, onSelect }: SystemSelection
                     <Box 
                         sx={{ 
                             p: 3, 
-                            background: 'linear-gradient(135deg, rgba(39, 136, 205, 0.2), rgba(156, 39, 176, 0.1))',
+                            bgcolor: 'background.raised',
                             borderBottom: '1px solid',
                             borderColor: 'divider'
                         }}
@@ -131,18 +132,16 @@ export default function SystemSelectionModal({ open, onSelect }: SystemSelection
                                             p: 2,
                                             cursor: 'pointer',
                                             border: '2px solid',
-                                            borderColor: selectedId === null ? 'primary.main' : 'transparent',
-                                            bgcolor: selectedId === null ? 'primary.dark' : 'background.default',
-                                            transition: 'all 0.2s ease',
+                                            borderColor: selectedId === null ? color.amberLine : 'transparent',
+                                            bgcolor: selectedId === null ? color.amberSubtle : 'background.raised',
+                                            transition: 'border-color 120ms, background-color 120ms',
                                             height: '100%',
                                             minHeight: 180,
                                             display: 'flex',
                                             flexDirection: 'column',
                                             position: 'relative',
                                             '&:hover': {
-                                                borderColor: 'primary.main',
-                                                transform: 'translateY(-2px)',
-                                                boxShadow: 4
+                                                borderColor: selectedId === null ? color.amberLine : color.borderStrong
                                             }
                                         }}
                                     >
@@ -188,18 +187,16 @@ export default function SystemSelectionModal({ open, onSelect }: SystemSelection
                                                 p: 2,
                                                 cursor: 'pointer',
                                                 border: '2px solid',
-                                                borderColor: selectedId === system.id ? 'secondary.main' : 'transparent',
-                                                bgcolor: selectedId === system.id ? 'secondary.dark' : 'background.default',
-                                                transition: 'all 0.2s ease',
+                                                borderColor: selectedId === system.id ? color.amberLine : 'transparent',
+                                                bgcolor: selectedId === system.id ? color.amberSubtle : 'background.raised',
+                                                transition: 'border-color 120ms, background-color 120ms',
                                                 height: '100%',
                                                 minHeight: 180,
                                                 display: 'flex',
                                                 flexDirection: 'column',
                                                 position: 'relative',
                                                 '&:hover': {
-                                                    borderColor: 'secondary.main',
-                                                    transform: 'translateY(-2px)',
-                                                    boxShadow: 4
+                                                    borderColor: selectedId === system.id ? color.amberLine : color.borderStrong
                                                 }
                                             }}
                                         >

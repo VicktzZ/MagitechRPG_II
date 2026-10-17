@@ -63,9 +63,7 @@ export default function CampaignCustomResources(): ReactElement | null {
             elevation={2}
             sx={{
                 p: 3,
-                borderRadius: 2,
-                transition: 'all 0.3s ease',
-                '&:hover': { boxShadow: 4 }
+                borderRadius: 2
             }}
         >
             <Box display="flex" alignItems="center" gap={1} mb={2}>

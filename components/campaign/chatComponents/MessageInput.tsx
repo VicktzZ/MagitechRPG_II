@@ -40,9 +40,7 @@ const MessageInput = memo(function MessageInput({ onSendMessage }: MessageInputP
                 p: 2,
                 borderTop: '2px solid',
                 borderColor: 'primary.main',
-                background: theme.palette.mode === 'dark'
-                    ? 'linear-gradient(135deg, #1e293b 0%, #334155 100%)'
-                    : 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
+                bgcolor: 'background.paper',
                 display: 'flex',
                 alignItems: 'flex-end',
                 gap: 1
@@ -90,8 +88,7 @@ const MessageInput = memo(function MessageInput({ onSendMessage }: MessageInputP
                             bgcolor: blue[600],
                             color: 'white',
                             '&:hover': {
-                                bgcolor: blue[700],
-                                transform: 'scale(1.05)'
+                                bgcolor: blue[700]
                             },
                             '&:disabled': {
                                 bgcolor: grey[300],

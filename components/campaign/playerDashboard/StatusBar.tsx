@@ -1,6 +1,7 @@
 import { Box, Button, Typography } from '@mui/material';
 import { indigo, lime, orange } from '@mui/material/colors';
-import { useState } from 'react';
+import { color as tokenColor } from '@themes/tokens';
+import { type ReactNode, useState } from 'react';
 
 export function StatusBar({
     label,
@@ -15,7 +16,7 @@ export function StatusBar({
     current: number,
     max: number,
     color: string,
-    icon: string,
+    icon: ReactNode,
     onIncrease: (value: number) => void,
     onDecrease: (value: number) => void
 }) {
@@ -34,9 +35,9 @@ export function StatusBar({
 
     const getOverhealColor = (baseColor: string) => {
         const colorMap: Record<string, string> = {
-            '#ef4444': orange.A700,
-            '#3b82f6': indigo.A700,
-            '#eab308': lime.A700
+            [tokenColor.lp]: orange.A700,
+            [tokenColor.mp]: indigo.A700,
+            [tokenColor.ap]: lime.A700
         };
         return colorMap[baseColor] || baseColor;
     };
@@ -47,7 +48,7 @@ export function StatusBar({
         <Box sx={{ mb: 3 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5, flexWrap: 'wrap', gap: 1 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <span style={{ fontSize: '16px' }}>{icon}</span>
+                    <span style={{ fontSize: '16px', display: 'inline-flex', color }}>{icon}</span>
                     <Typography variant="caption" sx={{ color: '#d1d5db', fontWeight: 500, fontSize: { xs: '10px', sm: '12px' } }}>
                         {label}
                     </Typography>
@@ -158,8 +159,7 @@ export function StatusBar({
                             width: `${Math.min(overPercentage, 100)}%`,
                             bgcolor: overhealColor,
                             transition: 'width 0.3s ease',
-                            zIndex: 2,
-                            boxShadow: `0 0 8px ${overhealColor}`
+                            zIndex: 2
                         }} />
                     </>
                 ) : (

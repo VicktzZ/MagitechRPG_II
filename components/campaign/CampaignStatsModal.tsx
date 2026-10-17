@@ -23,7 +23,7 @@ import CasinoIcon from '@mui/icons-material/Casino';
 import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
 import SentimentVeryDissatisfiedIcon from '@mui/icons-material/SentimentVeryDissatisfied';
 import MilitaryTechIcon from '@mui/icons-material/MilitaryTech';
-import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
+import AutoStoriesIcon from '@mui/icons-material/AutoStories';
 import { alpha, useTheme } from '@mui/material/styles';
 import { amber, blue, green, grey, orange, purple, red } from '@mui/material/colors';
 import type { CampaignStats, PlayerCampaignStats } from '@models/entities';
@@ -71,7 +71,7 @@ function computeHighlights(players: PlayerCampaignStats[]): Highlight[] {
     pushIf(topBy(p => p.combat.kills), <MilitaryTechIcon />, 'Caçador', p => `${p.combat.kills} abate(s)`, orange[700]);
     pushIf(topBy(p => p.dice.criticalHits), <CasinoIcon />, 'Abençoado pelos Dados', p => `${p.dice.criticalHits} crítico(s)`, amber[600]);
     pushIf(topBy(p => p.dice.criticalFailures), <SentimentVeryDissatisfiedIcon />, 'Azarado', p => `${p.dice.criticalFailures} falha(s) crítica(s)`, grey[600]);
-    pushIf(topBy(p => p.resources.spellsCast), <AutoFixHighIcon />, 'Arcanista', p => `${p.resources.spellsCast} magia(s) conjurada(s)`, purple[500]);
+    pushIf(topBy(p => p.resources.spellsCast), <AutoStoriesIcon />, 'Arcanista', p => `${p.resources.spellsCast} magia(s) conjurada(s)`, purple[500]);
     pushIf(topBy(p => p.dice.testsPassed), <EmojiEventsIcon />, 'Competente', p => `${p.dice.testsPassed} teste(s) passado(s)`, green[700]);
 
     return highlights;

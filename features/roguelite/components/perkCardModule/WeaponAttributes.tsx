@@ -1,11 +1,8 @@
 import { Box, Grid, Typography } from '@mui/material'
 import type { WeaponAttributesProps } from './types'
-import { getAttributeBoxSx, getAttributeLabelSx, attributeValueSx, attributeValueBoldSx } from './styles'
+import { attributeBoxSx, attributeLabelSx, attributeValueSx, attributeValueBoldSx } from './styles'
 
-export function WeaponAttributes({ weapon, borderColor }: WeaponAttributesProps) {
-    const boxSx = getAttributeBoxSx(borderColor)
-    const labelSx = getAttributeLabelSx(borderColor)
-
+export function WeaponAttributes({ weapon }: WeaponAttributesProps) {
     const renderDamageValue = () => {
         const effect = weapon.effect as any
         if (effect?.displayValue) {
@@ -28,8 +25,8 @@ export function WeaponAttributes({ weapon, borderColor }: WeaponAttributesProps)
             <Grid container spacing={0.5} columns={{ xs: 8, sm: 12 }}>
                 {/* Dano */}
                 <Grid item xs={4} sm={4} md={4}>
-                    <Box sx={boxSx}>
-                        <Typography variant="caption" sx={labelSx}>Dano</Typography>
+                    <Box sx={attributeBoxSx}>
+                        <Typography variant="caption" sx={attributeLabelSx}>Dano</Typography>
                         <Typography variant="body2" sx={attributeValueBoldSx}>
                             {renderDamageValue()}
                         </Typography>
@@ -38,8 +35,8 @@ export function WeaponAttributes({ weapon, borderColor }: WeaponAttributesProps)
 
                 {/* Crítico */}
                 <Grid item xs={4} sm={4} md={4}>
-                    <Box sx={boxSx}>
-                        <Typography variant="caption" sx={labelSx}>Crítico</Typography>
+                    <Box sx={attributeBoxSx}>
+                        <Typography variant="caption" sx={attributeLabelSx}>Crítico</Typography>
                         <Typography variant="body2" sx={attributeValueBoldSx}>
                             {renderCritValue()}
                         </Typography>
@@ -48,8 +45,8 @@ export function WeaponAttributes({ weapon, borderColor }: WeaponAttributesProps)
 
                 {/* Tipo */}
                 <Grid item xs={4} sm={4} md={4}>
-                    <Box sx={boxSx}>
-                        <Typography variant="caption" sx={labelSx}>Tipo</Typography>
+                    <Box sx={attributeBoxSx}>
+                        <Typography variant="caption" sx={attributeLabelSx}>Tipo</Typography>
                         <Typography variant="body2" sx={attributeValueSx}>
                             {weapon.kind ?? '-'}
                         </Typography>
@@ -58,8 +55,8 @@ export function WeaponAttributes({ weapon, borderColor }: WeaponAttributesProps)
 
                 {/* Categoria */}
                 <Grid item xs={4} sm={4} md={4}>
-                    <Box sx={boxSx}>
-                        <Typography variant="caption" sx={labelSx}>Categoria</Typography>
+                    <Box sx={attributeBoxSx}>
+                        <Typography variant="caption" sx={attributeLabelSx}>Categoria</Typography>
                         <Typography variant="body2" sx={attributeValueSx}>
                             {String(weapon.categ ?? '-')}
                         </Typography>
@@ -68,8 +65,8 @@ export function WeaponAttributes({ weapon, borderColor }: WeaponAttributesProps)
 
                 {/* Alcance */}
                 <Grid item xs={4} sm={4} md={4}>
-                    <Box sx={boxSx}>
-                        <Typography variant="caption" sx={labelSx}>Alcance</Typography>
+                    <Box sx={attributeBoxSx}>
+                        <Typography variant="caption" sx={attributeLabelSx}>Alcance</Typography>
                         <Typography variant="body2" sx={attributeValueSx}>
                             {weapon.range ?? '-'}
                         </Typography>
@@ -78,8 +75,8 @@ export function WeaponAttributes({ weapon, borderColor }: WeaponAttributesProps)
 
                 {/* Peso */}
                 <Grid item xs={4} sm={4} md={4}>
-                    <Box sx={boxSx}>
-                        <Typography variant="caption" sx={labelSx}>Peso</Typography>
+                    <Box sx={attributeBoxSx}>
+                        <Typography variant="caption" sx={attributeLabelSx}>Peso</Typography>
                         <Typography variant="body2" sx={attributeValueSx}>
                             {weapon.weight != null ? `${weapon.weight} kg` : '-'}
                         </Typography>

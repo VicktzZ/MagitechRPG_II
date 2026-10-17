@@ -101,11 +101,7 @@ export default function SubscriptionPlansPage() {
                     gutterBottom
                     sx={{
                         fontWeight: 'bold',
-                        background: (theme) =>
-                            `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
-                        backgroundClip: 'text',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent'
+                        color: 'text.primary'
                     }}
                 >
           Escolha o Plano Perfeito para Você

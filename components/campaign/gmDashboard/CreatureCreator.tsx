@@ -36,8 +36,8 @@ import {
     ExpandMore,
     Pets as PetsIcon,
     Psychology,
-    AutoFixHigh,
-    Stars,
+    AutoStories,
+    Star,
     ImageOutlined,
     FavoriteBorder,
     BoltOutlined,
@@ -494,8 +494,8 @@ export default function CreatureCreator({ open, onClose, onSave, editingCreature
             >
                 <Tab label="Básico" icon={<PetsIcon />} iconPosition="start" />
                 <Tab label="Habilidades" icon={<Psychology />} iconPosition="start" />
-                <Tab label="Magias" icon={<AutoFixHigh />} iconPosition="start" />
-                <Tab label="Perícias" icon={<Stars />} iconPosition="start" />
+                <Tab label="Magias" icon={<AutoStories />} iconPosition="start" />
+                <Tab label="Perícias" icon={<Star />} iconPosition="start" />
             </Tabs>
 
             <DialogContent sx={{ minHeight: 440 }}>

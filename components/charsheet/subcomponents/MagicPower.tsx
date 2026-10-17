@@ -1,21 +1,11 @@
 import { elementColor as eColor } from '@constants';
 import { useTheme, alpha, Paper, CardContent, Stack, Tooltip, Chip, Typography, Box, Button, IconButton } from '@mui/material';
-import { AutoAwesome, Info, Add, Close, LocalFireDepartment, WaterDrop, Air, Nature, Bolt, Flare } from '@mui/icons-material';
+import { Info, Add, Close } from '@mui/icons-material';
 import { type ReactElement, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { color } from '@themes/tokens';
+import ElementIcon, { resolveElement } from '@components/misc/ElementIcon';
 import type { Power } from '@models/entities';
-
-const elementIcons = {
-    'FOGO': <LocalFireDepartment />,
-    'ÁGUA': <WaterDrop />,
-    'AR': <Air />,
-    'TERRA': <Nature />,
-    'ELETRICIDADE': <Bolt />,
-    'GELO': <Flare sx={{ color: '#A5F2F3' }} />,
-    'LUZ': <Flare />,
-    'ESCURIDÃO': <Flare sx={{ color: '#4A4A4A' }} />,
-    'NEUTRO': <AutoAwesome />
-};
 
 export function MagicPower({
     power,
@@ -36,10 +26,8 @@ export function MagicPower({
     const [ description, setDescription ] = useState<string>(power.description);
     const [ activeTab, setActiveTab ] = useState<'descrição' | 'maestria'>('descrição');
 
-    // Element para cor/ícone
-    const element = power.element.toUpperCase() as any;
-    const elementColor = eColor[element] || theme.palette.primary.main;
-    const elementIcon = elementIcons[element] || <AutoAwesome />;
+    // Elemento para a marca (glifo)
+    const elementColor = eColor[resolveElement(power.element)];
 
     // Trocar entre descrição e maestria
     const handleTabChange = (tab: 'descrição' | 'maestria'): void => {
@@ -61,24 +49,6 @@ export function MagicPower({
         }
     };
 
-    // Efeito de brilho
-    const shineAnimation = {
-        '&::after': {
-            content: '""',
-            position: 'absolute',
-            top: 0,
-            left: '-100%',
-            width: '100%',
-            height: '100%',
-            background: `linear-gradient(90deg, transparent, ${alpha(elementColor, 0.2)}, transparent)`,
-            animation: disabled ? 'none' : 'shine 3s infinite'
-        },
-        '@keyframes shine': {
-            '0%': { left: '-100%' },
-            '100%': { left: '100%' }
-        }
-    };
-
     return (
         <motion.div
             data-id={id}
@@ -88,25 +58,23 @@ export function MagicPower({
             style={{ pointerEvents: 'auto' }}
         >
             <Paper
-                elevation={6}
+                elevation={0}
                 sx={{
                     width: { xs: '100%', sm: '30rem', md: '32rem' },
                     height: { xs: 'none', sm: '35rem', md: '40rem' },
                     position: 'relative',
                     overflow: 'hidden',
                     borderRadius: 2,
-                    background: theme.palette.mode === 'dark'
-                        ? `linear-gradient(135deg, ${alpha(theme.palette.background.paper, 0.9)}, ${alpha(theme.palette.background.default, 0.95)})`
-                        : `linear-gradient(135deg, ${alpha(theme.palette.background.paper, 0.9)}, ${alpha(theme.palette.background.default, 0.95)})`,
-                    border: `1px solid ${alpha(elementColor, theme.palette.mode === 'dark' ? 0.3 : 0.2)}`,
+                    bgcolor: 'background.raised',
+                    border: '1px solid',
+                    borderColor: 'divider',
                     boxSizing: 'border-box',
                     margin: '0 auto',
-                    transition: 'all 0.3s ease',
+                    transition: 'border-color 120ms',
                     ...(!disabled && {
                         '&:hover': {
-                            borderColor: alpha(elementColor, 0.5)
-                        },
-                        ...shineAnimation
+                            borderColor: color.borderStrong
+                        }
                     })
                 }}
             >
@@ -131,26 +99,22 @@ export function MagicPower({
                                 left: 0,
                                 width: '100%',
                                 height: '1px',
-                                background: `linear-gradient(90deg, ${alpha(elementColor, 0.7)}, transparent)`
+                                bgcolor: 'divider'
                             }
                         }}
                     >
                         {/* Badge de element */}
                         <Tooltip title={`Element: ${power.element}`} arrow placement="top">
                             <Chip
-                                icon={elementIcon}
+                                icon={<ElementIcon element={power.element} colored />}
                                 label={power.element}
+                                variant="outlined"
                                 sx={{
-                                    bgcolor: alpha(elementColor, 0.1),
-                                    color: elementColor,
+                                    color: 'text.primary',
+                                    borderColor: 'divider',
                                     borderRadius: '16px',
                                     fontWeight: 600,
-                                    '& .MuiChip-icon': { color: elementColor },
-                                    ...(!disabled && {
-                                        '&:hover': {
-                                            bgcolor: alpha(elementColor, 0.2)
-                                        }
-                                    })
+                                    '& .MuiChip-icon': { color: elementColor }
                                 }}
                             />
                         </Tooltip>
@@ -170,11 +134,7 @@ export function MagicPower({
                                     color: theme.palette.text.primary,
                                     fontSize: { xs: '1.2rem', sm: '1.5rem', md: '1.75rem' },
                                     wordBreak: 'break-word',
-                                    width: '100%',
-                                    ...(!disabled && {
-                                        '&:hover': { color: elementColor }
-                                    }),
-                                    transition: 'color 0.3s ease'
+                                    width: '100%'
                                 }}
                             >
                                 {power.name}
@@ -185,7 +145,7 @@ export function MagicPower({
                     {/* Seção de pré-requisitos */}
                     <Box sx={{ mt: 1 }}>
                         <Stack direction="row" spacing={1} alignItems="baseline" flexWrap="wrap">
-                            <Info fontSize="small" sx={{ color: elementColor }} />
+                            <Info fontSize="small" sx={{ color: 'info.main' }} />
                             <Typography variant="subtitle2" fontWeight="medium" sx={{ fontSize: { xs: '0.875rem', sm: '0.9rem', md: '1rem' } }}>
                                 Pré-requisito: 
                             </Typography>
@@ -217,21 +177,21 @@ export function MagicPower({
                                         minHeight: { xs: '150px', sm: '180px', md: '200px' },
                                         maxHeight: { xs: '200px', sm: '250px', md: '300px' },
                                         overflow: 'auto',
-                                        bgcolor: alpha(theme.palette.background.paper, 0.4),
-                                        borderColor: alpha(elementColor, 0.2),
+                                        bgcolor: 'background.paper',
+                                        borderColor: 'divider',
                                         position: 'relative',
                                         '&::-webkit-scrollbar': {
                                             width: '8px',
                                             borderRadius: '4px'
                                         },
                                         '&::-webkit-scrollbar-track': {
-                                            background: alpha(theme.palette.background.paper, 0.1)
+                                            background: 'transparent'
                                         },
                                         '&::-webkit-scrollbar-thumb': {
-                                            background: alpha(elementColor, 0.3),
+                                            background: color.borderStrong,
                                             borderRadius: '4px',
                                             '&:hover': {
-                                                background: alpha(elementColor, 0.5)
+                                                background: color.inkFaint
                                             }
                                         }
                                     }}
@@ -277,35 +237,27 @@ export function MagicPower({
                                 gap: 1,
                                 justifyContent: { xs: 'center', sm: 'flex-start' },
                                 position: 'relative', // Necessário para o z-index funcionar
-                                zIndex: 5 // Garante que os botões fiquem acima das animações
+                                zIndex: 5
                             }}
                         >
                             <Button
                                 size="small"
                                 onClick={() => handleTabChange('descrição')}
-                                variant={activeTab === 'descrição' ? 'contained' : 'outlined'}
+                                variant="outlined"
+                                color={activeTab === 'descrição' ? 'primary' : 'secondary'}
                                 disabled={disabled}
                                 sx={{
                                     position: 'relative', // Necessário para o z-index funcionar
-                                    zIndex: 10, // Garante que o botão fique acima das animações
+                                    zIndex: 10,
                                     minWidth: { xs: '80px', sm: 0 },
                                     px: 1.5,
                                     py: 0.5,
                                     fontSize: { xs: '0.75rem', sm: '0.8rem', md: '0.875rem' },
-                                    color: activeTab === 'descrição'
-                                        ? element === 'AR' || element === 'NÃO-ELEMENTAL' ? '#111' : '#fff' : elementColor,
-                                    bgcolor: activeTab === 'descrição'
-                                        ? elementColor
-                                        : 'transparent',
-                                    borderColor: alpha(elementColor, 0.5),
-                                    ...(!disabled && {
-                                        '&:hover': {
-                                            bgcolor: activeTab === 'descrição'
-                                                ? elementColor
-                                                : alpha(elementColor, 0.1),
-                                            transform: 'translateY(-2px)',
-                                            boxShadow: `0 2px 8px ${alpha(elementColor, 0.25)}`
-                                        }
+                                    ...(activeTab === 'descrição' && {
+                                        bgcolor: color.amberSubtle,
+                                        borderColor: color.amberLine,
+                                        color: 'primary.main',
+                                        '&:hover': { bgcolor: color.amberSubtle, borderColor: color.amberLine }
                                     })
                                 }}
                             >
@@ -314,29 +266,21 @@ export function MagicPower({
                             <Button
                                 size="small"
                                 onClick={() => handleTabChange('maestria')}
-                                variant={activeTab === 'maestria' ? 'contained' : 'outlined'}
+                                variant="outlined"
+                                color={activeTab === 'maestria' ? 'primary' : 'secondary'}
                                 disabled={disabled}
                                 sx={{
                                     position: 'relative', // Necessário para o z-index funcionar
-                                    zIndex: 10, // Garante que o botão fique acima das animações
+                                    zIndex: 10,
                                     minWidth: { xs: '80px', sm: 0 },
                                     px: 1.5,
                                     py: 0.5,
                                     fontSize: { xs: '0.75rem', sm: '0.8rem', md: '0.875rem' },
-                                    color: activeTab === 'maestria'
-                                        ? element === 'AR' || element === 'NÃO-ELEMENTAL' ? '#111' : '#fff' : elementColor,
-                                    bgcolor: activeTab === 'maestria'
-                                        ? elementColor
-                                        : 'transparent',
-                                    borderColor: alpha(elementColor, 0.5),
-                                    ...(!disabled && {
-                                        '&:hover': {
-                                            bgcolor: activeTab === 'maestria'
-                                                ? elementColor
-                                                : alpha(elementColor, 0.1),
-                                            transform: 'translateY(-2px)',
-                                            boxShadow: `0 2px 8px ${alpha(elementColor, 0.25)}`
-                                        }
+                                    ...(activeTab === 'maestria' && {
+                                        bgcolor: color.amberSubtle,
+                                        borderColor: color.amberLine,
+                                        color: 'primary.main',
+                                        '&:hover': { bgcolor: color.amberSubtle, borderColor: color.amberLine }
                                     })
                                 }}
                             >
@@ -352,17 +296,16 @@ export function MagicPower({
                                         onClick={onIconClick}
                                         size="small"
                                         sx={{
-                                            color: isAdding ? theme.palette.success.main : theme.palette.error.main,
-                                            bgcolor: alpha(isAdding ? theme.palette.success.main : theme.palette.error.main, 0.1),
-                                            border: `1px solid ${alpha(isAdding ? theme.palette.success.main : theme.palette.error.main, 0.2)}`,
+                                            color: isAdding ? theme.palette.primary.main : theme.palette.error.main,
+                                            bgcolor: alpha(isAdding ? theme.palette.primary.main : theme.palette.error.main, 0.1),
+                                            border: `1px solid ${alpha(isAdding ? theme.palette.primary.main : theme.palette.error.main, 0.2)}`,
                                             p: 1,
-                                            zIndex: 10, // Garante que o botão fique acima da animação
+                                            zIndex: 10,
                                             position: 'relative', // Necessário para o z-index funcionar
                                             '&:hover': {
-                                                bgcolor: alpha(isAdding ? theme.palette.success.main : theme.palette.error.main, 0.2),
-                                                transform: 'translateY(-2px)'
+                                                bgcolor: alpha(isAdding ? theme.palette.primary.main : theme.palette.error.main, 0.2)
                                             },
-                                            transition: 'all 0.2s ease'
+                                            transition: 'background-color 120ms'
                                         }}
                                     >
                                         {isAdding ? <Add /> : <Close />}

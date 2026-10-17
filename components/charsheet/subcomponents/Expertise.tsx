@@ -19,6 +19,7 @@ import { useFormContext } from 'react-hook-form';
 import { Casino, Edit, TrendingUp } from '@mui/icons-material';
 import type { Attributes, Expertise as ExpertiseType, Expertises } from '@models';
 import type { Charsheet } from '@models/entities';
+import { color as colorToken } from '@themes/tokens';
 
 interface ExpertiseProps {
     name: keyof Expertises | string;
@@ -52,7 +53,6 @@ export default function Expertise({
     const theme = useTheme();
     const matches = useMediaQuery(theme.breakpoints.down('md'));
     const [ open, setOpen ] = useState<boolean>(false);
-    const [ isHovered, setIsHovered ] = useState<boolean>(false);
     const { getValues } = useFormContext<Charsheet>();
 
     const determinateColor = useCallback((): string => {
@@ -169,25 +169,14 @@ export default function Expertise({
                     <ButtonBase
                         onClick={handleClick}
                         disabled={disabled}
-                        onMouseEnter={() => setIsHovered(true)}
-                        onMouseLeave={() => setIsHovered(false)}
                         sx={{
                             width: '100%',
                             height: matches ? '140px' : '180px',
-                            borderRadius: 2,
-                            transition: 'all 0.3s ease',
-                            transform: isHovered ? 'translateY(-4px)' : 'translateY(0)',
-                            '&:hover': {
-                                transform: 'translateY(-4px)',
-                                boxShadow: theme.shadows[8]
-                            },
-                            '&:active': {
-                                transform: 'translateY(-2px)'
-                            }
+                            borderRadius: 2
                         }}
                     >
                         <Paper
-                            elevation={isHovered ? 8 : 2}
+                            elevation={0}
                             sx={{
                                 width: '100%',
                                 height: '100%',
@@ -203,7 +192,8 @@ export default function Expertise({
                                     : alpha(color, 0.05),
                                 position: 'relative',
                                 overflow: 'hidden',
-                                transition: 'all 0.3s ease',
+                                transition: 'border-color 120ms',
+                                ...(!isEditing && { '&:hover': { borderColor: colorToken.borderStrong } }),
                                 '&::before': {
                                     content: '""',
                                     position: 'absolute',
@@ -211,8 +201,7 @@ export default function Expertise({
                                     left: 0,
                                     right: 0,
                                     height: '4px',
-                                    bgcolor: color,
-                                    transition: 'all 0.3s ease'
+                                    bgcolor: color
                                 }
                             }}
                         >
@@ -229,13 +218,7 @@ export default function Expertise({
                                     <Edit
                                         sx={{
                                             fontSize: '1.2rem',
-                                            color: theme.palette.warning.main,
-                                            animation: 'pulse 2s infinite',
-                                            '@keyframes pulse': {
-                                                '0%': { opacity: 0.5 },
-                                                '50%': { opacity: 1 },
-                                                '100%': { opacity: 0.5 }
-                                            }
+                                            color: theme.palette.warning.main
                                         }}
                                     />
                                 </Box>
@@ -259,8 +242,7 @@ export default function Expertise({
                                     sx={{
                                         fontSize: matches ? '1.8rem' : '2.2rem',
                                         fontWeight: 'bold',
-                                        color,
-                                        textShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                                        color
                                     }}
                                 >
                                     <Typography 
@@ -299,7 +281,6 @@ export default function Expertise({
                                         overflow: 'hidden',
                                         textOverflow: 'ellipsis',
                                         wordBreak: 'break-word',
-                                        textShadow: '0 1px 2px rgba(0,0,0,0.1)',
                                         minHeight: matches ? '32px' : '40px'
                                     }}
                                 >

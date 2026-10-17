@@ -1,4 +1,5 @@
 import { Add, Remove } from '@mui/icons-material';
+import { color } from '@themes/tokens';
 import { Box, Chip, IconButton, Typography, Grid, Paper } from '@mui/material';
 import { type ReactElement, useEffect, useMemo, useState } from 'react';
 import { Controller, useFormContext, useWatch } from 'react-hook-form';
@@ -273,10 +274,9 @@ export default function DynamicAttributes({ system }: DynamicAttributesProps): R
                                         borderRadius: 2,
                                         border: '1px solid',
                                         borderColor: 'divider',
-                                        transition: 'all 0.2s ease',
+                                        transition: 'border-color 120ms',
                                         '&:hover': {
-                                            borderColor: 'primary.main',
-                                            boxShadow: 2
+                                            borderColor: color.borderStrong
                                         }
                                     }}
                                 >

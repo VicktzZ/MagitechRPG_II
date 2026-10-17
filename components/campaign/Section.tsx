@@ -15,10 +15,6 @@ export default function Section({ title, icon, children, action, sx }: {
             sx={{ 
                 p: 3, 
                 borderRadius: 2,
-                transition: 'all 0.3s ease',
-                '&:hover': {
-                    boxShadow: 4
-                },
                 ...sx
             }}
         >

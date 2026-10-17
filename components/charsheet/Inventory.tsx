@@ -368,11 +368,7 @@ export function Inventory (): ReactElement {
                                     size={matches ? 'medium' : 'large'}
                                     sx={{
                                         fontWeight: 'bold',
-                                        px: 3,
-                                        '&:hover': {
-                                            transform: 'translateY(-2px)',
-                                            boxShadow: theme.shadows[6]
-                                        }
+                                        px: 3
                                     }}
                                 >
                                     {matches ? 'Adicionar' : 'Adicionar Item'}

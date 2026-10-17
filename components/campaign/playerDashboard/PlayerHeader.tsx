@@ -10,6 +10,8 @@ import {
     Paper,
     Typography
 } from '@mui/material';
+import { Favorite, Shield, WaterDrop } from '@mui/icons-material';
+import { color } from '@themes/tokens';
 import Image from 'next/image';
 import { StatusBar } from './StatusBar';
 import type { Stats } from '@models';
@@ -119,7 +121,7 @@ export default function PlayerHeader({ avatar }: { avatar: string | undefined })
                         />
                         {charsheet.subclass && (
                             <Chip
-                                label={`✨ ${charsheet.subclass}`}
+                                label={charsheet.subclass}
                                 sx={{
                                     bgcolor: 'rgba(168, 85, 247, 0.2)',
                                     color: '#c4b5fd',
@@ -258,8 +260,8 @@ export default function PlayerHeader({ avatar }: { avatar: string | undefined })
                             label={customSystem ? lpLabel : 'Pontos de Vida (LP)'}
                             current={stats.lp}
                             max={stats.maxLp}
-                            color="#ef4444"
-                            icon="❤️"
+                            color={color.lp}
+                            icon={<Favorite fontSize="inherit" />}
                             onIncrease={(value) => updateStat('lp', value)}
                             onDecrease={(value) => updateStat('lp', -value)}
                         />
@@ -270,8 +272,8 @@ export default function PlayerHeader({ avatar }: { avatar: string | undefined })
                             label={customSystem ? mpLabel : 'Pontos de Mana (MP)'}
                             current={stats.mp}
                             max={stats.maxMp}
-                            color="#3b82f6"
-                            icon="✨"
+                            color={color.mp}
+                            icon={<WaterDrop fontSize="inherit" />}
                             onIncrease={(value) => updateStat('mp', value)}
                             onDecrease={(value) => updateStat('mp', -value)}
                         />
@@ -282,8 +284,8 @@ export default function PlayerHeader({ avatar }: { avatar: string | undefined })
                             label={customSystem ? apLabel : 'Pontos de Armadura (AP)'}
                             current={stats.ap}
                             max={stats.maxAp}
-                            color="#eab308"
-                            icon="🛡️"
+                            color={color.ap}
+                            icon={<Shield fontSize="inherit" />}
                             onIncrease={(value) => updateStat('ap', value)}
                             onDecrease={(value) => updateStat('ap', -value)}
                         />

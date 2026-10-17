@@ -17,6 +17,7 @@ import {
 import { useRouter } from 'next/navigation';
 import type { SubscriptionPlan } from '@enums/subscriptionEnum';
 import { SubscriptionPlanMetadata } from '@enums/subscriptionEnum';
+import { color } from '@themes/tokens';
 
 interface FeatureLockedCardProps {
   requiredPlan: SubscriptionPlan;
@@ -53,16 +54,14 @@ export function FeatureLockedCard({
             sx={{
                 height: '100%',
                 position: 'relative',
-                border: 2,
-                borderColor: planMetadata.color,
-                background: (theme) =>
-                    `linear-gradient(135deg, ${alpha(theme.palette.background.paper, 0.9)} 0%, ${alpha(planMetadata.color, 0.1)} 100%)`,
+                border: 1,
+                borderColor: 'divider',
+                bgcolor: 'background.paper',
                 cursor: 'pointer',
-                transition: 'all 0.3s ease',
+                transition: 'border-color 120ms, background-color 120ms',
                 '&:hover': {
-                    transform: 'translateY(-4px)',
-                    boxShadow: 6,
-                    borderColor: planMetadata.color
+                    borderColor: color.borderStrong,
+                    bgcolor: 'background.raised'
                 }
             }}
             onClick={handleClick}
@@ -101,7 +100,7 @@ export function FeatureLockedCard({
                             top: '50%',
                             left: '50%',
                             transform: 'translate(-50%, -50%)',
-                            bgcolor: 'rgba(0,0,0,0.7)',
+                            bgcolor: alpha(color.canvas, 0.7),
                             borderRadius: '50%',
                             p: 2
                         }}
@@ -160,14 +159,7 @@ export function FeatureLockedCard({
                         e.stopPropagation();
                         handleClick();
                     }}
-                    sx={{
-                        bgcolor: planMetadata.color,
-                        fontWeight: 'bold',
-                        '&:hover': {
-                            bgcolor: planMetadata.color,
-                            filter: 'brightness(0.9)'
-                        }
-                    }}
+                    sx={{ fontWeight: 'bold' }}
                 >
           Desbloquear Agora
                 </Button>

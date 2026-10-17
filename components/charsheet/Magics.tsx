@@ -8,8 +8,7 @@ import { type CharsheetDTO } from '@models/dtos';
 import type { Spell } from '@models/entities';
 import {
     AddCircle,
-    AutoAwesome,
-    AutoFixHigh,
+    AutoStories,
     Close,
     EmojiSymbols,
     FilterList,
@@ -204,10 +203,6 @@ const Spells = memo(() => {
                         damping: 30,
                         delay: Math.random() * 0.1 // Efeito cascata sutil
                     }}
-                    whileHover={{
-                        y: -5,
-                        transition: { duration: 0.2 }
-                    }}
                 >
                     <Magic
                         as='magic-spell'
@@ -248,7 +243,7 @@ const Spells = memo(() => {
                         gap: '1rem'
                     }}
                 >
-                    <AutoAwesome
+                    <AutoStories
                         sx={{
                             fontSize: '3rem',
                             opacity: 0.4,
@@ -333,27 +328,11 @@ const Spells = memo(() => {
                     p: 3,
                     mb: 2,
                     borderRadius: 2,
-                    background: `linear-gradient(135deg, ${alpha(theme.palette.background.paper, 0.9)}, ${alpha(theme.palette.background.paper, 0.98)})`,
-                    backdropFilter: 'blur(10px)',
-                    borderBottom: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+                    bgcolor: 'background.paper',
                     position: 'relative',
                     overflow: 'hidden'
                 }}
             >
-                {/* Efeito decorativo */}
-                <Box
-                    sx={{
-                        position: 'absolute',
-                        right: -20,
-                        top: -20,
-                        width: 200,
-                        height: 200,
-                        borderRadius: '50%',
-                        background: `radial-gradient(circle, ${alpha(theme.palette.primary.main, 0.1)} 0%, transparent 70%)`,
-                        zIndex: 0
-                    }}
-                />
-
                 {/* Header Principal */}
                 <Stack
                     direction="row"
@@ -377,7 +356,7 @@ const Spells = memo(() => {
                                 }
                             }}
                         >
-                            <AutoFixHigh
+                            <AutoStories
                                 sx={{
                                     fontSize: '2rem',
                                     color: theme.palette.primary.main
@@ -389,8 +368,7 @@ const Spells = memo(() => {
                                 fontFamily={font.display}
                                 variant={isMobile ? 'h5' : 'h4'}
                                 sx={{
-                                    lineHeight: 1,
-                                    textShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                                    lineHeight: 1
                                 }}
                             >
                                 Magias
@@ -437,9 +415,7 @@ const Spells = memo(() => {
                                     bgcolor: alpha(theme.palette.primary.main, 0.1),
                                     border: `1px solid ${alpha(theme.palette.primary.main, 0.5)}`,
                                     '&:hover': {
-                                        bgcolor: alpha(theme.palette.primary.main, 0.15),
-                                        transform: 'scale(1.05)',
-                                        transition: 'all 0.2s'
+                                        bgcolor: alpha(theme.palette.primary.main, 0.15)
                                     },
                                     '&:disabled': {
                                         opacity: 0.5,

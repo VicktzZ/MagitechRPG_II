@@ -12,8 +12,8 @@ import {
     FormHelperText,
     Button
 } from '@mui/material'
-import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh'
-import { font } from '@themes/tokens'
+import StarIcon from '@mui/icons-material/Star'
+import { color, font } from '@themes/tokens'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
     useState, 
@@ -105,15 +105,10 @@ export default function Skills(): ReactElement {
             minWidth: 80,
             fontSize: '0.8rem',
             fontWeight: 500,
-            transition: 'all 0.2s ease-in-out',
+            transition: 'background-color 120ms, color 120ms',
             '&:hover': {
-                transform: 'translateY(-2px)',
-                boxShadow: 2,
                 backgroundColor: 'primary.main',
                 color: 'primary.contrastText'
-            },
-            '&.MuiChip-clickable:active': {
-                transform: 'translateY(0)'
             },
             [theme.breakpoints.down('md')]: {
                 height: 32,
@@ -178,21 +173,14 @@ export default function Skills(): ReactElement {
                     textAlign: 'center',
                     minHeight: 120,
                     height: '100%',
-                    transition: 'all 0.2s ease-in-out',
-                    backgroundColor: 'background.paper',
+                    transition: 'border-color 120ms, background-color 120ms',
+                    backgroundColor: 'background.raised',
                     border: '1px solid',
                     borderColor: 'divider',
                     position: 'relative',
                     overflow: 'hidden',
                     '&:hover': {
-                        transform: 'translateY(-3px)',
-                        boxShadow: 2,
-                        borderColor: 'primary.main',
-                        backgroundColor: 'background.default',
-                        zIndex: 1
-                    },
-                    '&:active': {
-                        transform: 'translateY(-1px)'
+                        borderColor: color.borderStrong
                     },
                     '&::before': {
                         content: '""',
@@ -559,7 +547,7 @@ export default function Skills(): ReactElement {
                                                     variant="outlined"
                                                     size="small"
                                                     color="secondary"
-                                                    startIcon={<AutoFixHighIcon />}
+                                                    startIcon={<StarIcon />}
                                                     onClick={() => setShowMasteryDescription(prev => !prev)}
                                                     sx={{
                                                         borderRadius: 4,

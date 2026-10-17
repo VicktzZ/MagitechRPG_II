@@ -38,9 +38,7 @@ const ChatWrapper = memo(function ChatWrapper({
             // o que elimina o travamento da animação com o chat cheio de mensagens.
             transform: `translateX(${isChatOpen ? 0 : 400}px)`,
             willChange: 'transform',
-            background: theme.palette.mode === 'dark'
-                ? 'linear-gradient(145deg, #1e293b 0%, #334155 100%)'
-                : 'linear-gradient(145deg, #f8fafc 0%, #e2e8f0 100%)',
+            bgcolor: 'background.paper',
             transition: 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
             borderLeft: '2px solid',
             borderColor: 'primary.main',
@@ -64,15 +62,13 @@ const ChatWrapper = memo(function ChatWrapper({
                         onClick={() => setIsChatOpen(!isChatOpen)}
                         sx={{
                             bgcolor: 'primary.main',
-                            color: 'white',
+                            color: 'primary.contrastText',
                             border: '2px solid',
                             borderColor: 'primary.main',
                             width: 50,
                             height: 50,
                             '&:hover': {
-                                bgcolor: 'primary.dark',
-                                transform: 'scale(1.1)',
-                                boxShadow: 4
+                                bgcolor: 'primary.dark'
                             },
                             transition: 'all 0.3s ease'
                         }}

@@ -17,7 +17,6 @@ import BoltIcon from '@mui/icons-material/Bolt';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import PetsIcon from '@mui/icons-material/Pets';
 import SportsKabaddiIcon from '@mui/icons-material/SportsKabaddi';
-import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import FlagIcon from '@mui/icons-material/Flag';
 import ReplayIcon from '@mui/icons-material/Replay';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
@@ -248,7 +247,7 @@ export default function GMActions(): ReactElement {
                     '&:hover': {
                         borderColor: 'primary.dark',
                         bgcolor: 'primary.main',
-                        color: 'white'
+                        color: 'primary.contrastText'
                     }
                 }}
             >
@@ -379,7 +378,7 @@ export default function GMActions(): ReactElement {
 
                 <MenuItem onClick={openEffectsCatalog} disabled={!isUserGM}>
                     <ListItemIcon>
-                        <AutoFixHighIcon fontSize="small" sx={{ color: blue[500] }} />
+                        <BoltIcon fontSize="small" sx={{ color: blue[500] }} />
                     </ListItemIcon>
                     <MenuItemText>Efeitos de Combate</MenuItemText>
                 </MenuItem>

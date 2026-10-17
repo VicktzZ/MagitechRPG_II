@@ -25,7 +25,7 @@ function formatModifier(mod: CombatEffectModifier): string {
     case 'damage_vulnerability':  return `💥 vulnerável${ele}${val ? ` ${val}` : ''}`
     case 'damage_dealt_bonus':    return `⚔️ dano causado ${val || '+'}`
     case 'damage_dealt_penalty':  return `⚔️ dano causado ${val || '-'}`
-    case 'advantage':             return `✨ vantagem${tgt}`
+    case 'advantage':             return `vantagem${tgt}`
     case 'disadvantage':          return `⚠️ desvantagem${tgt}`
     case 'skip_turn':             return '⏭️ pula turno'
     case 'no_healing':            return '🚫 cura bloqueada'

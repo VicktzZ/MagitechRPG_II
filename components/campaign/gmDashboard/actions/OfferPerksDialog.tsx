@@ -32,7 +32,7 @@ import CardGiftcardIcon from '@mui/icons-material/CardGiftcard';
 import LinkIcon from '@mui/icons-material/Link';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
-import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
+import StarIcon from '@mui/icons-material/Star';
 import { purple } from '@mui/material/colors';
 import { useSnackbar } from 'notistack';
 import { campaignService } from '@services';
@@ -322,7 +322,7 @@ export default function OfferPerksDialog({
                             </Button>
                         </Box>
                         <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
-                            <AutoAwesomeIcon sx={{ fontSize: '0.9rem', color: purple[400] }} />
+                            <StarIcon sx={{ fontSize: '0.9rem', color: purple[400] }} />
                             O contador mostra as vantagens que cada jogador já recebeu nesta campanha — clique para ver quais.
                         </Typography>
                         <Box sx={{ maxHeight: 300, overflow: 'auto', border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
@@ -353,7 +353,7 @@ export default function OfferPerksDialog({
                                                 />
                                                 <Tooltip title={perks.length > 0 ? 'Ver vantagens recebidas' : 'Nenhuma vantagem recebida ainda'}>
                                                     <Chip
-                                                        icon={<AutoAwesomeIcon sx={{ fontSize: '0.85rem !important' }} />}
+                                                        icon={<StarIcon sx={{ fontSize: '0.85rem !important' }} />}
                                                         label={perks.length}
                                                         size="small"
                                                         onClick={(e) => {

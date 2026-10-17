@@ -4,7 +4,7 @@
 import { useCampaignContext, useCampaignCurrentCharsheetContext } from '@contexts';
 import {
     AttachMoney,
-    AutoAwesome,
+    AutoStories,
     Inventory2,
     Person,
     SelfImprovement,
@@ -295,8 +295,7 @@ export default function CampaignPlayerDashboard(): ReactElement | null {
                 <Backdrop 
                     open={true}
                     sx={{ 
-                        zIndex: (theme) => theme.zIndex.drawer + 1,
-                        backdropFilter: 'blur(3px)'
+                        zIndex: (theme) => theme.zIndex.drawer + 1
                     }}
                 >
                     <Stack spacing={2} alignItems="center">
@@ -339,7 +338,7 @@ export default function CampaignPlayerDashboard(): ReactElement | null {
                                 <MoneyAndAmmo />
                             </Section>
                             {showSpells && (
-                                <Section title="Magias" icon={<AutoAwesome sx={{ color: 'secondary.main' }} />} sx={{ width: { xs: '100%', md: '60%' } }}>
+                                <Section title="Magias" icon={<AutoStories sx={{ color: 'secondary.main' }} />} sx={{ width: { xs: '100%', md: '60%' } }}>
                                     <SpellsSection />
                                 </Section>
                             )}

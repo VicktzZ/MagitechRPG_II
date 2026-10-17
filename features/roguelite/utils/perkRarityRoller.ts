@@ -444,6 +444,6 @@ export function iconForRarity(rarity: RarityType) {
     case 'Amaldiçoado':
         return 'Whatshot'
     default:
-        return 'AutoAwesome'
+        return 'Star'
     }
 }

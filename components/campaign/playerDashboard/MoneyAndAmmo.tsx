@@ -175,16 +175,9 @@ export default function MoneyAndAmmo(): ReactElement {
                         sx={{
                             p: 3,
                             borderRadius: 3,
-                            background: theme.palette.mode === 'dark'
-                                ? 'linear-gradient(145deg, #1e293b 0%, #334155 100%)'
-                                : 'linear-gradient(145deg, #f8fafc 0%, #e2e8f0 100%)',
+                            bgcolor: 'background.paper',
                             border: '1px solid',
-                            borderColor: 'divider',
-                            transition: 'all 0.3s ease',
-                            '&:hover': {
-                                boxShadow: 4,
-                                transform: 'translateY(-2px)'
-                            }
+                            borderColor: 'divider'
                         }}
                     >
                         <Stack spacing={2}>
@@ -280,16 +273,9 @@ export default function MoneyAndAmmo(): ReactElement {
                     sx={{ 
                         p: 3, 
                         borderRadius: 3,
-                        background: theme.palette.mode === 'dark'
-                            ? 'linear-gradient(145deg, #1e293b 0%, #334155 100%)'
-                            : 'linear-gradient(145deg, #f8fafc 0%, #e2e8f0 100%)',
+                        bgcolor: 'background.paper',
                         border: '1px solid',
-                        borderColor: 'divider',
-                        transition: 'all 0.3s ease',
-                        '&:hover': {
-                            boxShadow: 4,
-                            transform: 'translateY(-2px)'
-                        }
+                        borderColor: 'divider'
                     }}
                 >
                     <Stack spacing={3}>
@@ -465,8 +451,7 @@ export default function MoneyAndAmmo(): ReactElement {
                                     mb: 2,
                                     '& .MuiLinearProgress-bar': {
                                         bgcolor: ammoConfig.color,
-                                        borderRadius: 8,
-                                        boxShadow: `0 0 10px ${ammoConfig.color}40`
+                                        borderRadius: 8
                                     }
                                 }}
                             />

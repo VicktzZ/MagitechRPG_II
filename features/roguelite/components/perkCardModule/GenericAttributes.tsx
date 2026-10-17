@@ -1,6 +1,6 @@
 import { Box, Grid, Typography } from '@mui/material'
 import type { GenericAttributesProps } from './types'
-import { getAttributeBoxSx, getAttributeLabelSx, attributeValueSx } from './styles'
+import { attributeBoxSx, attributeLabelSx, attributeValueSx } from './styles'
 
 interface ExpertiseBonusSectionProps {
     borderColor: string
@@ -29,36 +29,19 @@ function ExpertiseBonusSection({ borderColor, bonusValue }: ExpertiseBonusSectio
                     px: 2,
                     py: 1.5,
                     borderRadius: 2,
-                    border: `3px solid ${borderColor}`,
-                    bgcolor: `${borderColor}20`,
+                    border: '1px solid',
+                    borderColor,
+                    bgcolor: 'background.paper',
                     textAlign: 'center',
-                    mb: 1,
-                    boxShadow: `0 0 20px ${borderColor}40, inset 0 0 20px ${borderColor}15`,
-                    position: 'relative',
-                    overflow: 'hidden',
-                    '&::before': {
-                        content: '""',
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        height: '2px',
-                        background: `linear-gradient(90deg, transparent, ${borderColor}, transparent)`,
-                        animation: 'shine 2s infinite'
-                    },
-                    '@keyframes shine': {
-                        '0%': { transform: 'translateX(-100%)' },
-                        '100%': { transform: 'translateX(100%)' }
-                    }
+                    mb: 1
                 }}
             >
                 <Typography
                     variant="h4"
                     sx={{
-                        color: '#ffffff',
+                        color: 'text.primary',
                         fontWeight: 900,
                         fontSize: '2rem',
-                        textShadow: `0 0 20px ${borderColor}, 0 0 40px ${borderColor}80`,
                         letterSpacing: 1
                     }}
                 >
@@ -67,7 +50,7 @@ function ExpertiseBonusSection({ borderColor, bonusValue }: ExpertiseBonusSectio
                 <Typography
                     variant="caption"
                     sx={{
-                        color: '#e0e0e0',
+                        color: 'text.secondary',
                         fontSize: '0.7rem',
                         fontWeight: 600,
                         mt: 0.5,
@@ -84,9 +67,6 @@ function ExpertiseBonusSection({ borderColor, bonusValue }: ExpertiseBonusSectio
 }
 
 export function GenericAttributes({ attributes, borderColor }: GenericAttributesProps) {
-    const boxSx = getAttributeBoxSx(borderColor)
-    const labelSx = getAttributeLabelSx(borderColor)
-
     const bonusAttr = attributes.find(attr => attr.label === 'Bônus')
     const otherAttrs = attributes.filter(attr => attr.label !== 'Bônus')
 
@@ -101,8 +81,8 @@ export function GenericAttributes({ attributes, borderColor }: GenericAttributes
                 <Grid container spacing={0.5} columns={{ xs: 8, sm: 12 }}>
                     {otherAttrs.map((attr, i) => (
                         <Grid key={i} item xs={4} sm={4} md={4}>
-                            <Box sx={boxSx}>
-                                <Typography variant="caption" sx={labelSx}>
+                            <Box sx={attributeBoxSx}>
+                                <Typography variant="caption" sx={attributeLabelSx}>
                                     {attr.label}
                                 </Typography>
                                 <Typography variant="body2" sx={attributeValueSx}>

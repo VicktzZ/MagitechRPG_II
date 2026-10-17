@@ -21,7 +21,21 @@
       "plugin:prettier/recommended",
       "next/core-web-vitals"
   ],
-  "overrides": [],
+  "overrides": [
+      {
+          "files": [
+              "themes/**",
+              "scripts/**",
+              "**/__tests__/**",
+              "**/*.test.ts",
+              "components/misc/elementGlyphs.ts",
+              "app/grimoire/pdf/**"
+          ],
+          "rules": {
+              "no-restricted-syntax": "off"
+          }
+      }
+  ],
   "settings": {
       "react": {
           "version": "18.2"
@@ -145,6 +159,41 @@
       "quotes": [
           "error",
           "single"
+      ],
+      "no-restricted-syntax": [
+          "warn",
+          {
+              "selector": "Literal[value=/#[0-9a-fA-F]{3,8}\\b/], TemplateElement[value.raw=/#[0-9a-fA-F]{3,8}\\b/]",
+              "message": "Cor solta: use um token de themes/tokens.ts ou o tema (primary.main, background.paper, text.secondary...)."
+          },
+          {
+              "selector": "Literal[value=/\\brgba?\\(/], TemplateElement[value.raw=/\\brgba?\\(/]",
+              "message": "rgba solto: use um token de themes/tokens.ts ou alpha() de uma cor do tema."
+          },
+          {
+              "selector": "Literal[value=/(linear|radial|conic)-gradient\\(/], TemplateElement[value.raw=/(linear|radial|conic)-gradient\\(/]",
+              "message": "Gradiente decorativo é proibido no design system: use uma superfície plana (background.paper ou background.raised)."
+          },
+          {
+              "selector": "Literal[value=/\\binfinite\\b/], TemplateElement[value.raw=/\\binfinite\\b/]",
+              "message": "Animação infinita é proibida no design system (brilho, pulso e shine): transições curtas, uma vez só."
+          },
+          {
+              "selector": "Literal[value=/translateY\\(-[0-9.]+(px|rem|em)\\)/], TemplateElement[value.raw=/translateY\\(-[0-9.]+(px|rem|em)\\)/]",
+              "message": "Cartão que sobe no hover é proibido: no hover, só a borda muda (border-strong)."
+          },
+          {
+              "selector": "Property[key.name='backdropFilter']",
+              "message": "Vidro desfocado só em camadas flutuantes; fora delas use uma superfície sólida."
+          },
+          {
+              "selector": "Property[key.name=/^(boxShadow|textShadow)$/][value.type=/^(Literal|TemplateLiteral)$/][value.value!='none']",
+              "message": "Sem brilho nem sombra solta: só a camada flutuante tem sombra (theme.shadows ou shadow.overlay de themes/tokens.ts)."
+          },
+          {
+              "selector": "ImportSpecifier[imported.name=/^(AutoAwesome|AutoFixHigh|Stars|Flare)$/], ImportDeclaration[source.value=/icons-material.(AutoAwesome|AutoFixHigh|Stars|Flare)$/]",
+              "message": "O ícone de faíscas não é marca de magia: use <ElementIcon element=... /> de components/misc/ElementIcon."
+          }
       ]
   }
 }
