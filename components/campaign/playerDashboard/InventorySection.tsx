@@ -815,8 +815,7 @@ export default function InventorySection(): ReactElement {
                                     right: 0,
                                     height: '100%',
                                     bgcolor: `${red[500]}30`,
-                                    borderRadius: 4,
-                                    animation: 'pulse 2s ease-in-out infinite'
+                                    borderRadius: 4
                                 }}
                             />
                         )}
@@ -910,13 +909,6 @@ export default function InventorySection(): ReactElement {
                     )}
                 </Box>
             </Paper>
-
-            <style>{`
-                @keyframes pulse {
-                    0%, 100% { opacity: 0.3; }
-                    50% { opacity: 0.6; }
-                }
-            `}</style>
 
             {/* Modal de Doação */}
             {donationModal.open && donationModal.item && (

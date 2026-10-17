@@ -13,7 +13,6 @@ import {
     Tooltip,
     IconButton,
     Collapse,
-    useTheme,
     Badge
 } from '@mui/material';
 import {
@@ -21,7 +20,7 @@ import {
     ExpandLess,
     Star,
     Shield,
-    AutoAwesome,
+    AutoStories,
     EmojiEvents,
     Whatshot
 } from '@mui/icons-material';
@@ -44,7 +43,7 @@ function SkillFilterChip({ label , selected, onClick }: SkillFilterChipProps) {
         case SkillType.CLASS:
             return { color: green[600], bg: green[100], icon: Shield };
         case SkillType.LINEAGE:
-            return { color: purple[600], bg: purple[100], icon: AutoAwesome };
+            return { color: purple[600], bg: purple[100], icon: AutoStories };
         case SkillType.POWERS:
             return { color: red[600], bg: red[100], icon: Whatshot };
         case SkillType.BONUS:
@@ -71,9 +70,7 @@ function SkillFilterChip({ label , selected, onClick }: SkillFilterChipProps) {
                 transition: 'all 0.2s ease',
                 '&:hover': {
                     bgcolor: config.bg,
-                    color: config.color,
-                    transform: 'translateY(-1px)',
-                    boxShadow: `0 4px 8px ${config.color}40`
+                    color: config.color
                 }
             }}
         />
@@ -87,7 +84,6 @@ interface SkillsSectionProps {
 
 export default function SkillsSection({ selectedSkillType, setSelectedSkillType }: SkillsSectionProps): ReactElement {
     const { charsheet } = useCampaignCurrentCharsheetContext();
-    const theme = useTheme();
     
     const filteredSkills = selectedSkillType === SkillType.ALL
         ? Object.values(charsheet.skills).flat()
@@ -124,16 +120,9 @@ export default function SkillsSection({ selectedSkillType, setSelectedSkillType 
                 sx={{ 
                     p: 3, 
                     borderRadius: 3,
-                    background: theme.palette.mode === 'dark'
-                        ? 'linear-gradient(145deg, #1e293b 0%, #334155 100%)'
-                        : 'linear-gradient(145deg, #f8fafc 0%, #e2e8f0 100%)',
+                    bgcolor: 'background.paper',
                     border: '1px solid',
-                    borderColor: 'divider',
-                    transition: 'all 0.3s ease',
-                    '&:hover': {
-                        boxShadow: 4,
-                        transform: 'translateY(-2px)'
-                    }
+                    borderColor: 'divider'
                 }}
             >
                 <Stack spacing={3}>
@@ -176,9 +165,7 @@ export default function SkillsSection({ selectedSkillType, setSelectedSkillType 
                                 sx={{
                                     bgcolor: blue[600],
                                     '&:hover': {
-                                        bgcolor: blue[700],
-                                        transform: 'translateY(-1px)',
-                                        boxShadow: 3
+                                        bgcolor: blue[700]
                                     }
                                 }}
                             >
@@ -268,12 +255,11 @@ export default function SkillsSection({ selectedSkillType, setSelectedSkillType 
                                             sx={{ 
                                                 p: 2.5, 
                                                 borderRadius: 2,
+                                                bgcolor: 'background.raised',
                                                 border: '1px solid',
                                                 borderColor: 'divider',
-                                                transition: 'all 0.3s ease',
+                                                transition: 'border-color 120ms',
                                                 '&:hover': {
-                                                    transform: 'translateY(-4px)',
-                                                    boxShadow: 4,
                                                     borderColor: getSkillTypeColor(selectedSkillType) + '60'
                                                 }
                                             }}

@@ -104,8 +104,7 @@ export default function CharacterInfo({ avatar }: CharacterInfoProps): ReactElem
                             width: { xs: 80, md: 100 }, 
                             height: { xs: 80, md: 100 },
                             border: '3px solid',
-                            borderColor: 'primary.main',
-                            boxShadow: 3
+                            borderColor: 'primary.main'
                         }}
                     />
                     <Stack spacing={2} flex={1} alignItems={{ xs: 'center', sm: 'flex-start' }}>
@@ -114,9 +113,7 @@ export default function CharacterInfo({ avatar }: CharacterInfoProps): ReactElem
                             sx={{ 
                                 fontWeight: 700,
                                 textAlign: { xs: 'center', sm: 'left' },
-                                background: 'linear-gradient(45deg, #667eea 30%, #764ba2 90%)',
-                                WebkitBackgroundClip: 'text',
-                                WebkitTextFillColor: 'transparent'
+                                color: 'text.primary'
                             }}
                         >
                             {charsheet.name}

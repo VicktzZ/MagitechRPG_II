@@ -146,11 +146,7 @@ const MessageList = memo(forwardRef<HTMLDivElement, MessageListProps>(function M
                                                 : 'divider',
                                         opacity: msg.isPending ? 0.6 : 1,
                                         transition: 'all 0.3s ease',
-                                        position: 'relative',
-                                        '&:hover': {
-                                            transform: 'translateY(-1px)',
-                                            boxShadow: 3
-                                        }
+                                        position: 'relative'
                                     }}
                                 >
                                     {/* Header da Mensagem */}

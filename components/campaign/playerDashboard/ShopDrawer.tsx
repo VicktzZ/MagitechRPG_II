@@ -188,7 +188,7 @@ export default function ShopDrawer(): ReactElement | null {
             return { bg: purple[100], color: purple[800], label: '⚡ Habilidade' };
         case 'SPELL':
         case 'MAGIA': 
-            return { bg: orange[100], color: orange[800], label: `✨ Magia${spellLevel ? ` Nv.${spellLevel}` : ''}` };
+            return { bg: orange[100], color: orange[800], label: `Magia${spellLevel ? ` Nv.${spellLevel}` : ''}` };
         case 'UPGRADE': 
             return { bg: green[100], color: green[800], label: '🔧 Acessório' };
         default: 
@@ -233,10 +233,8 @@ export default function ShopDrawer(): ReactElement | null {
                             height: 56,
                             bgcolor: orange[500],
                             color: 'white',
-                            boxShadow: 3,
                             '&:hover': {
-                                bgcolor: orange[600],
-                                transform: 'scale(1.1)'
+                                bgcolor: orange[600]
                             },
                             transition: 'all 0.2s ease'
                         }}
@@ -345,8 +343,7 @@ export default function ShopDrawer(): ReactElement | null {
                                             opacity: canBuy ? 1 : 0.7,
                                             transition: 'all 0.2s ease',
                                             '&:hover': canBuy ? {
-                                                borderColor: orange[300],
-                                                boxShadow: 2
+                                                borderColor: orange[300]
                                             } : {}
                                         }}
                                     >

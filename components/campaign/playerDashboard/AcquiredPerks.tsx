@@ -1,7 +1,7 @@
 'use client';
 
 import { useCampaignContext, useCampaignCurrentCharsheetContext } from '@contexts';
-import { AutoAwesome, ExpandLess, ExpandMore } from '@mui/icons-material';
+import { ExpandLess, ExpandMore, Star } from '@mui/icons-material';
 import {
     Badge,
     Box,
@@ -62,14 +62,9 @@ export default function AcquiredPerks() {
                 minWidth: expanded ? 280 : 'auto',
                 maxWidth: 320,
                 maxHeight: expanded ? '60vh' : 'auto',
-                bgcolor: theme.palette.mode === 'dark' 
-                    ? 'rgba(30, 30, 40, 0.95)' 
-                    : 'rgba(255, 255, 255, 0.95)',
-                backdropFilter: 'blur(10px)',
+                bgcolor: 'background.overlay',
                 border: '1px solid',
-                borderColor: theme.palette.mode === 'dark'
-                    ? 'rgba(255, 255, 255, 0.1)'
-                    : 'rgba(0, 0, 0, 0.1)',
+                borderColor: 'divider',
                 transition: 'all 0.3s ease'
             }}
         >
@@ -92,7 +87,7 @@ export default function AcquiredPerks() {
                     color="primary"
                     max={99}
                 >
-                    <AutoAwesome 
+                    <Star 
                         sx={{ 
                             color: 'primary.main',
                             fontSize: '1.3rem'
@@ -157,8 +152,7 @@ export default function AcquiredPerks() {
                                             '&:hover': {
                                                 bgcolor: theme.palette.mode === 'dark'
                                                     ? 'rgba(255, 255, 255, 0.1)'
-                                                    : 'rgba(0, 0, 0, 0.06)',
-                                                transform: 'translateX(2px)'
+                                                    : 'rgba(0, 0, 0, 0.06)'
                                             }
                                         }}
                                     >

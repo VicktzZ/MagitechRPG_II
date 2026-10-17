@@ -37,6 +37,7 @@ import ScienceIcon from '@mui/icons-material/Science';
 import SavingsIcon from '@mui/icons-material/Savings';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import TimerIcon from '@mui/icons-material/Timer';
+import { color } from '@themes/tokens';
 import { useSnackbar } from 'notistack';
 import { useCampaignContext } from '@contexts';
 import { NumberField } from '@components/misc';
@@ -346,8 +347,8 @@ export default function WidgetManagerDialog({ open, onClose, initialWidgetId }: 
                                     p: 2,
                                     height: '100%',
                                     cursor: 'pointer',
-                                    transition: 'all 0.2s ease',
-                                    '&:hover': { borderColor: 'primary.main', boxShadow: 2 }
+                                    transition: 'border-color 120ms, background-color 120ms',
+                                    '&:hover': { bgcolor: 'background.raised', borderColor: color.borderStrong }
                                 }}
                             >
                                 <Typography fontSize="1.8rem" lineHeight={1} mb={0.5}>{info.icon}</Typography>

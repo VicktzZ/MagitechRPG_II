@@ -34,6 +34,7 @@ import WhatshotIcon from '@mui/icons-material/Whatshot';
 import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
 import SkipNextIcon from '@mui/icons-material/SkipNext';
 import { red, green, blue, orange, grey, yellow } from '@mui/material/colors';
+import { color } from '@themes/tokens';
 import { useSnackbar } from 'notistack';
 import { useCampaignContext } from '@contexts';
 import { useSession } from 'next-auth/react';
@@ -497,10 +498,10 @@ function CombatStatus({
                                                                 bgcolor: isDarkMode ? 'rgba(255,255,255,0.1)' : grey[300],
                                                                 '& .MuiLinearProgress-bar': {
                                                                     bgcolor: lpPercent > 50 
-                                                                        ? green[500] 
+                                                                        ? color.success 
                                                                         : lpPercent > 25 
-                                                                            ? orange[500] 
-                                                                            : red[500]
+                                                                            ? color.warning 
+                                                                            : color.lp
                                                                 }
                                                             }}
                                                         />
@@ -521,7 +522,7 @@ function CombatStatus({
                                                                     borderRadius: 1,
                                                                     bgcolor: isDarkMode ? 'rgba(255,255,255,0.1)' : grey[300],
                                                                     '& .MuiLinearProgress-bar': {
-                                                                        bgcolor: blue[500]
+                                                                        bgcolor: color.mp
                                                                     }
                                                                 }}
                                                             />

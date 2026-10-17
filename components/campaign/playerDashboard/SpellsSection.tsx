@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 'use client'
 
-import { elementColor } from '@constants';
+import ElementIcon from '@components/misc/ElementIcon';
 import { useCampaignCurrentCharsheetContext, useCampaignContext } from '@contexts';
 import { useChatContext } from '@contexts/chatContext';
 import { postCampaignStats } from '@utils/campaignStatsClient';
@@ -20,18 +20,9 @@ import { campaignService } from '@services';
 import { useSnackbar } from 'notistack';
 import { useSession } from 'next-auth/react';
 import {
-    Air,
-    AutoAwesome,
     AutoFixHigh,
-    Brightness2,
-    Circle,
     Delete,
-    ExpandMore,
-    FlashOn,
-    LocalFireDepartment,
-    Terrain,
-    WaterDrop,
-    WbSunny
+    ExpandMore
 } from '@mui/icons-material';
 import {
     Accordion,
@@ -48,41 +39,8 @@ import {
     useTheme
 } from '@mui/material';
 import { blue, green, grey, orange, purple, red } from '@mui/material/colors';
+import { color } from '@themes/tokens';
 import { type ReactElement, useState } from 'react';
-
-function getSpellColor(spell: SpellDTO): string {
-    switch (spell.element?.toUpperCase()) {
-    case 'AR':
-    case 'LUZ':
-    case 'NÃO-ELEMENTAL':
-        return 'black'
-    default:
-        return 'white'
-    }
-}
-
-function getElementIcon(element: string) {
-    switch (element) {
-    case 'FOGO':
-        return LocalFireDepartment;
-    case 'ÁGUA':
-        return WaterDrop;
-    case 'TERRA':
-        return Terrain;
-    case 'AR':
-        return Air;
-    case 'ELETRICIDADE':
-        return FlashOn;
-    case 'TREVAS':
-        return Brightness2;
-    case 'LUZ':
-        return WbSunny;
-    case 'NÃO-ELEMENTAL':
-        return Circle;
-    default:
-        return AutoAwesome;
-    }
-}
 
 function getSpellLevelColor(level: number) {
     switch (level) {
@@ -179,7 +137,7 @@ function SpellStage({ stage, description, spell, onCast, isCasting, canCast, cur
                         fontWeight: 700
                     }}
                 >
-                    {stage !== 4 ? `✨ Estágio ${stage}` : '🌟 Maestria'}
+                    {stage !== 4 ? `Estágio ${stage}` : 'Maestria'}
                 </Typography>
                 <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
                     <Tooltip
@@ -423,16 +381,9 @@ export default function SpellsSection(): ReactElement {
                 sx={{ 
                     p: 3, 
                     borderRadius: 3,
-                    background: theme.palette.mode === 'dark'
-                        ? 'linear-gradient(145deg, #1e293b 0%, #334155 100%)'
-                        : 'linear-gradient(145deg, #f8fafc 0%, #e2e8f0 100%)',
+                    bgcolor: 'background.paper',
                     border: '1px solid',
-                    borderColor: 'divider',
-                    transition: 'all 0.3s ease',
-                    '&:hover': {
-                        boxShadow: 4,
-                        transform: 'translateY(-2px)'
-                    }
+                    borderColor: 'divider'
                 }}
             >
                 <Stack spacing={3}>
@@ -526,7 +477,6 @@ export default function SpellsSection(): ReactElement {
                         ) : (
                             <Stack spacing={2}>
                                 {allSpells.map(spell => {
-                                    const ElementIcon = getElementIcon(spell.element);
                                     const levelConfig = getSpellLevelColor(Number(spell.level));
                                     const spellId = spell.id || spell.name
                                     const selectedStage = (charsheet.spellStages?.[spellId] as 1 | 2 | 3 | undefined) || 1
@@ -541,13 +491,14 @@ export default function SpellsSection(): ReactElement {
                                             onChange={handleSpellExpand(spell.name)}
                                             elevation={2}
                                             sx={{
+                                                bgcolor: 'background.raised',
                                                 border: '1px solid',
                                                 borderColor: 'divider',
                                                 borderRadius: 2,
+                                                transition: 'border-color 120ms',
                                                 '&:before': { display: 'none' },
                                                 '&:hover': {
-                                                    borderColor: levelConfig.color + '60',
-                                                    boxShadow: 3
+                                                    borderColor: color.borderStrong
                                                 }
                                             }}
                                         >
@@ -568,16 +519,14 @@ export default function SpellsSection(): ReactElement {
                                                         sx={{
                                                             p: 0.8,
                                                             borderRadius: 1,
-                                                            bgcolor: elementColor[spell.element] || grey[300],
                                                             border: '1px solid',
-                                                            borderColor: 'rgba(0,0,0,0.2)'
+                                                            borderColor: 'divider'
                                                         }}
                                                     >
                                                         <ElementIcon 
-                                                            sx={{ 
-                                                                color: getSpellColor(spell),
-                                                                fontSize: '1.2rem'
-                                                            }} 
+                                                            element={spell.element}
+                                                            colored
+                                                            sx={{ fontSize: '1.2rem' }} 
                                                         />
                                                     </Box>
                                                     <Box flex={1}>
@@ -595,9 +544,10 @@ export default function SpellsSection(): ReactElement {
                                                             <Chip 
                                                                 label={spell.element} 
                                                                 size="small" 
+                                                                variant="outlined"
                                                                 sx={{ 
-                                                                    bgcolor: elementColor[spell.element] || grey[300], 
-                                                                    color: getSpellColor(spell),
+                                                                    borderColor: 'divider',
+                                                                    color: 'text.primary',
                                                                     fontWeight: 600
                                                                 }} 
                                                             />
