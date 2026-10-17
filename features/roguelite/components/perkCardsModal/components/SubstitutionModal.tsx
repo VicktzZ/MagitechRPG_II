@@ -22,7 +22,8 @@ import {
     useTheme,
     CircularProgress
 } from '@mui/material'
-import { SwapHoriz, AutoAwesome, Warning, CardGiftcard, Person } from '@mui/icons-material'
+import { SwapHoriz, Star, Warning, CardGiftcard, Person } from '@mui/icons-material'
+import ElementIcon from '@components/misc/ElementIcon'
 import { useState, type ReactElement } from 'react'
 
 export type SubstitutionType = 'spell' | 'weapon' | 'armor' | 'item'
@@ -68,7 +69,7 @@ interface SubstitutionModalProps {
 }
 
 const typeLabels: Record<SubstitutionType, { singular: string; plural: string; icon: string }> = {
-    spell: { singular: 'magia', plural: 'magias', icon: '✨' },
+    spell: { singular: 'magia', plural: 'magias', icon: '📖' },
     weapon: { singular: 'arma', plural: 'armas', icon: '⚔️' },
     armor: { singular: 'armadura', plural: 'armaduras', icon: '🛡️' },
     item: { singular: 'item', plural: 'itens', icon: '📦' }
@@ -244,10 +245,7 @@ export function SubstitutionModal({
             }}
             PaperProps={{
                 sx: {
-                    borderRadius: 3,
-                    background: theme.palette.mode === 'dark'
-                        ? 'linear-gradient(145deg, #1e293b 0%, #334155 100%)'
-                        : 'linear-gradient(145deg, #ffffff 0%, #f1f5f9 100%)'
+                    borderRadius: 3
                 }
             }}
         >
@@ -372,13 +370,26 @@ export function SubstitutionModal({
                                     }}
                                 >
                                     <ListItemIcon sx={{ minWidth: 40 }}>
-                                        <AutoAwesome 
-                                            sx={{ 
-                                                color: selectedItemId === item.id 
-                                                    ? theme.palette.error.main 
-                                                    : 'text.secondary' 
-                                            }} 
-                                        />
+                                        {type === 'spell'
+                                            ? (
+                                                <ElementIcon
+                                                    element={item.element}
+                                                    sx={{
+                                                        color: selectedItemId === item.id
+                                                            ? theme.palette.error.main
+                                                            : 'text.secondary'
+                                                    }}
+                                                />
+                                            )
+                                            : (
+                                                <Star
+                                                    sx={{
+                                                        color: selectedItemId === item.id
+                                                            ? theme.palette.error.main
+                                                            : 'text.secondary'
+                                                    }}
+                                                />
+                                            )}
                                     </ListItemIcon>
                                     <ListItemText
                                         primary={item.name}

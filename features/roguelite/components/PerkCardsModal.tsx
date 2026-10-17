@@ -1,9 +1,9 @@
 /* eslint-disable no-case-declarations */
 import { PerkTypeEnum } from '@enums/rogueliteEnum'
 import { iconForRarity, rollRandomPerks } from '@features/roguelite/utils'
-import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
 import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment'
 import ShuffleIcon from '@mui/icons-material/Shuffle'
+import StarIcon from '@mui/icons-material/Star'
 import VisibilityIcon from '@mui/icons-material/Visibility'
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff'
 import WhatshotIcon from '@mui/icons-material/Whatshot'
@@ -52,14 +52,14 @@ export function PerkCardsModal({ open, seed, level }: PerkCardsModalProps) {
 
     const getIcon = (rarity: string) => {
         switch (iconForRarity(rarity as any)) {
-        case 'AutoAwesome':
-            return <AutoAwesomeIcon />
+        case 'Star':
+            return <StarIcon />
         case 'LocalFireDepartment':
             return <LocalFireDepartmentIcon />
         case 'Whatshot':
             return <WhatshotIcon />
         default:
-            return <AutoAwesomeIcon />
+            return <StarIcon />
         }
     }
 
@@ -99,8 +99,7 @@ export function PerkCardsModal({ open, seed, level }: PerkCardsModalProps) {
                         p: '0 !important',
                         width: '100vw',
                         height: '100dvh',
-                        bgcolor: 'rgba(0, 0, 0, 0.75)',
-                        backdropFilter: 'blur(8px)',
+                        bgcolor: 'background.default',
                         zIndex: 9998,
                         display: 'flex',
                         flexDirection: 'column',
