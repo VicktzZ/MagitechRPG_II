@@ -191,7 +191,7 @@ export default function LevelAndInfo() {
                     p: 0,
                     borderRadius: 2,
                     overflow: 'hidden',
-                    bgcolor: 'background.paper3',
+                    bgcolor: 'background.default',
                     border: '1px solid',
                     borderColor: 'divider'
                 }}
@@ -477,7 +477,7 @@ export default function LevelAndInfo() {
                         minWidth: 0,
                         p: matches ? 1 : 2,
                         borderRadius: 2,
-                        bgcolor: 'background.paper3',
+                        bgcolor: 'background.default',
                         border: '1px solid',
                         borderColor: 'divider'
                     }}

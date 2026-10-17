@@ -863,7 +863,7 @@ export default function LandingPage(): ReactElement | null {
                                             boxShadow: `0 16px 30px ${alpha('#000000', 0.25)}`,
                                             '& .card-icon': {
                                                 transform: 'scale(1.1)',
-                                                color: 'terciary.main'
+                                                color: 'primary.main'
                                             },
                                             '& .card-highlight': {
                                                 height: '5px'
@@ -880,7 +880,7 @@ export default function LandingPage(): ReactElement | null {
                                             left: 0,
                                             width: '100%',
                                             height: '3px',
-                                            background: `linear-gradient(90deg, ${theme.palette.primary.light}, ${alpha(theme.palette.terciary.main, 0.8)})`,
+                                            background: `linear-gradient(90deg, ${theme.palette.primary.light}, ${alpha(theme.palette.info.main, 0.8)})`,
                                             transition: 'all 0.3s ease'
                                         }}
                                     />
@@ -895,7 +895,7 @@ export default function LandingPage(): ReactElement | null {
                                             className="card-icon"
                                             sx={{
                                                 fontSize: '3.5rem',
-                                                color: alpha(theme.palette.terciary.main, 0.8),
+                                                color: alpha(theme.palette.info.main, 0.8),
                                                 transition: 'all 0.3s ease',
                                                 mb: 1
                                             }}
@@ -1015,7 +1015,7 @@ export default function LandingPage(): ReactElement | null {
                                             <Button
                                                 sx={{ width: '33%' }}
                                                 variant="contained"
-                                                color={'terciary' as any}
+                                                color='primary'
                                                 onClick={() => {
                                                     window.open(BLOB_API.GUIA)
                                                 }}
@@ -1098,7 +1098,7 @@ export default function LandingPage(): ReactElement | null {
                                             <Button
                                                 sx={{ width: '33%' }}
                                                 variant="contained"
-                                                color={'terciary' as any}
+                                                color='primary'
                                                 onClick={() => {
                                                     window.open(BLOB_API.GRIMORIO)
                                                 }}
@@ -1345,7 +1345,7 @@ export default function LandingPage(): ReactElement | null {
                                             </Button>
                                             <Button
                                                 variant="contained"
-                                                color={'terciary' as any}
+                                                color='primary'
                                                 size="large"
                                                 sx={{
                                                     py: 1.5,
@@ -1377,7 +1377,7 @@ export default function LandingPage(): ReactElement | null {
                         display="flex"
                         flexDirection="column"
                         justifyContent="center"
-                        bgcolor="background.paper4"
+                        bgcolor="background.default"
                     >
                         <Box p={10} width="100%">
                             <Typography variant="h3" fontFamily="WBZ" textAlign="center">

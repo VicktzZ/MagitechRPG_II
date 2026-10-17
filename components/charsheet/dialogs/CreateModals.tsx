@@ -197,7 +197,7 @@ function ItemModalForm({
                         onClick={handleSubmit(action)}
                         type='submit'
                         variant='contained'
-                        color={'terciary' as any}
+                        color='primary'
                     >
                         Criar Item
                     </Button>

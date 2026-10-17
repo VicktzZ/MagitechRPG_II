@@ -453,7 +453,7 @@ export default function Skills(): ReactElement {
                     error={!!errors.skills}
                     sx={{
                         width: '100%',
-                        bgcolor: 'background.paper3',
+                        bgcolor: 'background.default',
                         borderRadius: 2,
                         p: 2,
                         border: errors.skills ? '1px solid' : 'none',
@@ -492,7 +492,7 @@ export default function Skills(): ReactElement {
 
                 {selectedSkill && (
                     <Box 
-                        bgcolor='background.paper3' 
+                        bgcolor='background.default' 
                         borderRadius={2} 
                         p={3}
                         flex={1}
@@ -601,7 +601,7 @@ export default function Skills(): ReactElement {
                         gap={2}
                         textAlign='center'
                         p={4}
-                        bgcolor='background.paper3'
+                        bgcolor='background.default'
                         borderRadius={2}
                         flex={1}
                     >

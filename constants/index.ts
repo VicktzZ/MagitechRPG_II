@@ -1,5 +1,6 @@
 import { Gavel, Inventory2, Shield } from '@mui/icons-material'
-import { amber, blue, blueGrey, cyan, deepPurple, green, grey, indigo, lightBlue, lightGreen, orange, pink, purple, red, teal } from '@mui/material/colors'
+import { blue, deepPurple, grey, lightBlue, lightGreen, pink, red, teal } from '@mui/material/colors'
+import { element, rarity } from '@themes/tokens'
 import type { ItemAttributes } from '@models/types/item'
 import type { ClassNames, RarityType } from '@models/types/string'
 
@@ -69,66 +70,17 @@ export const specialElements = [
     'Explosão'
 ]
 
-export const elementColor = {
-    'FOGO': red[500],
-    'ÁGUA': blue[600],
-    'AR': grey[300],
-    'TERRA': green[500],
-    'PLANTA': green[200],
-    'ELETRICIDADE': indigo[300],
-    'GELO': blue[300],
-    'METAL': grey[500],
-    'LUZ': amber[400],
-    'TREVAS': blueGrey[400],
-    'NÃO-ELEMENTAL': grey[100],
-    
-    'SANGUE': red[900],
-    'VÁCUO': '#555',
-    'PSÍQUICO': pink[500],
-    'RADIAÇÃO': purple[500],
-    'EXPLOSÃO': amber[900],
-    'TÓXICO': green[600]
-}
-
 /**
- * Cores vibrantes para cards de magia - mais saturadas e distintas
+ * Cor de marca de cada elemento (chave em maiúsculas, como no banco). Gerada de `themes/tokens.ts`:
+ * é o único mapa de elementos do projeto.
  */
-export const spellElementColor: Record<string, string> = {
-    // Elementos básicos
-    'FOGO': '#ff4d2a',           // Laranja-vermelho vibrante
-    'ÁGUA': '#00b8ff',           // Azul ciano brilhante
-    'AR': '#a8e6ff',             // Azul celeste claro (diferente de água)
-    'TERRA': '#8b5a2b',          // Marrom terra (diferente de verde)
-    'ELETRICIDADE': '#ffeb3b',   // Amarelo elétrico
-    'LUZ': '#fff176',            // Amarelo dourado claro
-    'TREVAS': '#7c4dff',         // Roxo profundo
-    'NÃO-ELEMENTAL': '#90a4ae',  // Lilás mágico (não branco!)
-    
-    // Elementos especiais
-    'SANGUE': '#b71c1c',         // Vermelho sangue escuro
-    'VÁCUO': '#4b2bda',          // Roxo escuro profundo
-    'PSÍQUICO': '#e040fb',       // Magenta vibrante
-    'RADIAÇÃO': '#76ff03',       // Verde neon radioativo
-    'EXPLOSÃO': '#ff6d00',       // Laranja explosivo
-    'TÓXICO': '#00e676',         // Verde tóxico brilhante
-    
-    // Extras
-    'GELO': '#4fc3f7',           // Azul gelo
-    'PLANTA': '#69f0ae',         // Verde natureza
-    'METAL': '#90a4ae'           // Cinza metálico
-}
+export const elementColor: Record<string, string> = { ...element }
 
-export const rarityColor: Record<RarityType, string> = {
-    'Comum': grey[400],
-    'Incomum': green[400],
-    'Raro': blue[400],
-    'Épico': deepPurple[400],
-    'Lendário': orange[400],
-    'Único': red[400],
-    'Mágico': cyan[400],
-    'Especial': indigo[400],
-    'Amaldiçoado': pink[400]
-}
+/** @deprecated Use `elementColor`: o mapa neon foi unificado a ele. */
+export const spellElementColor: Record<string, string> = elementColor
+
+/** Cor de cada raridade; gerada de `themes/tokens.ts` */
+export const rarityColor: Record<RarityType, string> = { ...rarity }
 
 export const classColor: Record<ClassNames, string> = {
     'Combatente': red[500],

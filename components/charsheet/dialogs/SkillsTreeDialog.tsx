@@ -327,7 +327,7 @@ export default function SkillsTreeDialog({ open, onClose, charsheet }: SkillsTre
             PaperProps={{
                 sx: {
                     minHeight: '80vh',
-                    bgcolor: 'background.paper2'
+                    bgcolor: 'background.raised'
                 }
             }}
         >

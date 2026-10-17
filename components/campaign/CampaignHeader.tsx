@@ -93,7 +93,7 @@ export default function CampaignHeader(): ReactElement {
             <Paper
                 sx={{
                     p: { xs: 1, sm: 2 },
-                    bgcolor: 'background.paper2',
+                    bgcolor: 'background.raised',
                     borderRadius: 2
                 }}
             >

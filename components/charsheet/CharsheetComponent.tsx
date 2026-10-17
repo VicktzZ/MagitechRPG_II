@@ -334,7 +334,7 @@ export default function CharsheetComponent(): ReactElement {
                             <Box>
                                 <Button
                                     variant='contained'
-                                    color={'terciary' as any}
+                                    color='primary'
                                     type='button'
                                     onClick={() => {
                                         setCreateCharsheetAutosave(null)
@@ -358,7 +358,7 @@ export default function CharsheetComponent(): ReactElement {
                         {!form.getValues('systemId') && !charsheet.id && (
                             <Button
                                 variant='outlined'
-                                color={'terciary' as any}
+                                color='secondary'
                                 type='button'
                                 onClick={changeGameMode}
                                 size="small"
@@ -530,7 +530,7 @@ export default function CharsheetComponent(): ReactElement {
                     {/* Dados Personalizados */}
                     <Section
                         title='Dados Personalizados'
-                        icon={<CasinoSharp sx={{ color: 'terciary.main' }} />}
+                        icon={<CasinoSharp sx={{ color: 'primary.main' }} />}
                     >
                         <Box>
                             <CustomDices />
