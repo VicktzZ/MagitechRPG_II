@@ -21,7 +21,7 @@ import {
     DialogActions
 } from '@mui/material';
 import {
-    Stars as StarsIcon,
+    WorkspacePremium as WorkspacePremiumIcon,
     CalendarToday as CalendarIcon,
     CreditCard as CreditCardIcon,
     Storage as StorageIcon,
@@ -247,7 +247,7 @@ export default function ManageSubscriptionPage() {
                             {planMetadata.features.map((feature, index) => (
                                 <Grid item xs={12} key={index}>
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                        <StarsIcon sx={{ color: 'success.main', fontSize: '1.25rem' }} />
+                                        <WorkspacePremiumIcon sx={{ color: 'success.main', fontSize: '1.25rem' }} />
                                         <Typography variant="body2">{feature}</Typography>
                                     </Box>
                                 </Grid>

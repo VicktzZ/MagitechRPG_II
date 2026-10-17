@@ -18,7 +18,7 @@ import {
 import {
     CheckCircle as CheckCircleIcon,
     Cancel as CancelIcon,
-    Stars as StarsIcon
+    WorkspacePremium as WorkspacePremiumIcon
 } from '@mui/icons-material';
 import { SubscriptionPlan, SubscriptionPlanMetadata } from '@enums/subscriptionEnum';
 import { color } from '@themes/tokens';
@@ -71,7 +71,7 @@ export function PricingCard({
                     }}
                 >
                     <Chip
-                        icon={isPopular ? <StarsIcon /> : undefined}
+                        icon={isPopular ? <WorkspacePremiumIcon /> : undefined}
                         label={isCurrentPlan ? 'PLANO ATUAL' : metadata.badge}
                         color={isCurrentPlan ? 'success' : 'primary'}
                         size="small"

@@ -3,14 +3,6 @@ import { RPGIcon } from '@components/misc'
 import { type IconType } from '@components/misc/rpg-icons'
 import type { Charsheet } from '@models/entities'
 import {
-    AutoAwesome,
-    EmojiPeople,
-    Favorite,
-    FlashOn,
-    Psychology,
-    Shield
-} from '@mui/icons-material'
-import {
     alpha,
     Box,
     Button,
@@ -23,14 +15,14 @@ import {
     Zoom
 } from '@mui/material'
 import { blue, deepPurple, green, orange, red, teal } from '@mui/material/colors'
-import { memo, type ReactElement, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { color } from '@themes/tokens'
+import { memo, useEffect, useMemo, useRef } from 'react'
 import { useFormContext, useWatch } from 'react-hook-form'
 
 type MainAttributes = 'vig' | 'des' | 'foc' | 'log' | 'sab' | 'car'
 
 interface AttributeConfig {
     icon: IconType
-    muiIcon: ReactElement
     color: string
     filter: string
     label: string
@@ -47,7 +39,6 @@ const attributeIcons: Record<MainAttributes, AttributeConfig> = {
     vig: {
         color: red[500],
         icon: 'health',
-        muiIcon: <Favorite />,
         filter: 'invert(32%) sepia(55%) saturate(3060%) hue-rotate(343deg) brightness(99%) contrast(93%)',
         label: 'Vigor',
         description: 'Resistência física e pontos de vida'
@@ -55,7 +46,6 @@ const attributeIcons: Record<MainAttributes, AttributeConfig> = {
     foc: {
         color: blue[500],
         icon: 'potion',
-        muiIcon: <FlashOn />,
         filter: 'invert(42%) sepia(99%) saturate(584%) hue-rotate(169deg) brightness(101%) contrast(99%)',
         label: 'Foco',
         description: 'Concentração e pontos de mana'
@@ -63,7 +53,6 @@ const attributeIcons: Record<MainAttributes, AttributeConfig> = {
     des: {
         color: orange[500],
         icon: 'shield',
-        muiIcon: <Shield />,
         filter: 'invert(57%) sepia(63%) saturate(723%) hue-rotate(357deg) brightness(99%) contrast(107%)',
         label: 'Destreza',
         description: 'Agilidade e velocidade'
@@ -71,7 +60,6 @@ const attributeIcons: Record<MainAttributes, AttributeConfig> = {
     log: {
         color: teal[500],
         icon: 'book',
-        muiIcon: <Psychology />,
         filter: 'invert(53%) sepia(48%) saturate(7320%) hue-rotate(150deg) brightness(89%) contrast(101%)',
         label: 'Lógica',
         description: 'Inteligência e raciocínio'
@@ -79,7 +67,6 @@ const attributeIcons: Record<MainAttributes, AttributeConfig> = {
     sab: {
         color: deepPurple[500],
         icon: 'pawprint',
-        muiIcon: <AutoAwesome />,
         filter: 'invert(19%) sepia(90%) saturate(2394%) hue-rotate(253deg) brightness(90%) contrast(84%)',
         label: 'Sabedoria',
         description: 'Percepção e intuição'
@@ -87,7 +74,6 @@ const attributeIcons: Record<MainAttributes, AttributeConfig> = {
     car: {
         color: green[500],
         icon: 'aura',
-        muiIcon: <EmojiPeople />,
         filter: 'invert(60%) sepia(41%) saturate(642%) hue-rotate(73deg) brightness(91%) contrast(85%)',
         label: 'Carisma',
         description: 'Presença e influência social'
@@ -123,8 +109,7 @@ function Attribute({
         // Criando um componente interno memoizado
         const bar = memo(({ id }: { id: number }) => {
             const filled = attributeValue >= id
-            const [ hover, setHover ] = useState(false)
-            
+
             // Determina a cor baseada no nível
             const getBarColor = () => {
                 if (!filled) return 'transparent'
@@ -145,10 +130,6 @@ function Attribute({
                 return '1.5rem'
             }
 
-            // Handlers memoizados para eventos
-            const handleMouseEnter = useCallback(() => setHover(true), [])
-            const handleMouseLeave = useCallback(() => setHover(false), [])
-
             return (
                 <Tooltip 
                     title={
@@ -168,8 +149,6 @@ function Attribute({
                     TransitionComponent={Zoom}
                 >
                     <Box 
-                        onMouseEnter={handleMouseEnter}
-                        onMouseLeave={handleMouseLeave}
                         sx={{
                             width: isSmall ? '0.6rem' : matches ? '0.8rem' : '1rem',
                             height: getBarHeight(),
@@ -177,29 +156,10 @@ function Attribute({
                             borderColor: filled ? config.color : alpha(theme.palette.divider, 0.3),
                             bgcolor: getBarColor(),
                             borderRadius: 0.5,
-                            transition: 'all 0.3s ease',
+                            transition: 'background-color 120ms, border-color 120ms',
                             cursor: 'pointer',
                             position: 'relative',
                             overflow: 'hidden',
-                            transform: hover ? 'translateY(-2px)' : 'none',
-                            boxShadow: hover && filled ? `0 4px 8px ${alpha(config.color, 0.3)}` : 'none',
-                            
-                            // Efeito de brilho para barras preenchidas
-                            '&::before': filled ? {
-                                content: '""',
-                                position: 'absolute',
-                                top: 0,
-                                left: '-100%',
-                                width: '100%',
-                                height: '100%',
-                                background: `linear-gradient(90deg, transparent, ${alpha('#fff', 0.3)}, transparent)`,
-                                animation: 'shine 2s infinite'
-                            } : {},
-                            
-                            '@keyframes shine': {
-                                '0%': { left: '-100%' },
-                                '100%': { left: '100%' }
-                            },
 
                             // Separadores de grupo
                             ...(id % 5 === 0 && id < 30 && {
@@ -366,33 +326,13 @@ function Attribute({
                 gap: isSmall ? 0.5 : matches ? 1 : 2,
                 p: getContainerPadding,
                 borderRadius: 2,
-                bgcolor: alpha(theme.palette.background.paper, 0.5),
+                bgcolor: 'background.raised',
                 border: '1px solid',
-                borderColor: alpha(config.color, 0.15),
-                boxShadow: `0 0 0 1px ${alpha(config.color, 0.05)} inset`,
-                transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                borderColor: 'divider',
+                transition: 'border-color 120ms',
                 position: 'relative',
-                '&::before': {
-                    content: '""',
-                    position: 'absolute',
-                    inset: 0,
-                    borderRadius: 2,
-                    padding: '1px',
-                    background: `linear-gradient(to right, transparent, ${alpha(config.color, 0.2)}, transparent)`,
-                    WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
-                    WebkitMaskComposite: 'xor',
-                    maskComposite: 'exclude',
-                    opacity: 0,
-                    transition: 'opacity 0.4s ease'
-                },
                 '&:hover': {
-                    transform: isSmall ? 'none' : 'translateY(-2px)',
-                    boxShadow: `0 4px 12px ${alpha(config.color, 0.15)}`,
-                    bgcolor: alpha(theme.palette.background.paper, 0.8),
-                    borderColor: alpha(config.color, 0.35),
-                    '&::before': {
-                        opacity: 1
-                    }
+                    borderColor: color.borderStrong
                 },
                 width: '100%',
                 maxWidth: '100%',
@@ -432,7 +372,7 @@ function Attribute({
                         minWidth: matches ? '80px' : '100px'
                     }}
                 >
-                    {/* Ícone com animação */}
+                    {/* Ícone do atributo */}
                     <Box sx={{ 
                         display: 'flex',
                         alignItems: 'center',
@@ -442,13 +382,7 @@ function Attribute({
                         bgcolor: alpha(config.color, 0.1),
                         border: '2px solid',
                         borderColor: alpha(config.color, 0.3),
-                        position: 'relative',
-                        animation: attributeValue > 15 ? 'pulse 2s infinite' : 'none',
-                        '@keyframes pulse': {
-                            '0%': { boxShadow: `0 0 0 0 ${alpha(config.color, 0.4)}` },
-                            '70%': { boxShadow: `0 0 0 10px ${alpha(config.color, 0)}` },
-                            '100%': { boxShadow: `0 0 0 0 ${alpha(config.color, 0)}` }
-                        }
+                        position: 'relative'
                     }}>
                         <RPGIcon
                             icon={config.icon}
@@ -497,8 +431,7 @@ function Attribute({
                             bgcolor: alpha(config.color, 0.1),
                             '& .MuiLinearProgress-bar': {
                                 backgroundColor: config.color,
-                                borderRadius: 5,
-                                backgroundImage: `linear-gradient(90deg, ${alpha(config.color, 0.7)}, ${config.color})`
+                                borderRadius: 5
                             }
                         }}
                     />
@@ -551,7 +484,6 @@ function Attribute({
                         fontWeight="bold"
                         sx={{ 
                             color: attributeValue > 15 ? config.color : 'text.primary',
-                            textShadow: attributeValue > 20 ? `0 0 10px ${alpha(config.color, 0.5)}` : 'none',
                             fontSize: isSmall ? '1.1rem' : getValueFontSize
                         }}
                     >

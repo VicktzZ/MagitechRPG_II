@@ -11,7 +11,7 @@ import type { Charsheet } from '@models/entities';
 import {
     Add,
     ArticleRounded,
-    AutoAwesome,
+    AutoStories,
     CasinoSharp,
     Edit,
     Equalizer,
@@ -66,10 +66,6 @@ function Section({ title, icon, children, action, sx }: {
             sx={{ 
                 p: 3, 
                 borderRadius: 2,
-                transition: 'all 0.3s ease',
-                '&:hover': {
-                    boxShadow: 4
-                },
                 ...sx
             }}
         >
@@ -299,7 +295,7 @@ export default function CharsheetComponent(): ReactElement {
                 sx={{ 
                     p: 3, 
                     borderRadius: 2,
-                    background: 'linear-gradient(135deg, rgba(39, 136, 205, 0.1), rgba(39, 136, 205, 0.05))'
+                    bgcolor: 'background.paper'
                 }}
             >
                 <Stack 
@@ -588,7 +584,7 @@ export default function CharsheetComponent(): ReactElement {
             {(!system || system.enabledFields?.spells !== false) && (
                 <Section
                     title="Magias"
-                    icon={<AutoAwesome sx={{ color: 'primary.main' }} />}
+                    icon={<AutoStories sx={{ color: 'primary.main' }} />}
                 >
                     <Magics />
                 </Section>
@@ -630,8 +626,7 @@ export default function CharsheetComponent(): ReactElement {
                             transition: 'all 0.2s ease',
                             '&:focus': {
                                 outline: 'none',
-                                borderColor: 'primary.main',
-                                boxShadow: (theme) => `0 0 0 2px ${theme.palette.primary.main}20`
+                                borderColor: 'primary.main'
                             },
                             '&:hover': {
                                 borderColor: 'text.secondary'
@@ -653,8 +648,7 @@ export default function CharsheetComponent(): ReactElement {
             <Backdrop 
                 open={isLoading}
                 sx={{ 
-                    zIndex: (theme) => theme.zIndex.drawer + 1,
-                    backdropFilter: 'blur(3px)'
+                    zIndex: (theme) => theme.zIndex.drawer + 1
                 }}
             >
                 <Stack spacing={2} alignItems="center">

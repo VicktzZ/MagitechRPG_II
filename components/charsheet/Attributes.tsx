@@ -550,11 +550,6 @@ function Attributes(): ReactElement {
                                                             sx={{ 
                                                                 color,
                                                                 ...(overallValue >= 150 && {
-                                                                    textShadow: '0px 0px 3px rgba(25, 118, 210, 0.5)',
-                                                                    fontWeight: 'bold'
-                                                                }),
-                                                                ...(overallValue >= 180 && {
-                                                                    textShadow: '0px 0px 3px rgba(210, 25, 25, 0.5)',
                                                                     fontWeight: 'bold'
                                                                 })
                                                             }}

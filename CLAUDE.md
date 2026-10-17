@@ -70,11 +70,17 @@ Decisões dadas pelo dono do projeto:
   símbolos WoD (`magics*.ttf`). As fontes dos dados (dPoly) ainda precisam de confirmação da licença.
 - Substituir as artes geradas por IA (hero da landing em cdn.leonardo.ai, fundos em parallax).
 - Componente novo usa tokens ou o tema, nunca hex/rgba solto, gradiente, brilho colorido ou animação infinita.
-  `sx={{ borderRadius: 1 | 2 | 3 }}` = 4 | 8 | 12px (`shape.borderRadius` do tema vale 4).
+  `sx={{ borderRadius: 1 | 2 | 3 }}` = 4 | 8 | 12px (`shape.borderRadius` do tema vale 4). Cartão é superfície plana
+  (`background.raised`, borda `divider` de 1px) e no hover só a borda muda (`color.borderStrong`); sombra só em menu,
+  drawer e modal (o tema já faz: elevação ≥ 7). A regra `no-restricted-syntax` do ESLint avisa de cor solta,
+  gradiente, brilho, hover que levita, animação infinita, vidro e ícones de faíscas.
+- **Elemento é marca, não preenchimento**: use `<ElementIcon element={...} colored />` (`components/misc/ElementIcon.tsx`,
+  13 glifos SVG) em vez de ícones do Material por elemento. O ícone de faíscas (`AutoAwesome`, `AutoFixHigh`, `Stars`,
+  `Flare`) e emoji de faísca não entram: magias em geral usam `AutoStories`, vantagens `Star`, planos `WorkspacePremium`.
 - Contraste: texto ≥ 4,5:1 e marcas ≥ 3:1 sobre as superfícies que citam (`themes/__tests__/tokens.test.ts`
   falha se um token novo ou alterado não passar).
 
 Plano em fases: 1 tokens e tema (feita) · 3 tipografia (fontes carregadas, fontes sem licença removidas e
-`fontFamily` migrado; faltam as rolagens com a fonte dos dados e o `html font-size: 12px`) · 4 efeitos (remover
-gradientes, brilhos, pulsos e vidro; regra de ESLint contra hex solto; `prefers-reduced-motion`) · depois as
-seções, começando pela landing.
+`fontFamily` migrado; faltam as rolagens com a fonte dos dados e o `html font-size: 12px`) · 4 efeitos (feita, menos a
+landing `app/page.tsx`; sobram só os avisos de cor solta, que migram junto com cada seção) · depois as seções,
+começando pela landing.

@@ -32,7 +32,7 @@ import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import PersonIcon from '@mui/icons-material/Person';
 import PetsIcon from '@mui/icons-material/Pets';
 import RefreshIcon from '@mui/icons-material/Refresh';
-import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
+import BoltIcon from '@mui/icons-material/Bolt';
 import LockOpenIcon from '@mui/icons-material/LockOpen';
 import LockIcon from '@mui/icons-material/Lock';
 import { red, green, blue, orange, grey } from '@mui/material/colors';
@@ -633,7 +633,7 @@ export default function CombatDialog({
                                                             onClick={() => setApplyEffectTarget({ id: combatant.id, name: combatant.name })}
                                                             sx={{ ml: 0.5 }}
                                                         >
-                                                            <AutoFixHighIcon fontSize="small" />
+                                                            <BoltIcon fontSize="small" />
                                                         </IconButton>
                                                     </Tooltip>
                                                     {mpLimitEnforced && (

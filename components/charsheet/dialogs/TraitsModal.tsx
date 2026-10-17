@@ -28,6 +28,7 @@ import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { green, red, blue } from '@mui/material/colors';
 import type { Trait, Lineage } from '@models';
+import { shadow } from '@themes/tokens';
 interface TraitWithSelected extends Trait {
     selected: boolean;
 }
@@ -220,7 +221,7 @@ function TraitsModal({ open, onClose, selectedTraits, onTraitsChange, lineage, c
                     maxHeight: '90vh',
                     bgcolor: 'background.paper',
                     borderRadius: 2,
-                    boxShadow: 24,
+                    boxShadow: shadow.overlay,
                     p: 0,
                     overflow: 'hidden',
                     display: 'flex',

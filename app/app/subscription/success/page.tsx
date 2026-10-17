@@ -17,7 +17,7 @@ import {
 } from '@mui/material';
 import {
     CheckCircle as CheckCircleIcon,
-    Stars as StarsIcon
+    WorkspacePremium as WorkspacePremiumIcon
 } from '@mui/icons-material';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useSubscription } from '@hooks';
@@ -128,7 +128,7 @@ export default function SubscriptionSuccessPage() {
                 {planMetadata && (
                     <Box sx={{ mb: 4, textAlign: 'left' }}>
                         <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', textAlign: 'center' }}>
-                            <StarsIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
+                            <WorkspacePremiumIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
               Recursos Desbloqueados
                         </Typography>
                         <List>

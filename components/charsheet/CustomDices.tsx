@@ -90,10 +90,9 @@ export default function CustomDices({ onClose, realtime = false, enableChatInteg
                             alignItems: 'center',
                             justifyContent: 'space-between',
                             gap: 2,
-                            transition: 'all 0.2s ease',
+                            transition: 'background-color 120ms',
                             '&:hover': {
-                                transform: 'translateY(-2px)',
-                                boxShadow: `0 4px 12px ${alpha(dice.color || theme.palette.primary.main, 0.2)}`
+                                bgcolor: alpha(dice.color || theme.palette.primary.main, 0.16)
                             }
                         }}
                     >

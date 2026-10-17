@@ -186,11 +186,7 @@ export default function Passives({ realtime = false }: { realtime?: boolean }) {
                                 variant="outlined" 
                                 sx={{ 
                                     position: 'relative',
-                                    borderLeft: `4px solid ${occasionColors[passive.occasion] || grey[500]}`,
-                                    transition: 'all 0.2s',
-                                    '&:hover': {
-                                        boxShadow: theme.shadows[3]
-                                    }
+                                    borderLeft: `4px solid ${occasionColors[passive.occasion] || grey[500]}`
                                 }}
                             >
                                 <CardContent sx={{ pb: 1 }}>

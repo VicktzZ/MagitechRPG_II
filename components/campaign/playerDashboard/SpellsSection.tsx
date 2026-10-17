@@ -20,7 +20,7 @@ import { campaignService } from '@services';
 import { useSnackbar } from 'notistack';
 import { useSession } from 'next-auth/react';
 import {
-    AutoFixHigh,
+    Bolt,
     Delete,
     ExpandMore
 } from '@mui/icons-material';
@@ -164,7 +164,7 @@ function SpellStage({ stage, description, spell, onCast, isCasting, canCast, cur
                                 <Button
                                     size="small"
                                     variant="contained"
-                                    startIcon={<AutoFixHigh fontSize="small" />}
+                                    startIcon={<Bolt fontSize="small" />}
                                     disabled={isCasting || canCast === false}
                                     onClick={() => { void onCast(stage as 1 | 2 | 3) }}
                                     sx={{

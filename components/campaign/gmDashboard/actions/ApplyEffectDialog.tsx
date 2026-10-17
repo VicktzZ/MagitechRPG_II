@@ -22,7 +22,7 @@ import {
     TextField,
     Typography
 } from '@mui/material'
-import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh'
+import BoltIcon from '@mui/icons-material/Bolt'
 import { useSnackbar } from 'notistack'
 import type { CombatEffect, CombatEffectCategory } from '@models'
 import { campaignService } from '@services'
@@ -164,7 +164,7 @@ export default function ApplyEffectDialog({
     return (
         <Dialog open={open} onClose={applying ? undefined : onClose} maxWidth="sm" fullWidth>
             <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <AutoFixHighIcon color="secondary" />
+                <BoltIcon color="secondary" />
                 Aplicar efeito {target ? `em ${target.name}` : ''}
             </DialogTitle>
             <DialogContent>
@@ -383,7 +383,7 @@ export default function ApplyEffectDialog({
                     variant="contained"
                     color="secondary"
                     disabled={applying || !selectedEffect || !target}
-                    startIcon={applying ? <CircularProgress size={18} /> : <AutoFixHighIcon />}
+                    startIcon={applying ? <CircularProgress size={18} /> : <BoltIcon />}
                 >
                     {applying ? 'Aplicando...' : 'Aplicar'}
                 </Button>

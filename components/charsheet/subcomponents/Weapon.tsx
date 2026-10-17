@@ -10,7 +10,6 @@ import {
     FitnessCenter,
     LocalFireDepartment,
     Speed,
-    Flare,
     Diamond,
     Star
 } from '@mui/icons-material'
@@ -151,7 +150,7 @@ export function Weapon(props: ItemTyping<'weapon'>): ReactElement {
 
                             {props.accessories && (
                                 <Box display='flex' alignItems='center' gap={1}>
-                                    <Flare fontSize="small" color="error" />
+                                    <Diamond fontSize="small" color="error" />
                                     <Typography variant="body2">
                                         <strong>Acessórios:</strong> {props.accessories}
                                     </Typography>

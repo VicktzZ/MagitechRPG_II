@@ -3,6 +3,7 @@
 /* eslint-disable @typescript-eslint/unbound-method */
 import { ResourceListModal } from '@components/utils';
 import { elements } from '@constants';
+import { shadow } from '@themes/tokens';
 import {
     Box,
     Button,
@@ -260,7 +261,7 @@ export default function SkillsModal({ open, onClose }: { open: boolean, onClose:
                             flexDirection: 'column',
                             overflow: 'hidden',
                             borderRadius: '12px',
-                            boxShadow: 24,
+                            boxShadow: shadow.overlay,
                             outline: 'none',
                             backgroundColor: 'background.paper'
                         }}
@@ -408,7 +409,7 @@ export default function SkillsModal({ open, onClose }: { open: boolean, onClose:
                         maxHeight: '90vh',
                         overflow: 'hidden',
                         borderRadius: '12px',
-                        boxShadow: 24,
+                        boxShadow: shadow.overlay,
                         outline: 'none',
                         backgroundColor: 'background.paper'
                     }}

@@ -191,7 +191,7 @@
               "message": "Sem brilho nem sombra solta: só a camada flutuante tem sombra (theme.shadows ou shadow.overlay de themes/tokens.ts)."
           },
           {
-              "selector": "ImportSpecifier[imported.name=/^AutoAwesome/], ImportDefaultSpecifier[local.name=/^AutoAwesome/]",
+              "selector": "ImportSpecifier[imported.name=/^(AutoAwesome|AutoFixHigh|Stars|Flare)$/], ImportDeclaration[source.value=/icons-material.(AutoAwesome|AutoFixHigh|Stars|Flare)$/]",
               "message": "O ícone de faíscas não é marca de magia: use <ElementIcon element=... /> de components/misc/ElementIcon."
           }
       ]

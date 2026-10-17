@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
     Modal,
     Box,
@@ -20,16 +20,11 @@ import {
 import { alpha } from '@mui/material/styles';
 import CloseIcon from '@mui/icons-material/Close';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
-import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
-import WaterDropIcon from '@mui/icons-material/WaterDrop';
-import GrassIcon from '@mui/icons-material/Grass';
-import AirIcon from '@mui/icons-material/Air';
-import ElectricBoltIcon from '@mui/icons-material/ElectricBolt';
-import DarkModeIcon from '@mui/icons-material/DarkMode';
-import LightModeIcon from '@mui/icons-material/LightMode';
-import AllInclusiveIcon from '@mui/icons-material/AllInclusive';
-import { blue, red, green, grey, purple, amber, blueGrey } from '@mui/material/colors';
+import AutoStoriesIcon from '@mui/icons-material/AutoStories';
+import { blue, red } from '@mui/material/colors';
+import { elementColor } from '@constants';
+import ElementIcon, { resolveElement } from '@components/misc/ElementIcon';
+import { shadow } from '@themes/tokens';
 import type { Element } from '@models/types/string';
 
 interface ElementalMasteryModalProps {
@@ -40,16 +35,12 @@ interface ElementalMasteryModalProps {
 
 // Definição dos elementos e suas propriedades
 const elementalData: Record<Element, {
-    color: string;
-    icon: React.ReactNode;
     description: string;
     benefits: string[];
     weakness: string;
     uniqueProperties: string[];
 }> = {
     'Fogo': {
-        color: red[500],
-        icon: <LocalFireDepartmentIcon />,
         description: 'Domínio sobre as chamas e o calor, permitindo manipular o fogo com maestria incomparável.',
         benefits: [
             'Upgrades em Poderes Mágicos de Fogo',
@@ -66,8 +57,6 @@ const elementalData: Record<Element, {
         ]
     },
     'Água': {
-        color: blue[500],
-        icon: <WaterDropIcon />,
         description: 'Controle sobre os fluidos e umidade, permitindo manipular a água e suas propriedades curativas.',
         benefits: [
             'Upgrades em Poderes Mágicos de Água',
@@ -84,8 +73,6 @@ const elementalData: Record<Element, {
         ]
     },
     'Terra': {
-        color: green[800],
-        icon: <GrassIcon />,
         description: 'Conexão profunda com o solo e a natureza, permitindo controlar a terra e suas criaturas.',
         benefits: [
             'Upgrades em Poderes Mágicos de Terra',
@@ -102,8 +89,6 @@ const elementalData: Record<Element, {
         ]
     },
     'Ar': {
-        color: blueGrey[300],
-        icon: <AirIcon />,
         description: 'Maestria sobre os ventos e o ar, permitindo manipular correntes de ar e sons com precisão.',
         benefits: [
             'Upgrades em Poderes Mágicos de Ar',
@@ -120,8 +105,6 @@ const elementalData: Record<Element, {
         ]
     },
     'Eletricidade': {
-        color: amber[500],
-        icon: <ElectricBoltIcon />,
         description: 'Controle sobre a energia elétrica, permitindo gerar e manipular raios e correntes elétricas.',
         benefits: [
             'Upgrades em Poderes Mágicos de Eletricidade',
@@ -138,8 +121,6 @@ const elementalData: Record<Element, {
         ]
     },
     'Trevas': {
-        color: purple[900],
-        icon: <DarkModeIcon />,
         description: 'Domínio sobre as sombras e a escuridão, permitindo manipular a ausência de luz e energias negativas.',
         benefits: [
             'Upgrades em Poderes Mágicos de Trevas',
@@ -156,8 +137,6 @@ const elementalData: Record<Element, {
         ]
     },
     'Luz': {
-        color: amber[300],
-        icon: <LightModeIcon />,
         description: 'Controle sobre a luz e a radiação, permitindo manipular a luminosidade e energias positivas.',
         benefits: [
             'Upgrades em Poderes Mágicos de Luz',
@@ -174,8 +153,6 @@ const elementalData: Record<Element, {
         ]
     },
     'Não-elemental': {
-        color: grey[500],
-        icon: <AllInclusiveIcon />,
         description: 'Equilíbrio entre todos os elementos, sem especialização mas também sem fraquezas específicas.',
         benefits: [
             'Versatilidade em todos os tipos de magia',
@@ -211,16 +188,10 @@ function ElementalMasteryModal({ open, onClose, onElementSelect }: ElementalMast
         }
     };
 
-    // Renderizar ícone do elemento com a cor correta
-    const renderElementIcon = (element: Element) => {
-        const iconProps = { 
-            sx: { 
-                color: elementalData[element].color,
-                fontSize: '1.5rem'
-            }
-        };
-        return React.cloneElement(elementalData[element].icon as React.ReactElement, iconProps);
-    };
+    // Glifo do elemento, na cor do elemento
+    const renderElementIcon = (element: Element) => (
+        <ElementIcon element={element} colored sx={{ fontSize: '1.5rem' }} />
+    );
 
     return (
         <Modal
@@ -239,7 +210,7 @@ function ElementalMasteryModal({ open, onClose, onElementSelect }: ElementalMast
                     maxHeight: '90vh',
                     bgcolor: 'background.paper',
                     borderRadius: 2,
-                    boxShadow: 24,
+                    boxShadow: shadow.overlay,
                     p: 0,
                     overflow: 'hidden',
                     display: 'flex',
@@ -258,7 +229,7 @@ function ElementalMasteryModal({ open, onClose, onElementSelect }: ElementalMast
                     }}
                 >
                     <Box display="flex" alignItems="center">
-                        <AutoAwesomeIcon sx={{ mr: 1 }} />
+                        <AutoStoriesIcon sx={{ mr: 1 }} />
                         <Typography variant="h6" component="h2">
                             Escolha sua Maestria Elemental
                         </Typography>
@@ -295,7 +266,7 @@ function ElementalMasteryModal({ open, onClose, onElementSelect }: ElementalMast
                     >
                         <Box sx={{ p: 2, borderBottom: `1px solid ${theme.palette.divider}` }}>
                             <Typography variant="subtitle1" fontWeight="bold" color="primary">
-                                <AutoAwesomeIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
+                                <AutoStoriesIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
                                 Elementos Disponíveis
                             </Typography>
                             <Typography variant="caption" color="text.secondary">
@@ -361,7 +332,7 @@ function ElementalMasteryModal({ open, onClose, onElementSelect }: ElementalMast
                                 <Box>
                                     <Box display="flex" alignItems="center" gap={1}>
                                         {renderElementIcon(selectedElement)}
-                                        <Typography variant="h6" fontWeight="bold" style={{ color: elementalData[selectedElement].color }}>
+                                        <Typography variant="h6" fontWeight="bold" style={{ color: elementColor[resolveElement(selectedElement)] }}>
                                             Maestria Elemental: {selectedElement}
                                         </Typography>
                                     </Box>
@@ -371,7 +342,7 @@ function ElementalMasteryModal({ open, onClose, onElementSelect }: ElementalMast
                                             label="Maestria Elemental"
                                             color="primary"
                                             size="small"
-                                            icon={<AutoAwesomeIcon />}
+                                            icon={<ElementIcon element={selectedElement} />}
                                         />
                                         <Chip
                                             label="Nível 10+"
@@ -393,7 +364,7 @@ function ElementalMasteryModal({ open, onClose, onElementSelect }: ElementalMast
                                             p: 2, 
                                             bgcolor: alpha(theme.palette.background.paper, 0.5),
                                             border: '1px solid',
-                                            borderColor: alpha(elementalData[selectedElement].color, 0.3),
+                                            borderColor: 'divider',
                                             borderRadius: 1,
                                             mb: 2
                                         }}
@@ -460,9 +431,9 @@ function ElementalMasteryModal({ open, onClose, onElementSelect }: ElementalMast
                                     
                                     <Card 
                                         sx={{
-                                            bgcolor: alpha(elementalData[selectedElement].color, 0.05),
+                                            bgcolor: 'background.raised',
                                             border: '1px solid',
-                                            borderColor: alpha(elementalData[selectedElement].color, 0.3)
+                                            borderColor: 'divider'
                                         }}
                                     >
                                         <CardContent>
@@ -496,7 +467,7 @@ function ElementalMasteryModal({ open, onClose, onElementSelect }: ElementalMast
                                     color: 'text.secondary'
                                 }}
                             >
-                                <AutoAwesomeIcon sx={{ fontSize: 40, mb: 2, opacity: 0.7 }} />
+                                <AutoStoriesIcon sx={{ fontSize: 40, mb: 2, opacity: 0.7 }} />
                                 <Typography variant="body1" gutterBottom>
                                     Selecione um elemento para ver seus detalhes
                                 </Typography>

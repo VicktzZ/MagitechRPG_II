@@ -23,10 +23,11 @@ import CloseIcon from '@mui/icons-material/Close';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import PsychologyIcon from '@mui/icons-material/Psychology';
-import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
+import StarIcon from '@mui/icons-material/Star';
 import { blue, orange } from '@mui/material/colors';
 import type { Class, Subclass } from '@models';
 import type { SystemSubclass } from '@models/entities';
+import { color, shadow } from '@themes/tokens';
 
 interface SubclassModalProps {
     open: boolean;
@@ -102,7 +103,7 @@ function SubclassModal({ open, onClose, currentClass, onConfirm, customSubclasse
                     maxHeight: '90vh',
                     bgcolor: 'background.paper',
                     borderRadius: 2,
-                    boxShadow: 24,
+                    boxShadow: shadow.overlay,
                     p: 0,
                     overflow: 'hidden',
                     display: 'flex',
@@ -271,8 +272,7 @@ function SubclassModal({ open, onClose, currentClass, onConfirm, customSubclasse
                                                         border: '1px solid',
                                                         borderColor: alpha(theme.palette.divider, 0.2),
                                                         '&:hover': {
-                                                            borderColor: alpha(theme.palette.primary.main, 0.3),
-                                                            boxShadow: `0 0 8px ${alpha(theme.palette.primary.main, 0.2)}`
+                                                            borderColor: color.borderStrong
                                                         }
                                                     }}
                                                 >
@@ -339,7 +339,7 @@ function SubclassModal({ open, onClose, currentClass, onConfirm, customSubclasse
                                     color: 'text.secondary'
                                 }}
                             >
-                                <AutoAwesomeIcon sx={{ fontSize: 40, mb: 2, opacity: 0.7 }} />
+                                <StarIcon sx={{ fontSize: 40, mb: 2, opacity: 0.7 }} />
                                 <Typography variant="body1" gutterBottom>
                                     Selecione uma subclasse para ver seus detalhes
                                 </Typography>

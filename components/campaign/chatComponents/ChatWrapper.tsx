@@ -62,7 +62,7 @@ const ChatWrapper = memo(function ChatWrapper({
                         onClick={() => setIsChatOpen(!isChatOpen)}
                         sx={{
                             bgcolor: 'primary.main',
-                            color: 'white',
+                            color: 'primary.contrastText',
                             border: '2px solid',
                             borderColor: 'primary.main',
                             width: 50,

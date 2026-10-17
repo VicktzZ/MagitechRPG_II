@@ -204,9 +204,7 @@ function ItemWrapper({
     const weightUnit = customSystem ? (customSystem.weightConfig?.unit ?? '') : 'kg'
 
     const [ open, setOpen ] = useState(false)
-    const [ , setShowTooltip ] = useState(false)
     const [ confirmModalOpen, setConfirmModalOpen ] = useState(false)
-    const [ hovered, setHovered ] = useState(false)
 
     const { enqueueSnackbar } = useSnackbar()
 
@@ -241,72 +239,24 @@ function ItemWrapper({
         return rarityColor[item.rarity] || '#9e9e9e' // Usa cinza como fallback
     }
 
-    const rarityGlowAnimation = {
-        '@keyframes rarityGlow': {
-            '0%': {
-                boxShadow: `0 0 5px ${alpha(getItemRarityColor(), 0.4)}, 
-                   0 0 10px ${alpha(getItemRarityColor(), 0.2)}`
-            },
-            '50%': {
-                boxShadow: `0 0 15px ${alpha(getItemRarityColor(), 0.6)}, 
-                    0 0 20px ${alpha(getItemRarityColor(), 0.3)}`
-            },
-            '100%': {
-                boxShadow: `0 0 5px ${alpha(getItemRarityColor(), 0.4)}, 
-                    0 0 10px ${alpha(getItemRarityColor(), 0.2)}`
-            }
-        }
-    }
-
-    // Efeito de iluminação para o cartão do item
-    const getCardGlow = () => {
-        if (item.rarity === 'Comum' || item.rarity === 'Amaldiçoado') {
-            return {}
-        }
-
-        return {
-            animation: hovered ? 'rarityGlow 2s infinite' : 'none'
-        }
-    }
-
     return (
         <>
             <Paper
-                elevation={hovered ? 12 : 4}
-                onMouseEnter={() => { setHovered(true); setTimeout(() => setShowTooltip(true), 600) }}
-                onMouseLeave={() => { setHovered(false); setShowTooltip(false) }}
+                elevation={0}
                 sx={{
                     display: 'flex',
                     flexDirection: 'column',
                     minHeight: '22rem',
                     width: { xs: '100%', sm: '18rem' },
-                    backgroundColor: alpha(theme.palette.background.paper, 0.7),
-                    border: `2px solid ${alpha(getItemRarityColor(), hovered ? 0.8 : 0.4)}`,
+                    bgcolor: 'background.raised',
+                    border: `2px solid ${alpha(getItemRarityColor(), 0.4)}`,
                     borderRadius: 4,
                     p: 2,
                     gap: 2,
-                    transition: 'all .3s cubic-bezier(0.34, 1.56, 0.64, 1)',
-                    transform: hovered ? 'translateY(-8px) scale(1.03)' : 'translateY(0) scale(1)',
+                    transition: 'border-color 120ms',
                     position: 'relative',
                     overflow: 'hidden',
-                    ...getCardGlow(),
-                    ...rarityGlowAnimation,
-                    '&::before': item.rarity !== 'Comum' && item.rarity !== 'Amaldiçoado' ? {
-                        content: '""',
-                        position: 'absolute',
-                        top: 0,
-                        left: -100,
-                        width: '50px',
-                        height: '100%',
-                        background: `linear-gradient(to right, transparent, ${alpha(getItemRarityColor(), 0.3)}, transparent)`,
-                        transform: 'skewX(-25deg)',
-                        animation: hovered ? 'shine 2.5s infinite' : 'none',
-                        '@keyframes shine': {
-                            '0%': { left: '-100px' },
-                            '50%': { left: '200%' },
-                            '100%': { left: '200%' }
-                        }
-                    } : {}
+                    '&:hover': { borderColor: alpha(getItemRarityColor(), 0.8) }
                 }}
             >
                 {/* Badge de tipo de item */}
@@ -333,13 +283,6 @@ function ItemWrapper({
                 <Box
                     py={0.5}
                     px={1}
-                    sx={{
-                        background: `linear-gradient(90deg, 
-                ${alpha(getItemRarityColor(), 0)} 0%, 
-                ${alpha(getItemRarityColor(), 0.15)} 50%, 
-                ${alpha(getItemRarityColor(), 0)} 100%)`,
-                        borderRadius: 2
-                    }}
                 >
                     <Typography
                         fontFamily={font.display}
@@ -347,10 +290,6 @@ function ItemWrapper({
                         textAlign='center'
                         fontSize="1rem"
                         color={getItemRarityColor()}
-                        sx={{
-                            textShadow: hovered ? `0 0 8px ${alpha(getItemRarityColor(), 0.7)}` : 'none',
-                            transition: 'text-shadow 0.3s ease'
-                        }}
                     >
                         {item.rarity?.toUpperCase()}
                     </Typography>
@@ -383,10 +322,9 @@ function ItemWrapper({
                         sx={{
                             border: `1px solid ${alpha(itemAttr.color, 0.3)}`,
                             color: itemAttr.color,
-                            transition: 'all 0.2s',
+                            transition: 'background-color 120ms',
                             '&:hover': {
-                                backgroundColor: alpha(itemAttr.color, 0.05),
-                                transform: 'scale(1.1)'
+                                backgroundColor: alpha(itemAttr.color, 0.05)
                             }
                         }}
                     >

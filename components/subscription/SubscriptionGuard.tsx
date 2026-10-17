@@ -22,7 +22,7 @@ import {
     Lock as LockIcon,
     CheckCircle as CheckCircleIcon,
     ArrowForward as ArrowForwardIcon,
-    Stars as StarsIcon
+    WorkspacePremium as WorkspacePremiumIcon
 } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
 import type { Permission } from '@enums/subscriptionEnum';
@@ -179,7 +179,7 @@ export function SubscriptionGuard({
                             }}
                         >
                             <Chip
-                                icon={<StarsIcon />}
+                                icon={<WorkspacePremiumIcon />}
                                 label="NECESSÁRIO"
                                 sx={{
                                     bgcolor: requiredPlanMetadata.color,

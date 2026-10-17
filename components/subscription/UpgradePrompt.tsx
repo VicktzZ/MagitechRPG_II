@@ -19,7 +19,7 @@ import {
     Lock as LockIcon,
     CheckCircle as CheckCircleIcon,
     ArrowForward as ArrowForwardIcon,
-    Stars as StarsIcon
+    WorkspacePremium as WorkspacePremiumIcon
 } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
 import type { Permission, SubscriptionPlan } from '@enums/subscriptionEnum';
@@ -163,7 +163,7 @@ export function UpgradePrompt({
                 }}
             >
                 <Chip
-                    icon={<StarsIcon />}
+                    icon={<WorkspacePremiumIcon />}
                     label="UPGRADE NECESSÁRIO"
                     sx={{
                         bgcolor: planMetadata.color,
