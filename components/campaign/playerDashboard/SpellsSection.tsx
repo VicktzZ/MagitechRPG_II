@@ -12,8 +12,11 @@ import { charsheetEntity } from '@utils/firestoreEntities';
 import {
     castSpell,
     buildSpellCastMessage,
-    buildInsufficientMpMessage
+    buildInsufficientMpMessage,
+    buildMpLimitExceededMessage
 } from '@utils/combat/spellRoller';
+import { getMpLimit, isMpLimitEnforced } from '@utils/mpLimit';
+import { campaignService } from '@services';
 import { useSnackbar } from 'notistack';
 import { useSession } from 'next-auth/react';
 import {
@@ -103,9 +106,11 @@ interface SpellStageProps {
     isCasting?: boolean
     canCast?: boolean
     currentMp?: number
+    /** Preenchido quando a conjuração estouraria o limite de MP por turno */
+    blockedReason?: string
 }
 
-function SpellStage({ stage, description, spell, onCast, isCasting, canCast, currentMp }: SpellStageProps): ReactElement {
+function SpellStage({ stage, description, spell, onCast, isCasting, canCast, currentMp, blockedReason }: SpellStageProps): ReactElement {
     let mpCost = Number(spell.mpCost)
     let extraCost: Record<string, number> = {
         'estágio 1': 0,
@@ -195,7 +200,7 @@ function SpellStage({ stage, description, spell, onCast, isCasting, canCast, cur
                     {onCast && stage !== 4 && (
                         <Tooltip title={canCast === false
                             ? `MP insuficiente (precisa de ${mpCost})`
-                            : `Conjurar — gasta ${mpCost} MP`
+                            : blockedReason ?? `Conjurar — gasta ${mpCost} MP`
                         }>
                             <span>
                                 <Button
@@ -209,6 +214,7 @@ function SpellStage({ stage, description, spell, onCast, isCasting, canCast, cur
                                         color: 'white',
                                         fontWeight: 700,
                                         textTransform: 'none',
+                                        opacity: blockedReason ? 0.55 : 1,
                                         '&:hover': {
                                             bgcolor: stageConfig.color,
                                             filter: 'brightness(0.9)'
@@ -246,6 +252,15 @@ export default function SpellsSection(): ReactElement {
     const [ expandedSpell, setExpandedSpell ] = useState<string | false>(false)
     const [ castingSpellId, setCastingSpellId ] = useState<string | null>(null)
 
+    // Limite de MP por turno: só vale em combate ativo, para quem participa dele (utils/mpLimit.ts)
+    const combat = campaign?.session?.combat
+    const myCombatant = combat?.isActive ? combat.combatants?.find(c => c.id === charsheet?.id) : undefined
+    const mpLimitEnforced = Boolean(myCombatant) && Boolean(charsheet) && isMpLimitEnforced(charsheet, campaign?.mode)
+    const mpLimit = charsheet ? getMpLimit(charsheet) : 0
+    const mpSpentThisTurn = myCombatant?.mpSpentThisTurn ?? 0
+    const mpLimitReleased = Boolean(myCombatant?.mpLimitOverride)
+    const exceedsMpLimit = (cost: number): boolean => mpLimitEnforced && !mpLimitReleased && mpSpentThisTurn + cost > mpLimit
+
     const sendCombatChatMessage = async (text: string) => {
         if (!session?.user) return;
         await handleSendMessage(new Message({
@@ -277,8 +292,23 @@ export default function SpellsSection(): ReactElement {
             return;
         }
 
+        if (exceedsMpLimit(result.mpCost)) {
+            await sendCombatChatMessage(buildMpLimitExceededMessage(playerName, spell, result.mpCost, mpSpentThisTurn, mpLimit));
+            enqueueSnackbar(`Limite de MP por turno excedido (${mpSpentThisTurn}/${mpLimit})`, { variant: 'warning' });
+            return;
+        }
+
+        let reservedMp = false;
+
         try {
             setCastingSpellId(spellKey);
+
+            // O servidor é quem decide: registra o gasto no turno e recusa (409) o que passar do limite
+            if (myCombatant) {
+                await campaignService.spendCombatMp(campaign.id, { combatantId: charsheet.id, value: result.mpCost });
+                reservedMp = true;
+            }
+
             const newMp = Math.max(0, currentMp - result.mpCost);
             await updateCharsheet({ 'stats.mp': newMp } as any);
             await sendCombatChatMessage(buildSpellCastMessage(playerName, result));
@@ -293,9 +323,20 @@ export default function SpellsSection(): ReactElement {
                     'resources.mpSpent': result.mpCost
                 }
             } ]);
-        } catch (error) {
-            console.error('Erro ao conjurar magia:', error);
-            enqueueSnackbar('Erro ao conjurar magia', { variant: 'error' });
+        } catch (error: any) {
+            if (error?.response?.status === 409 && error.response.data?.code === 'MP_LIMIT_EXCEEDED') {
+                // Estado local defasado: o servidor já tinha mais MP gasto neste turno
+                const { spent, limit } = error.response.data;
+                await sendCombatChatMessage(buildMpLimitExceededMessage(playerName, spell, result.mpCost, spent, limit));
+                enqueueSnackbar(error.response.data.error, { variant: 'warning' });
+            } else {
+                if (reservedMp) {
+                    // Desfaz a reserva para a conjuração que falhou não consumir o limite do turno
+                    void campaignService.spendCombatMp(campaign.id, { combatantId: charsheet.id, value: -result.mpCost }).catch(() => undefined);
+                }
+                console.error('Erro ao conjurar magia:', error);
+                enqueueSnackbar('Erro ao conjurar magia', { variant: 'error' });
+            }
         } finally {
             setCastingSpellId(null);
         }
@@ -420,6 +461,27 @@ export default function SpellsSection(): ReactElement {
                                 sx={{ fontWeight: 700, fontSize: '0.9rem' }}
                             />
                         </Box>
+
+                        {/* Limite de MP por turno (só em combate) */}
+                        {mpLimitEnforced && (
+                            <Box sx={{ textAlign: 'center' }}>
+                                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                                    MP neste turno
+                                </Typography>
+                                <Tooltip
+                                    title={mpLimitReleased
+                                        ? 'O mestre liberou o limite de MP por turno até o início do seu próximo turno.'
+                                        : 'MP gasto em magias desde o início do seu turno / limite por turno. Reações em turnos alheios contam.'}
+                                >
+                                    <Chip
+                                        label={`${mpLimitReleased ? '🔓 ' : ''}${mpSpentThisTurn} / ${mpLimit}`}
+                                        color={mpLimitReleased ? 'success' : mpSpentThisTurn >= mpLimit ? 'error' : 'info'}
+                                        variant="filled"
+                                        sx={{ fontWeight: 700, fontSize: '0.9rem' }}
+                                    />
+                                </Tooltip>
+                            </Box>
+                        )}
 
                         {/* Estatísticas por Nível */}
                         <Stack direction="row" spacing={3}>
@@ -624,6 +686,9 @@ export default function SpellsSection(): ReactElement {
                                                         if (!description) return null
                                                         const previewCost = castSpell(spell, selectedStage).mpCost
                                                         const currentMp = Number(charsheet.stats?.mp ?? 0)
+                                                        const limitBlockedReason = exceedsMpLimit(previewCost)
+                                                            ? `Limite de MP por turno: ${mpSpentThisTurn}/${mpLimit} gastos e esta conjuração custa ${previewCost}. Clique para avisar o mestre.`
+                                                            : undefined
                                                         return (
                                                             <SpellStage
                                                                 spell={spell}
@@ -633,6 +698,7 @@ export default function SpellsSection(): ReactElement {
                                                                 isCasting={castingSpellId === (spell.id || spell.name)}
                                                                 canCast={currentMp >= previewCost}
                                                                 currentMp={currentMp}
+                                                                blockedReason={limitBlockedReason}
                                                             />
                                                         )
                                                     })()}

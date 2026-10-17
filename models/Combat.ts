@@ -66,6 +66,19 @@ export class Combatant {
     @IsNumber()
         dexterity?: number; // Destreza (DES) para desempate de iniciativa
 
+    /**
+     * MP gasto em magias desde o início do último turno deste combatente (reações em
+     * turnos alheios contam). Volta a 0 quando o turno dele começa. Ver utils/mpLimit.ts.
+     */
+    @IsOptional()
+    @IsNumber()
+        mpSpentThisTurn?: number = 0;
+
+    /** Mestre liberou o limite de MP por turno até o início do próximo turno deste combatente */
+    @IsOptional()
+    @IsBoolean()
+        mpLimitOverride?: boolean = false;
+
     @ValidateNested({ each: true })
     @Type(() => AppliedEffect)
     @IsArray()

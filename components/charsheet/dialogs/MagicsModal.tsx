@@ -9,7 +9,7 @@ import { Box, Backdrop } from '@mui/material';
 import type { Spell } from '@models/entities';
 import type { ReactElement } from 'react';
 import type { CharsheetDTO } from '@models/dtos';
-import { getSpellCategory } from '@utils/spellCategory';
+import { SPELL_TYPE_FILTER } from '@utils/spellCategory';
 
 import Magic from '../subcomponents/Magic';
 
@@ -143,32 +143,23 @@ export default function SpellsModal({ open, onClose }: { open: boolean, onClose:
                             errorMessage={(err) => err.message || 'Erro ao adicionar magia'}
                             filterOptions={getValues('level') < 15 ? elements : [ ...elements, ...specialElements ]}
                             filterLabel="Elemento"
-                            secondaryFilter={{
-                                label: 'Tipo',
-                                getValue: (spell: Spell) => getSpellCategory(spell.type)
-                            }}
+                            secondaryFilter={SPELL_TYPE_FILTER}
                             sortOptions={[ 'Nível', 'Elemento', 'Alfabética' ]}
+                            itemMinWidth={300}
                             renderResource={({ item, handleAddItem }) => {
                                 const currentSpells = getValues('spells') || [];
                                 const alreadyAdded = currentSpells.some(m => m.id === item.id);
                                 
                                 return (
-                                    <motion.div
-                                        layout
-                                        initial={{ opacity: 0, y: 20 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        exit={{ opacity: 0, y: -20 }}
-                                        transition={{ duration: 0.2 }}
-                                    >
-                                        <Magic
-                                            as="magic-spell"
-                                            key={item.id ?? item.nome}
-                                            magic={item}
-                                            id={item.id ?? item.nome}
-                                            isAdding={!alreadyAdded}
-                                            onIconClick={alreadyAdded ? undefined : handleAddItem}
-                                        />
-                                    </motion.div>
+                                    <Magic
+                                        as="magic-spell"
+                                        compact
+                                        key={item.id ?? item.nome}
+                                        magic={item}
+                                        id={item.id ?? item.nome}
+                                        isAdding={!alreadyAdded}
+                                        onIconClick={alreadyAdded ? undefined : handleAddItem}
+                                    />
                                 );
                             }}
                         />

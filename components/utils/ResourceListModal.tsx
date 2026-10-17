@@ -21,40 +21,49 @@ import {
     useTheme
 } from '@mui/material';
 import { useSnackbar } from 'notistack';
-import { type ReactElement, useCallback, useEffect, useMemo, useState, memo } from 'react';
+import { type ReactElement, Fragment, useCallback, useEffect, useMemo, useState, memo } from 'react';
 import { useInView } from 'react-intersection-observer';
 
 import { toastDefault } from '@constants';
 import { useResourceList } from '@hooks/useResourceList';
 import { CustomMenu } from '@layout';
 import type { ResourceListModalProps } from '@models/types/components';
+import { collectFilterOptions } from '@utils/filterSelection';
 
-/** Botão de filtro com menu de múltipla seleção (checkboxes) */
-function MultiSelectFilter({
-    label,
-    options,
-    selected,
-    onToggle,
-    onClear
-}: {
+/** Seção (lista de checkboxes) de um menu de filtro */
+interface FilterSection {
     label: string;
     options: string[];
     selected: string[];
     onToggle: (value: string) => void;
     onClear: () => void;
+}
+
+/**
+ * Botão de filtro com menu de múltipla seleção (checkboxes). Aceita mais de uma seção
+ * no mesmo menu (ex: "Tipo" e "Subtipo"), lado a lado em telas largas e empilhadas nas
+ * estreitas, cada uma com a sua rolagem; o contador do botão soma as marcadas.
+ */
+function MultiSelectFilter({
+    label,
+    sections
+}: {
+    label: string;
+    sections: FilterSection[];
 }): ReactElement {
     const [ anchorEl, setAnchorEl ] = useState<HTMLElement | null>(null);
     const open = Boolean(anchorEl);
+    const totalSelected = sections.reduce((total, section) => total + section.selected.length, 0);
 
     return (
         <>
             <Button
-                variant={selected.length > 0 ? 'contained' : 'outlined'}
+                variant={totalSelected > 0 ? 'contained' : 'outlined'}
                 size="small"
                 onClick={(e) => setAnchorEl(e.currentTarget)}
                 endIcon={<ArrowDropDown />}
             >
-                {label}{selected.length > 0 ? ` (${selected.length})` : ''}
+                {label}{totalSelected > 0 ? ` (${totalSelected})` : ''}
             </Button>
             <Popover
                 open={open}
@@ -64,43 +73,80 @@ function MultiSelectFilter({
                 transformOrigin={{ vertical: 'top', horizontal: 'left' }}
                 slotProps={{ paper: { sx: { borderRadius: 2, mt: 0.5 } } }}
             >
-                <Box sx={{ p: 1.5, minWidth: 220, maxHeight: 320, overflowY: 'auto' }}>
-                    <Box display="flex" justifyContent="space-between" alignItems="center" mb={0.5} gap={1}>
-                        <Typography variant="subtitle2">{label}</Typography>
-                        {selected.length > 0 && (
-                            <Button size="small" onClick={onClear} sx={{ minWidth: 'auto' }}>
-                                Limpar
-                            </Button>
-                        )}
-                    </Box>
-                    <Divider sx={{ mb: 1 }} />
-                    {options.length === 0 ? (
-                        <Typography variant="body2" color="text.secondary" sx={{ px: 1, py: 1 }}>
-                            Nenhuma opção disponível.
-                        </Typography>
-                    ) : (
-                        <FormGroup>
-                            {options.map(option => (
-                                <FormControlLabel
-                                    key={option}
-                                    sx={{ mr: 0 }}
-                                    control={
-                                        <Checkbox
-                                            size="small"
-                                            checked={selected.includes(option)}
-                                            onChange={() => onToggle(option)}
-                                        />
-                                    }
-                                    label={<Typography variant="body2">{option}</Typography>}
-                                />
-                            ))}
-                        </FormGroup>
-                    )}
+                <Box
+                    sx={{
+                        p: 1.5,
+                        display: 'flex',
+                        flexDirection: { xs: 'column', sm: 'row' },
+                        gap: 1.5,
+                        maxHeight: { xs: '70vh', sm: 'none' },
+                        overflowY: { xs: 'auto', sm: 'visible' }
+                    }}
+                >
+                    {sections.map((section, index) => (
+                        <Fragment key={section.label}>
+                            {index > 0 && (
+                                <Divider flexItem orientation="vertical" sx={{ display: { xs: 'none', sm: 'block' } }} />
+                            )}
+                            <Box sx={{ minWidth: 200, maxHeight: { sm: 340 }, overflowY: { sm: 'auto' } }}>
+                                <Box display="flex" justifyContent="space-between" alignItems="center" mb={0.5} gap={1}>
+                                    <Typography variant="subtitle2">{section.label}</Typography>
+                                    {section.selected.length > 0 && (
+                                        <Button size="small" onClick={section.onClear} sx={{ minWidth: 'auto' }}>
+                                            Limpar
+                                        </Button>
+                                    )}
+                                </Box>
+                                <Divider sx={{ mb: 1 }} />
+                                {section.options.length === 0 ? (
+                                    <Typography variant="body2" color="text.secondary" sx={{ px: 1, py: 1 }}>
+                                        Nenhuma opção disponível.
+                                    </Typography>
+                                ) : (
+                                    <FormGroup>
+                                        {section.options.map(option => (
+                                            <FormControlLabel
+                                                key={option}
+                                                sx={{ mr: 0 }}
+                                                control={
+                                                    <Checkbox
+                                                        size="small"
+                                                        checked={section.selected.includes(option)}
+                                                        onChange={() => section.onToggle(option)}
+                                                    />
+                                                }
+                                                label={<Typography variant="body2">{option}</Typography>}
+                                            />
+                                        ))}
+                                    </FormGroup>
+                                )}
+                            </Box>
+                        </Fragment>
+                    ))}
                 </Box>
             </Popover>
         </>
     );
 }
+
+/** Quantos itens a grade desenha por vez; o resto entra conforme a rolagem se aproxima do fim */
+const RENDER_STEP = 48;
+
+/**
+ * Célula da lista. É memoizada para que digitar na busca, marcar filtros ou chegar uma página nova
+ * não redesenhe os itens que já estão na tela (cada item pode ser um cartão pesado).
+ */
+const ResourceCell = memo(function ResourceCell({
+    item,
+    renderResource,
+    onAdd
+}: {
+    item: any;
+    renderResource: ResourceListModalProps<any>['renderResource'];
+    onAdd: (item: any) => void;
+}): ReactElement {
+    return renderResource({ item, handleAddItem: () => onAdd(item) });
+});
 
 function ResourceListModal({
     open,
@@ -118,6 +164,7 @@ function ResourceListModal({
     secondaryFilter,
     title,
     renderResource,
+    itemMinWidth,
     pageSize = 20,
     initialSearch = '',
     initialFilters = [],
@@ -130,6 +177,9 @@ function ResourceListModal({
 
     const {
         items,
+        loadedItems,
+        isFiltering,
+        isLoadingAll,
         isLoading,
         isError,
         error,
@@ -140,6 +190,8 @@ function ResourceListModal({
         clearFilters,
         toggleSecondaryFilter,
         clearSecondaryFilters,
+        toggleSubFilter,
+        clearSubFilters,
         setSort,
         setButtonSelected,
         addItem,
@@ -147,6 +199,7 @@ function ResourceListModal({
         search,
         filters,
         secondaryFilters,
+        subFilters,
         sort,
         buttonSelected
     } = useResourceList({
@@ -161,42 +214,58 @@ function ResourceListModal({
         addFunction,
         validateAdd,
         sortFieldMap,
-        getSecondaryFilterValue: secondaryFilter?.getValue
+        getSecondaryFilterValue: secondaryFilter?.getValue,
+        getSubFilterValue: secondaryFilter?.subFilter?.getValue
     });
 
+    // As opções saem dos itens carregados (e não dos já filtrados), para que marcar uma
+    // opção não faça as outras sumirem. As fixas vêm primeiro; as demais, achadas nos itens, depois.
     const secondaryOptions = useMemo(() => {
         if (!secondaryFilter) return [];
-        if (secondaryFilter.options) return secondaryFilter.options;
+        return collectFilterOptions(loadedItems, secondaryFilter.getValue, secondaryFilter.options);
+    }, [ secondaryFilter, loadedItems ]);
 
-        const unique = new Set<string>();
-        items.forEach(item => {
-            const value = secondaryFilter.getValue(item);
-            if (value) unique.add(value);
-        });
+    const subFilterOptions = useMemo(() => {
+        const subFilter = secondaryFilter?.subFilter;
+        if (!subFilter) return [];
+        return collectFilterOptions(loadedItems, subFilter.getValue, subFilter.options);
+    }, [ secondaryFilter, loadedItems ]);
 
-        return Array.from(unique).sort((a, b) => a.localeCompare(b, 'pt-BR'));
-    }, [ secondaryFilter, items ]);
+    // Rolagem da lista e janela de renderização: o fim da grade é observado com folga de 800px, então
+    // os próximos itens já estão desenhados quando a rolagem chega neles
+    const [ scrollEl, setScrollEl ] = useState<HTMLDivElement | null>(null);
+    const [ renderLimit, setRenderLimit ] = useState(RENDER_STEP);
 
     const { ref: loadMoreRef, inView } = useInView({
-        threshold: 0.5, // Aumentado para evitar carregamentos prematuros
-        triggerOnce: false,
-        delay: 300 // Adiciona um delay para evitar múltiplos disparos
+        root: scrollEl,
+        rootMargin: '0px 0px 800px 0px',
+        threshold: 0
     });
 
+    // Resultado diferente (busca, filtros, ordenação): volta ao topo e à primeira janela
     useEffect(() => {
-        let timeoutId: NodeJS.Timeout | null = null;
+        setRenderLimit(RENDER_STEP);
+        if (scrollEl) scrollEl.scrollTop = 0;
+    }, [ search, filters, secondaryFilters, subFilters, sort, scrollEl ]);
 
-        if (inView && hasNextPage && !isFetchingNextPage) {
-            // Usa um timeout para evitar múltiplas chamadas em sequência
-            timeoutId = setTimeout(() => {
+    const hasHiddenItems = renderLimit < items.length;
+    const visibleItems = hasHiddenItems ? items.slice(0, renderLimit) : items;
+
+    // Com o fim da grade à vista: primeiro desenha os itens que faltam; depois, só sem filtro, busca a
+    // próxima página (com filtro tudo já vem de uma vez). Repete a cada passo enquanto o fim seguir à vista.
+    useEffect(() => {
+        if (!inView) return undefined;
+
+        const timeoutId = setTimeout(() => {
+            if (hasHiddenItems) {
+                setRenderLimit(limit => limit + RENDER_STEP);
+            } else if (!isFiltering && hasNextPage && !isFetchingNextPage) {
                 loadMore();
-            }, 200);
-        }
+            }
+        }, 50);
 
-        return () => {
-            if (timeoutId) clearTimeout(timeoutId);
-        };
-    }, [ inView, hasNextPage, isFetchingNextPage, loadMore ]);
+        return () => clearTimeout(timeoutId);
+    }, [ inView, renderLimit, hasHiddenItems, isFiltering, hasNextPage, isFetchingNextPage, loadMore ]);
 
     const handleButtonClick = useCallback((type: 'add' | 'create') => {
         setButtonSelected({
@@ -245,12 +314,13 @@ function ResourceListModal({
         }
     }, [ addItem, enqueueSnackbar, closeSnackbar ]);
 
-    const hasActiveFilters = filters.length > 0 || secondaryFilters.length > 0;
+    const hasActiveFilters = filters.length > 0 || secondaryFilters.length > 0 || subFilters.length > 0;
 
     const handleClearAllFilters = useCallback(() => {
         clearFilters();
         clearSecondaryFilters();
-    }, [ clearFilters, clearSecondaryFilters ]);
+        clearSubFilters();
+    }, [ clearFilters, clearSecondaryFilters, clearSubFilters ]);
 
     const renderContent = () => {
         if (buttonSelected.create) {
@@ -292,20 +362,35 @@ function ResourceListModal({
                     {filterOptions?.length > 0 && (
                         <MultiSelectFilter
                             label={filterLabel}
-                            options={filterOptions}
-                            selected={filters}
-                            onToggle={toggleFilter}
-                            onClear={clearFilters}
+                            sections={[ {
+                                label: filterLabel,
+                                options: filterOptions,
+                                selected: filters,
+                                onToggle: toggleFilter,
+                                onClear: clearFilters
+                            } ]}
                         />
                     )}
 
                     {secondaryFilter && (
                         <MultiSelectFilter
                             label={secondaryFilter.label}
-                            options={secondaryOptions}
-                            selected={secondaryFilters}
-                            onToggle={toggleSecondaryFilter}
-                            onClear={clearSecondaryFilters}
+                            sections={[
+                                {
+                                    label: secondaryFilter.label,
+                                    options: secondaryOptions,
+                                    selected: secondaryFilters,
+                                    onToggle: toggleSecondaryFilter,
+                                    onClear: clearSecondaryFilters
+                                },
+                                ...(secondaryFilter.subFilter ? [ {
+                                    label: secondaryFilter.subFilter.label,
+                                    options: subFilterOptions,
+                                    selected: subFilters,
+                                    onToggle: toggleSubFilter,
+                                    onClear: clearSubFilters
+                                } ] : [])
+                            ]}
                         />
                     )}
 
@@ -366,10 +451,20 @@ function ResourceListModal({
                                 variant="outlined"
                             />
                         ))}
+                        {subFilters.map(value => (
+                            <Chip
+                                key={`sub-${value}`}
+                                label={`${secondaryFilter?.subFilter?.label ?? 'Subtipo'}: ${value}`}
+                                size="small"
+                                onDelete={() => toggleSubFilter(value)}
+                                color="info"
+                                variant="outlined"
+                            />
+                        ))}
                     </Stack>
                 )}
 
-                {items.length === 0 && !isLoading ? (
+                {items.length === 0 && !isLoading && !isLoadingAll ? (
                     <Box textAlign="center" py={6}>
                         <Typography variant="body1" color="text.secondary">
                             Nenhum item encontrado.
@@ -381,7 +476,7 @@ function ResourceListModal({
                         )}
                     </Box>
                 ) : (
-                    <Box sx={{
+                    <Box ref={setScrollEl} sx={{
                         overflowY: 'auto',
                         overflowX: 'hidden',
                         maxHeight: '70vh',
@@ -398,49 +493,61 @@ function ResourceListModal({
                             borderRadius: '3px'
                         }
                     }}>
-                        <Grid container spacing={2} justifyContent="center">
-                            {items.map((item, index) => {
-                                const itemId = item.id || index;
-
-                                return (
-                                    <Grid item xs={12} sm={6} md={4} key={itemId} sx={{ display: 'flex', justifyContent: 'center' }}>
-                                        {renderResource({
-                                            item,
-                                            handleAddItem: () => handleAddItem(item)
-                                        })}
-                                    </Grid>
-                                );
-                            })}
-
-                            {/* Elemento de referência para carregar mais */}
-                            {hasNextPage && (
-                                <Grid item xs={12} ref={loadMoreRef}>
-                                    <Box display="flex" justifyContent="center" p={2}>
-                                        {isFetchingNextPage ? (
-                                            <CircularProgress size={24} />
-                                        ) : (
-                                            <Typography variant="body2" color="text.secondary">
-                                                Carregando mais...
-                                            </Typography>
-                                        )}
+                        {itemMinWidth ? (
+                            // Grade densa: quantas colunas couberem, cada uma com no mínimo `itemMinWidth`
+                            <Box
+                                sx={{
+                                    display: 'grid',
+                                    gridTemplateColumns: `repeat(auto-fill, minmax(min(100%, ${itemMinWidth}px), 1fr))`,
+                                    gap: 1.5,
+                                    alignItems: 'stretch'
+                                }}
+                            >
+                                {visibleItems.map((item, index) => (
+                                    <Box key={item.id || index} sx={{ display: 'flex', minWidth: 0 }}>
+                                        <ResourceCell item={item} renderResource={renderResource} onAdd={handleAddItem} />
                                     </Box>
-                                </Grid>
-                            )}
-                        </Grid>
+                                ))}
+                            </Box>
+                        ) : (
+                            <Grid container spacing={2} justifyContent="center">
+                                {visibleItems.map((item, index) => {
+                                    const itemId = item.id || index;
+
+                                    return (
+                                        <Grid item xs={12} sm={6} md={4} key={itemId} sx={{ display: 'flex', justifyContent: 'center' }}>
+                                            <ResourceCell item={item} renderResource={renderResource} onAdd={handleAddItem} />
+                                        </Grid>
+                                    );
+                                })}
+                            </Grid>
+                        )}
+
+                        {/* Com filtro ativo tudo é carregado de uma vez: só mostra o progresso. Sem filtro, o
+                            elemento de referência abaixo dispara o scroll infinito. */}
+                        {isLoading || isLoadingAll ? (
+                            <Box display="flex" justifyContent="center" alignItems="center" gap={1} p={2}>
+                                <CircularProgress size={18} />
+                                <Typography variant="body2" color="text.secondary">
+                                    {isFiltering ? 'Carregando todos os resultados...' : 'Carregando...'}
+                                </Typography>
+                            </Box>
+                        ) : (hasHiddenItems || (!isFiltering && hasNextPage)) && (
+                            <Box ref={loadMoreRef} display="flex" justifyContent="center" p={2} minHeight={56}>
+                                {!isFiltering && !hasHiddenItems && (isFetchingNextPage ? (
+                                    <CircularProgress size={24} />
+                                ) : (
+                                    <Typography variant="body2" color="text.secondary">
+                                        Carregando mais...
+                                    </Typography>
+                                ))}
+                            </Box>
+                        )}
                     </Box>
                 )}
             </Box>
         );
     };
-
-    // Memoiza o conteúdo do modal para evitar re-renderizações desnecessárias
-    const modalContent = useMemo(() => {
-        return renderContent();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [
-        buttonSelected, items, isLoading, hasNextPage, isFetchingNextPage,
-        search, filters, secondaryFilters, sort, secondaryOptions
-    ]);
 
     return (
         <>
@@ -506,16 +613,14 @@ function ResourceListModal({
                         </Button>
                     </Box>
 
-                    {isLoading && !items.length ? (
-                        <Box display="flex" justifyContent="center" p={4}>
-                            <CircularProgress />
-                        </Box>
-                    ) : isError ? (
+                    {/* O carregamento aparece só na área da lista: trocar o conteúdo inteiro desmontava a
+                        barra de filtros (fechando o menu aberto e tirando o foco da busca) a cada consulta nova. */}
+                    {isError ? (
                         <Box p={2} bgcolor={alpha(theme.palette.error.main, 0.1)} color="error.main" borderRadius={1}>
                             <Typography>Erro ao carregar os itens: {error?.message}</Typography>
                         </Box>
                     ) : (
-                        modalContent
+                        renderContent()
                     )}
                 </Box>
             </Modal>

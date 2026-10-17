@@ -197,12 +197,12 @@ function processAddEffect(
             }
         },
         
-        // Limite de MP
+        // Bônus ao limite de MP por turno (o limite base é calculado em utils/mpLimit.ts)
         'mpLimit': () => {
             const current = charsheet?.mpLimit || 0
-            return { 
-                update: { mpLimit: current + value }, 
-                message: `+${value} de limite de MP` 
+            return {
+                update: { mpLimit: current + value },
+                message: `+${value} de limite de MP por turno`
             }
         }
     }

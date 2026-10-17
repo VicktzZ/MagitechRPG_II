@@ -1,0 +1,114 @@
+import { filterBySelections } from '../filterSelection'
+import {
+    getSpellCategories,
+    getSpellCategory,
+    getSpellSubtypes,
+    SPELL_TYPE_FILTER
+} from '../spellCategory'
+
+describe('getSpellCategory', () => {
+    it('devolve o texto antes do parêntese', () => {
+        expect(getSpellCategory('Ataque (imediato)')).toBe('Ataque')
+        expect(getSpellCategory('Ataque/Cura (imediato)')).toBe('Ataque/Cura')
+    })
+
+    it('usa "Outro" quando não há categoria', () => {
+        expect(getSpellCategory(undefined)).toBe('Outro')
+        expect(getSpellCategory('')).toBe('Outro')
+        expect(getSpellCategory('(imediato)')).toBe('Outro')
+    })
+})
+
+describe('getSpellCategories', () => {
+    it('uma categoria', () => {
+        expect(getSpellCategories('Defesa (Reação)')).toEqual([ 'Defesa' ])
+        expect(getSpellCategories('Ataque')).toEqual([ 'Ataque' ])
+    })
+
+    it('combinações viram várias categorias', () => {
+        expect(getSpellCategories('Ataque/Cura (imediato)')).toEqual([ 'Ataque', 'Cura' ])
+        expect(getSpellCategories('Utilidade/Suporte (Sustentado)')).toEqual([ 'Utilidade', 'Suporte' ])
+    })
+
+    it('usa "Outro" quando não há categoria', () => {
+        expect(getSpellCategories(undefined)).toEqual([ 'Outro' ])
+        expect(getSpellCategories(null)).toEqual([ 'Outro' ])
+        expect(getSpellCategories('(imediato)')).toEqual([ 'Outro' ])
+    })
+})
+
+describe('getSpellSubtypes — variações reais do catálogo', () => {
+    it.each([
+        [ 'Ataque (imediato)', [ 'Imediato' ] ],
+        [ 'Ataque (Imediato)', [ 'Imediato' ] ],
+        [ 'Defesa (contínua)', [ 'Contínuo' ] ],
+        [ 'Encantamento (Contínuo)', [ 'Contínuo' ] ],
+        [ 'Defesa (Sustentada)', [ 'Sustentado' ] ],
+        [ 'Transmutação (sustentado)', [ 'Sustentado' ] ],
+        [ 'Defesa (Reação)', [ 'Reação' ] ],
+        [ 'Ataque (completo)', [ 'Completo' ] ],
+        [ 'Ataque (Invocação)', [ 'Invocação' ] ],
+        [ 'Ataque (Área)', [ 'Área' ] ]
+    ])('%s', (type, expected) => {
+        expect(getSpellSubtypes(type)).toEqual(expected)
+    })
+
+    it('combinações viram vários subtipos', () => {
+        expect(getSpellSubtypes('Cura (Conjurado, Contínuo)')).toEqual([ 'Conjurado', 'Contínuo' ])
+        expect(getSpellSubtypes('Ataque (Imediato/Área)')).toEqual([ 'Imediato', 'Área' ])
+        expect(getSpellSubtypes('Ataque (Área/Sacrifício)')).toEqual([ 'Área', 'Sacrifício' ])
+    })
+
+    it('ignora o texto que sobra depois do parêntese', () => {
+        expect(getSpellSubtypes('Transmutação (contínuo) Execução: Padrão Alcance: Pessoal')).toEqual([ 'Contínuo' ])
+    })
+
+    it('sem subtipo devolve lista vazia', () => {
+        expect(getSpellSubtypes('Ataque')).toEqual([])
+        expect(getSpellSubtypes('Ataque ()')).toEqual([])
+        expect(getSpellSubtypes(undefined)).toEqual([])
+        expect(getSpellSubtypes(null)).toEqual([])
+    })
+})
+
+describe('filtros Tipo + Subtipo', () => {
+    const spells = [
+        { name: 'A', type: 'Ataque (imediato)' },
+        { name: 'B', type: 'Ataque (Conjurado)' },
+        { name: 'C', type: 'Defesa (Imediato)' },
+        { name: 'D', type: 'Defesa (contínua)' },
+        { name: 'E', type: 'Ataque/Cura (imediato)' },
+        { name: 'F', type: 'Cura (Conjurado, Contínuo)' },
+        { name: 'G', type: 'Ataque' }
+    ]
+    const apply = (types: string[], subtypes: string[]) => filterBySelections(spells, [
+        { getValue: SPELL_TYPE_FILTER.getValue, selected: types },
+        { getValue: SPELL_TYPE_FILTER.subFilter.getValue, selected: subtypes }
+    ]).map(s => s.name)
+
+    it('sem nada marcado, não filtra', () => {
+        expect(apply([], [])).toEqual([ 'A', 'B', 'C', 'D', 'E', 'F', 'G' ])
+    })
+
+    it('só o Tipo: todas da categoria (inclusive combinações)', () => {
+        expect(apply([ 'Ataque' ], [])).toEqual([ 'A', 'B', 'E', 'G' ])
+        expect(apply([ 'Cura' ], [])).toEqual([ 'E', 'F' ])
+    })
+
+    it('só o Subtipo: todas as magias com o subtipo, de qualquer tipo', () => {
+        expect(apply([], [ 'Imediato' ])).toEqual([ 'A', 'C', 'E' ])
+        expect(apply([], [ 'Contínuo' ])).toEqual([ 'D', 'F' ])
+        expect(apply([], [ 'Conjurado' ])).toEqual([ 'B', 'F' ])
+    })
+
+    it('Tipo e Subtipo juntos: precisa passar pelos dois', () => {
+        expect(apply([ 'Ataque' ], [ 'Imediato' ])).toEqual([ 'A', 'E' ])
+        expect(apply([ 'Defesa' ], [ 'Imediato' ])).toEqual([ 'C' ])
+        expect(apply([ 'Defesa' ], [ 'Conjurado' ])).toEqual([])
+    })
+
+    it('várias opções do mesmo filtro: OU entre elas', () => {
+        expect(apply([ 'Ataque', 'Defesa' ], [ 'Imediato' ])).toEqual([ 'A', 'C', 'E' ])
+        expect(apply([ 'Ataque' ], [ 'Imediato', 'Conjurado' ])).toEqual([ 'A', 'B', 'E' ])
+    })
+})

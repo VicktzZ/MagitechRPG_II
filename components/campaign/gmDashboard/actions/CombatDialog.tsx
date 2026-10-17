@@ -33,9 +33,13 @@ import PersonIcon from '@mui/icons-material/Person';
 import PetsIcon from '@mui/icons-material/Pets';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
+import LockOpenIcon from '@mui/icons-material/LockOpen';
+import LockIcon from '@mui/icons-material/Lock';
 import { red, green, blue, orange, grey } from '@mui/material/colors';
 import { useSnackbar } from 'notistack';
 import { useChannel } from '@contexts/channelContext';
+import { useCampaignContext } from '@contexts';
+import { getMpLimit, isMpLimitEnforced } from '@utils/mpLimit';
 import { PusherEvent } from '@enums';
 import type { PlayerInfo } from './types';
 import type { AppliedEffect, Creature } from '@models';
@@ -70,6 +74,10 @@ interface Combatant {
     currentMp?: number;
     maxMp?: number;
     effects?: AppliedEffect[];
+    /** MP gasto em magias desde o início do turno do combatente (limite por turno) */
+    mpSpentThisTurn?: number;
+    /** Mestre liberou o limite de MP por turno até o início do próximo turno do combatente */
+    mpLimitOverride?: boolean;
 }
 
 interface Combat {
@@ -93,6 +101,7 @@ export default function CombatDialog({
     onCombatUpdate
 }: CombatDialogProps) {
     const { enqueueSnackbar } = useSnackbar();
+    const { campaign } = useCampaignContext();
     const theme = useTheme();
     const { channel } = useChannel();
     const isDarkMode = theme.palette.mode === 'dark';
@@ -116,6 +125,15 @@ export default function CombatDialog({
             enqueueSnackbar('Efeito removido', { variant: 'success' });
         } catch (err: any) {
             enqueueSnackbar(err?.response?.data?.error ?? 'Erro ao remover efeito', { variant: 'error' });
+        }
+    }, [ campaignId, enqueueSnackbar ]);
+
+    const handleToggleMpLimitOverride = useCallback(async (combatantId: string, enabled: boolean) => {
+        try {
+            await campaignService.setCombatMpLimitOverride(campaignId, { combatantId, enabled });
+            enqueueSnackbar(enabled ? 'Limite de MP liberado até o próximo turno do jogador' : 'Limite de MP restabelecido', { variant: 'success' });
+        } catch (err: any) {
+            enqueueSnackbar(err?.response?.data?.error ?? 'Erro ao atualizar o limite de MP', { variant: 'error' });
         }
     }, [ campaignId, enqueueSnackbar ]);
 
@@ -519,6 +537,15 @@ export default function CombatDialog({
                                 const maxLp = playerStats?.maxLp ?? combatant.maxLp ?? 1;
                                 const lpPercent = maxLp > 0 ? (currentLp / maxLp) * 100 : 0;
 
+                                // Limite de MP por turno (utils/mpLimit.ts): só jogadores de fichas comuns do modo Classic
+                                const mpSheet = combatant.type === 'player'
+                                    ? charsheets.find((c: any) => c.id === combatant.id || c.id === combatant.odacId)
+                                    : undefined;
+                                const mpLimitEnforced = Boolean(mpSheet) && isMpLimitEnforced(mpSheet, campaign?.mode);
+                                const mpLimit = mpSheet ? getMpLimit(mpSheet) : 0;
+                                const mpSpent = combatant.mpSpentThisTurn ?? 0;
+                                const mpReleased = Boolean(combatant.mpLimitOverride);
+
                                 return (
                                     <ListItem
                                         key={combatant.id}
@@ -609,6 +636,20 @@ export default function CombatDialog({
                                                             <AutoFixHighIcon fontSize="small" />
                                                         </IconButton>
                                                     </Tooltip>
+                                                    {mpLimitEnforced && (
+                                                        <Tooltip title={mpReleased
+                                                            ? 'Restabelecer o limite de MP por turno'
+                                                            : 'Liberar o limite de MP por turno (até o início do próximo turno do jogador)'}
+                                                        >
+                                                            <IconButton
+                                                                size="small"
+                                                                color={mpReleased ? 'success' : 'default'}
+                                                                onClick={() => { void handleToggleMpLimitOverride(combatant.id, !mpReleased); }}
+                                                            >
+                                                                {mpReleased ? <LockOpenIcon fontSize="small" /> : <LockIcon fontSize="small" />}
+                                                            </IconButton>
+                                                        </Tooltip>
+                                                    )}
                                                 </Box>
                                             }
                                             secondary={
@@ -635,6 +676,15 @@ export default function CombatDialog({
                                                             }}
                                                         />
                                                     </Box>
+                                                    {mpLimitEnforced && (
+                                                        <Typography
+                                                            variant="caption"
+                                                            component="span"
+                                                            sx={{ color: mpReleased ? green[600] : mpSpent >= mpLimit ? red[500] : 'text.secondary' }}
+                                                        >
+                                                            MP no turno: {mpSpent}/{mpLimit}{mpReleased ? ' (liberado)' : ''}
+                                                        </Typography>
+                                                    )}
                                                     {combatant.effects && combatant.effects.length > 0 && (
                                                         <Box sx={{ mt: 0.5 }} onClick={e => e.stopPropagation()}>
                                                             <EffectBadges

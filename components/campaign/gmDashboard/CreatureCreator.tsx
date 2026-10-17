@@ -51,7 +51,7 @@ import { ResourceListModal } from '@components/utils';
 import Magic from '@components/charsheet/subcomponents/Magic';
 import { poderService, magiaService } from '@services';
 import { elements, specialElements } from '@constants';
-import { getSpellCategory } from '@utils/spellCategory';
+import { SPELL_TYPE_FILTER } from '@utils/spellCategory';
 import type { Power, Spell, RPGSystem } from '@models/entities';
 
 interface CreatureData {
@@ -1035,15 +1035,14 @@ export default function CreatureCreator({ open, onClose, onSave, editingCreature
                 errorMessage={(err: Error) => err.message || 'Erro ao adicionar magia'}
                 filterOptions={[ ...elements, ...specialElements ]}
                 filterLabel="Elemento"
-                secondaryFilter={{
-                    label: 'Tipo',
-                    getValue: (spell: Spell) => getSpellCategory(spell.type)
-                }}
+                secondaryFilter={SPELL_TYPE_FILTER}
                 sortOptions={[ 'Nível', 'Elemento', 'Alfabética' ]}
                 initialSort={{ value: 'Nível', order: 'ASC' }}
+                itemMinWidth={300}
                 renderResource={({ item, handleAddItem }) => (
                     <Magic
                         as="magic-spell"
+                        compact
                         key={item.id}
                         magic={item}
                         id={item.id}

@@ -15,6 +15,7 @@ import { StatusBar } from './StatusBar';
 import type { Stats } from '@models';
 import EffectBadges from '@components/campaign/gmDashboard/actions/EffectBadges';
 import { useCharsheetSystem } from '@hooks/useCharsheetSystem';
+import { getMpLimit, isMpLimitEnforced } from '@utils/mpLimit';
 
 export default function PlayerHeader({ avatar }: { avatar: string | undefined }) {
     const { charsheet, updateCharsheet } = useCampaignCurrentCharsheetContext();
@@ -44,6 +45,12 @@ export default function PlayerHeader({ avatar }: { avatar: string | undefined })
     const myEffects = myCombatant?.effects;
     const isMyTurn = combat?.isActive && combat.phase === 'ACTION'
         && combat.combatants?.[combat.currentTurnIndex]?.id === myCombatant?.id;
+
+    // Limite de MP por turno (utils/mpLimit.ts): em combate mostra o gasto do turno / limite
+    const mpLimitEnforced = isMpLimitEnforced(charsheet, campaign?.mode);
+    const mpLimit = getMpLimit(charsheet);
+    const mpSpentThisTurn = myCombatant?.mpSpentThisTurn ?? 0;
+    const mpLimitReleased = Boolean(myCombatant?.mpLimitOverride);
 
     const updateStat = (stat: keyof Stats, delta: number) => {
         const maxKey = `max${stat.charAt(0).toUpperCase() + stat.slice(1)}` as keyof Stats;
@@ -136,7 +143,7 @@ export default function PlayerHeader({ avatar }: { avatar: string | undefined })
             {/* Segunda linha: Atributos */}
             <Box sx={{ mb: 2 }}>
                 <Grid container spacing={1}>
-                    {!customSystem && (
+                    {!customSystem && mpLimitEnforced && (
                         <Grid item xs={12} sm={4}>
                             <Paper sx={{
                                 bgcolor: 'rgba(71, 85, 105, 0.3)',
@@ -148,10 +155,17 @@ export default function PlayerHeader({ avatar }: { avatar: string | undefined })
                                 alignItems: 'center'
                             }}>
                                 <Typography sx={{ fontSize: { xs: '9px', sm: '10px' }, color: '#9ca3af', textTransform: 'uppercase', fontWeight: 600 }}>
-                                    Limite MP
+                                    Limite MP/turno
                                 </Typography>
-                                <Typography sx={{ fontSize: { xs: '12px', sm: '14px' }, fontWeight: 700, color: '#22d3ee' }}>
-                                    {charsheet.mpLimit}
+                                <Typography
+                                    title={mpLimitReleased ? 'Liberado pelo mestre até o início do seu próximo turno' : 'MP gasto neste turno / limite por turno'}
+                                    sx={{
+                                        fontSize: { xs: '12px', sm: '14px' },
+                                        fontWeight: 700,
+                                        color: mpLimitReleased ? '#4ade80' : (myCombatant && mpSpentThisTurn >= mpLimit ? '#f87171' : '#22d3ee')
+                                    }}
+                                >
+                                    {myCombatant ? `${mpLimitReleased ? '🔓 ' : ''}${mpSpentThisTurn}/${mpLimit}` : mpLimit}
                                 </Typography>
                             </Paper>
                         </Grid>

@@ -29,6 +29,10 @@ export class BaseCharsheet {
     @IsNumber() ORMLevel: number = 0;
     @IsNumber() displacement: number = 9;
     @IsNumber() spellSpace: number = 0;
+    /**
+     * BÔNUS ao limite de MP por turno (perks/mestre). O limite em si não é salvo: é
+     * calculado por `getMpLimit` (utils/mpLimit.ts) como ⌈(Nível + Foco) ÷ 2⌉ + ORM + este bônus.
+     */
     @IsNumber() mpLimit: number = 0;
     @IsNumber() overall: number = 0;
     @IsNumber() level: number = 0;
