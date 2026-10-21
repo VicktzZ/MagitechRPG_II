@@ -64,7 +64,6 @@ import {
     LinearProgress,
     Tooltip,
     Divider,
-    useTheme,
     TextField,
     InputAdornment,
     Tabs,
@@ -91,7 +90,6 @@ export default function InventorySection(): ReactElement {
     const weightUnitSuffix = weightUnit ? ` ${weightUnit}` : '';
     const { data: session } = useSession();
     const { handleSendMessage, setIsChatOpen, isChatOpen } = useChatContext();
-    const theme = useTheme();
     const { enqueueSnackbar } = useSnackbar();
     const [ activeTab, setActiveTab ] = useState<InventoryTab>('all');
     const [ searchQuery, setSearchQuery ] = useState('');
@@ -407,14 +405,14 @@ export default function InventorySection(): ReactElement {
                 key={item.name}
                 elevation={0}
                 sx={{
-                    bgcolor: theme.palette.mode === 'dark' ? '#1e293b' : '#f8fafc',
+                    bgcolor: 'background.raised',
                     border: '1px solid',
-                    borderColor: theme.palette.mode === 'dark' ? '#334155' : '#e2e8f0',
+                    borderColor: 'divider',
                     borderRadius: 2,
                     '&:before': { display: 'none' },
                     '&:hover': {
                         borderColor: typeConfig.color + '60',
-                        bgcolor: theme.palette.mode === 'dark' ? '#334155' : '#f1f5f9'
+                        bgcolor: 'action.hover'
                     },
                     mb: 1.5,
                     transition: 'all 0.2s ease'
@@ -532,11 +530,11 @@ export default function InventorySection(): ReactElement {
                                         borderRadius: 1.5,
                                         bgcolor: detail.highlight 
                                             ? `${typeConfig.color}10` 
-                                            : theme.palette.mode === 'dark' ? '#0f172a' : '#ffffff',
+                                            : 'background.default',
                                         border: '1px solid',
                                         borderColor: detail.highlight
                                             ? `${typeConfig.color}30`
-                                            : theme.palette.mode === 'dark' ? '#1e293b' : '#e2e8f0'
+                                            : 'divider'
                                     }}
                                 >
                                     <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
@@ -575,9 +573,9 @@ export default function InventorySection(): ReactElement {
                                 sx={{
                                     p: 2,
                                     borderRadius: 1.5,
-                                    bgcolor: theme.palette.mode === 'dark' ? '#0f172a' : '#ffffff',
+                                    bgcolor: 'background.default',
                                     border: '1px solid',
-                                    borderColor: theme.palette.mode === 'dark' ? '#1e293b' : '#e2e8f0'
+                                    borderColor: 'divider'
                                 }}
                             >
                                 <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
@@ -604,7 +602,7 @@ export default function InventorySection(): ReactElement {
                                     gap: 1,
                                     p: 1.5,
                                     borderRadius: 1.5,
-                                    bgcolor: theme.palette.mode === 'dark' ? '#0f172a' : '#f8fafc',
+                                    bgcolor: 'background.default',
                                     border: '1px dashed',
                                     borderColor: red[500] + '40'
                                 }}
@@ -720,9 +718,9 @@ export default function InventorySection(): ReactElement {
                 elevation={2}
                 sx={{ 
                     borderRadius: 3,
-                    bgcolor: theme.palette.mode === 'dark' ? '#1e293b' : '#ffffff',
+                    bgcolor: 'background.paper',
                     border: '1px solid',
-                    borderColor: theme.palette.mode === 'dark' ? '#334155' : '#e2e8f0',
+                    borderColor: 'divider',
                     overflow: 'hidden'
                 }}
             >
@@ -799,7 +797,7 @@ export default function InventorySection(): ReactElement {
                             sx={{
                                 height: 8,
                                 borderRadius: 4,
-                                bgcolor: theme.palette.mode === 'dark' ? '#0f172a' : '#f1f5f9',
+                                bgcolor: 'divider',
                                 '& .MuiLinearProgress-bar': {
                                     bgcolor: isOverloaded ? red[500] : isNearLimit ? orange[500] : green[500],
                                     borderRadius: 4

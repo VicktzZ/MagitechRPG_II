@@ -19,7 +19,7 @@ import {
     Tooltip, 
     Typography,
     Badge,
-    useTheme
+    alpha
 } from '@mui/material';
 import { 
     Close, 
@@ -29,6 +29,7 @@ import {
     Visibility
 } from '@mui/icons-material';
 import { amber, blue, green, grey, orange, purple, red } from '@mui/material/colors';
+import { color } from '@themes/tokens';
 import { type ReactElement, useState, useEffect, useCallback } from 'react';
 import { useSnackbar } from 'notistack';
 import { rarityColor } from '@constants';
@@ -50,7 +51,6 @@ export default function ShopDrawer(): ReactElement | null {
     const { campaign } = useCampaignContext();
     const { charsheet } = useCampaignCurrentCharsheetContext();
     const { enqueueSnackbar } = useSnackbar();
-    const theme = useTheme();
     const { system: customSystem } = useCharsheetSystem(charsheet?.systemId);
     const weightUnit = customSystem ? (customSystem.weightConfig?.unit ?? '') : 'kg';
     
@@ -252,7 +252,7 @@ export default function ShopDrawer(): ReactElement | null {
                 PaperProps={{
                     sx: {
                         width: { xs: '100%', sm: 400, md: 450 },
-                        bgcolor: theme.palette.mode === 'dark' ? '#1a1a2e' : '#fafafa'
+                        bgcolor: 'background.paper'
                     }
                 }}
             >
@@ -260,8 +260,8 @@ export default function ShopDrawer(): ReactElement | null {
                 <Box 
                     sx={{ 
                         p: 2, 
-                        bgcolor: orange[500], 
-                        color: 'white',
+                        bgcolor: 'primary.main', 
+                        color: 'primary.contrastText',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between'
@@ -277,12 +277,12 @@ export default function ShopDrawer(): ReactElement | null {
                         <Chip 
                             label={`${currencySymbol}${displayPrice(currentMoney).toFixed(0)}`}
                             sx={{ 
-                                bgcolor: 'rgba(255,255,255,0.2)', 
-                                color: 'white',
+                                bgcolor: alpha(color.onAmber, 0.16), 
+                                color: 'primary.contrastText',
                                 fontWeight: 700
                             }}
                         />
-                        <IconButton onClick={() => setDrawerOpen(false)} sx={{ color: 'white' }}>
+                        <IconButton onClick={() => setDrawerOpen(false)} sx={{ color: 'primary.contrastText' }}>
                             <Close />
                         </IconButton>
                     </Box>
@@ -337,9 +337,7 @@ export default function ShopDrawer(): ReactElement | null {
                                             p: 2,
                                             border: '1px solid',
                                             borderColor: canBuy ? 'divider' : red[200],
-                                            bgcolor: theme.palette.mode === 'dark' 
-                                                ? 'rgba(255,255,255,0.03)' 
-                                                : 'white',
+                                            bgcolor: 'background.raised',
                                             opacity: canBuy ? 1 : 0.7,
                                             transition: 'all 0.2s ease',
                                             '&:hover': canBuy ? {

@@ -26,8 +26,7 @@ import {
     Stack,
     TextField,
     Tooltip,
-    Typography,
-    useTheme
+    Typography
 } from '@mui/material';
 import { blue, green, orange, purple, red } from '@mui/material/colors';
 import React, { type ReactElement, useState, useEffect } from 'react';
@@ -35,7 +34,6 @@ import { useCharsheetSystem } from '@hooks/useCharsheetSystem';
 
 export default function MoneyAndAmmo(): ReactElement {
     const { charsheet, updateCharsheet } = useCampaignCurrentCharsheetContext();
-    const theme = useTheme();
     const { system: customSystem } = useCharsheetSystem(charsheet?.systemId);
     const showCurrency = !customSystem || customSystem.currency?.enabled !== false;
     const currencyLabel = customSystem?.currency?.name ?? 'Dinheiro';
@@ -216,7 +214,7 @@ export default function MoneyAndAmmo(): ReactElement {
                                     alignItems: 'center',
                                     gap: 2,
                                     p: 2,
-                                    bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
+                                    bgcolor: 'background.raised',
                                     borderRadius: 2,
                                     border: '1px solid',
                                     borderColor: 'divider'
@@ -420,7 +418,7 @@ export default function MoneyAndAmmo(): ReactElement {
                         <Box 
                             sx={{
                                 p: 2,
-                                bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
+                                bgcolor: 'background.raised',
                                 borderRadius: 2,
                                 border: '1px solid',
                                 borderColor: 'divider'
@@ -447,7 +445,7 @@ export default function MoneyAndAmmo(): ReactElement {
                                 sx={{
                                     height: 16,
                                     borderRadius: 8,
-                                    bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+                                    bgcolor: 'divider',
                                     mb: 2,
                                     '& .MuiLinearProgress-bar': {
                                         bgcolor: ammoConfig.color,
