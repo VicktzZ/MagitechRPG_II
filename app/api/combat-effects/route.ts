@@ -4,6 +4,7 @@ import { CombatEffectEntity } from '@models/entities'
 import type { CombatEffectScope, CombatEffectCategory, CombatEffectTiming, CombatEffectModifier } from '@models'
 import { v4 as uuidv4 } from 'uuid'
 import { stripUndefined } from '@utils/firestore/stripUndefined'
+import { color } from '@themes/tokens'
 import { assertId, assertMaxLength, forbidden, handleRouteError, readJsonBody, requireCampaignMember, requireCampaignGM, requireUser, TEXT_LIMITS } from '@utils/api'
 
 /**
@@ -113,7 +114,7 @@ export async function POST(request: NextRequest) {
             category: body.category ?? 'damage',
             timing: body.timing ?? 'turn',
             element: body.element,
-            color: body.color ?? '#ff5722',
+            color: body.color ?? color.warning,
             icon: body.icon ?? '💥',
             levels: body.levels.map(l => stripUndefined({
                 level: Math.max(1, Math.floor(Number(l.level) || 1)),

@@ -20,8 +20,7 @@ const StyledMenu = styled((props? : Record<string, any>) => (
         borderRadius: 6,
         marginTop: theme.spacing(1),
         minWidth: 180,
-        color:
-            theme.palette.mode === 'light' ? 'rgb(55, 65, 81)' : theme.palette.grey[300],
+        color: theme.palette.text.primary,
         '& .MuiMenu-list': {
             padding: '4px 0'
         },

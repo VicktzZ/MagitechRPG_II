@@ -180,7 +180,7 @@ export default function AdminSubscriptionsPage() {
                 size="small"
                 sx={{
                     bgcolor: metadata.color,
-                    color: 'white',
+                    color: 'primary.contrastText',
                     fontWeight: 'bold'
                 }}
             />
@@ -247,36 +247,36 @@ export default function AdminSubscriptionsPage() {
                     </Card>
                 </Grid>
                 <Grid item xs={12} sm={6} md={3}>
-                    <Card sx={{ borderLeft: 4, borderColor: '#9E9E9E' }}>
+                    <Card sx={{ borderLeft: 4, borderColor: SubscriptionPlanMetadata[SubscriptionPlan.FREEMIUM].color }}>
                         <CardContent>
                             <Typography variant="caption" color="text.secondary">
                 ⚡ Freemium
                             </Typography>
-                            <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#9E9E9E' }}>
+                            <Typography variant="h4" sx={{ fontWeight: 'bold', color: SubscriptionPlanMetadata[SubscriptionPlan.FREEMIUM].color }}>
                                 {stats.freemium}
                             </Typography>
                         </CardContent>
                     </Card>
                 </Grid>
                 <Grid item xs={12} sm={6} md={3}>
-                    <Card sx={{ borderLeft: 4, borderColor: '#2196F3' }}>
+                    <Card sx={{ borderLeft: 4, borderColor: SubscriptionPlanMetadata[SubscriptionPlan.PREMIUM].color }}>
                         <CardContent>
                             <Typography variant="caption" color="text.secondary">
                 👑 Premium
                             </Typography>
-                            <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#2196F3' }}>
+                            <Typography variant="h4" sx={{ fontWeight: 'bold', color: SubscriptionPlanMetadata[SubscriptionPlan.PREMIUM].color }}>
                                 {stats.premium}
                             </Typography>
                         </CardContent>
                     </Card>
                 </Grid>
                 <Grid item xs={12} sm={6} md={3}>
-                    <Card sx={{ borderLeft: 4, borderColor: '#9C27B0' }}>
+                    <Card sx={{ borderLeft: 4, borderColor: SubscriptionPlanMetadata[SubscriptionPlan.PREMIUM_PLUS].color }}>
                         <CardContent>
                             <Typography variant="caption" color="text.secondary">
                 💎 Premium+
                             </Typography>
-                            <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#9C27B0' }}>
+                            <Typography variant="h4" sx={{ fontWeight: 'bold', color: SubscriptionPlanMetadata[SubscriptionPlan.PREMIUM_PLUS].color }}>
                                 {stats.premiumPlus}
                             </Typography>
                         </CardContent>
@@ -344,7 +344,7 @@ export default function AdminSubscriptionsPage() {
 
                 {/* Info de Seleção */}
                 {selectedUsers.length > 0 && (
-                    <Box sx={{ mt: 2, p: 2, bgcolor: 'info.main', borderRadius: 1, color: 'white' }}>
+                    <Box sx={{ mt: 2, p: 2, bgcolor: 'info.main', borderRadius: 1, color: 'info.contrastText' }}>
                         <Typography variant="body2">
               ℹ️ {selectedUsers.length} usuário(s) selecionado(s) receberão o plano{' '}
                             <strong>{SubscriptionPlanMetadata[selectedPlan].displayName}</strong>
@@ -374,14 +374,14 @@ export default function AdminSubscriptionsPage() {
                                     checked={selectedUsers.length === filteredUsers.length && filteredUsers.length > 0}
                                     indeterminate={selectedUsers.length > 0 && selectedUsers.length < filteredUsers.length}
                                     onChange={handleSelectAll}
-                                    sx={{ color: 'white' }}
+                                    sx={{ color: 'primary.contrastText' }}
                                 />
                             </TableCell>
-                            <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Usuário</TableCell>
-                            <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Email</TableCell>
-                            <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Plano Atual</TableCell>
-                            <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Status</TableCell>
-                            <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Data de Início</TableCell>
+                            <TableCell sx={{ color: 'primary.contrastText', fontWeight: 'bold' }}>Usuário</TableCell>
+                            <TableCell sx={{ color: 'primary.contrastText', fontWeight: 'bold' }}>Email</TableCell>
+                            <TableCell sx={{ color: 'primary.contrastText', fontWeight: 'bold' }}>Plano Atual</TableCell>
+                            <TableCell sx={{ color: 'primary.contrastText', fontWeight: 'bold' }}>Status</TableCell>
+                            <TableCell sx={{ color: 'primary.contrastText', fontWeight: 'bold' }}>Data de Início</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>

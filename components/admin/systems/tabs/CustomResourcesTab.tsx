@@ -31,6 +31,7 @@ import EditIcon from '@mui/icons-material/Edit'
 import DeleteIcon from '@mui/icons-material/Delete'
 import CloseIcon from '@mui/icons-material/Close'
 import type { CustomResource, ResourceThreshold, RPGSystem, SymbolicResource } from '@models/entities'
+import { color } from '@themes/tokens'
 
 interface CustomResourcesTabProps {
     system: Partial<RPGSystem>
@@ -45,7 +46,7 @@ const emptyResource = (): CustomResource => ({
     min: 0,
     max: 100,
     defaultValue: 100,
-    color: '#1976d2',
+    color: color.cyan,
     thresholds: []
 })
 
@@ -65,7 +66,7 @@ export function CustomResourcesTab({ system, updateSystem }: CustomResourcesTabP
     const [ dialogOpen, setDialogOpen ] = useState(false)
     const [ editingIdx, setEditingIdx ] = useState<number | null>(null)
     const [ formData, setFormData ] = useState<CustomResource>(emptyResource())
-    const [ newThreshold, setNewThreshold ] = useState<ResourceThreshold>({ value: 0, label: '', color: '#f44336', mode: 'constant' })
+    const [ newThreshold, setNewThreshold ] = useState<ResourceThreshold>({ value: 0, label: '', color: color.danger, mode: 'constant' })
     const [ editingThresholdIdx, setEditingThresholdIdx ] = useState<number | null>(null)
 
     // ── Recursos simbólicos (contadores em "Informações Gerais") ──
@@ -91,7 +92,7 @@ export function CustomResourcesTab({ system, updateSystem }: CustomResourcesTabP
     const openCreate = () => {
         setEditingIdx(null)
         setFormData(emptyResource())
-        setNewThreshold({ value: 0, label: '', color: '#f44336', mode: 'constant' })
+        setNewThreshold({ value: 0, label: '', color: color.danger, mode: 'constant' })
         setEditingThresholdIdx(null)
         setDialogOpen(true)
     }
@@ -99,7 +100,7 @@ export function CustomResourcesTab({ system, updateSystem }: CustomResourcesTabP
     const openEdit = (idx: number) => {
         setEditingIdx(idx)
         setFormData({ ...resources[idx], thresholds: [ ...(resources[idx].thresholds ?? []) ] })
-        setNewThreshold({ value: 0, label: '', color: '#f44336', mode: 'constant' })
+        setNewThreshold({ value: 0, label: '', color: color.danger, mode: 'constant' })
         setEditingThresholdIdx(null)
         setDialogOpen(true)
     }
@@ -198,8 +199,8 @@ export function CustomResourcesTab({ system, updateSystem }: CustomResourcesTabP
                                             width: 18,
                                             height: 18,
                                             borderRadius: '50%',
-                                            bgcolor: res.color ?? '#1976d2',
-                                            border: '1px solid rgba(0,0,0,0.15)'
+                                            bgcolor: res.color ?? color.cyan,
+                                            border: `1px solid ${color.borderStrong}`
                                         }}
                                     />
                                     <Box minWidth={0}>
@@ -450,7 +451,7 @@ export function CustomResourcesTab({ system, updateSystem }: CustomResourcesTabP
                                     >
                                         <input
                                             type="color"
-                                            value={formData.color ?? '#1976d2'}
+                                            value={formData.color ?? color.cyan}
                                             onChange={e => setField('color', e.target.value)}
                                             style={{ width: 40, height: 40, border: 'none', cursor: 'pointer', borderRadius: 8, padding: 2 }}
                                         />
@@ -462,10 +463,10 @@ export function CustomResourcesTab({ system, updateSystem }: CustomResourcesTabP
                                 <TextField
                                     size="small"
                                     label="Hex"
-                                    value={formData.color ?? '#1976d2'}
+                                    value={formData.color ?? color.cyan}
                                     onChange={e => setField('color', e.target.value)}
                                     sx={{ width: 140 }}
-                                    placeholder="#1976d2"
+                                    placeholder={color.cyan}
                                 />
                             </Grid>
                         </Grid>
@@ -508,7 +509,7 @@ export function CustomResourcesTab({ system, updateSystem }: CustomResourcesTabP
                                                             height: 22,
                                                             borderRadius: 1,
                                                             bgcolor: t.color,
-                                                            border: '1px solid rgba(0,0,0,0.2)'
+                                                            border: `1px solid ${color.borderStrong}`
                                                         }}
                                                     />
                                                 </TableCell>

@@ -109,7 +109,7 @@ export function UpgradePrompt({
                                 size="small"
                                 sx={{
                                     bgcolor: planMetadata.color,
-                                    color: 'white',
+                                    color: 'primary.contrastText',
                                     fontWeight: 'bold',
                                     mt: 0.5
                                 }}
@@ -168,7 +168,7 @@ export function UpgradePrompt({
                     label="UPGRADE NECESSÁRIO"
                     sx={{
                         bgcolor: planMetadata.color,
-                        color: 'white',
+                        color: 'primary.contrastText',
                         fontWeight: 'bold',
                         fontSize: '0.75rem',
                         px: 2

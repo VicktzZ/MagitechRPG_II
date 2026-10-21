@@ -13,6 +13,7 @@ import {
     TableRow,
     Paper,
     Chip,
+    alpha,
     useTheme,
     useMediaQuery
 } from '@mui/material';
@@ -232,7 +233,7 @@ export function PlanComparison() {
                                         sx={{
                                             fontWeight: 'bold',
                                             backgroundColor: metadata.color,
-                                            color: 'white',
+                                            color: 'primary.contrastText',
                                             minWidth: 150
                                         }}
                                     >
@@ -249,8 +250,8 @@ export function PlanComparison() {
                                                     label={metadata.badge}
                                                     size="small"
                                                     sx={{
-                                                        backgroundColor: 'rgba(255,255,255,0.2)',
-                                                        color: 'white',
+                                                        backgroundColor: alpha(theme.palette.primary.contrastText, 0.16),
+                                                        color: 'primary.contrastText',
                                                         fontWeight: 'bold'
                                                     }}
                                                 />
