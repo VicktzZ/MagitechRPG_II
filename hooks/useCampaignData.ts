@@ -3,7 +3,8 @@ import type { CampaignData } from '@models/types/session';
 import type { Message } from '@models';
 import type { User } from '@models/entities';
 import { useQuery } from '@tanstack/react-query';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import { CampaignLookupError, resolveCampaignLoadStatus, type CampaignLoadStatus } from '@utils/campaignLoadStatus';
 import { useFirestoreRealtime } from './useFirestoreRealtime';
 import { useStableArrayItems, useStableValue } from './useStableValue';
 
@@ -22,6 +23,11 @@ interface UseCampaignDataResult {
      * a cada mensagem. `data.campaign.session.messages` vem sempre vazio.
      */
     messages: Message[];
+    /**
+     * `loading` enquanto busca; `not-found` (código inexistente ou campanha
+     * excluída) e `error` (falha de rede ou de permissão) deixam o spinner.
+     */
+    status: CampaignLoadStatus;
 }
 
 const EMPTY_MESSAGES: Message[] = [];
@@ -34,24 +40,35 @@ export function useCampaignData({
     // O código vira o ID pela API (o código é o convite da campanha). Com o ID, a
     // campanha é lida direto pelo documento: as regras do Firestore não deixam
     // listar/consultar a coleção de campanhas, só ler uma campanha conhecida.
-    const { data: campaignRef } = useQuery({
+    const { data: campaignRef, error: lookupError } = useQuery({
         queryKey: [ 'campaign-ref', campaignCode ],
         queryFn: async () => {
             const response = await fetch(`/api/campaign/${encodeURIComponent(campaignCode)}`);
-            if (!response.ok) throw new Error(`Campanha não encontrada (${response.status})`);
+            if (!response.ok) throw new CampaignLookupError(`Falha ao buscar a campanha (${response.status})`, response.status);
             return await response.json() as { id: string };
         },
         enabled: !!campaignCode,
         staleTime: Infinity,
-        retry: 1
+        // Código inexistente não melhora com nova tentativa; falha de rede, sim
+        retry: (failureCount, error) => !(error instanceof CampaignLookupError && error.status === 404) && failureCount < 1
     });
     const campaignId = campaignRef?.id;
 
-    const { data: campaign, loading } = useFirestoreRealtime('campaign', {
+    // O listener é recriado quando o ID chega; `loading` do hook fica falso por um
+    // render antes disso, então só consideramos a resposta válida para o ID atual
+    const [ settledId, setSettledId ] = useState<string>();
+
+    const { data: campaign, loading, error: realtimeError } = useFirestoreRealtime('campaign', {
         filters: campaignId ? [ { field: 'id', operator: '==', value: campaignId } ] : undefined,
         enabled: !!campaignId,
         onChange(type, doc) {
             onChange?.(type, doc);
+        },
+        onNext() {
+            setSettledId(campaignId);
+        },
+        onError() {
+            setSettledId(campaignId);
         }
     });
 
@@ -122,5 +139,14 @@ export function useCampaignData({
         };
     }, [ stableCampaign, stableUsers, stableCharsheets, userId ]);
 
-    return { data: campaignData, messages };
+    const status = resolveCampaignLoadStatus({
+        lookup: { pending: !campaignRef && !lookupError, error: lookupError },
+        realtime: {
+            settled: !!campaignId && settledId === campaignId && !loading,
+            error: realtimeError,
+            found: !!c
+        }
+    });
+
+    return { data: campaignData, messages, status };
 }

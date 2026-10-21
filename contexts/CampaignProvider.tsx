@@ -1,5 +1,6 @@
 'use client';
 
+import CampaignUnavailable from '@components/campaign/CampaignUnavailable';
 import { CharsheetCard } from '@components/charsheet';
 import { usePusher } from '@hooks';
 import { useCampaignData } from '@hooks/useCampaignData';
@@ -48,7 +49,7 @@ export function CampaignProvider({ children, code }: { children: ReactElement, c
     const [ rpgSystem, setRpgSystem ] = useState<RPGSystem | null>(null);
     const [ loadingSystem, setLoadingSystem ] = useState(false);
 
-    const { data: campaignData, messages } = useCampaignData({
+    const { data: campaignData, messages, status } = useCampaignData({
         campaignCode: code,
         userId: session?.user?.id
     });
@@ -155,27 +156,22 @@ export function CampaignProvider({ children, code }: { children: ReactElement, c
         }
     };
 
+    if (status === 'not-found' || status === 'error') {
+        return (
+            <CampaignUnavailable
+                reason={status}
+                code={code}
+                onBack={() => { router.push('/app/campaign'); }}
+                onRetry={() => { window.location.reload(); }}
+            />
+        )
+    }
+
     if (!campaignData) {
         return (
             <Backdrop open={true}>
                 <CircularProgress />
             </Backdrop>
-        )
-    }
-
-    if (campaignData === null) {
-        return (
-            <Box
-                sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    height: '100vh',
-                    width: '100vw'
-                }}
-            >
-                <Typography variant='h5'>Campanha não encontrada</Typography>
-            </Box>
         )
     }
 
