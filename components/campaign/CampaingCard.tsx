@@ -9,6 +9,7 @@ import {
     Campaign as CampaignIcon    
 } from '@mui/icons-material';
 import {
+    alpha,
     Avatar,
     Box,
     Card,
@@ -175,7 +176,7 @@ export default function CampaingCard({
                             sx={{
                                 px: 0.8,
                                 py: 0.2,
-                                bgcolor: theme.palette.mode === 'dark' ? 'rgba(76, 175, 80, 0.15)' : 'rgba(76, 175, 80, 0.08)',
+                                bgcolor: alpha(theme.palette.success.main, 0.15),
                                 borderRadius: 1.5,
                                 gap: 0.5
                             }}
@@ -215,9 +216,9 @@ export default function CampaingCard({
                                 size='small'
                                 sx={{
                                     color: theme.palette.primary.main,
-                                    bgcolor: theme.palette.mode === 'dark' ? 'rgba(144, 202, 249, 0.12)' : 'rgba(25, 118, 210, 0.08)',
+                                    bgcolor: alpha(theme.palette.primary.main, 0.12),
                                     '&:hover': {
-                                        bgcolor: theme.palette.mode === 'dark' ? 'rgba(144, 202, 249, 0.2)' : 'rgba(25, 118, 210, 0.12)'
+                                        bgcolor: alpha(theme.palette.primary.main, 0.2)
                                     }
                                 }}
                             >

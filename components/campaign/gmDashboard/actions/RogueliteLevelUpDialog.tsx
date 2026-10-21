@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import {
+    alpha,
     Avatar,
     Box,
     Button,
@@ -102,14 +103,10 @@ export default function RogueliteLevelUpDialog({
                     <Box 
                         sx={{ 
                             p: 2, 
-                            bgcolor: (theme) => theme.palette.mode === 'dark' 
-                                ? 'rgba(76, 175, 80, 0.15)' 
-                                : green[50], 
+                            bgcolor: (theme) => alpha(theme.palette.success.main, 0.15), 
                             borderRadius: 2,
                             border: '1px solid',
-                            borderColor: (theme) => theme.palette.mode === 'dark' 
-                                ? green[800] 
-                                : green[200]
+                            borderColor: (theme) => alpha(theme.palette.success.main, 0.5)
                         }}
                     >
                         <Typography 

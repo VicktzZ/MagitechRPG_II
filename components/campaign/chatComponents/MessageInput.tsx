@@ -5,11 +5,10 @@ import {
     IconButton,
     Paper,
     TextField,
-    Tooltip,
-    useTheme
+    Tooltip
 } from '@mui/material';
 import { Send } from '@mui/icons-material';
-import { blue, grey } from '@mui/material/colors';
+import { color } from '@themes/tokens';
 
 interface MessageInputProps {
     onSendMessage: (text: string) => void;
@@ -17,7 +16,6 @@ interface MessageInputProps {
 
 const MessageInput = memo(function MessageInput({ onSendMessage }: MessageInputProps) {
     const [ message, setMessage ] = useState('');
-    const theme = useTheme();
 
     const handleSendMessage = () => {
         if (message.trim()) {
@@ -57,17 +55,17 @@ const MessageInput = memo(function MessageInput({ onSendMessage }: MessageInputP
                 variant="outlined"
                 sx={{
                     '& .MuiOutlinedInput-root': {
-                        bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.8)',
+                        bgcolor: 'background.raised',
                         borderRadius: 2,
                         '& fieldset': {
-                            borderColor: blue[300],
+                            borderColor: color.borderControl,
                             borderWidth: 2
                         },
                         '&:hover fieldset': {
-                            borderColor: blue[500]
+                            borderColor: 'text.secondary'
                         },
                         '&.Mui-focused fieldset': {
-                            borderColor: blue[600],
+                            borderColor: 'primary.main',
                             borderWidth: 2
                         }
                     },
@@ -85,14 +83,14 @@ const MessageInput = memo(function MessageInput({ onSendMessage }: MessageInputP
                         disabled={!message.trim()}
                         size="large"
                         sx={{
-                            bgcolor: blue[600],
-                            color: 'white',
+                            bgcolor: 'primary.main',
+                            color: 'primary.contrastText',
                             '&:hover': {
-                                bgcolor: blue[700]
+                                bgcolor: 'primary.light'
                             },
                             '&:disabled': {
-                                bgcolor: grey[300],
-                                color: grey[500]
+                                bgcolor: 'background.raised',
+                                color: 'text.disabled'
                             },
                             transition: 'all 0.2s ease'
                         }}

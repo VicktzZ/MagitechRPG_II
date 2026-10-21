@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import {
+    alpha,
     Avatar,
     Box,
     Button,
@@ -21,6 +22,7 @@ import {
 } from '@mui/material';
 import StorefrontIcon from '@mui/icons-material/Storefront';
 import { green, orange, red } from '@mui/material/colors';
+import { color } from '@themes/tokens';
 import { useSnackbar } from 'notistack';
 import { PerkTypeEnum } from '@enums/rogueliteEnum';
 import type { PlayerInfo, ShopConfig } from './types';
@@ -146,10 +148,10 @@ export default function ShopDialog({
                     <Box 
                         sx={{ 
                             p: 2, 
-                            bgcolor: isShopOpen ? 'rgba(76, 175, 80, 0.1)' : 'rgba(158, 158, 158, 0.1)',
+                            bgcolor: isShopOpen ? alpha(color.success, 0.1) : 'background.raised',
                             borderRadius: 2,
                             border: '1px solid',
-                            borderColor: isShopOpen ? green[500] : 'divider'
+                            borderColor: isShopOpen ? 'success.main' : 'divider'
                         }}
                     >
                         <Typography 
@@ -219,10 +221,10 @@ export default function ShopDialog({
                                 onClick={() => setShopConfig(prev => ({ ...prev, currency: 'SCRAP' }))}
                                 sx={{
                                     cursor: 'pointer',
-                                    bgcolor: currency === 'SCRAP' ? 'rgba(76, 175, 80, 0.2)' : 'rgba(158, 158, 158, 0.2)',
-                                    color: currency === 'SCRAP' ? green[800] : 'text.secondary',
+                                    bgcolor: currency === 'SCRAP' ? color.amberSubtle : 'background.raised',
+                                    color: currency === 'SCRAP' ? 'text.primary' : 'text.secondary',
                                     border: '1px solid',
-                                    borderColor: currency === 'SCRAP' ? green[500] : 'transparent'
+                                    borderColor: currency === 'SCRAP' ? color.amberLine : 'transparent'
                                 }}
                             />
                             <Chip
@@ -231,10 +233,10 @@ export default function ShopDialog({
                                 onClick={() => setShopConfig(prev => ({ ...prev, currency: 'YEN' }))}
                                 sx={{
                                     cursor: 'pointer',
-                                    bgcolor: currency === 'YEN' ? 'rgba(76, 175, 80, 0.2)' : 'rgba(158, 158, 158, 0.2)',
-                                    color: currency === 'YEN' ? green[800] : 'text.secondary',
+                                    bgcolor: currency === 'YEN' ? color.amberSubtle : 'background.raised',
+                                    color: currency === 'YEN' ? 'text.primary' : 'text.secondary',
                                     border: '1px solid',
-                                    borderColor: currency === 'YEN' ? green[500] : 'transparent'
+                                    borderColor: currency === 'YEN' ? color.amberLine : 'transparent'
                                 }}
                             />
                         </Box>
@@ -259,13 +261,13 @@ export default function ShopDialog({
                                     }}
                                     sx={{
                                         bgcolor: shopConfig.rarities.includes(rarity) 
-                                            ? 'rgba(255, 152, 0, 0.2)' 
-                                            : 'rgba(158, 158, 158, 0.2)',
-                                        color: shopConfig.rarities.includes(rarity) ? orange[300] : 'text.secondary',
+                                            ? color.amberSubtle 
+                                            : 'background.raised',
+                                        color: shopConfig.rarities.includes(rarity) ? 'text.primary' : 'text.secondary',
                                         fontWeight: shopConfig.rarities.includes(rarity) ? 600 : 400,
                                         cursor: 'pointer',
                                         border: '1px solid',
-                                        borderColor: shopConfig.rarities.includes(rarity) ? orange[500] : 'transparent'
+                                        borderColor: shopConfig.rarities.includes(rarity) ? color.amberLine : 'transparent'
                                     }}
                                 />
                             ))}
@@ -308,13 +310,13 @@ export default function ShopDialog({
                                         }}
                                         sx={{
                                             bgcolor: shopConfig.types.includes(value) 
-                                                ? 'rgba(33, 150, 243, 0.2)' 
-                                                : 'rgba(158, 158, 158, 0.2)',
-                                            color: shopConfig.types.includes(value) ? 'primary.light' : 'text.secondary',
+                                                ? color.amberSubtle 
+                                                : 'background.raised',
+                                            color: shopConfig.types.includes(value) ? 'text.primary' : 'text.secondary',
                                             fontWeight: shopConfig.types.includes(value) ? 600 : 400,
                                             cursor: 'pointer',
                                             border: '1px solid',
-                                            borderColor: shopConfig.types.includes(value) ? 'primary.main' : 'transparent'
+                                            borderColor: shopConfig.types.includes(value) ? color.amberLine : 'transparent'
                                         }}
                                     />
                                 ))}
@@ -402,7 +404,7 @@ export default function ShopDialog({
                                                 justifyContent: 'space-between',
                                                 p: 1, 
                                                 borderRadius: 1,
-                                                bgcolor: 'rgba(255, 152, 0, 0.05)',
+                                                bgcolor: 'background.raised',
                                                 border: '1px solid',
                                                 borderColor: 'divider'
                                             }}

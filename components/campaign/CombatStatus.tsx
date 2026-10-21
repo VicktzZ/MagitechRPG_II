@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import {
+    alpha,
     Box,
     Paper,
     Typography,
@@ -441,15 +442,15 @@ function CombatStatus({
                                             gap: 1,
                                             bgcolor: isCurrentTurn 
                                                 ? (isDarkMode 
-                                                    ? (isUser ? 'rgba(255, 193, 7, 0.2)' : 'rgba(33, 150, 243, 0.2)')
+                                                    ? (isUser ? alpha(theme.palette.primary.main, 0.2) : alpha(theme.palette.info.main, 0.2))
                                                     : (isUser ? yellow[100] : blue[50]))
                                                 : combatant.hasActed 
-                                                    ? (isDarkMode ? 'rgba(158, 158, 158, 0.1)' : grey[100])
+                                                    ? (isDarkMode ? 'action.hover' : grey[100])
                                                     : (isDarkMode ? 'background.paper' : 'white'),
                                             border: isCurrentTurn ? '2px solid' : '1px solid',
                                             borderColor: isCurrentTurn 
-                                                ? (isUser ? yellow[600] : blue[400])
-                                                : (isDarkMode ? 'rgba(255, 255, 255, 0.12)' : grey[300]),
+                                                ? (isUser ? 'primary.main' : 'info.main')
+                                                : (isDarkMode ? 'divider' : grey[300]),
                                             opacity: combatant.hasActed && !isCurrentTurn ? 0.6 : 1
                                         }}
                                     >
@@ -495,7 +496,7 @@ function CombatStatus({
                                                                 flex: 1,
                                                                 height: 5,
                                                                 borderRadius: 1,
-                                                                bgcolor: isDarkMode ? 'rgba(255,255,255,0.1)' : grey[300],
+                                                                bgcolor: isDarkMode ? 'divider' : grey[300],
                                                                 '& .MuiLinearProgress-bar': {
                                                                     bgcolor: lpPercent > 50 
                                                                         ? color.success 
@@ -520,7 +521,7 @@ function CombatStatus({
                                                                     flex: 1,
                                                                     height: 5,
                                                                     borderRadius: 1,
-                                                                    bgcolor: isDarkMode ? 'rgba(255,255,255,0.1)' : grey[300],
+                                                                    bgcolor: isDarkMode ? 'divider' : grey[300],
                                                                     '& .MuiLinearProgress-bar': {
                                                                         bgcolor: color.mp
                                                                     }
@@ -551,7 +552,7 @@ function CombatStatus({
                                                     sx={{ 
                                                         height: 20,
                                                         fontSize: '0.7rem',
-                                                        bgcolor: isDarkMode ? 'rgba(255,255,255,0.1)' : grey[200]
+                                                        bgcolor: isDarkMode ? 'action.hover' : grey[200]
                                                     }}
                                                 />
                                             </Tooltip>
@@ -567,8 +568,8 @@ function CombatStatus({
                                                     width: 20,
                                                     fontSize: '0.7rem',
                                                     bgcolor: combatant.hasActed 
-                                                        ? (isDarkMode ? 'rgba(76, 175, 80, 0.3)' : green[100])
-                                                        : (isDarkMode ? 'rgba(255,255,255,0.1)' : grey[100])
+                                                        ? (isDarkMode ? alpha(theme.palette.success.main, 0.3) : green[100])
+                                                        : (isDarkMode ? 'action.hover' : grey[100])
                                                 }}
                                             />
                                         )}
@@ -583,7 +584,7 @@ function CombatStatus({
             {/* Dialog de Iniciativa */}
             <Dialog open={initiativeDialogOpen} onClose={() => !isRolling && setInitiativeDialogOpen(false)}>
                 <DialogTitle sx={{ 
-                    bgcolor: isDarkMode ? 'rgba(255, 152, 0, 0.15)' : orange[50], 
+                    bgcolor: isDarkMode ? alpha(theme.palette.warning.main, 0.15) : orange[50], 
                     display: 'flex', 
                     alignItems: 'center', 
                     gap: 1 
@@ -640,7 +641,7 @@ function CombatStatus({
             >
                 <DialogTitle sx={{ 
                     bgcolor: isDarkMode 
-                        ? (actionType === 'damage' ? 'rgba(244, 67, 54, 0.2)' : 'rgba(76, 175, 80, 0.2)')
+                        ? (actionType === 'damage' ? alpha(theme.palette.error.main, 0.2) : alpha(theme.palette.success.main, 0.2))
                         : (actionType === 'damage' ? red[50] : green[50]),
                     color: isDarkMode ? 'text.primary' : undefined,
                     display: 'flex',
@@ -665,7 +666,7 @@ function CombatStatus({
                             fullWidth
                             sx={{
                                 '& .MuiOutlinedInput-root': {
-                                    bgcolor: isDarkMode ? 'rgba(255,255,255,0.05)' : undefined
+                                    bgcolor: isDarkMode ? 'background.raised' : undefined
                                 }
                             }}
                         />
@@ -697,15 +698,15 @@ function CombatStatus({
                                                 cursor: 'pointer',
                                                 bgcolor: isSelected 
                                                     ? (isDarkMode
-                                                        ? (actionType === 'damage' ? 'rgba(244, 67, 54, 0.2)' : 'rgba(76, 175, 80, 0.2)')
+                                                        ? (actionType === 'damage' ? alpha(theme.palette.error.main, 0.2) : alpha(theme.palette.success.main, 0.2))
                                                         : (actionType === 'damage' ? red[50] : green[50]))
                                                     : 'background.paper',
                                                 border: '2px solid',
                                                 borderColor: isSelected
                                                     ? (actionType === 'damage' ? red[400] : green[400])
-                                                    : (isDarkMode ? 'rgba(255,255,255,0.12)' : grey[200]),
+                                                    : (isDarkMode ? 'divider' : grey[200]),
                                                 '&:hover': {
-                                                    bgcolor: isDarkMode ? 'rgba(255,255,255,0.05)' : grey[50]
+                                                    bgcolor: isDarkMode ? 'action.hover' : grey[50]
                                                 }
                                             }}
                                         >

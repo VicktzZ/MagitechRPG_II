@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import {
+    alpha,
     Avatar,
     Box,
     Button,
@@ -22,6 +23,7 @@ import FavoriteIcon from '@mui/icons-material/Favorite';
 import BoltIcon from '@mui/icons-material/Bolt';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import { blue, green, red } from '@mui/material/colors';
+import { color } from '@themes/tokens';
 import { useSnackbar } from 'notistack';
 import type { PlayerInfo, MassActionType } from './types';
 
@@ -167,12 +169,12 @@ export default function MassActionDialog({
                             sx={{ 
                                 p: 2, 
                                 bgcolor: (theme) => theme.palette.mode === 'dark'
-                                    ? (actionType === 'restoreLP' ? 'rgba(239, 83, 80, 0.15)' : 'rgba(66, 165, 245, 0.15)')
+                                    ? (actionType === 'restoreLP' ? alpha(color.lp, 0.15) : alpha(color.mp, 0.15))
                                     : (actionType === 'restoreLP' ? red[50] : blue[50]), 
                                 borderRadius: 2, 
                                 border: '1px solid', 
                                 borderColor: (theme) => theme.palette.mode === 'dark'
-                                    ? (actionType === 'restoreLP' ? red[800] : blue[800])
+                                    ? (actionType === 'restoreLP' ? alpha(color.lp, 0.5) : alpha(color.mp, 0.5))
                                     : (actionType === 'restoreLP' ? red[200] : blue[200])
                             }}
                         >

@@ -453,7 +453,7 @@ export default function CampaignGMDashboard(): ReactElement | null {
                                     display: 'flex',
                                     justifyContent: 'space-around',
                                     p: 2,
-                                    bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
+                                    bgcolor: 'background.raised',
                                     borderRadius: 2,
                                     border: '1px solid',
                                     borderColor: 'divider',
@@ -621,14 +621,14 @@ export default function CampaignGMDashboard(): ReactElement | null {
                                                 sx={{
                                                     borderRadius: 2,
                                                     '&:before': { display: 'none' },
-                                                    bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.01)'
+                                                    bgcolor: 'background.raised'
                                                 }}
                                             >
                                                 <AccordionSummary
                                                     expandIcon={<ExpandMore />}
                                                     sx={{ 
                                                         borderRadius: 2,
-                                                        '&:hover': { bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)' }
+                                                        '&:hover': { bgcolor: 'action.hover' }
                                                     }}
                                                 >
                                                     <Box display="flex" alignItems="center" gap={2} width="100%">
@@ -673,7 +673,7 @@ export default function CampaignGMDashboard(): ReactElement | null {
                                                             flexWrap: 'wrap', 
                                                             gap: 1,
                                                             p: 1,
-                                                            bgcolor: theme.palette.mode === 'dark' ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.03)',
+                                                            bgcolor: 'background.paper',
                                                             borderRadius: 1
                                                         }}
                                                     >
@@ -722,12 +722,12 @@ export default function CampaignGMDashboard(): ReactElement | null {
                                                                         }
                                                                         size="medium"
                                                                         sx={{
-                                                                            bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.9)',
+                                                                            bgcolor: 'background.raised',
                                                                             border: '1px solid',
                                                                             borderColor: 'divider',
                                                                             cursor: 'pointer',
                                                                             '&:hover': {
-                                                                                bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,1)'
+                                                                                bgcolor: 'background.overlay'
                                                                             }
                                                                         }}
                                                                     />
@@ -781,7 +781,7 @@ export default function CampaignGMDashboard(): ReactElement | null {
                                                 borderRadius: 2,
                                                 bgcolor: isCurrentTurn 
                                                     ? theme.palette.mode === 'dark' ? orange[900] + '20' : orange[50]
-                                                    : theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.01)',
+                                                    : 'background.raised',
                                                 position: 'relative',
                                                 '&::before': isCurrentTurn ? {
                                                     content: '"🎯 Vez desta criatura"',
@@ -929,7 +929,7 @@ export default function CampaignGMDashboard(): ReactElement | null {
                                                                                     label={(expertise.defaultAttribute as string).toUpperCase()}
                                                                                     size="small"
                                                                                     sx={{
-                                                                                        bgcolor: 'rgba(0,0,0,0.04)',
+                                                                                        bgcolor: 'action.hover',
                                                                                         fontWeight: 600,
                                                                                         fontSize: '0.7rem'
                                                                                     }}
@@ -993,7 +993,7 @@ export default function CampaignGMDashboard(): ReactElement | null {
                                                 border: '1px solid',
                                                 borderColor: 'divider',
                                                 borderRadius: 2,
-                                                bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.01)'
+                                                bgcolor: 'background.raised'
                                             }}
                                         >
                                             <Box display="flex" alignItems="center" justifyContent="space-between">

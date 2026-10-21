@@ -24,8 +24,7 @@ import {
     Tabs,
     TextField,
     Tooltip,
-    Typography,
-    useTheme
+    Typography
 } from '@mui/material';
 import {
     Add,
@@ -225,7 +224,6 @@ function buildInitialCreature(
 export default function CreatureCreator({ open, onClose, onSave, editingCreature, readOnly }: CreatureCreatorProps) {
     const { campaign, rpgSystem } = useCampaignContext();
     const { enqueueSnackbar } = useSnackbar();
-    const theme = useTheme();
     const isReadOnly = !!readOnly;
 
     const attrDefs = useMemo(() => getAttributeDefs(rpgSystem), [ rpgSystem ]);
@@ -970,7 +968,7 @@ export default function CreatureCreator({ open, onClose, onSave, editingCreature
                                             gap: 1,
                                             p: 0.5,
                                             borderRadius: 1,
-                                            bgcolor: current !== 0 ? (theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)') : 'transparent',
+                                            bgcolor: current !== 0 ? 'background.raised' : 'transparent',
                                             '&:hover': { bgcolor: 'action.hover' }
                                         }}
                                     >

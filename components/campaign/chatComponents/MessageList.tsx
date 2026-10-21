@@ -2,6 +2,7 @@
 
 import { forwardRef, memo, useMemo } from 'react';
 import {
+    alpha,
     Avatar,
     Box,
     Chip,
@@ -13,7 +14,8 @@ import {
 import { Chat, SmartToy, AdminPanelSettings, Casino } from '@mui/icons-material';
 import { DiceMessage } from '@components/misc';
 import { MessageType } from '@enums';
-import { blue, green, orange, purple, grey } from '@mui/material/colors';
+import { green, orange, purple, grey } from '@mui/material/colors';
+import { color } from '@themes/tokens';
 import type { Message } from '@models';
 
 interface ExtendedMessage extends Message {
@@ -55,21 +57,19 @@ const MessageList = memo(forwardRef<HTMLDivElement, MessageListProps>(function M
                 overflowY: 'auto',
                 overflowX: 'hidden',
                 p: 2,
-                background: theme.palette.mode === 'dark' 
-                    ? 'rgba(0,0,0,0.2)' 
-                    : 'rgba(255,255,255,0.3)',
+                bgcolor: 'background.paper',
                 '&::-webkit-scrollbar': {
                     width: '8px'
                 },
                 '&::-webkit-scrollbar-track': {
-                    background: 'rgba(0,0,0,0.1)',
+                    background: color.canvas,
                     borderRadius: '4px'
                 },
                 '&::-webkit-scrollbar-thumb': {
-                    background: 'rgba(0,0,0,0.3)',
+                    background: color.borderStrong,
                     borderRadius: '4px',
                     '&:hover': {
-                        background: 'rgba(0,0,0,0.5)'
+                        background: color.borderControl
                     }
                 }
             }} 
@@ -120,17 +120,13 @@ const MessageList = memo(forwardRef<HTMLDivElement, MessageListProps>(function M
                                         maxWidth: '85%',
                                         minWidth: '200px',
                                         bgcolor: isCombatLog
-                                            ? theme.palette.mode === 'dark' ? 'rgba(244, 67, 54, 0.15)' : 'rgba(244, 67, 54, 0.1)'
+                                            ? alpha(theme.palette.error.main, 0.15)
                                             : isOwnMessage 
-                                                ? blue[900]
+                                                ? color.amberSubtle
                                                 : isBot 
-                                                    ? theme.palette.mode === 'dark' ? 'rgba(76, 175, 80, 0.2)' : green[100]
-                                                    : isGM 
-                                                        ? purple[900]
-                                                        : 'background.paper',
-                                        color: isOwnMessage || isGM
-                                            ? 'white'
-                                            : 'text.primary',
+                                                    ? alpha(theme.palette.success.main, 0.2)
+                                                    : 'background.raised',
+                                        color: 'text.primary',
                                         borderRadius: isOwnMessage 
                                             ? '16px 4px 16px 16px'
                                             : '4px 16px 16px 16px',
@@ -140,10 +136,12 @@ const MessageList = memo(forwardRef<HTMLDivElement, MessageListProps>(function M
                                                 ? `2px solid ${orange[400]}`
                                                 : '1px solid',
                                         borderColor: isCombatLog
-                                            ? theme.palette.mode === 'dark' ? 'rgba(244, 67, 54, 0.5)' : 'rgba(244, 67, 54, 0.3)'
+                                            ? alpha(theme.palette.error.main, 0.5)
                                             : isDiceMessage 
                                                 ? orange[400]
-                                                : 'divider',
+                                                : isOwnMessage
+                                                    ? color.amberLine
+                                                    : 'divider',
                                         opacity: msg.isPending ? 0.6 : 1,
                                         transition: 'all 0.3s ease',
                                         position: 'relative'
@@ -157,11 +155,9 @@ const MessageList = memo(forwardRef<HTMLDivElement, MessageListProps>(function M
                                             sx={{ 
                                                 width: 28, 
                                                 height: 28,
-                                                border: isOwnMessage 
-                                                    ? '2px solid rgba(255,255,255,0.3)'
-                                                    : '2px solid',
+                                                border: '2px solid',
                                                 borderColor: isOwnMessage 
-                                                    ? 'rgba(255,255,255,0.3)'
+                                                    ? color.amberLine
                                                     : 'divider'
                                             }}
                                         />
@@ -169,9 +165,7 @@ const MessageList = memo(forwardRef<HTMLDivElement, MessageListProps>(function M
                                             variant="subtitle2" 
                                             sx={{ 
                                                 fontWeight: 600,
-                                                color: isOwnMessage || isGM
-                                                    ? 'rgba(255,255,255,0.9)'
-                                                    : 'text.primary'
+                                                color: 'text.primary'
                                             }}
                                         >
                                             {msg.by.name}
@@ -227,9 +221,7 @@ const MessageList = memo(forwardRef<HTMLDivElement, MessageListProps>(function M
                                                 variant="caption" 
                                                 sx={{ 
                                                     ml: 'auto',
-                                                    color: isOwnMessage || isGM
-                                                        ? 'rgba(255,255,255,0.7)'
-                                                        : 'text.secondary',
+                                                    color: 'text.secondary',
                                                     fontSize: '0.7rem'
                                                 }}
                                             >

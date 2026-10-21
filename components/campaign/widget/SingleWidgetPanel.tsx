@@ -359,7 +359,7 @@ export default function SingleWidgetPanel({ widget, campaignId, isUserGM, isFini
                         label={condition.label}
                         size="small"
                         sx={{
-                            bgcolor: alpha('#000', 0.25),
+                            bgcolor: alpha(theme.palette.background.default, 0.25),
                             color: 'white',
                             fontWeight: 700,
                             height: 20,
@@ -372,7 +372,7 @@ export default function SingleWidgetPanel({ widget, campaignId, isUserGM, isFini
                         icon={<WarningAmberIcon sx={{ fontSize: 14, color: 'white !important' }} />}
                         label={widget.alerts.length}
                         size="small"
-                        sx={{ bgcolor: alpha('#000', 0.25), color: 'white', height: 20, fontSize: '0.65rem' }}
+                        sx={{ bgcolor: alpha(theme.palette.background.default, 0.25), color: 'white', height: 20, fontSize: '0.65rem' }}
                     />
                 )}
                 {isUserGM && (
