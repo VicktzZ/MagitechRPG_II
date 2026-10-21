@@ -6,7 +6,6 @@ import useNumbersWithSpaces from '@hooks/useNumbersWithSpace'
 import { AttachMoney, DirectionsRun, Psychology, Star } from '@mui/icons-material'
 import { Box, Button, Chip, FormControl, IconButton, InputLabel, ListSubheader, MenuItem, OutlinedInput, Select, TextField, Typography, useMediaQuery } from '@mui/material'
 import { alpha, useTheme } from '@mui/material/styles'
-import { green, orange, purple } from '@mui/material/colors'
 import { useCallback, useEffect, useState } from 'react'
 import { Controller, useFormContext, useWatch } from 'react-hook-form'
 import ElementIcon from '@components/misc/ElementIcon'
@@ -321,7 +320,7 @@ export default function LevelAndInfo() {
                                     transition: 'all 0.2s ease',
                                     '&:hover': {
                                         bgcolor: alpha(theme.palette.background.paper, 0.8),
-                                        borderColor: alpha(green[500], 0.3)
+                                        borderColor: alpha(theme.palette.success.main, 0.3)
                                     }
                                 }}
                             >
@@ -333,8 +332,8 @@ export default function LevelAndInfo() {
                                         width: 40,
                                         height: 40,
                                         borderRadius: '50%',
-                                        bgcolor: alpha(green[500], 0.1),
-                                        color: green[500]
+                                        bgcolor: alpha(theme.palette.success.main, 0.1),
+                                        color: 'success.main'
                                     }}
                                 >
                                     <AttachMoney />
@@ -410,7 +409,7 @@ export default function LevelAndInfo() {
                                     transition: 'all 0.2s ease',
                                     '&:hover': {
                                         bgcolor: alpha(theme.palette.background.paper, 0.8),
-                                        borderColor: alpha(purple[500], 0.3)
+                                        borderColor: alpha(theme.palette.primary.main, 0.3)
                                     }
                                 }}
                             >
@@ -422,8 +421,8 @@ export default function LevelAndInfo() {
                                         width: 40,
                                         height: 40,
                                         borderRadius: '50%',
-                                        bgcolor: alpha(purple[500], 0.1),
-                                        color: purple[500]
+                                        bgcolor: alpha(theme.palette.primary.main, 0.1),
+                                        color: 'primary.main'
                                     }}
                                 >
                                     <Star />
@@ -612,7 +611,7 @@ export default function LevelAndInfo() {
                                             transition: 'all 0.2s ease',
                                             '&:hover': {
                                                 bgcolor: alpha(theme.palette.background.paper, 0.8),
-                                                borderColor: alpha(purple[500], 0.3)
+                                                borderColor: alpha(theme.palette.primary.main, 0.3)
                                             }
                                         }}
                                     >
@@ -624,8 +623,8 @@ export default function LevelAndInfo() {
                                                 width: 40,
                                                 height: 40,
                                                 borderRadius: '50%',
-                                                bgcolor: alpha(purple[500], 0.1),
-                                                color: purple[500]
+                                                bgcolor: alpha(theme.palette.primary.main, 0.1),
+                                                color: 'primary.main'
                                             }}
                                         >
                                             <ElementIcon element={currentElementalMastery} colored={Boolean(currentElementalMastery)} />
@@ -696,7 +695,7 @@ export default function LevelAndInfo() {
                                             transition: 'all 0.2s ease',
                                             '&:hover': {
                                                 bgcolor: alpha(theme.palette.background.paper, 0.8),
-                                                borderColor: alpha(orange[500], 0.3)
+                                                borderColor: alpha(theme.palette.info.main, 0.3)
                                             }
                                         }}
                                     >
@@ -708,8 +707,8 @@ export default function LevelAndInfo() {
                                                 width: 40,
                                                 height: 40,
                                                 borderRadius: '50%',
-                                                bgcolor: alpha(orange[500], 0.1),
-                                                color: orange[500]
+                                                bgcolor: alpha(theme.palette.info.main, 0.1),
+                                                color: 'info.main'
                                             }}
                                         >
                                             <Psychology />

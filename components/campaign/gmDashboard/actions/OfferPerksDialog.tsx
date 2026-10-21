@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { rarityColor } from '@constants';
 import {
+    alpha,
     Avatar,
     Box,
     Button,
@@ -34,7 +35,6 @@ import LinkIcon from '@mui/icons-material/Link';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import StarIcon from '@mui/icons-material/Star';
-import { purple } from '@mui/material/colors';
 import { useSnackbar } from 'notistack';
 import { campaignService } from '@services';
 import { PerkTypeEnum, type SkillTypeEnum } from '@enums/rogueliteEnum';
@@ -144,7 +144,7 @@ export default function OfferPerksDialog({
     return (
         <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
             <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <CardGiftcardIcon sx={{ color: purple[500] }} />
+                <CardGiftcardIcon sx={{ color: 'primary.main' }} />
                 Oferecer Vantagens
             </DialogTitle>
             <DialogContent>
@@ -289,7 +289,7 @@ export default function OfferPerksDialog({
                             checked={useSharedSeed}
                             onChange={(e) => setUseSharedSeed(e.target.checked)}
                         />
-                        <LinkIcon sx={{ color: purple[400] }} />
+                        <LinkIcon sx={{ color: 'primary.main' }} />
                         <Box>
                             <Typography variant="body2" fontWeight={600}>
                                 Usar Seed Compartilhada
@@ -313,7 +313,7 @@ export default function OfferPerksDialog({
                             </Button>
                         </Box>
                         <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
-                            <StarIcon sx={{ fontSize: '0.9rem', color: purple[400] }} />
+                            <StarIcon sx={{ fontSize: '0.9rem', color: 'primary.main' }} />
                             O contador mostra as vantagens que cada jogador já recebeu nesta campanha — clique para ver quais.
                         </Typography>
                         <Box sx={{ maxHeight: 300, overflow: 'auto', border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
@@ -353,11 +353,11 @@ export default function OfferPerksDialog({
                                                         }}
                                                         sx={{
                                                             mr: 0.5,
-                                                            bgcolor: perks.length > 0 ? purple[50] : 'action.hover',
-                                                            color: perks.length > 0 ? purple[700] : 'text.secondary',
+                                                            bgcolor: (theme) => perks.length > 0 ? alpha(theme.palette.primary.main, 0.14) : theme.palette.action.hover,
+                                                            color: perks.length > 0 ? 'primary.main' : 'text.secondary',
                                                             cursor: perks.length > 0 ? 'pointer' : 'default',
                                                             fontWeight: 600,
-                                                            '& .MuiChip-icon': { color: perks.length > 0 ? purple[500] : 'text.disabled' }
+                                                            '& .MuiChip-icon': { color: perks.length > 0 ? 'primary.main' : 'text.disabled' }
                                                         }}
                                                     />
                                                 </Tooltip>
@@ -440,7 +440,6 @@ export default function OfferPerksDialog({
                     variant="contained"
                     disabled={selectedPlayers.length === 0 || isOffering}
                     startIcon={isOffering ? <CircularProgress size={20} /> : <CardGiftcardIcon />}
-                    sx={{ bgcolor: purple[600], '&:hover': { bgcolor: purple[700] } }}
                 >
                     {isOffering ? 'Oferecendo...' : 'Oferecer Vantagens'}
                 </Button>

@@ -23,7 +23,8 @@ import {
     DialogActions,
     TextField,
     InputAdornment,
-    Container
+    Container,
+    alpha
 } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
 import RefreshIcon from '@mui/icons-material/Refresh'
@@ -35,7 +36,6 @@ import LockIcon from '@mui/icons-material/Lock'
 import DownloadIcon from '@mui/icons-material/Download'
 import UploadFileIcon from '@mui/icons-material/UploadFile'
 import SearchIcon from '@mui/icons-material/Search'
-import { green, grey } from '@mui/material/colors'
 import { useSnackbar } from 'notistack'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
@@ -295,8 +295,11 @@ export default function AdminSystemsPage() {
                                             label={system.isPublic ? 'Público' : 'Privado'}
                                             size="small"
                                             sx={{
-                                                bgcolor: system.isPublic ? `${green[500]}20` : `${grey[500]}20`,
-                                                color: system.isPublic ? green[700] : grey[700]
+                                                bgcolor: (theme) => alpha(
+                                                    system.isPublic ? theme.palette.success.main : theme.palette.text.secondary,
+                                                    0.12
+                                                ),
+                                                color: system.isPublic ? 'success.main' : 'text.secondary'
                                             }}
                                         />
                                     </TableCell>

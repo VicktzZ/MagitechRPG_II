@@ -173,7 +173,8 @@ export default function CustomResources(): ReactElement | null {
                                             size="small"
                                             sx={{
                                                 bgcolor: activeThreshold.color,
-                                                color: 'white',
+                                                // A cor do limiar vem do sistema (qualquer cor): o texto escolhe o contraste
+                                                color: (theme) => theme.palette.getContrastText(activeThreshold.color),
                                                 fontWeight: 'bold',
                                                 fontSize: '0.65rem',
                                                 height: 20

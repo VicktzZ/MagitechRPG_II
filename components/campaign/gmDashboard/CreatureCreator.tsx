@@ -24,7 +24,8 @@ import {
     Tabs,
     TextField,
     Tooltip,
-    Typography
+    Typography,
+    alpha
 } from '@mui/material';
 import {
     Add,
@@ -42,7 +43,7 @@ import {
     BoltOutlined,
     ShieldOutlined
 } from '@mui/icons-material';
-import { orange, blue, purple, grey, red, green } from '@mui/material/colors';
+import { color } from '@themes/tokens';
 import { useSnackbar } from 'notistack';
 import { useCampaignContext } from '@contexts';
 import { Expertises, type Expertise as ExpertiseModel } from '@models';
@@ -146,10 +147,10 @@ const CREATURE_TYPE_SUGGESTIONS = [
 
 // Presets de papel (role) — preenchem um bloco de estatísticas escalado pelo nível
 const ROLE_PRESETS = [
-    { id: 'minion', label: 'Lacaio', icon: '🐀', color: grey[600], lpPerLevel: 8, mpPerLevel: 3, ap: 2, attrFactor: 0.5, desc: 'Frágil, aparece em grupo' },
-    { id: 'standard', label: 'Padrão', icon: '🐺', color: blue[600], lpPerLevel: 15, mpPerLevel: 5, ap: 3, attrFactor: 0.8, desc: 'Ameaça equilibrada' },
-    { id: 'elite', label: 'Elite', icon: '🦁', color: purple[600], lpPerLevel: 30, mpPerLevel: 8, ap: 4, attrFactor: 1.0, desc: 'Resistente e perigoso' },
-    { id: 'boss', label: 'Chefe', icon: '🐲', color: orange[700], lpPerLevel: 60, mpPerLevel: 12, ap: 5, attrFactor: 1.3, desc: 'Combate memorável' }
+    { id: 'minion', label: 'Lacaio', icon: '🐀', color: 'text.secondary', lpPerLevel: 8, mpPerLevel: 3, ap: 2, attrFactor: 0.5, desc: 'Frágil, aparece em grupo' },
+    { id: 'standard', label: 'Padrão', icon: '🐺', color: 'info.main', lpPerLevel: 15, mpPerLevel: 5, ap: 3, attrFactor: 0.8, desc: 'Ameaça equilibrada' },
+    { id: 'elite', label: 'Elite', icon: '🦁', color: 'primary.main', lpPerLevel: 30, mpPerLevel: 8, ap: 4, attrFactor: 1.0, desc: 'Resistente e perigoso' },
+    { id: 'boss', label: 'Chefe', icon: '🐲', color: 'warning.main', lpPerLevel: 60, mpPerLevel: 12, ap: 5, attrFactor: 1.3, desc: 'Combate memorável' }
 ] as const;
 
 const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
@@ -446,16 +447,28 @@ export default function CreatureCreator({ open, onClose, onSave, editingCreature
     };
 
     // ── Cabeçalho de resumo ─────────────────────────────────────────────────
-    const iconSx = (color: string) => ({ fontSize: '0.9rem !important', color: `${color} !important` });
+    const iconSx = (tone: string) => ({ fontSize: '0.9rem !important', color: `${tone} !important` });
     const summaryChips = (
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, mt: 1 }}>
-            <Chip size="small" label={`Nível ${creatureData.level}`} sx={{ bgcolor: green[100], color: green[900], fontWeight: 700 }} />
-            <Chip size="small" icon={<FavoriteBorder sx={iconSx(red[500])} />} label={creatureData.stats.lp} sx={{ bgcolor: red[50], color: red[800] }} />
-            <Chip size="small" icon={<BoltOutlined sx={iconSx(blue[500])} />} label={creatureData.stats.mp} sx={{ bgcolor: blue[50], color: blue[800] }} />
-            <Chip size="small" icon={<ShieldOutlined sx={iconSx(grey[600])} />} label={`${creatureData.stats.ap} AP`} sx={{ bgcolor: grey[100], color: grey[800] }} />
+            <Chip size="small" label={`Nível ${creatureData.level}`} sx={{ bgcolor: (theme) => alpha(theme.palette.success.main, 0.14), color: 'success.main', fontWeight: 700 }} />
+            <Chip size="small" icon={<FavoriteBorder sx={iconSx(color.lp)} />} label={creatureData.stats.lp} sx={{ bgcolor: alpha(color.lp, 0.14), color: 'error.light' }} />
+            <Chip size="small" icon={<BoltOutlined sx={iconSx(color.mp)} />} label={creatureData.stats.mp} sx={{ bgcolor: alpha(color.mp, 0.14), color: color.mp }} />
+            <Chip size="small" icon={<ShieldOutlined sx={iconSx(color.ap)} />} label={`${creatureData.stats.ap} AP`} sx={{ bgcolor: alpha(color.ap, 0.14), color: 'text.secondary' }} />
             <Chip size="small" label={`Σ Atrib. ${attributeSum}`} variant="outlined" />
-            {creatureData.skills.length > 0 && <Chip size="small" label={`${creatureData.skills.length} habilidade(s)`} sx={{ bgcolor: purple[50], color: purple[800] }} />}
-            {creatureData.spells.length > 0 && <Chip size="small" label={`${creatureData.spells.length} magia(s)`} sx={{ bgcolor: blue[50], color: blue[800] }} />}
+            {creatureData.skills.length > 0 && (
+                <Chip
+                    size="small"
+                    label={`${creatureData.skills.length} habilidade(s)`}
+                    sx={{ bgcolor: (theme) => alpha(theme.palette.primary.main, 0.14), color: 'primary.main' }}
+                />
+            )}
+            {creatureData.spells.length > 0 && (
+                <Chip
+                    size="small"
+                    label={`${creatureData.spells.length} magia(s)`}
+                    sx={{ bgcolor: (theme) => alpha(theme.palette.info.main, 0.14), color: 'info.main' }}
+                />
+            )}
             {expertiseCount > 0 && <Chip size="small" label={`${expertiseCount} perícia(s)`} variant="outlined" />}
         </Box>
     );
@@ -466,7 +479,7 @@ export default function CreatureCreator({ open, onClose, onSave, editingCreature
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                     <Avatar
                         src={creatureData.imageUrl || undefined}
-                        sx={{ bgcolor: orange[100], color: orange[700], width: 44, height: 44 }}
+                        sx={{ bgcolor: (theme) => alpha(theme.palette.warning.main, 0.14), color: 'warning.main', width: 44, height: 44 }}
                     >
                         <PetsIcon />
                     </Avatar>
@@ -505,7 +518,7 @@ export default function CreatureCreator({ open, onClose, onSave, editingCreature
                             <Avatar
                                 variant="rounded"
                                 src={creatureData.imageUrl || undefined}
-                                sx={{ width: 96, height: 96, bgcolor: orange[50], color: orange[400], border: '1px solid', borderColor: 'divider' }}
+                                sx={{ width: 96, height: 96, bgcolor: (theme) => alpha(theme.palette.warning.main, 0.14), color: 'warning.main', border: '1px solid', borderColor: 'divider' }}
                             >
                                 <ImageOutlined sx={{ fontSize: 40 }} />
                             </Avatar>
@@ -579,7 +592,7 @@ export default function CreatureCreator({ open, onClose, onSave, editingCreature
                                                     borderColor: preset.color,
                                                     color: preset.color,
                                                     textTransform: 'none',
-                                                    '&:hover': { borderColor: preset.color, bgcolor: `${preset.color}14` }
+                                                    '&:hover': { borderColor: preset.color, bgcolor: 'action.hover' }
                                                 }}
                                             >
                                                 <span style={{ marginRight: 6 }}>{preset.icon}</span> {preset.label}
@@ -631,7 +644,7 @@ export default function CreatureCreator({ open, onClose, onSave, editingCreature
                                                     <Add sx={{ fontSize: 14 }} />
                                                 </IconButton>
                                             </Box>
-                                            <Typography variant="caption" sx={{ color: mod >= 0 ? green[600] : red[500], fontWeight: 600 }}>
+                                            <Typography variant="caption" sx={{ color: mod >= 0 ? 'success.main' : 'error.main', fontWeight: 600 }}>
                                                 {mod >= 0 ? `+${mod}` : mod} dado(s)
                                             </Typography>
                                         </Paper>
@@ -655,7 +668,7 @@ export default function CreatureCreator({ open, onClose, onSave, editingCreature
                                     inputProps={{ min: 1 }}
                                     disabled={isReadOnly}
                                     sx={{ width: 130 }}
-                                    InputProps={{ startAdornment: <InputAdornment position="start"><FavoriteBorder sx={{ color: red[400], fontSize: 18 }} /></InputAdornment> }}
+                                    InputProps={{ startAdornment: <InputAdornment position="start"><FavoriteBorder sx={{ color: color.lp, fontSize: 18 }} /></InputAdornment> }}
                                 />
                                 <TextField
                                     label="MP (Mana)"
@@ -668,7 +681,7 @@ export default function CreatureCreator({ open, onClose, onSave, editingCreature
                                     inputProps={{ min: 0 }}
                                     disabled={isReadOnly}
                                     sx={{ width: 130 }}
-                                    InputProps={{ startAdornment: <InputAdornment position="start"><BoltOutlined sx={{ color: blue[400], fontSize: 18 }} /></InputAdornment> }}
+                                    InputProps={{ startAdornment: <InputAdornment position="start"><BoltOutlined sx={{ color: color.mp, fontSize: 18 }} /></InputAdornment> }}
                                 />
                                 <TextField
                                     label="AP (Ações)"
@@ -678,7 +691,7 @@ export default function CreatureCreator({ open, onClose, onSave, editingCreature
                                     inputProps={{ min: 0 }}
                                     disabled={isReadOnly}
                                     sx={{ width: 130 }}
-                                    InputProps={{ startAdornment: <InputAdornment position="start"><ShieldOutlined sx={{ color: grey[500], fontSize: 18 }} /></InputAdornment> }}
+                                    InputProps={{ startAdornment: <InputAdornment position="start"><ShieldOutlined sx={{ color: color.ap, fontSize: 18 }} /></InputAdornment> }}
                                 />
                             </Box>
                         </Paper>
@@ -770,7 +783,7 @@ export default function CreatureCreator({ open, onClose, onSave, editingCreature
                                     >
                                         {skillTypes.map(type => (<option key={type} value={type}>{type}</option>))}
                                     </TextField>
-                                    <Button variant="contained" onClick={addSkill} disabled={!newSkill.name?.trim()} startIcon={<Add />} sx={{ bgcolor: purple[600] }}>
+                                    <Button variant="contained" onClick={addSkill} disabled={!newSkill.name?.trim()} startIcon={<Add />}>
                                         Adicionar
                                     </Button>
                                 </Box>
@@ -871,7 +884,7 @@ export default function CreatureCreator({ open, onClose, onSave, editingCreature
                                         inputProps={{ min: 0 }}
                                         sx={{ width: 100 }}
                                     />
-                                    <Button variant="contained" onClick={addSpell} disabled={!newSpell.name?.trim()} startIcon={<Add />} sx={{ bgcolor: blue[600] }}>
+                                    <Button variant="contained" onClick={addSpell} disabled={!newSpell.name?.trim()} startIcon={<Add />}>
                                         Adicionar
                                     </Button>
                                 </Box>
@@ -910,7 +923,7 @@ export default function CreatureCreator({ open, onClose, onSave, editingCreature
                                                         <Typography variant="body2" fontWeight={600}>{spell.name}</Typography>
                                                         <Chip label={spell.element} size="small" sx={{ height: 20, fontSize: '0.65rem' }} />
                                                         <Chip label={`Nv. ${spell.level}`} size="small" sx={{ height: 20, fontSize: '0.65rem' }} />
-                                                        <Chip label={`${spell.cost} MP`} size="small" sx={{ height: 20, fontSize: '0.65rem', bgcolor: blue[100], color: blue[800] }} />
+                                                        <Chip label={`${spell.cost} MP`} size="small" sx={{ height: 20, fontSize: '0.65rem', bgcolor: alpha(color.mp, 0.14), color: color.mp }} />
                                                     </Box>
                                                 }
                                                 secondary={spell.description}
@@ -1062,7 +1075,6 @@ export default function CreatureCreator({ open, onClose, onSave, editingCreature
                         variant="contained"
                         disabled={!creatureData.name.trim() || isLoading}
                         startIcon={isLoading ? <CircularProgress size={20} /> : <PetsIcon />}
-                        sx={{ bgcolor: orange[600], '&:hover': { bgcolor: orange[700] } }}
                     >
                         {isLoading ? 'Salvando...' : (editingCreature ? 'Atualizar' : 'Criar Criatura')}
                     </Button>

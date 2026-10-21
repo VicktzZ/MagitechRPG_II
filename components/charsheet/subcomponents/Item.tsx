@@ -141,7 +141,7 @@ function ItemComponent(props: ItemTyping<'item'>): ReactElement {
                             sx={{
                                 width: 48,
                                 height: 48,
-                                backgroundColor: alpha(theme.palette.grey[500], 0.1)
+                                backgroundColor: alpha(theme.palette.text.secondary, 0.1)
                             }}
                         >
                             <FitnessCenter color="action" />

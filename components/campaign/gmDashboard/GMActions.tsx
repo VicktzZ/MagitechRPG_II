@@ -371,7 +371,7 @@ export default function GMActions(): ReactElement {
                             <Chip 
                                 label={`R${campaign.session.combat.round}`}
                                 size="small" 
-                                sx={{ ml: 1, height: 20, bgcolor: (theme) => alpha(theme.palette.error.main, 0.14), color: 'error.main' }}
+                                sx={{ ml: 1, height: 20, bgcolor: (theme) => alpha(theme.palette.error.main, 0.14), color: 'error.light' }}
                             />
                         )}
                     </MenuItemText>

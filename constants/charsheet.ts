@@ -1,4 +1,4 @@
-import { red, blue, orange, teal, deepPurple, green } from '@mui/material/colors';
+import { classMark, color } from '@themes/tokens';
 import generateEntryCode from '@utils/generateEntryCode';
 import { type Expertises, type Race } from '@models';
 import type { FinancialCondition, Gender, SubclassNames, ClassNames, LineageNames } from '@models/types/string';
@@ -200,35 +200,37 @@ export const charsheet: CharsheetDTO = {
 
 export const charsheetModel = new CharsheetDTO(charsheet)
 
+// Cores pelo papel (vida, mana, alerta, sucesso) e pela paleta das classes (Lógica e Sabedoria).
+// O `filter` pinta o ícone preto de `RPGIcon` com a mesma cor de `color`; ao trocar uma, refaça a outra.
 export const attributeIcons = {
     vig: {
-        color: red[500],
+        color: color.lp,
         icon: 'health',
-        filter: 'invert(32%) sepia(55%) saturate(3060%) hue-rotate(343deg) brightness(99%) contrast(93%)'
+        filter: 'invert(41%) sepia(39%) saturate(1355%) hue-rotate(320deg) brightness(105%) contrast(76%)'
     },
     foc: {
-        color: blue[500],
+        color: color.mp,
         icon: 'potion',
-        filter: 'invert(42%) sepia(99%) saturate(584%) hue-rotate(169deg) brightness(101%) contrast(99%)'
+        filter: 'invert(61%) sepia(69%) saturate(563%) hue-rotate(165deg) brightness(92%) contrast(96%)'
     },
     des: {
-        color: orange[500],
+        color: color.warning,
         icon: 'shield',
-        filter: 'invert(57%) sepia(63%) saturate(723%) hue-rotate(357deg) brightness(99%) contrast(107%)'
+        filter: 'invert(77%) sepia(41%) saturate(6226%) hue-rotate(337deg) brightness(94%) contrast(86%)'
     },
     log: {
-        color: teal[500],
+        color: classMark.Feiticeiro,
         icon: 'book',
-        filter: 'invert(53%) sepia(48%) saturate(7320%) hue-rotate(150deg) brightness(89%) contrast(101%)'
+        filter: 'invert(64%) sepia(14%) saturate(5680%) hue-rotate(129deg) brightness(85%) contrast(70%)'
     },
     sab: {
-        color: deepPurple[500],
+        color: classMark.Bruxo,
         icon: 'pawprint',
-        filter: 'invert(19%) sepia(90%) saturate(2394%) hue-rotate(253deg) brightness(90%) contrast(84%)'
+        filter: 'invert(52%) sepia(81%) saturate(1027%) hue-rotate(219deg) brightness(87%) contrast(82%)'
     },
     car: {
-        color: green[500],
+        color: color.success,
         icon: 'aura',
-        filter: 'invert(60%) sepia(41%) saturate(642%) hue-rotate(73deg) brightness(91%) contrast(85%)'
+        filter: 'invert(69%) sepia(9%) saturate(1675%) hue-rotate(91deg) brightness(91%) contrast(91%)'
     }
 } as const;

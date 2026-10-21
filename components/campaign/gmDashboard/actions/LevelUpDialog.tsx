@@ -18,10 +18,11 @@ import {
     ListItemAvatar,
     ListItemText,
     TextField,
-    Typography
+    Typography,
+    alpha
 } from '@mui/material';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
-import { blue, green } from '@mui/material/colors';
+import { color } from '@themes/tokens';
 import { useSnackbar } from 'notistack';
 import { charsheetService } from '@services';
 import { postCampaignStats, type StatsEntry } from '@utils/campaignStatsClient';
@@ -104,7 +105,7 @@ export default function LevelUpDialog({ open, onClose, players, campaignId }: Le
     return (
         <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
             <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <TrendingUpIcon sx={{ color: blue[500] }} />
+                <TrendingUpIcon sx={{ color: 'info.main' }} />
                 Aumentar Nível de Jogadores
             </DialogTitle>
             <DialogContent>
@@ -133,8 +134,8 @@ export default function LevelUpDialog({ open, onClose, players, campaignId }: Le
                                             disabled={isLevelingUp || !player.charsheet}
                                             sx={{
                                                 '&.Mui-selected': {
-                                                    bgcolor: blue[100] + '60',
-                                                    '&:hover': { bgcolor: blue[100] + '80' }
+                                                    bgcolor: color.amberSubtle,
+                                                    '&:hover': { bgcolor: 'action.selected' }
                                                 }
                                             }}
                                         >
@@ -147,7 +148,7 @@ export default function LevelUpDialog({ open, onClose, players, campaignId }: Le
                                                     src={player.avatar}
                                                     sx={{
                                                         border: selectedPlayers.includes(player.id)
-                                                            ? `2px solid ${blue[500]}`
+                                                            ? `2px solid ${color.amber}`
                                                             : '2px solid transparent'
                                                     }}
                                                 />
@@ -174,7 +175,7 @@ export default function LevelUpDialog({ open, onClose, players, campaignId }: Le
                                                             <Chip
                                                                 label={`→ Nível ${(player.charsheet.level ?? 0) + levelsToAdd}`}
                                                                 size="small"
-                                                                sx={{ height: 20, bgcolor: green[100], color: green[800] }}
+                                                                sx={{ height: 20, bgcolor: (theme) => alpha(theme.palette.success.main, 0.14), color: 'success.main' }}
                                                             />
                                                         </Box>
                                                     ) : 'Jogador sem charsheet'

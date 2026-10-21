@@ -20,7 +20,7 @@ import {
     Typography
 } from '@mui/material';
 import AutoGraphIcon from '@mui/icons-material/AutoGraph';
-import { amber, blue, green, orange, purple, red } from '@mui/material/colors';
+import { color } from '@themes/tokens';
 import { useSnackbar } from 'notistack';
 import type { PlayerInfo } from './types';
 
@@ -94,7 +94,7 @@ export default function RogueliteLevelUpDialog({
     return (
         <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
             <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <AutoGraphIcon sx={{ color: green[500] }} />
+                <AutoGraphIcon sx={{ color: 'success.main' }} />
                 Evolução Roguelite (+5 Níveis)
             </DialogTitle>
             <DialogContent>
@@ -112,7 +112,7 @@ export default function RogueliteLevelUpDialog({
                         <Typography 
                             variant="subtitle2" 
                             sx={{ 
-                                color: (theme) => theme.palette.mode === 'dark' ? green[300] : green[800], 
+                                color: 'success.main',
                                 mb: 1, 
                                 fontWeight: 700 
                             }}
@@ -120,21 +120,21 @@ export default function RogueliteLevelUpDialog({
                             🎮 Bônus de Evolução Roguelite
                         </Typography>
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                            <Chip label="+5 Níveis" size="small" sx={{ bgcolor: green[800], color: green[50] }} />
-                            <Chip label="+1 Nível de ORM" size="small" sx={{ bgcolor: orange[700], color: orange[50] }} />
-                            <Chip label="+5 Atributos" size="small" sx={{ bgcolor: blue[700], color: blue[50] }} />
-                            <Chip label="+1 Modificadores" size="small" sx={{ bgcolor: blue[600], color: blue[50] }} />
-                            <Chip label="+1 Perícias" size="small" sx={{ bgcolor: purple[700], color: purple[50] }} />
+                            <Chip label="+5 Níveis" size="small" sx={{ bgcolor: (theme) => alpha(theme.palette.success.main, 0.14), color: 'success.main' }} />
+                            <Chip label="+1 Nível de ORM" size="small" sx={{ bgcolor: (theme) => alpha(theme.palette.warning.main, 0.14), color: 'warning.light' }} />
+                            <Chip label="+5 Atributos" size="small" sx={{ bgcolor: (theme) => alpha(theme.palette.info.main, 0.14), color: 'info.main' }} />
+                            <Chip label="+1 Modificadores" size="small" sx={{ bgcolor: (theme) => alpha(theme.palette.info.main, 0.14), color: 'info.main' }} />
+                            <Chip label="+1 Perícias" size="small" sx={{ bgcolor: 'background.raised', color: 'text.primary' }} />
                             <Chip label="+2 Espaços de Magia" size="small" sx={{ bgcolor: 'primary.main', color: 'primary.contrastText' }} />
-                            <Chip label="+2.0kg Capacidade" size="small" sx={{ bgcolor: amber[700], color: amber[50] }} />
-                            <Chip label="+¢250 Dinheiro" size="small" sx={{ bgcolor: green[600], color: green[50] }} />
-                            <Chip label="+10 LP Máximo" size="small" sx={{ bgcolor: red[600], color: red[50], fontWeight: 'bold' }} />
-                            <Chip label="+5 MP Máximo" size="small" sx={{ bgcolor: blue[500], color: blue[50], fontWeight: 'bold' }} />
+                            <Chip label="+2.0kg Capacidade" size="small" sx={{ bgcolor: (theme) => alpha(theme.palette.primary.main, 0.14), color: 'primary.main' }} />
+                            <Chip label="+¢250 Dinheiro" size="small" sx={{ bgcolor: (theme) => alpha(theme.palette.success.main, 0.14), color: 'success.main' }} />
+                            <Chip label="+10 LP Máximo" size="small" sx={{ bgcolor: alpha(color.lp, 0.14), color: 'error.light', fontWeight: 'bold' }} />
+                            <Chip label="+5 MP Máximo" size="small" sx={{ bgcolor: alpha(color.mp, 0.14), color: color.mp, fontWeight: 'bold' }} />
                         </Box>
                         <Typography 
                             variant="caption" 
                             sx={{ 
-                                color: (theme) => theme.palette.mode === 'dark' ? green[400] : green[700], 
+                                color: 'success.main',
                                 display: 'block', 
                                 mt: 1,
                                 fontWeight: 600
@@ -145,7 +145,7 @@ export default function RogueliteLevelUpDialog({
                         <Typography 
                             variant="caption" 
                             sx={{ 
-                                color: (theme) => theme.palette.mode === 'dark' ? blue[300] : blue[700], 
+                                color: 'info.main',
                                 display: 'block', 
                                 fontStyle: 'italic'
                             }}
@@ -169,8 +169,8 @@ export default function RogueliteLevelUpDialog({
                                             disabled={isLevelingUp || !player.charsheet}
                                             sx={{
                                                 '&.Mui-selected': {
-                                                    bgcolor: green[100] + '60',
-                                                    '&:hover': { bgcolor: green[100] + '80' }
+                                                    bgcolor: (theme) => alpha(theme.palette.success.main, 0.14),
+                                                    '&:hover': { bgcolor: (theme) => alpha(theme.palette.success.main, 0.22) }
                                                 }
                                             }}
                                         >
@@ -179,7 +179,7 @@ export default function RogueliteLevelUpDialog({
                                                     src={player.avatar}
                                                     sx={{
                                                         border: selectedPlayers.includes(player.id)
-                                                            ? `2px solid ${green[500]}`
+                                                            ? `2px solid ${color.success}`
                                                             : '2px solid transparent'
                                                     }}
                                                 />
@@ -206,7 +206,7 @@ export default function RogueliteLevelUpDialog({
                                                             <Chip
                                                                 label={`→ Nível ${(player.charsheet.level ?? 0) + 5}`}
                                                                 size="small"
-                                                                sx={{ height: 20, bgcolor: green[100], color: green[800] }}
+                                                                sx={{ height: 20, bgcolor: (theme) => alpha(theme.palette.success.main, 0.14), color: 'success.main' }}
                                                             />
                                                         </Box>
                                                     ) : 'Jogador sem charsheet'
@@ -230,7 +230,7 @@ export default function RogueliteLevelUpDialog({
                     variant="contained"
                     disabled={selectedPlayers.length === 0 || isLevelingUp}
                     startIcon={isLevelingUp ? <CircularProgress size={20} /> : <AutoGraphIcon />}
-                    sx={{ bgcolor: green[600], '&:hover': { bgcolor: green[700] } }}
+                    sx={{ bgcolor: 'success.main', color: 'success.contrastText', '&:hover': { bgcolor: 'success.dark' } }}
                 >
                     {isLevelingUp ? 'Evoluindo...' : 'Evoluir Jogadores'}
                 </Button>

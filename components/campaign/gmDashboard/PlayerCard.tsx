@@ -285,7 +285,7 @@ function PlayerCard({ charsheet }: { charsheet: Required<CharsheetDTO> }) {
                             <ListItemIcon>
                                 <Block sx={{ color: 'error.main' }} />
                             </ListItemIcon>
-                            <ListItemText sx={{ color: 'error.main' }}>Remover</ListItemText>
+                            <ListItemText sx={{ color: 'error.light' }}>Remover</ListItemText>
                         </MenuItem>
                     </MenuList>
                 </Box>

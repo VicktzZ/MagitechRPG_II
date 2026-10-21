@@ -29,12 +29,13 @@ import {
     useMediaQuery,
     useTheme
 } from '@mui/material';
-import { blue, green, red } from '@mui/material/colors';
+import { color } from '@themes/tokens';
 import { useMemo, useState, type ReactElement } from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
 import { useCharsheetSystem } from '@hooks';
 
-const redFilter = 'invert(16%) sepia(44%) saturate(6989%) hue-rotate(352deg) brightness(97%) contrast(82%)'
+// Pinta o ícone preto com `error.main` (color.danger)
+const redFilter = 'invert(46%) sepia(20%) saturate(1757%) hue-rotate(314deg) brightness(100%) contrast(84%)'
 
 /**
  * Normaliza um valor que pode ser um array ou um objeto com chaves numéricas
@@ -394,7 +395,7 @@ export function Inventory (): ReactElement {
                         <Box>
                             <Stack direction='row' alignItems='center' spacing={1} mb={2}>
                                 <RPGIcon icon='sword2' filter={redFilter} />
-                                <Typography variant="h6" fontWeight="bold" color={red[500]}>
+                                <Typography variant="h6" fontWeight="bold" color="error.main">
                                     Armas
                                 </Typography>
                                 <Chip 
@@ -412,8 +413,8 @@ export function Inventory (): ReactElement {
                                     sx={{ 
                                         p: 3, 
                                         textAlign: 'center', 
-                                        bgcolor: alpha(red[500], 0.05),
-                                        border: `1px dashed ${alpha(red[500], 0.3)}`
+                                        bgcolor: alpha(theme.palette.error.main, 0.05),
+                                        border: `1px dashed ${alpha(theme.palette.error.main, 0.3)}`
                                     }}
                                 >
                                     <Typography variant="body2" color="text.secondary">
@@ -428,8 +429,8 @@ export function Inventory (): ReactElement {
                         {/* Seção Armaduras */}
                         <Box>
                             <Stack direction='row' alignItems='center' spacing={1} mb={2}>
-                                <Shield sx={{ color: blue[500] }} />
-                                <Typography variant="h6" fontWeight="bold" color={blue[500]}>
+                                <Shield sx={{ color: color.ap }} />
+                                <Typography variant="h6" fontWeight="bold" color={color.ap}>
                                     Armaduras
                                 </Typography>
                                 <Chip 
@@ -447,8 +448,8 @@ export function Inventory (): ReactElement {
                                     sx={{ 
                                         p: 3, 
                                         textAlign: 'center', 
-                                        bgcolor: alpha(blue[500], 0.05),
-                                        border: `1px dashed ${alpha(blue[500], 0.3)}`
+                                        bgcolor: alpha(color.ap, 0.05),
+                                        border: `1px dashed ${alpha(color.ap, 0.3)}`
                                     }}
                                 >
                                     <Typography variant="body2" color="text.secondary">
@@ -463,8 +464,8 @@ export function Inventory (): ReactElement {
                         {/* Seção Itens */}
                         <Box>
                             <Stack direction='row' alignItems='center' spacing={1} mb={2}>
-                                <ShoppingBag sx={{ color: green[500] }} />
-                                <Typography variant="h6" fontWeight="bold" color={green[500]}>
+                                <ShoppingBag sx={{ color: 'success.main' }} />
+                                <Typography variant="h6" fontWeight="bold" color="success.main">
                                     Itens
                                 </Typography>
                                 <Chip 
@@ -482,8 +483,8 @@ export function Inventory (): ReactElement {
                                     sx={{ 
                                         p: 3, 
                                         textAlign: 'center', 
-                                        bgcolor: alpha(green[500], 0.05),
-                                        border: `1px dashed ${alpha(green[500], 0.3)}`
+                                        bgcolor: alpha(theme.palette.success.main, 0.05),
+                                        border: `1px dashed ${alpha(theme.palette.success.main, 0.3)}`
                                     }}
                                 >
                                     <Typography variant="body2" color="text.secondary">
