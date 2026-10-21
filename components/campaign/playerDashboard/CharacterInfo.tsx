@@ -2,15 +2,18 @@
 'use client';
 
 import { RPGIcon } from '@components/misc';
+import ElementIcon from '@components/misc/ElementIcon';
+import { classColor } from '@constants';
 import { attributeIcons } from '@constants/charsheet';
 import { useCampaignCurrentCharsheetContext } from '@contexts';
+import type { ClassNames } from '@models/types/string';
 import {
-    LocalFireDepartment,
     Psychology,
     Shield,
     Star
 } from '@mui/icons-material';
 import {
+    alpha,
     Avatar,
     Box,
     Button,
@@ -22,7 +25,7 @@ import {
     Stack,
     Typography
 } from '@mui/material';
-import { blue, green, orange, purple, red } from '@mui/material/colors';
+import { color } from '@themes/tokens';
 import { useState, type ReactElement } from 'react';
 
 interface CharacterInfoProps {
@@ -62,6 +65,7 @@ export default function CharacterInfo({ avatar }: CharacterInfoProps): ReactElem
     const lpPercent = (currentAttributes.lp / charsheet.stats.maxLp) * 100;
     const mpPercent = (currentAttributes.mp / charsheet.stats.maxMp) * 100;
     const apPercent = (currentAttributes.ap / charsheet.stats.maxAp) * 100;
+    const classMarkColor = classColor[charsheet.class as ClassNames] ?? color.borderControl;
     const attributes = Object.entries(charsheet.stats).filter(([ key ]) => ![ 'lp', 'mp', 'ap' ].includes(key));
 
     function AttributeBar({ attributeValue }: { attributeValue: number }) {
@@ -76,7 +80,7 @@ export default function CharacterInfo({ avatar }: CharacterInfoProps): ReactElem
                         height: '2rem',
                         border: '1px solid',
                         borderColor: 'primary.main',
-                        bgcolor: (i === 1 && attributeValue === -1) ? red[500] : filled ? green[500] : 'transparent',
+                        bgcolor: (i === 1 && attributeValue === -1) ? 'error.main' : filled ? 'success.main' : 'transparent',
                         borderRadius: 1
                     }} 
                 />
@@ -136,8 +140,8 @@ export default function CharacterInfo({ avatar }: CharacterInfoProps): ReactElem
                             <Chip 
                                 label={charsheet.lineage as unknown as string} 
                                 sx={{ 
-                                    bgcolor: blue[100],
-                                    color: blue[800],
+                                    bgcolor: (theme) => alpha(theme.palette.info.main, 0.14),
+                                    color: 'info.main',
                                     fontWeight: 600
                                 }}
                             />
@@ -145,9 +149,12 @@ export default function CharacterInfo({ avatar }: CharacterInfoProps): ReactElem
                                 icon={<Shield />}
                                 label={charsheet.class as string} 
                                 sx={{ 
-                                    bgcolor: green[100],
-                                    color: green[800],
-                                    fontWeight: 600
+                                    bgcolor: alpha(classMarkColor, 0.16),
+                                    color: 'text.primary',
+                                    border: '1px solid',
+                                    borderColor: classMarkColor,
+                                    fontWeight: 600,
+                                    '& .MuiChip-icon': { color: classMarkColor }
                                 }}
                             />
                             {charsheet.subclass && (
@@ -155,19 +162,24 @@ export default function CharacterInfo({ avatar }: CharacterInfoProps): ReactElem
                                     icon={<Psychology />}
                                     label={charsheet.subclass as string}
                                     sx={{ 
-                                        bgcolor: orange[100],
-                                        color: orange[800],
-                                        fontWeight: 600
+                                        bgcolor: 'background.raised',
+                                        color: 'text.primary',
+                                        border: '1px solid',
+                                        borderColor: 'divider',
+                                        fontWeight: 600,
+                                        '& .MuiChip-icon': { color: 'inherit' }
                                     }}
                                 />
                             )}
                             {charsheet.elementalMastery && (
                                 <Chip 
-                                    icon={<LocalFireDepartment />}
+                                    icon={<ElementIcon element={charsheet.elementalMastery} colored />}
                                     label={`Maestria: ${charsheet.elementalMastery}`} 
                                     sx={{ 
-                                        bgcolor: purple[100],
-                                        color: purple[800],
+                                        bgcolor: 'background.raised',
+                                        color: 'text.primary',
+                                        border: '1px solid',
+                                        borderColor: 'divider',
                                         fontWeight: 600
                                     }}
                                 />
@@ -183,8 +195,8 @@ export default function CharacterInfo({ avatar }: CharacterInfoProps): ReactElem
                                         color="warning"
                                         variant="filled"
                                         sx={{ 
-                                            bgcolor: red[100],
-                                            color: red[800],
+                                            bgcolor: (theme) => alpha(theme.palette.error.main, 0.14),
+                                            color: 'error.main',
                                             fontWeight: 600
                                         }}
                                     />
@@ -297,7 +309,7 @@ export default function CharacterInfo({ avatar }: CharacterInfoProps): ReactElem
                                                         justifyContent: 'center',
                                                         p: 0.5,
                                                         borderRadius: 5,
-                                                        backgroundColor: `${attributeIcons[key as keyof typeof attributeIcons].color}50`
+                                                        backgroundColor: alpha(attributeIcons[key as keyof typeof attributeIcons].color, 0.31)
                                                     }}>
                                                         <RPGIcon
                                                             icon={attributeIcons[key as keyof typeof attributeIcons].icon}

@@ -56,6 +56,7 @@ import {
     Accordion, 
     AccordionDetails, 
     AccordionSummary, 
+    alpha,
     Box, 
     Chip, 
     Paper, 
@@ -72,7 +73,7 @@ import {
     IconButton
 } from '@mui/material';
 import { useSnackbar } from 'notistack';
-import { red, blue, green, orange, grey, purple } from '@mui/material/colors';
+import { color } from '@themes/tokens';
 import { type ReactElement, useState, useMemo } from 'react';
 import { useSession } from '@node_modules/next-auth/react';
 import { type SessionPlayer } from '@features/roguelite/components';
@@ -153,6 +154,8 @@ export default function InventorySection(): ReactElement {
     const capacityPercent = (calculateTotalWeight / charsheet.capacity.max) * 100;
     const isOverloaded = capacityPercent > 100;
     const isNearLimit = capacityPercent > 80;
+    // Papel de cor do medidor de capacidade: erro na sobrecarga, alerta perto do limite, sucesso no resto
+    const capacityRole = isOverloaded ? 'error' : isNearLimit ? 'warning' : 'success';
 
     // Prepara lista de jogadores da sessão (excluindo o jogador atual)
     const sessionPlayers: SessionPlayer[] = useMemo(() => {
@@ -319,11 +322,11 @@ export default function InventorySection(): ReactElement {
     const getItemTypeConfig = (type: 'weapon' | 'armor' | 'item') => {
         switch (type) {
         case 'weapon':
-            return { color: red[600], bg: red[100], icon: AutoFixNormal, label: 'Arma' };
+            return { color: color.danger, icon: AutoFixNormal, label: 'Arma' };
         case 'armor':
-            return { color: blue[600], bg: blue[100], icon: Shield, label: 'Armadura' };
+            return { color: color.cyan, icon: Shield, label: 'Armadura' };
         case 'item':
-            return { color: green[600], bg: green[100], icon: ShoppingBag, label: 'Item' };
+            return { color: color.success, icon: ShoppingBag, label: 'Item' };
         }
     };
 
@@ -398,7 +401,7 @@ export default function InventorySection(): ReactElement {
         };
 
         const details = getItemDetails();
-        const rarityColorValue = item.rarity ? rarityColor[item.rarity as RarityType] : grey[500];
+        const rarityColorValue = (item.rarity ? rarityColor[item.rarity as RarityType] : undefined) ?? color.inkMuted;
 
         return (
             <Accordion
@@ -411,7 +414,7 @@ export default function InventorySection(): ReactElement {
                     borderRadius: 2,
                     '&:before': { display: 'none' },
                     '&:hover': {
-                        borderColor: typeConfig.color + '60',
+                        borderColor: alpha(typeConfig.color, 0.38),
                         bgcolor: 'action.hover'
                     },
                     mb: 1.5,
@@ -436,8 +439,8 @@ export default function InventorySection(): ReactElement {
                                     width: 40,
                                     height: 40,
                                     borderRadius: 1.5,
-                                    bgcolor: `${typeConfig.color}15`,
-                                    border: `2px solid ${typeConfig.color}30`,
+                                    bgcolor: alpha(typeConfig.color, 0.08),
+                                    border: `2px solid ${alpha(typeConfig.color, 0.19)}`,
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center'
@@ -462,10 +465,10 @@ export default function InventorySection(): ReactElement {
                                     label={item.rarity}
                                     size="small"
                                     sx={{
-                                        bgcolor: item.rarity === 'Amaldiçoado' ? 'transparent' : `${rarityColorValue}20`,
+                                        bgcolor: item.rarity === 'Amaldiçoado' ? 'transparent' : alpha(rarityColorValue, 0.12),
                                         color: rarityColorValue,
                                         border: '1px solid',
-                                        borderColor: `${rarityColorValue}40`,
+                                        borderColor: alpha(rarityColorValue, 0.25),
                                         fontWeight: 600,
                                         height: 24
                                     }}
@@ -476,8 +479,8 @@ export default function InventorySection(): ReactElement {
                                     label={`${item.effect.value} dano`}
                                     size="small"
                                     sx={{
-                                        bgcolor: `${red[500]}20`,
-                                        color: red[600],
+                                        bgcolor: alpha(color.danger, 0.12),
+                                        color: 'error.main',
                                         fontWeight: 600,
                                         height: 24
                                     }}
@@ -488,8 +491,8 @@ export default function InventorySection(): ReactElement {
                                     label={`+${item.ap || item.value || 0} AP`}
                                     size="small"
                                     sx={{
-                                        bgcolor: `${blue[500]}20`,
-                                        color: blue[600],
+                                        bgcolor: alpha(color.cyan, 0.12),
+                                        color: 'info.main',
                                         fontWeight: 600,
                                         height: 24
                                     }}
@@ -500,8 +503,8 @@ export default function InventorySection(): ReactElement {
                                     label={`x${item.quantity}`}
                                     size="small"
                                     sx={{
-                                        bgcolor: `${green[500]}20`,
-                                        color: green[600],
+                                        bgcolor: alpha(color.success, 0.12),
+                                        color: 'success.main',
                                         fontWeight: 600,
                                         height: 24
                                     }}
@@ -529,11 +532,11 @@ export default function InventorySection(): ReactElement {
                                         p: 1.5,
                                         borderRadius: 1.5,
                                         bgcolor: detail.highlight 
-                                            ? `${typeConfig.color}10` 
+                                            ? alpha(typeConfig.color, 0.06) 
                                             : 'background.default',
                                         border: '1px solid',
                                         borderColor: detail.highlight
-                                            ? `${typeConfig.color}30`
+                                            ? alpha(typeConfig.color, 0.19)
                                             : 'divider'
                                     }}
                                 >
@@ -604,7 +607,7 @@ export default function InventorySection(): ReactElement {
                                     borderRadius: 1.5,
                                     bgcolor: 'background.default',
                                     border: '1px dashed',
-                                    borderColor: red[500] + '40'
+                                    borderColor: alpha(color.danger, 0.25)
                                 }}
                             >
                                 <Typography
@@ -622,12 +625,13 @@ export default function InventorySection(): ReactElement {
                                         clickable
                                         onClick={(e) => handleWeaponHit(item as Weapon, e)}
                                         sx={{
-                                            bgcolor: blue[500] + '20',
-                                            color: blue[700],
+                                            bgcolor: alpha(color.cyan, 0.12),
+                                            color: 'info.main',
                                             fontWeight: 600,
                                             border: '1px solid',
-                                            borderColor: blue[500] + '40',
-                                            '&:hover': { bgcolor: blue[500] + '35' }
+                                            borderColor: alpha(color.cyan, 0.25),
+                                            '& .MuiChip-icon': { color: 'inherit' },
+                                            '&:hover': { bgcolor: alpha(color.cyan, 0.21) }
                                         }}
                                     />
                                 </Tooltip>
@@ -639,12 +643,13 @@ export default function InventorySection(): ReactElement {
                                         clickable
                                         onClick={(e) => handleWeaponDamage(item as Weapon, false, e)}
                                         sx={{
-                                            bgcolor: red[500] + '20',
-                                            color: red[700],
+                                            bgcolor: alpha(color.danger, 0.12),
+                                            color: 'error.main',
                                             fontWeight: 600,
                                             border: '1px solid',
-                                            borderColor: red[500] + '40',
-                                            '&:hover': { bgcolor: red[500] + '35' }
+                                            borderColor: alpha(color.danger, 0.25),
+                                            '& .MuiChip-icon': { color: 'inherit' },
+                                            '&:hover': { bgcolor: alpha(color.danger, 0.21) }
                                         }}
                                     />
                                 </Tooltip>
@@ -656,12 +661,13 @@ export default function InventorySection(): ReactElement {
                                         clickable
                                         onClick={(e) => handleWeaponDamage(item as Weapon, true, e)}
                                         sx={{
-                                            bgcolor: purple[500] + '20',
-                                            color: purple[700],
+                                            bgcolor: alpha(color.amber, 0.12),
+                                            color: 'primary.main',
                                             fontWeight: 600,
                                             border: '1px solid',
-                                            borderColor: purple[500] + '40',
-                                            '&:hover': { bgcolor: purple[500] + '35' }
+                                            borderColor: alpha(color.amber, 0.25),
+                                            '& .MuiChip-icon': { color: 'inherit' },
+                                            '&:hover': { bgcolor: alpha(color.amber, 0.21) }
                                         }}
                                     />
                                 </Tooltip>
@@ -677,10 +683,9 @@ export default function InventorySection(): ReactElement {
                                         size="small"
                                         onClick={(e) => handleOpenDonationModal(item, type, e)}
                                         sx={{
-                                            color: blue[400],
+                                            color: 'info.main',
                                             '&:hover': {
-                                                bgcolor: `${blue[500]}15`,
-                                                color: blue[600]
+                                                bgcolor: alpha(color.cyan, 0.08)
                                             }
                                         }}
                                     >
@@ -695,10 +700,9 @@ export default function InventorySection(): ReactElement {
                                     size="small"
                                     onClick={async (e) => await handleDeleteItem(item, type, e)}
                                     sx={{
-                                        color: red[400],
+                                        color: 'error.main',
                                         '&:hover': {
-                                            bgcolor: `${red[500]}15`,
-                                            color: red[600]
+                                            bgcolor: alpha(color.danger, 0.08)
                                         }
                                     }}
                                 >
@@ -733,14 +737,14 @@ export default function InventorySection(): ReactElement {
                                     width: 48,
                                     height: 48,
                                     borderRadius: 2,
-                                    bgcolor: `${green[500]}15`,
-                                    border: `2px solid ${green[500]}30`,
+                                    bgcolor: alpha(color.amber, 0.08),
+                                    border: `2px solid ${alpha(color.amber, 0.19)}`,
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center'
                                 }}
                             >
-                                <Inventory2 sx={{ color: green[600], fontSize: '1.75rem' }} />
+                                <Inventory2 sx={{ color: 'primary.main', fontSize: '1.75rem' }} />
                             </Box>
                             <Box>
                                 <Typography variant="h5" sx={{ fontWeight: 700, mb: 0.5 }}>
@@ -762,25 +766,17 @@ export default function InventorySection(): ReactElement {
                                     px: 2,
                                     py: 1,
                                     borderRadius: 2,
-                                    bgcolor: isOverloaded 
-                                        ? `${red[500]}15` 
-                                        : isNearLimit 
-                                            ? `${orange[500]}15` 
-                                            : `${green[500]}15`,
+                                    bgcolor: (theme) => alpha(theme.palette[capacityRole].main, 0.08),
                                     border: '1px solid',
-                                    borderColor: isOverloaded 
-                                        ? `${red[500]}30` 
-                                        : isNearLimit 
-                                            ? `${orange[500]}30` 
-                                            : `${green[500]}30`
+                                    borderColor: (theme) => alpha(theme.palette[capacityRole].main, 0.19)
                                 }}
                             >
                                 {isOverloaded ? (
-                                    <Warning sx={{ color: red[600], fontSize: '1.2rem' }} />
+                                    <Warning sx={{ color: 'error.main', fontSize: '1.2rem' }} />
                                 ) : isNearLimit ? (
-                                    <Warning sx={{ color: orange[600], fontSize: '1.2rem' }} />
+                                    <Warning sx={{ color: 'warning.main', fontSize: '1.2rem' }} />
                                 ) : (
-                                    <CheckCircle sx={{ color: green[600], fontSize: '1.2rem' }} />
+                                    <CheckCircle sx={{ color: 'success.main', fontSize: '1.2rem' }} />
                                 )}
                                 <Typography variant="body2" fontWeight={600}>
                                     {calculateTotalWeight.toFixed(1)}/{charsheet.capacity.max}{weightUnitSuffix}
@@ -799,7 +795,7 @@ export default function InventorySection(): ReactElement {
                                 borderRadius: 4,
                                 bgcolor: 'divider',
                                 '& .MuiLinearProgress-bar': {
-                                    bgcolor: isOverloaded ? red[500] : isNearLimit ? orange[500] : green[500],
+                                    bgcolor: `${capacityRole}.main`,
                                     borderRadius: 4
                                 }
                             }}
@@ -812,7 +808,7 @@ export default function InventorySection(): ReactElement {
                                     left: 0,
                                     right: 0,
                                     height: '100%',
-                                    bgcolor: `${red[500]}30`,
+                                    bgcolor: alpha(color.danger, 0.19),
                                     borderRadius: 4
                                 }}
                             />

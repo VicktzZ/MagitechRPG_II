@@ -24,7 +24,7 @@ import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
 import WhatshotIcon from '@mui/icons-material/Whatshot';
 import PersonIcon from '@mui/icons-material/Person';
 import PetsIcon from '@mui/icons-material/Pets';
-import { red, green, blue, orange } from '@mui/material/colors';
+import { color as tokenColor } from '@themes/tokens';
 import { useSnackbar } from 'notistack';
 import { useTheme } from '@mui/material';
 
@@ -63,7 +63,6 @@ export default function CombatActionButton({
 }: CombatActionButtonProps) {
     const { enqueueSnackbar } = useSnackbar();
     const theme = useTheme();
-    const isDarkMode = theme.palette.mode === 'dark';
 
     // Função para obter LP/MP de charsheet.stats
     const getPlayerStats = (combatant: Combatant) => {
@@ -163,11 +162,11 @@ export default function CombatActionButton({
                     startIcon={<WhatshotIcon />}
                     onClick={() => handleOpen('damage')}
                     sx={{
-                        bgcolor: red[600],
-                        color: 'white',
+                        bgcolor: 'error.main',
+                        color: 'error.contrastText',
                         fontWeight: 600,
                         fontSize: '0.75rem',
-                        '&:hover': { bgcolor: red[700] }
+                        '&:hover': { bgcolor: 'error.light' }
                     }}
                 >
                     Dano
@@ -178,11 +177,11 @@ export default function CombatActionButton({
                     startIcon={<LocalHospitalIcon />}
                     onClick={() => handleOpen('heal')}
                     sx={{
-                        bgcolor: green[600],
-                        color: 'white',
+                        bgcolor: 'success.main',
+                        color: 'success.contrastText',
                         fontWeight: 600,
                         fontSize: '0.75rem',
-                        '&:hover': { bgcolor: green[700] }
+                        '&:hover': { bgcolor: 'success.light' }
                     }}
                 >
                     Cura
@@ -195,24 +194,22 @@ export default function CombatActionButton({
                 maxWidth="xs" 
                 fullWidth
                 PaperProps={{
-                    sx: { bgcolor: isDarkMode ? 'background.paper' : undefined }
+                    sx: { bgcolor: 'background.paper' }
                 }}
             >
                 <DialogTitle sx={{ 
                     display: 'flex', 
                     alignItems: 'center', 
                     gap: 1,
-                    bgcolor: isDarkMode 
-                        ? (actionType === 'damage' ? alpha(theme.palette.error.main, 0.15) : alpha(theme.palette.success.main, 0.15))
-                        : (actionType === 'damage' ? red[50] : green[50]),
+                    bgcolor: actionType === 'damage' ? alpha(theme.palette.error.main, 0.15) : alpha(theme.palette.success.main, 0.15),
                     borderBottom: '2px solid',
-                    borderColor: actionType === 'damage' ? red[300] : green[300],
-                    color: isDarkMode ? 'text.primary' : undefined
+                    borderColor: actionType === 'damage' ? 'error.main' : 'success.main',
+                    color: 'text.primary'
                 }}>
                     {actionType === 'damage' ? (
-                        <WhatshotIcon sx={{ color: isDarkMode ? red[400] : red[600] }} />
+                        <WhatshotIcon sx={{ color: 'error.main' }} />
                     ) : (
-                        <LocalHospitalIcon sx={{ color: isDarkMode ? green[400] : green[600] }} />
+                        <LocalHospitalIcon sx={{ color: 'success.main' }} />
                     )}
                     <Typography variant="h6" component="span" sx={{ fontWeight: 600 }}>
                         {actionType === 'damage' ? 'Aplicar Dano' : 'Aplicar Cura'}
@@ -235,8 +232,8 @@ export default function CombatActionButton({
                             inputProps={{ min: 0 }}
                             InputProps={{
                                 startAdornment: actionType === 'damage' 
-                                    ? <WhatshotIcon sx={{ mr: 1, color: red[500] }} />
-                                    : <FavoriteIcon sx={{ mr: 1, color: green[500] }} />
+                                    ? <WhatshotIcon sx={{ mr: 1, color: 'error.main' }} />
+                                    : <FavoriteIcon sx={{ mr: 1, color: 'success.main' }} />
                             }}
                         />
 
@@ -268,7 +265,7 @@ export default function CombatActionButton({
                                                 onClick={() => setTargetId(combatant.id)}
                                                 sx={{
                                                     bgcolor: isSelected 
-                                                        ? (actionType === 'damage' ? red[50] : green[50])
+                                                        ? (actionType === 'damage' ? alpha(theme.palette.error.main, 0.15) : alpha(theme.palette.success.main, 0.15))
                                                         : 'transparent'
                                                 }}
                                             >
@@ -278,7 +275,7 @@ export default function CombatActionButton({
                                                         sx={{ 
                                                             width: 32, 
                                                             height: 32,
-                                                            bgcolor: combatant.type === 'creature' ? orange[500] : blue[500]
+                                                            bgcolor: combatant.type === 'creature' ? 'warning.main' : 'info.main'
                                                         }}
                                                     >
                                                         {combatant.type === 'creature' 
@@ -291,7 +288,7 @@ export default function CombatActionButton({
                                                     primary={combatant.name}
                                                     secondary={
                                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                            <FavoriteIcon sx={{ fontSize: 14, color: red[400] }} />
+                                                            <FavoriteIcon sx={{ fontSize: 14, color: tokenColor.lp }} />
                                                             <Typography variant="caption">
                                                                 {currentLp}/{maxLp}
                                                             </Typography>
@@ -299,7 +296,7 @@ export default function CombatActionButton({
                                                                 sx={{ 
                                                                     width: 50, 
                                                                     height: 6, 
-                                                                    bgcolor: 'grey.300',
+                                                                    bgcolor: 'divider',
                                                                     borderRadius: 1,
                                                                     overflow: 'hidden'
                                                                 }}
@@ -309,10 +306,10 @@ export default function CombatActionButton({
                                                                         width: `${lpPercent}%`, 
                                                                         height: '100%',
                                                                         bgcolor: lpPercent > 50 
-                                                                            ? green[500] 
+                                                                            ? 'success.main' 
                                                                             : lpPercent > 25 
-                                                                                ? orange[500] 
-                                                                                : red[500],
+                                                                                ? 'warning.main' 
+                                                                                : tokenColor.lp,
                                                                         transition: 'width 0.3s'
                                                                     }} 
                                                                 />
@@ -331,12 +328,10 @@ export default function CombatActionButton({
                         {selectedTarget && value > 0 && (
                             <Box sx={{ 
                                 p: 2, 
-                                bgcolor: isDarkMode 
-                                    ? (actionType === 'damage' ? alpha(theme.palette.error.main, 0.15) : alpha(theme.palette.success.main, 0.15))
-                                    : (actionType === 'damage' ? red[50] : green[50]),
+                                bgcolor: actionType === 'damage' ? alpha(theme.palette.error.main, 0.15) : alpha(theme.palette.success.main, 0.15),
                                 borderRadius: 1,
                                 border: '1px solid',
-                                borderColor: actionType === 'damage' ? red[200] : green[200]
+                                borderColor: actionType === 'damage' ? 'error.main' : 'success.main'
                             }}>
                                 <Typography variant="body2">
                                     {actionType === 'damage' ? '💥' : '💚'}{' '}
@@ -359,9 +354,10 @@ export default function CombatActionButton({
                             actionType === 'damage' ? <WhatshotIcon /> : <LocalHospitalIcon />
                         )}
                         sx={{
-                            bgcolor: actionType === 'damage' ? red[600] : green[600],
+                            bgcolor: actionType === 'damage' ? 'error.main' : 'success.main',
+                            color: actionType === 'damage' ? 'error.contrastText' : 'success.contrastText',
                             '&:hover': { 
-                                bgcolor: actionType === 'damage' ? red[700] : green[700] 
+                                bgcolor: actionType === 'damage' ? 'error.light' : 'success.light' 
                             }
                         }}
                     >

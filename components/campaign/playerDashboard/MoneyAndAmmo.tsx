@@ -15,6 +15,7 @@ import {
     Star
 } from '@mui/icons-material';
 import {
+    alpha,
     Box,
     Button,
     Chip,
@@ -28,7 +29,7 @@ import {
     Tooltip,
     Typography
 } from '@mui/material';
-import { blue, green, orange, purple, red } from '@mui/material/colors';
+import { color } from '@themes/tokens';
 import React, { type ReactElement, useState, useEffect } from 'react';
 import { useCharsheetSystem } from '@hooks/useCharsheetSystem';
 
@@ -133,15 +134,15 @@ export default function MoneyAndAmmo(): ReactElement {
     const getAmmoColor = (type: AmmoType) => {
         switch (type) {
         case AmmoType.BULLET:
-            return { color: orange[600], bg: orange[100], icon: FiberManualRecord };
+            return { color: color.warning, bg: alpha(color.warning, 0.14), icon: FiberManualRecord };
         case AmmoType.ARROW:
-            return { color: green[600], bg: green[100], icon: GpsFixed };
+            return { color: color.success, bg: alpha(color.success, 0.14), icon: GpsFixed };
         case AmmoType.ENERGY:
-            return { color: blue[600], bg: blue[100], icon: FlashOn };
+            return { color: color.cyan, bg: alpha(color.cyan, 0.14), icon: FlashOn };
         case AmmoType.SPECIAL:
-            return { color: purple[600], bg: purple[100], icon: Star };
+            return { color: color.amber, bg: alpha(color.amber, 0.14), icon: Star };
         default:
-            return { color: orange[600], bg: orange[100], icon: FiberManualRecord };
+            return { color: color.warning, bg: alpha(color.warning, 0.14), icon: FiberManualRecord };
         }
     };
 
@@ -184,12 +185,12 @@ export default function MoneyAndAmmo(): ReactElement {
                                     sx={{
                                         p: 1.5,
                                         borderRadius: 2,
-                                        bgcolor: green[100],
+                                        bgcolor: (theme) => alpha(theme.palette.primary.main, 0.14),
                                         border: '2px solid',
-                                        borderColor: green[200]
+                                        borderColor: (theme) => alpha(theme.palette.primary.main, 0.38)
                                     }}
                                 >
-                                    <AttachMoney sx={{ color: green[700], fontSize: '2rem' }} />
+                                    <AttachMoney sx={{ color: 'primary.main', fontSize: '2rem' }} />
                                 </Box>
                                 <Box flex={1}>
                                     <Typography
@@ -240,13 +241,13 @@ export default function MoneyAndAmmo(): ReactElement {
                                         flex: 1,
                                         '& .MuiOutlinedInput-root': {
                                             '& fieldset': {
-                                                borderColor: green[300]
+                                                borderColor: color.amberLine
                                             },
                                             '&:hover fieldset': {
-                                                borderColor: green[500]
+                                                borderColor: 'primary.main'
                                             },
                                             '&.Mui-focused fieldset': {
-                                                borderColor: green[600]
+                                                borderColor: 'primary.main'
                                             }
                                         }
                                     }}
@@ -254,8 +255,8 @@ export default function MoneyAndAmmo(): ReactElement {
                                 <Chip
                                     label={currencyAbbreviation}
                                     sx={{
-                                        bgcolor: green[100],
-                                        color: green[800],
+                                        bgcolor: (theme) => alpha(theme.palette.primary.main, 0.14),
+                                        color: 'primary.main',
                                         fontWeight: 600,
                                         fontSize: '0.9rem'
                                     }}
@@ -285,7 +286,7 @@ export default function MoneyAndAmmo(): ReactElement {
                                     borderRadius: 2,
                                     bgcolor: ammoConfig.bg,
                                     border: '2px solid',
-                                    borderColor: ammoConfig.color + '40'
+                                    borderColor: alpha(ammoConfig.color, 0.25)
                                 }}
                             >
                                 <AmmoIcon sx={{ color: ammoConfig.color, fontSize: '2rem' }} />
@@ -327,7 +328,7 @@ export default function MoneyAndAmmo(): ReactElement {
                                     sx={{ 
                                         minWidth: 140,
                                         '& .MuiOutlinedInput-notchedOutline': {
-                                            borderColor: ammoConfig.color + '60'
+                                            borderColor: alpha(ammoConfig.color, 0.38)
                                         },
                                         '&:hover .MuiOutlinedInput-notchedOutline': {
                                             borderColor: ammoConfig.color
@@ -339,25 +340,25 @@ export default function MoneyAndAmmo(): ReactElement {
                                 >
                                     <MenuItem value={AmmoType.BULLET}>
                                         <Box display="flex" alignItems="center" gap={1}>
-                                            <FiberManualRecord sx={{ color: orange[600], fontSize: '1rem' }} />
+                                            <FiberManualRecord sx={{ color: 'warning.main', fontSize: '1rem' }} />
                                             Balas
                                         </Box>
                                     </MenuItem>
                                     <MenuItem value={AmmoType.ARROW}>
                                         <Box display="flex" alignItems="center" gap={1}>
-                                            <GpsFixed sx={{ color: green[600], fontSize: '1rem' }} />
+                                            <GpsFixed sx={{ color: 'success.main', fontSize: '1rem' }} />
                                             Flechas
                                         </Box>
                                     </MenuItem>
                                     <MenuItem value={AmmoType.ENERGY}>
                                         <Box display="flex" alignItems="center" gap={1}>
-                                            <FlashOn sx={{ color: blue[600], fontSize: '1rem' }} />
+                                            <FlashOn sx={{ color: 'info.main', fontSize: '1rem' }} />
                                             Energia
                                         </Box>
                                     </MenuItem>
                                     <MenuItem value={AmmoType.SPECIAL}>
                                         <Box display="flex" alignItems="center" gap={1}>
-                                            <Star sx={{ color: purple[600], fontSize: '1rem' }} />
+                                            <Star sx={{ color: 'primary.main', fontSize: '1rem' }} />
                                             Especial
                                         </Box>
                                     </MenuItem>
@@ -377,7 +378,7 @@ export default function MoneyAndAmmo(): ReactElement {
                                         width: 120,
                                         '& .MuiOutlinedInput-root': {
                                             '& fieldset': {
-                                                borderColor: ammoConfig.color + '60'
+                                                borderColor: alpha(ammoConfig.color, 0.38)
                                             },
                                             '&:hover fieldset': {
                                                 borderColor: ammoConfig.color
@@ -460,10 +461,10 @@ export default function MoneyAndAmmo(): ReactElement {
                                         onClick={() => handleAmmoChange('decrement')}
                                         disabled={ammo.current <= 0}
                                         sx={{
-                                            bgcolor: red[50],
-                                            color: red[600],
+                                            bgcolor: (theme) => alpha(theme.palette.error.main, 0.14),
+                                            color: 'error.main',
                                             '&:hover': {
-                                                bgcolor: red[100]
+                                                bgcolor: (theme) => alpha(theme.palette.error.main, 0.24)
                                             },
                                             '&:disabled': {
                                                 bgcolor: 'action.disabledBackground',
@@ -480,10 +481,10 @@ export default function MoneyAndAmmo(): ReactElement {
                                         onClick={() => handleAmmoChange('increment')}
                                         disabled={ammo.current >= ammo.max}
                                         sx={{
-                                            bgcolor: green[50],
-                                            color: green[600],
+                                            bgcolor: (theme) => alpha(theme.palette.success.main, 0.14),
+                                            color: 'success.main',
                                             '&:hover': {
-                                                bgcolor: green[100]
+                                                bgcolor: (theme) => alpha(theme.palette.success.main, 0.24)
                                             },
                                             '&:disabled': {
                                                 bgcolor: 'action.disabledBackground',

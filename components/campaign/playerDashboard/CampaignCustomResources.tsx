@@ -8,6 +8,7 @@ import {
     Box,
     Chip,
     Divider,
+    getContrastRatio,
     IconButton,
     LinearProgress,
     Paper,
@@ -18,6 +19,13 @@ import {
 import { useEffect, useState, type ReactElement } from 'react';
 import type { CustomResource, RPGSystem } from '@models/entities';
 import { getActiveResolvedThreshold, resolveThresholds } from '@utils/resourceThresholds';
+
+/** Texto legível sobre uma cor de faixa escolhida pelo mestre: o que contrasta mais, tinta clara ou escura */
+function textOn(background: string): string {
+    return getContrastRatio(background, tokenColor.ink) >= getContrastRatio(background, tokenColor.canvas)
+        ? tokenColor.ink
+        : tokenColor.canvas;
+}
 
 export default function CampaignCustomResources(): ReactElement | null {
     const { charsheet, updateCharsheet } = useCampaignCurrentCharsheetContext();
@@ -116,7 +124,7 @@ export default function CampaignCustomResources(): ReactElement | null {
                                             size="small"
                                             sx={{
                                                 bgcolor: activeThreshold.color,
-                                                color: 'white',
+                                                color: textOn(activeThreshold.color),
                                                 fontWeight: 'bold',
                                                 fontSize: '0.65rem',
                                                 height: 20

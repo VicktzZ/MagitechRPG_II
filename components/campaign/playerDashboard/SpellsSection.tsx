@@ -28,6 +28,7 @@ import {
     Accordion,
     AccordionDetails,
     AccordionSummary,
+    alpha,
     Box,
     Button,
     Chip,
@@ -37,22 +38,22 @@ import {
     Tooltip,
     Typography
 } from '@mui/material';
-import { blue, green, grey, orange, purple, red } from '@mui/material/colors';
 import { color } from '@themes/tokens';
 import { type ReactElement, useState } from 'react';
 
+/** Nível e estágio são escalas ordenadas: neutros que clareiam até o âmbar no topo (o número vai sempre em texto) */
 function getSpellLevelColor(level: number) {
     switch (level) {
     case 1:
-        return { color: green[600], bg: green[100] };
+        return { color: color.inkMuted };
     case 2:
-        return { color: blue[600], bg: blue[100] };
+        return { color: color.ink };
     case 3:
-        return { color: purple[600], bg: purple[100] };
+        return { color: color.amber };
     case 4:
-        return { color: orange[600], bg: orange[100] };
+        return { color: color.amberHover };
     default:
-        return { color: grey[600], bg: grey[100] };
+        return { color: color.inkMuted };
     }
 }
 interface SpellStageProps {
@@ -101,16 +102,16 @@ function SpellStage({ stage, description, spell, onCast, isCasting, canCast, cur
     if (stage === 4) mpCost += extraCost['maestria']
 
     const getStageColor = (stageNum: number) => {
-        if (stageNum === 4) return { color: purple[600], bg: purple[100] }; // Maestria
+        if (stageNum === 4) return { color: color.amberHover }; // Maestria
         switch (stageNum) {
         case 1:
-            return { color: green[600], bg: green[100] };
+            return { color: color.inkMuted };
         case 2:
-            return { color: blue[600], bg: blue[100] };
+            return { color: color.ink };
         case 3:
-            return { color: orange[600], bg: orange[100] };
+            return { color: color.amber };
         default:
-            return { color: grey[600], bg: grey[100] };
+            return { color: color.inkMuted };
         }
     };
 
@@ -123,9 +124,9 @@ function SpellStage({ stage, description, spell, onCast, isCasting, canCast, cur
                 p: 2, 
                 mb: 2,
                 border: '1px solid',
-                borderColor: stageConfig.color + '40',
+                borderColor: alpha(stageConfig.color, 0.25),
                 borderRadius: 2,
-                bgcolor: stageConfig.bg + '20'
+                bgcolor: alpha(stageConfig.color, 0.06)
             }}
         >
             <Box display="flex" alignItems="center" justifyContent="space-between" mb={1.5} gap={1} flexWrap="wrap">
@@ -148,8 +149,8 @@ function SpellStage({ stage, description, spell, onCast, isCasting, canCast, cur
                         <Chip
                             label={`${mpCost} MP`}
                             sx={{
-                                bgcolor: blue[100],
-                                color: blue[800],
+                                bgcolor: alpha(color.mp, 0.14),
+                                color: color.mp,
                                 fontWeight: 600
                             }}
                         />
@@ -168,7 +169,7 @@ function SpellStage({ stage, description, spell, onCast, isCasting, canCast, cur
                                     onClick={() => { void onCast(stage as 1 | 2 | 3) }}
                                     sx={{
                                         bgcolor: stageConfig.color,
-                                        color: 'white',
+                                        color: 'background.default',
                                         fontWeight: 700,
                                         textTransform: 'none',
                                         opacity: blockedReason ? 0.55 : 1,
@@ -504,7 +505,7 @@ export default function SpellsSection(): ReactElement {
                                                 expandIcon={<ExpandMore sx={{ color: levelConfig.color }} />}
                                                 sx={{
                                                     minHeight: 64,
-                                                    bgcolor: levelConfig.bg + '40',
+                                                    bgcolor: alpha(levelConfig.color, 0.08),
                                                     borderRadius: '8px 8px 0 0',
                                                     '& .MuiAccordionSummary-content': {
                                                         alignItems: 'center',
@@ -553,7 +554,7 @@ export default function SpellsSection(): ReactElement {
                                                                 label={`Nível ${spell.level}`} 
                                                                 size="small" 
                                                                 sx={{
-                                                                    bgcolor: levelConfig.bg,
+                                                                    bgcolor: alpha(levelConfig.color, 0.14),
                                                                     color: levelConfig.color,
                                                                     fontWeight: 600
                                                                 }}
@@ -568,8 +569,8 @@ export default function SpellsSection(): ReactElement {
                                                             label={spell.range} 
                                                             size="small" 
                                                             sx={{
-                                                                bgcolor: blue[100],
-                                                                color: blue[800],
+                                                                bgcolor: 'action.hover',
+                                                                color: 'text.primary',
                                                                 fontWeight: 600
                                                             }}
                                                         />
@@ -579,8 +580,8 @@ export default function SpellsSection(): ReactElement {
                                                             label={spell.execution} 
                                                             size="small" 
                                                             sx={{
-                                                                bgcolor: green[100],
-                                                                color: green[800],
+                                                                bgcolor: 'action.hover',
+                                                                color: 'text.primary',
                                                                 fontWeight: 600
                                                             }}
                                                         />
@@ -590,8 +591,8 @@ export default function SpellsSection(): ReactElement {
                                                             label={spell.type} 
                                                             size="small" 
                                                             sx={{
-                                                                bgcolor: red[100],
-                                                                color: red[800],
+                                                                bgcolor: 'action.hover',
+                                                                color: 'text.primary',
                                                                 fontWeight: 600
                                                             }}
                                                         />
