@@ -1,5 +1,5 @@
 import { PusherEvent } from '@enums';
-import { pusherServer } from '@utils/pusher';
+import { triggerPusher } from '@utils/pusher';
 import { charsheetRepository } from '@repositories';
 import { CharsheetDTO } from '@models/dtos/CharsheetDTO';
 import { validate } from 'class-validator';
@@ -55,7 +55,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
         }
 
         await charsheetRepository.update(updatedCharsheet as unknown as Charsheet)
-        await pusherServer.trigger('presence-' + campaign.campaignCode, PusherEvent.CHARSHEET_UPDATED, updatedCharsheet)
+        await triggerPusher('presence-' + campaign.campaignCode, PusherEvent.CHARSHEET_UPDATED, updatedCharsheet)
 
         return Response.json({ message: 'SUCCESS' });
     } catch (error) {

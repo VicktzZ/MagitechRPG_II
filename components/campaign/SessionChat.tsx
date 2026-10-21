@@ -4,9 +4,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import { Alert, Paper, Snackbar } from '@mui/material';
 import { useCampaignContext } from '@contexts';
 import { useCampaignChat, useCampaignMessages } from '@contexts/campaignContext';
-import { useChannel } from '@contexts/channelContext';
 import { useChatContext, useChatMessages } from '@contexts/chatContext';
-import { PusherEvent } from '@enums';
 import { useCampaignTest, type TestNoticeSeverity } from '@hooks/useCampaignTest';
 import { useSession } from 'next-auth/react';
 import TestDialog from './TestDialog';
@@ -22,11 +20,10 @@ import {
 import { useUnreadMessages } from './chatComponents/useUnreadMessages';
 
 export default function SessionChat() {
-    const { campaign, updateCampaign } = useCampaignContext();
+    const { campaign } = useCampaignContext();
     const persistedMessages = useCampaignMessages();
     const { hasMore, loadingOlder, loadOlder, error: chatError } = useCampaignChat();
     const { data: session } = useSession();
-    const { channel } = useChannel();
 
     const [ shouldAutoScroll, setShouldAutoScroll ] = useState(true);
     const [ isTestModalOpen, setIsTestModalOpen ] = useState(false);
@@ -140,24 +137,6 @@ export default function SessionChat() {
             return () => chatBox.removeEventListener('scroll', handleScroll);
         }
     }, []);
-
-    // Atualização de combate em tempo real pelo Pusher.
-    // Dot-path: atualiza SOMENTE session.combat — espalhar a campanha
-    // inteira sobrescreveria session.messages (e apagaria o chat).
-    useEffect(() => {
-        if (!channel || !session?.user) return;
-
-        const handleCombatUpdated = (data: { combat: any, action: string }) => {
-            console.log('[SessionChat] Combate atualizado via Pusher:', data.action);
-            updateCampaign({ 'session.combat': data.combat } as any);
-        };
-
-        channel.bind(PusherEvent.COMBAT_UPDATED, handleCombatUpdated);
-
-        return () => {
-            channel.unbind(PusherEvent.COMBAT_UPDATED, handleCombatUpdated);
-        };
-    }, [ channel, session?.user?.id, updateCampaign ]);
 
     // Handlers estáveis para os modais — evita recriar props de componentes
     // memoizados (TestModal/TestDialog) a cada render do SessionChat.

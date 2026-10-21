@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/prefer-nullish-coalescing */
 import { PusherEvent } from '@enums';
 import { Message } from '@models';
-import { pusherServer } from '@utils/pusher';
+import { triggerPusher } from '@utils/pusher';
 import { appendCampaignMessage, listCampaignMessages } from '@utils/firestore/campaignMessages';
 import { randomUUID } from 'crypto';
 import { plainToInstance } from 'class-transformer';
@@ -63,16 +63,11 @@ export async function POST(
         // Só cria um documento novo: não relê nem regrava a campanha, então não desfaz alterações simultâneas
         await appendCampaignMessage(campaign.id, messageWithId);
 
-        // O Pusher é um aviso extra: se falhar, a mensagem já está salva
-        try {
-            await pusherServer.trigger(
-                `presence-${campaign.campaignCode}`,
-                PusherEvent.NEW_MESSAGE,
-                messageWithId
-            );
-        } catch (error) {
-            console.error('[Chat] Falha ao avisar o Pusher da nova mensagem:', error);
-        }
+        await triggerPusher(
+            `presence-${campaign.campaignCode}`,
+            PusherEvent.NEW_MESSAGE,
+            messageWithId
+        );
 
         return Response.json(messageWithId, { status: 200 });
     } catch (error) {

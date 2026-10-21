@@ -1,7 +1,7 @@
 import { PusherEvent } from '@enums';
 import { CreateCustomItemDTO } from '@models/dtos';
 import { campaignRepository } from '@repositories';
-import { pusherServer } from '@utils/pusher';
+import { triggerPusher } from '@utils/pusher';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { v4 as uuidv4 } from 'uuid';
@@ -36,7 +36,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
             id: uuidv4()
         };
 
-        await pusherServer.trigger(
+        await triggerPusher(
             `presence-${campaign.campaignCode}`,
             PusherEvent.ITEM_ADDED,
             { type, item: newItem }

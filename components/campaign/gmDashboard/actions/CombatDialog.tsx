@@ -168,7 +168,6 @@ export default function CombatDialog({
         if (!channel || !open) return;
 
         const handleCombatUpdated = (data: { combat: Combat, action: string }) => {
-            console.log('[CombatDialog] Combate atualizado via Pusher:', data.action, data.combat);
             if (data.combat) {
                 setCombat(data.combat);
             }

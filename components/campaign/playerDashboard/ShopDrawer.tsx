@@ -81,7 +81,7 @@ export default function ShopDrawer(): ReactElement | null {
             if (result.success && result.items) {
                 setShopItems(result.items);
             } else if (!result.success) {
-                console.log('[ShopDrawer] Erro:', result.message);
+                console.error('[ShopDrawer] Erro ao carregar a loja:', result.message);
                 setShopItems([]);
             }
         } catch (error) {

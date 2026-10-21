@@ -47,7 +47,6 @@ export function usePusher(campaignName: string, isUserGM: boolean, _session: Ses
         };
 
         document.addEventListener('visibilitychange', onVisible);
-        console.log('[Pusher Client] Connected')
 
         return () => {
             document.removeEventListener('visibilitychange', onVisible);

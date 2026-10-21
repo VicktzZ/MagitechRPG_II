@@ -37,6 +37,11 @@ export class Session {
     @IsOptional()
         perkFilters?: PerkFilters;
 
+    // Semente compartilhada: todos os jogadores veem as mesmas cartas de perk
+    @IsOptional()
+    @IsString()
+        sharedPerkSeed?: string | null;
+
     // Teste pedido pelo mestre e as respostas dos jogadores
     @IsOptional()
         testRequest?: ActiveTest;

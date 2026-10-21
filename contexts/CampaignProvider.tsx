@@ -29,7 +29,9 @@ import type { Campaign, RPGSystem } from '@models/entities';
 import { useSnackbar } from 'notistack';
 
 export function CampaignProvider({ children, code }: { children: ReactElement, code: string }) {
-    document.title = 'Campaign - ' + code;
+    useEffect(() => {
+        document.title = 'Campaign - ' + code;
+    }, [ code ]);
 
     const router = useRouter();
     const { data: session } = useSession();
@@ -179,8 +181,6 @@ export function CampaignProvider({ children, code }: { children: ReactElement, c
     const hasSelectedCharsheet = campaignData.charsheets.map(c => c.id).includes(charsheetId);
 
     if (contextValue && (isUserGM || hasOwnCharsheet || hasSelectedCharsheet || !!charsheetId)) {
-        localStorage.setItem('currentCharsheet', (charsheetId || campaignData?.charsheets.find(f => f.userId === session?.user?.id)?.id) ?? '');
-
         return (
             <campaignContext.Provider value={contextValue}>
                 <campaignMessagesContext.Provider value={messages}>
@@ -319,9 +319,9 @@ export function CampaignProvider({ children, code }: { children: ReactElement, c
                         <Typography variant='h6'>Escolha uma ficha para ingressar</Typography>
                     </Box>
                     <Grid minHeight='100%' overflow='auto' gap={2} container>
-                        {loading ? [ 0, 1, 2 ].map(() => (
+                        {loading ? [ 0, 1, 2 ].map(index => (
                             <Skeleton
-                                variant='rectangular' key={Math.random()} width='20rem' height='15rem'
+                                variant='rectangular' key={index} width='20rem' height='15rem'
                             />
                         )) : charsheetsResponse?.map(c => (
                             <CharsheetCard

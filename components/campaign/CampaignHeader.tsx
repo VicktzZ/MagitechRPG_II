@@ -109,7 +109,6 @@ export default function CampaignHeader(): ReactElement {
         setLeaving(true)
         try {
             await campaignService.removeUser(campaign.id, userId)
-            localStorage.setItem('currentCharsheet', '')
             router.push('/app/campaign')
         } catch (error) {
             console.error('Erro ao sair da campanha:', error)

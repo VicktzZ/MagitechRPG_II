@@ -35,28 +35,43 @@ import ShopDrawer from './ShopDrawer';
 import { PerkCardsModal, type SessionPlayer } from '@features/roguelite/components';
 import { savePerkToCharsheet } from '@features/roguelite/utils';
 import { DonationReceivedModal, type DonationNotification } from '@features/roguelite/components/perkCardsModal/components/DonationReceivedModal';
-import { useSnackbar } from '@node_modules/notistack';
+import { useSnackbar } from 'notistack';
 import { useSession } from 'next-auth/react';
 import { campaignService } from '@services';
 import { useCharsheetSystem } from '@hooks/useCharsheetSystem';
+import type { Spell } from '@models/entities';
+import type { CharsheetDTO } from '@models/dtos';
+
+/** Notificação gravada na ficha (doações recebidas); o campo não consta no tipo da ficha */
+type CharsheetNotification = DonationNotification & { type?: string, read?: boolean, createdAt?: string }
+
+const notificationsOf = (sheet: CharsheetDTO | null | undefined): CharsheetNotification[] =>
+    (sheet as (CharsheetDTO & { notifications?: CharsheetNotification[] }) | null | undefined)?.notifications ?? []
+
+/** Peça de equipamento como o modal de perks a lê: `effect` pode ser texto ou um objeto de efeito */
+interface EquipmentLike { id?: string, name: string, description?: string, effect?: unknown, rarity?: string, categ?: string, ap?: number }
+
+const equipmentDescription = (item: EquipmentLike): string =>
+    item.description || (typeof item.effect === 'string' ? item.effect : '')
 
 /**
  * Normaliza um valor que pode ser um array ou um objeto com chaves numéricas
  * Converte Record<number, T> para T[]
  */
-function normalizeToArray<T>(value: any): T[] {
+function normalizeToArray<T>(value: unknown): T[] {
     if (!value) return [];
-    if (Array.isArray(value)) return value;
+    if (Array.isArray(value)) return value as T[];
     
     // Se é um objeto com chaves numéricas, converter para array
     if (typeof value === 'object') {
-        const keys = Object.keys(value);
+        const record = value as Record<string, T>;
+        const keys = Object.keys(record);
         const isNumericKeys = keys.every(key => !isNaN(Number(key)));
         if (isNumericKeys) {
             return keys
                 .map(key => Number(key))
                 .sort((a, b) => a - b)
-                .map(key => value[key]);
+                .map(key => record[key]!);
         }
     }
     
@@ -99,15 +114,15 @@ export default function CampaignPlayerDashboard(): ReactElement | null {
 
     // Verifica se há notificações de doação não lidas
     useEffect(() => {
-        const notifications = charsheet?.notifications || []
+        const notifications = notificationsOf(charsheet)
         // Filtra notificações não lidas e não processadas localmente
         const unreadDonations = notifications.filter(
-            (n: any) => n.type === 'donation' && !n.read && !processedNotificationIds.has(n.id)
+            n => n.type === 'donation' && !n.read && !processedNotificationIds.has(n.id ?? '')
         )
         
         // Pega a mais recente (última na lista, ou ordena por data se houver)
         const latestDonation = unreadDonations.length > 0 
-            ? unreadDonations.sort((a: any, b: any) => 
+            ? unreadDonations.sort((a, b) => 
                 new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
             )[0]
             : null
@@ -121,7 +136,7 @@ export default function CampaignPlayerDashboard(): ReactElement | null {
                 itemRarity: latestDonation.itemRarity
             })
         }
-    }, [ charsheet?.notifications, processedNotificationIds, donationNotification ])
+    }, [ charsheet, processedNotificationIds, donationNotification ])
 
     // Prepara lista de jogadores da sessão (excluindo o jogador atual)
     const sessionPlayers: SessionPlayer[] = useMemo(() => {
@@ -132,21 +147,14 @@ export default function CampaignPlayerDashboard(): ReactElement | null {
         const campaignPlayers = campaign?.players || []
         const allCharsheets = charsheets || []
         
-        console.log('[CampaignPlayerDashboard] Debug inicial:', {
-            usersPlayers: users.players.map(p => ({ id: p.id, name: p.name })),
-            currentUserId,
-            campaignPlayers,
-            allCharsheets: allCharsheets.map(cs => ({ id: cs.id, userId: cs.userId, name: cs.name }))
-        })
-        
         const allPlayers = users.players
             .filter(player => player.id !== currentUserId)
             .map(player => {
                 // Primeiro, encontra o charsheetId do jogador na campanha
-                const playerInCampaign = campaignPlayers.find((cp: any) => cp.userId === player.id)
+                const playerInCampaign = campaignPlayers.find(cp => cp.userId === player.id)
                 // Depois, busca o charsheet completo
                 const playerCharsheet = playerInCampaign 
-                    ? allCharsheets.find((cs: any) => cs.id === playerInCampaign.charsheetId)
+                    ? allCharsheets.find(cs => cs.id === playerInCampaign.charsheetId)
                     : undefined
                 
                 const sessionPlayer = {
@@ -161,28 +169,11 @@ export default function CampaignPlayerDashboard(): ReactElement | null {
                     maxCargo: playerCharsheet?.capacity?.max || 0
                 }
                 
-                console.log(`[CampaignPlayerDashboard] Processando jogador ${player.name}:`, {
-                    playerId: player.id,
-                    playerInCampaign,
-                    hasCharsheet: !!playerCharsheet,
-                    charsheetId: sessionPlayer.charsheetId,
-                    charsheetName: playerCharsheet?.name,
-                    sessionPlayer
-                })
-                
                 return sessionPlayer
             })
         
         // Filtra jogadores sem charsheet
         const players = allPlayers.filter(p => p.charsheetId)
-        
-        console.log('[CampaignPlayerDashboard] SessionPlayers final:', {
-            totalPlayers: users.players.length,
-            currentUserId,
-            filteredBefore: allPlayers.length,
-            filteredPlayers: players.length,
-            sessionPlayers: players
-        })
         
         return players
     }, [ users.players, session?.user?.id, charsheets, campaign?.players ])
@@ -209,7 +200,7 @@ export default function CampaignPlayerDashboard(): ReactElement | null {
     // Prepara informações de espaço do charsheet para o modal de perks
     const charsheetSpace = useMemo(() => ({
         spellSpace: charsheet?.spellSpace || 0,
-        currentSpells: normalizeToArray(charsheet?.spells).map(spell => ({
+        currentSpells: normalizeToArray<Spell>(charsheet?.spells).map(spell => ({
             id: spell.id || crypto.randomUUID(),
             name: spell.name,
             description: spell.stages?.[0] || '',
@@ -217,18 +208,18 @@ export default function CampaignPlayerDashboard(): ReactElement | null {
             element: spell.element
         })),
         weaponSlots: 2, // Limite padrão de 2 armas
-        currentWeapons: normalizeToArray(charsheet?.inventory?.weapons).map(weapon => ({
+        currentWeapons: normalizeToArray<EquipmentLike>(charsheet?.inventory?.weapons).map(weapon => ({
             id: weapon.id || crypto.randomUUID(),
             name: weapon.name,
-            description: weapon.description || weapon.effect || '',
+            description: equipmentDescription(weapon),
             rarity: weapon.rarity,
             categ: weapon.categ
         })),
         armorSlots: 1, // Limite padrão de 1 armadura
-        currentArmors: normalizeToArray(charsheet?.inventory?.armors).map(armor => ({
+        currentArmors: normalizeToArray<EquipmentLike>(charsheet?.inventory?.armors).map(armor => ({
             id: armor.id || crypto.randomUUID(),
             name: armor.name,
-            description: armor.description || armor.effect || '',
+            description: equipmentDescription(armor),
             rarity: armor.rarity,
             ap: armor.ap
         }))
@@ -244,9 +235,7 @@ export default function CampaignPlayerDashboard(): ReactElement | null {
         // Se o usuário estava na lista de pendentes, remove após escolher
         if (userId && wasPending) {
             try {
-                console.log('[CampaignPlayerDashboard] Removendo usuário da lista de pendentes:', userId)
                 await campaignService.removePendingPerkUser(campaign.id, userId)
-                console.log('[CampaignPlayerDashboard] Usuário removido com sucesso')
             } catch (error) {
                 console.error('Erro ao remover usuário da lista de pendentes:', error)
             }
@@ -270,14 +259,13 @@ export default function CampaignPlayerDashboard(): ReactElement | null {
         
         // Marca a notificação como lida no charsheet
         try {
-            const notifications = charsheet?.notifications || []
-            const updatedNotifications = notifications.map((n: any) => 
+            const notifications = notificationsOf(charsheet)
+            const updatedNotifications = notifications.map(n => 
                 n.id === notificationId ? { ...n, read: true } : n
             )
             
-            await updateCharsheet({
-                notifications: updatedNotifications
-            })
+            // `notifications` não consta no tipo da ficha, mas é gravado nela
+            await updateCharsheet({ notifications: updatedNotifications } as unknown as Parameters<typeof updateCharsheet>[0])
         } catch (error) {
             console.error('Erro ao marcar notificação como lida:', error)
         }

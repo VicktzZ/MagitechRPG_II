@@ -1,7 +1,7 @@
 import { PusherEvent } from '@enums';
 import { campaignRepository } from '@repositories';
 import { assertId, forbidden, handleRouteError, readJsonBody, requireCampaignMember, requireUser } from '@utils/api';
-import { pusherServer } from '@utils/pusher';
+import { triggerPusher } from '@utils/pusher';
 
 interface RemovePendingUserBody {
     userId: string;
@@ -43,7 +43,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
         });
 
         // Notifica os clientes via Pusher
-        await pusherServer.trigger(
+        await triggerPusher(
             `presence-${campaign.campaignCode}`,
             PusherEvent.PERK_USER_COMPLETED,
             { userId: body.userId, remainingUsers: updatedPending }

@@ -1,7 +1,7 @@
 import { PusherEvent } from '@enums';
 import { Note } from '@models';
 import { campaignRepository } from '@repositories';
-import { pusherServer } from '@utils/pusher';
+import { triggerPusher } from '@utils/pusher';
 import { assertId, assertMaxLength, handleRouteError, readJsonBody, requireCampaignGM, requireUser, TEXT_LIMITS } from '@utils/api';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
@@ -30,7 +30,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
             notes: [ ...(campaign.notes || []), { ...newNote } ]
         });
 
-        await pusherServer.trigger(
+        await triggerPusher(
             `presence-${campaign.campaignCode}`,
             PusherEvent.NOTES_UPDATED,
             { ...newNote }
@@ -69,7 +69,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
             return Response.json({ message: 'Nota não encontrada' }, { status: 404 });
         }
 
-        await pusherServer.trigger(
+        await triggerPusher(
             `presence-${campaign.campaignCode}`,
             PusherEvent.NOTES_UPDATED,
             updatedNote
@@ -97,7 +97,7 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
             notes: updatedNotes
         });
 
-        await pusherServer.trigger(
+        await triggerPusher(
             `presence-${campaign.campaignCode}`,
             PusherEvent.NOTES_UPDATED,
             noteId

@@ -51,15 +51,6 @@ export default function MassActionDialog({
         if (open) {
             setSelectedPlayers(players.map(p => p.id));
             setAmount(actionType === 'addMoney' ? 100 : 0);
-            
-            // Debug: verificar dados dos jogadores
-            if (actionType === 'addMoney') {
-                console.log('[MassActionDialog] Players data:', players.map(p => ({
-                    name: p.charsheet?.name || p.name,
-                    money: p.charsheet?.inventory?.money,
-                    inventory: p.charsheet?.inventory
-                })));
-            }
         }
     }, [ open, players, actionType ]);
 

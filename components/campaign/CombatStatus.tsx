@@ -152,7 +152,6 @@ function CombatStatus({
     // Abre dialog de iniciativa automaticamente se precisar rolar
     useEffect(() => {
         if (needsToRollInitiative && !initiativeDialogOpen) {
-            console.log('[CombatStatus] Abrindo dialog de iniciativa automaticamente');
             setInitiativeDialogOpen(true);
         }
     }, [ needsToRollInitiative, initiativeDialogOpen ]);
@@ -162,7 +161,6 @@ function CombatStatus({
         if (needsToRollInitiative && !initiativeDialogOpen) {
             const timer = setTimeout(() => {
                 if (needsToRollInitiative) {
-                    console.log('[CombatStatus] Reabrindo dialog de iniciativa (timeout)');
                     setInitiativeDialogOpen(true);
                 }
             }, 1000);

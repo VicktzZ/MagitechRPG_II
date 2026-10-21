@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { campaignRepository, charsheetRepository, combatEffectRepository } from '@repositories'
 import { Combat, Combatant, CombatLog, AppliedEffect, Message } from '@models'
-import { pusherServer } from '@utils/pusher'
+import { triggerPusher } from '@utils/pusher'
 import { PusherEvent } from '@enums'
 import { processEffectTicks, refreshPlayerCombatantsLp, syncPlayerCharsheets } from '@utils/combat/processEffectTicks'
 import { getEffectDisplayName } from '@utils/combatEffectLabels'
@@ -1027,7 +1027,7 @@ export async function POST(
         }
 
         // Notifica os clientes via Pusher
-        await pusherServer.trigger(
+        await triggerPusher(
             `presence-${campaign.campaignCode}`,
             PusherEvent.COMBAT_UPDATED,
             { combat: campaign.session.combat, action }

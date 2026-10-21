@@ -1,7 +1,7 @@
 import { PusherEvent } from '@enums';
 import { campaignRepository } from '@repositories';
 import { assertIdList, assertMaxLength, forbidden, handleRouteError, readJsonBody, requireCampaignGM, requireUser } from '@utils/api';
-import { pusherServer } from '@utils/pusher';
+import { triggerPusher } from '@utils/pusher';
 import type { PerkFilters } from '@models';
 
 interface OfferPerksBody {
@@ -37,7 +37,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
         });
 
         // Notifica os clientes via Pusher
-        await pusherServer.trigger(
+        await triggerPusher(
             `presence-${campaign.campaignCode}`,
             PusherEvent.PERKS_OFFERED,
             { userIds: body.userIds, filters: body.filters, sharedSeed: body.sharedSeed }

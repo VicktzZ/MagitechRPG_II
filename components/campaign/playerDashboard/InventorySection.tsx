@@ -75,7 +75,7 @@ import {
 import { useSnackbar } from 'notistack';
 import { color } from '@themes/tokens';
 import { type ReactElement, useState, useMemo } from 'react';
-import { useSession } from '@node_modules/next-auth/react';
+import { useSession } from 'next-auth/react';
 import { type SessionPlayer } from '@features/roguelite/components';
 import { SubstitutionModal } from '@features/roguelite/components/perkCardsModal/components/SubstitutionModal';
 import { useCharsheetSystem } from '@hooks/useCharsheetSystem';
