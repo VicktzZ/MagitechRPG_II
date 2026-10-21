@@ -13,7 +13,6 @@ import {
     Typography
 } from '@mui/material';
 import FlagIcon from '@mui/icons-material/Flag';
-import { orange } from '@mui/material/colors';
 import { useSnackbar } from 'notistack';
 
 interface FinishCampaignDialogProps {
@@ -58,7 +57,7 @@ export default function FinishCampaignDialog({
     return (
         <Dialog open={open} onClose={isFinishing ? undefined : onClose} maxWidth="sm" fullWidth>
             <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <FlagIcon sx={{ color: orange[500] }} />
+                <FlagIcon sx={{ color: 'warning.main' }} />
                 Finalizar Campanha
             </DialogTitle>
             <DialogContent>

@@ -18,7 +18,6 @@ import {
     Paper,
     Typography
 } from '@mui/material'
-import { red } from '@mui/material/colors'
 import { campaignService, charsheetService, notificationService } from '@services'
 import { enqueueSnackbar } from 'notistack'
 import { memo, useState } from 'react'
@@ -284,9 +283,9 @@ function PlayerCard({ charsheet }: { charsheet: Required<CharsheetDTO> }) {
                         <Divider />
                         <MenuItem onClick={() => setRemoveUserDialogOpen(true)}>
                             <ListItemIcon>
-                                <Block sx={{ color: red[500] }} />
+                                <Block sx={{ color: 'error.main' }} />
                             </ListItemIcon>
-                            <ListItemText sx={{ color: red[500] }}>Remover</ListItemText>
+                            <ListItemText sx={{ color: 'error.main' }}>Remover</ListItemText>
                         </MenuItem>
                     </MenuList>
                 </Box>

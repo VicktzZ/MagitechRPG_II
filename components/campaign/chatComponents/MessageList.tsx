@@ -14,7 +14,6 @@ import {
 import { Chat, SmartToy, AdminPanelSettings, Casino } from '@mui/icons-material';
 import { DiceMessage } from '@components/misc';
 import { MessageType } from '@enums';
-import { green, orange, purple, grey } from '@mui/material/colors';
 import { color } from '@themes/tokens';
 import type { Message } from '@models';
 
@@ -87,7 +86,7 @@ const MessageList = memo(forwardRef<HTMLDivElement, MessageListProps>(function M
                         p: 4
                     }}
                 >
-                    <Chat sx={{ fontSize: '4rem', color: grey[400], mb: 2 }} />
+                    <Chat sx={{ fontSize: '4rem', color: 'text.disabled', mb: 2 }} />
                     <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
                         Nenhuma mensagem ainda
                     </Typography>
@@ -130,15 +129,13 @@ const MessageList = memo(forwardRef<HTMLDivElement, MessageListProps>(function M
                                         borderRadius: isOwnMessage 
                                             ? '16px 4px 16px 16px'
                                             : '4px 16px 16px 16px',
-                                        border: isCombatLog
+                                        border: isCombatLog || isDiceMessage
                                             ? '2px solid'
-                                            : isDiceMessage 
-                                                ? `2px solid ${orange[400]}`
-                                                : '1px solid',
+                                            : '1px solid',
                                         borderColor: isCombatLog
                                             ? alpha(theme.palette.error.main, 0.5)
                                             : isDiceMessage 
-                                                ? orange[400]
+                                                ? 'primary.main'
                                                 : isOwnMessage
                                                     ? color.amberLine
                                                     : 'divider',
@@ -178,8 +175,9 @@ const MessageList = memo(forwardRef<HTMLDivElement, MessageListProps>(function M
                                                 label="BOT"
                                                 size="small"
                                                 sx={{
-                                                    bgcolor: green[500],
-                                                    color: 'white',
+                                                    bgcolor: 'info.main',
+                                                    color: 'info.contrastText',
+                                                    '& .MuiChip-icon': { color: 'inherit' },
                                                     fontWeight: 600,
                                                     fontSize: '0.7rem',
                                                     height: 20
@@ -192,8 +190,11 @@ const MessageList = memo(forwardRef<HTMLDivElement, MessageListProps>(function M
                                                 label="GM"
                                                 size="small"
                                                 sx={{
-                                                    bgcolor: purple[500],
-                                                    color: 'white',
+                                                    bgcolor: 'background.overlay',
+                                                    color: 'text.primary',
+                                                    border: '1px solid',
+                                                    borderColor: color.borderStrong,
+                                                    '& .MuiChip-icon': { color: 'inherit' },
                                                     fontWeight: 600,
                                                     fontSize: '0.7rem',
                                                     height: 20
@@ -206,8 +207,9 @@ const MessageList = memo(forwardRef<HTMLDivElement, MessageListProps>(function M
                                                 label="DADOS"
                                                 size="small"
                                                 sx={{
-                                                    bgcolor: orange[500],
-                                                    color: 'white',
+                                                    bgcolor: 'primary.main',
+                                                    color: 'primary.contrastText',
+                                                    '& .MuiChip-icon': { color: 'inherit' },
                                                     fontWeight: 600,
                                                     fontSize: '0.7rem',
                                                     height: 20

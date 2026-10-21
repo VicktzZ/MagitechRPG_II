@@ -16,7 +16,6 @@ import {
     useMediaQuery,
     type Theme
 } from '@mui/material'
-import { grey } from '@mui/material/colors'
 import { campaignService, sessionService } from '@services'
 import { motion } from 'framer-motion'
 import { useSession } from 'next-auth/react'
@@ -80,7 +79,7 @@ export default function CampaignHeader(): ReactElement {
                     <Typography>
                         {isAdmin ? 'Game Master' : charsheets.find(c => c.userId === user.id)?.name}
                     </Typography>
-                    <Typography color={grey[500]} variant="caption">
+                    <Typography color="text.secondary" variant="caption">
                         {user.name}
                     </Typography>
                 </Box>

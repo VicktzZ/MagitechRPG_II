@@ -31,9 +31,10 @@ import {
     Menu,
     MenuItem,
     ListItemText as MenuItemText,
-    Typography
+    Typography,
+    alpha
 } from '@mui/material';
-import { green, orange, red, blue } from '@mui/material/colors';
+import { color } from '@themes/tokens';
 import { campaignService } from '@services';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSnackbar } from 'notistack';
@@ -285,14 +286,14 @@ export default function GMActions(): ReactElement {
                 {campaign.mode === 'Roguelite' && (
                     <MenuItem onClick={openRogueliteLevelUp} disabled={!isUserGM}>
                         <ListItemIcon>
-                            <AutoGraphIcon fontSize="small" sx={{ color: green[500] }} />
+                            <AutoGraphIcon fontSize="small" sx={{ color: 'success.main' }} />
                         </ListItemIcon>
                         <MenuItemText>
                             Evolução Roguelite (+5)
                             <Chip 
                                 label="Roguelite" 
                                 size="small" 
-                                sx={{ ml: 1, height: 18, fontSize: '0.65rem', bgcolor: green[100], color: green[800] }}
+                                sx={{ ml: 1, height: 18, fontSize: '0.65rem', bgcolor: (theme) => alpha(theme.palette.success.main, 0.14), color: 'success.main' }}
                             />
                         </MenuItemText>
                     </MenuItem>
@@ -310,14 +311,14 @@ export default function GMActions(): ReactElement {
 
                 <MenuItem onClick={openCreatureCreator} disabled={!isUserGM}>
                     <ListItemIcon>
-                        <PetsIcon fontSize="small" sx={{ color: orange[600] }} />
+                        <PetsIcon fontSize="small" sx={{ color: 'warning.main' }} />
                     </ListItemIcon>
                     <MenuItemText>Adicionar Criatura</MenuItemText>
                 </MenuItem>
 
                 <MenuItem onClick={() => { setWidgetManagerOpen(true); handleCloseMenu(); }} disabled={!isUserGM}>
                     <ListItemIcon>
-                        <WidgetsIcon fontSize="small" sx={{ color: blue[400] }} />
+                        <WidgetsIcon fontSize="small" sx={{ color: 'info.main' }} />
                     </ListItemIcon>
                     <MenuItemText>
                         {(campaign.widgets?.length ?? 0) > 0 ? 'Administrar Widgets' : 'Criar Widget da Campanha'}
@@ -351,7 +352,7 @@ export default function GMActions(): ReactElement {
                             <Chip 
                                 label="Aberta" 
                                 size="small" 
-                                sx={{ ml: 1, height: 20, bgcolor: green[100], color: green[800] }}
+                                sx={{ ml: 1, height: 20, bgcolor: (theme) => alpha(theme.palette.success.main, 0.14), color: 'success.main' }}
                             />
                         )}
                     </MenuItemText>
@@ -362,7 +363,7 @@ export default function GMActions(): ReactElement {
                 {/* Combate */}
                 <MenuItem onClick={openCombat} disabled={!isUserGM}>
                     <ListItemIcon>
-                        <SportsKabaddiIcon fontSize="small" sx={{ color: red[500] }} />
+                        <SportsKabaddiIcon fontSize="small" sx={{ color: 'error.main' }} />
                     </ListItemIcon>
                     <MenuItemText>
                         {campaign.session?.combat?.isActive ? 'Gerenciar Combate' : 'Iniciar Combate'}
@@ -370,7 +371,7 @@ export default function GMActions(): ReactElement {
                             <Chip 
                                 label={`R${campaign.session.combat.round}`}
                                 size="small" 
-                                sx={{ ml: 1, height: 20, bgcolor: red[100], color: red[800] }}
+                                sx={{ ml: 1, height: 20, bgcolor: (theme) => alpha(theme.palette.error.main, 0.14), color: 'error.main' }}
                             />
                         )}
                     </MenuItemText>
@@ -378,7 +379,7 @@ export default function GMActions(): ReactElement {
 
                 <MenuItem onClick={openEffectsCatalog} disabled={!isUserGM}>
                     <ListItemIcon>
-                        <BoltIcon fontSize="small" sx={{ color: blue[500] }} />
+                        <BoltIcon fontSize="small" sx={{ color: 'info.main' }} />
                     </ListItemIcon>
                     <MenuItemText>Efeitos de Combate</MenuItemText>
                 </MenuItem>
@@ -392,21 +393,21 @@ export default function GMActions(): ReactElement {
 
                 <MenuItem onClick={() => openMassAction('restoreLP')} disabled={!isUserGM}>
                     <ListItemIcon>
-                        <FavoriteIcon fontSize="small" sx={{ color: red[500] }} />
+                        <FavoriteIcon fontSize="small" sx={{ color: color.lp }} />
                     </ListItemIcon>
                     <MenuItemText>Restaurar LP</MenuItemText>
                 </MenuItem>
 
                 <MenuItem onClick={() => openMassAction('restoreMP')} disabled={!isUserGM}>
                     <ListItemIcon>
-                        <BoltIcon fontSize="small" sx={{ color: blue[500] }} />
+                        <BoltIcon fontSize="small" sx={{ color: color.mp }} />
                     </ListItemIcon>
                     <MenuItemText>Restaurar MP</MenuItemText>
                 </MenuItem>
 
                 <MenuItem onClick={() => openMassAction('addMoney')} disabled={!isUserGM}>
                     <ListItemIcon>
-                        <AttachMoneyIcon fontSize="small" sx={{ color: green[500] }} />
+                        <AttachMoneyIcon fontSize="small" sx={{ color: 'success.main' }} />
                     </ListItemIcon>
                     <MenuItemText>Adicionar Dinheiro</MenuItemText>
                 </MenuItem>
@@ -416,7 +417,7 @@ export default function GMActions(): ReactElement {
                 {/* Ciclo de vida da campanha */}
                 <MenuItem onClick={openStatsModal}>
                     <ListItemIcon>
-                        <EmojiEventsIcon fontSize="small" sx={{ color: orange[400] }} />
+                        <EmojiEventsIcon fontSize="small" sx={{ color: 'primary.main' }} />
                     </ListItemIcon>
                     <MenuItemText>Ver Estatísticas da Campanha</MenuItemText>
                 </MenuItem>
@@ -424,14 +425,14 @@ export default function GMActions(): ReactElement {
                 {!isFinished ? (
                     <MenuItem onClick={openFinishDialog} disabled={!isUserGM}>
                         <ListItemIcon>
-                            <FlagIcon fontSize="small" sx={{ color: orange[600] }} />
+                            <FlagIcon fontSize="small" sx={{ color: 'warning.main' }} />
                         </ListItemIcon>
                         <MenuItemText>Finalizar Campanha</MenuItemText>
                     </MenuItem>
                 ) : (
                     <MenuItem onClick={handleReopenCampaign} disabled={!isUserGM || isReopening}>
                         <ListItemIcon>
-                            <ReplayIcon fontSize="small" sx={{ color: green[500] }} />
+                            <ReplayIcon fontSize="small" sx={{ color: 'success.main' }} />
                         </ListItemIcon>
                         <MenuItemText>Reabrir Campanha</MenuItemText>
                     </MenuItem>
