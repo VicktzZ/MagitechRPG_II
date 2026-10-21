@@ -1,171 +1,26 @@
 'use client';
 
 import { useState, type ReactElement } from 'react';
-import {
-    alpha,
-    Box,
-    Button,
-    Chip,
-    Collapse,
-    Dialog,
-    DialogActions,
-    DialogContent,
-    DialogTitle,
-    Divider,
-    FormControl,
-    Grid,
-    IconButton,
-    InputLabel,
-    LinearProgress,
-    Menu,
-    MenuItem,
-    Paper,
-    Select,
-    Tooltip,
-    Typography,
-    useTheme
-} from '@mui/material';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import SettingsIcon from '@mui/icons-material/Settings';
-import WidgetsIcon from '@mui/icons-material/Widgets';
-import AddIcon from '@mui/icons-material/Add';
-import RemoveIcon from '@mui/icons-material/Remove';
-import WarningAmberIcon from '@mui/icons-material/WarningAmber';
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
-import ReportIcon from '@mui/icons-material/Report';
-import HistoryEduIcon from '@mui/icons-material/HistoryEdu';
-import Inventory2Icon from '@mui/icons-material/Inventory2';
-import UploadIcon from '@mui/icons-material/Upload';
-import DownloadIcon from '@mui/icons-material/Download';
-import ScienceIcon from '@mui/icons-material/Science';
-import SavingsIcon from '@mui/icons-material/Savings';
-import AssignmentIcon from '@mui/icons-material/Assignment';
-import TimerIcon from '@mui/icons-material/Timer';
-import { color as tokenColor } from '@themes/tokens';
+import { Box, Chip, Collapse, Divider, Paper, Typography, useTheme } from '@mui/material';
 import { useCampaignCurrentCharsheetContext } from '@contexts';
-import { useSnackbar } from 'notistack';
-import { NumberField } from '@components/misc';
-import type { CampaignWidget, WidgetBountyStatus, WidgetPartStatus, WidgetPool, WidgetStockItem } from '@models';
+import type { CampaignWidget } from '@models';
 import WidgetManagerDialog from './WidgetManagerDialog';
-
-const bountyStatusConfig: Record<WidgetBountyStatus, { label: string; color: string }> = {
-    open: { label: 'Aberta', color: tokenColor.cyan },
-    pending: { label: 'Pendente', color: tokenColor.amber },
-    done: { label: 'Concluída', color: tokenColor.success }
-};
-
-const partStatusConfig: Record<WidgetPartStatus, { label: string; color: string }> = {
-    operational: { label: 'Operacional', color: tokenColor.success },
-    damaged: { label: 'Avariado', color: tokenColor.warning },
-    critical: { label: 'Crítico', color: tokenColor.danger },
-    offline: { label: 'Offline', color: tokenColor.inkMuted }
-};
-
-const alertSeverityConfig = {
-    info: { color: tokenColor.cyan, icon: <InfoOutlinedIcon fontSize="small" /> },
-    warning: { color: tokenColor.warning, icon: <WarningAmberIcon fontSize="small" /> },
-    danger: { color: tokenColor.danger, icon: <ReportIcon fontSize="small" /> }
-} as const;
-
-/** Condição geral derivada da barra de integridade */
-function integrityCondition(widget: CampaignWidget): { label: string; color: string } {
-    const pct = widget.maxIntegrity > 0 ? (widget.integrity / widget.maxIntegrity) * 100 : 0;
-    if (pct <= 0) return { label: 'DESTRUÍDO', color: tokenColor.inkMuted };
-    if (pct < 25) return { label: 'CRÍTICO', color: tokenColor.danger };
-    if (pct < 60) return { label: 'AVARIADO', color: tokenColor.warning };
-    return { label: 'ESTÁVEL', color: tokenColor.success };
-}
-
-function ResourceBar({ label, value, max, color, unit, icon }: {
-    label: string;
-    value: number;
-    max?: number;
-    color: string;
-    unit?: string;
-    icon?: string;
-}): ReactElement {
-    const pct = max && max > 0 ? Math.max(0, Math.min(100, (value / max) * 100)) : 100;
-    return (
-        <Box>
-            <Box display="flex" justifyContent="space-between" alignItems="center" mb={0.25}>
-                <Typography variant="caption" fontWeight={600}>
-                    {icon ? `${icon} ` : ''}{label}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                    {value}{max !== undefined && max !== null ? ` / ${max}` : ''}{unit ? ` ${unit}` : ''}
-                </Typography>
-            </Box>
-            <LinearProgress
-                variant="determinate"
-                value={pct}
-                sx={{
-                    height: 8,
-                    borderRadius: 4,
-                    bgcolor: 'action.disabledBackground',
-                    '& .MuiLinearProgress-bar': { bgcolor: color, borderRadius: 4 }
-                }}
-            />
-        </Box>
-    );
-}
-
-/** Linha de controle -/número/+ compartilhada por barras principais e recursos */
-function AdjustRow({ value, min = 0, max, onChange, disabled }: {
-    value: number;
-    min?: number;
-    max?: number;
-    onChange: (next: number) => void;
-    disabled?: boolean;
-}): ReactElement | null {
-    if (disabled) return null;
-    return (
-        <Box display="flex" alignItems="center" gap={0.5} justifyContent="flex-end">
-            <IconButton size="small" sx={{ p: 0.25 }} onClick={() => onChange(value - 1)}>
-                <RemoveIcon sx={{ fontSize: 14 }} />
-            </IconButton>
-            <NumberField
-                size="small"
-                value={value}
-                min={min}
-                max={max}
-                onChange={onChange}
-                sx={{ width: 64, '& input': { textAlign: 'center', py: 0.4, fontSize: '0.75rem' } }}
-            />
-            <IconButton size="small" sx={{ p: 0.25 }} onClick={() => onChange(value + 1)}>
-                <AddIcon sx={{ fontSize: 14 }} />
-            </IconButton>
-        </Box>
-    );
-}
-
-/** Marcador segmentado ao estilo "clock" — preenche à medida que o relógio avança */
-function ClockPips({ current, max, color }: { current: number; max: number; color: string }): ReactElement {
-    return (
-        <Box display="flex" gap={0.4} flexWrap="wrap">
-            {Array.from({ length: Math.max(1, max) }).map((_, i) => (
-                <Box
-                    key={i}
-                    sx={{
-                        width: 14,
-                        height: 14,
-                        borderRadius: 0.5,
-                        bgcolor: i < current ? color : 'action.disabledBackground',
-                        border: `1px solid ${alpha(color, 0.5)}`
-                    }}
-                />
-            ))}
-        </Box>
-    );
-}
-
-type TransferDialogState =
-    | { mode: 'withdraw'; stockItem: WidgetStockItem }
-    | { mode: 'deposit' };
-
-interface PoolDialogState {
-    pool: WidgetPool;
-    mode: 'deposit' | 'withdraw';
-}
+import PanelHeader from './panel/PanelHeader';
+import AlertsSection from './panel/AlertsSection';
+import MainBarsSection from './panel/MainBarsSection';
+import PartsSection from './panel/PartsSection';
+import ResourcesSection from './panel/ResourcesSection';
+import StockSection from './panel/StockSection';
+import PoolsSection from './panel/PoolsSection';
+import BountiesSection from './panel/BountiesSection';
+import ClocksSection from './panel/ClocksSection';
+import CraftingSection from './panel/CraftingSection';
+import LogSection from './panel/LogSection';
+import StockTransferDialog from './panel/StockTransferDialog';
+import PoolTransactionDialog from './panel/PoolTransactionDialog';
+import { useWidgetActions } from './panel/useWidgetActions';
+import { useStockTransfer } from './panel/useStockTransfer';
+import { usePoolTransaction } from './panel/usePoolTransaction';
 
 interface SingleWidgetPanelProps {
     widget: CampaignWidget;
@@ -177,147 +32,19 @@ interface SingleWidgetPanelProps {
 export default function SingleWidgetPanel({ widget, campaignId, isUserGM, isFinished }: SingleWidgetPanelProps): ReactElement {
     const theme = useTheme();
     const { charsheet } = useCampaignCurrentCharsheetContext();
-    const { enqueueSnackbar } = useSnackbar();
     const [ expanded, setExpanded ] = useState(true);
     const [ managerOpen, setManagerOpen ] = useState(false);
-    const [ logOpen, setLogOpen ] = useState(false);
-    const [ transfer, setTransfer ] = useState<TransferDialogState | null>(null);
-    // Guarda o ÍNDICE do item em ownItems (como string, para o Select) — itens do
-    // catálogo padrão (ex: "Bolsa") podem não ter um `id` próprio.
-    const [ transferItemIndex, setTransferItemIndex ] = useState('');
-    const [ transferQty, setTransferQty ] = useState(1);
-    const [ transferBusy, setTransferBusy ] = useState(false);
-    const [ craftOpen, setCraftOpen ] = useState(false);
-    const [ craftRecipesModalOpen, setCraftRecipesModalOpen ] = useState(false);
-    const [ craftMultipliers, setCraftMultipliers ] = useState<Record<string, number>>({});
-    const [ multiplierMenu, setMultiplierMenu ] = useState<{ recipeId: string; anchor: HTMLElement } | null>(null);
-    const [ poolsOpen, setPoolsOpen ] = useState(false);
-    const [ bountiesOpen, setBountiesOpen ] = useState(false);
-    const [ clocksOpen, setClocksOpen ] = useState(false);
-    const [ poolDialog, setPoolDialog ] = useState<PoolDialogState | null>(null);
-    const [ poolAmount, setPoolAmount ] = useState(1);
-    const [ poolBusy, setPoolBusy ] = useState(false);
-
-    const labels = widget.labels;
-    const condition = integrityCondition(widget);
-    const integrityPct = widget.maxIntegrity > 0 ? (widget.integrity / widget.maxIntegrity) * 100 : 0;
-    const secondaryPct = widget.maxSecondary > 0 ? (widget.secondary / widget.maxSecondary) * 100 : 0;
 
     const hasCharsheet = !!charsheet?.id;
     const ownItems = charsheet?.inventory?.items ?? [];
     /** Ausente/true = comportamento padrão (jogadores podem ajustar recursos e estoque diretamente). */
     const canManageResources = isUserGM || widget.playersCanManageResources !== false;
 
-    const patch = async (payload: Record<string, unknown>) => {
-        if (isFinished) return;
-        try {
-            const response = await fetch(`/api/campaign/${campaignId}/widget`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ widgetId: widget.id, ...payload })
-            });
-            if (!response.ok) {
-                const data = await response.json();
-                throw new Error(data.error || 'Erro ao atualizar o widget');
-            }
-        } catch (error: any) {
-            enqueueSnackbar(error.message || 'Erro ao atualizar o widget', { variant: 'error' });
-        }
-    };
+    const actions = useWidgetActions({ widgetId: widget.id, campaignId, isFinished, charsheetId: charsheet?.id });
+    const stockTransfer = useStockTransfer({ widgetId: widget.id, campaignId, charsheetId: charsheet?.id, ownItems });
+    const poolTransaction = usePoolTransaction({ widgetId: widget.id, campaignId });
 
-    const adjustResource = async (resourceId: string, value: number) =>
-        await patch({ action: 'adjustResource', resourceId, value });
-    const adjustBar = async (bar: 'integrity' | 'secondary', value: number) =>
-        await patch({ action: 'adjustBar', bar, value });
-    const adjustStock = async (stockId: string, delta: number) =>
-        await patch({ action: 'adjustStock', stockId, delta });
-
-    const openWithdraw = (stockItem: WidgetStockItem) => {
-        setTransfer({ mode: 'withdraw', stockItem });
-        setTransferQty(stockItem.quantity);
-    };
-    const openDeposit = () => {
-        setTransfer({ mode: 'deposit' });
-        setTransferItemIndex(ownItems.length > 0 ? '0' : '');
-        setTransferQty(ownItems[0]?.quantity ?? 1);
-    };
-    const closeTransfer = () => {
-        setTransfer(null);
-        setTransferItemIndex('');
-        setTransferQty(1);
-    };
-
-    const confirmTransfer = async () => {
-        if (!transfer || !charsheet?.id) return;
-        setTransferBusy(true);
-        try {
-            const body = transfer.mode === 'withdraw'
-                ? { action: 'withdraw', charsheetId: charsheet.id, stockId: transfer.stockItem.id, quantity: transferQty }
-                : { action: 'deposit', charsheetId: charsheet.id, itemIndex: Number(transferItemIndex), quantity: transferQty };
-
-            const response = await fetch(`/api/campaign/${campaignId}/widget`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ widgetId: widget.id, ...body })
-            });
-            if (!response.ok) {
-                const data = await response.json();
-                throw new Error(data.error || 'Erro na transferência');
-            }
-            enqueueSnackbar(transfer.mode === 'withdraw' ? 'Item retirado do estoque!' : 'Item transferido para o estoque!', { variant: 'success' });
-            closeTransfer();
-        } catch (error: any) {
-            enqueueSnackbar(error.message || 'Erro na transferência', { variant: 'error' });
-        } finally {
-            setTransferBusy(false);
-        }
-    };
-
-    const getMultiplier = (recipeId: string): number => craftMultipliers[recipeId] ?? 1;
-    const craft = async (recipeId: string) =>
-        await patch({ action: 'craft', recipeId, quantity: getMultiplier(recipeId), charsheetId: charsheet?.id });
-
-    const claimBounty = async (bountyId: string) => {
-        if (!charsheet?.id) return;
-        await patch({ action: 'claimBounty', bountyId, charsheetId: charsheet.id });
-    };
-    const approveBounty = async (bountyId: string) => await patch({ action: 'approveBounty', bountyId });
-    const adjustClock = async (clockId: string, value: number) => await patch({ action: 'adjustClock', clockId, value });
-
-    const openPoolDialog = (pool: WidgetPool, mode: 'deposit' | 'withdraw') => {
-        setPoolDialog({ pool, mode });
-        setPoolAmount(1);
-    };
-    const confirmPoolTransaction = async () => {
-        if (!poolDialog) return;
-        setPoolBusy(true);
-        try {
-            const amount = poolDialog.mode === 'withdraw' ? -Math.abs(poolAmount) : Math.abs(poolAmount);
-            const response = await fetch(`/api/campaign/${campaignId}/widget`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ widgetId: widget.id, action: 'poolTransaction', poolId: poolDialog.pool.id, amount })
-            });
-            if (!response.ok) {
-                const data = await response.json();
-                throw new Error(data.error || 'Erro na transação');
-            }
-            enqueueSnackbar(poolDialog.mode === 'deposit' ? 'Depósito realizado!' : 'Retirada realizada!', { variant: 'success' });
-            setPoolDialog(null);
-        } catch (error: any) {
-            enqueueSnackbar(error.message || 'Erro na transação', { variant: 'error' });
-        } finally {
-            setPoolBusy(false);
-        }
-    };
-
-    const dangerAlerts = widget.alerts?.filter(a => a.severity === 'danger') ?? [];
-
-    // Texto do cabeçalho: branco sobre o vermelho de alerta, escuro sobre o âmbar
-
-    const headerText = dangerAlerts.length > 0 ? 'common.white' : 'primary.contrastText'
-    const stockWeight = (widget.stock ?? []).reduce((sum, s) => sum + (s.weight || 0) * s.quantity, 0);
-    const selectedOwnItem = ownItems[Number(transferItemIndex)];
+    const hasDangerAlert = (widget.alerts?.filter(a => a.severity === 'danger') ?? []).length > 0;
 
     return (
         <Paper
@@ -327,79 +54,20 @@ export default function SingleWidgetPanel({ widget, campaignId, isUserGM, isFini
                 maxWidth: 'calc(100vw - 32px)',
                 overflow: 'hidden',
                 border: '2px solid',
-                borderColor: dangerAlerts.length > 0 ? theme.palette.error.main : theme.palette.primary.main,
+                borderColor: hasDangerAlert ? theme.palette.error.main : theme.palette.primary.main,
                 borderRadius: 2,
                 bgcolor: 'background.paper'
             }}
         >
             {/* ── Header (sempre visível — clique colapsa) ── */}
-            <Box
-                onClick={() => setExpanded(prev => !prev)}
-                sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 1,
-                    px: 1.5,
-                    py: 1,
-                    cursor: 'pointer',
-                    bgcolor: dangerAlerts.length > 0
-                        ? alpha(theme.palette.error.dark, 0.9)
-                        : alpha(theme.palette.primary.main, 0.85),
-                    color: headerText
-                }}
-            >
-                {widget.icon
-                    ? <Typography fontSize="1.4rem" lineHeight={1}>{widget.icon}</Typography>
-                    : <WidgetsIcon />}
-                <Box minWidth={0} flex={1}>
-                    <Typography fontWeight={700} noWrap fontSize="0.95rem">
-                        {widget.name}
-                    </Typography>
-                    {widget.subtitle && (
-                        <Typography variant="caption" sx={{ opacity: 0.85 }} noWrap display="block">
-                            {widget.subtitle}
-                        </Typography>
-                    )}
-                </Box>
-                {widget.showIntegrity && (
-                    <Chip
-                        label={condition.label}
-                        size="small"
-                        sx={{
-                            bgcolor: alpha(theme.palette.background.default, 0.25),
-                            color: headerText,
-                            fontWeight: 700,
-                            height: 20,
-                            fontSize: '0.75rem'
-                        }}
-                    />
-                )}
-                {(widget.alerts?.length ?? 0) > 0 && (
-                    <Chip
-                        icon={<WarningAmberIcon sx={{ fontSize: 14, color: 'inherit !important' }} />}
-                        label={widget.alerts.length}
-                        size="small"
-                        sx={{ bgcolor: alpha(theme.palette.background.default, 0.25), color: headerText, height: 20, fontSize: '0.75rem' }}
-                    />
-                )}
-                {isUserGM && (
-                    <Tooltip title="Administrar (Mestre)">
-                        <IconButton
-                            size="small"
-                            sx={{ color: headerText }}
-                            onClick={(e) => { e.stopPropagation(); setManagerOpen(true); }}
-                        >
-                            <SettingsIcon fontSize="small" />
-                        </IconButton>
-                    </Tooltip>
-                )}
-                <IconButton
-                    size="small"
-                    sx={{ color: headerText, transform: expanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}
-                >
-                    <ExpandMoreIcon fontSize="small" />
-                </IconButton>
-            </Box>
+            <PanelHeader
+                widget={widget}
+                hasDangerAlert={hasDangerAlert}
+                expanded={expanded}
+                isUserGM={isUserGM}
+                onToggle={() => setExpanded(prev => !prev)}
+                onOpenManager={() => setManagerOpen(true)}
+            />
 
             <Collapse in={expanded}>
                 <Box p={1.5} display="flex" flexDirection="column" gap={1.5} maxHeight="60vh" overflow="auto">
@@ -413,629 +81,51 @@ export default function SingleWidgetPanel({ widget, campaignId, isUserGM, isFini
                         </Box>
                     )}
 
-                    {/* ── Alertas ── */}
-                    {(widget.alerts?.length ?? 0) > 0 && (
-                        <Box display="flex" flexDirection="column" gap={0.5}>
-                            {widget.alerts.map(alert => {
-                                const cfg = alertSeverityConfig[alert.severity] ?? alertSeverityConfig.info;
-                                return (
-                                    <Box
-                                        key={alert.id}
-                                        display="flex"
-                                        alignItems="center"
-                                        gap={0.75}
-                                        px={1}
-                                        py={0.5}
-                                        borderRadius={1.5}
-                                        sx={{
-                                            bgcolor: alpha(cfg.color, 0.1),
-                                            border: `1px solid ${alpha(cfg.color, 0.35)}`,
-                                            color: cfg.color
-                                        }}
-                                    >
-                                        {cfg.icon}
-                                        <Typography variant="caption" fontWeight={600} color="inherit">
-                                            {alert.text}
-                                        </Typography>
-                                    </Box>
-                                );
-                            })}
-                        </Box>
-                    )}
+                    <AlertsSection widget={widget} />
 
-                    {/* ── Barras principais ── */}
-                    {(widget.showIntegrity || widget.showSecondary) && (
-                        <Box display="flex" flexDirection="column" gap={1}>
-                            {widget.showIntegrity && (
-                                <Box>
-                                    <ResourceBar
-                                        label={labels.integrity}
-                                        value={widget.integrity}
-                                        max={widget.maxIntegrity}
-                                        color={integrityPct < 25 ? theme.palette.error.main : integrityPct < 60 ? theme.palette.warning.main : theme.palette.success.main}
-                                    />
-                                    <AdjustRow
-                                        value={widget.integrity}
-                                        max={widget.maxIntegrity}
-                                        disabled={isFinished}
-                                        onChange={async (v) => await adjustBar('integrity', v)}
-                                    />
-                                </Box>
-                            )}
-                            {widget.showSecondary && (
-                                <Box>
-                                    <ResourceBar
-                                        label={labels.secondary}
-                                        icon="◆"
-                                        value={widget.secondary}
-                                        max={widget.maxSecondary}
-                                        color={secondaryPct < 30 ? theme.palette.warning.main : theme.palette.info.main}
-                                    />
-                                    <AdjustRow
-                                        value={widget.secondary}
-                                        max={widget.maxSecondary}
-                                        disabled={isFinished}
-                                        onChange={async (v) => await adjustBar('secondary', v)}
-                                    />
-                                </Box>
-                            )}
-                        </Box>
-                    )}
+                    <MainBarsSection widget={widget} isFinished={isFinished} onAdjustBar={actions.adjustBar} />
 
-                    {/* ── Partes ── */}
-                    {(widget.parts?.length ?? 0) > 0 && (
-                        <Box>
-                            <Typography variant="caption" fontWeight={700} color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 1 }}>
-                                {labels.parts}
-                            </Typography>
-                            <Grid container spacing={0.75} mt={0}>
-                                {widget.parts.map(part => {
-                                    const statusCfg = partStatusConfig[part.status] ?? partStatusConfig.operational;
-                                    const partPct = part.maxHp > 0 ? (part.hp / part.maxHp) * 100 : 0;
-                                    return (
-                                        <Grid item xs={6} key={part.id}>
-                                            <Tooltip title={part.description || ''} arrow disableHoverListener={!part.description}>
-                                                <Paper
-                                                    variant="outlined"
-                                                    sx={{
-                                                        p: 0.75,
-                                                        borderColor: alpha(statusCfg.color, 0.4),
-                                                        opacity: part.status === 'offline' ? 0.6 : 1
-                                                    }}
-                                                >
-                                                    <Box display="flex" alignItems="center" gap={0.5} mb={0.4}>
-                                                        {part.icon && <Typography fontSize="0.85rem">{part.icon}</Typography>}
-                                                        <Typography variant="caption" fontWeight={700} noWrap flex={1}>
-                                                            {part.name}
-                                                        </Typography>
-                                                    </Box>
-                                                    <LinearProgress
-                                                        variant="determinate"
-                                                        value={Math.max(0, Math.min(100, partPct))}
-                                                        sx={{
-                                                            height: 4,
-                                                            borderRadius: 2,
-                                                            mb: 0.4,
-                                                            bgcolor: 'action.disabledBackground',
-                                                            '& .MuiLinearProgress-bar': { bgcolor: statusCfg.color }
-                                                        }}
-                                                    />
-                                                    <Box display="flex" justifyContent="space-between" alignItems="center">
-                                                        <Typography variant="caption" color="text.secondary" fontSize="0.75rem">
-                                                            {part.hp}/{part.maxHp}
-                                                        </Typography>
-                                                        <Typography variant="caption" sx={{ color: statusCfg.color, fontWeight: 700, fontSize: '0.75rem' }}>
-                                                            {statusCfg.label}
-                                                        </Typography>
-                                                    </Box>
-                                                </Paper>
-                                            </Tooltip>
-                                        </Grid>
-                                    );
-                                })}
-                            </Grid>
-                        </Box>
-                    )}
+                    <PartsSection widget={widget} />
 
-                    {/* ── Recursos ── */}
-                    {(widget.resources?.length ?? 0) > 0 && (
-                        <Box>
-                            <Typography variant="caption" fontWeight={700} color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 1 }}>
-                                {labels.resources}
-                            </Typography>
-                            <Box display="flex" flexDirection="column" gap={1} mt={0.5}>
-                                {widget.resources.map(resource => (
-                                    <Box key={resource.id}>
-                                        <ResourceBar
-                                            label={resource.name}
-                                            icon={resource.icon}
-                                            value={resource.value}
-                                            max={resource.max}
-                                            unit={resource.unit}
-                                            color={resource.color || theme.palette.info.main}
-                                        />
-                                        {canManageResources && (
-                                            <AdjustRow
-                                                value={resource.value}
-                                                max={resource.max}
-                                                disabled={isFinished}
-                                                onChange={async (v) => await adjustResource(resource.id, v)}
-                                            />
-                                        )}
-                                    </Box>
-                                ))}
-                            </Box>
-                        </Box>
-                    )}
+                    <ResourcesSection
+                        widget={widget}
+                        isFinished={isFinished}
+                        canManageResources={canManageResources}
+                        onAdjustResource={actions.adjustResource}
+                    />
 
-                    {/* ── Estoque compartilhado ── */}
-                    {widget.showStock !== false && ((widget.stock?.length ?? 0) > 0 || hasCharsheet) && (
-                        <Box>
-                            <Box display="flex" alignItems="center" justifyContent="space-between" flexWrap="wrap" gap={0.5}>
-                                <Typography
-                                    variant="caption" fontWeight={700} color="text.secondary"
-                                    sx={{ textTransform: 'uppercase', letterSpacing: 1, display: 'flex', alignItems: 'center', gap: 0.5 }}
-                                >
-                                    <Inventory2Icon sx={{ fontSize: 13 }} /> {labels.stock}
-                                </Typography>
-                                {!!widget.stockMaxWeight && (
-                                    <Typography variant="caption" color="text.secondary">
-                                        {stockWeight.toFixed(1)} / {widget.stockMaxWeight} {widget.stockWeightUnit ?? 'kg'}
-                                    </Typography>
-                                )}
-                            </Box>
-                            <Box display="flex" flexWrap="wrap" gap={0.75} mt={0.75}>
-                                {widget.stock.map(item => (
-                                    <Tooltip key={item.id} title={item.description || ''} arrow disableHoverListener={!item.description}>
-                                        <Paper
-                                            variant="outlined"
-                                            sx={{ px: 0.75, py: 0.4, display: 'flex', alignItems: 'center', gap: 0.5 }}
-                                        >
-                                            <Typography variant="caption">{item.name}</Typography>
-                                            <Chip label={item.quantity} size="small" sx={{ height: 18, fontWeight: 700, fontSize: '0.75rem' }} />
-                                            {!isFinished && (
-                                                <>
-                                                    {canManageResources && (
-                                                        <>
-                                                            <IconButton size="small" sx={{ p: 0.15 }} onClick={async () => await adjustStock(item.id, -1)}>
-                                                                <RemoveIcon sx={{ fontSize: 12 }} />
-                                                            </IconButton>
-                                                            <IconButton size="small" sx={{ p: 0.15 }} onClick={async () => await adjustStock(item.id, 1)}>
-                                                                <AddIcon sx={{ fontSize: 12 }} />
-                                                            </IconButton>
-                                                        </>
-                                                    )}
-                                                    {hasCharsheet && (
-                                                        <Tooltip title="Retirar para o meu inventário">
-                                                            <IconButton size="small" sx={{ p: 0.15 }} onClick={() => openWithdraw(item)}>
-                                                                <DownloadIcon sx={{ fontSize: 13 }} />
-                                                            </IconButton>
-                                                        </Tooltip>
-                                                    )}
-                                                </>
-                                            )}
-                                        </Paper>
-                                    </Tooltip>
-                                ))}
-                            </Box>
-                            {!isFinished && hasCharsheet && (
-                                <Button
-                                    size="small"
-                                    startIcon={<UploadIcon sx={{ fontSize: 15 }} />}
-                                    sx={{ mt: 0.75 }}
-                                    disabled={ownItems.length === 0}
-                                    onClick={openDeposit}
-                                >
-                                    Transferir item para o estoque
-                                </Button>
-                            )}
-                        </Box>
-                    )}
+                    <StockSection
+                        widget={widget}
+                        isFinished={isFinished}
+                        hasCharsheet={hasCharsheet}
+                        ownItemsCount={ownItems.length}
+                        canManageResources={canManageResources}
+                        onAdjustStock={actions.adjustStock}
+                        onWithdraw={stockTransfer.openWithdraw}
+                        onDeposit={stockTransfer.openDeposit}
+                    />
 
-                    {/* ── Fundos Comuns (beta) ── */}
-                    {(widget.pools?.length ?? 0) > 0 && (
-                        <Box>
-                            <Box
-                                display="flex" alignItems="center" gap={0.5}
-                                sx={{ cursor: 'pointer', width: 'fit-content' }}
-                                onClick={() => setPoolsOpen(prev => !prev)}
-                            >
-                                <SavingsIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
-                                <Typography variant="caption" fontWeight={700} color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 1 }}>
-                                    Fundos Comuns ({widget.pools.length})
-                                </Typography>
-                                <Chip label="BETA" size="small" color="secondary" sx={{ height: 16, fontSize: '0.75rem', fontWeight: 700 }} />
-                                <ExpandMoreIcon
-                                    sx={{ fontSize: 14, color: 'text.secondary', transform: poolsOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}
-                                />
-                            </Box>
-                            <Collapse in={poolsOpen}>
-                                <Box display="flex" flexDirection="column" gap={1} mt={0.75}>
-                                    {widget.pools.map(pool => (
-                                        <Paper key={pool.id} variant="outlined" sx={{ p: 1 }}>
-                                            <ResourceBar
-                                                label={pool.name} icon={pool.icon} value={pool.value}
-                                                max={pool.max} unit={pool.unit} color={pool.color || theme.palette.info.main}
-                                            />
-                                            {!isFinished && (
-                                                <Box display="flex" gap={0.5} mt={0.5}>
-                                                    <Button size="small" variant="outlined" onClick={() => openPoolDialog(pool, 'deposit')}>
-                                                        Depositar
-                                                    </Button>
-                                                    <Button
-                                                        size="small" variant="outlined"
-                                                        disabled={pool.value <= 0}
-                                                        onClick={() => openPoolDialog(pool, 'withdraw')}
-                                                    >
-                                                        Retirar
-                                                    </Button>
-                                                </Box>
-                                            )}
-                                            {(pool.history?.length ?? 0) > 0 && (
-                                                <Box mt={0.5} display="flex" flexDirection="column" gap={0.15}>
-                                                    {pool.history.slice(0, 3).map(entry => (
-                                                        <Typography key={entry.id} variant="caption" color="text.secondary" fontSize="0.75rem">
-                                                            {entry.userName} {entry.amount > 0 ? '+' : ''}{entry.amount}
-                                                        </Typography>
-                                                    ))}
-                                                </Box>
-                                            )}
-                                        </Paper>
-                                    ))}
-                                </Box>
-                            </Collapse>
-                        </Box>
-                    )}
+                    <PoolsSection widget={widget} isFinished={isFinished} onOpenPoolDialog={poolTransaction.openPoolDialog} />
 
-                    {/* ── Tarefas / Bounties (beta) ── */}
-                    {(widget.bounties?.length ?? 0) > 0 && (
-                        <Box>
-                            <Box
-                                display="flex" alignItems="center" gap={0.5}
-                                sx={{ cursor: 'pointer', width: 'fit-content' }}
-                                onClick={() => setBountiesOpen(prev => !prev)}
-                            >
-                                <AssignmentIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
-                                <Typography variant="caption" fontWeight={700} color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 1 }}>
-                                    Tarefas ({widget.bounties.length})
-                                </Typography>
-                                <Chip label="BETA" size="small" color="secondary" sx={{ height: 16, fontSize: '0.75rem', fontWeight: 700 }} />
-                                <ExpandMoreIcon
-                                    sx={{ fontSize: 14, color: 'text.secondary', transform: bountiesOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}
-                                />
-                            </Box>
-                            <Collapse in={bountiesOpen}>
-                                <Box display="flex" flexDirection="column" gap={0.75} mt={0.75}>
-                                    {widget.bounties.map(bounty => {
-                                        const statusCfg = bountyStatusConfig[bounty.status];
-                                        const rewardResource = widget.resources.find(r => r.id === bounty.rewardResourceId);
-                                        const rewardParts = [
-                                            bounty.rewardText,
-                                            rewardResource ? `${bounty.rewardAmount ?? 0} ${rewardResource.name}` : null
-                                        ].filter(Boolean);
-                                        return (
-                                            <Paper key={bounty.id} variant="outlined" sx={{ p: 1 }}>
-                                                <Box display="flex" alignItems="center" justifyContent="space-between" gap={1}>
-                                                    <Typography variant="caption" fontWeight={700}>{bounty.title}</Typography>
-                                                    <Chip
-                                                        label={statusCfg.label}
-                                                        size="small"
-                                                        sx={{ height: 16, fontSize: '0.75rem', fontWeight: 700, bgcolor: alpha(statusCfg.color, 0.15), color: statusCfg.color }}
-                                                    />
-                                                </Box>
-                                                {bounty.description && (
-                                                    <Typography variant="caption" color="text.secondary" display="block">
-                                                        {bounty.description}
-                                                    </Typography>
-                                                )}
-                                                {rewardParts.length > 0 && (
-                                                    <Typography variant="caption" color="text.secondary" fontStyle="italic" display="block">
-                                                        Recompensa: {rewardParts.join(' + ')}
-                                                    </Typography>
-                                                )}
-                                                {bounty.status !== 'open' && bounty.claimedByName && (
-                                                    <Typography variant="caption" color="text.secondary" display="block">
-                                                        Reivindicada por {bounty.claimedByName}
-                                                    </Typography>
-                                                )}
-                                                <Box display="flex" gap={0.5} mt={0.5} justifyContent="flex-end">
-                                                    {bounty.status === 'open' && hasCharsheet && !isFinished && (
-                                                        <Button size="small" variant="outlined" onClick={async () => await claimBounty(bounty.id)}>
-                                                            Cumprir
-                                                        </Button>
-                                                    )}
-                                                    {bounty.status === 'pending' && isUserGM && !isFinished && (
-                                                        <Button size="small" variant="contained" onClick={async () => await approveBounty(bounty.id)}>
-                                                            Aprovar
-                                                        </Button>
-                                                    )}
-                                                </Box>
-                                            </Paper>
-                                        );
-                                    })}
-                                </Box>
-                            </Collapse>
-                        </Box>
-                    )}
+                    <BountiesSection
+                        widget={widget}
+                        isUserGM={isUserGM}
+                        isFinished={isFinished}
+                        hasCharsheet={hasCharsheet}
+                        onClaimBounty={actions.claimBounty}
+                        onApproveBounty={actions.approveBounty}
+                    />
 
-                    {/* ── Relógios (beta) ── */}
-                    {(widget.clocks?.length ?? 0) > 0 && (
-                        <Box>
-                            <Box
-                                display="flex" alignItems="center" gap={0.5}
-                                sx={{ cursor: 'pointer', width: 'fit-content' }}
-                                onClick={() => setClocksOpen(prev => !prev)}
-                            >
-                                <TimerIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
-                                <Typography variant="caption" fontWeight={700} color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 1 }}>
-                                    Relógios ({widget.clocks.length})
-                                </Typography>
-                                <Chip label="BETA" size="small" color="secondary" sx={{ height: 16, fontSize: '0.75rem', fontWeight: 700 }} />
-                                <ExpandMoreIcon
-                                    sx={{ fontSize: 14, color: 'text.secondary', transform: clocksOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}
-                                />
-                            </Box>
-                            <Collapse in={clocksOpen}>
-                                <Box display="flex" flexDirection="column" gap={1} mt={0.75}>
-                                    {widget.clocks.map(clock => {
-                                        const triggered = clock.current >= clock.max;
-                                        return (
-                                            <Paper
-                                                key={clock.id}
-                                                variant="outlined"
-                                                sx={{ p: 1, ...(triggered && { borderColor: 'error.main', bgcolor: alpha(theme.palette.error.main, 0.05) }) }}
-                                            >
-                                                <Box display="flex" justifyContent="space-between" alignItems="center" mb={0.5}>
-                                                    <Typography variant="caption" fontWeight={700}>
-                                                        {clock.icon ? `${clock.icon} ` : ''}{clock.name}
-                                                    </Typography>
-                                                    <Typography variant="caption" color="text.secondary">
-                                                        {clock.current}/{clock.max}{clock.unit ? ` ${clock.unit}` : ''}
-                                                    </Typography>
-                                                </Box>
-                                                <ClockPips current={clock.current} max={clock.max} color={triggered ? theme.palette.error.main : (clock.color || theme.palette.info.main)} />
-                                                <AdjustRow
-                                                    value={clock.current} max={clock.max} disabled={isFinished}
-                                                    onChange={async (v) => await adjustClock(clock.id, v)}
-                                                />
-                                                {triggered && clock.triggeredMessage && (
-                                                    <Typography variant="caption" sx={{ color: 'error.main' }} fontWeight={700} display="block" mt={0.5}>
-                                                        {clock.triggeredMessage}
-                                                    </Typography>
-                                                )}
-                                            </Paper>
-                                        );
-                                    })}
-                                </Box>
-                            </Collapse>
-                        </Box>
-                    )}
+                    <ClocksSection widget={widget} isFinished={isFinished} onAdjustClock={actions.adjustClock} />
 
-                    {/* ── Crafting (beta) ── */}
-                    {(widget.recipes?.length ?? 0) > 0 && (
-                        <Box>
-                            <Box
-                                display="flex"
-                                alignItems="center"
-                                gap={0.5}
-                                sx={{ cursor: 'pointer', width: 'fit-content' }}
-                                onClick={() => setCraftOpen(prev => !prev)}
-                            >
-                                <ScienceIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
-                                <Typography variant="caption" fontWeight={700} color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 1 }}>
-                                    Crafting ({widget.recipes.length})
-                                </Typography>
-                                <Chip label="BETA" size="small" color="secondary" sx={{ height: 16, fontSize: '0.75rem', fontWeight: 700 }} />
-                                <ExpandMoreIcon
-                                    sx={{ fontSize: 14, color: 'text.secondary', transform: craftOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}
-                                />
-                            </Box>
-                            <Collapse in={craftOpen}>
-                                <Box display="flex" flexDirection="column" gap={0.75} mt={0.75}>
-                                    {(widget.craftLog?.length ?? 0) > 0 && (
-                                        <Box display="flex" flexDirection="column" gap={0.5}>
-                                            <Typography variant="caption" color="text.secondary" fontWeight={600}>
-                                                Últimas Fabricações
-                                            </Typography>
-                                            {widget.craftLog!.slice(0, 5).map(entry => (
-                                                <Box key={entry.id} display="flex" justifyContent="space-between" gap={1}>
-                                                    <Typography variant="caption" color="text.secondary" noWrap>
-                                                        <strong>{entry.userName}</strong> fabricou {entry.recipeName} x{entry.quantity}
-                                                    </Typography>
-                                                    <Typography variant="caption" color="text.secondary" flexShrink={0}>
-                                                        {new Date(entry.timestamp).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                                                    </Typography>
-                                                </Box>
-                                            ))}
-                                        </Box>
-                                    )}
-                                    <Button
-                                        size="small"
-                                        variant="outlined"
-                                        startIcon={<ScienceIcon fontSize="small" />}
-                                        onClick={() => setCraftRecipesModalOpen(true)}
-                                        sx={{ alignSelf: 'flex-start', fontSize: '0.75rem' }}
-                                    >
-                                        Ver Receitas Disponíveis ({widget.recipes.length})
-                                    </Button>
-                                </Box>
-                            </Collapse>
-                        </Box>
-                    )}
+                    <CraftingSection
+                        widget={widget}
+                        isFinished={isFinished}
+                        hasCharsheet={hasCharsheet}
+                        onCraft={actions.craft}
+                    />
 
-                    {/* ── Modal: catálogo completo de receitas ── */}
-                    <Dialog open={craftRecipesModalOpen} onClose={() => setCraftRecipesModalOpen(false)} maxWidth="xs" fullWidth>
-                        <DialogTitle>Receitas Disponíveis</DialogTitle>
-                        <DialogContent dividers>
-                            <Box display="flex" flexDirection="column" gap={0.75}>
-                                {widget.recipes.map(recipe => {
-                                    const multiplier = getMultiplier(recipe.id);
-                                    const missingInputs = recipe.inputs.filter(input => {
-                                        const stockItem = widget.stock.find(s => s.name.toLowerCase() === input.stockName.toLowerCase());
-                                        return !stockItem || stockItem.quantity < input.quantity * multiplier;
-                                    });
-                                    const missingResources = (recipe.resourceCosts ?? []).filter(cost => {
-                                        const resource = widget.resources.find(r => r.id === cost.resourceId);
-                                        return !resource || resource.value < cost.amount * multiplier;
-                                    });
-                                    const outputKind = recipe.output.kind ?? 'item';
-                                    const noDestination = (outputKind !== 'item' || widget.showStock === false) && !hasCharsheet;
-                                    const noDestinationMsg = outputKind !== 'item'
-                                        ? 'Armas/armaduras vão para o inventário pessoal — entre com uma ficha para fabricar'
-                                        : 'Este widget não possui estoque próprio — entre com uma ficha para fabricar';
-                                    const canCraft = missingInputs.length === 0 && missingResources.length === 0 && !noDestination;
-                                    return (
-                                        <Paper key={recipe.id} variant="outlined" sx={{ p: 1 }}>
-                                            <Box display="flex" alignItems="center" justifyContent="space-between" gap={1}>
-                                                <Typography variant="caption" fontWeight={700}>
-                                                    {recipe.name}
-                                                    {outputKind !== 'item' && (
-                                                        <Chip
-                                                            label={outputKind === 'weapon' ? 'Arma' : 'Armadura'}
-                                                            size="small"
-                                                            sx={{ ml: 0.5, height: 14, fontSize: '0.75rem' }}
-                                                        />
-                                                    )}
-                                                </Typography>
-                                                <Box display="flex" alignItems="center" gap={0.5}>
-                                                    <Tooltip title={noDestination ? noDestinationMsg : ''}>
-                                                        <span>
-                                                            <Button
-                                                                size="small"
-                                                                variant="outlined"
-                                                                disabled={isFinished || noDestination}
-                                                                onClick={(e) => setMultiplierMenu({ recipeId: recipe.id, anchor: e.currentTarget })}
-                                                                sx={{ minWidth: 0, px: 0.75, fontSize: '0.75rem', py: 0.25 }}
-                                                            >
-                                                                {multiplier}x
-                                                            </Button>
-                                                        </span>
-                                                    </Tooltip>
-                                                    <Tooltip title={noDestination ? noDestinationMsg : ''}>
-                                                        <span>
-                                                            <Button
-                                                                size="small"
-                                                                variant="contained"
-                                                                disabled={!canCraft || isFinished}
-                                                                onClick={async () => await craft(recipe.id)}
-                                                                sx={{ minWidth: 0, fontSize: '0.75rem', py: 0.25 }}
-                                                            >
-                                                                Fabricar
-                                                            </Button>
-                                                        </span>
-                                                    </Tooltip>
-                                                </Box>
-                                            </Box>
-                                            {recipe.description && (
-                                                <Typography variant="caption" color="text.secondary" display="block">
-                                                    {recipe.description}
-                                                </Typography>
-                                            )}
-                                            <Box display="flex" flexWrap="wrap" gap={0.5} mt={0.5}>
-                                                {recipe.inputs.map(input => {
-                                                    const insufficient = missingInputs.includes(input);
-                                                    return (
-                                                        <Chip
-                                                            key={input.id}
-                                                            label={`${input.stockName} x${input.quantity * multiplier}`}
-                                                            size="small"
-                                                            sx={{
-                                                                height: 18, fontSize: '0.75rem',
-                                                                bgcolor: alpha(insufficient ? theme.palette.error.main : theme.palette.success.main, 0.1),
-                                                                color: insufficient ? 'error.main' : 'success.main'
-                                                            }}
-                                                        />
-                                                    );
-                                                })}
-                                                {(recipe.resourceCosts ?? []).map(cost => {
-                                                    const resource = widget.resources.find(r => r.id === cost.resourceId);
-                                                    const insufficient = missingResources.includes(cost);
-                                                    return (
-                                                        <Chip
-                                                            key={cost.id}
-                                                            label={`${resource?.name ?? '?'} -${cost.amount * multiplier}`}
-                                                            size="small"
-                                                            sx={{
-                                                                height: 18, fontSize: '0.75rem',
-                                                                bgcolor: alpha(insufficient ? theme.palette.error.main : theme.palette.info.main, 0.1),
-                                                                color: insufficient ? 'error.main' : 'info.main'
-                                                            }}
-                                                        />
-                                                    );
-                                                })}
-                                                <Chip
-                                                    label={`→ ${recipe.output.name} x${recipe.output.quantity * multiplier}`}
-                                                    size="small"
-                                                    variant="outlined"
-                                                    sx={{ height: 18, fontSize: '0.75rem' }}
-                                                />
-                                            </Box>
-                                        </Paper>
-                                    );
-                                })}
-                            </Box>
-                        </DialogContent>
-                        <DialogActions>
-                            <Button onClick={() => setCraftRecipesModalOpen(false)}>Fechar</Button>
-                        </DialogActions>
-                    </Dialog>
-
-                    <Menu
-                        anchorEl={multiplierMenu?.anchor ?? null}
-                        open={!!multiplierMenu}
-                        onClose={() => setMultiplierMenu(null)}
-                    >
-                        {[ 1, 3, 5, 10 ].map(n => (
-                            <MenuItem
-                                key={n}
-                                selected={multiplierMenu ? getMultiplier(multiplierMenu.recipeId) === n : false}
-                                onClick={() => {
-                                    if (multiplierMenu) {
-                                        setCraftMultipliers(prev => ({ ...prev, [multiplierMenu.recipeId]: n }));
-                                    }
-                                    setMultiplierMenu(null);
-                                }}
-                            >
-                                {n}x
-                            </MenuItem>
-                        ))}
-                    </Menu>
-
-                    {/* ── Registro/Diário ── */}
-                    {(widget.log?.length ?? 0) > 0 && (
-                        <Box>
-                            <Box
-                                display="flex"
-                                alignItems="center"
-                                gap={0.5}
-                                sx={{ cursor: 'pointer', width: 'fit-content' }}
-                                onClick={() => setLogOpen(prev => !prev)}
-                            >
-                                <HistoryEduIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
-                                <Typography variant="caption" fontWeight={700} color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 1 }}>
-                                    {labels.log} ({widget.log.length})
-                                </Typography>
-                                <ExpandMoreIcon
-                                    sx={{ fontSize: 14, color: 'text.secondary', transform: logOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}
-                                />
-                            </Box>
-                            <Collapse in={logOpen}>
-                                <Box mt={0.75} pl={1} borderLeft={`2px solid ${theme.palette.divider}`} display="flex" flexDirection="column" gap={0.5}>
-                                    {[ ...widget.log ]
-                                        .sort((a, b) => b.timestamp.localeCompare(a.timestamp))
-                                        .slice(0, 10)
-                                        .map(entry => (
-                                            <Box key={entry.id}>
-                                                <Typography variant="caption" color="text.disabled" fontSize="0.75rem">
-                                                    {new Date(entry.timestamp).toLocaleString('pt-BR')}
-                                                </Typography>
-                                                <Typography variant="caption" display="block">{entry.text}</Typography>
-                                            </Box>
-                                        ))}
-                                </Box>
-                            </Collapse>
-                        </Box>
-                    )}
+                    <LogSection widget={widget} />
 
                     {widget.description && (
                         <>
@@ -1058,88 +148,10 @@ export default function SingleWidgetPanel({ widget, campaignId, isUserGM, isFini
             )}
 
             {/* Dialog de transferência (depósito/retirada) */}
-            <Dialog open={!!transfer} onClose={closeTransfer} maxWidth="xs" fullWidth>
-                <DialogTitle>
-                    {transfer?.mode === 'withdraw' ? 'Retirar do estoque' : 'Transferir para o estoque'}
-                </DialogTitle>
-                <DialogContent>
-                    <Box display="flex" flexDirection="column" gap={2} pt={1}>
-                        {transfer?.mode === 'deposit' && (
-                            <FormControl fullWidth size="small">
-                                <InputLabel>Item</InputLabel>
-                                <Select
-                                    label="Item"
-                                    value={transferItemIndex}
-                                    onChange={(e) => {
-                                        setTransferItemIndex(e.target.value);
-                                        const item = ownItems[Number(e.target.value)];
-                                        setTransferQty(item?.quantity ?? 1);
-                                    }}
-                                >
-                                    {ownItems.map((item, idx) => (
-                                        <MenuItem key={item.id ?? idx} value={String(idx)}>
-                                            {item.name} (x{item.quantity})
-                                        </MenuItem>
-                                    ))}
-                                </Select>
-                            </FormControl>
-                        )}
-                        {transfer?.mode === 'withdraw' && (
-                            <Typography variant="body2">
-                                {transfer.stockItem.name} — disponível: {transfer.stockItem.quantity}
-                            </Typography>
-                        )}
-                        <NumberField
-                            fullWidth
-                            size="small"
-                            label="Quantidade"
-                            min={1}
-                            max={transfer?.mode === 'withdraw' ? transfer.stockItem.quantity : (selectedOwnItem?.quantity ?? 1)}
-                            value={transferQty}
-                            onChange={setTransferQty}
-                        />
-                    </Box>
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={closeTransfer} disabled={transferBusy}>Cancelar</Button>
-                    <Button
-                        variant="contained"
-                        onClick={confirmTransfer}
-                        disabled={transferBusy || (transfer?.mode === 'deposit' && !transferItemIndex)}
-                    >
-                        Confirmar
-                    </Button>
-                </DialogActions>
-            </Dialog>
+            <StockTransferDialog state={stockTransfer} ownItems={ownItems} />
 
             {/* Dialog de transação de fundo comum */}
-            <Dialog open={!!poolDialog} onClose={() => setPoolDialog(null)} maxWidth="xs" fullWidth>
-                <DialogTitle>
-                    {poolDialog?.mode === 'withdraw' ? 'Retirar do fundo' : 'Depositar no fundo'}: {poolDialog?.pool.name}
-                </DialogTitle>
-                <DialogContent>
-                    <Box display="flex" flexDirection="column" gap={2} pt={1}>
-                        <Typography variant="body2" color="text.secondary">
-                            Saldo atual: {poolDialog?.pool.value}{poolDialog?.pool.max !== undefined ? ` / ${poolDialog.pool.max}` : ''} {poolDialog?.pool.unit ?? ''}
-                        </Typography>
-                        <NumberField
-                            fullWidth
-                            size="small"
-                            label="Quantidade"
-                            min={1}
-                            max={poolDialog?.mode === 'withdraw' ? poolDialog.pool.value : undefined}
-                            value={poolAmount}
-                            onChange={setPoolAmount}
-                        />
-                    </Box>
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => setPoolDialog(null)} disabled={poolBusy}>Cancelar</Button>
-                    <Button variant="contained" onClick={confirmPoolTransaction} disabled={poolBusy}>
-                        Confirmar
-                    </Button>
-                </DialogActions>
-            </Dialog>
+            <PoolTransactionDialog state={poolTransaction} />
         </Paper>
     );
 }
