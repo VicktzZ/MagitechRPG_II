@@ -26,31 +26,15 @@ import PersonIcon from '@mui/icons-material/Person';
 import PetsIcon from '@mui/icons-material/Pets';
 import { color as tokenColor } from '@themes/tokens';
 import { useSnackbar } from 'notistack';
+import type { Combat, Combatant } from '@models';
+import type { Charsheet } from '@models/entities';
 import { useTheme } from '@mui/material';
-
-interface Combatant {
-    id: string;
-    name: string;
-    type: 'player' | 'creature';
-    currentLp?: number;
-    maxLp?: number;
-    currentMp?: number;
-    maxMp?: number;
-    avatar?: string;
-    odacId?: string;
-}
 
 interface CombatActionButtonProps {
     campaignId: string;
     campaignCode?: string;
-    combat: {
-        isActive: boolean;
-        phase: string;
-        round: number;
-        currentTurnIndex: number;
-        combatants: Combatant[];
-    } | null;
-    charsheets?: any[]; // Charsheets para obter stats de charsheet.session
+    combat?: Combat | null;
+    charsheets?: Charsheet[]; // Charsheets para obter os pontos atuais (stats) de cada jogador
     onActionComplete?: () => void;
 }
 
@@ -69,7 +53,7 @@ export default function CombatActionButton({
         if (combatant.type !== 'player') return null;
         
         // Busca o charsheet do combatente
-        const charsheet = charsheets.find((c: any) => 
+        const charsheet = charsheets.find(c => 
             c.id === combatant.id || c.id === combatant.odacId
         );
         

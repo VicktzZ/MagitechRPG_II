@@ -31,6 +31,8 @@ import { charsheetEntity } from '@utils/firestoreEntities'
 import { useCharsheetSystem } from '@hooks/useCharsheetSystem'
 import { color, font } from '@themes/tokens'
 import StatMeter from './StatMeter'
+import { errorMessage } from '@utils/errors';
+import { normalizeToArray } from '@utils/normalizeToArray'
 
 /** Texto só para leitor de tela (o rótulo do número ao lado, que a tela mostra por ícone) */
 const srOnly = {
@@ -41,30 +43,6 @@ const srOnly = {
     clip: 'rect(0 0 0 0)',
     whiteSpace: 'nowrap'
 } as const
-
-function normalizeToArray<T>(value: any): T[] {
-    if (!value) return []
-    if (Array.isArray(value)) return value
-    if (typeof value === 'object') {
-        const keys = Object.keys(value)
-        const isNumericKeys = keys.every(key => !isNaN(Number(key)))
-        if (isNumericKeys) {
-            return keys
-                .map(key => Number(key))
-                .sort((a, b) => a - b)
-                .map(key => value[key])
-        }
-
-        const values = Object.values(value)
-        const flattened = values.flatMap(v => {
-            if (Array.isArray(v)) return v
-            return [ v ]
-        })
-
-        return flattened.filter(v => v !== undefined && v !== null) as T[]
-    }
-    return []
-}
 
 // memo: com as referências de ficha estabilizadas por item (useStableArrayItems),
 // só o card do jogador cuja ficha mudou re-renderiza.
@@ -129,15 +107,15 @@ function PlayerCard({ charsheet }: { charsheet: Required<CharsheetDTO> }) {
             if (isWeapon) {
                 await charsheetService.updateFields(charsheet.id, {
                     'inventory.weapons': [ ...currentWeapons, item ]
-                } as any)
+                })
             } else if (isArmor) {
                 await charsheetService.updateFields(charsheet.id, {
                     'inventory.armors': [ ...currentArmors, item ]
-                } as any)
+                })
             } else {
                 await charsheetService.updateFields(charsheet.id, {
                     'inventory.items': [ ...currentItems, item ]
-                } as any)
+                })
             }
 
             enqueueSnackbar(`Item ${item.name} adicionado com sucesso!`, { variant: 'success' })
@@ -159,8 +137,8 @@ function PlayerCard({ charsheet }: { charsheet: Required<CharsheetDTO> }) {
             })
 
             enqueueSnackbar('Notificação enviada com sucesso!', { variant: 'success' })
-        } catch (error: any) {
-            enqueueSnackbar(`Erro ao enviar notificação: ${error.message}`, { variant: 'error' })
+        } catch (error) {
+            enqueueSnackbar(`Erro ao enviar notificação: ${errorMessage(error, 'tente novamente')}`, { variant: 'error' })
         }
         
         setNotificationDialogOpen(false)
@@ -178,9 +156,9 @@ function PlayerCard({ charsheet }: { charsheet: Required<CharsheetDTO> }) {
             await campaignService.removeUser(campaign.id, charsheet.userId)
 
             enqueueSnackbar('Usuário removido com sucesso!', { variant: 'success' })
-        } catch (error: any) {
+        } catch (error) {
             console.error('Erro ao remover usuário:', error)
-            enqueueSnackbar(`Erro ao remover usuário: ${error.message}`, { variant: 'error' })
+            enqueueSnackbar(`Erro ao remover usuário: ${errorMessage(error, 'tente novamente')}`, { variant: 'error' })
         }
 
         setRemoveUserDialogOpen(false)

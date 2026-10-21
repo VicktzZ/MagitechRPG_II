@@ -13,6 +13,7 @@ import { campaignService } from '@services';
 import { useMutation } from '@tanstack/react-query';
 import generateEntryCode from '@utils/generateEntryCode';
 import type { Campaign, RPGSystem } from '@models/entities';
+import { errorMessage } from '@utils/errors';
 
 export default function CampaignOptionsModal({
     open,
@@ -110,8 +111,8 @@ export default function CampaignOptionsModal({
 
             enqueueSnackbar('Campanha criada com sucesso!', { variant: 'success' });
             router.push(`/app/campaign/${campaignCodeGen}`);
-        } catch (error: any) {
-            enqueueSnackbar('Erro ao criar sessão: ' + error.message, { variant: 'error' });
+        } catch (error) {
+            enqueueSnackbar('Erro ao criar sessão: ' + errorMessage(error, 'tente novamente'), { variant: 'error' });
         }
     };
 

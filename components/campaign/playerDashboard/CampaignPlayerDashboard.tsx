@@ -40,6 +40,7 @@ import { useSession } from 'next-auth/react';
 import { campaignService } from '@services';
 import { useCharsheetSystem } from '@hooks/useCharsheetSystem';
 import type { Spell } from '@models/entities';
+import { normalizeToArray } from '@utils/normalizeToArray';
 import type { CharsheetDTO } from '@models/dtos';
 
 /** Notificação gravada na ficha (doações recebidas); o campo não consta no tipo da ficha */
@@ -53,30 +54,6 @@ interface EquipmentLike { id?: string, name: string, description?: string, effec
 
 const equipmentDescription = (item: EquipmentLike): string =>
     item.description || (typeof item.effect === 'string' ? item.effect : '')
-
-/**
- * Normaliza um valor que pode ser um array ou um objeto com chaves numéricas
- * Converte Record<number, T> para T[]
- */
-function normalizeToArray<T>(value: unknown): T[] {
-    if (!value) return [];
-    if (Array.isArray(value)) return value as T[];
-    
-    // Se é um objeto com chaves numéricas, converter para array
-    if (typeof value === 'object') {
-        const record = value as Record<string, T>;
-        const keys = Object.keys(record);
-        const isNumericKeys = keys.every(key => !isNaN(Number(key)));
-        if (isNumericKeys) {
-            return keys
-                .map(key => Number(key))
-                .sort((a, b) => a - b)
-                .map(key => record[key]!);
-        }
-    }
-    
-    return [];
-}
 
 export default function CampaignPlayerDashboard(): ReactElement | null {
     const { users, campaign, charsheets } = useCampaignContext();
@@ -265,7 +242,7 @@ export default function CampaignPlayerDashboard(): ReactElement | null {
             )
             
             // `notifications` não consta no tipo da ficha, mas é gravado nela
-            await updateCharsheet({ notifications: updatedNotifications } as unknown as Parameters<typeof updateCharsheet>[0])
+            await updateCharsheet({ notifications: updatedNotifications })
         } catch (error) {
             console.error('Erro ao marcar notificação como lida:', error)
         }

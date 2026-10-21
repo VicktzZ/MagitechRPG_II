@@ -37,7 +37,7 @@ import { color, duration, easing } from '@themes/tokens';
 import { useSnackbar } from 'notistack';
 import { useCampaignContext } from '@contexts';
 import { useSession } from 'next-auth/react';
-import type { Combat } from '@models';
+import type { Attributes, Combat } from '@models';
 import EffectBadges from './gmDashboard/actions/EffectBadges';
 
 interface CombatStatusProps {
@@ -83,17 +83,17 @@ function CombatStatus({
     const initiativeFormula = useMemo(() => {
         if (!userCombatant || !charsheets?.length) return null;
 
-        const charsheet = charsheets.find((c: any) => 
+        const charsheet = charsheets.find(c => 
             c.id === userCombatant.id || c.id === userCombatant.odacId
         );
 
         if (!charsheet) return null;
 
-        const agiExpertise = (charsheet as any).expertises?.Agilidade;
+        const agiExpertise = charsheet.expertises?.Agilidade;
         const expertiseValue = Number(agiExpertise?.value ?? 0) || 0;
 
         const defaultAttrKey = (agiExpertise?.defaultAttribute ?? 'des') as string;
-        let modsValue = Number((charsheet as any).mods?.attributes?.[defaultAttrKey] ?? 1);
+        let modsValue = Number(charsheet.mods?.attributes?.[defaultAttrKey as keyof Attributes] ?? 1);
         if (!Number.isFinite(modsValue) || modsValue < 1) modsValue = 1;
 
         return { numDice: modsValue, expertiseValue };
@@ -115,7 +115,7 @@ function CombatStatus({
         
     // Função para obter LP/MP da charsheet para jogadores
     const getPlayerStats = useCallback((combatantId: string, odacId?: string) => {
-        const charsheet = charsheets?.find((c: any) => 
+        const charsheet = charsheets?.find(c => 
             c.id === combatantId || c.id === odacId
         );
         

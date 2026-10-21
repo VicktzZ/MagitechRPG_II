@@ -58,6 +58,7 @@ import {
 import CreatureCreator from './CreatureCreator';
 import CampaignStatsModal from '../CampaignStatsModal';
 import WidgetManagerDialog from '../widget/WidgetManagerDialog';
+import { errorMessage } from '@utils/errors';
 
 /** Botões da barra de ações: altura mínima de 40px (alvo de toque confortável) */
 const barButtonSx = { minHeight: 40 } as const;
@@ -101,12 +102,12 @@ export default function GMActions(): ReactElement {
         return users.players?.map(player => {
             // campaign.players usa `userId`, não `odacId`
             const playerInCampaign = campaign?.players?.find(p =>
-                (p as any).odacId === player.id || p.userId === player.id
+                (p as { odacId?: string }).odacId === player.id || p.userId === player.id
             );
-            const charsheet = realtimeCharsheets?.find((c: any) => c.id === playerInCampaign?.charsheetId);
+            const charsheet = realtimeCharsheets?.find(c => c.id === playerInCampaign?.charsheetId);
             // Vantagens adquiridas nesta campanha (sessão correspondente ao campaignCode)
             const campaignPerks = charsheet?.session?.find(
-                (s: any) => s.campaignCode === campaign.campaignCode
+                s => s.campaignCode === campaign.campaignCode
             )?.perks ?? [];
 
             return {
@@ -213,9 +214,9 @@ export default function GMActions(): ReactElement {
             }
             enqueueSnackbar('Campanha reaberta!', { variant: 'success' });
             await queryClient.invalidateQueries({ queryKey: [ 'campaignData', campaign.campaignCode ] });
-        } catch (error: any) {
+        } catch (error) {
             console.error('Erro ao reabrir campanha:', error);
-            enqueueSnackbar(error.message || 'Erro ao reabrir campanha', { variant: 'error' });
+            enqueueSnackbar(errorMessage(error, 'Erro ao reabrir campanha'), { variant: 'error' });
         } finally {
             setIsReopening(false);
         }
@@ -224,8 +225,8 @@ export default function GMActions(): ReactElement {
     // Custom item handler
     const handleAddCustomItem = async (created: Weapon | Armor | Item) => {
         try {
-            const isWeapon = (it: any): it is Weapon => it && 'hit' in it && 'effect' in it && 'ammo' in it;
-            const isArmor = (it: any): it is Armor => it && 'displacementPenalty' in it && 'value' in it && 'categ' in it;
+            const isWeapon = (it: object): it is Weapon => it && 'hit' in it && 'effect' in it && 'ammo' in it;
+            const isArmor = (it: object): it is Armor => it && 'displacementPenalty' in it && 'value' in it && 'categ' in it;
 
             const type: 'weapon' | 'armor' | 'item' = isWeapon(created) ? 'weapon' : isArmor(created) ? 'armor' : 'item';
 

@@ -27,6 +27,7 @@ import { useSnackbar } from 'notistack'
 import type { CombatEffect, CombatEffectCategory } from '@models'
 import { campaignService } from '@services'
 import { getCategoryLabel, getEffectDisplayName } from '@utils/combatEffectLabels'
+import { errorMessage } from '@utils/errors';
 
 interface ApplyEffectDialogProps {
     open: boolean
@@ -153,9 +154,9 @@ export default function ApplyEffectDialog({
             enqueueSnackbar(`Efeito ${getEffectDisplayName(selectedEffect, level)} aplicado em ${target.name}`, { variant: 'success' })
             onApplied?.()
             onClose()
-        } catch (err: any) {
+        } catch (err) {
             console.error('Erro ao aplicar efeito:', err)
-            enqueueSnackbar(err?.response?.data?.error ?? 'Erro ao aplicar efeito', { variant: 'error' })
+            enqueueSnackbar(errorMessage(err, 'Erro ao aplicar efeito'), { variant: 'error' })
         } finally {
             setApplying(false)
         }

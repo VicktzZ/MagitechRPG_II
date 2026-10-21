@@ -99,10 +99,10 @@ export default function SessionChat() {
     useEffect(() => {
         const list = persistedMessages ?? [];
         if (Array.isArray(list)) {
-            const unique: any[] = [];
+            const unique: Array<Message & { isPending: boolean }> = [];
             const seen = new Set<string>();
             for (const m of list) {
-                const key = (m as any).id || `${(m as any).timestamp}-${(m as any).by?.id}-${(m as any).text}`;
+                const key = m.id || `${m.timestamp}-${m.by?.id}-${m.text}`;
                 if (seen.has(key)) continue;
                 seen.add(key);
                 unique.push({ ...m, isPending: false });
@@ -164,7 +164,7 @@ export default function SessionChat() {
                 <ChatHeader
                     messageCount={messages.length}
                     isAdmin={!!isAdmin}
-                    combat={campaign.session?.combat as any}
+                    combat={campaign.session?.combat}
                     campaignId={campaign.id}
                     onTestClick={openTestModal}
                 />

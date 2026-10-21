@@ -27,6 +27,15 @@ import { PerkTypeEnum } from '@enums/rogueliteEnum';
 import type { PlayerInfo, ShopConfig } from './types';
 import { RARITY_OPTIONS, DEFAULT_SHOP_CONFIG } from './constants';
 
+/** Item da loja como a lista do mestre o mostra (nome, tipo, raridade e preço) */
+interface ShopItemSummary {
+    id: string
+    name: string
+    perkType: string
+    rarity: string
+    price: number
+}
+
 interface ShopDialogProps {
     open: boolean;
     onClose: () => void;
@@ -45,7 +54,7 @@ export default function ShopDialog({
     const { enqueueSnackbar } = useSnackbar();
     const [ shopConfig, setShopConfig ] = useState<ShopConfig>(DEFAULT_SHOP_CONFIG);
     const [ isUpdating, setIsUpdating ] = useState(false);
-    const [ shopItems, setShopItems ] = useState<any[]>([]);
+    const [ shopItems, setShopItems ] = useState<ShopItemSummary[]>([]);
     const [ isLoadingItems, setIsLoadingItems ] = useState(false);
     const isShopOpen = existingShop?.isOpen ?? false;
 
@@ -394,7 +403,7 @@ export default function ShopDialog({
                                 </Typography>
                             ) : (
                                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, maxHeight: 200, overflow: 'auto' }}>
-                                    {shopItems.map((item: any) => (
+                                    {shopItems.map(item => (
                                         <Box 
                                             key={item.id}
                                             sx={{ 

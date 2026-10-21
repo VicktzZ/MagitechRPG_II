@@ -27,6 +27,7 @@ import { campaignChatContext, campaignContext, campaignMessagesContext, type Cam
 import { campaignService } from '@services';
 import type { Campaign, RPGSystem } from '@models/entities';
 import { useSnackbar } from 'notistack';
+import { errorMessage } from '@utils/errors';
 
 export function CampaignProvider({ children, code }: { children: ReactElement, code: string }) {
     useEffect(() => {
@@ -144,15 +145,15 @@ export function CampaignProvider({ children, code }: { children: ReactElement, c
 
             if (!response.ok) {
                 const error = await response.json();
-                throw new Error(error.message || 'Erro ao criar ficha');
+                throw new Error(errorMessage(error, 'Erro ao criar ficha'));
             }
 
             const data = await response.json();
             enqueueSnackbar('Ficha criada com sucesso!', { variant: 'success' });
             setCharsheetId(data.charsheet.id);
-        } catch (error: any) {
+        } catch (error) {
             console.error('Erro ao criar ficha roguelite:', error);
-            enqueueSnackbar(error.message || 'Erro ao criar ficha', { variant: 'error' });
+            enqueueSnackbar(errorMessage(error, 'Erro ao criar ficha'), { variant: 'error' });
         } finally {
             setIsCreating(false);
         }

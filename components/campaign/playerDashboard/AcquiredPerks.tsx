@@ -37,7 +37,7 @@ export default function AcquiredPerks() {
         if (!charsheet?.session || !campaign?.campaignCode) return [];
 
         const sessionData = charsheet.session.find(
-            (s: any) => s.campaignCode === campaign.campaignCode
+            s => s.campaignCode === campaign.campaignCode
         );
 
         return sessionData?.perks || [];
@@ -127,7 +127,7 @@ export default function AcquiredPerks() {
                         </Typography>
                     ) : (
                         <Stack spacing={1}>
-                            {perks.map((perk: any, index: number) => (
+                            {perks.map((perk, index) => (
                                 <Tooltip 
                                     key={perk.id || index}
                                     title={perk.description || 'Sem descrição'}

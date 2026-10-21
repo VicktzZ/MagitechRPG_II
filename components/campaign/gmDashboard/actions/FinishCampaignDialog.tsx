@@ -14,6 +14,7 @@ import {
 } from '@mui/material';
 import FlagIcon from '@mui/icons-material/Flag';
 import { useSnackbar } from 'notistack';
+import { errorMessage } from '@utils/errors';
 
 interface FinishCampaignDialogProps {
     open: boolean;
@@ -46,9 +47,9 @@ export default function FinishCampaignDialog({
             enqueueSnackbar('Campanha finalizada!', { variant: 'success' });
             onClose();
             onFinished?.();
-        } catch (error: any) {
+        } catch (error) {
             console.error('Erro ao finalizar campanha:', error);
-            enqueueSnackbar(error.message || 'Erro ao finalizar campanha', { variant: 'error' });
+            enqueueSnackbar(errorMessage(error, 'Erro ao finalizar campanha'), { variant: 'error' });
         } finally {
             setIsFinishing(false);
         }

@@ -104,7 +104,7 @@ function ChatHeader({
                         <CombatActionButton 
                             campaignId={campaignId}
                             campaignCode={campaign?.campaignCode}
-                            combat={combat as any}
+                            combat={combat}
                             charsheets={charsheets}
                         />
                     </Box>

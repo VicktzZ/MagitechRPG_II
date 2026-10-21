@@ -41,6 +41,7 @@ import type { CombatEffect, CombatEffectCategory, CombatEffectTiming, CombatEffe
 import { campaignService, combatEffectService } from '@services'
 import type { CreateCombatEffectPayload } from '@services/combatEffectService'
 import { getCategoryLabel, getLevelLabel } from '@utils/combatEffectLabels'
+import { errorMessage } from '@utils/errors';
 
 interface CombatEffectsCatalogDialogProps {
     open: boolean
@@ -237,9 +238,9 @@ export default function CombatEffectsCatalogDialog({
             }
             resetForm()
             await load()
-        } catch (err: any) {
+        } catch (err) {
             console.error('Erro ao salvar efeito:', err)
-            enqueueSnackbar(err?.response?.data?.error ?? 'Erro ao salvar efeito', { variant: 'error' })
+            enqueueSnackbar(errorMessage(err, 'Erro ao salvar efeito'), { variant: 'error' })
         } finally {
             setSaving(false)
         }
@@ -266,9 +267,9 @@ export default function CombatEffectsCatalogDialog({
             resetForm()
             setTab('campaign')
             await load()
-        } catch (err: any) {
+        } catch (err) {
             console.error('Erro ao clonar efeito:', err)
-            enqueueSnackbar(err?.response?.data?.error ?? 'Erro ao clonar efeito', { variant: 'error' })
+            enqueueSnackbar(errorMessage(err, 'Erro ao clonar efeito'), { variant: 'error' })
         } finally {
             setSaving(false)
         }
@@ -283,8 +284,8 @@ export default function CombatEffectsCatalogDialog({
                 enqueueSnackbar('Efeito global removido', { variant: 'success' })
                 resetForm()
                 await load()
-            } catch (err: any) {
-                enqueueSnackbar(err?.response?.data?.error ?? 'Falha ao remover efeito global', { variant: 'error' })
+            } catch (err) {
+                enqueueSnackbar(errorMessage(err, 'Falha ao remover efeito global'), { variant: 'error' })
             }
             return
         }
@@ -294,8 +295,8 @@ export default function CombatEffectsCatalogDialog({
             enqueueSnackbar('Efeito removido', { variant: 'success' })
             resetForm()
             await load()
-        } catch (err: any) {
-            enqueueSnackbar(err?.response?.data?.error ?? 'Falha ao remover efeito', { variant: 'error' })
+        } catch (err) {
+            enqueueSnackbar(errorMessage(err, 'Falha ao remover efeito'), { variant: 'error' })
         }
     }
 

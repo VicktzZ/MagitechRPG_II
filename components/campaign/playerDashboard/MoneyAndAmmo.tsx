@@ -24,6 +24,7 @@ import {
     MenuItem,
     Paper,
     Select,
+    type SelectChangeEvent,
     Stack,
     TextField,
     Tooltip,
@@ -124,7 +125,7 @@ export default function MoneyAndAmmo(): ReactElement {
         });
     };
 
-    const handleAmmoTypeChange = (event: any) => {
+    const handleAmmoTypeChange = (event: SelectChangeEvent) => {
         setAmmo(prev => ({
             ...prev,
             type: event.target.value
@@ -229,9 +230,7 @@ export default function MoneyAndAmmo(): ReactElement {
                                         // Atualizar no Firestore em tempo real — só o dinheiro:
                                         // gravar o inventário inteiro sobrescrevia itens recebidos
                                         // ao mesmo tempo (loja, doação, mestre)
-                                        updateCharsheet({
-                                            'inventory.money': value
-                                        } as any);
+                                        updateCharsheet({ 'inventory.money': value });
                                     }}
                                     type="number"
                                     variant="outlined"
