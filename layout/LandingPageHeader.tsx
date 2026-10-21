@@ -41,6 +41,7 @@ import googleIcon from '@public/icons/google_icon.svg';
 import Image from 'next/image';
 import { PlanBadge } from '@components/subscription';
 import { useCurrentUserDoc } from '@hooks/useCurrentUserDoc';
+import { color } from '@themes/tokens';
 import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
 
 export default function LandingPageHeader(): ReactElement {
@@ -126,7 +127,7 @@ export default function LandingPageHeader(): ReactElement {
                 sx: {
                     width: 280,
                     backgroundColor: 'background.paper',
-                    color: 'white'
+                    color: 'text.primary'
                 }
             }}
         >
@@ -136,7 +137,7 @@ export default function LandingPageHeader(): ReactElement {
                 </IconButton>
             </Box>
             
-            <Divider sx={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }} />
+            <Divider />
             
             <List>
                 {navItems.map((item) => (
@@ -154,7 +155,7 @@ export default function LandingPageHeader(): ReactElement {
                     </ListItem>
                 ))}
                 
-                <Divider sx={{ my: 2, backgroundColor: 'rgba(255, 255, 255, 0.2)' }} />
+                <Divider sx={{ my: 2 }} />
                 
                 {!session ? (
                     <>
@@ -203,7 +204,7 @@ export default function LandingPageHeader(): ReactElement {
                                 )}
                             </Box>
                         </ListItem>
-                        <Divider sx={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }} />
+                        <Divider />
                         <ListItem 
                             button 
                             onClick={() => {
@@ -274,7 +275,7 @@ export default function LandingPageHeader(): ReactElement {
                                     sx={{ 
                                         opacity: 0.9,
                                         '&:hover': { opacity: 1 },
-                                        backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                                        backgroundColor: 'background.raised',
                                         borderRadius: '8px',
                                         px: 2
                                     }}
@@ -283,7 +284,7 @@ export default function LandingPageHeader(): ReactElement {
                                 </Button>
                             ))}
                             
-                            <Box sx={{ ml: 2, height: '24px', width: '1px', backgroundColor: 'rgba(255, 255, 255, 0.3)' }} />
+                            <Box sx={{ ml: 2, height: '24px', width: '1px', backgroundColor: 'divider' }} />
                             
                             {!session && providers ? (
                                 <Box sx={{ display: 'flex', gap: 1 }}>
@@ -301,12 +302,13 @@ export default function LandingPageHeader(): ReactElement {
                                             }
                                             sx={{ 
                                                 borderRadius: '8px',
-                                                borderColor: 'rgba(255, 255, 255, 0.3)',
+                                                color: 'text.primary',
+                                                borderColor: color.borderControl,
                                                 px: 2,
                                                 transition: 'all 0.2s',
                                                 '&:hover': {
-                                                    borderColor: 'rgba(255, 255, 255, 0.8)',
-                                                    background: 'rgba(255, 255, 255, 0.1)'
+                                                    borderColor: 'text.secondary',
+                                                    backgroundColor: 'action.hover'
                                                 }
                                             }}
                                         >
@@ -340,10 +342,11 @@ export default function LandingPageHeader(): ReactElement {
                                             }}
                                             sx={{ 
                                                 p: 0.5, 
-                                                border: '2px solid rgba(255, 255, 255, 0.2)',
+                                                border: '2px solid',
+                                                borderColor: 'divider',
                                                 transition: 'all 0.2s',
                                                 '&:hover': {
-                                                    border: '2px solid rgba(255, 255, 255, 0.5)'
+                                                    borderColor: 'text.disabled'
                                                 }
                                             }}
                                         >
@@ -402,9 +405,9 @@ export default function LandingPageHeader(): ReactElement {
                             onClick={handleMobileMenuToggle}
                             sx={{ 
                                 ml: 1,
-                                backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                                backgroundColor: 'background.raised',
                                 '&:hover': {
-                                    backgroundColor: 'rgba(255, 255, 255, 0.25)'
+                                    backgroundColor: 'background.overlay'
                                 }
                             }}
                         >

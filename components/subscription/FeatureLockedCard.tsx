@@ -77,7 +77,7 @@ export function FeatureLockedCard({
                     top: 12,
                     right: 12,
                     bgcolor: planMetadata.color,
-                    color: 'white',
+                    color: 'primary.contrastText',
                     fontWeight: 'bold',
                     zIndex: 1
                 }}
@@ -106,7 +106,7 @@ export function FeatureLockedCard({
                             p: 2
                         }}
                     >
-                        <LockIcon sx={{ fontSize: 48, color: 'white' }} />
+                        <LockIcon sx={{ fontSize: 48, color: 'text.primary' }} />
                     </Box>
                 </Box>
             )}

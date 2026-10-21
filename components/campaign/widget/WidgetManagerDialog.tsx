@@ -59,6 +59,9 @@ import { defaultItems } from '@constants/defaultItems';
 import { defaultWeapons } from '@constants/defaultWeapons';
 import { defaultArmors } from '@constants/defaultArmors';
 
+/** Cor inicial de um recurso novo (o seletor de cor exige hex): o ciano de mana e informação */
+const DEFAULT_RESOURCE_COLOR = color.cyan;
+
 interface WidgetManagerDialogProps {
     open: boolean;
     onClose: () => void;
@@ -708,7 +711,7 @@ export default function WidgetManagerDialog({ open, onClose, initialWidgetId }: 
                                             <Grid item xs={1} sm={1}>
                                                 <input
                                                     type="color"
-                                                    value={resource.color ?? '#1976d2'}
+                                                    value={resource.color ?? DEFAULT_RESOURCE_COLOR}
                                                     onChange={(e) => {
                                                         const resources = [ ...widget.resources ];
                                                         resources[idx] = { ...resource, color: e.target.value };
@@ -730,7 +733,7 @@ export default function WidgetManagerDialog({ open, onClose, initialWidgetId }: 
                                         onClick={() => patch({
                                             resources: [
                                                 ...widget.resources,
-                                                { id: crypto.randomUUID(), name: 'Novo Recurso', icon: '📦', value: 0, max: 100, color: '#1976d2' }
+                                                { id: crypto.randomUUID(), name: 'Novo Recurso', icon: '📦', value: 0, max: 100, color: DEFAULT_RESOURCE_COLOR }
                                             ]
                                         })}
                                     >

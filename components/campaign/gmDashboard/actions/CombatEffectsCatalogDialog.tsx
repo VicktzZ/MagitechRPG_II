@@ -36,6 +36,7 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import SaveIcon from '@mui/icons-material/Save'
 import CasinoIcon from '@mui/icons-material/Casino'
 import { useSnackbar } from 'notistack'
+import { color } from '@themes/tokens'
 import type { CombatEffect, CombatEffectCategory, CombatEffectTiming, CombatEffectElement, CombatEffectLevel } from '@models'
 import { campaignService, combatEffectService } from '@services'
 import type { CreateCombatEffectPayload } from '@services/combatEffectService'
@@ -80,7 +81,7 @@ const EMPTY_FORM: CreateCombatEffectPayload = {
     category: 'damage',
     timing: 'turn',
     element: '',
-    color: '#ff5722',
+    color: color.warning,
     icon: '💥',
     usesLevels: true,
     levels: [ { level: 1, formula: '1d6', duration: 2, description: '' } ]
@@ -336,7 +337,7 @@ export default function CombatEffectsCatalogDialog({
                                         <Chip
                                             label={eff.icon}
                                             size="small"
-                                            sx={{ bgcolor: eff.color, color: '#fff', mr: 1 }}
+                                            sx={{ bgcolor: eff.color, color: theme => (eff.color ? theme.palette.getContrastText(eff.color) : theme.palette.text.primary), mr: 1 }}
                                         />
                                         <ListItemText
                                             primary={eff.name}

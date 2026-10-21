@@ -2,6 +2,8 @@ import { v4 as uuidv4 } from 'uuid'
 import { IsArray, IsBoolean, IsHexColor, IsNumber, IsOptional, IsString, ValidateNested } from 'class-validator'
 import { Type } from 'class-transformer'
 
+import { color as tokenColor } from '../themes/tokens'
+
 export type CombatEffectCategory = 'damage' | 'heal' | 'info' | 'buff' | 'debuff'
 export type CombatEffectTiming = 'turn' | 'round'
 export type CombatEffectElement =
@@ -117,7 +119,7 @@ export class CombatEffect {
     @IsString()
         element?: CombatEffectElement
 
-    @IsHexColor() color: string = '#ff5722'
+    @IsHexColor() color: string = tokenColor.warning
 
     @IsString() icon: string = '💥'
 

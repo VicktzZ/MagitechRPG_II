@@ -1,7 +1,7 @@
 'use client';
 
 import { Add, Remove, Tune } from '@mui/icons-material';
-import { font } from '@themes/tokens'
+import { color, font } from '@themes/tokens'
 import {
     alpha,
     Box,
@@ -137,7 +137,7 @@ export default function CustomResources(): ReactElement | null {
                     const pct = range > 0 ? ((value - def.min) / range) * 100 : 0;
                     const resolvedThresholds = resolveThresholds(def, personalMax);
                     const activeThreshold = getActiveResolvedThreshold(def, value, personalMax);
-                    const barColor = activeThreshold?.color ?? def.color ?? '#1976d2';
+                    const barColor = activeThreshold?.color ?? def.color ?? color.amber;
 
                     return (
                         <Box key={def.key}>

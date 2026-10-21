@@ -74,7 +74,7 @@ export function Weapon(props: ItemTyping<'weapon'>): ReactElement {
                         p: 2,
                         backgroundColor: alpha(theme.palette.background.paper, 0.3),
                         borderRadius: 2,
-                        border: `1px solid ${alpha('#ef5350', 0.2)}`
+                        border: `1px solid ${alpha(theme.palette.error.main, 0.2)}`
                     }}
                 >
                     <Stack direction="row" justifyContent="space-between" mb={1}>

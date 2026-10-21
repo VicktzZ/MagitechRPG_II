@@ -12,7 +12,6 @@ import {
     Typography,
     Stack,
     Tooltip,
-    useTheme,
     FormControl,
     Select,
     MenuItem,
@@ -48,7 +47,6 @@ interface ExpertiseEntry {
 
 export default function ExpertiseSection(): ReactElement {
     const { charsheet } = useCampaignCurrentCharsheetContext();
-    const theme = useTheme();
     const [ filterLevel, setFilterLevel ] = useState<ExpertiseLevel>('all');
     const [ sortOrder, setSortOrder ] = useState<SortOrder>('alpha-asc');
     const [ systemExpertises, setSystemExpertises ] = useState<RPGSystem['expertises'] | null>(null);
@@ -256,7 +254,7 @@ export default function ExpertiseSection(): ReactElement {
                             display: 'flex',
                             justifyContent: 'space-around',
                             p: 2,
-                            bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
+                            bgcolor: 'background.raised',
                             borderRadius: 2,
                             border: '1px solid',
                             borderColor: 'divider',
@@ -290,7 +288,7 @@ export default function ExpertiseSection(): ReactElement {
                             flexWrap: 'wrap',
                             alignItems: 'center',
                             p: 2,
-                            bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.01)',
+                            bgcolor: 'background.raised',
                             borderRadius: 2,
                             border: '1px solid',
                             borderColor: 'divider'

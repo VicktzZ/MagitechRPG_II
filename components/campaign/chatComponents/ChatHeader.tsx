@@ -40,7 +40,7 @@ function ChatHeader({
             sx={{
                 p: 3,
                 bgcolor: 'background.paper',
-                color: 'white',
+                color: 'text.primary',
                 borderRadius: '0 0 16px 0',
                 position: 'relative',
                 overflow: 'hidden'
@@ -52,8 +52,9 @@ function ChatHeader({
                         sx={{
                             p: 1,
                             borderRadius: 2,
-                            bgcolor: 'rgba(255,255,255,0.2)',
-                            border: '1px solid rgba(255,255,255,0.3)'
+                            bgcolor: 'background.raised',
+                            border: '1px solid',
+                            borderColor: 'divider'
                         }}
                     >
                         <Chat sx={{ fontSize: '1.5rem' }} />
@@ -67,8 +68,8 @@ function ChatHeader({
                                 label={`${messageCount} mensagem${messageCount !== 1 ? 's' : ''}`}
                                 size="small"
                                 sx={{
-                                    bgcolor: 'rgba(255,255,255,0.2)',
-                                    color: 'white',
+                                    bgcolor: 'background.raised',
+                                    color: 'text.primary',
                                     fontWeight: 600
                                 }}
                             />
@@ -85,12 +86,13 @@ function ChatHeader({
                                 startIcon={<Casino />}
                                 onClick={onTestClick}
                                 sx={{
-                                    bgcolor: 'rgba(255,255,255,0.2)',
-                                    color: 'white',
-                                    border: '1px solid rgba(255,255,255,0.3)',
+                                    bgcolor: 'primary.main',
+                                    color: 'primary.contrastText',
+                                    border: '1px solid',
+                                    borderColor: 'primary.main',
                                     fontWeight: 600,
                                     '&:hover': {
-                                        bgcolor: 'rgba(255,255,255,0.3)'
+                                        bgcolor: 'primary.light'
                                     },
                                     transition: 'all 0.2s ease'
                                 }}

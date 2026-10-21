@@ -35,8 +35,7 @@ import {
     Paper,
     Stack,
     Tooltip,
-    Typography,
-    useTheme
+    Typography
 } from '@mui/material';
 import { blue, green, grey, orange, purple, red } from '@mui/material/colors';
 import { color } from '@themes/tokens';
@@ -204,7 +203,6 @@ export default function SpellsSection(): ReactElement {
     const { campaign } = useCampaignContext();
     const { handleSendMessage, setIsChatOpen, isChatOpen } = useChatContext();
     const { data: session } = useSession();
-    const theme = useTheme();
     const { enqueueSnackbar } = useSnackbar();
 
     const [ expandedSpell, setExpandedSpell ] = useState<string | false>(false)
@@ -394,7 +392,7 @@ export default function SpellsSection(): ReactElement {
                             justifyContent: 'space-between',
                             alignItems: 'center',
                             p: 2,
-                            bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
+                            bgcolor: 'background.raised',
                             borderRadius: 2,
                             border: '1px solid',
                             borderColor: 'divider'

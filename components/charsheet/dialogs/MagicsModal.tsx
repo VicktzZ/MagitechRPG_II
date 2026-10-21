@@ -5,12 +5,12 @@ import { magiaService as spellService } from '@services';
 import { ResourceListModal } from '@components/utils';
 import { elements, specialElements } from '@constants';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Box, Backdrop } from '@mui/material';
+import { alpha, Box, Backdrop } from '@mui/material';
 import type { Spell } from '@models/entities';
 import type { ReactElement } from 'react';
 import type { CharsheetDTO } from '@models/dtos';
 import { SPELL_FILTERS } from '@utils/spellCategory';
-import { shadow } from '@themes/tokens';
+import { color, shadow } from '@themes/tokens';
 
 import Magic from '../subcomponents/Magic';
 
@@ -107,7 +107,7 @@ export default function SpellsModal({ open, onClose }: { open: boolean, onClose:
                         onClick={onClose}
                         sx={{ 
                             zIndex: 1300,
-                            backgroundColor: 'rgba(0, 0, 0, 0.8)'
+                            backgroundColor: alpha(color.canvas, 0.7)
                         }}
                     />
                     <Box

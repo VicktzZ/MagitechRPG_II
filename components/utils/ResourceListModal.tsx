@@ -29,6 +29,7 @@ import { useResourceList } from '@hooks/useResourceList';
 import { CustomMenu } from '@layout';
 import type { ResourceListModalProps } from '@models/types/components';
 import { collectFilterOptions, getClientFilters } from '@utils/filterSelection';
+import { color } from '@themes/tokens';
 
 /** Seção (lista de checkboxes) de um menu de filtro */
 interface FilterSection {
@@ -514,7 +515,7 @@ function ResourceListModal({
                             background: 'transparent'
                         },
                         '&::-webkit-scrollbar-thumb': {
-                            background: '#888',
+                            background: color.inkFaint,
                             borderRadius: '3px'
                         }
                     }}>

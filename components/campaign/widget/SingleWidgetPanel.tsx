@@ -311,6 +311,10 @@ export default function SingleWidgetPanel({ widget, campaignId, isUserGM, isFini
     };
 
     const dangerAlerts = widget.alerts?.filter(a => a.severity === 'danger') ?? [];
+
+    // Texto do cabeçalho: branco sobre o vermelho de alerta, escuro sobre o âmbar
+
+    const headerText = dangerAlerts.length > 0 ? 'common.white' : 'primary.contrastText'
     const stockWeight = (widget.stock ?? []).reduce((sum, s) => sum + (s.weight || 0) * s.quantity, 0);
     const selectedOwnItem = ownItems[Number(transferItemIndex)];
 
@@ -340,7 +344,7 @@ export default function SingleWidgetPanel({ widget, campaignId, isUserGM, isFini
                     bgcolor: dangerAlerts.length > 0
                         ? alpha(red[600], 0.9)
                         : alpha(theme.palette.primary.main, 0.85),
-                    color: 'white'
+                    color: headerText
                 }}
             >
                 <Typography fontSize="1.4rem" lineHeight={1}>{widget.icon || '📋'}</Typography>
@@ -359,8 +363,8 @@ export default function SingleWidgetPanel({ widget, campaignId, isUserGM, isFini
                         label={condition.label}
                         size="small"
                         sx={{
-                            bgcolor: alpha('#000', 0.25),
-                            color: 'white',
+                            bgcolor: alpha(theme.palette.background.default, 0.25),
+                            color: headerText,
                             fontWeight: 700,
                             height: 20,
                             fontSize: '0.62rem'
@@ -369,17 +373,17 @@ export default function SingleWidgetPanel({ widget, campaignId, isUserGM, isFini
                 )}
                 {(widget.alerts?.length ?? 0) > 0 && (
                     <Chip
-                        icon={<WarningAmberIcon sx={{ fontSize: 14, color: 'white !important' }} />}
+                        icon={<WarningAmberIcon sx={{ fontSize: 14, color: 'inherit !important' }} />}
                         label={widget.alerts.length}
                         size="small"
-                        sx={{ bgcolor: alpha('#000', 0.25), color: 'white', height: 20, fontSize: '0.65rem' }}
+                        sx={{ bgcolor: alpha(theme.palette.background.default, 0.25), color: headerText, height: 20, fontSize: '0.65rem' }}
                     />
                 )}
                 {isUserGM && (
                     <Tooltip title="Administrar (Mestre)">
                         <IconButton
                             size="small"
-                            sx={{ color: 'white' }}
+                            sx={{ color: headerText }}
                             onClick={(e) => { e.stopPropagation(); setManagerOpen(true); }}
                         >
                             <SettingsIcon fontSize="small" />
@@ -388,7 +392,7 @@ export default function SingleWidgetPanel({ widget, campaignId, isUserGM, isFini
                 )}
                 <IconButton
                     size="small"
-                    sx={{ color: 'white', transform: expanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}
+                    sx={{ color: headerText, transform: expanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}
                 >
                     <ExpandMoreIcon fontSize="small" />
                 </IconButton>

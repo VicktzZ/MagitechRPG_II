@@ -1,5 +1,4 @@
-import { Box, Button, Typography } from '@mui/material';
-import { indigo, lime, orange } from '@mui/material/colors';
+import { alpha, Box, Button, Typography } from '@mui/material';
 import { color as tokenColor } from '@themes/tokens';
 import { type ReactNode, useState } from 'react';
 
@@ -33,23 +32,15 @@ export function StatusBar({
         setInputValue(Math.max(1, value));
     };
 
-    const getOverhealColor = (baseColor: string) => {
-        const colorMap: Record<string, string> = {
-            [tokenColor.lp]: orange.A700,
-            [tokenColor.mp]: indigo.A700,
-            [tokenColor.ap]: lime.A700
-        };
-        return colorMap[baseColor] || baseColor;
-    };
-
-    const overhealColor = getOverhealColor(color);
+    // O overheal é sempre âmbar: destaca-se de LP (vermelho), MP (ciano) e AP (cinza) e combina com o "(+N)" do texto
+    const overhealColor = tokenColor.amber;
 
     return (
         <Box sx={{ mb: 3 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5, flexWrap: 'wrap', gap: 1 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <span style={{ fontSize: '16px', display: 'inline-flex', color }}>{icon}</span>
-                    <Typography variant="caption" sx={{ color: '#d1d5db', fontWeight: 500, fontSize: { xs: '10px', sm: '12px' } }}>
+                    <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500, fontSize: { xs: '10px', sm: '12px' } }}>
                         {label}
                     </Typography>
                     <Typography
@@ -57,7 +48,7 @@ export function StatusBar({
                         sx={{
                             fontWeight: 700,
                             ml: 0.5,
-                            color: 'white' // Sempre branco para boa legibilidade
+                            color: 'text.primary' // Texto principal para boa legibilidade
                         }}
                     >
                         {current}/{max}
@@ -65,7 +56,7 @@ export function StatusBar({
                             <span style={{
                                 fontSize: '10px',
                                 marginLeft: '4px',
-                                color: '#fbbf24', // Amarelo para destacar o overheal
+                                color: tokenColor.amber, // Âmbar para destacar o overheal
                                 fontWeight: 600
                             }}>
                                 (+{overValue})
@@ -82,11 +73,11 @@ export function StatusBar({
                                 width: '40px',
                                 height: '24px',
                                 minWidth: 'unset',
-                                bgcolor: 'rgba(239, 68, 68, 0.2)',
-                                color: '#f87171',
-                                border: '1px solid rgba(239, 68, 68, 0.3)',
+                                bgcolor: alpha(tokenColor.danger, 0.16),
+                                color: 'text.primary',
+                                border: `1px solid ${alpha(tokenColor.danger, 0.4)}`,
                                 '&:hover': {
-                                    bgcolor: 'rgba(239, 68, 68, 0.3)'
+                                    bgcolor: alpha(tokenColor.danger, 0.28)
                                 },
                                 '&:disabled': {
                                     opacity: 0.3
@@ -105,10 +96,10 @@ export function StatusBar({
                             width: '40px',
                             height: '24px',
                             textAlign: 'center',
-                            backgroundColor: 'rgba(71, 85, 105, 0.3)',
-                            border: '1px solid rgba(71, 85, 105, 0.5)',
+                            backgroundColor: tokenColor.surfaceRaised,
+                            border: `1px solid ${tokenColor.borderControl}`,
                             borderRadius: '4px',
-                            color: 'white',
+                            color: tokenColor.ink,
                             fontSize: '12px',
                             fontWeight: 600
                         }}
@@ -120,11 +111,11 @@ export function StatusBar({
                             width: '40px',
                             height: '24px',
                             minWidth: 'unset',
-                            bgcolor: 'rgba(34, 197, 94, 0.2)',
-                            color: '#4ade80',
-                            border: '1px solid rgba(34, 197, 94, 0.3)',
+                            bgcolor: alpha(tokenColor.success, 0.16),
+                            color: 'text.primary',
+                            border: `1px solid ${alpha(tokenColor.success, 0.4)}`,
                             '&:hover': {
-                                bgcolor: 'rgba(34, 197, 94, 0.3)'
+                                bgcolor: alpha(tokenColor.success, 0.28)
                             },
                             '&:disabled': {
                                 opacity: 0.3
@@ -136,7 +127,7 @@ export function StatusBar({
                 </Box>
             </Box>
 
-            <Box sx={{ position: 'relative', height: '6px', bgcolor: 'rgba(71, 85, 105, 0.5)', borderRadius: '3px', overflow: 'hidden' }}>
+            <Box sx={{ position: 'relative', height: '6px', bgcolor: 'divider', borderRadius: '3px', overflow: 'hidden' }}>
                 {isOverhealed ? (
                     <>
                         {/* Barra base completa (100%) */}
@@ -182,7 +173,7 @@ export function StatusBar({
                     sx={{
                         fontSize: '9px',
                         fontWeight: 700,
-                        color: 'rgba(255,255,255,0.7)', // Mais visível
+                        color: 'text.secondary', // Mais visível
                         zIndex: 3
                     }}
                 >

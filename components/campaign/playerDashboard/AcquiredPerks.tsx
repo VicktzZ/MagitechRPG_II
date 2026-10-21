@@ -11,8 +11,7 @@ import {
     Paper,
     Stack,
     Tooltip,
-    Typography,
-    useTheme
+    Typography
 } from '@mui/material';
 import { useMemo, useState } from 'react';
 import { rarityColor } from '@constants';
@@ -32,7 +31,6 @@ const perkTypeLabels: Record<string, string> = {
 export default function AcquiredPerks() {
     const { campaign } = useCampaignContext();
     const { charsheet } = useCampaignCurrentCharsheetContext();
-    const theme = useTheme();
     const [ expanded, setExpanded ] = useState(false);
 
     const perks = useMemo(() => {
@@ -143,16 +141,12 @@ export default function AcquiredPerks() {
                                             gap: 1,
                                             p: 1,
                                             borderRadius: 1,
-                                            bgcolor: theme.palette.mode === 'dark'
-                                                ? 'rgba(255, 255, 255, 0.05)'
-                                                : 'rgba(0, 0, 0, 0.03)',
+                                            bgcolor: 'background.raised',
                                             borderLeft: '3px solid',
                                             borderColor: rarityColors[perk.rarity] || rarityColors['Comum'],
                                             transition: 'all 0.2s ease',
                                             '&:hover': {
-                                                bgcolor: theme.palette.mode === 'dark'
-                                                    ? 'rgba(255, 255, 255, 0.1)'
-                                                    : 'rgba(0, 0, 0, 0.06)'
+                                                bgcolor: 'action.hover'
                                             }
                                         }}
                                     >

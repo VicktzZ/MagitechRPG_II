@@ -46,7 +46,7 @@ export function PlanBadge({
                 variant={variant}
                 sx={{
                     backgroundColor: variant === 'filled' ? metadata.color : 'transparent',
-                    color: variant === 'filled' ? 'white' : metadata.color,
+                    color: variant === 'filled' ? 'primary.contrastText' : metadata.color,
                     borderColor: metadata.color,
                     fontWeight: 'bold',
                     fontSize: size === 'small' ? '0.75rem' : '0.875rem'

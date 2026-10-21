@@ -1,7 +1,7 @@
 'use client';
 
 import { useCampaignCurrentCharsheetContext } from '@contexts';
-import { font } from '@themes/tokens'
+import { color as tokenColor, font } from '@themes/tokens'
 import { Add, Remove, Tune } from '@mui/icons-material';
 import {
     alpha,
@@ -80,7 +80,7 @@ export default function CampaignCustomResources(): ReactElement | null {
                     const pct = range > 0 ? ((value - def.min) / range) * 100 : 0;
                     const resolvedThresholds = resolveThresholds(def, personalMax);
                     const activeThreshold = getActiveResolvedThreshold(def, value, personalMax);
-                    const barColor = activeThreshold?.color ?? def.color ?? '#1976d2';
+                    const barColor = activeThreshold?.color ?? def.color ?? tokenColor.amber;
 
                     return (
                         <Box key={def.key}>

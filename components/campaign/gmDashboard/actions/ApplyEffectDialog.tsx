@@ -240,7 +240,13 @@ export default function ApplyEffectDialog({
                             )}
                             <Chip
                                 label={selectedEffect.usesLevels === false ? selectedEffect.name : getEffectDisplayName(selectedEffect, level)}
-                                sx={{ bgcolor: selectedEffect.color, color: '#fff', fontWeight: 700 }}
+                                sx={{
+                                    bgcolor: selectedEffect.color,
+                                    color: theme => (selectedEffect.color
+                                        ? theme.palette.getContrastText(selectedEffect.color)
+                                        : theme.palette.text.primary),
+                                    fontWeight: 700
+                                }}
                             />
                         </Box>
 

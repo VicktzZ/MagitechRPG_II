@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { rarityColor } from '@constants';
 import {
     Avatar,
     Box,
@@ -49,17 +50,7 @@ import {
     DEFAULT_PERK_FILTERS
 } from './constants';
 
-const PERK_RARITY_COLORS: Record<string, string> = {
-    'Comum': '#9e9e9e',
-    'Incomum': '#4caf50',
-    'Raro': '#2196f3',
-    'Épico': '#9c27b0',
-    'Lendário': '#ff9800',
-    'Único': '#f44336',
-    'Mágico': '#00bcd4',
-    'Amaldiçoado': '#880e4f',
-    'Especial': '#ffd700'
-};
+const PERK_RARITY_COLORS: Record<string, string> = rarityColor;
 
 const PERK_TYPE_LABELS: Record<string, string> = {
     'WEAPON': 'Arma',

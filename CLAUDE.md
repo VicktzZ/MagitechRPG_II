@@ -87,8 +87,10 @@ Decisões dadas pelo dono do projeto:
 
 Plano em fases: 1 tokens e tema (feita) · 3 tipografia (fontes carregadas, fontes sem licença removidas e
 `fontFamily` migrado; faltam as rolagens com a fonte dos dados e o `html font-size: 12px`) · 4 efeitos (feita) ·
-5 landing (feita: arte de IA e assets de 20 MB removidos, logo em SVG) · depois as demais seções (ficha, cartões,
-dashboards), onde os avisos de cor solta do ESLint (hex e rgba) migram para tokens.
+5 landing (feita: arte de IA e assets de 20 MB removidos, logo em SVG) · 6 cores soltas (feita: o ESLint não acusa
+mais hex nem rgba; sobram cores do Material que a regra não pega, como `blue[100]` e `orange[500]` em chips, botões e
+cabeçalhos, e `color: 'white'` sobre cores categóricas, a trocar por `contrastText`) · depois: rolagens com a fonte
+dos dados, `html font-size`, licença das fontes dPoly.
 
 ## Ambiente de desenvolvimento
 

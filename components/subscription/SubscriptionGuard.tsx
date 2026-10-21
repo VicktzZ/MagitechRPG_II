@@ -184,7 +184,7 @@ export function SubscriptionGuard({
                                 label="NECESSÁRIO"
                                 sx={{
                                     bgcolor: requiredPlanMetadata.color,
-                                    color: 'white',
+                                    color: 'primary.contrastText',
                                     fontWeight: 'bold',
                                     fontSize: '0.75rem',
                                     px: 1

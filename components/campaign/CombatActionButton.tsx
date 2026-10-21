@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import {
+    alpha,
     Box,
     Button,
     Dialog,
@@ -202,7 +203,7 @@ export default function CombatActionButton({
                     alignItems: 'center', 
                     gap: 1,
                     bgcolor: isDarkMode 
-                        ? (actionType === 'damage' ? 'rgba(244, 67, 54, 0.15)' : 'rgba(76, 175, 80, 0.15)')
+                        ? (actionType === 'damage' ? alpha(theme.palette.error.main, 0.15) : alpha(theme.palette.success.main, 0.15))
                         : (actionType === 'damage' ? red[50] : green[50]),
                     borderBottom: '2px solid',
                     borderColor: actionType === 'damage' ? red[300] : green[300],
@@ -331,7 +332,7 @@ export default function CombatActionButton({
                             <Box sx={{ 
                                 p: 2, 
                                 bgcolor: isDarkMode 
-                                    ? (actionType === 'damage' ? 'rgba(244, 67, 54, 0.15)' : 'rgba(76, 175, 80, 0.15)')
+                                    ? (actionType === 'damage' ? alpha(theme.palette.error.main, 0.15) : alpha(theme.palette.success.main, 0.15))
                                     : (actionType === 'damage' ? red[50] : green[50]),
                                 borderRadius: 1,
                                 border: '1px solid',

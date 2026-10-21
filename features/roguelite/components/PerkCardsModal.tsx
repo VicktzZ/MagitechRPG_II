@@ -7,9 +7,10 @@ import StarIcon from '@mui/icons-material/Star'
 import VisibilityIcon from '@mui/icons-material/Visibility'
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff'
 import WhatshotIcon from '@mui/icons-material/Whatshot'
-import { Box, Button, FormControl, Grid, IconButton, InputLabel, MenuItem, Select, Typography } from '@mui/material'
+import { alpha, Box, Button, FormControl, Grid, IconButton, InputLabel, MenuItem, Select, Typography } from '@mui/material'
 import { useMemo, useState } from 'react'
 import type { RarityType } from '@models/types/string'
+import { color } from '@themes/tokens'
 import PerkCard from './PerkCard'
 
 interface PerkCardsModalProps {
@@ -74,13 +75,13 @@ export function PerkCardsModal({ open, seed, level }: PerkCardsModalProps) {
                         top: 40,
                         right: 20,
                         zIndex: 9999,
-                        bgcolor: 'rgba(0, 0, 0, 0.8)',
-                        color: 'white',
+                        bgcolor: alpha(color.canvas, 0.8),
+                        color: 'text.primary',
                         width: 56,
                         height: 56,
                         m: 0,
                         '&:hover': {
-                            bgcolor: 'rgba(0, 0, 0, 0.9)'
+                            bgcolor: alpha(color.canvas, 0.9)
                         }
                     }}
                 >
@@ -114,15 +115,15 @@ export function PerkCardsModal({ open, seed, level }: PerkCardsModalProps) {
                             p: 2.5
                         }}
                     >
-                        <Typography variant="h5" fontWeight={700} color="white">
+                        <Typography variant="h5" fontWeight={700} color="text.primary">
                             Escolha sua vantagem
                         </Typography>
                         <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
                             <FormControl size="small" sx={{ minWidth: 120 }}>
                                 <InputLabel
                                     sx={{
-                                        color: 'rgba(255, 255, 255, 0.7)',
-                                        '&.Mui-focused': { color: 'rgba(255, 255, 255, 0.9)' }
+                                        color: 'text.secondary',
+                                        '&.Mui-focused': { color: 'primary.main' }
                                     }}
                                 >
                                     Raridade
@@ -137,19 +138,19 @@ export function PerkCardsModal({ open, seed, level }: PerkCardsModalProps) {
                                         }
                                     }}
                                     sx={{
-                                        color: 'white',
-                                        borderColor: 'rgba(255, 255, 255, 0.3)',
+                                        color: 'text.primary',
+                                        borderColor: color.borderControl,
                                         '& .MuiOutlinedInput-notchedOutline': {
-                                            borderColor: 'rgba(255, 255, 255, 0.3)'
+                                            borderColor: color.borderControl
                                         },
                                         '&:hover .MuiOutlinedInput-notchedOutline': {
-                                            borderColor: 'rgba(255, 255, 255, 0.5)'
+                                            borderColor: 'text.secondary'
                                         },
                                         '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                                            borderColor: 'rgba(255, 255, 255, 0.7)'
+                                            borderColor: 'primary.main'
                                         },
                                         '& .MuiSvgIcon-root': {
-                                            color: 'rgba(255, 255, 255, 0.7)'
+                                            color: 'text.secondary'
                                         }
                                     }}
                                 >
@@ -167,8 +168,8 @@ export function PerkCardsModal({ open, seed, level }: PerkCardsModalProps) {
                             <FormControl size="small" sx={{ minWidth: 120 }}>
                                 <InputLabel
                                     sx={{
-                                        color: 'rgba(255, 255, 255, 0.7)',
-                                        '&.Mui-focused': { color: 'rgba(255, 255, 255, 0.9)' }
+                                        color: 'text.secondary',
+                                        '&.Mui-focused': { color: 'primary.main' }
                                     }}
                                 >
                                     Tipo
@@ -183,19 +184,19 @@ export function PerkCardsModal({ open, seed, level }: PerkCardsModalProps) {
                                         }
                                     }}
                                     sx={{
-                                        color: 'white',
-                                        borderColor: 'rgba(255, 255, 255, 0.3)',
+                                        color: 'text.primary',
+                                        borderColor: color.borderControl,
                                         '& .MuiOutlinedInput-notchedOutline': {
-                                            borderColor: 'rgba(255, 255, 255, 0.3)'
+                                            borderColor: color.borderControl
                                         },
                                         '&:hover .MuiOutlinedInput-notchedOutline': {
-                                            borderColor: 'rgba(255, 255, 255, 0.5)'
+                                            borderColor: 'text.secondary'
                                         },
                                         '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                                            borderColor: 'rgba(255, 255, 255, 0.7)'
+                                            borderColor: 'primary.main'
                                         },
                                         '& .MuiSvgIcon-root': {
-                                            color: 'rgba(255, 255, 255, 0.7)'
+                                            color: 'text.secondary'
                                         }
                                     }}
                                 >
@@ -218,11 +219,11 @@ export function PerkCardsModal({ open, seed, level }: PerkCardsModalProps) {
                                 startIcon={<ShuffleIcon />}
                                 onClick={handleReroll}
                                 sx={{
-                                    color: 'white',
-                                    borderColor: 'rgba(255, 255, 255, 0.3)',
+                                    color: 'text.primary',
+                                    borderColor: 'divider',
                                     '&:hover': {
-                                        borderColor: 'rgba(255, 255, 255, 0.5)',
-                                        bgcolor: 'rgba(255, 255, 255, 0.1)'
+                                        borderColor: color.borderStrong,
+                                        bgcolor: 'action.hover'
                                     }
                                 }}
                             >

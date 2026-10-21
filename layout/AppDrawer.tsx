@@ -68,7 +68,7 @@ export default function AppDrawer(): ReactElement {
             flexDirection='column'
             justifyContent='space-between'
             py={1.5}
-            bgcolor={theme.palette.mode === 'dark' ? '#1a2234' : '#f8fafc'}
+            bgcolor='background.paper'
             width='280px'
             role="presentation"
             height='100%'
@@ -245,7 +245,7 @@ export default function AppDrawer(): ReactElement {
                     p: 2,
                     gap: 1.5,
                     borderTop: '1px solid',
-                    borderColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+                    borderColor: 'divider',
                     mt: 1,
                     mx: 1.5,
                     pt: 2
@@ -257,7 +257,7 @@ export default function AppDrawer(): ReactElement {
                             sx={{
                                 height: '2.5rem',
                                 width: '2.5rem',
-                                color: 'white',
+                                color: 'primary.contrastText',
                                 bgcolor: theme.palette.primary.main
                             }}
                         >

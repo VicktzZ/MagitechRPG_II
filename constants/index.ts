@@ -1,6 +1,6 @@
 import { Gavel, Inventory2, Shield } from '@mui/icons-material'
 import { blue, deepPurple, grey, lightBlue, lightGreen, pink, red, teal } from '@mui/material/colors'
-import { element, rarity } from '@themes/tokens'
+import { color, element, rarity } from '@themes/tokens'
 import type { ItemAttributes } from '@models/types/item'
 import type { ClassNames, RarityType } from '@models/types/string'
 
@@ -95,19 +95,19 @@ export const classColor: Record<ClassNames, string> = {
 export const itemAttributes: ItemAttributes = {
     weapon: {
         icon: Gavel,
-        color: '#ef5350',
+        color: color.danger,
         label: 'Arma',
         badgeColor: 'error.main'
     },
     armor: {
         icon: Shield,
-        color: '#42a5f5',
+        color: color.ap,
         label: 'Armadura',
         badgeColor: 'info.main'
     },
     item: {
         icon: Inventory2,
-        color: '#66bb6a',
+        color: color.success,
         label: 'Item',
         badgeColor: 'success.main'
     }

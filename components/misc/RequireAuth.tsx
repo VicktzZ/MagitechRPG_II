@@ -1,6 +1,7 @@
 'use client';
 
-import { Backdrop, CircularProgress } from '@mui/material';
+import { Backdrop, CircularProgress, alpha } from '@mui/material';
+import { color } from '@themes/tokens';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import React, { type ReactElement, useEffect, useState } from 'react';
@@ -58,7 +59,7 @@ export default function RequireAuth({ children }: RequireAuthProps): ReactElemen
                 open 
                 sx={{ 
                     zIndex: (theme) => theme.zIndex.drawer + 1,
-                    backgroundColor: 'rgba(0, 0, 0, 0.9)'
+                    backgroundColor: alpha(color.canvas, 0.9)
                 }}
             >
                 <CircularProgress color="primary" />

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import {
+    alpha,
     Avatar,
     Box,
     Button,
@@ -479,12 +480,12 @@ export default function CombatDialog({
                     alignItems: 'center',
                     p: 2,
                     bgcolor: isDarkMode 
-                        ? (combat.phase === 'INITIATIVE' ? 'rgba(255, 152, 0, 0.15)' : 'rgba(33, 150, 243, 0.15)')
+                        ? (combat.phase === 'INITIATIVE' ? alpha(theme.palette.warning.main, 0.15) : alpha(theme.palette.info.main, 0.15))
                         : (combat.phase === 'INITIATIVE' ? orange[50] : blue[50]),
                     borderRadius: 2,
                     border: '1px solid',
                     borderColor: isDarkMode
-                        ? (combat.phase === 'INITIATIVE' ? orange[800] : blue[800])
+                        ? (combat.phase === 'INITIATIVE' ? 'warning.main' : 'info.main')
                         : (combat.phase === 'INITIATIVE' ? orange[200] : blue[200])
                 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -550,9 +551,9 @@ export default function CombatDialog({
                                     <ListItem
                                         key={combatant.id}
                                         sx={{
-                                            bgcolor: isCurrentTurn ? 'rgba(33, 150, 243, 0.1)' : 'transparent',
+                                            bgcolor: isCurrentTurn ? alpha(theme.palette.info.main, 0.1) : 'transparent',
                                             borderLeft: isCurrentTurn ? '4px solid' : 'none',
-                                            borderColor: blue[500]
+                                            borderColor: 'info.main'
                                         }}
                                         secondaryAction={
                                             combat.phase === 'INITIATIVE' ? (
@@ -715,7 +716,7 @@ export default function CombatDialog({
                             maxHeight: 150, 
                             overflow: 'auto', 
                             p: 1.5, 
-                            bgcolor: theme.palette.mode === 'dark' ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.03)', 
+                            bgcolor: 'background.paper', 
                             borderRadius: 1,
                             border: '1px solid',
                             borderColor: 'divider'
