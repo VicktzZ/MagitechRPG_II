@@ -36,8 +36,8 @@ interface SkillFilterChipProps {
     onClick: () => void;
 }
 
-function SkillFilterChip({ label , selected, onClick }: SkillFilterChipProps) {
-    const getChipConfig = (type: SkillType) => {
+function SkillFilterChip({ label, type, selected, onClick }: SkillFilterChipProps) {
+    const getChipConfig = () => {
         switch (type) {
         case SkillType.ALL:
             return { color: color.amber, bg: alpha(color.amber, 0.14), icon: Star };
@@ -54,7 +54,7 @@ function SkillFilterChip({ label , selected, onClick }: SkillFilterChipProps) {
         }
     };
 
-    const config = getChipConfig(label as any);
+    const config = getChipConfig();
     const ChipIcon = config.icon;
 
     return (
