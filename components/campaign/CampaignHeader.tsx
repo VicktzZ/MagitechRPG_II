@@ -16,22 +16,45 @@ import {
     useMediaQuery,
     type Theme
 } from '@mui/material'
-import { campaignService, sessionService } from '@services'
+import { campaignService } from '@services'
 import { motion } from 'framer-motion'
 import { useSession } from 'next-auth/react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
+import { useSnackbar } from 'notistack'
 import { useState, type ReactElement } from 'react'
+import LeaveCampaignDialog from './LeaveCampaignDialog'
 import Section from './Section'
 import NotesSection from './playerDashboard/NotesSection'
 
 export default function CampaignHeader(): ReactElement {
     const { campaign, users, charsheets, isUserGM } = useCampaignContext()
     const [ copiedCode, setCopiedCode ] = useState<boolean>(false)
+    const [ leaveOpen, setLeaveOpen ] = useState<boolean>(false)
+    const [ leaving, setLeaving ] = useState<boolean>(false)
     const { data: session } = useSession()
+    const { enqueueSnackbar } = useSnackbar()
     
     const router = useRouter()
     const isMobile = useMediaQuery((theme: Theme) => theme.breakpoints.down('sm'))
+
+    // A remoção e o disconnect reescrevem a campanha inteira: disparados juntos, o último a gravar
+    // pode devolver o jogador à lista. Por isso só a remoção, aguardada; o disconnect roda ao sair da tela.
+    const handleLeave = async () => {
+        const userId = session?.user?.id
+        if (!userId || !campaign.id || leaving) return
+
+        setLeaving(true)
+        try {
+            await campaignService.removeUser(campaign.id, userId)
+            localStorage.setItem('currentCharsheet', '')
+            router.push('/app/campaign')
+        } catch (error) {
+            console.error('Erro ao sair da campanha:', error)
+            enqueueSnackbar('Não foi possível sair da campanha. Tente de novo.', { variant: 'error' })
+            setLeaving(false)
+        }
+    }
 
     const renderUserAvatar = (user: User, isAdmin: boolean = false) => {
         return (
@@ -230,17 +253,14 @@ export default function CampaignHeader(): ReactElement {
                 </Box>
                 {!isUserGM && (
                     <Box>
-                        <Button onClick={() => {
-                            if (!session?.user?.id || !campaign.id) return
-
-                            localStorage.setItem('currentCharsheet', '');
-                            const userId = session?.user?.id;
-                            if (!userId) return;
-                            
-                            sessionService.disconnect({ campaignCode: campaign.campaignCode, userId });
-                            campaignService.removeUser(campaign.id, session.user.id);
-                            router.push('/app/campaign');
-                        }} variant="contained">Sair da campanha</Button>
+                        <Button onClick={() => { setLeaveOpen(true) }} variant="contained">Sair da campanha</Button>
+                        <LeaveCampaignDialog
+                            open={leaveOpen}
+                            campaignTitle={campaign.title}
+                            leaving={leaving}
+                            onConfirm={handleLeave}
+                            onCancel={() => { setLeaveOpen(false) }}
+                        />
                     </Box>
                 )}
             </Box>
