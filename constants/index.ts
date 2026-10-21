@@ -1,6 +1,5 @@
 import { Gavel, Inventory2, Shield } from '@mui/icons-material'
-import { blue, deepPurple, grey, lightBlue, lightGreen, pink, red, teal } from '@mui/material/colors'
-import { color, element, rarity } from '@themes/tokens'
+import { classMark, color, element, rarity } from '@themes/tokens'
 import type { ItemAttributes } from '@models/types/item'
 import type { ClassNames, RarityType } from '@models/types/string'
 
@@ -81,16 +80,8 @@ export const spellElementColor: Record<string, string> = elementColor
 /** Cor de cada raridade; gerada de `themes/tokens.ts` */
 export const rarityColor: Record<RarityType, string> = { ...rarity }
 
-export const classColor: Record<ClassNames, string> = {
-    'Combatente': red[500],
-    'Especialista': blue[600],
-    'Feiticeiro': teal[400],
-    'Bruxo': deepPurple[400],
-    'Monge': lightBlue[300],
-    'Druida': lightGreen[500],
-    'Arcano': pink[500],
-    'Ladino': grey[500]
-}
+/** Cor de cada classe; gerada de `themes/tokens.ts` */
+export const classColor: Record<ClassNames, string> = { ...classMark }
 
 export const itemAttributes: ItemAttributes = {
     weapon: {

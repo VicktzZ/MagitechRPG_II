@@ -1,5 +1,5 @@
 import theme from '../theme'
-import { color, diceFont, element, font, radius, rarity, shadow } from '../tokens'
+import { classMark, color, diceFont, element, font, radius, rarity, shadow } from '../tokens'
 
 /** Luminância relativa (WCAG 2.x) de uma cor `#rrggbb` */
 const luminance = (hex: string): number => {
@@ -67,6 +67,15 @@ describe('contraste dos tokens', () => {
 
     it('marcas de elemento passam de 3:1 sobre canvas, surface e surfaceRaised', () => {
         for (const [ name, mark ] of Object.entries(element)) {
+            for (const background of [ color.canvas, color.surface, color.surfaceRaised ]) {
+                expect({ name, ratio: contrast(mark, background) >= 3 }).toEqual({ name, ratio: true })
+            }
+        }
+    })
+
+    it('marcas de classe passam de 3:1 sobre canvas, surface e surfaceRaised', () => {
+        expect(Object.keys(classMark)).toHaveLength(8)
+        for (const [ name, mark ] of Object.entries(classMark)) {
             for (const background of [ color.canvas, color.surface, color.surfaceRaised ]) {
                 expect({ name, ratio: contrast(mark, background) >= 3 }).toEqual({ name, ratio: true })
             }
