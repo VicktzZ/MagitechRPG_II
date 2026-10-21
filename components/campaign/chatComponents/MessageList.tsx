@@ -5,7 +5,9 @@ import {
     alpha,
     Avatar,
     Box,
+    Button,
     Chip,
+    CircularProgress,
     Paper,
     Stack,
     Typography,
@@ -27,10 +29,16 @@ interface MessageListProps {
     currentUserId?: string;
     adminIds: string[];
     onScroll: () => void;
+    /** Há mensagens mais antigas que as carregadas */
+    hasMore?: boolean;
+    loadingOlder?: boolean;
+    onLoadOlder?: () => void;
+    /** Falha ao ler o histórico */
+    loadError?: boolean;
 }
 
 const MessageList = memo(forwardRef<HTMLDivElement, MessageListProps>(function MessageList(
-    { messages, currentUserId, adminIds, onScroll },
+    { messages, currentUserId, adminIds, onScroll, hasMore = false, loadingOlder = false, onLoadOlder, loadError = false },
     ref
 ) {
     const theme = useTheme();
@@ -74,6 +82,24 @@ const MessageList = memo(forwardRef<HTMLDivElement, MessageListProps>(function M
             }} 
             onScroll={onScroll}
         >
+            {loadError && (
+                <Typography role="alert" variant="caption" sx={{ display: 'block', textAlign: 'center', color: 'error.light', mb: 1 }}>
+                    Não foi possível carregar parte do histórico do chat.
+                </Typography>
+            )}
+            {hasMore && onLoadOlder && (
+                <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+                    <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={onLoadOlder}
+                        disabled={loadingOlder}
+                        startIcon={loadingOlder ? <CircularProgress size={14} color="inherit" /> : undefined}
+                    >
+                        Carregar mensagens anteriores
+                    </Button>
+                </Box>
+            )}
             {messages.length === 0 ? (
                 <Box 
                     sx={{

@@ -1,12 +1,13 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { campaignRepository, charsheetRepository, combatEffectRepository } from '@repositories'
-import { Combat, Combatant, CombatLog, AppliedEffect } from '@models'
+import { Combat, Combatant, CombatLog, AppliedEffect, Message } from '@models'
 import { pusherServer } from '@utils/pusher'
 import { PusherEvent } from '@enums'
 import { processEffectTicks, refreshPlayerCombatantsLp, syncPlayerCharsheets } from '@utils/combat/processEffectTicks'
 import { getEffectDisplayName } from '@utils/combatEffectLabels'
 import { v4 as uuidv4 } from 'uuid'
 import { stripUndefined } from '@utils/firestore/stripUndefined'
+import { appendCampaignMessage } from '@utils/firestore/campaignMessages'
 import { recordCampaignStats, type StatsEntry } from '@utils/campaignStatsHelper'
 import { badRequest, forbidden, handleRouteError, readJsonBody, requireCampaignMember, requireUser } from '@utils/api'
 import { evaluateMpSpend, getMpLimit, isMpLimitEnforced } from '@utils/mpLimit'
@@ -986,11 +987,13 @@ export async function POST(
             return NextResponse.json({ error: 'Ação inválida' }, { status: 400 })
         }
 
-        // Adiciona o último log como mensagem no chat (se houver). `spend_mp` não gera log:
+        // O último log vira mensagem no chat (se houver). `spend_mp` não gera log:
         // sem esta guarda o último log antigo seria repostado a cada conjuração.
+        // A mensagem é gravada no chat (subcoleção) depois de salvar a campanha.
+        let combatMessage: Message | undefined
         if (action !== 'spend_mp' && combat.logs.length > 0) {
             const lastLog = combat.logs[combat.logs.length - 1]
-            const combatMessage = {
+            combatMessage = new Message({
                 id: crypto.randomUUID(),
                 text: `⚔️ ${lastLog.message}`,
                 by: {
@@ -1001,18 +1004,22 @@ export async function POST(
                 },
                 timestamp: new Date().toISOString(),
                 type: 'combat_log'
-            }
-            
-            if (!campaign.session.messages) {
-                campaign.session.messages = []
-            }
-            campaign.session.messages.push(combatMessage)
+            })
         }
 
         // Salva a campanha atualizada
         const plainCampaign = JSON.parse(JSON.stringify(campaign))
 
         await campaignRepository.update(plainCampaign)
+
+        if (combatMessage) {
+            try {
+                await appendCampaignMessage(campaign.id, combatMessage)
+            } catch (error) {
+                // O combate já foi salvo; o registro no chat é só o aviso
+                console.error('[Combat API] Erro ao registrar o log no chat:', error)
+            }
+        }
 
         // Registra estatísticas da campanha (não bloqueia o fluxo em caso de erro)
         if (statsEntries.length > 0) {

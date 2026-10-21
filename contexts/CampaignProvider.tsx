@@ -23,7 +23,7 @@ import {
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, useMemo, useCallback, type ReactElement } from 'react';
-import { campaignContext, campaignMessagesContext, type CampaignContextValue } from './campaignContext';
+import { campaignChatContext, campaignContext, campaignMessagesContext, type CampaignContextValue } from './campaignContext';
 import { campaignService } from '@services';
 import type { Campaign, RPGSystem } from '@models/entities';
 import { useSnackbar } from 'notistack';
@@ -49,7 +49,7 @@ export function CampaignProvider({ children, code }: { children: ReactElement, c
     const [ rpgSystem, setRpgSystem ] = useState<RPGSystem | null>(null);
     const [ loadingSystem, setLoadingSystem ] = useState(false);
 
-    const { data: campaignData, messages, status } = useCampaignData({
+    const { data: campaignData, messages, chat, status } = useCampaignData({
         campaignCode: code,
         userId: session?.user?.id
     });
@@ -184,7 +184,9 @@ export function CampaignProvider({ children, code }: { children: ReactElement, c
         return (
             <campaignContext.Provider value={contextValue}>
                 <campaignMessagesContext.Provider value={messages}>
-                    {children}
+                    <campaignChatContext.Provider value={chat}>
+                        {children}
+                    </campaignChatContext.Provider>
                 </campaignMessagesContext.Provider>
             </campaignContext.Provider>
         )

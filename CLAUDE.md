@@ -58,6 +58,24 @@ lote (senão alguém editou à mão), sobrescrever só os ids do lote e reler pa
   `users` e `session/disconnect`) perdem alterações simultâneas. Para campos soltos use `adminUpdateDoc` (caminhos de
   campo) e, quando precisar conferir antes de gravar, `adminUpdateDocInTransaction`.
 
+- **Chat**: as mensagens ficam em `campaigns/{id}/messages` (um documento por mensagem, ID = ID da mensagem), não mais
+  na lista `session.messages` da campanha. O servidor só cria o documento (`utils/firestore/campaignMessages.ts`:
+  `appendCampaignMessage`, `listCampaignMessages`, `deleteCampaignMessages`); o navegador acompanha as últimas 100 em
+  tempo real e busca as anteriores por `GET /api/campaign/[id]/messages?beforeId=` (`hooks/useCampaignChatFeed.ts`).
+  O horário da mensagem é o do servidor. As mensagens antigas que ainda estão na lista da campanha aparecem junto, sem
+  repetir; `scripts/migrateCampaignMessages.ts` as move (simulação por padrão; `--apply` copia, `--clear` esvazia a lista
+  antiga — **grava no banco: só com liberação do dono**). Ao excluir a campanha o servidor apaga a subcoleção.
+  **Publique `firestore.rules` antes do código**: a regra nova de `campaigns/{id}/messages` é aditiva, mas sem ela o
+  navegador não lê o chat.
+- **Verificar contra o Firestore de verdade (emulador)**: `(cd tests/firestore-rules && npm install)` uma vez; depois
+  `npm test` nessa pasta (regras) e `npm run test:emulator` na raiz (helpers do servidor com o Admin SDK).
+- **Ver a campanha rodando, sem banco real**: emuladores (`firebase emulators:start --only firestore,auth --project
+  demo-magitech --config firebase.firestore.json`) + `next dev` com `NEXT_PUBLIC_FIREBASE_EMULATORS=true`,
+  `FIRESTORE_EMULATOR_HOST=127.0.0.1:8080`, `FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099` e credenciais descartáveis. O login
+  de desenvolvimento é o provedor de administração (`ADMIN_EMAIL`/`ADMIN_PASSWORD`, só com `NODE_ENV=development`); o
+  `signIn` do NextAuth grava `image: undefined` para esse usuário e o Firestore recusa, então o usuário de teste não pode
+  ter `image` na hora do login.
+
 ## Limite de MP por turno
 
 `⌈(Nível + Foco) ÷ 2⌉ + Nível de ORM` (+ bônus em `mpLimit` da ficha), em `utils/mpLimit.ts`.

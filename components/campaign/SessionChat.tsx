@@ -1,9 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Alert, Paper, Snackbar } from '@mui/material';
 import { useCampaignContext } from '@contexts';
-import { useCampaignMessages } from '@contexts/campaignContext';
+import { useCampaignChat, useCampaignMessages } from '@contexts/campaignContext';
 import { useChannel } from '@contexts/channelContext';
 import { useChatContext, useChatMessages } from '@contexts/chatContext';
 import { PusherEvent } from '@enums';
@@ -24,6 +24,7 @@ import {
 export default function SessionChat() {
     const { campaign, updateCampaign } = useCampaignContext();
     const persistedMessages = useCampaignMessages();
+    const { hasMore, loadingOlder, loadOlder, error: chatError } = useCampaignChat();
     const { data: session } = useSession();
     const { channel } = useChannel();
 
@@ -66,6 +67,19 @@ export default function SessionChat() {
         }
     }, []);
 
+    // "Carregar anteriores" põe mensagens ACIMA do que está na tela: guarda a posição antes e,
+    // quando a lista nova entrar, devolve o scroll para que o texto lido não saia do lugar.
+    const scrollRestoreRef = useRef<{ height: number, top: number } | null>(null);
+
+    const handleLoadOlder = useCallback(() => {
+        const box = chatBoxRef.current;
+        if (box) scrollRestoreRef.current = { height: box.scrollHeight, top: box.scrollTop };
+        void loadOlder().finally(() => {
+            // Se nada entrou (erro, ou já estava tudo carregado), não há o que restaurar
+            window.setTimeout(() => { scrollRestoreRef.current = null; }, 0);
+        });
+    }, [ loadOlder ]);
+
     // A persistência acontece dentro de sendMsg (ChatProvider → API), que já
     // faz o append no servidor. O updateCampaign extra que existia aqui
     // gravava a mensagem uma SEGUNDA vez (por isso a deduplicação abaixo) e
@@ -101,6 +115,15 @@ export default function SessionChat() {
             setMessages([]);
         }
     }, [ persistedMessages ]);
+
+    // Mensagens anteriores entraram acima: mantém o que o jogador estava lendo no mesmo lugar
+    useLayoutEffect(() => {
+        const box = chatBoxRef.current;
+        const saved = scrollRestoreRef.current;
+        if (!box || !saved || box.scrollHeight === saved.height) return;
+        box.scrollTop = saved.top + (box.scrollHeight - saved.height);
+        scrollRestoreRef.current = null;
+    }, [ messages ]);
 
     // Scroll to bottom quando mensagens carregam
     useEffect(() => {
@@ -173,6 +196,10 @@ export default function SessionChat() {
                     currentUserId={session?.user?.id}
                     adminIds={campaign.admin || []}
                     onScroll={handleScroll}
+                    hasMore={hasMore}
+                    loadingOlder={loadingOlder}
+                    onLoadOlder={handleLoadOlder}
+                    loadError={!!chatError}
                 />
 
                 <div ref={messagesEndRef} style={{ height: 0 }} />

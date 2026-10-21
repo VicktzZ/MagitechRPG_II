@@ -1,10 +1,11 @@
 // Testes das regras do Firestore (../../firestore.rules) contra o emulador.
 // Rodar: npm install && npm test   (nesta pasta; precisa de Java para o emulador)
+import assert from 'node:assert/strict';
 import { after, before, beforeEach, describe, it } from 'node:test';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { assertFails, assertSucceeds, initializeTestEnvironment } from '@firebase/rules-unit-testing';
-import { collection, deleteDoc, doc, getDoc, getDocs, orderBy, query, setDoc, updateDoc, where } from 'firebase/firestore';
+import { collection, deleteDoc, doc, getDoc, getDocs, limit, orderBy, query, setDoc, updateDoc, where } from 'firebase/firestore';
 
 const rulesPath = fileURLToPath(new URL('../../firestore.rules', import.meta.url));
 
@@ -35,6 +36,8 @@ beforeEach(async () => {
         await setDoc(doc(fs, 'charsheets/sheetA'), { id: 'sheetA', userId: 'alice', name: 'Aria', inventory: { money: 10 } });
         await setDoc(doc(fs, 'charsheets/sheetB'), { id: 'sheetB', userId: 'bob', name: 'Borin' });
         await setDoc(doc(fs, 'campaigns/camp1'), { id: 'camp1', campaignCode: 'ABCD1234', admin: [ 'bob' ], players: [ { userId: 'alice', charsheetId: 'sheetA' } ] });
+        await setDoc(doc(fs, 'campaigns/camp1/messages/m1'), { id: 'm1', text: 'oi', timestamp: '2026-01-01T10:00:00.000Z', by: { id: 'alice', name: 'Aria', image: '' } });
+        await setDoc(doc(fs, 'campaigns/camp1/messages/m2'), { id: 'm2', text: 'olá', timestamp: '2026-01-01T10:01:00.000Z', by: { id: 'bob', name: 'Borin', image: '' } });
         await setDoc(doc(fs, 'notifications/n1'), { id: 'n1', userId: 'alice', title: 'oi', timestamp: '2026-01-01' });
         await setDoc(doc(fs, 'notifications/n2'), { id: 'n2', userId: 'bob', title: 'oi', timestamp: '2026-01-01' });
         await setDoc(doc(fs, 'spells/s1'), { id: 's1', name: 'Bola de Fogo' });
@@ -123,6 +126,33 @@ describe('campaigns', () => {
         await assertFails(updateDoc(doc(bob(), 'campaigns/camp1'), { 'session.combat': {} }));
         await assertFails(updateDoc(doc(alice(), 'campaigns/camp1'), { admin: [ 'alice' ] }));
         await assertFails(deleteDoc(doc(bob(), 'campaigns/camp1')));
+    });
+});
+
+describe('chat da campanha (campaigns/{id}/messages)', () => {
+    it('anônimo não lê', async () => {
+        await assertFails(getDoc(doc(anon(), 'campaigns/camp1/messages/m1')));
+        await assertFails(getDocs(collection(anon(), 'campaigns/camp1/messages')));
+    });
+
+    it('logado lê o histórico, na consulta que o app faz (mais recentes primeiro, com limite)', async () => {
+        const recent = query(collection(alice(), 'campaigns/camp1/messages'), orderBy('timestamp', 'desc'), limit(100));
+        const snapshot = await assertSucceeds(getDocs(recent));
+        assert.deepEqual(snapshot.docs.map(d => d.id), [ 'm2', 'm1' ]);
+        await assertSucceeds(getDoc(doc(bob(), 'campaigns/camp1/messages/m1')));
+    });
+
+    it('ninguém escreve direto — nem jogador, nem mestre; mensagem só pela API', async () => {
+        for (const user of [ alice(), bob() ]) {
+            await assertFails(setDoc(doc(user, 'campaigns/camp1/messages/novo'), { id: 'novo', text: 'x', timestamp: '2026-01-01T11:00:00.000Z' }));
+            await assertFails(updateDoc(doc(user, 'campaigns/camp1/messages/m1'), { text: 'editado' }));
+            await assertFails(deleteDoc(doc(user, 'campaigns/camp1/messages/m1')));
+        }
+        await assertFails(setDoc(doc(admin(), 'campaigns/camp1/messages/novo'), { id: 'novo', text: 'x' }));
+    });
+
+    it('a subcoleção não abre a listagem das campanhas', async () => {
+        await assertFails(getDocs(collection(alice(), 'campaigns')));
     });
 });
 

@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "test": "jest",
+    "test:emulator": "tests/firestore-rules/node_modules/.bin/firebase emulators:exec --only firestore --project demo-magitech --config firebase.firestore.json \"jest utils/firestore\"",
     "eslint": "eslint --ext .ts,.tsx --ignore-path .gitignore .",
     "eslint:fix": "eslint --ext .ts,.tsx --ignore-path .gitignore . --fix",
     "prepare": "ts-patch install -s"

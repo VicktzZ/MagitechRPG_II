@@ -1,12 +1,13 @@
 /* eslint-disable @typescript-eslint/prefer-nullish-coalescing */
 import { PusherEvent } from '@enums';
 import { Message } from '@models';
-import { campaignRepository } from '@repositories';
 import { pusherServer } from '@utils/pusher';
+import { appendCampaignMessage, listCampaignMessages } from '@utils/firestore/campaignMessages';
+import { randomUUID } from 'crypto';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import type { NextRequest } from 'next/server';
-import { assertMaxLength, handleRouteError, readJsonBody, requireCampaignMember, requireUser, TEXT_LIMITS } from '@utils/api';
+import { assertMaxLength, handleRouteError, isValidId, readJsonBody, requireCampaignMember, requireUser, TEXT_LIMITS } from '@utils/api';
 
 interface id { id: string }
 
@@ -43,26 +44,35 @@ export async function POST(
             return Response.json({ message: 'BAD REQUEST', errors }, { status: 400 });
         }
 
-        let messageWithId = new Message(dto);
-        messageWithId = { ...messageWithId }
-
         if (campaign.status === 'finished') {
             return Response.json({ error: 'Campanha finalizada — o chat está bloqueado' }, { status: 403 });
         }
 
-        await campaignRepository.update({
-            ...campaign,
-            session: {
-                ...campaign.session,
-                messages: [ ...campaign.session.messages || [], messageWithId ]
-            }
-        });
+        // O ID da mensagem é o ID do documento: um ID do cliente só vale se for um ID de documento
+        // válido (UUIDs são); o horário é o do servidor, para a ordem do chat não depender dos relógios.
+        // Só os campos de uma mensagem: o cliente também manda tempId/isPending, que não devem ser salvos.
+        const messageWithId = { ...new Message({
+            id: isValidId(dto.id) ? dto.id : randomUUID(),
+            text: dto.text,
+            type: dto.type,
+            isHTML: dto.isHTML,
+            by: dto.by,
+            timestamp: new Date().toISOString()
+        }) };
 
-        await pusherServer.trigger(
-            `presence-${campaign.campaignCode}`,
-            PusherEvent.NEW_MESSAGE,
-            messageWithId
-        );
+        // Só cria um documento novo: não relê nem regrava a campanha, então não desfaz alterações simultâneas
+        await appendCampaignMessage(campaign.id, messageWithId);
+
+        // O Pusher é um aviso extra: se falhar, a mensagem já está salva
+        try {
+            await pusherServer.trigger(
+                `presence-${campaign.campaignCode}`,
+                PusherEvent.NEW_MESSAGE,
+                messageWithId
+            );
+        } catch (error) {
+            console.error('[Chat] Falha ao avisar o Pusher da nova mensagem:', error);
+        }
 
         return Response.json(messageWithId, { status: 200 });
     } catch (error) {
@@ -70,15 +80,27 @@ export async function POST(
     }
 }
 
+/**
+ * Mensagens do chat, das mais recentes para trás: `?beforeId=<id>` traz as anteriores a essa
+ * mensagem e `?limit=` define o tamanho da página (padrão 100, máximo 200).
+ */
 export async function GET(
-    _req: NextRequest,
+    req: NextRequest,
     { params }: { params: id }
 ): Promise<Response> {
     try {
         const user = await requireUser();
         const { campaign } = await requireCampaignMember(params.id, user);
 
-        return Response.json(campaign?.session?.messages || [], { status: 200 });
+        const { searchParams } = req.nextUrl;
+        const beforeId = searchParams.get('beforeId') ?? undefined;
+        if (beforeId !== undefined && !isValidId(beforeId)) {
+            return Response.json({ error: '"beforeId" inválido' }, { status: 400 });
+        }
+
+        const page = await listCampaignMessages(campaign.id, { beforeId, limit: searchParams.get('limit') });
+
+        return Response.json(page, { status: 200 });
     } catch (error) {
         return handleRouteError(error, 'Erro ao buscar mensagens');
     }

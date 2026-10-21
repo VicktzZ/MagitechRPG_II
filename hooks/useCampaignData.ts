@@ -5,6 +5,7 @@ import type { User } from '@models/entities';
 import { useQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { CampaignLookupError, resolveCampaignLoadStatus, type CampaignLoadStatus } from '@utils/campaignLoadStatus';
+import { useCampaignChatFeed, type CampaignChat } from './useCampaignChatFeed';
 import { useFirestoreRealtime } from './useFirestoreRealtime';
 import { useStableArrayItems, useStableValue } from './useStableValue';
 
@@ -21,8 +22,11 @@ interface UseCampaignDataResult {
      * qualquer jogador e manterí-las dentro de `data.campaign` invalidava a
      * identidade da campanha inteira (e todos os consumidores do contexto)
      * a cada mensagem. `data.campaign.session.messages` vem sempre vazio.
+     * Vêm da subcoleção do chat, mais as antigas que ainda estão na campanha.
      */
     messages: Message[];
+    /** Paginação e erro do chat (carregar mensagens anteriores) */
+    chat: CampaignChat;
     /**
      * `loading` enquanto busca; `not-found` (código inexistente ou campanha
      * excluída) e `error` (falha de rede ou de permissão) deixam o spinner.
@@ -104,7 +108,12 @@ export function useCampaignData({
     const stableCharsheets = useStableArrayItems(campaignCharsheets ?? [], cs => cs.id ?? '');
     const stableUsers = useStableArrayItems(campaignUsers ?? [], u => u.id ?? '');
 
-    const messages = useStableValue(c?.session?.messages ?? EMPTY_MESSAGES);
+    // Mensagens antigas, ainda dentro do documento da campanha (a lista só diminui com a migração)
+    const legacyMessages = useStableValue(c?.session?.messages ?? EMPTY_MESSAGES);
+
+    // O chat só abre para membros: quem ainda escolhe a ficha para entrar não precisa do histórico
+    const isMember = !!userId && !!c && (c.admin?.includes(userId) || c.players?.some(player => player.userId === userId));
+    const { messages, chat } = useCampaignChatFeed({ campaignId: c?.id, enabled: !!isMember, legacyMessages });
 
     // Campanha sem as mensagens, estabilizada por conteúdo: um snapshot que só
     // acrescentou mensagem mantém a MESMA referência de campanha.
@@ -148,5 +157,5 @@ export function useCampaignData({
         }
     });
 
-    return { data: campaignData, messages, status };
+    return { data: campaignData, messages, chat, status };
 }
