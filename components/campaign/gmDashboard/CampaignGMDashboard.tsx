@@ -34,9 +34,11 @@ import {
     Stack,
     Tooltip,
     Typography,
-    useTheme
+    alpha,
+    type Theme
 } from '@mui/material';
-import { amber, blue, green, grey, orange, purple, red } from '@mui/material/colors';
+import { rarityColor } from '@constants';
+import { color } from '@themes/tokens';
 import { MessageType } from '@enums';
 import { type ReactElement, useMemo, useState } from 'react';
 import PlayerCard from './PlayerCard';
@@ -58,43 +60,43 @@ const getGMExpertiseLevel = (value: number): 'novice' | 'trained' | 'expert' | '
     return 'legendary';
 };
 
+/** Fundo translúcido (14%) da cor de um papel do tema, para chips e ícones */
+const roleTint = (role: 'error' | 'info' | 'primary' | 'success' | 'warning') =>
+    (theme: Theme) => alpha(theme.palette[role].main, 0.14);
+
+/** Cor de cada nível de perícia: a mesma escada de raridades (Comum a Lendário) */
 const getGMExpertiseConfig = (value: number) => {
     const level = getGMExpertiseLevel(value);
 
     switch (level) {
     case 'novice':
         return {
-            color: grey[600],
-            bg: grey[100],
+            color: rarityColor.Comum,
             label: 'Destreinado',
             icon: Person
         };
     case 'trained':
         return {
-            color: green[600],
-            bg: green[100],
+            color: rarityColor.Incomum,
             label: 'Treinado',
             icon: TrendingUp
         };
     case 'expert':
         return {
-            color: blue[600],
-            bg: blue[100],
+            color: rarityColor.Raro,
             label: 'Especialista',
             icon: Star
         };
     case 'master':
         return {
-            color: purple[600],
-            bg: purple[100],
+            color: rarityColor['Épico'],
             label: 'Mestre',
             icon: EmojiEvents
         };
     case 'legendary':
     default:
         return {
-            color: orange[600],
-            bg: orange[100],
+            color: rarityColor['Lendário'],
             label: 'Lendário',
             icon: Casino
         };
@@ -137,7 +139,6 @@ export default function CampaignGMDashboard(): ReactElement | null {
     const { campaign, users, charsheets, updateCampaign } = useCampaignContext()
     const { handleSendMessage, setIsChatOpen, isChatOpen } = useChatContext()
     
-    const theme = useTheme();
     const [ expandedPlayer, setExpandedPlayer ] = useState<string | false>(false);
     const [ creatureModalOpen, setCreatureModalOpen ] = useState(false);
     const [ selectedCreature, setSelectedCreature ] = useState<any | null>(null);
@@ -327,14 +328,14 @@ export default function CampaignGMDashboard(): ReactElement | null {
     // Função para obter cor por tipo de perk
     const getPerkTypeColor = (perkType: string) => {
         switch (perkType) {
-        case 'WEAPON': return { bg: red[100], color: red[800] };
-        case 'ARMOR': return { bg: blue[100], color: blue[800] };
-        case 'ITEM': return { bg: amber[100], color: amber[800] };
+        case 'WEAPON': return { bg: roleTint('error'), color: 'error.light' };
+        case 'ARMOR': return { bg: roleTint('info'), color: 'info.main' };
+        case 'ITEM': return { bg: roleTint('primary'), color: 'primary.main' };
         case 'SKILL': 
-        case 'HABILIDADE': return { bg: purple[100], color: purple[800] };
-        case 'SPELL': return { bg: orange[100], color: orange[800] };
-        case 'BONUS': return { bg: green[100], color: green[800] };
-        default: return { bg: 'grey.200', color: 'grey.800' };
+        case 'HABILIDADE': return { bg: alpha(color.ap, 0.14), color: 'text.secondary' };
+        case 'SPELL': return { bg: roleTint('warning'), color: 'warning.light' };
+        case 'BONUS': return { bg: roleTint('success'), color: 'success.main' };
+        default: return { bg: 'action.hover', color: 'text.secondary' };
         }
     };
 
@@ -434,12 +435,12 @@ export default function CampaignGMDashboard(): ReactElement | null {
                                 sx={{
                                     p: 1.5,
                                     borderRadius: 2,
-                                    bgcolor: blue[100],
+                                    bgcolor: (theme) => alpha(theme.palette.info.main, 0.14),
                                     border: '2px solid',
-                                    borderColor: blue[200]
+                                    borderColor: (theme) => alpha(theme.palette.info.main, 0.5)
                                 }}
                             >
-                                <SupervisorAccount sx={{ color: blue[700], fontSize: '2rem' }} />
+                                <SupervisorAccount sx={{ color: 'info.main', fontSize: '2rem' }} />
                             </Box>
                         }
                     >
@@ -462,7 +463,7 @@ export default function CampaignGMDashboard(): ReactElement | null {
                                 }}
                             >
                                 <Stack alignItems="center" spacing={0.5}>
-                                    <Typography variant="h4" sx={{ color: blue[600], fontWeight: 700 }}>
+                                    <Typography variant="h4" sx={{ color: 'info.main', fontWeight: 700 }}>
                                         {campaignStats.totalPlayers}
                                     </Typography>
                                     <Typography variant="caption" color="text.secondary">
@@ -470,7 +471,7 @@ export default function CampaignGMDashboard(): ReactElement | null {
                                     </Typography>
                                 </Stack>
                                 <Stack alignItems="center" spacing={0.5}>
-                                    <Typography variant="h4" sx={{ color: green[600], fontWeight: 700 }}>
+                                    <Typography variant="h4" sx={{ color: 'success.main', fontWeight: 700 }}>
                                         {campaignStats.activePlayers}
                                     </Typography>
                                     <Typography variant="caption" color="text.secondary">
@@ -478,7 +479,7 @@ export default function CampaignGMDashboard(): ReactElement | null {
                                     </Typography>
                                 </Stack>
                                 <Stack alignItems="center" spacing={0.5}>
-                                    <Typography variant="h4" sx={{ color: orange[600], fontWeight: 700 }}>
+                                    <Typography variant="h4" sx={{ color: 'warning.main', fontWeight: 700 }}>
                                         {campaignStats.averageLevel}
                                     </Typography>
                                     <Typography variant="caption" color="text.secondary">
@@ -486,7 +487,7 @@ export default function CampaignGMDashboard(): ReactElement | null {
                                     </Typography>
                                 </Stack>
                                 <Stack alignItems="center" spacing={0.5}>
-                                    <Typography variant="h4" sx={{ color: purple[600], fontWeight: 700 }}>
+                                    <Typography variant="h4" sx={{ color: 'primary.main', fontWeight: 700 }}>
                                         {campaignStats.highestLevel}
                                     </Typography>
                                     <Typography variant="caption" color="text.secondary">
@@ -505,12 +506,12 @@ export default function CampaignGMDashboard(): ReactElement | null {
                                 sx={{
                                     p: 1.5,
                                     borderRadius: 2,
-                                    bgcolor: green[100],
+                                    bgcolor: (theme) => alpha(theme.palette.success.main, 0.14),
                                     border: '2px solid',
-                                    borderColor: green[200]
+                                    borderColor: (theme) => alpha(theme.palette.success.main, 0.5)
                                 }}
                             >
-                                <People sx={{ color: green[700], fontSize: '2rem' }} />
+                                <People sx={{ color: 'success.main', fontSize: '2rem' }} />
                             </Box>
                         }
                     >
@@ -575,12 +576,12 @@ export default function CampaignGMDashboard(): ReactElement | null {
                                     sx={{
                                         p: 1.5,
                                         borderRadius: 2,
-                                        bgcolor: purple[100],
+                                        bgcolor: (theme) => alpha(theme.palette.primary.main, 0.14),
                                         border: '2px solid',
-                                        borderColor: purple[200]
+                                        borderColor: (theme) => alpha(theme.palette.primary.main, 0.5)
                                     }}
                                 >
-                                    <CardGiftcard sx={{ color: purple[700], fontSize: '2rem' }} />
+                                    <CardGiftcard sx={{ color: 'primary.main', fontSize: '2rem' }} />
                                 </Box>
                             }
                         >
@@ -637,12 +638,12 @@ export default function CampaignGMDashboard(): ReactElement | null {
                                                             sx={{ 
                                                                 width: 44, 
                                                                 height: 44,
-                                                                bgcolor: purple[100],
-                                                                color: purple[800],
+                                                                bgcolor: (theme) => alpha(theme.palette.primary.main, 0.14),
+                                                                color: 'primary.main',
                                                                 fontSize: '1rem',
                                                                 fontWeight: 700,
                                                                 border: '2px solid',
-                                                                borderColor: purple[300]
+                                                                borderColor: (theme) => alpha(theme.palette.primary.main, 0.5)
                                                             }}
                                                         >
                                                             {!player.userImage && (player.charsheetName?.charAt(0)?.toUpperCase() || '?')}
@@ -659,8 +660,8 @@ export default function CampaignGMDashboard(): ReactElement | null {
                                                             label={`${player.perks.length} vantagem${player.perks.length !== 1 ? 's' : ''}`}
                                                             size="small"
                                                             sx={{ 
-                                                                bgcolor: purple[100], 
-                                                                color: purple[800],
+                                                                bgcolor: (theme) => alpha(theme.palette.primary.main, 0.14), 
+                                                                color: 'primary.main',
                                                                 fontWeight: 600
                                                             }}
                                                         />
@@ -755,12 +756,12 @@ export default function CampaignGMDashboard(): ReactElement | null {
                                     sx={{
                                         p: 1.5,
                                         borderRadius: 2,
-                                        bgcolor: orange[100],
+                                        bgcolor: (theme) => alpha(theme.palette.warning.main, 0.14),
                                         border: '2px solid',
-                                        borderColor: orange[200]
+                                        borderColor: (theme) => alpha(theme.palette.warning.main, 0.5)
                                     }}
                                 >
-                                    <Pets sx={{ color: orange[700], fontSize: '2rem' }} />
+                                    <Pets sx={{ color: 'warning.main', fontSize: '2rem' }} />
                                 </Box>
                             }
                         >
@@ -777,10 +778,10 @@ export default function CampaignGMDashboard(): ReactElement | null {
                                                 p: 2,
                                                 mb: index < allCreaturesInCombat.length - 1 ? 2 : 0,
                                                 border: isCurrentTurn ? '3px solid' : '1px solid',
-                                                borderColor: isCurrentTurn ? orange[500] : 'divider',
+                                                borderColor: isCurrentTurn ? 'warning.main' : 'divider',
                                                 borderRadius: 2,
                                                 bgcolor: isCurrentTurn 
-                                                    ? theme.palette.mode === 'dark' ? orange[900] + '20' : orange[50]
+                                                    ? (theme) => alpha(theme.palette.warning.main, 0.12)
                                                     : 'background.raised',
                                                 position: 'relative',
                                                 '&::before': isCurrentTurn ? {
@@ -788,8 +789,8 @@ export default function CampaignGMDashboard(): ReactElement | null {
                                                     position: 'absolute',
                                                     top: -12,
                                                     left: 16,
-                                                    bgcolor: orange[500],
-                                                    color: 'white',
+                                                    bgcolor: 'warning.main',
+                                                    color: 'warning.contrastText',
                                                     px: 1.5,
                                                     py: 0.5,
                                                     borderRadius: 1,
@@ -802,10 +803,10 @@ export default function CampaignGMDashboard(): ReactElement | null {
                                             <Stack spacing={2}>
                                                 <Box display="flex" alignItems="center" gap={2}>
                                                     <Avatar sx={{ 
-                                                        bgcolor: isCurrentTurn ? orange[200] : orange[100], 
-                                                        color: isCurrentTurn ? orange[900] : orange[800],
+                                                        bgcolor: (theme) => alpha(theme.palette.warning.main, isCurrentTurn ? 0.28 : 0.14), 
+                                                        color: 'warning.main',
                                                         border: isCurrentTurn ? '2px solid' : 'none',
-                                                        borderColor: orange[500]
+                                                        borderColor: 'warning.main'
                                                     }}>
                                                         <Pets />
                                                     </Avatar>
@@ -818,8 +819,8 @@ export default function CampaignGMDashboard(): ReactElement | null {
                                                                     size="small" 
                                                                     sx={{ 
                                                                         ml: 1, 
-                                                                        bgcolor: orange[500], 
-                                                                        color: 'white',
+                                                                        bgcolor: 'warning.main', 
+                                                                        color: 'warning.contrastText',
                                                                         fontWeight: 700,
                                                                         fontSize: '0.65rem'
                                                                     }} 
@@ -871,17 +872,17 @@ export default function CampaignGMDashboard(): ReactElement | null {
                                                                     disabled={false}
                                                                     sx={{
                                                                         p: 1.5,
-                                                                        bgcolor: config.bg + '40',
+                                                                        bgcolor: alpha(config.color, 0.12),
                                                                         border: '1px solid',
-                                                                        borderColor: config.color + '40',
+                                                                        borderColor: alpha(config.color, 0.25),
                                                                         borderRadius: 2,
                                                                         justifyContent: 'flex-start',
                                                                         textAlign: 'left',
                                                                         textTransform: 'none',
                                                                         opacity: 1,
                                                                         '&:hover': {
-                                                                            bgcolor: config.bg + '60',
-                                                                            borderColor: config.color + '80'
+                                                                            bgcolor: alpha(config.color, 0.18),
+                                                                            borderColor: alpha(config.color, 0.5)
                                                                         }
                                                                     }}
                                                                 >
@@ -891,9 +892,9 @@ export default function CampaignGMDashboard(): ReactElement | null {
                                                                                 sx={{
                                                                                     p: 0.8,
                                                                                     borderRadius: 1,
-                                                                                    bgcolor: config.color + '20',
+                                                                                    bgcolor: alpha(config.color, 0.12),
                                                                                     border: '1px solid',
-                                                                                    borderColor: config.color + '40'
+                                                                                    borderColor: alpha(config.color, 0.25)
                                                                                 }}
                                                                             >
                                                                                 <IconComponent 
@@ -919,7 +920,7 @@ export default function CampaignGMDashboard(): ReactElement | null {
                                                                                 size="small"
                                                                                 sx={{
                                                                                     bgcolor: config.color,
-                                                                                    color: 'white',
+                                                                                    color: color.canvas,
                                                                                     fontWeight: 700,
                                                                                     fontSize: '0.75rem'
                                                                                 }}
@@ -940,8 +941,8 @@ export default function CampaignGMDashboard(): ReactElement | null {
                                                                                 size="small"
                                                                                 variant="outlined"
                                                                                 sx={{
-                                                                                    borderColor: config.color + '60',
-                                                                                    color: config.color,
+                                                                                    borderColor: alpha(config.color, 0.38),
+                                                                                    color: 'text.primary',
                                                                                     fontWeight: 600,
                                                                                     fontSize: '0.7rem'
                                                                                 }}
@@ -970,12 +971,12 @@ export default function CampaignGMDashboard(): ReactElement | null {
                                     sx={{
                                         p: 1.5,
                                         borderRadius: 2,
-                                        bgcolor: orange[100],
+                                        bgcolor: (theme) => alpha(theme.palette.warning.main, 0.14),
                                         border: '2px solid',
-                                        borderColor: orange[200]
+                                        borderColor: (theme) => alpha(theme.palette.warning.main, 0.5)
                                     }}
                                 >
-                                    <Pets sx={{ color: orange[700], fontSize: '2rem' }} />
+                                    <Pets sx={{ color: 'warning.main', fontSize: '2rem' }} />
                                 </Box>
                             }
                         >
@@ -1000,7 +1001,7 @@ export default function CampaignGMDashboard(): ReactElement | null {
                                                 <Box display="flex" alignItems="center" gap={2}>
                                                     <Avatar
                                                         src={creature.imageUrl || undefined}
-                                                        sx={{ bgcolor: orange[100], color: orange[800] }}
+                                                        sx={{ bgcolor: (theme) => alpha(theme.palette.warning.main, 0.14), color: 'warning.main' }}
                                                     >
                                                         <Pets />
                                                     </Avatar>
@@ -1017,30 +1018,30 @@ export default function CampaignGMDashboard(): ReactElement | null {
                                                             <Chip
                                                                 label={`Nível ${creature.level}`}
                                                                 size="small"
-                                                                sx={{ height: 20, fontSize: '0.65rem', bgcolor: green[100], color: green[800] }}
+                                                                sx={{ height: 20, fontSize: '0.65rem', bgcolor: (theme) => alpha(theme.palette.success.main, 0.14), color: 'success.main' }}
                                                             />
                                                             <Chip 
                                                                 label={`LP: ${creature.stats?.lp || 0}`} 
                                                                 size="small" 
-                                                                sx={{ height: 20, fontSize: '0.65rem', bgcolor: red[100], color: red[800] }} 
+                                                                sx={{ height: 20, fontSize: '0.65rem', bgcolor: alpha(color.lp, 0.14), color: 'error.light' }} 
                                                             />
                                                             <Chip 
                                                                 label={`MP: ${creature.stats?.mp || 0}`} 
                                                                 size="small" 
-                                                                sx={{ height: 20, fontSize: '0.65rem', bgcolor: blue[100], color: blue[800] }} 
+                                                                sx={{ height: 20, fontSize: '0.65rem', bgcolor: alpha(color.mp, 0.14), color: color.mp }} 
                                                             />
                                                             {creature.skills?.length > 0 && (
                                                                 <Chip 
                                                                     label={`${creature.skills.length} habilidade(s)`} 
                                                                     size="small" 
-                                                                    sx={{ height: 20, fontSize: '0.65rem', bgcolor: purple[100], color: purple[800] }} 
+                                                                    sx={{ height: 20, fontSize: '0.65rem', bgcolor: (theme) => alpha(theme.palette.primary.main, 0.14), color: 'primary.main' }} 
                                                                 />
                                                             )}
                                                             {creature.spells?.length > 0 && (
                                                                 <Chip 
                                                                     label={`${creature.spells.length} magia(s)`} 
                                                                     size="small" 
-                                                                    sx={{ height: 20, fontSize: '0.65rem', bgcolor: amber[100], color: amber[800] }} 
+                                                                    sx={{ height: 20, fontSize: '0.65rem', bgcolor: (theme) => alpha(theme.palette.info.main, 0.14), color: 'info.main' }} 
                                                                 />
                                                             )}
                                                         </Box>
@@ -1057,10 +1058,10 @@ export default function CampaignGMDashboard(): ReactElement | null {
                                                             size="small"
                                                             onClick={() => handleViewCreature(creature)}
                                                             sx={{ 
-                                                                color: blue[500],
+                                                                color: 'info.main',
                                                                 '&:hover': { 
-                                                                    bgcolor: blue[50],
-                                                                    color: blue[700]
+                                                                    bgcolor: (theme) => alpha(theme.palette.info.main, 0.14),
+                                                                    color: 'info.light'
                                                                 }
                                                             }}
                                                         >
@@ -1072,10 +1073,10 @@ export default function CampaignGMDashboard(): ReactElement | null {
                                                             size="small"
                                                             onClick={() => handleEditCreature(creature)}
                                                             sx={{ 
-                                                                color: purple[500],
+                                                                color: 'primary.main',
                                                                 '&:hover': { 
-                                                                    bgcolor: purple[50],
-                                                                    color: purple[700]
+                                                                    bgcolor: (theme) => alpha(theme.palette.primary.main, 0.14),
+                                                                    color: 'primary.light'
                                                                 }
                                                             }}
                                                         >
@@ -1087,10 +1088,10 @@ export default function CampaignGMDashboard(): ReactElement | null {
                                                             size="small"
                                                             onClick={async () => await handleDeleteCreature(creature.id, creature.name)}
                                                             sx={{ 
-                                                                color: red[400],
+                                                                color: 'error.main',
                                                                 '&:hover': { 
-                                                                    bgcolor: red[50],
-                                                                    color: red[600]
+                                                                    bgcolor: (theme) => alpha(theme.palette.error.main, 0.14),
+                                                                    color: 'error.light'
                                                                 }
                                                             }}
                                                         >

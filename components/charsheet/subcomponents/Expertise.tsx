@@ -13,13 +13,13 @@ import {
     alpha
 } from '@mui/material';
 import { useState, type ReactElement, useCallback } from 'react';
-import { blue, green, grey, purple, yellow, red } from '@mui/material/colors';
 import DiceRollModal from '@components/misc/DiceRollModal';
 import { useFormContext } from 'react-hook-form';
 import { Casino, Edit, TrendingUp } from '@mui/icons-material';
 import type { Attributes, Expertise as ExpertiseType, Expertises } from '@models';
 import type { Charsheet } from '@models/entities';
 import { color as colorToken } from '@themes/tokens';
+import { classColor } from '@constants';
 
 interface ExpertiseProps {
     name: keyof Expertises | string;
@@ -57,17 +57,17 @@ export default function Expertise({
 
     const determinateColor = useCallback((): string => {
         if (expertise.value < 0) {
-            return red[500] // Valores negativos em vermelho
+            return colorToken.danger // Valores negativos em vermelho
         } else if (expertise.value < 2) {
-            return grey[500]
+            return colorToken.inkMuted
         } else if (expertise.value < 5) {
-            return green[500]
+            return colorToken.success
         } else if (expertise.value < 7) {
-            return blue[500]
+            return colorToken.cyan
         } else if (expertise.value < 9) {
-            return purple[500]
+            return classColor.Bruxo
         } else {
-            return yellow[500]
+            return colorToken.amber
         }
     }, [ expertise.value ]);
 

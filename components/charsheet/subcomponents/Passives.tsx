@@ -26,7 +26,6 @@ import {
 } from '@mui/material';
 import { Add, Delete, Edit, EventNote } from '@mui/icons-material';
 import { useFormContext, useWatch } from 'react-hook-form';
-import { amber, blue, grey, red } from '@mui/material/colors';
 import { color } from '@themes/tokens';
 import type { PassiveOccasion } from '@models/types/string';
 import type { Charsheet } from '@models/entities';
@@ -48,20 +47,21 @@ const occasionOptions: PassiveOccasion[] = [
     'Personalizado'
 ];
 
-// Mapeamento de cores para ocasiões
+// Mapeamento de cores para ocasiões (pelo papel: dano/ataque sofrido em vermelho, turno e magia em ciano,
+// cura em verde, aviso em laranja, neutros para o que não tem gatilho próprio)
 const occasionColors: Record<PassiveOccasion, string> = {
-    'Início do turno': blue[200],
-    'Final do turno': blue[300],
-    'Ao ser atacado': red[200],
-    'Ao atacar': amber[500],
+    'Início do turno': color.cyan,
+    'Final do turno': color.cyan,
+    'Ao ser atacado': color.danger,
+    'Ao atacar': color.amber,
     'Ao usar magia': color.mp,
-    'Ao sofrer dano': red[400],
-    'Ao causar dano': red[300],
-    'Sempre ativo': grey[500],
+    'Ao sofrer dano': color.danger,
+    'Ao causar dano': color.danger,
+    'Sempre ativo': color.inkMuted,
     'Quando curar': color.success,
     'Ao se deslocar': color.cyan,
     'Condição específica': color.warning,
-    'Personalizado': grey[400]
+    'Personalizado': color.inkFaint
 };
 
 interface PassiveFormData {
@@ -187,7 +187,7 @@ export default function Passives({ realtime = false }: { realtime?: boolean }) {
                                 variant="outlined" 
                                 sx={{ 
                                     position: 'relative',
-                                    borderLeft: `4px solid ${occasionColors[passive.occasion] || grey[500]}`
+                                    borderLeft: `4px solid ${occasionColors[passive.occasion] || color.inkMuted}`
                                 }}
                             >
                                 <CardContent sx={{ pb: 1 }}>
@@ -200,8 +200,8 @@ export default function Passives({ realtime = false }: { realtime?: boolean }) {
                                                 size="small" 
                                                 label={passive.occasion}
                                                 sx={{ 
-                                                    bgcolor: occasionColors[passive.occasion] || grey[300],
-                                                    color: theme.palette.getContrastText(occasionColors[passive.occasion] || grey[300]),
+                                                    bgcolor: occasionColors[passive.occasion] || color.inkMuted,
+                                                    color: theme.palette.getContrastText(occasionColors[passive.occasion] || color.inkMuted),
                                                     fontSize: '0.7rem',
                                                     mb: 1
                                                 }} 
@@ -217,14 +217,14 @@ export default function Passives({ realtime = false }: { realtime?: boolean }) {
                                         <IconButton 
                                             size="small" 
                                             onClick={() => handleEdit(passive)}
-                                            sx={{ color: blue[500] }}
+                                            sx={{ color: 'primary.main' }}
                                         >
                                             <Edit fontSize="small" />
                                         </IconButton>
                                         <IconButton 
                                             size="small" 
                                             onClick={() => handleDelete(passive.id)}
-                                            sx={{ color: red[500] }}
+                                            sx={{ color: 'error.main' }}
                                         >
                                             <Delete fontSize="small" />
                                         </IconButton>

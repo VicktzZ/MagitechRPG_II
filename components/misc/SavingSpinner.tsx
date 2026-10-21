@@ -3,7 +3,6 @@
 import { Box, CircularProgress } from '@mui/material';
 import type { ReactElement } from 'react';
 import { useSavingSpinner } from '@contexts/savingSpinnerContext';
-import { amber } from '@mui/material/colors';
 
 export function SavingSpinner(): ReactElement | null {
     const { isSaving } = useSavingSpinner()
@@ -22,7 +21,7 @@ export function SavingSpinner(): ReactElement | null {
             <CircularProgress
                 size={30}
                 sx={{
-                    color: amber[500]
+                    color: 'primary.main'
                 }}
             />
         </Box>

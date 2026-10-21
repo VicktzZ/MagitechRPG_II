@@ -21,7 +21,6 @@ import {
     Typography
 } from '@mui/material';
 import StorefrontIcon from '@mui/icons-material/Storefront';
-import { green, orange, red } from '@mui/material/colors';
 import { color } from '@themes/tokens';
 import { useSnackbar } from 'notistack';
 import { PerkTypeEnum } from '@enums/rogueliteEnum';
@@ -136,10 +135,10 @@ export default function ShopDialog({
     return (
         <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
             <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <StorefrontIcon sx={{ color: orange[500] }} />
+                <StorefrontIcon sx={{ color: 'primary.main' }} />
                 Gerenciar Loja
                 {isShopOpen && (
-                    <Chip label="Aberta" size="small" sx={{ ml: 1, bgcolor: green[100], color: green[800] }} />
+                    <Chip label="Aberta" size="small" sx={{ ml: 1, bgcolor: (theme) => alpha(theme.palette.success.main, 0.14), color: 'success.main' }} />
                 )}
             </DialogTitle>
             <DialogContent>
@@ -159,7 +158,7 @@ export default function ShopDialog({
                             sx={{ 
                                 mb: 1, 
                                 fontWeight: 700, 
-                                color: isShopOpen ? green[400] : 'text.primary' 
+                                color: isShopOpen ? 'success.main' : 'text.primary' 
                             }}
                         >
                             {isShopOpen ? '🟢' : '🔴'} Status da Loja
@@ -184,7 +183,7 @@ export default function ShopDialog({
                             step={1}
                             marks
                             valueLabelDisplay="auto"
-                            sx={{ color: orange[500] }}
+                            sx={{ color: 'primary.main' }}
                         />
                     </Box>
 
@@ -206,7 +205,7 @@ export default function ShopDialog({
                                 { value: 3, label: '3x' }
                             ]}
                             valueLabelDisplay="auto"
-                            sx={{ color: orange[500] }}
+                            sx={{ color: 'primary.main' }}
                         />
                     </Box>
 
@@ -421,7 +420,7 @@ export default function ShopDialog({
                                             <Chip 
                                                 label={`${currencySymbol}${displayPrice(item.price)}`}
                                                 size="small"
-                                                sx={{ fontWeight: 700, bgcolor: green[100], color: green[800] }}
+                                                sx={{ fontWeight: 700, bgcolor: (theme) => alpha(theme.palette.success.main, 0.14), color: 'success.main' }}
                                             />
                                         </Box>
                                     ))}
@@ -441,7 +440,7 @@ export default function ShopDialog({
                         variant="contained"
                         disabled={isUpdating}
                         startIcon={isUpdating ? <CircularProgress size={20} /> : <StorefrontIcon />}
-                        sx={{ bgcolor: red[600], '&:hover': { bgcolor: red[700] } }}
+                        sx={{ bgcolor: 'error.main', color: 'error.contrastText', '&:hover': { bgcolor: 'error.dark' } }}
                     >
                         {isUpdating ? 'Fechando...' : 'Fechar Loja'}
                     </Button>
@@ -451,7 +450,7 @@ export default function ShopDialog({
                         variant="contained"
                         disabled={isUpdating}
                         startIcon={isUpdating ? <CircularProgress size={20} /> : <StorefrontIcon />}
-                        sx={{ bgcolor: green[600], '&:hover': { bgcolor: green[700] } }}
+                        sx={{ bgcolor: 'success.main', color: 'success.contrastText', '&:hover': { bgcolor: 'success.dark' } }}
                     >
                         {isUpdating ? 'Abrindo...' : 'Abrir Loja'}
                     </Button>

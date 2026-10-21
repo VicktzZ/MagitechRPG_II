@@ -24,7 +24,8 @@ import {
     TextField,
     Alert,
     CircularProgress,
-    Tooltip
+    Tooltip,
+    alpha
 } from '@mui/material';
 import { Edit, Save, Cancel, Delete } from '@mui/icons-material';
 import ChangePlayerStatusModal from './ChangePlayerStatusModal';
@@ -33,8 +34,8 @@ import { useFirestoreRealtime } from '@hooks/useFirestoreRealtime';
 import { useFirestoreByIds } from '@hooks/useFirestoreByIds';
 import { charsheetService } from '@services';
 import { useSnackbar } from 'notistack';
-import { green, red, orange } from '@mui/material/colors';
 import { elementColor } from '@constants';
+import { color } from '@themes/tokens';
 import { useCharsheetSystem } from '@hooks/useCharsheetSystem';
 
 /**
@@ -402,7 +403,7 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet }: Char
                                 <Tooltip title="Editar ficha">
                                     <IconButton
                                         onClick={() => setIsEditing(true)}
-                                        sx={{ bgcolor: orange[100], color: orange[800] }}
+                                        sx={{ bgcolor: (theme) => alpha(theme.palette.primary.main, 0.14), color: 'primary.main' }}
                                     >
                                         <Edit />
                                     </IconButton>
@@ -413,7 +414,7 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet }: Char
                                         <IconButton
                                             onClick={handleCancelEdit}
                                             disabled={isSaving}
-                                            sx={{ bgcolor: red[100], color: red[800] }}
+                                            sx={{ bgcolor: (theme) => alpha(theme.palette.error.main, 0.14), color: 'error.main' }}
                                         >
                                             <Cancel />
                                         </IconButton>
@@ -422,7 +423,7 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet }: Char
                                         <IconButton
                                             onClick={handleSave}
                                             disabled={isSaving}
-                                            sx={{ bgcolor: green[100], color: green[800] }}
+                                            sx={{ bgcolor: (theme) => alpha(theme.palette.success.main, 0.14), color: 'success.main' }}
                                         >
                                             {isSaving ? <CircularProgress size={24} /> : <Save />}
                                         </IconButton>
@@ -1256,7 +1257,8 @@ export default function CharsheetDetailsModal({ open, onClose, charsheet }: Char
                                                         size="small"
                                                         sx={{
                                                             bgcolor: elementColor[spell?.element?.toUpperCase() ],
-                                                            color: spell?.element?.toUpperCase() === 'NÃO-ELEMENTAL' || spell?.element?.toUpperCase() === 'LUZ' ? 'black' : 'white'
+                                                            // Texto escuro sobre a marca do elemento (maior contraste); só o vermelho de SANGUE pede texto claro
+                                                            color: spell?.element?.toUpperCase() === 'SANGUE' ? 'text.primary' : color.canvas
                                                         }}
                                                     />
                                                 </TableCell>

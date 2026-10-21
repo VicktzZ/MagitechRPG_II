@@ -21,7 +21,6 @@ import { alpha } from '@mui/material/styles';
 import CloseIcon from '@mui/icons-material/Close';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import AutoStoriesIcon from '@mui/icons-material/AutoStories';
-import { blue, red } from '@mui/material/colors';
 import { elementColor } from '@constants';
 import ElementIcon, { resolveElement } from '@components/misc/ElementIcon';
 import { shadow } from '@themes/tokens';
@@ -221,8 +220,8 @@ function ElementalMasteryModal({ open, onClose, onElementSelect }: ElementalMast
                 <Box
                     sx={{
                         p: 2,
-                        bgcolor: blue[700],
-                        color: 'white',
+                        bgcolor: theme.palette.primary.main,
+                        color: 'primary.contrastText',
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center'
@@ -283,18 +282,18 @@ function ElementalMasteryModal({ open, onClose, onElementSelect }: ElementalMast
                                         onClick={() => handleElementSelect(element as Element)}
                                         sx={{
                                             bgcolor: selectedElement === element 
-                                                ? alpha(blue[500], 0.1) 
+                                                ? alpha(theme.palette.primary.main, 0.1) 
                                                 : 'transparent',
                                             '&:hover': {
                                                 bgcolor: selectedElement === element 
-                                                    ? alpha(blue[500], 0.2) 
+                                                    ? alpha(theme.palette.primary.main, 0.2) 
                                                     : alpha(theme.palette.action.hover, 0.1)
                                             }
                                         }}
                                         secondaryAction={
                                             selectedElement === element && (
                                                 <CheckCircleIcon 
-                                                    sx={{ color: blue[500] }} 
+                                                    sx={{ color: 'primary.main' }} 
                                                     fontSize="small" 
                                                 />
                                             )
@@ -378,9 +377,9 @@ function ElementalMasteryModal({ open, onClose, onElementSelect }: ElementalMast
                                         <Grid item xs={12} md={6}>
                                             <Card 
                                                 sx={{
-                                                    bgcolor: alpha(blue[500], 0.05),
+                                                    bgcolor: alpha(theme.palette.primary.main, 0.05),
                                                     border: '1px solid',
-                                                    borderColor: alpha(blue[300], 0.3),
+                                                    borderColor: alpha(theme.palette.primary.main, 0.3),
                                                     height: '100%'
                                                 }}
                                             >
@@ -407,9 +406,9 @@ function ElementalMasteryModal({ open, onClose, onElementSelect }: ElementalMast
                                         <Grid item xs={12} md={6}>
                                             <Card 
                                                 sx={{
-                                                    bgcolor: alpha(red[500], 0.05),
+                                                    bgcolor: alpha(theme.palette.error.main, 0.05),
                                                     border: '1px solid',
-                                                    borderColor: alpha(red[300], 0.3),
+                                                    borderColor: alpha(theme.palette.error.main, 0.3),
                                                     height: '100%'
                                                 }}
                                             >

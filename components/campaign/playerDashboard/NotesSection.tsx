@@ -9,6 +9,7 @@ import {
     Save
 } from '@mui/icons-material';
 import {
+    alpha,
     Box,
     Chip,
     Paper,
@@ -16,7 +17,7 @@ import {
     TextField,
     Typography
 } from '@mui/material';
-import { blue, green, grey } from '@mui/material/colors';
+import { color } from '@themes/tokens';
 import { useState, type ReactElement } from 'react';
 
 export default function NotesSection(): ReactElement {
@@ -64,12 +65,12 @@ export default function NotesSection(): ReactElement {
                                 sx={{
                                     p: 1.5,
                                     borderRadius: 2,
-                                    bgcolor: grey[100],
+                                    bgcolor: 'background.raised',
                                     border: '2px solid',
-                                    borderColor: grey[200]
+                                    borderColor: 'divider'
                                 }}
                             >
-                                <Notes sx={{ color: grey[700], fontSize: '2rem' }} />
+                                <Notes sx={{ color: 'text.secondary', fontSize: '2rem' }} />
                             </Box>
                             <Box>
                                 <Typography 
@@ -96,9 +97,10 @@ export default function NotesSection(): ReactElement {
                                     label="Editando"
                                     size="small"
                                     sx={{
-                                        bgcolor: blue[100],
-                                        color: blue[800],
-                                        fontWeight: 600
+                                        bgcolor: (theme) => alpha(theme.palette.info.main, 0.14),
+                                        color: 'info.main',
+                                        fontWeight: 600,
+                                        '& .MuiChip-icon': { color: 'inherit' }
                                     }}
                                 />
                             ) : (
@@ -107,9 +109,10 @@ export default function NotesSection(): ReactElement {
                                     label="Salvo"
                                     size="small"
                                     sx={{
-                                        bgcolor: green[100],
-                                        color: green[800],
-                                        fontWeight: 600
+                                        bgcolor: (theme) => alpha(theme.palette.success.main, 0.14),
+                                        color: 'success.main',
+                                        fontWeight: 600,
+                                        '& .MuiChip-icon': { color: 'inherit' }
                                     }}
                                 />
                             )}
@@ -139,14 +142,14 @@ export default function NotesSection(): ReactElement {
                                         resize: 'none'
                                     },
                                     '& fieldset': {
-                                        borderColor: grey[300],
+                                        borderColor: color.borderControl,
                                         borderWidth: 2
                                     },
                                     '&:hover fieldset': {
-                                        borderColor: blue[400]
+                                        borderColor: 'text.secondary'
                                     },
                                     '&.Mui-focused fieldset': {
-                                        borderColor: blue[600],
+                                        borderColor: 'primary.main',
                                         borderWidth: 2
                                     }
                                 }

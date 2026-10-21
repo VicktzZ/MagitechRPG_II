@@ -14,8 +14,8 @@ import {
     useTheme,
     Zoom
 } from '@mui/material'
-import { blue, deepPurple, green, orange, red, teal } from '@mui/material/colors'
 import { color } from '@themes/tokens'
+import { classColor } from '@constants'
 import { memo, useEffect, useMemo, useRef } from 'react'
 import { useFormContext, useWatch } from 'react-hook-form'
 
@@ -35,46 +35,47 @@ function calculateAttributeMod(attributeValue: number): number {
     return 2 + Math.floor((attributeValue - 10) / 10)
 }
 
+// O `filter` pinta o ícone preto de `RPGIcon` com a mesma cor de `color`; ao trocar uma, refaça a outra
 const attributeIcons: Record<MainAttributes, AttributeConfig> = {
     vig: {
-        color: red[500],
+        color: color.lp,
         icon: 'health',
-        filter: 'invert(32%) sepia(55%) saturate(3060%) hue-rotate(343deg) brightness(99%) contrast(93%)',
+        filter: 'invert(41%) sepia(39%) saturate(1355%) hue-rotate(320deg) brightness(105%) contrast(76%)',
         label: 'Vigor',
         description: 'Resistência física e pontos de vida'
     },
     foc: {
-        color: blue[500],
+        color: color.mp,
         icon: 'potion',
-        filter: 'invert(42%) sepia(99%) saturate(584%) hue-rotate(169deg) brightness(101%) contrast(99%)',
+        filter: 'invert(61%) sepia(69%) saturate(563%) hue-rotate(165deg) brightness(92%) contrast(96%)',
         label: 'Foco',
         description: 'Concentração e pontos de mana'
     },
     des: {
-        color: orange[500],
+        color: color.warning,
         icon: 'shield',
-        filter: 'invert(57%) sepia(63%) saturate(723%) hue-rotate(357deg) brightness(99%) contrast(107%)',
+        filter: 'invert(77%) sepia(41%) saturate(6226%) hue-rotate(337deg) brightness(94%) contrast(86%)',
         label: 'Destreza',
         description: 'Agilidade e velocidade'
     },
     log: {
-        color: teal[500],
+        color: classColor.Feiticeiro,
         icon: 'book',
-        filter: 'invert(53%) sepia(48%) saturate(7320%) hue-rotate(150deg) brightness(89%) contrast(101%)',
+        filter: 'invert(64%) sepia(14%) saturate(5680%) hue-rotate(129deg) brightness(85%) contrast(70%)',
         label: 'Lógica',
         description: 'Inteligência e raciocínio'
     },
     sab: {
-        color: deepPurple[500],
+        color: classColor.Bruxo,
         icon: 'pawprint',
-        filter: 'invert(19%) sepia(90%) saturate(2394%) hue-rotate(253deg) brightness(90%) contrast(84%)',
+        filter: 'invert(52%) sepia(81%) saturate(1027%) hue-rotate(219deg) brightness(87%) contrast(82%)',
         label: 'Sabedoria',
         description: 'Percepção e intuição'
     },
     car: {
-        color: green[500],
+        color: color.success,
         icon: 'aura',
-        filter: 'invert(60%) sepia(41%) saturate(642%) hue-rotate(73deg) brightness(91%) contrast(85%)',
+        filter: 'invert(69%) sepia(9%) saturate(1675%) hue-rotate(91deg) brightness(91%) contrast(91%)',
         label: 'Carisma',
         description: 'Presença e influência social'
     }
@@ -505,9 +506,9 @@ function Attribute({
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                bgcolor: alpha(attributeMod >= 0 ? green[500] : red[500], 0.1),
+                                bgcolor: alpha(attributeMod >= 0 ? theme.palette.success.main : theme.palette.error.main, 0.1),
                                 border: '1px solid',
-                                borderColor: alpha(attributeMod >= 0 ? green[500] : red[500], 0.3),
+                                borderColor: alpha(attributeMod >= 0 ? theme.palette.success.main : theme.palette.error.main, 0.3),
                                 borderRadius: '4px',
                                 px: 0.8,
                                 py: 0.1,
@@ -520,7 +521,7 @@ function Attribute({
                                 sx={{
                                     fontSize: matches ? '0.6rem' : '0.7rem',
                                     fontWeight: 'medium',
-                                    color: attributeMod >= 0 ? green[500] : red[500]
+                                    color: attributeMod >= 0 ? 'success.main' : 'error.main'
                                 }}
                             >
                                 {attributeMod >= 0 ? `+${attributeMod}` : attributeMod}
@@ -543,9 +544,9 @@ function Attribute({
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
-                                    bgcolor: alpha(discountValue < 0 ? red[500] : green[500], 0.1),
+                                    bgcolor: alpha(discountValue < 0 ? theme.palette.error.main : theme.palette.success.main, 0.1),
                                     border: '1px solid',
-                                    borderColor: alpha(discountValue < 0 ? red[500] : green[500], 0.3),
+                                    borderColor: alpha(discountValue < 0 ? theme.palette.error.main : theme.palette.success.main, 0.3),
                                     borderRadius: '4px',
                                     px: 0.8,
                                     py: 0.1,
@@ -558,7 +559,7 @@ function Attribute({
                                     sx={{
                                         fontSize: matches ? '0.55rem' : '0.65rem',
                                         fontWeight: 'medium',
-                                        color: alpha(discountValue < 0 ? red[500] : green[500], 0.8)
+                                        color: alpha(discountValue < 0 ? theme.palette.error.main : theme.palette.success.main, 0.8)
                                     }}
                                 >
                                     {discountValue}%
@@ -574,7 +575,7 @@ function Attribute({
                 <Typography 
                     variant="caption" 
                     sx={{ 
-                        color: red[500],
+                        color: 'error.main',
                         position: 'absolute',
                         bottom: -18,
                         right: 10,

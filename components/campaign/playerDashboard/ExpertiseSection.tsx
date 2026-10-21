@@ -5,6 +5,7 @@ import { useCampaignCurrentCharsheetContext } from '@contexts';
 import { useChatContext } from '@contexts/chatContext'
 import { MessageType } from '@enums'
 import { 
+    alpha,
     Box, 
     Button, 
     Chip, 
@@ -29,13 +30,22 @@ import {
     SortByAlpha,
     TrendingDown
 } from '@mui/icons-material'
-import { blue, green, grey, purple, orange, red } from '@mui/material/colors'
+import { color } from '@themes/tokens'
 import { useSession } from 'next-auth/react'
 import { type ReactElement, useState, useMemo, useEffect } from 'react'
 import type { RPGSystem, SystemAttribute } from '@models/entities';
 
 type ExpertiseLevel = 'all' | 'novice' | 'trained' | 'expert' | 'master' | 'legendary';
 type SortOrder = 'alpha-asc' | 'alpha-desc' | 'value-asc' | 'value-desc';
+
+/** Cor de cada nível de perícia, do neutro (destreinado) ao topo da escala: papéis do tema, não cores soltas */
+const levelColor = {
+    novice: color.inkMuted,
+    trained: color.success,
+    expert: color.cyan,
+    master: color.amber,
+    legendary: color.warning
+} as const
 
 interface ExpertiseEntry {
     key: string;
@@ -140,36 +150,31 @@ export default function ExpertiseSection(): ReactElement {
     const getExpertiseConfig = (value: number) => {
         if (value < 2) {
             return { 
-                color: grey[600], 
-                bg: grey[100], 
+                color: levelColor.novice, 
                 label: 'Destreinado',
                 icon: Person
             }
         } else if (value < 5) {
             return { 
-                color: green[600], 
-                bg: green[100], 
+                color: levelColor.trained, 
                 label: 'Treinado',
                 icon: TrendingUp
             }
         } else if (value < 7) {
             return { 
-                color: blue[600], 
-                bg: blue[100], 
+                color: levelColor.expert, 
                 label: 'Especialista',
                 icon: Star
             }
         } else if (value < 9) {
             return { 
-                color: purple[600], 
-                bg: purple[100], 
+                color: levelColor.master, 
                 label: 'Mestre',
                 icon: EmojiEvents
             }
         } else {
             return { 
-                color: orange[600], 
-                bg: orange[100], 
+                color: levelColor.legendary, 
                 label: 'Lendário',
                 icon: Casino
             }
@@ -178,13 +183,13 @@ export default function ExpertiseSection(): ReactElement {
 
     const getAttributeColor = (attr: string) => {
         const colors: Record<string, string> = {
-            'FOR': red[600],
-            'AGI': green[600],
-            'INT': blue[600],
-            'PRE': purple[600],
-            'VIG': orange[600]
+            'FOR': color.danger,
+            'AGI': color.success,
+            'INT': color.cyan,
+            'PRE': color.amber,
+            'VIG': color.warning
         }
-        return colors[attr] || grey[600]
+        return colors[attr] || color.inkMuted
     }
 
     const handleExpertiseClick = async (entry: ExpertiseEntry) => {
@@ -263,11 +268,11 @@ export default function ExpertiseSection(): ReactElement {
                         }}
                     >
                         {[
-                            { key: 'novice', label: 'Destreinado', count: expertiseStats.novice, color: grey[600] },
-                            { key: 'trained', label: 'Treinado', count: expertiseStats.trained, color: green[600] },
-                            { key: 'expert', label: 'Competente', count: expertiseStats.expert, color: blue[600] },
-                            { key: 'master', label: 'Experiente', count: expertiseStats.master, color: purple[600] },
-                            { key: 'legendary', label: 'Especialista', count: expertiseStats.legendary, color: orange[600] }
+                            { key: 'novice', label: 'Destreinado', count: expertiseStats.novice, color: levelColor.novice },
+                            { key: 'trained', label: 'Treinado', count: expertiseStats.trained, color: levelColor.trained },
+                            { key: 'expert', label: 'Competente', count: expertiseStats.expert, color: levelColor.expert },
+                            { key: 'master', label: 'Experiente', count: expertiseStats.master, color: levelColor.master },
+                            { key: 'legendary', label: 'Especialista', count: expertiseStats.legendary, color: levelColor.legendary }
                         ].map(stat => (
                             <Stack key={stat.key} alignItems="center" spacing={0.5}>
                                 <Typography variant="h6" sx={{ color: stat.color, fontWeight: 700 }}>
@@ -309,31 +314,31 @@ export default function ExpertiseSection(): ReactElement {
                                 <MenuItem value="all">Todas as Perícias</MenuItem>
                                 <MenuItem value="novice">
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                        <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: grey[600] }} />
+                                        <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: levelColor.novice }} />
                                         Destreinado
                                     </Box>
                                 </MenuItem>
                                 <MenuItem value="trained">
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                        <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: green[600] }} />
+                                        <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: levelColor.trained }} />
                                         Treinado
                                     </Box>
                                 </MenuItem>
                                 <MenuItem value="expert">
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                        <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: blue[600] }} />
+                                        <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: levelColor.expert }} />
                                         Competente
                                     </Box>
                                 </MenuItem>
                                 <MenuItem value="master">
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                        <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: purple[600] }} />
+                                        <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: levelColor.master }} />
                                         Experiente
                                     </Box>
                                 </MenuItem>
                                 <MenuItem value="legendary">
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                        <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: orange[600] }} />
+                                        <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: levelColor.legendary }} />
                                         Especialista
                                     </Box>
                                 </MenuItem>
@@ -455,16 +460,16 @@ export default function ExpertiseSection(): ReactElement {
                                                 elevation={1}
                                                 sx={{
                                                     p: 2.5,
-                                                    bgcolor: config.bg + '40',
+                                                    bgcolor: alpha(config.color, 0.1),
                                                     border: '1px solid',
-                                                    borderColor: config.color + '40',
+                                                    borderColor: alpha(config.color, 0.25),
                                                     borderRadius: 2,
                                                     justifyContent: 'flex-start',
                                                     textAlign: 'left',
                                                     transition: 'all 0.3s ease',
                                                     '&:hover': {
-                                                        bgcolor: config.bg + '60',
-                                                        borderColor: config.color + '80'
+                                                        bgcolor: alpha(config.color, 0.18),
+                                                        borderColor: alpha(config.color, 0.5)
                                                     }
                                                 }}
                                             >
@@ -474,9 +479,9 @@ export default function ExpertiseSection(): ReactElement {
                                                             sx={{
                                                                 p: 0.8,
                                                                 borderRadius: 1,
-                                                                bgcolor: config.color + '20',
+                                                                bgcolor: alpha(config.color, 0.12),
                                                                 border: '1px solid',
-                                                                borderColor: config.color + '40'
+                                                                borderColor: alpha(config.color, 0.25)
                                                             }}
                                                         >
                                                             <IconComponent 
@@ -504,7 +509,7 @@ export default function ExpertiseSection(): ReactElement {
                                                             size="small"
                                                             sx={{
                                                                 bgcolor: config.color,
-                                                                color: 'white',
+                                                                color: 'background.default',
                                                                 fontWeight: 700,
                                                                 fontSize: '0.8rem'
                                                             }}
@@ -514,7 +519,7 @@ export default function ExpertiseSection(): ReactElement {
                                                                 label={entry.attributeLabel}
                                                                 size="small"
                                                                 sx={{
-                                                                    bgcolor: getAttributeColor(entry.attributeLabel) + '20',
+                                                                    bgcolor: alpha(getAttributeColor(entry.attributeLabel), 0.12),
                                                                     color: getAttributeColor(entry.attributeLabel),
                                                                     fontWeight: 600,
                                                                     fontSize: '0.75rem'
@@ -526,7 +531,7 @@ export default function ExpertiseSection(): ReactElement {
                                                             size="small"
                                                             variant="outlined"
                                                             sx={{
-                                                                borderColor: config.color + '60',
+                                                                borderColor: alpha(config.color, 0.38),
                                                                 color: config.color,
                                                                 fontWeight: 600,
                                                                 fontSize: '0.7rem'

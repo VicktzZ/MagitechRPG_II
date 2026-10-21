@@ -11,7 +11,7 @@ import type { Charsheet, RPGSystem } from '@models/entities';
 import type { ClassNames, LineageNames } from '@models/types/string';
 import { Box, FormControl, FormHelperText, InputLabel, MenuItem, Select, TextField, Typography, useMediaQuery, useTheme, type SelectChangeEvent } from '@mui/material';
 import { NumberField } from '@components/misc';
-import { blue, green, red, yellow } from '@mui/material/colors';
+import { color } from '@themes/tokens';
 import { useCallback, useMemo, useState, useEffect, type ReactElement } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
 
@@ -413,7 +413,7 @@ export default function Characteristics(): ReactElement {
             >
                 <Box>
                     <Typography>{lineage}</Typography>
-                    <Typography noWrap whiteSpace='pre-wrap' color={green[500]} variant='caption'>
+                    <Typography noWrap whiteSpace='pre-wrap' color='success.main' variant='caption'>
                         {lineagePoints(expertises)}
                     </Typography>
                 </Box>
@@ -446,13 +446,13 @@ export default function Characteristics(): ReactElement {
                         {classesModel[classe as keyof typeof classesModel].name}
                     </Typography>
                     <Box display='flex' gap={2}>
-                        <Typography fontWeight={900} variant='caption' color={red[500]}>
+                        <Typography fontWeight={900} variant='caption' color={color.lp}>
                             LP: {classesModel[classe as keyof typeof classesModel].stats.lp}
                         </Typography>
-                        <Typography fontWeight={900} variant='caption' color={blue[300]}>
+                        <Typography fontWeight={900} variant='caption' color={color.mp}>
                             MP: {classesModel[classe as keyof typeof classesModel].stats.mp}
                         </Typography>
-                        <Typography fontWeight={900} variant='caption' color={yellow[500]}>
+                        <Typography fontWeight={900} variant='caption' color={color.ap}>
                             AP: {classesModel[classe as keyof typeof classesModel].stats.ap}
                         </Typography>
                     </Box>
@@ -608,7 +608,7 @@ export default function Characteristics(): ReactElement {
                                                     </Typography>
                                                 )}
                                                 {(occ.startingMoney ?? 0) > 0 && (
-                                                    <Typography variant='caption' color={green[500]} display='block'>
+                                                    <Typography variant='caption' color='success.main' display='block'>
                                                         +{occ.startingMoney} de dinheiro inicial
                                                     </Typography>
                                                 )}
@@ -665,28 +665,28 @@ export default function Characteristics(): ReactElement {
                                                 <Box display='flex' flexDirection='column'>
                                                     <Typography>{raceName}</Typography>
                                                     {raceData.stats.pda > 0 ? (
-                                                        <Typography variant='caption' color={green[500]}>
+                                                        <Typography variant='caption' color='success.main'>
                                                             +{raceData.stats.pda} {raceData.stats.pda === 1 ? 'Ponto' : 'Pontos'} de Atributo
                                                         </Typography>
                                                     ) : (
                                                         <>
                                                             {raceData.stats.lp > 0 && (
-                                                                <Typography variant='caption' color={green[500]}>+{raceData.stats.lp} LP</Typography>
+                                                                <Typography variant='caption' color='success.main'>+{raceData.stats.lp} LP</Typography>
                                                             )}
                                                             {raceData.stats.lp < 0 && (
-                                                                <Typography variant='caption' color={red[500]}>{raceData.stats.lp} LP</Typography>
+                                                                <Typography variant='caption' color='error.main'>{raceData.stats.lp} LP</Typography>
                                                             )}
                                                             {raceData.stats.mp > 0 && (
-                                                                <Typography variant='caption' color={green[500]}>+{raceData.stats.mp} MP</Typography>
+                                                                <Typography variant='caption' color='success.main'>+{raceData.stats.mp} MP</Typography>
                                                             )}
                                                             {raceData.stats.mp < 0 && (
-                                                                <Typography variant='caption' color={red[500]}>{raceData.stats.mp} MP</Typography>
+                                                                <Typography variant='caption' color='error.main'>{raceData.stats.mp} MP</Typography>
                                                             )}
                                                             {raceData.stats.ap > 0 && (
-                                                                <Typography variant='caption' color={green[500]}>+{raceData.stats.ap} AP</Typography>
+                                                                <Typography variant='caption' color='success.main'>+{raceData.stats.ap} AP</Typography>
                                                             )}
                                                             {raceData.stats.ap < 0 && (
-                                                                <Typography variant='caption' color={red[500]}>{raceData.stats.ap} AP</Typography>
+                                                                <Typography variant='caption' color='error.main'>{raceData.stats.ap} AP</Typography>
                                                             )}
                                                         </>
                                                     )}

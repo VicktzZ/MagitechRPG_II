@@ -36,7 +36,7 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import BoltIcon from '@mui/icons-material/Bolt';
 import LockOpenIcon from '@mui/icons-material/LockOpen';
 import LockIcon from '@mui/icons-material/Lock';
-import { red, green, blue, orange, grey } from '@mui/material/colors';
+import { color } from '@themes/tokens';
 import { useSnackbar } from 'notistack';
 import { useChannel } from '@contexts/channelContext';
 import { useCampaignContext } from '@contexts';
@@ -105,7 +105,6 @@ export default function CombatDialog({
     const { campaign } = useCampaignContext();
     const theme = useTheme();
     const { channel } = useChannel();
-    const isDarkMode = theme.palette.mode === 'dark';
     const [ isLoading, setIsLoading ] = useState(false);
     const [ combat, setCombat ] = useState<Combat | null>(existingCombat || null);
     
@@ -422,7 +421,7 @@ export default function CombatDialog({
                                         onChange={() => toggleCreature(creature.id)}
                                     />
                                     <ListItemAvatar>
-                                        <Avatar sx={{ width: 28, height: 28, bgcolor: red[500] }}>
+                                        <Avatar sx={{ width: 28, height: 28, bgcolor: 'error.main' }}>
                                             <PetsIcon fontSize="small" />
                                         </Avatar>
                                     </ListItemAvatar>
@@ -479,14 +478,10 @@ export default function CombatDialog({
                     justifyContent: 'space-between', 
                     alignItems: 'center',
                     p: 2,
-                    bgcolor: isDarkMode 
-                        ? (combat.phase === 'INITIATIVE' ? alpha(theme.palette.warning.main, 0.15) : alpha(theme.palette.info.main, 0.15))
-                        : (combat.phase === 'INITIATIVE' ? orange[50] : blue[50]),
+                    bgcolor: combat.phase === 'INITIATIVE' ? alpha(theme.palette.warning.main, 0.15) : alpha(theme.palette.info.main, 0.15),
                     borderRadius: 2,
                     border: '1px solid',
-                    borderColor: isDarkMode
-                        ? (combat.phase === 'INITIATIVE' ? 'warning.main' : 'info.main')
-                        : (combat.phase === 'INITIATIVE' ? orange[200] : blue[200])
+                    borderColor: combat.phase === 'INITIATIVE' ? 'warning.main' : 'info.main'
                 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <Box>
@@ -497,8 +492,8 @@ export default function CombatDialog({
                                 label={combat.phase === 'INITIATIVE' ? '⚡ Fase de Iniciativa' : '⚔️ Fase de Ação'}
                                 size="small"
                                 sx={{ 
-                                    bgcolor: combat.phase === 'INITIATIVE' ? orange[500] : blue[500],
-                                    color: 'white',
+                                    bgcolor: combat.phase === 'INITIATIVE' ? 'warning.main' : 'info.main',
+                                    color: combat.phase === 'INITIATIVE' ? 'warning.contrastText' : 'info.contrastText',
                                     fontWeight: 600
                                 }}
                             />
@@ -617,7 +612,7 @@ export default function CombatDialog({
                                                 sx={{ 
                                                     width: 32, 
                                                     height: 32,
-                                                    bgcolor: combatant.type === 'creature' ? red[500] : blue[500]
+                                                    bgcolor: combatant.type === 'creature' ? 'error.main' : 'info.main'
                                                 }}
                                             >
                                                 {combatant.type === 'creature' ? <PetsIcon /> : combatant.name.charAt(0)}
@@ -666,13 +661,13 @@ export default function CombatDialog({
                                                                 width: 60, 
                                                                 height: 6, 
                                                                 borderRadius: 1,
-                                                                bgcolor: grey[300],
+                                                                bgcolor: 'background.raised',
                                                                 '& .MuiLinearProgress-bar': {
                                                                     bgcolor: lpPercent > 50 
-                                                                        ? green[500] 
+                                                                        ? 'success.main' 
                                                                         : lpPercent > 25 
-                                                                            ? orange[500] 
-                                                                            : red[500]
+                                                                            ? 'warning.main' 
+                                                                            : color.lp
                                                                 }
                                                             }}
                                                         />
@@ -681,7 +676,7 @@ export default function CombatDialog({
                                                         <Typography
                                                             variant="caption"
                                                             component="span"
-                                                            sx={{ color: mpReleased ? green[600] : mpSpent >= mpLimit ? red[500] : 'text.secondary' }}
+                                                            sx={{ color: mpReleased ? 'success.main' : mpSpent >= mpLimit ? 'error.light' : 'text.secondary' }}
                                                         >
                                                             MP no turno: {mpSpent}/{mpLimit}{mpReleased ? ' (liberado)' : ''}
                                                         </Typography>
@@ -771,7 +766,7 @@ export default function CombatDialog({
                             startIcon={<PlayArrowIcon />}
                             onClick={handleSetInitiativeOrder}
                             disabled={isLoading}
-                            sx={{ bgcolor: green[600], '&:hover': { bgcolor: green[700] } }}
+                            sx={{ bgcolor: 'success.main', color: 'success.contrastText', '&:hover': { bgcolor: 'success.dark' } }}
                         >
                             Definir Ordem
                         </Button>
@@ -796,7 +791,7 @@ export default function CombatDialog({
     return (
         <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
             <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <SportsKabaddiIcon sx={{ color: red[500] }} />
+                <SportsKabaddiIcon sx={{ color: 'error.main' }} />
                 {isSetupMode ? 'Iniciar Combate' : `Combate em Andamento - Round ${combat?.round || 1}`}
             </DialogTitle>
             <DialogContent>
@@ -813,7 +808,7 @@ export default function CombatDialog({
                         variant="contained"
                         disabled={isLoading || (selectedPlayers.length === 0 && selectedCreatures.length === 0)}
                         startIcon={isLoading ? <CircularProgress size={20} /> : <SportsKabaddiIcon />}
-                        sx={{ bgcolor: red[600], '&:hover': { bgcolor: red[700] } }}
+                        sx={{ bgcolor: 'error.main', color: 'error.contrastText', '&:hover': { bgcolor: 'error.dark' } }}
                     >
                         {isLoading ? 'Iniciando...' : 'Iniciar Combate'}
                     </Button>
@@ -823,7 +818,7 @@ export default function CombatDialog({
                         variant="contained"
                         disabled={isLoading}
                         startIcon={isLoading ? <CircularProgress size={20} /> : <StopIcon />}
-                        sx={{ bgcolor: grey[700], '&:hover': { bgcolor: grey[800] } }}
+                        sx={{ bgcolor: 'secondary.main', color: 'secondary.contrastText', '&:hover': { bgcolor: 'secondary.dark' } }}
                     >
                         {isLoading ? 'Encerrando...' : 'Encerrar Combate'}
                     </Button>

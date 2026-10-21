@@ -25,7 +25,8 @@ import SentimentVeryDissatisfiedIcon from '@mui/icons-material/SentimentVeryDiss
 import MilitaryTechIcon from '@mui/icons-material/MilitaryTech';
 import AutoStoriesIcon from '@mui/icons-material/AutoStories';
 import { alpha, useTheme } from '@mui/material/styles';
-import { amber, blue, green, grey, orange, purple, red } from '@mui/material/colors';
+import { classColor } from '@constants';
+import { color as tokenColor } from '@themes/tokens';
 import type { CampaignStats, PlayerCampaignStats } from '@models/entities';
 
 interface CampaignStatsModalProps {
@@ -65,14 +66,14 @@ function computeHighlights(players: PlayerCampaignStats[]): Highlight[] {
         }
     };
 
-    pushIf(topBy(p => p.combat.damageDealt), <LocalFireDepartmentIcon />, 'Devastador', p => `${p.combat.damageDealt} de dano causado`, red[500]);
-    pushIf(topBy(p => p.combat.damageTaken), <ShieldIcon />, 'Tanque', p => `${p.combat.damageTaken} de dano recebido`, blue[500]);
-    pushIf(topBy(p => p.combat.healingDone), <FavoriteIcon />, 'Anjo da Guarda', p => `${p.combat.healingDone} de cura realizada`, green[500]);
-    pushIf(topBy(p => p.combat.kills), <MilitaryTechIcon />, 'Caçador', p => `${p.combat.kills} abate(s)`, orange[700]);
-    pushIf(topBy(p => p.dice.criticalHits), <CasinoIcon />, 'Abençoado pelos Dados', p => `${p.dice.criticalHits} crítico(s)`, amber[600]);
-    pushIf(topBy(p => p.dice.criticalFailures), <SentimentVeryDissatisfiedIcon />, 'Azarado', p => `${p.dice.criticalFailures} falha(s) crítica(s)`, grey[600]);
-    pushIf(topBy(p => p.resources.spellsCast), <AutoStoriesIcon />, 'Arcanista', p => `${p.resources.spellsCast} magia(s) conjurada(s)`, purple[500]);
-    pushIf(topBy(p => p.dice.testsPassed), <EmojiEventsIcon />, 'Competente', p => `${p.dice.testsPassed} teste(s) passado(s)`, green[700]);
+    pushIf(topBy(p => p.combat.damageDealt), <LocalFireDepartmentIcon />, 'Devastador', p => `${p.combat.damageDealt} de dano causado`, tokenColor.danger);
+    pushIf(topBy(p => p.combat.damageTaken), <ShieldIcon />, 'Tanque', p => `${p.combat.damageTaken} de dano recebido`, tokenColor.ap);
+    pushIf(topBy(p => p.combat.healingDone), <FavoriteIcon />, 'Anjo da Guarda', p => `${p.combat.healingDone} de cura realizada`, tokenColor.success);
+    pushIf(topBy(p => p.combat.kills), <MilitaryTechIcon />, 'Caçador', p => `${p.combat.kills} abate(s)`, tokenColor.warning);
+    pushIf(topBy(p => p.dice.criticalHits), <CasinoIcon />, 'Abençoado pelos Dados', p => `${p.dice.criticalHits} crítico(s)`, tokenColor.amber);
+    pushIf(topBy(p => p.dice.criticalFailures), <SentimentVeryDissatisfiedIcon />, 'Azarado', p => `${p.dice.criticalFailures} falha(s) crítica(s)`, tokenColor.inkMuted);
+    pushIf(topBy(p => p.resources.spellsCast), <AutoStoriesIcon />, 'Arcanista', p => `${p.resources.spellsCast} magia(s) conjurada(s)`, tokenColor.mp);
+    pushIf(topBy(p => p.dice.testsPassed), <EmojiEventsIcon />, 'Competente', p => `${p.dice.testsPassed} teste(s) passado(s)`, classColor.Feiticeiro);
 
     return highlights;
 }
@@ -124,7 +125,7 @@ export default function CampaignStatsModal({ open, onClose, campaignId, campaign
     return (
         <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
             <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                <EmojiEventsIcon sx={{ color: amber[500], fontSize: 32 }} />
+                <EmojiEventsIcon sx={{ color: 'primary.main', fontSize: 32 }} />
                 <Box flex={1}>
                     <Typography variant="h6" component="div" fontWeight={700}>
                         Retrospectiva da Campanha
@@ -218,7 +219,7 @@ export default function CampaignStatsModal({ open, onClose, campaignId, campaign
                                                 )}
                                             </Box>
 
-                                            <Typography variant="caption" fontWeight={700} color={red[400]}>⚔️ Combate</Typography>
+                                            <Typography variant="caption" fontWeight={700} color="error.main">⚔️ Combate</Typography>
                                             <StatRow label="Dano causado" value={player.combat.damageDealt} />
                                             <StatRow label="Dano recebido" value={player.combat.damageTaken} />
                                             <StatRow label="Cura realizada" value={player.combat.healingDone} />
@@ -227,7 +228,7 @@ export default function CampaignStatsModal({ open, onClose, campaignId, campaign
                                             <StatRow label="Quedas (0 LP)" value={player.combat.knockouts} />
 
                                             <Divider sx={{ my: 1 }} />
-                                            <Typography variant="caption" fontWeight={700} color={amber[600]}>🎲 Dados</Typography>
+                                            <Typography variant="caption" fontWeight={700} color="primary.main">🎲 Dados</Typography>
                                             <StatRow label="Testes rolados" value={player.dice.totalRolls} />
                                             <StatRow label="Passou / Falhou" value={`${player.dice.testsPassed} / ${player.dice.testsFailed}`} />
                                             <StatRow label="Críticos / Fumbles" value={`${player.dice.criticalHits} / ${player.dice.criticalFailures}`} />
@@ -235,7 +236,7 @@ export default function CampaignStatsModal({ open, onClose, campaignId, campaign
                                             <StatRow label="Perícia favorita" value={topExpertise(player.dice.expertiseUsage)} />
 
                                             <Divider sx={{ my: 1 }} />
-                                            <Typography variant="caption" fontWeight={700} color={blue[400]}>💧 Recursos</Typography>
+                                            <Typography variant="caption" fontWeight={700} color="info.main">💧 Recursos</Typography>
                                             <StatRow label="Magias conjuradas" value={player.resources.spellsCast} />
                                             <StatRow label="MP gasto" value={player.resources.mpSpent} />
                                             <StatRow label="Dinheiro gasto / ganho" value={`${player.resources.moneySpent} / ${player.resources.moneyEarned}`} />
@@ -243,7 +244,7 @@ export default function CampaignStatsModal({ open, onClose, campaignId, campaign
                                             <StatRow label="Doações feitas / recebidas" value={`${player.resources.itemsDonated} / ${player.resources.itemsReceived}`} />
 
                                             <Divider sx={{ my: 1 }} />
-                                            <Typography variant="caption" fontWeight={700} color={green[500]}>📈 Progressão</Typography>
+                                            <Typography variant="caption" fontWeight={700} color="success.main">📈 Progressão</Typography>
                                             <StatRow label="Níveis ganhos" value={player.progression.levelsGained} />
                                             <StatRow label="Magias adquiridas" value={player.progression.spellsLearned} />
                                             <StatRow label="Habilidades adquiridas" value={player.progression.skillsGained} />

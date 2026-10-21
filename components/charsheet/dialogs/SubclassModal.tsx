@@ -24,7 +24,6 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import PsychologyIcon from '@mui/icons-material/Psychology';
 import StarIcon from '@mui/icons-material/Star';
-import { blue, orange } from '@mui/material/colors';
 import type { Class, Subclass } from '@models';
 import type { SystemSubclass } from '@models/entities';
 import { color, shadow } from '@themes/tokens';
@@ -173,18 +172,18 @@ function SubclassModal({ open, onClose, currentClass, onConfirm, customSubclasse
                                         onClick={() => handleSubclassSelect(name as Subclass['name'])}
                                         sx={{
                                             bgcolor: selectedSubclass === name 
-                                                ? alpha(orange[500], 0.1) 
+                                                ? alpha(theme.palette.primary.main, 0.1) 
                                                 : 'transparent',
                                             '&:hover': {
                                                 bgcolor: selectedSubclass === name 
-                                                    ? alpha(orange[500], 0.2) 
+                                                    ? alpha(theme.palette.primary.main, 0.2) 
                                                     : alpha(theme.palette.action.hover, 0.1)
                                             }
                                         }}
                                         secondaryAction={
                                             selectedSubclass === name && (
                                                 <CheckCircleIcon 
-                                                    sx={{ color: orange[500] }} 
+                                                    sx={{ color: 'primary.main' }} 
                                                     fontSize="small" 
                                                 />
                                             )
@@ -310,9 +309,9 @@ function SubclassModal({ open, onClose, currentClass, onConfirm, customSubclasse
                                                 elevation={0} 
                                                 sx={{ 
                                                     p: 2, 
-                                                    bgcolor: alpha(blue[500], 0.05),
+                                                    bgcolor: alpha(theme.palette.info.main, 0.05),
                                                     border: '1px solid',
-                                                    borderColor: alpha(blue[300], 0.2),
+                                                    borderColor: alpha(theme.palette.info.main, 0.2),
                                                     borderRadius: 1,
                                                     textAlign: 'center'
                                                 }}

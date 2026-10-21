@@ -69,6 +69,21 @@ export const element = {
     'NÃO-ELEMENTAL': '#c9c3b6'
 } as const
 
+/**
+ * Marca de cada classe de personagem (cor de categoria, usada como ponto, borda ou texto de rótulo; o nome
+ * da classe vem sempre em texto). Todas passam de 3:1 sobre canvas, surface e surfaceRaised.
+ */
+export const classMark = {
+    'Combatente': '#ef5350',
+    'Especialista': '#4d8fe0',
+    'Feiticeiro': '#26a69a',
+    'Bruxo': '#9575cd',
+    'Monge': '#4fc3f7',
+    'Druida': '#8bc34a',
+    'Arcano': '#ec407a',
+    'Ladino': '#9e9e9e'
+} as const
+
 /** Cor de cada raridade; acompanha sempre o nome da raridade em texto */
 export const rarity = {
     'Comum': '#9a968c',
@@ -152,3 +167,4 @@ export const easing = { standard: 'cubic-bezier(0.2, 0, 0, 1)', exit: 'cubic-bez
 
 export type ElementName = keyof typeof element
 export type RarityName = keyof typeof rarity
+export type ClassMarkName = keyof typeof classMark

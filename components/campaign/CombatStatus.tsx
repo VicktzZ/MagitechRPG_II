@@ -34,7 +34,6 @@ import CasinoIcon from '@mui/icons-material/Casino';
 import WhatshotIcon from '@mui/icons-material/Whatshot';
 import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
 import SkipNextIcon from '@mui/icons-material/SkipNext';
-import { red, green, blue, orange, grey, yellow } from '@mui/material/colors';
 import { color } from '@themes/tokens';
 import { useSnackbar } from 'notistack';
 import { useCampaignContext } from '@contexts';
@@ -59,7 +58,6 @@ function CombatStatus({
     const { data: session } = useSession();
     const { campaign, charsheets } = useCampaignContext();
     const theme = useTheme();
-    const isDarkMode = theme.palette.mode === 'dark';
     
     const [ expanded, setExpanded ] = useState(true);
     const [ initiativeDialogOpen, setInitiativeDialogOpen ] = useState(false);
@@ -297,16 +295,16 @@ function CombatStatus({
                     transition: 'max-height 0.3s ease',
                     zIndex: 1200,
                     border: '2px solid',
-                    borderColor: red[500],
-                    bgcolor: isDarkMode ? 'background.paper' : 'background.default'
+                    borderColor: 'error.main',
+                    bgcolor: 'background.paper'
                 }}
             >
                 {/* Header */}
                 <Box 
                     sx={{ 
                         p: 1.5, 
-                        bgcolor: red[600], 
-                        color: 'white',
+                        bgcolor: 'error.main', 
+                        color: 'error.contrastText',
                         display: 'flex',
                         alignItems: 'center',
                         gap: 1,
@@ -322,12 +320,12 @@ function CombatStatus({
                         label={combat.phase === 'INITIATIVE' ? 'Iniciativa' : 'Ação'}
                         size="small"
                         sx={{ 
-                            bgcolor: combat.phase === 'INITIATIVE' ? yellow[700] : green[600],
-                            color: 'white',
+                            bgcolor: combat.phase === 'INITIATIVE' ? 'primary.main' : 'success.main',
+                            color: combat.phase === 'INITIATIVE' ? 'primary.contrastText' : 'success.contrastText',
                             fontWeight: 600
                         }}
                     />
-                    <IconButton size="small" sx={{ color: 'white' }}>
+                    <IconButton size="small" sx={{ color: 'error.contrastText' }}>
                         {expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
                     </IconButton>
                 </Box>
@@ -361,7 +359,7 @@ function CombatStatus({
                                     variant="contained"
                                     startIcon={<CasinoIcon />}
                                     onClick={() => setInitiativeDialogOpen(true)}
-                                    sx={{ mt: 1, bgcolor: orange[600] }}
+                                    sx={{ mt: 1, bgcolor: 'warning.main', color: 'warning.contrastText', '&:hover': { bgcolor: 'warning.light' } }}
                                 >
                                     Rolar Iniciativa
                                 </Button>
@@ -379,7 +377,7 @@ function CombatStatus({
                                         setActionType('damage');
                                         setActionDialogOpen(true);
                                     }}
-                                    sx={{ flex: 1, bgcolor: red[600], minWidth: 80 }}
+                                    sx={{ flex: 1, bgcolor: 'error.main', color: 'error.contrastText', '&:hover': { bgcolor: 'error.light' }, minWidth: 80 }}
                                 >
                                     Dano
                                 </Button>
@@ -391,7 +389,7 @@ function CombatStatus({
                                         setActionType('heal');
                                         setActionDialogOpen(true);
                                     }}
-                                    sx={{ flex: 1, bgcolor: green[600], minWidth: 80 }}
+                                    sx={{ flex: 1, bgcolor: 'success.main', color: 'success.contrastText', '&:hover': { bgcolor: 'success.light' }, minWidth: 80 }}
                                 >
                                     Cura
                                 </Button>
@@ -441,16 +439,14 @@ function CombatStatus({
                                             alignItems: 'center',
                                             gap: 1,
                                             bgcolor: isCurrentTurn 
-                                                ? (isDarkMode 
-                                                    ? (isUser ? alpha(theme.palette.primary.main, 0.2) : alpha(theme.palette.info.main, 0.2))
-                                                    : (isUser ? yellow[100] : blue[50]))
+                                                ? (isUser ? alpha(theme.palette.primary.main, 0.2) : alpha(theme.palette.info.main, 0.2))
                                                 : combatant.hasActed 
-                                                    ? (isDarkMode ? 'action.hover' : grey[100])
-                                                    : (isDarkMode ? 'background.paper' : 'white'),
+                                                    ? 'action.hover'
+                                                    : 'background.paper',
                                             border: isCurrentTurn ? '2px solid' : '1px solid',
                                             borderColor: isCurrentTurn 
                                                 ? (isUser ? 'primary.main' : 'info.main')
-                                                : (isDarkMode ? 'divider' : grey[300]),
+                                                : 'divider',
                                             opacity: combatant.hasActed && !isCurrentTurn ? 0.6 : 1
                                         }}
                                     >
@@ -459,7 +455,7 @@ function CombatStatus({
                                             sx={{ 
                                                 width: 32, 
                                                 height: 32,
-                                                bgcolor: isPlayer ? blue[500] : orange[500]
+                                                bgcolor: isPlayer ? 'info.main' : 'warning.main'
                                             }}
                                         >
                                             {isPlayer 
@@ -488,7 +484,7 @@ function CombatStatus({
                                                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.3, mt: 0.5 }}>
                                                     {/* LP */}
                                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                                        <FavoriteIcon sx={{ fontSize: 10, color: red[400] }} />
+                                                        <FavoriteIcon sx={{ fontSize: 10, color: color.lp }} />
                                                         <LinearProgress
                                                             variant="determinate"
                                                             value={lpPercent}
@@ -496,7 +492,7 @@ function CombatStatus({
                                                                 flex: 1,
                                                                 height: 5,
                                                                 borderRadius: 1,
-                                                                bgcolor: isDarkMode ? 'divider' : grey[300],
+                                                                bgcolor: 'divider',
                                                                 '& .MuiLinearProgress-bar': {
                                                                     bgcolor: lpPercent > 50 
                                                                         ? color.success 
@@ -513,7 +509,7 @@ function CombatStatus({
                                                     {/* MP (apenas se tiver) */}
                                                     {maxMp > 0 && (
                                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                                            <BoltIcon sx={{ fontSize: 10, color: blue[400] }} />
+                                                            <BoltIcon sx={{ fontSize: 10, color: color.mp }} />
                                                             <LinearProgress
                                                                 variant="determinate"
                                                                 value={mpPercent}
@@ -521,7 +517,7 @@ function CombatStatus({
                                                                     flex: 1,
                                                                     height: 5,
                                                                     borderRadius: 1,
-                                                                    bgcolor: isDarkMode ? 'divider' : grey[300],
+                                                                    bgcolor: 'divider',
                                                                     '& .MuiLinearProgress-bar': {
                                                                         bgcolor: color.mp
                                                                     }
@@ -552,7 +548,7 @@ function CombatStatus({
                                                     sx={{ 
                                                         height: 20,
                                                         fontSize: '0.7rem',
-                                                        bgcolor: isDarkMode ? 'action.hover' : grey[200]
+                                                        bgcolor: 'action.hover'
                                                     }}
                                                 />
                                             </Tooltip>
@@ -568,8 +564,8 @@ function CombatStatus({
                                                     width: 20,
                                                     fontSize: '0.7rem',
                                                     bgcolor: combatant.hasActed 
-                                                        ? (isDarkMode ? alpha(theme.palette.success.main, 0.3) : green[100])
-                                                        : (isDarkMode ? 'action.hover' : grey[100])
+                                                        ? alpha(theme.palette.success.main, 0.3)
+                                                        : 'action.hover'
                                                 }}
                                             />
                                         )}
@@ -584,12 +580,12 @@ function CombatStatus({
             {/* Dialog de Iniciativa */}
             <Dialog open={initiativeDialogOpen} onClose={() => !isRolling && setInitiativeDialogOpen(false)}>
                 <DialogTitle sx={{ 
-                    bgcolor: isDarkMode ? alpha(theme.palette.warning.main, 0.15) : orange[50], 
+                    bgcolor: alpha(theme.palette.warning.main, 0.15), 
                     display: 'flex', 
                     alignItems: 'center', 
                     gap: 1 
                 }}>
-                    <CasinoIcon sx={{ color: orange[600] }} />
+                    <CasinoIcon sx={{ color: 'warning.main' }} />
                     Teste de Iniciativa
                 </DialogTitle>
                 <DialogContent sx={{ mt: 2 }}>
@@ -620,7 +616,7 @@ function CombatStatus({
                         onClick={handleRollInitiative}
                         disabled={isRolling}
                         startIcon={<CasinoIcon />}
-                        sx={{ bgcolor: orange[600] }}
+                        sx={{ bgcolor: 'warning.main', color: 'warning.contrastText', '&:hover': { bgcolor: 'warning.light' } }}
                     >
                         {isRolling ? 'Rolando...' : 'Rolar Iniciativa'}
                     </Button>
@@ -635,26 +631,24 @@ function CombatStatus({
                 fullWidth
                 PaperProps={{
                     sx: {
-                        bgcolor: isDarkMode ? 'background.paper' : undefined
+                        bgcolor: 'background.paper'
                     }
                 }}
             >
                 <DialogTitle sx={{ 
-                    bgcolor: isDarkMode 
-                        ? (actionType === 'damage' ? alpha(theme.palette.error.main, 0.2) : alpha(theme.palette.success.main, 0.2))
-                        : (actionType === 'damage' ? red[50] : green[50]),
-                    color: isDarkMode ? 'text.primary' : undefined,
+                    bgcolor: actionType === 'damage' ? alpha(theme.palette.error.main, 0.2) : alpha(theme.palette.success.main, 0.2),
+                    color: 'text.primary',
                     display: 'flex',
                     alignItems: 'center',
                     gap: 1
                 }}>
                     {actionType === 'damage' 
-                        ? <WhatshotIcon sx={{ color: isDarkMode ? red[400] : red[600] }} />
-                        : <LocalHospitalIcon sx={{ color: isDarkMode ? green[400] : green[600] }} />
+                        ? <WhatshotIcon sx={{ color: 'error.main' }} />
+                        : <LocalHospitalIcon sx={{ color: 'success.main' }} />
                     }
                     {actionType === 'damage' ? 'Aplicar Dano' : 'Aplicar Cura'}
                 </DialogTitle>
-                <DialogContent sx={{ mt: 2, bgcolor: isDarkMode ? 'background.paper' : undefined }}>
+                <DialogContent sx={{ mt: 2, bgcolor: 'background.paper' }}>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                         {/* Valor */}
                         <TextField
@@ -666,7 +660,7 @@ function CombatStatus({
                             fullWidth
                             sx={{
                                 '& .MuiOutlinedInput-root': {
-                                    bgcolor: isDarkMode ? 'background.raised' : undefined
+                                    bgcolor: 'background.raised'
                                 }
                             }}
                         />
@@ -697,22 +691,20 @@ function CombatStatus({
                                                 gap: 1,
                                                 cursor: 'pointer',
                                                 bgcolor: isSelected 
-                                                    ? (isDarkMode
-                                                        ? (actionType === 'damage' ? alpha(theme.palette.error.main, 0.2) : alpha(theme.palette.success.main, 0.2))
-                                                        : (actionType === 'damage' ? red[50] : green[50]))
+                                                    ? (actionType === 'damage' ? alpha(theme.palette.error.main, 0.2) : alpha(theme.palette.success.main, 0.2))
                                                     : 'background.paper',
                                                 border: '2px solid',
                                                 borderColor: isSelected
-                                                    ? (actionType === 'damage' ? red[400] : green[400])
-                                                    : (isDarkMode ? 'divider' : grey[200]),
+                                                    ? (actionType === 'damage' ? 'error.main' : 'success.main')
+                                                    : 'divider',
                                                 '&:hover': {
-                                                    bgcolor: isDarkMode ? 'action.hover' : grey[50]
+                                                    bgcolor: 'action.hover'
                                                 }
                                             }}
                                         >
                                             <Avatar
                                                 src={combatant.avatar}
-                                                sx={{ width: 28, height: 28, bgcolor: isPlayer ? blue[500] : orange[500] }}
+                                                sx={{ width: 28, height: 28, bgcolor: isPlayer ? 'info.main' : 'warning.main' }}
                                             >
                                                 {isPlayer ? <PersonIcon fontSize="small" /> : <PetsIcon fontSize="small" />}
                                             </Avatar>
@@ -733,12 +725,12 @@ function CombatStatus({
                 </DialogContent>
                 <DialogActions sx={{ 
                     p: 2, 
-                    bgcolor: isDarkMode ? 'background.paper' : undefined 
+                    bgcolor: 'background.paper' 
                 }}>
                     <Button 
                         onClick={() => setActionDialogOpen(false)} 
                         disabled={isApplying}
-                        sx={{ color: isDarkMode ? 'text.secondary' : undefined }}
+                        sx={{ color: 'text.secondary' }}
                     >
                         Cancelar
                     </Button>
@@ -747,13 +739,10 @@ function CombatStatus({
                         onClick={handleApplyAction}
                         disabled={!targetId || actionValue <= 0 || isApplying}
                         sx={{ 
-                            bgcolor: actionType === 'damage' 
-                                ? (isDarkMode ? red[700] : red[600]) 
-                                : (isDarkMode ? green[700] : green[600]),
+                            bgcolor: actionType === 'damage' ? 'error.main' : 'success.main',
+                            color: actionType === 'damage' ? 'error.contrastText' : 'success.contrastText',
                             '&:hover': {
-                                bgcolor: actionType === 'damage'
-                                    ? (isDarkMode ? red[600] : red[700])
-                                    : (isDarkMode ? green[600] : green[700])
+                                bgcolor: actionType === 'damage' ? 'error.light' : 'success.light'
                             }
                         }}
                     >

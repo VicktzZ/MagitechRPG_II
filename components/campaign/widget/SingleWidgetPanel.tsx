@@ -40,7 +40,7 @@ import ScienceIcon from '@mui/icons-material/Science';
 import SavingsIcon from '@mui/icons-material/Savings';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import TimerIcon from '@mui/icons-material/Timer';
-import { amber, blue, green, grey, orange, red } from '@mui/material/colors';
+import { color as tokenColor } from '@themes/tokens';
 import { useCampaignCurrentCharsheetContext } from '@contexts';
 import { useSnackbar } from 'notistack';
 import { NumberField } from '@components/misc';
@@ -48,31 +48,31 @@ import type { CampaignWidget, WidgetBountyStatus, WidgetPartStatus, WidgetPool, 
 import WidgetManagerDialog from './WidgetManagerDialog';
 
 const bountyStatusConfig: Record<WidgetBountyStatus, { label: string; color: string }> = {
-    open: { label: 'Aberta', color: blue[400] },
-    pending: { label: 'Pendente', color: amber[600] },
-    done: { label: 'Concluída', color: green[500] }
+    open: { label: 'Aberta', color: tokenColor.cyan },
+    pending: { label: 'Pendente', color: tokenColor.amber },
+    done: { label: 'Concluída', color: tokenColor.success }
 };
 
 const partStatusConfig: Record<WidgetPartStatus, { label: string; color: string }> = {
-    operational: { label: 'Operacional', color: green[500] },
-    damaged: { label: 'Avariado', color: orange[500] },
-    critical: { label: 'Crítico', color: red[500] },
-    offline: { label: 'Offline', color: grey[600] }
+    operational: { label: 'Operacional', color: tokenColor.success },
+    damaged: { label: 'Avariado', color: tokenColor.warning },
+    critical: { label: 'Crítico', color: tokenColor.danger },
+    offline: { label: 'Offline', color: tokenColor.inkMuted }
 };
 
 const alertSeverityConfig = {
-    info: { color: blue[400], icon: <InfoOutlinedIcon fontSize="small" /> },
-    warning: { color: amber[600], icon: <WarningAmberIcon fontSize="small" /> },
-    danger: { color: red[500], icon: <ReportIcon fontSize="small" /> }
+    info: { color: tokenColor.cyan, icon: <InfoOutlinedIcon fontSize="small" /> },
+    warning: { color: tokenColor.warning, icon: <WarningAmberIcon fontSize="small" /> },
+    danger: { color: tokenColor.danger, icon: <ReportIcon fontSize="small" /> }
 } as const;
 
 /** Condição geral derivada da barra de integridade */
 function integrityCondition(widget: CampaignWidget): { label: string; color: string } {
     const pct = widget.maxIntegrity > 0 ? (widget.integrity / widget.maxIntegrity) * 100 : 0;
-    if (pct <= 0) return { label: 'DESTRUÍDO', color: grey[700] };
-    if (pct < 25) return { label: 'CRÍTICO', color: red[500] };
-    if (pct < 60) return { label: 'AVARIADO', color: orange[500] };
-    return { label: 'ESTÁVEL', color: green[500] };
+    if (pct <= 0) return { label: 'DESTRUÍDO', color: tokenColor.inkMuted };
+    if (pct < 25) return { label: 'CRÍTICO', color: tokenColor.danger };
+    if (pct < 60) return { label: 'AVARIADO', color: tokenColor.warning };
+    return { label: 'ESTÁVEL', color: tokenColor.success };
 }
 
 function ResourceBar({ label, value, max, color, unit, icon }: {
@@ -326,7 +326,7 @@ export default function SingleWidgetPanel({ widget, campaignId, isUserGM, isFini
                 maxWidth: 'calc(100vw - 32px)',
                 overflow: 'hidden',
                 border: '2px solid',
-                borderColor: dangerAlerts.length > 0 ? red[500] : theme.palette.primary.main,
+                borderColor: dangerAlerts.length > 0 ? theme.palette.error.main : theme.palette.primary.main,
                 borderRadius: 2,
                 bgcolor: 'background.paper'
             }}
@@ -342,7 +342,7 @@ export default function SingleWidgetPanel({ widget, campaignId, isUserGM, isFini
                     py: 1,
                     cursor: 'pointer',
                     bgcolor: dangerAlerts.length > 0
-                        ? alpha(red[600], 0.9)
+                        ? alpha(theme.palette.error.dark, 0.9)
                         : alpha(theme.palette.primary.main, 0.85),
                     color: headerText
                 }}
@@ -450,7 +450,7 @@ export default function SingleWidgetPanel({ widget, campaignId, isUserGM, isFini
                                         icon="🛡️"
                                         value={widget.integrity}
                                         max={widget.maxIntegrity}
-                                        color={integrityPct < 25 ? red[500] : integrityPct < 60 ? orange[500] : green[500]}
+                                        color={integrityPct < 25 ? theme.palette.error.main : integrityPct < 60 ? theme.palette.warning.main : theme.palette.success.main}
                                     />
                                     <AdjustRow
                                         value={widget.integrity}
@@ -467,7 +467,7 @@ export default function SingleWidgetPanel({ widget, campaignId, isUserGM, isFini
                                         icon="◆"
                                         value={widget.secondary}
                                         max={widget.maxSecondary}
-                                        color={secondaryPct < 30 ? orange[400] : blue[400]}
+                                        color={secondaryPct < 30 ? theme.palette.warning.main : theme.palette.info.main}
                                     />
                                     <AdjustRow
                                         value={widget.secondary}
@@ -550,7 +550,7 @@ export default function SingleWidgetPanel({ widget, campaignId, isUserGM, isFini
                                             value={resource.value}
                                             max={resource.max}
                                             unit={resource.unit}
-                                            color={resource.color || blue[400]}
+                                            color={resource.color || theme.palette.info.main}
                                         />
                                         {canManageResources && (
                                             <AdjustRow
@@ -653,7 +653,7 @@ export default function SingleWidgetPanel({ widget, campaignId, isUserGM, isFini
                                         <Paper key={pool.id} variant="outlined" sx={{ p: 1 }}>
                                             <ResourceBar
                                                 label={pool.name} icon={pool.icon} value={pool.value}
-                                                max={pool.max} unit={pool.unit} color={pool.color || blue[400]}
+                                                max={pool.max} unit={pool.unit} color={pool.color || theme.palette.info.main}
                                             />
                                             {!isFinished && (
                                                 <Box display="flex" gap={0.5} mt={0.5}>
@@ -781,7 +781,7 @@ export default function SingleWidgetPanel({ widget, campaignId, isUserGM, isFini
                                             <Paper
                                                 key={clock.id}
                                                 variant="outlined"
-                                                sx={{ p: 1, ...(triggered && { borderColor: red[500], bgcolor: alpha(red[500], 0.05) }) }}
+                                                sx={{ p: 1, ...(triggered && { borderColor: 'error.main', bgcolor: alpha(theme.palette.error.main, 0.05) }) }}
                                             >
                                                 <Box display="flex" justifyContent="space-between" alignItems="center" mb={0.5}>
                                                     <Typography variant="caption" fontWeight={700}>
@@ -791,13 +791,13 @@ export default function SingleWidgetPanel({ widget, campaignId, isUserGM, isFini
                                                         {clock.current}/{clock.max}{clock.unit ? ` ${clock.unit}` : ''}
                                                     </Typography>
                                                 </Box>
-                                                <ClockPips current={clock.current} max={clock.max} color={triggered ? red[500] : (clock.color || blue[400])} />
+                                                <ClockPips current={clock.current} max={clock.max} color={triggered ? theme.palette.error.main : (clock.color || theme.palette.info.main)} />
                                                 <AdjustRow
                                                     value={clock.current} max={clock.max} disabled={isFinished}
                                                     onChange={async (v) => await adjustClock(clock.id, v)}
                                                 />
                                                 {triggered && clock.triggeredMessage && (
-                                                    <Typography variant="caption" sx={{ color: red[600] }} fontWeight={700} display="block" mt={0.5}>
+                                                    <Typography variant="caption" sx={{ color: 'error.main' }} fontWeight={700} display="block" mt={0.5}>
                                                         ⚠ {clock.triggeredMessage}
                                                     </Typography>
                                                 )}
@@ -939,8 +939,8 @@ export default function SingleWidgetPanel({ widget, campaignId, isUserGM, isFini
                                                             size="small"
                                                             sx={{
                                                                 height: 18, fontSize: '0.6rem',
-                                                                bgcolor: insufficient ? alpha(red[500], 0.15) : alpha(green[500], 0.15),
-                                                                color: insufficient ? red[700] : green[800]
+                                                                bgcolor: alpha(insufficient ? theme.palette.error.main : theme.palette.success.main, 0.1),
+                                                                color: insufficient ? 'error.main' : 'success.main'
                                                             }}
                                                         />
                                                     );
@@ -955,8 +955,8 @@ export default function SingleWidgetPanel({ widget, campaignId, isUserGM, isFini
                                                             size="small"
                                                             sx={{
                                                                 height: 18, fontSize: '0.6rem',
-                                                                bgcolor: insufficient ? alpha(red[500], 0.15) : alpha(blue[500], 0.15),
-                                                                color: insufficient ? red[700] : blue[800]
+                                                                bgcolor: alpha(insufficient ? theme.palette.error.main : theme.palette.info.main, 0.1),
+                                                                color: insufficient ? 'error.main' : 'info.main'
                                                             }}
                                                         />
                                                     );

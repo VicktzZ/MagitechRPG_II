@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogTitle, Box, Typography, Paper, Grid, IconB
 import { font } from '@themes/tokens'
 import { Close } from '@mui/icons-material'
 import { skills } from '@constants/skills'
-import { blue, green, indigo, orange, pink, purple, red, yellow } from '@mui/material/colors'
+import { classColor } from '@constants'
 import type { Skill } from '@models'
 import type { Charsheet } from '@models/entities'
 
@@ -22,17 +22,6 @@ interface SkillNodeProps {
     size?: number
 }
 
-const skillColors: Record<keyof typeof skills.class, string> = {
-    Combatente: red[500],
-    Especialista: orange[500],
-    Feiticeiro: pink[400],
-    Bruxo: purple[400],
-    Monge: yellow[600],
-    Druida: green[500],
-    Arcano: blue[500],
-    Ladino: indigo[600]
-}
-
 function SkillNode({ skill, isUnlocked = false, skillClass, icon, size = 2.5 }: SkillNodeProps) {
     return (
         <Tooltip title={skill?.description}>
@@ -40,7 +29,7 @@ function SkillNode({ skill, isUnlocked = false, skillClass, icon, size = 2.5 }: 
                 elevation={3}
                 sx={{
                     p: 2,
-                    bgcolor: isUnlocked ? skillColors[skillClass ] : 'background.paper',
+                    bgcolor: isUnlocked ? classColor[skillClass] : 'background.paper',
                     color: isUnlocked ? 'primary.contrastText' : 'text.primary',
                     cursor: 'pointer',
                     fontFamily: font.display,

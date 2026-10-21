@@ -87,10 +87,14 @@ Decisões dadas pelo dono do projeto:
 
 Plano em fases: 1 tokens e tema (feita) · 3 tipografia (fontes carregadas, fontes sem licença removidas e
 `fontFamily` migrado; faltam as rolagens com a fonte dos dados e o `html font-size: 12px`) · 4 efeitos (feita) ·
-5 landing (feita: arte de IA e assets de 20 MB removidos, logo em SVG) · 6 cores soltas (feita: o ESLint não acusa
-mais hex nem rgba; sobram cores do Material que a regra não pega, como `blue[100]` e `orange[500]` em chips, botões e
-cabeçalhos, e `color: 'white'` sobre cores categóricas, a trocar por `contrastText`) · depois: rolagens com a fonte
-dos dados, `html font-size`, licença das fontes dPoly.
+5 landing (feita: arte de IA e assets de 20 MB removidos, logo em SVG) · 6 cores soltas (feita) · 7 cores do Material
+(feita: nenhum arquivo importa `@mui/material/colors` e a regra do ESLint avisa de `white` e `black` fixos; cores
+de classe vêm de `classMark` em `themes/tokens.ts`, e categorias sem mapa próprio usam as cores de papel do tema) ·
+depois: rolagens com a fonte dos dados, `html font-size`, licença das fontes dPoly.
+
+Pares de "modo claro" (`blue[100]` com `blue[800]`) não existem mais: tinta translúcida do papel (`alpha(papel, 0.14)`)
+com o texto no papel. Texto em `error.main` ou `warning.main` sobre `background.overlay` ou sobre fundo tingido passa a
+usar `.light` (o `.main` fica em cerca de 4,2:1 ali); ícones e barras usam `.main`.
 
 ## Ambiente de desenvolvimento
 

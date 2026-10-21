@@ -481,7 +481,7 @@ export default function AdminSubscriptionsPage() {
                         <strong>{SubscriptionPlanMetadata[selectedPlan].displayName}</strong>{' '}
             para <strong>{selectedUsers.length}</strong> usuário(s).
                     </DialogContentText>
-                    <Box sx={{ mt: 3, p: 2, bgcolor: 'grey.100', borderRadius: 1 }}>
+                    <Box sx={{ mt: 3, p: 2, bgcolor: 'background.raised', borderRadius: 1 }}>
                         <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 'bold' }}>
               Usuários selecionados:
                         </Typography>

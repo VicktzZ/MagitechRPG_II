@@ -26,7 +26,6 @@ import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
-import { green, red, blue } from '@mui/material/colors';
 import type { Trait, Lineage } from '@models';
 import { shadow } from '@themes/tokens';
 interface TraitWithSelected extends Trait {
@@ -294,10 +293,10 @@ function TraitsModal({ open, onClose, selectedTraits, onTraitsChange, lineage, c
                                 label="Positivos" 
                                 icon={<AddCircleOutlineIcon />} 
                                 sx={{ 
-                                    color: tabIndex === 0 ? green[600] : 'inherit',
+                                    color: tabIndex === 0 ? 'success.main' : 'inherit',
                                     position: 'relative',
                                     bottom: !matches ? 10 : 0,
-                                    '&.Mui-selected': { color: green[700] }
+                                    '&.Mui-selected': { color: 'success.main' }
                                 }}
                                 iconPosition="start"
                             />
@@ -305,10 +304,10 @@ function TraitsModal({ open, onClose, selectedTraits, onTraitsChange, lineage, c
                                 label="Negativos" 
                                 icon={<RemoveCircleOutlineIcon />} 
                                 sx={{ 
-                                    color: tabIndex === 1 ? red[600] : 'inherit',
+                                    color: tabIndex === 1 ? 'error.main' : 'inherit',
                                     position: 'relative',
                                     bottom: !matches ? 10 : 0,
-                                    '&.Mui-selected': { color: red[700] }
+                                    '&.Mui-selected': { color: 'error.main' }
                                 }}
                                 iconPosition="start"
                             />
@@ -324,18 +323,18 @@ function TraitsModal({ open, onClose, selectedTraits, onTraitsChange, lineage, c
                                             onClick={() => handleTraitToggle(trait, true)}
                                             sx={{
                                                 bgcolor: trait.selected 
-                                                    ? alpha(green[500], 0.1) 
+                                                    ? alpha(theme.palette.success.main, 0.1) 
                                                     : 'transparent',
                                                 '&:hover': {
                                                     bgcolor: trait.selected 
-                                                        ? alpha(green[500], 0.2) 
+                                                        ? alpha(theme.palette.success.main, 0.2) 
                                                         : alpha(theme.palette.action.hover, 0.1)
                                                 }
                                             }}
                                             secondaryAction={
                                                 trait.selected && (
                                                     <CheckCircleIcon 
-                                                        sx={{ color: green[500] }} 
+                                                        sx={{ color: 'success.main' }} 
                                                         fontSize="small" 
                                                     />
                                                 )
@@ -364,11 +363,11 @@ function TraitsModal({ open, onClose, selectedTraits, onTraitsChange, lineage, c
                                             onClick={() => !isNovato && handleTraitToggle(trait, false)}
                                             sx={{
                                                 bgcolor: trait.selected 
-                                                    ? alpha(red[500], 0.1) 
+                                                    ? alpha(theme.palette.error.main, 0.1) 
                                                     : 'transparent',
                                                 '&:hover': {
                                                     bgcolor: !isNovato && (trait.selected 
-                                                        ? alpha(red[500], 0.2) 
+                                                        ? alpha(theme.palette.error.main, 0.2) 
                                                         : alpha(theme.palette.action.hover, 0.1))
                                                 },
                                                 opacity: isNovato ? 0.5 : 1,
@@ -378,7 +377,7 @@ function TraitsModal({ open, onClose, selectedTraits, onTraitsChange, lineage, c
                                             secondaryAction={
                                                 trait.selected && !isNovato && (
                                                     <CheckCircleIcon 
-                                                        sx={{ color: red[500] }} 
+                                                        sx={{ color: 'error.main' }} 
                                                         fontSize="small" 
                                                     />
                                                 )
@@ -468,9 +467,9 @@ function TraitsModal({ open, onClose, selectedTraits, onTraitsChange, lineage, c
                                         elevation={0} 
                                         sx={{ 
                                             p: 2, 
-                                            bgcolor: alpha(blue[500], 0.05),
+                                            bgcolor: alpha(theme.palette.info.main, 0.05),
                                             border: '1px solid',
-                                            borderColor: alpha(blue[300], 0.2),
+                                            borderColor: alpha(theme.palette.info.main, 0.2),
                                             borderRadius: 1
                                         }}
                                     >

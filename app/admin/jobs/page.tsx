@@ -20,7 +20,8 @@ import {
     AccordionSummary,
     AccordionDetails,
     Alert,
-    Divider
+    Divider,
+    alpha
 } from '@mui/material'
 import PlayArrowIcon from '@mui/icons-material/PlayArrow'
 import RefreshIcon from '@mui/icons-material/Refresh'
@@ -29,7 +30,7 @@ import ScheduleIcon from '@mui/icons-material/Schedule'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import ErrorIcon from '@mui/icons-material/Error'
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty'
-import { green, red, blue, grey } from '@mui/material/colors'
+import { color } from '@themes/tokens'
 import { useSnackbar } from 'notistack'
 
 interface JobLog {
@@ -57,10 +58,10 @@ interface Job {
 }
 
 const statusConfig = {
-    running: { color: blue[500], icon: <HourglassEmptyIcon />, label: 'Executando' },
-    success: { color: green[500], icon: <CheckCircleIcon />, label: 'Sucesso' },
-    error: { color: red[500], icon: <ErrorIcon />, label: 'Erro' },
-    scheduled: { color: grey[500], icon: <ScheduleIcon />, label: 'Agendado' }
+    running: { color: color.cyan, icon: <HourglassEmptyIcon />, label: 'Executando' },
+    success: { color: color.success, icon: <CheckCircleIcon />, label: 'Sucesso' },
+    error: { color: color.danger, icon: <ErrorIcon />, label: 'Erro' },
+    scheduled: { color: color.inkMuted, icon: <ScheduleIcon />, label: 'Agendado' }
 }
 
 export default function AdminJobsPage() {
@@ -212,7 +213,7 @@ export default function AdminJobsPage() {
                                                 label={config.label}
                                                 size="small"
                                                 sx={{
-                                                    bgcolor: `${config.color}20`,
+                                                    bgcolor: alpha(config.color, 0.12),
                                                     color: config.color,
                                                     fontWeight: 600
                                                 }}
@@ -241,12 +242,12 @@ export default function AdminJobsPage() {
                                             <Chip
                                                 label={job.successCount}
                                                 size="small"
-                                                sx={{ bgcolor: green[100], color: green[800], mr: 1 }}
+                                                sx={{ bgcolor: (theme) => alpha(theme.palette.success.main, 0.14), color: 'success.main', mr: 1 }}
                                             />
                                             <Chip
                                                 label={job.errorCount}
                                                 size="small"
-                                                sx={{ bgcolor: red[100], color: red[800] }}
+                                                sx={{ bgcolor: (theme) => alpha(theme.palette.error.main, 0.14), color: 'error.main' }}
                                             />
                                         </TableCell>
                                         <TableCell align="center">
@@ -300,7 +301,7 @@ export default function AdminJobsPage() {
                                                     label={logConfig.label}
                                                     size="small"
                                                     sx={{
-                                                        bgcolor: `${logConfig.color}20`,
+                                                        bgcolor: alpha(logConfig.color, 0.12),
                                                         color: logConfig.color,
                                                         '& .MuiChip-icon': { color: logConfig.color }
                                                     }}

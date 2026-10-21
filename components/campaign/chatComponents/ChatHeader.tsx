@@ -12,7 +12,6 @@ import {
 } from '@mui/material';
 import { Chat, Casino } from '@mui/icons-material';
 import SportsKabaddiIcon from '@mui/icons-material/SportsKabaddi';
-import { red } from '@mui/material/colors';
 import CombatActionButton from '../CombatActionButton';
 import type { Combat } from '@models';
 import { useCampaignContext } from '@contexts';
@@ -118,10 +117,10 @@ function ChatHeader({
                         label={`Combate R${combat.round} - ${combat.phase === 'INITIATIVE' ? 'Iniciativa' : 'Ação'}`}
                         sx={{
                             mt: 1,
-                            bgcolor: red[500],
-                            color: 'white',
+                            bgcolor: 'error.main',
+                            color: 'error.contrastText',
                             fontWeight: 600,
-                            '& .MuiChip-icon': { color: 'white' }
+                            '& .MuiChip-icon': { color: 'error.contrastText' }
                         }}
                     />
                 )}

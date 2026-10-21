@@ -1,5 +1,4 @@
 import { Box, Typography, useTheme, alpha, Tooltip, useMediaQuery, Fade, Zoom } from '@mui/material'
-import { amber, deepPurple, orange, teal } from '@mui/material/colors'
 import React, { memo, useMemo } from 'react'
 import { color } from '@themes/tokens'
 
@@ -21,10 +20,10 @@ const LevelProgress = memo(function LevelProgress({ title, level, amount, barWid
         const percentage = level / amount;
         if (filledColor) return filledColor;
         
-        if (percentage <= 0.25) return teal[500];
-        if (percentage <= 0.5) return amber[600];
-        if (percentage <= 0.75) return orange[800];
-        return deepPurple[500];
+        if (percentage <= 0.25) return color.success;
+        if (percentage <= 0.5) return color.amber;
+        if (percentage <= 0.75) return color.warning;
+        return color.cyan;
     }, [ level, amount, filledColor ]);
     
     const progressWidth = useMemo(() => {

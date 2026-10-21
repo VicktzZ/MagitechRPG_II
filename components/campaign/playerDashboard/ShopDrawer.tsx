@@ -28,7 +28,6 @@ import {
     Storefront,
     Visibility
 } from '@mui/icons-material';
-import { amber, blue, green, grey, orange, purple, red } from '@mui/material/colors';
 import { color } from '@themes/tokens';
 import { type ReactElement, useState, useEffect, useCallback } from 'react';
 import { useSnackbar } from 'notistack';
@@ -177,22 +176,22 @@ export default function ShopDrawer(): ReactElement | null {
         switch (type) {
         case 'WEAPON':
         case 'ARMA': 
-            return { bg: red[100], color: red[800], label: '⚔️ Arma' };
+            return { bg: alpha(color.danger, 0.14), color: color.danger, label: '⚔️ Arma' };
         case 'ARMOR':
         case 'ARMADURA': 
-            return { bg: blue[100], color: blue[800], label: '🛡️ Armadura' };
+            return { bg: alpha(color.cyan, 0.14), color: color.cyan, label: '🛡️ Armadura' };
         case 'ITEM': 
-            return { bg: amber[100], color: amber[800], label: '📦 Item' };
+            return { bg: alpha(color.amber, 0.14), color: color.amber, label: '📦 Item' };
         case 'SKILL':
         case 'HABILIDADE': 
-            return { bg: purple[100], color: purple[800], label: '⚡ Habilidade' };
+            return { bg: alpha(color.inkMuted, 0.14), color: color.ink, label: '⚡ Habilidade' };
         case 'SPELL':
         case 'MAGIA': 
-            return { bg: orange[100], color: orange[800], label: `Magia${spellLevel ? ` Nv.${spellLevel}` : ''}` };
+            return { bg: alpha(color.warning, 0.14), color: color.warning, label: `Magia${spellLevel ? ` Nv.${spellLevel}` : ''}` };
         case 'UPGRADE': 
-            return { bg: green[100], color: green[800], label: '🔧 Acessório' };
+            return { bg: alpha(color.success, 0.14), color: color.success, label: '🔧 Acessório' };
         default: 
-            return { bg: grey[100], color: grey[800], label: perkType };
+            return { bg: alpha(color.inkMuted, 0.14), color: color.ink, label: perkType };
         }
     };
 
@@ -231,10 +230,10 @@ export default function ShopDrawer(): ReactElement | null {
                         sx={{
                             width: 56,
                             height: 56,
-                            bgcolor: orange[500],
-                            color: 'white',
+                            bgcolor: 'primary.main',
+                            color: 'primary.contrastText',
                             '&:hover': {
-                                bgcolor: orange[600]
+                                bgcolor: 'primary.light'
                             },
                             transition: 'all 0.2s ease'
                         }}
@@ -328,7 +327,7 @@ export default function ShopDrawer(): ReactElement | null {
                                 const canAfford = currentMoney >= item.price;
                                 const restriction = getItemRestriction(item);
                                 const canBuy = canAfford && !restriction;
-                                const rarityColorValue = rarityColor[item.rarity as RarityType] || grey[500];
+                                const rarityColorValue = rarityColor[item.rarity as RarityType] || color.inkMuted;
 
                                 return (
                                     <Paper
@@ -336,12 +335,12 @@ export default function ShopDrawer(): ReactElement | null {
                                         sx={{
                                             p: 2,
                                             border: '1px solid',
-                                            borderColor: canBuy ? 'divider' : red[200],
+                                            borderColor: canBuy ? 'divider' : (theme) => alpha(theme.palette.error.main, 0.5),
                                             bgcolor: 'background.raised',
                                             opacity: canBuy ? 1 : 0.7,
                                             transition: 'all 0.2s ease',
                                             '&:hover': canBuy ? {
-                                                borderColor: orange[300]
+                                                borderColor: color.borderStrong
                                             } : {}
                                         }}
                                     >
@@ -365,7 +364,7 @@ export default function ShopDrawer(): ReactElement | null {
                                                         label={item.rarity}
                                                         size="small"
                                                         sx={{ 
-                                                            bgcolor: `${rarityColorValue}20`, 
+                                                            bgcolor: alpha(rarityColorValue, 0.12), 
                                                             color: rarityColorValue,
                                                             fontWeight: 600,
                                                             height: 22
@@ -376,8 +375,8 @@ export default function ShopDrawer(): ReactElement | null {
                                             <Chip 
                                                 label={`${currencySymbol}${displayPrice(item.price)}`}
                                                 sx={{ 
-                                                    bgcolor: canAfford ? green[100] : red[100], 
-                                                    color: canAfford ? green[800] : red[800],
+                                                    bgcolor: (theme) => alpha(canAfford ? theme.palette.success.main : theme.palette.error.main, 0.14), 
+                                                    color: canAfford ? 'success.main' : 'error.main',
                                                     fontWeight: 700,
                                                     fontSize: '0.9rem'
                                                 }}
@@ -429,8 +428,8 @@ export default function ShopDrawer(): ReactElement | null {
                                                 startIcon={isPurchasing === item.id ? <CircularProgress size={16} /> : <ShoppingCart />}
                                                 sx={{
                                                     flex: 2,
-                                                    bgcolor: canBuy ? green[500] : grey[400],
-                                                    '&:hover': { bgcolor: canBuy ? green[600] : grey[400] }
+                                                    bgcolor: canBuy ? 'primary.main' : 'action.disabledBackground',
+                                                    '&:hover': { bgcolor: canBuy ? 'primary.light' : 'action.disabledBackground' }
                                                 }}
                                             >
                                                 {isPurchasing === item.id 
@@ -478,8 +477,8 @@ export default function ShopDrawer(): ReactElement | null {
                                         label={selectedItem.rarity}
                                         size="small"
                                         sx={{ 
-                                            bgcolor: `${rarityColor[selectedItem.rarity as RarityType] || grey[500]}20`, 
-                                            color: rarityColor[selectedItem.rarity as RarityType] || grey[500],
+                                            bgcolor: alpha(rarityColor[selectedItem.rarity as RarityType] || color.inkMuted, 0.12), 
+                                            color: rarityColor[selectedItem.rarity as RarityType] || color.inkMuted,
                                             fontWeight: 600
                                         }}
                                     />
@@ -488,8 +487,8 @@ export default function ShopDrawer(): ReactElement | null {
                             <Chip 
                                 label={`${currencySymbol}${displayPrice(selectedItem.price)}`}
                                 sx={{ 
-                                    bgcolor: currentMoney >= selectedItem.price ? green[100] : red[100], 
-                                    color: currentMoney >= selectedItem.price ? green[800] : red[800],
+                                    bgcolor: (theme) => alpha(currentMoney >= selectedItem.price ? theme.palette.success.main : theme.palette.error.main, 0.14), 
+                                    color: currentMoney >= selectedItem.price ? 'success.main' : 'error.main',
                                     fontWeight: 700,
                                     fontSize: '1rem'
                                 }}
@@ -669,10 +668,10 @@ export default function ShopDrawer(): ReactElement | null {
                                     sx={{
                                         flex: 2,
                                         bgcolor: (currentMoney >= selectedItem.price && !getItemRestriction(selectedItem)) 
-                                            ? green[500] : grey[400],
+                                            ? 'primary.main' : 'action.disabledBackground',
                                         '&:hover': { 
                                             bgcolor: (currentMoney >= selectedItem.price && !getItemRestriction(selectedItem)) 
-                                                ? green[600] : grey[400] 
+                                                ? 'primary.light' : 'action.disabledBackground' 
                                         }
                                     }}
                                 >

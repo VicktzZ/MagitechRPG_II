@@ -3,7 +3,7 @@
 
 import { Expertise } from '@components/charsheet';
 import { Box, Button, Grid, Typography, useTheme, FormHelperText, type ButtonProps, useMediaQuery, TextField } from '@mui/material';
-import { blue, green, grey, purple, yellow } from '@mui/material/colors';
+import { classColor } from '@constants';
 import { useFormContext, useWatch, type FieldError } from 'react-hook-form';
 import { useState, type ReactElement, useRef, useCallback, useMemo, useEffect } from 'react';
 import type { Charsheet, RPGSystem, SkillPointRules, SystemAttribute } from '@models/entities';
@@ -352,27 +352,27 @@ export default function Expertises({ disabled }: { disabled?: boolean }): ReactE
                 <Typography 
                     variant='caption'
                     fontWeight={900}
-                    color={grey[500]}
+                    color='text.secondary'
                 >Destreinado: {'< 2'}</Typography>
                 <Typography 
                     variant='caption'
                     fontWeight={900}
-                    color={green[500]}
+                    color='success.main'
                 >Treinado: {'< 5'}</Typography>
                 <Typography 
                     variant='caption'
                     fontWeight={900}
-                    color={blue[500]}
+                    color='info.main'
                 >Competente: {'< 7'}</Typography>
                 <Typography 
                     variant='caption'
                     fontWeight={900}
-                    color={purple[500]}
+                    color={classColor.Bruxo}
                 >Experiente: {'< 9'}</Typography>
                 <Typography 
                     variant='caption'
                     fontWeight={900}
-                    color={yellow[500]}
+                    color='primary.main'
                 >Especialista: {'10+'}</Typography>
             </Box>
         </Box>
