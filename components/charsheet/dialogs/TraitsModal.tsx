@@ -233,7 +233,7 @@ function TraitsModal({ open, onClose, selectedTraits, onTraitsChange, lineage, c
                     sx={{
                         p: 2,
                         bgcolor: theme.palette.primary.main,
-                        color: 'white',
+                        color: 'primary.contrastText',
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center'
@@ -536,7 +536,7 @@ function TraitsModal({ open, onClose, selectedTraits, onTraitsChange, lineage, c
                             '&.Mui-disabled': {
                                 bgcolor: validationStatus.severity === 'error' ? 'error.main' : 'action.disabledBackground',
                                 opacity: validationStatus.severity === 'error' ? 0.7 : 0.3,
-                                color: validationStatus.severity === 'error' ? 'white' : 'action.disabled'
+                                color: validationStatus.severity === 'error' ? 'error.contrastText' : 'action.disabled'
                             }
                         }}
                     >

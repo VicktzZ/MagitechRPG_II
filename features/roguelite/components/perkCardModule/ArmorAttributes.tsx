@@ -16,7 +16,7 @@ export function ArmorAttributes({ armor }: ArmorAttributesProps) {
                     <Typography
                         component="span"
                         sx={{
-                            color: '#60a5fa',
+                            color: 'info.main',
                             fontSize: '0.75rem',
                             ml: 0.5,
                             fontWeight: 600

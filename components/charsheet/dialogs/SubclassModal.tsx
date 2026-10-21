@@ -115,7 +115,7 @@ function SubclassModal({ open, onClose, currentClass, onConfirm, customSubclasse
                     sx={{
                         p: 2,
                         bgcolor: theme.palette.primary.main,
-                        color: 'white',
+                        color: 'primary.contrastText',
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center'

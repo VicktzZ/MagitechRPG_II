@@ -364,7 +364,7 @@ export function PerkCardsModal({
                         <Typography 
                             variant={isMobile ? 'h6' : 'h5'} 
                             fontWeight={700} 
-                            color="white"
+                            color="text.primary"
                             sx={{ fontSize: { xs: '1rem', sm: '1.25rem', md: '1.5rem' } }}
                         >
                             Escolha sua vantagem

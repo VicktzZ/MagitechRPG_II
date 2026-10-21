@@ -27,6 +27,7 @@ import {
 import { Add, Delete, Edit, EventNote } from '@mui/icons-material';
 import { useFormContext, useWatch } from 'react-hook-form';
 import { amber, blue, grey, red } from '@mui/material/colors';
+import { color } from '@themes/tokens';
 import type { PassiveOccasion } from '@models/types/string';
 import type { Charsheet } from '@models/entities';
 import type { Passive } from '@models';
@@ -53,13 +54,13 @@ const occasionColors: Record<PassiveOccasion, string> = {
     'Final do turno': blue[300],
     'Ao ser atacado': red[200],
     'Ao atacar': amber[500],
-    'Ao usar magia': '#9c27b0',
+    'Ao usar magia': color.mp,
     'Ao sofrer dano': red[400],
     'Ao causar dano': red[300],
     'Sempre ativo': grey[500],
-    'Quando curar': '#4caf50',
-    'Ao se deslocar': '#2196f3',
-    'Condição específica': '#ff9800',
+    'Quando curar': color.success,
+    'Ao se deslocar': color.cyan,
+    'Condição específica': color.warning,
     'Personalizado': grey[400]
 };
 

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { itemAttributes, rarityColor, toastDefault } from '@constants'
-import { font } from '@themes/tokens'
+import { color, font } from '@themes/tokens'
 import { WarningModal } from '@layout'
 import {
     ArrowDropDown,
@@ -83,7 +83,7 @@ function ItemComponent(props: ItemTyping<'item'>): ReactElement {
                     p: 2,
                     backgroundColor: alpha(theme.palette.background.paper, 0.3),
                     borderRadius: 2,
-                    border: `1px solid ${alpha('#66bb6a', 0.2)}`
+                    border: `1px solid ${alpha(theme.palette.success.main, 0.2)}`
                 }}
             >
                 <Stack direction="row" justifyContent="space-between" mb={1}>
@@ -236,7 +236,7 @@ function ItemWrapper({
 
     // Obtém a cor da raridade ou usa um fallback
     const getItemRarityColor = () => {
-        return rarityColor[item.rarity] || '#9e9e9e' // Usa cinza como fallback
+        return rarityColor[item.rarity] || rarityColor.Comum // Usa a cor de Comum como fallback
     }
 
     return (
@@ -266,7 +266,7 @@ function ItemWrapper({
                         top: 12,
                         right: 12,
                         backgroundColor: itemAttr.color,
-                        color: '#fff',
+                        color: color.canvas,
                         fontSize: '0.65rem',
                         fontWeight: 'bold',
                         borderRadius: '10px',
