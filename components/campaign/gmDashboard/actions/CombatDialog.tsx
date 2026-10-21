@@ -489,7 +489,7 @@ export default function CombatDialog({
                                 Round {combat.round}
                             </Typography>
                             <Chip 
-                                label={combat.phase === 'INITIATIVE' ? '⚡ Fase de Iniciativa' : '⚔️ Fase de Ação'}
+                                label={combat.phase === 'INITIATIVE' ? 'Fase de Iniciativa' : 'Fase de Ação'}
                                 size="small"
                                 sx={{ 
                                     bgcolor: combat.phase === 'INITIATIVE' ? 'warning.main' : 'info.main',
@@ -622,7 +622,7 @@ export default function CombatDialog({
                                             primary={
                                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
                                                     {combatant.name}
-                                                    {isCurrentTurn && <Chip label="🎯" size="small" />}
+                                                    {isCurrentTurn && <Chip label="Em turno" size="small" color="primary" />}
                                                     <Tooltip title="Aplicar efeito">
                                                         <IconButton
                                                             size="small"
@@ -791,7 +791,7 @@ export default function CombatDialog({
     return (
         <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
             <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <SportsKabaddiIcon sx={{ color: 'error.main' }} />
+                <SportsKabaddiIcon sx={{ color: 'text.secondary' }} />
                 {isSetupMode ? 'Iniciar Combate' : `Combate em Andamento - Round ${combat?.round || 1}`}
             </DialogTitle>
             <DialogContent>

@@ -205,7 +205,7 @@ const MessageList = memo(forwardRef<HTMLDivElement, MessageListProps>(function M
                                                     color: 'info.contrastText',
                                                     '& .MuiChip-icon': { color: 'inherit' },
                                                     fontWeight: 600,
-                                                    fontSize: '0.7rem',
+                                                    fontSize: '0.75rem',
                                                     height: 20
                                                 }}
                                             />
@@ -222,7 +222,7 @@ const MessageList = memo(forwardRef<HTMLDivElement, MessageListProps>(function M
                                                     borderColor: color.borderStrong,
                                                     '& .MuiChip-icon': { color: 'inherit' },
                                                     fontWeight: 600,
-                                                    fontSize: '0.7rem',
+                                                    fontSize: '0.75rem',
                                                     height: 20
                                                 }}
                                             />
@@ -237,7 +237,7 @@ const MessageList = memo(forwardRef<HTMLDivElement, MessageListProps>(function M
                                                     color: 'primary.contrastText',
                                                     '& .MuiChip-icon': { color: 'inherit' },
                                                     fontWeight: 600,
-                                                    fontSize: '0.7rem',
+                                                    fontSize: '0.75rem',
                                                     height: 20
                                                 }}
                                             />
@@ -250,7 +250,7 @@ const MessageList = memo(forwardRef<HTMLDivElement, MessageListProps>(function M
                                                 sx={{ 
                                                     ml: 'auto',
                                                     color: 'text.secondary',
-                                                    fontSize: '0.7rem'
+                                                    fontSize: '0.75rem'
                                                 }}
                                             >
                                                 {new Date(msg.timestamp).toLocaleString('pt-BR', {

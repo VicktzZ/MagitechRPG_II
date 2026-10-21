@@ -168,7 +168,7 @@ export default function AcquiredPerks() {
                                             size="small"
                                             sx={{
                                                 height: 20,
-                                                fontSize: '0.65rem',
+                                                fontSize: '0.75rem',
                                                 bgcolor: `${rarityColors[perk.rarity] || rarityColors['Comum']}20`,
                                                 color: rarityColors[perk.rarity] || rarityColors['Comum'],
                                                 border: '1px solid',

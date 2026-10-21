@@ -27,6 +27,7 @@ import {
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import SettingsIcon from '@mui/icons-material/Settings';
+import WidgetsIcon from '@mui/icons-material/Widgets';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
@@ -347,7 +348,9 @@ export default function SingleWidgetPanel({ widget, campaignId, isUserGM, isFini
                     color: headerText
                 }}
             >
-                <Typography fontSize="1.4rem" lineHeight={1}>{widget.icon || '📋'}</Typography>
+                {widget.icon
+                    ? <Typography fontSize="1.4rem" lineHeight={1}>{widget.icon}</Typography>
+                    : <WidgetsIcon />}
                 <Box minWidth={0} flex={1}>
                     <Typography fontWeight={700} noWrap fontSize="0.95rem">
                         {widget.name}
@@ -367,7 +370,7 @@ export default function SingleWidgetPanel({ widget, campaignId, isUserGM, isFini
                             color: headerText,
                             fontWeight: 700,
                             height: 20,
-                            fontSize: '0.62rem'
+                            fontSize: '0.75rem'
                         }}
                     />
                 )}
@@ -376,7 +379,7 @@ export default function SingleWidgetPanel({ widget, campaignId, isUserGM, isFini
                         icon={<WarningAmberIcon sx={{ fontSize: 14, color: 'inherit !important' }} />}
                         label={widget.alerts.length}
                         size="small"
-                        sx={{ bgcolor: alpha(theme.palette.background.default, 0.25), color: headerText, height: 20, fontSize: '0.65rem' }}
+                        sx={{ bgcolor: alpha(theme.palette.background.default, 0.25), color: headerText, height: 20, fontSize: '0.75rem' }}
                     />
                 )}
                 {isUserGM && (
@@ -405,7 +408,7 @@ export default function SingleWidgetPanel({ widget, campaignId, isUserGM, isFini
                         <Box display="flex" gap={0.75} flexWrap="wrap">
                             {widget.status && <Chip label={widget.status} size="small" variant="outlined" />}
                             {widget.location && (
-                                <Chip label={`📍 ${widget.location}`} size="small" variant="outlined" />
+                                <Chip label={widget.location} size="small" variant="outlined" />
                             )}
                         </Box>
                     )}
@@ -447,7 +450,6 @@ export default function SingleWidgetPanel({ widget, campaignId, isUserGM, isFini
                                 <Box>
                                     <ResourceBar
                                         label={labels.integrity}
-                                        icon="🛡️"
                                         value={widget.integrity}
                                         max={widget.maxIntegrity}
                                         color={integrityPct < 25 ? theme.palette.error.main : integrityPct < 60 ? theme.palette.warning.main : theme.palette.success.main}
@@ -519,10 +521,10 @@ export default function SingleWidgetPanel({ widget, campaignId, isUserGM, isFini
                                                         }}
                                                     />
                                                     <Box display="flex" justifyContent="space-between" alignItems="center">
-                                                        <Typography variant="caption" color="text.secondary" fontSize="0.6rem">
+                                                        <Typography variant="caption" color="text.secondary" fontSize="0.75rem">
                                                             {part.hp}/{part.maxHp}
                                                         </Typography>
-                                                        <Typography variant="caption" sx={{ color: statusCfg.color, fontWeight: 700, fontSize: '0.6rem' }}>
+                                                        <Typography variant="caption" sx={{ color: statusCfg.color, fontWeight: 700, fontSize: '0.75rem' }}>
                                                             {statusCfg.label}
                                                         </Typography>
                                                     </Box>
@@ -590,7 +592,7 @@ export default function SingleWidgetPanel({ widget, campaignId, isUserGM, isFini
                                             sx={{ px: 0.75, py: 0.4, display: 'flex', alignItems: 'center', gap: 0.5 }}
                                         >
                                             <Typography variant="caption">{item.name}</Typography>
-                                            <Chip label={item.quantity} size="small" sx={{ height: 18, fontWeight: 700, fontSize: '0.65rem' }} />
+                                            <Chip label={item.quantity} size="small" sx={{ height: 18, fontWeight: 700, fontSize: '0.75rem' }} />
                                             {!isFinished && (
                                                 <>
                                                     {canManageResources && (
@@ -642,7 +644,7 @@ export default function SingleWidgetPanel({ widget, campaignId, isUserGM, isFini
                                 <Typography variant="caption" fontWeight={700} color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 1 }}>
                                     Fundos Comuns ({widget.pools.length})
                                 </Typography>
-                                <Chip label="BETA" size="small" color="secondary" sx={{ height: 16, fontSize: '0.55rem', fontWeight: 700 }} />
+                                <Chip label="BETA" size="small" color="secondary" sx={{ height: 16, fontSize: '0.75rem', fontWeight: 700 }} />
                                 <ExpandMoreIcon
                                     sx={{ fontSize: 14, color: 'text.secondary', transform: poolsOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}
                                 />
@@ -672,7 +674,7 @@ export default function SingleWidgetPanel({ widget, campaignId, isUserGM, isFini
                                             {(pool.history?.length ?? 0) > 0 && (
                                                 <Box mt={0.5} display="flex" flexDirection="column" gap={0.15}>
                                                     {pool.history.slice(0, 3).map(entry => (
-                                                        <Typography key={entry.id} variant="caption" color="text.secondary" fontSize="0.62rem">
+                                                        <Typography key={entry.id} variant="caption" color="text.secondary" fontSize="0.75rem">
                                                             {entry.userName} {entry.amount > 0 ? '+' : ''}{entry.amount}
                                                         </Typography>
                                                     ))}
@@ -697,7 +699,7 @@ export default function SingleWidgetPanel({ widget, campaignId, isUserGM, isFini
                                 <Typography variant="caption" fontWeight={700} color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 1 }}>
                                     Tarefas ({widget.bounties.length})
                                 </Typography>
-                                <Chip label="BETA" size="small" color="secondary" sx={{ height: 16, fontSize: '0.55rem', fontWeight: 700 }} />
+                                <Chip label="BETA" size="small" color="secondary" sx={{ height: 16, fontSize: '0.75rem', fontWeight: 700 }} />
                                 <ExpandMoreIcon
                                     sx={{ fontSize: 14, color: 'text.secondary', transform: bountiesOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}
                                 />
@@ -718,7 +720,7 @@ export default function SingleWidgetPanel({ widget, campaignId, isUserGM, isFini
                                                     <Chip
                                                         label={statusCfg.label}
                                                         size="small"
-                                                        sx={{ height: 16, fontSize: '0.55rem', fontWeight: 700, bgcolor: alpha(statusCfg.color, 0.15), color: statusCfg.color }}
+                                                        sx={{ height: 16, fontSize: '0.75rem', fontWeight: 700, bgcolor: alpha(statusCfg.color, 0.15), color: statusCfg.color }}
                                                     />
                                                 </Box>
                                                 {bounty.description && (
@@ -768,7 +770,7 @@ export default function SingleWidgetPanel({ widget, campaignId, isUserGM, isFini
                                 <Typography variant="caption" fontWeight={700} color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 1 }}>
                                     Relógios ({widget.clocks.length})
                                 </Typography>
-                                <Chip label="BETA" size="small" color="secondary" sx={{ height: 16, fontSize: '0.55rem', fontWeight: 700 }} />
+                                <Chip label="BETA" size="small" color="secondary" sx={{ height: 16, fontSize: '0.75rem', fontWeight: 700 }} />
                                 <ExpandMoreIcon
                                     sx={{ fontSize: 14, color: 'text.secondary', transform: clocksOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}
                                 />
@@ -798,7 +800,7 @@ export default function SingleWidgetPanel({ widget, campaignId, isUserGM, isFini
                                                 />
                                                 {triggered && clock.triggeredMessage && (
                                                     <Typography variant="caption" sx={{ color: 'error.main' }} fontWeight={700} display="block" mt={0.5}>
-                                                        ⚠ {clock.triggeredMessage}
+                                                        {clock.triggeredMessage}
                                                     </Typography>
                                                 )}
                                             </Paper>
@@ -823,7 +825,7 @@ export default function SingleWidgetPanel({ widget, campaignId, isUserGM, isFini
                                 <Typography variant="caption" fontWeight={700} color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 1 }}>
                                     Crafting ({widget.recipes.length})
                                 </Typography>
-                                <Chip label="BETA" size="small" color="secondary" sx={{ height: 16, fontSize: '0.55rem', fontWeight: 700 }} />
+                                <Chip label="BETA" size="small" color="secondary" sx={{ height: 16, fontSize: '0.75rem', fontWeight: 700 }} />
                                 <ExpandMoreIcon
                                     sx={{ fontSize: 14, color: 'text.secondary', transform: craftOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}
                                 />
@@ -852,7 +854,7 @@ export default function SingleWidgetPanel({ widget, campaignId, isUserGM, isFini
                                         variant="outlined"
                                         startIcon={<ScienceIcon fontSize="small" />}
                                         onClick={() => setCraftRecipesModalOpen(true)}
-                                        sx={{ alignSelf: 'flex-start', fontSize: '0.7rem' }}
+                                        sx={{ alignSelf: 'flex-start', fontSize: '0.75rem' }}
                                     >
                                         Ver Receitas Disponíveis ({widget.recipes.length})
                                     </Button>
@@ -891,7 +893,7 @@ export default function SingleWidgetPanel({ widget, campaignId, isUserGM, isFini
                                                         <Chip
                                                             label={outputKind === 'weapon' ? 'Arma' : 'Armadura'}
                                                             size="small"
-                                                            sx={{ ml: 0.5, height: 14, fontSize: '0.55rem' }}
+                                                            sx={{ ml: 0.5, height: 14, fontSize: '0.75rem' }}
                                                         />
                                                     )}
                                                 </Typography>
@@ -903,7 +905,7 @@ export default function SingleWidgetPanel({ widget, campaignId, isUserGM, isFini
                                                                 variant="outlined"
                                                                 disabled={isFinished || noDestination}
                                                                 onClick={(e) => setMultiplierMenu({ recipeId: recipe.id, anchor: e.currentTarget })}
-                                                                sx={{ minWidth: 0, px: 0.75, fontSize: '0.65rem', py: 0.25 }}
+                                                                sx={{ minWidth: 0, px: 0.75, fontSize: '0.75rem', py: 0.25 }}
                                                             >
                                                                 {multiplier}x
                                                             </Button>
@@ -916,7 +918,7 @@ export default function SingleWidgetPanel({ widget, campaignId, isUserGM, isFini
                                                                 variant="contained"
                                                                 disabled={!canCraft || isFinished}
                                                                 onClick={async () => await craft(recipe.id)}
-                                                                sx={{ minWidth: 0, fontSize: '0.65rem', py: 0.25 }}
+                                                                sx={{ minWidth: 0, fontSize: '0.75rem', py: 0.25 }}
                                                             >
                                                                 Fabricar
                                                             </Button>
@@ -938,7 +940,7 @@ export default function SingleWidgetPanel({ widget, campaignId, isUserGM, isFini
                                                             label={`${input.stockName} x${input.quantity * multiplier}`}
                                                             size="small"
                                                             sx={{
-                                                                height: 18, fontSize: '0.6rem',
+                                                                height: 18, fontSize: '0.75rem',
                                                                 bgcolor: alpha(insufficient ? theme.palette.error.main : theme.palette.success.main, 0.1),
                                                                 color: insufficient ? 'error.main' : 'success.main'
                                                             }}
@@ -954,7 +956,7 @@ export default function SingleWidgetPanel({ widget, campaignId, isUserGM, isFini
                                                             label={`${resource?.name ?? '?'} -${cost.amount * multiplier}`}
                                                             size="small"
                                                             sx={{
-                                                                height: 18, fontSize: '0.6rem',
+                                                                height: 18, fontSize: '0.75rem',
                                                                 bgcolor: alpha(insufficient ? theme.palette.error.main : theme.palette.info.main, 0.1),
                                                                 color: insufficient ? 'error.main' : 'info.main'
                                                             }}
@@ -965,7 +967,7 @@ export default function SingleWidgetPanel({ widget, campaignId, isUserGM, isFini
                                                     label={`→ ${recipe.output.name} x${recipe.output.quantity * multiplier}`}
                                                     size="small"
                                                     variant="outlined"
-                                                    sx={{ height: 18, fontSize: '0.6rem' }}
+                                                    sx={{ height: 18, fontSize: '0.75rem' }}
                                                 />
                                             </Box>
                                         </Paper>
@@ -1024,7 +1026,7 @@ export default function SingleWidgetPanel({ widget, campaignId, isUserGM, isFini
                                         .slice(0, 10)
                                         .map(entry => (
                                             <Box key={entry.id}>
-                                                <Typography variant="caption" color="text.disabled" fontSize="0.6rem">
+                                                <Typography variant="caption" color="text.disabled" fontSize="0.75rem">
                                                     {new Date(entry.timestamp).toLocaleString('pt-BR')}
                                                 </Typography>
                                                 <Typography variant="caption" display="block">{entry.text}</Typography>

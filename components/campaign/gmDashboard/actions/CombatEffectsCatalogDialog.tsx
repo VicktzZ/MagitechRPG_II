@@ -551,7 +551,7 @@ export default function CombatEffectsCatalogDialog({
                                                             mod.value !== undefined ? `= ${mod.value}` : '',
                                                             mod.element ? `[${mod.element}]` : ''
                                                         ].filter(Boolean).join(' ')}
-                                                        sx={{ height: 20, fontSize: '0.65rem' }}
+                                                        sx={{ height: 20, fontSize: '0.75rem' }}
                                                     />
                                                 ))}
                                             </Stack>

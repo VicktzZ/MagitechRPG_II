@@ -117,7 +117,7 @@ export default function DevViewSwitcher({ campaignId, userId, activeCharsheetId,
                     MODO DEV — Visualizar como:
                 </Typography>
                 <Chip
-                    label="🛠️ Mestre"
+                    label="Mestre"
                     size="small"
                     color={!activeCharsheetId ? 'warning' : 'default'}
                     variant={!activeCharsheetId ? 'filled' : 'outlined'}
@@ -126,7 +126,7 @@ export default function DevViewSwitcher({ campaignId, userId, activeCharsheetId,
                 {testCharsheets.map(c => (
                     <Chip
                         key={c.id}
-                        label={`🎭 ${c.name}`}
+                        label={c.name}
                         size="small"
                         disabled={busy}
                         color={activeCharsheetId === c.id ? 'warning' : 'default'}

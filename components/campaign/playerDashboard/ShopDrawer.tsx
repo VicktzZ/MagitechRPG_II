@@ -176,20 +176,20 @@ export default function ShopDrawer(): ReactElement | null {
         switch (type) {
         case 'WEAPON':
         case 'ARMA': 
-            return { bg: alpha(color.danger, 0.14), color: color.danger, label: '⚔️ Arma' };
+            return { bg: alpha(color.danger, 0.14), color: color.danger, label: 'Arma' };
         case 'ARMOR':
         case 'ARMADURA': 
-            return { bg: alpha(color.cyan, 0.14), color: color.cyan, label: '🛡️ Armadura' };
+            return { bg: alpha(color.cyan, 0.14), color: color.cyan, label: 'Armadura' };
         case 'ITEM': 
-            return { bg: alpha(color.amber, 0.14), color: color.amber, label: '📦 Item' };
+            return { bg: alpha(color.amber, 0.14), color: color.amber, label: 'Item' };
         case 'SKILL':
         case 'HABILIDADE': 
-            return { bg: alpha(color.inkMuted, 0.14), color: color.ink, label: '⚡ Habilidade' };
+            return { bg: alpha(color.inkMuted, 0.14), color: color.ink, label: 'Habilidade' };
         case 'SPELL':
         case 'MAGIA': 
             return { bg: alpha(color.warning, 0.14), color: color.warning, label: `Magia${spellLevel ? ` Nv.${spellLevel}` : ''}` };
         case 'UPGRADE': 
-            return { bg: alpha(color.success, 0.14), color: color.success, label: '🔧 Acessório' };
+            return { bg: alpha(color.success, 0.14), color: color.success, label: 'Acessório' };
         default: 
             return { bg: alpha(color.inkMuted, 0.14), color: color.ink, label: perkType };
         }
@@ -408,7 +408,7 @@ export default function ShopDrawer(): ReactElement | null {
                                                 color="error"
                                                 sx={{ display: 'block', mb: 1, fontWeight: 600 }}
                                             >
-                                                ⚠️ {restriction}
+                                                {restriction}
                                             </Typography>
                                         )}
 
@@ -646,7 +646,7 @@ export default function ShopDrawer(): ReactElement | null {
                                     color="error"
                                     sx={{ textAlign: 'center', fontWeight: 600, mb: 1 }}
                                 >
-                                    ⚠️ {getItemRestriction(selectedItem)}
+                                    {getItemRestriction(selectedItem)}
                                 </Typography>
                             )}
                             <Box display="flex" gap={1} width="100%">

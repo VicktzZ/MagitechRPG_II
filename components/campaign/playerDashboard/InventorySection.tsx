@@ -582,7 +582,7 @@ export default function InventorySection(): ReactElement {
                                 }}
                             >
                                 <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
-                                    📝 Descrição
+                                    Descrição
                                 </Typography>
                                 <Typography 
                                     variant="body2" 
@@ -718,16 +718,8 @@ export default function InventorySection(): ReactElement {
 
     return (
         <Box sx={{ width: '100%' }}>
-            <Paper 
-                elevation={2}
-                sx={{ 
-                    borderRadius: 3,
-                    bgcolor: 'background.paper',
-                    border: '1px solid',
-                    borderColor: 'divider',
-                    overflow: 'hidden'
-                }}
-            >
+            {/* A moldura e o título da seção vêm do Section da campanha */}
+            <Paper elevation={0} sx={{ bgcolor: 'transparent', overflow: 'hidden' }}>
                 {/* Header */}
                 <Box sx={{ p: 3, borderBottom: '1px solid', borderColor: 'divider' }}>
                     <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ sm: 'center' }} mb={2}>

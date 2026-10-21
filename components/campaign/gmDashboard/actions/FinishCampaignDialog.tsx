@@ -43,7 +43,7 @@ export default function FinishCampaignDialog({
                 throw new Error(data.error || 'Erro ao finalizar campanha');
             }
 
-            enqueueSnackbar('Campanha finalizada! 🏆', { variant: 'success' });
+            enqueueSnackbar('Campanha finalizada!', { variant: 'success' });
             onClose();
             onFinished?.();
         } catch (error: any) {
@@ -57,7 +57,7 @@ export default function FinishCampaignDialog({
     return (
         <Dialog open={open} onClose={isFinishing ? undefined : onClose} maxWidth="sm" fullWidth>
             <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <FlagIcon sx={{ color: 'warning.main' }} />
+                <FlagIcon sx={{ color: 'text.secondary' }} />
                 Finalizar Campanha
             </DialogTitle>
             <DialogContent>

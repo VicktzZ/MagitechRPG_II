@@ -334,7 +334,6 @@ export default function CombatActionButton({
                                 borderColor: actionType === 'damage' ? 'error.main' : 'success.main'
                             }}>
                                 <Typography variant="body2">
-                                    {actionType === 'damage' ? '💥' : '💚'}{' '}
                                     <strong>{value}</strong> de {actionType === 'damage' ? 'dano' : 'cura'} em{' '}
                                     <strong>{selectedTarget.name}</strong>
                                 </Typography>

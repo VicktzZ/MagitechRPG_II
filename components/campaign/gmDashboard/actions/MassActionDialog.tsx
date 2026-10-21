@@ -180,8 +180,8 @@ export default function MassActionDialog({
                                 }}
                             >
                                 {actionType === 'restoreLP' 
-                                    ? '❤️ O LP de todos os jogadores selecionados será restaurado ao máximo.'
-                                    : '⚡ O MP de todos os jogadores selecionados será restaurado ao máximo.'
+                                    ? 'O LP de todos os jogadores selecionados será restaurado ao máximo.'
+                                    : 'O MP de todos os jogadores selecionados será restaurado ao máximo.'
                                 }
                             </Typography>
                         </Box>

@@ -213,7 +213,7 @@ export default function ApplyEffectDialog({
                                     <Chip
                                         label={eff.scope === 'global' ? 'Global' : 'Campanha'}
                                         size="small"
-                                        sx={{ height: 18, fontSize: '0.6rem', ml: 1 }}
+                                        sx={{ height: 18, fontSize: '0.75rem', ml: 1 }}
                                     />
                                 </Stack>
                             </MenuItem>
@@ -373,7 +373,7 @@ export default function ApplyEffectDialog({
 
                             {!indefiniteOverride && timingOverride === 'turn' && (selectedEffect.category === 'damage' || selectedEffect.category === 'heal') && (
                                 <Typography variant="caption" sx={{ color: 'warning.main', mt: 0.5 }}>
-                                    ⚠️ Efeitos por turno de dano/cura aplicam o primeiro tick imediatamente ao serem atribuídos.
+                                    Efeitos por turno de dano/cura aplicam o primeiro tick imediatamente ao serem atribuídos.
                                 </Typography>
                             )}
                         </Stack>

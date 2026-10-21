@@ -219,7 +219,7 @@ export function CampaignProvider({ children, code }: { children: ReactElement, c
                 >
                     <Box>
                         <Typography variant='h5' fontWeight={600} gutterBottom>
-                            🎲 Criar Personagem Roguelite
+                            Criar Personagem Roguelite
                         </Typography>
                         <Typography variant='body2' color='text.secondary'>
                             Preencha os dados básicos do seu personagem. Você começará do zero e evoluirá durante a campanha!

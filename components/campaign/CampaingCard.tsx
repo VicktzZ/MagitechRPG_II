@@ -141,7 +141,7 @@ export default function CampaingCard({
                             variant='filled'
                             sx={{
                                 fontWeight: 600,
-                                fontSize: '0.7rem',
+                                fontSize: '0.75rem',
                                 height: 24
                             }}
                         />

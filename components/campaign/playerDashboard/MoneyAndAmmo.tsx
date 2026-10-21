@@ -226,7 +226,7 @@ export default function MoneyAndAmmo(): ReactElement {
                                     onChange={(e) => {
                                         const value = parseFloat(e.target.value) || 0;
                                         setMoney(value);
-                                        // 🔥 Atualizar no Firestore em tempo real — só o dinheiro:
+                                        // Atualizar no Firestore em tempo real — só o dinheiro:
                                         // gravar o inventário inteiro sobrescrevia itens recebidos
                                         // ao mesmo tempo (loja, doação, mestre)
                                         updateCharsheet({

@@ -375,18 +375,10 @@ export default function SpellsSection(): ReactElement {
 
     return (
         <Box sx={{ width: '100%' }}>
-            <Paper 
-                elevation={2}
-                sx={{ 
-                    p: 3, 
-                    borderRadius: 3,
-                    bgcolor: 'background.paper',
-                    border: '1px solid',
-                    borderColor: 'divider'
-                }}
-            >
+            {/* A moldura e o título vêm do Section da campanha */}
+            <Paper elevation={0} sx={{ bgcolor: 'transparent' }}>
                 <Stack spacing={3}>
-                    {/* Header com Espaço de Magias */}
+                    {/* Espaço de Magias */}
                     <Box 
                         sx={{
                             display: 'flex',
@@ -424,7 +416,7 @@ export default function SpellsSection(): ReactElement {
                                         : 'MP gasto em magias desde o início do seu turno / limite por turno. Reações em turnos alheios contam.'}
                                 >
                                     <Chip
-                                        label={`${mpLimitReleased ? '🔓 ' : ''}${mpSpentThisTurn} / ${mpLimit}`}
+                                        label={`${mpSpentThisTurn} / ${mpLimit}${mpLimitReleased ? ' (liberado)' : ''}`}
                                         color={mpLimitReleased ? 'success' : mpSpentThisTurn >= mpLimit ? 'error' : 'info'}
                                         variant="filled"
                                         sx={{ fontWeight: 700, fontSize: '0.9rem' }}

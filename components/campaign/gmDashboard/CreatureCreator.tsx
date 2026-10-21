@@ -147,10 +147,10 @@ const CREATURE_TYPE_SUGGESTIONS = [
 
 // Presets de papel (role) — preenchem um bloco de estatísticas escalado pelo nível
 const ROLE_PRESETS = [
-    { id: 'minion', label: 'Lacaio', icon: '🐀', color: 'text.secondary', lpPerLevel: 8, mpPerLevel: 3, ap: 2, attrFactor: 0.5, desc: 'Frágil, aparece em grupo' },
-    { id: 'standard', label: 'Padrão', icon: '🐺', color: 'info.main', lpPerLevel: 15, mpPerLevel: 5, ap: 3, attrFactor: 0.8, desc: 'Ameaça equilibrada' },
-    { id: 'elite', label: 'Elite', icon: '🦁', color: 'primary.main', lpPerLevel: 30, mpPerLevel: 8, ap: 4, attrFactor: 1.0, desc: 'Resistente e perigoso' },
-    { id: 'boss', label: 'Chefe', icon: '🐲', color: 'warning.main', lpPerLevel: 60, mpPerLevel: 12, ap: 5, attrFactor: 1.3, desc: 'Combate memorável' }
+    { id: 'minion', label: 'Lacaio', color: 'text.secondary', lpPerLevel: 8, mpPerLevel: 3, ap: 2, attrFactor: 0.5, desc: 'Frágil, aparece em grupo' },
+    { id: 'standard', label: 'Padrão', color: 'info.main', lpPerLevel: 15, mpPerLevel: 5, ap: 3, attrFactor: 0.8, desc: 'Ameaça equilibrada' },
+    { id: 'elite', label: 'Elite', color: 'primary.main', lpPerLevel: 30, mpPerLevel: 8, ap: 4, attrFactor: 1.0, desc: 'Resistente e perigoso' },
+    { id: 'boss', label: 'Chefe', color: 'warning.main', lpPerLevel: 60, mpPerLevel: 12, ap: 5, attrFactor: 1.3, desc: 'Combate memorável' }
 ] as const;
 
 const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
@@ -595,7 +595,7 @@ export default function CreatureCreator({ open, onClose, onSave, editingCreature
                                                     '&:hover': { borderColor: preset.color, bgcolor: 'action.hover' }
                                                 }}
                                             >
-                                                <span style={{ marginRight: 6 }}>{preset.icon}</span> {preset.label}
+                                                {preset.label}
                                             </Button>
                                         </Tooltip>
                                     ))}
@@ -608,7 +608,7 @@ export default function CreatureCreator({ open, onClose, onSave, editingCreature
                             <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1.5 }}>
                                 Atributos
                                 {rpgSystem?.attributes?.length ? (
-                                    <Chip label={rpgSystem.name || 'Sistema customizado'} size="small" sx={{ ml: 1, height: 18, fontSize: '0.6rem' }} />
+                                    <Chip label={rpgSystem.name || 'Sistema customizado'} size="small" sx={{ ml: 1, height: 18, fontSize: '0.75rem' }} />
                                 ) : null}
                             </Typography>
                             <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
@@ -820,7 +820,7 @@ export default function CreatureCreator({ open, onClose, onSave, editingCreature
                                                 primary={
                                                     <Box display="flex" alignItems="center" gap={1}>
                                                         <Typography variant="body2" fontWeight={600}>{skill.name}</Typography>
-                                                        <Chip label={skill.type} size="small" sx={{ height: 20, fontSize: '0.65rem' }} />
+                                                        <Chip label={skill.type} size="small" sx={{ height: 20, fontSize: '0.75rem' }} />
                                                     </Box>
                                                 }
                                                 secondary={skill.description}
@@ -921,9 +921,9 @@ export default function CreatureCreator({ open, onClose, onSave, editingCreature
                                                 primary={
                                                     <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
                                                         <Typography variant="body2" fontWeight={600}>{spell.name}</Typography>
-                                                        <Chip label={spell.element} size="small" sx={{ height: 20, fontSize: '0.65rem' }} />
-                                                        <Chip label={`Nv. ${spell.level}`} size="small" sx={{ height: 20, fontSize: '0.65rem' }} />
-                                                        <Chip label={`${spell.cost} MP`} size="small" sx={{ height: 20, fontSize: '0.65rem', bgcolor: alpha(color.mp, 0.14), color: color.mp }} />
+                                                        <Chip label={spell.element} size="small" sx={{ height: 20, fontSize: '0.75rem' }} />
+                                                        <Chip label={`Nv. ${spell.level}`} size="small" sx={{ height: 20, fontSize: '0.75rem' }} />
+                                                        <Chip label={`${spell.cost} MP`} size="small" sx={{ height: 20, fontSize: '0.75rem', bgcolor: alpha(color.mp, 0.14), color: color.mp }} />
                                                     </Box>
                                                 }
                                                 secondary={spell.description}

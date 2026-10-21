@@ -370,7 +370,7 @@ export default function WidgetManagerDialog({ open, onClose, initialWidgetId }: 
     return (
         <Dialog open={open} onClose={saving ? undefined : onClose} maxWidth="md" fullWidth>
             <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <WidgetsIcon color="primary" />
+                <WidgetsIcon sx={{ color: 'text.secondary' }} />
                 Administrar Widgets
                 <Box flex={1} />
                 {widget && (
@@ -391,7 +391,7 @@ export default function WidgetManagerDialog({ open, onClose, initialWidgetId }: 
                 {widgets.map(w => (
                     <Chip
                         key={w.id}
-                        icon={<span style={{ marginLeft: 6 }}>{w.icon || '📋'}</span>}
+                        icon={w.icon ? <span style={{ marginLeft: 6 }}>{w.icon}</span> : undefined}
                         label={w.name || 'Sem nome'}
                         onClick={() => { setActiveId(w.id); setAddingPreset(false); }}
                         color={w.id === activeId && !addingPreset ? 'primary' : 'default'}
@@ -492,7 +492,7 @@ export default function WidgetManagerDialog({ open, onClose, initialWidgetId }: 
                         <Accordion disableGutters>
                             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                                 <Typography fontWeight={700}>
-                                    🛡️ Barras Principais — {widget.labels.integrity} {widget.integrity}/{widget.maxIntegrity}
+                                    Barras Principais — {widget.labels.integrity} {widget.integrity}/{widget.maxIntegrity}
                                     {widget.showSecondary ? ` · ${widget.labels.secondary} ${widget.secondary}/${widget.maxSecondary}` : ''}
                                 </Typography>
                             </AccordionSummary>
@@ -564,7 +564,7 @@ export default function WidgetManagerDialog({ open, onClose, initialWidgetId }: 
                         {/* ── Partes ── */}
                         <Accordion disableGutters>
                             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                                <Typography fontWeight={700}>⚙️ {widget.labels.parts} ({widget.parts.length})</Typography>
+                                <Typography fontWeight={700}>{widget.labels.parts} ({widget.parts.length})</Typography>
                             </AccordionSummary>
                             <AccordionDetails>
                                 <Box display="flex" flexDirection="column" gap={1.5}>
@@ -654,7 +654,7 @@ export default function WidgetManagerDialog({ open, onClose, initialWidgetId }: 
                         {/* ── Recursos ── */}
                         <Accordion disableGutters>
                             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                                <Typography fontWeight={700}>⛽ {widget.labels.resources} ({widget.resources.length})</Typography>
+                                <Typography fontWeight={700}>{widget.labels.resources} ({widget.resources.length})</Typography>
                             </AccordionSummary>
                             <AccordionDetails>
                                 <Box display="flex" flexDirection="column" gap={1.5}>
@@ -746,7 +746,7 @@ export default function WidgetManagerDialog({ open, onClose, initialWidgetId }: 
                         {/* ── Estoque ── */}
                         <Accordion disableGutters>
                             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                                <Typography fontWeight={700}>📦 {widget.labels.stock} ({widget.stock.length})</Typography>
+                                <Typography fontWeight={700}>{widget.labels.stock} ({widget.stock.length})</Typography>
                             </AccordionSummary>
                             <AccordionDetails>
                                 <Box display="flex" flexDirection="column" gap={1.5}>
@@ -852,7 +852,7 @@ export default function WidgetManagerDialog({ open, onClose, initialWidgetId }: 
                             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                                 <Typography fontWeight={700} display="flex" alignItems="center" gap={0.75}>
                                     <SavingsIcon fontSize="small" /> Fundos Comuns ({widget.pools?.length ?? 0})
-                                    <Chip label="BETA" size="small" color="secondary" sx={{ height: 18, fontSize: '0.6rem' }} />
+                                    <Chip label="BETA" size="small" color="secondary" sx={{ height: 18, fontSize: '0.75rem' }} />
                                 </Typography>
                             </AccordionSummary>
                             <AccordionDetails>
@@ -932,7 +932,7 @@ export default function WidgetManagerDialog({ open, onClose, initialWidgetId }: 
                             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                                 <Typography fontWeight={700} display="flex" alignItems="center" gap={0.75}>
                                     <AssignmentIcon fontSize="small" /> Tarefas ({widget.bounties?.length ?? 0})
-                                    <Chip label="BETA" size="small" color="secondary" sx={{ height: 18, fontSize: '0.6rem' }} />
+                                    <Chip label="BETA" size="small" color="secondary" sx={{ height: 18, fontSize: '0.75rem' }} />
                                 </Typography>
                             </AccordionSummary>
                             <AccordionDetails>
@@ -1039,7 +1039,7 @@ export default function WidgetManagerDialog({ open, onClose, initialWidgetId }: 
                             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                                 <Typography fontWeight={700} display="flex" alignItems="center" gap={0.75}>
                                     <TimerIcon fontSize="small" /> Relógios ({widget.clocks?.length ?? 0})
-                                    <Chip label="BETA" size="small" color="secondary" sx={{ height: 18, fontSize: '0.6rem' }} />
+                                    <Chip label="BETA" size="small" color="secondary" sx={{ height: 18, fontSize: '0.75rem' }} />
                                 </Typography>
                             </AccordionSummary>
                             <AccordionDetails>
@@ -1127,7 +1127,7 @@ export default function WidgetManagerDialog({ open, onClose, initialWidgetId }: 
                             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                                 <Typography fontWeight={700} display="flex" alignItems="center" gap={0.75}>
                                     <ScienceIcon fontSize="small" /> Crafting ({widget.recipes?.length ?? 0})
-                                    <Chip label="BETA" size="small" color="secondary" sx={{ height: 18, fontSize: '0.6rem' }} />
+                                    <Chip label="BETA" size="small" color="secondary" sx={{ height: 18, fontSize: '0.75rem' }} />
                                 </Typography>
                             </AccordionSummary>
                             <AccordionDetails>
@@ -1445,7 +1445,7 @@ export default function WidgetManagerDialog({ open, onClose, initialWidgetId }: 
                         {/* ── Alertas ── */}
                         <Accordion disableGutters>
                             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                                <Typography fontWeight={700}>🚨 Alertas ({widget.alerts.length})</Typography>
+                                <Typography fontWeight={700}>Alertas ({widget.alerts.length})</Typography>
                             </AccordionSummary>
                             <AccordionDetails>
                                 <Box display="flex" flexDirection="column" gap={1.5}>
@@ -1503,7 +1503,7 @@ export default function WidgetManagerDialog({ open, onClose, initialWidgetId }: 
                         {/* ── Registro/Diário ── */}
                         <Accordion disableGutters>
                             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                                <Typography fontWeight={700}>📖 {widget.labels.log} ({widget.log.length})</Typography>
+                                <Typography fontWeight={700}>{widget.labels.log} ({widget.log.length})</Typography>
                             </AccordionSummary>
                             <AccordionDetails>
                                 <Box display="flex" flexDirection="column" gap={1.5}>

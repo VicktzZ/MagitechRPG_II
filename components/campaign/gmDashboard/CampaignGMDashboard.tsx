@@ -510,7 +510,7 @@ export default function CampaignGMDashboard(): ReactElement | null {
                                                                 bgcolor: 'warning.main', 
                                                                 color: 'warning.contrastText',
                                                                 fontWeight: 700,
-                                                                fontSize: '0.65rem'
+                                                                fontSize: '0.75rem'
                                                             }} 
                                                         />
                                                     )}
@@ -620,7 +620,7 @@ export default function CampaignGMDashboard(): ReactElement | null {
                                                                             sx={{
                                                                                 bgcolor: 'action.hover',
                                                                                 fontWeight: 600,
-                                                                                fontSize: '0.7rem'
+                                                                                fontSize: '0.75rem'
                                                                             }}
                                                                         />
                                                                     )}
@@ -632,7 +632,7 @@ export default function CampaignGMDashboard(): ReactElement | null {
                                                                             borderColor: alpha(config.color, 0.38),
                                                                             color: 'text.primary',
                                                                             fontWeight: 600,
-                                                                            fontSize: '0.7rem'
+                                                                            fontSize: '0.75rem'
                                                                         }}
                                                                     />
                                                                 </Box>
@@ -776,7 +776,7 @@ export default function CampaignGMDashboard(): ReactElement | null {
                                                                             size="small"
                                                                             sx={{ 
                                                                                 height: 18,
-                                                                                fontSize: '0.65rem',
+                                                                                fontSize: '0.75rem',
                                                                                 bgcolor: typeColor.bg,
                                                                                 color: typeColor.color
                                                                             }}
@@ -786,7 +786,7 @@ export default function CampaignGMDashboard(): ReactElement | null {
                                                                             size="small"
                                                                             sx={{ 
                                                                                 height: 18,
-                                                                                fontSize: '0.65rem',
+                                                                                fontSize: '0.75rem',
                                                                                 bgcolor: typeColor.bg,
                                                                                 color: typeColor.color
                                                                             }}
@@ -861,30 +861,30 @@ export default function CampaignGMDashboard(): ReactElement | null {
                                                     <Chip
                                                         label={`Nível ${creature.level}`}
                                                         size="small"
-                                                        sx={{ height: 20, fontSize: '0.65rem', bgcolor: (theme) => alpha(theme.palette.success.main, 0.14), color: 'success.main' }}
+                                                        sx={{ height: 20, fontSize: '0.75rem', bgcolor: (theme) => alpha(theme.palette.success.main, 0.14), color: 'success.main' }}
                                                     />
                                                     <Chip 
                                                         label={`LP: ${creature.stats?.lp || 0}`} 
                                                         size="small" 
-                                                        sx={{ height: 20, fontSize: '0.65rem', bgcolor: alpha(color.lp, 0.14), color: 'error.light' }} 
+                                                        sx={{ height: 20, fontSize: '0.75rem', bgcolor: alpha(color.lp, 0.14), color: 'error.light' }} 
                                                     />
                                                     <Chip 
                                                         label={`MP: ${creature.stats?.mp || 0}`} 
                                                         size="small" 
-                                                        sx={{ height: 20, fontSize: '0.65rem', bgcolor: alpha(color.mp, 0.14), color: color.mp }} 
+                                                        sx={{ height: 20, fontSize: '0.75rem', bgcolor: alpha(color.mp, 0.14), color: color.mp }} 
                                                     />
                                                     {creature.skills?.length > 0 && (
                                                         <Chip 
                                                             label={`${creature.skills.length} habilidade(s)`} 
                                                             size="small" 
-                                                            sx={{ height: 20, fontSize: '0.65rem', bgcolor: (theme) => alpha(theme.palette.primary.main, 0.14), color: 'primary.main' }} 
+                                                            sx={{ height: 20, fontSize: '0.75rem', bgcolor: (theme) => alpha(theme.palette.primary.main, 0.14), color: 'primary.main' }} 
                                                         />
                                                     )}
                                                     {creature.spells?.length > 0 && (
                                                         <Chip 
                                                             label={`${creature.spells.length} magia(s)`} 
                                                             size="small" 
-                                                            sx={{ height: 20, fontSize: '0.65rem', bgcolor: (theme) => alpha(theme.palette.info.main, 0.14), color: 'info.main' }} 
+                                                            sx={{ height: 20, fontSize: '0.75rem', bgcolor: (theme) => alpha(theme.palette.info.main, 0.14), color: 'info.main' }} 
                                                         />
                                                     )}
                                                 </Box>

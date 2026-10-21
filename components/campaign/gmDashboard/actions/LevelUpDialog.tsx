@@ -105,7 +105,7 @@ export default function LevelUpDialog({ open, onClose, players, campaignId }: Le
     return (
         <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
             <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <TrendingUpIcon sx={{ color: 'info.main' }} />
+                <TrendingUpIcon sx={{ color: 'text.secondary' }} />
                 Aumentar Nível de Jogadores
             </DialogTitle>
             <DialogContent>
