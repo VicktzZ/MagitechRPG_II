@@ -7,6 +7,8 @@
  * uma caravana... Os rótulos de cada seção são personalizáveis.
  */
 
+import { color as tokenColor } from '../themes/tokens'
+
 export type WidgetPartStatus = 'operational' | 'damaged' | 'critical' | 'offline';
 
 /** Parte/subsistema com vida própria (ex: Motores, Cozinha, Portão Norte) */
@@ -294,8 +296,8 @@ export function createWidgetFromPreset(preset: WidgetPreset): CampaignWidget {
                 { id: crypto.randomUUID(), name: 'Computador de Bordo', icon: '🖥️', hp: 15, maxHp: 15, status: 'operational' }
             ],
             resources: [
-                { id: crypto.randomUUID(), name: 'Combustível', icon: '⛽', value: 100, max: 100, unit: '%', color: '#f59e0b' },
-                { id: crypto.randomUUID(), name: 'Energia', icon: '⚡', value: 100, max: 100, unit: '%', color: '#0ea5e9' }
+                { id: crypto.randomUUID(), name: 'Combustível', icon: '⛽', value: 100, max: 100, unit: '%', color: tokenColor.amber },
+                { id: crypto.randomUUID(), name: 'Energia', icon: '⚡', value: 100, max: 100, unit: '%', color: tokenColor.cyan }
             ],
             labels: {
                 integrity: 'Casco',
@@ -321,8 +323,8 @@ export function createWidgetFromPreset(preset: WidgetPreset): CampaignWidget {
                 { id: crypto.randomUUID(), name: 'Quartos', icon: '🛏️', hp: 15, maxHp: 15, status: 'operational' }
             ],
             resources: [
-                { id: crypto.randomUUID(), name: 'Provisões', icon: '🍞', value: 50, max: 100, unit: 'unid.', color: '#84cc16' },
-                { id: crypto.randomUUID(), name: 'Caixa', icon: '💰', value: 200, color: '#f59e0b' }
+                { id: crypto.randomUUID(), name: 'Provisões', icon: '🍞', value: 50, max: 100, unit: 'unid.', color: tokenColor.success },
+                { id: crypto.randomUUID(), name: 'Caixa', icon: '💰', value: 200, color: tokenColor.amber }
             ],
             labels: {
                 integrity: 'Estrutura',
@@ -349,8 +351,8 @@ export function createWidgetFromPreset(preset: WidgetPreset): CampaignWidget {
                 { id: crypto.randomUUID(), name: 'Torre de Vigia', icon: '🗼', hp: 15, maxHp: 15, status: 'operational' }
             ],
             resources: [
-                { id: crypto.randomUUID(), name: 'Munição', icon: '🏹', value: 100, max: 100, unit: 'unid.', color: '#ef4444' },
-                { id: crypto.randomUUID(), name: 'Moral das Tropas', icon: '🎖️', value: 80, max: 100, unit: '%', color: '#8b5cf6' }
+                { id: crypto.randomUUID(), name: 'Munição', icon: '🏹', value: 100, max: 100, unit: 'unid.', color: tokenColor.danger },
+                { id: crypto.randomUUID(), name: 'Moral das Tropas', icon: '🎖️', value: 80, max: 100, unit: '%', color: tokenColor.ap }
             ],
             labels: {
                 integrity: 'Vida do Objetivo',

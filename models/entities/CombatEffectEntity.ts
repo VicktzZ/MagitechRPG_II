@@ -8,6 +8,7 @@ import type {
     CombatEffectLevel,
     CombatEffectScope
 } from '../CombatEffect'
+import { color as tokenColor } from '../../themes/tokens'
 
 // Revalidação do tipo acontece automaticamente em CombatEffect; esta classe apenas
 // implementa o shape para o fireorm persistir na collection `combatEffects`.
@@ -26,7 +27,7 @@ export class CombatEffectEntity implements CombatEffect {
     category: CombatEffectCategory = 'damage'
     timing: 'turn' | 'round' = 'turn'
     element?: CombatEffectElement
-    color: string = '#ff5722'
+    color: string = tokenColor.warning
     icon: string = '💥'
     levels: CombatEffectLevel[] = []
     usesLevels?: boolean
