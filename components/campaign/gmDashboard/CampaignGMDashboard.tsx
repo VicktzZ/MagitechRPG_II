@@ -8,7 +8,6 @@ import {
     CardGiftcard,
     ExpandMore,
     People,
-    SupervisorAccount,
     Pets,
     Person,
     Delete as DeleteIcon,
@@ -30,7 +29,6 @@ import {
     IconButton,
     Paper,
     Skeleton,
-    Snackbar,
     Stack,
     Tooltip,
     Typography,
@@ -40,17 +38,14 @@ import {
 import { rarityColor } from '@constants';
 import { color } from '@themes/tokens';
 import { MessageType } from '@enums';
+import { useSnackbar } from 'notistack';
 import { type ReactElement, useMemo, useState } from 'react';
 import PlayerCard from './PlayerCard';
 import CreatureCreator from './CreatureCreator';
+import CampaignStatsStrip from './CampaignStatsStrip';
+import DeleteCreatureDialog from './DeleteCreatureDialog';
+import Section from '../Section';
 import type { CharsheetDTO } from '@models/dtos';
-
-interface SectionProps {
-    title: string;
-    icon: React.ReactElement;
-    children: React.ReactNode;
-    sx?: any;
-}
 
 const getGMExpertiseLevel = (value: number): 'novice' | 'trained' | 'expert' | 'master' | 'legendary' => {
     if (value < 2) return 'novice';
@@ -103,46 +98,19 @@ const getGMExpertiseConfig = (value: number) => {
     }
 };
 
-function Section({ title, icon, children, sx }: SectionProps) {
-    return (
-        <Paper 
-            elevation={2}
-            sx={{ 
-                p: 3, 
-                borderRadius: 3,
-                bgcolor: 'background.paper',
-                border: '1px solid',
-                borderColor: 'divider',
-                ...sx
-            }}
-        >
-            <Stack spacing={3}>
-                <Box display="flex" alignItems="center" gap={2}>
-                    {icon}
-                    <Typography 
-                        variant="h5" 
-                        sx={{ 
-                            fontWeight: 700,
-                            color: 'primary.main'
-                        }}
-                    >
-                        {title}
-                    </Typography>
-                </Box>
-                {children}
-            </Stack>
-        </Paper>
-    );
-}
-
 export default function CampaignGMDashboard(): ReactElement | null {
     const { campaign, users, charsheets, updateCampaign } = useCampaignContext()
     const { handleSendMessage, setIsChatOpen, isChatOpen } = useChatContext()
+    const { enqueueSnackbar } = useSnackbar()
     
     const [ expandedPlayer, setExpandedPlayer ] = useState<string | false>(false);
     const [ creatureModalOpen, setCreatureModalOpen ] = useState(false);
     const [ selectedCreature, setSelectedCreature ] = useState<any | null>(null);
     const [ selectedCreatureReadOnly, setSelectedCreatureReadOnly ] = useState(false);
+    // Exclusão de criatura: o alvo fica guardado após fechar para o nome não sumir durante a animação do diálogo
+    const [ creatureToDelete, setCreatureToDelete ] = useState<{ id: string; name: string } | null>(null);
+    const [ deleteDialogOpen, setDeleteDialogOpen ] = useState(false);
+    const [ isDeletingCreature, setIsDeletingCreature ] = useState(false);
     
     // As fichas já chegam em tempo real pelo campaignContext (useCampaignData) —
     // assinar de novo aqui duplicava o listener do Firestore para os mesmos docs.
@@ -165,7 +133,6 @@ export default function CampaignGMDashboard(): ReactElement | null {
 
     const campaignStats = useMemo(() => {
         const totalPlayers = players?.length ?? 0;
-        const activePlayers = players?.filter(p => p.charsheet).length ?? 0;
         const averageLevel = playerCharsheets?.length 
             ? Math.round(playerCharsheets.reduce((sum, f) => sum + f.level, 0) / playerCharsheets.length)
             : 0;
@@ -175,7 +142,6 @@ export default function CampaignGMDashboard(): ReactElement | null {
         
         return {
             totalPlayers,
-            activePlayers,
             averageLevel,
             highestLevel
         };
@@ -354,32 +320,35 @@ export default function CampaignGMDashboard(): ReactElement | null {
         }
     };
 
-    // Função para deletar criatura customizada
-    const handleDeleteCreature = async (creatureId: string, creatureName: string) => {
-        if (!confirm(`Tem certeza que deseja excluir a criatura "${creatureName}"?`)) return;
-        
+    // Excluir criatura customizada: primeiro pede confirmação, depois remove
+    const handleRequestDeleteCreature = (creatureId: string, creatureName: string) => {
+        setCreatureToDelete({ id: creatureId, name: creatureName });
+        setDeleteDialogOpen(true);
+    };
+
+    const handleConfirmDeleteCreature = async () => {
+        if (!creatureToDelete) return;
+
+        setIsDeletingCreature(true);
         try {
             const response = await fetch(`/api/campaign/${campaign.id}/custom/creatures`, {
                 method: 'DELETE',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ creatureId })
+                body: JSON.stringify({ creatureId: creatureToDelete.id })
             });
-            
+
             if (!response.ok) {
                 throw new Error('Erro ao excluir criatura');
             }
-            
-            // Atualiza apenas o campo custom — espalhar a campanha inteira
-            // sobrescreveria session.messages e apagaria o chat.
-            updateCampaign({
-                custom: {
-                    ...campaign.custom,
-                    creatures: (campaign.custom?.creatures || []).filter((c: any) => c.id !== creatureId)
-                }
-            });
+
+            // A rota DELETE já grava a remoção na campanha; o listener da campanha atualiza a lista.
+            // Gravar `custom` de novo aqui sobrescreveria o objeto inteiro com um valor possivelmente velho.
         } catch (error) {
             console.error('Erro ao deletar criatura:', error);
-            alert('Erro ao excluir criatura');
+            enqueueSnackbar('Erro ao excluir criatura', { variant: 'error' });
+        } finally {
+            setIsDeletingCreature(false);
+            setDeleteDialogOpen(false);
         }
     };
 
@@ -412,703 +381,574 @@ export default function CampaignGMDashboard(): ReactElement | null {
     };
 
     return (
-        <Box sx={{ width: '100%', pb: 8, position: 'relative' }}>
-            <Box sx={{ 
-                maxWidth: {
-                    xs: '100%',
-                    lg: '1400px',
-                    xl: '1800px'
-                },
-                width: '100%',
-                mx: 'auto',
-                px: { xs: 2, md: 3, lg: 4 },
-                '@media (min-width: 2000px)': {
-                    maxWidth: '95%'
-                }
-            }}>
-                <Stack spacing={4}>
-                    {/* Estatísticas da Campanha */}
-                    <Section 
-                        title="Estatísticas da Campanha" 
-                        icon={
-                            <Box 
-                                sx={{
-                                    p: 1.5,
-                                    borderRadius: 2,
-                                    bgcolor: (theme) => alpha(theme.palette.info.main, 0.14),
-                                    border: '2px solid',
-                                    borderColor: (theme) => alpha(theme.palette.info.main, 0.5)
-                                }}
-                            >
-                                <SupervisorAccount sx={{ color: 'info.main', fontSize: '2rem' }} />
-                            </Box>
-                        }
-                    >
-                        {isPlayerCharsheetsPending ? (
-                            <Box sx={{ p: 2 }}>
-                                <Skeleton variant="rounded" height={80} />
-                            </Box>
-                        ) : (
-                            <Box 
-                                sx={{
-                                    display: 'flex',
-                                    justifyContent: 'space-around',
-                                    p: 2,
-                                    bgcolor: 'background.raised',
-                                    borderRadius: 2,
-                                    border: '1px solid',
-                                    borderColor: 'divider',
-                                    flexWrap: 'wrap',
-                                    gap: 2
-                                }}
-                            >
-                                <Stack alignItems="center" spacing={0.5}>
-                                    <Typography variant="h4" sx={{ color: 'info.main', fontWeight: 700 }}>
-                                        {campaignStats.totalPlayers}
-                                    </Typography>
-                                    <Typography variant="caption" color="text.secondary">
-                                        Jogadores Total
-                                    </Typography>
-                                </Stack>
-                                <Stack alignItems="center" spacing={0.5}>
-                                    <Typography variant="h4" sx={{ color: 'success.main', fontWeight: 700 }}>
-                                        {campaignStats.activePlayers}
-                                    </Typography>
-                                    <Typography variant="caption" color="text.secondary">
-                                        Fichas Ativas
-                                    </Typography>
-                                </Stack>
-                                <Stack alignItems="center" spacing={0.5}>
-                                    <Typography variant="h4" sx={{ color: 'warning.main', fontWeight: 700 }}>
-                                        {campaignStats.averageLevel}
-                                    </Typography>
-                                    <Typography variant="caption" color="text.secondary">
-                                        Nível Médio
-                                    </Typography>
-                                </Stack>
-                                <Stack alignItems="center" spacing={0.5}>
-                                    <Typography variant="h4" sx={{ color: 'primary.main', fontWeight: 700 }}>
-                                        {campaignStats.highestLevel}
-                                    </Typography>
-                                    <Typography variant="caption" color="text.secondary">
-                                        Maior Nível
-                                    </Typography>
-                                </Stack>
-                            </Box>
-                        )}
-                    </Section>
+        <Stack spacing={2} sx={{ width: '100%' }}>
+            {/* Faixa com o resumo da campanha (e o combate, se houver) */}
+            <CampaignStatsStrip
+                totalPlayers={campaignStats.totalPlayers}
+                averageLevel={campaignStats.averageLevel}
+                highestLevel={campaignStats.highestLevel}
+                combatRound={campaign.session?.combat?.isActive ? campaign.session.combat.round : undefined}
+                loading={isPlayerCharsheetsPending}
+            />
 
-                    {/* Lista de Jogadores */}
-                    <Section 
-                        title="Jogadores da Campanha" 
-                        icon={
-                            <Box 
-                                sx={{
-                                    p: 1.5,
-                                    borderRadius: 2,
-                                    bgcolor: (theme) => alpha(theme.palette.success.main, 0.14),
-                                    border: '2px solid',
-                                    borderColor: (theme) => alpha(theme.palette.success.main, 0.5)
-                                }}
-                            >
-                                <People sx={{ color: 'success.main', fontSize: '2rem' }} />
-                            </Box>
-                        }
-                    >
-                        <Box>
-                            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                                {playerCharsheets?.length || 0} ficha{(playerCharsheets?.length || 0) !== 1 ? 's' : ''} ativa{(playerCharsheets?.length || 0) !== 1 ? 's' : ''}
-                            </Typography>
-                            
-                            {isPlayerCharsheetsPending ? (
-                                <Stack spacing={2}>
-                                    <Skeleton variant="rounded" height={140} />
-                                    <Skeleton variant="rounded" height={140} />
-                                    <Skeleton variant="rounded" height={140} />
-                                </Stack>
-                            ) : (!playerCharsheets || playerCharsheets.length === 0) ? (
-                                <Paper 
-                                    sx={{ 
-                                        p: 4, 
-                                        textAlign: 'center',
-                                        border: '2px dashed',
-                                        borderColor: 'divider',
-                                        bgcolor: 'transparent'
-                                    }}
-                                >
-                                    <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
-                                        Nenhum jogador encontrado
-                                    </Typography>
-                                    <Typography variant="body2" color="text.secondary">
-                                        Os jogadores da campanha aparecerão aqui quando se juntarem.
-                                    </Typography>
-                                </Paper>
-                            ) : (
-                                <Box 
-                                    sx={{
-                                        display: 'grid',
-                                        gridTemplateColumns: {
-                                            xs: '1fr',
-                                            sm: 'repeat(2, 1fr)',
-                                            lg: 'repeat(3, 1fr)'
-                                        },
-                                        gap: 3
-                                    }}
-                                >
-                                    {playerCharsheets.map(charsheet => (
-                                        <PlayerCard
-                                            key={charsheet.id}
-                                            charsheet={charsheet as unknown as Required<CharsheetDTO>}
-                                        />
-                                    ))}
-                                </Box>
-                            )}
-                        </Box>
-                    </Section>
-
-                    {/* Seção de Vantagens Adquiridas — visível no Roguelite (sempre) ou
-                        em qualquer modo quando algum jogador já recebeu vantagens */}
-                    {(campaign.mode === 'Roguelite' || playersWithPerks.length > 0) && (
-                        <Section
-                            title="Vantagens Adquiridas"
-                            icon={
-                                <Box
-                                    sx={{
-                                        p: 1.5,
-                                        borderRadius: 2,
-                                        bgcolor: (theme) => alpha(theme.palette.primary.main, 0.14),
-                                        border: '2px solid',
-                                        borderColor: (theme) => alpha(theme.palette.primary.main, 0.5)
-                                    }}
-                                >
-                                    <CardGiftcard sx={{ color: 'primary.main', fontSize: '2rem' }} />
-                                </Box>
-                            }
+            {/* Lista de Jogadores */}
+            <Section 
+                title="Jogadores da campanha" 
+                icon={<People sx={{ color: 'text.secondary' }} />}
+            >
+                <Box>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                        {playerCharsheets?.length || 0} ficha{(playerCharsheets?.length || 0) !== 1 ? 's' : ''} ativa{(playerCharsheets?.length || 0) !== 1 ? 's' : ''}
+                    </Typography>
+                    
+                    {isPlayerCharsheetsPending ? (
+                        <Stack spacing={2}>
+                            <Skeleton variant="rounded" height={140} />
+                            <Skeleton variant="rounded" height={140} />
+                            <Skeleton variant="rounded" height={140} />
+                        </Stack>
+                    ) : (!playerCharsheets || playerCharsheets.length === 0) ? (
+                        <Paper 
+                            sx={{ 
+                                p: 4, 
+                                textAlign: 'center',
+                                border: '2px dashed',
+                                borderColor: 'divider',
+                                bgcolor: 'transparent'
+                            }}
                         >
-                            <Box>
-                                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                                    Vantagens obtidas por cada jogador nesta campanha
-                                </Typography>
-                                
-                                {isPlayerCharsheetsPending ? (
-                                    <Stack spacing={1}>
-                                        <Skeleton variant="rounded" height={60} />
-                                        <Skeleton variant="rounded" height={60} />
-                                    </Stack>
-                                ) : playersWithPerks.length === 0 ? (
-                                    <Paper 
-                                        sx={{ 
-                                            p: 3, 
-                                            textAlign: 'center',
-                                            border: '2px dashed',
-                                            borderColor: 'divider',
-                                            bgcolor: 'transparent'
-                                        }}
-                                    >
-                                        <Typography variant="body1" color="text.secondary">
-                                            Nenhuma vantagem adquirida ainda
-                                        </Typography>
-                                        <Typography variant="caption" color="text.secondary">
-                                            As vantagens aparecerão aqui quando os jogadores as selecionarem
-                                        </Typography>
-                                    </Paper>
-                                ) : (
-                                    <Stack spacing={1}>
-                                        {playersWithPerks.map(player => (
-                                            <Accordion 
-                                                key={player.charsheetId}
-                                                expanded={expandedPlayer === player.charsheetId}
-                                                onChange={(_, isExpanded) => setExpandedPlayer(isExpanded ? player.charsheetId : false)}
-                                                sx={{
-                                                    borderRadius: 2,
-                                                    '&:before': { display: 'none' },
-                                                    bgcolor: 'background.raised'
+                            <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
+                                Nenhum jogador encontrado
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                                Os jogadores da campanha aparecerão aqui quando se juntarem.
+                            </Typography>
+                        </Paper>
+                    ) : (
+                        <Box 
+                            sx={{
+                                display: 'grid',
+                                gridTemplateColumns: {
+                                    xs: '1fr',
+                                    sm: 'repeat(2, 1fr)',
+                                    lg: 'repeat(3, 1fr)'
+                                },
+                                gap: 3
+                            }}
+                        >
+                            {playerCharsheets.map(charsheet => (
+                                <PlayerCard
+                                    key={charsheet.id}
+                                    charsheet={charsheet as unknown as Required<CharsheetDTO>}
+                                />
+                            ))}
+                        </Box>
+                    )}
+                </Box>
+            </Section>
+
+            {/* Ficha das criaturas em combate (sempre visível durante combate) */}
+            {allCreaturesInCombat.length > 0 && (
+                <Section 
+                    title="Criaturas em combate" 
+                    icon={<Pets sx={{ color: 'text.secondary' }} />}
+                >
+                    <Box>
+                        {allCreaturesInCombat.map((creatureData: any, index: number) => {
+                            if (!creatureData) return null;
+                            const { combatant, creature, isCurrentTurn } = creatureData;
+                            const expertisesEntries = Object.entries(creature.expertises || {});
+
+                            return (
+                                <Paper
+                                    key={combatant.id}
+                                    sx={{
+                                        p: 2,
+                                        mb: index < allCreaturesInCombat.length - 1 ? 2 : 0,
+                                        border: isCurrentTurn ? '3px solid' : '1px solid',
+                                        borderColor: isCurrentTurn ? 'warning.main' : 'divider',
+                                        borderRadius: 2,
+                                        bgcolor: isCurrentTurn 
+                                            ? (theme) => alpha(theme.palette.warning.main, 0.12)
+                                            : 'background.raised',
+                                        position: 'relative',
+                                        '&::before': isCurrentTurn ? {
+                                            content: '"Vez desta criatura"',
+                                            position: 'absolute',
+                                            top: -12,
+                                            left: 16,
+                                            bgcolor: 'warning.main',
+                                            color: 'warning.contrastText',
+                                            px: 1.5,
+                                            py: 0.5,
+                                            borderRadius: 1,
+                                            fontSize: '0.75rem',
+                                            fontWeight: 600,
+                                            zIndex: 1
+                                        } : {}
+                                    }}
+                                >
+                                    <Stack spacing={2}>
+                                        <Box display="flex" alignItems="center" gap={2}>
+                                            <Avatar sx={{ 
+                                                bgcolor: (theme) => alpha(theme.palette.warning.main, isCurrentTurn ? 0.28 : 0.14), 
+                                                color: 'warning.main',
+                                                border: isCurrentTurn ? '2px solid' : 'none',
+                                                borderColor: 'warning.main'
+                                            }}>
+                                                <Pets />
+                                            </Avatar>
+                                            <Box>
+                                                <Typography variant="subtitle1" fontWeight={700}>
+                                                    {combatant?.name || creature.name}
+                                                    {isCurrentTurn && (
+                                                        <Chip 
+                                                            label="EM TURNO" 
+                                                            size="small" 
+                                                            sx={{ 
+                                                                ml: 1, 
+                                                                bgcolor: 'warning.main', 
+                                                                color: 'warning.contrastText',
+                                                                fontWeight: 700,
+                                                                fontSize: '0.65rem'
+                                                            }} 
+                                                        />
+                                                    )}
+                                                </Typography>
+                                                <Typography variant="caption" color="text.secondary">
+                                                    Nível {creature.level} • LP {combatant.currentLp ?? creature.stats?.lp ?? 0}/{combatant.maxLp ?? creature.stats?.maxLp ?? creature.stats?.lp ?? 0} • MP {combatant.currentMp ?? creature.stats?.mp ?? 0}/{combatant.maxMp ?? creature.stats?.maxMp ?? creature.stats?.mp ?? 0}
+                                                </Typography>
+                                            </Box>
+                                        </Box>
+
+                                        {/* Lista de Perícias da Criatura */}
+                                        {expertisesEntries.length === 0 ? (
+                                            <Paper 
+                                                sx={{ 
+                                                    p: 2, 
+                                                    textAlign: 'center',
+                                                    border: '2px dashed',
+                                                    borderColor: 'divider',
+                                                    bgcolor: 'transparent'
                                                 }}
                                             >
-                                                <AccordionSummary
-                                                    expandIcon={<ExpandMore />}
-                                                    sx={{ 
-                                                        borderRadius: 2,
-                                                        '&:hover': { bgcolor: 'action.hover' }
-                                                    }}
-                                                >
-                                                    <Box display="flex" alignItems="center" gap={2} width="100%">
-                                                        <Avatar 
-                                                            src={player.userImage || undefined}
-                                                            sx={{ 
-                                                                width: 44, 
-                                                                height: 44,
-                                                                bgcolor: (theme) => alpha(theme.palette.primary.main, 0.14),
-                                                                color: 'primary.main',
-                                                                fontSize: '1rem',
-                                                                fontWeight: 700,
-                                                                border: '2px solid',
-                                                                borderColor: (theme) => alpha(theme.palette.primary.main, 0.5)
+                                                <Typography variant="body2" color="text.secondary">
+                                                    Esta criatura não possui perícias configuradas.
+                                                </Typography>
+                                            </Paper>
+                                        ) : (
+                                            <Box 
+                                                sx={{
+                                                    display: 'grid',
+                                                    gridTemplateColumns: {
+                                                        xs: 'repeat(2, 1fr)',
+                                                        sm: 'repeat(3, 1fr)',
+                                                        md: 'repeat(4, 1fr)'
+                                                    },
+                                                    gap: 1.5
+                                                }}
+                                            >
+                                                {expertisesEntries.map(([ nome, expertise ]: any) => {
+                                                    const config = getGMExpertiseConfig(expertise.value ?? 0);
+                                                    const IconComponent = config.icon;
+
+                                                    return (
+                                                        <Button
+                                                            key={`${combatant.id}-${nome}`}
+                                                            fullWidth
+                                                            onClick={async () => await handleCreatureExpertiseRoll(nome, expertise, creature, combatant)}
+                                                            disabled={false}
+                                                            sx={{
+                                                                p: 1.5,
+                                                                bgcolor: alpha(config.color, 0.12),
+                                                                border: '1px solid',
+                                                                borderColor: alpha(config.color, 0.25),
+                                                                borderRadius: 2,
+                                                                justifyContent: 'flex-start',
+                                                                textAlign: 'left',
+                                                                textTransform: 'none',
+                                                                opacity: 1,
+                                                                '&:hover': {
+                                                                    bgcolor: alpha(config.color, 0.18),
+                                                                    borderColor: alpha(config.color, 0.5)
+                                                                }
                                                             }}
                                                         >
-                                                            {!player.userImage && (player.charsheetName?.charAt(0)?.toUpperCase() || '?')}
-                                                        </Avatar>
-                                                        <Box flex={1}>
-                                                            <Typography variant="subtitle1" fontWeight={600}>
-                                                                {player.charsheetName}
-                                                            </Typography>
-                                                            <Typography variant="caption" color="text.secondary">
-                                                                Nível {player.level} • {player.userName}
-                                                            </Typography>
-                                                        </Box>
-                                                        <Chip 
-                                                            label={`${player.perks.length} vantagem${player.perks.length !== 1 ? 's' : ''}`}
-                                                            size="small"
-                                                            sx={{ 
-                                                                bgcolor: (theme) => alpha(theme.palette.primary.main, 0.14), 
-                                                                color: 'primary.main',
-                                                                fontWeight: 600
-                                                            }}
-                                                        />
-                                                    </Box>
-                                                </AccordionSummary>
-                                                <AccordionDetails sx={{ pt: 0 }}>
-                                                    <Box 
-                                                        sx={{ 
-                                                            display: 'flex', 
-                                                            flexWrap: 'wrap', 
-                                                            gap: 1,
-                                                            p: 1,
-                                                            bgcolor: 'background.paper',
-                                                            borderRadius: 1
-                                                        }}
-                                                    >
-                                                        {player.perks.map((perk: any, index: number) => {
-                                                            const typeColor = getPerkTypeColor(perk.perkType);
-                                                            return (
-                                                                <Tooltip 
-                                                                    key={index}
-                                                                    title={
-                                                                        <Box>
-                                                                            <Typography variant="subtitle2">{perk.name}</Typography>
-                                                                            {perk.description && (
-                                                                                <Typography variant="caption">{perk.description}</Typography>
-                                                                            )}
-                                                                        </Box>
-                                                                    }
-                                                                    arrow
-                                                                >
-                                                                    <Chip
-                                                                        label={
-                                                                            <Box display="flex" alignItems="center" gap={0.5}>
-                                                                                <Typography variant="caption" fontWeight={600}>
-                                                                                    {perk.name}
-                                                                                </Typography>
-                                                                                <Chip 
-                                                                                    label={getPerkTypeLabel(perk.perkType)}
-                                                                                    size="small"
-                                                                                    sx={{ 
-                                                                                        height: 18,
-                                                                                        fontSize: '0.65rem',
-                                                                                        bgcolor: typeColor.bg,
-                                                                                        color: typeColor.color
-                                                                                    }}
-                                                                                />
-                                                                                <Chip 
-                                                                                    label={getPerkTypeLabel(perk.rarity)}
-                                                                                    size="small"
-                                                                                    sx={{ 
-                                                                                        height: 18,
-                                                                                        fontSize: '0.65rem',
-                                                                                        bgcolor: typeColor.bg,
-                                                                                        color: typeColor.color
-                                                                                    }}
-                                                                                />
-                                                                            </Box>
-                                                                        }
-                                                                        size="medium"
+                                                            <Stack spacing={1} width="100%">
+                                                                <Box display="flex" alignItems="center" gap={1}>
+                                                                    <Box 
                                                                         sx={{
-                                                                            bgcolor: 'background.raised',
+                                                                            p: 0.8,
+                                                                            borderRadius: 1,
+                                                                            bgcolor: alpha(config.color, 0.12),
                                                                             border: '1px solid',
-                                                                            borderColor: 'divider',
-                                                                            cursor: 'pointer',
-                                                                            '&:hover': {
-                                                                                bgcolor: 'background.overlay'
-                                                                            }
+                                                                            borderColor: alpha(config.color, 0.25)
+                                                                        }}
+                                                                    >
+                                                                        <IconComponent 
+                                                                            sx={{ 
+                                                                                color: config.color,
+                                                                                fontSize: '1.1rem'
+                                                                            }} 
+                                                                        />
+                                                                    </Box>
+                                                                    <Typography 
+                                                                        variant="subtitle2" 
+                                                                        sx={{ 
+                                                                            fontWeight: 600,
+                                                                            flex: 1
+                                                                        }}
+                                                                    >
+                                                                        {nome}
+                                                                    </Typography>
+                                                                </Box>
+                                                                <Box display="flex" gap={1} flexWrap="wrap" justifyContent="space-between">
+                                                                    <Chip 
+                                                                        label={`${expertise.value >= 0 ? '+' : ''}${expertise.value}`}
+                                                                        size="small"
+                                                                        sx={{
+                                                                            bgcolor: config.color,
+                                                                            color: color.canvas,
+                                                                            fontWeight: 700,
+                                                                            fontSize: '0.75rem'
                                                                         }}
                                                                     />
-                                                                </Tooltip>
-                                                            );
-                                                        })}
-                                                    </Box>
-                                                </AccordionDetails>
-                                            </Accordion>
-                                        ))}
-                                    </Stack>
-                                )}
-                            </Box>
-                        </Section>
-                    )}
-
-                    {/* Ficha das criaturas em combate (sempre visível durante combate) */}
-                    {(() => {
-                        return true;
-                    })() && allCreaturesInCombat.length > 0 && (
-                        <Section 
-                            title="Criaturas em Combate" 
-                            icon={
-                                <Box 
-                                    sx={{
-                                        p: 1.5,
-                                        borderRadius: 2,
-                                        bgcolor: (theme) => alpha(theme.palette.warning.main, 0.14),
-                                        border: '2px solid',
-                                        borderColor: (theme) => alpha(theme.palette.warning.main, 0.5)
-                                    }}
-                                >
-                                    <Pets sx={{ color: 'warning.main', fontSize: '2rem' }} />
-                                </Box>
-                            }
-                        >
-                            <Box>
-                                {allCreaturesInCombat.map((creatureData: any, index: number) => {
-                                    if (!creatureData) return null;
-                                    const { combatant, creature, isCurrentTurn } = creatureData;
-                                    const expertisesEntries = Object.entries(creature.expertises || {});
-
-                                    return (
-                                        <Paper
-                                            key={combatant.id}
-                                            sx={{
-                                                p: 2,
-                                                mb: index < allCreaturesInCombat.length - 1 ? 2 : 0,
-                                                border: isCurrentTurn ? '3px solid' : '1px solid',
-                                                borderColor: isCurrentTurn ? 'warning.main' : 'divider',
-                                                borderRadius: 2,
-                                                bgcolor: isCurrentTurn 
-                                                    ? (theme) => alpha(theme.palette.warning.main, 0.12)
-                                                    : 'background.raised',
-                                                position: 'relative',
-                                                '&::before': isCurrentTurn ? {
-                                                    content: '"🎯 Vez desta criatura"',
-                                                    position: 'absolute',
-                                                    top: -12,
-                                                    left: 16,
-                                                    bgcolor: 'warning.main',
-                                                    color: 'warning.contrastText',
-                                                    px: 1.5,
-                                                    py: 0.5,
-                                                    borderRadius: 1,
-                                                    fontSize: '0.75rem',
-                                                    fontWeight: 600,
-                                                    zIndex: 1
-                                                } : {}
-                                            }}
-                                        >
-                                            <Stack spacing={2}>
-                                                <Box display="flex" alignItems="center" gap={2}>
-                                                    <Avatar sx={{ 
-                                                        bgcolor: (theme) => alpha(theme.palette.warning.main, isCurrentTurn ? 0.28 : 0.14), 
-                                                        color: 'warning.main',
-                                                        border: isCurrentTurn ? '2px solid' : 'none',
-                                                        borderColor: 'warning.main'
-                                                    }}>
-                                                        <Pets />
-                                                    </Avatar>
-                                                    <Box>
-                                                        <Typography variant="subtitle1" fontWeight={700}>
-                                                            {combatant?.name || creature.name}
-                                                            {isCurrentTurn && (
-                                                                <Chip 
-                                                                    label="EM TURNO" 
-                                                                    size="small" 
-                                                                    sx={{ 
-                                                                        ml: 1, 
-                                                                        bgcolor: 'warning.main', 
-                                                                        color: 'warning.contrastText',
-                                                                        fontWeight: 700,
-                                                                        fontSize: '0.65rem'
-                                                                    }} 
-                                                                />
-                                                            )}
-                                                        </Typography>
-                                                        <Typography variant="caption" color="text.secondary">
-                                                            Nível {creature.level} • LP {combatant.currentLp ?? creature.stats?.lp ?? 0}/{combatant.maxLp ?? creature.stats?.maxLp ?? creature.stats?.lp ?? 0} • MP {combatant.currentMp ?? creature.stats?.mp ?? 0}/{combatant.maxMp ?? creature.stats?.maxMp ?? creature.stats?.mp ?? 0}
-                                                        </Typography>
-                                                    </Box>
-                                                </Box>
-
-                                                {/* Lista de Perícias da Criatura */}
-                                                {expertisesEntries.length === 0 ? (
-                                                    <Paper 
-                                                        sx={{ 
-                                                            p: 2, 
-                                                            textAlign: 'center',
-                                                            border: '2px dashed',
-                                                            borderColor: 'divider',
-                                                            bgcolor: 'transparent'
-                                                        }}
-                                                    >
-                                                        <Typography variant="body2" color="text.secondary">
-                                                            Esta criatura não possui perícias configuradas.
-                                                        </Typography>
-                                                    </Paper>
-                                                ) : (
-                                                    <Box 
-                                                        sx={{
-                                                            display: 'grid',
-                                                            gridTemplateColumns: {
-                                                                xs: 'repeat(2, 1fr)',
-                                                                sm: 'repeat(3, 1fr)',
-                                                                md: 'repeat(4, 1fr)'
-                                                            },
-                                                            gap: 1.5
-                                                        }}
-                                                    >
-                                                        {expertisesEntries.map(([ nome, expertise ]: any) => {
-                                                            const config = getGMExpertiseConfig(expertise.value ?? 0);
-                                                            const IconComponent = config.icon;
-
-                                                            return (
-                                                                <Button
-                                                                    key={`${combatant.id}-${nome}`}
-                                                                    fullWidth
-                                                                    onClick={async () => await handleCreatureExpertiseRoll(nome, expertise, creature, combatant)}
-                                                                    disabled={false}
-                                                                    sx={{
-                                                                        p: 1.5,
-                                                                        bgcolor: alpha(config.color, 0.12),
-                                                                        border: '1px solid',
-                                                                        borderColor: alpha(config.color, 0.25),
-                                                                        borderRadius: 2,
-                                                                        justifyContent: 'flex-start',
-                                                                        textAlign: 'left',
-                                                                        textTransform: 'none',
-                                                                        opacity: 1,
-                                                                        '&:hover': {
-                                                                            bgcolor: alpha(config.color, 0.18),
-                                                                            borderColor: alpha(config.color, 0.5)
-                                                                        }
-                                                                    }}
-                                                                >
-                                                                    <Stack spacing={1} width="100%">
-                                                                        <Box display="flex" alignItems="center" gap={1}>
-                                                                            <Box 
-                                                                                sx={{
-                                                                                    p: 0.8,
-                                                                                    borderRadius: 1,
-                                                                                    bgcolor: alpha(config.color, 0.12),
-                                                                                    border: '1px solid',
-                                                                                    borderColor: alpha(config.color, 0.25)
-                                                                                }}
-                                                                            >
-                                                                                <IconComponent 
-                                                                                    sx={{ 
-                                                                                        color: config.color,
-                                                                                        fontSize: '1.1rem'
-                                                                                    }} 
-                                                                                />
-                                                                            </Box>
-                                                                            <Typography 
-                                                                                variant="subtitle2" 
-                                                                                sx={{ 
-                                                                                    fontWeight: 600,
-                                                                                    flex: 1
-                                                                                }}
-                                                                            >
-                                                                                {nome}
-                                                                            </Typography>
-                                                                        </Box>
-                                                                        <Box display="flex" gap={1} flexWrap="wrap" justifyContent="space-between">
-                                                                            <Chip 
-                                                                                label={`${expertise.value >= 0 ? '+' : ''}${expertise.value}`}
-                                                                                size="small"
-                                                                                sx={{
-                                                                                    bgcolor: config.color,
-                                                                                    color: color.canvas,
-                                                                                    fontWeight: 700,
-                                                                                    fontSize: '0.75rem'
-                                                                                }}
-                                                                            />
-                                                                            {expertise.defaultAttribute && (
-                                                                                <Chip 
-                                                                                    label={(expertise.defaultAttribute as string).toUpperCase()}
-                                                                                    size="small"
-                                                                                    sx={{
-                                                                                        bgcolor: 'action.hover',
-                                                                                        fontWeight: 600,
-                                                                                        fontSize: '0.7rem'
-                                                                                    }}
-                                                                                />
-                                                                            )}
-                                                                            <Chip 
-                                                                                label={getGMExpertiseLevel(expertise.value).replace(/^(\w)/, (_, c) => c.toUpperCase())}
-                                                                                size="small"
-                                                                                variant="outlined"
-                                                                                sx={{
-                                                                                    borderColor: alpha(config.color, 0.38),
-                                                                                    color: 'text.primary',
-                                                                                    fontWeight: 600,
-                                                                                    fontSize: '0.7rem'
-                                                                                }}
-                                                                            />
-                                                                        </Box>
-                                                                    </Stack>
-                                                                </Button>
-                                                            );
-                                                        })}
-                                                    </Box>
-                                                )}
-                                            </Stack>
-                                        </Paper>
-                                    );
-                                })}
-                            </Box>
-                        </Section>
-                    )}
-
-                    {/* Seção de Criaturas Customizadas */}
-                    {campaign.custom?.creatures && campaign.custom.creatures.length > 0 && (
-                        <Section 
-                            title="Criaturas Customizadas" 
-                            icon={
-                                <Box 
-                                    sx={{
-                                        p: 1.5,
-                                        borderRadius: 2,
-                                        bgcolor: (theme) => alpha(theme.palette.warning.main, 0.14),
-                                        border: '2px solid',
-                                        borderColor: (theme) => alpha(theme.palette.warning.main, 0.5)
-                                    }}
-                                >
-                                    <Pets sx={{ color: 'warning.main', fontSize: '2rem' }} />
-                                </Box>
-                            }
-                        >
-                            <Box>
-                                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                                    Criaturas criadas para esta campanha
-                                </Typography>
-                                
-                                <Stack spacing={1}>
-                                    {campaign.custom.creatures.map((creature: any) => (
-                                        <Paper
-                                            key={creature.id}
-                                            sx={{
-                                                p: 2,
-                                                border: '1px solid',
-                                                borderColor: 'divider',
-                                                borderRadius: 2,
-                                                bgcolor: 'background.raised'
-                                            }}
-                                        >
-                                            <Box display="flex" alignItems="center" justifyContent="space-between">
-                                                <Box display="flex" alignItems="center" gap={2}>
-                                                    <Avatar
-                                                        src={creature.imageUrl || undefined}
-                                                        sx={{ bgcolor: (theme) => alpha(theme.palette.warning.main, 0.14), color: 'warning.main' }}
-                                                    >
-                                                        <Pets />
-                                                    </Avatar>
-                                                    <Box>
-                                                        <Typography variant="subtitle1" fontWeight={600}>
-                                                            {creature.name}
-                                                            {creature.type && (
-                                                                <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 1 }}>
-                                                                    {creature.type}
-                                                                </Typography>
-                                                            )}
-                                                        </Typography>
-                                                        <Box display="flex" gap={0.5} mt={0.5} flexWrap="wrap">
-                                                            <Chip
-                                                                label={`Nível ${creature.level}`}
-                                                                size="small"
-                                                                sx={{ height: 20, fontSize: '0.65rem', bgcolor: (theme) => alpha(theme.palette.success.main, 0.14), color: 'success.main' }}
-                                                            />
-                                                            <Chip 
-                                                                label={`LP: ${creature.stats?.lp || 0}`} 
-                                                                size="small" 
-                                                                sx={{ height: 20, fontSize: '0.65rem', bgcolor: alpha(color.lp, 0.14), color: 'error.light' }} 
-                                                            />
-                                                            <Chip 
-                                                                label={`MP: ${creature.stats?.mp || 0}`} 
-                                                                size="small" 
-                                                                sx={{ height: 20, fontSize: '0.65rem', bgcolor: alpha(color.mp, 0.14), color: color.mp }} 
-                                                            />
-                                                            {creature.skills?.length > 0 && (
-                                                                <Chip 
-                                                                    label={`${creature.skills.length} habilidade(s)`} 
-                                                                    size="small" 
-                                                                    sx={{ height: 20, fontSize: '0.65rem', bgcolor: (theme) => alpha(theme.palette.primary.main, 0.14), color: 'primary.main' }} 
-                                                                />
-                                                            )}
-                                                            {creature.spells?.length > 0 && (
-                                                                <Chip 
-                                                                    label={`${creature.spells.length} magia(s)`} 
-                                                                    size="small" 
-                                                                    sx={{ height: 20, fontSize: '0.65rem', bgcolor: (theme) => alpha(theme.palette.info.main, 0.14), color: 'info.main' }} 
-                                                                />
-                                                            )}
-                                                        </Box>
-                                                        {creature.description && (
-                                                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
-                                                                {creature.description}
-                                                            </Typography>
-                                                        )}
-                                                    </Box>
-                                                </Box>
-                                                <Box display="flex" alignItems="center" gap={0.5}>
-                                                    <Tooltip title="Ver detalhes da criatura">
-                                                        <IconButton
-                                                            size="small"
-                                                            onClick={() => handleViewCreature(creature)}
-                                                            sx={{ 
-                                                                color: 'info.main',
-                                                                '&:hover': { 
-                                                                    bgcolor: (theme) => alpha(theme.palette.info.main, 0.14),
-                                                                    color: 'info.light'
-                                                                }
-                                                            }}
-                                                        >
-                                                            <SearchIcon fontSize="small" />
-                                                        </IconButton>
-                                                    </Tooltip>
-                                                    <Tooltip title="Editar criatura">
-                                                        <IconButton
-                                                            size="small"
-                                                            onClick={() => handleEditCreature(creature)}
-                                                            sx={{ 
-                                                                color: 'primary.main',
-                                                                '&:hover': { 
-                                                                    bgcolor: (theme) => alpha(theme.palette.primary.main, 0.14),
-                                                                    color: 'primary.light'
-                                                                }
-                                                            }}
-                                                        >
-                                                            <EditIcon fontSize="small" />
-                                                        </IconButton>
-                                                    </Tooltip>
-                                                    <Tooltip title="Excluir criatura">
-                                                        <IconButton
-                                                            size="small"
-                                                            onClick={async () => await handleDeleteCreature(creature.id, creature.name)}
-                                                            sx={{ 
-                                                                color: 'error.main',
-                                                                '&:hover': { 
-                                                                    bgcolor: (theme) => alpha(theme.palette.error.main, 0.14),
-                                                                    color: 'error.light'
-                                                                }
-                                                            }}
-                                                        >
-                                                            <DeleteIcon fontSize="small" />
-                                                        </IconButton>
-                                                    </Tooltip>
-                                                </Box>
+                                                                    {expertise.defaultAttribute && (
+                                                                        <Chip 
+                                                                            label={(expertise.defaultAttribute as string).toUpperCase()}
+                                                                            size="small"
+                                                                            sx={{
+                                                                                bgcolor: 'action.hover',
+                                                                                fontWeight: 600,
+                                                                                fontSize: '0.7rem'
+                                                                            }}
+                                                                        />
+                                                                    )}
+                                                                    <Chip 
+                                                                        label={getGMExpertiseLevel(expertise.value).replace(/^(\w)/, (_, c) => c.toUpperCase())}
+                                                                        size="small"
+                                                                        variant="outlined"
+                                                                        sx={{
+                                                                            borderColor: alpha(config.color, 0.38),
+                                                                            color: 'text.primary',
+                                                                            fontWeight: 600,
+                                                                            fontSize: '0.7rem'
+                                                                        }}
+                                                                    />
+                                                                </Box>
+                                                            </Stack>
+                                                        </Button>
+                                                    );
+                                                })}
                                             </Box>
-                                        </Paper>
-                                    ))}
-                                </Stack>
-                            </Box>
-                        </Section>
-                    )}
-                </Stack>
-            </Box>
-            <Snackbar />
+                                        )}
+                                    </Stack>
+                                </Paper>
+                            );
+                        })}
+                    </Box>
+                </Section>
+            )}
+
+            {/* Seção de Vantagens Adquiridas — visível no Roguelite (sempre) ou
+                em qualquer modo quando algum jogador já recebeu vantagens */}
+            {(campaign.mode === 'Roguelite' || playersWithPerks.length > 0) && (
+                <Section
+                    title="Vantagens adquiridas"
+                    icon={<CardGiftcard sx={{ color: 'text.secondary' }} />}
+                >
+                    <Box>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                            Vantagens obtidas por cada jogador nesta campanha
+                        </Typography>
+                        
+                        {isPlayerCharsheetsPending ? (
+                            <Stack spacing={1}>
+                                <Skeleton variant="rounded" height={60} />
+                                <Skeleton variant="rounded" height={60} />
+                            </Stack>
+                        ) : playersWithPerks.length === 0 ? (
+                            <Paper 
+                                sx={{ 
+                                    p: 3, 
+                                    textAlign: 'center',
+                                    border: '2px dashed',
+                                    borderColor: 'divider',
+                                    bgcolor: 'transparent'
+                                }}
+                            >
+                                <Typography variant="body1" color="text.secondary">
+                                    Nenhuma vantagem adquirida ainda
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                    As vantagens aparecerão aqui quando os jogadores as selecionarem
+                                </Typography>
+                            </Paper>
+                        ) : (
+                            <Stack spacing={1}>
+                                {playersWithPerks.map(player => (
+                                    <Accordion 
+                                        key={player.charsheetId}
+                                        expanded={expandedPlayer === player.charsheetId}
+                                        onChange={(_, isExpanded) => setExpandedPlayer(isExpanded ? player.charsheetId : false)}
+                                        sx={{
+                                            borderRadius: 2,
+                                            '&:before': { display: 'none' },
+                                            bgcolor: 'background.raised'
+                                        }}
+                                    >
+                                        <AccordionSummary
+                                            expandIcon={<ExpandMore />}
+                                            sx={{ 
+                                                borderRadius: 2,
+                                                '&:hover': { bgcolor: 'action.hover' }
+                                            }}
+                                        >
+                                            <Box display="flex" alignItems="center" gap={2} width="100%">
+                                                <Avatar 
+                                                    src={player.userImage || undefined}
+                                                    sx={{ 
+                                                        width: 44, 
+                                                        height: 44,
+                                                        bgcolor: (theme) => alpha(theme.palette.primary.main, 0.14),
+                                                        color: 'primary.main',
+                                                        fontSize: '1rem',
+                                                        fontWeight: 700,
+                                                        border: '2px solid',
+                                                        borderColor: (theme) => alpha(theme.palette.primary.main, 0.5)
+                                                    }}
+                                                >
+                                                    {!player.userImage && (player.charsheetName?.charAt(0)?.toUpperCase() || '?')}
+                                                </Avatar>
+                                                <Box flex={1}>
+                                                    <Typography variant="subtitle1" fontWeight={600}>
+                                                        {player.charsheetName}
+                                                    </Typography>
+                                                    <Typography variant="caption" color="text.secondary">
+                                                        Nível {player.level} • {player.userName}
+                                                    </Typography>
+                                                </Box>
+                                                <Chip 
+                                                    label={`${player.perks.length} vantagem${player.perks.length !== 1 ? 's' : ''}`}
+                                                    size="small"
+                                                    sx={{ 
+                                                        bgcolor: (theme) => alpha(theme.palette.primary.main, 0.14), 
+                                                        color: 'primary.main',
+                                                        fontWeight: 600
+                                                    }}
+                                                />
+                                            </Box>
+                                        </AccordionSummary>
+                                        <AccordionDetails sx={{ pt: 0 }}>
+                                            <Box 
+                                                sx={{ 
+                                                    display: 'flex', 
+                                                    flexWrap: 'wrap', 
+                                                    gap: 1,
+                                                    p: 1,
+                                                    bgcolor: 'background.paper',
+                                                    borderRadius: 1
+                                                }}
+                                            >
+                                                {player.perks.map((perk: any, index: number) => {
+                                                    const typeColor = getPerkTypeColor(perk.perkType);
+                                                    return (
+                                                        <Tooltip 
+                                                            key={index}
+                                                            title={
+                                                                <Box>
+                                                                    <Typography variant="subtitle2">{perk.name}</Typography>
+                                                                    {perk.description && (
+                                                                        <Typography variant="caption">{perk.description}</Typography>
+                                                                    )}
+                                                                </Box>
+                                                            }
+                                                            arrow
+                                                        >
+                                                            <Chip
+                                                                label={
+                                                                    <Box display="flex" alignItems="center" gap={0.5}>
+                                                                        <Typography variant="caption" fontWeight={600}>
+                                                                            {perk.name}
+                                                                        </Typography>
+                                                                        <Chip 
+                                                                            label={getPerkTypeLabel(perk.perkType)}
+                                                                            size="small"
+                                                                            sx={{ 
+                                                                                height: 18,
+                                                                                fontSize: '0.65rem',
+                                                                                bgcolor: typeColor.bg,
+                                                                                color: typeColor.color
+                                                                            }}
+                                                                        />
+                                                                        <Chip 
+                                                                            label={getPerkTypeLabel(perk.rarity)}
+                                                                            size="small"
+                                                                            sx={{ 
+                                                                                height: 18,
+                                                                                fontSize: '0.65rem',
+                                                                                bgcolor: typeColor.bg,
+                                                                                color: typeColor.color
+                                                                            }}
+                                                                        />
+                                                                    </Box>
+                                                                }
+                                                                size="medium"
+                                                                sx={{
+                                                                    bgcolor: 'background.raised',
+                                                                    border: '1px solid',
+                                                                    borderColor: 'divider',
+                                                                    cursor: 'pointer',
+                                                                    '&:hover': {
+                                                                        bgcolor: 'background.overlay'
+                                                                    }
+                                                                }}
+                                                            />
+                                                        </Tooltip>
+                                                    );
+                                                })}
+                                            </Box>
+                                        </AccordionDetails>
+                                    </Accordion>
+                                ))}
+                            </Stack>
+                        )}
+                    </Box>
+                </Section>
+            )}
+
+            {/* Seção de Criaturas Customizadas */}
+            {campaign.custom?.creatures && campaign.custom.creatures.length > 0 && (
+                <Section 
+                    title="Criaturas customizadas" 
+                    icon={<Pets sx={{ color: 'text.secondary' }} />}
+                >
+                    <Box>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                            Criaturas criadas para esta campanha
+                        </Typography>
+                        
+                        <Stack spacing={1}>
+                            {campaign.custom.creatures.map((creature: any) => (
+                                <Paper
+                                    key={creature.id}
+                                    sx={{
+                                        p: 2,
+                                        border: '1px solid',
+                                        borderColor: 'divider',
+                                        borderRadius: 2,
+                                        bgcolor: 'background.raised'
+                                    }}
+                                >
+                                    <Box display="flex" alignItems="center" justifyContent="space-between">
+                                        <Box display="flex" alignItems="center" gap={2}>
+                                            <Avatar
+                                                src={creature.imageUrl || undefined}
+                                                sx={{ bgcolor: (theme) => alpha(theme.palette.warning.main, 0.14), color: 'warning.main' }}
+                                            >
+                                                <Pets />
+                                            </Avatar>
+                                            <Box>
+                                                <Typography variant="subtitle1" fontWeight={600}>
+                                                    {creature.name}
+                                                    {creature.type && (
+                                                        <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 1 }}>
+                                                            {creature.type}
+                                                        </Typography>
+                                                    )}
+                                                </Typography>
+                                                <Box display="flex" gap={0.5} mt={0.5} flexWrap="wrap">
+                                                    <Chip
+                                                        label={`Nível ${creature.level}`}
+                                                        size="small"
+                                                        sx={{ height: 20, fontSize: '0.65rem', bgcolor: (theme) => alpha(theme.palette.success.main, 0.14), color: 'success.main' }}
+                                                    />
+                                                    <Chip 
+                                                        label={`LP: ${creature.stats?.lp || 0}`} 
+                                                        size="small" 
+                                                        sx={{ height: 20, fontSize: '0.65rem', bgcolor: alpha(color.lp, 0.14), color: 'error.light' }} 
+                                                    />
+                                                    <Chip 
+                                                        label={`MP: ${creature.stats?.mp || 0}`} 
+                                                        size="small" 
+                                                        sx={{ height: 20, fontSize: '0.65rem', bgcolor: alpha(color.mp, 0.14), color: color.mp }} 
+                                                    />
+                                                    {creature.skills?.length > 0 && (
+                                                        <Chip 
+                                                            label={`${creature.skills.length} habilidade(s)`} 
+                                                            size="small" 
+                                                            sx={{ height: 20, fontSize: '0.65rem', bgcolor: (theme) => alpha(theme.palette.primary.main, 0.14), color: 'primary.main' }} 
+                                                        />
+                                                    )}
+                                                    {creature.spells?.length > 0 && (
+                                                        <Chip 
+                                                            label={`${creature.spells.length} magia(s)`} 
+                                                            size="small" 
+                                                            sx={{ height: 20, fontSize: '0.65rem', bgcolor: (theme) => alpha(theme.palette.info.main, 0.14), color: 'info.main' }} 
+                                                        />
+                                                    )}
+                                                </Box>
+                                                {creature.description && (
+                                                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+                                                        {creature.description}
+                                                    </Typography>
+                                                )}
+                                            </Box>
+                                        </Box>
+                                        <Box display="flex" alignItems="center" gap={0.5}>
+                                            <Tooltip title="Ver detalhes da criatura">
+                                                <IconButton
+                                                    size="small"
+                                                    onClick={() => handleViewCreature(creature)}
+                                                    sx={{ 
+                                                        color: 'info.main',
+                                                        '&:hover': { 
+                                                            bgcolor: (theme) => alpha(theme.palette.info.main, 0.14),
+                                                            color: 'info.light'
+                                                        }
+                                                    }}
+                                                >
+                                                    <SearchIcon fontSize="small" />
+                                                </IconButton>
+                                            </Tooltip>
+                                            <Tooltip title="Editar criatura">
+                                                <IconButton
+                                                    size="small"
+                                                    onClick={() => handleEditCreature(creature)}
+                                                    sx={{ 
+                                                        color: 'primary.main',
+                                                        '&:hover': { 
+                                                            bgcolor: (theme) => alpha(theme.palette.primary.main, 0.14),
+                                                            color: 'primary.light'
+                                                        }
+                                                    }}
+                                                >
+                                                    <EditIcon fontSize="small" />
+                                                </IconButton>
+                                            </Tooltip>
+                                            <Tooltip title="Excluir criatura">
+                                                <IconButton
+                                                    size="small"
+                                                    onClick={() => handleRequestDeleteCreature(creature.id, creature.name)}
+                                                    sx={{ 
+                                                        color: 'error.main',
+                                                        '&:hover': { 
+                                                            bgcolor: (theme) => alpha(theme.palette.error.main, 0.14),
+                                                            color: 'error.light'
+                                                        }
+                                                    }}
+                                                >
+                                                    <DeleteIcon fontSize="small" />
+                                                </IconButton>
+                                            </Tooltip>
+                                        </Box>
+                                    </Box>
+                                </Paper>
+                            ))}
+                        </Stack>
+                    </Box>
+                </Section>
+            )}
 
             <CreatureCreator
                 open={creatureModalOpen}
@@ -1120,6 +960,14 @@ export default function CampaignGMDashboard(): ReactElement | null {
                 readOnly={selectedCreatureReadOnly}
                 onSave={handleCreatureSaved}
             />
-        </Box>
+
+            <DeleteCreatureDialog
+                open={deleteDialogOpen}
+                creatureName={creatureToDelete?.name ?? ''}
+                deleting={isDeletingCreature}
+                onConfirm={handleConfirmDeleteCreature}
+                onCancel={() => setDeleteDialogOpen(false)}
+            />
+        </Stack>
     )
 }

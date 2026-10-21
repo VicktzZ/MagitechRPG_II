@@ -2,6 +2,8 @@ import {
     CHAT_MAX_PAGE_SIZE,
     CHAT_PAGE_SIZE,
     compareChatMessages,
+    countUnreadMessages,
+    latestMessageTimestamp,
     mergeChatMessages,
     oldestMessageId,
     parseChatPageSize
@@ -95,5 +97,33 @@ describe('parseChatPageSize', () => {
         [ 'abc', CHAT_PAGE_SIZE ], [ '0', CHAT_PAGE_SIZE ], [ '-5', CHAT_PAGE_SIZE ]
     ])('%p vira %p', (raw, expected) => {
         expect(parseChatPageSize(raw )).toBe(expected)
+    })
+})
+
+describe('não lidas', () => {
+    const by = (id: string) => ({ id })
+    const list = [
+        msg('a', '2026-01-01T10:00:00.000Z', { by: by('ana') }),
+        msg('b', '2026-01-01T10:05:00.000Z', { by: by('bia') }),
+        msg('c', '2026-01-01T10:06:00.000Z', { by: by('me') }),
+        msg('d', '2026-01-01T10:07:00.000Z', { by: by('ana') })
+    ]
+
+    it('conta só as mais novas que o último momento visto, de outras pessoas', () => {
+        expect(countUnreadMessages(list, '2026-01-01T10:04:00.000Z', 'me')).toBe(2)
+    })
+
+    it('as minhas mensagens nunca contam', () => {
+        expect(countUnreadMessages(list, '2026-01-01T09:00:00.000Z', 'me')).toBe(3)
+    })
+
+    it('nada novo, nada não lido', () => {
+        expect(countUnreadMessages(list, '2026-01-01T10:07:00.000Z', 'me')).toBe(0)
+        expect(countUnreadMessages([], '2026-01-01T10:07:00.000Z', 'me')).toBe(0)
+    })
+
+    it('horário da mais recente', () => {
+        expect(latestMessageTimestamp(list)).toBe('2026-01-01T10:07:00.000Z')
+        expect(latestMessageTimestamp([])).toBeUndefined()
     })
 })

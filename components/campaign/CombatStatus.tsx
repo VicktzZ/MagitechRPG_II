@@ -59,7 +59,9 @@ function CombatStatus({
     const { campaign, charsheets } = useCampaignContext();
     const theme = useTheme();
     
-    const [ expanded, setExpanded ] = useState(true);
+    // Começa recolhido (só o cabeçalho, que já diz de quem é a vez): o card flutua sobre a ficha
+    // e abre sozinho quando chega o turno do jogador
+    const [ expanded, setExpanded ] = useState(false);
     const [ initiativeDialogOpen, setInitiativeDialogOpen ] = useState(false);
     const [ isRolling, setIsRolling ] = useState(false);
     const [ actionDialogOpen, setActionDialogOpen ] = useState(false);
@@ -129,6 +131,10 @@ function CombatStatus({
         
         return null;
     }, [ charsheets ]);
+
+    useEffect(() => {
+        if (isUserTurn) setExpanded(true);
+    }, [ isUserTurn ]);
 
     // Notifica quando é o turno do jogador
     useEffect(() => {
@@ -281,19 +287,22 @@ function CombatStatus({
 
     const showEnemyLp = combat.showEnemyLp || isGM;
 
+    // Linha do cabeçalho: a informação que o jogador quer sem expandir o card
+    const turnSummary = combat.phase === 'INITIATIVE'
+        ? 'Rolando iniciativa'
+        : isUserTurn ? 'É a sua vez' : currentCombatant ? `Vez de ${currentCombatant.name}` : '';
+
     return (
         <>
             <Paper 
                 elevation={3}
                 sx={{
-                    position: 'fixed',
-                    bottom: 80,
-                    left: 16,
+                    // Vive no FloatingDock (canto inferior direito, ao lado do chat): aqui só o tamanho
                     width: 340,
-                    maxHeight: expanded ? 450 : 56,
+                    maxWidth: '100%',
+                    maxHeight: expanded ? 450 : 68,
                     overflow: 'hidden',
                     transition: 'max-height 0.3s ease',
-                    zIndex: 1200,
                     border: '2px solid',
                     borderColor: 'error.main',
                     bgcolor: 'background.paper'
@@ -313,9 +322,16 @@ function CombatStatus({
                     onClick={() => setExpanded(!expanded)}
                 >
                     <SportsKabaddiIcon />
-                    <Typography variant="subtitle1" sx={{ fontWeight: 700, flex: 1 }}>
-                        Combate - Round {combat.round}
-                    </Typography>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                        <Typography variant="subtitle1" sx={{ fontWeight: 700, lineHeight: 1.25 }}>
+                            Combate - Round {combat.round}
+                        </Typography>
+                        {turnSummary && (
+                            <Typography variant="caption" noWrap component="div" sx={{ opacity: 0.9, lineHeight: 1.3 }}>
+                                {turnSummary}
+                            </Typography>
+                        )}
+                    </Box>
                     <Chip 
                         label={combat.phase === 'INITIATIVE' ? 'Iniciativa' : 'Ação'}
                         size="small"
@@ -341,7 +357,7 @@ function CombatStatus({
                             >
                                 <Typography variant="body2" sx={{ fontWeight: 600 }}>
                                     {isUserTurn 
-                                        ? '🎯 É sua vez de agir!' 
+                                        ? 'É sua vez de agir!' 
                                         : `Vez de ${currentCombatant.name}`
                                     }
                                 </Typography>

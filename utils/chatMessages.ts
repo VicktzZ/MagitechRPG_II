@@ -57,3 +57,17 @@ export function parseChatPageSize(raw: string | null | undefined): number {
     if (!Number.isFinite(parsed) || parsed < 1) return CHAT_PAGE_SIZE;
     return Math.min(parsed, CHAT_MAX_PAGE_SIZE);
 }
+
+/** Horário da mensagem mais recente (texto ISO), ou undefined sem mensagens */
+export function latestMessageTimestamp(messages: readonly TimedMessage[]): string | undefined {
+    let latest: string | undefined;
+    for (const message of messages) {
+        if (message.timestamp && (!latest || message.timestamp > latest)) latest = message.timestamp;
+    }
+    return latest;
+}
+
+/** Mensagens de OUTRAS pessoas mais novas que `since` (o selo de "não lidas" do botão do chat) */
+export function countUnreadMessages(messages: readonly TimedMessage[], since: string, myId?: string): number {
+    return messages.filter(message => (message.timestamp ?? '') > since && message.by?.id !== myId).length;
+}

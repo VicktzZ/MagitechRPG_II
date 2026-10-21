@@ -11,7 +11,6 @@ import { useCampaignTest, type TestNoticeSeverity } from '@hooks/useCampaignTest
 import { useSession } from 'next-auth/react';
 import TestDialog from './TestDialog';
 import TestModal from './TestModal';
-import CombatStatus from './CombatStatus';
 import type { Message } from '@models';
 
 import { 
@@ -20,6 +19,7 @@ import {
     ChatHeader, 
     MessageList 
 } from './chatComponents';
+import { useUnreadMessages } from './chatComponents/useUnreadMessages';
 
 export default function SessionChat() {
     const { campaign, updateCampaign } = useCampaignContext();
@@ -45,7 +45,7 @@ export default function SessionChat() {
     const { messages, setMessages } = useChatMessages();
 
     const isAdmin = session?.user && campaign.admin?.includes(session.user.id);
-    const userCharsheetId = campaign.players?.find(p => p.userId === session?.user?.id)?.charsheetId;
+    const unreadCount = useUnreadMessages(messages, isChatOpen, session?.user?.id);
 
     // Ref para não precisar de `shouldAutoScroll` nas deps de callbacks
     // estáveis (handleScroll/scrollToBottom são passados como props para
@@ -169,7 +169,7 @@ export default function SessionChat() {
         <ChatWrapper 
             isChatOpen={isChatOpen} 
             setIsChatOpen={setIsChatOpen}
-            messageCount={messages.length}
+            unreadCount={unreadCount}
         >
             <Paper 
                 elevation={0}
@@ -237,12 +237,6 @@ export default function SessionChat() {
                     </Alert>
                 </Snackbar>
 
-                {/* Status de Combate para Jogadores */}
-                <CombatStatus
-                    campaignId={campaign.id}
-                    combat={campaign.session?.combat as any}
-                    userCharsheetId={userCharsheetId}
-                />
             </Paper>
         </ChatWrapper>          
     );

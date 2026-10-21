@@ -5,22 +5,25 @@ import { useCampaignContext, useCampaignCurrentCharsheetContext } from '@context
 import {
     AttachMoney,
     AutoStories,
+    Casino,
     Inventory2,
+    Notes,
     Person,
     SelfImprovement,
     SportsMartialArts,
     Tune
 } from '@mui/icons-material';
 import {
-    Backdrop,
     Box,
-    CircularProgress,
-    Stack
+    Stack,
+    type SxProps
 } from '@mui/material';
 import { useState, useEffect, useMemo, type ReactElement } from 'react';
 
-import { Passives, Skills } from '@components/charsheet';
+import { CustomDices, Passives, Skills } from '@components/charsheet';
 import Section from '../Section';
+import NotesSection from './NotesSection';
+import PlayerStickyBar, { type PlayerSectionLink } from './PlayerStickyBar';
 import ExpertiseSection from './ExpertiseSection';
 import InventorySection from './InventorySection';
 import MoneyAndAmmo from './MoneyAndAmmo';
@@ -74,6 +77,9 @@ export default function CampaignPlayerDashboard(): ReactElement | null {
         const pendingUsers = campaign?.session?.pendingPerkUsers || []
         return !!(userId && pendingUsers.includes(userId))
     }, [ session?.user?.id, campaign?.session?.pendingPerkUsers ])
+
+    // Cabeçalho do personagem: a barra fixa observa quando ele sai da tela
+    const [ headerElement, setHeaderElement ] = useState<HTMLElement | null>(null)
 
     // Modal abre SOMENTE quando o usuário está na lista de pendentes
     const [ perkModalOpen, setPerkModalOpen ] = useState(false)
@@ -282,123 +288,130 @@ export default function CampaignPlayerDashboard(): ReactElement | null {
     const charsheetUser = users.players.find(player => player.id === charsheet.userId);
     const avatar = charsheetUser?.image ?? '/assets/default-avatar.jpg';
 
+    // Atalhos da barra fixa: um por seção, na ordem em que aparecem
+    const sections: PlayerSectionLink[] = [
+        { id: 'passivas', label: 'Passivas' },
+        { id: 'inventario', label: 'Inventário' },
+        { id: 'habilidades', label: 'Habilidades' },
+        { id: 'recursos', label: 'Recursos' },
+        ...(showSpells ? [ { id: 'magias', label: 'Magias' } ] : []),
+        ...(charsheet.systemId ? [ { id: 'sistema', label: 'Sistema' } ] : []),
+        { id: 'pericias', label: 'Perícias' },
+        { id: 'dados', label: 'Dados' },
+        { id: 'anotacoes', label: 'Anotações' }
+    ]
+
+    // Duas seções lado a lado quando a COLUNA (não a janela) comporta; com o chat encaixado a coluna é mais estreita
+    const pair = (columns: string): SxProps => ({
+        display: 'grid',
+        gap: 3,
+        gridTemplateColumns: 'minmax(0, 1fr)',
+        '@container (min-width: 820px)': { gridTemplateColumns: columns }
+    })
+
+    const sectionIcon = { color: 'text.secondary' }
+
     return (
-        <Box 
-            sx={{ 
-                width: '100%', 
-                pb: 8, 
+        <Box
+            sx={{
+                width: '100%',
+                pb: 8,
                 position: 'relative',
-                minHeight: '100vh'
+                containerType: 'inline-size',
+                '--campaign-sticky-offset': '120px'
             }}
         >
-            {!charsheet ? (
-                <Backdrop 
-                    open={true}
-                    sx={{ 
-                        zIndex: (theme) => theme.zIndex.drawer + 1
-                    }}
-                >
-                    <Stack spacing={2} alignItems="center">
-                        <CircularProgress size={60} />
-                    </Stack>
-                </Backdrop>
-            ) : (
-                <Box 
-                    sx={{
-                        maxWidth: { xs: '100%', lg: '1400px', xl: '1800px' },
-                        width: '100%',
-                        mx: 'auto',
-                        px: { xs: 2, md: 3, lg: 4 },
-                        '@media (min-width: 2000px)': { maxWidth: '95%' }
-                    }}
-                >
-                    {/* Header da Charsheet */}
-                    <PlayerHeader avatar={avatar} />
+            <PlayerHeader avatar={avatar} rootRef={setHeaderElement} />
+            <PlayerStickyBar headerElement={headerElement} sections={sections} />
 
-                    {/* Grid Principal */}
-                    <Stack spacing={4}>
-                        {/* Passivas */}
-                        <Section title="Passivas" icon={<SelfImprovement sx={{ color: 'text.secondary' }} />}>
-                            <Passives realtime={true} />
-                        </Section>
+            <Stack spacing={3} sx={{ mt: 3 }}>
+                <Section id="passivas" title="Passivas" icon={<SelfImprovement sx={sectionIcon} />}>
+                    <Passives realtime={true} />
+                </Section>
 
-                        {/* Inventário e Habilidades */}
-                        <Box sx={{ display: 'flex', gap: { xs: 2, md: 4 }, flexDirection: { xs: 'column', md: 'row' } }}>
-                            <Section title="Inventário" icon={<Inventory2 sx={{ color: 'success.main' }} />} sx={{ width: { xs: '100%', md: '60%' } }}>
-                                <InventorySection />
-                            </Section>
-                            <Section title="Habilidades" icon={<SportsMartialArts sx={{ color: 'primary.main' }} />} sx={{ width: { xs: '100%', md: '40%' } }}>
-                                <Skills />
-                            </Section>
-                        </Box>
-
-                        {/* Recursos e Magias */}
-                        <Box sx={{ display: 'flex', gap: { xs: 2, md: 4 }, flexDirection: { xs: 'column', md: 'row' } }}>
-                            <Section title="Recursos" icon={<AttachMoney sx={{ color: 'warning.main' }} />} sx={{ width: { xs: '100%', md: showSpells ? '40%' : '100%' } }}>
-                                <MoneyAndAmmo />
-                            </Section>
-                            {showSpells && (
-                                <Section title="Magias" icon={<AutoStories sx={{ color: 'secondary.main' }} />} sx={{ width: { xs: '100%', md: '60%' } }}>
-                                    <SpellsSection />
-                                </Section>
-                            )}
-                        </Box>
-
-                        {/* Recursos customizados do sistema (ex: Bateria, O2, Estresse) */}
-                        {charsheet.systemId && (
-                            <Section title="Recursos do Sistema" icon={<Tune sx={{ color: 'warning.main' }} />}>
-                                <CampaignCustomResources />
-                            </Section>
-                        )}
-
-                        {/* Perícias */}
-                        <Section title="Perícias" icon={<Person sx={{ color: 'info.main' }} />}>
-                            <ExpertiseSection />
-                        </Section>
-                    </Stack>
-
-                    {/* Modal de Perks - aparece SOMENTE quando GM oferece e usuário está na lista */}
-                    {isUserPendingPerk && (
-                        <PerkCardsModal 
-                            open={perkModalOpen} 
-                            seed={campaign.session?.sharedPerkSeed || undefined}
-                            level={charsheet.level}
-                            hideFilters={true}
-                            initialFilters={campaign.session?.perkFilters ? {
-                                rarities: campaign.session.perkFilters.rarities,
-                                type: campaign.session.perkFilters.type || undefined,
-                                element: campaign.session.perkFilters.element || undefined,
-                                spellLevel: campaign.session.perkFilters.spellLevel || undefined,
-                                execution: campaign.session.perkFilters.execution || undefined,
-                                itemKinds: campaign.session.perkFilters.itemKinds,
-                                skillTypes: campaign.session.perkFilters.skillTypes
-                            } : undefined}
-                            charsheetSpace={charsheetSpace}
-                            sessionPlayers={sessionPlayers}
-                            campaignId={campaign.id}
-                            currentCharsheetId={charsheet.id}
-                            currentPlayerName={charsheet.name}
-                            onPerkSelected={handlePerkSelected}
-                            onClose={handleCloseModal}
-                        />
-                    )}
-                
-                    {/* Lista de perks adquiridos - apenas em Roguelite */}
-                    {campaign.mode === 'Roguelite' && (
-                        <AcquiredPerks />
-                    )}
-
-                    {/* Modal de notificação de doação recebida */}
-                    <DonationReceivedModal
-                        open={!!donationNotification}
-                        donation={donationNotification}
-                        onClose={handleCloseDonationModal}
-                    />
-
-                    {/* Drawer de loja - disponível em qualquer campanha quando a loja está aberta */}
-                    <ShopDrawer />
+                <Box sx={pair('minmax(0, 3fr) minmax(0, 2fr)')}>
+                    <Section id="inventario" title="Inventário" icon={<Inventory2 sx={sectionIcon} />}>
+                        <InventorySection />
+                    </Section>
+                    <Section id="habilidades" title="Habilidades" icon={<SportsMartialArts sx={sectionIcon} />}>
+                        <Skills />
+                    </Section>
                 </Box>
+
+                <Box sx={showSpells ? pair('minmax(0, 2fr) minmax(0, 3fr)') : undefined}>
+                    <Section id="recursos" title="Recursos" icon={<AttachMoney sx={sectionIcon} />}>
+                        <MoneyAndAmmo />
+                    </Section>
+                    {showSpells && (
+                        <Section id="magias" title="Magias" icon={<AutoStories sx={sectionIcon} />}>
+                            <SpellsSection />
+                        </Section>
+                    )}
+                </Box>
+
+                {/* Recursos customizados do sistema (ex: Bateria, O2, Estresse) */}
+                {charsheet.systemId && (
+                    <Section id="sistema" title="Recursos do Sistema" icon={<Tune sx={sectionIcon} />}>
+                        <CampaignCustomResources />
+                    </Section>
+                )}
+
+                {/* Perícias */}
+                <Section id="pericias" title="Perícias" icon={<Person sx={sectionIcon} />}>
+                    <ExpertiseSection />
+                </Section>
+
+                {/* Dados e anotações do jogador: ficavam na coluna lateral, longe da ficha */}
+                <Box sx={pair('minmax(0, 1fr) minmax(0, 1fr)')}>
+                    <Section id="dados" title="Dados customizados" icon={<Casino sx={sectionIcon} />}>
+                        <CustomDices enableChatIntegration={true} realtime={true} />
+                    </Section>
+                    <Section id="anotacoes" title="Anotações" icon={<Notes sx={sectionIcon} />}>
+                        <NotesSection />
+                    </Section>
+                </Box>
+            </Stack>
+
+            {/* Modal de Perks - aparece SOMENTE quando GM oferece e usuário está na lista */}
+            {isUserPendingPerk && (
+                <PerkCardsModal 
+                    open={perkModalOpen} 
+                    seed={campaign.session?.sharedPerkSeed || undefined}
+                    level={charsheet.level}
+                    hideFilters={true}
+                    initialFilters={campaign.session?.perkFilters ? {
+                        rarities: campaign.session.perkFilters.rarities,
+                        type: campaign.session.perkFilters.type || undefined,
+                        element: campaign.session.perkFilters.element || undefined,
+                        spellLevel: campaign.session.perkFilters.spellLevel || undefined,
+                        execution: campaign.session.perkFilters.execution || undefined,
+                        itemKinds: campaign.session.perkFilters.itemKinds,
+                        skillTypes: campaign.session.perkFilters.skillTypes
+                    } : undefined}
+                    charsheetSpace={charsheetSpace}
+                    sessionPlayers={sessionPlayers}
+                    campaignId={campaign.id}
+                    currentCharsheetId={charsheet.id}
+                    currentPlayerName={charsheet.name}
+                    onPerkSelected={handlePerkSelected}
+                    onClose={handleCloseModal}
+                />
             )}
+            
+            {/* Lista de perks adquiridos - apenas em Roguelite */}
+            {campaign.mode === 'Roguelite' && (
+                <AcquiredPerks />
+            )}
+
+            {/* Modal de notificação de doação recebida */}
+            <DonationReceivedModal
+                open={!!donationNotification}
+                donation={donationNotification}
+                onClose={handleCloseDonationModal}
+            />
+
+            {/* Drawer de loja - disponível em qualquer campanha quando a loja está aberta */}
+            <ShopDrawer />
         </Box>
     );
 }

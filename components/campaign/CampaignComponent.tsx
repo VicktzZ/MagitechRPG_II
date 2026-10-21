@@ -2,9 +2,10 @@
 
 import { campaignCurrentCharsheetContext, useCampaignContext } from '@contexts';
 import { useCompleteCharsheet } from '@hooks/useCompleteCharsheet';
-import { Backdrop, Box, CircularProgress } from '@mui/material';
+import { Backdrop, CircularProgress, Stack } from '@mui/material';
 import { sessionService } from '@services';
 import { enqueueSnackbar } from 'notistack';
+import { useSession } from 'next-auth/react';
 import { useEffect, useMemo, useState, type ReactElement } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 import { CampaignGMDashboard, CampaignHeader, CampaignNotes, CampaignPlayerDashboard, SessionChat } from '.';
@@ -12,7 +13,9 @@ import type { CharsheetDTO } from '@models/dtos';
 import GMActions from './gmDashboard/GMActions';
 import CampaignFinishedBanner from './CampaignFinishedBanner';
 import CampaignWidgetPanel from './widget/CampaignWidgetPanel';
+import CombatStatus from './CombatStatus';
 import DevViewSwitcher from './DevViewSwitcher';
+import FloatingDock from './FloatingDock';
 
 const DEV_MODE = process.env.NEXT_PUBLIC_NODE_ENV === 'development';
 
@@ -80,44 +83,43 @@ export default function CampaignComponent(): ReactElement {
     // render e re-renderizava todos os consumidores do contexto da ficha atual.
     const currentCharsheetValue = useMemo(() => ({ charsheet: charsheet! }), [ charsheet ]);
     
+    // O card de combate precisa saber qual é a ficha de quem está vendo (para a iniciativa)
+    const { data: session } = useSession();
+    const ownCharsheetId = campaign.players?.find(player => player.userId === session?.user?.id)?.charsheetId;
+
+    // Uma coluna só: faixa da campanha, avisos, ações do mestre, notas e o painel de quem está vendo.
+    // O chat e o dock (combate e widgets) ficam fixos na borda e não entram no fluxo.
     const content = (
         <>
-            <CampaignHeader />
-            <CampaignFinishedBanner />
-            <Box sx={{
-                display: 'flex',
-                position: 'relative',
-                gap: 2,
-                width: '100%',
-                height: '100%'
-            }}>
-                <Box sx={{
-                    width: '100%'
-                }}>
-                    {DEV_MODE && isUserGM && (
-                        <DevViewSwitcher
-                            campaignId={campaign.id}
-                            userId={userId}
-                            activeCharsheetId={devPreviewCharsheetId}
-                            onChange={handleDevPreviewChange}
-                        />
-                    )}
-                    {effectiveIsUserGM && (
-                        <Box sx={{ display: 'flex', mb: 2 }}>
-                            <GMActions />
-                        </Box>
-                    )}
-                    <CampaignNotes />
-                    {effectiveIsUserGM ? (
-                        <CampaignGMDashboard />
-                    ) : (
-                        <CampaignPlayerDashboard />
-                    )}
-                </Box>
-            </Box>
+            <Stack spacing={2} sx={{ width: '100%', minWidth: 0 }}>
+                <CampaignHeader />
+                <CampaignFinishedBanner />
+                {DEV_MODE && isUserGM && (
+                    <DevViewSwitcher
+                        campaignId={campaign.id}
+                        userId={userId}
+                        activeCharsheetId={devPreviewCharsheetId}
+                        onChange={handleDevPreviewChange}
+                    />
+                )}
+                {effectiveIsUserGM && <GMActions />}
+                <CampaignNotes />
+                {effectiveIsUserGM ? (
+                    <CampaignGMDashboard />
+                ) : (
+                    <CampaignPlayerDashboard />
+                )}
+            </Stack>
             <SessionChat />
-            {/* Widget da campanha — painel flutuante visível a todos (estilo pop-up de combate) */}
-            <CampaignWidgetPanel />
+            <FloatingDock>
+                <CombatStatus
+                    campaignId={campaign.id}
+                    combat={campaign.session?.combat ?? null}
+                    userCharsheetId={ownCharsheetId}
+                />
+                {/* Widgets da campanha: visíveis a todos, empilhados com o combate */}
+                <CampaignWidgetPanel />
+            </FloatingDock>
         </>
     );
 

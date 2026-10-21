@@ -11,10 +11,11 @@ import type { TempMessage } from '@models/types/session'
 import type { Message } from '@models'
 
 export function ChatProvider({ children }: { children: React.ReactNode }) {
-    const isMobile = useMediaQuery((theme: Theme) => theme.breakpoints.down('sm'))
+    // Aberto por padrão só quando cabe ao lado do conteúdo (lg+); abaixo disso ele cobre a página
+    const startsOpen = useMediaQuery((theme: Theme) => theme.breakpoints.up('lg'))
     const { campaign } = useCampaignContext()
     const { data: session } = useSession()
-    const [ isChatOpen, setIsChatOpen ] = useState(!isMobile)
+    const [ isChatOpen, setIsChatOpen ] = useState(startsOpen)
     const [ messages, setMessages ] = useState<TempMessage[]>([])
 
     const campaignCode = campaign.campaignCode
