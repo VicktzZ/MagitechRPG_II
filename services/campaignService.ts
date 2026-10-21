@@ -1,6 +1,6 @@
 import type { Armor, Item, Note, Weapon, PerkFilters, CombatEffect } from '@models'
 import type { Campaign, Charsheet, User } from '@models/entities'
-import type { CampaignData } from '@models/types/session'
+import type { ActiveTest, CampaignData, TestData, TestResponse } from '@models/types/session'
 import { Service } from '@utils/apiRequest'
 import type { CreateCombatEffectPayload } from './combatEffectService'
 
@@ -37,6 +37,15 @@ class CampaignService extends Service<Campaign, 'code' | 'userId'> {
 
     async removePendingPerkUser(campaignId: string, userId: string) {
         return (await this.post({ param: `${campaignId}/session/pending-perk-user`, body: { userId } })).data
+    }
+
+    // Testes pedidos pelo mestre
+    async requestTest(campaignId: string, data: TestData) {
+        return (await this.post({ param: `${campaignId}/session/test-request`, body: data })).data as unknown as { success: boolean, request: ActiveTest }
+    }
+
+    async respondTest(campaignId: string, body: { requestId: string, rolls: number[], bonus: number }) {
+        return (await this.post({ param: `${campaignId}/session/test-response`, body })).data as unknown as { success: boolean, response: TestResponse }
     }
 
     // --- Combat Effects (catalogo + aplicação em combate) ---

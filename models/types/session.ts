@@ -34,17 +34,41 @@ export interface TempMessage extends Message {
     tempId?: string;
 }
 
-export interface TestRequest {
+/** Resultado de um jogador num teste pedido pelo mestre (gravado pelo servidor, que refaz a conta) */
+export interface TestResponse {
+    userName: string
+    /** d20 rolados (um por dado do teste) */
+    rolls: number[]
+    /** Quantidade de d20 do teste */
+    dice: number
+    /** Valor usado: o maior d20 rolado */
+    usedRoll: number
+    /** Bônus somado ao d20 (perícia + influência do atributo) */
+    bonus: number
+    total: number
+    success: boolean
+    respondedAt: string
+}
+
+/**
+ * Teste em andamento pedido pelo mestre. Fica em `campaign.session.testRequest`:
+ * os jogadores o recebem pelo mesmo listener da campanha, sem depender do Pusher.
+ * Só existe um por vez — um novo pedido substitui o anterior.
+ */
+export interface ActiveTest {
+    id: string
     dt: number
-    expertise?: keyof Expertises
+    expertise?: string
     isGroupTest: boolean
+    /** Público: o resultado vai para o chat. Fechado: só o mestre vê. */
     isVisible: boolean
     showResult: boolean
+    /** IDs de usuário dos jogadores chamados (num teste geral, os que estavam online) */
     selectedPlayers: string[]
-    requestedBy: {
-        id: string
-        name: string
-    }
+    requestedBy: { id: string, name: string }
+    createdAt: string
+    /** Respostas por ID de usuário */
+    responses?: Record<string, TestResponse>
 }
 
 export interface Player {

@@ -41,6 +41,23 @@ explícita do dono: criar apenas ids novos, abortar se houver colisão de id ou 
 Para alterar um lote já gravado, conferir antes que os documentos ainda estão na versão anterior do
 lote (senão alguém editou à mão), sobrescrever só os ids do lote e reler para conferir.
 
+## Campanha: testes pedidos pelo mestre e tempo real
+
+- **Teste ("Solicitar teste")** não usa Pusher. O mestre grava o pedido em `campaign.session.testRequest`
+  (`POST /api/campaign/[id]/session/test-request`) e os jogadores o recebem pelo listener da campanha; cada
+  resposta vai para `testRequest.responses.<userId>` (`.../test-response`, em transação). O servidor refaz a conta
+  (maior d20 + bônus contra a DT) e confere pedido, prazo (10 min) e se o jogador foi chamado. A regra de dados é a
+  mesma do botão da perícia na ficha: nº de d20 = `mods.attributes` do atributo padrão (mínimo 1), vale o maior.
+  Lógica pura em `utils/campaignTest.ts`; validação em `utils/api/campaignTests.ts`; fluxo do navegador em
+  `hooks/useCampaignTest.ts`.
+- **Pusher está praticamente sem uso**: só o mestre assina (`hooks/usePusher.tsx`), e no canal `CODIGO` enquanto o
+  servidor publica em `presence-CODIGO`, então os eventos do servidor não chegam a nenhum cliente. O estado em tempo
+  real da campanha é todo Firestore. Antes de usar Pusher para algo novo, corrija o nome do canal e a assinatura dos jogadores.
+- Eventos de cliente do Pusher (`channel.trigger`) exigem nome com prefixo `client-`; sem ele a lib lança `BadEventName`.
+- Rotas que reescrevem a campanha inteira (`campaignRepository.update({ ...campaign, ... })`, como as de mensagens,
+  `users` e `session/disconnect`) perdem alterações simultâneas. Para campos soltos use `adminUpdateDoc` (caminhos de
+  campo) e, quando precisar conferir antes de gravar, `adminUpdateDocInTransaction`.
+
 ## Limite de MP por turno
 
 `⌈(Nível + Foco) ÷ 2⌉ + Nível de ORM` (+ bônus em `mpLimit` da ficha), em `utils/mpLimit.ts`.

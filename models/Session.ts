@@ -4,6 +4,7 @@ import { Combat } from './Combat';
 import { Type } from 'class-transformer';
 import type { PerkTypeEnum, SkillTypeEnum } from '@enums/rogueliteEnum';
 import type { RarityType } from './types/string';
+import type { ActiveTest } from './types/session';
 
 export interface PerkFilters {
     rarities: RarityType[];
@@ -35,6 +36,10 @@ export class Session {
     // Filtros configurados pelo GM para os perks oferecidos
     @IsOptional()
         perkFilters?: PerkFilters;
+
+    // Teste pedido pelo mestre e as respostas dos jogadores
+    @IsOptional()
+        testRequest?: ActiveTest;
 
     // Sistema de combate
     @ValidateNested()
