@@ -15,7 +15,9 @@
  *
  * Rodar (precisa das variáveis NEXT_PUBLIC_FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL e FIREBASE_PRIVATE_KEY;
  * para testar contra o emulador, defina FIRESTORE_EMULATOR_HOST):
- *   npx ts-node -r tsconfig-paths/register -O '{"module":"commonjs"}' scripts/migrateCampaignMessages.ts [--apply [--clear]] [--campaign ID]
+ *   npx ts-node -T -r tsconfig-paths/register -O '{"module":"commonjs","moduleResolution":"node10"}' scripts/migrateCampaignMessages.ts [--apply [--clear]] [--campaign ID]
+ * (-T pula a checagem de tipos, que no ts-node reclama do acesso a process.env; o moduleResolution evita o conflito
+ * do "bundler" do tsconfig com o commonjs)
  */
 import admin from 'firebase-admin'
 import { migrateLegacyMessages, type MigrationReport } from '../utils/firestore/campaignMessages'
