@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, type KeyboardEvent } from 'react'
 import {
     Modal,
     Box,
@@ -38,18 +38,24 @@ export default function SystemSelectionModal({ open, onSelect }: SystemSelection
     const [ systems, setSystems ] = useState<RPGSystem[]>([])
     const [ loading, setLoading ] = useState(true)
     const [ selectedId, setSelectedId ] = useState<string | null>(null)
+    const [ loadFailed, setLoadFailed ] = useState(false)
 
     useEffect(() => {
         if (open && session?.user?.id) {
             setLoading(true)
+            setLoadFailed(false)
             fetch(`/api/rpg-system?userId=${session.user.id}`)
-                .then(res => res.json())
+                .then(async res => {
+                    // Resposta de erro não é lista de sistemas
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+                    return await res.json()
+                })
                 .then(data => {
                     setSystems(Array.isArray(data) ? data : [])
                 })
-                .catch(err => {
-                    console.error('Erro ao carregar sistemas:', err)
+                .catch(() => {
                     setSystems([])
+                    setLoadFailed(true)
                 })
                 .finally(() => setLoading(false))
         }
@@ -69,9 +75,17 @@ export default function SystemSelectionModal({ open, onSelect }: SystemSelection
         router.push('/app')
     }
 
+    const selectOnKey = (event: KeyboardEvent, id: string | null) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault()
+            setSelectedId(id)
+        }
+    }
+
     return (
         <Modal
             open={open}
+            aria-labelledby='system-selection-title'
             onClose={() => {}}
             disableEscapeKeyDown
             sx={{
@@ -106,7 +120,7 @@ export default function SystemSelectionModal({ open, onSelect }: SystemSelection
                         <Box display="flex" alignItems="center" gap={2}>
                             <SystemIcon sx={{ fontSize: 40, color: 'primary.main' }} />
                             <Box>
-                                <Typography variant="h5" fontWeight={700}>
+                                <Typography variant="h5" component="h2" id='system-selection-title' fontWeight={700}>
                                     Selecione um Sistema de RPG
                                 </Typography>
                                 <Typography variant="body2" color="text.secondary">
@@ -123,11 +137,15 @@ export default function SystemSelectionModal({ open, onSelect }: SystemSelection
                                 <CircularProgress />
                             </Box>
                         ) : (
-                            <Grid container spacing={2}>
+                            <Grid container spacing={2} role='radiogroup' aria-labelledby='system-selection-title'>
                                 {/* Sistema Padrão Magitech */}
                                 <Grid item xs={12} sm={6} md={4}>
                                     <Paper
+                                        role='radio'
+                                        tabIndex={0}
+                                        aria-checked={selectedId === null}
                                         onClick={() => setSelectedId(null)}
+                                        onKeyDown={event => selectOnKey(event, null)}
                                         sx={{
                                             p: 2,
                                             cursor: 'pointer',
@@ -157,7 +175,7 @@ export default function SystemSelectionModal({ open, onSelect }: SystemSelection
                                         )}
                                         <Box display="flex" alignItems="center" gap={1} mb={1}>
                                             <MagicIcon sx={{ color: 'primary.main' }} />
-                                            <Typography variant="h6" fontWeight={600}>
+                                            <Typography variant="h6" component="h3" fontWeight={600}>
                                                 Magitech RPG
                                             </Typography>
                                         </Box>
@@ -182,7 +200,11 @@ export default function SystemSelectionModal({ open, onSelect }: SystemSelection
                                 {systems.map((system) => (
                                     <Grid item xs={12} sm={6} md={4} key={system.id}>
                                         <Paper
+                                            role='radio'
+                                            tabIndex={0}
+                                            aria-checked={selectedId === system.id}
                                             onClick={() => setSelectedId(system.id)}
+                                            onKeyDown={event => selectOnKey(event, system.id)}
                                             sx={{
                                                 p: 2,
                                                 cursor: 'pointer',
@@ -212,7 +234,7 @@ export default function SystemSelectionModal({ open, onSelect }: SystemSelection
                                             )}
                                             <Box display="flex" alignItems="center" gap={1} mb={1}>
                                                 <SystemIcon sx={{ color: 'secondary.main' }} />
-                                                <Typography variant="h6" fontWeight={600} noWrap>
+                                                <Typography variant="h6" component="h3" fontWeight={600} noWrap>
                                                     {system.name}
                                                 </Typography>
                                             </Box>
@@ -266,7 +288,15 @@ export default function SystemSelectionModal({ open, onSelect }: SystemSelection
                                     </Grid>
                                 ))}
 
-                                {systems.length === 0 && (
+                                {loadFailed && (
+                                    <Grid item xs={12}>
+                                        <Alert severity="error" sx={{ mt: 2 }}>
+                                            Não foi possível carregar seus sistemas. Você pode continuar com o sistema padrão ou recarregar a página.
+                                        </Alert>
+                                    </Grid>
+                                )}
+
+                                {systems.length === 0 && !loadFailed && (
                                     <Grid item xs={12}>
                                         <Alert severity="info" sx={{ mt: 2 }}>
                                             Você ainda não tem sistemas customizados. Use o sistema padrão Magitech RPG ou crie um novo sistema em <strong>Admin → Sistemas</strong>.

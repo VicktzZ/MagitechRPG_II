@@ -112,6 +112,11 @@ const LevelProgress = memo(function LevelProgress({ title, level, amount, barWid
                 </Box>
                 
                 <Box 
+                    role='progressbar'
+                    aria-label={title}
+                    aria-valuemin={0}
+                    aria-valuemax={amount}
+                    aria-valuenow={level}
                     sx={{
                         width: '100%',
                         height: '0.75rem',

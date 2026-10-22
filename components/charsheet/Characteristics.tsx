@@ -12,7 +12,8 @@ import type { ClassNames, LineageNames } from '@models/types/string';
 import { Box, FormControl, FormHelperText, InputLabel, MenuItem, Select, TextField, Typography, useMediaQuery, useTheme, type SelectChangeEvent } from '@mui/material';
 import { NumberField } from '@components/misc';
 import { color } from '@themes/tokens';
-import { useCallback, useMemo, useState, useEffect, type ReactElement } from 'react';
+import { useCharsheetSystem } from '@hooks/useCharsheetSystem';
+import { useCallback, useId, useMemo, type ReactElement } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
 
 export default function Characteristics(): ReactElement {
@@ -24,28 +25,9 @@ export default function Characteristics(): ReactElement {
     const audio = useAudio('/sounds/cybernetic-technology-affirmation.wav')
     const disabled = !!charsheet.id
     
-    // Estado para sistema customizado
-    const [ customSystem, setCustomSystem ] = useState<RPGSystem | null>(null)
-    const [ , setLoadingSystem ] = useState(false)
-    
-    // Carregar sistema se houver systemId
-    useEffect(() => {
-        if (charsheet.systemId) {
-            setLoadingSystem(true)
-            fetch(`/api/rpg-system/${charsheet.systemId}`)
-                .then(async res => await res.json())
-                .then((data: RPGSystem) => {
-                    setCustomSystem(data)
-                })
-                .catch(err => {
-                    console.error('Erro ao carregar sistema:', err)
-                    setCustomSystem(null)
-                })
-                .finally(() => setLoadingSystem(false))
-        } else {
-            setCustomSystem(null)
-        }
-    }, [ charsheet.systemId ])
+    // Sistema customizado (cache compartilhado; resposta de erro não vira "sistema")
+    const { system: customSystem } = useCharsheetSystem(charsheet.systemId)
+    const fieldId = useId()
     
     const isCustomSystem = !!customSystem
     
@@ -462,9 +444,9 @@ export default function Characteristics(): ReactElement {
     }, [ isCustomSystem, customSystem ])
 
     return (
-        <Box display='flex' gap={3} width='100%'>
-            {/* Coluna esquerda */}
-            <Box display='flex' flexDirection='column' gap={2} width='65%'>
+        <Box display='flex' flexDirection={{ xs: 'column', md: 'row' }} gap={3} width='100%'>
+            {/* Coluna esquerda (empilha acima do breakpoint md) */}
+            <Box display='flex' flexDirection='column' gap={2} width={{ xs: '100%', md: '65%' }}>
                 {/* Nome */}
                 <Controller
                     name='name'
@@ -489,9 +471,10 @@ export default function Characteristics(): ReactElement {
                         control={control}
                         render={({ field, fieldState: { error } }) => (
                             <FormControl fullWidth error={!!error} disabled={disabled}>
-                                <InputLabel>{classLabel} *</InputLabel>
+                                <InputLabel id={`${fieldId}-class-label`}>{classLabel} *</InputLabel>
                                 <Select
                                     {...field}
+                                    labelId={`${fieldId}-class-label`}
                                     label={`${classLabel} *`}
                                     required
                                     fullWidth
@@ -518,9 +501,10 @@ export default function Characteristics(): ReactElement {
                             control={control}
                             render={({ field, fieldState: { error } }) => (
                                 <FormControl sx={{ width: '50%' }} error={!!error} disabled={disabled}>
-                                    <InputLabel>{lineageLabel} *</InputLabel>
+                                    <InputLabel id={`${fieldId}-lineage-label`}>{lineageLabel} *</InputLabel>
                                     <Select
                                         {...field}
+                                        labelId={`${fieldId}-lineage-label`}
                                         label={`${lineageLabel} *`}
                                         required
                                         fullWidth
@@ -551,10 +535,11 @@ export default function Characteristics(): ReactElement {
                         control={control}
                         render={({ field, fieldState: { error } }) => (
                             <FormControl sx={{ width: '100%' }} error={!!error} disabled={disabled}>
-                                <InputLabel>{charsheet.mode === 'Classic' ? 'Linhagem' : 'Profissão'} *</InputLabel>
+                                <InputLabel id={`${fieldId}-lineage-mobile-label`}>{lineageLabel} *</InputLabel>
                                 <Select
                                     {...field}
-                                    label='Linhagem'
+                                    labelId={`${fieldId}-lineage-mobile-label`}
+                                    label={`${lineageLabel} *`}
                                     required
                                     fullWidth
                                     onChange={(e) => {
@@ -583,9 +568,10 @@ export default function Characteristics(): ReactElement {
                         control={control}
                         render={({ field, fieldState: { error } }) => (
                             <FormControl fullWidth error={!!error} disabled={disabled}>
-                                <InputLabel>{occupationLabel}</InputLabel>
+                                <InputLabel id={`${fieldId}-occupation-label`}>{occupationLabel}</InputLabel>
                                 <Select
                                     {...field}
+                                    labelId={`${fieldId}-occupation-label`}
                                     value={field.value || ''}
                                     label={occupationLabel}
                                     fullWidth
@@ -626,7 +612,7 @@ export default function Characteristics(): ReactElement {
             </Box>
 
             {/* Coluna direita */}
-            <Box display='flex' flexDirection='column' gap={2} width='35%'>
+            <Box display='flex' flexDirection='column' gap={2} width={{ xs: '100%', md: '35%' }}>
                 {/* Raça */}
                 {(!isCustomSystem || customSystem?.enabledFields?.race) && (
                     <Controller
@@ -634,9 +620,10 @@ export default function Characteristics(): ReactElement {
                         control={control}
                         render={({ field, fieldState: { error } }) => (
                             <FormControl error={!!error} disabled={disabled}>
-                                <InputLabel>{raceLabel} *</InputLabel>
+                                <InputLabel id={`${fieldId}-race-label`}>{raceLabel} *</InputLabel>
                                 <Select
                                     {...field}
+                                    labelId={`${fieldId}-race-label`}
                                     label={`${raceLabel} *`}
                                     required
                                     fullWidth
@@ -730,7 +717,7 @@ export default function Characteristics(): ReactElement {
 
                         {!matches && showGender && (
                             <FormControl sx={{ width: showAge ? '50%' : '100%' }}>
-                                <InputLabel>{customSystem?.initialFields?.gender?.label || 'Gênero'} *</InputLabel>
+                                <InputLabel id={`${fieldId}-gender-label`}>{customSystem?.initialFields?.gender?.label || 'Gênero'} *</InputLabel>
                                 <Controller
                                     name='gender'
                                     control={control}
@@ -738,6 +725,7 @@ export default function Characteristics(): ReactElement {
                                         <>
                                             <Select
                                                 {...field}
+                                                labelId={`${fieldId}-gender-label`}
                                                 label={`${customSystem?.initialFields?.gender?.label || 'Gênero'} *`}
                                                 error={!!error}
                                                 required
@@ -761,7 +749,7 @@ export default function Characteristics(): ReactElement {
                 {/* Gênero (mobile) */}
                 {matches && showGender && (
                     <FormControl sx={{ width: '100%' }}>
-                        <InputLabel>{customSystem?.initialFields?.gender?.label || 'Gênero'}</InputLabel>
+                        <InputLabel id={`${fieldId}-gender-mobile-label`}>{customSystem?.initialFields?.gender?.label || 'Gênero'} *</InputLabel>
                         <Controller
                             name='gender'
                             control={control}
@@ -769,6 +757,7 @@ export default function Characteristics(): ReactElement {
                                 <>
                                     <Select
                                         {...field}
+                                        labelId={`${fieldId}-gender-mobile-label`}
                                         label={`${customSystem?.initialFields?.gender?.label || 'Gênero'} *`}
                                         error={!!error}
                                         required
@@ -797,9 +786,10 @@ export default function Characteristics(): ReactElement {
                             if (fieldDef.type === 'select') {
                                 return (
                                     <FormControl fullWidth error={!!error} disabled={disabled}>
-                                        <InputLabel>{fieldDef.label}{fieldDef.required ? ' *' : ''}</InputLabel>
+                                        <InputLabel id={`${fieldId}-${fieldDef.key}-label`}>{fieldDef.label}{fieldDef.required ? ' *' : ''}</InputLabel>
                                         <Select
                                             {...field}
+                                            labelId={`${fieldId}-${fieldDef.key}-label`}
                                             value={(value as string) ?? ''}
                                             label={`${fieldDef.label}${fieldDef.required ? ' *' : ''}`}
                                             onChange={(e) => onChange(e.target.value)}
@@ -816,9 +806,10 @@ export default function Characteristics(): ReactElement {
                             if (fieldDef.type === 'boolean') {
                                 return (
                                     <FormControl fullWidth error={!!error} disabled={disabled}>
-                                        <InputLabel>{fieldDef.label}</InputLabel>
+                                        <InputLabel id={`${fieldId}-${fieldDef.key}-label`}>{fieldDef.label}</InputLabel>
                                         <Select
                                             {...field}
+                                            labelId={`${fieldId}-${fieldDef.key}-label`}
                                             value={value === true ? 'true' : value === false ? 'false' : ''}
                                             label={fieldDef.label}
                                             onChange={(e) => onChange(e.target.value === 'true')}

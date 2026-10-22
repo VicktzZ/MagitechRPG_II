@@ -37,29 +37,8 @@ import { useSnackbar } from 'notistack';
 import { memo, useCallback, useMemo, useState } from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
 import { Magic } from '.';
-import MagicsModal from './dialogs/MagicsModal';
-
-/**
- * Normaliza um valor que pode ser um array ou um objeto com chaves numéricas
- */
-function normalizeToArray<T>(value: any): T[] {
-    if (!value) return [];
-    if (Array.isArray(value)) return value;
-    
-    // Se é um objeto com chaves numéricas, converter para array
-    if (typeof value === 'object') {
-        const keys = Object.keys(value);
-        const isNumericKeys = keys.every(key => !isNaN(Number(key)));
-        if (isNumericKeys) {
-            return keys
-                .map(key => Number(key))
-                .sort((a, b) => a - b)
-                .map(key => value[key]);
-        }
-    }
-    
-    return [];
-}
+import MagicsModal, { spellKey } from './dialogs/MagicsModal';
+import { normalizeToArray } from '@utils/normalizeToArray';
 
 function getSpellPointCost(level: number): 1 | 2 {
     return level >= 3 ? 2 : 1
@@ -79,13 +58,13 @@ const Spells = memo(() => {
     const [ sortType, setSortType ] = useState<'elemento' | 'level' | 'name'>('name')
 
     // Hooks e contexto
-    const { control, setValue, getValues } = useFormContext<CharsheetDTO>()
+    const { control, setValue } = useFormContext<CharsheetDTO>()
     const { enqueueSnackbar, closeSnackbar } = useSnackbar()
     const theme = useTheme()
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
 
     const spellsRaw = useWatch({ control, name: 'spells' })
-    const spells = useMemo(() => normalizeToArray(spellsRaw), [ spellsRaw ])
+    const spells = useMemo(() => normalizeToArray<Spell>(spellsRaw), [ spellsRaw ])
 
     const spellStages = useWatch({ control, name: 'spellStages' })
 
@@ -148,24 +127,24 @@ const Spells = memo(() => {
         }
     }, [ spells ])
 
-    const handleRemoveMagic = useCallback((magicId: string, magicName: string) => {
-        const currentSpells = normalizeToArray(spells)
-        const magicIndex = currentSpells.findIndex(m => m.id === magicId)
+    const handleRemoveMagic = useCallback((magicKey: string, magicName: string) => {
+        const magicIndex = spells.findIndex(m => spellKey(m) === magicKey)
 
         if (magicIndex !== -1) {
-            const removedMagic = currentSpells[magicIndex]
+            const removedMagic = spells[magicIndex]
             const refundCost = getSpellPointCost(Number(removedMagic?.level ?? 1))
-            currentSpells.splice(magicIndex, 1)
+            // Lista nova: o array observado pelo formulário não pode ser alterado no lugar
+            const remainingSpells = spells.filter((_, index) => index !== magicIndex)
 
             const currentStages: Record<string, number> = spellStages || {}
-            if (magicId in currentStages) {
+            if (magicKey in currentStages) {
                 const restStages = Object.fromEntries(
-                    Object.entries(currentStages).filter(([ key ]) => key !== magicId)
+                    Object.entries(currentStages).filter(([ key ]) => key !== magicKey)
                 ) as Record<string, number>
                 setValue('spellStages', restStages, { shouldValidate: true })
             }
 
-            setValue('spells', currentSpells, { shouldValidate: true })
+            setValue('spells', remainingSpells as CharsheetDTO['spells'], { shouldValidate: true })
             setValue('points.magics', (points.magics ?? 0) + refundCost, { shouldValidate: true })
             setValue('spellSpace', spellSpace + 1, { shouldValidate: true })
 
@@ -177,15 +156,16 @@ const Spells = memo(() => {
     }, [ spells, points, spellSpace, enqueueSnackbar, closeSnackbar, setValue, spellStages ])
 
     const renderMagicCard = useCallback((magic: Spell) => {
+        const magicKey = spellKey(magic)
         const selectedStage = Math.min(
             3,
-            Math.max(1, Number((spellStages as any)?.[magic.id ?? ''] ?? 1))
-        )
+            Math.max(1, Number((spellStages as any)?.[magicKey] ?? 1))
+        ) as 1 | 2 | 3
 
         return (
             <Grid
                 item
-                key={magic.id ?? ''}
+                key={magicKey}
 
                 xs={12}
                 sm={6}
@@ -206,14 +186,15 @@ const Spells = memo(() => {
                 >
                     <Magic
                         as='magic-spell'
-                        id={magic.id ?? ''}
+                        id={magicKey}
                         magic={magic}
                         selectedStage={selectedStage}
                         onStageChange={(stage: 1 | 2 | 3) => {
-                            if (!magic.id) return
-                            setValue(`spellStages.${magic.id}` as any, stage, { shouldValidate: true })
+                            if (!magicKey) return
+                            // Objeto inteiro: o nome da magia (chave de reserva) pode ter ponto, que o caminho do RHF separaria
+                            setValue('spellStages', { ...(spellStages || {}), [magicKey]: stage } as any, { shouldValidate: true })
                         }}
-                        onIconClick={() => { handleRemoveMagic(magic.id ?? '', magic.name) }}
+                        onIconClick={() => { handleRemoveMagic(magicKey, magic.name) }}
                     />
                 </motion.div>
             </Grid>
@@ -378,7 +359,8 @@ const Spells = memo(() => {
                                 color="text.secondary"
                                 sx={{ display: 'block' }}
                             >
-                                {`${spells?.length ?? 0} de ${spells?.length ?? 0 + getValues().attributes.log + 1} espaços utilizados`}
+                                {/* `spellSpace` guarda os espaços livres: usados = magias aprendidas; total = usados + livres */}
+                                {`${spells.length} de ${spells.length + Math.max(0, Number(spellSpace) || 0)} espaços utilizados`}
                             </Typography>
                         </Box>
                     </Stack>
@@ -388,6 +370,8 @@ const Spells = memo(() => {
                         <Tooltip title="Filtrar magias">
                             <IconButton
                                 onClick={() => setFilterOpen(!filterOpen)}
+                                aria-label="Filtrar magias"
+                                aria-expanded={filterOpen}
                                 color={filterOpen || elementFilter ? 'primary' : 'default'}
                                 sx={{
                                     borderRadius: 1.5,
@@ -406,25 +390,29 @@ const Spells = memo(() => {
                         </Tooltip>
 
                         <Tooltip title="Adicionar magia">
-                            <IconButton
-                                onClick={() => { setOpen(true) }}
-                                color="primary"
-                                disabled={spellSpace === 0 || points.magics === 0}
-                                sx={{
-                                    borderRadius: 1.5,
-                                    bgcolor: alpha(theme.palette.primary.main, 0.1),
-                                    border: `1px solid ${alpha(theme.palette.primary.main, 0.5)}`,
-                                    '&:hover': {
-                                        bgcolor: alpha(theme.palette.primary.main, 0.15)
-                                    },
-                                    '&:disabled': {
-                                        opacity: 0.5,
-                                        cursor: 'not-allowed'
-                                    }
-                                }}
-                            >
-                                <AddCircle />
-                            </IconButton>
+                            {/* span: o Tooltip não recebe eventos de um botão desabilitado */}
+                            <span>
+                                <IconButton
+                                    onClick={() => { setOpen(true) }}
+                                    aria-label="Adicionar magia"
+                                    color="primary"
+                                    disabled={spellSpace === 0 || points.magics === 0}
+                                    sx={{
+                                        borderRadius: 1.5,
+                                        bgcolor: alpha(theme.palette.primary.main, 0.1),
+                                        border: `1px solid ${alpha(theme.palette.primary.main, 0.5)}`,
+                                        '&:hover': {
+                                            bgcolor: alpha(theme.palette.primary.main, 0.15)
+                                        },
+                                        '&:disabled': {
+                                            opacity: 0.5,
+                                            cursor: 'not-allowed'
+                                        }
+                                    }}
+                                >
+                                    <AddCircle />
+                                </IconButton>
+                            </span>
                         </Tooltip>
                     </Stack>
                 </Stack>

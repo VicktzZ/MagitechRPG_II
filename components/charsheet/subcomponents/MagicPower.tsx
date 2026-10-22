@@ -294,6 +294,7 @@ export function MagicPower({
                                 <span>
                                     <IconButton
                                         onClick={onIconClick}
+                                        aria-label={isAdding ? `Adicionar poder ${power.name}` : `Remover poder ${power.name}`}
                                         size="small"
                                         sx={{
                                             color: isAdding ? theme.palette.primary.main : theme.palette.error.main,

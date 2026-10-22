@@ -33,31 +33,135 @@ import { color } from '@themes/tokens';
 import { useMemo, useState, type ReactElement } from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
 import { useCharsheetSystem } from '@hooks';
+import { normalizeToArray } from '@utils/normalizeToArray';
 
 // Pinta o ícone preto com `error.main` (color.danger)
 const redFilter = 'invert(46%) sepia(20%) saturate(1757%) hue-rotate(314deg) brightness(100%) contrast(84%)'
 
-/**
- * Normaliza um valor que pode ser um array ou um objeto com chaves numéricas
- * Converte Record<number, T> para T[]
- */
-function normalizeToArray<T>(value: any): T[] {
-    if (!value) return [];
-    if (Array.isArray(value)) return value;
-    
-    // Se é um objeto com chaves numéricas, converter para array
-    if (typeof value === 'object') {
-        const keys = Object.keys(value);
-        const isNumericKeys = keys.every(key => !isNaN(Number(key)));
-        if (isNumericKeys) {
-            return keys
-                .map(key => Number(key))
-                .sort((a, b) => a - b)
-                .map(key => value[key]);
-        }
+/** Entrada do inventário que dá para mostrar: objeto com `name` preenchido (a descrição pode ser vazia) */
+interface InventoryEntry<T> {
+    entry: T
+    /** Posição na lista gravada (inclui entradas inválidas puladas), usada para excluir só este item */
+    index: number
+}
+
+function isRenderableEntry(entry: unknown): boolean {
+    return typeof entry === 'object' && entry !== null
+        && typeof (entry as { name?: unknown }).name === 'string'
+        && (entry as { name: string }).name.trim() !== ''
+}
+
+function listEntries<T>(list: unknown): Array<InventoryEntry<T>> {
+    return normalizeToArray<T>(list)
+        .map((entry, index) => ({ entry, index }))
+        .filter(({ entry }) => isRenderableEntry(entry))
+}
+
+function entryKey(entry: { id?: string, name?: string }, index: number): string {
+    return entry.id ? `id-${entry.id}` : `${entry.name}-${index}`
+}
+
+/** Peso na tela com até 2 casas (um valor gravado como 0.9999999999999999 aparece como 1) */
+function formatWeight(value: unknown): number {
+    const weight = Number(value)
+    return Number.isFinite(weight) ? Number(weight.toFixed(2)) : 0
+}
+
+/** Garante que accessories seja array de strings */
+function normalizeAccessories(acc: unknown): string[] {
+    if (!acc) return []
+    if (Array.isArray(acc)) return acc.map(a => String(a))
+    if (typeof acc === 'string') return [ acc ]
+    if (typeof acc === 'object') return Object.values(acc as Record<string, unknown>).map(a => String(a))
+    return []
+}
+
+/** Efeitos de um item como lista de textos (aceita lista, texto único ou objeto) */
+function normalizeEffects(effects: unknown): string[] {
+    return normalizeAccessories(effects).map(effect => effect.trim()).filter(effect => effect !== '')
+}
+
+/** Garante que effect seja um objeto válido */
+function normalizeEffect(eff: any) {
+    if (!eff || typeof eff !== 'object') {
+        return { effectType: '', value: '', critValue: '' }
     }
-    
-    return [];
+    return {
+        effectType: String(eff.effectType || ''),
+        value: String(eff.value || ''),
+        critValue: String(eff.critValue || '')
+    }
+}
+
+/**
+ * Card de uma arma, armadura ou item do inventário. Só o nome é exigido: itens sem descrição (como os que
+ * chegam da retirada de estoque do widget) aparecem e podem ser excluídos.
+ */
+function InventoryItem({
+    item,
+    type,
+    index,
+    bonus
+}: {
+    item: any,
+    type: 'weapon' | 'armor' | 'item',
+    index: number,
+    bonus?: number
+}) {
+    // Props base que todos os tipos compartilham
+    const baseProps = {
+        id: typeof item.id === 'string' ? item.id : undefined,
+        inventoryIndex: index,
+        name: String(item.name || ''),
+        description: String(item.description || ''),
+        rarity: String(item.rarity || 'Comum'),
+        kind: String(item.kind || ''),
+        weight: Number(item.weight) || 0,
+        quantity: Number(item.quantity) || 1
+    } as any
+
+    // Props específicas baseadas no tipo
+    if (type === 'weapon') {
+        return (
+            <ItemComponent
+                {...baseProps}
+                as='weapon'
+                categ={String(item.categ || '')}
+                range={String(item.range || '')}
+                hit={String(item.hit || '')}
+                ammo={String(item.ammo || '')}
+                magazineSize={Number(item.magazineSize) || 0}
+                accessories={normalizeAccessories(item.accessories)}
+                bonus={String(item.bonus || '')}
+                effect={normalizeEffect(item.effect)}
+                bonusValue={bonus ? [ bonus ] : [ 0 ]}
+                isDisadvantage={false}
+                diceQuantity={1}
+            />
+        )
+    }
+
+    if (type === 'armor') {
+        return (
+            <ItemComponent
+                {...baseProps}
+                as='armor'
+                categ={String(item.categ || '')}
+                value={Number(item.value) || 0}
+                displacementPenalty={Number(item.displacementPenalty) || 0}
+                accessories={normalizeAccessories(item.accessories)}
+            />
+        )
+    }
+
+    return (
+        <ItemComponent
+            {...baseProps}
+            as='item'
+            effects={normalizeEffects(item.effects)}
+            level={Number(item.level) || 0}
+        />
+    )
 }
 
 // TODO: ACRESCENTAR ITENS DE LINHAGEM (ao mudar)
@@ -83,21 +187,12 @@ export function Inventory (): ReactElement {
     const inventoryStats = useMemo(() => {
         if (!inventory) return { totalItems: 0, weapons: 0, armors: 0, items: 0 }
         
-        const weaponsArray = normalizeToArray(inventory.weapons);
-        const armorsArray = normalizeToArray(inventory.armors);
-        const itemsArray = normalizeToArray(inventory.items);
-        
-        // Contar apenas objetos válidos (não IDs)
-        const validWeapons = weaponsArray.filter((w: any) => typeof w === 'object' && w !== null && 'name' in w);
-        const validArmors = armorsArray.filter((a: any) => typeof a === 'object' && a !== null && 'name' in a);
-        const validItems = itemsArray.filter((i: any) => typeof i === 'object' && i !== null && 'name' in i);
-        
-        return {
-            totalItems: validWeapons.length + validArmors.length + validItems.length,
-            weapons: validWeapons.length,
-            armors: validArmors.length,
-            items: validItems.length
-        }
+        // Conta exatamente o que é mostrado (objetos com nome), para o número bater com os cards
+        const weapons = listEntries(inventory.weapons).length
+        const armors = listEntries(inventory.armors).length
+        const items = listEntries(inventory.items).length
+
+        return { totalItems: weapons + armors + items, weapons, armors, items }
     }, [ inventory ])
 
     // Calcula porcentagem de capacidade
@@ -114,112 +209,14 @@ export function Inventory (): ReactElement {
         return 'success'
     }
 
-    // Componente adaptador para traduzir as props
-    function InventoryItem({
-        item,
-        type,
-        bonus
-    }: {
-        item: any,
-        type: 'weapon' | 'armor' | 'item',
-        index: number,
-        bonus?: number
-    }) {
-        // Garante que todos os campos necessários existam
-        if (!item?.name || !item.description || !item.rarity) {
-            console.error('Item inválido:', item);
-            return null;
-        }
-
-        // Função helper para garantir que accessories seja array de strings
-        const normalizeAccessories = (acc: any): string[] => {
-            if (!acc) return [];
-            if (Array.isArray(acc)) return acc.map(a => String(a));
-            if (typeof acc === 'string') return [ acc ];
-            if (typeof acc === 'object') return Object.values(acc).map(a => String(a));
-            return [];
-        };
-
-        // Função helper para garantir que effect seja objeto válido
-        const normalizeEffect = (eff: any) => {
-            if (!eff || typeof eff !== 'object') {
-                return { effectType: '', value: '', critValue: '' };
-            }
-            return {
-                effectType: String(eff.effectType || ''),
-                value: String(eff.value || ''),
-                critValue: String(eff.critValue || '')
-            };
-        };
-
-        // Props base que todos os tipos compartilham
-        const baseProps = {
-            name: String(item.name || ''),
-            description: String(item.description || ''),
-            rarity: String(item.rarity || ''),
-            kind: String(item.kind || ''),
-            weight: Number(item.weight) || 0,
-            quantity: Number(item.quantity) || 1,
-            as: type === 'weapon' ? 'weapon' : type === 'armor' ? 'armor' : 'item'
-        };
-
-        try {
-            // Props específicas baseadas no tipo
-            if (type === 'weapon') {
-                return (
-                    <ItemComponent
-                        {...baseProps}
-                        as='weapon'
-                        categ={String(item.categ || '')}
-                        range={String(item.range || '')}
-                        hit={String(item.hit || '')}
-                        ammo={String(item.ammo || '')}
-                        magazineSize={Number(item.magazineSize) || 0}
-                        accessories={normalizeAccessories(item.accessories)}
-                        bonus={String(item.bonus || '')}
-                        effect={normalizeEffect(item.effect)}
-                        bonusValue={bonus ? [ bonus ] : [ 0 ]}
-                        isDisadvantage={false}
-                        diceQuantity={1}
-                    />
-                );
-            } else if (type === 'armor') {
-                return (
-                    <ItemComponent
-                        {...baseProps}
-                        as='armor'
-                        categ={String(item.categ || '')}
-                        value={Number(item.value) || 0}
-                        displacementPenalty={Number(item.displacementPenalty) || 0}
-                        accessories={normalizeAccessories(item.accessories)}
-                    />
-                );
-            } else {
-                return (
-                    <ItemComponent
-                        {...baseProps}
-                        as='item'
-                        effects={String(item.effects || '')}
-                        level={Number(item.level) || 0}
-                    />
-                );
-            }
-        } catch (error) {
-            console.error('Erro ao renderizar item:', error, item);
-            return null;
-        }
-    }
-
     // Renderiza as armas
     const weapons = useMemo(() => {
-        const weaponsArray = normalizeToArray<Weapon>(inventory?.weapons);
-        if (weaponsArray.length === 0) return []
-        return weaponsArray.map((weapon, index) => {
+        return listEntries<Weapon>(inventory?.weapons).map(({ entry: weapon, index }) => {
             const rarityValues = rarityArmorBonuses[weapon.rarity]
             const bonus = rarityValues || 0;
 
             return (
-                <Grid key={`${weapon.name}-${index}`} item xs={12} sm={6} md={4} lg={3}>
+                <Grid key={entryKey(weapon, index)} item xs={12} sm={6} md={4} lg={3}>
                     <InventoryItem
                         item={weapon}
                         type="weapon"
@@ -233,10 +230,8 @@ export function Inventory (): ReactElement {
 
     // Renderiza as armaduras
     const armors = useMemo(() => {
-        const armorsArray = normalizeToArray<Armor>(inventory?.armors);
-        if (armorsArray.length === 0) return []
-        return armorsArray.map((armor, index) => (
-            <Grid key={`${armor.name}${index}`} item xs={12} sm={6} md={4} lg={3}>
+        return listEntries<Armor>(inventory?.armors).map(({ entry: armor, index }) => (
+            <Grid key={entryKey(armor, index)} item xs={12} sm={6} md={4} lg={3}>
                 <InventoryItem
                     item={armor}
                     type="armor"
@@ -248,18 +243,8 @@ export function Inventory (): ReactElement {
 
     // Renderiza os itens
     const items = useMemo(() => {
-        const itemsArray = normalizeToArray<Item>(inventory?.items);
-        if (itemsArray.length === 0) return []
-        
-        // Filtrar apenas objetos válidos (não IDs)
-        const validItems = itemsArray.filter((item: any) => 
-            typeof item === 'object' && 
-            item !== null && 
-            'name' in item
-        );
-        
-        return validItems.map((item, index) => (
-            <Grid key={`${item.name}${index}`} item xs={12} sm={6} md={4} lg={3}>
+        return listEntries<Item>(inventory?.items).map(({ entry: item, index }) => (
+            <Grid key={entryKey(item, index)} item xs={12} sm={6} md={4} lg={3}>
                 <InventoryItem
                     item={item}
                     type="item"
@@ -353,9 +338,7 @@ export function Inventory (): ReactElement {
                                         fontWeight="bold"
                                         color={`${getCapacityColor()}.main`}
                                     >
-                                        {capacity
-                                            ? `${capacity.cargo}/${capacity.max}${weightUnit ? ` ${weightUnit}` : ''}`
-                                            : `0/0${weightUnit ? ` ${weightUnit}` : ''}`}
+                                        {`${formatWeight(capacity?.cargo)}/${formatWeight(capacity?.max)}${weightUnit ? ` ${weightUnit}` : ''}`}
                                     </Typography>
                                 </Stack>
                             </Paper>

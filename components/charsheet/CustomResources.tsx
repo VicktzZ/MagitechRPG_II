@@ -14,42 +14,44 @@ import {
     Tooltip,
     Typography
 } from '@mui/material';
-import { useEffect, useState, type ReactElement } from 'react';
+import { useEffect, useMemo, type ReactElement } from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
-import type { Charsheet, CustomResource, RPGSystem, SystemAttribute } from '@models/entities';
+import type { Charsheet, CustomResource, SystemAttribute } from '@models/entities';
 import { getActiveResolvedThreshold, resolveThresholds } from '@utils/resourceThresholds';
 import { evaluateFormula } from '@utils/formulaEvaluator';
+import { useCharsheetSystem } from '@hooks/useCharsheetSystem';
+
+const NO_RESOURCES: CustomResource[] = [];
+const NO_ATTRIBUTES: SystemAttribute[] = [];
 
 export default function CustomResources(): ReactElement | null {
     const { control, setValue, getValues } = useFormContext<Charsheet>();
     const charsheet = getValues();
     const disabled = !!charsheet.id;
-    const [ resourceDefs, setResourceDefs ] = useState<CustomResource[]>([]);
-    const [ systemAttributes, setSystemAttributes ] = useState<SystemAttribute[]>([]);
 
+    // Sistema customizado (cache compartilhado; resposta de erro não vira "sistema")
+    const { system } = useCharsheetSystem(charsheet.systemId);
+    const resourceDefs = useMemo(
+        () => (system?.customResources && system.customResources.length > 0 ? system.customResources : NO_RESOURCES),
+        [ system ]
+    );
+    const systemAttributes = system?.attributes ?? NO_ATTRIBUTES;
+
+    // Recursos que a ficha ainda não tem entram com o valor padrão
     useEffect(() => {
-        if (!charsheet.systemId) return;
-        fetch(`/api/rpg-system/${charsheet.systemId}`)
-            .then(async res => await res.json())
-            .then((data: RPGSystem) => {
-                setSystemAttributes(data.attributes ?? []);
-                if (data.customResources && data.customResources.length > 0) {
-                    setResourceDefs(data.customResources);
-                    const current = getValues('customResources') ?? {};
-                    const updated = { ...current };
-                    let changed = false;
-                    data.customResources.forEach(r => {
-                        // Recursos com fórmula são calculados ao vivo pelo efeito abaixo
-                        if (!r.formula && updated[r.key] === undefined) {
-                            updated[r.key] = r.defaultValue ?? r.max;
-                            changed = true;
-                        }
-                    });
-                    if (changed) setValue('customResources', updated);
-                }
-            })
-            .catch(err => console.error('Erro ao carregar recursos do sistema:', err));
-    }, [ charsheet.systemId ]);
+        if (resourceDefs.length === 0) return;
+        const current = getValues('customResources') ?? {};
+        const updated = { ...current };
+        let changed = false;
+        resourceDefs.forEach(r => {
+            // Recursos com fórmula são calculados ao vivo pelo efeito abaixo
+            if (!r.formula && updated[r.key] === undefined) {
+                updated[r.key] = r.defaultValue ?? r.max;
+                changed = true;
+            }
+        });
+        if (changed) setValue('customResources', updated);
+    }, [ resourceDefs, getValues, setValue ]);
 
     const customResources = useWatch<Charsheet, 'customResources'>({
         control,
@@ -100,7 +102,7 @@ export default function CustomResources(): ReactElement | null {
             setValue('customResourceMaxes', currentMaxes);
             setValue('customResources', currentResources);
         }
-    }, [ disabled, resourceDefs, systemAttributes, attributesValues, level ]);
+    }, [ disabled, resourceDefs, systemAttributes, attributesValues, level, getValues, setValue ]);
 
     const personalMaxOf = (def: CustomResource): number =>
         customResourceMaxes?.[def.key] ?? def.max;
@@ -125,7 +127,7 @@ export default function CustomResources(): ReactElement | null {
         >
             <Box display="flex" alignItems="center" gap={1} mb={2}>
                 <Tune sx={{ color: 'warning.main' }} />
-                <Typography variant="h6" fontFamily={font.display}>Recursos</Typography>
+                <Typography variant="h6" component="h2" fontFamily={font.display}>Recursos</Typography>
             </Box>
             <Divider sx={{ mb: 2 }} />
 
@@ -151,7 +153,7 @@ export default function CustomResources(): ReactElement | null {
                                 mb={1}
                             >
                                 <Box display="flex" alignItems="center" gap={1}>
-                                    <Typography fontWeight="bold" variant="subtitle1">
+                                    <Typography fontWeight="bold" variant="subtitle1" component="h3" id={`resource-${def.key}-name`}>
                                         {def.name}
                                     </Typography>
                                     {def.abbreviation && (
@@ -187,6 +189,7 @@ export default function CustomResources(): ReactElement | null {
                                 <Box display="flex" alignItems="center" gap={0.5}>
                                     <IconButton
                                         size="small"
+                                        aria-label={`Diminuir ${def.name}`}
                                         onClick={() => handleChange(def.key, value - 1, def)}
                                         sx={{ width: 28, height: 28 }}
                                     >
@@ -198,6 +201,7 @@ export default function CustomResources(): ReactElement | null {
                                         value={value}
                                         onChange={e => handleChange(def.key, parseInt(e.target.value), def)}
                                         inputProps={{
+                                            'aria-labelledby': `resource-${def.key}-name`,
                                             min: def.min,
                                             max: personalMax,
                                             style: { textAlign: 'center', padding: '4px 0', width: '52px' }
@@ -209,6 +213,7 @@ export default function CustomResources(): ReactElement | null {
                                     </Typography>
                                     <IconButton
                                         size="small"
+                                        aria-label={`Aumentar ${def.name}`}
                                         onClick={() => handleChange(def.key, value + 1, def)}
                                         sx={{ width: 28, height: 28 }}
                                     >

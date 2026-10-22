@@ -254,6 +254,7 @@ function Attribute({
                     size="small"
                     onClick={onIncrement}
                     disabled={attributeValue >= 30}
+                    aria-label={`Aumentar ${config.label}`}
                     sx={buttonStyle}
                 >
                     +
@@ -263,13 +264,14 @@ function Attribute({
                     size="small"
                     onClick={onDecrement}
                     disabled={attributeValue <= Math.max(0, minValue)}
+                    aria-label={`Diminuir ${config.label}`}
                     sx={buttonStyle}
                 >
                     -
                 </Button>
             </Box>
         )
-    }, [ isSmall, config.color, attributeValue, minValue, onIncrement, onDecrement, getControlButtonSize ])
+    }, [ isSmall, config.color, config.label, attributeValue, minValue, onIncrement, onDecrement, getControlButtonSize ])
 
     const attr = useWatch({
         control,
@@ -288,36 +290,46 @@ function Attribute({
         name: 'mods.discount'
     }) || -10 : 0
 
+    // Ficha já salva: os modificadores guardados só são recalculados depois que o
+    // usuário altera este atributo. Recalcular ao abrir a página mudava dados sem
+    // ninguém mexer (ex.: o mod de DES guardado como 3 virava 2 só de abrir a ficha).
+    const isSavedSheet = !!charsheet.id
+    const initialAttr = useRef(attr)
+    const attrChangedByUser = useRef(false)
+
     // Set attributes mods
     useEffect(() => {
+        if (isSavedSheet && !attrChangedByUser.current) {
+            if (attr === initialAttr.current) return
+            attrChangedByUser.current = true
+        }
+
         let lineageBonus = 0
         
-        if (attributeName === 'car' && charsheet.lineage === 'Artista') {
+        if (attributeName === 'car' && getValues('lineage') === 'Artista') {
             lineageBonus = 1
         }
         
-        // Nova fórmula de modificadores:
-        // 0 pontos: -1 dado (desvantagem)
-        // 5 pontos: 1 dado
-        // 10 pontos: 2 dados
-        // 15 pontos: 3 dados
-        // 20 pontos: 4 dados
-        // 30+ pontos: 5 dados (máximo)
+        // Modificador do atributo (ver calculateAttributeMod):
+        // 0 a 4: -1 dado (desvantagem) · 5 a 9: 1 · 10 a 19: 2 · 20 a 29: 3 · 30: 4
         const baseMod = calculateAttributeMod(attr)
-        setValue(`mods.attributes.${attributeName}`, baseMod + lineageBonus)
+        const nextMod = baseMod + lineageBonus
+        if (getValues(`mods.attributes.${attributeName}`) !== nextMod) {
+            setValue(`mods.attributes.${attributeName}`, nextMod, { shouldDirty: isSavedSheet })
+        }
         
         const difference = attr - previousAttributeValue.current
         
         if (difference !== 0) {
             if (attributeName === 'car') {
-                setValue('mods.discount', attr === 5 ? +1 : (attr * 2) - 10)
+                setValue('mods.discount', attr === 5 ? +1 : (attr * 2) - 10, { shouldDirty: isSavedSheet })
             }
             
             if (attr !== previousAttributeValue.current) {
                 previousAttributeValue.current = attr
             }
         }
-    }, [ attr, attributeName, setValue ])
+    }, [ attr, attributeName, isSavedSheet, getValues, setValue ])
 
     return (
         <Box 

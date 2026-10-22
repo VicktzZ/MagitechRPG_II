@@ -12,6 +12,8 @@ import { defaultWeapons, defaultWeapon } from '@constants/defaultWeapons';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { weaponSchema,  type WeaponFormFields  } from '@schemas/itemsSchemas';
 import { useCharsheetForm } from '@contexts/CharsheetFormProvider';
+import { computeCargo } from '@utils/cargo';
+import { v4 as uuidv4 } from 'uuid';
 import { useAudio } from '@hooks';
 import {
     weaponCateg,
@@ -120,20 +122,13 @@ export const InventoryCreateWeaponModal = memo(({
             ? `Arremessável (${w.range})`
             : w.kind;
 
-        const payload = { ...w, kind: composedKind } as WeaponFormFields;
+        // `id` próprio: é ele que identifica a arma ao excluir (dois itens podem ter o mesmo nome)
+        const payload = { ...w, kind: composedKind, id: uuidv4(), type: 'weapon' } as WeaponFormFields;
         const current = charsheetForm.getValues('inventory.weapons') ?? [];
         charsheetForm.setValue('inventory.weapons', [ ...current, payload ], { shouldValidate: true, shouldDirty: true });
         
-        // Atualizar capacity.cargo
-        const weapons = charsheetForm.getValues('inventory.weapons') ?? [];
-        const armors = charsheetForm.getValues('inventory.armors') ?? [];
-        const items = charsheetForm.getValues('inventory.items') ?? [];
-        const totalWeight = [
-            ...(Array.isArray(weapons) ? weapons : []),
-            ...(Array.isArray(armors) ? armors : []),
-            ...(Array.isArray(items) ? items : [])
-        ].reduce((sum, item) => sum + (Number(item.weight) || 0) * (Number(item.quantity) || 1), 0);
-        charsheetForm.setValue('capacity.cargo', totalWeight, { shouldValidate: true, shouldDirty: true });
+        // Recalcula capacity.cargo a partir do inventário inteiro (utils/cargo.ts)
+        charsheetForm.setValue('capacity.cargo', computeCargo(charsheetForm.getValues('inventory')), { shouldValidate: true, shouldDirty: true });
         
         enqueueSnackbar(`${payload.name} criado com sucesso!`, toastDefault('itemCreated', 'success'));
         action();
