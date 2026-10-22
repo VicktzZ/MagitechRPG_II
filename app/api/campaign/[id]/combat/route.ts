@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server'
-import { campaignRepository, charsheetRepository, combatEffectRepository } from '@repositories'
+import { charsheetRepository, combatEffectRepository } from '@repositories'
+import { adminUpdateDoc } from '@utils/firestore/adminDocs'
 import { Combat, Combatant, CombatLog, AppliedEffect, Message } from '@models'
 import { triggerPusher } from '@utils/pusher'
 import { PusherEvent } from '@enums'
@@ -1007,10 +1008,11 @@ export async function POST(
             })
         }
 
-        // Salva a campanha atualizada
-        const plainCampaign = JSON.parse(JSON.stringify(campaign))
+        // Salva só o estado do combate (caminho de campo): o resto da campanha (presença, notas, jogadores)
+        // pode ter mudado desde a leitura no início da requisição, e regravá-la inteira desfazia isso
+        const plainCombat = JSON.parse(JSON.stringify(campaign.session.combat))
 
-        await campaignRepository.update(plainCampaign)
+        await adminUpdateDoc('campaigns', campaign.id, { 'session.combat': plainCombat })
 
         if (combatMessage) {
             try {

@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/promise-function-async */
-import { campaignRepository, userRepository } from '@repositories';
+import type { Campaign } from '@models/entities';
+import { userRepository } from '@repositories';
+import { adminUpdateDocInTransaction } from '@utils/firestore/adminDocs';
 import { chunk } from '@utils/helpers/chunk';
 import { assertId, forbidden, handleRouteError, readJsonBody, requireCampaignMember, requireUser } from '@utils/api';
 import type { NextRequest } from 'next/server';
@@ -46,17 +48,15 @@ export async function DELETE(req: NextRequest, { params }: { params: id }): Prom
             throw forbidden('Apenas o mestre pode remover outros jogadores');
         }
 
-        const updatedPlayers = campaign.players.filter(p => p.userId !== userId);
-        const updatedSessionUsers = campaign.session.users.filter(u => u !== userId);
-
-        await campaignRepository.update({
-            ...campaign,
-            players: updatedPlayers,
-            session: {
-                ...campaign.session,
-                users: updatedSessionUsers
-            }
-        });
+        // Só `players` e `session.users`, dentro de uma transação: sair ou remover alguém não regrava a
+        // campanha inteira (o que desfazia entradas e mudanças simultâneas)
+        await adminUpdateDocInTransaction<null, Campaign>('campaigns', campaign.id, data => ({
+            fields: {
+                players: (data?.players ?? []).filter(p => p.userId !== userId),
+                'session.users': (data?.session?.users ?? []).filter(u => u !== userId)
+            },
+            result: null
+        }));
 
         return Response.json({ message: 'USER REMOVED FROM CAMPAIGN' });
     } catch (error) {

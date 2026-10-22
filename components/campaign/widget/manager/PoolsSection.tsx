@@ -26,7 +26,7 @@ export default function PoolsSection({ widget, patch }: PoolsSectionProps): Reac
     return (
         <SectionAccordion
             summary={(
-                <Typography fontWeight={700} display="flex" alignItems="center" gap={0.75}>
+                <Typography component="div" fontWeight={700} display="flex" alignItems="center" gap={0.75}>
                     <SavingsIcon fontSize="small" /> Fundos Comuns ({widget.pools?.length ?? 0})
                     <Chip label="BETA" size="small" color="secondary" sx={{ height: 18, fontSize: '0.75rem' }} />
                 </Typography>

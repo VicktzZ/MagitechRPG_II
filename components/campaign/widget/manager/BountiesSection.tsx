@@ -32,7 +32,7 @@ export default function BountiesSection({ widget, patch }: BountiesSectionProps)
     return (
         <SectionAccordion
             summary={(
-                <Typography fontWeight={700} display="flex" alignItems="center" gap={0.75}>
+                <Typography component="div" fontWeight={700} display="flex" alignItems="center" gap={0.75}>
                     <AssignmentIcon fontSize="small" /> Tarefas ({widget.bounties?.length ?? 0})
                     <Chip label="BETA" size="small" color="secondary" sx={{ height: 18, fontSize: '0.75rem' }} />
                 </Typography>

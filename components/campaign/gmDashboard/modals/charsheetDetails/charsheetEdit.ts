@@ -15,8 +15,8 @@ export function buildEditSnapshot(charsheet: Required<CharsheetDTO>): Partial<Ch
         attributes: { ...charsheet.attributes },
         expertises: { ...charsheet.expertises },
         mods: {
-            attributes: { ...charsheet.mods?.attributes },
-            expertises: { ...charsheet.mods?.expertises }
+            ...charsheet.mods,
+            attributes: { ...charsheet.mods?.attributes }
         },
         points: { ...charsheet.points },
         inventory: {
@@ -33,24 +33,11 @@ export function buildEditSnapshot(charsheet: Required<CharsheetDTO>): Partial<Ch
     };
 }
 
-/** Dados restaurados ao cancelar a edição */
-export function buildCancelSnapshot(charsheet: Required<CharsheetDTO>): Partial<CharsheetDTO> {
-    return {
-        name: charsheet.name,
-        playerName: charsheet.playerName,
-        level: charsheet.level,
-        stats: { ...charsheet.stats },
-        attributes: { ...charsheet.attributes },
-        capacity: { ...charsheet.capacity },
-        inventory: {
-            ...charsheet.inventory,
-            weapons: normalizeToArray(charsheet.inventory?.weapons),
-            armors: normalizeToArray(charsheet.inventory?.armors),
-            items: normalizeToArray(charsheet.inventory?.items)
-        },
-        skills: { ...charsheet.skills }
-    };
-}
+/**
+ * Dados restaurados ao cancelar a edição: os mesmos campos que a edição abriu, para que cancelar e
+ * editar de novo sem fechar o modal não traga de volta o que foi alterado (idade, raça, perícias, magias...)
+ */
+export const buildCancelSnapshot = buildEditSnapshot;
 
 /** Helper para obter valor do input de forma segura */
 export const getInputValue = (value: unknown, fallback?: number): string => {

@@ -79,7 +79,9 @@ export const authOptions: NextAuthOptions = {
                 const newImage = p?.picture ?? p?.image_url;
 
                 if (existingUser) {
-                    if (existingUser.image !== newImage) {
+                    // Sem foto no perfil não há o que atualizar: gravar `image: undefined` o Firestore recusa
+                    // e o login falhava com AccessDenied
+                    if (newImage && existingUser.image !== newImage) {
                         await userRepository.update({
                             ...existingUser,
                             image: newImage
@@ -90,8 +92,8 @@ export const authOptions: NextAuthOptions = {
 
                 const newUser = new User()
                 newUser.email = email;
-                newUser.name = p?.name?.replace(' ', '').toLowerCase() ?? p?.username?.replace(' ', '').toLowerCase();
-                newUser.image = newImage;
+                newUser.name = p?.name?.replace(' ', '').toLowerCase() ?? p?.username?.replace(' ', '').toLowerCase() ?? email.split('@')[0];
+                if (newImage) newUser.image = newImage;
                 newUser.charsheets = [];
 
                 await userRepository.create(newUser);

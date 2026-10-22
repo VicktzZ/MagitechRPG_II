@@ -180,7 +180,7 @@ export default function CampaignOptionsModal({
                                                 label='Modo'
                                                 value={campaignProps.mode}
                                                 placeholder='Modo da campanha'
-                                                onChange={(e) => { setCampaignProps(state => ({ ...state, mode: e.target.value })); }}
+                                                onChange={(e) => { setCampaignProps(state => ({ ...state, mode: e.target.value as Campaign['mode'] })); }}
                                                 displayEmpty
                                             >
                                                 <MenuItem value="" disabled>Selecione um modo</MenuItem>

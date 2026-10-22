@@ -13,6 +13,7 @@ import { useInventoryFilters } from './inventory/useInventoryFilters';
 import { useInventoryTotals } from './inventory/useInventoryTotals';
 import { useSessionPlayers } from './inventory/useSessionPlayers';
 import { useWeaponRolls } from './inventory/useWeaponRolls';
+import { normalizeToArray } from '@utils/normalizeToArray';
 
 export default function InventorySection(): ReactElement {
     const { charsheet } = useCampaignCurrentCharsheetContext();
@@ -63,9 +64,9 @@ export default function InventorySection(): ReactElement {
                     onSearchChange={setSearchQuery}
                     counts={{
                         all: totalItems,
-                        weapons: charsheet.inventory.weapons.length,
-                        armors: charsheet.inventory.armors.length,
-                        items: charsheet.inventory.items.length
+                        weapons: normalizeToArray(charsheet.inventory.weapons).length,
+                        armors: normalizeToArray(charsheet.inventory.armors).length,
+                        items: normalizeToArray(charsheet.inventory.items).length
                     }}
                 />
 
