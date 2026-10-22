@@ -32,6 +32,28 @@ export async function adminUpdateDoc(name: CollectionName, id: string, data: Rec
     });
 }
 
+/**
+ * update() parcial dentro de uma transação: `run` recebe o documento como está
+ * agora (undefined se não existir), pode lançar um erro para abortar e devolve os
+ * campos a gravar (mesma semântica de adminUpdateDoc) e um resultado. Serve para
+ * conferir uma condição e gravar sem que outra escrita passe entre as duas coisas.
+ */
+export async function adminUpdateDocInTransaction<R, D = Record<string, any>>(
+    name: CollectionName,
+    id: string,
+    run: (data: D | undefined) => { fields: Record<string, unknown>; result: R }
+): Promise<R> {
+    const ref = collection(name).doc(id);
+
+    return await admin.firestore().runTransaction(async (transaction) => {
+        const snapshot = await transaction.get(ref);
+        const { fields, result } = run(snapshot.exists ? snapshot.data() as D : undefined);
+
+        transaction.update(ref, { ...fields, updatedAt: admin.firestore.FieldValue.serverTimestamp() });
+        return result;
+    });
+}
+
 // Até 8 segmentos separados por ponto; sem os caracteres que o Firestore proíbe em caminhos
 // (~ * / [ ] `) nem caracteres de controle. Nomes de perícias como "RES Física" são válidos.
 // eslint-disable-next-line no-control-regex

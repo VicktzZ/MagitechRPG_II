@@ -20,20 +20,20 @@ function formatModifier(mod: CombatEffectModifier): string {
     const ele = mod.element ? ` [${mod.element}]` : ''
 
     switch (mod.kind) {
-    case 'stat_bonus':            return `⬆️${tgt}${val ? ` ${val}` : ''}`
-    case 'stat_penalty':          return `⬇️${tgt}${val ? ` ${val}` : ''}`
-    case 'damage_resistance':     return `🛡️ resiste${ele}${val ? ` ${val}` : ''}`
-    case 'damage_vulnerability':  return `💥 vulnerável${ele}${val ? ` ${val}` : ''}`
-    case 'damage_dealt_bonus':    return `⚔️ dano causado ${val || '+'}`
-    case 'damage_dealt_penalty':  return `⚔️ dano causado ${val || '-'}`
+    case 'stat_bonus':            return `aumenta${tgt}${val ? ` ${val}` : ''}`
+    case 'stat_penalty':          return `reduz${tgt}${val ? ` ${val}` : ''}`
+    case 'damage_resistance':     return `resiste${ele}${val ? ` ${val}` : ''}`
+    case 'damage_vulnerability':  return `vulnerável${ele}${val ? ` ${val}` : ''}`
+    case 'damage_dealt_bonus':    return `dano causado ${val || '+'}`
+    case 'damage_dealt_penalty':  return `dano causado ${val || '-'}`
     case 'advantage':             return `vantagem${tgt}`
-    case 'disadvantage':          return `⚠️ desvantagem${tgt}`
-    case 'skip_turn':             return '⏭️ pula turno'
-    case 'no_healing':            return '🚫 cura bloqueada'
-    case 'no_actions':            return '🚫 não pode agir'
-    case 'no_spells':             return '🚫 sem magias'
-    case 'overflow_stat':         return `💗${tgt} pode ultrapassar${val ? ` ${val}` : ''}`
-    case 'flag':                  return `🏷️${tgt}${val ? ` (${val})` : ''}`
+    case 'disadvantage':          return `desvantagem${tgt}`
+    case 'skip_turn':             return 'pula turno'
+    case 'no_healing':            return 'cura bloqueada'
+    case 'no_actions':            return 'não pode agir'
+    case 'no_spells':             return 'sem magias'
+    case 'overflow_stat':         return `${tgt} pode ultrapassar${val ? ` ${val}` : ''}`.trim()
+    case 'flag':                  return `marca${tgt}${val ? ` (${val})` : ''}`
     default:                      return `${mod.kind}${tgt}${val ? ` ${val}` : ''}`
     }
 }

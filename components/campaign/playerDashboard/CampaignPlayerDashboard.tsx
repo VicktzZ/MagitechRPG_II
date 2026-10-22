@@ -5,22 +5,25 @@ import { useCampaignContext, useCampaignCurrentCharsheetContext } from '@context
 import {
     AttachMoney,
     AutoStories,
+    Casino,
     Inventory2,
+    Notes,
     Person,
     SelfImprovement,
     SportsMartialArts,
     Tune
 } from '@mui/icons-material';
 import {
-    Backdrop,
     Box,
-    CircularProgress,
-    Stack
+    Stack,
+    type SxProps
 } from '@mui/material';
 import { useState, useEffect, useMemo, type ReactElement } from 'react';
 
-import { Passives, Skills } from '@components/charsheet';
+import { CustomDices, Passives, Skills } from '@components/charsheet';
 import Section from '../Section';
+import NotesSection from './NotesSection';
+import PlayerStickyBar, { type PlayerSectionLink } from './PlayerStickyBar';
 import ExpertiseSection from './ExpertiseSection';
 import InventorySection from './InventorySection';
 import MoneyAndAmmo from './MoneyAndAmmo';
@@ -32,33 +35,25 @@ import ShopDrawer from './ShopDrawer';
 import { PerkCardsModal, type SessionPlayer } from '@features/roguelite/components';
 import { savePerkToCharsheet } from '@features/roguelite/utils';
 import { DonationReceivedModal, type DonationNotification } from '@features/roguelite/components/perkCardsModal/components/DonationReceivedModal';
-import { useSnackbar } from '@node_modules/notistack';
+import { useSnackbar } from 'notistack';
 import { useSession } from 'next-auth/react';
 import { campaignService } from '@services';
 import { useCharsheetSystem } from '@hooks/useCharsheetSystem';
+import type { Spell } from '@models/entities';
+import { normalizeToArray } from '@utils/normalizeToArray';
+import type { CharsheetDTO } from '@models/dtos';
 
-/**
- * Normaliza um valor que pode ser um array ou um objeto com chaves numéricas
- * Converte Record<number, T> para T[]
- */
-function normalizeToArray<T>(value: any): T[] {
-    if (!value) return [];
-    if (Array.isArray(value)) return value;
-    
-    // Se é um objeto com chaves numéricas, converter para array
-    if (typeof value === 'object') {
-        const keys = Object.keys(value);
-        const isNumericKeys = keys.every(key => !isNaN(Number(key)));
-        if (isNumericKeys) {
-            return keys
-                .map(key => Number(key))
-                .sort((a, b) => a - b)
-                .map(key => value[key]);
-        }
-    }
-    
-    return [];
-}
+/** Notificação gravada na ficha (doações recebidas); o campo não consta no tipo da ficha */
+type CharsheetNotification = DonationNotification & { type?: string, read?: boolean, createdAt?: string }
+
+const notificationsOf = (sheet: CharsheetDTO | null | undefined): CharsheetNotification[] =>
+    (sheet as (CharsheetDTO & { notifications?: CharsheetNotification[] }) | null | undefined)?.notifications ?? []
+
+/** Peça de equipamento como o modal de perks a lê: `effect` pode ser texto ou um objeto de efeito */
+interface EquipmentLike { id?: string, name: string, description?: string, effect?: unknown, rarity?: string, categ?: string, ap?: number }
+
+const equipmentDescription = (item: EquipmentLike): string =>
+    item.description || (typeof item.effect === 'string' ? item.effect : '')
 
 export default function CampaignPlayerDashboard(): ReactElement | null {
     const { users, campaign, charsheets } = useCampaignContext();
@@ -74,6 +69,9 @@ export default function CampaignPlayerDashboard(): ReactElement | null {
         const pendingUsers = campaign?.session?.pendingPerkUsers || []
         return !!(userId && pendingUsers.includes(userId))
     }, [ session?.user?.id, campaign?.session?.pendingPerkUsers ])
+
+    // Cabeçalho do personagem: a barra fixa observa quando ele sai da tela
+    const [ headerElement, setHeaderElement ] = useState<HTMLElement | null>(null)
 
     // Modal abre SOMENTE quando o usuário está na lista de pendentes
     const [ perkModalOpen, setPerkModalOpen ] = useState(false)
@@ -93,15 +91,15 @@ export default function CampaignPlayerDashboard(): ReactElement | null {
 
     // Verifica se há notificações de doação não lidas
     useEffect(() => {
-        const notifications = charsheet?.notifications || []
+        const notifications = notificationsOf(charsheet)
         // Filtra notificações não lidas e não processadas localmente
         const unreadDonations = notifications.filter(
-            (n: any) => n.type === 'donation' && !n.read && !processedNotificationIds.has(n.id)
+            n => n.type === 'donation' && !n.read && !processedNotificationIds.has(n.id ?? '')
         )
         
         // Pega a mais recente (última na lista, ou ordena por data se houver)
         const latestDonation = unreadDonations.length > 0 
-            ? unreadDonations.sort((a: any, b: any) => 
+            ? unreadDonations.sort((a, b) => 
                 new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
             )[0]
             : null
@@ -115,7 +113,7 @@ export default function CampaignPlayerDashboard(): ReactElement | null {
                 itemRarity: latestDonation.itemRarity
             })
         }
-    }, [ charsheet?.notifications, processedNotificationIds, donationNotification ])
+    }, [ charsheet, processedNotificationIds, donationNotification ])
 
     // Prepara lista de jogadores da sessão (excluindo o jogador atual)
     const sessionPlayers: SessionPlayer[] = useMemo(() => {
@@ -126,21 +124,14 @@ export default function CampaignPlayerDashboard(): ReactElement | null {
         const campaignPlayers = campaign?.players || []
         const allCharsheets = charsheets || []
         
-        console.log('[CampaignPlayerDashboard] Debug inicial:', {
-            usersPlayers: users.players.map(p => ({ id: p.id, name: p.name })),
-            currentUserId,
-            campaignPlayers,
-            allCharsheets: allCharsheets.map(cs => ({ id: cs.id, userId: cs.userId, name: cs.name }))
-        })
-        
         const allPlayers = users.players
             .filter(player => player.id !== currentUserId)
             .map(player => {
                 // Primeiro, encontra o charsheetId do jogador na campanha
-                const playerInCampaign = campaignPlayers.find((cp: any) => cp.userId === player.id)
+                const playerInCampaign = campaignPlayers.find(cp => cp.userId === player.id)
                 // Depois, busca o charsheet completo
                 const playerCharsheet = playerInCampaign 
-                    ? allCharsheets.find((cs: any) => cs.id === playerInCampaign.charsheetId)
+                    ? allCharsheets.find(cs => cs.id === playerInCampaign.charsheetId)
                     : undefined
                 
                 const sessionPlayer = {
@@ -155,28 +146,11 @@ export default function CampaignPlayerDashboard(): ReactElement | null {
                     maxCargo: playerCharsheet?.capacity?.max || 0
                 }
                 
-                console.log(`[CampaignPlayerDashboard] Processando jogador ${player.name}:`, {
-                    playerId: player.id,
-                    playerInCampaign,
-                    hasCharsheet: !!playerCharsheet,
-                    charsheetId: sessionPlayer.charsheetId,
-                    charsheetName: playerCharsheet?.name,
-                    sessionPlayer
-                })
-                
                 return sessionPlayer
             })
         
         // Filtra jogadores sem charsheet
         const players = allPlayers.filter(p => p.charsheetId)
-        
-        console.log('[CampaignPlayerDashboard] SessionPlayers final:', {
-            totalPlayers: users.players.length,
-            currentUserId,
-            filteredBefore: allPlayers.length,
-            filteredPlayers: players.length,
-            sessionPlayers: players
-        })
         
         return players
     }, [ users.players, session?.user?.id, charsheets, campaign?.players ])
@@ -203,7 +177,7 @@ export default function CampaignPlayerDashboard(): ReactElement | null {
     // Prepara informações de espaço do charsheet para o modal de perks
     const charsheetSpace = useMemo(() => ({
         spellSpace: charsheet?.spellSpace || 0,
-        currentSpells: normalizeToArray(charsheet?.spells).map(spell => ({
+        currentSpells: normalizeToArray<Spell>(charsheet?.spells).map(spell => ({
             id: spell.id || crypto.randomUUID(),
             name: spell.name,
             description: spell.stages?.[0] || '',
@@ -211,18 +185,18 @@ export default function CampaignPlayerDashboard(): ReactElement | null {
             element: spell.element
         })),
         weaponSlots: 2, // Limite padrão de 2 armas
-        currentWeapons: normalizeToArray(charsheet?.inventory?.weapons).map(weapon => ({
+        currentWeapons: normalizeToArray<EquipmentLike>(charsheet?.inventory?.weapons).map(weapon => ({
             id: weapon.id || crypto.randomUUID(),
             name: weapon.name,
-            description: weapon.description || weapon.effect || '',
+            description: equipmentDescription(weapon),
             rarity: weapon.rarity,
             categ: weapon.categ
         })),
         armorSlots: 1, // Limite padrão de 1 armadura
-        currentArmors: normalizeToArray(charsheet?.inventory?.armors).map(armor => ({
+        currentArmors: normalizeToArray<EquipmentLike>(charsheet?.inventory?.armors).map(armor => ({
             id: armor.id || crypto.randomUUID(),
             name: armor.name,
-            description: armor.description || armor.effect || '',
+            description: equipmentDescription(armor),
             rarity: armor.rarity,
             ap: armor.ap
         }))
@@ -238,9 +212,7 @@ export default function CampaignPlayerDashboard(): ReactElement | null {
         // Se o usuário estava na lista de pendentes, remove após escolher
         if (userId && wasPending) {
             try {
-                console.log('[CampaignPlayerDashboard] Removendo usuário da lista de pendentes:', userId)
                 await campaignService.removePendingPerkUser(campaign.id, userId)
-                console.log('[CampaignPlayerDashboard] Usuário removido com sucesso')
             } catch (error) {
                 console.error('Erro ao remover usuário da lista de pendentes:', error)
             }
@@ -264,14 +236,13 @@ export default function CampaignPlayerDashboard(): ReactElement | null {
         
         // Marca a notificação como lida no charsheet
         try {
-            const notifications = charsheet?.notifications || []
-            const updatedNotifications = notifications.map((n: any) => 
+            const notifications = notificationsOf(charsheet)
+            const updatedNotifications = notifications.map(n => 
                 n.id === notificationId ? { ...n, read: true } : n
             )
             
-            await updateCharsheet({
-                notifications: updatedNotifications
-            })
+            // `notifications` não consta no tipo da ficha, mas é gravado nela
+            await updateCharsheet({ notifications: updatedNotifications })
         } catch (error) {
             console.error('Erro ao marcar notificação como lida:', error)
         }
@@ -282,123 +253,130 @@ export default function CampaignPlayerDashboard(): ReactElement | null {
     const charsheetUser = users.players.find(player => player.id === charsheet.userId);
     const avatar = charsheetUser?.image ?? '/assets/default-avatar.jpg';
 
+    // Atalhos da barra fixa: um por seção, na ordem em que aparecem
+    const sections: PlayerSectionLink[] = [
+        { id: 'passivas', label: 'Passivas' },
+        { id: 'inventario', label: 'Inventário' },
+        { id: 'habilidades', label: 'Habilidades' },
+        { id: 'recursos', label: 'Recursos' },
+        ...(showSpells ? [ { id: 'magias', label: 'Magias' } ] : []),
+        ...(charsheet.systemId ? [ { id: 'sistema', label: 'Sistema' } ] : []),
+        { id: 'pericias', label: 'Perícias' },
+        { id: 'dados', label: 'Dados' },
+        { id: 'anotacoes', label: 'Anotações' }
+    ]
+
+    // Duas seções lado a lado quando a COLUNA (não a janela) comporta; com o chat encaixado a coluna é mais estreita
+    const pair = (columns: string): SxProps => ({
+        display: 'grid',
+        gap: 3,
+        gridTemplateColumns: 'minmax(0, 1fr)',
+        '@container (min-width: 820px)': { gridTemplateColumns: columns }
+    })
+
+    const sectionIcon = { color: 'text.secondary' }
+
     return (
-        <Box 
-            sx={{ 
-                width: '100%', 
-                pb: 8, 
+        <Box
+            sx={{
+                width: '100%',
+                pb: 8,
                 position: 'relative',
-                minHeight: '100vh'
+                containerType: 'inline-size',
+                '--campaign-sticky-offset': '120px'
             }}
         >
-            {!charsheet ? (
-                <Backdrop 
-                    open={true}
-                    sx={{ 
-                        zIndex: (theme) => theme.zIndex.drawer + 1
-                    }}
-                >
-                    <Stack spacing={2} alignItems="center">
-                        <CircularProgress size={60} />
-                    </Stack>
-                </Backdrop>
-            ) : (
-                <Box 
-                    sx={{
-                        maxWidth: { xs: '100%', lg: '1400px', xl: '1800px' },
-                        width: '100%',
-                        mx: 'auto',
-                        px: { xs: 2, md: 3, lg: 4 },
-                        '@media (min-width: 2000px)': { maxWidth: '95%' }
-                    }}
-                >
-                    {/* Header da Charsheet */}
-                    <PlayerHeader avatar={avatar} />
+            <PlayerHeader avatar={avatar} rootRef={setHeaderElement} />
+            <PlayerStickyBar headerElement={headerElement} sections={sections} />
 
-                    {/* Grid Principal */}
-                    <Stack spacing={4}>
-                        {/* Passivas */}
-                        <Section title="Passivas" icon={<SelfImprovement sx={{ color: 'text.secondary' }} />}>
-                            <Passives realtime={true} />
-                        </Section>
+            <Stack spacing={3} sx={{ mt: 3 }}>
+                <Section id="passivas" title="Passivas" icon={<SelfImprovement sx={sectionIcon} />}>
+                    <Passives realtime={true} />
+                </Section>
 
-                        {/* Inventário e Habilidades */}
-                        <Box sx={{ display: 'flex', gap: { xs: 2, md: 4 }, flexDirection: { xs: 'column', md: 'row' } }}>
-                            <Section title="Inventário" icon={<Inventory2 sx={{ color: 'success.main' }} />} sx={{ width: { xs: '100%', md: '60%' } }}>
-                                <InventorySection />
-                            </Section>
-                            <Section title="Habilidades" icon={<SportsMartialArts sx={{ color: 'primary.main' }} />} sx={{ width: { xs: '100%', md: '40%' } }}>
-                                <Skills />
-                            </Section>
-                        </Box>
-
-                        {/* Recursos e Magias */}
-                        <Box sx={{ display: 'flex', gap: { xs: 2, md: 4 }, flexDirection: { xs: 'column', md: 'row' } }}>
-                            <Section title="Recursos" icon={<AttachMoney sx={{ color: 'warning.main' }} />} sx={{ width: { xs: '100%', md: showSpells ? '40%' : '100%' } }}>
-                                <MoneyAndAmmo />
-                            </Section>
-                            {showSpells && (
-                                <Section title="Magias" icon={<AutoStories sx={{ color: 'secondary.main' }} />} sx={{ width: { xs: '100%', md: '60%' } }}>
-                                    <SpellsSection />
-                                </Section>
-                            )}
-                        </Box>
-
-                        {/* Recursos customizados do sistema (ex: Bateria, O2, Estresse) */}
-                        {charsheet.systemId && (
-                            <Section title="Recursos do Sistema" icon={<Tune sx={{ color: 'warning.main' }} />}>
-                                <CampaignCustomResources />
-                            </Section>
-                        )}
-
-                        {/* Perícias */}
-                        <Section title="Perícias" icon={<Person sx={{ color: 'info.main' }} />}>
-                            <ExpertiseSection />
-                        </Section>
-                    </Stack>
-
-                    {/* Modal de Perks - aparece SOMENTE quando GM oferece e usuário está na lista */}
-                    {isUserPendingPerk && (
-                        <PerkCardsModal 
-                            open={perkModalOpen} 
-                            seed={campaign.session?.sharedPerkSeed || undefined}
-                            level={charsheet.level}
-                            hideFilters={true}
-                            initialFilters={campaign.session?.perkFilters ? {
-                                rarities: campaign.session.perkFilters.rarities,
-                                type: campaign.session.perkFilters.type || undefined,
-                                element: campaign.session.perkFilters.element || undefined,
-                                spellLevel: campaign.session.perkFilters.spellLevel || undefined,
-                                execution: campaign.session.perkFilters.execution || undefined,
-                                itemKinds: campaign.session.perkFilters.itemKinds,
-                                skillTypes: campaign.session.perkFilters.skillTypes
-                            } : undefined}
-                            charsheetSpace={charsheetSpace}
-                            sessionPlayers={sessionPlayers}
-                            campaignId={campaign.id}
-                            currentCharsheetId={charsheet.id}
-                            currentPlayerName={charsheet.name}
-                            onPerkSelected={handlePerkSelected}
-                            onClose={handleCloseModal}
-                        />
-                    )}
-                
-                    {/* Lista de perks adquiridos - apenas em Roguelite */}
-                    {campaign.mode === 'Roguelite' && (
-                        <AcquiredPerks />
-                    )}
-
-                    {/* Modal de notificação de doação recebida */}
-                    <DonationReceivedModal
-                        open={!!donationNotification}
-                        donation={donationNotification}
-                        onClose={handleCloseDonationModal}
-                    />
-
-                    {/* Drawer de loja - disponível em qualquer campanha quando a loja está aberta */}
-                    <ShopDrawer />
+                <Box sx={pair('minmax(0, 3fr) minmax(0, 2fr)')}>
+                    <Section id="inventario" title="Inventário" icon={<Inventory2 sx={sectionIcon} />}>
+                        <InventorySection />
+                    </Section>
+                    <Section id="habilidades" title="Habilidades" icon={<SportsMartialArts sx={sectionIcon} />}>
+                        <Skills />
+                    </Section>
                 </Box>
+
+                <Box sx={showSpells ? pair('minmax(0, 2fr) minmax(0, 3fr)') : undefined}>
+                    <Section id="recursos" title="Recursos" icon={<AttachMoney sx={sectionIcon} />}>
+                        <MoneyAndAmmo />
+                    </Section>
+                    {showSpells && (
+                        <Section id="magias" title="Magias" icon={<AutoStories sx={sectionIcon} />}>
+                            <SpellsSection />
+                        </Section>
+                    )}
+                </Box>
+
+                {/* Recursos customizados do sistema (ex: Bateria, O2, Estresse) */}
+                {charsheet.systemId && (
+                    <Section id="sistema" title="Recursos do Sistema" icon={<Tune sx={sectionIcon} />}>
+                        <CampaignCustomResources />
+                    </Section>
+                )}
+
+                {/* Perícias */}
+                <Section id="pericias" title="Perícias" icon={<Person sx={sectionIcon} />}>
+                    <ExpertiseSection />
+                </Section>
+
+                {/* Dados e anotações do jogador: ficavam na coluna lateral, longe da ficha */}
+                <Box sx={pair('minmax(0, 1fr) minmax(0, 1fr)')}>
+                    <Section id="dados" title="Dados customizados" icon={<Casino sx={sectionIcon} />}>
+                        <CustomDices enableChatIntegration={true} realtime={true} />
+                    </Section>
+                    <Section id="anotacoes" title="Anotações" icon={<Notes sx={sectionIcon} />}>
+                        <NotesSection />
+                    </Section>
+                </Box>
+            </Stack>
+
+            {/* Modal de Perks - aparece SOMENTE quando GM oferece e usuário está na lista */}
+            {isUserPendingPerk && (
+                <PerkCardsModal 
+                    open={perkModalOpen} 
+                    seed={campaign.session?.sharedPerkSeed || undefined}
+                    level={charsheet.level}
+                    hideFilters={true}
+                    initialFilters={campaign.session?.perkFilters ? {
+                        rarities: campaign.session.perkFilters.rarities,
+                        type: campaign.session.perkFilters.type || undefined,
+                        element: campaign.session.perkFilters.element || undefined,
+                        spellLevel: campaign.session.perkFilters.spellLevel || undefined,
+                        execution: campaign.session.perkFilters.execution || undefined,
+                        itemKinds: campaign.session.perkFilters.itemKinds,
+                        skillTypes: campaign.session.perkFilters.skillTypes
+                    } : undefined}
+                    charsheetSpace={charsheetSpace}
+                    sessionPlayers={sessionPlayers}
+                    campaignId={campaign.id}
+                    currentCharsheetId={charsheet.id}
+                    currentPlayerName={charsheet.name}
+                    onPerkSelected={handlePerkSelected}
+                    onClose={handleCloseModal}
+                />
             )}
+            
+            {/* Lista de perks adquiridos - apenas em Roguelite */}
+            {campaign.mode === 'Roguelite' && (
+                <AcquiredPerks />
+            )}
+
+            {/* Modal de notificação de doação recebida */}
+            <DonationReceivedModal
+                open={!!donationNotification}
+                donation={donationNotification}
+                onClose={handleCloseDonationModal}
+            />
+
+            {/* Drawer de loja - disponível em qualquer campanha quando a loja está aberta */}
+            <ShopDrawer />
         </Box>
     );
 }

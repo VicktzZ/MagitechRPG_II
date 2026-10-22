@@ -1,6 +1,9 @@
 import { PusherEvent } from '@enums';
-import { campaignRepository, charsheetRepository } from '@repositories';
-import { pusherServer } from '@utils/pusher';
+import type { Campaign } from '@models/entities';
+import { charsheetRepository } from '@repositories';
+import { triggerPusher } from '@utils/pusher';
+import { adminUpdateDocInTransaction } from '@utils/firestore/adminDocs';
+import { disconnectFields } from '@utils/campaignPresence';
 import { findCampaignOrThrow, getCampaignRole, handleRouteError, readJsonBody, requireUser, toCampaignPreview } from '@utils/api';
 
 export async function POST(req: Request): Promise<Response> {
@@ -12,13 +15,12 @@ export async function POST(req: Request): Promise<Response> {
         const userId = user.id;
         const campaign = await findCampaignOrThrow(String(body.campaignCode ?? ''));
 
-        await campaignRepository.update({
-            ...campaign,
-            session: {
-                ...campaign.session,
-                users: campaign.session.users.filter(u => u !== userId)
-            }
-        });
+        // Só `session.users` muda, dentro de uma transação: sair não reescreve a campanha inteira
+        // (o que desfazia entradas e alterações simultâneas)
+        await adminUpdateDocInTransaction<null, Campaign>('campaigns', campaign.id, data => ({
+            fields: disconnectFields(data, userId),
+            result: null
+        }));
 
         const updatedCampaign = await findCampaignOrThrow(campaign.campaignCode);
 
@@ -30,7 +32,7 @@ export async function POST(req: Request): Promise<Response> {
             if (userSheet) userName = userSheet.name;
         }
 
-        await pusherServer.trigger(
+        await triggerPusher(
             'presence-' + campaign.campaignCode,
             PusherEvent.USER_EXIT,
             {

@@ -197,8 +197,8 @@ export const useResourceList = <T extends Record<string, any>>(
         // Processa em ordem reversa para que itens de páginas mais recentes
         // (ex: adicionados via mutation) tenham prioridade
         for (let i = allItems.length - 1; i >= 0; i--) {
-            const item = allItems[i];
-            const id = item.id;
+            const item = allItems[i]!;
+            const id = (item as { id?: string }).id;
             if (id) {
                 uniqueMap.set(id, item);
             }

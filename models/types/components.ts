@@ -1,6 +1,7 @@
 import type { ReactElement } from 'react';
 import type { FilterValue } from '@utils/filterSelection';
 import type { ApiParams } from './api';
+import type { ResourcePage } from './hooks';
 
 export interface SubFilterConfig<T> {
     /** Rótulo da seção, ex: "Subtipo" */
@@ -29,7 +30,7 @@ export interface ResourceListModalProps<T extends Record<string, any>> {
     open: boolean;
     onClose: () => void;
     queryKey: string;
-    fetchFunction: (params: ApiParams<string, T>) => Promise<T[]>;
+    fetchFunction: (params: ApiParams<string, T>) => Promise<ResourcePage<T>>;
     addFunction: (item: T) => void;
     validateAdd: (item: T) => { isValid: boolean; errorMessage?: string };
     successMessage: (item: T) => string;

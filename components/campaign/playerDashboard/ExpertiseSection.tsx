@@ -240,18 +240,9 @@ export default function ExpertiseSection(): ReactElement {
 
     return (
         <Box sx={{ width: '100%' }}>
-            <Paper 
-                elevation={2}
-                sx={{ 
-                    p: 3, 
-                    borderRadius: 3,
-                    bgcolor: 'background.paper',
-                    border: '1px solid',
-                    borderColor: 'divider'
-                }}
-            >
+            {/* A moldura e o título vêm do Section da campanha */}
+            <Paper elevation={0} sx={{ bgcolor: 'transparent' }}>
                 <Stack spacing={3}>
-                    {/* Header */}
 
                     {/* Estatísticas por Nível */}
                     <Box 
@@ -534,7 +525,7 @@ export default function ExpertiseSection(): ReactElement {
                                                                 borderColor: alpha(config.color, 0.38),
                                                                 color: config.color,
                                                                 fontWeight: 600,
-                                                                fontSize: '0.7rem'
+                                                                fontSize: '0.75rem'
                                                             }}
                                                         />
                                                     </Box>

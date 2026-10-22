@@ -1,8 +1,9 @@
 import { PusherEvent } from '@enums';
 import { Note } from '@models';
-import { campaignRepository } from '@repositories';
-import { pusherServer } from '@utils/pusher';
-import { assertId, assertMaxLength, handleRouteError, readJsonBody, requireCampaignGM, requireUser, TEXT_LIMITS } from '@utils/api';
+import type { Campaign } from '@models/entities';
+import { triggerPusher } from '@utils/pusher';
+import { adminUpdateDocInTransaction } from '@utils/firestore/adminDocs';
+import { assertId, assertMaxLength, handleRouteError, notFound, readJsonBody, requireCampaignGM, requireUser, TEXT_LIMITS } from '@utils/api';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 
@@ -25,12 +26,14 @@ export async function POST(req: Request, { params }: { params: { id: string } })
 
         const newNote = new Note(dto);
 
-        await campaignRepository.update({
-            ...campaign,
-            notes: [ ...(campaign.notes || []), { ...newNote } ]
-        });
+        // Só o campo `notes`, dentro de uma transação: regravar a campanha inteira desfazia o que
+        // outros (jogadores entrando, combate) tivessem gravado desde a leitura
+        await adminUpdateDocInTransaction<null, Campaign>('campaigns', campaign.id, data => ({
+            fields: { notes: [ ...(data?.notes ?? []), { ...newNote } ] },
+            result: null
+        }));
 
-        await pusherServer.trigger(
+        await triggerPusher(
             `presence-${campaign.campaignCode}`,
             PusherEvent.NOTES_UPDATED,
             { ...newNote }
@@ -54,22 +57,16 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
 
         const { noteId, content } = body;
         
-        const updatedNotes = (campaign.notes || []).map(note => 
-            note.id === noteId ? { ...note, content } : note
-        );
-        
-        await campaignRepository.update({
-            ...campaign,
-            notes: updatedNotes
-        });
-        
-        const updatedNote = updatedNotes.find(note => note.id === noteId);
-        
-        if (!updatedNote) {
-            return Response.json({ message: 'Nota não encontrada' }, { status: 404 });
-        }
+        const updatedNote = await adminUpdateDocInTransaction<Note, Campaign>('campaigns', campaign.id, data => {
+            const notes = data?.notes ?? [];
+            const current = notes.find(note => note.id === noteId);
+            if (!current) throw notFound('Nota não encontrada');
 
-        await pusherServer.trigger(
+            const updated = { ...current, content };
+            return { fields: { notes: notes.map(note => note.id === noteId ? updated : note) }, result: updated };
+        });
+
+        await triggerPusher(
             `presence-${campaign.campaignCode}`,
             PusherEvent.NOTES_UPDATED,
             updatedNote
@@ -90,14 +87,12 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
 
         const noteId = assertId(body.noteId, 'noteId');
         
-        const updatedNotes = (campaign.notes || []).filter(note => note.id !== noteId);
-        
-        await campaignRepository.update({
-            ...campaign,
-            notes: updatedNotes
-        });
+        await adminUpdateDocInTransaction<null, Campaign>('campaigns', campaign.id, data => ({
+            fields: { notes: (data?.notes ?? []).filter(note => note.id !== noteId) },
+            result: null
+        }));
 
-        await pusherServer.trigger(
+        await triggerPusher(
             `presence-${campaign.campaignCode}`,
             PusherEvent.NOTES_UPDATED,
             noteId

@@ -53,6 +53,13 @@ export interface UseResourceListParams {
     body?: any
 }
 
+/** Uma página da lista de recursos, como as rotas de busca a devolvem (o hook segue `nextCursor` enquanto `hasMore`) */
+export interface ResourcePage<T> {
+    data: T[];
+    hasMore?: boolean;
+    nextCursor?: string;
+}
+
 export interface UseResourceListOptions<T> {
     initialSearch?: string;
     initialFilters?: string[];
@@ -64,7 +71,7 @@ export interface UseResourceListOptions<T> {
     };
     pageSize?: number;
     queryKey: string;
-    fetchFunction: (params: ApiParams<string, T>) => Promise<T[]>;
+    fetchFunction: (params: ApiParams<string, T>) => Promise<ResourcePage<T>>;
     addFunction?: (item: T) => void;
     validateAdd?: (item: T, currentData: any) => { isValid: boolean; errorMessage?: string };
     successMessage?: (item: T) => string;

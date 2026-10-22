@@ -40,6 +40,7 @@ import {
 } from '@mui/material';
 import { color } from '@themes/tokens';
 import { type ReactElement, useState } from 'react';
+import { asRequestError } from '@utils/errors';
 
 /** Nível e estágio são escalas ordenadas: neutros que clareiam até o âmbar no topo (o número vai sempre em texto) */
 function getSpellLevelColor(level: number) {
@@ -267,7 +268,7 @@ export default function SpellsSection(): ReactElement {
             }
 
             const newMp = Math.max(0, currentMp - result.mpCost);
-            await updateCharsheet({ 'stats.mp': newMp } as any);
+            await updateCharsheet({ 'stats.mp': newMp });
             await sendCombatChatMessage(buildSpellCastMessage(playerName, result));
 
             // Estatísticas: magia conjurada + MP gasto
@@ -280,12 +281,13 @@ export default function SpellsSection(): ReactElement {
                     'resources.mpSpent': result.mpCost
                 }
             } ]);
-        } catch (error: any) {
-            if (error?.response?.status === 409 && error.response.data?.code === 'MP_LIMIT_EXCEEDED') {
+        } catch (error) {
+            const { response } = asRequestError(error);
+            if (response?.status === 409 && response.data?.code === 'MP_LIMIT_EXCEEDED') {
                 // Estado local defasado: o servidor já tinha mais MP gasto neste turno
-                const { spent, limit } = error.response.data;
+                const { spent = 0, limit = 0 } = response.data;
                 await sendCombatChatMessage(buildMpLimitExceededMessage(playerName, spell, result.mpCost, spent, limit));
-                enqueueSnackbar(error.response.data.error, { variant: 'warning' });
+                enqueueSnackbar(response.data.error ?? 'Limite de MP por turno excedido', { variant: 'warning' });
             } else {
                 if (reservedMp) {
                     // Desfaz a reserva para a conjuração que falhou não consumir o limite do turno
@@ -375,18 +377,10 @@ export default function SpellsSection(): ReactElement {
 
     return (
         <Box sx={{ width: '100%' }}>
-            <Paper 
-                elevation={2}
-                sx={{ 
-                    p: 3, 
-                    borderRadius: 3,
-                    bgcolor: 'background.paper',
-                    border: '1px solid',
-                    borderColor: 'divider'
-                }}
-            >
+            {/* A moldura e o título vêm do Section da campanha */}
+            <Paper elevation={0} sx={{ bgcolor: 'transparent' }}>
                 <Stack spacing={3}>
-                    {/* Header com Espaço de Magias */}
+                    {/* Espaço de Magias */}
                     <Box 
                         sx={{
                             display: 'flex',
@@ -424,7 +418,7 @@ export default function SpellsSection(): ReactElement {
                                         : 'MP gasto em magias desde o início do seu turno / limite por turno. Reações em turnos alheios contam.'}
                                 >
                                     <Chip
-                                        label={`${mpLimitReleased ? '🔓 ' : ''}${mpSpentThisTurn} / ${mpLimit}`}
+                                        label={`${mpSpentThisTurn} / ${mpLimit}${mpLimitReleased ? ' (liberado)' : ''}`}
                                         color={mpLimitReleased ? 'success' : mpSpentThisTurn >= mpLimit ? 'error' : 'info'}
                                         variant="filled"
                                         sx={{ fontWeight: 700, fontSize: '0.9rem' }}

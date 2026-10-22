@@ -144,7 +144,7 @@ export default function OfferPerksDialog({
     return (
         <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
             <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <CardGiftcardIcon sx={{ color: 'primary.main' }} />
+                <CardGiftcardIcon sx={{ color: 'text.secondary' }} />
                 Oferecer Vantagens
             </DialogTitle>
             <DialogContent>
@@ -289,7 +289,7 @@ export default function OfferPerksDialog({
                             checked={useSharedSeed}
                             onChange={(e) => setUseSharedSeed(e.target.checked)}
                         />
-                        <LinkIcon sx={{ color: 'primary.main' }} />
+                        <LinkIcon sx={{ color: 'text.secondary' }} />
                         <Box>
                             <Typography variant="body2" fontWeight={600}>
                                 Usar Seed Compartilhada
@@ -407,13 +407,13 @@ export default function OfferPerksDialog({
                                                                             <Chip
                                                                                 label={PERK_TYPE_LABELS[perk.perkType ?? ''] || perk.perkType || 'Bônus'}
                                                                                 size="small"
-                                                                                sx={{ height: 18, fontSize: '0.6rem', bgcolor: `${color}20`, color }}
+                                                                                sx={{ height: 18, fontSize: '0.75rem', bgcolor: `${color}20`, color }}
                                                                             />
                                                                             <Chip
                                                                                 label={perk.rarity || 'Comum'}
                                                                                 size="small"
                                                                                 variant="outlined"
-                                                                                sx={{ height: 18, fontSize: '0.6rem', borderColor: `${color}80`, color }}
+                                                                                sx={{ height: 18, fontSize: '0.75rem', borderColor: `${color}80`, color }}
                                                                             />
                                                                         </Box>
                                                                     </Tooltip>

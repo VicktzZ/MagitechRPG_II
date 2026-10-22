@@ -1,6 +1,7 @@
 import type { CampaignData } from '@models/types/session'
 import type { Campaign, RPGSystem } from '@models/entities'
 import type { Message } from '@models'
+import type { CampaignChat } from '@hooks/useCampaignChatFeed'
 import { createContext, useContext } from 'react'
 
 export interface CampaignContextValue extends CampaignData {
@@ -60,3 +61,7 @@ export const useCampaignContext = (): CampaignContextValue => useContext(campaig
  */
 export const campaignMessagesContext = createContext<Message[]>([])
 export const useCampaignMessages = (): Message[] => useContext(campaignMessagesContext)
+
+const noChat: CampaignChat = { hasMore: false, loadingOlder: false, loadOlder: async () => {}, error: null }
+export const campaignChatContext = createContext<CampaignChat>(noChat)
+export const useCampaignChat = (): CampaignChat => useContext(campaignChatContext)

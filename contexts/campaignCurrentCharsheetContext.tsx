@@ -5,6 +5,9 @@ import type { Charsheet } from '@models/entities';
 
 const obj = {};
 
+/** Campos da ficha a gravar: o objeto parcial da ficha ou caminhos com ponto ({ 'inventory.money': 10 }) */
+export type CharsheetUpdate = Partial<Charsheet> | Record<string, unknown>;
+
 export const campaignCurrentCharsheetContext = createContext<{ charsheet: CharsheetDTO; }>({
     charsheet: obj as CharsheetDTO
 });
@@ -12,12 +15,11 @@ export const campaignCurrentCharsheetContext = createContext<{ charsheet: Charsh
 export const useCampaignCurrentCharsheetContext = () => {
     const context = useContext(campaignCurrentCharsheetContext);
     
-    const updateCharsheet = useCallback(async (data: Partial<Charsheet>) => {
+    const updateCharsheet = useCallback(async (data: CharsheetUpdate) => {
         if (!context.charsheet.id) return;
 
         try {
-            await charsheetEntity.update(context.charsheet.id, data);
-            console.log('[CharsheetUpdater] Charsheet atualizada:', context.charsheet.id);
+            await charsheetEntity.update(context.charsheet.id, data as Partial<Charsheet>);
         } catch (error) {
             console.error('[CharsheetUpdater] Erro ao atualizar charsheet:', error);
             throw error;

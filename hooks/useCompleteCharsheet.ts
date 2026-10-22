@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/prefer-nullish-coalescing */
 import type { CharsheetDTO, SpellDTO } from '@models/dtos';
-import { useMemo } from 'react';
+import { isInitialCharsheetLoad } from '@utils/charsheetLoad';
+import { useMemo, useRef } from 'react';
 import { useFirestoreByIds } from './useFirestoreByIds';
 import { useFirestoreRealtime } from './useFirestoreRealtime';
 
@@ -34,6 +35,12 @@ interface UseCompleteCharsheetOptions {
 
 interface UseCompleteCharsheetResult {
     data: CharsheetDTO | null;
+    /**
+     * Só a PRIMEIRA carga de cada ficha. Depois dela, trocar os ids de magias/poderes
+     * recarrega esses documentos em segundo plano sem voltar a `true`: quem usa `loading`
+     * para mostrar um spinner no lugar da tela (campanha, ficha) desmontaria tudo — chat,
+     * widgets, modais abertos e o formulário com edições não salvas.
+     */
     loading: boolean;
     error: Error | null;
 }
@@ -132,7 +139,12 @@ export function useCompleteCharsheet({
     // Considera carregando enquanto ainda precisamos resolver IDs e estamos tentando buscar
     const needsSpellFetch = enabled && spellIdsToFetch.length > 0;
     const needsPowerFetch = enabled && powerIdsToFetch.length > 0;
-    const loading = enabled ? (charsheetLoading || (needsSpellFetch && spellsLoading) || (needsPowerFetch && powersLoading)) : false;
+    const stillLoading = enabled ? (charsheetLoading || (needsSpellFetch && spellsLoading) || (needsPowerFetch && powersLoading)) : false;
+
+    // Marca a ficha como carregada na primeira vez que terminou; trocar de ficha reinicia
+    const loadedIdRef = useRef<string>();
+    if (!stillLoading && charsheet?.id) loadedIdRef.current = charsheet.id;
+    const loading = isInitialCharsheetLoad(stillLoading, loadedIdRef.current, charsheetId);
     const error = charsheetError || spellsError || powersError;
 
     return {

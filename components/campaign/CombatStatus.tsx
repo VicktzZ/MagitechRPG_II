@@ -17,7 +17,6 @@ import {
     DialogActions,
     Alert,
     Collapse,
-    IconButton,
     Tooltip,
     Divider,
     TextField,
@@ -34,11 +33,11 @@ import CasinoIcon from '@mui/icons-material/Casino';
 import WhatshotIcon from '@mui/icons-material/Whatshot';
 import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
 import SkipNextIcon from '@mui/icons-material/SkipNext';
-import { color } from '@themes/tokens';
+import { color, duration, easing } from '@themes/tokens';
 import { useSnackbar } from 'notistack';
 import { useCampaignContext } from '@contexts';
 import { useSession } from 'next-auth/react';
-import type { Combat } from '@models';
+import type { Attributes, Combat } from '@models';
 import EffectBadges from './gmDashboard/actions/EffectBadges';
 
 interface CombatStatusProps {
@@ -59,7 +58,9 @@ function CombatStatus({
     const { campaign, charsheets } = useCampaignContext();
     const theme = useTheme();
     
-    const [ expanded, setExpanded ] = useState(true);
+    // Começa recolhido (só o cabeçalho, que já diz de quem é a vez): o card flutua sobre a ficha
+    // e abre sozinho quando chega o turno do jogador
+    const [ expanded, setExpanded ] = useState(false);
     const [ initiativeDialogOpen, setInitiativeDialogOpen ] = useState(false);
     const [ isRolling, setIsRolling ] = useState(false);
     const [ actionDialogOpen, setActionDialogOpen ] = useState(false);
@@ -82,17 +83,17 @@ function CombatStatus({
     const initiativeFormula = useMemo(() => {
         if (!userCombatant || !charsheets?.length) return null;
 
-        const charsheet = charsheets.find((c: any) => 
+        const charsheet = charsheets.find(c => 
             c.id === userCombatant.id || c.id === userCombatant.odacId
         );
 
         if (!charsheet) return null;
 
-        const agiExpertise = (charsheet as any).expertises?.Agilidade;
+        const agiExpertise = charsheet.expertises?.Agilidade;
         const expertiseValue = Number(agiExpertise?.value ?? 0) || 0;
 
         const defaultAttrKey = (agiExpertise?.defaultAttribute ?? 'des') as string;
-        let modsValue = Number((charsheet as any).mods?.attributes?.[defaultAttrKey] ?? 1);
+        let modsValue = Number(charsheet.mods?.attributes?.[defaultAttrKey as keyof Attributes] ?? 1);
         if (!Number.isFinite(modsValue) || modsValue < 1) modsValue = 1;
 
         return { numDice: modsValue, expertiseValue };
@@ -114,7 +115,7 @@ function CombatStatus({
         
     // Função para obter LP/MP da charsheet para jogadores
     const getPlayerStats = useCallback((combatantId: string, odacId?: string) => {
-        const charsheet = charsheets?.find((c: any) => 
+        const charsheet = charsheets?.find(c => 
             c.id === combatantId || c.id === odacId
         );
         
@@ -129,6 +130,10 @@ function CombatStatus({
         
         return null;
     }, [ charsheets ]);
+
+    useEffect(() => {
+        if (isUserTurn) setExpanded(true);
+    }, [ isUserTurn ]);
 
     // Notifica quando é o turno do jogador
     useEffect(() => {
@@ -147,7 +152,6 @@ function CombatStatus({
     // Abre dialog de iniciativa automaticamente se precisar rolar
     useEffect(() => {
         if (needsToRollInitiative && !initiativeDialogOpen) {
-            console.log('[CombatStatus] Abrindo dialog de iniciativa automaticamente');
             setInitiativeDialogOpen(true);
         }
     }, [ needsToRollInitiative, initiativeDialogOpen ]);
@@ -157,7 +161,6 @@ function CombatStatus({
         if (needsToRollInitiative && !initiativeDialogOpen) {
             const timer = setTimeout(() => {
                 if (needsToRollInitiative) {
-                    console.log('[CombatStatus] Reabrindo dialog de iniciativa (timeout)');
                     setInitiativeDialogOpen(true);
                 }
             }, 1000);
@@ -281,30 +284,44 @@ function CombatStatus({
 
     const showEnemyLp = combat.showEnemyLp || isGM;
 
+    // Linha do cabeçalho: a informação que o jogador quer sem expandir o card
+    const turnSummary = combat.phase === 'INITIATIVE'
+        ? 'Rolando iniciativa'
+        : isUserTurn ? 'É a sua vez' : currentCombatant ? `Vez de ${currentCombatant.name}` : '';
+
     return (
         <>
             <Paper 
-                elevation={3}
+                elevation={0}
                 sx={{
-                    position: 'fixed',
-                    bottom: 80,
-                    left: 16,
+                    // Vive no FloatingDock (canto inferior direito, ao lado do chat): aqui só o tamanho.
+                    // Superfície plana; o combate é marcado pelo filete vermelho, não por um cartão cheio
                     width: 340,
-                    maxHeight: expanded ? 450 : 56,
+                    maxWidth: '100%',
+                    maxHeight: expanded ? 450 : 68,
                     overflow: 'hidden',
-                    transition: 'max-height 0.3s ease',
-                    zIndex: 1200,
-                    border: '2px solid',
-                    borderColor: 'error.main',
-                    bgcolor: 'background.paper'
+                    transition: `max-height ${duration.slow}ms ${easing.standard}`,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    borderLeft: '3px solid',
+                    borderLeftColor: 'error.main',
+                    bgcolor: 'background.raised'
                 }}
             >
                 {/* Header */}
                 <Box 
+                    component="button"
+                    type="button"
+                    aria-expanded={expanded}
+                    aria-label={expanded ? 'Recolher o combate' : 'Expandir o combate'}
                     sx={{ 
                         p: 1.5, 
-                        bgcolor: 'error.main', 
-                        color: 'error.contrastText',
+                        width: '100%',
+                        border: 0,
+                        bgcolor: 'transparent',
+                        color: 'text.primary',
+                        font: 'inherit',
+                        textAlign: 'left',
                         display: 'flex',
                         alignItems: 'center',
                         gap: 1,
@@ -312,10 +329,17 @@ function CombatStatus({
                     }}
                     onClick={() => setExpanded(!expanded)}
                 >
-                    <SportsKabaddiIcon />
-                    <Typography variant="subtitle1" sx={{ fontWeight: 700, flex: 1 }}>
-                        Combate - Round {combat.round}
-                    </Typography>
+                    <SportsKabaddiIcon sx={{ color: 'error.light' }} />
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                        <Typography variant="subtitle1" sx={{ fontWeight: 700, lineHeight: 1.25 }}>
+                            Combate - Round {combat.round}
+                        </Typography>
+                        {turnSummary && (
+                            <Typography variant="caption" noWrap component="div" sx={{ color: 'text.secondary', lineHeight: 1.3 }}>
+                                {turnSummary}
+                            </Typography>
+                        )}
+                    </Box>
                     <Chip 
                         label={combat.phase === 'INITIATIVE' ? 'Iniciativa' : 'Ação'}
                         size="small"
@@ -325,9 +349,7 @@ function CombatStatus({
                             fontWeight: 600
                         }}
                     />
-                    <IconButton size="small" sx={{ color: 'error.contrastText' }}>
-                        {expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-                    </IconButton>
+                    {expanded ? <ExpandLessIcon sx={{ color: 'text.secondary' }} /> : <ExpandMoreIcon sx={{ color: 'text.secondary' }} />}
                 </Box>
 
                 <Collapse in={expanded}>
@@ -341,7 +363,7 @@ function CombatStatus({
                             >
                                 <Typography variant="body2" sx={{ fontWeight: 600 }}>
                                     {isUserTurn 
-                                        ? '🎯 É sua vez de agir!' 
+                                        ? 'É sua vez de agir!' 
                                         : `Vez de ${currentCombatant.name}`
                                     }
                                 </Typography>
@@ -484,7 +506,7 @@ function CombatStatus({
                                                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.3, mt: 0.5 }}>
                                                     {/* LP */}
                                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                                        <FavoriteIcon sx={{ fontSize: 10, color: color.lp }} />
+                                                        <FavoriteIcon sx={{ fontSize: 12, color: color.lp }} />
                                                         <LinearProgress
                                                             variant="determinate"
                                                             value={lpPercent}
@@ -502,14 +524,14 @@ function CombatStatus({
                                                                 }
                                                             }}
                                                         />
-                                                        <Typography variant="caption" sx={{ minWidth: 36, textAlign: 'right', fontSize: '0.65rem', color: 'text.secondary' }}>
+                                                        <Typography variant="caption" sx={{ minWidth: 36, textAlign: 'right', fontSize: '0.75rem', color: 'text.secondary' }}>
                                                             {currentLp}/{maxLp}
                                                         </Typography>
                                                     </Box>
                                                     {/* MP (apenas se tiver) */}
                                                     {maxMp > 0 && (
                                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                                            <BoltIcon sx={{ fontSize: 10, color: color.mp }} />
+                                                            <BoltIcon sx={{ fontSize: 12, color: color.mp }} />
                                                             <LinearProgress
                                                                 variant="determinate"
                                                                 value={mpPercent}
@@ -523,7 +545,7 @@ function CombatStatus({
                                                                     }
                                                                 }}
                                                             />
-                                                            <Typography variant="caption" sx={{ minWidth: 36, textAlign: 'right', fontSize: '0.65rem', color: 'text.secondary' }}>
+                                                            <Typography variant="caption" sx={{ minWidth: 36, textAlign: 'right', fontSize: '0.75rem', color: 'text.secondary' }}>
                                                                 {currentMp}/{maxMp}
                                                             </Typography>
                                                         </Box>
@@ -547,7 +569,7 @@ function CombatStatus({
                                                     size="small"
                                                     sx={{ 
                                                         height: 20,
-                                                        fontSize: '0.7rem',
+                                                        fontSize: '0.75rem',
                                                         bgcolor: 'action.hover'
                                                     }}
                                                 />
@@ -562,7 +584,7 @@ function CombatStatus({
                                                 sx={{
                                                     height: 20,
                                                     width: 20,
-                                                    fontSize: '0.7rem',
+                                                    fontSize: '0.75rem',
                                                     bgcolor: combatant.hasActed 
                                                         ? alpha(theme.palette.success.main, 0.3)
                                                         : 'action.hover'
@@ -585,7 +607,7 @@ function CombatStatus({
                     alignItems: 'center', 
                     gap: 1 
                 }}>
-                    <CasinoIcon sx={{ color: 'warning.main' }} />
+                    <CasinoIcon sx={{ color: 'text.secondary' }} />
                     Teste de Iniciativa
                 </DialogTitle>
                 <DialogContent sx={{ mt: 2 }}>

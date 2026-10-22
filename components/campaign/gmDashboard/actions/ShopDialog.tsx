@@ -27,6 +27,15 @@ import { PerkTypeEnum } from '@enums/rogueliteEnum';
 import type { PlayerInfo, ShopConfig } from './types';
 import { RARITY_OPTIONS, DEFAULT_SHOP_CONFIG } from './constants';
 
+/** Item da loja como a lista do mestre o mostra (nome, tipo, raridade e preço) */
+interface ShopItemSummary {
+    id: string
+    name: string
+    perkType: string
+    rarity: string
+    price: number
+}
+
 interface ShopDialogProps {
     open: boolean;
     onClose: () => void;
@@ -45,7 +54,7 @@ export default function ShopDialog({
     const { enqueueSnackbar } = useSnackbar();
     const [ shopConfig, setShopConfig ] = useState<ShopConfig>(DEFAULT_SHOP_CONFIG);
     const [ isUpdating, setIsUpdating ] = useState(false);
-    const [ shopItems, setShopItems ] = useState<any[]>([]);
+    const [ shopItems, setShopItems ] = useState<ShopItemSummary[]>([]);
     const [ isLoadingItems, setIsLoadingItems ] = useState(false);
     const isShopOpen = existingShop?.isOpen ?? false;
 
@@ -135,7 +144,7 @@ export default function ShopDialog({
     return (
         <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
             <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <StorefrontIcon sx={{ color: 'primary.main' }} />
+                <StorefrontIcon sx={{ color: 'text.secondary' }} />
                 Gerenciar Loja
                 {isShopOpen && (
                     <Chip label="Aberta" size="small" sx={{ ml: 1, bgcolor: (theme) => alpha(theme.palette.success.main, 0.14), color: 'success.main' }} />
@@ -161,7 +170,7 @@ export default function ShopDialog({
                                 color: isShopOpen ? 'success.main' : 'text.primary' 
                             }}
                         >
-                            {isShopOpen ? '🟢' : '🔴'} Status da Loja
+                            Status da Loja: {isShopOpen ? 'aberta' : 'fechada'}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
                             {isShopOpen 
@@ -372,7 +381,7 @@ export default function ShopDialog({
                         <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, p: 2 }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
                                 <Typography variant="subtitle2" fontWeight={600}>
-                                    👁️ Itens na Loja ({shopItems.length})
+                                    Itens na Loja ({shopItems.length})
                                 </Typography>
                                 <Button 
                                     size="small" 
@@ -394,7 +403,7 @@ export default function ShopDialog({
                                 </Typography>
                             ) : (
                                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, maxHeight: 200, overflow: 'auto' }}>
-                                    {shopItems.map((item: any) => (
+                                    {shopItems.map(item => (
                                         <Box 
                                             key={item.id}
                                             sx={{ 
@@ -413,8 +422,8 @@ export default function ShopDialog({
                                                     {item.name}
                                                 </Typography>
                                                 <Box sx={{ display: 'flex', gap: 0.5, mt: 0.5 }}>
-                                                    <Chip label={item.perkType} size="small" sx={{ height: 18, fontSize: '0.65rem' }} />
-                                                    <Chip label={item.rarity} size="small" sx={{ height: 18, fontSize: '0.65rem' }} />
+                                                    <Chip label={item.perkType} size="small" sx={{ height: 18, fontSize: '0.75rem' }} />
+                                                    <Chip label={item.rarity} size="small" sx={{ height: 18, fontSize: '0.75rem' }} />
                                                 </Box>
                                             </Box>
                                             <Chip 

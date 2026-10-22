@@ -24,6 +24,7 @@ import {
     MenuItem,
     Paper,
     Select,
+    type SelectChangeEvent,
     Stack,
     TextField,
     Tooltip,
@@ -124,7 +125,7 @@ export default function MoneyAndAmmo(): ReactElement {
         });
     };
 
-    const handleAmmoTypeChange = (event: any) => {
+    const handleAmmoTypeChange = (event: SelectChangeEvent) => {
         setAmmo(prev => ({
             ...prev,
             type: event.target.value
@@ -226,12 +227,10 @@ export default function MoneyAndAmmo(): ReactElement {
                                     onChange={(e) => {
                                         const value = parseFloat(e.target.value) || 0;
                                         setMoney(value);
-                                        // 🔥 Atualizar no Firestore em tempo real — só o dinheiro:
+                                        // Atualizar no Firestore em tempo real — só o dinheiro:
                                         // gravar o inventário inteiro sobrescrevia itens recebidos
                                         // ao mesmo tempo (loja, doação, mestre)
-                                        updateCharsheet({
-                                            'inventory.money': value
-                                        } as any);
+                                        updateCharsheet({ 'inventory.money': value });
                                     }}
                                     type="number"
                                     variant="outlined"
@@ -392,25 +391,28 @@ export default function MoneyAndAmmo(): ReactElement {
                             </Box>
 
                             <Box sx={{ ml: 'auto' }}>
+                                {/* O span deixa o Tooltip funcionar com o botão desabilitado */}
                                 <Tooltip title="Recarregar munição ao máximo">
-                                    <Button
-                                        variant="contained"
-                                        onClick={handleReload}
-                                        disabled={ammo.current >= ammo.max}
-                                        startIcon={<Refresh />}
-                                        sx={{
-                                            bgcolor: ammoConfig.color,
-                                            '&:hover': {
+                                    <span>
+                                        <Button
+                                            variant="contained"
+                                            onClick={handleReload}
+                                            disabled={ammo.current >= ammo.max}
+                                            startIcon={<Refresh />}
+                                            sx={{
                                                 bgcolor: ammoConfig.color,
-                                                filter: 'brightness(0.9)'
-                                            },
-                                            '&:disabled': {
-                                                bgcolor: 'action.disabledBackground'
-                                            }
-                                        }}
-                                    >
+                                                '&:hover': {
+                                                    bgcolor: ammoConfig.color,
+                                                    filter: 'brightness(0.9)'
+                                                },
+                                                '&:disabled': {
+                                                    bgcolor: 'action.disabledBackground'
+                                                }
+                                            }}
+                                        >
                                         Recarregar
-                                    </Button>
+                                        </Button>
+                                    </span>
                                 </Tooltip>
                             </Box>
                         </Box>
@@ -457,43 +459,49 @@ export default function MoneyAndAmmo(): ReactElement {
                             
                             <Stack direction="row" spacing={2} justifyContent="center">
                                 <Tooltip title="Usar 1 munição">
-                                    <IconButton 
-                                        onClick={() => handleAmmoChange('decrement')}
-                                        disabled={ammo.current <= 0}
-                                        sx={{
-                                            bgcolor: (theme) => alpha(theme.palette.error.main, 0.14),
-                                            color: 'error.main',
-                                            '&:hover': {
-                                                bgcolor: (theme) => alpha(theme.palette.error.main, 0.24)
-                                            },
-                                            '&:disabled': {
-                                                bgcolor: 'action.disabledBackground',
-                                                color: 'action.disabled'
-                                            }
-                                        }}
-                                    >
-                                        <RemoveIcon />
-                                    </IconButton>
+                                    <span>
+                                        <IconButton 
+                                            aria-label="Usar 1 munição"
+                                            onClick={() => handleAmmoChange('decrement')}
+                                            disabled={ammo.current <= 0}
+                                            sx={{
+                                                bgcolor: (theme) => alpha(theme.palette.error.main, 0.14),
+                                                color: 'error.main',
+                                                '&:hover': {
+                                                    bgcolor: (theme) => alpha(theme.palette.error.main, 0.24)
+                                                },
+                                                '&:disabled': {
+                                                    bgcolor: 'action.disabledBackground',
+                                                    color: 'action.disabled'
+                                                }
+                                            }}
+                                        >
+                                            <RemoveIcon />
+                                        </IconButton>
+                                    </span>
                                 </Tooltip>
                                 
                                 <Tooltip title="Adicionar 1 munição">
-                                    <IconButton 
-                                        onClick={() => handleAmmoChange('increment')}
-                                        disabled={ammo.current >= ammo.max}
-                                        sx={{
-                                            bgcolor: (theme) => alpha(theme.palette.success.main, 0.14),
-                                            color: 'success.main',
-                                            '&:hover': {
-                                                bgcolor: (theme) => alpha(theme.palette.success.main, 0.24)
-                                            },
-                                            '&:disabled': {
-                                                bgcolor: 'action.disabledBackground',
-                                                color: 'action.disabled'
-                                            }
-                                        }}
-                                    >
-                                        <AddIcon />
-                                    </IconButton>
+                                    <span>
+                                        <IconButton 
+                                            aria-label="Adicionar 1 munição"
+                                            onClick={() => handleAmmoChange('increment')}
+                                            disabled={ammo.current >= ammo.max}
+                                            sx={{
+                                                bgcolor: (theme) => alpha(theme.palette.success.main, 0.14),
+                                                color: 'success.main',
+                                                '&:hover': {
+                                                    bgcolor: (theme) => alpha(theme.palette.success.main, 0.24)
+                                                },
+                                                '&:disabled': {
+                                                    bgcolor: 'action.disabledBackground',
+                                                    color: 'action.disabled'
+                                                }
+                                            }}
+                                        >
+                                            <AddIcon />
+                                        </IconButton>
+                                    </span>
                                 </Tooltip>
                             </Stack>
                         </Box>

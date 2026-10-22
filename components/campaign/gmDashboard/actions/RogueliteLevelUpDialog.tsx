@@ -94,7 +94,7 @@ export default function RogueliteLevelUpDialog({
     return (
         <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
             <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <AutoGraphIcon sx={{ color: 'success.main' }} />
+                <AutoGraphIcon sx={{ color: 'text.secondary' }} />
                 Evolução Roguelite (+5 Níveis)
             </DialogTitle>
             <DialogContent>
@@ -117,7 +117,7 @@ export default function RogueliteLevelUpDialog({
                                 fontWeight: 700 
                             }}
                         >
-                            🎮 Bônus de Evolução Roguelite
+                            Bônus de Evolução Roguelite
                         </Typography>
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                             <Chip label="+5 Níveis" size="small" sx={{ bgcolor: (theme) => alpha(theme.palette.success.main, 0.14), color: 'success.main' }} />
@@ -140,7 +140,7 @@ export default function RogueliteLevelUpDialog({
                                 fontWeight: 600
                             }}
                         >
-                            ❤️ LP e MP máximos AUMENTAM e são totalmente restaurados
+                            LP e MP máximos AUMENTAM e são totalmente restaurados
                         </Typography>
                         <Typography 
                             variant="caption" 
@@ -150,7 +150,7 @@ export default function RogueliteLevelUpDialog({
                                 fontStyle: 'italic'
                             }}
                         >
-                            ⚠️ Stats são salvos na sessão da campanha, não globalmente
+                            Stats são salvos na sessão da campanha, não globalmente
                         </Typography>
                     </Box>
 

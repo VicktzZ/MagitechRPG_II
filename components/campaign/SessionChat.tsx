@@ -1,20 +1,15 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Alert, Paper, Snackbar } from '@mui/material';
 import { useCampaignContext } from '@contexts';
-import { useCampaignMessages } from '@contexts/campaignContext';
-import { useChannel } from '@contexts/channelContext';
+import { useCampaignChat, useCampaignMessages } from '@contexts/campaignContext';
 import { useChatContext, useChatMessages } from '@contexts/chatContext';
-import { MessageType, PusherEvent } from '@enums';
-import { charsheetService } from '@services';
-import { postCampaignStats } from '@utils/campaignStatsClient';
-import { computeAttributeInfluence, findSystemAttribute } from '@utils/systemLookups';
+import { useCampaignTest, type TestNoticeSeverity } from '@hooks/useCampaignTest';
 import { useSession } from 'next-auth/react';
 import TestDialog from './TestDialog';
 import TestModal from './TestModal';
-import CombatStatus from './CombatStatus';
-import type { Expertises, Message } from '@models';
+import type { Message } from '@models';
 
 import { 
     MessageInput, 
@@ -22,20 +17,19 @@ import {
     ChatHeader, 
     MessageList 
 } from './chatComponents';
+import { useUnreadMessages } from './chatComponents/useUnreadMessages';
 
 export default function SessionChat() {
-    const { campaign, updateCampaign, rpgSystem } = useCampaignContext();
+    const { campaign } = useCampaignContext();
     const persistedMessages = useCampaignMessages();
+    const { hasMore, loadingOlder, loadOlder, error: chatError } = useCampaignChat();
     const { data: session } = useSession();
-    const { channel } = useChannel();
 
     const [ shouldAutoScroll, setShouldAutoScroll ] = useState(true);
     const [ isTestModalOpen, setIsTestModalOpen ] = useState(false);
-    const [ isTestDialogOpen, setIsTestDialogOpen ] = useState(false);
-    const [ currentTest, setCurrentTest ] = useState<any>(null);
     const [ snackbarOpen, setSnackbarOpen ] = useState(false);
     const [ snackbarMessage, setSnackbarMessage ] = useState('');
-    const [ snackbarSeverity, setSnackbarSeverity ] = useState<'success' | 'error' | 'info'>('success');
+    const [ snackbarSeverity, setSnackbarSeverity ] = useState<TestNoticeSeverity>('success');
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const chatBoxRef = useRef<HTMLDivElement>(null);
 
@@ -48,7 +42,7 @@ export default function SessionChat() {
     const { messages, setMessages } = useChatMessages();
 
     const isAdmin = session?.user && campaign.admin?.includes(session.user.id);
-    const userCharsheetId = campaign.players?.find(p => p.userId === session?.user?.id)?.charsheetId;
+    const unreadCount = useUnreadMessages(messages, isChatOpen, session?.user?.id);
 
     // Ref para não precisar de `shouldAutoScroll` nas deps de callbacks
     // estáveis (handleScroll/scrollToBottom são passados como props para
@@ -70,6 +64,19 @@ export default function SessionChat() {
         }
     }, []);
 
+    // "Carregar anteriores" põe mensagens ACIMA do que está na tela: guarda a posição antes e,
+    // quando a lista nova entrar, devolve o scroll para que o texto lido não saia do lugar.
+    const scrollRestoreRef = useRef<{ height: number, top: number } | null>(null);
+
+    const handleLoadOlder = useCallback(() => {
+        const box = chatBoxRef.current;
+        if (box) scrollRestoreRef.current = { height: box.scrollHeight, top: box.scrollTop };
+        void loadOlder().finally(() => {
+            // Se nada entrou (erro, ou já estava tudo carregado), não há o que restaurar
+            window.setTimeout(() => { scrollRestoreRef.current = null; }, 0);
+        });
+    }, [ loadOlder ]);
+
     // A persistência acontece dentro de sendMsg (ChatProvider → API), que já
     // faz o append no servidor. O updateCampaign extra que existia aqui
     // gravava a mensagem uma SEGUNDA vez (por isso a deduplicação abaixo) e
@@ -78,198 +85,24 @@ export default function SessionChat() {
         await sendMsg(newMessage, scrollToBottom);
     }, [ sendMsg, scrollToBottom ]);
 
-    const handleTestConfirm = useCallback((data: any) => {
-        if (!session?.user) return;
-
-        const testRequest: any = {
-            ...data,
-            requestedBy: {
-                id: session.user.id,
-                name: session.user.name
-            }
-        };
-
-        channel?.trigger(PusherEvent.TEST_REQUEST, testRequest);
-
-        // Estatística: mestre solicitou um teste
-        postCampaignStats(campaign.id, [ { gm: true, inc: { testsRequested: 1 } } ]);
-
-        if (!data.isVisible) {
-            setSnackbarMessage('Teste solicitado. Aguardando respostas...');
-            setSnackbarSeverity('success');
-            setSnackbarOpen(true);
-        }
-    }, [ session?.user, channel, campaign.id ]);
-
-    const handleTestRollComplete = useCallback(async (success: boolean, roll: { dice: string, result: number[] }) => {
-        setIsTestDialogOpen(false);
-
-        if (!currentTest || !session?.user) return;
-
-        let expertiseBonus = 0;
-        let expertiseResult = null;
-        let baseAttribute = null;
-        let baseAttributeValue = 0;
-
-        if (currentTest.expertise) {
-            const player = campaign.players.find(p => p.userId === session.user.id);
-            if (player) {
-                try {
-                    const charsheet = await charsheetService.getById(player.charsheetId);
-                    if (charsheet) {
-                        const expertise = charsheet.expertises[currentTest.expertise as keyof Expertises];
-                        expertiseBonus = expertise.value;
-
-                        let numDice = 1;
-                        let useWorst = false;
-                        let attributeFlatBonus = 0;
-
-                        if (rpgSystem && charsheet.systemId) {
-                            // Sistema customizado: influência configurada no atributo
-                            // (vantagem = mais dados; soma = bônus fixo)
-                            const attrDef = findSystemAttribute(rpgSystem, expertise.defaultAttribute as unknown as string);
-                            baseAttribute = attrDef?.key ?? null;
-                            baseAttributeValue = attrDef ? ((charsheet.attributes as any)?.[attrDef.key] ?? 0) : 0;
-
-                            const influence = computeAttributeInfluence(attrDef, baseAttributeValue, charsheet.level || 1);
-                            numDice = 1 + influence.extraDice;
-                            attributeFlatBonus = influence.bonus;
-                        } else {
-                            // Magitech legado
-                            baseAttribute = expertise.defaultAttribute?.toLowerCase();
-                            baseAttributeValue = baseAttribute ? ((charsheet.attributes as any)?.[baseAttribute] ?? 0) : 0;
-
-                            if (baseAttributeValue === -1) {
-                                numDice = 2;
-                                useWorst = true;
-                            } else if (baseAttributeValue >= 3) {
-                                numDice = 2;
-                            } else if (baseAttributeValue >= 5) {
-                                numDice = 3;
-                            }
-                        }
-
-                        const rolls: number[] = [];
-                        for (let i = 0; i < numDice; i++) {
-                            rolls.push(Math.floor(Math.random() * 20) + 1);
-                        }
-
-                        let finalRoll = rolls[0];
-                        if (numDice > 1) {
-                            finalRoll = useWorst ? Math.min(...rolls) : Math.max(...rolls);
-                        }
-
-                        expertiseResult = {
-                            rolls,
-                            finalRoll,
-                            total: finalRoll + expertiseBonus + attributeFlatBonus
-                        };
-                    }
-                } catch (error) {
-                    console.error('Erro ao buscar charsheet:', error);
-                }
-            }
-        }
-
-        const rollMessage: Message = {
-            id: crypto.randomUUID(),
-            text: expertiseResult ? 
-                ` ${currentTest.expertise.toUpperCase()} - 1d20${expertiseBonus >= 0 ? '+' : ''}${expertiseBonus}: [${expertiseResult.rolls.join(', ')}${expertiseResult.rolls.length > 1 ? ': ' + expertiseResult.finalRoll : ''}] = ${expertiseResult.total}` :
-                ` ${roll.dice}: [${roll.result.join(', ')}] = ${roll.result.reduce((a, b) => a + b, 0)}`,
-            by: {
-                id: session.user.id,
-                name: session.user.name,
-                image: session.user.image ?? '/assets/default-avatar.png'
-            },
-            timestamp: new Date().toISOString(),
-            type: expertiseResult ? MessageType.EXPERTISE : MessageType.ROLL
-        };
-
-        const resultMessage: Message | null = currentTest.showResult ? {
-            id: crypto.randomUUID(),
-            text: `${success ? ' ' : ' '} ${session.user.name} ${success ? 'passou' : 'não passou'} no teste!`,
-            type: MessageType.ROLL,
-            by: {
-                id: 'dice-roller-bot',
-                image: '/assets/dice-roller-bot.jpg',
-                name: 'Dice Roller',
-                isBot: true
-            },
-            timestamp: new Date().toISOString()
-        } : null;
-
-        if (currentTest.isVisible) {
-            await sendMessage(rollMessage);
-            if (resultMessage) {
-                await sendMessage(resultMessage);
-            }
-        } else {
-            setSnackbarMessage(rollMessage.text);
-            setSnackbarSeverity('info');
-            setSnackbarOpen(true);
-
-            channel?.trigger(PusherEvent.TEST_RESULT, {
-                success,
-                playerName: session.user.name,
-                roll: {
-                    dice: roll.dice,
-                    result: roll.result
-                },
-                showResult: currentTest.showResult
-            });
-        }
-
-        // ── Estatísticas do teste ──
-        if (userCharsheetId) {
-            const naturalRolls = expertiseResult?.rolls ?? roll.result;
-            const usedRoll = expertiseResult?.finalRoll ?? naturalRolls[0];
-            const totalResult = expertiseResult?.total ?? roll.result.reduce((a, b) => a + b, 0);
-
-            const inc: Record<string, number> = {
-                'dice.totalRolls': 1,
-                [success ? 'dice.testsPassed' : 'dice.testsFailed']: 1
-            };
-            if (usedRoll === 20) inc['dice.criticalHits'] = 1;
-            if (usedRoll === 1) inc['dice.criticalFailures'] = 1;
-
-            postCampaignStats(campaign.id, [ {
-                charsheetId: userCharsheetId,
-                userId: session.user.id,
-                inc,
-                max: { 'dice.highestRoll': totalResult },
-                expertiseUsed: currentTest.expertise || undefined
-            } ]);
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [ currentTest, session, campaign.players, campaign.id, rpgSystem, sendMessage, channel, userCharsheetId ]);
-
-    const handleTestResult = useCallback((data: {
-        success: boolean,
-        playerName: string,
-        roll: { dice: string, result: number[] },
-        showResult: boolean
-    }) => {
-        if (!isAdmin) return;
-
-        const rollText = ` ${data.playerName} rolou ${data.roll.dice}: [${data.roll.result.join(', ')}] = ${data.roll.result.reduce((a, b) => a + b, 0)}`;
-        const resultText = data.showResult ?
-            `\n${data.success ? ' ' : ' '} ${data.playerName} ${data.success ? 'passou' : 'não passou'} no teste!` :
-            '';
-
-        setSnackbarMessage(rollText + resultText);
-        setSnackbarSeverity(data.showResult ? (data.success ? 'success' : 'error') : 'info');
+    const notify = useCallback((message: string, severity: TestNoticeSeverity) => {
+        setSnackbarMessage(message);
+        setSnackbarSeverity(severity);
         setSnackbarOpen(true);
-    }, [ isAdmin ]);
+    }, []);
+
+    // Testes pedidos pelo mestre: o pedido chega pelo listener da campanha (não pelo Pusher)
+    const { requestTest, pendingTest, rolling, rollPending, dismissPending } = useCampaignTest({ notify, sendMessage });
 
     // Sincroniza mensagens do Firestore (contexto dedicado — não re-renderiza
     // o resto da página da campanha a cada mensagem)
     useEffect(() => {
         const list = persistedMessages ?? [];
         if (Array.isArray(list)) {
-            const unique: any[] = [];
+            const unique: Array<Message & { isPending: boolean }> = [];
             const seen = new Set<string>();
             for (const m of list) {
-                const key = (m as any).id || `${(m as any).timestamp}-${(m as any).by?.id}-${(m as any).text}`;
+                const key = m.id || `${m.timestamp}-${m.by?.id}-${m.text}`;
                 if (seen.has(key)) continue;
                 seen.add(key);
                 unique.push({ ...m, isPending: false });
@@ -279,6 +112,15 @@ export default function SessionChat() {
             setMessages([]);
         }
     }, [ persistedMessages ]);
+
+    // Mensagens anteriores entraram acima: mantém o que o jogador estava lendo no mesmo lugar
+    useLayoutEffect(() => {
+        const box = chatBoxRef.current;
+        const saved = scrollRestoreRef.current;
+        if (!box || !saved || box.scrollHeight === saved.height) return;
+        box.scrollTop = saved.top + (box.scrollHeight - saved.height);
+        scrollRestoreRef.current = null;
+    }, [ messages ]);
 
     // Scroll to bottom quando mensagens carregam
     useEffect(() => {
@@ -296,62 +138,17 @@ export default function SessionChat() {
         }
     }, []);
 
-    // Configura eventos do Pusher
-    useEffect(() => {
-        if (!channel || !session?.user) return;
-
-        const handleTestRequest = (data: any) => {
-            const isSelected = data.isGroupTest || data.selectedPlayers.includes(session.user.id);
-            
-            if (isSelected && !campaign.admin.includes(session.user.id)) {
-                setCurrentTest(data);
-                setIsTestDialogOpen(true);
-            }
-        };
-
-        const handleTestResultPusher = (data: { 
-            success: boolean, 
-            playerName: string, 
-            roll: { dice: string, result: number[] },
-            showResult: boolean 
-        }) => {
-            handleTestResult(data);
-        };
-
-        // Handler para atualização de combate em tempo real.
-        // Dot-path: atualiza SOMENTE session.combat — espalhar a campanha
-        // inteira sobrescreveria session.messages (e apagaria o chat).
-        const handleCombatUpdated = (data: { combat: any, action: string }) => {
-            console.log('[SessionChat] Combate atualizado via Pusher:', data.action);
-            updateCampaign({ 'session.combat': data.combat } as any);
-        };
-
-        channel.bind(PusherEvent.TEST_REQUEST, handleTestRequest);
-        channel.bind(PusherEvent.TEST_RESULT, handleTestResultPusher);
-        channel.bind(PusherEvent.COMBAT_UPDATED, handleCombatUpdated);
-
-        return () => {
-            channel.unbind(PusherEvent.TEST_REQUEST, handleTestRequest);
-            channel.unbind(PusherEvent.TEST_RESULT, handleTestResultPusher);
-            channel.unbind(PusherEvent.COMBAT_UPDATED, handleCombatUpdated);
-        };
-    }, [ channel, session?.user?.id, campaign, updateCampaign, handleTestResult ]);
-
     // Handlers estáveis para os modais — evita recriar props de componentes
     // memoizados (TestModal/TestDialog) a cada render do SessionChat.
     const openTestModal = useCallback(() => setIsTestModalOpen(true), []);
     const closeTestModal = useCallback(() => setIsTestModalOpen(false), []);
-    const closeTestDialog = useCallback(() => {
-        setIsTestDialogOpen(false);
-        setCurrentTest(null);
-    }, []);
     const closeSnackbar = useCallback(() => setSnackbarOpen(false), []);
 
     return (
         <ChatWrapper 
             isChatOpen={isChatOpen} 
             setIsChatOpen={setIsChatOpen}
-            messageCount={messages.length}
+            unreadCount={unreadCount}
         >
             <Paper 
                 elevation={0}
@@ -367,7 +164,7 @@ export default function SessionChat() {
                 <ChatHeader
                     messageCount={messages.length}
                     isAdmin={!!isAdmin}
-                    combat={campaign.session?.combat as any}
+                    combat={campaign.session?.combat}
                     campaignId={campaign.id}
                     onTestClick={openTestModal}
                 />
@@ -378,6 +175,10 @@ export default function SessionChat() {
                     currentUserId={session?.user?.id}
                     adminIds={campaign.admin || []}
                     onScroll={handleScroll}
+                    hasMore={hasMore}
+                    loadingOlder={loadingOlder}
+                    onLoadOlder={handleLoadOlder}
+                    loadError={!!chatError}
                 />
 
                 <div ref={messagesEndRef} style={{ height: 0 }} />
@@ -388,15 +189,16 @@ export default function SessionChat() {
                 <TestModal
                     open={isTestModalOpen}
                     onClose={closeTestModal}
-                    onConfirm={handleTestConfirm}
+                    onConfirm={(data) => { void requestTest(data); }}
                     campaign={campaign}
                 />
 
                 <TestDialog
-                    open={isTestDialogOpen}
-                    onClose={closeTestDialog}
-                    dt={currentTest?.dt ?? 0}
-                    onRollComplete={handleTestRollComplete}
+                    open={!!pendingTest}
+                    expertise={pendingTest?.expertise}
+                    rolling={rolling}
+                    onRoll={() => { void rollPending(); }}
+                    onClose={dismissPending}
                 />
 
                 <Snackbar
@@ -408,18 +210,12 @@ export default function SessionChat() {
                     <Alert
                         onClose={closeSnackbar}
                         severity={snackbarSeverity}
-                        sx={{ width: '100%' }}
+                        sx={{ width: '100%', whiteSpace: 'pre-line' }}
                     >
                         {snackbarMessage}
                     </Alert>
                 </Snackbar>
 
-                {/* Status de Combate para Jogadores */}
-                <CombatStatus
-                    campaignId={campaign.id}
-                    combat={campaign.session?.combat as any}
-                    userCharsheetId={userCharsheetId}
-                />
             </Paper>
         </ChatWrapper>          
     );

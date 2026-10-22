@@ -20,6 +20,7 @@ import AddIcon from '@mui/icons-material/Add';
 import { useSnackbar } from 'notistack';
 import { useCampaignContext } from '@contexts';
 import { useFirestoreRealtime } from '@hooks/useFirestoreRealtime';
+import { errorMessage } from '@utils/errors';
 
 interface DevViewSwitcherProps {
     campaignId: string;
@@ -68,8 +69,8 @@ export default function DevViewSwitcher({ campaignId, userId, activeCharsheetId,
             }
             onChange(charsheetId);
             setPickerOpen(false);
-        } catch (error: any) {
-            enqueueSnackbar(error.message || 'Erro ao anexar ficha de teste', { variant: 'error' });
+        } catch (error) {
+            enqueueSnackbar(errorMessage(error, 'Erro ao anexar ficha de teste'), { variant: 'error' });
         } finally {
             setBusy(false);
         }
@@ -88,8 +89,8 @@ export default function DevViewSwitcher({ campaignId, userId, activeCharsheetId,
                 throw new Error(data.error || 'Erro ao remover ficha de teste');
             }
             if (activeCharsheetId === charsheetId) onChange(null);
-        } catch (error: any) {
-            enqueueSnackbar(error.message || 'Erro ao remover ficha de teste', { variant: 'error' });
+        } catch (error) {
+            enqueueSnackbar(errorMessage(error, 'Erro ao remover ficha de teste'), { variant: 'error' });
         } finally {
             setBusy(false);
         }
@@ -117,7 +118,7 @@ export default function DevViewSwitcher({ campaignId, userId, activeCharsheetId,
                     MODO DEV — Visualizar como:
                 </Typography>
                 <Chip
-                    label="🛠️ Mestre"
+                    label="Mestre"
                     size="small"
                     color={!activeCharsheetId ? 'warning' : 'default'}
                     variant={!activeCharsheetId ? 'filled' : 'outlined'}
@@ -126,7 +127,7 @@ export default function DevViewSwitcher({ campaignId, userId, activeCharsheetId,
                 {testCharsheets.map(c => (
                     <Chip
                         key={c.id}
-                        label={`🎭 ${c.name}`}
+                        label={c.name}
                         size="small"
                         disabled={busy}
                         color={activeCharsheetId === c.id ? 'warning' : 'default'}

@@ -13,6 +13,7 @@ import { campaignService } from '@services';
 import { useMutation } from '@tanstack/react-query';
 import generateEntryCode from '@utils/generateEntryCode';
 import type { Campaign, RPGSystem } from '@models/entities';
+import { errorMessage } from '@utils/errors';
 
 export default function CampaignOptionsModal({
     open,
@@ -110,8 +111,8 @@ export default function CampaignOptionsModal({
 
             enqueueSnackbar('Campanha criada com sucesso!', { variant: 'success' });
             router.push(`/app/campaign/${campaignCodeGen}`);
-        } catch (error: any) {
-            enqueueSnackbar('Erro ao criar sessão: ' + error.message, { variant: 'error' });
+        } catch (error) {
+            enqueueSnackbar('Erro ao criar sessão: ' + errorMessage(error, 'tente novamente'), { variant: 'error' });
         }
     };
 
@@ -179,7 +180,7 @@ export default function CampaignOptionsModal({
                                                 label='Modo'
                                                 value={campaignProps.mode}
                                                 placeholder='Modo da campanha'
-                                                onChange={(e) => { setCampaignProps(state => ({ ...state, mode: e.target.value })); }}
+                                                onChange={(e) => { setCampaignProps(state => ({ ...state, mode: e.target.value as Campaign['mode'] })); }}
                                                 displayEmpty
                                             >
                                                 <MenuItem value="" disabled>Selecione um modo</MenuItem>

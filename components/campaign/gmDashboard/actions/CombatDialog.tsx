@@ -43,10 +43,15 @@ import { useCampaignContext } from '@contexts';
 import { getMpLimit, isMpLimitEnforced } from '@utils/mpLimit';
 import { PusherEvent } from '@enums';
 import type { PlayerInfo } from './types';
-import type { AppliedEffect, Creature } from '@models';
+import type { AppliedEffect, CombatLog, Creature } from '@models';
+import type { Charsheet } from '@models/entities';
 import EffectBadges from './EffectBadges';
 import ApplyEffectDialog from './ApplyEffectDialog';
 import { campaignService } from '@services';
+import { errorMessage } from '@utils/errors';
+
+/** Os atributos hoje são des/vig/log/sab/foc/car; fichas antigas ainda podem trazer `agi` */
+const legacyAgility = (attributes: object | undefined): number | undefined => (attributes as { agi?: number } | undefined)?.agi;
 
 interface CombatDialogProps {
     open: boolean;
@@ -55,8 +60,8 @@ interface CombatDialogProps {
     campaignCode?: string;
     players: PlayerInfo[];
     creatures: Creature[];
-    charsheets?: any[];
-    existingCombat?: any;
+    charsheets?: Charsheet[];
+    existingCombat?: Combat | null;
     onCombatUpdate?: () => void;
 }
 
@@ -87,7 +92,7 @@ interface Combat {
     round: number;
     currentTurnIndex: number;
     combatants: Combatant[];
-    logs: any[];
+    logs: CombatLog[];
 }
 
 export default function CombatDialog({ 
@@ -123,8 +128,8 @@ export default function CombatDialog({
         try {
             await campaignService.removeCombatEffect(campaignId, { targetId: combatantId, appliedEffectId });
             enqueueSnackbar('Efeito removido', { variant: 'success' });
-        } catch (err: any) {
-            enqueueSnackbar(err?.response?.data?.error ?? 'Erro ao remover efeito', { variant: 'error' });
+        } catch (err) {
+            enqueueSnackbar(errorMessage(err, 'Erro ao remover efeito'), { variant: 'error' });
         }
     }, [ campaignId, enqueueSnackbar ]);
 
@@ -132,8 +137,8 @@ export default function CombatDialog({
         try {
             await campaignService.setCombatMpLimitOverride(campaignId, { combatantId, enabled });
             enqueueSnackbar(enabled ? 'Limite de MP liberado até o próximo turno do jogador' : 'Limite de MP restabelecido', { variant: 'success' });
-        } catch (err: any) {
-            enqueueSnackbar(err?.response?.data?.error ?? 'Erro ao atualizar o limite de MP', { variant: 'error' });
+        } catch (err) {
+            enqueueSnackbar(errorMessage(err, 'Erro ao atualizar o limite de MP'), { variant: 'error' });
         }
     }, [ campaignId, enqueueSnackbar ]);
 
@@ -142,7 +147,7 @@ export default function CombatDialog({
         if (combatant.type !== 'player') return null;
         
         // Busca o charsheet do combatente
-        const charsheet = charsheets.find((c: any) => 
+        const charsheet = charsheets.find(c => 
             c.id === combatant.id || c.id === combatant.odacId
         );
         
@@ -168,7 +173,6 @@ export default function CombatDialog({
         if (!channel || !open) return;
 
         const handleCombatUpdated = (data: { combat: Combat, action: string }) => {
-            console.log('[CombatDialog] Combate atualizado via Pusher:', data.action, data.combat);
             if (data.combat) {
                 setCombat(data.combat);
             }
@@ -205,7 +209,7 @@ export default function CombatDialog({
         }
     };
 
-    const executeCombatAction = useCallback(async (action: string, payload: any = {}) => {
+    const executeCombatAction = useCallback(async (action: string, payload: Record<string, unknown> = {}) => {
         setIsLoading(true);
         try {
             const response = await fetch(`/api/campaign/${campaignId}/combat`, {
@@ -246,8 +250,8 @@ export default function CombatDialog({
                 odacId: player?.id,
                 charsheetId: player?.charsheet?.id,
                 name: player?.charsheet?.name || player?.name || 'Jogador',
-                agility: (player?.charsheet as any)?.attributes?.agi || 0,
-                dexterity: (player?.charsheet as any)?.attributes?.des || 0,
+                agility: legacyAgility(player?.charsheet?.attributes) || 0,
+                dexterity: player?.charsheet?.attributes?.des || 0,
                 avatar: player?.avatar,
                 lp: player?.charsheet?.stats?.lp || 0,
                 maxLp: player?.charsheet?.stats?.maxLp || 0,
@@ -265,7 +269,7 @@ export default function CombatDialog({
             return Array.from({ length: count }, (_, index) => ({
                 id: `${creature.id}-${index + 1}`,
                 name: count > 1 ? `${creature.name} (${index + 1})` : (creature.name || 'Criatura'),
-                agility: (creature.attributes as any)?.agi ?? creature.attributes?.des ?? 0,
+                agility: legacyAgility(creature.attributes) ?? creature.attributes?.des ?? 0,
                 dexterity: creature.attributes?.des ?? 0,
                 lp: creature.stats?.lp ?? 0,
                 maxLp: creature.stats?.maxLp ?? creature.stats?.lp ?? 0,
@@ -489,7 +493,7 @@ export default function CombatDialog({
                                 Round {combat.round}
                             </Typography>
                             <Chip 
-                                label={combat.phase === 'INITIATIVE' ? '⚡ Fase de Iniciativa' : '⚔️ Fase de Ação'}
+                                label={combat.phase === 'INITIATIVE' ? 'Fase de Iniciativa' : 'Fase de Ação'}
                                 size="small"
                                 sx={{ 
                                     bgcolor: combat.phase === 'INITIATIVE' ? 'warning.main' : 'info.main',
@@ -535,9 +539,9 @@ export default function CombatDialog({
 
                                 // Limite de MP por turno (utils/mpLimit.ts): só jogadores de fichas comuns do modo Classic
                                 const mpSheet = combatant.type === 'player'
-                                    ? charsheets.find((c: any) => c.id === combatant.id || c.id === combatant.odacId)
+                                    ? charsheets.find(c => c.id === combatant.id || c.id === combatant.odacId)
                                     : undefined;
-                                const mpLimitEnforced = Boolean(mpSheet) && isMpLimitEnforced(mpSheet, campaign?.mode);
+                                const mpLimitEnforced = mpSheet !== undefined && isMpLimitEnforced(mpSheet, campaign?.mode);
                                 const mpLimit = mpSheet ? getMpLimit(mpSheet) : 0;
                                 const mpSpent = combatant.mpSpentThisTurn ?? 0;
                                 const mpReleased = Boolean(combatant.mpLimitOverride);
@@ -622,7 +626,7 @@ export default function CombatDialog({
                                             primary={
                                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
                                                     {combatant.name}
-                                                    {isCurrentTurn && <Chip label="🎯" size="small" />}
+                                                    {isCurrentTurn && <Chip label="Em turno" size="small" color="primary" />}
                                                     <Tooltip title="Aplicar efeito">
                                                         <IconButton
                                                             size="small"
@@ -750,7 +754,7 @@ export default function CombatDialog({
                                             '& strong': { fontWeight: 700 }
                                         }}
                                     >
-                                        {renderLogText(log.message)}
+                                        {renderLogText(log.message ?? '')}
                                     </Typography>
                                 )
                             })}
@@ -791,7 +795,7 @@ export default function CombatDialog({
     return (
         <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
             <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <SportsKabaddiIcon sx={{ color: 'error.main' }} />
+                <SportsKabaddiIcon sx={{ color: 'text.secondary' }} />
                 {isSetupMode ? 'Iniciar Combate' : `Combate em Andamento - Round ${combat?.round || 1}`}
             </DialogTitle>
             <DialogContent>

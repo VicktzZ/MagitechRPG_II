@@ -1,17 +1,15 @@
 'use client';
 
 import { useCampaignCurrentCharsheetContext } from '@contexts';
-import { color as tokenColor, font } from '@themes/tokens'
-import { Add, Remove, Tune } from '@mui/icons-material';
+import { color as tokenColor } from '@themes/tokens'
+import { Add, Remove } from '@mui/icons-material';
 import {
     alpha,
     Box,
     Chip,
-    Divider,
     getContrastRatio,
     IconButton,
     LinearProgress,
-    Paper,
     TextField,
     Tooltip,
     Typography
@@ -67,19 +65,7 @@ export default function CampaignCustomResources(): ReactElement | null {
     const resources: Record<string, number> = charsheet.customResources ?? {};
 
     return (
-        <Paper
-            elevation={2}
-            sx={{
-                p: 3,
-                borderRadius: 2
-            }}
-        >
-            <Box display="flex" alignItems="center" gap={1} mb={2}>
-                <Tune sx={{ color: 'warning.main' }} />
-                <Typography variant="h6" fontFamily={font.display}>Recursos</Typography>
-            </Box>
-            <Divider sx={{ mb: 2 }} />
-
+        <Box>
             <Box display="flex" flexDirection="column" gap={2.5}>
                 {resourceDefs.map(def => {
                     const personalMax = personalMaxOf(def);
@@ -111,7 +97,7 @@ export default function CampaignCustomResources(): ReactElement | null {
                                             size="small"
                                             variant="outlined"
                                             sx={{
-                                                fontSize: '0.65rem',
+                                                fontSize: '0.75rem',
                                                 height: 20,
                                                 borderColor: barColor,
                                                 color: barColor
@@ -126,7 +112,7 @@ export default function CampaignCustomResources(): ReactElement | null {
                                                 bgcolor: activeThreshold.color,
                                                 color: textOn(activeThreshold.color),
                                                 fontWeight: 'bold',
-                                                fontSize: '0.65rem',
+                                                fontSize: '0.75rem',
                                                 height: 20
                                             }}
                                         />
@@ -221,7 +207,7 @@ export default function CampaignCustomResources(): ReactElement | null {
                                                     transform: 'translateX(-50%)',
                                                     color: t.color,
                                                     fontWeight: activeThreshold?.value === t.value ? 'bold' : 'normal',
-                                                    fontSize: '0.6rem',
+                                                    fontSize: '0.75rem',
                                                     lineHeight: 1,
                                                     whiteSpace: 'nowrap',
                                                     userSelect: 'none'
@@ -237,6 +223,6 @@ export default function CampaignCustomResources(): ReactElement | null {
                     );
                 })}
             </Box>
-        </Paper>
+        </Box>
     );
 }

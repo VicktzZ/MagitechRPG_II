@@ -24,7 +24,7 @@ import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
 import SentimentVeryDissatisfiedIcon from '@mui/icons-material/SentimentVeryDissatisfied';
 import MilitaryTechIcon from '@mui/icons-material/MilitaryTech';
 import AutoStoriesIcon from '@mui/icons-material/AutoStories';
-import { alpha, useTheme } from '@mui/material/styles';
+import { alpha } from '@mui/material/styles';
 import { classColor } from '@constants';
 import { color as tokenColor } from '@themes/tokens';
 import type { CampaignStats, PlayerCampaignStats } from '@models/entities';
@@ -95,7 +95,6 @@ function topExpertise(usage: Record<string, number>): string {
 }
 
 export default function CampaignStatsModal({ open, onClose, campaignId, campaignTitle }: CampaignStatsModalProps): ReactElement {
-    const theme = useTheme();
     const [ stats, setStats ] = useState<CampaignStats | null>(null);
     const [ loading, setLoading ] = useState(false);
 
@@ -125,7 +124,7 @@ export default function CampaignStatsModal({ open, onClose, campaignId, campaign
     return (
         <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
             <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                <EmojiEventsIcon sx={{ color: 'primary.main', fontSize: 32 }} />
+                <EmojiEventsIcon sx={{ color: 'text.secondary', fontSize: 32 }} />
                 <Box flex={1}>
                     <Typography variant="h6" component="div" fontWeight={700}>
                         Retrospectiva da Campanha
@@ -161,7 +160,7 @@ export default function CampaignStatsModal({ open, onClose, campaignId, campaign
                         {highlights.length > 0 && (
                             <Box>
                                 <Typography variant="subtitle1" fontWeight={700} gutterBottom>
-                                    🏆 Destaques
+                                    Destaques
                                 </Typography>
                                 <Grid container spacing={1.5}>
                                     {highlights.map((h, idx) => (
@@ -199,7 +198,7 @@ export default function CampaignStatsModal({ open, onClose, campaignId, campaign
                         {/* ── Estatísticas por jogador ── */}
                         <Box>
                             <Typography variant="subtitle1" fontWeight={700} gutterBottom>
-                                📊 Jogadores
+                                Jogadores
                             </Typography>
                             <Grid container spacing={2}>
                                 {players.map(player => (
@@ -219,7 +218,7 @@ export default function CampaignStatsModal({ open, onClose, campaignId, campaign
                                                 )}
                                             </Box>
 
-                                            <Typography variant="caption" fontWeight={700} color="error.main">⚔️ Combate</Typography>
+                                            <Typography variant="caption" fontWeight={700} color="text.secondary">Combate</Typography>
                                             <StatRow label="Dano causado" value={player.combat.damageDealt} />
                                             <StatRow label="Dano recebido" value={player.combat.damageTaken} />
                                             <StatRow label="Cura realizada" value={player.combat.healingDone} />
@@ -228,7 +227,7 @@ export default function CampaignStatsModal({ open, onClose, campaignId, campaign
                                             <StatRow label="Quedas (0 LP)" value={player.combat.knockouts} />
 
                                             <Divider sx={{ my: 1 }} />
-                                            <Typography variant="caption" fontWeight={700} color="primary.main">🎲 Dados</Typography>
+                                            <Typography variant="caption" fontWeight={700} color="text.secondary">Dados</Typography>
                                             <StatRow label="Testes rolados" value={player.dice.totalRolls} />
                                             <StatRow label="Passou / Falhou" value={`${player.dice.testsPassed} / ${player.dice.testsFailed}`} />
                                             <StatRow label="Críticos / Fumbles" value={`${player.dice.criticalHits} / ${player.dice.criticalFailures}`} />
@@ -236,7 +235,7 @@ export default function CampaignStatsModal({ open, onClose, campaignId, campaign
                                             <StatRow label="Perícia favorita" value={topExpertise(player.dice.expertiseUsage)} />
 
                                             <Divider sx={{ my: 1 }} />
-                                            <Typography variant="caption" fontWeight={700} color="info.main">💧 Recursos</Typography>
+                                            <Typography variant="caption" fontWeight={700} color="text.secondary">Recursos</Typography>
                                             <StatRow label="Magias conjuradas" value={player.resources.spellsCast} />
                                             <StatRow label="MP gasto" value={player.resources.mpSpent} />
                                             <StatRow label="Dinheiro gasto / ganho" value={`${player.resources.moneySpent} / ${player.resources.moneyEarned}`} />
@@ -244,7 +243,7 @@ export default function CampaignStatsModal({ open, onClose, campaignId, campaign
                                             <StatRow label="Doações feitas / recebidas" value={`${player.resources.itemsDonated} / ${player.resources.itemsReceived}`} />
 
                                             <Divider sx={{ my: 1 }} />
-                                            <Typography variant="caption" fontWeight={700} color="success.main">📈 Progressão</Typography>
+                                            <Typography variant="caption" fontWeight={700} color="text.secondary">Progressão</Typography>
                                             <StatRow label="Níveis ganhos" value={player.progression.levelsGained} />
                                             <StatRow label="Magias adquiridas" value={player.progression.spellsLearned} />
                                             <StatRow label="Habilidades adquiridas" value={player.progression.skillsGained} />
@@ -261,11 +260,11 @@ export default function CampaignStatsModal({ open, onClose, campaignId, campaign
                                 <Divider />
                                 <Box>
                                     <Typography variant="subtitle1" fontWeight={700} gutterBottom>
-                                        🎩 Mestre
+                                        Mestre
                                     </Typography>
                                     <Paper
                                         variant="outlined"
-                                        sx={{ p: 2, bgcolor: alpha(theme.palette.primary.main, 0.04) }}
+                                        sx={{ p: 2, bgcolor: 'background.raised' }}
                                     >
                                         <Grid container spacing={1}>
                                             <Grid item xs={6} sm={4}>

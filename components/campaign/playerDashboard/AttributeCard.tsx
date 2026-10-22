@@ -40,7 +40,7 @@ export function AttributeCard({
                     fontWeight: 700,
                     textTransform: 'uppercase',
                     letterSpacing: '0.05em',
-                    fontSize: '11px'
+                    fontSize: '12px'
                 }}>
                     {label}
                 </Typography>

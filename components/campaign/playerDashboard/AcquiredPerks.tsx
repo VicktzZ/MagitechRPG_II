@@ -37,7 +37,7 @@ export default function AcquiredPerks() {
         if (!charsheet?.session || !campaign?.campaignCode) return [];
 
         const sessionData = charsheet.session.find(
-            (s: any) => s.campaignCode === campaign.campaignCode
+            s => s.campaignCode === campaign.campaignCode
         );
 
         return sessionData?.perks || [];
@@ -127,7 +127,7 @@ export default function AcquiredPerks() {
                         </Typography>
                     ) : (
                         <Stack spacing={1}>
-                            {perks.map((perk: any, index: number) => (
+                            {perks.map((perk, index) => (
                                 <Tooltip 
                                     key={perk.id || index}
                                     title={perk.description || 'Sem descrição'}
@@ -168,7 +168,7 @@ export default function AcquiredPerks() {
                                             size="small"
                                             sx={{
                                                 height: 20,
-                                                fontSize: '0.65rem',
+                                                fontSize: '0.75rem',
                                                 bgcolor: `${rarityColors[perk.rarity] || rarityColors['Comum']}20`,
                                                 color: rarityColors[perk.rarity] || rarityColors['Comum'],
                                                 border: '1px solid',

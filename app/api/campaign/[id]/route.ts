@@ -1,4 +1,5 @@
 import { campaignRepository } from '@repositories';
+import { deleteCampaignMessages } from '@utils/firestore/campaignMessages';
 import type { Campaign } from '@models/entities/Campaign';
 import {
     assertMaxLength,
@@ -31,6 +32,13 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
         const { campaign } = await requireCampaignGM(params.id, user);
 
         await campaignRepository.delete(campaign.id);
+
+        // O Firestore não apaga as subcoleções junto com o documento: sem isto o chat ficaria órfão
+        try {
+            await deleteCampaignMessages(campaign.id);
+        } catch (error) {
+            console.error('[Campanha] Campanha excluída, mas as mensagens do chat não foram apagadas:', error);
+        }
 
         return Response.json({ message: 'SUCCESS' });
     } catch (error) {

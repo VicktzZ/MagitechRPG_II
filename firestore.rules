@@ -49,6 +49,16 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Chat da campanha (campaigns/{id}/messages, uma mensagem por documento). Leitura para
+    // logados, o mesmo alcance de abrir a campanha pelo ID (onde as mensagens ficavam antes):
+    // o ID só chega a quem tem o convite. As regras não conseguem checar se o usuário é jogador
+    // (a lista `players` é de mapas), então a checagem de membro fica na API, que também faz a
+    // paginação do histórico. Escrita só pela API.
+    match /campaigns/{campaignId}/messages/{messageId} {
+      allow read: if signedIn();
+      allow write: if false;
+    }
+
     // Notificações: só as do próprio usuário. Criar/marcar como lida: pela API.
     match /notifications/{notificationId} {
       allow read: if signedIn() && (resource.data.userId == request.auth.uid || isAdmin());

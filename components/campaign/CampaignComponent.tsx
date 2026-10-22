@@ -2,38 +2,34 @@
 
 import { campaignCurrentCharsheetContext, useCampaignContext } from '@contexts';
 import { useCompleteCharsheet } from '@hooks/useCompleteCharsheet';
-import { Backdrop, Box, CircularProgress } from '@mui/material';
+import { Backdrop, CircularProgress, Stack } from '@mui/material';
 import { sessionService } from '@services';
 import { enqueueSnackbar } from 'notistack';
-import { useEffect, useMemo, useState, type ReactElement } from 'react';
+import { useSession } from 'next-auth/react';
+import { useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 import { CampaignGMDashboard, CampaignHeader, CampaignNotes, CampaignPlayerDashboard, SessionChat } from '.';
 import type { CharsheetDTO } from '@models/dtos';
 import GMActions from './gmDashboard/GMActions';
 import CampaignFinishedBanner from './CampaignFinishedBanner';
 import CampaignWidgetPanel from './widget/CampaignWidgetPanel';
+import CombatStatus from './CombatStatus';
 import DevViewSwitcher from './DevViewSwitcher';
+import FloatingDock from './FloatingDock';
 
 const DEV_MODE = process.env.NEXT_PUBLIC_NODE_ENV === 'development';
 
 export default function CampaignComponent(): ReactElement {
     const { isUserGM, campaign, charsheets  } = useCampaignContext();
     const { campaignCode } = campaign;
-    const [ charsheetId, setCharsheetId ] = useState<string>(typeof window !== 'undefined' ? (localStorage.getItem('currentCharsheet') ?? '') : '');
-    const userId = typeof window !== 'undefined' ? (localStorage.getItem('userId') ?? '') : '';
+    const { data: session } = useSession();
+    const userId = session?.user?.id ?? '';
 
-    // Se não-GM e não há charsheetId, tentar derivar do contexto e persistir
-    useEffect(() => {
-        if (isUserGM) return;
-        if (!charsheetId) {
-            const owned = userId ? (charsheets.find(c => c.userId === userId)?.id ?? '') : '';
-            const fallback = owned || (charsheets[0]?.id ?? '');
-            if (fallback) {
-                localStorage.setItem('currentCharsheet', fallback);
-                setCharsheetId(fallback);
-            }
-        }
-    }, [ isUserGM, charsheets, userId, charsheetId ]);
+    // A ficha de quem está vendo vem da própria campanha (campaign.players); um localStorage global
+    // misturava a ficha de campanhas abertas em abas diferentes
+    const charsheetId = campaign.players?.find(player => player.userId === userId)?.charsheetId
+        ?? charsheets.find(sheet => sheet.userId === userId)?.id
+        ?? '';
 
     // MODO DEV: permite ao mestre pré-visualizar a campanha como jogador,
     // usando uma ficha da própria conta anexada como jogador de teste.
@@ -54,22 +50,41 @@ export default function CampaignComponent(): ReactElement {
 
     const { data: charsheet, loading } = useCompleteCharsheet({ charsheetId: effectiveCharsheetId });
 
+    // Presença: entra na sessão ao abrir a campanha e sai ao deixá-la (trocar de tela ou fechar a aba).
+    // Os dados mais novos vêm por ref para que mudar de ficha ou o mestre alternar a visão não reconecte.
+    const presenceRef = useRef({ isUserGM, charsheetId, alreadyInSession: campaign.session?.users?.includes(userId) ?? false });
+    presenceRef.current = { ...presenceRef.current, isUserGM, charsheetId };
+
     useEffect(() => {
-        enqueueSnackbar('Você entrou na campanha!', { variant: 'success' }) 
-        sessionService.connect({ 
+        if (!campaignCode || !userId) return;
+
+        sessionService.connect({
             campaignCode,
             userId,
-            isGM: isUserGM,
-            charsheetId
+            isGM: presenceRef.current.isUserGM,
+            charsheetId: presenceRef.current.charsheetId
+        }).then(() => {
+            if (!presenceRef.current.alreadyInSession) enqueueSnackbar('Você entrou na campanha!', { variant: 'success' });
+        }).catch(() => {
+            enqueueSnackbar('Não foi possível registrar sua entrada na sessão. Os outros podem não ver você online.', { variant: 'warning' });
         });
-         
+
+        // Fechar a aba não roda o cleanup do React: keepalive deixa o aviso de saída terminar mesmo assim
+        const leaveOnPageHide = () => {
+            void fetch('/api/session/disconnect', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ campaignCode }),
+                keepalive: true
+            }).catch(() => undefined);
+        };
+        window.addEventListener('pagehide', leaveOnPageHide);
+
         return () => {
-            sessionService.disconnect({ 
-                campaignCode,
-                userId  
-            }); 
-        }; 
-    }, [])
+            window.removeEventListener('pagehide', leaveOnPageHide);
+            sessionService.disconnect({ campaignCode, userId }).catch(() => undefined);
+        };
+    }, [ campaignCode, userId ]);
 
     const form = useForm<CharsheetDTO>({
         defaultValues: charsheet!,
@@ -79,45 +94,40 @@ export default function CampaignComponent(): ReactElement {
     // Objeto memoizado — inline ({{ charsheet }}) criava um valor novo a cada
     // render e re-renderizava todos os consumidores do contexto da ficha atual.
     const currentCharsheetValue = useMemo(() => ({ charsheet: charsheet! }), [ charsheet ]);
-    
+
+    // Uma coluna só: faixa da campanha, avisos, ações do mestre, notas e o painel de quem está vendo.
+    // O chat e o dock (combate e widgets) ficam fixos na borda e não entram no fluxo.
     const content = (
         <>
-            <CampaignHeader />
-            <CampaignFinishedBanner />
-            <Box sx={{
-                display: 'flex',
-                position: 'relative',
-                gap: 2,
-                width: '100%',
-                height: '100%'
-            }}>
-                <Box sx={{
-                    width: '100%'
-                }}>
-                    {DEV_MODE && isUserGM && (
-                        <DevViewSwitcher
-                            campaignId={campaign.id}
-                            userId={userId}
-                            activeCharsheetId={devPreviewCharsheetId}
-                            onChange={handleDevPreviewChange}
-                        />
-                    )}
-                    {effectiveIsUserGM && (
-                        <Box sx={{ display: 'flex', mb: 2 }}>
-                            <GMActions />
-                        </Box>
-                    )}
-                    <CampaignNotes />
-                    {effectiveIsUserGM ? (
-                        <CampaignGMDashboard />
-                    ) : (
-                        <CampaignPlayerDashboard />
-                    )}
-                </Box>
-            </Box>
+            <Stack spacing={2} sx={{ width: '100%', minWidth: 0 }}>
+                <CampaignHeader />
+                <CampaignFinishedBanner />
+                {DEV_MODE && isUserGM && (
+                    <DevViewSwitcher
+                        campaignId={campaign.id}
+                        userId={userId}
+                        activeCharsheetId={devPreviewCharsheetId}
+                        onChange={handleDevPreviewChange}
+                    />
+                )}
+                {effectiveIsUserGM && <GMActions />}
+                <CampaignNotes />
+                {effectiveIsUserGM ? (
+                    <CampaignGMDashboard />
+                ) : (
+                    <CampaignPlayerDashboard />
+                )}
+            </Stack>
             <SessionChat />
-            {/* Widget da campanha — painel flutuante visível a todos (estilo pop-up de combate) */}
-            <CampaignWidgetPanel />
+            <FloatingDock>
+                <CombatStatus
+                    campaignId={campaign.id}
+                    combat={campaign.session?.combat ?? null}
+                    userCharsheetId={charsheetId || undefined}
+                />
+                {/* Widgets da campanha: visíveis a todos, empilhados com o combate */}
+                <CampaignWidgetPanel />
+            </FloatingDock>
         </>
     );
 

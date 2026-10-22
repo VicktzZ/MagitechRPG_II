@@ -35,16 +35,41 @@ import { rarityColor } from '@constants';
 import type { RarityType } from '@models/types/string';
 import { useCharsheetSystem } from '@hooks/useCharsheetSystem';
 
+/** Texto de estágio/efeito/descrição: a loja devolve ora uma string, ora um objeto com `description` ou `value` */
+type TextLike = string | { description?: string, value?: string }
+
+/** Valor cru de um campo do catálogo (texto, número ou objeto); `safeRender` o transforma em texto */
+type Raw = string | number | boolean | object
+
+/** Dados do item como vêm do catálogo de perks: os campos variam por tipo (arma, armadura, magia, habilidade...) */
+interface ShopItemData {
+    categ?: Raw
+    range?: Raw
+    effect?: { value?: Raw, critValue?: Raw }
+    value?: Raw
+    element?: Raw
+    execution?: Raw
+    mpCost?: Raw
+    kind?: Raw
+    weight?: Raw
+    skillType?: Raw
+    stages?: TextLike[]
+    effects?: TextLike[]
+}
+
 interface ShopItem {
     id: string
     name: string
-    description?: string
+    description?: TextLike
     perkType: string
     rarity: string
     price: number
     spellLevel?: number
-    data?: any
+    data?: ShopItemData
 }
+
+const textOf = (text: TextLike): string =>
+    typeof text === 'string' ? text : text.description || text.value || JSON.stringify(text)
 
 export default function ShopDrawer(): ReactElement | null {
     const { campaign } = useCampaignContext();
@@ -81,7 +106,7 @@ export default function ShopDrawer(): ReactElement | null {
             if (result.success && result.items) {
                 setShopItems(result.items);
             } else if (!result.success) {
-                console.log('[ShopDrawer] Erro:', result.message);
+                console.error('[ShopDrawer] Erro ao carregar a loja:', result.message);
                 setShopItems([]);
             }
         } catch (error) {
@@ -176,36 +201,37 @@ export default function ShopDrawer(): ReactElement | null {
         switch (type) {
         case 'WEAPON':
         case 'ARMA': 
-            return { bg: alpha(color.danger, 0.14), color: color.danger, label: '⚔️ Arma' };
+            return { bg: alpha(color.danger, 0.14), color: color.danger, label: 'Arma' };
         case 'ARMOR':
         case 'ARMADURA': 
-            return { bg: alpha(color.cyan, 0.14), color: color.cyan, label: '🛡️ Armadura' };
+            return { bg: alpha(color.cyan, 0.14), color: color.cyan, label: 'Armadura' };
         case 'ITEM': 
-            return { bg: alpha(color.amber, 0.14), color: color.amber, label: '📦 Item' };
+            return { bg: alpha(color.amber, 0.14), color: color.amber, label: 'Item' };
         case 'SKILL':
         case 'HABILIDADE': 
-            return { bg: alpha(color.inkMuted, 0.14), color: color.ink, label: '⚡ Habilidade' };
+            return { bg: alpha(color.inkMuted, 0.14), color: color.ink, label: 'Habilidade' };
         case 'SPELL':
         case 'MAGIA': 
             return { bg: alpha(color.warning, 0.14), color: color.warning, label: `Magia${spellLevel ? ` Nv.${spellLevel}` : ''}` };
         case 'UPGRADE': 
-            return { bg: alpha(color.success, 0.14), color: color.success, label: '🔧 Acessório' };
+            return { bg: alpha(color.success, 0.14), color: color.success, label: 'Acessório' };
         default: 
             return { bg: alpha(color.inkMuted, 0.14), color: color.ink, label: perkType };
         }
     };
 
     // Helper para renderizar valores de forma segura (evita objetos como React children)
-    const safeRender = (value: any): string => {
+    const safeRender = (value: unknown): string => {
         if (value === null || value === undefined) return '';
         if (typeof value === 'string') return value;
         if (typeof value === 'number') return String(value);
         if (typeof value === 'boolean') return value ? 'Sim' : 'Não';
         if (typeof value === 'object') {
             // Tenta extrair propriedades comuns
-            if (value.description) return value.description;
-            if (value.value) return safeRender(value.value);
-            if (value.name) return value.name;
+            const record = value as { description?: string, value?: unknown, name?: string };
+            if (record.description) return record.description;
+            if (record.value) return safeRender(record.value);
+            if (record.name) return record.name;
             return '';
         }
         return String(value);
@@ -397,7 +423,7 @@ export default function ShopDrawer(): ReactElement | null {
                                             >
                                                 {typeof item.description === 'string' 
                                                     ? item.description 
-                                                    : (item.description as any)?.description || ''}
+                                                    : item.description?.description || ''}
                                             </Typography>
                                         )}
 
@@ -408,7 +434,7 @@ export default function ShopDrawer(): ReactElement | null {
                                                 color="error"
                                                 sx={{ display: 'block', mb: 1, fontWeight: 600 }}
                                             >
-                                                ⚠️ {restriction}
+                                                {restriction}
                                             </Typography>
                                         )}
 
@@ -504,7 +530,7 @@ export default function ShopDrawer(): ReactElement | null {
                                     <Typography variant="body1">
                                         {typeof selectedItem.description === 'string' 
                                             ? selectedItem.description 
-                                            : (selectedItem.description as any)?.description || ''}
+                                            : selectedItem.description?.description || ''}
                                     </Typography>
                                 </Box>
                             )}
@@ -602,15 +628,13 @@ export default function ShopDrawer(): ReactElement | null {
                                                 Estágios
                                             </Typography>
                                             <Stack spacing={1}>
-                                                {selectedItem.data.stages.map((stage: any, idx: number) => (
+                                                {selectedItem.data.stages.map((stage, idx) => (
                                                     <Paper key={idx} sx={{ p: 1.5, bgcolor: 'action.hover' }}>
                                                         <Typography variant="caption" color="primary" fontWeight={600}>
                                                             Estágio {idx + 1}
                                                         </Typography>
                                                         <Typography variant="body2">
-                                                            {typeof stage === 'string' 
-                                                                ? stage 
-                                                                : stage.description || stage.value || JSON.stringify(stage)}
+                                                            {textOf(stage)}
                                                         </Typography>
                                                     </Paper>
                                                 ))}
@@ -625,11 +649,9 @@ export default function ShopDrawer(): ReactElement | null {
                                                 Efeitos
                                             </Typography>
                                             <Stack spacing={0.5}>
-                                                {selectedItem.data.effects.map((effect: any, idx: number) => (
+                                                {selectedItem.data.effects.map((effect, idx) => (
                                                     <Typography key={idx} variant="body2">
-                                                        • {typeof effect === 'string' 
-                                                            ? effect 
-                                                            : effect.description || effect.value || JSON.stringify(effect)}
+                                                        • {textOf(effect)}
                                                     </Typography>
                                                 ))}
                                             </Stack>
@@ -646,7 +668,7 @@ export default function ShopDrawer(): ReactElement | null {
                                     color="error"
                                     sx={{ textAlign: 'center', fontWeight: 600, mb: 1 }}
                                 >
-                                    ⚠️ {getItemRestriction(selectedItem)}
+                                    {getItemRestriction(selectedItem)}
                                 </Typography>
                             )}
                             <Box display="flex" gap={1} width="100%">

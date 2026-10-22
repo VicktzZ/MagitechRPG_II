@@ -36,6 +36,9 @@ export const notFound = (message = 'Recurso não encontrado') =>
 export const badRequest = (message = 'Requisição inválida') =>
     new ApiError(400, 'BAD_REQUEST', message);
 
+export const conflict = (message = 'O recurso mudou; tente de novo') =>
+    new ApiError(409, 'CONFLICT', message);
+
 export const payloadTooLarge = (message = 'Conteúdo da requisição grande demais') =>
     new ApiError(413, 'PAYLOAD_TOO_LARGE', message);
 

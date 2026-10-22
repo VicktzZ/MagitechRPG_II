@@ -29,9 +29,9 @@ export default function CampaignPage(): ReactElement {
                             <Typography variant='h5'>Campanha</Typography>
                         </Box>
                         <Grid container gap={2}>
-                            {loading ? [ 0, 1, 2, 3 ].map(() => (
+                            {loading ? [ 0, 1, 2, 3 ].map(index => (
                                 <Skeleton
-                                    key={Math.random()}
+                                    key={index}
                                     variant='rectangular'
                                     sx={{
                                         borderRadius: 3,

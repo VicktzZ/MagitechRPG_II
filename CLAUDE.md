@@ -41,6 +41,68 @@ explícita do dono: criar apenas ids novos, abortar se houver colisão de id ou 
 Para alterar um lote já gravado, conferir antes que os documentos ainda estão na versão anterior do
 lote (senão alguém editou à mão), sobrescrever só os ids do lote e reler para conferir.
 
+## Campanha: testes pedidos pelo mestre e tempo real
+
+- **Teste ("Solicitar teste")** não usa Pusher. O mestre grava o pedido em `campaign.session.testRequest`
+  (`POST /api/campaign/[id]/session/test-request`) e os jogadores o recebem pelo listener da campanha; cada
+  resposta vai para `testRequest.responses.<userId>` (`.../test-response`, em transação). O servidor refaz a conta
+  (maior d20 + bônus contra a DT) e confere pedido, prazo (10 min) e se o jogador foi chamado. A regra de dados é a
+  mesma do botão da perícia na ficha: nº de d20 = `mods.attributes` do atributo padrão (mínimo 1), vale o maior.
+  Lógica pura em `utils/campaignTest.ts`; validação em `utils/api/campaignTests.ts`; fluxo do navegador em
+  `hooks/useCampaignTest.ts`.
+- **Pusher está praticamente sem uso**: só o mestre assina (`hooks/usePusher.tsx`), e no canal `CODIGO` enquanto o
+  servidor publica em `presence-CODIGO`, então os eventos do servidor não chegam a nenhum cliente. O estado em tempo
+  real da campanha é todo Firestore. Antes de usar Pusher para algo novo, corrija o nome do canal e a assinatura dos jogadores.
+- Eventos de cliente do Pusher (`channel.trigger`) exigem nome com prefixo `client-`; sem ele a lib lança `BadEventName`.
+- Rotas que reescrevem a campanha inteira (`campaignRepository.update({ ...campaign, ... })`) perdem alterações
+  simultâneas. Para campos soltos use `adminUpdateDoc` (caminhos de campo) e, quando precisar conferir antes de
+  gravar, `adminUpdateDocInTransaction`. `session/connect` e `session/disconnect` já fazem assim: só `session.users` e
+  `players` (e o campo `session` da ficha) são gravados, com a lógica pura em `utils/campaignPresence.ts`. Ainda
+  reescrevem a campanha inteira, entre outras, as rotas de notas, `offer-perks` e `pending-perk-user`.
+- Avise o Pusher sempre com `triggerPusher` (`utils/pusher.ts`): o aviso é um extra e uma falha dele não pode virar 500
+  depois de a gravação já ter sido feita. A presença (quem está online) é `campaign.session.users`; o navegador
+  conecta ao abrir a campanha e desconecta ao sair da tela e no `pagehide` (fetch com `keepalive`).
+- **Erros em `catch`**: use `errorMessage(error, 'texto padrão')` e `asRequestError` de `utils/errors.ts`; nada de
+  `catch (error: any)`. Listas que o Firestore devolve como objeto de chaves numéricas: `utils/normalizeToArray.ts`.
+
+- **Chat**: as mensagens ficam em `campaigns/{id}/messages` (um documento por mensagem, ID = ID da mensagem), não mais
+  na lista `session.messages` da campanha. O servidor só cria o documento (`utils/firestore/campaignMessages.ts`:
+  `appendCampaignMessage`, `listCampaignMessages`, `deleteCampaignMessages`); o navegador acompanha as últimas 100 em
+  tempo real e busca as anteriores por `GET /api/campaign/[id]/messages?beforeId=` (`hooks/useCampaignChatFeed.ts`).
+  O horário da mensagem é o do servidor. As mensagens antigas que ainda estão na lista da campanha aparecem junto, sem
+  repetir; `scripts/migrateCampaignMessages.ts` as move (simulação por padrão; `--apply` copia, `--clear` esvazia a lista
+  antiga — **grava no banco: só com liberação do dono**). Ao excluir a campanha o servidor apaga a subcoleção.
+  **Publique `firestore.rules` antes do código**: a regra nova de `campaigns/{id}/messages` é aditiva, mas sem ela o
+  navegador não lê o chat.
+- **Verificar contra o Firestore de verdade (emulador)**: `(cd tests/firestore-rules && npm install)` uma vez; depois
+  `npm test` nessa pasta (regras) e `npm run test:emulator` na raiz (helpers do servidor com o Admin SDK).
+- **Ver a campanha rodando, sem banco real**: emuladores (`firebase emulators:start --only firestore,auth --project
+  demo-magitech --config firebase.firestore.json`) + `next dev` com `NEXT_PUBLIC_FIREBASE_EMULATORS=true`,
+  `FIRESTORE_EMULATOR_HOST=127.0.0.1:8080`, `FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099` e credenciais descartáveis. O login
+  de desenvolvimento é o provedor de administração (`ADMIN_EMAIL`/`ADMIN_PASSWORD`, só com `NODE_ENV=development`); o
+  `signIn` do NextAuth grava `image: undefined` para esse usuário e o Firestore recusa, então o usuário de teste não pode
+  ter `image` na hora do login.
+
+## Campanha: layout da página
+
+- **Uma coluna só** (`CampaignComponent`): cabeçalho, avisos, ações do mestre, notas e o painel de quem está vendo.
+  O chat (`SessionChat`/`ChatWrapper`) é uma coluna **encaixada** à direita a partir de `lg` (`CampaignShell` reserva o
+  espaço com padding; `campaignLayout.ts` tem `CHAT_PANEL_WIDTH` e `useChatDocked`), abre fechado em telas menores e
+  vira sobreposição de tela cheia no celular, com o selo de mensagens não lidas (`useUnreadMessages`).
+- **Dock flutuante** (`FloatingDock`, canto inferior direito, ao lado do chat): card de combate (`CombatStatus`, começa
+  recolhido e abre sozinho no turno do jogador) e widgets (`CampaignWidgetPanel`). Painel `position: fixed` com
+  `transform` cria um bloco de contenção para filhos fixos: por isso nada novo deve morar dentro do painel do chat.
+- **Seções** usam o `Section` compartilhado (`components/campaign/Section.tsx`, título com ícone neutro, filete e
+  `scroll-margin-top: var(--campaign-sticky-offset)`); os componentes de seção (perícias, magias, inventário...) não
+  têm moldura nem título próprios, só o conteúdo. O painel do jogador tem barra fixa com navegação por âncoras e os
+  pontos vitais compactos (`PlayerStickyBar`); colunas lado a lado usam container query (`@container (min-width: 820px)`),
+  porque a largura útil depende do chat encaixado.
+- Sem emoji na interface (só dados que o usuário escolhe: ícone de widget/efeito, e o 🎲 do texto de rolagem do chat,
+  que o `DiceMessage` reconhece), texto ≥ 12px, ícones decorativos em `text.secondary`.
+- **Arquivos grandes**: componentes acima de ~400 linhas devem ser divididos em subpastas por seção
+  (`gmDashboard/dashboard/`, `playerDashboard/inventory/`, `widget/panel/`...), mantendo o arquivo original como
+  composição com o mesmo export e props.
+
 ## Limite de MP por turno
 
 `⌈(Nível + Foco) ÷ 2⌉ + Nível de ORM` (+ bônus em `mpLimit` da ficha), em `utils/mpLimit.ts`.

@@ -1,7 +1,8 @@
 import { PusherEvent } from '@enums';
-import { campaignRepository } from '@repositories';
+import type { Campaign } from '@models/entities';
 import { assertId, forbidden, handleRouteError, readJsonBody, requireCampaignMember, requireUser } from '@utils/api';
-import { pusherServer } from '@utils/pusher';
+import { triggerPusher } from '@utils/pusher';
+import { adminUpdateDocInTransaction } from '@utils/firestore/adminDocs';
 
 interface RemovePendingUserBody {
     userId: string;
@@ -25,25 +26,22 @@ export async function POST(req: Request, { params }: { params: { id: string } })
             throw forbidden('Você só pode concluir a sua própria escolha de perks');
         }
 
-        // Remove o usuário da lista de pending
-        const currentPending = campaign.session?.pendingPerkUsers || [];
-        const updatedPending = currentPending.filter(uid => uid !== body.userId);
-
-        // Cria a sessão atualizada sem undefined (Firestore não aceita undefined)
-        const updatedSession = {
-            ...campaign.session,
-            pendingPerkUsers: updatedPending,
-            // Limpa os filtros se não houver mais ninguém pendente (usa null em vez de undefined)
-            perkFilters: updatedPending.length === 0 ? null : (campaign.session?.perkFilters || null)
-        };
-
-        await campaignRepository.update({
-            ...campaign,
-            session: updatedSession
+        // Remove o usuário da lista de pendentes dentro de uma transação: vários jogadores concluem a
+        // escolha ao mesmo tempo, e cada um precisa ver a lista que o outro acabou de gravar
+        const updatedPending = await adminUpdateDocInTransaction<string[], Campaign>('campaigns', campaign.id, data => {
+            const remaining = (data?.session?.pendingPerkUsers ?? []).filter(uid => uid !== body.userId);
+            return {
+                fields: {
+                    'session.pendingPerkUsers': remaining,
+                    // Limpa os filtros quando não sobra ninguém pendente (null: o Firestore não aceita undefined)
+                    ...(remaining.length === 0 ? { 'session.perkFilters': null } : {})
+                },
+                result: remaining
+            };
         });
 
         // Notifica os clientes via Pusher
-        await pusherServer.trigger(
+        await triggerPusher(
             `presence-${campaign.campaignCode}`,
             PusherEvent.PERK_USER_COMPLETED,
             { userId: body.userId, remainingUsers: updatedPending }
