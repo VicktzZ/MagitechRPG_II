@@ -1,9 +1,10 @@
-import { Box, Chip, IconButton, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from '@mui/material';
+import { Box, Chip, IconButton, NativeSelect, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from '@mui/material';
 import { Delete } from '@mui/icons-material';
 import { elementColor } from '@constants';
 import { color } from '@themes/tokens';
 import type { SpellDTO } from '@models/dtos';
 import type { Spell } from '@models/entities';
+import { getStageProgress, spellStageCount, spellStageKey, usesStageUnlock } from '@utils/spellStages';
 import { normalizeToArray } from './normalizeToArray';
 import SpellStats from './SpellStats';
 import type { CharsheetTabProps } from './types';
@@ -15,6 +16,10 @@ interface SpellsTabProps extends CharsheetTabProps {
 
 /** Aba "Spells": tabela de magias da ficha e estatísticas */
 export default function SpellsTab({ charsheet, editedData, isEditing, updateNestedField, spells }: SpellsTabProps) {
+    // O mestre ajusta o estágio liberado de cada magia (ver utils/spellStages.ts); vale no Magitech padrão
+    const stageRule = usesStageUnlock(charsheet);
+    const unlockedMap = editedData.spellUnlocked ?? charsheet.spellUnlocked;
+
     return (
         <>
             <Box sx={{ mb: 2 }}>
@@ -36,6 +41,7 @@ export default function SpellsTab({ charsheet, editedData, isEditing, updateNest
                                 <TableCell>Custo de Mana</TableCell>
                                 <TableCell>Nível</TableCell>
                                 <TableCell>Descrição</TableCell>
+                                {stageRule && <TableCell>Estágio liberado</TableCell>}
                                 {isEditing && <TableCell>Ações</TableCell>}
                             </TableRow>
                         </TableHead>
@@ -89,6 +95,28 @@ export default function SpellsTab({ charsheet, editedData, isEditing, updateNest
                                             </Box>
                                         )} */}
                                     </TableCell>
+                                    {stageRule && (
+                                        <TableCell>
+                                            {(() => {
+                                                const key = spellStageKey(spell);
+                                                const progress = getStageProgress({ spellStages: charsheet.spellStages, spellUnlocked: unlockedMap }, key, spellStageCount(spell), true);
+                                                if (!isEditing) return `${progress.unlocked} de ${progress.count}`;
+                                                return (
+                                                    <NativeSelect
+                                                        value={progress.unlocked}
+                                                        inputProps={{ 'aria-label': `Estágio liberado de ${spell?.name}` }}
+                                                        onChange={(event) => {
+                                                            updateNestedField('spellUnlocked', { ...(unlockedMap ?? {}), [key]: Number(event.target.value) });
+                                                        }}
+                                                    >
+                                                        {Array.from({ length: progress.count }, (_, stageIndex) => (
+                                                            <option key={stageIndex + 1} value={stageIndex + 1}>{`Estágio ${stageIndex + 1}`}</option>
+                                                        ))}
+                                                    </NativeSelect>
+                                                );
+                                            })()}
+                                        </TableCell>
+                                    )}
                                     {isEditing && (
                                         <TableCell>
                                             <IconButton

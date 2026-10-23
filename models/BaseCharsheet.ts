@@ -50,9 +50,15 @@ export class BaseCharsheet {
     @IsOptional()
         systemId?: string;
 
+    /** Estágio ATIVO de cada magia (a que o jogador usa para conjurar), por id da magia */
     @IsOptional()
     @IsObject()
         spellStages?: Record<string, number> = {};
+
+    /** Estágio liberado até agora em cada magia, por id; o ativo nunca passa dele (ver `utils/spellStages.ts`) */
+    @IsOptional()
+    @IsObject()
+        spellUnlocked?: Record<string, number> = {};
 
     @IsEnum([ 'Masculino', 'Feminino', 'Não-binário', 'Outro', 'Não definido' ]) gender: Gender;
     @IsEnum([ 'Miserável', 'Pobre', 'Estável', 'Rico' ]) financialCondition: FinancialCondition;

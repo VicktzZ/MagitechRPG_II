@@ -22,7 +22,8 @@ import { useSession } from 'next-auth/react';
 import {
     Bolt,
     Delete,
-    ExpandMore
+    ExpandMore,
+    LockOutlined
 } from '@mui/icons-material';
 import {
     Accordion,
@@ -41,6 +42,7 @@ import {
 import { color } from '@themes/tokens';
 import { type ReactElement, useState } from 'react';
 import { asRequestError } from '@utils/errors';
+import { getStageProgress, materializeUnlocked, spellStageCount, usesStageUnlock, withoutSpell } from '@utils/spellStages';
 
 /** Nível e estágio são escalas ordenadas: neutros que clareiam até o âmbar no topo (o número vai sempre em texto) */
 function getSpellLevelColor(level: number) {
@@ -235,10 +237,19 @@ export default function SpellsSection(): ReactElement {
         if (!isChatOpen) setIsChatOpen(true);
     };
 
+    // Desbloqueio de estágios (ver utils/spellStages.ts): vale no Magitech padrão, não em sistema customizado nem no Roguelite
+    const stageRule = usesStageUnlock(charsheet ?? {}, campaign?.mode);
+
     const handleCastSpell = async (spell: SpellDTO, stage: 1 | 2 | 3) => {
         if (!charsheet?.id) return;
         const spellKey = spell.id || spell.name;
         if (castingSpellId) return;
+
+        const progress = getStageProgress(charsheet, spellKey, spellStageCount(spell), stageRule);
+        if (stage > progress.unlocked) {
+            enqueueSnackbar(`O estágio ${stage} de ${spell.name} ainda está bloqueado. Evolua a magia primeiro.`, { variant: 'warning' });
+            return;
+        }
 
         const result = castSpell(spell, stage);
         const playerName = charsheet.name || session?.user?.name || 'Jogador';
@@ -324,9 +335,10 @@ export default function SpellsSection(): ReactElement {
 
             const currentStages = charsheet.spellStages || {};
             if (spellKey in currentStages) {
-                update['spellStages'] = Object.fromEntries(
-                    Object.entries(currentStages).filter(([ key ]) => key !== spellKey)
-                );
+                update['spellStages'] = withoutSpell(currentStages, spellKey);
+            }
+            if (spellKey in (charsheet.spellUnlocked || {})) {
+                update['spellUnlocked'] = withoutSpell(charsheet.spellUnlocked, spellKey);
             }
 
             // Mesma regra da ficha: excluir devolve o espaço e o ponto de magia
@@ -349,18 +361,46 @@ export default function SpellsSection(): ReactElement {
         const spellId = spell.id || spell.name
         if (!spellId) return
 
+        const progress = getStageProgress(charsheet, spellId, spellStageCount(spell), stageRule)
+        if (stage > progress.unlocked) return
+
         try {
-            await charsheetEntity.update(charsheet.id, {
+            const update: Record<string, unknown> = {
                 spellStages: {
                     ...(charsheet.spellStages || {}),
                     [spellId]: stage
                 }
-            } as any)
+            }
+            // Ficha antiga: grava o estágio que a magia já tinha liberado antes de trocar o ativo
+            const unlocked = materializeUnlocked(charsheet.spellUnlocked, spellId, progress)
+            if (unlocked !== (charsheet.spellUnlocked ?? {})) update['spellUnlocked'] = unlocked
+
+            await charsheetEntity.update(charsheet.id, update as any)
 
             enqueueSnackbar(`Estágio da magia "${spell.name}" definido para ${stage}!`, { variant: 'success' })
         } catch (error) {
             console.error('Erro ao atualizar estágio da magia:', error)
             enqueueSnackbar('Erro ao atualizar estágio da magia', { variant: 'error' })
+        }
+    }
+
+    // Evoluir: libera o próximo estágio, sem custo, e já o deixa ativo
+    const handleUnlockStage = async (spell: SpellDTO, stage: 1 | 2 | 3) => {
+        if (!charsheet?.id) return
+
+        const spellId = spell.id || spell.name
+        if (!spellId) return
+
+        try {
+            await charsheetEntity.update(charsheet.id, {
+                spellUnlocked: { ...(charsheet.spellUnlocked || {}), [spellId]: stage },
+                spellStages: { ...(charsheet.spellStages || {}), [spellId]: stage }
+            } as any)
+
+            enqueueSnackbar(`${spell.name} evoluiu: estágio ${stage} desbloqueado!`, { variant: 'success' })
+        } catch (error) {
+            console.error('Erro ao evoluir magia:', error)
+            enqueueSnackbar('Erro ao evoluir a magia', { variant: 'error' })
         }
     }
 
@@ -472,7 +512,9 @@ export default function SpellsSection(): ReactElement {
                                 {allSpells.map(spell => {
                                     const levelConfig = getSpellLevelColor(Number(spell.level));
                                     const spellId = spell.id || spell.name
-                                    const selectedStage = (charsheet.spellStages?.[spellId] as 1 | 2 | 3 | undefined) || 1
+                                    const progress = getStageProgress(charsheet, spellId, spellStageCount(spell), stageRule)
+                                    const selectedStage = progress.active
+                                    const nextStage = progress.next
                                     const availableStages: Array<1 | 2 | 3> = [ 1 ]
                                     if (spell.stages?.[1]) availableStages.push(2)
                                     if (spell.stages?.[2]) availableStages.push(3)
@@ -611,17 +653,42 @@ export default function SpellsSection(): ReactElement {
                                                 <Stack spacing={2}>
                                                     <Box display="flex" gap={1} flexWrap="wrap" alignItems="center">
                                                         <Typography variant="caption" color="text.secondary">Estágio ativo:</Typography>
-                                                        {availableStages.map(stage => (
-                                                            <Chip
-                                                                key={stage}
-                                                                label={`Estágio ${stage}`}
+                                                        {availableStages.map(stage => {
+                                                            const locked = stage > progress.unlocked
+                                                            return (
+                                                                <Tooltip key={stage} title={locked ? 'Evolua a magia para desbloquear este estágio' : ''} arrow>
+                                                                    <span>
+                                                                        <Chip
+                                                                            label={`Estágio ${stage}`}
+                                                                            size="small"
+                                                                            clickable={!locked}
+                                                                            disabled={locked}
+                                                                            icon={locked ? <LockOutlined /> : undefined}
+                                                                            aria-label={locked ? `Estágio ${stage} bloqueado` : `Estágio ${stage}`}
+                                                                            onClick={() => { void handleSetSpellStage(spell, stage) }}
+                                                                            color={selectedStage === stage ? 'primary' : 'default'}
+                                                                            variant={selectedStage === stage ? 'filled' : 'outlined'}
+                                                                        />
+                                                                    </span>
+                                                                </Tooltip>
+                                                            )
+                                                        })}
+                                                        {progress.enabled && (
+                                                            <Typography variant="caption" color="text.secondary" sx={{ ml: 0.5 }}>
+                                                                Desbloqueado: {progress.unlocked} de {progress.count}
+                                                            </Typography>
+                                                        )}
+                                                        {nextStage && (
+                                                            <Button
                                                                 size="small"
-                                                                clickable
-                                                                onClick={() => { void handleSetSpellStage(spell, stage) }}
-                                                                color={selectedStage === stage ? 'primary' : 'default'}
-                                                                variant={selectedStage === stage ? 'filled' : 'outlined'}
-                                                            />
-                                                        ))}
+                                                                variant="outlined"
+                                                                aria-label={`Evoluir ${spell.name} para o estágio ${nextStage}`}
+                                                                onClick={() => { void handleUnlockStage(spell, nextStage) }}
+                                                                sx={{ py: 0, px: 1 }}
+                                                            >
+                                                                Evoluir
+                                                            </Button>
+                                                        )}
                                                     </Box>
 
                                                     {(() => {
