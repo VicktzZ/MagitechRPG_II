@@ -76,7 +76,7 @@ export function ItemWrapperModal({
                                 Detalhes do {itemAttr.label}
                             </Typography>
                         </Box>
-                        <IconButton onClick={onClose} color='inherit'>
+                        <IconButton onClick={onClose} color='inherit' aria-label='Fechar'>
                             <Close />
                         </IconButton>
                     </Box>

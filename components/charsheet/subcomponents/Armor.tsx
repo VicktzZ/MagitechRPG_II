@@ -42,6 +42,8 @@ export function Armor(props: ItemTyping<'armor'>): ReactElement {
                     </Typography>
                     <IconButton
                         size="small"
+                        aria-label={showStats ? 'Ocultar detalhes da armadura' : 'Mostrar detalhes da armadura'}
+                        aria-expanded={showStats}
                         onClick={() => setShowStats(!showStats)}
                         sx={{
                             transform: showStats ? 'rotate(180deg)' : 'rotate(0deg)',

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { DICE_NOTATION_MESSAGE, DICE_NOTATION_REGEX } from '@utils/diceNotation';
 
 // Schema base para todos os itens
 export const defaultValidationSchema = {
@@ -15,12 +16,13 @@ export const weaponEffectSchema = z.object({
     critChance: z.coerce.number()
         .min(0, { message: 'Chance crítica deve ser maior ou igual a 0' })
         .max(20, { message: 'Chance crítica deve ser menor ou igual a 20' }),
-    critValue: z.string()
+    // Mesma notação do schema da ficha (utils/diceNotation.ts): aceita 2d6x2, maiúsculas e modificadores
+    critValue: z.string().trim()
         .min(1, { message: 'Dano crítico é obrigatório' })
-        .regex(/^(?:\d+d(?:\d+)(?:[-+]\d+)?)$/i, { message: 'Formato de dano deve ser XdY(+/-Z)' }),
-    value: z.string()
+        .regex(DICE_NOTATION_REGEX, { message: DICE_NOTATION_MESSAGE }),
+    value: z.string().trim()
         .min(1, { message: 'Dano é obrigatório' })
-        .regex(/^(?:\d+d(?:\d+)(?:[-+]\d+)?)$/i, { message: 'Formato de dano deve ser XdY(+/-Z)' })
+        .regex(DICE_NOTATION_REGEX, { message: DICE_NOTATION_MESSAGE })
 });
 
 // Schema para armas

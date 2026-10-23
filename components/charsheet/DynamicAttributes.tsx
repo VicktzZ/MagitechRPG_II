@@ -8,6 +8,7 @@ import { LinearProgressWithLabel } from '@layout';
 import { NumberField } from '@components/misc';
 import { evaluateFormula } from '@utils/formulaEvaluator';
 import { computeOriginBonuses } from '@utils/originBonuses';
+import Attributes, { useOverallSync } from './Attributes';
 
 interface DynamicAttributesProps {
     system: RPGSystem | null;
@@ -21,9 +22,8 @@ export default function DynamicAttributes({ system }: DynamicAttributesProps): R
     // Se for sistema customizado, usar os atributos do sistema
     const attributes = system?.attributes || [];
     
-    // Watch para atributos e perícias para calcular overall
+    // Watch para atributos, perícias e nível (fórmulas de stats e limite de atributo)
     const attributesValues = useWatch({ control, name: 'attributes' });
-    const expertises = useWatch({ control, name: 'expertises' });
     const level = useWatch({ control, name: 'level' });
     const attributePoints = useWatch({ control, name: 'points.attributes' });
     const [ charsheetClass, lineage, occupation, traits ] = useWatch<Charsheet>({
@@ -75,41 +75,13 @@ export default function DynamicAttributes({ system }: DynamicAttributesProps): R
         setValue('points.attributes', available - spent);
     };
 
-    useEffect(() => {
-        if (system && attributes.length > 0) {
-            // Calcular soma dos atributos customizados
-            const attributesSum = attributes.reduce((sum, attr) => {
-                const value = (attributesValues as any)?.[attr.key] || 0;
-                return sum + value;
-            }, 0);
-
-            const expertisesSum = Object.values(expertises || {}).reduce(
-                (sum, expertise) => sum + (expertise && typeof expertise === 'object' && 'value' in expertise ? (expertise.value || 0) : 0),
-                0
-            );
-
-            const overallValue = attributesSum + expertisesSum + (level || 0);
-            setValue('overall', overallValue);
-        } else {
-            // Sistema padrão - usar cálculo padrão Magitech
-            const attributesSum = (
-                (attributesValues?.vig || 0) +
-                (attributesValues?.foc || 0) +
-                (attributesValues?.des || 0) +
-                (attributesValues?.log || 0) +
-                (attributesValues?.sab || 0) +
-                (attributesValues?.car || 0)
-            );
-
-            const expertisesSum = Object.values(expertises || {}).reduce(
-                (sum, expertise) => sum + (expertise && typeof expertise === 'object' && 'value' in expertise ? (expertise.value || 0) : 0),
-                0
-            );
-
-            const overallValue = attributesSum + expertisesSum + (level || 0);
-            setValue('overall', overallValue);
-        }
-    }, [ attributesValues, expertises, level, setValue, system, attributes ]);
+    // Overall: em sistema customizado soma os atributos do sistema; no padrão o próprio
+    // componente Attributes (renderizado no fim) faz o mesmo cálculo.
+    const isCustomLayout = Boolean(system) && attributes.length > 0
+    useOverallSync({
+        attributeKeys: isCustomLayout ? attributes.map(attr => attr.key) : undefined,
+        enabled: isCustomLayout
+    });
 
     // Inicializa os pontos de atributo/perícia do sistema na criação da ficha.
     // Só aplica se nada foi gasto ainda, para não sobrescrever progresso
@@ -282,6 +254,7 @@ export default function DynamicAttributes({ system }: DynamicAttributesProps): R
                                 >
                                     <Typography
                                         variant="subtitle2"
+                                        component="h3"
                                         fontWeight={600}
                                         color="primary.main"
                                         mb={1}
@@ -303,6 +276,7 @@ export default function DynamicAttributes({ system }: DynamicAttributesProps): R
                                                 <Box display="flex" alignItems="flex-start" gap={0.5}>
                                                     <IconButton
                                                         size="small"
+                                                        aria-label={`Diminuir ${attribute.name}`}
                                                         disabled={attributesLocked || current <= min}
                                                         onClick={() => changeAttribute(attribute.key, current - 1, min, max)}
                                                         sx={{ mt: 0.5 }}
@@ -322,10 +296,11 @@ export default function DynamicAttributes({ system }: DynamicAttributesProps): R
                                                             error?.message ||
                                                             `Min: ${min}, Max: ${max >= 999 ? '∞' : max}`
                                                         }
-                                                        inputProps={{ style: { textAlign: 'center' } }}
+                                                        inputProps={{ 'aria-label': attribute.name, style: { textAlign: 'center' } }}
                                                     />
                                                     <IconButton
                                                         size="small"
+                                                        aria-label={`Aumentar ${attribute.name}`}
                                                         disabled={attributesLocked || current >= max || (attributePoints ?? 0) <= 0}
                                                         onClick={() => changeAttribute(attribute.key, current + 1, min, max)}
                                                         sx={{ mt: 0.5 }}
@@ -345,7 +320,6 @@ export default function DynamicAttributes({ system }: DynamicAttributesProps): R
         );
     }
 
-    // Sistema padrão - importar e usar componente Attributes original
-    const OriginalAttributes = require('./Attributes').default;
-    return <OriginalAttributes />;
+    // Sistema padrão - usa o componente Attributes original
+    return <Attributes />;
 }

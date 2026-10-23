@@ -46,8 +46,9 @@ lote (senão alguém editou à mão), sobrescrever só os ids do lote e reler pa
 - **Teste ("Solicitar teste")** não usa Pusher. O mestre grava o pedido em `campaign.session.testRequest`
   (`POST /api/campaign/[id]/session/test-request`) e os jogadores o recebem pelo listener da campanha; cada
   resposta vai para `testRequest.responses.<userId>` (`.../test-response`, em transação). O servidor refaz a conta
-  (maior d20 + bônus contra a DT) e confere pedido, prazo (10 min) e se o jogador foi chamado. A regra de dados é a
-  mesma do botão da perícia na ficha: nº de d20 = `mods.attributes` do atributo padrão (mínimo 1), vale o maior.
+  (maior d20 + bônus contra a DT) e confere pedido, prazo (10 min) e se o jogador foi chamado. O nº de d20 do teste é
+  `mods.attributes` do atributo padrão (mínimo 1), vale o maior. **Não é a mesma regra do botão da perícia na ficha** (`subcomponents/Expertise.tsx`:
+  `mod + 1` d20, e mod negativo rola 2), nem da criatura (`⌊valor/5⌋`): a regra única é decisão pendente do dono.
   Lógica pura em `utils/campaignTest.ts`; validação em `utils/api/campaignTests.ts`; fluxo do navegador em
   `hooks/useCampaignTest.ts`.
 - **Pusher está praticamente sem uso**: só o mestre assina (`hooks/usePusher.tsx`), e no canal `CODIGO` enquanto o
@@ -102,6 +103,42 @@ lote (senão alguém editou à mão), sobrescrever só os ids do lote e reler pa
 - **Arquivos grandes**: componentes acima de ~400 linhas devem ser divididos em subpastas por seção
   (`gmDashboard/dashboard/`, `playerDashboard/inventory/`, `widget/panel/`...), mantendo o arquivo original como
   composição com o mesmo export e props.
+
+## Ficha: salvar e validar
+
+Dados reais (61 fichas) mostraram que 42 não passavam no schema antigo e que salvar apagava `session[].perks`. Regras que valem agora:
+
+- **Salvar ficha existente envia só o que mudou.** `useCharsheetSubmit` (`components/charsheet/page/`) compara o formulário com a
+  ficha como foi carregada (`CharsheetBaseline`, em `contexts/CharsheetFormProvider.tsx`) por `collectChanges`
+  (`utils/charsheetDiff.ts`) e grava por `PATCH /api/charsheet/[id]/fields` (caminhos de campo). Objetos são comparados campo a
+  campo, listas valem como um todo. **Nunca** grava `id`, `userId`, `createdAt`, `playerName` nem `session` (é da campanha: vantagens,
+  stats da sessão). Escrita do mestre enquanto a ficha está aberta não é desfeita. Depois de salvar, `markSaved` + `form.reset`.
+- **`PATCH /api/charsheet/[id]`** (abas antigas, clientes externos) também é parcial: grava só as chaves de topo do corpo, ignora as
+  protegidas acima, `spells` vira ids e `traits: []` persiste. Não use `plainToInstance` + `update` da ficha inteira (vazava defaults e
+  apagava `session`).
+- **Normalização na carga** (`utils/charsheetNormalize.ts`, chamada por `useCompleteCharsheet`): lista gravada como objeto de chaves
+  numéricas vira array, `elementalMastery`/`anotacoes`/`financialCondition` nulos viram `''`, perícia solta vira `{value, defaultAttribute}`,
+  arma sem `ammo`/`bonus`/`hit`... ganha os campos. É pura e idempotente e só mexe no formato. A carga também devolve `dropped`
+  (magias/poderes que a tela não mostra); `collectChanges` os devolve junto quando a lista é regravada.
+- **Schema** (`schemas/charsheetSchema.ts`): `buildCharsheetSchema({ mode })`. `create` é rígido (pontos de atributo e perícia = 0, atributo ≤ 30,
+  perícia ≤ 10, e no sistema padrão classe, raça e linhagem/profissão preenchidas; sistema customizado pode desligar esses campos). `edit` não bloqueia pontos sobrando (o level-up concede na hora) e os tetos só barram quem AUMENTA. O resolver
+  (`schemas/charsheetResolver.ts`) ainda ignora, na edição, erro de campo que vale o mesmo que o salvo (não é o jogador que o causou) e entrega
+  os valores CRUS ao envio. O Zod descarta chaves que não conhece: **use `.passthrough()`** em objeto novo do schema, senão o submit apaga
+  a chave. Evite `z.union` de itens: o resolver lista os erros de todas as ramificações ("Required" de campos que o item nem tem).
+- **Erros legíveis**: `utils/charsheetErrors.ts` (`listFormErrors`) devolve "Inventário > Armas > Pistola > Munição: campo obrigatório" com a
+  âncora da seção (`CHARSHEET_SECTION_IDS`); pontos para gastar aparecem como aviso (`PendingPoints`), não como erro, em ficha criada.
+- **Poderes** ficam como objeto na ficha, não como id: habilidades de sistema customizado não existem no catálogo `powers`. Só poder mágico do
+  catálogo (`type: 'Poder Mágico'`) vira id na criação (`POST /api/charsheet`). `spells` ficam como ids (`id || name`).
+- **Migração do formato das fichas antigas**: `scripts/normalizeCharsheets.ts` (mesma função da carga). Simulação por padrão, `--apply`
+  regrava cada ficha numa transação, só os caminhos alterados, guarda o valor antigo em arquivo e não apaga nada.
+  **Grava no banco: só com liberação do dono.** Teste com o emulador: `utils/firestore/__tests__/normalizeCharsheets.emulator.test.ts`.
+- **Abrir uma ficha salva não pode gravar nada**: efeito de montagem que recalcula valor derivado (`overall`, `mods.attributes`, `stats`) só escreve
+  na criação; em ficha salva só depois de o usuário mexer no atributo (`useOverallSync` em `Attributes.tsx`, `isSavedSheet` em `Attribute.tsx`).
+  Como o salvar compara com a ficha carregada, escrita automática no mount apareceria como alteração do jogador.
+- `useCharsheetSystem` guarda em cache só o sistema carregado com sucesso; falha (rede, 404) não vale até recarregar a página.
+- O rascunho da criação (`create-charsheet-autosave`) só entra na página de criação; na edição ele preenchia campos ausentes com dados de outro personagem.
+- **Decisões de balanceamento ainda abertas com o dono** (regra única de nº de d20 por atributo, papel do AP, tetos de bônus, roguelite sem teto,
+  raças/classes): não implemente sem resposta.
 
 ## Limite de MP por turno
 

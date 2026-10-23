@@ -37,7 +37,7 @@ import { useCharsheetSystem } from '@hooks/useCharsheetSystem'
 import type { ItemTyping } from '@models/types/item'
 import type { MergedItems } from '@models/types/misc'
 import type { Charsheet } from '@models/entities'
-import type { Inventory } from '@models'
+import { computeCargo, removeInventoryEntry } from '@utils/cargo'
 
 /**
  * Converte um valor para string renderizável
@@ -47,7 +47,10 @@ function toRenderableString(value: any, defaultValue: string = 'N/A'): string {
     if (!value) return defaultValue;
     if (typeof value === 'string') return value;
     if (typeof value === 'number') return String(value);
-    if (Array.isArray(value)) return value.join(', ');
+    if (Array.isArray(value)) {
+        const parts = value.map(part => String(part ?? '').trim()).filter(part => part !== '');
+        return parts.length > 0 ? parts.join(', ') : defaultValue;
+    }
     if (typeof value === 'object') {
         // Se é um objeto com propriedades simples, tentar formatar
         try {
@@ -74,6 +77,10 @@ function ItemComponent(props: ItemTyping<'item'>): ReactElement {
         return props.quantity ? `${props.quantity}x` : '1x'
     }, [ props.quantity ])
 
+    const noEffectsText = 'Este item não possui efeitos especiais.'
+    const effectsText = toRenderableString(props.effects, noEffectsText)
+    const hasEffects = effectsText !== noEffectsText
+
     return (
         <Box height='100%' display='flex' flexDirection='column' justifyContent='space-between'>
             {/* Seção principal de informações */}
@@ -92,6 +99,8 @@ function ItemComponent(props: ItemTyping<'item'>): ReactElement {
                     </Typography>
                     <IconButton
                         size="small"
+                        aria-label={showDescription ? 'Ocultar efeitos do item' : 'Mostrar efeitos do item'}
+                        aria-expanded={showDescription}
                         onClick={() => setShowDescription(!showDescription)}
                         sx={{
                             transform: showDescription ? 'rotate(180deg)' : 'rotate(0deg)',
@@ -158,8 +167,8 @@ function ItemComponent(props: ItemTyping<'item'>): ReactElement {
                         border={`1px dashed ${alpha(theme.palette.success.main, 0.3)}`}
                         mb={1}
                     >
-                        <Typography variant="body2" color="textSecondary" sx={{ fontStyle: props.effects ? 'normal' : 'italic' }}>
-                            {toRenderableString(props.effects, 'Este item não possui efeitos especiais.')}
+                        <Typography variant="body2" color="textSecondary" sx={{ fontStyle: hasEffects ? 'normal' : 'italic' }}>
+                            {effectsText}
                         </Typography>
                     </Box>
                 </Collapse>
@@ -187,16 +196,21 @@ function ItemComponent(props: ItemTyping<'item'>): ReactElement {
     )
 }
 
+/** O que o ItemWrapper sabe do item: o `id` (BaseItem) identifica qual excluir */
+type WrapperItem = MergedItems<'Leve' | 'Pesada'> & { id?: string }
+
 function ItemWrapper({
     children,
-    title
-    ,
-    item
+    title,
+    item,
+    inventoryIndex
 }: {
     children: ReactElement,
     title: string,
     description: string,
-    item: MergedItems<'Leve' | 'Pesada'>
+    item: WrapperItem,
+    /** Posição do item na lista do inventário: desempata itens sem `id` e de mesmo nome */
+    inventoryIndex?: number
 }): ReactElement {
     const theme = useTheme()
     const { getValues, setValue } = useFormContext<Charsheet>()
@@ -217,14 +231,22 @@ function ItemWrapper({
     // Obtém os atributos visuais do tipo de item
     const itemAttr = itemAttributes[itemType]
 
-    // Função para excluir o item
+    // Exclui só o item clicado (por id; sem id, pela posição) e recalcula a carga do inventário
     const onConfirm = async (): Promise<void> => {
-        const currentValues = getValues()
-        const inventoryKey = `${itemType}s` as keyof Inventory
-        const currentItems = [ ...currentValues.inventory[inventoryKey] as any[] ]
-        const updatedItems = currentItems.filter((i: any) => i.name !== item.name)
+        const inventoryKey = `${itemType}s` as 'weapons' | 'armors' | 'items'
+        const currentInventory = getValues('inventory')
+        const updatedItems = removeInventoryEntry(currentInventory?.[inventoryKey], {
+            id: item.id,
+            index: inventoryIndex,
+            name: item.name
+        })
 
-        setValue(`inventory.${inventoryKey}`, updatedItems, { shouldValidate: true })
+        setValue(`inventory.${inventoryKey}`, updatedItems as any, { shouldValidate: true, shouldDirty: true })
+        setValue(
+            'capacity.cargo',
+            computeCargo({ ...currentInventory, [inventoryKey]: updatedItems }),
+            { shouldValidate: true, shouldDirty: true }
+        )
 
         setConfirmModalOpen(false)
         setOpen(false)
@@ -319,6 +341,7 @@ function ItemWrapper({
                     <IconButton
                         onClick={() => { setOpen(true) }}
                         size="small"
+                        aria-label={`Ver detalhes de ${title}`}
                         sx={{
                             border: `1px solid ${alpha(itemAttr.color, 0.3)}`,
                             color: itemAttr.color,
@@ -623,20 +646,24 @@ export default function Item<C extends 'weapon' | 'armor' | 'item'>({
     name,
     description,
     as,
+    inventoryIndex,
     ...props
 }: {
     name: string,
     description: string,
     as?: C,
+    /** Posição do item na lista do inventário (para excluir só este, mesmo sem `id`) */
+    inventoryIndex?: number,
 } & ItemTyping<C>): ReactElement {
-    // Seleciona o componente interno baseado no tipo de item
-    const Component = as === 'weapon' ? Weapon : as === 'armor' ? Armor : ItemComponent
+    // Seleciona o componente interno baseado no tipo de item (cada um recebe as props do seu tipo)
+    const Component = (as === 'weapon' ? Weapon : as === 'armor' ? Armor : ItemComponent) as (componentProps: any) => ReactElement
 
     return (
         <ItemWrapper
             description={description}
             title={name}
-            item={{ name, description, ...props } }
+            item={{ name, description, ...props } as unknown as WrapperItem}
+            inventoryIndex={inventoryIndex}
         >
             <Component {...props } />
         </ItemWrapper>

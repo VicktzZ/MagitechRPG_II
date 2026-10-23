@@ -1,13 +1,10 @@
-/* eslint-disable @typescript-eslint/no-shadow */
 'use client';
 
-import { Attributes, CustomResources, DynamicAttributes, Characteristics, CustomDices, Expertises, Inventory, LevelAndInfo, Magics, Passives, Skills, SkillsModal } from '@components/charsheet';
+import { CustomResources, DynamicAttributes, Characteristics, CustomDices, Expertises, Inventory, LevelAndInfo, Magics, Passives, Skills, SkillsModal } from '@components/charsheet';
 import { font } from '@themes/tokens'
-import { toastDefault } from '@constants';
 import { useAudio, useCharsheetSystem } from '@hooks';
 import { CustomIconButton, WarningModal } from '@layout';
 import type { CharsheetDTO } from '@models/dtos';
-import type { Charsheet } from '@models/entities';
 import {
     Add,
     ArticleRounded,
@@ -21,265 +18,131 @@ import {
     Person,
     Psychology,
     Save,
-    SportsMartialArts,
-    Warning,
-    TrendingUp,
-    TrendingDown
+    SportsMartialArts
 } from '@mui/icons-material';
 import {
-    Alert,
     Backdrop,
     Box,
     Button,
     Chip,
     CircularProgress,
-    Divider,
-    Fade,
-    LinearProgress,
     Paper,
     Stack,
     Tooltip,
     Typography,
     useMediaQuery,
-    useTheme,
-    type SxProps
+    useTheme
 } from '@mui/material';
-import { useSession } from 'next-auth/react';
-import { charsheetService } from '@services';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { CHARSHEET_SECTION_IDS, listFormErrors } from '@utils/charsheetErrors';
 import { useLocalStorage } from '@uidotdev/usehooks';
-import { useRouter } from 'next/navigation';
-import { useSnackbar } from 'notistack';
-import { useEffect, useMemo, useState, type ReactElement } from 'react';
-import { useFormContext, type SubmitHandler } from 'react-hook-form';
-
-function Section({ title, icon, children, action, sx }: { 
-    title: string; 
-    icon?: ReactElement; 
-    children: ReactElement;
-    action?: ReactElement;
-    sx?: SxProps;
-}) {
-    return (
-        <Paper 
-            elevation={2} 
-            sx={{ 
-                p: 3, 
-                borderRadius: 2,
-                ...sx
-            }}
-        >
-            <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
-                <Box display="flex" alignItems="center" gap={1}>
-                    {icon}
-                    <Typography variant="h6" fontFamily={font.display}>{title}</Typography>
-                </Box>
-                {action}
-            </Box>
-            <Divider sx={{ mb: 2 }} />
-            {children}
-        </Paper>
-    )
-}
+import { useEffect, useState, type FormEvent, type ReactElement } from 'react';
+import { useFormContext, useWatch } from 'react-hook-form';
+import { FormErrors, PendingPoints } from './page/FormProblems';
+import Section from './page/Section';
+import { useCharsheetSubmit } from './page/useCharsheetSubmit';
+import { useUnsavedChangesWarning } from './page/useUnsavedChangesWarning';
+import { useSession } from 'next-auth/react';
 
 export default function CharsheetComponent(): ReactElement {
     const form = useFormContext<CharsheetDTO>()
     const charsheet = form.getValues()
+    const isCreating = !charsheet.id
     const { system } = useCharsheetSystem(charsheet.systemId)
     const { data: session } = useSession()
-    const queryClient = useQueryClient()
     const audio = useAudio('/sounds/arcade-cyber-bling.wav')
-    
-    // Limpar itens padrão se houver systemId
+    const submitter = useCharsheetSubmit(form, session?.user?.id)
+    useUnsavedChangesWarning(form)
+    const theme = useTheme()
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
+    const [ openSkillsModal, setOpenSkillsModal ] = useState<boolean>(false)
+    const [ confirmReset, setConfirmReset ] = useState<boolean>(false)
+    const [ , setCreateCharsheetAutosave ] = useLocalStorage<CharsheetDTO | null>('create-charsheet-autosave')
+
+    const points = useWatch({ control: form.control, name: 'points' })
+    const lineage = useWatch({ control: form.control, name: 'lineage' })
+    const errorList = listFormErrors(form.formState.errors, charsheet)
+
+    // Sistema customizado: tira os itens padrão do Magitech da ficha nova
     useEffect(() => {
-        if (charsheet.systemId && !charsheet.id) {
-            // Verificar se há itens do Magitech e remover
-            const hasDefaultItems = charsheet.inventory?.items?.some(
-                item => item.name === 'Celular' || item.name === 'ORM'
-            )
-            const hasDefaultWeapons = charsheet.inventory?.weapons?.some(
-                weapon => weapon.name === 'Bastão Retrátil'
-            )
-            const hasDefaultArmors = charsheet.inventory?.armors?.some(
-                armor => armor.name === 'Uniforme da UFEM'
-            )
-            
-            if (hasDefaultItems || hasDefaultWeapons || hasDefaultArmors) {
-                form.setValue('inventory.items', [])
-                form.setValue('inventory.weapons', [])
-                form.setValue('inventory.armors', [])
-                form.setValue('spellSpace', 0)
-                form.setValue('ORMLevel', 0)
-                form.setValue('points.magics', 0)
-            }
+        if (!charsheet.systemId || charsheet.id) return
+        const hasDefaultItems = charsheet.inventory?.items?.some(item => item.name === 'Celular' || item.name === 'ORM')
+        const hasDefaultWeapons = charsheet.inventory?.weapons?.some(weapon => weapon.name === 'Bastão Retrátil')
+        const hasDefaultArmors = charsheet.inventory?.armors?.some(armor => armor.name === 'Uniforme da UFEM')
+
+        if (hasDefaultItems || hasDefaultWeapons || hasDefaultArmors) {
+            form.setValue('inventory.items', [])
+            form.setValue('inventory.weapons', [])
+            form.setValue('inventory.armors', [])
+            form.setValue('spellSpace', 0)
+            form.setValue('ORMLevel', 0)
+            form.setValue('points.magics', 0)
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [ charsheet.systemId, charsheet.id, form ])
 
     const changeGameMode = (): void => {
         const currentMode = form.getValues('mode')
         const newMode = currentMode === 'Classic' ? 'Apocalypse' : 'Classic'
-        
+
         form.setValue('mode', newMode, { shouldValidate: true })
-        form.setValue('financialCondition', '' as any)    
+        form.setValue('financialCondition', '' as any)
         form.setValue('inventory.money', 0)
         form.setValue('lineage', undefined as unknown as any)
-        audio.play()
+        void audio?.play()?.catch(() => undefined)
     }
 
-    const { enqueueSnackbar, closeSnackbar } = useSnackbar()
-    const [ openModal, setOpenModal ] = useState<boolean>(false)
-    const [ isLoading, setIsLoading ] = useState<boolean>(false)
-    const [ openSkillsModal, setOpenSkillsModal ] = useState<boolean>(false)
-    const [ saveProgress, setSaveProgress ] = useState<number>(0)
-    const router = useRouter()
-    const theme = useTheme()
-    const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
-    const isTablet = useMediaQuery(theme.breakpoints.down('md'))
-    const isNotebook = useMediaQuery(theme.breakpoints.between('md', 'xl'))
-    const submitAudio = useAudio('/sounds/sci-fi-interface-zoom.wav')
-    const [ , setCreateCharsheetAutosave ] = useLocalStorage<Charsheet | null>('create-charsheet-autosave')
-    
-    // Funções de level up/down
-    const handleLevelUp = async () => {
-        if (!charsheet.id) {
-            enqueueSnackbar('Salve a ficha primeiro antes de subir de nível', toastDefault('warning', 'warning'))
-            return
-        }
-        
-        try {
-            await charsheetService.increaseLevel(charsheet.id, 1)
-            enqueueSnackbar('Nível aumentado com sucesso!', toastDefault('success', 'success'))
-            queryClient.invalidateQueries({ queryKey: [ 'charsheet', charsheet.id ] })
-            window.location.reload()
-        } catch (error: any) {
-            enqueueSnackbar(`Erro ao subir de nível: ${error.message}`, toastDefault('error', 'error'))
-        }
-    }
-    
-    const handleLevelDown = async () => {
-        if (!charsheet.id) {
-            enqueueSnackbar('Salve a ficha primeiro', toastDefault('warning', 'warning'))
-            return
-        }
-        
-        if (charsheet.level <= 0) {
-            enqueueSnackbar('Nível já está em 0', toastDefault('warning', 'warning'))
-            return
-        }
-        
-        try {
-            await charsheetService.increaseLevel(charsheet.id, -1)
-            enqueueSnackbar('Nível diminuído com sucesso!', toastDefault('success', 'success'))
-            queryClient.invalidateQueries({ queryKey: [ 'charsheet', charsheet.id ] })
-            window.location.reload()
-        } catch (error: any) {
-            enqueueSnackbar(`Erro ao diminuir nível: ${error.message}`, toastDefault('error', 'error'))
-        }
+    const resetDraft = (): void => {
+        setCreateCharsheetAutosave(null)
+        window.location.reload()
     }
 
-    const { mutateAsync: updateCharsheet } = useMutation({
-        mutationFn: async ({ id, data }: { id: string, data: CharsheetDTO }) => await charsheetService.updateById({ id, data }),
-        onSuccess: () => {
-            enqueueSnackbar('Charsheet atualizada com sucesso!', toastDefault('success', 'success'))
-            setSaveProgress(100)
-            setTimeout(() => setSaveProgress(0), 2000)
-            queryClient.invalidateQueries({ queryKey: [ 'charsheet', charsheet.id ] })
-            queryClient.invalidateQueries({ queryKey: [ 'charsheets', session?.user?.id ] })
-        },
-        onError: (error: any) => {
-            enqueueSnackbar(`Algo deu errado: ${error.message}`, toastDefault('error', 'error'))
-            setSaveProgress(0)
-        }
-    })
+    // Em ficha criada, Enter num campo não pode salvar nem recarregar a página
+    const onFormSubmit = (event: FormEvent<HTMLFormElement>): void => {
+        if (isCreating) void submitter.submit(event)
+        else event.preventDefault()
+    }
 
-    const { mutateAsync: createCharsheet } = useMutation({
-        mutationFn: async (data: CharsheetDTO) => await charsheetService.create(data),
-        onSuccess: () => {
-            enqueueSnackbar('Charsheet criada com sucesso!', toastDefault('success', 'success'))
-            queryClient.invalidateQueries({ queryKey: [ 'charsheet', charsheet.id ] })
-            queryClient.invalidateQueries({ queryKey: [ 'charsheets', session?.user?.id ] })
-        },
-        onError: (error: any) => {
-            enqueueSnackbar(`Algo deu errado: ${error.message}`, toastDefault('error', 'error'))
-        }
-    })
+    const saveTooltip = submitter.isSaving ? 'Salvando...'
+        : errorList.length > 0 ? 'Corrija os problemas indicados antes de salvar'
+            : isCreating ? 'Criar a ficha' : 'Salvar alterações'
 
-    const { errors, isValid } = form.formState;
+    const saveButton = (
+        <Tooltip title={saveTooltip}>
+            <span>
+                <Button
+                    variant="contained"
+                    color="primary"
+                    type="button"
+                    onClick={(event) => { void submitter.submit(event) }}
+                    disabled={submitter.isSaving}
+                    startIcon={submitter.isSaving ? <CircularProgress size={16} color="inherit" /> : <Save />}
+                    size={isMobile ? 'small' : 'medium'}
+                    sx={{ minWidth: isMobile ? 100 : 150 }}
+                >
+                    {submitter.isSaving ? 'Salvando...' : isCreating ? 'Criar' : 'Salvar'}
+                </Button>
+            </span>
+        </Tooltip>
+    )
 
-    const errorList = useMemo(() => {
-        const list: Array<{ path: string; message: string }> = []
-        const walk = (obj: any, prefix: string[] = []) => {
-            if (!obj || typeof obj !== 'object') return
-            Object.entries(obj).forEach(([ key, val ]: any) => {
-                if (!val) return
-                const current = [ ...prefix, key ]
-                if (typeof val.message === 'string') {
-                    list.push({ path: current.join('.'), message: val.message })
-                }
-                if (typeof val === 'object') {
-                    walk(val, current)
-                }
-            })
-        }
-        walk(errors as any)
-        const unique = new Map<string, { path: string; message: string }>()
-        list.forEach(e => { if (!unique.has(e.path + e.message)) unique.set(e.path + e.message, e) })
-        return Array.from(unique.values())
-    }, [ errors ])
-
-    useEffect(() => {
-        console.log(errors)
-    }, [ errors ])
-
-    const submitForm: SubmitHandler<CharsheetDTO> = async (values) => {
-        enqueueSnackbar('Aguarde...', toastDefault('loadingFetch', 'info'))
-        console.log(values)
-
-        if (!values.id) {
-            try {
-                const response = await createCharsheet(values)
-
-                closeSnackbar('loadingFetch')
-
-                enqueueSnackbar('Charsheet criada com sucesso!', toastDefault('success', 'success'))
-                setIsLoading(true)
-                submitAudio.play()
-                setCreateCharsheetAutosave(null)
-                setTimeout(() => {
-                    router.push('/app/charsheet/' + response.id)
-                }, 500);
-            } catch (error: any) {
-                closeSnackbar('loadingFetch')
-                enqueueSnackbar(`Algo deu errado: ${error.message}`, toastDefault('error', 'error'))
-            }
-            return
-        }
-
-        try {
-            const response = await updateCharsheet({ id: values.id, data: values })
-
-            closeSnackbar('loadingFetch')
-
-            if (charsheet.id) {
-                enqueueSnackbar('Charsheet salva com sucesso!', toastDefault('success', 'success'))
-            } else {
-                enqueueSnackbar('Charsheet criada com sucesso!', toastDefault('charsheetCreated', 'success'))
-                setIsLoading(true)
-                setTimeout(() => {
-                    router.push('/app/charsheet/' + response.id)
-                }, 500);
-            }
-        } catch (error: any) {
-            closeSnackbar('loadingFetch')
-            enqueueSnackbar(`Algo deu errado: ${error.message}`, toastDefault('error', 'error'))
-        }
-    };
+    const skillsAction = (
+        <Tooltip title="Gerenciar habilidades">
+            <CustomIconButton
+                onClick={() => setOpenSkillsModal(true)}
+                size="small"
+                aria-label="Gerenciar habilidades"
+            >
+                <Edit fontSize="small" />
+            </CustomIconButton>
+        </Tooltip>
+    )
 
     return (
-        <Box 
-            component="form" 
-            onSubmit={!charsheet.id ? form.handleSubmit(submitForm) : undefined}
-            sx={{ 
+        <Box
+            component="form"
+            noValidate
+            onSubmit={onFormSubmit}
+            sx={{
                 display: 'flex',
                 flexDirection: 'column',
                 gap: 3,
@@ -290,28 +153,29 @@ export default function CharsheetComponent(): ReactElement {
             }}
         >
             {/* Header com informações e ações */}
-            <Paper 
-                elevation={3} 
-                sx={{ 
-                    p: 3, 
+            <Paper
+                elevation={3}
+                sx={{
+                    p: 3,
                     borderRadius: 2,
                     bgcolor: 'background.paper'
                 }}
             >
-                <Stack 
-                    direction={isMobile ? 'column' : 'row'} 
-                    justifyContent="space-between" 
+                <Stack
+                    direction={isMobile ? 'column' : 'row'}
+                    justifyContent="space-between"
                     alignItems={isMobile ? 'stretch' : 'center'}
                     spacing={2}
                 >
                     <Box display='flex' gap={2}>
                         <Box>
-                            <Typography 
-                                variant={isMobile ? 'h5' : 'h4'} 
+                            <Typography
+                                variant={isMobile ? 'h5' : 'h4'}
+                                component="h1"
                                 fontFamily={font.display}
                                 sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
                             >
-                                {!charsheet.id ? (
+                                {isCreating ? (
                                     <>
                                         <Add /> Criar Nova Ficha
                                     </>
@@ -321,106 +185,64 @@ export default function CharsheetComponent(): ReactElement {
                                     </>
                                 )}
                             </Typography>
-                            {charsheet.id && (
+                            {!isCreating && (
                                 <Typography variant="body2" color="text.secondary" mt={1}>
                                     Jogador: {charsheet.playerName}
                                 </Typography>
                             )}
                         </Box>
-                        {!charsheet.id && (
+                        {isCreating && (
                             <Box>
                                 <Button
-                                    variant='contained'
-                                    color='primary'
+                                    variant='outlined'
+                                    color='secondary'
                                     type='button'
-                                    onClick={() => {
-                                        setCreateCharsheetAutosave(null)
-                                        window.location.reload()
-                                    }}
+                                    onClick={() => setConfirmReset(true)}
                                 >
                                     Resetar Ficha
                                 </Button>
                             </Box>
                         )}
                     </Box>
-                    
+
                     <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
                         {/* Mostra o sistema (nome do sistema customizado, ou modo Magitech) */}
                         <Chip
-                            label={`Sistema: ${system?.name || form.getValues().mode || 'Magitech RPG'}`}
+                            label={`Sistema: ${system?.name || charsheet.mode || 'Magitech RPG'}`}
                             color="secondary"
                             sx={{ fontWeight: 600 }}
                         />
-                        {/* Botão de trocar modo - apenas para sistema padrão e nova ficha */}
-                        {!form.getValues('systemId') && !charsheet.id && (
-                            <Button
-                                variant='outlined'
-                                color='secondary'
-                                type='button'
-                                onClick={changeGameMode}
-                                size="small"
-                            >
-                                Trocar Modo
-                            </Button>
+                        {/* Trocar modo: só no sistema padrão, em ficha nova e antes de escolher a linhagem
+                            (os bônus da linhagem escolhida ficariam na ficha e os da nova somariam por cima) */}
+                        {!charsheet.systemId && isCreating && (
+                            <Tooltip title={lineage ? 'Para trocar o modo, use "Resetar Ficha": os bônus da linhagem já aplicados não saem sozinhos' : ''}>
+                                <span>
+                                    <Button
+                                        variant='outlined'
+                                        color='secondary'
+                                        type='button'
+                                        onClick={changeGameMode}
+                                        disabled={!!lineage}
+                                        size="small"
+                                    >
+                                        Trocar Modo
+                                    </Button>
+                                </span>
+                            </Tooltip>
                         )}
-                        <Tooltip 
-                            title={
-                                !isValid ? 'Preencha todos os campos obrigatórios' : 
-                                    session?.user.id !== charsheet.userId ? 'Você não pode salvar esta ficha' : 
-                                        'Salvar alterações'
-                            }
-                        >
-                            <span>
-                                <Button
-                                    variant="contained"
-                                    color="primary"
-                                    type={!charsheet.id ? 'submit' : 'button'}
-                                    onClick={form.handleSubmit(submitForm)}
-                                    // disabled={!!charsheet?.id && (session?.user.id !== charsheet.userId)}
-                                    startIcon={<Save />}
-                                    size={isMobile ? 'small' : 'medium'}
-                                    sx={{ minWidth: isMobile ? 100 : 150 }}
-                                >
-                                    {!charsheet.id ? 'Criar' : 'Salvar'}
-                                </Button>
-                            </span>
-                        </Tooltip>
+                        {saveButton}
                     </Stack>
                 </Stack>
-                
-                {/* Barra de progresso do salvamento */}
-                {saveProgress > 0 && (
-                    <Fade in>
-                        <LinearProgress 
-                            variant="determinate" 
-                            value={saveProgress} 
-                            sx={{ mt: 2, borderRadius: 1 }}
-                        />
-                    </Fade>
-                )}
             </Paper>
 
-            {/* Alertas de validação */}
-            {Object.keys(errors).length > 0 && (
-                <Alert severity="error" icon={<Warning />}>
-                    <Stack spacing={0.5}>
-                        <Typography variant="body2">
-                            Existem erros no formulário. Corrija os itens abaixo:
-                        </Typography>
-                        {errorList.slice(0, 10).map((e, i) => (
-                            <Typography key={i} variant="caption">• {e.message}</Typography>
-                        ))}
-                        {errorList.length > 10 && (
-                            <Typography variant="caption">(+ {errorList.length - 10} outros)</Typography>
-                        )}
-                    </Stack>
-                </Alert>
-            )}
+            <PendingPoints points={points} creating={isCreating} />
+            <FormErrors errors={errorList} />
 
             {/* Características */}
             <Section
+                id={CHARSHEET_SECTION_IDS.characteristics}
                 title="Características"
-                icon={<ArticleRounded sx={{ color: 'primary.main' }} />}
+                icon={<ArticleRounded />}
             >
                 <Characteristics />
             </Section>
@@ -428,178 +250,97 @@ export default function CharsheetComponent(): ReactElement {
             {/* Recursos customizados (ex: Bateria, O2, Estresse no Cosmos RPG) */}
             <CustomResources />
 
-            {/* Grid de Atributos e Habilidades */}
-            {/* Layout para Desktop: duas colunas lado a lado */}
-            {!isTablet && !isNotebook && (
-                <Stack 
-                    direction="row"
-                    spacing={3}
-                    sx={{ width: '100%' }}
-                >
-                    {/* Coluna Esquerda - Atributos */}
-                    <Stack spacing={3} sx={{ flex: 1 }}>
-                        <Section
-                            title="Atributos"
-                            icon={<Equalizer sx={{ color: 'warning.main' }} />}
-                        >
-                            <Box>
-                                <DynamicAttributes system={system} />
-                                {system && <LevelAndInfo />}
-                            </Box>
-                        </Section>
-                    </Stack>
-
-                    {/* Coluna Direita - Habilidades e Dados */}
-                    <Stack spacing={3} sx={{ flex: 1 }}>
-                        {/* Habilidades */}
-                        <Section 
-                            title="Habilidades"
-                            icon={<SportsMartialArts sx={{ color: 'secondary.main' }} />}
-                            action={
-                                <Tooltip title="Gerenciar habilidades">
-                                    <CustomIconButton 
-                                        onClick={() => setOpenSkillsModal(true)}
-                                        size="small"
-                                    >
-                                        <Edit fontSize="small" />
-                                    </CustomIconButton>
-                                </Tooltip>
-                            }
-                        >
-                            <Skills />
-                        </Section>
-
-                        {/* Dados Personalizados */}
-                        <Section
-                            title='Dados Personalizados'
-                            icon={<CasinoSharp sx={{ color: 'secondary.main' }} />}
-                        >
-                            <Box>
-                                <CustomDices />
-                            </Box>
-                        </Section>
-                        
-                        {/* Passivas */}
-                        <Section
-                            title='Passivas'
-                            icon={<EventNote sx={{ color: 'info.main' }} />}
-                        >
-                            <Box>
-                                <Passives />
-                            </Box>
-                        </Section>
-                    </Stack>
-                </Stack>
-            )}
-
-            {/* Layout para Notebook/Tablet/Mobile: coluna única com componentes empilhados */}
-            {(isTablet || isNotebook) && (
-                <Stack spacing={3} sx={{ width: '100%' }}>
-                    {/* Atributos */}
+            {/* Atributos e habilidades: duas colunas em tela larga, uma só nas demais */}
+            <Stack
+                direction={{ xs: 'column', xl: 'row' }}
+                spacing={3}
+                sx={{ width: '100%' }}
+            >
+                <Stack spacing={3} sx={{ flex: 1, minWidth: 0 }}>
                     <Section
+                        id={CHARSHEET_SECTION_IDS.attributes}
                         title="Atributos"
-                        icon={<Equalizer sx={{ color: 'warning.main' }} />}
+                        icon={<Equalizer />}
                     >
                         <Box>
                             <DynamicAttributes system={system} />
                             {system && <LevelAndInfo />}
                         </Box>
                     </Section>
+                </Stack>
 
-                    {/* Habilidades */}
-                    <Section 
+                <Stack spacing={3} sx={{ flex: 1, minWidth: 0 }}>
+                    <Section
+                        id={CHARSHEET_SECTION_IDS.skills}
                         title="Habilidades"
-                        icon={<SportsMartialArts sx={{ color: 'secondary.main' }} />}
-                        action={
-                            <Tooltip title="Gerenciar habilidades">
-                                <CustomIconButton 
-                                    onClick={() => setOpenSkillsModal(true)}
-                                    size="small"
-                                >
-                                    <Edit fontSize="small" />
-                                </CustomIconButton>
-                            </Tooltip>
-                        }
+                        icon={<SportsMartialArts />}
+                        action={skillsAction}
                     >
                         <Skills />
                     </Section>
 
-                    {/* Dados Personalizados */}
                     <Section
+                        id={CHARSHEET_SECTION_IDS.dices}
                         title='Dados Personalizados'
-                        icon={<CasinoSharp sx={{ color: 'primary.main' }} />}
+                        icon={<CasinoSharp />}
                     >
                         <Box>
                             <CustomDices />
                         </Box>
                     </Section>
 
-                    {/* Passivas */}
                     <Section
+                        id={CHARSHEET_SECTION_IDS.passives}
                         title='Passivas'
-                        icon={<EventNote sx={{ color: 'info.main' }} />}
+                        icon={<EventNote />}
                     >
                         <Box>
                             <Passives />
                         </Box>
                     </Section>
                 </Stack>
-            )}
+            </Stack>
 
             {/* Perícias */}
-            <Section 
-                title="Perícias" 
-                icon={<Psychology sx={{ color: 'info.main' }} />}
+            <Section
+                id={CHARSHEET_SECTION_IDS.expertises}
+                title="Perícias"
+                icon={<Psychology />}
             >
                 <Expertises />
             </Section>
 
             {/* Inventário */}
-            <Section 
-                title="Inventário" 
-                icon={<Inventory2 sx={{ color: 'success.main' }} />}
+            <Section
+                id={CHARSHEET_SECTION_IDS.inventory}
+                title="Inventário"
+                icon={<Inventory2 />}
             >
-                <Box>
-                    <Stack 
-                        direction="row" 
-                        spacing={2} 
-                        flexWrap="wrap"
-                        sx={{ mb: 2 }}
-                    >
-                        {[ 'Armas', 'Armaduras', 'Itens', 'Consumíveis' ].map((categoria) => (
-                            <Chip
-                                key={categoria}
-                                label={categoria}
-                                variant="outlined"
-                                size="small"
-                                disabled
-                            />
-                        ))}
-                    </Stack>
-                    <Inventory />
-                </Box>
+                <Inventory />
             </Section>
 
             {/* Magias — oculto para sistemas com spells desabilitado */}
             {(!system || system.enabledFields?.spells !== false) && (
                 <Section
+                    id={CHARSHEET_SECTION_IDS.spells}
                     title="Magias"
-                    icon={<AutoStories sx={{ color: 'primary.main' }} />}
+                    icon={<AutoStories />}
                 >
                     <Magics />
                 </Section>
             )}
 
             {/* Anotações */}
-            <Section 
-                title="Anotações" 
-                icon={<Notes sx={{ color: 'text.secondary' }} />}
+            <Section
+                id={CHARSHEET_SECTION_IDS.notes}
+                title="Anotações"
+                icon={<Notes />}
                 sx={{ height: '100%' }}
             >
                 <Box>
-                    <Typography 
-                        variant="caption" 
-                        color="text.secondary" 
+                    <Typography
+                        variant="caption"
+                        color="text.secondary"
                         sx={{ mb: 1, display: 'block' }}
                     >
                         Use este espaço para anotar informações importantes sobre seu personagem
@@ -623,7 +364,7 @@ export default function CharsheetComponent(): ReactElement {
                             borderRadius: 1,
                             resize: 'vertical',
                             fontFamily: 'inherit',
-                            transition: 'all 0.2s ease',
+                            transition: 'border-color 0.2s ease',
                             '&:focus': {
                                 outline: 'none',
                                 borderColor: 'primary.main'
@@ -636,19 +377,50 @@ export default function CharsheetComponent(): ReactElement {
                 </Box>
             </Section>
 
+            {/* Barra de salvar: a página é longa, o botão do topo some de vista */}
+            <Paper
+                variant="outlined"
+                sx={{
+                    position: 'sticky',
+                    bottom: 16,
+                    zIndex: 2,
+                    p: 1.5,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 2,
+                    bgcolor: 'background.raised'
+                }}
+            >
+                <Typography variant="body2" color="text.secondary">
+                    {errorList.length > 0
+                        ? `${errorList.length} ${errorList.length === 1 ? 'problema' : 'problemas'} para corrigir`
+                        : isCreating ? 'Revise a ficha e crie quando estiver pronto' : 'Suas alterações só vão ao banco quando você salva'}
+                </Typography>
+                {saveButton}
+            </Paper>
+
             {/* Modais */}
             <WarningModal
-                open={openModal}
-                onClose={() => setOpenModal(false)}
-                onConfirm={() => { submitForm(charsheet); setOpenModal(false) }}
-                text='Após criar a charsheet, alguns campos não poderão ser alterados. Deseja continuar?'
+                open={submitter.confirmingCreate}
+                onClose={submitter.cancelCreate}
+                onConfirm={submitter.confirmCreate}
+                text='Após criar a ficha, alguns campos (nome, classe, raça, linhagem e idade) não poderão ser alterados. Deseja continuar?'
                 title='Confirmar Criação'
             />
-            
-            <Backdrop 
-                open={isLoading}
-                sx={{ 
-                    zIndex: (theme) => theme.zIndex.drawer + 1
+
+            <WarningModal
+                open={confirmReset}
+                onClose={() => setConfirmReset(false)}
+                onConfirm={resetDraft}
+                text='Isso apaga tudo o que você preencheu nesta ficha e começa de novo. Deseja continuar?'
+                title='Resetar Ficha'
+            />
+
+            <Backdrop
+                open={submitter.isRedirecting}
+                sx={{
+                    zIndex: (muiTheme) => muiTheme.zIndex.drawer + 1
                 }}
             >
                 <Stack spacing={2} alignItems="center">
@@ -658,7 +430,7 @@ export default function CharsheetComponent(): ReactElement {
                     </Typography>
                 </Stack>
             </Backdrop>
-            
+
             {openSkillsModal && (
                 <SkillsModal
                     open={openSkillsModal}

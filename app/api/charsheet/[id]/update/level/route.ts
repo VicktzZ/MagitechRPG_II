@@ -28,7 +28,8 @@ function normalizeToArray<T>(value: any): T[] {
 // Preservada integralmente para evitar regressões
 // ─────────────────────────────────────────────
 function calcMagitechProgression(charsheet: Charsheet, oldLevel: number, newLevel: number) {
-    const classRewards = levelDefaultRewards[charsheet.class as ClassNames];
+    // Classe vazia ou de sistema sem tabela própria não tem recompensas de LP/MP por nível: sem isto o nível par dava TypeError (500)
+    const classRewards = levelDefaultRewards[charsheet.class as ClassNames] ?? { lp: 0, mp: 0 };
     // ORM parte do nível atual e sobe 1 a cada múltiplo de 5 cruzado (máx. 4).
     // Antes, saltos de vários níveis terminando em múltiplo de 5 partiam de
     // floor(nível/5) e ainda somavam +1 por múltiplo (ex: 1→15 resultava em ORM 6).

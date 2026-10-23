@@ -395,6 +395,7 @@ function MagicSpell({
                                 <span>
                                     <IconButton
                                         onClick={onIconClick}
+                                        aria-label={isAdding ? `Adicionar magia ${magic.name}` : `Remover magia ${magic.name}`}
                                         size="small"
                                         sx={{
                                             color: isAdding ? theme.palette.primary.main : theme.palette.error.main,

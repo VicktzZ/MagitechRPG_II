@@ -1,3 +1,4 @@
-import { charsheetSchema } from './charsheetSchema';
+import { buildCharsheetSchema, charsheetSchema } from './charsheetSchema';
+import { createCharsheetResolver } from './charsheetResolver';
 
-export { charsheetSchema }
+export { buildCharsheetSchema, charsheetSchema, createCharsheetResolver }

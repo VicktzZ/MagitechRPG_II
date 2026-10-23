@@ -18,7 +18,6 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { 
     useState, 
     type ReactElement, 
-    type MouseEvent, 
     useRef, 
     useMemo, 
     useCallback, 
@@ -30,30 +29,9 @@ import type { CharsheetDTO } from '@models/dtos';
 import type { Power } from '@models/entities';
 import type { Skill } from '@models';
 import { useCharsheetSystem } from '@hooks/useCharsheetSystem';
+import { normalizeToArray } from '@utils/normalizeToArray';
 
 type SkillsFilterType = 'all' | 'class' | 'subclass' | 'lineage' | 'powers' | 'bonus' | 'race'
-
-/**
- * Normaliza um valor que pode ser um array ou um objeto com chaves numéricas
- */
-function normalizeToArray<T>(value: any): T[] {
-    if (!value) return [];
-    if (Array.isArray(value)) return value;
-    
-    // Se é um objeto com chaves numéricas, converter para array
-    if (typeof value === 'object') {
-        const keys = Object.keys(value);
-        const isNumericKeys = keys.every(key => !isNaN(Number(key)));
-        if (isNumericKeys) {
-            return keys
-                .map(key => Number(key))
-                .sort((a, b) => a - b)
-                .map(key => value[key]);
-        }
-    }
-    
-    return [];
-}
 
 export default function Skills(): ReactElement {
     const { control, setValue, getValues, formState: { errors } } = useFormContext<CharsheetDTO>()
@@ -119,7 +97,7 @@ export default function Skills(): ReactElement {
         }
     }), [ theme ])
 
-    const handleSkillClick = useCallback((event: MouseEvent<HTMLSpanElement>, skill: Skill): void => {
+    const handleSkillClick = useCallback((event: { currentTarget: HTMLElement }, skill: Skill): void => {
         if (skillRef.current) {
             const element = skillRef.current as HTMLElement
             element.style.backgroundColor = 'transparent'
@@ -200,7 +178,16 @@ export default function Skills(): ReactElement {
                         opacity: 1
                     }
                 }}
+                role='button'
+                tabIndex={0}
+                aria-pressed={selectedSkill?.name === skill.name}
                 onClick={e => { handleSkillClick(e, skill) }}
+                onKeyDown={e => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        handleSkillClick(e, skill)
+                    }
+                }}
             >
                 <Box sx={{ 
                     width: '100%',
@@ -285,18 +272,18 @@ export default function Skills(): ReactElement {
 
         if (skillsFilter === 'all') {
             return [
-                ...normalizeToArray(formSkills?.class),
-                ...(showSubclass ? normalizeToArray(formSkills?.subclass) : []),
-                ...normalizeToArray(formSkills?.bonus),
-                ...(showPowers ? normalizeToArray(formSkills?.powers) : []),
-                ...(showLineage ? normalizeToArray(formSkills?.lineage) : []),
-                ...(showRace ? normalizeToArray(formSkills?.race) : [])
+                ...normalizeToArray<Skill>(formSkills?.class),
+                ...(showSubclass ? normalizeToArray<Skill>(formSkills?.subclass) : []),
+                ...normalizeToArray<Skill>(formSkills?.bonus),
+                ...(showPowers ? normalizeToArray<Skill>(formSkills?.powers) : []),
+                ...(showLineage ? normalizeToArray<Skill>(formSkills?.lineage) : []),
+                ...(showRace ? normalizeToArray<Skill>(formSkills?.race) : [])
             ].map(renderSkill)
         } else {
             const filteredSkills = formSkills?.[skillsFilter as keyof typeof formSkills]
-            return normalizeToArray(filteredSkills).map(renderSkill)
+            return normalizeToArray<Skill>(filteredSkills).map(renderSkill)
         }
-    }, [ formSkills, skills, skillsFilter, getValues, setValue, handleSkillClick, showRace, showLineage, showSubclass, showPowers ])
+    }, [ formSkills, skills, skillsFilter, selectedSkill, getValues, setValue, handleSkillClick, showRace, showLineage, showSubclass, showPowers ])
     
     // Exibe erros de validação se houver
     const renderErrors = () => {
@@ -317,7 +304,6 @@ export default function Skills(): ReactElement {
     
     // Verifica se a habilidade selecionada é um poder mágico e corresponde à maestria elemental
     const canShowMasteryDescription = useMemo(() => {
-        console.log({ selectedSkill, elementalMastery })
         if (!selectedSkill || !elementalMastery || selectedSkill.type !== 'Poder Mágico') return false
         return selectedSkill.element === elementalMastery?.toUpperCase()
     }, [ selectedSkill, elementalMastery ])
@@ -337,7 +323,7 @@ export default function Skills(): ReactElement {
                 px={2} 
                 pt={1}
             >
-                <Typography variant="h6" fontWeight={600}>
+                <Typography variant="h6" component="h3" fontWeight={600}>
                     Habilidades
                 </Typography>
                 <Chip 
@@ -494,11 +480,12 @@ export default function Skills(): ReactElement {
                                     fontWeight={700} 
                                     fontFamily={font.display} 
                                     variant='h4'
+                                    component='h4'
                                     color='primary.main'
                                 >
                                     {selectedSkill.name}
                                 </Typography>
-                                <Typography variant='subtitle1' color='text.secondary'>
+                                <Typography variant='subtitle1' component='p' color='text.secondary'>
                                     {selectedSkill.type}
                                     {selectedSkill.origin && ` • ${selectedSkill.origin}`}
                                     {(selectedSkill?.level || selectedSkill?.level === 0) && (
@@ -594,7 +581,7 @@ export default function Skills(): ReactElement {
                         borderRadius={2}
                         flex={1}
                     >
-                        <Typography variant='h6' color='text.secondary'>
+                        <Typography variant='h6' component='p' color='text.secondary'>
                             Selecione uma habilidade para ver os detalhes
                         </Typography>
                         <Typography variant='body2' color='text.disabled'>

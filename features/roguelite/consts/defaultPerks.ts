@@ -2,7 +2,9 @@ import type { RarityType } from '@models/types/string';
 import type { Perk } from '../models';
 import { PerkTypeEnum } from '@/enums/rogueliteEnum';
 
-export const defaultPerks: Record<RarityType, Array<Perk<any>>> = {
+// Vários efeitos usam `type` e `target` que o modelo PerkEffect (features/roguelite/models/PerkEffect.ts) ainda não lista
+// (ex.: 'scaling_bonus', 'temp_hp'). Enquanto o modelo não é ampliado, a tabela é tipada pelo cast no fim do objeto.
+export const defaultPerks = {
     Comum: [
         {
             name: 'Postura Defensiva',
@@ -107,7 +109,7 @@ export const defaultPerks: Record<RarityType, Array<Perk<any>>> = {
             effects: [
                 {
                     type: 'add',
-                    target: 'maxMp',
+                    target: 'stats.maxMp',
                     value: 5,
                     description: 'Aumenta sua mana máxima em +5 pontos'
                 }
@@ -122,7 +124,7 @@ export const defaultPerks: Record<RarityType, Array<Perk<any>>> = {
             effects: [
                 {
                     type: 'add',
-                    target: 'maxLp',
+                    target: 'stats.maxLp',
                     value: 10,
                     description: 'Aumenta sua vida máxima em +10 pontos'
                 }
@@ -152,7 +154,7 @@ export const defaultPerks: Record<RarityType, Array<Perk<any>>> = {
             effects: [
                 {
                     type: 'add',
-                    target: 'cargo.max',
+                    target: 'capacity.max',
                     value: 1,
                     description: 'Aumenta sua capacidade de carregar itens em +1Kg'
                 }
@@ -935,7 +937,7 @@ export const defaultPerks: Record<RarityType, Array<Perk<any>>> = {
             ]
         }
     ]
-}
+} as unknown as Record<RarityType, Array<Perk<any>>>
 
 /**
  * Gera uma nova instância de um perk aleatório de uma raridade específica

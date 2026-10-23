@@ -3,10 +3,10 @@ import { subclasses } from '@constants/subclasses'
 import { negativeTraits, positiveTraits } from '@constants/traits'
 import { useAudio } from '@hooks'
 import useNumbersWithSpaces from '@hooks/useNumbersWithSpace'
-import { AttachMoney, DirectionsRun, Psychology, Star } from '@mui/icons-material'
+import { AttachMoney, Casino, DirectionsRun, Lock, Psychology, Star } from '@mui/icons-material'
 import { Box, Button, Chip, FormControl, IconButton, InputLabel, ListSubheader, MenuItem, OutlinedInput, Select, TextField, Typography, useMediaQuery } from '@mui/material'
 import { alpha, useTheme } from '@mui/material/styles'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useId, useState } from 'react'
 import { Controller, useFormContext, useWatch } from 'react-hook-form'
 import ElementIcon from '@components/misc/ElementIcon'
 import ElementalMasteryModal from './dialogs/ElementalMasteryModal'
@@ -15,10 +15,10 @@ import TraitsModal from './dialogs/TraitsModal'
 import LevelProgress from './subcomponents/LevelProgress'
 import { skills } from '@constants/skills'
 import { resolveTraitTargetLabel } from '@utils/systemLookups'
+import { useCharsheetSystem } from '@hooks/useCharsheetSystem'
 import type { CharsheetDTO } from '@models/dtos'
 import type { Class, Expertises, Lineage, Subclass, Trait } from '@models'
 import { type Element } from '@models/types/string'
-import type { RPGSystem } from '@models/entities'
 
 export default function LevelAndInfo() {
     const { control, getValues, setValue , formState: { errors } } = useFormContext<CharsheetDTO>()
@@ -27,7 +27,7 @@ export default function LevelAndInfo() {
     const [ subclassModalOpen, setSubclassModalOpen ] = useState<boolean>(false)
     const [ elementalMasteryModalOpen, setElementalMasteryModalOpen ] = useState<boolean>(false)
     const [ selectedSubclass, setSelectedSubclass ] = useState<Subclass['name'] | null>(null)
-    const [ customSystem, setCustomSystem ] = useState<RPGSystem | null>(null)
+    const fieldId = useId()
     const audio = useAudio('/sounds/sci-fi-positive-notification.wav')
     const audio2 = useAudio('/sounds/fast-sci-fi-bleep.wav')
     
@@ -39,16 +39,8 @@ export default function LevelAndInfo() {
     const numberWithSpaces = useNumbersWithSpaces()
     const charsheet = getValues()
 
-    useEffect(() => {
-        if (charsheet.systemId) {
-            fetch(`/api/rpg-system/${charsheet.systemId}`)
-                .then(async res => await res.json())
-                .then((data: RPGSystem) => setCustomSystem(data))
-                .catch(() => setCustomSystem(null))
-        } else {
-            setCustomSystem(null)
-        }
-    }, [ charsheet.systemId ])
+    // Sistema customizado (cache compartilhado; resposta de erro não vira "sistema")
+    const { system: customSystem } = useCharsheetSystem(charsheet.systemId)
 
     const isCustomSystem = !!customSystem
 
@@ -197,7 +189,7 @@ export default function LevelAndInfo() {
                 }}
             >
                 <Box sx={{ p: matches ? 1 : 2, pb: 0 }}>
-                    <Typography variant={matches ? 'subtitle1' : 'h6'} fontWeight="bold" color="primary" mb={2}>
+                    <Typography variant={matches ? 'subtitle1' : 'h6'} component='h3' fontWeight="bold" color="primary" mb={2}>
                         Níveis e Informações
                     </Typography>
                 </Box>
@@ -244,6 +236,7 @@ export default function LevelAndInfo() {
                     >
                         <Typography
                             variant="subtitle1"
+                            component='h4'
                             fontWeight="500"
                             sx={{
                                 color: theme.palette.text.secondary,
@@ -296,7 +289,7 @@ export default function LevelAndInfo() {
                                     name='displacement'
                                     control={control}
                                     render={({ field }) => (
-                                        <Typography variant="h6" fontWeight="bold" color="text.primary">
+                                        <Typography variant="h6" component="p" fontWeight="bold" color="text.primary">
                                             {field.value}m
                                         </Typography>
                                     )}
@@ -379,6 +372,7 @@ export default function LevelAndInfo() {
                                                         error={!!error}
                                                         helperText={error?.message}
                                                         inputProps={{
+                                                            'aria-label': (isCustomSystem && customSystem?.currency?.name) || 'Dinheiro',
                                                             min: 0,
                                                             onWheel: (e) => (e.target as HTMLElement).blur()
                                                         }}
@@ -442,6 +436,7 @@ export default function LevelAndInfo() {
                                                 <Box display='flex' alignItems='center' gap={1} flexWrap='wrap'>
                                                     <IconButton
                                                         size="small"
+                                                        aria-label={`Diminuir ${resource.name}`}
                                                         onClick={() => onChange(Math.max(0, current - 1))}
                                                         sx={{ width: 26, height: 26 }}
                                                     >
@@ -455,6 +450,7 @@ export default function LevelAndInfo() {
                                                     />
                                                     <IconButton
                                                         size="small"
+                                                        aria-label={`Aumentar ${resource.name}`}
                                                         onClick={() => onChange(current + 1)}
                                                         sx={{ width: 26, height: 26 }}
                                                     >
@@ -482,20 +478,21 @@ export default function LevelAndInfo() {
                         borderColor: 'divider'
                     }}
                 >
-                    <Typography variant={matches ? 'subtitle1' : 'h6'} fontWeight="bold" color="primary" mb={2}>
+                    <Typography variant={matches ? 'subtitle1' : 'h6'} component='h3' fontWeight="bold" color="primary" mb={2}>
                         Outras informações
                     </Typography>
 
                     <Box display='flex' flexDirection='column' gap={2}>
                         {/* Traços */}
                         <FormControl fullWidth size={matches ? 'small' : 'medium'}>
-                            <InputLabel>Traços *</InputLabel>
+                            <InputLabel htmlFor={`${fieldId}-traits`}>Traços *</InputLabel>
                             <Controller
                                 name='traits'
                                 control={control}
                                 render={({ field }) => (
                                     <>
                                         <OutlinedInput
+                                            id={`${fieldId}-traits`}
                                             label="Traços"
                                             readOnly
                                             value={Array.isArray(field.value) && field.value.length > 0 ?
@@ -583,6 +580,7 @@ export default function LevelAndInfo() {
                             <>
                                 <Typography
                                     variant="subtitle1"
+                                    component='h4'
                                     fontWeight="500"
                                     sx={{
                                         color: theme.palette.text.secondary,
@@ -640,6 +638,7 @@ export default function LevelAndInfo() {
                                                     <FormControl fullWidth size="small" disabled={!(isElementalMasteryLocked || !canEditMasteryFields)}>
                                                         <Select
                                                             {...field}
+                                                            inputProps={{ 'aria-label': 'Maestria Elemental' }}
                                                             displayEmpty
                                                             value={field.value || ''}
                                                             onChange={() => {
@@ -671,8 +670,8 @@ export default function LevelAndInfo() {
                                                 </Typography>
                                             )}
                                             {isElementalMasteryLocked && (
-                                                <Typography variant="caption" color="warning.main" display="block" mt={0.5}>
-                                                🔒 Maestria não pode ser alterada
+                                                <Typography variant="caption" color="warning.main" display="flex" alignItems="center" gap={0.5} mt={0.5}>
+                                                    <Lock fontSize="inherit" /> Maestria não pode ser alterada
                                                 </Typography>
                                             )}
                                         </Box>
@@ -724,6 +723,7 @@ export default function LevelAndInfo() {
                                                     <FormControl fullWidth size="small" disabled={!(isSubclassLocked || !canEditMasteryFields)}>
                                                         <Select
                                                             {...field}
+                                                            inputProps={{ 'aria-label': 'Subclasse' }}
                                                             displayEmpty
                                                             value={typeof field.value === 'string' ? field.value : field.value?.name || ''}
                                                             onChange={() => {
@@ -755,8 +755,8 @@ export default function LevelAndInfo() {
                                                 </Typography>
                                             )}
                                             {isSubclassLocked && (
-                                                <Typography variant="caption" color="warning.main" display="block" mt={0.5}>
-                                                🔒 Subclasse não pode ser alterada
+                                                <Typography variant="caption" color="warning.main" display="flex" alignItems="center" gap={0.5} mt={0.5}>
+                                                    <Lock fontSize="inherit" /> Subclasse não pode ser alterada
                                                 </Typography>
                                             )}
                                             {currentSubclass && (
@@ -776,13 +776,14 @@ export default function LevelAndInfo() {
                         {/* Condição Financeira */}
                         {(!isCustomSystem || customSystem?.enabledFields?.financialCondition) && (
                             <FormControl fullWidth size={matches ? 'small' : 'medium'}>
-                                <InputLabel>Condição financeira *</InputLabel>
+                                <InputLabel id={`${fieldId}-financial-label`}>Condição financeira *</InputLabel>
                                 <Controller
                                     name='financialCondition'
                                     control={control}
                                     render={({ field }) => (
                                         <Select
                                             {...field}
+                                            labelId={`${fieldId}-financial-label`}
                                             label='Condição financeira'
                                             required
                                             disabled={!!charsheet.id}
@@ -832,6 +833,7 @@ export default function LevelAndInfo() {
                                 variant='outlined'
                                 color="primary"
                                 fullWidth
+                                startIcon={<Casino />}
                                 size={matches ? 'small' : 'medium'}
                                 sx={{
                                     mt: 1,
@@ -843,7 +845,7 @@ export default function LevelAndInfo() {
                                     }
                                 }}
                             >
-                                🎲 Rolar Dados da Condição Financeira
+                                Rolar Dados da Condição Financeira
                             </Button>
                         )}
                     </Box>

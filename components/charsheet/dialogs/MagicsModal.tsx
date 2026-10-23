@@ -11,10 +11,21 @@ import type { ReactElement } from 'react';
 import type { CharsheetDTO } from '@models/dtos';
 import { SPELL_FILTERS } from '@utils/spellCategory';
 import { color, shadow } from '@themes/tokens';
+import { normalizeToArray } from '@utils/normalizeToArray';
 
 import Magic from '../subcomponents/Magic';
 
-const SpellsResourceListModal = ResourceListModal;    
+const SpellsResourceListModal = ResourceListModal;
+
+/** Chave da magia na ficha: o id; magias sem id usam o nome (mesma regra de `spellStages` e da remoção) */
+export function spellKey(spell: Pick<Spell, 'id' | 'name'>): string {
+    return spell.id || spell.name;
+}
+
+function hasSpell(spells: unknown, spell: Spell): boolean {
+    const key = spellKey(spell);
+    return normalizeToArray<Spell>(spells).some(owned => spellKey(owned) === key);
+}
 
 export default function SpellsModal({ open, onClose }: { open: boolean, onClose: () => void }): ReactElement {
     const { getValues, setValue } = useFormContext<CharsheetDTO>();
@@ -26,9 +37,12 @@ export default function SpellsModal({ open, onClose }: { open: boolean, onClose:
     }
 
     const validateAdd = (spell: Spell) => {
-        const { ORMLevel, spellSpace, points } = getValues();
+        const { ORMLevel, spellSpace, points, spells } = getValues();
         const cost = getSpellPointCost(Number(spell.level))
-        
+
+        if (hasSpell(spells, spell)) {
+            return invalidate('Você já possui esta magia!');
+        }
         if (ORMLevel < Number(spell.level)) {
             return invalidate('Seu nível de ORM não é suficiente para esta magia!');
         }
@@ -40,14 +54,19 @@ export default function SpellsModal({ open, onClose }: { open: boolean, onClose:
     };
 
     const addSpell = async (spell: Spell) => {
-        const currentSpells = getValues('spells') || [];
+        const currentSpells = normalizeToArray<Spell>(getValues('spells'));
         const currentPoints = getValues('points');
         const currentSpellsSpace = getValues('spellSpace');
         const cost = getSpellPointCost(Number(spell.level))
-        
+
+        // Segunda barreira (a primeira é o validateAdd): dois cliques seguidos não gastam espaço e pontos duas vezes
+        if (hasSpell(currentSpells, spell)) {
+            throw new Error('Você já possui esta magia!');
+        }
+
         const newSpell = {
             ...spell,
-            id: spell.id ?? Date.now().toString()
+            id: spellKey(spell)
         };
         
         setValue('spells', [ ...currentSpells, newSpell ], { shouldValidate: true });
@@ -149,16 +168,15 @@ export default function SpellsModal({ open, onClose }: { open: boolean, onClose:
                             itemMinWidth={360}
                             itemMaxColumns={5}
                             renderResource={({ item, handleAddItem }) => {
-                                const currentSpells = getValues('spells') || [];
-                                const alreadyAdded = currentSpells.some(m => m.id === item.id);
-                                
+                                const alreadyAdded = hasSpell(getValues('spells'), item);
+
                                 return (
                                     <Magic
                                         as="magic-spell"
                                         compact
-                                        key={item.id ?? item.nome}
+                                        key={spellKey(item)}
                                         magic={item}
-                                        id={item.id ?? item.nome}
+                                        id={spellKey(item)}
                                         isAdding={!alreadyAdded}
                                         onIconClick={alreadyAdded ? undefined : handleAddItem}
                                     />

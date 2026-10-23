@@ -29,8 +29,6 @@ class BaseRequest<T> {
                 }
             }
 
-            console.log({ requestUrl: url, method: requestMethod, baseURL: instance.defaults.baseURL });
-
             const requestConfig = { data: config?.body };
 
             switch (requestMethod) {

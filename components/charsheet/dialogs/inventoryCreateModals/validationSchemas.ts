@@ -31,28 +31,3 @@ export const armorSchema = z.object({
     displacementPenalty: z.coerce.number().min(0, { message: 'Penalidade de Deslocamento é obrigatória' }),
     accessories: z.array(z.string()).default([ 'Não possui acessórios' ])
 });
-
-/**
- * Schema para efeitos de armas
- */
-export const weaponEffectSchema = z.object({
-    value: z.string().min(1, { message: 'Dano é obrigatório' }),
-    critValue: z.string().min(1, { message: 'Dano crítico é obrigatório' }),
-    critChance: z.coerce.number().min(1, { message: 'Chance crítica é obrigatória' }),
-    effectType: z.string().min(1, { message: 'Tipo de dano é obrigatório' })
-});
-
-/**
- * Schema para armas
- */
-export const weaponSchema = z.object({
-    ...commonItemSchema,
-    kind: z.string().min(1, { message: 'Tipo é obrigatório' }).default('Padrão'),
-    categ: z.string().min(1, { message: 'Categoria é obrigatória' }),
-    bonus: z.string().min(1, { message: 'Bônus é obrigatório' }),
-    range: z.string().min(1, { message: 'Alcance é obrigatório' }),
-    hitType: z.string().min(1, { message: 'Tipo de acerto é obrigatório' }),
-    ammo: z.string().default('Não consome'),
-    accessories: z.array(z.string()).default([ 'Não possui acessórios' ]),
-    effect: weaponEffectSchema
-});

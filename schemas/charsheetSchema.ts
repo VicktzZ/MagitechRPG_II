@@ -1,434 +1,352 @@
 import { z } from 'zod'
+import { DICE_NOTATION_MESSAGE, isDiceNotation } from '@utils/diceNotation'
 
-// Enums e tipos básicos
-const GameModes = z.enum([ 'Apocalypse', 'Classic' ])
+/**
+ * Schema do formulário da ficha.
+ *
+ * Regra de ouro: o schema valida o que o jogador digita, não a história do banco. Ficha antiga com
+ * formato fora do padrão (lista gravada como objeto, perícia sem atributo base, arma sem munição...) tem de
+ * continuar salvável — por isso quase tudo tem `.passthrough()` (o Zod descarta chaves desconhecidas, e uma
+ * chave descartada no submit era apagada do banco) e `buildCharsheetSchema` tem dois modos:
+ *
+ * - `create`: a ficha nova precisa fechar (pontos de atributo e de perícia gastos, atributo ≤ 30, perícia ≤ 10);
+ * - `edit`: ficha já criada. Pontos para gastar não bloqueiam (o level-up concede pontos na hora), e os tetos só
+ *   barram quem AUMENTA acima do teto — o valor que já estava salvo acima dele continua válido.
+ */
 
-const Genders = z.enum([ 'Masculino', 'Feminino', 'Não-binário', 'Outro', 'Não definido' ])
+export type CharsheetSchemaMode = 'create' | 'edit'
 
-const Elements = z.enum([
-    'Fogo',
-    'Água',
-    'Terra',
-    'Ar',
-    'Eletricidade',
-    'Trevas',
-    'Luz',
-    'Não-elemental',
-    ''
-])
+export interface CharsheetSchemaOptions {
+    mode?: CharsheetSchemaMode
+    /** Valores da ficha como foi carregada (só no modo `edit`); lido na hora de validar, então pode mudar depois de salvar */
+    getBaseline?: () => unknown
+}
 
-// Em BaseCharsheet, race e class são strings tipadas; aqui manteremos como string
-// para alinhar ao DTO e evitar acoplamento rígido com listas locais.
-const Races = z.string()
-const Classes = z.string()
+export const ATTRIBUTE_CAP = 30
+export const EXPERTISE_CAP = 10
 
-const FinancialConditions = z.enum([
-    'Miserável',
-    'Pobre',
-    'Estável',
-    'Rico'
-])
+const ATTRIBUTE_LABELS: Record<string, string> = {
+    vig: 'Vigor', des: 'Destreza', foc: 'Foco', log: 'Lógica', sab: 'Sabedoria', car: 'Carisma'
+}
 
-// Schemas para objetos aninhados
-// catchall permite atributos de sistemas customizados (chaves além de
-// vig/des/foc/log/sab/car) sobreviverem à validação — sem ele, o Zod
-// descartaria silenciosamente qualquer chave não listada, zerando os
-// atributos de sistemas customizados a cada submit.
+// Texto que o banco pode ter como null/ausente vira ''
+const text = z.preprocess(value => value ?? '', z.string())
+
+const attribute = z.number().int().min(0, 'Atributos não podem ser negativos').default(0)
+
+// Atributos de sistemas customizados (chaves além de vig/des/foc/log/sab/car) sobrevivem pelo catchall
 const AttributesSchema = z.object({
-    vig: z.number().int().min(0).max(30, 'O valor máximo para atributos é 30')
-        .refine(val => val >= 0 && val <= 30, {
-            message: 'Vigor deve estar entre 0 e 30'
-        })
-        .default(0),
-
-    des: z.number().int().min(0).max(30, 'O valor máximo para atributos é 30')
-        .refine(val => val >= 0 && val <= 30, {
-            message: 'Destreza deve estar entre 0 e 30'
-        })
-        .default(0),
-
-    foc: z.number().int().min(0).max(30, 'O valor máximo para atributos é 30')
-        .refine(val => val >= 0 && val <= 30, {
-            message: 'Foco deve estar entre 0 e 30'
-        })
-        .default(0),
-
-    log: z.number().int().min(0).max(30, 'O valor máximo para atributos é 30')
-        .refine(val => val >= 0 && val <= 30, {
-            message: 'Lógica deve estar entre 0 e 30'
-        })
-        .default(0),
-
-    sab: z.number().int().min(0).max(30, 'O valor máximo para atributos é 30')
-        .refine(val => val >= 0 && val <= 30, {
-            message: 'Sabedoria deve estar entre 0 e 30'
-        })
-        .default(0),
-
-    car: z.number().int().min(0).max(30, 'O valor máximo para atributos é 30')
-        .refine(val => val >= 0 && val <= 30, {
-            message: 'Carisma deve estar entre 0 e 30'
-        })
-        .default(0)
+    vig: attribute, des: attribute, foc: attribute, log: attribute, sab: attribute, car: attribute
 }).catchall(z.number().int())
 
-// Stats separados conforme BaseCharsheet
+// Decimais valem: o app grava `ap` e dinheiro fracionados (a loja e o mestre usam passo 0,1)
 const StatsSchema = z.object({
-    lp: z.number().int().min(0, 'Pontos de vida não podem ser negativos').default(0),
-    mp: z.number().int().min(0, 'Pontos de mana não podem ser negativos').default(0),
-    ap: z.number().int().min(0, 'Pontos de ação não podem ser negativos').default(0),
-    maxLp: z.number().int().min(0, 'Valor máximo de vida inválido').default(0),
-    maxMp: z.number().int().min(0, 'Valor máximo de mana inválido').default(0),
-    maxAp: z.number().int().min(0, 'Valor máximo de ação inválido').default(0)
-})
+    lp: z.number().min(0, 'Pontos de vida não podem ser negativos').default(0),
+    mp: z.number().min(0, 'Pontos de mana não podem ser negativos').default(0),
+    ap: z.number().min(0, 'Pontos de ação não podem ser negativos').default(0),
+    maxLp: z.number().min(0, 'Valor máximo de vida inválido').default(0),
+    maxMp: z.number().min(0, 'Valor máximo de mana inválido').default(0),
+    maxAp: z.number().min(0, 'Valor máximo de ação inválido').default(0)
+}).passthrough()
 
 const PointsSchema = z.object({
     attributes: z.number().int().default(0),
     expertises: z.number().int().default(0),
-    skills: z.number().int().min(0, 'Pontos de habilidade não podem ser negativos').default(0),
-    magics: z.number().int().min(0, 'Pontos de magia não podem ser negativos').default(0)
-}).superRefine((data, ctx) => {
-    if (data.attributes !== 0) {
-        ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: data.attributes > 0
-                ? `Você ainda possui ${data.attributes} ponto(s) de atributo para gastar`
-                : `Você gastou ${Math.abs(data.attributes)} ponto(s) de atributo a mais`,
-            path: [ 'attributes' ]
-        })
-    }
-    if (data.expertises !== 0) {
-        ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: data.expertises > 0
-                ? `Você ainda possui ${data.expertises} ponto(s) de perícia para gastar`
-                : `Você gastou ${Math.abs(data.expertises)} ponto(s) de perícia a mais`,
-            path: [ 'expertises' ]
-        })
-    }
-    if (data.skills < 0) {
-        ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: 'Pontos de habilidade não podem ser negativos',
-            path: [ 'skills' ]
-        })
-    }
-    if (data.magics < 0) {
-        ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: 'Pontos de magia não podem ser negativos',
-            path: [ 'magics' ]
-        })
-    }
-})
+    skills: z.number().int().default(0),
+    magics: z.number().int().default(0)
+}).passthrough()
 
 const SkillSchema = z.object({
     id: z.string().optional(),
     name: z.string().min(1, 'O nome da habilidade é obrigatório'),
-    description: z.string().min(1, 'A descrição da habilidade é obrigatória'),
-    type: z.string(),
-    origin: z.string().optional(),
-    effects: z.array(z.number().int()).optional(),
-    level: z.number().int().min(0, 'O nível deve ser maior ou igual a 0').optional()
-})
+    description: text,
+    type: text,
+    origin: z.string().nullish(),
+    effects: z.array(z.any()).nullish(),
+    level: z.number().min(0, 'O nível deve ser maior ou igual a 0').nullish()
+}).passthrough()
+
+const skillList = z.array(SkillSchema).nullish().transform(list => list ?? [])
 
 const SkillsSchema = z.object({
-    class: z.array(SkillSchema).optional().default([]).refine(
-        skills => new Set(skills.map(s => s.name)).size === skills.length,
-        { message: 'Habilidades de classe não podem ter nomes duplicados' }
-    ),
-    subclass: z.array(SkillSchema).optional().default([]).refine(
-        skills => new Set(skills.map(s => s.name)).size === skills.length,
-        { message: 'Habilidades de subclasse não podem ter nomes duplicados' }
-    ),
-    bonus: z.array(SkillSchema).optional().default([]).refine(
-        skills => new Set(skills.map(s => s.name)).size === skills.length,
-        { message: 'Habilidades bônus não podem ter nomes duplicados' }
-    ),
-    powers: z.array(SkillSchema).optional().default([]).refine(
-        skills => new Set(skills.map(s => s.name)).size === skills.length,
-        { message: 'Poderes não podem ter nomes duplicados' }
-    ),
-    lineage: z.array(SkillSchema).optional().default([]),
-    race: z.array(SkillSchema).optional().default([]),
-    occupation: z.array(SkillSchema).optional().default([])
-})
+    class: skillList,
+    subclass: skillList,
+    bonus: skillList,
+    powers: skillList,
+    lineage: skillList,
+    race: skillList,
+    occupation: skillList
+}).passthrough()
 
 const AmmoCounterSchema = z.object({
     current: z.number().int().min(0, 'Munição atual não pode ser negativa').default(0),
     max: z.number().int().min(0, 'Munição máxima não pode ser negativa').default(0)
-})
+}).passthrough()
 
 const CapacitySchema = z.object({
     cargo: z.coerce.number().min(0, 'Carga não pode ser negativa').default(0),
     max: z.coerce.number().min(0, 'Capacidade máxima não pode ser negativa').default(5.0)
-})
+}).passthrough()
 
 const PassiveSchema = z.object({
-    id: z.string().min(1, 'O ID da habilidade passiva é obrigatório'),
+    id: z.string().optional(),
     title: z.string().min(1, 'O título da habilidade passiva é obrigatório'),
-    description: z.string(),
-    occasion: z.enum([
-        'Início do turno',
-        'Final do turno',
-        'Ao ser atacado',
-        'Ao atacar',
-        'Ao usar magia',
-        'Ao sofrer dano',
-        'Ao causar dano',
-        'Sempre ativo',
-        'Quando curar',
-        'Ao se deslocar',
-        'Condição específica',
-        'Personalizado'
-    ]),
+    description: text,
+    // O seletor da tela limita as opções; o banco aceita qualquer texto (ocasião personalizada)
+    occasion: z.string(),
     custom: z.boolean().optional()
-})
+}).passthrough()
 
-const StatusSchema = z.object({
+const StatusEntrySchema = z.object({
     name: z.string().min(1, 'O nome do status é obrigatório'),
-    description: z.string().optional(),
-    type: z.string(),
-    duration: z.number().int().min(0).optional().default(0),
-    effect: z.array(z.string()).optional().default([])
-})
+    description: z.string().nullish(),
+    type: text,
+    duration: z.number().min(0).nullish(),
+    effect: z.array(z.any()).nullish()
+}).passthrough()
 
 const DiceSchema = z.object({
+    id: z.string().optional(),
     name: z.string().min(1, 'O nome do dado é obrigatório'),
-    color: z.string(),
-    createdAt: z.string(),
-    description: z.string().optional(),
-    dices: z.array(z.object({ faces: z.number().int(), quantity: z.number().int() })),
-    effects: z.array(z.object({})).optional().default([]),
-    modifiers: z.array(z.object({})).optional().default([])
-})
+    color: text,
+    createdAt: text,
+    description: z.string().nullish(),
+    dices: z.array(z.object({ faces: z.number().int(), quantity: z.number().int() }).passthrough()),
+    effects: z.array(z.any()).nullish(),
+    modifiers: z.array(z.any()).nullish(),
+    lastRolled: z.string().nullish()
+}).passthrough()
 
 const ModsSchema = z.object({
     attributes: z.object({
-        des: z.number().int().default(0),
-        vig: z.number().int().default(0),
-        log: z.number().int().default(0),
-        sab: z.number().int().default(0),
-        foc: z.number().int().default(0),
-        car: z.number().int().default(0)
-    }).catchall(z.number().int()),
-    discount: z.number().int().default(-10)
-})
+        des: z.number().default(0),
+        vig: z.number().default(0),
+        log: z.number().default(0),
+        sab: z.number().default(0),
+        foc: z.number().default(0),
+        car: z.number().default(0)
+    }).catchall(z.number()),
+    discount: z.number().default(-10)
+}).passthrough()
 
-// Schema base para itens do inventário
+// Itens do inventário
 const BaseItemSchema = z.object({
     id: z.string().optional(),
     name: z.string().min(1, 'O nome do item é obrigatório'),
-    description: z.string().optional(),
-    weight: z.number().min(0, 'O peso não pode ser negativo').default(0),
+    description: z.string().nullish(),
+    weight: z.number().default(0),
     value: z.number().min(0, 'O valor não pode ser negativo').default(0),
     rarity: z.string().default('Comum'),
-    kind: z.string().optional(),
+    kind: z.string().nullish(),
     quantity: z.number().int().min(1, 'A quantidade mínima é 1').default(1)
-})
+}).passthrough()
 
-// Enum para schema de armas
-const AmmoEnum = z.enum([
-    '9mm',
-    'Calibre .50',
-    'Calibre 12',
-    'Calibre 22', 
-    'Bateria de lítio',
-    'Amplificador de partículas',
-    'Cartucho de fusão',
-    'Servomotor iônico',
-    'Flecha',
-    'Combustível', 
-    'Foguete', 
-    'Granada',
-    'Serra de metal',
-    'Bateria de Cádmio com Óxido de Grafeno',
-    'Não consome'
-])
+const damageDice = z.string().default('').refine(
+    value => value.trim() === '' || isDiceNotation(value),
+    { message: DICE_NOTATION_MESSAGE }
+)
 
-// Schema para armas
+// Munição é texto livre: o modal de arma oferece opções (Dardo, Ácido...) que o enum antigo não conhecia
 const WeaponSchema = BaseItemSchema.extend({
-    ammo: AmmoEnum,
-    categ: z.string().min(1, 'A categoria da arma é obrigatória'),
-    range: z.string().optional(),
-    accessories: z.array(z.string()).default([]),
-    bonus: z.string(),
-    hit: z.string(),
+    ammo: z.string().default('Não consome'),
+    categ: text,
+    range: z.string().nullish(),
+    accessories: z.array(z.any()).default([]),
+    bonus: text,
+    hit: text,
     effect: z.object({
-        effectType: z.string().optional(),
-        critChance: z.number().optional(),
-        critValue: z.string()
-            .min(1, { message: 'Valor crítico é obrigatório' })
-            .regex(/^\d+d\d+(?:[+-](?:\d+|\d+d\d+))*$/, 
-                { message: 'Formato deve ser XdY, opcionalmente com modificadores (ex: 2d4+1, 2d4+2d4)' }),
-        value: z.string()
-            .min(1, { message: 'Valor de dano é obrigatório' })
-            .regex(/^\d+d\d+(?:[+-](?:\d+|\d+d\d+))*$/, 
-                { message: 'Formato deve ser XdY, opcionalmente com modificadores (ex: 2d4+1, 2d4+2d4)' })
-    }).optional()
+        effectType: z.string().nullish(),
+        critChance: z.coerce.number().optional(),
+        critValue: damageDice,
+        value: damageDice
+    }).passthrough().nullish()
 })
 
-// Schema para armaduras
 const ArmorSchema = BaseItemSchema.extend({
-    categ: z.string().min(1, 'A categoria da armadura é obrigatória'),
-    displacementPenalty: z.number().int().default(0),
-    value: z.number().min(0, 'O valor de defesa não pode ser negativo').default(0)
+    categ: text,
+    displacementPenalty: z.number().default(0)
 })
 
-// Schema para itens comuns
+// `inventory.items` é só item comum: um `union` com arma e armadura fazia o item sem `ammo` acusar
+// "Required" de campos que ele nem tem
 const CommonItemSchema = BaseItemSchema.extend({
-    effects: z.array(z.any()).default([])
+    effects: z.array(z.any()).nullish()
 })
-
-// Schema para qualquer item do inventário
-const InventoryItemSchema = z.union([
-    WeaponSchema,
-    ArmorSchema,
-    CommonItemSchema
-])
 
 const MagicSchema = z.object({
-    id: z.string(),
-    element: z.string().min(1, 'O elemento da magia é obrigatório'),
+    id: z.string().optional(),
+    element: text,
     name: z.string().min(1, 'O nome da magia é obrigatório'),
     cost: z.coerce.number().min(0, 'O custo da magia não pode ser negativo').default(0),
     level: z.coerce.number().min(0, 'O nível da magia não pode ser negativo').default(0),
-    type: z.string().min(1, 'O tipo da magia é obrigatório'),
-    execution: z.string().min(1, 'A execução da magia é obrigatória'),
-    range: z.string().min(1, 'O alcance da magia é obrigatório'),
-    stages: z.array(z.string().or(z.null())).default([]),
-    mastery: z.string().optional()
-})
+    type: text,
+    execution: text,
+    range: text,
+    stages: z.array(z.string().nullable()).default([]),
+    mastery: z.string().nullish()
+}).passthrough()
 
+// Valor e atributo base; os tetos são conferidos no schema principal (dependem do valor salvo)
 const ExpertiseValueSchema = z.object({
-    value: z.number().int().min(-10, 'O valor da perícia não pode ser menor que -10')
-        .max(10, 'O valor máximo para uma perícia é 10')
-        .default(0),
-    // Aceita qualquer string para suportar atributos de sistemas customizados (ex: rac, tec, con)
+    value: z.number().int().default(0),
+    // Qualquer string: atributos de sistemas customizados (rac, tec, con...)
     defaultAttribute: z.string().nullable().optional()
-})
-
-const ExpertisesSchema = z.record(ExpertiseValueSchema).superRefine((expertises, ctx) => {
-    Object.entries(expertises).forEach(([ name, expertise ]) => {
-        if (typeof expertise !== 'object' || expertise === null) {
-            ctx.addIssue({
-                code: z.ZodIssueCode.custom,
-                message: `Perícia '${name}' deve ser um objeto com valor e atributo base`,
-                path: [ 'expertises', name ]
-            })
-        }
-    })
-})
+}).passthrough()
 
 const SessionInfoSchema = z.object({
     campaignCode: z.string(),
     stats: z.object({
-        maxLp: z.number().int().min(0, 'LP máximo não pode ser negativo').optional(),
-        maxMp: z.number().int().min(0, 'MP máximo não pode ser negativo').optional(),
-        maxAp: z.number().int().min(0, 'AP máximo não pode ser negativo').optional(),
-        lp: z.number().int().min(0, 'LP não pode ser negativo').optional(),
-        mp: z.number().int().min(0, 'MP não pode ser negativo').optional(),
-        ap: z.number().int().min(0, 'AP não pode ser negativo').optional()
+        maxLp: z.number().min(0, 'LP máximo não pode ser negativo').optional(),
+        maxMp: z.number().min(0, 'MP máximo não pode ser negativo').optional(),
+        maxAp: z.number().min(0, 'AP máximo não pode ser negativo').optional(),
+        lp: z.number().min(0, 'LP não pode ser negativo').optional(),
+        mp: z.number().min(0, 'MP não pode ser negativo').optional(),
+        ap: z.number().min(0, 'AP não pode ser negativo').optional()
+    }).passthrough().optional(),
+    // Vantagens que a campanha entrega: o formulário não as edita, mas não pode perdê-las
+    perks: z.array(z.any()).optional()
+}).passthrough()
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+    typeof value === 'object' && value !== null && !Array.isArray(value)
+
+const asNumber = (value: unknown): number | undefined =>
+    typeof value === 'number' && Number.isFinite(value) ? value : undefined
+
+const pointsIssue = (kind: 'atributo' | 'perícia', value: number): string =>
+    value > 0
+        ? `Você ainda possui ${value} ponto(s) de ${kind} para gastar`
+        : `Você gastou ${Math.abs(value)} ponto(s) de ${kind} a mais`
+
+export function buildCharsheetSchema({ mode = 'create', getBaseline }: CharsheetSchemaOptions = {}) {
+    const creating = mode === 'create'
+
+    const object = z.object({
+        id: z.string().optional(),
+        playerName: creating ? z.string().min(1, 'O nome do jogador é obrigatório') : z.string().optional(),
+        mode: z.string().default('Classic'),
+        userId: creating ? z.string().min(1, 'ID do usuário é obrigatório') : z.string().optional(),
+        name: z.string().min(1, 'O nome do personagem é obrigatório'),
+        // A data é definida no envio (e pelo servidor), não congelada na hora em que o módulo foi importado
+        createdAt: z.string().optional(),
+        systemId: z.string().nullish(),
+        age: z.preprocess(
+            value => (value === '' || value === null || value === undefined || (typeof value === 'number' && Number.isNaN(value))) ? 0 : value,
+            z.coerce.number().int('A idade deve ser um número inteiro').min(0, 'A idade deve ser um número positivo')
+        ),
+        class: text,
+        race: text,
+        lineage: text,
+        ORMLevel: z.number().int().min(0, 'Nível de ORM não pode ser negativo').default(0),
+        inventory: z.object({
+            items: z.array(CommonItemSchema).nullish().transform(list => list ?? []),
+            weapons: z.array(WeaponSchema).nullish().transform(list => list ?? []),
+            armors: z.array(ArmorSchema).nullish().transform(list => list ?? []),
+            money: z.number().min(0, 'O dinheiro não pode ser negativo').default(0)
+        }).passthrough(),
+        displacement: z.number().min(0, 'Deslocamento não pode ser negativo').default(0),
+        spellStages: z.preprocess(value => value ?? {}, z.record(z.coerce.number().int().min(1).max(3))),
+        spells: z.array(MagicSchema).default([]),
+        anotacoes: text,
+        spellSpace: z.number().int().min(0, 'Espaço de magias não pode ser negativo').default(0),
+        mpLimit: z.number().int().min(0, 'Limite de MP não pode ser negativo').default(0),
+        overall: z.number().min(0, 'Overall não pode ser negativo').default(0),
+        // Gênero e maestria aceitam qualquer texto (sistemas customizados)
+        gender: z.preprocess(value => value || 'Não definido', z.string()),
+        elementalMastery: text,
+        level: z.number().int().min(0, 'Nível não pode ser negativo').default(0),
+        subclass: text,
+        // Opcional: sistemas customizados não usam
+        financialCondition: text,
+        expertises: z.record(ExpertiseValueSchema).default({}),
+        traits: z.array(z.string()).default([]),
+        session: z.array(SessionInfoSchema).nullish().transform(list => list ?? []),
+        skills: SkillsSchema,
+        points: PointsSchema,
+        attributes: AttributesSchema,
+        stats: StatsSchema,
+        ammoCounter: AmmoCounterSchema,
+        capacity: CapacitySchema.default({ cargo: 1.0, max: 5.0 }),
+        passives: z.array(PassiveSchema).nullish().transform(list => list ?? []),
+        status: z.array(z.union([ z.string(), StatusEntrySchema ])).nullish().transform(list => list ?? []),
+        dices: z.array(DiceSchema).nullish().transform(list => list ?? []),
+        mods: ModsSchema.default({
+            attributes: { des: 0, vig: 0, log: 0, sab: 0, foc: 0, car: 0 },
+            discount: -10
+        }),
+        // Recursos definidos pelo sistema (Bateria, O2, Estresse...) e o máximo pessoal de cada um
+        customResources: z.preprocess(value => value ?? {}, z.record(z.number())),
+        customResourceMaxes: z.preprocess(value => value ?? {}, z.record(z.number())),
+        occupation: text,
+        customFields: z.preprocess(value => value ?? {}, z.record(z.union([ z.string(), z.number(), z.boolean() ])))
+    }).passthrough()
+
+    return object.superRefine((data, ctx) => {
+        const baseline = !creating ? getBaseline?.() : undefined
+        const base = isRecord(baseline) ? baseline : {}
+
+        // ── Campos obrigatórios do sistema padrão ────────────────
+        // Classe, raça e linhagem (profissão, no modo Apocalypse) têm `*` na tela. Sistema customizado pode desligá-los, então só o padrão exige.
+        if (creating && !data.systemId) {
+            const required: Array<[ 'class' | 'race' | 'lineage', string ]> = [
+                [ 'class', 'Escolha a classe do personagem' ],
+                [ 'race', 'Escolha a raça do personagem' ],
+                [ 'lineage', data.mode === 'Apocalypse' ? 'Escolha a profissão do personagem' : 'Escolha a linhagem do personagem' ]
+            ]
+            for (const [ key, message ] of required) {
+                if (String(data[key]).trim() === '') ctx.addIssue({ code: z.ZodIssueCode.custom, message, path: [ key ] })
+            }
+        }
+
+        // ── Pontos ───────────────────────────────────────────────
+        const points = data.points
+        const basePoints = isRecord(base['points']) ? base['points'] : {}
+        if (creating) {
+            // ficha nova só fecha com tudo gasto
+            if (points.attributes !== 0) ctx.addIssue({ code: z.ZodIssueCode.custom, message: pointsIssue('atributo', points.attributes), path: [ 'points', 'attributes' ] })
+            if (points.expertises !== 0) ctx.addIssue({ code: z.ZodIssueCode.custom, message: pointsIssue('perícia', points.expertises), path: [ 'points', 'expertises' ] })
+            if (points.skills < 0) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Pontos de habilidade não podem ser negativos', path: [ 'points', 'skills' ] })
+            if (points.magics < 0) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Pontos de magia não podem ser negativos', path: [ 'points', 'magics' ] })
+        } else {
+            // ficha criada: pontos sobrando são aviso na tela. Só barra gastar mais do que tem (e só se piorou)
+            const checks: Array<[ 'attributes' | 'expertises' | 'skills' | 'magics', string ]> = [
+                [ 'attributes', 'Você gastou mais pontos de atributo do que possui' ],
+                [ 'expertises', 'Você gastou mais pontos de perícia do que possui' ],
+                [ 'skills', 'Pontos de habilidade não podem ser negativos' ],
+                [ 'magics', 'Pontos de magia não podem ser negativos' ]
+            ]
+            for (const [ key, message ] of checks) {
+                const floor = Math.min(0, asNumber(basePoints[key]) ?? 0)
+                if (points[key] < floor) ctx.addIssue({ code: z.ZodIssueCode.custom, message, path: [ 'points', key ] })
+            }
+        }
+
+        // ── Tetos de atributo ────────────────────────────────────
+        const baseAttributes = isRecord(base['attributes']) ? base['attributes'] : {}
+        for (const key of Object.keys(ATTRIBUTE_LABELS)) {
+            const value = asNumber((data.attributes as Record<string, unknown>)[key])
+            if (value === undefined) continue
+            const cap = Math.max(ATTRIBUTE_CAP, asNumber(baseAttributes[key]) ?? 0)
+            if (value > cap) {
+                ctx.addIssue({ code: z.ZodIssueCode.custom, message: `${ATTRIBUTE_LABELS[key]} deve estar entre 0 e ${ATTRIBUTE_CAP}`, path: [ 'attributes', key ] })
+            }
+        }
+
+        // ── Tetos de perícia ─────────────────────────────────────
+        const baseExpertises = isRecord(base['expertises']) ? base['expertises'] : {}
+        for (const [ name, expertise ] of Object.entries(data.expertises)) {
+            const value = expertise.value
+            const baseExpertise = baseExpertises[name]
+            const baseValue = isRecord(baseExpertise) ? asNumber(baseExpertise['value']) : undefined
+            const max = Math.max(EXPERTISE_CAP, baseValue ?? 0)
+            const min = Math.min(-EXPERTISE_CAP, baseValue ?? 0)
+            if (value > max) ctx.addIssue({ code: z.ZodIssueCode.custom, message: `O valor máximo para uma perícia é ${EXPERTISE_CAP}`, path: [ 'expertises', name, 'value' ] })
+            if (value < min) ctx.addIssue({ code: z.ZodIssueCode.custom, message: `O valor da perícia não pode ser menor que -${EXPERTISE_CAP}`, path: [ 'expertises', name, 'value' ] })
+        }
     })
-})
+}
 
-// Schema principal da Charsheet
-export const charsheetSchema = z.object({
-    id: z.string().optional(),
-    playerName: z.string().min(1, 'O nome do jogador é obrigatório'),
-    mode: GameModes.default('Classic'),
-    userId: z.string().min(1, 'ID do usuário é obrigatório'),
-    name: z.string().min(1, 'O nome do personagem é obrigatório'),
-    createdAt: z.string().default(new Date().toISOString()),
-    systemId: z.string().optional(),
-    age: z.coerce.number().int().min(0, 'A idade deve ser um número positivo'),
-    class: Classes.optional().default(''),
-    race: Races.optional().default(''),
-    lineage: z.string().optional().default(''),
-    ORMLevel: z.number().int().min(0, 'Nível de ORM não pode ser negativo').default(0),
-    inventory: z.object({
-        items: z.array(InventoryItemSchema).optional().default([]).refine(
-            items => new Set(items.map(i => i.name)).size === items.length,
-            { message: 'Não pode haver itens com nomes duplicados' }
-        ),
-        weapons: z.array(WeaponSchema).optional().default([]).refine(
-            weapons => new Set(weapons.map(w => w.name)).size === weapons.length,
-            { message: 'Não pode haver armas com nomes duplicados' }
-        ),
-        armors: z.array(ArmorSchema).optional().default([]).refine(
-            armors => new Set(armors.map(a => a.name)).size === armors.length,
-            { message: 'Não pode haver armaduras com nomes duplicados' }
-        ),
-        money: z.number().int().min(0, 'O dinheiro não pode ser negativo').default(0)
-    }).superRefine((inventory, ctx) => {
-        const totalWeight = [
-            ...inventory.items,
-            ...inventory.weapons,
-            ...inventory.armors
-        ].reduce((sum, item) => sum + (item.weight * (item.quantity || 1)), 0)
-        if (totalWeight < 0) {
-            ctx.addIssue({
-                code: z.ZodIssueCode.custom,
-                message: 'Peso total do inventário inválido',
-                path: [ 'items' ]
-            })
-        }
-    }),
-    displacement: z.number().int().min(0, 'Deslocamento não pode ser negativo').default(0),
-    spellStages: z.record(z.coerce.number().int().min(1).max(3))
-        .optional()
-        .default({}),
-    spells: z.array(MagicSchema).default([]),
-    anotacoes: z.string().optional(),
-    spellSpace: z.number().int().min(0, 'Espaço de magias não pode ser negativo').default(0),
-    mpLimit: z.number().int().min(0, 'Limite de MP não pode ser negativo').default(0),
-    overall: z.number().int().min(0, 'Overall não pode ser negativo').default(0),
-    // Gênero: valida contra o enum do Magitech, mas aceita qualquer string para sistemas customizados
-    gender: z.string().optional().default('Não definido'),
-    elementalMastery: z.string().optional().default(''),
-    level: z.number().int().min(0, 'Nível não pode ser negativo').default(0),
-    subclass: z.string().optional(),
-    // Condição financeira: opcional para sistemas que não a utilizam
-    financialCondition: z.string().optional().default(''),
-    expertises: ExpertisesSchema.default({}).refine(
-        expertises => {
-            // Garante que todas as perícias tenham valores válidos
-            return Object.values(expertises).every(expertise =>
-                typeof expertise === 'object' &&
-                expertise !== null &&
-                'value' in expertise &&
-                'defaultAttribute' in expertise
-            )
-        },
-        {
-            message: 'Todas as perícias devem ter um valor e um atributo base válidos',
-            path: [ 'expertises' ]
-        }
-    ),
-    traits: z.array(z.string()).default([]),
-    session: z.array(SessionInfoSchema).optional().default([]),
-    skills: SkillsSchema,
-    points: PointsSchema,
-    attributes: AttributesSchema,
-    stats: StatsSchema,
-    ammoCounter: AmmoCounterSchema,
-    capacity: CapacitySchema.default({ cargo: 1.0, max: 5.0 }),
-    passives: z.array(PassiveSchema).optional().default([]),
-    status: z.array(StatusSchema).optional().default([]),
-    dices: z.array(DiceSchema).optional().default([]),
-    mods: ModsSchema.default({
-        attributes: { des: 0, vig: 0, log: 0, sab: 0, foc: 0, car: 0 },
-        discount: -10
-    }),
-    // Recursos customizados definidos pelo sistema (ex: Bateria, O2, Estresse no Cosmos RPG)
-    customResources: z.record(z.number()).optional().default({}),
-    // Máximo pessoal de cada recurso customizado (cresce com level-up)
-    customResourceMaxes: z.record(z.number()).optional().default({}),
-    // Profissão/ocupação de sistemas customizados (Magitech usa lineage no modo Apocalypse)
-    occupation: z.string().optional().default(''),
-    // Valores de campos iniciais customizados do sistema (ex: Altura, Peso)
-    customFields: z.record(z.union([ z.string(), z.number(), z.boolean() ])).optional().default({})
-})
+/** Schema da criação de ficha (o mais rígido). A edição usa `createCharsheetResolver` com `mode: 'edit'`. */
+export const charsheetSchema = buildCharsheetSchema({ mode: 'create' })
 
-// Tipo inferido do schema
 export type CharsheetType = z.infer<typeof charsheetSchema>
