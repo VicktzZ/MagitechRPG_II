@@ -285,6 +285,19 @@ export function buildCharsheetSchema({ mode = 'create', getBaseline }: Charsheet
         const baseline = !creating ? getBaseline?.() : undefined
         const base = isRecord(baseline) ? baseline : {}
 
+        // ── Campos obrigatórios do sistema padrão ────────────────
+        // Classe, raça e linhagem (profissão, no modo Apocalypse) têm `*` na tela. Sistema customizado pode desligá-los, então só o padrão exige.
+        if (creating && !data.systemId) {
+            const required: Array<[ 'class' | 'race' | 'lineage', string ]> = [
+                [ 'class', 'Escolha a classe do personagem' ],
+                [ 'race', 'Escolha a raça do personagem' ],
+                [ 'lineage', data.mode === 'Apocalypse' ? 'Escolha a profissão do personagem' : 'Escolha a linhagem do personagem' ]
+            ]
+            for (const [ key, message ] of required) {
+                if (String(data[key]).trim() === '') ctx.addIssue({ code: z.ZodIssueCode.custom, message, path: [ key ] })
+            }
+        }
+
         // ── Pontos ───────────────────────────────────────────────
         const points = data.points
         const basePoints = isRecord(base['points']) ? base['points'] : {}

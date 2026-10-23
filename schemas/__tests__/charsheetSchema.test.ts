@@ -29,6 +29,21 @@ describe('charsheetSchema', () => {
             expect(paths(create.safeParse(sheet))).toEqual(expect.arrayContaining([ 'attributes.foc', 'expertises.Luta.value' ]));
         });
 
+        test('sistema padrão exige classe, raça e linhagem; sistema customizado e edição não', () => {
+            const empty = healthy();
+            empty.class = '';
+            empty.race = '';
+            empty.lineage = '';
+            expect(paths(create.safeParse(empty))).toEqual(expect.arrayContaining([ 'class', 'race', 'lineage' ]));
+
+            const apocalypse = { ...empty, mode: 'Apocalypse' };
+            const result = create.safeParse(apocalypse);
+            expect(!result.success && result.error.issues.find(issue => issue.path[0] === 'lineage')?.message).toBe('Escolha a profissão do personagem');
+
+            expect(create.safeParse({ ...empty, systemId: 'sistema-1' }).success).toBe(true);
+            expect(buildCharsheetSchema({ mode: 'edit', getBaseline: () => empty }).safeParse(empty).success).toBe(true);
+        });
+
         test('exige nome, jogador e dono', () => {
             const sheet = healthy();
             sheet.name = '';

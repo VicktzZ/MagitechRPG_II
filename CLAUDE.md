@@ -121,7 +121,7 @@ Dados reais (61 fichas) mostraram que 42 não passavam no schema antigo e que sa
   arma sem `ammo`/`bonus`/`hit`... ganha os campos. É pura e idempotente e só mexe no formato. A carga também devolve `dropped`
   (magias/poderes que a tela não mostra); `collectChanges` os devolve junto quando a lista é regravada.
 - **Schema** (`schemas/charsheetSchema.ts`): `buildCharsheetSchema({ mode })`. `create` é rígido (pontos de atributo e perícia = 0, atributo ≤ 30,
-  perícia ≤ 10). `edit` não bloqueia pontos sobrando (o level-up concede na hora) e os tetos só barram quem AUMENTA. O resolver
+  perícia ≤ 10, e no sistema padrão classe, raça e linhagem/profissão preenchidas; sistema customizado pode desligar esses campos). `edit` não bloqueia pontos sobrando (o level-up concede na hora) e os tetos só barram quem AUMENTA. O resolver
   (`schemas/charsheetResolver.ts`) ainda ignora, na edição, erro de campo que vale o mesmo que o salvo (não é o jogador que o causou) e entrega
   os valores CRUS ao envio. O Zod descarta chaves que não conhece: **use `.passthrough()`** em objeto novo do schema, senão o submit apaga
   a chave. Evite `z.union` de itens: o resolver lista os erros de todas as ramificações ("Required" de campos que o item nem tem).
