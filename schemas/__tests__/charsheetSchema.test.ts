@@ -139,6 +139,18 @@ describe('charsheetSchema', () => {
             expect(paths(edit(baseline).safeParse(sheet))).toContain('spellUnlocked.m1');
         });
 
+        test('points.evolution aceita 0 ou mais e ficha sem o campo continua válida', () => {
+            const baseline = healthy();
+            const sheet = healthy();
+            expect(edit(baseline).safeParse(sheet).success).toBe(true);
+
+            sheet.points.evolution = 3;
+            expect(edit(baseline).safeParse(sheet).success).toBe(true);
+
+            sheet.points.evolution = -1;
+            expect(paths(edit(baseline).safeParse(sheet))).toContain('points.evolution');
+        });
+
         test('chaves desconhecidas sobrevivem (perks da sessão, campos de item)', () => {
             const sheet = healthy();
             sheet.session = [ { campaignCode: 'ABC', stats: { lp: 1 }, perks: [ { id: 'p1', name: 'Vantagem' } ] } ];

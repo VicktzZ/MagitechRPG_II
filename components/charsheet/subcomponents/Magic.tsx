@@ -9,7 +9,7 @@ import { useEffect, useState, type ReactElement } from 'react';
 import { motion } from 'framer-motion';
 import { elementColor } from '@constants';
 import { calculateExtraManaCost } from '@utils/roguelite';
-import { spellStageCount } from '@utils/spellStages';
+import { EVOLUTION_POINT_COST, spellStageCount } from '@utils/spellStages';
 import { color } from '@themes/tokens';
 import { MagicPower } from './MagicPower';
 import ElementIcon, { resolveElement } from '@components/misc/ElementIcon';
@@ -32,6 +32,8 @@ type MagicTyping<C extends 'magic-spell' | 'magic-power'> =
         unlockedStage?: 1 | 2 | 3,
         /** Libera o próximo estágio (botão "Evoluir"); sem ele o cartão só mostra o progresso */
         onUnlockStage?: (stage: 1 | 2 | 3) => void,
+        /** Pontos de evolução da ficha: evoluir custa 1, sem ponto o botão fica desabilitado. Sem este valor não há cobrança. */
+        evolutionPoints?: number,
         disabled?: boolean,
         /** Cartão enxuto para listas em grade (ex: modal de escolher magias) */
         compact?: boolean
@@ -46,6 +48,15 @@ type MagicTyping<C extends 'magic-spell' | 'magic-power'> =
         disabled?: boolean
     }
 
+/** Cadeado em SVG simples: o cartão enxuto evita um componente MUI por botão (listas de centenas de magias) */
+function LockMark(): ReactElement {
+    return (
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false">
+            <path d="M18 8h-1V6a5 5 0 0 0-10 0v2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2ZM9 6a3 3 0 0 1 6 0v2H9V6Z" />
+        </svg>
+    );
+}
+
 /** Rótulo do botão de um estágio: no nível 4 o terceiro é a Maestria */
 const getStageLabel = (level: number, stage: 0 | 1 | 2): string =>
     level === 4 && stage === 2 ? 'Maestria' : `Estágio ${stage + 1}`;
@@ -59,9 +70,11 @@ function MagicSpell({
     onStageChange,
     unlockedStage,
     onUnlockStage,
+    evolutionPoints,
     disabled = false
 }: MagicTyping<'magic-spell'>): ReactElement {
     const theme = useTheme();
+    const hasEvolutionPoint = evolutionPoints === undefined || evolutionPoints >= EVOLUTION_POINT_COST
 
     // Índice (0 a 2) do último estágio liberado; sem a regra de desbloqueio, todos
     const stageCount = spellStageCount(magic)
@@ -370,13 +383,19 @@ function MagicSpell({
                                 Estágio desbloqueado: <strong>{unlockedStage} de {stageCount}</strong>
                             </Typography>
                             {onUnlockStage && nextStage && (
-                                <Tooltip title={`Libera o ${getStageLabel(Number(magic.level), (nextStage - 1) as 0 | 1 | 2)} desta magia`} arrow placement="top">
+                                <Tooltip
+                                    title={hasEvolutionPoint
+                                        ? `Libera o ${getStageLabel(Number(magic.level), (nextStage - 1) as 0 | 1 | 2)} desta magia e gasta ${EVOLUTION_POINT_COST} ponto de evolução`
+                                        : 'Você precisa de 1 ponto de evolução para evoluir uma magia. Peça ao mestre.'}
+                                    arrow
+                                    placement="top"
+                                >
                                     <span>
                                         <Button
                                             size="small"
                                             variant="outlined"
                                             color="primary"
-                                            disabled={disabled}
+                                            disabled={disabled || !hasEvolutionPoint}
                                             onClick={() => onUnlockStage(nextStage)}
                                             aria-label={`Evoluir ${magic.name} para o ${getStageLabel(Number(magic.level), (nextStage - 1) as 0 | 1 | 2)}`}
                                             sx={{ position: 'relative', zIndex: 10, py: 0.25, px: 1.25 }}
@@ -568,6 +587,7 @@ const CompactSpellCard = styled('div')(({ theme }) => ({
         '&:hover': { background: theme.palette.action.hover },
         '&:disabled': { opacity: 0.5, cursor: 'default' }
     },
+    '& .mc-stage.locked': { display: 'inline-flex', alignItems: 'center', gap: 4, cursor: 'not-allowed' },
     '& .mc-stage.active, & .mc-stage.active:hover': { color: theme.palette.primary.main, background: color.amberSubtle, borderColor: color.amberLine },
     '& .mc-action': {
         display: 'inline-flex',
@@ -596,17 +616,21 @@ function MagicSpellCompact({
     onIconClick,
     selectedStage,
     onStageChange,
+    unlockedStage,
     disabled = false
 }: MagicTyping<'magic-spell'>): ReactElement {
     const theme = useTheme();
 
-    const [ activeStage, setActiveStage ] = useState<0 | 1 | 2>(
-        Math.min(2, Math.max(0, Number(selectedStage ?? 1) - 1)) as 0 | 1 | 2
-    );
+    // Estágios acima do liberado ficam bloqueados (cadeado, sem o texto); sem a regra de desbloqueio, todos abertos
+    const unlockedIndex = Math.min(2, (unlockedStage === undefined ? 3 : Math.max(1, unlockedStage)) - 1) as 0 | 1 | 2;
+    const clampToUnlocked = (stage: number): 0 | 1 | 2 => Math.min(unlockedIndex, Math.min(2, Math.max(0, stage))) as 0 | 1 | 2;
+
+    const [ activeStage, setActiveStage ] = useState<0 | 1 | 2>(clampToUnlocked(Number(selectedStage ?? 1) - 1));
 
     useEffect(() => {
-        setActiveStage(Math.min(2, Math.max(0, Number(selectedStage ?? 1) - 1)) as 0 | 1 | 2);
-    }, [ selectedStage ]);
+        setActiveStage(clampToUnlocked(Number(selectedStage ?? 1) - 1));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [ selectedStage, unlockedIndex ]);
 
     const actionColor = isAdding ? theme.palette.primary.main : theme.palette.error.main;
 
@@ -616,6 +640,7 @@ function MagicSpellCompact({
     const availableStages = ([ 0, 1, 2 ] as const).filter(stage => stage === 0 || Boolean(magic.stages[stage]));
 
     const handleStageChange = (stage: 0 | 1 | 2): void => {
+        if (stage > unlockedIndex) return;
         setActiveStage(stage);
         onStageChange?.((stage + 1) as 1 | 2 | 3);
     };
@@ -650,17 +675,24 @@ function MagicSpellCompact({
 
             <div className="mc-footer">
                 <div className="mc-stages">
-                    {availableStages.map(stage => (
-                        <button
-                            key={stage}
-                            type="button"
-                            className={activeStage === stage ? 'mc-stage active' : 'mc-stage'}
-                            disabled={disabled}
-                            onClick={() => handleStageChange(stage)}
-                        >
-                            {getStageLabel(level, stage)}
-                        </button>
-                    ))}
+                    {availableStages.map(stage => {
+                        const locked = stage > unlockedIndex;
+                        const label = getStageLabel(level, stage);
+                        return (
+                            <button
+                                key={stage}
+                                type="button"
+                                className={locked ? 'mc-stage locked' : activeStage === stage ? 'mc-stage active' : 'mc-stage'}
+                                disabled={disabled || locked}
+                                aria-label={locked ? `${label} bloqueado` : label}
+                                title={locked ? 'Estágio bloqueado: evolua a magia na ficha para desbloquear' : undefined}
+                                onClick={() => handleStageChange(stage)}
+                            >
+                                {locked && <LockMark />}
+                                {label}
+                            </button>
+                        );
+                    })}
                 </div>
 
                 {onIconClick && (

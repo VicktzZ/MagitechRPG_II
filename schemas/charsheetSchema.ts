@@ -53,7 +53,8 @@ const PointsSchema = z.object({
     attributes: z.number().int().default(0),
     expertises: z.number().int().default(0),
     skills: z.number().int().default(0),
-    magics: z.number().int().default(0)
+    magics: z.number().int().default(0),
+    evolution: z.number().int().min(0, 'Pontos de evolução não podem ser negativos').default(0)
 }).passthrough()
 
 const SkillSchema = z.object({

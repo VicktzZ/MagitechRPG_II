@@ -42,7 +42,7 @@ import {
 import { color } from '@themes/tokens';
 import { type ReactElement, useState } from 'react';
 import { asRequestError } from '@utils/errors';
-import { getStageProgress, materializeUnlocked, spellStageCount, usesStageUnlock, withoutSpell } from '@utils/spellStages';
+import { EVOLUTION_POINT_COST, getEvolutionPoints, getStageProgress, materializeUnlocked, spellStageCount, usesStageUnlock, withoutSpell } from '@utils/spellStages';
 
 /** Nível e estágio são escalas ordenadas: neutros que clareiam até o âmbar no topo (o número vai sempre em texto) */
 function getSpellLevelColor(level: number) {
@@ -384,15 +384,22 @@ export default function SpellsSection(): ReactElement {
         }
     }
 
-    // Evoluir: libera o próximo estágio, sem custo, e já o deixa ativo
+    // Evoluir: gasta 1 ponto de evolução (concedido pelo mestre), libera o próximo estágio e já o deixa ativo
+    const evolutionPoints = getEvolutionPoints(charsheet?.points)
     const handleUnlockStage = async (spell: SpellDTO, stage: 1 | 2 | 3) => {
         if (!charsheet?.id) return
 
         const spellId = spell.id || spell.name
         if (!spellId) return
 
+        if (evolutionPoints < EVOLUTION_POINT_COST) {
+            enqueueSnackbar('Você precisa de 1 ponto de evolução para evoluir uma magia. Peça ao mestre.', { variant: 'warning' })
+            return
+        }
+
         try {
             await charsheetEntity.update(charsheet.id, {
+                'points.evolution': evolutionPoints - EVOLUTION_POINT_COST,
                 spellUnlocked: { ...(charsheet.spellUnlocked || {}), [spellId]: stage },
                 spellStages: { ...(charsheet.spellStages || {}), [spellId]: stage }
             } as any)
@@ -679,15 +686,25 @@ export default function SpellsSection(): ReactElement {
                                                             </Typography>
                                                         )}
                                                         {nextStage && (
-                                                            <Button
-                                                                size="small"
-                                                                variant="outlined"
-                                                                aria-label={`Evoluir ${spell.name} para o estágio ${nextStage}`}
-                                                                onClick={() => { void handleUnlockStage(spell, nextStage) }}
-                                                                sx={{ py: 0, px: 1 }}
-                                                            >
-                                                                Evoluir
-                                                            </Button>
+                                                            <Tooltip title={evolutionPoints >= EVOLUTION_POINT_COST ? `Gasta ${EVOLUTION_POINT_COST} ponto de evolução (você tem ${evolutionPoints})` : 'Você precisa de 1 ponto de evolução. Peça ao mestre.'} arrow>
+                                                                <span>
+                                                                    <Button
+                                                                        size="small"
+                                                                        variant="outlined"
+                                                                        disabled={evolutionPoints < EVOLUTION_POINT_COST}
+                                                                        aria-label={`Evoluir ${spell.name} para o estágio ${nextStage}`}
+                                                                        onClick={() => { void handleUnlockStage(spell, nextStage) }}
+                                                                        sx={{ py: 0, px: 1 }}
+                                                                    >
+                                                                        Evoluir
+                                                                    </Button>
+                                                                </span>
+                                                            </Tooltip>
+                                                        )}
+                                                        {progress.enabled && (
+                                                            <Typography variant="caption" color="text.secondary" data-testid="evolution-points">
+                                                                Pontos de evolução: {evolutionPoints}
+                                                            </Typography>
                                                         )}
                                                     </Box>
 
