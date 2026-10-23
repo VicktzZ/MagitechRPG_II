@@ -132,6 +132,10 @@ Dados reais (61 fichas) mostraram que 42 não passavam no schema antigo e que sa
 - **Migração do formato das fichas antigas**: `scripts/normalizeCharsheets.ts` (mesma função da carga). Simulação por padrão, `--apply`
   regrava cada ficha numa transação, só os caminhos alterados, guarda o valor antigo em arquivo e não apaga nada.
   **Grava no banco: só com liberação do dono.** Teste com o emulador: `utils/firestore/__tests__/normalizeCharsheets.emulator.test.ts`.
+- **Abrir uma ficha salva não pode gravar nada**: efeito de montagem que recalcula valor derivado (`overall`, `mods.attributes`, `stats`) só escreve
+  na criação; em ficha salva só depois de o usuário mexer no atributo (`useOverallSync` em `Attributes.tsx`, `isSavedSheet` em `Attribute.tsx`).
+  Como o salvar compara com a ficha carregada, escrita automática no mount apareceria como alteração do jogador.
+- `useCharsheetSystem` guarda em cache só o sistema carregado com sucesso; falha (rede, 404) não vale até recarregar a página.
 - O rascunho da criação (`create-charsheet-autosave`) só entra na página de criação; na edição ele preenchia campos ausentes com dados de outro personagem.
 - **Decisões de balanceamento ainda abertas com o dono** (regra única de nº de d20 por atributo, papel do AP, tetos de bônus, roguelite sem teto,
   raças/classes): não implemente sem resposta.
