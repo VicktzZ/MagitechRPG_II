@@ -140,6 +140,22 @@ Dados reais (61 fichas) mostraram que 42 não passavam no schema antigo e que sa
 - **Decisões de balanceamento ainda abertas com o dono** (regra única de nº de d20 por atributo, papel do AP, tetos de bônus, roguelite sem teto,
   raças/classes): não implemente sem resposta.
 
+## Magias: estágios desbloqueados
+
+Regra dada pelo dono: toda magia começa no estágio 1; o jogador **evolui** a magia (botão "Evoluir" no cartão, sem custo) e libera o próximo
+estágio, em ordem; o mestre também ajusta (aba de magias do detalhe da ficha, em edição). Estágio acima do liberado fica com cadeado, sem o texto
+do efeito, e não pode ser escolhido nem conjurado. O MP extra por estágio ao conjurar (`calculateExtraManaCost`) continua valendo.
+
+- Dois campos da ficha, por id da magia (nome, se não tiver id): `spellStages[chave]` é o estágio **ativo** (o que se usa para conjurar) e
+  `spellUnlocked[chave]` o **liberado** até agora; o ativo nunca passa do liberado. Lógica pura em `utils/spellStages.ts` (`getStageProgress`).
+- **Ficha antiga** não tem `spellUnlocked`: vale o estágio que a magia já usava, para ninguém perder o estágio 3 que conjurava. Esse valor tem de
+  ser gravado junto da primeira mudança da magia (`materializeUnlocked`), senão voltar o ativo para 1 apagaria o liberado. Na ficha aberta para
+  edição o valor antigo vem de `baseline.get().spellStages` (o formulário já mudou com os cliques).
+- **Não vale** em sistema customizado (`systemId`), no Roguelite (`campaign.mode`) nem na ficha de classe "Sem Classe": lá todos os estágios ficam
+  abertos como sempre (`usesStageUnlock`). Excluir a magia remove as duas chaves (`withoutSpell`).
+- Onde aparece: cartão da ficha (`subcomponents/Magic.tsx`, `Magics.tsx`), tela do jogador na campanha (`SpellsSection.tsx`, que também recusa
+  conjurar estágio bloqueado) e detalhe da ficha do mestre (`SpellsTab.tsx`, `charsheetEdit.ts`).
+
 ## Limite de MP por turno
 
 `⌈(Nível + Foco) ÷ 2⌉ + Nível de ORM` (+ bônus em `mpLimit` da ficha), em `utils/mpLimit.ts`.

@@ -246,6 +246,7 @@ export function buildCharsheetSchema({ mode = 'create', getBaseline }: Charsheet
         }).passthrough(),
         displacement: z.number().min(0, 'Deslocamento não pode ser negativo').default(0),
         spellStages: z.preprocess(value => value ?? {}, z.record(z.coerce.number().int().min(1).max(3))),
+        spellUnlocked: z.preprocess(value => value ?? {}, z.record(z.coerce.number().int().min(1).max(3))),
         spells: z.array(MagicSchema).default([]),
         anotacoes: text,
         spellSpace: z.number().int().min(0, 'Espaço de magias não pode ser negativo').default(0),

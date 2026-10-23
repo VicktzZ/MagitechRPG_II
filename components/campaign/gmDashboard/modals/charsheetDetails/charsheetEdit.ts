@@ -27,6 +27,7 @@ export function buildEditSnapshot(charsheet: Required<CharsheetDTO>): Partial<Ch
         },
         skills: { ...charsheet.skills },
         spells: normalizeToArray(charsheet.spells),
+        spellUnlocked: { ...(charsheet.spellUnlocked ?? {}) },
         displacement: charsheet.displacement,
         spellSpace: charsheet.spellSpace,
         elementalMastery: charsheet.elementalMastery
@@ -109,6 +110,7 @@ const pickEditableFields = (data: Partial<CharsheetDTO>) => ({
     skills: data.skills,
     // Editáveis no modal, mas antes não eram salvos
     spells: data.spells,
+    spellUnlocked: data.spellUnlocked,
     elementalMastery: data.elementalMastery,
     displacement: data.displacement,
     spellSpace: data.spellSpace

@@ -128,6 +128,17 @@ describe('charsheetSchema', () => {
             expect(paths(edit(baseline).safeParse(sheet))).toContain('inventory.weapons.0.effect.value');
         });
 
+        test('spellUnlocked e spellStages aceitam estágios de 1 a 3 e recusam fora disso', () => {
+            const baseline = healthy();
+            const sheet = healthy();
+            sheet.spellStages = { m1: 2 };
+            sheet.spellUnlocked = { m1: 3, 'Magia sem id': 1 };
+            expect(edit(baseline).safeParse(sheet).success).toBe(true);
+
+            sheet.spellUnlocked = { m1: 4 };
+            expect(paths(edit(baseline).safeParse(sheet))).toContain('spellUnlocked.m1');
+        });
+
         test('chaves desconhecidas sobrevivem (perks da sessão, campos de item)', () => {
             const sheet = healthy();
             sheet.session = [ { campaignCode: 'ABC', stats: { lp: 1 }, perks: [ { id: 'p1', name: 'Vantagem' } ] } ];

@@ -49,7 +49,7 @@ const ROOT_SECTION: Record<string, SectionInfo> = {
     dices: { label: 'Dados Personalizados', id: CHARSHEET_SECTION_IDS.dices },
     expertises: EXPERTISES,
     inventory: INVENTORY, capacity: INVENTORY, ammoCounter: INVENTORY,
-    spells: SPELLS, spellStages: SPELLS, spellSpace: SPELLS, ORMLevel: SPELLS, mpLimit: SPELLS,
+    spells: SPELLS, spellStages: SPELLS, spellUnlocked: SPELLS, spellSpace: SPELLS, ORMLevel: SPELLS, mpLimit: SPELLS,
     anotacoes: { label: 'Anotações', id: CHARSHEET_SECTION_IDS.notes }
 };
 
@@ -66,7 +66,7 @@ const ROOT_LABEL: Record<string, string> = {
     inventory: 'Inventário', skills: 'Habilidades', expertises: 'Perícias', attributes: 'Atributos', stats: 'Estatísticas',
     mods: 'Modificadores', passives: 'Passivas', dices: 'Dados personalizados', spells: 'Magias', capacity: 'Capacidade',
     points: 'Pontos', session: 'Campanha', status: 'Status', customResources: 'Recursos', customResourceMaxes: 'Máximo dos recursos',
-    customFields: 'Campos do sistema', ammoCounter: 'Munição', spellStages: 'Estágios das magias'
+    customFields: 'Campos do sistema', ammoCounter: 'Munição', spellStages: 'Estágios das magias', spellUnlocked: 'Estágios liberados das magias'
 };
 
 const FIELD_LABEL: Record<string, string> = {

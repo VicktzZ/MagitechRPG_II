@@ -38,7 +38,9 @@ import { memo, useCallback, useMemo, useState } from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
 import { Magic } from '.';
 import MagicsModal, { spellKey } from './dialogs/MagicsModal';
+import { useCharsheetBaseline } from '@contexts';
 import { normalizeToArray } from '@utils/normalizeToArray';
+import { getStageProgress, materializeUnlocked, spellStageCount, usesStageUnlock, withoutSpell, type StageProgress } from '@utils/spellStages';
 
 function getSpellPointCost(level: number): 1 | 2 {
     return level >= 3 ? 2 : 1
@@ -67,6 +69,15 @@ const Spells = memo(() => {
     const spells = useMemo(() => normalizeToArray<Spell>(spellsRaw), [ spellsRaw ])
 
     const spellStages = useWatch({ control, name: 'spellStages' })
+    const spellUnlocked = useWatch({ control, name: 'spellUnlocked' })
+
+    // Desbloqueio de estágios: vale na ficha do Magitech padrão (ver utils/spellStages.ts). O estágio que a ficha já usava
+    // quando foi aberta vale como liberado nas fichas antigas, que ainda não têm `spellUnlocked`
+    const systemId = useWatch({ control, name: 'systemId' })
+    const charClass = useWatch({ control, name: 'class' })
+    const baseline = useCharsheetBaseline()
+    const legacyStages = baseline.get()?.spellStages
+    const stageRule = usesStageUnlock({ systemId, class: charClass })
 
     const points = useWatch({ control, name: 'points' })
     const spellSpace = useWatch({ control, name: 'spellSpace' })
@@ -138,10 +149,10 @@ const Spells = memo(() => {
 
             const currentStages: Record<string, number> = spellStages || {}
             if (magicKey in currentStages) {
-                const restStages = Object.fromEntries(
-                    Object.entries(currentStages).filter(([ key ]) => key !== magicKey)
-                ) as Record<string, number>
-                setValue('spellStages', restStages, { shouldValidate: true })
+                setValue('spellStages', withoutSpell(currentStages, magicKey), { shouldValidate: true })
+            }
+            if (spellUnlocked && magicKey in spellUnlocked) {
+                setValue('spellUnlocked', withoutSpell(spellUnlocked, magicKey), { shouldValidate: true })
             }
 
             setValue('spells', remainingSpells as CharsheetDTO['spells'], { shouldValidate: true })
@@ -153,14 +164,26 @@ const Spells = memo(() => {
                 action: () => <Close sx={{ cursor: 'pointer' }} onClick={() => { closeSnackbar(magicName) }} />
             })
         }
-    }, [ spells, points, spellSpace, enqueueSnackbar, closeSnackbar, setValue, spellStages ])
+    }, [ spells, points, spellSpace, enqueueSnackbar, closeSnackbar, setValue, spellStages, spellUnlocked ])
+
+    // Objetos inteiros: o nome da magia (chave de reserva) pode ter ponto, que o caminho do RHF separaria
+    const changeActiveStage = useCallback((magicKey: string, stage: 1 | 2 | 3, progress: StageProgress) => {
+        const unlocked = materializeUnlocked(spellUnlocked, magicKey, progress)
+        // Ficha antiga: grava o estágio que a magia já tinha liberado antes de mudar o ativo (senão trocar para o 1 o perderia)
+        if (unlocked !== (spellUnlocked ?? {})) setValue('spellUnlocked', unlocked, { shouldValidate: true })
+        setValue('spellStages', { ...(spellStages || {}), [magicKey]: stage } as any, { shouldValidate: true })
+    }, [ setValue, spellStages, spellUnlocked ])
+
+    // Evoluir: libera o próximo estágio, sem custo, e já o deixa ativo para o jogador ver o que ganhou
+    const unlockStage = useCallback((magicKey: string, stage: 1 | 2 | 3) => {
+        setValue('spellUnlocked', { ...(spellUnlocked || {}), [magicKey]: stage } as any, { shouldValidate: true })
+        setValue('spellStages', { ...(spellStages || {}), [magicKey]: stage } as any, { shouldValidate: true })
+    }, [ setValue, spellStages, spellUnlocked ])
 
     const renderMagicCard = useCallback((magic: Spell) => {
         const magicKey = spellKey(magic)
-        const selectedStage = Math.min(
-            3,
-            Math.max(1, Number((spellStages as any)?.[magicKey] ?? 1))
-        ) as 1 | 2 | 3
+        const progress = getStageProgress({ spellStages, spellUnlocked }, magicKey, spellStageCount(magic), stageRule, legacyStages)
+        const selectedStage = progress.active
 
         return (
             <Grid
@@ -189,17 +212,18 @@ const Spells = memo(() => {
                         id={magicKey}
                         magic={magic}
                         selectedStage={selectedStage}
+                        unlockedStage={progress.enabled ? progress.unlocked : undefined}
+                        onUnlockStage={progress.enabled ? (stage: 1 | 2 | 3) => { unlockStage(magicKey, stage) } : undefined}
                         onStageChange={(stage: 1 | 2 | 3) => {
                             if (!magicKey) return
-                            // Objeto inteiro: o nome da magia (chave de reserva) pode ter ponto, que o caminho do RHF separaria
-                            setValue('spellStages', { ...(spellStages || {}), [magicKey]: stage } as any, { shouldValidate: true })
+                            changeActiveStage(magicKey, stage, progress)
                         }}
                         onIconClick={() => { handleRemoveMagic(magicKey, magic.name) }}
                     />
                 </motion.div>
             </Grid>
         )
-    }, [ handleRemoveMagic, setValue, spellStages ])
+    }, [ handleRemoveMagic, changeActiveStage, unlockStage, spellStages, spellUnlocked, stageRule, legacyStages ])
 
     const spellsList = useMemo(() => {
         if (!filteredSpells?.length) {

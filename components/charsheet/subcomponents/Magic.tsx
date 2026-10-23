@@ -3,12 +3,13 @@
 
 'use client';
 
-import { Add, Close } from '@mui/icons-material';
+import { Add, Close, LockOutlined } from '@mui/icons-material';
 import { alpha, Box, Button, CardContent, Chip, Grid, IconButton, Paper, Stack, styled, Tooltip, Typography, useTheme } from '@mui/material';
 import { useEffect, useState, type ReactElement } from 'react';
 import { motion } from 'framer-motion';
 import { elementColor } from '@constants';
 import { calculateExtraManaCost } from '@utils/roguelite';
+import { spellStageCount } from '@utils/spellStages';
 import { color } from '@themes/tokens';
 import { MagicPower } from './MagicPower';
 import ElementIcon, { resolveElement } from '@components/misc/ElementIcon';
@@ -24,6 +25,13 @@ type MagicTyping<C extends 'magic-spell' | 'magic-power'> =
         onIconClick?: () => void,
         selectedStage?: 1 | 2 | 3,
         onStageChange?: (stage: 1 | 2 | 3) => void,
+        /**
+         * Estágio liberado até agora. Sem ele (sistema customizado, Roguelite, modal de escolha) todos os estágios
+         * estão abertos; com ele, os estágios acima ficam bloqueados (cadeado, sem texto) e o cartão mostra o progresso.
+         */
+        unlockedStage?: 1 | 2 | 3,
+        /** Libera o próximo estágio (botão "Evoluir"); sem ele o cartão só mostra o progresso */
+        onUnlockStage?: (stage: 1 | 2 | 3) => void,
         disabled?: boolean,
         /** Cartão enxuto para listas em grade (ex: modal de escolher magias) */
         compact?: boolean
@@ -38,6 +46,10 @@ type MagicTyping<C extends 'magic-spell' | 'magic-power'> =
         disabled?: boolean
     }
 
+/** Rótulo do botão de um estágio: no nível 4 o terceiro é a Maestria */
+const getStageLabel = (level: number, stage: 0 | 1 | 2): string =>
+    level === 4 && stage === 2 ? 'Maestria' : `Estágio ${stage + 1}`;
+
 function MagicSpell({
     magic,
     id,
@@ -45,11 +57,20 @@ function MagicSpell({
     onIconClick,
     selectedStage,
     onStageChange,
+    unlockedStage,
+    onUnlockStage,
     disabled = false
 }: MagicTyping<'magic-spell'>): ReactElement {
     const theme = useTheme();
 
-    const initialStage = Math.min(2, Math.max(0, Number(selectedStage ?? 1) - 1)) as 0 | 1 | 2
+    // Índice (0 a 2) do último estágio liberado; sem a regra de desbloqueio, todos
+    const stageCount = spellStageCount(magic)
+    const hasUnlockRule = unlockedStage !== undefined
+    const unlockedIndex = Math.min(2, (hasUnlockRule ? Math.max(1, unlockedStage) : 3) - 1) as 0 | 1 | 2
+    const nextStage = hasUnlockRule && unlockedStage < stageCount ? (unlockedStage + 1) as 2 | 3 : null
+
+    const clampToUnlocked = (stage: number): 0 | 1 | 2 => Math.min(unlockedIndex, Math.min(2, Math.max(0, stage))) as 0 | 1 | 2
+    const initialStage = clampToUnlocked(Number(selectedStage ?? 1) - 1)
 
     // Estados
     const [ description, setDescription ] = useState<string>(magic.stages[initialStage] ?? magic.stages[0]);
@@ -63,24 +84,18 @@ function MagicSpell({
     const availableStages: Array<0 | 1 | 2> = [ 0 ];
     if (magic.stages[1]) availableStages.push(1);
     if (magic.stages[2]) availableStages.push(2);
-    if (magic.stages[2] && magic.level === 4) availableStages.push(2);
-
-    const isCommonElement = 
-        magic.element !== 'Vácuo' &&
-        magic.element !== 'Sangue' &&
-        magic.element !== 'Psíquico' &&
-        magic.element !== 'Radiação' &&
-        magic.element !== 'Explosão'
 
     useEffect(() => {
-        const nextStage = Math.min(2, Math.max(0, Number(selectedStage ?? 1) - 1)) as 0 | 1 | 2
-        setActiveStage(nextStage)
-        setDescription(magic.stages[nextStage] ?? magic.stages[0])
-        setExtraManaCost(calculateExtraManaCost(Number(magic.level), nextStage))
-    }, [ magic.level, magic.stages, selectedStage ])
+        const shownStage = clampToUnlocked(Number(selectedStage ?? 1) - 1)
+        setActiveStage(shownStage)
+        setDescription(magic.stages[shownStage] ?? magic.stages[0])
+        setExtraManaCost(calculateExtraManaCost(Number(magic.level), shownStage))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [ magic.level, magic.stages, selectedStage, unlockedIndex ])
     
     // Trocar entre estágios e calcular custos adicionais de MP
     const handleStageChange = (stage: 0 | 1 | 2): void => {
+        if (stage > unlockedIndex) return;
         setActiveStage(stage);
         setDescription(magic.stages[stage]!);
         setExtraManaCost(calculateExtraManaCost(Number(magic.level), stage));
@@ -342,6 +357,38 @@ function MagicSpell({
                         </Typography>
                     </Paper>
 
+                    {/* Progresso: estágio liberado até agora e o botão para liberar o próximo */}
+                    {hasUnlockRule && (
+                        <Stack
+                            direction="row"
+                            alignItems="center"
+                            justifyContent="space-between"
+                            spacing={1}
+                            sx={{ mt: 1.5, width: '100%' }}
+                        >
+                            <Typography variant="caption" color="text.secondary" data-testid="spell-unlocked-stage">
+                                Estágio desbloqueado: <strong>{unlockedStage} de {stageCount}</strong>
+                            </Typography>
+                            {onUnlockStage && nextStage && (
+                                <Tooltip title={`Libera o ${getStageLabel(Number(magic.level), (nextStage - 1) as 0 | 1 | 2)} desta magia`} arrow placement="top">
+                                    <span>
+                                        <Button
+                                            size="small"
+                                            variant="outlined"
+                                            color="primary"
+                                            disabled={disabled}
+                                            onClick={() => onUnlockStage(nextStage)}
+                                            aria-label={`Evoluir ${magic.name} para o ${getStageLabel(Number(magic.level), (nextStage - 1) as 0 | 1 | 2)}`}
+                                            sx={{ position: 'relative', zIndex: 10, py: 0.25, px: 1.25 }}
+                                        >
+                                            Evoluir
+                                        </Button>
+                                    </span>
+                                </Tooltip>
+                            )}
+                        </Stack>
+                    )}
+
                     {/* Botões de estágio */}
                     <Stack
                         direction={{ xs: 'column', sm: 'row' }}
@@ -361,32 +408,47 @@ function MagicSpell({
                                 zIndex: 5
                             }}
                         >
-                            {availableStages.map(stage => (
-                                <Button
-                                    key={stage}
-                                    variant="outlined"
-                                    color={activeStage === stage ? 'primary' : 'secondary'}
-                                    size="small"
-                                    disabled={disabled}
-                                    onClick={() => handleStageChange(stage)}
-                                    sx={{
-                                        position: 'relative', // Necessário para o z-index funcionar
-                                        zIndex: 10,
-                                        minWidth: { xs: '80px', sm: 0 },
-                                        px: 1.5,
-                                        py: 0.5,
-                                        fontSize: { xs: '0.75rem', sm: '0.8rem', md: '0.875rem' },
-                                        ...(activeStage === stage && {
-                                            bgcolor: color.amberSubtle,
-                                            borderColor: color.amberLine,
-                                            color: 'primary.main',
-                                            '&:hover': { bgcolor: color.amberSubtle, borderColor: color.amberLine }
-                                        })
-                                    }}
-                                >
-                                    {magic.level === 4 && !isCommonElement ? 'Maestria' : `Estágio ${stage + 1}`}
-                                </Button>
-                            ))}
+                            {availableStages.map(stage => {
+                                const locked = stage > unlockedIndex
+                                const label = getStageLabel(Number(magic.level), stage)
+                                const stageButton = (
+                                    <Button
+                                        key={locked ? undefined : stage}
+                                        variant="outlined"
+                                        color={activeStage === stage ? 'primary' : 'secondary'}
+                                        size="small"
+                                        disabled={disabled || locked}
+                                        onClick={() => handleStageChange(stage)}
+                                        aria-label={locked ? `${label} bloqueado` : label}
+                                        aria-pressed={locked ? undefined : activeStage === stage}
+                                        startIcon={locked ? <LockOutlined fontSize="inherit" /> : undefined}
+                                        sx={{
+                                            position: 'relative', // Necessário para o z-index funcionar
+                                            zIndex: 10,
+                                            minWidth: { xs: '80px', sm: 0 },
+                                            px: locked ? 1 : 1.5,
+                                            py: 0.5,
+                                            whiteSpace: 'nowrap',
+                                            fontSize: { xs: '0.75rem', sm: '0.8rem', md: '0.875rem' },
+                                            '& .MuiButton-startIcon': { mr: 0.5, ml: 0 },
+                                            ...(activeStage === stage && !locked && {
+                                                bgcolor: color.amberSubtle,
+                                                borderColor: color.amberLine,
+                                                color: 'primary.main',
+                                                '&:hover': { bgcolor: color.amberSubtle, borderColor: color.amberLine }
+                                            })
+                                        }}
+                                    >
+                                        {label}
+                                    </Button>
+                                )
+                                // Botão desabilitado não dispara eventos: o span leva a dica de por que está bloqueado
+                                return locked ? (
+                                    <Tooltip key={stage} title="Evolua a magia para desbloquear este estágio" arrow placement="top">
+                                        <span>{stageButton}</span>
+                                    </Tooltip>
+                                ) : stageButton
+                            })}
                         </Stack>
 
                         {/* Botão de ação (adicionar ou remover) */}
@@ -421,10 +483,6 @@ function MagicSpell({
         </motion.div>
     );
 }
-
-/** Rótulo do botão de um estágio: no nível 4 o terceiro é a Maestria */
-const getStageLabel = (level: number, stage: 0 | 1 | 2): string =>
-    level === 4 && stage === 2 ? 'Maestria' : `Estágio ${stage + 1}`;
 
 /**
  * Cartão enxuto, só com elementos HTML simples dentro de um único componente estilizado: numa lista
