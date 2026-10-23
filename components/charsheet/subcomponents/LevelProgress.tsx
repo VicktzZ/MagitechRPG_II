@@ -93,6 +93,7 @@ const LevelProgress = memo(function LevelProgress({ title, level, amount, barWid
                 <Box display="flex" justifyContent="space-between" alignItems="center">
                     <Typography 
                         variant="subtitle1" 
+                        component="span"
                         fontWeight="500"
                         sx={{
                             color: alpha(getLevelColor, 0.9)
@@ -102,6 +103,7 @@ const LevelProgress = memo(function LevelProgress({ title, level, amount, barWid
                     </Typography>
                     <Typography 
                         variant="h6" 
+                        component="span"
                         fontWeight="bold"
                         sx={{ 
                             color: getLevelColor

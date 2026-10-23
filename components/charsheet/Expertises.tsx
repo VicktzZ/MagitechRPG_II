@@ -7,7 +7,7 @@ import { classColor } from '@constants';
 import { useFormContext, useWatch, type FieldError } from 'react-hook-form';
 import { useState, type ReactElement, type ReactNode, useRef, useCallback, useMemo, useEffect } from 'react';
 import type { Charsheet } from '@models/entities';
-import type { Expertises as ExpertisesType } from '@models';
+import type { Attributes, Expertises as ExpertisesType } from '@models';
 import { evaluateFormula } from '@utils/formulaEvaluator';
 import { computeAttributeInfluence } from '@utils/systemLookups';
 import { computeOriginBonuses } from '@utils/originBonuses';
@@ -184,7 +184,7 @@ export default function Expertises({ disabled }: { disabled?: boolean }): ReactE
             const pointsToSpend = actualDifference * skillCost;
 
             setValue('points.expertises', points - pointsToSpend, { shouldValidate: true });
-            setValue(`expertises.${name}.value`, finalValue, { shouldValidate: true });
+            setValue(`expertises.${name}.value` as any, finalValue, { shouldValidate: true });
         } else if (newValue < currentValue) {
             // Só devolve pontos que foram gastos: nunca abaixo dos bônus de origem
             // (senão trocar a origem gerava pontos infinitos) nem abaixo de 0
@@ -194,7 +194,7 @@ export default function Expertises({ disabled }: { disabled?: boolean }): ReactE
 
             const difference = currentValue - finalValue;
             setValue('points.expertises', points + difference * skillCost, { shouldValidate: true });
-            setValue(`expertises.${name}.value`, finalValue, { shouldValidate: true });
+            setValue(`expertises.${name}.value` as any, finalValue, { shouldValidate: true });
         }
     }, [ disabled, expertises, setValue, points, skillPointRules, maxPerSkill, expertiseFloor ]);
     
@@ -229,7 +229,7 @@ export default function Expertises({ disabled }: { disabled?: boolean }): ReactE
                 if (!expertise) {
                     expertise = {
                         value: 0,
-                        defaultAttribute: sysExpertise.defaultAttribute || 'sab'
+                        defaultAttribute: (sysExpertise.defaultAttribute || 'sab') as keyof Attributes
                     }
                 }
 

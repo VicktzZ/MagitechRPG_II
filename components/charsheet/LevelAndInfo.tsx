@@ -289,7 +289,7 @@ export default function LevelAndInfo() {
                                     name='displacement'
                                     control={control}
                                     render={({ field }) => (
-                                        <Typography variant="h6" fontWeight="bold" color="text.primary">
+                                        <Typography variant="h6" component="p" fontWeight="bold" color="text.primary">
                                             {field.value}m
                                         </Typography>
                                     )}
@@ -784,7 +784,7 @@ export default function LevelAndInfo() {
                                         <Select
                                             {...field}
                                             labelId={`${fieldId}-financial-label`}
-                                            label='Condição financeira *'
+                                            label='Condição financeira'
                                             required
                                             disabled={!!charsheet.id}
                                             fullWidth

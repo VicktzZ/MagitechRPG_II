@@ -299,6 +299,9 @@ function Attribute({
 
     // Set attributes mods
     useEffect(() => {
+        // Sem valor (ex.: sistema customizado ainda carregando, sem os atributos do Magitech): nada a calcular
+        if (!Number.isFinite(attr)) return
+
         if (isSavedSheet && !attrChangedByUser.current) {
             if (attr === initialAttr.current) return
             attrChangedByUser.current = true
@@ -494,6 +497,7 @@ function Attribute({
                 >
                     <Typography 
                         variant={matches ? 'h6' : 'h5'} 
+                        component='span'
                         fontWeight="bold"
                         sx={{ 
                             color: attributeValue > 15 ? config.color : 'text.primary',

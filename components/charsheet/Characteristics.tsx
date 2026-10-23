@@ -539,7 +539,7 @@ export default function Characteristics(): ReactElement {
                                 <Select
                                     {...field}
                                     labelId={`${fieldId}-lineage-mobile-label`}
-                                    label={`${lineageLabel} *`}
+                                    label={lineageLabel}
                                     required
                                     fullWidth
                                     onChange={(e) => {
@@ -758,7 +758,7 @@ export default function Characteristics(): ReactElement {
                                     <Select
                                         {...field}
                                         labelId={`${fieldId}-gender-mobile-label`}
-                                        label={`${customSystem?.initialFields?.gender?.label || 'Gênero'} *`}
+                                        label={customSystem?.initialFields?.gender?.label || 'Gênero'}
                                         error={!!error}
                                         required
                                         fullWidth

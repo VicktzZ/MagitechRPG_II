@@ -303,18 +303,21 @@ function Attributes(): ReactElement {
     })
 
     const raceRef = useRef(race)
-    const attributesRef = useRef({ vig, foc, des })
+    const attributesRef = useRef({ vig: Number(vig) || 0, foc: Number(foc) || 0, des: Number(des) || 0 })
 
     // Status Attributes
     useEffect(() => {
         if (disabled) {
             // Ficha salva: aplica só a diferença causada por uma alteração de atributo feita
             // agora. Ao abrir a página nada muda (e nada é gravado).
+            // (Number(...) || 0: em sistema customizado os atributos do Magitech não existem e
+            // `undefined - undefined` gravava NaN nas estatísticas da ficha salva)
+            const current = { vig: Number(vig) || 0, foc: Number(foc) || 0, des: Number(des) || 0 }
             const previous = attributesRef.current
-            const vigDiff = vig - previous.vig
-            const focDiff = foc - previous.foc
-            const apDiff = Math.floor(des / 10) - Math.floor(previous.des / 10)
-            attributesRef.current = { vig, foc, des }
+            const vigDiff = current.vig - previous.vig
+            const focDiff = current.foc - previous.foc
+            const apDiff = Math.floor(current.des / 10) - Math.floor(previous.des / 10)
+            attributesRef.current = current
 
             if (vigDiff === 0 && focDiff === 0 && apDiff === 0) return
 

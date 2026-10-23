@@ -485,7 +485,7 @@ export default function Skills(): ReactElement {
                                 >
                                     {selectedSkill.name}
                                 </Typography>
-                                <Typography variant='subtitle1' color='text.secondary'>
+                                <Typography variant='subtitle1' component='p' color='text.secondary'>
                                     {selectedSkill.type}
                                     {selectedSkill.origin && ` • ${selectedSkill.origin}`}
                                     {(selectedSkill?.level || selectedSkill?.level === 0) && (
