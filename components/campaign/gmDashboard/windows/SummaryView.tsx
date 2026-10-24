@@ -95,6 +95,9 @@ export function SummaryView({ charsheet, inTurn, metrics, showEvolution, onOpenS
                     {inTurn && <Chip label="Em turno" size="small" color="primary" />}
                 </Stack>
                 <Typography variant="body2" color="text.secondary">
+                    ({charsheet.id})
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
                     Nv. {charsheet.level} • {charsheet.class as string} • {charsheet.lineage as unknown as string}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
