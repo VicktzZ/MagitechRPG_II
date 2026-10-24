@@ -299,6 +299,8 @@ log do combate (hoje só o diálogo de combate narra dano e cura). A ordem das f
 - **Ícone de arma = espadas cruzadas** (`components/misc/WeaponIcon.tsx`), na campanha e na ficha (`itemAttributes.weapon.icon`): o martelo de juiz (`Gavel`) parecia outra coisa. O `@mui/icons-material` não tem espada, então o glifo
   "swords" preenchido do Material Symbols (Apache-2.0, pacote `@material-symbols/svg-400`) foi embutido como um `createSvgIcon` do MUI (grade de 24px, aceita `color`/`fontSize`/`sx` como `Shield`). Sem dependência nova. Para outro
   ícone que falte no MUI, repita o caminho: pegue o SVG em `outlined/<nome>-fill.svg` (viewBox `0 -960 960 960`) e use `transform="translate(0 24) scale(0.025)"`.
+  **O arquivo precisa de `'use client'`** (há teste): `@constants` também é importado pela rota de servidor `/grimoire/pdf`, e no servidor o `createSvgIcon` do MUI é uma referência de cliente; chamá-lo ao carregar o módulo
+  quebrava o `next build` ("o is not a function" ao coletar `/grimoire/pdf`) só na Vercel, porque `next dev` e o jest não passam por essa camada. Teste de build local: `NODE_ENV=production` (com `NODE_ENV=development` no shell o prerender falha à toa) e o emulador do Firestore no ar.
 - **Remover pede confirmação** (`ConfirmRemoveDialog`; antes apagava no clique). A gravação é `buildRemovalUpdate` (`inventoryRemoval.ts`, compartilhada com a doação): tira o item **pelo id** (sem id, só aquele item, não todos os sem id),
   armadura devolve os AP (atual e máximo, nunca abaixo da base 5), item de Capacidade diminui `capacity.max` e não mexe na carga, o resto diminui `capacity.cargo` pelo peso x quantidade (nunca negativo).
 

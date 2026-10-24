@@ -1,3 +1,5 @@
+'use client'
+
 import { createSvgIcon } from '@mui/material/utils'
 
 /**
@@ -6,6 +8,10 @@ import { createSvgIcon } from '@mui/material/utils'
  * que não existe no @mui/icons-material. O original está numa grade de 960 com a origem embaixo
  * (viewBox "0 -960 960 960"); a transformação leva ao 24px dos ícones do MUI, então ele aceita
  * `color`, `fontSize` e `sx` como os outros (Shield, Inventory2).
+ *
+ * `'use client'` é obrigatório: `@constants` (que guarda o ícone em `itemAttributes`) também é importado por rota de
+ * servidor (`/grimoire/pdf`), e lá o `createSvgIcon` do MUI é uma referência de cliente que não pode ser chamada ao
+ * carregar o módulo. Marcando este arquivo, o servidor só recebe a referência (como já acontece com o `Gavel`).
  */
 
 /** Contornos do glifo, ainda na grade original de 960 */

@@ -1,3 +1,5 @@
+import { readFileSync } from 'fs'
+import { join } from 'path'
 import { itemAttributes } from '../../../constants'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { getItemTypeConfig } from '../../campaign/playerDashboard/inventory/itemTypeConfig'
@@ -18,5 +20,10 @@ describe('WeaponIcon', () => {
     it('a ficha (itemAttributes) e a campanha (getItemTypeConfig) usam o mesmo ícone de arma', () => {
         expect(itemAttributes.weapon.icon).toBe(WeaponIcon)
         expect(getItemTypeConfig('weapon').icon).toBe(WeaponIcon)
+    })
+
+    it('é um módulo de cliente: sem isso o build quebra em /grimoire/pdf, rota de servidor que importa @constants', () => {
+        const source = readFileSync(join(__dirname, '..', 'WeaponIcon.tsx'), 'utf8')
+        expect(/^\s*'use client'/.test(source)).toBe(true)
     })
 })
