@@ -1,0 +1,245 @@
+import { ThemeProvider } from '@mui/material';
+import type { ReactElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { healthySheet } from '@utils/__tests__/charsheetFixture';
+import theme from '../../../../../themes/theme';
+import { color } from '../../../../../themes/tokens';
+import FloatingWindow from '../FloatingWindow';
+import { PartyPortrait, type PortraitVital } from '../PartyPortrait';
+import { SummaryView } from '../SummaryView';
+import type { Bounds } from '../windowGeometry';
+import type { WindowEntry } from '../windowState';
+
+// O hook de sistema customizado puxa os contextos do app; aqui basta o padrão (sem sistema customizado)
+jest.mock('../../useCharsheetPointsView', () => ({
+    useCharsheetPointsView: () => ({
+        customSystem: null,
+        weightUnit: 'kg',
+        hasLP: true,
+        hasMP: true,
+        hasAP: true,
+        lpName: 'Vida',
+        mpName: 'Mana',
+        apName: 'Armadura'
+    })
+}));
+
+const render = (element: ReactElement): string => renderToStaticMarkup(<ThemeProvider theme={theme}>{element}</ThemeProvider>);
+
+const bounds: Bounds = { left: 100, top: 72, right: 1100, bottom: 792 };
+
+const entry = (overrides: Partial<WindowEntry> = {}): WindowEntry => ({
+    key: 'summary:a',
+    kind: 'summary',
+    charsheetId: 'a',
+    x: 200,
+    y: 150,
+    w: 380,
+    h: 520,
+    collapsed: false,
+    z: 1,
+    ...overrides
+});
+
+const noop = (): void => undefined;
+
+const windowProps = {
+    title: 'Resumo: Kael',
+    rank: 0,
+    isFront: true,
+    bounds,
+    mobile: false,
+    focusToken: 0,
+    onFocus: noop,
+    onClose: noop,
+    onCommit: noop,
+    onToggleCollapse: noop
+};
+
+describe('FloatingWindow', () => {
+    it('é um diálogo não modal, com nome, título, botões de recolher e fechar e as três alças de tamanho', () => {
+        const html = render(<FloatingWindow entry={entry()} {...windowProps}><p>conteúdo</p></FloatingWindow>);
+        expect(html).toContain('role="dialog"');
+        expect(html).toContain('aria-modal="false"');
+        expect(html).toContain('aria-label="Resumo: Kael"');
+        expect(html).toContain('aria-label="Recolher Resumo: Kael"');
+        expect(html).toContain('aria-label="Fechar Resumo: Kael"');
+        expect(html).toContain('conteúdo');
+        expect(html.match(/cursor:\s*(ew|ns|nwse)-resize|ew-resize|ns-resize|nwse-resize/g)?.length ?? 0).toBeGreaterThanOrEqual(3);
+    });
+
+    it('fica na posição e no tamanho guardados e acima das janelas de trás', () => {
+        const html = render(<FloatingWindow entry={entry()} {...windowProps} rank={3}><p>x</p></FloatingWindow>);
+        expect(html).toContain('left:200px');
+        expect(html).toContain('top:150px');
+        expect(html).toContain('width:380px');
+        expect(html).toContain('height:520px');
+        expect(html).toContain('z-index:1103');
+    });
+
+    it('uma janela guardada fora da área aparece puxada para dentro, sem alterar o guardado', () => {
+        const html = render(<FloatingWindow entry={entry({ x: 5000, y: 5000 })} {...windowProps}><p>x</p></FloatingWindow>);
+        expect(html).toContain('left:720px');
+        expect(html).toContain('top:272px');
+    });
+
+    it('recolhida, mostra só a barra de título, mas mantém o conteúdo montado', () => {
+        const html = render(<FloatingWindow entry={entry({ collapsed: true })} {...windowProps}><p>conteúdo</p></FloatingWindow>);
+        expect(html).toContain('data-collapsed="true"');
+        expect(html).toContain('height:40px');
+        expect(html).toContain('aria-label="Expandir Resumo: Kael"');
+        expect(html).toContain('aria-expanded="false"');
+        expect(html).toContain('hidden');
+        expect(html).toContain('conteúdo');
+        expect(html).not.toContain('nwse-resize');
+    });
+
+    it('no celular ocupa a tela toda, sem alça de tamanho nem botão de recolher', () => {
+        const html = render(<FloatingWindow entry={entry()} {...windowProps} mobile><p>x</p></FloatingWindow>);
+        expect(html).toContain('inset:0');
+        expect(html).toContain('z-index:1250');
+        expect(html).not.toContain('nwse-resize');
+        expect(html).not.toContain('Recolher Resumo');
+        expect(html).toContain('aria-label="Fechar Resumo: Kael"');
+    });
+
+    it('no celular, só a janela da frente aparece', () => {
+        const html = render(<FloatingWindow entry={entry()} {...windowProps} mobile isFront={false}><p>x</p></FloatingWindow>);
+        expect(html).toContain('display:none');
+        expect(html).toContain('data-front="false"');
+    });
+});
+
+const vitals: PortraitVital[] = [
+    { key: 'lp', name: 'Vida', value: 30, max: 40, barColor: color.lp },
+    { key: 'mp', name: 'Mana', value: 5, max: 20, barColor: color.mp }
+];
+
+describe('PartyPortrait', () => {
+    const base = { name: 'Aria Valen', level: 7, online: true, inTurn: false, open: false, vitals, onClick: noop };
+
+    it('é um botão com nome acessível completo: quem é, presença, vitais e a ação', () => {
+        const html = render(<PartyPortrait {...base} />);
+        expect(html).toContain('aria-label="Aria Valen, nível 7, online, Vida 30 de 40, Mana 5 de 20. Abrir resumo"');
+        expect(html).toContain('aria-pressed="false"');
+        expect(html).toContain('Nv. 7');
+    });
+
+    it('as barras refletem a proporção de cada recurso', () => {
+        const html = render(<PartyPortrait {...base} />);
+        expect(html).toContain('data-vital="lp"');
+        expect(html).toContain('width:75%');
+        expect(html).toContain('width:25%');
+        expect(html).not.toContain('data-vital="ap"');
+    });
+
+    it('em turno troca o nível por texto e entra no nome acessível', () => {
+        const html = render(<PartyPortrait {...base} inTurn />);
+        expect(html).toContain('Em turno');
+        expect(html).toContain('em turno');
+        expect(html).not.toContain('Nv. 7');
+    });
+
+    it('offline entra no nome acessível, e janela aberta marca o botão como pressionado', () => {
+        const html = render(<PartyPortrait {...base} online={false} open />);
+        expect(html).toContain('offline');
+        expect(html).toContain('aria-pressed="true"');
+    });
+
+    it('sem nenhum recurso (sistema customizado sem LP, MP e AP), não desenha barras', () => {
+        const html = render(<PartyPortrait {...base} vitals={[]} />);
+        expect(html).not.toContain('data-vital');
+        expect(html).toContain('aria-label="Aria Valen, nível 7, online. Abrir resumo"');
+    });
+});
+
+describe('SummaryView', () => {
+    // O fixture é uma ficha saudável mínima; o resumo só lê os campos que o teste preenche
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const sheet = (overrides: Record<string, unknown> = {}): any => ({
+        ...healthySheet(),
+        name: 'Aria Valen',
+        playerName: 'Vic',
+        class: 'Piromante',
+        lineage: 'Brasa',
+        race: 'Humano',
+        level: 7,
+        stats: { lp: 30, maxLp: 40, mp: 5, maxMp: 20, ap: 2, maxAp: 4 },
+        attributes: { vig: 10, des: 8, foc: 12, log: 5, sab: 6, car: 4 },
+        mods: { attributes: { vig: 2, des: 1, foc: 2, log: 0, sab: -1, car: 0 } },
+        points: { attributes: 0, expertises: 2, skills: 0, magics: 1, evolution: 3 },
+        inventory: { money: 12500, items: [], weapons: [], armors: [] },
+        ammoCounter: { current: 0, max: 0 },
+        capacity: { cargo: 12, max: 40 },
+        displacement: 9,
+        ...overrides
+    });
+
+    it('mostra quem é, os pontos vitais e os atributos com modificador', () => {
+        const html = render(<SummaryView charsheet={sheet()} inTurn={false} showEvolution onOpenFullSheet={noop} />);
+        expect(html).toContain('Aria Valen');
+        expect(html).toContain('Nv. 7');
+        expect(html).toContain('Piromante');
+        expect(html).toContain('aria-label="Vida de Aria Valen"');
+        expect(html).toContain('30/40');
+        expect(html).toContain('5/20');
+        expect(html).toContain('VIG');
+        expect(html).toContain('mod +2');
+        expect(html).toContain('mod -1');
+    });
+
+    it('mostra a bolsa: dinheiro com milhar, carga com unidade, deslocamento e esconde a munição vazia', () => {
+        const html = render(<SummaryView charsheet={sheet()} inTurn={false} showEvolution onOpenFullSheet={noop} />);
+        expect(html).toContain('12 500');
+        expect(html).toContain('12/40 kg');
+        expect(html).toContain('9m');
+        expect(html).not.toContain('Munição');
+
+        const withAmmo = render(<SummaryView charsheet={sheet({ ammoCounter: { current: 3, max: 10 } })} inTurn={false} showEvolution onOpenFullSheet={noop} />);
+        expect(withAmmo).toContain('Munição');
+        expect(withAmmo).toContain('3/10');
+    });
+
+    it('lista só os pontos para gastar que sobraram, e a evolução quando a regra vale', () => {
+        const html = render(<SummaryView charsheet={sheet()} inTurn={false} showEvolution onOpenFullSheet={noop} />);
+        expect(html).toContain('Perícias: 2');
+        expect(html).toContain('Magias: 1');
+        expect(html).not.toContain('Atributos: 0');
+        expect(html).toContain('Evolução: 3');
+
+        const noRule = render(<SummaryView charsheet={sheet()} inTurn={false} showEvolution={false} onOpenFullSheet={noop} />);
+        expect(noRule).not.toContain('Evolução');
+    });
+
+    it('sem pontos nem regra de evolução, a seção de pontos some', () => {
+        const html = render(
+            <SummaryView
+                charsheet={sheet({ points: { attributes: 0, expertises: 0, skills: 0, magics: 0 } })}
+                inTurn={false}
+                showEvolution={false}
+                onOpenFullSheet={noop}
+            />
+        );
+        expect(html).not.toContain('Pontos para gastar');
+    });
+
+    it('em turno mostra o selo, e tem o botão da ficha completa', () => {
+        const html = render(<SummaryView charsheet={sheet()} inTurn showEvolution onOpenFullSheet={noop} />);
+        expect(html).toContain('Em turno');
+        expect(html).toContain('Ficha completa');
+    });
+
+    it('ficha antiga com campos faltando não quebra', () => {
+        const html = render(
+            <SummaryView
+                charsheet={sheet({ stats: undefined, mods: undefined, points: undefined, ammoCounter: undefined, capacity: undefined, inventory: undefined })}
+                inTurn={false}
+                showEvolution={false}
+                onOpenFullSheet={noop}
+            />
+        );
+        expect(html).toContain('Aria Valen');
+        expect(html).not.toContain('NaN');
+        expect(html).not.toContain('undefined');
+    });
+});

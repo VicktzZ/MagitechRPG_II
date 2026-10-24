@@ -2,6 +2,13 @@ import { Box, Typography } from '@mui/material';
 import { font } from '@themes/tokens';
 import type { ReactElement } from 'react';
 
+/** Quanto da barra preencher (0 a 100): sem máximo ou valor inválido, vazia; acima do máximo, cheia */
+export function meterPercent(value: number, max: number): number {
+    const safeValue = Number.isFinite(value) ? value : 0;
+    const safeMax = Number.isFinite(max) && max > 0 ? max : 0;
+    return safeMax > 0 ? Math.min(100, Math.max(0, (safeValue / safeMax) * 100)) : 0;
+}
+
 interface StatMeterProps {
     /** Rótulo curto visível (LP, MP, AP ou o nome do sistema customizado) */
     label: string;
@@ -21,7 +28,7 @@ interface StatMeterProps {
 export default function StatMeter({ label, ariaLabel, value, max, barColor }: StatMeterProps): ReactElement {
     const safeValue = Number.isFinite(value) ? value : 0;
     const safeMax = Number.isFinite(max) && max > 0 ? max : 0;
-    const percent = safeMax > 0 ? Math.min(100, Math.max(0, (safeValue / safeMax) * 100)) : 0;
+    const percent = meterPercent(value, max);
 
     return (
         <Box
