@@ -6,6 +6,8 @@ import type { RPGSystem } from '@models/entities/RPGSystem';
 import type { ClassNames } from '@models/types/string';
 import { charsheetRepository, notificationRepository, rpgSystemRepository } from '@repositories';
 import { handleRouteError, readJsonBody, requireCharsheetAccess, requireUser } from '@utils/api';
+import { evolutionPointsForLevelUp } from '@utils/evolutionPoints';
+import { getEvolutionPoints, usesStageUnlock } from '@utils/spellStages';
 
 function normalizeToArray<T>(value: any): T[] {
     if (!value) return []
@@ -90,6 +92,11 @@ function calcMagitechProgression(charsheet: Charsheet, oldLevel: number, newLeve
         }
     }
 
+    // 3 pontos de evolução a cada nível múltiplo de 5 atingido. Só servem à regra de estágios das magias (ficha do
+    // Magitech padrão, com classe), então só ela os ganha
+    const evolutionPoints = usesStageUnlock(charsheet) ? evolutionPointsForLevelUp(oldLevel, newLevel) : 0;
+    if (evolutionPoints > 0) rewardsList.push(`+${evolutionPoints} pontos de evolução`);
+
     let newMaxLp = charsheet.stats.maxLp;
     let newMaxMp = charsheet.stats.maxMp;
     let newLp = charsheet.stats.lp;
@@ -161,6 +168,7 @@ function calcMagitechProgression(charsheet: Charsheet, oldLevel: number, newLeve
         attributePoints,
         magicPowerPoints,
         spellsPoints,
+        evolutionPoints,
         newClassSkills,
         newSubclassSkills,
         rewardsList
@@ -400,7 +408,8 @@ export async function POST(req: Request, { params }: { params: { id: string } })
                     expertises: charsheet.points.expertises + result.testPoints,
                     attributes: charsheet.points.attributes + result.attributePoints,
                     skills: charsheet.points.skills + result.magicPowerPoints,
-                    magics: charsheet.points.magics + result.spellsPoints
+                    magics: charsheet.points.magics + result.spellsPoints,
+                    ...(result.evolutionPoints > 0 ? { evolution: getEvolutionPoints(charsheet.points) + result.evolutionPoints } : {})
                 },
                 skills: {
                     ...charsheet.skills,

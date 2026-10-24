@@ -17,7 +17,9 @@ import { useCampaignContext } from '@contexts';
 import type { CharsheetDTO } from '@models/dtos'
 import useNumbersWithSpaces from '@hooks/useNumbersWithSpace'
 import { color, font } from '@themes/tokens'
+import SheetMetricsView from './SheetMetricsView'
 import StatMeter from './StatMeter'
+import { getSheetMetrics } from '@utils/charsheetMetrics'
 import { isCombatantInTurn } from '@utils/combatTurn'
 import { useCharsheetPointsView } from './useCharsheetPointsView'
 import { usePlayerActions } from './usePlayerActions'
@@ -44,6 +46,7 @@ function PlayerCard({ charsheet }: { charsheet: Required<CharsheetDTO> }) {
 
     // Combate ativo, fase de ação: o cartão de quem joga agora ganha o destaque "Em turno"
     const isMyTurn = isCombatantInTurn(campaign.session?.combat, charsheet)
+    const metrics = getSheetMetrics(charsheet, campaign.mode, campaign.session?.combat)
     const [ playerAnchorEl, setPlayerAnchorEl ] = useState<null | HTMLElement>(null)
     const [ sectionAnchorEl, setSectionAnchorEl ] = useState<null | HTMLElement>(null)
 
@@ -192,6 +195,8 @@ function PlayerCard({ charsheet }: { charsheet: Required<CharsheetDTO> }) {
                         <Box component="span" sx={srOnly}>Deslocamento:</Box>
                         <Typography component="span" className="value">{charsheet.displacement || 0}m</Typography>
                     </Box>
+
+                    <SheetMetricsView metrics={metrics} variant="inline" />
                 </Box>
             </Paper>
 

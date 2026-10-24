@@ -2,6 +2,7 @@
 
 import { useCampaignContext } from '@contexts';
 import type { CharsheetDTO } from '@models/dtos';
+import { getSheetMetrics } from '@utils/charsheetMetrics';
 import { TextField, Typography } from '@mui/material';
 import { useState, type ReactElement, type ReactNode } from 'react';
 import ChangePlayerStatusModal from '../modals/ChangePlayerStatusModal';
@@ -37,6 +38,7 @@ export function SheetWindow({ charsheetId, children }: SheetWindowProps): ReactE
 
 /** "Informações": detalhes do personagem, pontos vitais e pontos para gastar (o nível se edita aqui também) */
 export function InfoWindow({ charsheetId }: { charsheetId: string }): ReactElement {
+    const { campaign } = useCampaignContext();
     const [ statusOpen, setStatusOpen ] = useState(false);
 
     return (
@@ -57,6 +59,7 @@ export function InfoWindow({ charsheetId }: { charsheetId: string }): ReactEleme
                                     />
                                 )}
                                 <BasicInfoTab
+                                    metrics={getSheetMetrics(charsheet, campaign.mode, campaign.session?.combat)}
                                     charsheet={charsheet}
                                     editedData={editedData}
                                     isEditing={isEditing}

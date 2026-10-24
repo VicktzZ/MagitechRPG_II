@@ -6,9 +6,11 @@ import { Box, Button, Chip, Divider, Stack, Typography } from '@mui/material';
 import { color, font } from '@themes/tokens';
 import useNumbersWithSpaces from '@hooks/useNumbersWithSpace';
 import { getEvolutionPoints } from '@utils/spellStages';
+import type { SheetMetrics } from '@utils/charsheetMetrics';
 import type { VitalKey } from '@utils/vitals';
 import type { ReactElement, ReactNode } from 'react';
 import { useCharsheetPointsView } from '../useCharsheetPointsView';
+import SheetMetricsView from '../SheetMetricsView';
 import VitalsPanel, { type VitalRow } from './VitalsPanel';
 import { SHEET_WINDOW_KINDS, WINDOW_KIND_LABEL, type SheetWindowKind } from './windowKinds';
 
@@ -55,6 +57,8 @@ export interface SummaryActions {
 interface SummaryViewProps {
     charsheet: SummarySheet;
     inTurn: boolean;
+    /** Overall e limite de MP por turno (o limite some onde a regra não vale) */
+    metrics: SheetMetrics;
     /** A regra de estágios (e o ponto de evolução) vale para esta ficha */
     showEvolution: boolean;
     onOpenSection: (kind: SheetWindowKind) => void;
@@ -67,7 +71,7 @@ interface SummaryViewProps {
  * Resumo de uma ficha para o mestre: quem é, pontos vitais (com dano e cura rápidos), atributos, bolsa e pontos para
  * gastar, mais as ações do jogador e os atalhos para as seções. O resto é só leitura; cada seção se edita na própria janela.
  */
-export function SummaryView({ charsheet, inTurn, showEvolution, onOpenSection, onAdjustVital, actions }: SummaryViewProps): ReactElement {
+export function SummaryView({ charsheet, inTurn, metrics, showEvolution, onOpenSection, onAdjustVital, actions }: SummaryViewProps): ReactElement {
     const view = useCharsheetPointsView(charsheet);
     const spacedMoney = useNumbersWithSpaces();
 
@@ -101,6 +105,8 @@ export function SummaryView({ charsheet, inTurn, showEvolution, onOpenSection, o
             {vitalRows.length > 0 && (
                 <VitalsPanel charsheetName={charsheet.name} rows={vitalRows} onAdjust={onAdjustVital} />
             )}
+
+            <SheetMetricsView metrics={metrics} />
 
             <Box>
                 <Heading>Atributos</Heading>

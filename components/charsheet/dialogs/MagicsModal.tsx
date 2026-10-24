@@ -9,6 +9,7 @@ import { alpha, Box, Backdrop } from '@mui/material';
 import type { Spell } from '@models/entities';
 import type { ReactElement } from 'react';
 import type { CharsheetDTO } from '@models/dtos';
+import { elementHint } from '@utils/elements';
 import { SPELL_FILTERS } from '@utils/spellCategory';
 import { color, shadow } from '@themes/tokens';
 import { normalizeToArray } from '@utils/normalizeToArray';
@@ -166,6 +167,7 @@ export default function SpellsModal({ open, onClose }: { open: boolean, onClose:
                             errorMessage={(err) => err.message || 'Erro ao adicionar magia'}
                             filterOptions={getValues('level') < 15 ? elements : [ ...elements, ...specialElements ]}
                             filterLabel="Elemento"
+                            filterOptionHint={elementHint}
                             secondaryFilters={SPELL_FILTERS}
                             sortOptions={[ 'Nível', 'Elemento', 'Alfabética' ]}
                             itemMinWidth={360}

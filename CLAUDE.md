@@ -164,6 +164,12 @@ do efeito, e não pode ser escolhido nem conjurado. O MP extra por estágio ao c
   o valor velho desfaria o ponto concedido.
 - **O modal de magias também bloqueia**: magia que a ficha ainda não tem aparece com o estágio 1 liberado e os outros com cadeado; magia que a ficha tem
   mostra o liberado dela (`MagicsModal.tsx`, cartão enxuto de `Magic.tsx`).
+- **Pontos de evolução por nível**: ao subir de nível a ficha ganha **3 pontos de evolução a cada nível múltiplo de 5** atingido (5, 10, 15, 20; saltos de vários
+  níveis contam cada múltiplo do caminho: `evolutionPointsForLevelUp`, `utils/evolutionPoints.ts`), na rota `POST /api/charsheet/[id]/update/level` (caminho do Magitech padrão, só
+  para quem usa a regra de estágios: `usesStageUnlock`). A notificação de nível lista os pontos.
+- **Elementos secundários**: Sangue, Vácuo, Psíquico, Radiação e Explosão (`SECONDARY_ELEMENTS`, `constants/secondaryElements.ts`; `specialElements` é a mesma lista com o nome antigo
+  dos filtros). `isSecondaryElement` (`utils/elements.ts`, ignora caixa e acento) alimenta o selo "Secundário" nos cartões de magia, a observação "secundário" nos filtros de elemento
+  (`filterOptionHint` do `ResourceListModal`), o aviso do modal de maestria elemental e o título da seção do grimório em PDF.
 - **Não vale** em sistema customizado (`systemId`), no Roguelite (`campaign.mode`) nem na ficha de classe "Sem Classe": lá todos os estágios ficam
   abertos como sempre (`usesStageUnlock`). Excluir a magia remove as duas chaves (`withoutSpell`).
 - Onde aparece: cartão da ficha (`subcomponents/Magic.tsx`, `Magics.tsx`), tela do jogador na campanha (`SpellsSection.tsx`, que também recusa
@@ -251,12 +257,16 @@ log do combate (hoje só o diálogo de combate narra dano e cura). A ordem das f
 - Teste de componente que importa `useCharsheetPointsView` precisa de `jest.mock` dele: o hook de sistema customizado puxa `@contexts`, e o ts-jest
   barra um erro de tipo antigo em `contexts/charsheetContext.ts`.
 
-## Limite de MP por turno
+## Limite de MP por turno e Overall
 
 `⌈(Nível + Foco) ÷ 2⌉ + Nível de ORM` (+ bônus em `mpLimit` da ficha), em `utils/mpLimit.ts`.
 Janela: do início do turno do personagem ao início do próximo (reações contam); recuperar MP não
 devolve limite; ao exceder, a conjuração é bloqueada e o mestre pode liberar. Não vale no Roguelite
 nem em sistemas customizados.
+
+O mestre vê o **Overall** (o `overall` guardado na ficha, o mesmo da tela do jogador) e o limite no resumo, no cartão do jogador e na aba Informações
+(`SheetMetricsView`, `getSheetMetrics` em `utils/charsheetMetrics.ts`). Onde a regra não vale o limite some e o Overall fica; em combate ativo o limite
+aparece como gasto/limite (`mpSpentThisTurn` do combatente).
 
 ## Design system
 
