@@ -44,7 +44,7 @@ export const MANA_RECOVERY_SPELLS: SeedSpell[] = [
         name: 'Dança do Vento',
         level: 1,
         mpCost: 1,
-        type: 'Defesa (imediato)',
+        type: 'Recuperação (imediato)',
         execution: 'Reação',
         range: 'Curto',
         stages: [
@@ -59,7 +59,7 @@ export const MANA_RECOVERY_SPELLS: SeedSpell[] = [
         name: 'Brasa Voraz',
         level: 1,
         mpCost: 1,
-        type: 'Ataque (imediato)',
+        type: 'Ataque/Recuperação (imediato)',
         execution: 'Padrão',
         range: 'Médio',
         stages: [
@@ -74,7 +74,7 @@ export const MANA_RECOVERY_SPELLS: SeedSpell[] = [
         name: 'Cisterna Arcana',
         level: 1,
         mpCost: 1,
-        type: 'Utilidade (contínuo)',
+        type: 'Recuperação (contínuo)',
         execution: 'Movimento',
         range: 'Pessoal',
         stages: [
@@ -89,7 +89,7 @@ export const MANA_RECOVERY_SPELLS: SeedSpell[] = [
         name: 'Capacitor Vivo',
         level: 1,
         mpCost: 1,
-        type: 'Encantamento (contínuo)',
+        type: 'Recuperação (contínuo)',
         execution: 'Movimento',
         range: 'Pessoal',
         stages: [
@@ -104,7 +104,7 @@ export const MANA_RECOVERY_SPELLS: SeedSpell[] = [
         name: 'Pedra de Foco',
         level: 1,
         mpCost: 1,
-        type: 'Transmutação (imediato)',
+        type: 'Recuperação (imediato)',
         execution: 'Completa',
         range: 'Pessoal',
         stages: [
@@ -123,7 +123,7 @@ export const MANA_RECOVERY_SPELLS: SeedSpell[] = [
         name: 'Prisma Refletor',
         level: 2,
         mpCost: 4,
-        type: 'Defesa (imediato)',
+        type: 'Defesa/Recuperação (imediato)',
         execution: 'Reação',
         range: 'Médio',
         stages: [
@@ -138,7 +138,7 @@ export const MANA_RECOVERY_SPELLS: SeedSpell[] = [
         name: 'Maré Cheia',
         level: 2,
         mpCost: 4,
-        type: 'Encantamento (contínuo)',
+        type: 'Recuperação (contínuo)',
         execution: 'Padrão',
         range: 'Médio',
         stages: [
@@ -153,7 +153,7 @@ export const MANA_RECOVERY_SPELLS: SeedSpell[] = [
         name: 'Chama Piloto',
         level: 2,
         mpCost: 4,
-        type: 'Encantamento (contínuo)',
+        type: 'Recuperação (contínuo)',
         execution: 'Movimento',
         range: 'Pessoal',
         stages: [
@@ -168,7 +168,7 @@ export const MANA_RECOVERY_SPELLS: SeedSpell[] = [
         name: 'Transvase Arcano',
         level: 2,
         mpCost: 4,
-        type: 'Suporte (imediato)',
+        type: 'Recuperação (imediato)',
         execution: 'Padrão',
         range: 'Curto',
         stages: [
@@ -183,7 +183,7 @@ export const MANA_RECOVERY_SPELLS: SeedSpell[] = [
         name: 'Sobrecarga Controlada',
         level: 2,
         mpCost: 4,
-        type: 'Utilidade (imediato)',
+        type: 'Recuperação (imediato)',
         execution: 'Livre',
         range: 'Pessoal',
         stages: [
@@ -198,7 +198,7 @@ export const MANA_RECOVERY_SPELLS: SeedSpell[] = [
         name: 'Sombra Glutona',
         level: 2,
         mpCost: 4,
-        type: 'Controle (contínuo)',
+        type: 'Controle/Recuperação (contínuo)',
         execution: 'Padrão',
         range: 'Médio',
         stages: [
@@ -217,7 +217,7 @@ export const MANA_RECOVERY_SPELLS: SeedSpell[] = [
         name: 'Núcleo Geotérmico',
         level: 3,
         mpCost: 6,
-        type: 'Encantamento (contínuo)',
+        type: 'Recuperação (contínuo)',
         execution: 'Padrão',
         range: 'Médio',
         stages: [
@@ -232,7 +232,7 @@ export const MANA_RECOVERY_SPELLS: SeedSpell[] = [
         name: 'Reserva Subconsciente',
         level: 3,
         mpCost: 6,
-        type: 'Mentalização (contínuo)',
+        type: 'Recuperação (contínuo)',
         execution: 'Livre',
         range: 'Pessoal',
         stages: [
@@ -247,7 +247,7 @@ export const MANA_RECOVERY_SPELLS: SeedSpell[] = [
         name: 'Pacto Carmesim',
         level: 3,
         mpCost: 6,
-        type: 'Encantamento (contínuo)',
+        type: 'Recuperação (contínuo)',
         execution: 'Movimento',
         range: 'Pessoal',
         stages: [
@@ -262,7 +262,7 @@ export const MANA_RECOVERY_SPELLS: SeedSpell[] = [
         name: 'Aurora Restauradora',
         level: 3,
         mpCost: 7,
-        type: 'Suporte (imediato)',
+        type: 'Recuperação (imediato)',
         execution: 'Padrão',
         range: 'Médio',
         stages: [
@@ -277,7 +277,7 @@ export const MANA_RECOVERY_SPELLS: SeedSpell[] = [
         name: 'Fluxo Perpétuo',
         level: 3,
         mpCost: 6,
-        type: 'Utilidade (contínuo)',
+        type: 'Recuperação (contínuo)',
         execution: 'Movimento',
         range: 'Pessoal',
         stages: [
@@ -292,7 +292,7 @@ export const MANA_RECOVERY_SPELLS: SeedSpell[] = [
         name: 'Arco Voltaico',
         level: 3,
         mpCost: 6,
-        type: 'Ataque (imediato)',
+        type: 'Ataque/Recuperação (imediato)',
         execution: 'Padrão',
         range: 'Médio',
         stages: [
@@ -311,7 +311,7 @@ export const MANA_RECOVERY_SPELLS: SeedSpell[] = [
         name: 'Fenda Devoradora',
         level: 4,
         mpCost: 10,
-        type: 'Anulação (imediato)',
+        type: 'Anulação/Recuperação (imediato)',
         execution: 'Reação',
         range: 'Médio',
         stages: [
@@ -326,7 +326,7 @@ export const MANA_RECOVERY_SPELLS: SeedSpell[] = [
         name: 'Decaimento Benigno',
         level: 4,
         mpCost: 10,
-        type: 'Encantamento (contínuo)',
+        type: 'Encantamento/Recuperação (contínuo)',
         execution: 'Padrão',
         range: 'Longo',
         stages: [
@@ -341,7 +341,7 @@ export const MANA_RECOVERY_SPELLS: SeedSpell[] = [
         name: 'Detonação Capacitora',
         level: 4,
         mpCost: 11,
-        type: 'Ataque (imediato)',
+        type: 'Ataque/Recuperação (imediato)',
         execution: 'Completa',
         range: 'Longo',
         stages: [
@@ -356,7 +356,7 @@ export const MANA_RECOVERY_SPELLS: SeedSpell[] = [
         name: 'Convergência Zepta',
         level: 4,
         mpCost: 12,
-        type: 'Suporte (contínuo)',
+        type: 'Recuperação (contínuo)',
         execution: 'Padrão',
         range: 'Longo',
         stages: [

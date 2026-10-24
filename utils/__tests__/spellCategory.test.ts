@@ -4,6 +4,7 @@ import {
     getSpellCategory,
     getSpellExecution,
     getSpellSubtypes,
+    SPELL_CATEGORIES,
     SPELL_EXECUTION_FILTER,
     SPELL_FILTERS,
     SPELL_SUBTYPES,
@@ -189,5 +190,63 @@ describe('filtros Tipo + Subtipo', () => {
     it('várias opções do mesmo filtro: OU entre elas', () => {
         expect(apply([ 'Ataque', 'Defesa' ], [ 'Imediato' ])).toEqual([ 'A', 'C', 'E' ])
         expect(apply([ 'Ataque' ], [ 'Imediato', 'Conjurado' ])).toEqual([ 'A', 'B', 'E' ])
+    })
+})
+
+describe('categoria Recuperação (magias que devolvem MP)', () => {
+    it('está na lista do filtro Tipo, em ordem alfabética', () => {
+        expect(SPELL_CATEGORIES).toContain('Recuperação')
+        expect(SPELL_TYPE_FILTER.options).toContain('Recuperação')
+        expect([ ...SPELL_CATEGORIES ]).toEqual([ ...SPELL_CATEGORIES ].sort((a, b) => a.localeCompare(b, 'pt-BR')))
+    })
+
+    it('sozinha ou somada a outra categoria', () => {
+        expect(getSpellCategories('Recuperação (contínuo)')).toEqual([ 'Recuperação' ])
+        expect(getSpellCategories('Ataque/Recuperação (imediato)')).toEqual([ 'Ataque', 'Recuperação' ])
+        expect(getSpellCategories('Cura/Ataque/Recuperação (Imediato)')).toEqual([ 'Cura', 'Ataque', 'Recuperação' ])
+    })
+
+    it('aceita a grafia sem acento ou em outra caixa e devolve a forma canônica', () => {
+        expect(getSpellCategories('recuperacao (imediato)')).toEqual([ 'Recuperação' ])
+        expect(getSpellCategories('RECUPERAÇÃO (imediato)')).toEqual([ 'Recuperação' ])
+        expect(getSpellCategories('ataque/Recuperacao (imediato)')).toEqual([ 'Ataque', 'Recuperação' ])
+        expect(getSpellCategories('ilusao (contínuo)')).toEqual([ 'Ilusão' ])
+    })
+
+    it('categoria desconhecida continua só com a inicial maiúscula', () => {
+        expect(getSpellCategories('invocação (imediato)')).toEqual([ 'Invocação' ])
+    })
+
+    describe('filtro Tipo = Recuperação', () => {
+        const spells = [
+            { name: 'Só recupera', type: 'Recuperação (contínuo)' },
+            { name: 'Ataque que recupera', type: 'Ataque/Recuperação (imediato)' },
+            { name: 'Cura que recupera', type: 'Cura/Recuperação (Conjurado, Contínuo)' },
+            { name: 'Ataque comum', type: 'Ataque (imediato)' },
+            { name: 'Cura comum', type: 'Cura (contínuo)' },
+            { name: 'Sem recuperação (subtipo não é tipo)', type: 'Defesa (Recuperação)' }
+        ]
+        const apply = (types: string[], subtypes: string[] = []) => filterBySelections(spells, [
+            { getValue: SPELL_TYPE_FILTER.getValue, selected: types },
+            { getValue: SPELL_TYPE_FILTER.subFilter.getValue, selected: subtypes }
+        ]).map(s => s.name)
+
+        it('lista as que só recuperam e as que somam outra categoria', () => {
+            expect(apply([ 'Recuperação' ])).toEqual([ 'Só recupera', 'Ataque que recupera', 'Cura que recupera' ])
+        })
+
+        it('as categorias somadas continuam aparecendo no filtro da outra categoria', () => {
+            expect(apply([ 'Ataque' ])).toEqual([ 'Ataque que recupera', 'Ataque comum' ])
+            expect(apply([ 'Cura' ])).toEqual([ 'Cura que recupera', 'Cura comum' ])
+        })
+
+        it('Recuperação + Subtipo: precisa passar pelos dois', () => {
+            expect(apply([ 'Recuperação' ], [ 'Contínuo' ])).toEqual([ 'Só recupera', 'Cura que recupera' ])
+            expect(apply([ 'Recuperação' ], [ 'Imediato' ])).toEqual([ 'Ataque que recupera' ])
+        })
+
+        it('Recuperação ou Ataque: OU entre as categorias', () => {
+            expect(apply([ 'Recuperação', 'Ataque' ])).toEqual([ 'Só recupera', 'Ataque que recupera', 'Cura que recupera', 'Ataque comum' ])
+        })
     })
 })
