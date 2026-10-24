@@ -20,6 +20,9 @@ class CharsheetService extends Service<DbCharsheet, 'userId'> {
      * várias variações seguidas, ou junto de uma mudança do jogador, não se perdem.
      */
     async adjustStats(charsheetId: string, deltas: VitalDeltas) { return (await this.post({ param: `${charsheetId}/stats`, body: deltas })).data }
+
+    /** Alguma campanha onde a ficha joga liberou a visualização de todos os estágios das magias? (ver `utils/spellReveal.ts`) */
+    async getSpellStagesRevealed(charsheetId: string) { return (await this.get({ param: `${charsheetId}/reveal-spell-stages` })).data as { revealed: boolean } }
 }
 
 export const charsheetService = new CharsheetService('/charsheet')

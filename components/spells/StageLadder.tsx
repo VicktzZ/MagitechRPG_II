@@ -28,6 +28,11 @@ interface LadderSpell {
 export interface StageLadderProps {
     spell: LadderSpell;
     progress: SpellProgress;
+    /**
+     * O mestre liberou a visualização (`utils/spellReveal.ts`): os estágios ainda bloqueados mostram também o texto e o custo de MP.
+     * Só visualização: continuam bloqueados para conjurar e evoluir.
+     */
+    revealLocked?: boolean;
     /** Só quem evolui a magia (o jogador) passa isto; sem isso o custo aparece mas não há botão (visão do mestre) */
     evolution?: {
         points: number;
@@ -90,7 +95,7 @@ function StageMark({ children }: { children: string }): ReactElement {
  * Os estágios de uma magia, do primeiro ao último, como uma escada: os liberados ficam abertos (dá para recolher), com o que
  * cada um muda em relação ao anterior destacado, e os bloqueados mostram o custo para liberar.
  */
-export default function StageLadder({ spell, progress, evolution, cast }: StageLadderProps): ReactElement {
+export default function StageLadder({ spell, progress, revealLocked, evolution, cast }: StageLadderProps): ReactElement {
     const [ collapsed, setCollapsed ] = useState<ReadonlySet<number>>(new Set());
     const level = Number(spell.level) || 1;
     const baseCost = Number(spell.mpCost) || 0;
@@ -347,6 +352,14 @@ export default function StageLadder({ spell, progress, evolution, cast }: StageL
                                         <Typography variant="caption" color="text.secondary" sx={{ flexBasis: '100%' }} data-testid="stage-evolve-reason">
                                             {blockReason}
                                         </Typography>
+                                    )}
+                                    {revealLocked && !!texts[info.stage - 1] && (
+                                        <Box sx={{ flexBasis: '100%', pt: 0.5 }} data-testid={`stage-revealed-${info.stage}`}>
+                                            <Typography variant="caption" color="text.secondary" component="div" sx={{ mb: 0.5 }}>
+                                                {`Revelado pelo mestre · custo de ${costOf(info.stage)} MP`}
+                                            </Typography>
+                                            <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>{texts[info.stage - 1]}</Typography>
+                                        </Box>
                                     )}
                                 </Box>
                             )}
