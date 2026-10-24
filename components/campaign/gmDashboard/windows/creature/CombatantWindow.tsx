@@ -9,6 +9,7 @@ import type { CombatantVitalKey } from '@utils/combatantVitals';
 import { errorMessage, asRequestError } from '@utils/errors';
 import { getCreatureMpLimit, isCreatureMpLimitEnforced } from '@utils/mpLimit';
 import { enqueueSnackbar } from 'notistack';
+import { useSetMpSpent } from '../../actions/useSetMpSpent';
 import { useCreatureExpertiseRoll } from '../../dashboard/useCreatureExpertiseRoll';
 import { useGMWindowActions } from '../GMWindowProvider';
 import { CombatantView } from './CombatantView';
@@ -18,6 +19,7 @@ export default function CombatantWindow({ combatantId }: { combatantId: string }
     const { campaign } = useCampaignContext();
     const { openWindow } = useGMWindowActions();
     const rollExpertise = useCreatureExpertiseRoll(null);
+    const { openSetMpSpent, setMpSpentDialog } = useSetMpSpent(campaign.id);
 
     const combat = campaign.session?.combat;
     const combatant = combat?.isActive ? combat.combatants?.find(candidate => candidate.id === combatantId) : undefined;
@@ -66,18 +68,24 @@ export default function CombatantWindow({ combatantId }: { combatantId: string }
     };
 
     return (
-        <CombatantView
-            combatant={combatant}
-            creature={creature}
-            inTurn={inTurn}
-            onAdjustVital={(key, delta) => { void adjustVital(key, delta); }}
-            onRollExpertise={async (name, expertise) => {
-                if (creature) await rollExpertise(name, expertise, creature, combatant);
-            }}
-            onOpenCreature={creature ? () => openWindow('creature', creature.id) : undefined}
-            mpLimit={mpLimit}
-            onCastSpell={spell => { void castSpell(spell); }}
-            onResetMpLimit={() => { void resetMpLimit(); }}
-        />
+        <>
+            <CombatantView
+                combatant={combatant}
+                creature={creature}
+                inTurn={inTurn}
+                onAdjustVital={(key, delta) => { void adjustVital(key, delta); }}
+                onRollExpertise={async (name, expertise) => {
+                    if (creature) await rollExpertise(name, expertise, creature, combatant);
+                }}
+                onOpenCreature={creature ? () => openWindow('creature', creature.id) : undefined}
+                mpLimit={mpLimit}
+                onCastSpell={spell => { void castSpell(spell); }}
+                onResetMpLimit={() => { void resetMpLimit(); }}
+                onSetMpSpent={() => {
+                    openSetMpSpent({ id: combatant.id, name: combatant.name, spent: combatant.mpSpentThisTurn ?? 0, limit: mpLimit });
+                }}
+            />
+            {setMpSpentDialog}
+        </>
     );
 }

@@ -36,6 +36,7 @@ import BoltIcon from '@mui/icons-material/Bolt';
 import LockOpenIcon from '@mui/icons-material/LockOpen';
 import LockIcon from '@mui/icons-material/Lock';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
+import EditIcon from '@mui/icons-material/Edit';
 import { color } from '@themes/tokens';
 import { useSnackbar } from 'notistack';
 import { useChannel } from '@contexts/channelContext';
@@ -52,6 +53,7 @@ import { buildStartCreatures, buildStartPlayers, type JoinPayload } from './comb
 import ParticipantPicker from './combat/ParticipantPicker';
 import { useParticipantSelection } from './combat/useParticipantSelection';
 import ApplyEffectDialog from './ApplyEffectDialog';
+import { useSetMpSpent } from './useSetMpSpent';
 import { campaignService } from '@services';
 import { errorMessage } from '@utils/errors';
 
@@ -124,6 +126,9 @@ export default function CombatDialog({
 
     // Aplicação de efeito
     const [ applyEffectTarget, setApplyEffectTarget ] = useState<{ id: string; name: string } | null>(null);
+
+    // O mestre define o MP gasto na rodada de um combatente
+    const { openSetMpSpent, setMpSpentDialog } = useSetMpSpent(campaignId);
 
     const handleRemoveEffect = useCallback(async (combatantId: string, appliedEffectId: string) => {
         try {
@@ -516,6 +521,17 @@ export default function CombatDialog({
                                                         </IconButton>
                                                     </Tooltip>
                                                     {mpLimitEnforced && (
+                                                        <Tooltip title="Definir o MP gasto nesta rodada (o limite não muda)">
+                                                            <IconButton
+                                                                size="small"
+                                                                aria-label={`Definir o MP gasto de ${combatant.name}`}
+                                                                onClick={() => { openSetMpSpent({ id: combatant.id, name: combatant.name, spent: mpSpent, limit: mpLimit }); }}
+                                                            >
+                                                                <EditIcon fontSize="small" />
+                                                            </IconButton>
+                                                        </Tooltip>
+                                                    )}
+                                                    {mpLimitEnforced && (
                                                         <Tooltip title="Resetar o MP gasto nesta rodada (limite de MP por turno)">
                                                             <IconButton
                                                                 size="small"
@@ -727,6 +743,7 @@ export default function CombatDialog({
                 appliedByName="GM"
                 onApplied={() => { void fetchCombat(); }}
             />
+            {setMpSpentDialog}
         </Dialog>
     );
 }

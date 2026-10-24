@@ -1,4 +1,4 @@
-import { Add, Backpack, Block, Bolt, ChatBubbleOutline, RestartAlt, DirectionsRun, LocalPolice, MonetizationOn, MoreVert, Upgrade, ViewList, ViewSidebar } from '@mui/icons-material'
+import { Add, Backpack, Block, Bolt, ChatBubbleOutline, Edit, RestartAlt, DirectionsRun, LocalPolice, MonetizationOn, MoreVert, Upgrade, ViewList, ViewSidebar } from '@mui/icons-material'
 import {
     Box,
     Chip,
@@ -26,6 +26,7 @@ import { usePlayerActions } from './usePlayerActions'
 import { useGMWindowActions } from './windows/GMWindowProvider'
 import SectionMenu from './windows/SectionMenu'
 import { useQuickEffect } from './actions/useQuickEffect'
+import { useSetMpSpent } from './actions/useSetMpSpent'
 import { campaignService } from '@services'
 import { errorMessage } from '@utils/errors'
 import { enqueueSnackbar } from 'notistack'
@@ -48,6 +49,7 @@ function PlayerCard({ charsheet }: { charsheet: Required<CharsheetDTO> }) {
     const { openWindow } = useGMWindowActions()
     const actions = usePlayerActions(charsheet)
     const { openEffectFor, effectDialog } = useQuickEffect(campaign.id)
+    const { openSetMpSpent, setMpSpentDialog } = useSetMpSpent(campaign.id)
     // Efeito só vale em combate ativo e para quem está nele
     const inCombat = Boolean(campaign.session?.combat?.isActive && campaign.session.combat.combatants?.some(combatant => combatant.id === charsheet.id))
 
@@ -231,6 +233,16 @@ function PlayerCard({ charsheet }: { charsheet: Required<CharsheetDTO> }) {
                                 <ListItemText>Aplicar efeito</ListItemText>
                             </MenuItem>
                         )}
+                        {inCombat && metrics.mpLimit !== null && (
+                            <MenuItem onClick={afterClosing(() => {
+                                openSetMpSpent({ id: charsheet.id, name: charsheet.name, spent: metrics.mpSpent ?? 0, limit: metrics.mpLimit ?? 0 })
+                            })}>
+                                <ListItemIcon>
+                                    <Edit fontSize="small" />
+                                </ListItemIcon>
+                                <ListItemText>Definir MP gasto no turno</ListItemText>
+                            </MenuItem>
+                        )}
                         {inCombat && (
                             <MenuItem onClick={afterClosing(() => {
                                 campaignService.resetMpLimit(campaign.id, { combatantId: charsheet.id })
@@ -282,6 +294,7 @@ function PlayerCard({ charsheet }: { charsheet: Required<CharsheetDTO> }) {
 
             {actions.dialogs}
             {effectDialog}
+            {setMpSpentDialog}
         </>
     )
 }
