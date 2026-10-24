@@ -22,6 +22,15 @@ quase todas são `(imediato)` no `type`. Duas (Rajada Refletora, Retribuição C
 `type`; o filtro de subtipo ignora esse texto. Para listar reações, usa-se o filtro "Execução"
 (Padrão, Completa, Movimento, Livre, Reação) do modal de magias.
 
+**Recuperação** é uma categoria do filtro "Tipo" (`SPELL_CATEGORIES`): a magia devolve MP ao conjurador ou a aliados em algum estágio. Se só faz isso, o
+`type` é `Recuperação (subtipo)`; se faz outra coisa também (dano, cura, defesa, controle...), a categoria é somada: `Ataque/Recuperação (imediato)`. O filtro
+"Tipo: Recuperação" lista as duas formas, e a categoria somada continua aparecendo no filtro da outra (`Ataque`). A grafia sem acento ou em outra caixa ("recuperacao") vale
+a mesma categoria. **Não** entram magias que só gastam MP, mudam o custo de outras ou tiram MP de um inimigo sem devolver nada a ninguém. Em 24/10/2026 o catálogo
+de produção foi mapeado lendo os 3 estágios das 424 magias e **46 trocaram de `type`** (21 do lote `seed-mp-*`, que já usa os tipos novos em `manaRecoverySpells.ts`):
+dados em `scripts/data/manaRecoveryTypes.ts`, script `scripts/applySpellTypeChanges.ts` (simulação por padrão; `--apply` troca só o campo `type` e só se ele ainda for o
+antigo, então não passa por cima de edição manual; `--backup F` guarda as trocas e `--revert F --apply` desfaz; teste com o emulador em `utils/firestore/__tests__/applySpellTypeChanges.emulator.test.ts`).
+Magia nova que recupera MP já deve nascer com a categoria.
+
 ## Convenções do catálogo de magias (conferidas no Firestore real, coleção `spells`)
 
 - `element` em MAIÚSCULAS (`FOGO`, `ÁGUA`, `NÃO-ELEMENTAL`, `PSÍQUICO`...). A API filtra assim.

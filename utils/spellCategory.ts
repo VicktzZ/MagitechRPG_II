@@ -10,6 +10,11 @@
  *  - sem subtipo ("Ataque") ou com texto sobrando depois do parêntese;
  *  - "(Reação)" no `type` de duas magias: Reação é uma EXECUÇÃO (campo `execution`), não um
  *    subtipo, então esse texto é ignorado aqui e o filtro "Execução" é que lista as reações.
+ *
+ * "Recuperação" é a categoria das magias que devolvem MP (ao conjurador ou a aliados). Quando a
+ * magia só faz isso, o `type` é "Recuperação (subtipo)"; quando recuperar MP é um efeito além de
+ * outro (dano, cura, defesa...), a categoria é somada: "Ataque/Recuperação (imediato)". Em qualquer
+ * dos casos o filtro "Tipo: Recuperação" encontra a magia.
  */
 
 /** Categorias conhecidas do catálogo. Categorias novas aparecem no filtro conforme são carregadas. */
@@ -26,6 +31,7 @@ export const SPELL_CATEGORIES = [
     'Ilusão',
     'Mentalização',
     'Movimento',
+    'Recuperação',
     'Suporte',
     'Transmutação',
     'Utilidade'
@@ -49,6 +55,11 @@ const FALLBACK_CATEGORY = 'Outro';
 
 const normalizeKey = (value: string): string =>
     value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+
+/** Forma canônica das categorias conhecidas, indexada pela chave sem acento/caixa ("recuperacao" → "Recuperação") */
+const CATEGORY_ALIASES: Record<string, string> = Object.fromEntries(
+    SPELL_CATEGORIES.map(category => [ normalizeKey(category), category ])
+);
 
 /** Forma canônica dos subtipos conhecidos, indexada pela chave sem acento/caixa (inclui o feminino) */
 const SUBTYPE_ALIASES: Record<string, string> = Object.fromEntries([
@@ -88,7 +99,7 @@ export function getSpellCategories(type?: string | null): string[] {
         .split('/')
         .map(part => part.trim())
         .filter(Boolean)
-        .map(capitalize);
+        .map(part => CATEGORY_ALIASES[normalizeKey(part)] ?? capitalize(part));
 
     return categories.length > 0 ? unique(categories) : [ FALLBACK_CATEGORY ];
 }
