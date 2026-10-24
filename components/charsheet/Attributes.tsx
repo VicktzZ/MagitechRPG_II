@@ -558,7 +558,7 @@ function Attributes(): ReactElement {
                                 <Box sx={{ mt: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 1.5, bgcolor: 'background.paper' }}>
                                     {/* Limite de MP por turno */}
                                     <Box display="flex" alignItems="center" mb={1}>
-                                        <Tooltip title="Máximo de MP que pode ser gasto em magias entre o início do seu turno e o início do próximo">
+                                        <Tooltip title="Máximo de MP que pode ser gasto em magias em cada rodada de combate (zera quando a rodada vira)">
                                             <LocalFireDepartment color="primary" fontSize="small" sx={{ mr: 1 }} />
                                         </Tooltip>
                                         <Box flexGrow={1}>

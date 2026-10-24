@@ -10,9 +10,11 @@
  * - nível 1 e 2: 1 ponto por estágio;
  * - nível 3: 2 pontos por estágio;
  * - nível 4: 3 pontos para o estágio 2. O 3º estágio é a **Maestria**: abre sozinho, sem gastar ponto, depois do estágio 2, para
- *   quem tem maestria no elemento da magia (`elementalMastery`); sem a maestria ele não se compra. Em elemento **secundário** o
- *   nível 4 não tem esse atalho: o estágio 3 também custa 3 pontos.
- * O ajuste direto do mestre (aba de magias do detalhe da ficha) não gasta ponto.
+ *   quem tem maestria no elemento da magia (`elementalMastery`). **Sem a maestria no elemento a Maestria não se libera de
+ *   maneira nenhuma**: nem se compra, nem o ajuste do mestre nem o `spellStages` legado a abrem (o estágio liberado é limitado
+ *   ao 2 ao ler a ficha). Em elemento **secundário** o nível 4 não tem Maestria: o estágio 3 é um estágio comum, rotulado
+ *   "Estágio 3", e se compra por 3 pontos (os mesmos do estágio 2), tenha ou não maestria no elemento.
+ * O ajuste direto do mestre (aba de magias do detalhe da ficha) não gasta ponto, mas também não passa por cima da Maestria.
  *
  * Não existe "estágio ativo": quem evoluiu a magia conjura o estágio liberado ou qualquer um dos anteriores, escolhendo na hora
  * de conjurar (cada estágio traz o próprio custo de MP).
@@ -101,9 +103,12 @@ export function formatEvolutionPoints(amount: number): string {
     return `${amount} ${amount === 1 ? 'ponto' : 'pontos'} de evolução`;
 }
 
-/** Nome do estágio: no nível 4 o terceiro é a Maestria */
-export function spellStageLabel(level: unknown, stage: number): string {
-    return Number(level) === 4 && stage === 3 ? 'Maestria' : `Estágio ${stage}`;
+/**
+ * Nome do estágio: no nível 4 de elemento primário o terceiro é a Maestria. No de elemento secundário (que não tem
+ * Maestria) ele é um estágio comum, "Estágio 3". Sem `element` vale o primário.
+ */
+export function spellStageLabel(level: unknown, stage: number, element?: unknown): string {
+    return Number(level) === 4 && stage === 3 && !isSecondaryElement(element) ? 'Maestria' : `Estágio ${stage}`;
 }
 
 /**
@@ -167,6 +172,8 @@ export interface SpellProgress extends StageProgress {
     nextCost: number | null;
     /** O próximo estágio é a Maestria e a ficha não tem maestria no elemento da magia */
     needsMastery: boolean;
+    /** A magia tem Maestria (3º estágio do nível 4 de elemento primário) e a ficha não tem a maestria no elemento: ela fica bloqueada, por qualquer caminho */
+    masteryRequired: boolean;
     /** Todos os estágios da magia, do primeiro ao último, com a situação de cada um */
     stages: StageInfo[];
 }
@@ -187,13 +194,15 @@ export function getSpellProgress(
 ): SpellProgress {
     const key = spellStageKey(spell);
     const base = getStageProgress(sheet, key, spellStageCount(spell), options.enabled);
-    const purchased = base.unlocked;
 
-    const masteryOpens = base.enabled
-        && base.count >= 3
-        && purchased === 2
-        && stageRule(spell, 3).access === 'mastery'
-        && sameElement(sheet.elementalMastery, spell.element);
+    // A Maestria existe só no 3º estágio do nível 4 de elemento primário e só abre para quem tem a maestria no elemento.
+    // Sem ela o liberado nunca passa do 2, venha o 3 do ajuste do mestre, do `spellStages` legado ou de um valor antigo gravado
+    const hasMasteryStage = base.enabled && base.count >= 3 && stageRule(spell, 3).access === 'mastery';
+    const hasMastery = hasMasteryStage && sameElement(sheet.elementalMastery, spell.element);
+    const masteryRequired = hasMasteryStage && !hasMastery;
+    const purchased = (masteryRequired ? Math.min(base.unlocked, 2) : base.unlocked) as SpellStage;
+
+    const masteryOpens = hasMastery && purchased === 2;
     const unlocked: SpellStage = masteryOpens ? 3 : purchased;
     const next = unlocked < base.count ? (unlocked + 1) as SpellStage : null;
 
@@ -202,7 +211,7 @@ export function getSpellProgress(
         const stage = (index + 1) as SpellStage;
         return {
             stage,
-            label: spellStageLabel(spell.level, stage),
+            label: spellStageLabel(spell.level, stage, spell.element),
             rule: stageRule(spell, stage),
             status: stage <= unlocked ? 'unlocked' : stage === unlocked + 1 ? 'next' : 'locked',
             byMastery: masteryOpens && stage === 3
@@ -216,6 +225,7 @@ export function getSpellProgress(
         purchased,
         nextCost: nextRule?.access === 'points' ? nextRule.cost : null,
         needsMastery: nextRule?.access === 'mastery',
+        masteryRequired,
         stages
     };
 }

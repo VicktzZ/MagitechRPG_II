@@ -5,7 +5,7 @@ import type { SheetMetrics } from '@utils/charsheetMetrics';
 import type { ReactElement } from 'react';
 
 const OVERALL_HINT = 'Overall: soma dos atributos, dos valores de perícia e do nível';
-const MP_LIMIT_HINT = 'Limite de MP por turno: o máximo que o personagem gasta em magias entre o início do seu turno e o início do próximo';
+const MP_LIMIT_HINT = 'Limite de MP por turno: o máximo que o personagem gasta em magias em cada rodada de combate (zera quando a rodada vira)';
 
 interface SheetMetricsViewProps {
     metrics: SheetMetrics;
@@ -13,11 +13,11 @@ interface SheetMetricsViewProps {
     variant?: 'tiles' | 'inline';
 }
 
-/** "3/8" em combate (gasto neste turno e limite) e só "8" fora dele */
+/** "3/8" em combate (gasto nesta rodada e limite) e só "8" fora dele */
 const formatMpLimit = ({ mpLimit, mpSpent }: SheetMetrics): string => (mpSpent === null ? String(mpLimit) : `${mpSpent}/${mpLimit}`);
 
 const mpLimitLabel = ({ mpLimit, mpSpent }: SheetMetrics): string =>
-    mpSpent === null ? `Limite de MP por turno: ${mpLimit}` : `Limite de MP por turno: gastou ${mpSpent} de ${mpLimit} neste turno`;
+    mpSpent === null ? `Limite de MP por turno: ${mpLimit}` : `Limite de MP por turno: gastou ${mpSpent} de ${mpLimit} nesta rodada`;
 
 /**
  * Overall da ficha e limite de MP por turno, para o mestre ver sem abrir a ficha. O limite some onde a regra não vale

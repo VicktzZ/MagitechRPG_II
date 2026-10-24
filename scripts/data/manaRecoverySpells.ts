@@ -19,7 +19,7 @@
  * ou custo em LP), para que nenhuma magia vire uma fonte infinita de MP. Os valores e as
  * durações receberam um reforço (buff) que cresce com o nível: ~+35% e +1 turno nos níveis 1
  * e 2, ~+50-65% e +2 turnos no nível 3 e ~+100% e +3 turnos no nível 4.
- * Cada estágio tem no máximo UMA expressão de dados (XdY), porque `castSpell` rola
+ * Cada estágio tem no máximo UMA expressão de dados (XdY), porque `rollSpellEffect` rola
  * todas as encontradas no texto e soma o resultado.
  */
 export interface SeedSpell {

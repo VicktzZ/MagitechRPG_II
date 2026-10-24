@@ -18,7 +18,7 @@ describe('getSheetMetrics', () => {
         expect(getSheetMetrics(sheet)).toEqual({ overall: 52, mpLimit: 8, mpSpent: null });
     });
 
-    it('em combate ativo, mostra quanto o personagem já gastou neste turno', () => {
+    it('em combate ativo, mostra quanto o personagem já gastou nesta rodada', () => {
         expect(getSheetMetrics(sheet, 'Classic', combat())).toEqual({ overall: 52, mpLimit: 8, mpSpent: 3 });
     });
 

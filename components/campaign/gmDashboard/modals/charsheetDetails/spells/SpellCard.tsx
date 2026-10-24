@@ -3,7 +3,7 @@ import StageLadder from '@components/spells/StageLadder';
 import { Delete, ExpandMore } from '@mui/icons-material';
 import { alpha, Box, ButtonBase, Chip, Collapse, IconButton, ToggleButton, ToggleButtonGroup, Tooltip, Typography } from '@mui/material';
 import { color } from '@themes/tokens';
-import { spellStageLabel, type SpellProgress, type SpellStage } from '@utils/spellStages';
+import type { SpellProgress, SpellStage } from '@utils/spellStages';
 import type { SpellDTO } from '@models/dtos';
 import type { Spell } from '@models/entities';
 import type { ReactElement } from 'react';
@@ -99,12 +99,23 @@ export default function SpellCard({ spell, progress, expanded, onToggle, onSetUn
                                 onChange={(_, stage: SpellStage | null) => { if (stage) onSetUnlocked(stage) }}
                             >
                                 {progress.stages.map(info => (
-                                    <ToggleButton key={info.stage} value={info.stage} aria-label={`Liberar até o ${info.label} de ${spell.name}`} sx={{ textTransform: 'none', px: 1.5 }}>
-                                        {spellStageLabel(level, info.stage)}
+                                    <ToggleButton
+                                        key={info.stage}
+                                        value={info.stage}
+                                        // A Maestria só abre para quem tem a maestria no elemento: nem o mestre a libera por este ajuste
+                                        disabled={progress.masteryRequired && info.rule.access === 'mastery'}
+                                        aria-label={`Liberar até o ${info.label} de ${spell.name}`}
+                                        sx={{ textTransform: 'none', px: 1.5 }}
+                                    >
+                                        {info.label}
                                     </ToggleButton>
                                 ))}
                             </ToggleButtonGroup>
-                            <Typography variant="caption" color="text.secondary">Ajuste direto do mestre: não gasta ponto de evolução.</Typography>
+                            <Typography variant="caption" color="text.secondary">
+                                {progress.masteryRequired
+                                    ? `Ajuste direto do mestre: não gasta ponto de evolução. A Maestria só abre para quem tem a maestria elemental em ${String(spell.element).toLowerCase()}.`
+                                    : 'Ajuste direto do mestre: não gasta ponto de evolução.'}
+                            </Typography>
                         </Box>
                     )}
 

@@ -40,7 +40,7 @@ Magia nova que recupera MP já deve nascer com a categoria.
   (`calculateExtraManaCost`). Custo base médio no catálogo: N1 1,7 · N2 4,2 · N3 7 · N4 12.
 - `level` e `mpCost` como número nos documentos novos.
 - Texto no vocabulário do catálogo: "turnos" e "combate" (não "rodadas"/"cena"), metros como `4,5m`.
-- No máximo UMA expressão de dados (`XdY`) por estágio: `castSpell` rola todas as que achar no texto.
+- No máximo UMA expressão de dados (`XdY`) por estágio: `rollSpellEffect` (ao efetuar a magia) rola todas as que achar no texto.
 - Antes de criar magias, ler o catálogo para não repetir conceito e seguir o vocabulário real.
 
 Lotes já criados: `scripts/data/manaRecoverySpells.ts` (ids `seed-mp-*`) e
@@ -90,6 +90,15 @@ lote (senão alguém editou à mão), sobrescrever só os ids do lote e reler pa
   antiga — **grava no banco: só com liberação do dono**). Ao excluir a campanha o servidor apaga a subcoleção.
   **Publique `firestore.rules` antes do código**: a regra nova de `campaigns/{id}/messages` é aditiva, mas sem ela o
   navegador não lê o chat.
+- **Dano de arma e magia no chat** (`utils/combat/actionRollMessage.ts`, `components/misc/ActionRollCard.tsx`): vão como mensagem de **dados** (`MessageType.DICE`, chip "DADOS" e borda
+  primária) e o `DiceMessage` os mostra como o cartão dos testes e dos dados personalizados: `[jogador] Nome`, detalhe ("FOGO · Estágio 2 · Conjuração", "Dano crítico · Perfurante"), expressões em cinza,
+  **Total à vista** e as rolagens num dropdown fechado de início. Há três tipos de cartão: **arma** (dano normal ou crítico, com o chip "Crítico"), **conjuração** (o teste de magia: chips de Custo de MP, DT e
+  Sucesso/Falhou; o dropdown mostra os d20, o maior dado destacado e "Total 25 contra DT 21: passou por 4") e **efeito** (os dados do estágio: dano, cura, duração; sem custo nem DT). O texto da mensagem é
+  legível e começa com o marcador `[AÇÃO] conjuração|efeito|arma [crítico]` (`buildActionRollText`/`parseActionRoll`; o parser devolve `null` para qualquer outro texto, e log de combate nunca vira
+  cartão). **Só dano, conjuração e efeito viram cartão**: o acerto da arma e os avisos de MP insuficiente e de limite de MP continuam linhas de log de combate (`COMBAT_LOG`). `useWeaponRolls` e
+  `SpellsSection` mandam o `Message` pronto (texto cru no `handleSendMessage` faria o chat tentar rolar a notação). Visto no e2e: um dropdown aberto no primeiro segundo depois do envio fechou
+  sozinho (a mensagem otimista tem a chave `tempId` e a confirmada pelo servidor `id-índice` em `MessageList`, então o cartão remonta); vale para todos os cartões de dados, e o teste espera uns 2 s antes de abrir.
+  Teste de componente que importa `DiceMessage` ou `diceRoller` precisa de `jest.mock('@enums', ...)`: o barril puxa `subscriptionEnum.ts`, que o ts-jest barra por um erro de tipo antigo.
 - **Verificar contra o Firestore de verdade (emulador)**: `(cd tests/firestore-rules && npm install)` uma vez; depois
   `npm test` nessa pasta (regras) e `npm run test:emulator` na raiz (helpers do servidor com o Admin SDK).
 - **Ver a campanha rodando, sem banco real**: emuladores (`firebase emulators:start --only firestore,auth --project
@@ -169,8 +178,10 @@ do efeito, e não pode ser conjurado. O MP extra por estágio ao conjurar (`calc
 - O cartão da ficha (`Magic.tsx`) abre no estágio liberado mais novo; os botões de estágio dele só **mostram** o texto e o custo daquele estágio (estado de tela, não grava).
 - **Evoluir custa pontos de evolução, e o custo depende do nível da magia** (`stageRule`, `utils/spellStages.ts`): nível 1 e 2 = **1 ponto** por estágio; nível 3 = **2 pontos** por estágio;
   nível 4 = **3 pontos** para o estágio 2, e o 3º estágio é a **Maestria**: abre **sozinha, sem gastar ponto,** para quem tem maestria no elemento da magia (`elementalMastery`, comparação sem
-  caixa nem acento: `sameElement`) **depois de liberar o estágio 2**; sem a maestria ela não se compra. Nível 4 de elemento **secundário** não tem esse atalho: o estágio 3 também custa
-  **3 pontos**. O custo vem **explícito** ao jogador (texto "Custa 2 pontos de evolução" no estágio bloqueado e no botão "Evoluir (2 pontos)", mais "Faltam N pontos" quando não dá).
+  caixa nem acento: `sameElement`) **depois de liberar o estágio 2**; sem a maestria ela **nunca** abre (decisão do dono): não se compra, o `3` gravado em `spellUnlocked`/`spellStages` (ficha antiga,
+  edição de fora) vale só até o estágio 2 (`masteryRequired` em `getSpellProgress`), e o ajuste direto do mestre (aba de magias) deixa o botão da Maestria desabilitado, com o motivo. Nível 4 de
+  elemento **secundário** (Sangue, Vácuo, Psíquico, Radiação, Explosão) não tem Maestria: o 3º estágio é um estágio comum, chamado **"Estágio 3"** (`spellStageLabel(level, stage, element)`; sem o
+  elemento ele devolve "Maestria") e **custa 3 pontos**, comprado como os outros, tenha o jogador maestria em outro elemento ou não. O custo vem **explícito** ao jogador (texto "Custa 2 pontos de evolução" no estágio bloqueado e no botão "Evoluir (2 pontos)", mais "Faltam N pontos" quando não dá).
   `getSpellProgress(spell, sheet, { enabled, legacy })` é o que as telas chamam (envolve `getStageProgress` e devolve `nextCost`, `needsMastery`, `purchased` e `stages[]`); a maestria é **derivada**
   (se a maestria da ficha mudar, a Maestria volta a bloquear) e **não é gravada**: `spellUnlocked` guarda só o liberado por pontos (`purchased`; é o que `materializeUnlocked` grava).
   O ajuste da regra (se o dono mudar o custo) fica todo em `stageRule`. Novo atributo `points.evolution` (inteiro ≥ 0; ficha antiga não tem o campo e vale 0). O **mestre concede**: no cartão do
@@ -198,6 +209,13 @@ do efeito, e não pode ser conjurado. O MP extra por estágio ao conjurar (`calc
   de Elemento nem oferece as cinco opções. Quem faz isso é `itemFilter` (`ResourceListModal` → `useResourceList`: o item vetado some da lista carregada, então de tudo que sai dela) com `isHiddenSpell(spell, nível)`. O criador de criatura do mestre
   (`CreatureResourceModals`) não tem nível e mostra todas. Ao **chegar ao nível 10** (subida de nível que cruza o 10, só uma vez; `unlocksSecondaryElements`) a rota `POST /api/charsheet/[id]/update/level` cria uma **notificação à parte**,
   "Elementos secundários desbloqueados!", com os cinco elementos um por linha logo abaixo (`secondaryElementsUnlockedNotice`); sistema customizado com magias desligadas não recebe.
+- **Conjurar e Efetuar** (campanha, `SpellsSection` + `StageLadder`; decisão do dono): **Conjurar** (um botão por estágio liberado) **rola o teste de magia do jogador e gasta o MP** (confere MP e limite antes);
+  **Efetuar** só aparece depois de uma conjuração **com sucesso** e rola os dados do estágio (dano, cura, duração: toda expressão `XdY` do texto, `rollSpellEffect`), num segundo cartão. **Teste de magia**
+  (`rollSpellTest`, `utils/combat/hitTest.ts`, o mesmo do botão Acerto da arma com Foco): um d20 por ponto do mod de Foco (mínimo 1), vale o maior, mais a perícia **Magia** (sem ela, o valor de Foco); é sempre o
+  mesmo teste, seja qual for a magia. **Sucesso** = total **≥ DT** (`spellCastDifficulty`, `utils/spellDifficulty.ts`, tabela do dono): nível 1 = 15/17/20, nível 2 = 18/21/23, nível 3 = 22/24/26, nível 4 =
+  26/28/30 por estágio 1/2/3 (o 3º do nível 4 é a Maestria, ou o "Estágio 3" comprado em elemento secundário); nível ou estágio fora da tabela não tem DT e a conjuração vale. **O MP é gasto mesmo se o teste
+  falhar** (a magia só não pode ser efetuada); estágio sem dado no texto não tem o que efetuar. A conjuração pendente de efetuar fica em `localStorage` (`hooks/usePendingSpellEffects.ts`, `utils/pendingSpellEffects.ts`:
+  uma por magia, a mais nova troca a anterior) para recarregar a página não fazer o jogador pagar de novo, e tem o botão de descartar; não vai para o banco. O mestre não vê nem interfere (ainda).
 - **Não vale** em sistema customizado (`systemId`), no Roguelite (`campaign.mode`) nem na ficha de classe "Sem Classe": lá todos os estágios ficam
   abertos como sempre (`usesStageUnlock`). Excluir a magia remove as duas chaves (`withoutSpell`).
 - Onde aparece: cartão da ficha (`subcomponents/Magic.tsx`, `Magics.tsx`), tela do jogador na campanha (`SpellsSection.tsx`, que também recusa
@@ -320,9 +338,12 @@ log do combate (hoje só o diálogo de combate narra dano e cura). A ordem das f
 ## Limite de MP por turno e Overall
 
 `⌈(Nível + Foco) ÷ 2⌉ + Nível de ORM` (+ bônus em `mpLimit` da ficha), em `utils/mpLimit.ts`.
-Janela: do início do turno do personagem ao início do próximo (reações contam); recuperar MP não
-devolve limite; ao exceder, a conjuração é bloqueada e o mestre pode liberar. Não vale no Roguelite
-nem em sistemas customizados.
+Janela (decisão do dono, 24/10/2026): **por rodada de combate**. O MP gasto em magias e a liberação do mestre **zeram para todos quando a rodada vira**
+(todos os presentes no combate passaram o turno: `next_turn` em `app/api/campaign/[id]/combat/route.ts`, `resetMpLimitWindows` em
+`utils/combat/mpLimitWindow.ts`) e quando o combate termina; **começar o turno de alguém não zera nada** (antes zerava no início do turno de cada um, mas então a
+rodada nova começava com o gasto antigo). Reações em turnos alheios contam na mesma rodada. **Fora do combate o limite não é consumido**: a tela só registra o gasto
+de quem está num combate ativo (`SpellsSection`), e o `spend_mp` do servidor sem combate ativo devolve sucesso sem gravar nada (não é mais 400). Recuperar MP não
+devolve limite; ao exceder, a conjuração é bloqueada e o mestre pode liberar (até a rodada virar). Não vale no Roguelite nem em sistemas customizados.
 
 O mestre vê o **Overall** (o `overall` guardado na ficha, o mesmo da tela do jogador) e o limite no resumo, no cartão do jogador e na aba Informações
 (`SheetMetricsView`, `getSheetMetrics` em `utils/charsheetMetrics.ts`). Onde a regra não vale o limite some e o Overall fica; em combate ativo o limite

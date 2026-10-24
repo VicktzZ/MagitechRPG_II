@@ -14,6 +14,7 @@ import { badRequest, forbidden, handleRouteError, readJsonBody, requireCampaignM
 import { evaluateMpSpend, getMpLimit, isMpLimitEnforced } from '@utils/mpLimit'
 import { insertCombatant, nextCreatureInstance } from '@utils/combat/addCombatants'
 import { creatureInitiativeDice, describeInitiativeRolls, playerInitiativeDice, resolveInitiative, type InitiativeDice } from '@utils/combat/initiativeRoll'
+import { resetMpLimitWindows } from '@utils/combat/mpLimitWindow'
 import { findBaseCreature } from '@utils/combatCreatureLookup'
 
 /** Ações que conduzem o combate — exclusivas do mestre */
@@ -93,16 +94,6 @@ interface CombatRequest {
 
     /** Para set_mp_limit_override: true libera o limite, false restabelece */
     enabled?: boolean
-}
-
-/**
- * Começa o turno de um combatente: o MP gasto em magias volta a 0 e a liberação do
- * limite pelo mestre acaba (a janela do limite vai do início do turno ao início do próximo).
- */
-function startMpLimitWindow(combatant?: Combatant): void {
-    if (!combatant) return
-    combatant.mpSpentThisTurn = 0
-    combatant.mpLimitOverride = false
 }
 
 /** Máximo de jogadores (e de criaturas diferentes) por chamada, e de cópias de uma criatura, ao entrar num combate em andamento */
@@ -299,8 +290,8 @@ export async function POST(
                 if (Array.isArray(c.effects) && c.effects.length > 0) {
                     c.effects = []
                 }
-                startMpLimitWindow(c)
             }
+            resetMpLimitWindows(combat.combatants)
 
             combat.logs.push(new CombatLog({
                 round: combat.round,
@@ -411,7 +402,6 @@ export async function POST(
             })
             combat.phase = 'ACTION'
             combat.currentTurnIndex = 0
-            startMpLimitWindow(combat.combatants[0])
 
             // Formata a ordem de iniciativa de forma legível
             const orderLines = combat.combatants.map((c, i) => 
@@ -460,6 +450,8 @@ export async function POST(
                 })
                 combat.phase = 'INITIATIVE'
                 combat.currentTurnIndex = 0
+                // A rodada virou: o limite de MP por turno de todos recomeça
+                resetMpLimitWindows(combat.combatants)
 
                 combat.logs.push(new CombatLog({
                     round: combat.round,
@@ -503,6 +495,7 @@ export async function POST(
                     })
                     combat.phase = 'INITIATIVE'
                     combat.currentTurnIndex = 0
+                    resetMpLimitWindows(combat.combatants)
 
                     combat.logs.push(new CombatLog({
                         round: combat.round,
@@ -515,7 +508,6 @@ export async function POST(
                     combat.currentTurnIndex = nextIndex
 
                     const nextCombatant = combat.combatants[nextIndex]
-                    startMpLimitWindow(nextCombatant)
                     combat.logs.push(new CombatLog({
                         round: combat.round,
                         type: 'turn_pass',
@@ -1007,8 +999,9 @@ export async function POST(
         }
 
         case 'spend_mp': {
+            // Fora do combate não há limite por turno: nada é registrado (e nada falha, para quem ainda tem o combate antigo na tela)
             if (!combat.isActive) {
-                return NextResponse.json({ error: 'Não há combate ativo' }, { status: 400 })
+                return NextResponse.json({ success: true, combat, enforced: false })
             }
 
             const { combatantId, value: amount } = body
@@ -1072,7 +1065,7 @@ export async function POST(
                 targetId: combatant.id,
                 targetName: combatant.name,
                 message: allow
-                    ? `🔓 O mestre liberou o limite de MP por turno de **${combatant.name}** até o início do próximo turno dele.`
+                    ? `🔓 O mestre liberou o limite de MP por turno de **${combatant.name}** até a rodada virar.`
                     : `🔒 O limite de MP por turno de **${combatant.name}** foi restabelecido.`
             }))
 

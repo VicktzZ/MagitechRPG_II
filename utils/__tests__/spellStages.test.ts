@@ -129,11 +129,18 @@ describe('stageRule: custo de cada estágio', () => {
         }
     })
 
-    it('rótulo: no nível 4 o terceiro estágio é a Maestria', () => {
+    it('rótulo: no nível 4 de elemento primário o terceiro estágio é a Maestria', () => {
         expect(spellStageLabel(4, 3)).toBe('Maestria')
         expect(spellStageLabel('4', 3)).toBe('Maestria')
+        expect(spellStageLabel(4, 3, 'FOGO')).toBe('Maestria')
         expect(spellStageLabel(4, 2)).toBe('Estágio 2')
         expect(spellStageLabel(3, 3)).toBe('Estágio 3')
+    })
+
+    it('rótulo: o nível 4 de elemento secundário não tem Maestria, o terceiro é "Estágio 3"', () => {
+        for (const element of [ 'SANGUE', 'Vácuo', 'PSÍQUICO', 'RADIAÇÃO', 'EXPLOSÃO' ]) {
+            expect(spellStageLabel(4, 3, element)).toBe('Estágio 3')
+        }
     })
 
     it('formata a quantidade de pontos', () => {
@@ -186,6 +193,74 @@ describe('getSpellProgress', () => {
         expect(progress).toMatchObject({ unlocked: 2, next: 3, nextCost: 3, needsMastery: false })
         expect(canEvolve(progress, 3)).toBe(true)
         expect(canEvolve(progress, 2)).toBe(false)
+    })
+
+    describe('a Maestria nunca abre sem a maestria no elemento', () => {
+        it('o ajuste direto do mestre (spellUnlocked = 3) não passa do estágio 2', () => {
+            const progress = getSpellProgress(fireL4, { spellUnlocked: { f4: 3 } }, { enabled: true })
+            expect(progress).toMatchObject({ unlocked: 2, purchased: 2, next: 3, nextCost: null, needsMastery: true, masteryRequired: true })
+            expect(progress.stages.map(s => s.status)).toEqual([ 'unlocked', 'unlocked', 'next' ])
+            expect(canEvolve(progress, 99)).toBe(false)
+        })
+
+        it('a ficha antiga (spellStages = 3, sem spellUnlocked) também não ganha a Maestria', () => {
+            const progress = getSpellProgress(fireL4, { spellStages: { f4: 3 } }, { enabled: true })
+            expect(progress).toMatchObject({ unlocked: 2, purchased: 2, masteryRequired: true })
+        })
+
+        it('maestria em outro elemento também não abre', () => {
+            const progress = getSpellProgress(fireL4, { elementalMastery: 'ÁGUA', spellUnlocked: { f4: 3 } }, { enabled: true })
+            expect(progress).toMatchObject({ unlocked: 2, masteryRequired: true })
+        })
+
+        it('quem perde a maestria perde a Maestria, mesmo com o 3 gravado', () => {
+            const sheet = { spellUnlocked: { f4: 3 } }
+            expect(getSpellProgress(fireL4, { ...sheet, elementalMastery: 'FOGO' }, { enabled: true })).toMatchObject({ unlocked: 3, masteryRequired: false })
+            expect(getSpellProgress(fireL4, { ...sheet, elementalMastery: '' }, { enabled: true })).toMatchObject({ unlocked: 2, masteryRequired: true })
+        })
+
+        it('com a maestria no elemento o 3 gravado vale', () => {
+            const progress = getSpellProgress(fireL4, { elementalMastery: 'fogo', spellUnlocked: { f4: 3 } }, { enabled: true })
+            expect(progress).toMatchObject({ unlocked: 3, next: null, masteryRequired: false })
+        })
+
+        it('só a magia de nível 4 de elemento primário tem Maestria: as demais não pedem maestria', () => {
+            expect(getSpellProgress(waterL3, { spellUnlocked: { w3: 3 } }, { enabled: true })).toMatchObject({ unlocked: 3, masteryRequired: false })
+            expect(getSpellProgress(bloodL4, { spellUnlocked: { b4: 3 } }, { enabled: true })).toMatchObject({ unlocked: 3, masteryRequired: false })
+        })
+
+        it('sem a regra (customizado/Roguelite) não há Maestria a bloquear', () => {
+            expect(getSpellProgress(fireL4, {}, { enabled: false })).toMatchObject({ unlocked: 3, masteryRequired: false })
+        })
+    })
+
+    describe('nível 4 de elemento secundário: estágio 3 comum, comprado por 3 pontos', () => {
+        const radiationL4 = { id: 'r4', name: 'Chuva Ácida', level: 4, element: 'RADIAÇÃO', stages: [ 'a', 'b', 'c' ] }
+
+        it('o estágio 2 custa 3 e o 3 custa mais 3 (6 no total), com o rótulo "Estágio 3"', () => {
+            const first = getSpellProgress(radiationL4, {}, { enabled: true })
+            expect(first).toMatchObject({ next: 2, nextCost: 3, needsMastery: false, masteryRequired: false })
+
+            const second = getSpellProgress(radiationL4, { spellUnlocked: { r4: 2 } }, { enabled: true })
+            expect(second).toMatchObject({ unlocked: 2, next: 3, nextCost: 3, needsMastery: false })
+            expect(second.stages.map(s => s.label)).toEqual([ 'Estágio 1', 'Estágio 2', 'Estágio 3' ])
+            expect(canEvolve(second, 3)).toBe(true)
+            expect(canEvolve(second, 2)).toBe(false)
+        })
+
+        it('não depende de maestria: ter a maestria no elemento não muda o custo nem abre de graça', () => {
+            const progress = getSpellProgress(radiationL4, { elementalMastery: 'Radiação', spellUnlocked: { r4: 2 } }, { enabled: true })
+            expect(progress).toMatchObject({ unlocked: 2, nextCost: 3, masteryRequired: false })
+            expect(progress.stages[2]).toMatchObject({ byMastery: false })
+        })
+
+        it('depois de comprar o estágio 3 ele fica liberado', () => {
+            expect(getSpellProgress(radiationL4, { spellUnlocked: { r4: 3 } }, { enabled: true })).toMatchObject({ unlocked: 3, next: null })
+        })
+
+        it('a magia de elemento primário do mesmo nível rotula o estágio 3 como Maestria', () => {
+            expect(getSpellProgress(fireL4, {}, { enabled: true }).stages.map(s => s.label)).toEqual([ 'Estágio 1', 'Estágio 2', 'Maestria' ])
+        })
     })
 
     it('o spellStages legado não libera nada acima do que está gravado em spellUnlocked', () => {

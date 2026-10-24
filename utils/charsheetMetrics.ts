@@ -7,7 +7,7 @@ export interface SheetMetrics {
     overall: number;
     /** Máximo de MP gasto em magias por turno; `null` quando a regra não vale para esta ficha (Roguelite, sistema customizado, sem nível) */
     mpLimit: number | null;
-    /** MP já gasto desde o início do turno dele; só existe em combate ativo, para quem participa dele */
+    /** MP já gasto nesta rodada; só existe em combate ativo, para quem participa dele */
     mpSpent: number | null;
 }
 

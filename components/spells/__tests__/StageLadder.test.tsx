@@ -55,7 +55,8 @@ describe('StageLadder', () => {
     });
 
     it('o custo do estágio 3 do nível 4 usa o extra da Maestria (sem NaN)', () => {
-        const html = ladder(fire4, { spellUnlocked: { f4: 3 } });
+        // A Maestria só está liberada para quem tem a maestria no elemento
+        const html = ladder(fire4, { elementalMastery: 'FOGO', spellUnlocked: { f4: 3 } });
         expect(html).toContain('21 MP');
         expect(html).not.toContain('NaN');
         expect(html).toContain('Maestria');
@@ -131,6 +132,33 @@ describe('StageLadder', () => {
     it('sem MP o botão de conjurar fica desabilitado', () => {
         const html = ladder(water3, {}, { cast: { onCast: noop, currentMp: 3 } });
         expect(html).toMatch(/<button[^>]*disabled[^>]*data-testid="stage-cast-1"|<button[^>]*data-testid="stage-cast-1"[^>]*disabled/);
+    });
+
+    it('conjuração com sucesso deixa "Efetuar" só no estágio conjurado, com como descartar', () => {
+        const effect = { pendingStage: 2 as const, onEffect: noop, onDismiss: noop };
+        const html = ladder(water3, { spellUnlocked: { w3: 3 } }, { cast: { onCast: noop, currentMp: 30, effect } });
+
+        expect(html).toContain('data-testid="stage-effect-2"');
+        expect(html).toContain('aria-label="Efetuar Maré Alta no Estágio 2"');
+        expect(html).toContain('data-testid="stage-effect-dismiss-2"');
+        expect(html).not.toContain('data-testid="stage-effect-1"');
+        expect(html).not.toContain('data-testid="stage-effect-3"');
+        // o Conjurar de cada estágio continua ali
+        expect(html).toContain('data-testid="stage-cast-2"');
+    });
+
+    it('sem conjuração com sucesso à espera não há "Efetuar"', () => {
+        const none = ladder(water3, { spellUnlocked: { w3: 3 } }, { cast: { onCast: noop, currentMp: 30, effect: { onEffect: noop, onDismiss: noop } } });
+        const withoutEffect = ladder(water3, { spellUnlocked: { w3: 3 } }, { cast: { onCast: noop, currentMp: 30 } });
+
+        expect(none).not.toContain('stage-effect-');
+        expect(withoutEffect).not.toContain('stage-effect-');
+    });
+
+    it('enquanto efetua, o botão fica desabilitado', () => {
+        const html = ladder(water3, {}, { cast: { onCast: noop, currentMp: 30, effect: { pendingStage: 1, onEffect: noop, onDismiss: noop, busy: true } } });
+
+        expect(html).toMatch(/<button[^>]*disabled[^>]*data-testid="stage-effect-1"|<button[^>]*data-testid="stage-effect-1"[^>]*disabled/);
     });
 
     it('recolher/expandir só aparece quando há mais de um estágio liberado', () => {

@@ -80,9 +80,9 @@ interface Combatant {
     currentMp?: number;
     maxMp?: number;
     effects?: AppliedEffect[];
-    /** MP gasto em magias desde o início do turno do combatente (limite por turno) */
+    /** MP gasto em magias nesta rodada (limite por turno) */
     mpSpentThisTurn?: number;
-    /** Mestre liberou o limite de MP por turno até o início do próximo turno do combatente */
+    /** Mestre liberou o limite de MP por turno até a rodada virar */
     mpLimitOverride?: boolean;
 }
 
@@ -135,7 +135,7 @@ export default function CombatDialog({
     const handleToggleMpLimitOverride = useCallback(async (combatantId: string, enabled: boolean) => {
         try {
             await campaignService.setCombatMpLimitOverride(campaignId, { combatantId, enabled });
-            enqueueSnackbar(enabled ? 'Limite de MP liberado até o próximo turno do jogador' : 'Limite de MP restabelecido', { variant: 'success' });
+            enqueueSnackbar(enabled ? 'Limite de MP liberado até a rodada virar' : 'Limite de MP restabelecido', { variant: 'success' });
         } catch (err) {
             enqueueSnackbar(errorMessage(err, 'Erro ao atualizar o limite de MP'), { variant: 'error' });
         }
@@ -503,7 +503,7 @@ export default function CombatDialog({
                                                     {mpLimitEnforced && (
                                                         <Tooltip title={mpReleased
                                                             ? 'Restabelecer o limite de MP por turno'
-                                                            : 'Liberar o limite de MP por turno (até o início do próximo turno do jogador)'}
+                                                            : 'Liberar o limite de MP por turno (até a rodada virar)'}
                                                         >
                                                             <IconButton
                                                                 size="small"
