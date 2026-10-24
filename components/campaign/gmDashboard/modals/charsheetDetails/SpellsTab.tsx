@@ -1,12 +1,13 @@
-import { Box, Chip, IconButton, NativeSelect, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from '@mui/material';
-import { Delete } from '@mui/icons-material';
-import { elementColor } from '@constants';
-import { color } from '@themes/tokens';
+import { AutoStories, Search } from '@mui/icons-material';
+import { Box, Button, InputAdornment, NativeSelect, TextField, Typography } from '@mui/material';
 import type { SpellDTO } from '@models/dtos';
 import type { Spell } from '@models/entities';
-import { getStageProgress, spellStageCount, spellStageKey, usesStageUnlock } from '@utils/spellStages';
+import { filterSpells, summarizeSpells } from '@utils/spellsOverview';
+import { getEvolutionPoints, getSpellProgress, spellStageKey, usesStageUnlock, withoutSpell } from '@utils/spellStages';
+import { useMemo, useState, type ReactElement } from 'react';
 import { normalizeToArray } from './normalizeToArray';
-import SpellStats from './SpellStats';
+import SpellCard from './spells/SpellCard';
+import SpellsOverview from './spells/SpellsOverview';
 import type { CharsheetTabProps } from './types';
 
 interface SpellsTabProps extends CharsheetTabProps {
@@ -14,141 +15,132 @@ interface SpellsTabProps extends CharsheetTabProps {
     spells: Array<SpellDTO | Spell>;
 }
 
-/** Aba "Spells": tabela de magias da ficha e estatísticas */
-export default function SpellsTab({ charsheet, editedData, isEditing, updateNestedField, spells }: SpellsTabProps) {
+/** Com poucas magias já abre cada uma para ver os estágios; com muitas a lista abre fechada */
+const AUTO_EXPAND_LIMIT = 3;
+
+/** A partir daqui a lista ganha busca e filtros */
+const FILTER_LIMIT = 4;
+
+/** Aba "Spells": resumo das magias da ficha e, por magia, todos os estágios com o que cada um muda */
+export default function SpellsTab({ charsheet, editedData, isEditing, updateNestedField, spells }: SpellsTabProps): ReactElement {
     // O mestre ajusta o estágio liberado de cada magia (ver utils/spellStages.ts); vale no Magitech padrão
     const stageRule = usesStageUnlock(charsheet);
     const unlockedMap = editedData.spellUnlocked ?? charsheet.spellUnlocked;
 
-    return (
-        <>
-            <Box sx={{ mb: 2 }}>
-                <Typography variant="subtitle1" gutterBottom>
-                    Espaço Mágico: {charsheet.spellSpace} / Maestria Elemental: {charsheet.elementalMastery ?? 'Nenhuma'}
-                </Typography>
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-                    Total de Spells: {charsheet.spells?.length}
-                </Typography>
-            </Box>
+    const [ query, setQuery ] = useState('');
+    const [ element, setElement ] = useState('');
+    const [ level, setLevel ] = useState('');
+    const [ opened, setOpened ] = useState<Record<string, boolean>>({});
 
-            {charsheet.spells?.length > 0 ? (
-                <TableContainer component={Paper} variant="outlined" sx={{ maxHeight: 400, overflow: 'auto' }}>
-                    <Table size="small">
-                        <TableHead>
-                            <TableRow>
-                                <TableCell>Nome</TableCell>
-                                <TableCell>Elemento</TableCell>
-                                <TableCell>Custo de Mana</TableCell>
-                                <TableCell>Nível</TableCell>
-                                <TableCell>Descrição</TableCell>
-                                {stageRule && <TableCell>Estágio liberado</TableCell>}
-                                {isEditing && <TableCell>Ações</TableCell>}
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {spells?.map((spell, index) => (
-                                <TableRow key={index}>
-                                    <TableCell>
-                                        <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                                            <Typography variant="body2" fontWeight="bold">{spell?.name}</Typography>
-                                            {spell?.element && (
-                                                <Chip
-                                                    label={spell?.type}
-                                                    size="small"
-                                                    variant="outlined"
-                                                    sx={{ mt: 0.5, alignSelf: 'flex-start' }}
-                                                />
-                                            )}
-                                        </Box>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Chip
-                                            label={spell?.element}
-                                            size="small"
-                                            sx={{
-                                                bgcolor: elementColor[spell?.element?.toUpperCase() ],
-                                                // Texto escuro sobre a marca do elemento (maior contraste); só o vermelho de SANGUE pede texto claro
-                                                color: spell?.element?.toUpperCase() === 'SANGUE' ? 'text.primary' : color.canvas
-                                            }}
-                                        />
-                                    </TableCell>
-                                    <TableCell>{spell?.mpCost} MP</TableCell>
-                                    <TableCell>
-                                        {spell?.level}
-                                    </TableCell>
-                                    <TableCell>
-                                        <Typography variant="body2" sx={{ maxWidth: 250, whiteSpace: 'pre-wrap' }}>
-                                            {spell?.stages?.[0]}
-                                        </Typography>
-                                        {/* {spell.dano && (
-                                            <Box mt={1}>
-                                                <Typography variant="body2" fontWeight="bold">
-                                                    Dano: {spell.dano}
-                                                </Typography>
-                                            </Box>
-                                        )}
-                                        {spell['pré-requisito'] && (
-                                            <Box mt={1}>
-                                                <Typography variant="caption" color="text.secondary">
-                                                    Pré-requisito: {spell['pré-requisito']}
-                                                </Typography>
-                                            </Box>
-                                        )} */}
-                                    </TableCell>
-                                    {stageRule && (
-                                        <TableCell>
-                                            {(() => {
-                                                const key = spellStageKey(spell);
-                                                const progress = getStageProgress({ spellStages: charsheet.spellStages, spellUnlocked: unlockedMap }, key, spellStageCount(spell), true);
-                                                if (!isEditing) return `${progress.unlocked} de ${progress.count}`;
-                                                return (
-                                                    <NativeSelect
-                                                        value={progress.unlocked}
-                                                        inputProps={{ 'aria-label': `Estágio liberado de ${spell?.name}` }}
-                                                        onChange={(event) => {
-                                                            updateNestedField('spellUnlocked', { ...(unlockedMap ?? {}), [key]: Number(event.target.value) });
-                                                        }}
-                                                    >
-                                                        {Array.from({ length: progress.count }, (_, stageIndex) => (
-                                                            <option key={stageIndex + 1} value={stageIndex + 1}>{`Estágio ${stageIndex + 1}`}</option>
-                                                        ))}
-                                                    </NativeSelect>
-                                                );
-                                            })()}
-                                        </TableCell>
-                                    )}
-                                    {isEditing && (
-                                        <TableCell>
-                                            <IconButton
-                                                size="small"
-                                                color="error"
-                                                onClick={() => {
-                                                    const currentSpells = normalizeToArray<SpellDTO>(editedData.spells || charsheet.spells);
-                                                    const newSpells = [ ...currentSpells ];
-                                                    newSpells.splice(index, 1);
-                                                    updateNestedField('spells', newSpells);
-                                                }}
-                                            >
-                                                <Delete fontSize="small" />
-                                            </IconButton>
-                                        </TableCell>
-                                    )}
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </TableContainer>
-            ) : (
-                <Box sx={{ textAlign: 'center', py: 4 }}>
-                    <Typography variant="body1" color="text.secondary">
-                        Este personagem não possui spells
-                    </Typography>
+    const entries = useMemo(() => spells.map(spell => ({
+        spell,
+        key: spellStageKey(spell),
+        progress: getSpellProgress(spell, {
+            spellStages: charsheet.spellStages,
+            spellUnlocked: unlockedMap,
+            elementalMastery: charsheet.elementalMastery
+        }, { enabled: stageRule })
+    })), [ spells, charsheet.spellStages, unlockedMap, charsheet.elementalMastery, stageRule ]);
+
+    const overview = useMemo(() => summarizeSpells(spells), [ spells ]);
+    const stages = stageRule
+        ? { unlocked: entries.reduce((sum, entry) => sum + entry.progress.unlocked, 0), total: entries.reduce((sum, entry) => sum + entry.progress.count, 0) }
+        : null;
+
+    const visible = useMemo(() => {
+        const allowed = new Set(filterSpells(spells, { query, element, level }));
+        return entries.filter(entry => allowed.has(entry.spell));
+    }, [ entries, spells, query, element, level ]);
+
+    const isOpen = (key: string): boolean => opened[key] ?? spells.length <= AUTO_EXPAND_LIMIT;
+    const setAll = (open: boolean): void => { setOpened(Object.fromEntries(entries.map(entry => [ entry.key, open ]))) };
+    const allOpen = visible.length > 0 && visible.every(entry => isOpen(entry.key));
+    const filtering = Boolean(query || element || level);
+
+    const handleDelete = (target: SpellDTO | Spell): void => {
+        const key = spellStageKey(target);
+        const current = normalizeToArray<SpellDTO | string>(editedData.spells || charsheet.spells);
+        const index = current.findIndex(entry => (typeof entry === 'string' ? entry : spellStageKey(entry)) === key);
+        if (index === -1) return;
+        updateNestedField('spells', current.filter((_, position) => position !== index));
+        // A chave sai do liberado junto: magia aprendida de novo começa no estágio 1
+        if (unlockedMap && key in unlockedMap) updateNestedField('spellUnlocked', withoutSpell(unlockedMap, key));
+    };
+
+    if (spells.length === 0 && !(charsheet.spells?.length > 0)) {
+        return (
+            <Box sx={{ textAlign: 'center', py: 4 }}>
+                <AutoStories sx={{ color: 'text.secondary', fontSize: 32, mb: 1 }} />
+                <Typography variant="body1" color="text.secondary">Este personagem não possui magias</Typography>
+            </Box>
+        );
+    }
+
+    const elements = overview.elements.map(entry => entry.element);
+
+    return (
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <SpellsOverview
+                overview={overview}
+                spellSpace={Number(charsheet.spellSpace) || 0}
+                elementalMastery={charsheet.elementalMastery}
+                evolutionPoints={stageRule ? getEvolutionPoints(editedData.points ?? charsheet.points) : null}
+                stages={stages}
+            />
+
+            {spells.length >= FILTER_LIMIT && (
+                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
+                    <TextField
+                        size="small"
+                        placeholder="Buscar magia"
+                        value={query}
+                        onChange={(event) => { setQuery(event.target.value) }}
+                        inputProps={{ 'aria-label': 'Buscar magia' }}
+                        InputProps={{ startAdornment: <InputAdornment position="start"><Search fontSize="small" /></InputAdornment> }}
+                        sx={{ flex: 1, minWidth: 180 }}
+                    />
+                    <NativeSelect value={element} onChange={(event) => { setElement(event.target.value) }} inputProps={{ 'aria-label': 'Filtrar por elemento' }}>
+                        <option value="">Todos os elementos</option>
+                        {elements.map(name => <option key={name} value={name}>{name}</option>)}
+                    </NativeSelect>
+                    <NativeSelect value={level} onChange={(event) => { setLevel(event.target.value) }} inputProps={{ 'aria-label': 'Filtrar por nível' }}>
+                        <option value="">Todos os níveis</option>
+                        {[ 1, 2, 3, 4 ].map(value => <option key={value} value={value}>{`Nível ${value}`}</option>)}
+                    </NativeSelect>
                 </Box>
             )}
 
-            {charsheet.elementalMastery && charsheet.spells?.length > 0 && (
-                <SpellStats charsheet={charsheet} />
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, flexWrap: 'wrap' }}>
+                <Typography variant="caption" color="text.secondary" data-testid="spells-count">
+                    {filtering ? `${visible.length} de ${spells.length} magias` : `${spells.length} ${spells.length === 1 ? 'magia' : 'magias'}`}
+                </Typography>
+                {visible.length > 1 && (
+                    <Button size="small" color="secondary" onClick={() => { setAll(!allOpen) }} data-testid="spells-toggle-all" sx={{ py: 0 }}>
+                        {allOpen ? 'Recolher todas' : 'Expandir todas'}
+                    </Button>
+                )}
+            </Box>
+
+            {visible.length === 0 ? (
+                <Box sx={{ textAlign: 'center', py: 3 }}>
+                    <Typography color="text.secondary">Nenhuma magia com esses filtros.</Typography>
+                    <Button size="small" onClick={() => { setQuery(''); setElement(''); setLevel('') }} sx={{ mt: 1 }}>Limpar filtros</Button>
+                </Box>
+            ) : (
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                    {visible.map(({ spell, key, progress }, index) => (
+                        <SpellCard
+                            key={`${key}-${index}`}
+                            spell={spell}
+                            progress={progress}
+                            expanded={isOpen(key)}
+                            onToggle={() => { setOpened(current => ({ ...current, [key]: !isOpen(key) })) }}
+                            onSetUnlocked={isEditing && stageRule ? (stage) => { updateNestedField('spellUnlocked', { ...(unlockedMap ?? {}), [key]: stage }) } : undefined}
+                            onDelete={isEditing ? () => { handleDelete(spell) } : undefined}
+                        />
+                    ))}
+                </Box>
             )}
-        </>
+        </Box>
     );
 }

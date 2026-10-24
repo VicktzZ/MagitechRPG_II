@@ -2,6 +2,7 @@
 'use client'
 
 import ElementIcon from '@components/misc/ElementIcon';
+import StageLadder from '@components/spells/StageLadder';
 import { useCampaignCurrentCharsheetContext, useCampaignContext } from '@contexts';
 import { useChatContext } from '@contexts/chatContext';
 import { postCampaignStats } from '@utils/campaignStatsClient';
@@ -20,10 +21,8 @@ import { campaignService } from '@services';
 import { useSnackbar } from 'notistack';
 import { useSession } from 'next-auth/react';
 import {
-    Bolt,
     Delete,
-    ExpandMore,
-    LockOutlined
+    ExpandMore
 } from '@mui/icons-material';
 import {
     Accordion,
@@ -31,7 +30,6 @@ import {
     AccordionSummary,
     alpha,
     Box,
-    Button,
     Chip,
     IconButton,
     Paper,
@@ -42,7 +40,8 @@ import {
 import { color } from '@themes/tokens';
 import { type ReactElement, useState } from 'react';
 import { asRequestError } from '@utils/errors';
-import { EVOLUTION_POINT_COST, getEvolutionPoints, getStageProgress, materializeUnlocked, spellStageCount, usesStageUnlock, withoutSpell } from '@utils/spellStages';
+import { SECONDARY_ELEMENT_LABEL, isSecondaryElement } from '@utils/elements';
+import { canEvolve, formatEvolutionPoints, getEvolutionPoints, getSpellProgress, spellStageLabel, usesStageUnlock, withoutSpell, type SpellStage } from '@utils/spellStages';
 
 /** Nível e estágio são escalas ordenadas: neutros que clareiam até o âmbar no topo (o número vai sempre em texto) */
 function getSpellLevelColor(level: number) {
@@ -59,149 +58,6 @@ function getSpellLevelColor(level: number) {
         return { color: color.inkMuted };
     }
 }
-interface SpellStageProps {
-    stage: number
-    description: string
-    spell: SpellDTO
-    onCast?: (stage: 1 | 2 | 3) => void | Promise<void>
-    isCasting?: boolean
-    canCast?: boolean
-    currentMp?: number
-    /** Preenchido quando a conjuração estouraria o limite de MP por turno */
-    blockedReason?: string
-}
-
-function SpellStage({ stage, description, spell, onCast, isCasting, canCast, currentMp, blockedReason }: SpellStageProps): ReactElement {
-    let mpCost = Number(spell.mpCost)
-    let extraCost: Record<string, number> = {
-        'estágio 1': 0,
-        'estágio 2': 1,
-        'estágio 3': 2
-    }
-
-    if (Number(spell.level) === 4)
-        extraCost = {
-            'estágio 1': 0,
-            'estágio 2': 4,
-            'maestria': 9
-        }
-        
-    if (Number(spell.level) === 3)
-        extraCost = {
-            'estágio 1': 0,
-            'estágio 2': 2,
-            'estágio 3': 5
-        }
-
-    if (Number(spell.level) === 2)
-        extraCost = {
-            'estágio 1': 0,
-            'estágio 2': 2,
-            'estágio 3': 4
-        }
-
-    if (stage === 2) mpCost += extraCost['estágio 2']
-    if (stage === 3) mpCost += extraCost['estágio 3']
-    if (stage === 4) mpCost += extraCost['maestria']
-
-    const getStageColor = (stageNum: number) => {
-        if (stageNum === 4) return { color: color.amberHover }; // Maestria
-        switch (stageNum) {
-        case 1:
-            return { color: color.inkMuted };
-        case 2:
-            return { color: color.ink };
-        case 3:
-            return { color: color.amber };
-        default:
-            return { color: color.inkMuted };
-        }
-    };
-
-    const stageConfig = getStageColor(stage);
-
-    return (
-        <Paper 
-            elevation={1}
-            sx={{ 
-                p: 2, 
-                mb: 2,
-                border: '1px solid',
-                borderColor: alpha(stageConfig.color, 0.25),
-                borderRadius: 2,
-                bgcolor: alpha(stageConfig.color, 0.06)
-            }}
-        >
-            <Box display="flex" alignItems="center" justifyContent="space-between" mb={1.5} gap={1} flexWrap="wrap">
-                <Typography 
-                    variant="h6" 
-                    sx={{ 
-                        color: stageConfig.color,
-                        fontWeight: 700
-                    }}
-                >
-                    {stage !== 4 ? `Estágio ${stage}` : 'Maestria'}
-                </Typography>
-                <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
-                    <Tooltip
-                        title={typeof currentMp === 'number'
-                            ? `${currentMp} / custo ${mpCost} MP`
-                            : `Custo ${mpCost} MP`
-                        }
-                    >
-                        <Chip
-                            label={`${mpCost} MP`}
-                            sx={{
-                                bgcolor: alpha(color.mp, 0.14),
-                                color: color.mp,
-                                fontWeight: 600
-                            }}
-                        />
-                    </Tooltip>
-                    {onCast && stage !== 4 && (
-                        <Tooltip title={canCast === false
-                            ? `MP insuficiente (precisa de ${mpCost})`
-                            : blockedReason ?? `Conjurar — gasta ${mpCost} MP`
-                        }>
-                            <span>
-                                <Button
-                                    size="small"
-                                    variant="contained"
-                                    startIcon={<Bolt fontSize="small" />}
-                                    disabled={isCasting || canCast === false}
-                                    onClick={() => { void onCast(stage as 1 | 2 | 3) }}
-                                    sx={{
-                                        bgcolor: stageConfig.color,
-                                        color: 'background.default',
-                                        fontWeight: 700,
-                                        textTransform: 'none',
-                                        opacity: blockedReason ? 0.55 : 1,
-                                        '&:hover': {
-                                            bgcolor: stageConfig.color,
-                                            filter: 'brightness(0.9)'
-                                        }
-                                    }}
-                                >
-                                    Conjurar
-                                </Button>
-                            </span>
-                        </Tooltip>
-                    )}
-                </Box>
-            </Box>
-            <Typography 
-                variant="body2" 
-                sx={{ 
-                    lineHeight: 1.6,
-                    textAlign: 'justify'
-                }}
-            >
-                {description}
-            </Typography>
-        </Paper>
-    )
-}
-
 export default function SpellsSection(): ReactElement {
     const { charsheet, updateCharsheet } = useCampaignCurrentCharsheetContext();
     const { campaign } = useCampaignContext();
@@ -240,12 +96,12 @@ export default function SpellsSection(): ReactElement {
     // Desbloqueio de estágios (ver utils/spellStages.ts): vale no Magitech padrão, não em sistema customizado nem no Roguelite
     const stageRule = usesStageUnlock(charsheet ?? {}, campaign?.mode);
 
-    const handleCastSpell = async (spell: SpellDTO, stage: 1 | 2 | 3) => {
+    const handleCastSpell = async (spell: SpellDTO, stage: SpellStage) => {
         if (!charsheet?.id) return;
         const spellKey = spell.id || spell.name;
         if (castingSpellId) return;
 
-        const progress = getStageProgress(charsheet, spellKey, spellStageCount(spell), stageRule);
+        const progress = getSpellProgress(spell, charsheet, { enabled: stageRule });
         if (stage > progress.unlocked) {
             enqueueSnackbar(`O estágio ${stage} de ${spell.name} ainda está bloqueado. Evolua a magia primeiro.`, { variant: 'warning' });
             return;
@@ -355,56 +211,32 @@ export default function SpellsSection(): ReactElement {
         }
     }
 
-    const handleSetSpellStage = async (spell: SpellDTO, stage: 1 | 2 | 3) => {
-        if (!charsheet?.id) return
-
-        const spellId = spell.id || spell.name
-        if (!spellId) return
-
-        const progress = getStageProgress(charsheet, spellId, spellStageCount(spell), stageRule)
-        if (stage > progress.unlocked) return
-
-        try {
-            const update: Record<string, unknown> = {
-                spellStages: {
-                    ...(charsheet.spellStages || {}),
-                    [spellId]: stage
-                }
-            }
-            // Ficha antiga: grava o estágio que a magia já tinha liberado antes de trocar o ativo
-            const unlocked = materializeUnlocked(charsheet.spellUnlocked, spellId, progress)
-            if (unlocked !== (charsheet.spellUnlocked ?? {})) update['spellUnlocked'] = unlocked
-
-            await charsheetEntity.update(charsheet.id, update as any)
-
-            enqueueSnackbar(`Estágio da magia "${spell.name}" definido para ${stage}!`, { variant: 'success' })
-        } catch (error) {
-            console.error('Erro ao atualizar estágio da magia:', error)
-            enqueueSnackbar('Erro ao atualizar estágio da magia', { variant: 'error' })
-        }
-    }
-
-    // Evoluir: gasta 1 ponto de evolução (concedido pelo mestre), libera o próximo estágio e já o deixa ativo
+    // Evoluir: gasta os pontos de evolução que o próximo estágio custa (ver `stageRule`) e libera o estágio
     const evolutionPoints = getEvolutionPoints(charsheet?.points)
-    const handleUnlockStage = async (spell: SpellDTO, stage: 1 | 2 | 3) => {
+    const handleEvolve = async (spell: SpellDTO) => {
         if (!charsheet?.id) return
 
         const spellId = spell.id || spell.name
         if (!spellId) return
 
-        if (evolutionPoints < EVOLUTION_POINT_COST) {
-            enqueueSnackbar('Você precisa de 1 ponto de evolução para evoluir uma magia. Peça ao mestre.', { variant: 'warning' })
+        const progress = getSpellProgress(spell, charsheet, { enabled: stageRule })
+        const stage = progress.next
+        const cost = progress.nextCost
+        if (stage === null || cost === null) return
+
+        if (!canEvolve(progress, evolutionPoints)) {
+            enqueueSnackbar(`Você precisa de ${formatEvolutionPoints(cost)} para evoluir ${spell.name}. Peça ao mestre.`, { variant: 'warning' })
             return
         }
 
         try {
             await charsheetEntity.update(charsheet.id, {
-                'points.evolution': evolutionPoints - EVOLUTION_POINT_COST,
-                spellUnlocked: { ...(charsheet.spellUnlocked || {}), [spellId]: stage },
-                spellStages: { ...(charsheet.spellStages || {}), [spellId]: stage }
+                'points.evolution': evolutionPoints - cost,
+                spellUnlocked: { ...(charsheet.spellUnlocked || {}), [spellId]: stage }
             } as any)
 
-            enqueueSnackbar(`${spell.name} evoluiu: estágio ${stage} desbloqueado!`, { variant: 'success' })
+            const unlockedLabel = spellStageLabel(spell.level, stage).toLowerCase()
+            enqueueSnackbar(`${spell.name} evoluiu: ${unlockedLabel} desbloqueado (-${formatEvolutionPoints(cost)})!`, { variant: 'success' })
         } catch (error) {
             console.error('Erro ao evoluir magia:', error)
             enqueueSnackbar('Erro ao evoluir a magia', { variant: 'error' })
@@ -519,13 +351,10 @@ export default function SpellsSection(): ReactElement {
                                 {allSpells.map(spell => {
                                     const levelConfig = getSpellLevelColor(Number(spell.level));
                                     const spellId = spell.id || spell.name
-                                    const progress = getStageProgress(charsheet, spellId, spellStageCount(spell), stageRule)
-                                    const selectedStage = progress.active
-                                    const nextStage = progress.next
-                                    const availableStages: Array<1 | 2 | 3> = [ 1 ]
-                                    if (spell.stages?.[1]) availableStages.push(2)
-                                    if (spell.stages?.[2]) availableStages.push(3)
-                                    
+                                    const progress = getSpellProgress(spell, charsheet, { enabled: stageRule })
+                                    const evolvable = progress.enabled && canEvolve(progress, evolutionPoints)
+                                    const currentMp = Number(charsheet.stats?.mp ?? 0)
+
                                     return (
                                         <Accordion
                                             key={spell.name}
@@ -602,6 +431,23 @@ export default function SpellsSection(): ReactElement {
                                                                     fontWeight: 600
                                                                 }}
                                                             />
+                                                            {isSecondaryElement(spell.element) && (
+                                                                <Tooltip title="Elemento secundário: Sangue, Vácuo, Psíquico, Radiação e Explosão" arrow>
+                                                                    <Chip label={SECONDARY_ELEMENT_LABEL} size="small" variant="outlined" sx={{ borderColor: 'divider', color: 'text.secondary' }} />
+                                                                </Tooltip>
+                                                            )}
+                                                            {progress.enabled && progress.count > 1 && (
+                                                                <Chip
+                                                                    label={`${progress.unlocked} de ${progress.count} estágios`}
+                                                                    size="small"
+                                                                    variant="outlined"
+                                                                    data-testid={`spell-progress-${spellId}`}
+                                                                    sx={{ borderColor: 'divider', color: 'text.secondary' }}
+                                                                />
+                                                            )}
+                                                            {evolvable && (
+                                                                <Chip label="Pode evoluir" size="small" variant="outlined" color="primary" />
+                                                            )}
                                                         </Box>
                                                     </Box>
                                                 </Box>
@@ -656,79 +502,26 @@ export default function SpellsSection(): ReactElement {
                                                 </Box>
                                             </AccordionSummary>
                                             
-                                            <AccordionDetails sx={{ p: 3 }}>
+                                            <AccordionDetails sx={{ p: { xs: 1.5, sm: 3 } }}>
                                                 <Stack spacing={2}>
-                                                    <Box display="flex" gap={1} flexWrap="wrap" alignItems="center">
-                                                        <Typography variant="caption" color="text.secondary">Estágio ativo:</Typography>
-                                                        {availableStages.map(stage => {
-                                                            const locked = stage > progress.unlocked
-                                                            return (
-                                                                <Tooltip key={stage} title={locked ? 'Evolua a magia para desbloquear este estágio' : ''} arrow>
-                                                                    <span>
-                                                                        <Chip
-                                                                            label={`Estágio ${stage}`}
-                                                                            size="small"
-                                                                            clickable={!locked}
-                                                                            disabled={locked}
-                                                                            icon={locked ? <LockOutlined /> : undefined}
-                                                                            aria-label={locked ? `Estágio ${stage} bloqueado` : `Estágio ${stage}`}
-                                                                            onClick={() => { void handleSetSpellStage(spell, stage) }}
-                                                                            color={selectedStage === stage ? 'primary' : 'default'}
-                                                                            variant={selectedStage === stage ? 'filled' : 'outlined'}
-                                                                        />
-                                                                    </span>
-                                                                </Tooltip>
-                                                            )
-                                                        })}
-                                                        {progress.enabled && (
-                                                            <Typography variant="caption" color="text.secondary" sx={{ ml: 0.5 }}>
-                                                                Desbloqueado: {progress.unlocked} de {progress.count}
-                                                            </Typography>
-                                                        )}
-                                                        {nextStage && (
-                                                            <Tooltip title={evolutionPoints >= EVOLUTION_POINT_COST ? `Gasta ${EVOLUTION_POINT_COST} ponto de evolução (você tem ${evolutionPoints})` : 'Você precisa de 1 ponto de evolução. Peça ao mestre.'} arrow>
-                                                                <span>
-                                                                    <Button
-                                                                        size="small"
-                                                                        variant="outlined"
-                                                                        disabled={evolutionPoints < EVOLUTION_POINT_COST}
-                                                                        aria-label={`Evoluir ${spell.name} para o estágio ${nextStage}`}
-                                                                        onClick={() => { void handleUnlockStage(spell, nextStage) }}
-                                                                        sx={{ py: 0, px: 1 }}
-                                                                    >
-                                                                        Evoluir
-                                                                    </Button>
-                                                                </span>
-                                                            </Tooltip>
-                                                        )}
-                                                        {progress.enabled && (
-                                                            <Typography variant="caption" color="text.secondary" data-testid="evolution-points">
-                                                                Pontos de evolução: {evolutionPoints}
-                                                            </Typography>
-                                                        )}
-                                                    </Box>
-
-                                                    {(() => {
-                                                        const description = spell.stages?.[selectedStage - 1]
-                                                        if (!description) return null
-                                                        const previewCost = castSpell(spell, selectedStage).mpCost
-                                                        const currentMp = Number(charsheet.stats?.mp ?? 0)
-                                                        const limitBlockedReason = exceedsMpLimit(previewCost)
-                                                            ? `Limite de MP por turno: ${mpSpentThisTurn}/${mpLimit} gastos e esta conjuração custa ${previewCost}. Clique para avisar o mestre.`
-                                                            : undefined
-                                                        return (
-                                                            <SpellStage
-                                                                spell={spell}
-                                                                stage={selectedStage}
-                                                                description={description}
-                                                                onCast={(stg) => handleCastSpell(spell, stg)}
-                                                                isCasting={castingSpellId === (spell.id || spell.name)}
-                                                                canCast={currentMp >= previewCost}
-                                                                currentMp={currentMp}
-                                                                blockedReason={limitBlockedReason}
-                                                            />
-                                                        )
-                                                    })()}
+                                                    {progress.enabled && (
+                                                        <Typography variant="caption" color="text.secondary" data-testid="evolution-points">
+                                                            Pontos de evolução: {evolutionPoints}
+                                                        </Typography>
+                                                    )}
+                                                    <StageLadder
+                                                        spell={spell}
+                                                        progress={progress}
+                                                        evolution={progress.enabled ? { points: evolutionPoints, onEvolve: async () => { await handleEvolve(spell) } } : undefined}
+                                                        cast={{
+                                                            onCast: async (stage) => { await handleCastSpell(spell, stage) },
+                                                            isCasting: castingSpellId === spellId,
+                                                            currentMp,
+                                                            blockedReason: (_stage, cost) => (exceedsMpLimit(cost)
+                                                                ? `Limite de MP por turno: ${mpSpentThisTurn}/${mpLimit} gastos e esta conjuração custa ${cost}. Clique para avisar o mestre.`
+                                                                : undefined)
+                                                        }}
+                                                    />
                                                 </Stack>
                                             </AccordionDetails>
                                         </Accordion>

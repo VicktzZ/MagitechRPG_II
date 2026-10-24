@@ -13,8 +13,7 @@ import { elementHint } from '@utils/elements';
 import { SPELL_FILTERS } from '@utils/spellCategory';
 import { color, shadow } from '@themes/tokens';
 import { normalizeToArray } from '@utils/normalizeToArray';
-import { getStageProgress, spellStageCount, usesStageUnlock } from '@utils/spellStages';
-import { useCharsheetBaseline } from '@contexts';
+import { getSpellProgress, usesStageUnlock } from '@utils/spellStages';
 
 import Magic from '../subcomponents/Magic';
 
@@ -32,7 +31,6 @@ function hasSpell(spells: unknown, spell: Spell): boolean {
 
 export default function SpellsModal({ open, onClose }: { open: boolean, onClose: () => void }): ReactElement {
     const { getValues, setValue } = useFormContext<CharsheetDTO>();
-    const baseline = useCharsheetBaseline();
     
     const invalidate = (message: string) => ({ isValid: false, errorMessage: message });
 
@@ -178,12 +176,10 @@ export default function SpellsModal({ open, onClose }: { open: boolean, onClose:
                                 // Estágios bloqueados também aqui (ver utils/spellStages.ts): magia que a ficha já tem mostra o liberado
                                 // dela; magia nova começa no estágio 1. Sistema customizado e Roguelite não usam a regra.
                                 const stageRule = usesStageUnlock({ systemId: getValues('systemId'), class: getValues('class') });
-                                const progress = getStageProgress(
-                                    { spellStages: getValues('spellStages'), spellUnlocked: getValues('spellUnlocked') },
-                                    spellKey(item),
-                                    spellStageCount(item),
-                                    stageRule,
-                                    baseline.get()?.spellStages
+                                const progress = getSpellProgress(
+                                    item,
+                                    { spellStages: getValues('spellStages'), spellUnlocked: getValues('spellUnlocked'), elementalMastery: getValues('elementalMastery') },
+                                    { enabled: stageRule }
                                 );
 
                                 return (
@@ -194,7 +190,6 @@ export default function SpellsModal({ open, onClose }: { open: boolean, onClose:
                                         magic={item}
                                         id={spellKey(item)}
                                         isAdding={!alreadyAdded}
-                                        selectedStage={stageRule ? (alreadyAdded ? progress.active : 1) : undefined}
                                         unlockedStage={stageRule ? (alreadyAdded ? progress.unlocked : 1) : undefined}
                                         onIconClick={alreadyAdded ? undefined : handleAddItem}
                                     />
