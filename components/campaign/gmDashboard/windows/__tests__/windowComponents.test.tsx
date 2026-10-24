@@ -6,7 +6,8 @@ import theme from '../../../../../themes/theme';
 import { color } from '../../../../../themes/tokens';
 import FloatingWindow from '../FloatingWindow';
 import { PartyPortrait, type PortraitVital } from '../PartyPortrait';
-import { SummaryView } from '../SummaryView';
+import EditableSection from '../EditableSection';
+import { SummaryView, type SummaryActions } from '../SummaryView';
 import type { Bounds } from '../windowGeometry';
 import type { WindowEntry } from '../windowState';
 
@@ -42,6 +43,29 @@ const entry = (overrides: Partial<WindowEntry> = {}): WindowEntry => ({
 });
 
 const noop = (): void => undefined;
+
+// A edição de verdade grava na ficha pelo serviço; aqui só importa o estado que a casca mostra
+const mockEditing = { isEditing: false, isSaving: false };
+jest.mock('../../modals/charsheetDetails/useCharsheetEditing', () => ({
+    useCharsheetEditing: () => ({
+        isEditing: mockEditing.isEditing,
+        setIsEditing: () => undefined,
+        isSaving: mockEditing.isSaving,
+        editedData: {},
+        updateNestedField: () => undefined,
+        handleNumberInputChange: () => undefined,
+        handleSave: () => undefined,
+        handleCancelEdit: () => undefined
+    })
+}));
+
+const playerActions: SummaryActions = {
+    canGrantEvolution: true,
+    onAddItem: noop,
+    onGrantEvolution: noop,
+    onNotify: noop,
+    onRemove: noop
+};
 
 const windowProps = {
     title: 'Resumo: Kael',
@@ -146,6 +170,19 @@ describe('PartyPortrait', () => {
         expect(html).toContain('aria-pressed="true"');
     });
 
+    it('com menu de seções, tem um botão próprio (irmão do retrato, nunca aninhado) que avisa que abre um menu', () => {
+        const html = render(<PartyPortrait {...base} onOpenMenu={noop} />);
+        expect(html).toContain('aria-label="Abrir seções de Aria Valen"');
+        expect(html).toContain('aria-haspopup="menu"');
+        // dois botões, lado a lado: se um estivesse dentro do outro, o HTML seria inválido
+        expect(html.match(/<button/g)).toHaveLength(2);
+        expect(html).not.toMatch(/<button[^>]*>(?:(?!<\/button>).)*<button/);
+    });
+
+    it('sem o menu, só o botão do retrato', () => {
+        expect(render(<PartyPortrait {...base} />).match(/<button/g)).toHaveLength(1);
+    });
+
     it('sem nenhum recurso (sistema customizado sem LP, MP e AP), não desenha barras', () => {
         const html = render(<PartyPortrait {...base} vitals={[]} />);
         expect(html).not.toContain('data-vital');
@@ -176,7 +213,7 @@ describe('SummaryView', () => {
     });
 
     it('mostra quem é, os pontos vitais e os atributos com modificador', () => {
-        const html = render(<SummaryView charsheet={sheet()} inTurn={false} showEvolution onOpenFullSheet={noop} />);
+        const html = render(<SummaryView charsheet={sheet()} inTurn={false} showEvolution onOpenSection={noop} actions={playerActions} />);
         expect(html).toContain('Aria Valen');
         expect(html).toContain('Nv. 7');
         expect(html).toContain('Piromante');
@@ -189,25 +226,25 @@ describe('SummaryView', () => {
     });
 
     it('mostra a bolsa: dinheiro com milhar, carga com unidade, deslocamento e esconde a munição vazia', () => {
-        const html = render(<SummaryView charsheet={sheet()} inTurn={false} showEvolution onOpenFullSheet={noop} />);
+        const html = render(<SummaryView charsheet={sheet()} inTurn={false} showEvolution onOpenSection={noop} actions={playerActions} />);
         expect(html).toContain('12 500');
         expect(html).toContain('12/40 kg');
         expect(html).toContain('9m');
         expect(html).not.toContain('Munição');
 
-        const withAmmo = render(<SummaryView charsheet={sheet({ ammoCounter: { current: 3, max: 10 } })} inTurn={false} showEvolution onOpenFullSheet={noop} />);
+        const withAmmo = render(<SummaryView charsheet={sheet({ ammoCounter: { current: 3, max: 10 } })} inTurn={false} showEvolution onOpenSection={noop} actions={playerActions} />);
         expect(withAmmo).toContain('Munição');
         expect(withAmmo).toContain('3/10');
     });
 
     it('lista só os pontos para gastar que sobraram, e a evolução quando a regra vale', () => {
-        const html = render(<SummaryView charsheet={sheet()} inTurn={false} showEvolution onOpenFullSheet={noop} />);
+        const html = render(<SummaryView charsheet={sheet()} inTurn={false} showEvolution onOpenSection={noop} actions={playerActions} />);
         expect(html).toContain('Perícias: 2');
         expect(html).toContain('Magias: 1');
         expect(html).not.toContain('Atributos: 0');
         expect(html).toContain('Evolução: 3');
 
-        const noRule = render(<SummaryView charsheet={sheet()} inTurn={false} showEvolution={false} onOpenFullSheet={noop} />);
+        const noRule = render(<SummaryView charsheet={sheet()} inTurn={false} showEvolution={false} onOpenSection={noop} actions={playerActions} />);
         expect(noRule).not.toContain('Evolução');
     });
 
@@ -217,16 +254,38 @@ describe('SummaryView', () => {
                 charsheet={sheet({ points: { attributes: 0, expertises: 0, skills: 0, magics: 0 } })}
                 inTurn={false}
                 showEvolution={false}
-                onOpenFullSheet={noop}
+                onOpenSection={noop} actions={playerActions}
             />
         );
         expect(html).not.toContain('Pontos para gastar');
     });
 
-    it('em turno mostra o selo, e tem o botão da ficha completa', () => {
-        const html = render(<SummaryView charsheet={sheet()} inTurn showEvolution onOpenFullSheet={noop} />);
+    it('em turno mostra o selo', () => {
+        const html = render(<SummaryView charsheet={sheet()} inTurn showEvolution onOpenSection={noop} actions={playerActions} />);
         expect(html).toContain('Em turno');
-        expect(html).toContain('Ficha completa');
+    });
+
+    it('tem um atalho para cada seção da ficha (menos o próprio resumo)', () => {
+        const html = render(<SummaryView charsheet={sheet()} inTurn={false} showEvolution onOpenSection={noop} actions={playerActions} />);
+        [ 'Informações', 'Atributos', 'Perícias', 'Inventário', 'Habilidades', 'Magias' ].forEach(label => expect(html).toContain(`>${label}<`));
+        expect(html).not.toContain('>Resumo<');
+    });
+
+    it('tem as ações do jogador; o ponto de evolução some quando a regra não vale', () => {
+        const html = render(<SummaryView charsheet={sheet()} inTurn={false} showEvolution onOpenSection={noop} actions={playerActions} />);
+        [ 'Adicionar item', 'Conceder ponto de evolução', 'Enviar notificação', 'Remover da campanha' ].forEach(label => expect(html).toContain(label));
+
+        const noRule = render(
+            <SummaryView
+                charsheet={sheet()}
+                inTurn={false}
+                showEvolution={false}
+                onOpenSection={noop}
+                actions={{ ...playerActions, canGrantEvolution: false }}
+            />
+        );
+        expect(noRule).not.toContain('Conceder ponto de evolução');
+        expect(noRule).toContain('Adicionar item');
     });
 
     it('ficha antiga com campos faltando não quebra', () => {
@@ -235,11 +294,56 @@ describe('SummaryView', () => {
                 charsheet={sheet({ stats: undefined, mods: undefined, points: undefined, ammoCounter: undefined, capacity: undefined, inventory: undefined })}
                 inTurn={false}
                 showEvolution={false}
-                onOpenFullSheet={noop}
+                onOpenSection={noop} actions={playerActions}
             />
         );
         expect(html).toContain('Aria Valen');
         expect(html).not.toContain('NaN');
         expect(html).not.toContain('undefined');
+    });
+});
+
+describe('EditableSection', () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const sheet: any = { ...healthySheet(), id: 'a', name: 'Aria Valen' };
+    const body = () => <p>conteúdo da seção</p>;
+
+    afterEach(() => {
+        mockEditing.isEditing = false;
+        mockEditing.isSaving = false;
+    });
+
+    it('fora da edição mostra só o botão Editar e o conteúdo', () => {
+        const html = render(<EditableSection charsheet={sheet}>{body}</EditableSection>);
+        expect(html).toContain('Editar');
+        expect(html).toContain('conteúdo da seção');
+        expect(html).not.toContain('Salvar');
+        expect(html).not.toContain('Cancelar');
+    });
+
+    it('em edição mostra Cancelar e Salvar e avisa do modo de edição', () => {
+        mockEditing.isEditing = true;
+        const html = render(<EditableSection charsheet={sheet}>{body}</EditableSection>);
+        expect(html).toContain('Salvar');
+        expect(html).toContain('Cancelar');
+        expect(html).toContain('Modo de edição');
+        expect(html).not.toContain('>Editar<');
+    });
+
+    it('salvando, os dois botões ficam desabilitados', () => {
+        mockEditing.isEditing = true;
+        mockEditing.isSaving = true;
+        const html = render(<EditableSection charsheet={sheet}>{body}</EditableSection>);
+        expect(html.match(/disabled=""/g)?.length ?? 0).toBeGreaterThanOrEqual(2);
+    });
+
+    it('entrega ao conteúdo o estado de edição e a unidade de peso', () => {
+        mockEditing.isEditing = true;
+        const html = render(
+            <EditableSection charsheet={sheet}>
+                {({ isEditing, weightUnit }) => <p>{`editando=${isEditing} unidade=${weightUnit}`}</p>}
+            </EditableSection>
+        );
+        expect(html).toContain('editando=true unidade=kg');
     });
 });

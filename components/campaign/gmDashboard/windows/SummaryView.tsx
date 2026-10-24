@@ -2,13 +2,14 @@
 
 import type { CharsheetDTO } from '@models/dtos';
 import { Backpack, DirectionsRun, LocalPolice, MonetizationOn } from '@mui/icons-material';
-import { Box, Button, Chip, Stack, Typography } from '@mui/material';
+import { Box, Button, Chip, Divider, Stack, Typography } from '@mui/material';
 import { color, font } from '@themes/tokens';
 import useNumbersWithSpaces from '@hooks/useNumbersWithSpace';
 import { getEvolutionPoints } from '@utils/spellStages';
 import type { ReactElement, ReactNode } from 'react';
 import StatMeter from '../StatMeter';
 import { useCharsheetPointsView } from '../useCharsheetPointsView';
+import { WINDOW_KINDS, WINDOW_KIND_LABEL, type WindowKind } from './windowKinds';
 
 export type SummarySheet = Required<CharsheetDTO>;
 
@@ -41,19 +42,29 @@ function Heading({ children }: { children: ReactNode }): ReactElement {
     );
 }
 
+/** O que o mestre faz com o jogador a partir do resumo (as mesmas ações do menu do cartão) */
+export interface SummaryActions {
+    canGrantEvolution: boolean;
+    onAddItem: () => void;
+    onGrantEvolution: () => void;
+    onNotify: () => void;
+    onRemove: () => void;
+}
+
 interface SummaryViewProps {
     charsheet: SummarySheet;
     inTurn: boolean;
     /** A regra de estágios (e o ponto de evolução) vale para esta ficha */
     showEvolution: boolean;
-    onOpenFullSheet: () => void;
+    onOpenSection: (kind: WindowKind) => void;
+    actions: SummaryActions;
 }
 
 /**
- * Resumo de uma ficha para o mestre: quem é, pontos vitais, atributos, bolsa e pontos para gastar.
- * Só leitura; a edição continua na ficha completa até as seções virarem janelas próprias.
+ * Resumo de uma ficha para o mestre: quem é, pontos vitais, atributos, bolsa e pontos para gastar, mais as ações
+ * do jogador e os atalhos para as seções. Só leitura; cada seção se edita na própria janela.
  */
-export function SummaryView({ charsheet, inTurn, showEvolution, onOpenFullSheet }: SummaryViewProps): ReactElement {
+export function SummaryView({ charsheet, inTurn, showEvolution, onOpenSection, actions }: SummaryViewProps): ReactElement {
     const view = useCharsheetPointsView(charsheet);
     const spacedMoney = useNumbersWithSpaces();
 
@@ -185,8 +196,29 @@ export function SummaryView({ charsheet, inTurn, showEvolution, onOpenFullSheet 
                 </Box>
             )}
 
+            <Divider />
+
             <Box>
-                <Button variant="outlined" size="small" onClick={onOpenFullSheet}>Ficha completa</Button>
+                <Heading>Abrir seção</Heading>
+                <Stack direction="row" flexWrap="wrap" useFlexGap spacing={1}>
+                    {WINDOW_KINDS.filter(kind => kind !== 'summary').map(kind => (
+                        <Button key={kind} variant="outlined" size="small" onClick={() => onOpenSection(kind)}>
+                            {WINDOW_KIND_LABEL[kind]}
+                        </Button>
+                    ))}
+                </Stack>
+            </Box>
+
+            <Box>
+                <Heading>Ações</Heading>
+                <Stack direction="row" flexWrap="wrap" useFlexGap spacing={1}>
+                    <Button variant="outlined" size="small" onClick={actions.onAddItem}>Adicionar item</Button>
+                    {actions.canGrantEvolution && (
+                        <Button variant="outlined" size="small" onClick={actions.onGrantEvolution}>Conceder ponto de evolução</Button>
+                    )}
+                    <Button variant="outlined" size="small" onClick={actions.onNotify}>Enviar notificação</Button>
+                    <Button variant="outlined" size="small" color="error" onClick={actions.onRemove}>Remover da campanha</Button>
+                </Stack>
             </Box>
         </Stack>
     );

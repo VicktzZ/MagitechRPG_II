@@ -256,7 +256,7 @@ export default function FloatingWindow({
             {/* Montado mesmo recolhido: o estado de edição de uma seção não se perde ao recolher */}
             <Box
                 hidden={collapsed}
-                sx={{ display: collapsed ? 'none' : 'block', flex: 1, minHeight: 0, overflow: 'auto', p: 2 }}
+                sx={{ display: collapsed ? 'none' : 'block', flex: 1, minHeight: 0, overflow: 'auto', p: 2, containerType: 'inline-size' }}
             >
                 {children}
             </Box>

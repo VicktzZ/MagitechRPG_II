@@ -168,7 +168,7 @@ do efeito, e não pode ser escolhido nem conjurado. O MP extra por estágio ao c
 O mestre gerencia fichas em **janelas flutuantes** (estilo BG3), em `components/campaign/gmDashboard/windows/`. Escopo combinado com o dono:
 uma janela **por seção** da ficha de um jogador; entrada pela **barra do grupo** (um retrato por jogador) e pelos cartões; conteúdo = as abas atuais
 do mestre (fase 1), a visão do jogador fica para a fase 2. **Criaturas também entram no escopo** (decisão do dono): a criatura ganha janelas pelo mesmo
-gerenciador. Fases/PRs: 1 gerenciador + barra + resumo (feita) · 2 seções em janelas (atributos, perícias, inventário, habilidades, magias) + ações do jogador
+gerenciador. Fases/PRs: 1 gerenciador + barra + resumo (feita) · 2 (feita) seções em janelas (atributos, perícias, inventário, habilidades, magias) + ações do jogador
 (item, ponto de evolução, notificação, remover), tirando o `CharsheetDetailsModal` · 3 dano/cura rápidos de LP/MP/AP por rota com transação (soma/subtrai,
 0 a máx., sem contar no limite de MP por turno) · 4 rolagem do mestre pelo jogador (**regra do botão da perícia na ficha**: `mod + 1` d20, mod negativo rola 2;
 não unifica as regras) · 5 anotações privadas por ficha em `campaigns/{id}/gmNotes/{fichaId}` com regra do Firestore só para `campaign.admin` (**publicar
@@ -177,9 +177,19 @@ não unifica as regras) · 5 anotações privadas por ficha em `campaigns/{id}/g
 as janelas de criatura, que não são fichas); a ordem das fases pode mudar a pedido do dono.
 
 - **Peças**: `windowState.ts` (reducer puro: abrir/focar/fechar/recolher/gravar posição, `sanitizeWindows` para o que vem do navegador), `windowGeometry.ts`
-  (puro: área, clamp, cascata, mover, redimensionar), `windowKinds.ts` (tipos de janela, tamanhos, limite de 8), `GMWindowProvider` (estado, área útil,
-  persistência), `FloatingWindow` (casca: arrastar, redimensionar, recolher, teclado), `GMWindowLayer` (portal no `body`), `PartyBar`/`PartyPortrait`
-  (retratos) e `SummaryWindow`/`SummaryView` (resumo). Provider montado em `CampaignComponent` só para o mestre.
+  (puro: área, clamp, cascata, mover, redimensionar), `windowKinds.ts` (tipos de janela, tamanhos, limite de 10), `GMWindowProvider` (estado, área útil,
+  persistência), `FloatingWindow` (casca: arrastar, redimensionar, recolher, teclado), `GMWindowLayer` (portal no `body`; escolhe o conteúdo por tipo),
+  `PartyBar`/`PartyPortrait` (retratos, com o menu de seções em `SectionMenu`), `SummaryWindow`/`SummaryView` (resumo, atalhos de seção e ações do jogador),
+  `SectionWindows` + `EditableSection` (as seções editáveis). Provider montado em `CampaignComponent` só para o mestre.
+- **Tipos de janela** (`WINDOW_KINDS`): `summary` (só leitura) e as ex-abas do modal de detalhes, que não existe mais: `info`, `attributes`, `expertises`,
+  `inventory`, `skills`, `spells`. Os componentes das abas continuam em `modals/charsheetDetails/` e são reaproveitados; `ChangePlayerStatusModal` segue
+  como diálogo aberto pela janela de informações. Para um tipo novo: `windowKinds.ts` (nome, rótulo, tamanho) + `GMWindowLayer` (conteúdo).
+- **Cada seção edita sozinha**: `EditableSection` tem o próprio `useCharsheetEditing` (Editar/Cancelar/Salvar). Salvar grava só os caminhos que o mestre
+  mexeu naquela janela (`collectCharsheetChanges` contra o snapshot do início), então duas seções da mesma ficha em edição, ou o jogador mexendo ao mesmo tempo,
+  não se desfazem. O corpo da janela é um container: as grades `md={6}` das abas viram uma coluna abaixo de 600px de largura útil (o Grid do MUI olha a tela, não a janela).
+- **Ações do jogador** (`usePlayerActions`, compartilhado pelo cartão e pelo resumo): adicionar item, conceder ponto de evolução, notificar e remover; o hook
+  devolve os diálogos em `dialogs`, que quem usa precisa renderizar. A notificação vai por `POST /api/notification/[userId]` (`notificationService.create(body,
+  { param: userId })`); sem o `userId` na URL o servidor responde 405 (era assim no cartão e o envio não funcionava).
 - **Dois contextos de propósito**: ações (estáveis; cartões e barra só abrem janelas) e estado. Sem provider, as ações são no-ops (testes).
 - **Arrastar não passa pelo estado**: enquanto arrasta, a posição fica local na `FloatingWindow` e vai ao reducer ao soltar. Posição guardada pode estar
   fora da área (janela menor, chat aberto): a tela mostra clampada e não altera o guardado.

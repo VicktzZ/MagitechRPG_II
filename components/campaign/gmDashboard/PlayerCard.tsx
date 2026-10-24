@@ -1,13 +1,7 @@
-import { AddItemModal, WarningModal } from '@layout'
-import { Add, Backpack, Block, ChatBubbleOutline, DirectionsRun, Info, LocalPolice, MonetizationOn, MoreVert, Upgrade, ViewSidebar } from '@mui/icons-material'
+import { Add, Backpack, Block, ChatBubbleOutline, DirectionsRun, LocalPolice, MonetizationOn, MoreVert, Upgrade, ViewList, ViewSidebar } from '@mui/icons-material'
 import {
     Box,
-    Button,
     Chip,
-    DialogActions,
-    Dialog,
-    DialogContent,
-    DialogTitle,
     Divider,
     IconButton,
     ListItemIcon,
@@ -18,24 +12,17 @@ import {
     Paper,
     Typography
 } from '@mui/material'
-import { campaignService, charsheetService, notificationService } from '@services'
-import { enqueueSnackbar } from 'notistack'
 import { memo, useState } from 'react'
 import { useCampaignContext } from '@contexts';
-import { TextField } from '@mui/material'
-import { CharsheetDetailsModal } from './modals'
-import type { Armor, Item, Weapon } from '@models'
 import type { CharsheetDTO } from '@models/dtos'
 import useNumbersWithSpaces from '@hooks/useNumbersWithSpace'
-import { charsheetEntity } from '@utils/firestoreEntities'
-import { useCharsheetPointsView } from './useCharsheetPointsView'
-import { useGMWindowActions } from './windows/GMWindowProvider'
-import { isCombatantInTurn } from '@utils/combatTurn'
 import { color, font } from '@themes/tokens'
 import StatMeter from './StatMeter'
-import { errorMessage } from '@utils/errors';
-import { normalizeToArray } from '@utils/normalizeToArray'
-import { getEvolutionPoints, usesStageUnlock } from '@utils/spellStages'
+import { isCombatantInTurn } from '@utils/combatTurn'
+import { useCharsheetPointsView } from './useCharsheetPointsView'
+import { usePlayerActions } from './usePlayerActions'
+import { useGMWindowActions } from './windows/GMWindowProvider'
+import SectionMenu from './windows/SectionMenu'
 
 /** Texto só para leitor de tela (o rótulo do número ao lado, que a tela mostra por ícone) */
 const srOnly = {
@@ -50,20 +37,15 @@ const srOnly = {
 // memo: com as referências de ficha estabilizadas por item (useStableArrayItems),
 // só o card do jogador cuja ficha mudou re-renderiza.
 function PlayerCard({ charsheet }: { charsheet: Required<CharsheetDTO> }) {
-    const { campaign, charsheets } = useCampaignContext()
+    const { campaign } = useCampaignContext()
     const { customSystem, weightUnit, hasLP, hasMP, hasAP, lpName, mpName, apName } = useCharsheetPointsView(charsheet)
     const { openWindow } = useGMWindowActions()
+    const actions = usePlayerActions(charsheet)
 
     // Combate ativo, fase de ação: o cartão de quem joga agora ganha o destaque "Em turno"
     const isMyTurn = isCombatantInTurn(campaign.session?.combat, charsheet)
     const [ playerAnchorEl, setPlayerAnchorEl ] = useState<null | HTMLElement>(null)
-    const [ addItemModalOpen, setAddItemModalOpen ] = useState(false)
-    const [ removeUserDialogOpen, setRemoveUserDialogOpen ] = useState(false)
-    const [ charsheetDetailsOpen, setCharsheetDetailsOpen ] = useState(false)
-
-    const [ notificationDialogOpen, setNotificationDialogOpen ] = useState(false)
-    const [ notificationTitle, setNotificationTitle ] = useState('')
-    const [ notificationContent, setNotificationContent ] = useState('')
+    const [ sectionAnchorEl, setSectionAnchorEl ] = useState<null | HTMLElement>(null)
 
     const stats = charsheet.stats
     const spacedMoney = useNumbersWithSpaces()
@@ -76,101 +58,16 @@ function PlayerCard({ charsheet }: { charsheet: Required<CharsheetDTO> }) {
         setPlayerAnchorEl(null)
     }
 
-    const handleAddItem = async (item: Weapon | Item | Armor) => {
-        try {
-            // Busca a ficha mais recente do servidor em vez de usar a prop (que pode
-            // estar desatualizada) — evita sobrescrever itens adicionados por outra
-            // ação (ex: outro "adicionar item" ou depósito de widget) enquanto esta
-            // tela estava aberta.
-            const freshCharsheet = await charsheetEntity.findById(charsheet.id)
-            const inventory = freshCharsheet?.inventory ?? charsheet.inventory
-
-            // Verifica se é uma arma ou um item
-            const isWeapon = 'hit' in item
-            const isArmor = 'displacementPenalty' in item
-            const currentWeapons = normalizeToArray(inventory?.weapons)
-            const currentArmors = normalizeToArray(inventory?.armors)
-            const currentItems = normalizeToArray(inventory?.items)
-
-            if (isWeapon) {
-                await charsheetService.updateFields(charsheet.id, {
-                    'inventory.weapons': [ ...currentWeapons, item ]
-                })
-            } else if (isArmor) {
-                await charsheetService.updateFields(charsheet.id, {
-                    'inventory.armors': [ ...currentArmors, item ]
-                })
-            } else {
-                await charsheetService.updateFields(charsheet.id, {
-                    'inventory.items': [ ...currentItems, item ]
-                })
-            }
-
-            enqueueSnackbar(`Item ${item.name} adicionado com sucesso!`, { variant: 'success' })
-        } catch (error) {
-            console.error('Erro ao adicionar item:', error)
-            enqueueSnackbar('Erro ao adicionar item!', { variant: 'error' })
-        }
-    }
-
-    const handleSendNotification = async () => {
-        try {
-            await notificationService.create({
-                title: notificationTitle,
-                content: notificationContent,
-                userId: charsheet.userId,
-                timestamp: new Date().toISOString(),
-                read: false,
-                type: 'other'
-            })
-
-            enqueueSnackbar('Notificação enviada com sucesso!', { variant: 'success' })
-        } catch (error) {
-            enqueueSnackbar(`Erro ao enviar notificação: ${errorMessage(error, 'tente novamente')}`, { variant: 'error' })
-        }
-        
-        setNotificationDialogOpen(false)
-    }
-
-    // Ponto de evolução: cada um libera o próximo estágio de uma magia do jogador (ver utils/spellStages.ts)
-    const canGrantEvolution = usesStageUnlock(charsheet, campaign.mode)
-    const handleGrantEvolutionPoint = async () => {
+    // Cada item do menu fecha o menu e depois faz a ação
+    const afterClosing = (action: () => void) => () => {
         handlePlayerMenuClose()
-        try {
-            // Lê a ficha mais recente: o jogador pode ter gasto ponto enquanto esta tela estava aberta
-            const fresh = await charsheetEntity.findById(charsheet.id)
-            const total = getEvolutionPoints(fresh?.points ?? charsheet.points) + 1
-            await charsheetService.updateFields(charsheet.id, { 'points.evolution': total })
-            enqueueSnackbar(`${charsheet.name} recebeu 1 ponto de evolução (agora tem ${total}).`, { variant: 'success' })
-        } catch (error) {
-            console.error('Erro ao conceder ponto de evolução:', error)
-            enqueueSnackbar(`Erro ao conceder ponto de evolução: ${errorMessage(error, 'tente novamente')}`, { variant: 'error' })
-        }
+        action()
     }
 
-    const viewCharsheetDetails = () => {
-        setCharsheetDetailsOpen(true);
-        handlePlayerMenuClose();
-    }
-
-    const openSummaryWindow = () => {
-        openWindow('summary', charsheet.id)
+    const openSummaryWindow = afterClosing(() => openWindow('summary', charsheet.id))
+    const openSectionMenu = () => {
+        setSectionAnchorEl(playerAnchorEl)
         handlePlayerMenuClose()
-    }
-
-    const handleRemoveUser = async () => {
-        try {
-            if (!charsheet.id) return
-
-            await campaignService.removeUser(campaign.id, charsheet.userId)
-
-            enqueueSnackbar('Usuário removido com sucesso!', { variant: 'success' })
-        } catch (error) {
-            console.error('Erro ao remover usuário:', error)
-            enqueueSnackbar(`Erro ao remover usuário: ${errorMessage(error, 'tente novamente')}`, { variant: 'error' })
-        }
-
-        setRemoveUserDialogOpen(false)
     }
 
     return (
@@ -308,34 +205,34 @@ function PlayerCard({ charsheet }: { charsheet: Required<CharsheetDTO> }) {
                             </ListItemIcon>
                             <ListItemText>Abrir resumo em janela</ListItemText>
                         </MenuItem>
-                        <MenuItem onClick={viewCharsheetDetails}>
+                        <MenuItem onClick={openSectionMenu}>
                             <ListItemIcon>
-                                <Info />
+                                <ViewList fontSize="small" />
                             </ListItemIcon>
-                            <ListItemText>Ver detalhes</ListItemText>
+                            <ListItemText>Abrir seção da ficha…</ListItemText>
                         </MenuItem>
-                        <MenuItem onClick={() => setAddItemModalOpen(true)}>
+                        <MenuItem onClick={afterClosing(actions.openAddItem)}>
                             <ListItemIcon>
                                 <Add fontSize="small" />
                             </ListItemIcon>
                             <ListItemText>Adicionar item</ListItemText>
                         </MenuItem>
-                        {canGrantEvolution && (
-                            <MenuItem onClick={() => { void handleGrantEvolutionPoint() }}>
+                        {actions.canGrantEvolution && (
+                            <MenuItem onClick={afterClosing(() => { void actions.grantEvolutionPoint() })}>
                                 <ListItemIcon>
                                     <Upgrade fontSize="small" />
                                 </ListItemIcon>
                                 <ListItemText>Conceder ponto de evolução</ListItemText>
                             </MenuItem>
                         )}
-                        <MenuItem onClick={() => setNotificationDialogOpen(true)}>
+                        <MenuItem onClick={afterClosing(actions.openNotification)}>
                             <ListItemIcon>
                                 <ChatBubbleOutline fontSize="small" />
                             </ListItemIcon>
                             <ListItemText>Enviar Notificação</ListItemText>
                         </MenuItem>
                         <Divider />
-                        <MenuItem onClick={() => setRemoveUserDialogOpen(true)}>
+                        <MenuItem onClick={afterClosing(actions.openRemove)}>
                             <ListItemIcon>
                                 <Block sx={{ color: 'error.main' }} />
                             </ListItemIcon>
@@ -345,65 +242,14 @@ function PlayerCard({ charsheet }: { charsheet: Required<CharsheetDTO> }) {
                 </Box>
             </Menu>
 
-            {/* Modal de Adicionar Item */}
-            <AddItemModal
-                subtitle={`Adicionar item para ${charsheet.name} (${charsheet.id})`}
-                modalOpen={addItemModalOpen}
-                setModalOpen={setAddItemModalOpen}
-                disableDefaultCreate={true}
-                onConfirm={handleAddItem}
+            <SectionMenu
+                anchorEl={sectionAnchorEl}
+                onClose={() => setSectionAnchorEl(null)}
+                charsheetId={charsheet.id}
+                charsheetName={charsheet.name}
             />
 
-            {/* Modal de Notificação */}
-            <Dialog open={notificationDialogOpen} onClose={() => setNotificationDialogOpen(false)}>
-                <DialogTitle>Enviar Notificação</DialogTitle>
-                <DialogContent>
-                    <TextField
-                        autoFocus
-                        margin="dense"
-                        id="notification-title"
-                        label="Título"
-                        type="text"
-                        fullWidth
-                        variant="outlined"
-                        value={notificationTitle}
-                        onChange={(e) => setNotificationTitle(e.target.value)}
-                    />
-                    <TextField
-                        margin="dense"
-                        id="notification-content"
-                        label="Conteúdo"
-                        type="text"
-                        fullWidth
-                        variant="outlined"
-                        multiline
-                        rows={4}
-                        value={notificationContent}
-                        onChange={(e) => setNotificationContent(e.target.value)}
-                    />
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => setNotificationDialogOpen(false)}>Cancelar</Button>
-                    <Button onClick={handleSendNotification}>Enviar</Button>
-                </DialogActions>
-            </Dialog>
-
-            {/* Modal de aviso */}
-            <WarningModal
-                text={`Você tem certeza que deseja banir usuário ${charsheets.find(
-                    userCharsheet => userCharsheet.id === charsheet.id
-                )?.name} da campanha?`}
-                open={removeUserDialogOpen}
-                onClose={() => setRemoveUserDialogOpen(false)}
-                onConfirm={handleRemoveUser}
-            />
-
-            {/* Modal de Detalhes da Charsheet */}
-            <CharsheetDetailsModal
-                open={charsheetDetailsOpen}
-                onClose={() => setCharsheetDetailsOpen(false)}
-                charsheet={charsheet}
-            />
+            {actions.dialogs}
         </>
     )
 }
