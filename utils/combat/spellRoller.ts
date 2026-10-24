@@ -1,6 +1,8 @@
 import type { SpellDTO } from '@models/dtos';
 import { rollDice } from '@utils/diceRoller';
 import { calculateTotalManaCost } from '@utils/roguelite/spellCost';
+import { spellStageLabel } from '@utils/spellStages';
+import { buildActionRollText } from './actionRollMessage';
 
 export interface SpellRollSegment {
     notation: string;
@@ -69,19 +71,24 @@ export function castSpell(spell: SpellDTO, stage: 1 | 2 | 3): SpellCastResult {
     };
 }
 
+/**
+ * Texto da conjuração para o chat (mensagem de dados, ver `actionRollMessage.ts`): o cartão mostra o total do dano à vista,
+ * as rolagens no dropdown e o custo de MP. Magia sem dado só mostra o custo.
+ */
 export function buildSpellCastMessage(playerName: string, result: SpellCastResult): string {
-    const stageLabel = result.stage === 4 ? 'Maestria' : `Estágio ${result.stage}`;
-    const elementTag = result.spell.element ? ` [${result.spell.element}]` : '';
+    const stageLabel = spellStageLabel(result.spell.level, result.stage, result.spell.element);
+    const element = result.spell.element ? String(result.spell.element) : '';
 
-    if (result.segments.length === 0) {
-        return `✨ ${playerName} conjurou **${result.spell.name}**${elementTag} (${stageLabel}) — custo: **${result.mpCost} MP**`;
-    }
-
-    const detail = result.segments
-        .map(s => `${s.notation}: ${s.display} = ${s.total}`)
-        .join(' • ');
-
-    return `✨ ${playerName} conjurou **${result.spell.name}**${elementTag} (${stageLabel}): **${result.totalDamage}** [${detail}] — custo: **${result.mpCost} MP**`;
+    return buildActionRollText({
+        kind: 'magia',
+        player: playerName,
+        title: result.spell.name,
+        detail: [ element, stageLabel ].filter(Boolean).join(' · '),
+        critical: false,
+        total: result.segments.length > 0 ? result.totalDamage : null,
+        cost: result.mpCost,
+        segments: result.segments.map(({ notation, display, total }) => ({ notation, display, total }))
+    });
 }
 
 export function buildInsufficientMpMessage(playerName: string, spell: SpellDTO, mpCost: number, currentMp: number): string {

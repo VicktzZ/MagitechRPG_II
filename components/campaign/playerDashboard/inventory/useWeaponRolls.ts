@@ -12,17 +12,20 @@ import {
 import { useSession } from 'next-auth/react';
 import type { MouseEvent as ReactMouseEvent } from 'react';
 
-/** Rolagens de acerto e dano das armas do inventário, enviadas ao chat da sessão como log de combate */
+/**
+ * Rolagens de acerto e dano das armas do inventário, enviadas ao chat da sessão: o acerto como log de combate e o dano
+ * como mensagem de dados (cartão com o total à vista e as rolagens no dropdown, ver `actionRollMessage.ts`)
+ */
 export function useWeaponRolls() {
     const { charsheet } = useCampaignCurrentCharsheetContext();
     const { data: session } = useSession();
     const { handleSendMessage, setIsChatOpen, isChatOpen } = useChatContext();
 
-    const sendCombatChatMessage = async (text: string) => {
+    const sendCombatChatMessage = async (text: string, type: MessageType = MessageType.COMBAT_LOG) => {
         if (!session?.user) return;
         await handleSendMessage(new Message({
             text,
-            type: MessageType.COMBAT_LOG,
+            type,
             by: {
                 id: session.user.id ?? '',
                 name: session.user.name ?? '',
@@ -49,7 +52,7 @@ export function useWeaponRolls() {
             await sendCombatChatMessage(buildDamageErrorText(weapon, isCritical));
             return;
         }
-        await sendCombatChatMessage(buildDamageMessageText(playerName, weapon, result));
+        await sendCombatChatMessage(buildDamageMessageText(playerName, weapon, result), MessageType.DICE);
     };
 
     return { handleWeaponHit, handleWeaponDamage };

@@ -80,6 +80,32 @@ describe('SpellsTab (visão do mestre)', () => {
         expect(html).toContain('Aberta pela maestria');
     });
 
+    it('sem maestria no elemento a Maestria não abre de jeito nenhum: nem com o 3 gravado, nem pelo ajuste do mestre', () => {
+        const inferno = spell({ id: 'f4', name: 'Inferno', level: 4, element: 'FOGO' });
+        const html = view([ inferno ], { elementalMastery: '', spellUnlocked: { f4: 3 } }, { isEditing: true });
+        // o 3 gravado vale só até o estágio 2
+        expect(html).toContain('2 de 3 estágios');
+        expect(html).not.toContain('Aberta pela maestria');
+        // o botão da Maestria fica desabilitado e a tela diz por quê; os estágios 1 e 2 seguem ajustáveis
+        expect(html).toMatch(/<button[^>]*disabled[^>]*aria-label="Liberar até o Maestria de Inferno"/);
+        expect(html).not.toMatch(/<button[^>]*disabled[^>]*aria-label="Liberar até o Estágio 2 de Inferno"/);
+        expect(html).toContain('A Maestria só abre para quem tem a maestria elemental em fogo.');
+        // com a maestria no elemento o botão volta e o aviso some
+        const mastered = view([ inferno ], { elementalMastery: 'FOGO', spellUnlocked: { f4: 2 } }, { isEditing: true });
+        expect(mastered).not.toMatch(/<button[^>]*disabled[^>]*aria-label="Liberar até o Maestria de Inferno"/);
+        expect(mastered).not.toContain('A Maestria só abre');
+    });
+
+    it('elemento secundário no nível 4 tem "Estágio 3" (não Maestria) e ele abre pagando, mesmo com maestria em outro elemento', () => {
+        const hemo = spell({ id: 'hemo', name: 'Hemorragia', level: 4, element: 'SANGUE', mpCost: 12 });
+        const bought = view([ hemo ], { elementalMastery: 'FOGO', spellUnlocked: { hemo: 3 } }, { isEditing: true });
+        expect(bought).toContain('3 de 3 estágios');
+        expect(bought).toContain('aria-label="Liberar até o Estágio 3 de Hemorragia"');
+        expect(bought).not.toContain('Maestria de Hemorragia');
+        expect(bought).not.toContain('Aberta pela maestria');
+        expect(bought).not.toMatch(/<button[^>]*disabled[^>]*aria-label="Liberar até o Estágio 3 de Hemorragia"/);
+    });
+
     it('com muitas magias a lista abre fechada e ganha busca e filtros', () => {
         const many = [ fire, water, blood, spell({ id: 'f2', name: 'Fagulha', level: 1 }) ];
         const html = view(many);

@@ -90,6 +90,15 @@ lote (senão alguém editou à mão), sobrescrever só os ids do lote e reler pa
   antiga — **grava no banco: só com liberação do dono**). Ao excluir a campanha o servidor apaga a subcoleção.
   **Publique `firestore.rules` antes do código**: a regra nova de `campaigns/{id}/messages` é aditiva, mas sem ela o
   navegador não lê o chat.
+- **Dano de arma e conjuração de magia no chat** (`utils/combat/actionRollMessage.ts`, `components/misc/ActionRollCard.tsx`): vão como mensagem de **dados** (`MessageType.DICE`, chip "DADOS" e borda
+  primária) e o `DiceMessage` os mostra como o cartão dos testes e dos dados personalizados: `[jogador] Nome`, detalhe ("FOGO · Estágio 2", "Dano crítico · Perfurante"), expressões em cinza, **Total à vista** e as
+  rolagens (cada expressão com os dados, o modificador e o total, mais Subtotal e Média) num dropdown fechado de início. A magia mostra também o **custo de MP** (chip ciano); o dano crítico da arma ganha o
+  chip "Crítico"; magia sem dado no texto do estágio mostra só o custo (sem Total nem dropdown). O texto da mensagem é legível e começa com o marcador `[AÇÃO] magia|arma [crítico]` (`buildActionRollText`/
+  `parseActionRoll`; o parser devolve `null` para qualquer outro texto, e log de combate nunca vira cartão). **Só o dano e a conjuração viram cartão**: o acerto da arma e os avisos de MP insuficiente e de limite de
+  MP continuam linhas de log de combate (`COMBAT_LOG`). `useWeaponRolls` e `SpellsSection` mandam o `Message` pronto (texto cru no `handleSendMessage` faria o chat tentar rolar a notação). Visto no
+  e2e: um dropdown aberto no primeiro segundo depois do envio fechou sozinho (a mensagem otimista tem a chave `tempId` e a confirmada pelo servidor `id-índice` em `MessageList`, então o cartão remonta);
+  vale para todos os cartões de dados, e o teste espera uns 2 s antes de abrir. Teste de componente que importa
+  `DiceMessage` ou `diceRoller` precisa de `jest.mock('@enums', ...)`: o barril puxa `subscriptionEnum.ts`, que o ts-jest barra por um erro de tipo antigo.
 - **Verificar contra o Firestore de verdade (emulador)**: `(cd tests/firestore-rules && npm install)` uma vez; depois
   `npm test` nessa pasta (regras) e `npm run test:emulator` na raiz (helpers do servidor com o Admin SDK).
 - **Ver a campanha rodando, sem banco real**: emuladores (`firebase emulators:start --only firestore,auth --project
@@ -169,8 +178,10 @@ do efeito, e não pode ser conjurado. O MP extra por estágio ao conjurar (`calc
 - O cartão da ficha (`Magic.tsx`) abre no estágio liberado mais novo; os botões de estágio dele só **mostram** o texto e o custo daquele estágio (estado de tela, não grava).
 - **Evoluir custa pontos de evolução, e o custo depende do nível da magia** (`stageRule`, `utils/spellStages.ts`): nível 1 e 2 = **1 ponto** por estágio; nível 3 = **2 pontos** por estágio;
   nível 4 = **3 pontos** para o estágio 2, e o 3º estágio é a **Maestria**: abre **sozinha, sem gastar ponto,** para quem tem maestria no elemento da magia (`elementalMastery`, comparação sem
-  caixa nem acento: `sameElement`) **depois de liberar o estágio 2**; sem a maestria ela não se compra. Nível 4 de elemento **secundário** não tem esse atalho: o estágio 3 também custa
-  **3 pontos**. O custo vem **explícito** ao jogador (texto "Custa 2 pontos de evolução" no estágio bloqueado e no botão "Evoluir (2 pontos)", mais "Faltam N pontos" quando não dá).
+  caixa nem acento: `sameElement`) **depois de liberar o estágio 2**; sem a maestria ela **nunca** abre (decisão do dono): não se compra, o `3` gravado em `spellUnlocked`/`spellStages` (ficha antiga,
+  edição de fora) vale só até o estágio 2 (`masteryRequired` em `getSpellProgress`), e o ajuste direto do mestre (aba de magias) deixa o botão da Maestria desabilitado, com o motivo. Nível 4 de
+  elemento **secundário** (Sangue, Vácuo, Psíquico, Radiação, Explosão) não tem Maestria: o 3º estágio é um estágio comum, chamado **"Estágio 3"** (`spellStageLabel(level, stage, element)`; sem o
+  elemento ele devolve "Maestria") e **custa 3 pontos**, comprado como os outros, tenha o jogador maestria em outro elemento ou não. O custo vem **explícito** ao jogador (texto "Custa 2 pontos de evolução" no estágio bloqueado e no botão "Evoluir (2 pontos)", mais "Faltam N pontos" quando não dá).
   `getSpellProgress(spell, sheet, { enabled, legacy })` é o que as telas chamam (envolve `getStageProgress` e devolve `nextCost`, `needsMastery`, `purchased` e `stages[]`); a maestria é **derivada**
   (se a maestria da ficha mudar, a Maestria volta a bloquear) e **não é gravada**: `spellUnlocked` guarda só o liberado por pontos (`purchased`; é o que `materializeUnlocked` grava).
   O ajuste da regra (se o dono mudar o custo) fica todo em `stageRule`. Novo atributo `points.evolution` (inteiro ≥ 0; ficha antiga não tem o campo e vale 0). O **mestre concede**: no cartão do

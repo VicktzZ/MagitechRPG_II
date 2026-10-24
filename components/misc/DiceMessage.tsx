@@ -5,6 +5,8 @@ import { Box, Chip, Collapse, Divider, IconButton, Stack, Tooltip, Typography } 
 import { MessageType } from '@enums'
 import { Casino, ExpandMore } from '@mui/icons-material'
 import { useState } from 'react'
+import { parseActionRoll } from '@utils/combat/actionRollMessage'
+import { ActionRollCard } from './ActionRollCard'
 
 interface DiceMessageProps {
     text: string
@@ -17,6 +19,10 @@ export function DiceMessage({ text, type }: DiceMessageProps) {
     // Aceita mensagens com ou sem emoji inicial. Se houver, remove-o.
     const hasEmoji = text.startsWith('🎲')
     const messageText = (hasEmoji ? text.substring(2) : text).trim()
+
+    // Dano de arma e conjuração de magia (utils/combat/actionRollMessage.ts): mesmo cartão dos testes, com custo na magia
+    const action = type === MessageType.COMBAT_LOG ? null : parseActionRoll(messageText)
+    if (action) return <ActionRollCard action={action} />
 
     // Caso 0: Logs de combate - renderiza com formatação especial
     if (type === MessageType.COMBAT_LOG) {

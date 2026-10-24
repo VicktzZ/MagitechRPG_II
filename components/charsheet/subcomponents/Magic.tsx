@@ -62,8 +62,8 @@ function LockMark(): ReactElement {
     );
 }
 
-/** Rótulo do botão de um estágio: no nível 4 o terceiro é a Maestria */
-const getStageLabel = (level: number, stage: 0 | 1 | 2): string => spellStageLabel(level, stage + 1);
+/** Rótulo do botão de um estágio: no nível 4 de elemento primário o terceiro é a Maestria (o secundário não tem: "Estágio 3") */
+const getStageLabel = (level: number, stage: 0 | 1 | 2, element?: unknown): string => spellStageLabel(level, stage + 1, element);
 
 function MagicSpell({
     magic,
@@ -85,7 +85,7 @@ function MagicSpell({
     const hasUnlockRule = unlockedStage !== undefined
     const unlockedIndex = Math.min(2, (hasUnlockRule ? Math.max(1, unlockedStage) : 3) - 1) as 0 | 1 | 2
     const nextStage = hasUnlockRule && unlockedStage < stageCount ? (unlockedStage + 1) as 2 | 3 : null
-    const nextLabel = nextStage ? spellStageLabel(Number(magic.level), nextStage) : ''
+    const nextLabel = nextStage ? spellStageLabel(Number(magic.level), nextStage, magic.element) : ''
 
     const clampToUnlocked = (stage: number): 0 | 1 | 2 => Math.min(unlockedIndex, Math.min(2, Math.max(0, stage))) as 0 | 1 | 2
     // O cartão abre no estágio liberado mais novo (ou no pedido, nas vitrines sem a regra)
@@ -435,7 +435,7 @@ function MagicSpell({
                         >
                             {availableStages.map(stage => {
                                 const locked = stage > unlockedIndex
-                                const label = getStageLabel(Number(magic.level), stage)
+                                const label = getStageLabel(Number(magic.level), stage, magic.element)
                                 const stageButton = (
                                     <Button
                                         key={locked ? undefined : stage}
@@ -683,7 +683,7 @@ function MagicSpellCompact({
                 <div className="mc-stages">
                     {availableStages.map(stage => {
                         const locked = stage > unlockedIndex;
-                        const label = getStageLabel(level, stage);
+                        const label = getStageLabel(level, stage, magic.element);
                         return (
                             <button
                                 key={stage}

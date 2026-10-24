@@ -3,6 +3,7 @@ import type { CharsheetDTO } from '@models/dtos';
 import type { Attributes } from '@models/Attributes';
 import type { Expertises } from '@models/Expertises';
 import { rollDice, type DiceResult } from '@utils/diceRoller';
+import { buildActionRollText } from './actionRollMessage';
 
 export type WeaponHitResult = {
     notation: string;
@@ -134,11 +135,21 @@ export function buildHitMessageText(playerName: string, weapon: Weapon, hit: Wea
     return `🎯 ${playerName} testou acerto com **${weapon.name}** (${hit.bonusLabel}): [${rollPart}] ${sign}${hit.bonus} = **${hit.total}**`;
 }
 
+/**
+ * Texto do dano da arma para o chat (mensagem de dados, ver `actionRollMessage.ts`): o cartão mostra o total à vista e as
+ * rolagens no dropdown, com o dano crítico marcado.
+ */
 export function buildDamageMessageText(playerName: string, weapon: Weapon, damage: WeaponDamageResult): string {
-    const prefix = damage.isCritical ? '💥' : '⚔️';
-    const action = damage.isCritical ? 'acertou um **crítico** com' : 'usou';
-    const dmgType = weapon.effect?.effectType ? ` (${weapon.effect.effectType})` : '';
-    return `${prefix} ${playerName} ${action} **${weapon.name}**${dmgType}: **${damage.total}** de dano [${damage.notation}: ${damage.display}]`;
+    return buildActionRollText({
+        kind: 'arma',
+        player: playerName,
+        title: weapon.name,
+        detail: [ damage.isCritical ? 'Dano crítico' : 'Dano', weapon.effect?.effectType ].filter(Boolean).join(' · '),
+        critical: damage.isCritical,
+        total: damage.total,
+        cost: null,
+        segments: [ { notation: damage.notation, display: damage.display, total: damage.total } ]
+    });
 }
 
 export function buildDamageErrorText(weapon: Weapon, isCritical: boolean): string {

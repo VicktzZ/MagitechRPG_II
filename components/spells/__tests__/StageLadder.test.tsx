@@ -55,7 +55,8 @@ describe('StageLadder', () => {
     });
 
     it('o custo do estágio 3 do nível 4 usa o extra da Maestria (sem NaN)', () => {
-        const html = ladder(fire4, { spellUnlocked: { f4: 3 } });
+        // A Maestria só está liberada para quem tem a maestria no elemento
+        const html = ladder(fire4, { elementalMastery: 'FOGO', spellUnlocked: { f4: 3 } });
         expect(html).toContain('21 MP');
         expect(html).not.toContain('NaN');
         expect(html).toContain('Maestria');

@@ -76,11 +76,12 @@ export default function SpellsSection(): ReactElement {
     const mpLimitReleased = Boolean(myCombatant?.mpLimitOverride)
     const exceedsMpLimit = (cost: number): boolean => mpLimitEnforced && !mpLimitReleased && mpSpentThisTurn + cost > mpLimit
 
-    const sendCombatChatMessage = async (text: string) => {
+    // Avisos (MP insuficiente, limite de MP) são log de combate; a conjuração em si vai como mensagem de dados (cartão com dropdown)
+    const sendCombatChatMessage = async (text: string, type: MessageType = MessageType.COMBAT_LOG) => {
         if (!session?.user) return;
         await handleSendMessage(new Message({
             text,
-            type: MessageType.COMBAT_LOG,
+            type,
             by: {
                 id: session.user.id ?? '',
                 name: session.user.name ?? '',
@@ -135,7 +136,7 @@ export default function SpellsSection(): ReactElement {
 
             const newMp = Math.max(0, currentMp - result.mpCost);
             await updateCharsheet({ 'stats.mp': newMp });
-            await sendCombatChatMessage(buildSpellCastMessage(playerName, result));
+            await sendCombatChatMessage(buildSpellCastMessage(playerName, result), MessageType.DICE);
 
             // Estatísticas: magia conjurada + MP gasto
             postCampaignStats(campaign.id, [ {
@@ -234,7 +235,7 @@ export default function SpellsSection(): ReactElement {
                 spellUnlocked: { ...(charsheet.spellUnlocked || {}), [spellId]: stage }
             } as any)
 
-            const unlockedLabel = spellStageLabel(spell.level, stage).toLowerCase()
+            const unlockedLabel = spellStageLabel(spell.level, stage, spell.element).toLowerCase()
             enqueueSnackbar(`${spell.name} evoluiu: ${unlockedLabel} desbloqueado (-${formatEvolutionPoints(cost)})!`, { variant: 'success' })
         } catch (error) {
             console.error('Erro ao evoluir magia:', error)
