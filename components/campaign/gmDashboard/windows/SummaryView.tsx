@@ -10,7 +10,7 @@ import type { VitalKey } from '@utils/vitals';
 import type { ReactElement, ReactNode } from 'react';
 import { useCharsheetPointsView } from '../useCharsheetPointsView';
 import VitalsPanel, { type VitalRow } from './VitalsPanel';
-import { WINDOW_KINDS, WINDOW_KIND_LABEL, type WindowKind } from './windowKinds';
+import { SHEET_WINDOW_KINDS, WINDOW_KIND_LABEL, type SheetWindowKind } from './windowKinds';
 
 export type SummarySheet = Required<CharsheetDTO>;
 
@@ -57,7 +57,7 @@ interface SummaryViewProps {
     inTurn: boolean;
     /** A regra de estágios (e o ponto de evolução) vale para esta ficha */
     showEvolution: boolean;
-    onOpenSection: (kind: WindowKind) => void;
+    onOpenSection: (kind: SheetWindowKind) => void;
     /** Dano ou cura rápidos: variação (negativa = dano ou gasto) de um ponto vital */
     onAdjustVital: (key: VitalKey, delta: number) => void;
     actions: SummaryActions;
@@ -177,7 +177,7 @@ export function SummaryView({ charsheet, inTurn, showEvolution, onOpenSection, o
             <Box>
                 <Heading>Abrir seção</Heading>
                 <Stack direction="row" flexWrap="wrap" useFlexGap spacing={1}>
-                    {WINDOW_KINDS.filter(kind => kind !== 'summary').map(kind => (
+                    {SHEET_WINDOW_KINDS.filter(kind => kind !== 'summary').map(kind => (
                         <Button key={kind} variant="outlined" size="small" onClick={() => onOpenSection(kind)}>
                             {WINDOW_KIND_LABEL[kind]}
                         </Button>

@@ -6,6 +6,7 @@ import type { ReactElement } from 'react';
 import FloatingWindow from './FloatingWindow';
 import { useGMWindowActions, useGMWindowView } from './GMWindowProvider';
 import { WINDOW_KIND_LABEL } from './windowKinds';
+import { windowTargetName } from './windowTargets';
 import type { WindowEntry } from './windowState';
 import {
     AttributesWindow,
@@ -15,6 +16,8 @@ import {
     SkillsWindow,
     SpellsWindow
 } from './SectionWindows';
+import CombatantWindow from './creature/CombatantWindow';
+import CreatureWindow from './creature/CreatureWindow';
 import NotesWindow from './NotesWindow';
 import SummaryWindow from './SummaryWindow';
 
@@ -22,21 +25,25 @@ import SummaryWindow from './SummaryWindow';
 function WindowContent({ entry }: { entry: WindowEntry }): ReactElement {
     switch (entry.kind) {
     case 'summary':
-        return <SummaryWindow charsheetId={entry.charsheetId} />;
+        return <SummaryWindow charsheetId={entry.targetId} />;
     case 'info':
-        return <InfoWindow charsheetId={entry.charsheetId} />;
+        return <InfoWindow charsheetId={entry.targetId} />;
     case 'attributes':
-        return <AttributesWindow charsheetId={entry.charsheetId} />;
+        return <AttributesWindow charsheetId={entry.targetId} />;
     case 'expertises':
-        return <ExpertisesWindow charsheetId={entry.charsheetId} />;
+        return <ExpertisesWindow charsheetId={entry.targetId} />;
     case 'inventory':
-        return <InventoryWindow charsheetId={entry.charsheetId} />;
+        return <InventoryWindow charsheetId={entry.targetId} />;
     case 'skills':
-        return <SkillsWindow charsheetId={entry.charsheetId} />;
+        return <SkillsWindow charsheetId={entry.targetId} />;
     case 'spells':
-        return <SpellsWindow charsheetId={entry.charsheetId} />;
+        return <SpellsWindow charsheetId={entry.targetId} />;
     case 'notes':
-        return <NotesWindow charsheetId={entry.charsheetId} />;
+        return <NotesWindow charsheetId={entry.targetId} />;
+    case 'creature':
+        return <CreatureWindow creatureId={entry.targetId} />;
+    case 'combatant':
+        return <CombatantWindow combatantId={entry.targetId} />;
     }
 }
 
@@ -45,7 +52,7 @@ function WindowContent({ entry }: { entry: WindowEntry }): ReactElement {
  * contenção para elementos `fixed` (ver CLAUDE.md), e as janelas precisam ficar por cima da página inteira.
  */
 export default function GMWindowLayer(): ReactElement | null {
-    const { charsheets } = useCampaignContext();
+    const { campaign, charsheets } = useCampaignContext();
     const { windows, frontKey, focusRequest, bounds, mobile } = useGMWindowView();
     const { focusWindow, closeWindow, commitRect, toggleCollapse } = useGMWindowActions();
 
@@ -56,13 +63,13 @@ export default function GMWindowLayer(): ReactElement | null {
     return (
         <Portal>
             {windows.map(entry => {
-                const sheetName = charsheets.find(sheet => sheet.id === entry.charsheetId)?.name ?? 'ficha indisponível';
+                const targetName = windowTargetName(entry.kind, entry.targetId, { charsheets, campaign });
 
                 return (
                     <FloatingWindow
                         key={entry.key}
                         entry={entry}
-                        title={`${WINDOW_KIND_LABEL[entry.kind]}: ${sheetName}`}
+                        title={`${WINDOW_KIND_LABEL[entry.kind]}: ${targetName}`}
                         rank={stackOrder.indexOf(entry.key)}
                         isFront={entry.key === frontKey}
                         bounds={bounds}

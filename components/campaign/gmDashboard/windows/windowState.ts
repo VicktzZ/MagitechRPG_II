@@ -5,14 +5,17 @@ import {
     WINDOW_TITLE_HEIGHT,
     isWindowKind,
     windowKey,
-    type WindowKind
+    windowTargetOf,
+    type WindowKind,
+    type WindowTarget
 } from './windowKinds';
 
-/** Uma janela aberta: o que mostra (seção + ficha), onde está e se está recolhida na barra de título */
+/** Uma janela aberta: o que mostra (tipo + alvo), onde está e se está recolhida na barra de título */
 export interface WindowEntry {
     key: string;
     kind: WindowKind;
-    charsheetId: string;
+    /** Id do que a janela mostra: ficha, criatura ou combatente, conforme o tipo (`windowTargetOf`) */
+    targetId: string;
     x: number;
     y: number;
     w: number;
@@ -35,11 +38,14 @@ export interface WindowsState {
 }
 
 export type WindowsAction =
-    | { type: 'open'; kind: WindowKind; charsheetId: string; rect: Rect }
+    | { type: 'open'; kind: WindowKind; targetId: string; rect: Rect }
     | { type: 'focus'; key: string }
     | { type: 'close'; key: string }
-    /** Fecha as janelas de fichas que saíram da campanha */
-    | { type: 'keepSheets'; ids: string[] }
+    /**
+     * Fecha as janelas cujo alvo saiu da campanha (ficha removida, criatura excluída, combatente fora do combate).
+     * Só olha os tipos de alvo presentes em `keep`: um tipo ausente não é podado (ainda carregando).
+     */
+    | { type: 'keepTargets'; keep: Partial<Record<WindowTarget, string[]>> }
     /** Grava o resultado de um arrastar ou redimensionar */
     | { type: 'commit'; key: string; rect: Rect }
     | { type: 'toggleCollapse'; key: string }
@@ -50,6 +56,8 @@ export const initialWindowsState: WindowsState = { windows: [], nextZ: 1, focusR
 
 interface RawWindow {
     kind?: unknown;
+    targetId?: unknown;
+    /** Nome antigo de `targetId`, de quando só havia janelas de ficha: o que o navegador guardou antes ainda usa */
     charsheetId?: unknown;
     x?: unknown;
     y?: unknown;
@@ -64,7 +72,7 @@ const isRecord = (value: unknown): value is Record<string, unknown> => typeof va
 const finiteNumber = (value: unknown, fallback: number): number => (typeof value === 'number' && Number.isFinite(value) ? value : fallback);
 
 /**
- * Lê o que o navegador guardou: ignora o que não é uma janela conhecida, repetida ou sem ficha, corrige
+ * Lê o que o navegador guardou: ignora o que não é uma janela conhecida, repetida ou sem alvo, corrige
  * números inválidos e renumera a ordem de empilhamento. O que sobra respeita o limite de janelas abertas.
  */
 export function sanitizeWindows(raw: unknown): WindowEntry[] {
@@ -77,9 +85,10 @@ export function sanitizeWindows(raw: unknown): WindowEntry[] {
         if (!isRecord(item)) return;
         const candidate: RawWindow = item;
         if (!isWindowKind(candidate.kind)) return;
-        if (typeof candidate.charsheetId !== 'string' || candidate.charsheetId === '') return;
+        const targetId = typeof candidate.targetId === 'string' ? candidate.targetId : candidate.charsheetId;
+        if (typeof targetId !== 'string' || targetId === '') return;
 
-        const key = windowKey(candidate.kind, candidate.charsheetId);
+        const key = windowKey(candidate.kind, targetId);
         if (seen.has(key)) return;
         seen.add(key);
 
@@ -89,7 +98,7 @@ export function sanitizeWindows(raw: unknown): WindowEntry[] {
             entry: {
                 key,
                 kind: candidate.kind,
-                charsheetId: candidate.charsheetId,
+                targetId,
                 x: finiteNumber(candidate.x, 0),
                 y: finiteNumber(candidate.y, 0),
                 w: Math.max(0, finiteNumber(candidate.w, size.w)) || size.w,
@@ -120,7 +129,7 @@ const nextFocus = (state: WindowsState, key: string): FocusRequest => ({ key, n:
 export function windowsReducer(state: WindowsState, action: WindowsAction): WindowsState {
     switch (action.type) {
     case 'open': {
-        const key = windowKey(action.kind, action.charsheetId);
+        const key = windowKey(action.kind, action.targetId);
         const existing = state.windows.find(entry => entry.key === key);
 
         // Já aberta: só vem para a frente (e desrecolhe), sem mudar de lugar
@@ -137,7 +146,7 @@ export function windowsReducer(state: WindowsState, action: WindowsAction): Wind
         const entry: WindowEntry = {
             key,
             kind: action.kind,
-            charsheetId: action.charsheetId,
+            targetId: action.targetId,
             ...action.rect,
             collapsed: false,
             z: state.nextZ
@@ -166,9 +175,13 @@ export function windowsReducer(state: WindowsState, action: WindowsAction): Wind
         };
     }
 
-    case 'keepSheets': {
-        const keep = new Set(action.ids);
-        const windows = state.windows.filter(entry => keep.has(entry.charsheetId));
+    case 'keepTargets': {
+        const keep = new Map<WindowTarget, Set<string>>();
+        (Object.entries(action.keep) as Array<[ WindowTarget, string[] | undefined ]>).forEach(([ target, ids ]) => {
+            if (ids) keep.set(target, new Set(ids));
+        });
+
+        const windows = state.windows.filter(entry => keep.get(windowTargetOf(entry.kind))?.has(entry.targetId) ?? true);
         if (windows.length === state.windows.length) return state;
 
         return { ...state, windows, focusRequest: null };

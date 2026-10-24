@@ -35,7 +35,7 @@ const bounds: Bounds = { left: 100, top: 72, right: 1100, bottom: 792 };
 const entry = (overrides: Partial<WindowEntry> = {}): WindowEntry => ({
     key: 'summary:a',
     kind: 'summary',
-    charsheetId: 'a',
+    targetId: 'a',
     x: 200,
     y: 150,
     w: 380,
@@ -190,6 +190,32 @@ describe('PartyPortrait', () => {
         const html = render(<PartyPortrait {...base} vitals={[]} />);
         expect(html).not.toContain('data-vital');
         expect(html).toContain('aria-label="Aria Valen, nível 7, online. Abrir resumo"');
+    });
+});
+
+describe('PartyPortrait (criatura em combate)', () => {
+    const base = { name: 'Goblin A', inTurn: false, open: false, vitals: [ { key: 'lp' as const, name: 'Vida', value: 9, max: 25, barColor: color.lp } ], onClick: noop };
+
+    it('sem presença não mostra online nem offline, e a ação é a de abrir a criatura', () => {
+        const html = render(<PartyPortrait {...base} level={3} actionLabel="Abrir criatura" />);
+        expect(html).toContain('aria-label="Goblin A, nível 3, Vida 9 de 25. Abrir criatura"');
+        expect(html).not.toContain('online');
+        expect(html).not.toContain('offline');
+        expect(html).toContain('Nv. 3');
+    });
+
+    it('sem nível o nome acessível é só o nome, e em turno o selo aparece', () => {
+        const html = render(<PartyPortrait {...base} inTurn actionLabel="Abrir criatura" />);
+        expect(html).toContain('aria-label="Goblin A, em turno, Vida 9 de 25. Abrir criatura"');
+        expect(html).toContain('Em turno');
+        expect(html).not.toContain('Nv.');
+    });
+
+    it('o retrato do jogador segue igual: online ou offline e "Abrir resumo"', () => {
+        const online = render(<PartyPortrait {...base} name="Aria" level={5} online />);
+        expect(online).toContain('aria-label="Aria, nível 5, online, Vida 9 de 25. Abrir resumo"');
+        const offline = render(<PartyPortrait {...base} name="Aria" level={5} online={false} />);
+        expect(offline).toContain('offline');
     });
 });
 

@@ -13,6 +13,7 @@ import type { CharsheetDTO } from '@models/dtos';
 import GMActions from './gmDashboard/GMActions';
 import GMWindowLayer from './gmDashboard/windows/GMWindowLayer';
 import { GMWindowProvider } from './gmDashboard/windows/GMWindowProvider';
+import { creatureWindowTargets } from './gmDashboard/windows/windowTargets';
 import PartyBar from './gmDashboard/windows/PartyBar';
 import { PARTY_BAR_GAP } from './gmDashboard/windows/layout';
 import CampaignFinishedBanner from './CampaignFinishedBanner';
@@ -95,6 +96,9 @@ export default function CampaignComponent(): ReactElement {
         values: charsheet!
     });
 
+    // Criaturas e combatentes que podem ter janela do mestre (as janelas dos que saíram são fechadas)
+    const windowTargets = useMemo(() => creatureWindowTargets(campaign), [ campaign ]);
+
     // Objeto memoizado — inline ({{ charsheet }}) criava um valor novo a cada
     // render e re-renderizava todos os consumidores do contexto da ficha atual.
     const currentCharsheetValue = useMemo(() => ({ charsheet: charsheet! }), [ charsheet ]);
@@ -125,7 +129,12 @@ export default function CampaignComponent(): ReactElement {
 
     // Mestre: a barra do grupo fica ao lado da coluna e as janelas abertas por ela flutuam sobre a página
     const body = effectiveIsUserGM ? (
-        <GMWindowProvider campaignId={campaign.id} charsheetIds={charsheets.map(sheet => sheet.id)}>
+        <GMWindowProvider
+            campaignId={campaign.id}
+            charsheetIds={charsheets.map(sheet => sheet.id)}
+            creatureIds={windowTargets.creatureIds}
+            combatantIds={windowTargets.combatantIds}
+        >
             <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: `${PARTY_BAR_GAP}px` }}>
                 <PartyBar />
                 {main}
