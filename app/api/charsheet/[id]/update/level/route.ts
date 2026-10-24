@@ -6,6 +6,7 @@ import type { RPGSystem } from '@models/entities/RPGSystem';
 import type { ClassNames } from '@models/types/string';
 import { charsheetRepository, notificationRepository, rpgSystemRepository } from '@repositories';
 import { handleRouteError, readJsonBody, requireCharsheetAccess, requireUser } from '@utils/api';
+import { secondaryElementsUnlockedNotice, unlocksSecondaryElements } from '@utils/elements';
 import { evolutionPointsForLevelUp } from '@utils/evolutionPoints';
 import { getEvolutionPoints, usesStageUnlock } from '@utils/spellStages';
 
@@ -431,6 +432,21 @@ export async function POST(req: Request, { params }: { params: { id: string } })
             link: `/charsheet/${charsheet.id}`,
             read: false
         });
+
+        // Chegou ao nível dos elementos secundários: aviso à parte, com o título e, logo abaixo, os elementos. Sistema
+        // customizado sem magias não tem o que liberar
+        if (unlocksSecondaryElements(oldLevel, newLevel) && (!hasCustomProgression || system?.enabledFields?.spells !== false)) {
+            const { title, content } = secondaryElementsUnlockedNotice();
+            await notificationRepository.create({
+                userId: charsheet.userId,
+                title,
+                content,
+                timestamp: new Date().toISOString(),
+                type: 'levelUp',
+                link: `/charsheet/${charsheet.id}`,
+                read: false
+            });
+        }
 
         return Response.json(updatedCharsheet);
     } catch (error) {

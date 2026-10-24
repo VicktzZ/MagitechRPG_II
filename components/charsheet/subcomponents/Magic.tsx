@@ -8,7 +8,6 @@ import { alpha, Box, Button, CardContent, Chip, Grid, IconButton, Paper, Stack, 
 import { useEffect, useState, type ReactElement } from 'react';
 import { motion } from 'framer-motion';
 import { elementColor } from '@constants';
-import { SECONDARY_ELEMENT_LABEL, SECONDARY_ELEMENTS_RULE, isSecondaryElement } from '@utils/elements';
 import { calculateExtraManaCost } from '@utils/roguelite';
 import { EVOLUTION_POINT_COST, formatEvolutionPoints, spellStageCount, spellStageLabel, stageAccessText, stageRule } from '@utils/spellStages';
 import { color } from '@themes/tokens';
@@ -207,17 +206,6 @@ function MagicSpell({
                                 }}
                             />
                         </Tooltip>
-
-                        {isSecondaryElement(magic.element) && (
-                            <Tooltip title={SECONDARY_ELEMENTS_RULE} arrow placement="top">
-                                <Chip
-                                    size="small"
-                                    variant="outlined"
-                                    label={SECONDARY_ELEMENT_LABEL}
-                                    sx={{ color: 'text.secondary', borderColor: 'divider', borderRadius: '16px' }}
-                                />
-                            </Tooltip>
-                        )}
 
                         {/* Nome da magia com tooltip */}
                         <Tooltip
@@ -676,9 +664,7 @@ function MagicSpellCompact({
                 <span className="mc-icon" title={`Elemento: ${magic.element}`}><ElementIcon element={magic.element} colored /></span>
                 <div className="mc-title">
                     <div className="mc-name" title={magic.name}>{magic.name}</div>
-                    <div className="mc-sub" title={isSecondaryElement(magic.element) ? SECONDARY_ELEMENTS_RULE : undefined}>
-                        {magic.element}{isSecondaryElement(magic.element) ? ` (${SECONDARY_ELEMENT_LABEL.toLowerCase()})` : ''} · {magic.type}
-                    </div>
+                    <div className="mc-sub">{magic.element} · {magic.type}</div>
                 </div>
             </div>
 

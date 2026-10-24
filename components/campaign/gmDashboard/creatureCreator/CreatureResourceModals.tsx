@@ -2,7 +2,6 @@ import { ResourceListModal } from '@components/utils';
 import Magic from '@components/charsheet/subcomponents/Magic';
 import { poderService, magiaService } from '@services';
 import { elements, specialElements } from '@constants';
-import { elementHint } from '@utils/elements';
 import { SPELL_FILTERS } from '@utils/spellCategory';
 import type { Power, Spell } from '@models/entities';
 import type { SkillData, SpellData } from './types';
@@ -69,7 +68,6 @@ export default function CreatureResourceModals({
                 errorMessage={(err: Error) => err.message || 'Erro ao adicionar magia'}
                 filterOptions={[ ...elements, ...specialElements ]}
                 filterLabel="Elemento"
-                filterOptionHint={elementHint}
                 secondaryFilters={SPELL_FILTERS}
                 sortOptions={[ 'Nível', 'Elemento', 'Alfabética' ]}
                 initialSort={{ value: 'Nível', order: 'ASC' }}

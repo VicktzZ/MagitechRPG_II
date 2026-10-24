@@ -1,4 +1,3 @@
-import { isSecondaryElement } from './elements';
 import { matchesSearch, normalizeSearchText } from './searchText';
 
 /** O pouco que as telas de lista precisam de uma magia */
@@ -35,7 +34,6 @@ export function filterSpells<T extends OverviewSpell>(spells: readonly T[], filt
 export interface ElementCount {
     element: string;
     count: number;
-    secondary: boolean;
 }
 
 export interface SpellOverview {
@@ -62,7 +60,7 @@ export function summarizeSpells(spells: readonly OverviewSpell[]): SpellOverview
         const key = normalizeSearchText(name);
         const current = counts.get(key);
         if (current) current.count += 1;
-        else counts.set(key, { element: name, count: 1, secondary: isSecondaryElement(name) });
+        else counts.set(key, { element: name, count: 1 });
     }
 
     return {

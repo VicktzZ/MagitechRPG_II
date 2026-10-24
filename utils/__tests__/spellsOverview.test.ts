@@ -33,9 +33,9 @@ describe('summarizeSpells', () => {
         expect(overview.byLevel).toEqual({ 1: 1, 2: 1, 3: 1, 4: 1 })
         expect(overview.averageMpCost).toBe(6)
         expect(overview.elements).toEqual([
-            { element: 'FOGO', count: 2, secondary: false },
-            { element: 'ÁGUA', count: 1, secondary: false },
-            { element: 'SANGUE', count: 1, secondary: true }
+            { element: 'FOGO', count: 2 },
+            { element: 'ÁGUA', count: 1 },
+            { element: 'SANGUE', count: 1 }
         ])
     })
 
@@ -47,6 +47,6 @@ describe('summarizeSpells', () => {
         const overview = summarizeSpells([ { name: 'x', element: '', level: 'a', mpCost: 'b' }, { name: 'y', element: 'Fogo', level: 9, mpCost: 3 } ])
         expect(overview.byLevel).toEqual({ 1: 0, 2: 0, 3: 0, 4: 0 })
         expect(overview.averageMpCost).toBe(2)
-        expect(overview.elements).toEqual([ { element: 'Fogo', count: 1, secondary: false } ])
+        expect(overview.elements).toEqual([ { element: 'Fogo', count: 1 } ])
     })
 })

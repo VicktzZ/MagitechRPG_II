@@ -1,5 +1,11 @@
-import { SECONDARY_ELEMENTS } from '../../constants/secondaryElements';
-import { SECONDARY_ELEMENTS_RULE, elementHint, isSecondaryElement } from '../elements';
+import { SECONDARY_ELEMENTS, SECONDARY_ELEMENTS_UNLOCK_LEVEL } from '../../constants/secondaryElements';
+import {
+    isHiddenSpell,
+    isSecondaryElement,
+    secondaryElementsUnlocked,
+    secondaryElementsUnlockedNotice,
+    unlocksSecondaryElements
+} from '../elements';
 
 describe('isSecondaryElement', () => {
     it('reconhece os cinco secundários em qualquer caixa e com ou sem acento', () => {
@@ -22,18 +28,48 @@ describe('isSecondaryElement', () => {
         expect(isSecondaryElement('  Sangue ')).toBe(true);
     });
 
-    it('a lista de constantes e a regra por extenso dizem a mesma coisa', () => {
+    it('a lista de constantes tem os cinco elementos secundários', () => {
         expect([ ...SECONDARY_ELEMENTS ].sort()).toEqual([ 'Explosão', 'Psíquico', 'Radiação', 'Sangue', 'Vácuo' ]);
-        SECONDARY_ELEMENTS.forEach(element => expect(SECONDARY_ELEMENTS_RULE).toContain(element));
-        expect(SECONDARY_ELEMENTS_RULE).toBe('Sangue, Vácuo, Psíquico, Radiação e Explosão são elementos secundários.');
     });
 });
 
-describe('elementHint', () => {
-    it('marca só os secundários, para as listas de filtro', () => {
-        expect(elementHint('Sangue')).toBe('secundário');
-        expect(elementHint('PSÍQUICO')).toBe('secundário');
-        expect(elementHint('Fogo')).toBeUndefined();
-        expect(elementHint('')).toBeUndefined();
+describe('liberação dos elementos secundários no nível 10', () => {
+    it('o nível de liberação é o 10', () => {
+        expect(SECONDARY_ELEMENTS_UNLOCK_LEVEL).toBe(10);
+    });
+
+    it.each([ [ 1, false ], [ 9, false ], [ 10, true ], [ 11, true ], [ 20, true ], [ '9', false ], [ '10', true ], [ undefined, false ], [ null, false ], [ 'x', false ] ])(
+        'ficha nível %p: liberada = %p',
+        (level, expected) => {
+            expect(secondaryElementsUnlocked(level)).toBe(expected);
+        }
+    );
+
+    it('antes do nível 10 a magia de elemento secundário fica escondida, em qualquer grafia do elemento', () => {
+        [ 'SANGUE', 'Vácuo', 'PSÍQUICO', 'psiquico', 'RADIAÇÃO', 'Explosão' ].forEach(element => {
+            expect(isHiddenSpell({ element }, 9)).toBe(true);
+            expect(isHiddenSpell({ element }, 10)).toBe(false);
+        });
+    });
+
+    it('a magia de elemento primário nunca fica escondida', () => {
+        [ 'FOGO', 'ÁGUA', 'TERRA', 'AR', 'ELETRICIDADE', 'LUZ', 'TREVAS', 'NÃO-ELEMENTAL' ].forEach(element => {
+            expect(isHiddenSpell({ element }, 1)).toBe(false);
+        });
+        expect(isHiddenSpell({}, 1)).toBe(false);
+    });
+
+    it('o aviso sai só quando a subida de nível chega ao 10 pela primeira vez', () => {
+        expect(unlocksSecondaryElements(9, 10)).toBe(true);
+        expect(unlocksSecondaryElements(1, 20)).toBe(true);
+        expect(unlocksSecondaryElements(8, 9)).toBe(false);
+        expect(unlocksSecondaryElements(10, 11)).toBe(false);
+        expect(unlocksSecondaryElements(12, 20)).toBe(false);
+    });
+
+    it('a notificação diz "Elementos secundários desbloqueados!" e lista os cinco elementos logo abaixo', () => {
+        const { title, content } = secondaryElementsUnlockedNotice();
+        expect(title).toBe('Elementos secundários desbloqueados!');
+        expect(content.split('\n')).toEqual([ 'Sangue', 'Vácuo', 'Psíquico', 'Radiação', 'Explosão' ]);
     });
 });

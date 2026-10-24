@@ -38,8 +38,6 @@ export interface ResourceListModalProps<T extends Record<string, any>> {
     filterOptions: string[];
     /** Rótulo do primeiro filtro (multi-seleção, resolvido no servidor), ex: "Elemento" */
     filterLabel?: string;
-    /** Observação curta ao lado de cada opção do primeiro filtro (ex.: "secundário" nos elementos secundários) */
-    filterOptionHint?: (option: string) => string | undefined;
     hasGroupsInFilter?: boolean;
     sortOptions: string[];
     /** Mapeia o rótulo de ordenação exibido para o campo real da entidade */
@@ -50,6 +48,8 @@ export interface ResourceListModalProps<T extends Record<string, any>> {
      */
     secondaryFilters?: Array<SecondaryFilterConfig<T>>;
     renderResource: ({ item, handleAddItem }: { item: T, handleAddItem?: () => void }) => ReactElement;
+    /** Itens que não podem aparecer de jeito nenhum (ver `UseResourceListOptions.itemFilter`); `false` esconde. Identidade estável. */
+    itemFilter?: (item: T) => boolean;
     /**
      * Largura mínima (px) de cada item. Quando informada, a lista vira uma grade que encaixa o máximo de
      * colunas possível e o item deve ocupar toda a célula; sem ela, usa 1/2/3 colunas fixas centralizadas.
