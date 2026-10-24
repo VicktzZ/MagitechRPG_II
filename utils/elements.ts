@@ -9,6 +9,13 @@ export const SECONDARY_ELEMENTS_RULE = `${SECONDARY_ELEMENTS.slice(0, -1).join('
 /** Tira acento e caixa: o banco guarda os elementos em maiúsculas (`EXPLOSÃO`) e as listas do app em título (`Explosão`) */
 const normalize = (value: string): string => value.normalize('NFD').replace(/[̀-ͯ]/g, '').trim().toLowerCase();
 
+/** Dois nomes de elemento são o mesmo? Ignora caixa e acento; nome vazio nunca é igual a nada */
+export function sameElement(a: unknown, b: unknown): boolean {
+    if (typeof a !== 'string' || typeof b !== 'string') return false;
+    const left = normalize(a);
+    return left !== '' && left === normalize(b);
+}
+
 const SECONDARY_KEYS = new Set<string>(SECONDARY_ELEMENTS.map(normalize));
 
 /** O elemento é secundário (Sangue, Vácuo, Psíquico, Radiação ou Explosão), em qualquer caixa e com ou sem acento? */

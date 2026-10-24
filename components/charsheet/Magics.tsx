@@ -40,7 +40,7 @@ import { Magic } from '.';
 import MagicsModal, { spellKey } from './dialogs/MagicsModal';
 import { useCharsheetBaseline } from '@contexts';
 import { normalizeToArray } from '@utils/normalizeToArray';
-import { EVOLUTION_POINT_COST, getEvolutionPoints, getStageProgress, materializeUnlocked, spellStageCount, usesStageUnlock, withoutSpell, type StageProgress } from '@utils/spellStages';
+import { canEvolve, formatEvolutionPoints, getEvolutionPoints, getSpellProgress, materializeUnlocked, usesStageUnlock, withoutSpell, type SpellProgress } from '@utils/spellStages';
 
 function getSpellPointCost(level: number): 1 | 2 {
     return level >= 3 ? 2 : 1
@@ -70,6 +70,8 @@ const Spells = memo(() => {
 
     const spellStages = useWatch({ control, name: 'spellStages' })
     const spellUnlocked = useWatch({ control, name: 'spellUnlocked' })
+    // A maestria no elemento abre sozinha o 3º estágio das magias de nível 4 (ver utils/spellStages.ts)
+    const elementalMastery = useWatch({ control, name: 'elementalMastery' })
 
     // Desbloqueio de estágios: vale na ficha do Magitech padrão (ver utils/spellStages.ts). O estágio que a ficha já usava
     // quando foi aberta vale como liberado nas fichas antigas, que ainda não têm `spellUnlocked`
@@ -167,7 +169,7 @@ const Spells = memo(() => {
     }, [ spells, points, spellSpace, enqueueSnackbar, closeSnackbar, setValue, spellStages, spellUnlocked ])
 
     // Objetos inteiros: o nome da magia (chave de reserva) pode ter ponto, que o caminho do RHF separaria
-    const changeActiveStage = useCallback((magicKey: string, stage: 1 | 2 | 3, progress: StageProgress) => {
+    const changeActiveStage = useCallback((magicKey: string, stage: 1 | 2 | 3, progress: SpellProgress) => {
         const unlocked = materializeUnlocked(spellUnlocked, magicKey, progress)
         // Ficha antiga: grava o estágio que a magia já tinha liberado antes de mudar o ativo (senão trocar para o 1 o perderia)
         if (unlocked !== (spellUnlocked ?? {})) setValue('spellUnlocked', unlocked, { shouldValidate: true })
@@ -176,20 +178,21 @@ const Spells = memo(() => {
 
     const evolutionPoints = getEvolutionPoints(points)
 
-    // Evoluir: gasta 1 ponto de evolução, libera o próximo estágio e já o deixa ativo para o jogador ver o que ganhou
-    const unlockStage = useCallback((magicKey: string, stage: 1 | 2 | 3) => {
-        if (evolutionPoints < EVOLUTION_POINT_COST) {
-            enqueueSnackbar('Você precisa de 1 ponto de evolução para evoluir uma magia. Peça ao mestre.', toastDefault('noEvolutionPoint', 'warning'))
+    // Evoluir: gasta os pontos de evolução que o próximo estágio custa (nível 1 e 2: 1, nível 3: 2, nível 4: 3), libera o estágio
+    // e já o deixa ativo para o jogador ver o que ganhou
+    const unlockStage = useCallback((magicKey: string, stage: 1 | 2 | 3, cost: number, progress: SpellProgress) => {
+        if (!canEvolve(progress, evolutionPoints)) {
+            enqueueSnackbar(`Você precisa de ${formatEvolutionPoints(cost)} para evoluir esta magia. Peça ao mestre.`, toastDefault('noEvolutionPoint', 'warning'))
             return
         }
-        setValue('points.evolution', evolutionPoints - EVOLUTION_POINT_COST, { shouldValidate: true })
+        setValue('points.evolution', evolutionPoints - cost, { shouldValidate: true })
         setValue('spellUnlocked', { ...(spellUnlocked || {}), [magicKey]: stage } as any, { shouldValidate: true })
         setValue('spellStages', { ...(spellStages || {}), [magicKey]: stage } as any, { shouldValidate: true })
     }, [ setValue, spellStages, spellUnlocked, evolutionPoints, enqueueSnackbar ])
 
     const renderMagicCard = useCallback((magic: Spell) => {
         const magicKey = spellKey(magic)
-        const progress = getStageProgress({ spellStages, spellUnlocked }, magicKey, spellStageCount(magic), stageRule, legacyStages)
+        const progress = getSpellProgress(magic, { spellStages, spellUnlocked, elementalMastery }, { enabled: stageRule, legacy: legacyStages })
         const selectedStage = progress.active
 
         return (
@@ -220,8 +223,9 @@ const Spells = memo(() => {
                         magic={magic}
                         selectedStage={selectedStage}
                         unlockedStage={progress.enabled ? progress.unlocked : undefined}
-                        onUnlockStage={progress.enabled ? (stage: 1 | 2 | 3) => { unlockStage(magicKey, stage) } : undefined}
+                        onUnlockStage={progress.enabled && progress.nextCost !== null ? (stage: 1 | 2 | 3) => { unlockStage(magicKey, stage, progress.nextCost ?? 0, progress) } : undefined}
                         evolutionPoints={progress.enabled ? evolutionPoints : undefined}
+                        nextCost={progress.nextCost}
                         onStageChange={(stage: 1 | 2 | 3) => {
                             if (!magicKey) return
                             changeActiveStage(magicKey, stage, progress)
@@ -231,7 +235,7 @@ const Spells = memo(() => {
                 </motion.div>
             </Grid>
         )
-    }, [ handleRemoveMagic, changeActiveStage, unlockStage, spellStages, spellUnlocked, stageRule, legacyStages, evolutionPoints ])
+    }, [ handleRemoveMagic, changeActiveStage, unlockStage, spellStages, spellUnlocked, elementalMastery, stageRule, legacyStages, evolutionPoints ])
 
     const spellsList = useMemo(() => {
         if (!filteredSpells?.length) {
@@ -501,7 +505,7 @@ const Spells = memo(() => {
                                 <Typography fontWeight="bold" sx={{ fontSize: '1.1rem' }} data-testid="evolution-points">
                                     {evolutionPoints}
                                 </Typography>
-                                <Tooltip title="Cada ponto libera o próximo estágio de uma magia. O mestre concede.">
+                                <Tooltip title="Evoluir uma magia custa 1 ponto por estágio (nível 1 e 2), 2 pontos (nível 3) ou 3 pontos (nível 4); no nível 4 a Maestria abre sozinha para quem tem maestria no elemento. O mestre concede pontos e você ganha 3 a cada 5 níveis.">
                                     <Typography variant="caption" color="text.secondary">
                                         disponíveis
                                     </Typography>

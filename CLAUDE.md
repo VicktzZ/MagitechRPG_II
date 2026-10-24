@@ -148,7 +148,7 @@ Dados reais (61 fichas) mostraram que 42 não passavam no schema antigo e que sa
 
 ## Magias: estágios desbloqueados
 
-Regra dada pelo dono: toda magia começa no estágio 1; o jogador **evolui** a magia (botão "Evoluir" no cartão, sem custo) e libera o próximo
+Regra dada pelo dono: toda magia começa no estágio 1; o jogador **evolui** a magia (botão "Evoluir" no cartão, gastando pontos de evolução) e libera o próximo
 estágio, em ordem; o mestre também ajusta (aba de magias do detalhe da ficha, em edição). Estágio acima do liberado fica com cadeado, sem o texto
 do efeito, e não pode ser escolhido nem conjurado. O MP extra por estágio ao conjurar (`calculateExtraManaCost`) continua valendo.
 
@@ -157,11 +157,25 @@ do efeito, e não pode ser escolhido nem conjurado. O MP extra por estágio ao c
 - **Ficha antiga** não tem `spellUnlocked`: vale o estágio que a magia já usava, para ninguém perder o estágio 3 que conjurava. Esse valor tem de
   ser gravado junto da primeira mudança da magia (`materializeUnlocked`), senão voltar o ativo para 1 apagaria o liberado. Na ficha aberta para
   edição o valor antigo vem de `baseline.get().spellStages` (o formulário já mudou com os cliques).
-- **Evoluir custa 1 ponto de evolução**: novo atributo `points.evolution` (inteiro ≥ 0; ficha antiga não tem o campo e vale 0). O **mestre concede**: no cartão do
-  jogador na campanha (menu "Conceder ponto de evolução", +1) ou no detalhe da ficha, em edição ("Evolução (magias)"). Sem ponto, o botão Evoluir fica
+- **Evoluir custa pontos de evolução, e o custo depende do nível da magia** (`stageRule`, `utils/spellStages.ts`): nível 1 e 2 = **1 ponto** por estágio; nível 3 = **2 pontos** por estágio;
+  nível 4 = **3 pontos** para o estágio 2, e o 3º estágio é a **Maestria**: abre **sozinha, sem gastar ponto,** para quem tem maestria no elemento da magia (`elementalMastery`, comparação sem
+  caixa nem acento: `sameElement`) **depois de liberar o estágio 2**; sem a maestria ela não se compra. Nível 4 de elemento **secundário** não tem esse atalho: o estágio 3 também custa
+  **3 pontos**. O custo vem **explícito** ao jogador (texto "Custa 2 pontos de evolução" no estágio bloqueado e no botão "Evoluir (2 pontos)", mais "Faltam N pontos" quando não dá).
+  `getSpellProgress(spell, sheet, { enabled, legacy })` é o que as telas chamam (envolve `getStageProgress` e devolve `nextCost`, `needsMastery`, `purchased` e `stages[]`); a maestria é **derivada**
+  (se a maestria da ficha mudar, a Maestria volta a bloquear) e **não é gravada**: `spellUnlocked` guarda só o liberado por pontos (`purchased`; é o que `materializeUnlocked` grava).
+  O ajuste da regra (se o dono mudar o custo) fica todo em `stageRule`. Novo atributo `points.evolution` (inteiro ≥ 0; ficha antiga não tem o campo e vale 0). O **mestre concede**: no cartão do
+  jogador na campanha (menu "Conceder ponto de evolução", +1) ou no detalhe da ficha, em edição ("Evolução (magias)"). Sem pontos suficientes, o botão Evoluir fica
   desabilitado. O ajuste direto do estágio liberado pelo mestre (aba de magias do detalhe) não gasta ponto. Na página da ficha o formulário é uma foto:
   a concessão de fora entra somada ao que o jogador já gastou ali (`mergeRemoteCounter`, `utils/counterSync.ts`, no `CharsheetFormProvider`), senão salvar
   o valor velho desfaria o ponto concedido.
+- **Estágios aninhados** (`components/spells/StageLadder.tsx`, usado na seção de Magias do jogador e na aba de magias do mestre): todos os estágios da magia em escada vertical; os **liberados ficam
+  abertos por padrão** (cada um recolhe; "Recolher/Expandir estágios") com o que mudou em relação ao anterior **destacado** (`utils/textDiff.ts`, diferença por palavra; texto reescrito
+  não é destacado), custo total de MP e a diferença (`9 MP (+2)`); o ativo tem chip "Ativo" e "Conjurar", os outros "Usar"; os bloqueados mostram o custo e, só o próximo, o botão Evoluir. O custo do
+  estágio 3 do nível 4 usa o extra da Maestria (`calculateTotalManaCost`; o `SpellStage` antigo da campanha dava NaN aí).
+- **Aba de magias do mestre** (`SpellsTab` + `spells/SpellsOverview`, `spells/SpellCard`): resumo (magias, por nível, custo médio de MP base, maestria, estágios liberados, pontos de evolução, elementos
+  com o selo secundário), busca/filtros de elemento e nível (a partir de 4 magias, `utils/spellsOverview.ts`, `utils/searchText.ts`: sem acento nem caixa) e um cartão por magia (até 3 magias abrem já
+  expandidas). Em edição o mestre ajusta o estágio liberado por botões (não gasta ponto) e exclui a magia **pela chave** (a tabela antiga excluía pelo índice, que não batia quando a ficha mistura ids e
+  objetos).
 - **O modal de magias também bloqueia**: magia que a ficha ainda não tem aparece com o estágio 1 liberado e os outros com cadeado; magia que a ficha tem
   mostra o liberado dela (`MagicsModal.tsx`, cartão enxuto de `Magic.tsx`).
 - **Pontos de evolução por nível**: ao subir de nível a ficha ganha **3 pontos de evolução a cada nível múltiplo de 5** atingido (5, 10, 15, 20; saltos de vários
