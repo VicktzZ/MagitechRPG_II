@@ -79,7 +79,7 @@ describe('CreatureView', () => {
 
 describe('CombatantView', () => {
     const view = (props: Partial<Parameters<typeof CombatantView>[0]> = {}) => render(
-        <CombatantView combatant={combatant()} creature={creature} inTurn={false} onRollExpertise={asyncNoop} onOpenCreature={noop} {...props} />
+        <CombatantView combatant={combatant()} creature={creature} inTurn={false} onAdjustVital={noop} onRollExpertise={asyncNoop} onOpenCreature={noop} {...props} />
     );
 
     it('mostra o que mudou no combate (vida e mana do combatente, não os da criatura base)', () => {
@@ -89,6 +89,22 @@ describe('CombatantView', () => {
         expect(html).toContain('9/25');
         expect(html).toContain('1/6');
         expect(html).not.toContain('20/25');
+    });
+
+    it('tem dano e cura rápidos: um campo de valor e − e + para vida e mana, com o nome da criatura', () => {
+        const html = view();
+        expect(html).toContain('Pontos vitais');
+        expect(html).toContain('aria-label="Valor a aplicar em Goblin A"');
+        expect(html).toContain('aria-label="Reduzir Vida de Goblin A em 1"');
+        expect(html).toContain('aria-label="Aumentar Vida de Goblin A em 1"');
+        expect(html).toContain('aria-label="Reduzir Mana de Goblin A em 1"');
+        expect(html).toContain('aria-label="Aumentar Mana de Goblin A em 1"');
+    });
+
+    it('sem mana máxima só vida tem dano e cura rápidos', () => {
+        const html = view({ combatant: combatant({ currentMp: 0, maxMp: 0 }), creature: { ...rawCreature, stats: { lp: 20, maxLp: 25, mp: 0, maxMp: 0 } } as unknown as Creature });
+        expect(html).toContain('Reduzir Vida de Goblin A');
+        expect(html).not.toContain('Reduzir Mana');
     });
 
     it('sem vida atual no combatente, cai nos valores da criatura', () => {

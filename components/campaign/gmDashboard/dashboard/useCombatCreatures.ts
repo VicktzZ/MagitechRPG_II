@@ -1,7 +1,7 @@
 import { useCampaignContext } from '@contexts';
 import type { Combatant, Creature } from '@models';
 import { useMemo } from 'react';
-import { creatureCombatants, findBaseCreature } from './combatCreatureLookup';
+import { creatureCombatants, findBaseCreature } from '@utils/combatCreatureLookup';
 
 /** Criatura da campanha que está em combate, com o combatente que a representa */
 export interface CombatCreatureEntry {

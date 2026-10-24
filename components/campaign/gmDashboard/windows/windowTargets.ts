@@ -1,5 +1,5 @@
 import type { Campaign } from '@models/entities';
-import { creatureCombatants } from '../dashboard/combatCreatureLookup';
+import { creatureCombatants } from '@utils/combatCreatureLookup';
 import { windowTargetOf, type WindowKind, type WindowTarget } from './windowKinds';
 
 /** Texto para quando o alvo da janela já não existe (ficha removida, criatura excluída, combate encerrado) */

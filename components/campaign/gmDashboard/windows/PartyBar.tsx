@@ -4,6 +4,7 @@ import { useCampaignContext } from '@contexts';
 import type { CharsheetDTO } from '@models/dtos';
 import { Box, Typography } from '@mui/material';
 import { color } from '@themes/tokens';
+import { combatantVitals } from '@utils/combatantVitals';
 import { isCombatantInTurn } from '@utils/combatTurn';
 import { memo, useState, type ReactElement } from 'react';
 import { useCharsheetPointsView } from '../useCharsheetPointsView';
@@ -55,10 +56,7 @@ const CombatantMember = memo(function CombatantMember({ combatant, creature, isC
     const { windows } = useGMWindowView();
     const { openWindow } = useGMWindowActions();
 
-    const lp = combatant.currentLp ?? creature.stats?.lp ?? 0;
-    const maxLp = combatant.maxLp ?? creature.stats?.maxLp ?? creature.stats?.lp ?? 0;
-    const mp = combatant.currentMp ?? creature.stats?.mp ?? 0;
-    const maxMp = combatant.maxMp ?? creature.stats?.maxMp ?? creature.stats?.mp ?? 0;
+    const { lp, maxLp, mp, maxMp } = combatantVitals(combatant, creature);
 
     const vitals: PortraitVital[] = [ { key: 'lp', name: 'Vida', value: lp, max: maxLp, barColor: color.lp } ];
     if (maxMp > 0) vitals.push({ key: 'mp', name: 'Mana', value: mp, max: maxMp, barColor: color.mp });
