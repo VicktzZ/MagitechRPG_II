@@ -1,4 +1,5 @@
-import { Gavel, Inventory2, Shield } from '@mui/icons-material';
+import WeaponIcon from '@components/misc/WeaponIcon';
+import { Inventory2, Shield } from '@mui/icons-material';
 import { color } from '@themes/tokens';
 import type { InventoryItemType } from './inventoryTypes';
 
@@ -6,7 +7,7 @@ import type { InventoryItemType } from './inventoryTypes';
 export const getItemTypeConfig = (type: InventoryItemType) => {
     switch (type) {
     case 'weapon':
-        return { color: color.danger, icon: Gavel, label: 'Arma', plural: 'Armas' };
+        return { color: color.danger, icon: WeaponIcon, label: 'Arma', plural: 'Armas' };
     case 'armor':
         return { color: color.ap, icon: Shield, label: 'Armadura', plural: 'Armaduras' };
     case 'item':

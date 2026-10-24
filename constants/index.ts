@@ -1,5 +1,6 @@
 import { SECONDARY_ELEMENTS } from './secondaryElements'
-import { Gavel, Inventory2, Shield } from '@mui/icons-material'
+import { Inventory2, Shield } from '@mui/icons-material'
+import WeaponIcon from '@components/misc/WeaponIcon'
 import { classMark, color, element, rarity } from '@themes/tokens'
 import type { ItemAttributes } from '@models/types/item'
 import type { ClassNames, RarityType } from '@models/types/string'
@@ -83,7 +84,7 @@ export const classColor: Record<ClassNames, string> = { ...classMark }
 
 export const itemAttributes: ItemAttributes = {
     weapon: {
-        icon: Gavel,
+        icon: WeaponIcon,
         color: color.danger,
         label: 'Arma',
         badgeColor: 'error.main'

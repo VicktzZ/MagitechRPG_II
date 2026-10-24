@@ -108,6 +108,13 @@ describe('InventoryItemCard', () => {
         expect(html).not.toContain('Rolar dano crítico')
     })
 
+    it('cada tipo tem o próprio ícone: arma = espadas cruzadas (não o martelo), armadura = escudo, item = caixa', () => {
+        expect(card(pistola, 'weapon')).toContain('data-testid="WeaponIcon"')
+        expect(card(pistola, 'weapon')).not.toContain('GavelIcon')
+        expect(card(colete, 'armor')).toContain('data-testid="ShieldIcon"')
+        expect(card(racao, 'item')).toContain('data-testid="Inventory2Icon"')
+    })
+
     it('armadura: pontos de armadura na linha', () => {
         const html = card(colete, 'armor')
         expect(html).toContain('+3')

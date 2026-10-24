@@ -293,9 +293,12 @@ log do combate (hoje só o diálogo de combate narra dano e cura). A ordem das f
 - **Item do tipo Capacidade** (mochila) **soma à capacidade máxima e não conta como peso carregado** (`entryWeight`): é o que a doação e a remoção já faziam (mexem em `capacity.max`, não na carga); a tela antiga somava o peso dele.
 - **Lista** (`utils` puras em `inventoryList.ts`): `collectEntries` junta armas, armaduras e itens. **Só some o mesmo item gravado duas vezes (mesmo `id`)**; dois itens com o mesmo nome e ids diferentes aparecem os dois (a tela antiga
   escondia o segundo). Filtro por tipo (com contagem), busca sem acento nem caixa por nome, tipo do item e raridade, e ordem (por tipo, nome A → Z, mais pesados, mais raros; empate pelo nome). Estado vazio com "Limpar busca e filtros".
-- **Cartão** (`InventoryItemCard`): superfície plana (`background.raised`, borda `divider`), **filete lateral de 3px na cor do tipo** (arma `danger`, armadura `ap`, item `success`; `getItemTypeConfig`, ícones `Gavel`/`Shield`/`Inventory2` como em
-  `itemAttributes`), raridade como ponto + nome (não como bloco colorido), número principal em mono (dano, +AP, xN) e peso. Não usa mais o Accordion do MUI: o botão que abre é irmão das ações, para não aninhar botão em botão.
+- **Cartão** (`InventoryItemCard`): superfície plana (`background.raised`, borda `divider`), **filete lateral de 3px na cor do tipo** (arma `danger`, armadura `ap`, item `success`; `getItemTypeConfig`, ícones `WeaponIcon`/`Shield`/`Inventory2` como em
+  `itemAttributes`, que a ficha também usa), raridade como ponto + nome (não como bloco colorido), número principal em mono (dano, +AP, xN) e peso. Não usa mais o Accordion do MUI: o botão que abre é irmão das ações, para não aninhar botão em botão.
   **Arma mostra Acerto e Dano à vista na linha** (sem abrir); aberta, mostra também o Crítico. Detalhes e descrição só ao abrir.
+- **Ícone de arma = espadas cruzadas** (`components/misc/WeaponIcon.tsx`), na campanha e na ficha (`itemAttributes.weapon.icon`): o martelo de juiz (`Gavel`) parecia outra coisa. O `@mui/icons-material` não tem espada, então o glifo
+  "swords" preenchido do Material Symbols (Apache-2.0, pacote `@material-symbols/svg-400`) foi embutido como um `createSvgIcon` do MUI (grade de 24px, aceita `color`/`fontSize`/`sx` como `Shield`). Sem dependência nova. Para outro
+  ícone que falte no MUI, repita o caminho: pegue o SVG em `outlined/<nome>-fill.svg` (viewBox `0 -960 960 960`) e use `transform="translate(0 24) scale(0.025)"`.
 - **Remover pede confirmação** (`ConfirmRemoveDialog`; antes apagava no clique). A gravação é `buildRemovalUpdate` (`inventoryRemoval.ts`, compartilhada com a doação): tira o item **pelo id** (sem id, só aquele item, não todos os sem id),
   armadura devolve os AP (atual e máximo, nunca abaixo da base 5), item de Capacidade diminui `capacity.max` e não mexe na carga, o resto diminui `capacity.cargo` pelo peso x quantidade (nunca negativo).
 
