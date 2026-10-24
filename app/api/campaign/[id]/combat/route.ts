@@ -23,7 +23,7 @@ import { findBaseCreature } from '@utils/combatCreatureLookup'
 /** Ações que conduzem o combate — exclusivas do mestre */
 const GM_ONLY_ACTIONS: CombatAction[] = [
     'start', 'end', 'set_initiative', 'add_creature', 'add_combatants', 'remove_combatant', 'apply_effect', 'remove_effect',
-    'set_mp_limit_override', 'reset_mp_limit'
+    'set_mp_limit_override', 'reset_mp_limit', 'set_mp_spent'
 ]
 
 /** Ações de jogador que só valem no turno do próprio personagem */
@@ -47,6 +47,7 @@ type CombatAction =
     | 'spend_mp'        // Registrar MP gasto em magia (valida o limite por turno; valor negativo estorna)
     | 'set_mp_limit_override' // Mestre libera/restabelece o limite de MP por turno de um jogador
     | 'reset_mp_limit'  // Mestre zera o MP gasto na rodada de um jogador ou criatura
+    | 'set_mp_spent'    // Mestre define exatamente o MP gasto na rodada (de 0 até o limite, que não muda)
     | 'sustain_start'   // Jogador conjurou com sucesso uma magia sustentada em combate: ela vira um efeito sobre ele
     | 'sustain_end'     // Desconjurar uma magia sustentada (ou todas, sem spellKey)
 
@@ -1117,6 +1118,55 @@ export async function POST(
             break
         }
 
+        case 'set_mp_spent': {
+            if (!combat.isActive) {
+                return NextResponse.json({ error: 'Não há combate ativo' }, { status: 400 })
+            }
+
+            const { combatantId, value: spentValue } = body
+            if (typeof spentValue !== 'number' || !Number.isInteger(spentValue) || spentValue < 0 || spentValue > 1000) {
+                throw badRequest('Valor de MP gasto inválido')
+            }
+
+            const combatant = combat.combatants.find(c => c.id === combatantId || c.odacId === combatantId)
+            if (!combatant) {
+                return NextResponse.json({ error: 'Combatente não encontrado no combate' }, { status: 404 })
+            }
+
+            // O limite (o máximo) não muda aqui: só o gasto atual, de 0 até ele. Jogador: ficha; criatura: a criatura de origem
+            let limit = 0
+            let enforced = false
+            if (combatant.type === 'player') {
+                const sheet = await charsheetRepository.findById(combatant.id)
+                limit = sheet ? getMpLimit(sheet) : 0
+                enforced = sheet ? isMpLimitEnforced(sheet, campaign.mode) : false
+            } else {
+                const creature = findBaseCreature(combatant.id, campaign.custom?.creatures ?? [])
+                limit = creature ? getCreatureMpLimit(creature) : 0
+                enforced = creature ? isCreatureMpLimitEnforced(creature, campaign.mode) : false
+            }
+            if (!enforced) {
+                throw badRequest(`O limite de MP por turno não vale para ${combatant.name}`)
+            }
+            if (spentValue > limit) {
+                throw badRequest(`O MP gasto não pode passar do limite (${limit})`)
+            }
+
+            combatant.mpSpentThisTurn = spentValue
+
+            combat.logs.push(new CombatLog({
+                round: combat.round,
+                type: 'action',
+                actorId: 'gm',
+                actorName: 'Mestre',
+                targetId: combatant.id,
+                targetName: combatant.name,
+                message: `✏️ O mestre definiu o MP gasto na rodada de **${combatant.name}** em ${spentValue}/${limit}.`
+            }))
+
+            break
+        }
+
         case 'sustain_start': {
             // Fora do combate a sustentada é como uma imediata: nada fica ativo
             if (!combat.isActive) {
@@ -1274,6 +1324,7 @@ function getActionMessage(action: CombatAction): string {
         spend_mp: 'MP registrado',
         set_mp_limit_override: 'Limite de MP atualizado',
         reset_mp_limit: 'Limite de MP resetado',
+        set_mp_spent: 'MP gasto definido',
         sustain_start: 'Magia sustentada ativa',
         sustain_end: 'Magia sustentada encerrada'
     }

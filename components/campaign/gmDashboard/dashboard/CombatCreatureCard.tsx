@@ -1,7 +1,7 @@
 import type { Expertise } from '@models';
 import { combatantVitals } from '@utils/combatantVitals';
 import { filterAndSortExpertises } from '@utils/expertiseList';
-import { Bolt, OpenInNew, Pets, RestartAlt } from '@mui/icons-material';
+import { Bolt, Edit, OpenInNew, Pets, RestartAlt } from '@mui/icons-material';
 import { Avatar, Box, Chip, IconButton, Paper, Stack, Tooltip, Typography, alpha } from '@mui/material';
 import type { ReactElement } from 'react';
 import type { CombatCreatureEntry } from './useCombatCreatures';
@@ -19,11 +19,13 @@ interface CombatCreatureCardProps extends CombatCreatureEntry {
     mpLimit?: number;
     /** O mestre zera o MP gasto na rodada */
     onResetMpLimit?: () => void;
+    /** O mestre define exatamente o MP gasto na rodada (de 0 até o limite) */
+    onSetMpSpent?: () => void;
     onRollExpertise: (expertiseName: string, expertise: Expertise) => Promise<void>;
 }
 
 /** Cartão de uma criatura em combate: nome, LP/MP atuais e as perícias, com destaque quando é a vez dela */
-export default function CombatCreatureCard({ combatant, creature, isCurrentTurn, isLast, onOpenWindow, onApplyEffect, mpLimit = 0, onResetMpLimit, onRollExpertise }: CombatCreatureCardProps): ReactElement {
+export default function CombatCreatureCard({ combatant, creature, isCurrentTurn, isLast, onOpenWindow, onApplyEffect, mpLimit = 0, onResetMpLimit, onSetMpSpent, onRollExpertise }: CombatCreatureCardProps): ReactElement {
     const expertisesEntries: Array<[ string, Expertise ]> = Object.entries(creature.expertises || {});
     const list = useExpertiseListState();
     const visibleEntries = filterAndSortExpertises(expertisesEntries, { query: list.query, sort: list.sort, nameOf: ([ nome ]) => nome, valueOf: ([ , expertise ]) => expertise.value });
@@ -89,6 +91,13 @@ export default function CombatCreatureCard({ combatant, creature, isCurrentTurn,
                             {mpLimit > 0 && ` • Limite de MP ${combatant?.mpSpentThisTurn ?? 0}/${mpLimit}${combatant?.mpLimitOverride ? ' (liberado)' : ''}`}
                         </Typography>
                     </Box>
+                    {onSetMpSpent && mpLimit > 0 && (
+                        <Tooltip title="Definir o MP gasto nesta rodada">
+                            <IconButton size="small" aria-label={`Definir o MP gasto de ${combatant?.name || creature.name}`} onClick={onSetMpSpent}>
+                                <Edit fontSize="small" />
+                            </IconButton>
+                        </Tooltip>
+                    )}
                     {onResetMpLimit && mpLimit > 0 && (
                         <Tooltip title="Resetar o limite de MP desta rodada">
                             <IconButton size="small" aria-label={`Resetar o limite de MP de ${combatant?.name || creature.name}`} onClick={onResetMpLimit}>

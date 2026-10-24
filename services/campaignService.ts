@@ -132,6 +132,14 @@ class CampaignService extends Service<Campaign, 'code' | 'userId'> {
         })).data
     }
 
+    /** Mestre define exatamente o MP gasto na rodada de um jogador ou criatura em combate (de 0 até o limite; o limite não muda) */
+    async setMpSpent(campaignId: string, payload: { combatantId: string; value: number }) {
+        return (await this.post({
+            param: `${campaignId}/combat`,
+            body: { action: 'set_mp_spent', ...payload }
+        })).data
+    }
+
     /** Magia sustentada conjurada com sucesso em combate: vira um efeito sobre o conjurador, com manutenção a cada rodada */
     async startSustainedSpell(campaignId: string, payload: { combatantId: string; spellKey: string; spellName: string; stage: number; cost: number }) {
         return (await this.post({

@@ -1,7 +1,7 @@
 'use client';
 
 import type { Combatant, Creature, Expertise } from '@models';
-import { Bolt, Pets, RestartAlt } from '@mui/icons-material';
+import { Bolt, Edit, Pets, RestartAlt } from '@mui/icons-material';
 import { Avatar, Box, Button, Chip, Stack, Typography, alpha } from '@mui/material';
 import { color, font } from '@themes/tokens';
 import { combatantVitals, type CombatantVitalKey } from '@utils/combatantVitals';
@@ -36,13 +36,15 @@ interface CombatantViewProps {
     onCastSpell?: (spell: { name: string; cost: number }) => void;
     /** O mestre zera o MP gasto na rodada */
     onResetMpLimit?: () => void;
+    /** O mestre define exatamente o MP gasto na rodada (de 0 até o limite) */
+    onSetMpSpent?: () => void;
 }
 
 /**
  * Uma criatura que está no combate agora: de quem é a vez, vida e mana atuais (com dano e cura rápidos) e as perícias, que o
  * mestre rola pela criatura (resultado no chat). Os valores vêm do combatente, que é onde o combate guarda o que mudou durante a luta.
  */
-export function CombatantView({ combatant, creature, inTurn, onAdjustVital, onRollExpertise, onOpenCreature, mpLimit = 0, onCastSpell, onResetMpLimit }: CombatantViewProps): ReactElement {
+export function CombatantView({ combatant, creature, inTurn, onAdjustVital, onRollExpertise, onOpenCreature, mpLimit = 0, onCastSpell, onResetMpLimit, onSetMpSpent }: CombatantViewProps): ReactElement {
     const expertises: Array<[ string, Expertise ]> = Object.entries(creature?.expertises ?? {});
     const list = useExpertiseListState();
     const visibleExpertises = filterAndSortExpertises(expertises, { query: list.query, sort: list.sort, nameOf: ([ expertiseName ]) => expertiseName, valueOf: ([ , expertise ]) => expertise.value });
@@ -95,6 +97,11 @@ export function CombatantView({ combatant, creature, inTurn, onAdjustVital, onRo
                         color={mpReleased ? 'success' : mpSpent >= mpLimit ? 'error' : 'info'}
                         sx={{ fontFamily: font.mono, fontWeight: 700 }}
                     />
+                    {onSetMpSpent && (
+                        <Button size="small" variant="outlined" startIcon={<Edit fontSize="small" />} onClick={onSetMpSpent} sx={{ textTransform: 'none' }}>
+                            Definir gasto
+                        </Button>
+                    )}
                     {onResetMpLimit && (
                         <Button size="small" variant="outlined" startIcon={<RestartAlt fontSize="small" />} onClick={onResetMpLimit} sx={{ textTransform: 'none' }}>
                             Resetar limite
