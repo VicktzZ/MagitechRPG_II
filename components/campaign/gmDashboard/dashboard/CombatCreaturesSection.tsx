@@ -3,6 +3,10 @@ import { Box } from '@mui/material';
 import type { ReactElement } from 'react';
 import { useCampaignContext } from '@contexts';
 import Section from '../../Section';
+import { campaignService } from '@services';
+import { errorMessage } from '@utils/errors';
+import { getCreatureMpLimit, isCreatureMpLimitEnforced } from '@utils/mpLimit';
+import { enqueueSnackbar } from 'notistack';
 import { useQuickEffect } from '../actions/useQuickEffect';
 import { useGMWindowActions } from '../windows/GMWindowProvider';
 import CombatCreatureCard from './CombatCreatureCard';
@@ -34,6 +38,11 @@ export default function CombatCreaturesSection(): ReactElement | null {
                         isLast={index === allCreaturesInCombat.length - 1}
                         onOpenWindow={() => openWindow('combatant', combatant.id)}
                         onApplyEffect={() => { openEffectFor({ id: combatant.id, name: combatant.name || creature.name }); }}
+                        mpLimit={isCreatureMpLimitEnforced(creature, campaign.mode) ? getCreatureMpLimit(creature) : 0}
+                        onResetMpLimit={() => {
+                            campaignService.resetMpLimit(campaign.id, { combatantId: combatant.id })
+                                .catch((error: unknown) => { enqueueSnackbar(errorMessage(error, 'Erro ao resetar o limite de MP'), { variant: 'error' }); });
+                        }}
                         onRollExpertise={async (nome, expertise) => await handleCreatureExpertiseRoll(nome, expertise, creature, combatant)}
                     />
                 ))}

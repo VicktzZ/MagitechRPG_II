@@ -6,7 +6,8 @@ import type { ReactElement } from 'react';
 import { campaignService } from '@services';
 import { findBaseCreature } from '@utils/combatCreatureLookup';
 import type { CombatantVitalKey } from '@utils/combatantVitals';
-import { errorMessage } from '@utils/errors';
+import { errorMessage, asRequestError } from '@utils/errors';
+import { getCreatureMpLimit, isCreatureMpLimitEnforced } from '@utils/mpLimit';
 import { enqueueSnackbar } from 'notistack';
 import { useCreatureExpertiseRoll } from '../../dashboard/useCreatureExpertiseRoll';
 import { useGMWindowActions } from '../GMWindowProvider';
@@ -38,6 +39,32 @@ export default function CombatantWindow({ combatantId }: { combatantId: string }
         }
     };
 
+    const mpLimit = creature && isCreatureMpLimitEnforced(creature, campaign.mode) ? getCreatureMpLimit(creature) : 0;
+
+    // Conjurar gasta o MP da criatura e conta no limite da rodada; o servidor recusa (409) o que passar dele
+    const castSpell = async (spell: { name: string; cost: number }): Promise<void> => {
+        try {
+            await campaignService.spendCombatMp(campaign.id, { combatantId: combatant.id, value: spell.cost });
+            enqueueSnackbar(`${combatant.name} conjurou ${spell.name} (${spell.cost} MP)`, { variant: 'success' });
+        } catch (error) {
+            const { response } = asRequestError(error);
+            if (response?.status === 409 && response.data?.code === 'MP_LIMIT_EXCEEDED') {
+                enqueueSnackbar(`${response.data.error ?? 'Limite de MP por turno excedido'} Libere ou resete o limite para conjurar.`, { variant: 'warning' });
+            } else {
+                console.error('Erro ao conjurar pela criatura:', error);
+                enqueueSnackbar(errorMessage(error, 'Erro ao conjurar a magia da criatura'), { variant: 'error' });
+            }
+        }
+    };
+
+    const resetMpLimit = async (): Promise<void> => {
+        try {
+            await campaignService.resetMpLimit(campaign.id, { combatantId: combatant.id });
+        } catch (error) {
+            enqueueSnackbar(errorMessage(error, 'Erro ao resetar o limite de MP'), { variant: 'error' });
+        }
+    };
+
     return (
         <CombatantView
             combatant={combatant}
@@ -48,6 +75,9 @@ export default function CombatantWindow({ combatantId }: { combatantId: string }
                 if (creature) await rollExpertise(name, expertise, creature, combatant);
             }}
             onOpenCreature={creature ? () => openWindow('creature', creature.id) : undefined}
+            mpLimit={mpLimit}
+            onCastSpell={spell => { void castSpell(spell); }}
+            onResetMpLimit={() => { void resetMpLimit(); }}
         />
     );
 }

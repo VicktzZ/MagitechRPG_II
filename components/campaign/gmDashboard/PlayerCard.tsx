@@ -1,4 +1,4 @@
-import { Add, Backpack, Block, Bolt, ChatBubbleOutline, DirectionsRun, LocalPolice, MonetizationOn, MoreVert, Upgrade, ViewList, ViewSidebar } from '@mui/icons-material'
+import { Add, Backpack, Block, Bolt, ChatBubbleOutline, RestartAlt, DirectionsRun, LocalPolice, MonetizationOn, MoreVert, Upgrade, ViewList, ViewSidebar } from '@mui/icons-material'
 import {
     Box,
     Chip,
@@ -26,6 +26,9 @@ import { usePlayerActions } from './usePlayerActions'
 import { useGMWindowActions } from './windows/GMWindowProvider'
 import SectionMenu from './windows/SectionMenu'
 import { useQuickEffect } from './actions/useQuickEffect'
+import { campaignService } from '@services'
+import { errorMessage } from '@utils/errors'
+import { enqueueSnackbar } from 'notistack'
 
 /** Texto só para leitor de tela (o rótulo do número ao lado, que a tela mostra por ícone) */
 const srOnly = {
@@ -226,6 +229,17 @@ function PlayerCard({ charsheet }: { charsheet: Required<CharsheetDTO> }) {
                                     <Bolt fontSize="small" />
                                 </ListItemIcon>
                                 <ListItemText>Aplicar efeito</ListItemText>
+                            </MenuItem>
+                        )}
+                        {inCombat && (
+                            <MenuItem onClick={afterClosing(() => {
+                                campaignService.resetMpLimit(campaign.id, { combatantId: charsheet.id })
+                                    .catch((error: unknown) => { enqueueSnackbar(errorMessage(error, 'Erro ao resetar o limite de MP'), { variant: 'error' }) })
+                            })}>
+                                <ListItemIcon>
+                                    <RestartAlt fontSize="small" />
+                                </ListItemIcon>
+                                <ListItemText>Resetar limite de MP</ListItemText>
                             </MenuItem>
                         )}
                         <MenuItem onClick={afterClosing(actions.openAddItem)}>

@@ -354,6 +354,12 @@ rodada nova começava com o gasto antigo). Reações em turnos alheios contam na
 de quem está num combate ativo (`SpellsSection`), e o `spend_mp` do servidor sem combate ativo devolve sucesso sem gravar nada (não é mais 400). Recuperar MP não
 devolve limite; ao exceder, a conjuração é bloqueada e o mestre pode liberar (até a rodada virar). Não vale no Roguelite nem em sistemas customizados.
 
+**Criaturas também têm limite de MP por turno** (decisão do dono, 24/10/2026): `getCreatureMpLimit` = `⌈(Nível + Foco) ÷ 2⌉` da criatura personalizada de origem (sem ORM; `isCreatureMpLimitEnforced`:
+não vale no Roguelite nem com o cálculo em 0). O MP da criatura mora no combatente: o `spend_mp` do servidor, para criatura (só o mestre), confere o MP, aplica o limite (409 `MP_LIMIT_EXCEEDED`), grava o gasto na
+rodada e desconta o MP do combatente. A janela da criatura em combate (`CombatantView`) lista as magias dela com **Conjurar** (gasta o custo e conta no limite); o limite aparece como gasto/limite na janela, no cartão da
+criatura e no diálogo de combate. O mestre pode **resetar o MP gasto de qualquer jogador ou criatura** em combate (`reset_mp_limit`, só mestre; botão no diálogo de combate, no menu do cartão do jogador, no cartão e na janela da
+criatura) e liberar o limite (`set_mp_limit_override`, agora também para criatura). Mudança entregue sem testes novos.
+
 O mestre vê o **Overall** (o `overall` guardado na ficha, o mesmo da tela do jogador) e o limite no resumo, no cartão do jogador e na aba Informações
 (`SheetMetricsView`, `getSheetMetrics` em `utils/charsheetMetrics.ts`). Onde a regra não vale o limite some e o Overall fica; em combate ativo o limite
 aparece como gasto/limite (`mpSpentThisTurn` do combatente).

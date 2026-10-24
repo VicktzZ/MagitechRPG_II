@@ -1,7 +1,7 @@
 import type { Expertise } from '@models';
 import { combatantVitals } from '@utils/combatantVitals';
 import { filterAndSortExpertises } from '@utils/expertiseList';
-import { Bolt, OpenInNew, Pets } from '@mui/icons-material';
+import { Bolt, OpenInNew, Pets, RestartAlt } from '@mui/icons-material';
 import { Avatar, Box, Chip, IconButton, Paper, Stack, Tooltip, Typography, alpha } from '@mui/material';
 import type { ReactElement } from 'react';
 import type { CombatCreatureEntry } from './useCombatCreatures';
@@ -15,11 +15,15 @@ interface CombatCreatureCardProps extends CombatCreatureEntry {
     onOpenWindow: () => void;
     /** Abre direto o diálogo de aplicar efeito nesta criatura (sem passar pelo diálogo de combate) */
     onApplyEffect?: () => void;
+    /** Limite de MP por turno da criatura (0 ou ausente: a regra não vale para ela) */
+    mpLimit?: number;
+    /** O mestre zera o MP gasto na rodada */
+    onResetMpLimit?: () => void;
     onRollExpertise: (expertiseName: string, expertise: Expertise) => Promise<void>;
 }
 
 /** Cartão de uma criatura em combate: nome, LP/MP atuais e as perícias, com destaque quando é a vez dela */
-export default function CombatCreatureCard({ combatant, creature, isCurrentTurn, isLast, onOpenWindow, onApplyEffect, onRollExpertise }: CombatCreatureCardProps): ReactElement {
+export default function CombatCreatureCard({ combatant, creature, isCurrentTurn, isLast, onOpenWindow, onApplyEffect, mpLimit = 0, onResetMpLimit, onRollExpertise }: CombatCreatureCardProps): ReactElement {
     const expertisesEntries: Array<[ string, Expertise ]> = Object.entries(creature.expertises || {});
     const list = useExpertiseListState();
     const visibleEntries = filterAndSortExpertises(expertisesEntries, { query: list.query, sort: list.sort, nameOf: ([ nome ]) => nome, valueOf: ([ , expertise ]) => expertise.value });
@@ -82,8 +86,16 @@ export default function CombatCreatureCard({ combatant, creature, isCurrentTurn,
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
                             Nível {creature.level} • LP {currentLp}/{maxLp} • MP {currentMp}/{maxMp}
+                            {mpLimit > 0 && ` • Limite de MP ${combatant?.mpSpentThisTurn ?? 0}/${mpLimit}${combatant?.mpLimitOverride ? ' (liberado)' : ''}`}
                         </Typography>
                     </Box>
+                    {onResetMpLimit && mpLimit > 0 && (
+                        <Tooltip title="Resetar o limite de MP desta rodada">
+                            <IconButton size="small" aria-label={`Resetar o limite de MP de ${combatant?.name || creature.name}`} onClick={onResetMpLimit}>
+                                <RestartAlt fontSize="small" />
+                            </IconButton>
+                        </Tooltip>
+                    )}
                     {onApplyEffect && (
                         <Tooltip title="Aplicar efeito">
                             <IconButton size="small" aria-label={`Aplicar efeito em ${combatant?.name || creature.name}`} onClick={onApplyEffect}>
