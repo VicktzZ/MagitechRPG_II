@@ -14,7 +14,10 @@ import {
     Stack,
     Tooltip,
     FormControl,
+    IconButton,
+    InputAdornment,
     Select,
+    TextField,
     MenuItem,
     InputLabel,
     ToggleButtonGroup,
@@ -26,7 +29,9 @@ import {
     TrendingUp,
     Star,
     EmojiEvents,
+    Close,
     FilterList,
+    Search,
     SortByAlpha,
     TrendingDown
 } from '@mui/icons-material'
@@ -34,9 +39,11 @@ import { color } from '@themes/tokens'
 import { useSession } from 'next-auth/react'
 import { type ReactElement, useState, useMemo, useEffect } from 'react'
 import type { RPGSystem, SystemAttribute } from '@models/entities';
+import { filterAndSortExpertises, type ExpertiseSort } from '@utils/expertiseList';
+import { matchesSearch } from '@utils/searchText';
 
 type ExpertiseLevel = 'all' | 'novice' | 'trained' | 'expert' | 'master' | 'legendary';
-type SortOrder = 'alpha-asc' | 'alpha-desc' | 'value-asc' | 'value-desc';
+type SortOrder = ExpertiseSort;
 
 /** Cor de cada nível de perícia, do neutro (destreinado) ao topo da escala: papéis do tema, não cores soltas */
 const levelColor = {
@@ -59,6 +66,7 @@ export default function ExpertiseSection(): ReactElement {
     const { charsheet } = useCampaignCurrentCharsheetContext();
     const [ filterLevel, setFilterLevel ] = useState<ExpertiseLevel>('all');
     const [ sortOrder, setSortOrder ] = useState<SortOrder>('alpha-asc');
+    const [ query, setQuery ] = useState('');
     const [ systemExpertises, setSystemExpertises ] = useState<RPGSystem['expertises'] | null>(null);
     const [ systemAttributes, setSystemAttributes ] = useState<SystemAttribute[] | null>(null);
 
@@ -114,29 +122,10 @@ export default function ExpertiseSection(): ReactElement {
     }, [ expertises, systemExpertises, systemAttributes ]);
 
     const filteredAndSortedExpertises = useMemo(() => {
-        let list = [ ...entries ];
-
-        if (filterLevel !== 'all') {
-            list = list.filter(e => getExpertiseLevel(e.value) === filterLevel);
-        }
-
-        list.sort((a, b) => {
-            switch (sortOrder) {
-            case 'alpha-asc':
-                return a.label.localeCompare(b.label);
-            case 'alpha-desc':
-                return b.label.localeCompare(a.label);
-            case 'value-asc':
-                return a.value - b.value;
-            case 'value-desc':
-                return b.value - a.value;
-            default:
-                return 0;
-            }
-        });
-
-        return list;
-    }, [ entries, filterLevel, sortOrder ]);
+        const byLevel = filterLevel === 'all' ? entries : entries.filter(e => getExpertiseLevel(e.value) === filterLevel);
+        const bySearch = byLevel.filter(e => matchesSearch(e.label, query));
+        return filterAndSortExpertises(bySearch, { sort: sortOrder, nameOf: e => e.label, valueOf: e => e.value });
+    }, [ entries, filterLevel, sortOrder, query ]);
 
     const expertiseStats = useMemo(() => ({
         total: entries.length,
@@ -290,6 +279,25 @@ export default function ExpertiseSection(): ReactElement {
                             borderColor: 'divider'
                         }}
                     >
+                        <TextField
+                            size="small"
+                            placeholder="Buscar perícia"
+                            value={query}
+                            onChange={(e) => setQuery(e.target.value)}
+                            inputProps={{ 'aria-label': 'Buscar perícia' }}
+                            InputProps={{
+                                startAdornment: <InputAdornment position="start"><Search fontSize="small" /></InputAdornment>,
+                                endAdornment: query ? (
+                                    <InputAdornment position="end">
+                                        <IconButton size="small" aria-label="Limpar busca de perícias" onClick={() => setQuery('')} edge="end">
+                                            <Close fontSize="small" />
+                                        </IconButton>
+                                    </InputAdornment>
+                                ) : undefined
+                            }}
+                            sx={{ minWidth: 200, flex: '1 1 200px', maxWidth: 320 }}
+                        />
+
                         <FormControl size="small" sx={{ minWidth: 200 }}>
                             <InputLabel>
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -381,13 +389,14 @@ export default function ExpertiseSection(): ReactElement {
                             </ToggleButton>
                         </ToggleButtonGroup>
 
-                        {(filterLevel !== 'all' || sortOrder !== 'alpha-asc') && (
+                        {(filterLevel !== 'all' || sortOrder !== 'alpha-asc' || query.trim() !== '') && (
                             <Button
                                 size="small"
                                 variant="outlined"
                                 onClick={() => {
                                     setFilterLevel('all');
                                     setSortOrder('alpha-asc');
+                                    setQuery('');
                                 }}
                                 sx={{ ml: 'auto' }}
                             >
@@ -409,14 +418,16 @@ export default function ExpertiseSection(): ReactElement {
                                 }}
                             >
                                 <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
-                                    {filterLevel !== 'all' 
-                                        ? 'Nenhuma perícia encontrada com este filtro'
-                                        : 'Nenhuma perícia encontrada'
+                                    {query.trim() !== ''
+                                        ? `Nenhuma perícia encontrada para "${query.trim()}"`
+                                        : filterLevel !== 'all'
+                                            ? 'Nenhuma perícia encontrada com este filtro'
+                                            : 'Nenhuma perícia encontrada'
                                     }
                                 </Typography>
                                 <Typography variant="body2" color="text.secondary">
-                                    {filterLevel !== 'all' 
-                                        ? 'Tente ajustar os filtros para ver mais perícias.'
+                                    {filterLevel !== 'all' || query.trim() !== ''
+                                        ? 'Tente ajustar a busca ou os filtros para ver mais perícias.'
                                         : 'As perícias do personagem aparecerão aqui.'
                                     }
                                 </Typography>
@@ -447,6 +458,7 @@ export default function ExpertiseSection(): ReactElement {
                                         >
                                             <Button
                                                 fullWidth
+                                                data-testid="expertise-card"
                                                 onClick={async () => await handleExpertiseClick(entry)}
                                                 elevation={1}
                                                 sx={{

@@ -448,6 +448,13 @@ describe('ExpertisesTab (rolar pelo jogador)', () => {
         expect(html).not.toContain('Rolar');
     });
 
+    it('a lista começa em ordem alfabética (não pelo valor) e tem busca e ordenação', () => {
+        const html = renderTab({ charsheet: { ...sheet, expertises: { Zoologia: { value: 9, defaultAttribute: 'int' }, Acrobacia: { value: 1, defaultAttribute: 'des' } } } });
+        expect(html.indexOf('Acrobacia')).toBeLessThan(html.indexOf('Zoologia'));
+        expect(html).toContain('aria-label="Buscar perícia"');
+        expect(html).toContain('aria-label="Ordenar perícias"');
+    });
+
     it('com a rolagem, cada perícia tem um botão com nome acessível e a dica do que seria rolado', () => {
         const html = renderTab({ roll });
         expect(html).toContain('>Rolar<');
