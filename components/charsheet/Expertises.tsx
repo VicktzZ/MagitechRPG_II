@@ -84,8 +84,8 @@ export default function Expertises({ disabled }: { disabled?: boolean }): ReactE
     })
 
     const maxPerSkill = useMemo<number>(() => {
-        if (!skillPointRules?.maxPointsPerSkillFormula) return 10;
-        return Math.max(1, evaluateFormula(skillPointRules.maxPointsPerSkillFormula, { level: charsheetLevel || 1 }, 10));
+        if (!skillPointRules?.maxPointsPerSkillFormula) return 15;
+        return Math.max(1, evaluateFormula(skillPointRules.maxPointsPerSkillFormula, { level: charsheetLevel || 1 }, 15));
     }, [ skillPointRules, charsheetLevel ]);
 
     // Atualiza editValue quando o multiplicador muda e um botão está ativo
@@ -315,13 +315,13 @@ export default function Expertises({ disabled }: { disabled?: boolean }): ReactE
                                 type="number"
                                 inputProps={{ 
                                     min: 1, 
-                                    max: 10, 
+                                    max: 15, 
                                     style: { padding: '4px 8px', width: '40px' } 
                                 }}
                                 value={multiplier}
                                 onChange={(e) => {
                                     const value = parseInt(e.target.value);
-                                    if (!isNaN(value) && value >= 1 && value <= 10) {
+                                    if (!isNaN(value) && value >= 1 && value <= 15) {
                                         setMultiplier(value);
                                     }
                                 }}

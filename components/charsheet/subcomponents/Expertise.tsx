@@ -46,7 +46,7 @@ export default function Expertise({
     edit,
     onClick,
     customLabel,
-    maxValue = 10,
+    maxValue = 15,
     attributeLabel,
     customInfluence
 }: ExpertiseProps): ReactElement {
