@@ -125,6 +125,21 @@ describe('CombatantView', () => {
         expect(html.match(/<button/g)?.length).toBeGreaterThanOrEqual(2);
     });
 
+    it('as perícias começam em ordem alfabética e dá para buscar e trocar a ordem', () => {
+        const html = view();
+        expect(html).toContain('aria-label="Buscar perícia"');
+        expect(html).toContain('aria-label="Ordenar perícias"');
+        expect(html).toContain('value="alpha-asc"');
+        // a criatura guarda Furtividade antes de Atletismo; a lista mostra A → Z
+        expect(html.indexOf('Atletismo')).toBeGreaterThan(-1);
+        expect(html.indexOf('Atletismo')).toBeLessThan(html.indexOf('Furtividade'));
+    });
+
+    it('criatura sem perícias não mostra os controles', () => {
+        const html = view({ creature: { ...rawCreature, expertises: {} } as unknown as Creature });
+        expect(html).not.toContain('aria-label="Buscar perícia"');
+    });
+
     it('o nível de cada perícia aparece em português, não com o nome interno em inglês', () => {
         const html = view();
         expect(html).toContain('Treinado');

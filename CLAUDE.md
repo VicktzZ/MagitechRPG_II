@@ -233,6 +233,10 @@ log do combate (hoje só o diálogo de combate narra dano e cura). A ordem das f
   vem da criatura de origem (`findBaseCreature`, agora em `utils/combatCreatureLookup.ts`); ao ajustar, grava atual e máximo no combatente. Jogador em combate é recusado (400): a vida dele é da ficha
   (`adjustCharsheetStats`). **Não registra no log do combate** (é bookkeeping do mestre, como o ajuste dos jogadores); a rota `combat` (`apply_damage`/`apply_heal`), que narra, reescreve a campanha inteira e
   continua sendo o caminho do diálogo de combate. Teste do servidor: `utils/firestore/__tests__/combatantStats.emulator.test.ts`.
+- **Perícias pesquisáveis e ordenáveis** (`utils/expertiseList.ts`, `components/campaign/ExpertiseListControls.tsx`): toda lista de perícias da campanha tem **busca por nome** (sem acento nem caixa:
+  `utils/searchText.ts`) e **ordem**, com **A → Z de início** e as opções Z → A, maior valor e menor valor (empate pelo nome). `filterAndSortExpertises` é a regra única e `useExpertiseListState` guarda busca
+  e ordem. Está na janela da criatura em combate (`CombatantView`), no cartão da criatura em combate do dashboard (`CombatCreatureCard`), na janela de perícias do mestre (`ExpertisesTab`; ordena pelo valor
+  **salvo**, não pelo que se digita em edição, senão a linha pularia a cada tecla) e na seção de perícias do jogador (`ExpertiseSection`, que já tinha filtro por nível e ordem e ganhou a busca; só pelo nome).
 - **Cada seção edita sozinha**: `EditableSection` tem o próprio `useCharsheetEditing` (Editar/Cancelar/Salvar). Salvar grava só os caminhos que o mestre
   mexeu naquela janela (`collectCharsheetChanges` contra o snapshot do início), então duas seções da mesma ficha em edição, ou o jogador mexendo ao mesmo tempo,
   não se desfazem. O corpo da janela é um container: as grades `md={6}` das abas viram uma coluna abaixo de 600px de largura útil (o Grid do MUI olha a tela, não a janela).

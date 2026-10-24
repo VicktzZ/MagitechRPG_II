@@ -1,9 +1,11 @@
 import type { Expertise } from '@models';
 import { combatantVitals } from '@utils/combatantVitals';
+import { filterAndSortExpertises } from '@utils/expertiseList';
 import { OpenInNew, Pets } from '@mui/icons-material';
 import { Avatar, Box, Chip, IconButton, Paper, Stack, Tooltip, Typography, alpha } from '@mui/material';
 import type { ReactElement } from 'react';
 import type { CombatCreatureEntry } from './useCombatCreatures';
+import ExpertiseListControls, { ExpertiseNoResults, useExpertiseListState } from '../../ExpertiseListControls';
 import CreatureExpertiseButton from './CreatureExpertiseButton';
 
 interface CombatCreatureCardProps extends CombatCreatureEntry {
@@ -17,6 +19,8 @@ interface CombatCreatureCardProps extends CombatCreatureEntry {
 /** Cartão de uma criatura em combate: nome, LP/MP atuais e as perícias, com destaque quando é a vez dela */
 export default function CombatCreatureCard({ combatant, creature, isCurrentTurn, isLast, onOpenWindow, onRollExpertise }: CombatCreatureCardProps): ReactElement {
     const expertisesEntries: Array<[ string, Expertise ]> = Object.entries(creature.expertises || {});
+    const list = useExpertiseListState();
+    const visibleEntries = filterAndSortExpertises(expertisesEntries, { query: list.query, sort: list.sort, nameOf: ([ nome ]) => nome, valueOf: ([ , expertise ]) => expertise.value });
     const { lp: currentLp, maxLp, mp: currentMp, maxMp } = combatantVitals(combatant, creature);
 
     return (
@@ -101,26 +105,33 @@ export default function CombatCreatureCard({ combatant, creature, isCurrentTurn,
                         </Typography>
                     </Paper>
                 ) : (
-                    <Box 
-                        sx={{
-                            display: 'grid',
-                            gridTemplateColumns: {
-                                xs: 'repeat(2, 1fr)',
-                                sm: 'repeat(3, 1fr)',
-                                md: 'repeat(4, 1fr)'
-                            },
-                            gap: 1.5
-                        }}
-                    >
-                        {expertisesEntries.map(([ nome, expertise ]) => (
-                            <CreatureExpertiseButton
-                                key={`${combatant.id}-${nome}`}
-                                name={nome}
-                                expertise={expertise}
-                                onRoll={async () => await onRollExpertise(nome, expertise)}
-                            />
-                        ))}
-                    </Box>
+                    <Stack spacing={1.5}>
+                        <ExpertiseListControls state={list} shown={visibleEntries.length} total={expertisesEntries.length} />
+                        {visibleEntries.length === 0 ? (
+                            <ExpertiseNoResults query={list.query} onClear={() => { list.setQuery('') }} />
+                        ) : (
+                            <Box
+                                sx={{
+                                    display: 'grid',
+                                    gridTemplateColumns: {
+                                        xs: 'repeat(2, 1fr)',
+                                        sm: 'repeat(3, 1fr)',
+                                        md: 'repeat(4, 1fr)'
+                                    },
+                                    gap: 1.5
+                                }}
+                            >
+                                {visibleEntries.map(([ nome, expertise ]) => (
+                                    <CreatureExpertiseButton
+                                        key={`${combatant.id}-${nome}`}
+                                        name={nome}
+                                        expertise={expertise}
+                                        onRoll={async () => await onRollExpertise(nome, expertise)}
+                                    />
+                                ))}
+                            </Box>
+                        )}
+                    </Stack>
                 )}
             </Stack>
         </Paper>

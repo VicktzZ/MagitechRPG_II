@@ -5,7 +5,9 @@ import { Pets } from '@mui/icons-material';
 import { Avatar, Box, Button, Chip, Stack, Typography, alpha } from '@mui/material';
 import { color, font } from '@themes/tokens';
 import { combatantVitals, type CombatantVitalKey } from '@utils/combatantVitals';
+import { filterAndSortExpertises } from '@utils/expertiseList';
 import type { ReactElement, ReactNode } from 'react';
+import ExpertiseListControls, { ExpertiseNoResults, useExpertiseListState } from '../../../ExpertiseListControls';
 import CreatureExpertiseButton from '../../dashboard/CreatureExpertiseButton';
 import VitalsPanel, { type VitalRow } from '../VitalsPanel';
 
@@ -35,6 +37,8 @@ interface CombatantViewProps {
  */
 export function CombatantView({ combatant, creature, inTurn, onAdjustVital, onRollExpertise, onOpenCreature }: CombatantViewProps): ReactElement {
     const expertises: Array<[ string, Expertise ]> = Object.entries(creature?.expertises ?? {});
+    const list = useExpertiseListState();
+    const visibleExpertises = filterAndSortExpertises(expertises, { query: list.query, sort: list.sort, nameOf: ([ expertiseName ]) => expertiseName, valueOf: ([ , expertise ]) => expertise.value });
     const { lp, maxLp, mp, maxMp } = combatantVitals(combatant, creature);
     const name = combatant.name || creature?.name || 'Criatura';
 
@@ -81,16 +85,23 @@ export function CombatantView({ combatant, creature, inTurn, onAdjustVital, onRo
                 ) : expertises.length === 0 ? (
                     <Typography variant="body2" color="text.secondary">Esta criatura não possui perícias configuradas.</Typography>
                 ) : (
-                    <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))', gap: 1.5 }}>
-                        {expertises.map(([ expertiseName, expertise ]) => (
-                            <CreatureExpertiseButton
-                                key={`${combatant.id}-${expertiseName}`}
-                                name={expertiseName}
-                                expertise={expertise}
-                                onRoll={async () => await onRollExpertise(expertiseName, expertise)}
-                            />
-                        ))}
-                    </Box>
+                    <Stack spacing={1.5}>
+                        <ExpertiseListControls state={list} shown={visibleExpertises.length} total={expertises.length} />
+                        {visibleExpertises.length === 0 ? (
+                            <ExpertiseNoResults query={list.query} onClear={() => { list.setQuery('') }} />
+                        ) : (
+                            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))', gap: 1.5 }}>
+                                {visibleExpertises.map(([ expertiseName, expertise ]) => (
+                                    <CreatureExpertiseButton
+                                        key={`${combatant.id}-${expertiseName}`}
+                                        name={expertiseName}
+                                        expertise={expertise}
+                                        onRoll={async () => await onRollExpertise(expertiseName, expertise)}
+                                    />
+                                ))}
+                            </Box>
+                        )}
+                    </Stack>
                 )}
             </Box>
 
