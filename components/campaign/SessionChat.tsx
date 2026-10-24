@@ -50,11 +50,16 @@ export default function SessionChat() {
     const shouldAutoScrollRef = useRef(shouldAutoScroll);
     shouldAutoScrollRef.current = shouldAutoScroll;
 
-    const scrollToBottom = useCallback(() => {
-        if (shouldAutoScrollRef.current && messagesEndRef.current) {
-            messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
-        }
+    // Rola a própria lista de mensagens (a MessageList é quem tem o scroll). Antes isto chamava scrollIntoView num
+    // marcador que fica FORA da lista, o que não rolava nada: o chat abria no começo e as mensagens novas ficavam fora da tela.
+    const scrollListToBottom = useCallback(() => {
+        const box = chatBoxRef.current;
+        if (box) box.scrollTo({ top: box.scrollHeight, behavior: 'smooth' });
     }, []);
+
+    const scrollToBottom = useCallback(() => {
+        if (shouldAutoScrollRef.current) scrollListToBottom();
+    }, [ scrollListToBottom ]);
 
     const handleScroll = useCallback(() => {
         if (chatBoxRef.current) {
@@ -128,6 +133,21 @@ export default function SessionChat() {
             scrollToBottom();
         }
     }, [ messages ]);
+
+    // Mensagem que o próprio usuário acabou de mandar (inclusive rolagens feitas fora do chat, como o botão de rolar
+    // do mestre) sempre vem à vista, mesmo que ele tenha rolado o histórico para cima: quem rola quer ver o resultado
+    const lastOwnMessageRef = useRef<string | null>(null);
+    useEffect(() => {
+        const last = messages[messages.length - 1];
+        if (!last || !session?.user?.id || last.by?.id !== session.user.id) return;
+
+        const key = last.id || last.tempId || `${last.timestamp}-${last.text}`;
+        if (lastOwnMessageRef.current === key) return;
+        lastOwnMessageRef.current = key;
+
+        setShouldAutoScroll(true);
+        scrollListToBottom();
+    }, [ messages, session?.user?.id, scrollListToBottom ]);
 
     // Adiciona evento de scroll
     useEffect(() => {

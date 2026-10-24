@@ -6,6 +6,7 @@ import theme from '../../../../../themes/theme';
 import { color } from '../../../../../themes/tokens';
 import FloatingWindow from '../FloatingWindow';
 import { PartyPortrait, type PortraitVital } from '../PartyPortrait';
+import ExpertisesTab from '../../modals/charsheetDetails/ExpertisesTab';
 import EditableSection from '../EditableSection';
 import { SummaryView, type SummaryActions } from '../SummaryView';
 import VitalsPanel, { type VitalRow } from '../VitalsPanel';
@@ -386,5 +387,51 @@ describe('VitalsPanel', () => {
         const html = render(<VitalsPanel charsheetName="Aria Valen" rows={[]} onAdjust={noop} />);
         expect(html).not.toContain('role="meter"');
         expect(html).not.toContain('Reduzir');
+    });
+});
+
+describe('ExpertisesTab (rolar pelo jogador)', () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const sheet: any = {
+        ...healthySheet(),
+        id: 'a',
+        name: 'Aria Valen',
+        expertises: {
+            Atletismo: { value: 3, defaultAttribute: 'vig' },
+            Furtividade: { value: 1, defaultAttribute: 'des' }
+        }
+    };
+    const roll = {
+        planFor: (name: string) => (name === 'Atletismo' ? { dice: 2, keep: 'highest' as const, bonus: 3 } : null),
+        onRoll: noop
+    };
+    const renderTab = (props: Record<string, unknown> = {}) => render(
+        <ExpertisesTab charsheet={sheet} editedData={{}} isEditing={false} updateNestedField={noop} {...props} />
+    );
+
+    it('sem a rolagem, é só a tabela (sem coluna nem botões)', () => {
+        const html = renderTab();
+        expect(html).toContain('Atletismo');
+        expect(html).not.toContain('Rolar');
+    });
+
+    it('com a rolagem, cada perícia tem um botão com nome acessível e a dica do que seria rolado', () => {
+        const html = renderTab({ roll });
+        expect(html).toContain('>Rolar<');
+        expect(html).toContain('aria-label="Rolar Atletismo de Aria Valen"');
+        expect(html).toContain('title="Rolar 2d20 (vale o maior) +3"');
+    });
+
+    it('perícia que não dá para rolar agora fica com o botão desabilitado e explica', () => {
+        const html = renderTab({ roll });
+        const furtividade = html.match(/<button[^>]*aria-label="Rolar Furtividade de Aria Valen"[^>]*>/)?.[0] ?? '';
+        expect(furtividade).toContain('disabled');
+        expect(furtividade).toContain('title="Indisponível: o sistema da ficha ainda não carregou"');
+    });
+
+    it('durante a edição a coluna some (rolar é com os valores salvos)', () => {
+        const html = renderTab({ roll, isEditing: true });
+        expect(html).not.toContain('>Rolar<');
+        expect(html).not.toContain('aria-label="Rolar Atletismo');
     });
 });

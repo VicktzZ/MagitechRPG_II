@@ -14,6 +14,7 @@ import SkillsTab from '../modals/charsheetDetails/SkillsTab';
 import SpellsTab from '../modals/charsheetDetails/SpellsTab';
 import { useCharsheetSpells } from '../modals/charsheetDetails/useCharsheetSpells';
 import EditableSection from './EditableSection';
+import { useGMExpertiseRoll } from './useGMExpertiseRoll';
 
 type Sheet = Required<CharsheetDTO>;
 
@@ -88,16 +89,29 @@ export function AttributesWindow({ charsheetId }: { charsheetId: string }): Reac
     );
 }
 
+/** Perícias: além de editar, o mestre rola a perícia pelo jogador (resultado no chat) */
+function ExpertisesBody({ charsheet }: { charsheet: Sheet }): ReactElement {
+    const { planFor, roll } = useGMExpertiseRoll(charsheet);
+
+    return (
+        <EditableSection charsheet={charsheet}>
+            {({ editedData, isEditing, updateNestedField }) => (
+                <ExpertisesTab
+                    charsheet={charsheet}
+                    editedData={editedData}
+                    isEditing={isEditing}
+                    updateNestedField={updateNestedField}
+                    roll={{ planFor, onRoll: name => { void roll(name); } }}
+                />
+            )}
+        </EditableSection>
+    );
+}
+
 export function ExpertisesWindow({ charsheetId }: { charsheetId: string }): ReactElement {
     return (
         <SheetWindow charsheetId={charsheetId}>
-            {charsheet => (
-                <EditableSection charsheet={charsheet}>
-                    {({ editedData, isEditing, updateNestedField }) => (
-                        <ExpertisesTab charsheet={charsheet} editedData={editedData} isEditing={isEditing} updateNestedField={updateNestedField} />
-                    )}
-                </EditableSection>
-            )}
+            {charsheet => <ExpertisesBody charsheet={charsheet} />}
         </SheetWindow>
     );
 }
