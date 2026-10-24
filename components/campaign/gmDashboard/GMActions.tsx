@@ -22,6 +22,7 @@ import ReplayIcon from '@mui/icons-material/Replay';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import WidgetsIcon from '@mui/icons-material/Widgets';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 
 import {
     Box,
@@ -34,6 +35,7 @@ import {
     MenuItem,
     ListItemText as MenuItemText,
     Stack,
+    Tooltip,
     alpha
 } from '@mui/material';
 import { campaignService } from '@services';
@@ -59,6 +61,7 @@ import CreatureCreator from './CreatureCreator';
 import CampaignStatsModal from '../CampaignStatsModal';
 import WidgetManagerDialog from '../widget/WidgetManagerDialog';
 import { errorMessage } from '@utils/errors';
+import { campaignRevealsSpellStages } from '@utils/spellReveal';
 
 /** Botões da barra de ações: altura mínima de 40px (alvo de toque confortável) */
 const barButtonSx = { minHeight: 40 } as const;
@@ -88,6 +91,7 @@ export default function GMActions(): ReactElement {
     const [ statsModalOpen, setStatsModalOpen ] = useState(false);
     const [ widgetManagerOpen, setWidgetManagerOpen ] = useState(false);
     const [ isReopening, setIsReopening ] = useState(false);
+    const [ isTogglingReveal, setIsTogglingReveal ] = useState(false);
 
     const isFinished = campaign.status === 'finished';
 
@@ -222,6 +226,24 @@ export default function GMActions(): ReactElement {
         }
     };
 
+    // Revelar os estágios de todas as magias aos jogadores (só visualização; ver utils/spellReveal.ts). Grava só este campo da campanha
+    const revealStages = campaignRevealsSpellStages(campaign) || campaign.revealSpellStages === true;
+    const handleToggleRevealStages = async () => {
+        setIsTogglingReveal(true);
+        try {
+            await campaignService.updateFields(campaign.id, { revealSpellStages: !revealStages });
+            await queryClient.invalidateQueries({ queryKey: [ 'campaignData', campaign.campaignCode ] });
+            enqueueSnackbar(revealStages ? 'Os estágios das magias voltaram a seguir o desbloqueio de cada jogador.' : 'Os jogadores agora veem todos os estágios das magias.', { variant: 'success' });
+        } catch (error) {
+            console.error('Erro ao alterar a revelação dos estágios:', error);
+            enqueueSnackbar(errorMessage(error, 'Não foi possível alterar a revelação dos estágios.'), { variant: 'error' });
+        } finally {
+            setIsTogglingReveal(false);
+        }
+    };
+    // A regra de estágios só existe no Magitech padrão: no Roguelite e em sistema customizado os estágios já ficam todos abertos
+    const showRevealStages = campaign.mode !== 'Roguelite' && !campaign.systemId;
+
     // Custom item handler
     const handleAddCustomItem = async (created: Weapon | Armor | Item) => {
         try {
@@ -309,6 +331,27 @@ export default function GMActions(): ReactElement {
                 >
                     Nova nota
                 </Button>
+
+                {showRevealStages && (
+                    <Tooltip
+                        title="Mostra aos jogadores o texto e o custo de MP de todos os estágios de todas as magias, mesmo os que eles ainda não desbloquearam, na campanha e na ficha. É só leitura: para conjurar um estágio, o jogador ainda precisa evoluir a magia."
+                        arrow
+                    >
+                        <span>
+                            <Button
+                                variant={revealStages ? 'contained' : 'outlined'}
+                                color={revealStages ? 'primary' : 'secondary'}
+                                startIcon={<VisibilityIcon />}
+                                onClick={() => { void handleToggleRevealStages() }}
+                                disabled={isTogglingReveal || isFinished}
+                                aria-pressed={revealStages}
+                                sx={barButtonSx}
+                            >
+                                {revealStages ? 'Estágios revelados' : 'Revelar estágios'}
+                            </Button>
+                        </span>
+                    </Tooltip>
+                )}
 
                 <Button
                     id="gm-more-actions-button"

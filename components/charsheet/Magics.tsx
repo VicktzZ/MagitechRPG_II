@@ -39,6 +39,7 @@ import { useFormContext, useWatch } from 'react-hook-form';
 import { Magic } from '.';
 import MagicsModal, { spellKey } from './dialogs/MagicsModal';
 import { normalizeToArray } from '@utils/normalizeToArray';
+import { useSpellStagesRevealed } from '@hooks/useSpellStagesRevealed';
 import { canEvolve, formatEvolutionPoints, getEvolutionPoints, getSpellProgress, usesStageUnlock, withoutSpell, type SpellProgress } from '@utils/spellStages';
 
 function getSpellPointCost(level: number): 1 | 2 {
@@ -77,6 +78,9 @@ const Spells = memo(() => {
     const systemId = useWatch({ control, name: 'systemId' })
     const charClass = useWatch({ control, name: 'class' })
     const stageRule = usesStageUnlock({ systemId, class: charClass })
+    // O mestre da campanha onde a ficha joga pode liberar a leitura de todos os estágios (utils/spellReveal.ts): só visualização
+    const charsheetId = useWatch({ control, name: 'id' })
+    const revealStages = useSpellStagesRevealed(charsheetId, stageRule)
 
     const points = useWatch({ control, name: 'points' })
     const spellSpace = useWatch({ control, name: 'spellSpace' })
@@ -209,6 +213,7 @@ const Spells = memo(() => {
                         id={magicKey}
                         magic={magic}
                         unlockedStage={progress.enabled ? progress.unlocked : undefined}
+                        revealStages={progress.enabled && revealStages}
                         onUnlockStage={progress.enabled && progress.nextCost !== null ? (stage: 1 | 2 | 3) => { unlockStage(magicKey, stage, progress.nextCost ?? 0, progress) } : undefined}
                         evolutionPoints={progress.enabled ? evolutionPoints : undefined}
                         nextCost={progress.nextCost}
@@ -217,7 +222,7 @@ const Spells = memo(() => {
                 </motion.div>
             </Grid>
         )
-    }, [ handleRemoveMagic, unlockStage, spellStages, spellUnlocked, elementalMastery, stageRule, evolutionPoints ])
+    }, [ handleRemoveMagic, unlockStage, spellStages, spellUnlocked, elementalMastery, stageRule, evolutionPoints, revealStages ])
 
     const spellsList = useMemo(() => {
         if (!filteredSpells?.length) {
@@ -631,6 +636,7 @@ const Spells = memo(() => {
             <MagicsModal
                 open={open}
                 onClose={() => { setOpen(false) }}
+                revealStages={revealStages}
             />
         </>
     )

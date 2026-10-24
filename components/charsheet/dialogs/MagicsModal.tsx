@@ -29,7 +29,7 @@ function hasSpell(spells: unknown, spell: Spell): boolean {
     return normalizeToArray<Spell>(spells).some(owned => spellKey(owned) === key);
 }
 
-export default function SpellsModal({ open, onClose }: { open: boolean, onClose: () => void }): ReactElement {
+export default function SpellsModal({ open, onClose, revealStages = false }: { open: boolean, onClose: () => void, revealStages?: boolean }): ReactElement {
     const { getValues, setValue } = useFormContext<CharsheetDTO>();
 
     // Elementos secundários só existem para a ficha a partir do nível de liberação (nível 10): antes disso as magias deles
@@ -197,6 +197,7 @@ export default function SpellsModal({ open, onClose }: { open: boolean, onClose:
                                         id={spellKey(item)}
                                         isAdding={!alreadyAdded}
                                         unlockedStage={stageRule ? (alreadyAdded ? progress.unlocked : 1) : undefined}
+                                        revealStages={stageRule && revealStages}
                                         onIconClick={alreadyAdded ? undefined : handleAddItem}
                                     />
                                 );

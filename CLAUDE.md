@@ -208,6 +208,11 @@ do efeito, e não pode ser conjurado. O MP extra por estágio ao conjurar (`calc
   objetos).
 - **O modal de magias também bloqueia**: magia que a ficha ainda não tem aparece com o estágio 1 liberado e os outros com cadeado; magia que a ficha tem
   mostra o liberado dela (`MagicsModal.tsx`, cartão enxuto de `Magic.tsx`).
+- **Revelar estágios** (opção do mestre, 24/10/2026; `Campaign.revealSpellStages`, `utils/spellReveal.ts`; **entrou sem teste nem e2e a pedido do dono: a primeira coisa a conferir se algo estranhar**): botão **"Revelar estágios"** na barra de ações do mestre
+  (`GMActions`, com tooltip; só no Magitech padrão: some no Roguelite e em campanha de sistema customizado, onde os estágios já ficam abertos) liga/desliga o campo, gravado só ele por `PATCH /api/campaign/[id]/fields`. Ligado, os jogadores veem o **texto e o custo de MP de
+  todos os estágios de todas as magias**, também os ainda bloqueados, na tela da campanha (`StageLadder` `revealLocked`: o estágio bloqueado ganha o texto abaixo do cadeado) e na ficha (`Magic.tsx` `revealStages`: o botão do estágio bloqueado mantém o cadeado mas abre para ler,
+  com a nota "revelado pelo mestre só para leitura"; vale também no cartão enxuto do `MagicsModal`). **É só visualização**: conjurar e evoluir seguem a regra de sempre (`getSpellProgress` não muda) e a visão do mestre (`SpellsTab`) não muda. A ficha descobre pela rota
+  `GET /api/charsheet/[id]/reveal-spell-stages` (`useSpellStagesRevealed`, react-query, refaz ao voltar para a aba): vale se alguma campanha onde a ficha **ainda joga** (`campaign.players`) ligou a opção e não está finalizada (`sheetSeesRevealedStages`).
 - **Pontos de evolução por nível**: ao subir de nível a ficha ganha **3 pontos de evolução a cada nível múltiplo de 5** atingido (5, 10, 15, 20; saltos de vários
   níveis contam cada múltiplo do caminho: `evolutionPointsForLevelUp`, `utils/evolutionPoints.ts`), na rota `POST /api/charsheet/[id]/update/level` (caminho do Magitech padrão, só
   para quem usa a regra de estágios: `usesStageUnlock`). A notificação de nível lista os pontos.

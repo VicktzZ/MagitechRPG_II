@@ -22,6 +22,7 @@ import {
 } from '@utils/combat/spellRoller';
 import { spellCastDifficulty, spellCastSucceeded } from '@utils/spellDifficulty';
 import { isSustainedSpell, sustainedEffects } from '@utils/combat/sustainedSpells';
+import { campaignRevealsSpellStages } from '@utils/spellReveal';
 import { usePendingSpellEffects } from '@hooks/usePendingSpellEffects';
 import { getMpLimit, isMpLimitEnforced } from '@utils/mpLimit';
 import { campaignService } from '@services';
@@ -583,6 +584,7 @@ export default function SpellsSection(): ReactElement {
                                                     <StageLadder
                                                         spell={spell}
                                                         progress={progress}
+                                                        revealLocked={progress.enabled && campaignRevealsSpellStages(campaign)}
                                                         evolution={progress.enabled ? { points: evolutionPoints, onEvolve: async () => { await handleEvolve(spell) } } : undefined}
                                                         cast={{
                                                             onCast: async (stage) => { await handleCastSpell(spell, stage) },
