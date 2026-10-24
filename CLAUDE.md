@@ -171,8 +171,8 @@ do mestre (fase 1), a visão do jogador fica para a fase 2. **Criaturas também 
 gerenciador. Fases/PRs: 1 gerenciador + barra + resumo (feita) · 2 (feita) seções em janelas (atributos, perícias, inventário, habilidades, magias) + ações do jogador
 (item, ponto de evolução, notificação, remover), tirando o `CharsheetDetailsModal` · 3 (feita) dano/cura rápidos de LP/MP/AP por rota com transação (soma/subtrai,
 0 a máx., sem contar no limite de MP por turno) · 4 (feita, só perícias) rolagem do mestre pelo jogador (**regra do botão da perícia na ficha**: `mod + 1` d20, mod negativo rola 2;
-não unifica as regras) · 5 anotações privadas por ficha em `campaigns/{id}/gmNotes/{fichaId}` com regra do Firestore só para `campaign.admin` (**publicar
-`firestore.rules` antes do código**) · 6 criaturas em janelas (as de combate e as personalizadas, hoje em `dashboard/CombatCreatureCard`, `CustomCreatureCard` e
+não unifica as regras) · 5 (feita) anotações privadas por ficha em `campaigns/{id}/gmNotes/{fichaId}` com regra do Firestore só para `campaign.admin` (regra publicada
+antes do código) · 6 criaturas em janelas (as de combate e as personalizadas, hoje em `dashboard/CombatCreatureCard`, `CustomCreatureCard` e
 `CreatureCreator`). Ao entrar criaturas, `WindowEntry.charsheetId` precisa virar um id genérico do alvo e `keepSheets` passa a podar por tipo (senão fecharia
 as janelas de criatura, que não são fichas); a ordem das fases pode mudar a pedido do dono.
 
@@ -182,7 +182,7 @@ as janelas de criatura, que não são fichas); a ordem das fases pode mudar a pe
   `PartyBar`/`PartyPortrait` (retratos, com o menu de seções em `SectionMenu`), `SummaryWindow`/`SummaryView` (resumo, atalhos de seção e ações do jogador),
   `SectionWindows` + `EditableSection` (as seções editáveis). Provider montado em `CampaignComponent` só para o mestre.
 - **Tipos de janela** (`WINDOW_KINDS`): `summary` (só leitura) e as ex-abas do modal de detalhes, que não existe mais: `info`, `attributes`, `expertises`,
-  `inventory`, `skills`, `spells`. Os componentes das abas continuam em `modals/charsheetDetails/` e são reaproveitados; `ChangePlayerStatusModal` segue
+  `inventory`, `skills`, `spells`, mais `notes` (anotações privadas do mestre, não é aba antiga). Os componentes das abas continuam em `modals/charsheetDetails/` e são reaproveitados; `ChangePlayerStatusModal` segue
   como diálogo aberto pela janela de informações. Para um tipo novo: `windowKinds.ts` (nome, rótulo, tamanho) + `GMWindowLayer` (conteúdo).
 - **Cada seção edita sozinha**: `EditableSection` tem o próprio `useCharsheetEditing` (Editar/Cancelar/Salvar). Salvar grava só os caminhos que o mestre
   mexeu naquela janela (`collectCharsheetChanges` contra o snapshot do início), então duas seções da mesma ficha em edição, ou o jogador mexendo ao mesmo tempo,
@@ -201,6 +201,14 @@ as janelas de criatura, que não são fichas); a ordem das fases pode mudar a pe
   perícia. Resultado no chat em nome do mestre, no formato do chat (`🎲 [Aria Valen] ATLETISMO - 2d20+3: [12, 7: 12] = 15`), por uma `Message` pronta (`useGMExpertiseRoll`): mandar o
   texto cru faria o chat tentar rolar a notação que está nele. **São três regras de d20 hoje** (ficha, teste do mestre e perícia na tela da campanha do jogador, que usa o mod com mínimo 1);
   a regra única é decisão pendente do dono, e **atributo não rola** (a ficha não rola atributo, então não há regra): não invente uma sem resposta.
+- **Anotações privadas do mestre** (janela "Anotações", `NotesWindow`/`NotesView`): um documento por ficha em `campaigns/{id}/gmNotes/{fichaId}` com `{ text, updatedBy, updatedAt }`.
+  Mora numa subcoleção porque qualquer usuário logado lê campanha e ficha pelo id: a regra do Firestore só deixa ler quem está em `campaign.admin` (ou o admin do site) e **ninguém
+  escreve pelo cliente**. Escrita só por `PUT /api/campaign/[id]/gm-notes/[fichaId]` (`requireCampaignGM`, ficha tem de jogar na campanha, corpo `{ text }` com até 20 000
+  caracteres; `saveGmNote` em `utils/firestore/gmNotes.ts`; **texto vazio apaga o documento**). O navegador lê em tempo real (`hooks/useGmNote.ts`). Salvamento automático
+  1 s depois de parar de digitar, ao fechar a janela e no `pagehide` (fetch com `keepalive`); a lógica de rascunho contra salvo é pura em `utils/gmNoteDraft.ts` (rascunho `null` = a
+  tela segue o salvo, então mudança feita em outra aba aparece). O campo fica **travado enquanto carrega e se a leitura falhar**, para não gravar por cima de algo que não chegou.
+  O servidor apaga a subcoleção ao excluir a campanha (`deleteGmNotes`). Conferido no Firestore de verdade: `tests/firestore-rules` (10 casos das regras) e
+  `utils/firestore/__tests__/gmNotes.emulator.test.ts`. Regra publicada em produção em 24/10/2026 (conjunto novo 0285d09e; o anterior era 4ba5468a, para reverter se preciso).
 - **Chat**: `SessionChat` rola a própria lista (`chatBoxRef`, a `MessageList` é quem tem o scroll; o marcador `messagesEndRef` fica fora dela e não serve para isso). Mensagem do próprio usuário,
   inclusive rolagem feita fora do chat, sempre vem à vista, mesmo com o histórico rolado para cima.
 - **Dois contextos de propósito**: ações (estáveis; cartões e barra só abrem janelas) e estado. Sem provider, as ações são no-ops (testes).

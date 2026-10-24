@@ -15,6 +15,7 @@ import {
     SkillsWindow,
     SpellsWindow
 } from './SectionWindows';
+import NotesWindow from './NotesWindow';
 import SummaryWindow from './SummaryWindow';
 
 /** Conteúdo de cada tipo de janela */
@@ -34,6 +35,8 @@ function WindowContent({ entry }: { entry: WindowEntry }): ReactElement {
         return <SkillsWindow charsheetId={entry.charsheetId} />;
     case 'spells':
         return <SpellsWindow charsheetId={entry.charsheetId} />;
+    case 'notes':
+        return <NotesWindow charsheetId={entry.charsheetId} />;
     }
 }
 
