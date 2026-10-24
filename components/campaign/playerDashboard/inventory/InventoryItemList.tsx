@@ -1,57 +1,37 @@
 import { Inventory2 } from '@mui/icons-material';
-import { Box, Paper, Stack, Typography } from '@mui/material';
+import { Box, Button, Typography } from '@mui/material';
 import type { ReactElement } from 'react';
 import InventoryItemCard, { type InventoryItemCardActions } from './InventoryItemCard';
 import type { InventoryEntry } from './inventoryTypes';
 
 interface InventoryItemListProps extends InventoryItemCardActions {
     entries: InventoryEntry[];
-    /** Busca ativa: muda o texto do estado vazio */
-    searchQuery: string;
+    /** Há busca ou filtro de tipo ativos: muda o texto do estado vazio e oferece limpar */
+    isFiltering: boolean;
+    onClearFilters: () => void;
     weightUnitSuffix: string;
 }
 
-/** Lista de itens do inventário, ou o estado vazio (inventário vazio ou busca sem resultado) */
-export default function InventoryItemList({ entries, searchQuery, weightUnitSuffix, ...actions }: InventoryItemListProps): ReactElement {
+/** Lista de itens do inventário, ou o estado vazio (inventário vazio ou filtro sem resultado) */
+export default function InventoryItemList({ entries, isFiltering, onClearFilters, weightUnitSuffix, ...actions }: InventoryItemListProps): ReactElement {
+    if (entries.length === 0) {
+        return (
+            <Box data-testid="inventory-empty" sx={{ textAlign: 'center', py: 5, px: 2, border: '1px dashed', borderColor: 'divider', borderRadius: 2 }}>
+                <Inventory2 aria-hidden sx={{ fontSize: 36, color: 'text.secondary', mb: 1 }} />
+                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>{isFiltering ? 'Nenhum item encontrado' : 'Inventário vazio'}</Typography>
+                <Typography variant="body2" color="text.secondary">
+                    {isFiltering ? 'Tente outro nome ou outro tipo.' : 'Os itens do personagem aparecem aqui.'}
+                </Typography>
+                {isFiltering && <Button size="small" onClick={onClearFilters} sx={{ mt: 1 }}>Limpar busca e filtros</Button>}
+            </Box>
+        );
+    }
+
     return (
-        <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            {entries.length === 0 ? (
-                <Paper 
-                    elevation={0}
-                    sx={{ 
-                        p: 6, 
-                        textAlign: 'center',
-                        border: '2px dashed',
-                        borderColor: 'divider',
-                        bgcolor: 'transparent',
-                        borderRadius: 2
-                    }}
-                >
-                    <Inventory2 sx={{ fontSize: 48, color: 'text.disabled', mb: 2 }} />
-                    <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
-                        {searchQuery ? 'Nenhum item encontrado' : 'Inventário vazio'}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                        {searchQuery 
-                            ? 'Tente buscar com outros termos'
-                            : 'Os itens do personagem aparecerão aqui'
-                        }
-                    </Typography>
-                </Paper>
-            ) : (
-                <Stack spacing={0}>
-                    {entries.map(({ item, type }, idx) => (
-                        <Box key={`${type}-${item?.name}-${idx}`}>
-                            <InventoryItemCard
-                                item={item}
-                                type={type}
-                                weightUnitSuffix={weightUnitSuffix}
-                                {...actions}
-                            />
-                        </Box>
-                    ))}
-                </Stack>
-            )}
+        <Box component="ul" aria-label="Itens do inventário" sx={{ m: 0, p: 0, display: 'flex', flexDirection: 'column', gap: 1 }}>
+            {entries.map(({ item, type, key }) => (
+                <InventoryItemCard key={key} item={item} type={type} weightUnitSuffix={weightUnitSuffix} {...actions} />
+            ))}
         </Box>
     );
 }

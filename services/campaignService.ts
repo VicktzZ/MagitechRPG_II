@@ -13,6 +13,13 @@ class CampaignService extends Service<Campaign, 'code' | 'userId'> {
     async updateFields(campaignId: string, fields: Record<string, unknown>) { return (await this.patch({ param: `${campaignId}/fields`, body: { fields } })).data }
 
     async getCampaignUsers(campaignId: string): Promise<User[]> { return await this.fetch({ param: `${campaignId}/users` }) as unknown as User[] }
+    /** Anotação privada do mestre sobre uma ficha (texto vazio apaga); a leitura é direto no Firestore, em tempo real */
+    async saveGmNote(campaignId: string, charsheetId: string, text: string) { return (await this.put({ param: `${campaignId}/gm-notes/${charsheetId}`, body: { text } })).data as unknown as { saved: boolean } }
+    /**
+     * Dano ou cura rápidos de uma criatura em combate: manda só a variação (negativa = dano ou gasto) e o servidor soma ao que está
+     * gravado, então cliques seguidos não se perdem. Nunca mande o valor final.
+     */
+    async adjustCombatantVitals(campaignId: string, combatantId: string, deltas: Partial<Record<'lp' | 'mp', number>>) { return (await this.post({ param: `${campaignId}/combat/vitals`, body: { combatantId, ...deltas } })).data }
     async createNote(campaignId: string, note: Pick<Note, 'content'>) { return (await this.post({ param: `${campaignId}/notes`, body: note })).data }
     async updateNote(campaignId: string, noteId: string, content: string) { return (await this.patch({ param: `${campaignId}/notes`, body: { noteId, content } })).data }
     async deleteNote(campaignId: string, noteId: string) { return (await this.delete({ param: `${campaignId}/notes`, body: { noteId } })).data }
@@ -115,6 +122,49 @@ class CampaignService extends Service<Campaign, 'code' | 'userId'> {
             param: `${campaignId}/combat`,
             body: { action: 'spend_mp', ...payload }
         })).data
+    }
+
+    /** Mestre zera o MP gasto na rodada (o limite de MP por turno) de qualquer jogador ou criatura em combate */
+    async resetMpLimit(campaignId: string, payload: { combatantId: string }) {
+        return (await this.post({
+            param: `${campaignId}/combat`,
+            body: { action: 'reset_mp_limit', ...payload }
+        })).data
+    }
+
+    /** Mestre define exatamente o MP gasto na rodada de um jogador ou criatura em combate (de 0 até o limite; o limite não muda) */
+    async setMpSpent(campaignId: string, payload: { combatantId: string; value: number }) {
+        return (await this.post({
+            param: `${campaignId}/combat`,
+            body: { action: 'set_mp_spent', ...payload }
+        })).data
+    }
+
+    /** Magia sustentada conjurada com sucesso em combate: vira um efeito sobre o conjurador, com manutenção a cada rodada */
+    async startSustainedSpell(campaignId: string, payload: { combatantId: string; spellKey: string; spellName: string; stage: number; cost: number }) {
+        return (await this.post({
+            param: `${campaignId}/combat`,
+            body: { action: 'sustain_start', ...payload }
+        })).data
+    }
+
+    /** Desconjura a magia sustentada (ou todas, sem `spellKey`) */
+    async endSustainedSpells(campaignId: string, payload: { combatantId: string; spellKey?: string }) {
+        return (await this.post({
+            param: `${campaignId}/combat`,
+            body: { action: 'sustain_end', ...payload }
+        })).data
+    }
+
+    /**
+     * Mestre: adiciona jogadores (por ficha) e criaturas (por id, com cópias) a um combate em andamento. O servidor lê os dados da ficha e
+     * da criatura, rola a iniciativa na fase de ação e põe cada um no lugar dela na ordem. Devolve `warnings` do que ficou de fora.
+     */
+    async addCombatants(campaignId: string, join: { players?: Array<{ charsheetId: string; avatar?: string }>; creatures?: Array<{ id: string; quantity?: number }> }) {
+        return (await this.post({
+            param: `${campaignId}/combat`,
+            body: { action: 'add_combatants', join }
+        })).data as unknown as { success: boolean; message: string; warnings?: string[] }
     }
 
     /** Mestre: libera (true) ou restabelece (false) o limite de MP por turno de um jogador */

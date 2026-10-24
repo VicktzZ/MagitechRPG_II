@@ -248,6 +248,7 @@ export default function Expertise({
                                     <Typography 
                                         fontSize='inherit' 
                                         fontFamily='D20'
+                                        aria-hidden='true'
                                         sx={{ 
                                             transform: 'rotate(-15deg)',
                                             display: 'inline-block',

@@ -23,12 +23,111 @@ import { classColor } from '@constants'
 import { classesModel } from '@constants/classes'
 import { races } from '@constants/races'
 import { getMpLimit } from '@utils/mpLimit'
-import { Attribute, LevelAndInfo } from '.'
+import Attribute from './subcomponents/Attribute'
+import LevelAndInfo from './LevelAndInfo'
 import type { Charsheet } from '@models/entities'
+
+const DEFAULT_ATTRIBUTE_KEYS = [ 'vig', 'foc', 'des', 'log', 'sab', 'car' ] as const
+
+/**
+ * "Overall" da ficha: soma dos atributos + valores de perícia + nível.
+ * `attributeKeys` troca os seis atributos do Magitech pelos de um sistema customizado.
+ */
+export function calculateOverall({ attributes, expertises, level, attributeKeys = DEFAULT_ATTRIBUTE_KEYS }: {
+    attributes?: object | null
+    expertises?: object | null
+    level?: number | null
+    attributeKeys?: readonly string[]
+}): number {
+    const attributeValues = (attributes ?? {}) as Record<string, unknown>
+    const attributesSum = attributeKeys.reduce((sum, key) => sum + (Number(attributeValues[key]) || 0), 0)
+
+    const expertisesSum = Object.values(expertises ?? {}).reduce<number>(
+        (sum, expertise) => sum + (expertise && typeof expertise === 'object' && 'value' in expertise
+            ? (Number((expertise as { value?: unknown }).value) || 0)
+            : 0),
+        0
+    )
+
+    return attributesSum + expertisesSum + (level || 0)
+}
+
+/**
+ * Mantém `overall` em dia com atributos, perícias e nível.
+ *
+ * Na criação recalcula assim que a tela abre (comportamento antigo). Em ficha já
+ * salva não grava nada até o usuário mexer: recalcular na abertura mudava dados sem
+ * ninguém tocar na ficha (ex.: overall guardado 18 virava 67). Depois da primeira
+ * alteração passa a gravar, marcando o campo como alterado.
+ */
+export function useOverallSync({ attributeKeys, enabled = true }: {
+    attributeKeys?: readonly string[]
+    enabled?: boolean
+} = {}): number {
+    const { control, setValue, getValues } = useFormContext<Charsheet>()
+    const attributes = useWatch({ control, name: 'attributes' })
+    const expertises = useWatch({ control, name: 'expertises' })
+    const level = useWatch({ control, name: 'level' })
+    const isSavedSheet = !!getValues('id')
+
+    const overall = calculateOverall({ attributes, expertises, level, attributeKeys })
+
+    // Valor calculado ao abrir a ficha salva: enquanto não muda, nada foi alterado pelo usuário
+    const openedWith = useRef<number | null>(null)
+    const changedByUser = useRef(false)
+
+    useEffect(() => {
+        if (!enabled) return
+
+        if (isSavedSheet && !changedByUser.current) {
+            if (openedWith.current === null) openedWith.current = overall
+            if (overall === openedWith.current) return
+            changedByUser.current = true
+        }
+
+        if (getValues('overall') !== overall) {
+            setValue('overall', overall, { shouldDirty: isSavedSheet })
+        }
+    }, [ enabled, isSavedSheet, overall, getValues, setValue ])
+
+    return overall
+}
+
+/** Estatísticas iniciais (LP, MP, AP) de uma ficha em criação. Valores negativos viram 0. */
+export function calculateInitialStats({ race, classe, vig, foc, des }: {
+    race?: string
+    classe?: string
+    vig?: number
+    foc?: number
+    des?: number
+}): { lp: number, mp: number, ap: number, limited: Array<'LP' | 'MP' | 'AP'> } {
+    const raceStats = races[race as keyof typeof races]?.stats
+    const classStats = classesModel[classe as keyof typeof classesModel]?.stats
+
+    const raw = {
+        lp: (raceStats?.lp || 0) + (classStats?.lp || 0) + (vig || 0),
+        mp: (raceStats?.mp || 0) + (classStats?.mp || 0) + (foc || 0),
+        ap: (raceStats?.ap || 0) + (classStats?.ap || 0) + (Math.floor((des || 0) / 10) || 0)
+    }
+
+    const limited: Array<'LP' | 'MP' | 'AP'> = []
+    if (raw.lp < 0) limited.push('LP')
+    if (raw.mp < 0) limited.push('MP')
+    if (raw.ap < 0) limited.push('AP')
+
+    return {
+        lp: Math.max(0, raw.lp),
+        mp: Math.max(0, raw.mp),
+        ap: Math.max(0, raw.ap),
+        limited
+    }
+}
 
 function Attributes(): ReactElement {
     const { control, setValue, getValues, formState: { errors }, reset } = useFormContext<Charsheet>()
     const [ multiplier, setMultiplier ] = useState<string>('1')
+    // Estatísticas iniciais que o cálculo deixou negativas e que foram limitadas a 0
+    const [ limitedStats, setLimitedStats ] = useState<string[]>([])
     
     const theme = useTheme()
     const matches = useMediaQuery(theme.breakpoints.down('md'))
@@ -36,30 +135,8 @@ function Attributes(): ReactElement {
     const charsheet = getValues()
     const disabled = !!charsheet.id
 
-    // Watch para todos os atributos, perícias e nível para atualizar o overall
-    const attributes = useWatch({ control, name: 'attributes' })
-    const expertises = useWatch({ control, name: 'expertises' })
-    const level = useWatch({ control, name: 'level' })
-    
-    // Efeito para atualizar o overall sempre que qualquer dependência mudar
-    useEffect(() => {
-        const attributesSum = (
-            (attributes?.vig || 0) +
-            (attributes?.foc || 0) +
-            (attributes?.des || 0) +
-            (attributes?.log || 0) +
-            (attributes?.sab || 0) +
-            (attributes?.car || 0)
-        );
-
-        const expertisesSum = Object.values(expertises || {}).reduce(
-            (sum, expertise) => sum + (expertise && typeof expertise === 'object' && 'value' in expertise ? (expertise.value || 0) : 0),
-            0
-        );
-        
-        const overallValue = attributesSum + expertisesSum + (level || 0);
-        setValue('overall', overallValue);
-    }, [ attributes, expertises, level, setValue ]);
+    // Overall (soma de atributos, perícias e nível), mantido em dia no formulário
+    const overallValue = useOverallSync()
 
     const charsheetDetailsColor = useMemo(() => {
         const classe = charsheet.class
@@ -226,59 +303,54 @@ function Attributes(): ReactElement {
     })
 
     const raceRef = useRef(race)
-    const attributesRef = useRef({ vig, foc, des })
+    const attributesRef = useRef({ vig: Number(vig) || 0, foc: Number(foc) || 0, des: Number(des) || 0 })
 
     // Status Attributes
     useEffect(() => {
-        let baseLP = 0; let baseMaxLP = 0; let baseMP = 0; let baseMaxMP = 0; let baseAP = 0; let baseMaxAP = 0
-        
         if (disabled) {
-            baseLP = charsheet.stats.lp
-            baseMaxLP = charsheet.stats.maxLp
-            baseMP = charsheet.stats.mp
-            baseMaxMP = charsheet.stats.maxMp
-            baseAP = charsheet.stats.ap
-            baseMaxAP = charsheet.stats.maxAp
+            // Ficha salva: aplica só a diferença causada por uma alteração de atributo feita
+            // agora. Ao abrir a página nada muda (e nada é gravado).
+            // (Number(...) || 0: em sistema customizado os atributos do Magitech não existem e
+            // `undefined - undefined` gravava NaN nas estatísticas da ficha salva)
+            const current = { vig: Number(vig) || 0, foc: Number(foc) || 0, des: Number(des) || 0 }
+            const previous = attributesRef.current
+            const vigDiff = current.vig - previous.vig
+            const focDiff = current.foc - previous.foc
+            const apDiff = Math.floor(current.des / 10) - Math.floor(previous.des / 10)
+            attributesRef.current = current
 
-            baseLP += vig - attributesRef.current.vig
-            baseMaxLP += vig - attributesRef.current.vig
-            baseMP += foc - attributesRef.current.foc
-            baseMaxMP += foc - attributesRef.current.foc
-            baseAP += Math.floor(des / 10) - Math.floor(attributesRef.current.des / 10)
-            baseMaxAP += Math.floor(des / 10) - Math.floor(attributesRef.current.des / 10)
-          
-            attributesRef.current.vig = vig
-            attributesRef.current.foc = foc
-            attributesRef.current.des = des
-        } else {
-            baseLP = (races[race as keyof typeof races]?.stats.lp || 0) +
-                (classesModel[classe as keyof typeof classesModel]?.stats.lp || 0) +
-                (vig || 0)
-            baseMaxLP = baseLP
-    
-            baseMP = (races[race as keyof typeof races]?.stats.mp || 0) +
-                (classesModel[classe as keyof typeof classesModel]?.stats.mp || 0) +
-                (foc || 0)
-            baseMaxMP = baseMP
-    
-            baseAP = (races[race as keyof typeof races]?.stats.ap || 0) +
-                (classesModel[classe as keyof typeof classesModel]?.stats.ap || 0) +
-                (Math.floor(des / 10) || 0)
-            baseMaxAP = baseAP
+            if (vigDiff === 0 && focDiff === 0 && apDiff === 0) return
+
+            const saved = getValues('stats')
+            const options = { shouldDirty: true }
+            setValue('stats.lp', Math.max(0, saved.lp + vigDiff), options)
+            setValue('stats.maxLp', Math.max(0, saved.maxLp + vigDiff), options)
+            setValue('stats.mp', Math.max(0, saved.mp + focDiff), options)
+            setValue('stats.maxMp', Math.max(0, saved.maxMp + focDiff), options)
+            setValue('stats.ap', Math.max(0, saved.ap + apDiff), options)
+            setValue('stats.maxAp', Math.max(0, saved.maxAp + apDiff), options)
+            return
         }
-        
-        setValue('stats.lp', baseLP)
-        setValue('stats.maxLp', baseMaxLP)
-        setValue('stats.mp', baseMP)
-        setValue('stats.maxMp', baseMaxMP)
-        setValue('stats.ap', baseAP)
-        setValue('stats.maxAp', baseMaxAP)
-    }, [ vig, des, foc, race, classe ])
+
+        // Criação: estatísticas iniciais da raça + classe + atributo. Nunca negativas
+        const initial = calculateInitialStats({ race, classe, vig, foc, des })
+
+        setValue('stats.lp', initial.lp)
+        setValue('stats.maxLp', initial.lp)
+        setValue('stats.mp', initial.mp)
+        setValue('stats.maxMp', initial.mp)
+        setValue('stats.ap', initial.ap)
+        setValue('stats.maxAp', initial.ap)
+
+        setLimitedStats(previous => (
+            previous.join() === initial.limited.join() ? previous : initial.limited
+        ))
+    }, [ vig, des, foc, race, classe, disabled, getValues, setValue ])
 
     // Pontos de atributo extras da raça (ex: 'Humano'): aplica só a diferença
     // quando a raça muda — ao montar (ex: rascunho restaurado) nada é alterado
     useEffect(() => {
-        if (charsheet.id) return
+        if (getValues('id')) return
         const previousRace = raceRef.current
         raceRef.current = race
         if (previousRace === race) return
@@ -289,7 +361,7 @@ function Attributes(): ReactElement {
         if (diff !== 0) {
             setValue('points.attributes', getValues('points.attributes') + diff)
         }
-    }, [ race ])
+    }, [ race, getValues, setValue ])
     
     return (
         <Box
@@ -325,7 +397,7 @@ function Attributes(): ReactElement {
                         borderColor: 'divider'
                     }}
                 >
-                    <Typography variant={matches ? 'subtitle1' : 'h6'} fontWeight="bold" color="primary">
+                    <Typography variant={matches ? 'subtitle1' : 'h6'} component='h3' fontWeight="bold" color="primary">
                         Atributos Físicos
                     </Typography>
                     <Box display='flex' gap={2} flexDirection={matches ? 'column' : 'row'}>
@@ -475,11 +547,18 @@ function Attributes(): ReactElement {
                                     )}
                                 />
 
+                                {limitedStats.length > 0 && (
+                                    <Typography variant='caption' color='warning.light' role='status' display='block'>
+                                        O cálculo inicial de {limitedStats.join(', ')} ficou negativo com a raça, a classe e os atributos
+                                        escolhidos e foi limitado a 0.
+                                    </Typography>
+                                )}
+
                                 {/* Estatísticas gerais */}
                                 <Box sx={{ mt: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 1.5, bgcolor: 'background.paper' }}>
                                     {/* Limite de MP por turno */}
                                     <Box display="flex" alignItems="center" mb={1}>
-                                        <Tooltip title="Máximo de MP que pode ser gasto em magias entre o início do seu turno e o início do próximo">
+                                        <Tooltip title="Máximo de MP que pode ser gasto em magias em cada rodada de combate (zera quando a rodada vira)">
                                             <LocalFireDepartment color="primary" fontSize="small" sx={{ mr: 1 }} />
                                         </Tooltip>
                                         <Box flexGrow={1}>
@@ -515,27 +594,6 @@ function Attributes(): ReactElement {
                                             {/* Valor com indicador visual */}
                                             <Box sx={{ display: 'flex', alignItems: 'center' }}>
                                                 {(() => {
-                                                    // Soma todos os atributos principais
-                                                    const attributesSum = (
-                                                        getValues('attributes.vig') +
-                                                        getValues('attributes.foc') +
-                                                        getValues('attributes.des') +
-                                                        getValues('attributes.log') +
-                                                        getValues('attributes.sab') +
-                                                        getValues('attributes.car')
-                                                    );
-
-                                                    // Calcula a somatória dos bônus de perícias
-                                                    const expertises = getValues('expertises') || {};
-                                                    const expertisesSum = Object.values(expertises).reduce(
-                                                        (sum, expertise) => sum + (expertise && typeof expertise === 'object' && 'value' in expertise ? (expertise.value || 0) : 0), 
-                                                        0
-                                                    );
-                                                    
-                                                    // Valor total do overall (atributos + perícias)
-                                                    const overallValue = attributesSum + expertisesSum + charsheet.level;
-                                                    setValue('overall', overallValue)
-                                                    
                                                     // Define cores com base no valor
                                                     let color = 'text.primary';
                                                     if (overallValue >= 40) color = 'warning.main';
@@ -592,18 +650,19 @@ function Attributes(): ReactElement {
                         }}
                     >
                         <Box display='flex' alignItems='center' justifyContent='space-between' mb={2} flexWrap='wrap' gap={1}>
-                            <Typography variant={matches ? 'subtitle1' : 'h6'} fontWeight="bold" color="primary">
+                            <Typography variant={matches ? 'subtitle1' : 'h6'} component='h3' fontWeight="bold" color="primary">
                                 Atributos Principais
                             </Typography>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
                                 <Box display="flex" alignItems="center" gap={1}>                
-                                    <Typography variant="subtitle2" fontWeight="medium">Multiplicador:</Typography>
+                                    <Typography variant="subtitle2" fontWeight="medium" component='span' id='attributes-multiplier-label'>Multiplicador:</Typography>
                                     <TextField
                                         size="small"
                                         type="number"
                                         inputProps={{ 
                                             min: 1, 
                                             max: 10, 
+                                            'aria-labelledby': 'attributes-multiplier-label',
                                             style: { padding: '4px 8px', width: '40px' } 
                                         }}
                                         value={multiplier}

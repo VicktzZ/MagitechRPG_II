@@ -2,7 +2,7 @@
 
 import { campaignCurrentCharsheetContext, useCampaignContext } from '@contexts';
 import { useCompleteCharsheet } from '@hooks/useCompleteCharsheet';
-import { Backdrop, CircularProgress, Stack } from '@mui/material';
+import { Backdrop, Box, CircularProgress, Stack } from '@mui/material';
 import { sessionService } from '@services';
 import { enqueueSnackbar } from 'notistack';
 import { useSession } from 'next-auth/react';
@@ -11,6 +11,12 @@ import { FormProvider, useForm } from 'react-hook-form';
 import { CampaignGMDashboard, CampaignHeader, CampaignNotes, CampaignPlayerDashboard, SessionChat } from '.';
 import type { CharsheetDTO } from '@models/dtos';
 import GMActions from './gmDashboard/GMActions';
+import GMWindowLayer from './gmDashboard/windows/GMWindowLayer';
+import { GMWindowProvider } from './gmDashboard/windows/GMWindowProvider';
+import { creatureWindowTargets } from './gmDashboard/windows/windowTargets';
+import { resolveViewerCharsheetId } from '@utils/campaignViewer';
+import PartyBar from './gmDashboard/windows/PartyBar';
+import { PARTY_BAR_GAP } from './gmDashboard/windows/layout';
 import CampaignFinishedBanner from './CampaignFinishedBanner';
 import CampaignWidgetPanel from './widget/CampaignWidgetPanel';
 import CombatStatus from './CombatStatus';
@@ -20,16 +26,15 @@ import FloatingDock from './FloatingDock';
 const DEV_MODE = process.env.NEXT_PUBLIC_NODE_ENV === 'development';
 
 export default function CampaignComponent(): ReactElement {
-    const { isUserGM, campaign, charsheets  } = useCampaignContext();
+    const { isUserGM, campaign, charsheets, selectedCharsheetId } = useCampaignContext();
     const { campaignCode } = campaign;
     const { data: session } = useSession();
     const userId = session?.user?.id ?? '';
 
     // A ficha de quem está vendo vem da própria campanha (campaign.players); um localStorage global
-    // misturava a ficha de campanhas abertas em abas diferentes
-    const charsheetId = campaign.players?.find(player => player.userId === userId)?.charsheetId
-        ?? charsheets.find(sheet => sheet.userId === userId)?.id
-        ?? '';
+    // misturava a ficha de campanhas abertas em abas diferentes. Quem entra pela primeira vez ainda não está
+    // em players: vale a ficha que escolheu no modal de entrada (ver resolveViewerCharsheetId)
+    const charsheetId = resolveViewerCharsheetId({ players: campaign.players, userId, selectedCharsheetId, charsheets });
 
     // MODO DEV: permite ao mestre pré-visualizar a campanha como jogador,
     // usando uma ficha da própria conta anexada como jogador de teste.
@@ -91,33 +96,56 @@ export default function CampaignComponent(): ReactElement {
         values: charsheet!
     });
 
+    // Criaturas e combatentes que podem ter janela do mestre (as janelas dos que saíram são fechadas)
+    const windowTargets = useMemo(() => creatureWindowTargets(campaign), [ campaign ]);
+
     // Objeto memoizado — inline ({{ charsheet }}) criava um valor novo a cada
     // render e re-renderizava todos os consumidores do contexto da ficha atual.
     const currentCharsheetValue = useMemo(() => ({ charsheet: charsheet! }), [ charsheet ]);
 
     // Uma coluna só: faixa da campanha, avisos, ações do mestre, notas e o painel de quem está vendo.
     // O chat e o dock (combate e widgets) ficam fixos na borda e não entram no fluxo.
+    const main = (
+        <Stack spacing={2} sx={{ width: '100%', minWidth: 0, flex: 1 }}>
+            <CampaignHeader />
+            <CampaignFinishedBanner />
+            {DEV_MODE && isUserGM && (
+                <DevViewSwitcher
+                    campaignId={campaign.id}
+                    userId={userId}
+                    activeCharsheetId={devPreviewCharsheetId}
+                    onChange={handleDevPreviewChange}
+                />
+            )}
+            {effectiveIsUserGM && <GMActions />}
+            <CampaignNotes />
+            {effectiveIsUserGM ? (
+                <CampaignGMDashboard />
+            ) : (
+                <CampaignPlayerDashboard />
+            )}
+        </Stack>
+    );
+
+    // Mestre: a barra do grupo fica ao lado da coluna e as janelas abertas por ela flutuam sobre a página
+    const body = effectiveIsUserGM ? (
+        <GMWindowProvider
+            campaignId={campaign.id}
+            charsheetIds={charsheets.map(sheet => sheet.id)}
+            creatureIds={windowTargets.creatureIds}
+            combatantIds={windowTargets.combatantIds}
+        >
+            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: `${PARTY_BAR_GAP}px` }}>
+                <PartyBar />
+                {main}
+            </Box>
+            <GMWindowLayer />
+        </GMWindowProvider>
+    ) : main;
+
     const content = (
         <>
-            <Stack spacing={2} sx={{ width: '100%', minWidth: 0 }}>
-                <CampaignHeader />
-                <CampaignFinishedBanner />
-                {DEV_MODE && isUserGM && (
-                    <DevViewSwitcher
-                        campaignId={campaign.id}
-                        userId={userId}
-                        activeCharsheetId={devPreviewCharsheetId}
-                        onChange={handleDevPreviewChange}
-                    />
-                )}
-                {effectiveIsUserGM && <GMActions />}
-                <CampaignNotes />
-                {effectiveIsUserGM ? (
-                    <CampaignGMDashboard />
-                ) : (
-                    <CampaignPlayerDashboard />
-                )}
-            </Stack>
+            {body}
             <SessionChat />
             <FloatingDock>
                 <CombatStatus

@@ -22,6 +22,15 @@ quase todas são `(imediato)` no `type`. Duas (Rajada Refletora, Retribuição C
 `type`; o filtro de subtipo ignora esse texto. Para listar reações, usa-se o filtro "Execução"
 (Padrão, Completa, Movimento, Livre, Reação) do modal de magias.
 
+**Recuperação** é uma categoria do filtro "Tipo" (`SPELL_CATEGORIES`): a magia devolve MP ao conjurador ou a aliados em algum estágio. Se só faz isso, o
+`type` é `Recuperação (subtipo)`; se faz outra coisa também (dano, cura, defesa, controle...), a categoria é somada: `Ataque/Recuperação (imediato)`. O filtro
+"Tipo: Recuperação" lista as duas formas, e a categoria somada continua aparecendo no filtro da outra (`Ataque`). A grafia sem acento ou em outra caixa ("recuperacao") vale
+a mesma categoria. **Não** entram magias que só gastam MP, mudam o custo de outras ou tiram MP de um inimigo sem devolver nada a ninguém. Em 24/10/2026 o catálogo
+de produção foi mapeado lendo os 3 estágios das 424 magias e **46 trocaram de `type`** (21 do lote `seed-mp-*`, que já usa os tipos novos em `manaRecoverySpells.ts`):
+dados em `scripts/data/manaRecoveryTypes.ts`, script `scripts/applySpellTypeChanges.ts` (simulação por padrão; `--apply` troca só o campo `type` e só se ele ainda for o
+antigo, então não passa por cima de edição manual; `--backup F` guarda as trocas e `--revert F --apply` desfaz; teste com o emulador em `utils/firestore/__tests__/applySpellTypeChanges.emulator.test.ts`).
+Magia nova que recupera MP já deve nascer com a categoria.
+
 ## Convenções do catálogo de magias (conferidas no Firestore real, coleção `spells`)
 
 - `element` em MAIÚSCULAS (`FOGO`, `ÁGUA`, `NÃO-ELEMENTAL`, `PSÍQUICO`...). A API filtra assim.
@@ -30,8 +39,13 @@ quase todas são `(imediato)` no `type`. Duas (Rajada Refletora, Retribuição C
 - Sempre 3 estágios; no nível 4 o 3º é a Maestria. Custo exibido = `mpCost` + extra do estágio
   (`calculateExtraManaCost`). Custo base médio no catálogo: N1 1,7 · N2 4,2 · N3 7 · N4 12.
 - `level` e `mpCost` como número nos documentos novos.
+- **Acréscimo de MP por estágio** (`mpCostIncrease`, opcional): sem o campo, o custo de cada estágio é `mpCost` + o acréscimo padrão do código por nível (N1 +1/+2, N2 +2/+4, N3 +2/+5, N4 +4/+9;
+  `calculateExtraManaCost`, `utils/roguelite/spellCost.ts`). Com o campo, é um **array de números, um por estágio acima do primeiro** (`[acréscimo do estágio 2, acréscimo do estágio 3]`; um só para magia de
+  2 estágios, nenhum para 1), somado ao `mpCost` no lugar do padrão; o estágio 1 nunca tem acréscimo, e número ausente, vazio ou inválido cai no padrão só daquele estágio. Vale em tudo que mostra ou cobra o custo
+  (cartão da ficha, `StageLadder`, conjurar na campanha, cartão do Roguelite); a sustentada paga metade desse custo. Em 24/10/2026 o custo de 17 magias de Recuperação foi reduzido direto no banco (13 delas ganharam `mpCostIncrease`; as outras só um `mpCost` menor); as demais seguem o padrão do código.
+  **Rodar `scripts/seedManaRecoverySpells.ts` de novo devolveria os custos antigos das 13 `seed-mp-*` desse grupo** (o lote em `scripts/data/manaRecoverySpells.ts` ainda tem os valores velhos): sincronize o lote antes de regravar.
 - Texto no vocabulário do catálogo: "turnos" e "combate" (não "rodadas"/"cena"), metros como `4,5m`.
-- No máximo UMA expressão de dados (`XdY`) por estágio: `castSpell` rola todas as que achar no texto.
+- No máximo UMA expressão de dados (`XdY`) por estágio: `rollSpellEffect` (ao efetuar a magia) rola todas as que achar no texto.
 - Antes de criar magias, ler o catálogo para não repetir conceito e seguir o vocabulário real.
 
 Lotes já criados: `scripts/data/manaRecoverySpells.ts` (ids `seed-mp-*`) e
@@ -46,8 +60,9 @@ lote (senão alguém editou à mão), sobrescrever só os ids do lote e reler pa
 - **Teste ("Solicitar teste")** não usa Pusher. O mestre grava o pedido em `campaign.session.testRequest`
   (`POST /api/campaign/[id]/session/test-request`) e os jogadores o recebem pelo listener da campanha; cada
   resposta vai para `testRequest.responses.<userId>` (`.../test-response`, em transação). O servidor refaz a conta
-  (maior d20 + bônus contra a DT) e confere pedido, prazo (10 min) e se o jogador foi chamado. A regra de dados é a
-  mesma do botão da perícia na ficha: nº de d20 = `mods.attributes` do atributo padrão (mínimo 1), vale o maior.
+  (maior d20 + bônus contra a DT) e confere pedido, prazo (10 min) e se o jogador foi chamado. O nº de d20 do teste é
+  `mods.attributes` do atributo padrão (mínimo 1), vale o maior. **Não é a mesma regra do botão da perícia na ficha** (`subcomponents/Expertise.tsx`:
+  `mod + 1` d20, e mod negativo rola 2), nem da criatura (`⌊valor/5⌋`): a regra única é decisão pendente do dono.
   Lógica pura em `utils/campaignTest.ts`; validação em `utils/api/campaignTests.ts`; fluxo do navegador em
   `hooks/useCampaignTest.ts`.
 - **Pusher está praticamente sem uso**: só o mestre assina (`hooks/usePusher.tsx`), e no canal `CODIGO` enquanto o
@@ -62,6 +77,12 @@ lote (senão alguém editou à mão), sobrescrever só os ids do lote e reler pa
 - Avise o Pusher sempre com `triggerPusher` (`utils/pusher.ts`): o aviso é um extra e uma falha dele não pode virar 500
   depois de a gravação já ter sido feita. A presença (quem está online) é `campaign.session.users`; o navegador
   conecta ao abrir a campanha e desconecta ao sair da tela e no `pagehide` (fetch com `keepalive`).
+  **Primeira entrada de jogador**: quem ainda não está em `campaign.players` escolhe a ficha no modal do `CampaignProvider` (ou cria,
+  no Roguelite), e é o `POST /api/session/connect` que o registra em `players`. O provedor expõe a escolha em
+  `selectedCharsheetId` e `resolveViewerCharsheetId` (`utils/campaignViewer.ts`) decide a ficha de quem vê (registrada, depois escolhida,
+  depois uma do usuário entre as da campanha). Sem a escolhida o navegador mandava `charsheetId: ""` e o servidor recusava (400): o jogador
+  via "Não foi possível registrar sua entrada na sessão" e ficava sem painel (regressão do PR #86). **Teste a entrada com um usuário que
+  ainda não está na campanha**, não só com quem já joga ou com o mestre.
 - **Erros em `catch`**: use `errorMessage(error, 'texto padrão')` e `asRequestError` de `utils/errors.ts`; nada de
   `catch (error: any)`. Listas que o Firestore devolve como objeto de chaves numéricas: `utils/normalizeToArray.ts`.
 
@@ -74,6 +95,20 @@ lote (senão alguém editou à mão), sobrescrever só os ids do lote e reler pa
   antiga — **grava no banco: só com liberação do dono**). Ao excluir a campanha o servidor apaga a subcoleção.
   **Publique `firestore.rules` antes do código**: a regra nova de `campaigns/{id}/messages` é aditiva, mas sem ela o
   navegador não lê o chat.
+- **Dano de arma e magia no chat** (`utils/combat/actionRollMessage.ts`, `components/misc/ActionRollCard.tsx`): vão como mensagem de **dados** (`MessageType.DICE`, chip "DADOS" e borda
+  primária) e o `DiceMessage` os mostra como o cartão dos testes e dos dados personalizados: `[jogador] Nome`, detalhe ("FOGO · Estágio 2 · Conjuração", "Dano crítico · Perfurante"), expressões em cinza,
+  **Total à vista** e as rolagens num dropdown fechado de início. Há três tipos de cartão: **arma** (dano normal ou crítico, com o chip "Crítico"), **conjuração** (o teste de magia: chips de Custo de MP, DT e
+  Sucesso/Falhou; o dropdown mostra os d20, o maior dado destacado e "Total 25 contra DT 21: passou por 4") e **efeito** (os dados do estágio: dano, cura, duração; sem custo nem DT). O texto da mensagem é
+  legível e começa com o marcador `[AÇÃO] conjuração|efeito|arma [crítico]` (`buildActionRollText`/`parseActionRoll`; o parser devolve `null` para qualquer outro texto, e log de combate nunca vira
+  cartão). **Só dano, conjuração e efeito viram cartão**: o acerto da arma e os avisos de MP insuficiente e de limite de MP continuam linhas de log de combate (`COMBAT_LOG`). `useWeaponRolls` e
+  `SpellsSection` mandam o `Message` pronto (texto cru no `handleSendMessage` faria o chat tentar rolar a notação). Visto no e2e: um dropdown aberto no primeiro segundo depois do envio fechou
+  sozinho (a mensagem otimista tem a chave `tempId` e a confirmada pelo servidor `id-índice` em `MessageList`, então o cartão remonta); vale para todos os cartões de dados, e o teste espera uns 2 s antes de abrir.
+  Teste de componente que importa `DiceMessage` ou `diceRoller` precisa de `jest.mock('@enums', ...)`: o barril puxa `subscriptionEnum.ts`, que o ts-jest barra por um erro de tipo antigo.
+- **Furtivo na arma** (decisão do dono, 24/10/2026; `utils/combat/stealth.ts`; **entrou sem teste nem e2e a pedido do dono: a primeira coisa a conferir se algo estranhar**): o jogador com o efeito **Furtivo** em combate ativo (`isCombatantStealthy`:
+  efeito aplicado ao combatente cujo nome é "Furtivo", sem caixa nem acento, ou id `seed-furtivo`) que usa o botão **Acerto** da arma rola **1d20 a mais** (vantagem: vale o maior; `rollHitTest(..., { extraDice })`, a linha do log diz
+  "furtivo: vantagem, +1d20") e, se rolar o dano da arma (normal ou crítico), o dano sai **dobrado** (`rollWeaponDamage(..., { stealth })`). O cartão do dano mostra o chip "Furtivo ×2" e, no dropdown, "Furtivo: dano dobrado (9 × 2 = 18)"; o
+  marcador do texto é `[AÇÃO] arma [crítico] furtivo` (`ActionRoll.stealth`) e as linhas `-` continuam com o valor rolado, sem dobrar (só o `Total` é o dobro). **Só arma**: o teste de magia, a conjuração e o efeito da magia não mudam. Fora de combate
+  ativo não há efeito, então nada muda. O catálogo `seed-furtivo` ainda descreve a vantagem de ataque só a partir do nível 2 e +25% de dano no nível 3 (modificadores informativos); a regra acima vale para o efeito em qualquer nível.
 - **Verificar contra o Firestore de verdade (emulador)**: `(cd tests/firestore-rules && npm install)` uma vez; depois
   `npm test` nessa pasta (regras) e `npm run test:emulator` na raiz (helpers do servidor com o Admin SDK).
 - **Ver a campanha rodando, sem banco real**: emuladores (`firebase emulators:start --only firestore,auth --project
@@ -103,12 +138,249 @@ lote (senão alguém editou à mão), sobrescrever só os ids do lote e reler pa
   (`gmDashboard/dashboard/`, `playerDashboard/inventory/`, `widget/panel/`...), mantendo o arquivo original como
   composição com o mesmo export e props.
 
-## Limite de MP por turno
+## Ficha: salvar e validar
+
+Dados reais (61 fichas) mostraram que 42 não passavam no schema antigo e que salvar apagava `session[].perks`. Regras que valem agora:
+
+- **Salvar ficha existente envia só o que mudou.** `useCharsheetSubmit` (`components/charsheet/page/`) compara o formulário com a
+  ficha como foi carregada (`CharsheetBaseline`, em `contexts/CharsheetFormProvider.tsx`) por `collectChanges`
+  (`utils/charsheetDiff.ts`) e grava por `PATCH /api/charsheet/[id]/fields` (caminhos de campo). Objetos são comparados campo a
+  campo, listas valem como um todo. **Nunca** grava `id`, `userId`, `createdAt`, `playerName` nem `session` (é da campanha: vantagens,
+  stats da sessão). Escrita do mestre enquanto a ficha está aberta não é desfeita. Depois de salvar, `markSaved` + `form.reset`.
+- **`PATCH /api/charsheet/[id]`** (abas antigas, clientes externos) também é parcial: grava só as chaves de topo do corpo, ignora as
+  protegidas acima, `spells` vira ids e `traits: []` persiste. Não use `plainToInstance` + `update` da ficha inteira (vazava defaults e
+  apagava `session`).
+- **Normalização na carga** (`utils/charsheetNormalize.ts`, chamada por `useCompleteCharsheet`): lista gravada como objeto de chaves
+  numéricas vira array, `elementalMastery`/`anotacoes`/`financialCondition` nulos viram `''`, perícia solta vira `{value, defaultAttribute}`,
+  arma sem `ammo`/`bonus`/`hit`... ganha os campos. É pura e idempotente e só mexe no formato. A carga também devolve `dropped`
+  (magias/poderes que a tela não mostra); `collectChanges` os devolve junto quando a lista é regravada.
+- **Schema** (`schemas/charsheetSchema.ts`): `buildCharsheetSchema({ mode })`. `create` é rígido (pontos de atributo e perícia = 0, atributo ≤ 30,
+  perícia ≤ 10, e no sistema padrão classe, raça e linhagem/profissão preenchidas; sistema customizado pode desligar esses campos). `edit` não bloqueia pontos sobrando (o level-up concede na hora) e os tetos só barram quem AUMENTA. O resolver
+  (`schemas/charsheetResolver.ts`) ainda ignora, na edição, erro de campo que vale o mesmo que o salvo (não é o jogador que o causou) e entrega
+  os valores CRUS ao envio. O Zod descarta chaves que não conhece: **use `.passthrough()`** em objeto novo do schema, senão o submit apaga
+  a chave. Evite `z.union` de itens: o resolver lista os erros de todas as ramificações ("Required" de campos que o item nem tem).
+- **Erros legíveis**: `utils/charsheetErrors.ts` (`listFormErrors`) devolve "Inventário > Armas > Pistola > Munição: campo obrigatório" com a
+  âncora da seção (`CHARSHEET_SECTION_IDS`); pontos para gastar aparecem como aviso (`PendingPoints`), não como erro, em ficha criada.
+- **Poderes** ficam como objeto na ficha, não como id: habilidades de sistema customizado não existem no catálogo `powers`. Só poder mágico do
+  catálogo (`type: 'Poder Mágico'`) vira id na criação (`POST /api/charsheet`). `spells` ficam como ids (`id || name`).
+- **Migração do formato das fichas antigas**: `scripts/normalizeCharsheets.ts` (mesma função da carga). Simulação por padrão, `--apply`
+  regrava cada ficha numa transação, só os caminhos alterados, guarda o valor antigo em arquivo e não apaga nada.
+  **Grava no banco: só com liberação do dono.** Teste com o emulador: `utils/firestore/__tests__/normalizeCharsheets.emulator.test.ts`.
+- **Abrir uma ficha salva não pode gravar nada**: efeito de montagem que recalcula valor derivado (`overall`, `mods.attributes`, `stats`) só escreve
+  na criação; em ficha salva só depois de o usuário mexer no atributo (`useOverallSync` em `Attributes.tsx`, `isSavedSheet` em `Attribute.tsx`).
+  Como o salvar compara com a ficha carregada, escrita automática no mount apareceria como alteração do jogador.
+- `useCharsheetSystem` guarda em cache só o sistema carregado com sucesso; falha (rede, 404) não vale até recarregar a página.
+- O rascunho da criação (`create-charsheet-autosave`) só entra na página de criação; na edição ele preenchia campos ausentes com dados de outro personagem.
+- **Decisões de balanceamento ainda abertas com o dono** (regra única de nº de d20 por atributo, papel do AP, tetos de bônus, roguelite sem teto,
+  raças/classes): não implemente sem resposta.
+
+## Magias: estágios desbloqueados
+
+Regra dada pelo dono: toda magia começa no estágio 1; o jogador **evolui** a magia (botão "Evoluir" no cartão, gastando pontos de evolução) e libera o próximo
+estágio, em ordem; o mestre também ajusta (aba de magias do detalhe da ficha, em edição). Estágio acima do liberado fica com cadeado, sem o texto
+do efeito, e não pode ser conjurado. O MP extra por estágio ao conjurar (`calculateExtraManaCost`) continua valendo.
+**Não existe "estágio ativo"** (decisão do dono): quem evoluiu a magia conjura o estágio liberado **ou qualquer um dos anteriores**, escolhendo na hora de conjurar
+(cada estágio liberado tem o próprio botão "Conjurar", com o custo de MP dele); nada a trocar nem a gravar.
+
+- Um campo da ficha, por id da magia (nome, se não tiver id): `spellUnlocked[chave]`, o estágio **liberado** até agora. Lógica pura em `utils/spellStages.ts` (`getStageProgress`).
+  `spellStages[chave]` é **legado** (era o "estágio ativo"): a tela não grava mais esse campo (só o remove junto da magia) e ele só vale como estágio liberado em **ficha antiga
+  sem `spellUnlocked`**, para ninguém perder o estágio 3 que já conjurava. Não há mais `materializeUnlocked`: como o legado nunca muda, não precisa ser copiado.
+- O cartão da ficha (`Magic.tsx`) abre no estágio liberado mais novo; os botões de estágio dele só **mostram** o texto e o custo daquele estágio (estado de tela, não grava).
+- **Evoluir custa pontos de evolução, e o custo depende do nível da magia** (`stageRule`, `utils/spellStages.ts`): nível 1 e 2 = **1 ponto** por estágio; nível 3 = **2 pontos** por estágio;
+  nível 4 = **3 pontos** para o estágio 2, e o 3º estágio é a **Maestria**: abre **sozinha, sem gastar ponto,** para quem tem maestria no elemento da magia (`elementalMastery`, comparação sem
+  caixa nem acento: `sameElement`) **depois de liberar o estágio 2**; sem a maestria ela **nunca** abre (decisão do dono): não se compra, o `3` gravado em `spellUnlocked`/`spellStages` (ficha antiga,
+  edição de fora) vale só até o estágio 2 (`masteryRequired` em `getSpellProgress`), e o ajuste direto do mestre (aba de magias) deixa o botão da Maestria desabilitado, com o motivo. Nível 4 de
+  elemento **secundário** (Sangue, Vácuo, Psíquico, Radiação, Explosão) não tem Maestria: o 3º estágio é um estágio comum, chamado **"Estágio 3"** (`spellStageLabel(level, stage, element)`; sem o
+  elemento ele devolve "Maestria") e **custa 3 pontos**, comprado como os outros, tenha o jogador maestria em outro elemento ou não. O custo vem **explícito** ao jogador (texto "Custa 2 pontos de evolução" no estágio bloqueado e no botão "Evoluir (2 pontos)", mais "Faltam N pontos" quando não dá).
+  `getSpellProgress(spell, sheet, { enabled, legacy })` é o que as telas chamam (envolve `getStageProgress` e devolve `nextCost`, `needsMastery`, `purchased` e `stages[]`); a maestria é **derivada**
+  (se a maestria da ficha mudar, a Maestria volta a bloquear) e **não é gravada**: `spellUnlocked` guarda só o liberado por pontos (`purchased`; é o que `materializeUnlocked` grava).
+  O ajuste da regra (se o dono mudar o custo) fica todo em `stageRule`. Novo atributo `points.evolution` (inteiro ≥ 0; ficha antiga não tem o campo e vale 0). O **mestre concede**: no cartão do
+  jogador na campanha (menu "Conceder ponto de evolução", +1) ou no detalhe da ficha, em edição ("Evolução (magias)"). Sem pontos suficientes, o botão Evoluir fica
+  desabilitado. O ajuste direto do estágio liberado pelo mestre (aba de magias do detalhe) não gasta ponto. Na página da ficha o formulário é uma foto:
+  a concessão de fora entra somada ao que o jogador já gastou ali (`mergeRemoteCounter`, `utils/counterSync.ts`, no `CharsheetFormProvider`), senão salvar
+  o valor velho desfaria o ponto concedido.
+- **Estágios aninhados** (`components/spells/StageLadder.tsx`, usado na seção de Magias do jogador e na aba de magias do mestre): todos os estágios da magia em escada vertical; os **liberados ficam
+  abertos por padrão** (cada um recolhe; "Recolher/Expandir estágios") com o que mudou em relação ao anterior **destacado** (`utils/textDiff.ts`, diferença por palavra; texto reescrito
+  não é destacado), custo total de MP e a diferença (`9 MP (+2)`); **cada estágio liberado tem o próprio "Conjurar"** (MP e limite de MP por turno são conferidos por estágio, com o custo dele); os bloqueados mostram o custo e, só o próximo, o botão Evoluir. O custo do
+  estágio 3 do nível 4 usa o extra da Maestria (`calculateTotalManaCost`; o `SpellStage` antigo da campanha dava NaN aí).
+- **Aba de magias do mestre** (`SpellsTab` + `spells/SpellsOverview`, `spells/SpellCard`): resumo (magias, por nível, custo médio de MP base, maestria, estágios liberados, pontos de evolução, elementos),
+  busca/filtros de elemento e nível (a partir de 4 magias, `utils/spellsOverview.ts`, `utils/searchText.ts`: sem acento nem caixa) e um cartão por magia (até 3 magias abrem já
+  expandidas). Em edição o mestre ajusta o estágio liberado por botões (não gasta ponto) e exclui a magia **pela chave** (a tabela antiga excluía pelo índice, que não batia quando a ficha mistura ids e
+  objetos).
+- **O modal de magias também bloqueia**: magia que a ficha ainda não tem aparece com o estágio 1 liberado e os outros com cadeado; magia que a ficha tem
+  mostra o liberado dela (`MagicsModal.tsx`, cartão enxuto de `Magic.tsx`).
+- **Revelar estágios** (opção do mestre, 24/10/2026; `Campaign.revealSpellStages`, `utils/spellReveal.ts`; **entrou sem teste nem e2e a pedido do dono: a primeira coisa a conferir se algo estranhar**): botão **"Revelar estágios"** na barra de ações do mestre
+  (`GMActions`, com tooltip; só no Magitech padrão: some no Roguelite e em campanha de sistema customizado, onde os estágios já ficam abertos) liga/desliga o campo, gravado só ele por `PATCH /api/campaign/[id]/fields`. Ligado, os jogadores veem o **texto e o custo de MP de
+  todos os estágios de todas as magias**, também os ainda bloqueados, na tela da campanha (`StageLadder` `revealLocked`: o estágio bloqueado ganha o texto abaixo do cadeado) e na ficha (`Magic.tsx` `revealStages`: o botão do estágio bloqueado mantém o cadeado mas abre para ler,
+  com a nota "revelado pelo mestre só para leitura"; vale também no cartão enxuto do `MagicsModal`). **É só visualização**: conjurar e evoluir seguem a regra de sempre (`getSpellProgress` não muda) e a visão do mestre (`SpellsTab`) não muda. A ficha descobre pela rota
+  `GET /api/charsheet/[id]/reveal-spell-stages` (`useSpellStagesRevealed`, react-query, refaz ao voltar para a aba): vale se alguma campanha onde a ficha **ainda joga** (`campaign.players`) ligou a opção e não está finalizada (`sheetSeesRevealedStages`).
+- **Pontos de evolução por nível**: ao subir de nível a ficha ganha **3 pontos de evolução a cada nível múltiplo de 5** atingido (5, 10, 15, 20; saltos de vários
+  níveis contam cada múltiplo do caminho: `evolutionPointsForLevelUp`, `utils/evolutionPoints.ts`), na rota `POST /api/charsheet/[id]/update/level` (caminho do Magitech padrão, só
+  para quem usa a regra de estágios: `usesStageUnlock`). A notificação de nível lista os pontos.
+- **Elementos secundários**: Sangue, Vácuo, Psíquico, Radiação e Explosão (`SECONDARY_ELEMENTS`, `constants/secondaryElements.ts`; `specialElements` é a mesma lista com o nome antigo dos filtros). **Sem selo nem observação "secundário"
+  na tela** (o dono tirou: cartões de magia, filtro de elemento, maestria elemental e título do grimório em PDF, "Elementos Especiais", voltaram ao que eram); `isSecondaryElement` (`utils/elements.ts`, ignora caixa e acento) só serve às regras:
+  o custo do estágio 3 no nível 4 (acima) e a liberação por nível. **Liberação no nível 10** (`SECONDARY_ELEMENTS_UNLOCK_LEVEL`; o código antigo usava 15 no filtro, o dono definiu 10): antes dele as magias desses elementos **não aparecem de
+  nenhuma maneira no modal de magias da ficha** (`MagicsModal`): nem na lista, nem na busca por nome, nem nos filtros de Tipo/Subtipo/Execução (uma magia "Psíquico" de tipo Mentalização não entra em "Mentalização"), nem na contagem, e o filtro
+  de Elemento nem oferece as cinco opções. Quem faz isso é `itemFilter` (`ResourceListModal` → `useResourceList`: o item vetado some da lista carregada, então de tudo que sai dela) com `isHiddenSpell(spell, nível)`. O criador de criatura do mestre
+  (`CreatureResourceModals`) não tem nível e mostra todas. Ao **chegar ao nível 10** (subida de nível que cruza o 10, só uma vez; `unlocksSecondaryElements`) a rota `POST /api/charsheet/[id]/update/level` cria uma **notificação à parte**,
+  "Elementos secundários desbloqueados!", com os cinco elementos um por linha logo abaixo (`secondaryElementsUnlockedNotice`); sistema customizado com magias desligadas não recebe.
+- **Conjurar e Efetuar** (campanha, `SpellsSection` + `StageLadder`; decisão do dono): **Conjurar** (um botão por estágio liberado) **rola o teste de magia do jogador e gasta o MP** (confere MP e limite antes);
+  **Efetuar** só aparece depois de uma conjuração **com sucesso** e rola os dados do estágio (dano, cura, duração: toda expressão `XdY` do texto, `rollSpellEffect`), num segundo cartão. **Teste de magia**
+  (`rollSpellTest`, `utils/combat/hitTest.ts`, o mesmo do botão Acerto da arma com Foco): um d20 por ponto do mod de Foco (mínimo 1), vale o maior, mais a perícia **Magia** (sem ela, o valor de Foco); é sempre o
+  mesmo teste, seja qual for a magia. **Sucesso** = total **≥ DT** (`spellCastDifficulty`, `utils/spellDifficulty.ts`, tabela do dono): nível 1 = 15/17/20, nível 2 = 18/21/23, nível 3 = 22/24/26, nível 4 =
+  26/28/30 por estágio 1/2/3 (o 3º do nível 4 é a Maestria, ou o "Estágio 3" comprado em elemento secundário); nível ou estágio fora da tabela não tem DT e a conjuração vale. **O MP é gasto mesmo se o teste
+  falhar** (a magia só não pode ser efetuada); estágio sem dado no texto não tem o que efetuar. A conjuração pendente de efetuar fica em `localStorage` (`hooks/usePendingSpellEffects.ts`, `utils/pendingSpellEffects.ts`:
+  uma por magia, a mais nova troca a anterior) para recarregar a página não fazer o jogador pagar de novo, e tem o botão de descartar; não vai para o banco. O mestre não vê nem interfere (ainda).
+- **Magia sustentada em combate** (decisão do dono, 24/10/2026; `utils/combat/sustainedSpells.ts`, `utils/combat/sustainedUpkeep.ts`; **entrou sem teste nem e2e a pedido do dono: a primeira coisa a conferir se algo estranhar**): magia
+  com subtipo "sustentado" conjurada **com sucesso no teste** (total ≥ DT) **em combate ativo** vira um **efeito sobre o conjurador** (`AppliedEffect` com `sustained`, indefinido, nome da magia, sem tick; a rota `combat` ganhou
+  `sustain_start`/`sustain_end`). **Fora do combate ou com o teste falho ela é como uma imediata** (nada fica ativo, nenhum limite de MP). **Manutenção**: quando a **rodada vira**, depois de zerar o limite de MP por turno,
+  cada jogador paga **metade do custo do estágio conjurado, arredondada para baixo** por magia mantida (`applySustainedUpkeep`): o MP sai da ficha (`adjustCharsheetStats`) e **conta no limite de MP da rodada nova**; ao
+  conjurar o custo cheio também conta (é o `spend_mp` de sempre). A que não couber no MP acaba, e se o MP chegar a 0 (na manutenção, ou ao conjurar outra magia) todas acabam; o combate encerrado limpa os efeitos. **Desconjurar**: no
+  estágio ativo o botão "Conjurar" vira "Desconjurar" (`StageLadder` `cast.sustained`), que encerra a magia sem devolver MP; enquanto ativa, os outros estágios dela não conjuram. A manutenção é cobrada **na virada da rodada**,
+  não no turno de cada um (interpretação da regra do dono: "gasta limite de MP ao conjurar e ao virar a rodada"). GM mexendo no MP à mão não encerra a magia (só a próxima manutenção ou conjuração).
+- **Aplicar efeito de combate sem abrir o diálogo de combate**: `useQuickEffect` (`gmDashboard/actions/useQuickEffect.tsx`) abre o `ApplyEffectDialog` já com o alvo escolhido. Entradas: menu do cartão do jogador ("Aplicar efeito",
+  só com ele no combate ativo) e botão no cartão da criatura em combate. O diálogo de combate continua funcionando como antes.
+- **Não vale** em sistema customizado (`systemId`), no Roguelite (`campaign.mode`) nem na ficha de classe "Sem Classe": lá todos os estágios ficam
+  abertos como sempre (`usesStageUnlock`). Excluir a magia remove as duas chaves (`withoutSpell`).
+- Onde aparece: cartão da ficha (`subcomponents/Magic.tsx`, `Magics.tsx`), tela do jogador na campanha (`SpellsSection.tsx`, que também recusa
+  conjurar estágio bloqueado) e detalhe da ficha do mestre (`SpellsTab.tsx`, `charsheetEdit.ts`).
+
+## Campanha do mestre: janelas e barra do grupo
+
+O mestre gerencia fichas e criaturas em **janelas flutuantes** (estilo BG3), em `components/campaign/gmDashboard/windows/`. Escopo combinado com o dono:
+uma janela **por seção** da ficha de um jogador; entrada pela **barra do grupo** (um retrato por jogador) e pelos cartões; conteúdo = as abas atuais
+do mestre (fase 1), a visão do jogador fica para a fase 2. **Criaturas também entram no escopo** (decisão do dono): a criatura ganha janelas pelo mesmo
+gerenciador. Fases/PRs: 1 gerenciador + barra + resumo (feita) · 2 (feita) seções em janelas (atributos, perícias, inventário, habilidades, magias) + ações do jogador
+(item, ponto de evolução, notificação, remover), tirando o `CharsheetDetailsModal` · 3 (feita) dano/cura rápidos de LP/MP/AP por rota com transação (soma/subtrai,
+0 a máx., sem contar no limite de MP por turno) · 4 (feita, só perícias) rolagem do mestre pelo jogador (**regra do botão da perícia na ficha**: `mod + 1` d20, mod negativo rola 2;
+não unifica as regras) · 5 (feita) anotações privadas por ficha em `campaigns/{id}/gmNotes/{fichaId}` com regra do Firestore só para `campaign.admin` (regra publicada
+antes do código) · 6 (feita) criaturas em janelas: a criatura personalizada (`creature`) e a criatura em combate (`combatant`), com o alvo da janela generalizado (`targetId`) ·
+7 (feita) dano/cura rápidos de LP/MP da criatura em combate, por rota com transação.
+**Ainda em aberto nas criaturas** (perguntar ao dono antes): levar o **editor de criatura** (`CreatureCreator`, ainda um diálogo) para dentro de uma janela, e registrar o ajuste rápido no
+log do combate (hoje só o diálogo de combate narra dano e cura). A ordem das fases pode mudar a pedido do dono.
+
+- **Peças**: `windowState.ts` (reducer puro: abrir/focar/fechar/recolher/gravar posição, `sanitizeWindows` para o que vem do navegador), `windowGeometry.ts`
+  (puro: área, clamp, cascata, mover, redimensionar), `windowKinds.ts` (tipos de janela, tamanhos, limite de 10), `GMWindowProvider` (estado, área útil,
+  persistência), `FloatingWindow` (casca: arrastar, redimensionar, recolher, teclado), `GMWindowLayer` (portal no `body`; escolhe o conteúdo por tipo),
+  `PartyBar`/`PartyPortrait` (retratos, com o menu de seções em `SectionMenu`), `SummaryWindow`/`SummaryView` (resumo, atalhos de seção e ações do jogador),
+  `SectionWindows` + `EditableSection` (as seções editáveis), `creature/` (janelas de criatura) e `windowTargets.ts` (alvos que existem agora e nome do alvo para o título).
+  Provider montado em `CampaignComponent` só para o mestre.
+- **Tipos de janela** (`WINDOW_KINDS` = `SHEET_WINDOW_KINDS` + `CREATURE_WINDOW_KINDS`): das fichas, `summary` (só leitura) e as ex-abas do modal de detalhes, que não existe mais: `info`, `attributes`, `expertises`,
+  `inventory`, `skills`, `spells`, mais `notes` (anotações privadas do mestre, não é aba antiga); das criaturas, `creature` e `combatant`. O menu de seções e os atalhos do resumo
+  usam só `SHEET_WINDOW_KINDS`. Os componentes das abas continuam em `modals/charsheetDetails/` e são reaproveitados; `ChangePlayerStatusModal` segue
+  como diálogo aberto pela janela de informações. Para um tipo novo: `windowKinds.ts` (nome, rótulo, tamanho) + `GMWindowLayer` (conteúdo).
+- **Alvo da janela**: `WindowEntry.targetId` (era `charsheetId`) é o id do que a janela mostra, e `windowTargetOf(kind)` diz o que ele identifica: `sheet` (id da ficha), `creature` (id da criatura
+  personalizada, `campaign.custom.creatures[].id`) ou `combatant` (id do combatente em `session.combat.combatants`). A chave da janela é `tipo:alvo`, então o mesmo id em tipos diferentes não colide.
+  O que o navegador guardou antes (`charsheetId`) ainda é lido por `sanitizeWindows`. `keepTargets` fecha as janelas cujo alvo saiu, **por tipo de alvo e só para os tipos que vieram na lista**: ficha
+  vazia significa "ainda carregando" (não poda), mas criatura e combatente vêm da própria campanha, então lista vazia vale (criatura excluída fecha a janela; combate encerrado fecha as de combatente).
+- **Criaturas em janelas** (`windows/creature/`): `creature` é a ficha da criatura personalizada, só leitura (`CreatureView` sobre `toCreatureCard`, que lê o formato real: o editor grava magia como
+  `{ description, cost }` e não como o catálogo `{ stages, mpCost }`), com Editar (abre o `CreatureCreator`, que continua um diálogo; a criatura em edição é uma **cópia fixada no clique**, porque o editor
+  reinicia o formulário quando recebe outro objeto e a campanha chega de novo a cada mudança) e Excluir (`useCreatureDelete`, com confirmação; a rota já grava, **não regrave `custom` pelo cliente**).
+  `combatant` é a criatura no combate agora (`CombatantView`): turno, LP/MP do **combatente** (é onde o combate guarda o que mudou, não a criatura base), dano e cura rápidos e as perícias, rolando pela **regra da criatura**
+  (`⌊atributo/5⌋` d20, `useCreatureExpertiseRoll`; não unifica as regras de d20). O combatente é ligado à criatura por `findBaseCreature` (`dashboard/combatCreatureLookup.ts`: o id do combatente é o da criatura,
+  com sufixo `-n` quando há cópias). Entradas: grupo "Em combate" na `PartyBar` (só criaturas com criatura de origem, como a seção do dashboard), botão "Abrir em janela" no cartão de combate e "Ver detalhes" no cartão da
+  criatura personalizada (que não abre mais o diálogo somente leitura).
+- **Dano e cura rápidos da criatura em combate** (`VitalsPanel` na janela `combatant`, o mesmo painel do resumo): o cliente manda só a variação
+  (`campaignService.adjustCombatantVitals(campaignId, combatantId, { lp: -7 })` → `POST /api/campaign/[id]/combat/vitals`, só o mestre; só `lp` e `mp`, a criatura em combate não tem armadura) e o servidor
+  soma numa transação (`adjustCombatantVitals`, `utils/firestore/combatantStats.ts`), com a regra pura de `applyCombatantDeltas` (`utils/combatantVitals.ts`, a mesma de `applyVitalDelta`). **Nunca mande o valor final.** O
+  Firestore não altera um item de lista por caminho, então grava `session.combat.combatants` inteiro, mas só o combatente alvo muda (rodada, turno, log e o resto da campanha saem como estavam).
+  `combatantVitals(combatant, criatura)` é a conta única de "vida e mana do combatente" (tela e servidor): o que o combatente guarda, e o que ele ainda não guarda (criatura que entrou no meio do combate não leva mana)
+  vem da criatura de origem (`findBaseCreature`, agora em `utils/combatCreatureLookup.ts`); ao ajustar, grava atual e máximo no combatente. Jogador em combate é recusado (400): a vida dele é da ficha
+  (`adjustCharsheetStats`). **Não registra no log do combate** (é bookkeeping do mestre, como o ajuste dos jogadores); a rota `combat` (`apply_damage`/`apply_heal`), que narra, reescreve a campanha inteira e
+  continua sendo o caminho do diálogo de combate. Teste do servidor: `utils/firestore/__tests__/combatantStats.emulator.test.ts`.
+- **Entrar no meio do combate** (`POST /api/campaign/[id]/combat`, ação `add_combatants`, só o mestre; `add_creature`, a entrada antiga, passa pelo mesmo caminho): o corpo é `join: { players: [{ charsheetId, avatar? }], creatures: [{ id, quantity? }] }`
+  e **o servidor lê os dados da ficha e da criatura da campanha** (nome, vida, mana, DES, dono), não do cliente; a ficha tem de estar em `campaign.players` e não pode já estar no combate (vira aviso em `warnings`; se nada entra, 400 com o motivo).
+  Cada cópia de criatura ganha id `<criatura>-<n>` (menor n livre; é o que `findBaseCreature` entende) e a primeira leva o nome puro, as seguintes "Nome (n)" (`nextCreatureInstance`, `utils/combat/addCombatants.ts`).
+  **Na fase de iniciativa** entra pendente, no fim da lista, e rola como os outros (`set_initiative` espera todos). **Na fase de ação** a iniciativa é rolada na hora (mesma regra de `roll_initiative`, agora em
+  `utils/combat/initiativeRoll.ts`: jogador = mod do atributo da Agilidade, criatura = ⌊atributo/5⌋ d20) e entra no lugar dela na ordem (`insertCombatant`: maior iniciativa, desempate por DES); se esse lugar já passou
+  neste round, age **logo depois de quem está agindo**, que não muda (`currentTurnIndex` fica). Cada round re-rola a iniciativa, então a posição só vale para o round atual. Quantidade 1 a 99 inteira (número, não texto), até 20 jogadores
+  e 20 criaturas por chamada. Tela: botão **"Adicionar ao combate"** no diálogo de combate em andamento (`CombatDialog` → `combat/AddCombatantsPanel`, `combat/ParticipantPicker` é a mesma lista do início do combate, que
+  mostra quem já está nele desabilitado). **Remover combatente** (`remove_combatant`) existe na rota mas não tem tela, e ele não ajusta `currentTurnIndex` quando sai alguém antes do turno atual: ao ligar, corrija isso.
+- **Perícias pesquisáveis e ordenáveis** (`utils/expertiseList.ts`, `components/campaign/ExpertiseListControls.tsx`): toda lista de perícias da campanha tem **busca por nome** (sem acento nem caixa:
+  `utils/searchText.ts`) e **ordem**, com **A → Z de início** e as opções Z → A, maior valor e menor valor (empate pelo nome). `filterAndSortExpertises` é a regra única e `useExpertiseListState` guarda busca
+  e ordem. Está na janela da criatura em combate (`CombatantView`), no cartão da criatura em combate do dashboard (`CombatCreatureCard`), na janela de perícias do mestre (`ExpertisesTab`; ordena pelo valor
+  **salvo**, não pelo que se digita em edição, senão a linha pularia a cada tecla) e na seção de perícias do jogador (`ExpertiseSection`, que já tinha filtro por nível e ordem e ganhou a busca; só pelo nome).
+- **Cada seção edita sozinha**: `EditableSection` tem o próprio `useCharsheetEditing` (Editar/Cancelar/Salvar). Salvar grava só os caminhos que o mestre
+  mexeu naquela janela (`collectCharsheetChanges` contra o snapshot do início), então duas seções da mesma ficha em edição, ou o jogador mexendo ao mesmo tempo,
+  não se desfazem. O corpo da janela é um container: as grades `md={6}` das abas viram uma coluna abaixo de 600px de largura útil (o Grid do MUI olha a tela, não a janela).
+- **Ações do jogador** (`usePlayerActions`, compartilhado pelo cartão e pelo resumo): adicionar item, conceder ponto de evolução, notificar e remover; o hook
+  devolve os diálogos em `dialogs`, que quem usa precisa renderizar. A notificação vai por `POST /api/notification/[userId]` (`notificationService.create(body,
+  { param: userId })`); sem o `userId` na URL o servidor responde 405 (era assim no cartão e o envio não funcionava).
+- **Dano e cura rápidos** (`VitalsPanel`, no resumo): o mestre digita um valor (inteiro de 1 a 9999, um por janela) e usa − ou + em LP, MP e AP. O cliente manda só a
+  variação (`charsheetService.adjustStats(id, { lp: -7 })` → `POST /api/charsheet/[id]/stats`) e o servidor soma numa transação (`adjustCharsheetStats`,
+  `utils/firestore/charsheetStats.ts`), então cliques seguidos e o jogador mexendo ao mesmo tempo não se perdem; **nunca mande o valor final** (sobrescreveria o
+  que mudou de fora). Regra pura em `utils/vitals.ts` (`applyVitalDelta`): dano para em zero, cura para no máximo, e quem está acima do máximo (pontos dados pelo
+  mestre) não perde nada ao ser curado. Grava só `stats.<lp|mp|ap>`; o MP gasto no turno (limite de MP por turno) não conta. A barra muda sozinha pelo listener
+  da campanha. Teste do servidor: `utils/firestore/__tests__/charsheetStats.emulator.test.ts`.
+- **Rolagem do mestre pelo jogador** (janela de Perícias, coluna "Rolar"): `utils/sheetRoll.ts` é a regra do **botão da perícia na ficha** (`planSheetRoll`: `mod + 1` d20 e vale
+  o maior; mod negativo rola 2 e vale o menor, "desvantagem"; sistema customizado: `1 + dados extras` e bônus da influência do atributo, e sem o sistema carregado não rola) mais a
+  perícia. Resultado no chat em nome do mestre, no formato do chat (`🎲 [Aria Valen] ATLETISMO - 2d20+3: [12, 7: 12] = 15`), por uma `Message` pronta (`useGMExpertiseRoll`): mandar o
+  texto cru faria o chat tentar rolar a notação que está nele. **São três regras de d20 hoje** (ficha, teste do mestre e perícia na tela da campanha do jogador, que usa o mod com mínimo 1);
+  a regra única é decisão pendente do dono, e **atributo não rola** (a ficha não rola atributo, então não há regra): não invente uma sem resposta.
+- **Anotações privadas do mestre** (janela "Anotações", `NotesWindow`/`NotesView`): um documento por ficha em `campaigns/{id}/gmNotes/{fichaId}` com `{ text, updatedBy, updatedAt }`.
+  Mora numa subcoleção porque qualquer usuário logado lê campanha e ficha pelo id: a regra do Firestore só deixa ler quem está em `campaign.admin` (ou o admin do site) e **ninguém
+  escreve pelo cliente**. Escrita só por `PUT /api/campaign/[id]/gm-notes/[fichaId]` (`requireCampaignGM`, ficha tem de jogar na campanha, corpo `{ text }` com até 20 000
+  caracteres; `saveGmNote` em `utils/firestore/gmNotes.ts`; **texto vazio apaga o documento**). O navegador lê em tempo real (`hooks/useGmNote.ts`). Salvamento automático
+  1 s depois de parar de digitar, ao fechar a janela e no `pagehide` (fetch com `keepalive`); a lógica de rascunho contra salvo é pura em `utils/gmNoteDraft.ts` (rascunho `null` = a
+  tela segue o salvo, então mudança feita em outra aba aparece). O campo fica **travado enquanto carrega e se a leitura falhar**, para não gravar por cima de algo que não chegou.
+  O servidor apaga a subcoleção ao excluir a campanha (`deleteGmNotes`). Conferido no Firestore de verdade: `tests/firestore-rules` (10 casos das regras) e
+  `utils/firestore/__tests__/gmNotes.emulator.test.ts`. Regra publicada em produção em 24/10/2026 (conjunto novo 0285d09e; o anterior era 4ba5468a, para reverter se preciso).
+- **Chat**: `SessionChat` rola a própria lista (`chatBoxRef`, a `MessageList` é quem tem o scroll; o marcador `messagesEndRef` fica fora dela e não serve para isso). Mensagem do próprio usuário,
+  inclusive rolagem feita fora do chat, sempre vem à vista, mesmo com o histórico rolado para cima.
+- **Dois contextos de propósito**: ações (estáveis; cartões e barra só abrem janelas) e estado. Sem provider, as ações são no-ops (testes).
+- **Arrastar não passa pelo estado**: enquanto arrasta, a posição fica local na `FloatingWindow` e vai ao reducer ao soltar. Posição guardada pode estar
+  fora da área (janela menor, chat aberto): a tela mostra clampada e não altera o guardado.
+- **Área das janelas**: começa depois da barra do grupo (`WINDOW_AREA_LEFT`, depende do preenchimento de `app/app/layout.tsx` + `CampaignShell`; mudou um,
+  atualize `layout.ts`) e termina antes do chat encaixado e aberto. Camada `zIndex` 1100+, abaixo do dock (1200), do chat e dos modais (1300); no celular
+  a janela da frente ocupa a tela toda (1250) e a barra do grupo some (abre-se pelo menu do cartão: "Abrir resumo em janela").
+- **Persistência**: `localStorage` `gm-windows:{campaignId}` (lista de janelas); lido depois da montagem, JSON inválido é ignorado, janelas cujo alvo saiu da campanha
+  fecham (`keepTargets`, ver "Alvo da janela").
+- **Teclado**: barra de título focável (setas movem 16px, Shift 64, Alt+setas redimensionam, Enter recolhe); Esc fecha, menos de dentro de campo/menu.
+- Teste de componente que importa `useCharsheetPointsView` precisa de `jest.mock` dele: o hook de sistema customizado puxa `@contexts`, e o ts-jest
+  barra um erro de tipo antigo em `contexts/charsheetContext.ts`.
+
+## Campanha: inventário do jogador
+
+`components/campaign/playerDashboard/InventorySection.tsx` (composição) + `inventory/`. Regras da tela:
+
+- **Resumo** (`InventorySummary`): peso carregado contra `capacity.max` com o **estado por extenso** (Dentro da capacidade / Perto do limite, acima de 80% / Sobrecarga, acima de 100%; `capacityState`), medidor
+  `role="meter"`, contagem por tipo e a soma dos AP das armaduras. Perto do limite ou em sobrecarga mostra "Para aliviar:" com os 3 itens mais pesados. Capacidade 0 (ficha sem limite) nunca avisa.
+- **Item do tipo Capacidade** (mochila) **soma à capacidade máxima e não conta como peso carregado** (`entryWeight`): é o que a doação e a remoção já faziam (mexem em `capacity.max`, não na carga); a tela antiga somava o peso dele.
+- **Lista** (`utils` puras em `inventoryList.ts`): `collectEntries` junta armas, armaduras e itens. **Só some o mesmo item gravado duas vezes (mesmo `id`)**; dois itens com o mesmo nome e ids diferentes aparecem os dois (a tela antiga
+  escondia o segundo). Filtro por tipo (com contagem), busca sem acento nem caixa por nome, tipo do item e raridade, e ordem (por tipo, nome A → Z, mais pesados, mais raros; empate pelo nome). Estado vazio com "Limpar busca e filtros".
+- **Cartão** (`InventoryItemCard`): superfície plana (`background.raised`, borda `divider`), **filete lateral de 3px na cor do tipo** (arma `danger`, armadura `ap`, item `success`; `getItemTypeConfig`, ícones `WeaponIcon`/`Shield`/`Inventory2` como em
+  `itemAttributes`, que a ficha também usa), raridade como ponto + nome (não como bloco colorido), número principal em mono (dano, +AP, xN) e peso. Não usa mais o Accordion do MUI: o botão que abre é irmão das ações, para não aninhar botão em botão.
+  **Arma mostra Acerto e Dano à vista na linha** (sem abrir); aberta, mostra também o Crítico. Detalhes e descrição só ao abrir.
+- **Ícone de arma = espadas cruzadas** (`components/misc/WeaponIcon.tsx`), na campanha e na ficha (`itemAttributes.weapon.icon`): o martelo de juiz (`Gavel`) parecia outra coisa. O `@mui/icons-material` não tem espada, então o glifo
+  "swords" preenchido do Material Symbols (Apache-2.0, pacote `@material-symbols/svg-400`) foi embutido como um `createSvgIcon` do MUI (grade de 24px, aceita `color`/`fontSize`/`sx` como `Shield`). Sem dependência nova. Para outro
+  ícone que falte no MUI, repita o caminho: pegue o SVG em `outlined/<nome>-fill.svg` (viewBox `0 -960 960 960`) e use `transform="translate(0 24) scale(0.025)"`.
+  **O arquivo precisa de `'use client'`** (há teste): `@constants` também é importado pela rota de servidor `/grimoire/pdf`, e no servidor o `createSvgIcon` do MUI é uma referência de cliente; chamá-lo ao carregar o módulo
+  quebrava o `next build` ("o is not a function" ao coletar `/grimoire/pdf`) só na Vercel, porque `next dev` e o jest não passam por essa camada. Teste de build local: `NODE_ENV=production` (com `NODE_ENV=development` no shell o prerender falha à toa) e o emulador do Firestore no ar.
+- **Remover pede confirmação** (`ConfirmRemoveDialog`; antes apagava no clique). A gravação é `buildRemovalUpdate` (`inventoryRemoval.ts`, compartilhada com a doação): tira o item **pelo id** (sem id, só aquele item, não todos os sem id),
+  armadura devolve os AP (atual e máximo, nunca abaixo da base 5), item de Capacidade diminui `capacity.max` e não mexe na carga, o resto diminui `capacity.cargo` pelo peso x quantidade (nunca negativo).
+
+## Limite de MP por turno e Overall
 
 `⌈(Nível + Foco) ÷ 2⌉ + Nível de ORM` (+ bônus em `mpLimit` da ficha), em `utils/mpLimit.ts`.
-Janela: do início do turno do personagem ao início do próximo (reações contam); recuperar MP não
-devolve limite; ao exceder, a conjuração é bloqueada e o mestre pode liberar. Não vale no Roguelite
-nem em sistemas customizados.
+Janela (decisão do dono, 24/10/2026): **por rodada de combate**. O MP gasto em magias e a liberação do mestre **zeram para todos quando a rodada vira**
+(todos os presentes no combate passaram o turno: `next_turn` em `app/api/campaign/[id]/combat/route.ts`, `resetMpLimitWindows` em
+`utils/combat/mpLimitWindow.ts`) e quando o combate termina; **começar o turno de alguém não zera nada** (antes zerava no início do turno de cada um, mas então a
+rodada nova começava com o gasto antigo). Reações em turnos alheios contam na mesma rodada. **Fora do combate o limite não é consumido**: a tela só registra o gasto
+de quem está num combate ativo (`SpellsSection`), e o `spend_mp` do servidor sem combate ativo devolve sucesso sem gravar nada (não é mais 400). Recuperar MP não
+devolve limite; ao exceder, a conjuração é bloqueada e o mestre pode liberar (até a rodada virar). Não vale no Roguelite nem em sistemas customizados.
+
+**Criaturas também têm limite de MP por turno** (decisão do dono, 24/10/2026): `getCreatureMpLimit` = `⌈(Nível + Foco) ÷ 2⌉` da criatura personalizada de origem (sem ORM; `isCreatureMpLimitEnforced`:
+não vale no Roguelite nem com o cálculo em 0). O MP da criatura mora no combatente: o `spend_mp` do servidor, para criatura (só o mestre), confere o MP, aplica o limite (409 `MP_LIMIT_EXCEEDED`), grava o gasto na
+rodada e desconta o MP do combatente. A janela da criatura em combate (`CombatantView`) lista as magias dela com **Conjurar** (gasta o custo e conta no limite); o limite aparece como gasto/limite na janela, no cartão da
+criatura e no diálogo de combate. O mestre pode **resetar o MP gasto de qualquer jogador ou criatura** em combate (`reset_mp_limit`, só mestre; botão no diálogo de combate, no menu do cartão do jogador, no cartão e na janela da
+criatura) e liberar o limite (`set_mp_limit_override`, agora também para criatura). Mudança entregue sem testes novos.
+**O mestre também define o MP gasto exato** (`set_mp_spent`, só mestre, 24/10/2026; **entrou sem teste**): ação de `POST /api/campaign/[id]/combat` com `{ combatantId, value }`, `value` inteiro de **0 até o limite** (o servidor refaz o limite da ficha ou da criatura
+de origem e recusa com 400 valor acima dele ou combatente a quem a regra não vale); **só o gasto atual muda, nunca o limite (o máximo)**, e o log do combate registra "o mestre definiu o MP gasto ... em V/L". Diálogo único `SetMpSpentDialog` + `useSetMpSpent`
+(`gmDashboard/actions/`), aberto por: menu do cartão do jogador ("Definir MP gasto no turno"), lápis no diálogo de combate, no cartão da criatura em combate e botão "Definir gasto" na janela da criatura, ao lado de "Resetar limite".
+
+O mestre vê o **Overall** (o `overall` guardado na ficha, o mesmo da tela do jogador) e o limite no resumo, no cartão do jogador e na aba Informações
+(`SheetMetricsView`, `getSheetMetrics` em `utils/charsheetMetrics.ts`). Onde a regra não vale o limite some e o Overall fica; em combate ativo o limite
+aparece como gasto/limite (`mpSpentThisTurn` do combatente).
 
 ## Design system
 

@@ -1,4 +1,5 @@
 import type { DbCharsheet } from '@models';
+import type { VitalDeltas } from '@utils/vitals';
 import { Service } from '@utils/apiRequest';
 
 class CharsheetService extends Service<DbCharsheet, 'userId'> {
@@ -13,6 +14,15 @@ class CharsheetService extends Service<DbCharsheet, 'userId'> {
      * ao editar fichas de jogadores — só o dono escreve direto no Firestore.
      */
     async updateFields(charsheetId: string, fields: Record<string, unknown>) { return (await this.patch({ param: `${charsheetId}/fields`, body: { fields } })).data }
+
+    /**
+     * Soma variações a LP, MP e AP ({ lp: -5 } tira 5 de vida), de 0 até o máximo, numa transação no servidor:
+     * várias variações seguidas, ou junto de uma mudança do jogador, não se perdem.
+     */
+    async adjustStats(charsheetId: string, deltas: VitalDeltas) { return (await this.post({ param: `${charsheetId}/stats`, body: deltas })).data }
+
+    /** Alguma campanha onde a ficha joga liberou a visualização de todos os estágios das magias? (ver `utils/spellReveal.ts`) */
+    async getSpellStagesRevealed(charsheetId: string) { return (await this.get({ param: `${charsheetId}/reveal-spell-stages` })).data as { revealed: boolean } }
 }
 
 export const charsheetService = new CharsheetService('/charsheet')

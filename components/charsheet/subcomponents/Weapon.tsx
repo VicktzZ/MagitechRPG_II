@@ -83,6 +83,8 @@ export function Weapon(props: ItemTyping<'weapon'>): ReactElement {
                         </Typography>
                         <IconButton
                             size="small"
+                            aria-label={showStats ? 'Ocultar detalhes da arma' : 'Mostrar detalhes da arma'}
+                            aria-expanded={showStats}
                             onClick={() => setShowStats(!showStats)}
                             sx={{
                                 transform: showStats ? 'rotate(180deg)' : 'rotate(0deg)',

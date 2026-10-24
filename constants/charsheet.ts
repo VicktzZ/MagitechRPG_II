@@ -146,7 +146,7 @@ export const charsheet: CharsheetDTO = {
                 weight: 0.5,
                 value: 5,
                 displacementPenalty: 0,
-                type: 'weapon',
+                type: 'armor',
                 accessories: [],
                 id: `uniform-${generateEntryCode(12, 'lower')}`,
                 quantity: 1
@@ -161,7 +161,8 @@ export const charsheet: CharsheetDTO = {
         attributes: 25,
         expertises: 0,
         skills: 0,
-        magics: 1
+        magics: 1,
+        evolution: 0
     },
 
     attributes: {

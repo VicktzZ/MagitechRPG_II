@@ -51,7 +51,7 @@ export default function HeroShowcase() {
                 <ResourceMeter label="Armadura (AP)" value={6} max={10} barColor={color.ap} />
             </Box>
 
-            <Magic as="magic-spell" compact magic={BRASA_VORAZ} id="landing-brasa-voraz" selectedStage={2} />
+            <Magic as="magic-spell" compact magic={BRASA_VORAZ} id="landing-brasa-voraz" initialStage={2} />
 
             <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, bgcolor: 'background.raised', p: 2 }}>
                 <Typography component="p" sx={{ mb: 1, color: 'text.secondary', fontSize: 12, fontWeight: 600, letterSpacing: '0.06em' }}>

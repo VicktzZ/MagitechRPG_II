@@ -30,28 +30,32 @@ import CasinoIcon from '@mui/icons-material/Casino';
 import SkipNextIcon from '@mui/icons-material/SkipNext';
 import StopIcon from '@mui/icons-material/Stop';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
-import PersonIcon from '@mui/icons-material/Person';
 import PetsIcon from '@mui/icons-material/Pets';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import BoltIcon from '@mui/icons-material/Bolt';
 import LockOpenIcon from '@mui/icons-material/LockOpen';
 import LockIcon from '@mui/icons-material/Lock';
+import RestartAltIcon from '@mui/icons-material/RestartAlt';
+import EditIcon from '@mui/icons-material/Edit';
 import { color } from '@themes/tokens';
 import { useSnackbar } from 'notistack';
 import { useChannel } from '@contexts/channelContext';
 import { useCampaignContext } from '@contexts';
-import { getMpLimit, isMpLimitEnforced } from '@utils/mpLimit';
+import { getCreatureMpLimit, getMpLimit, isCreatureMpLimitEnforced, isMpLimitEnforced } from '@utils/mpLimit';
+import { findBaseCreature } from '@utils/combatCreatureLookup';
 import { PusherEvent } from '@enums';
 import type { PlayerInfo } from './types';
 import type { AppliedEffect, CombatLog, Creature } from '@models';
 import type { Charsheet } from '@models/entities';
 import EffectBadges from './EffectBadges';
+import AddCombatantsPanel from './combat/AddCombatantsPanel';
+import { buildStartCreatures, buildStartPlayers, type JoinPayload } from './combat/combatPayload';
+import ParticipantPicker from './combat/ParticipantPicker';
+import { useParticipantSelection } from './combat/useParticipantSelection';
 import ApplyEffectDialog from './ApplyEffectDialog';
+import { useSetMpSpent } from './useSetMpSpent';
 import { campaignService } from '@services';
 import { errorMessage } from '@utils/errors';
-
-/** Os atributos hoje são des/vig/log/sab/foc/car; fichas antigas ainda podem trazer `agi` */
-const legacyAgility = (attributes: object | undefined): number | undefined => (attributes as { agi?: number } | undefined)?.agi;
 
 interface CombatDialogProps {
     open: boolean;
@@ -80,9 +84,9 @@ interface Combatant {
     currentMp?: number;
     maxMp?: number;
     effects?: AppliedEffect[];
-    /** MP gasto em magias desde o início do turno do combatente (limite por turno) */
+    /** MP gasto em magias nesta rodada (limite por turno) */
     mpSpentThisTurn?: number;
-    /** Mestre liberou o limite de MP por turno até o início do próximo turno do combatente */
+    /** Mestre liberou o limite de MP por turno até a rodada virar */
     mpLimitOverride?: boolean;
 }
 
@@ -114,15 +118,17 @@ export default function CombatDialog({
     const [ combat, setCombat ] = useState<Combat | null>(existingCombat || null);
     
     // Setup do combate - seleção de participantes
-    const [ selectedPlayers, setSelectedPlayers ] = useState<string[]>([]);
-    const [ selectedCreatures, setSelectedCreatures ] = useState<string[]>([]);
-    const [ creatureQuantities, setCreatureQuantities ] = useState<Record<string, number>>({});
+    const selection = useParticipantSelection();
+    const { selectedPlayers, selectedCreatures, creatureQuantities } = selection;
     const [ initiativeValue, setInitiativeValue ] = useState<number>(0);
     const [ selectedCombatantForInit, setSelectedCombatantForInit ] = useState<string | null>(null);
     const [ showEnemyLp, setShowEnemyLp ] = useState(false);
 
     // Aplicação de efeito
     const [ applyEffectTarget, setApplyEffectTarget ] = useState<{ id: string; name: string } | null>(null);
+
+    // O mestre define o MP gasto na rodada de um combatente
+    const { openSetMpSpent, setMpSpentDialog } = useSetMpSpent(campaignId);
 
     const handleRemoveEffect = useCallback(async (combatantId: string, appliedEffectId: string) => {
         try {
@@ -133,10 +139,19 @@ export default function CombatDialog({
         }
     }, [ campaignId, enqueueSnackbar ]);
 
+    const handleResetMpLimit = useCallback(async (combatantId: string) => {
+        try {
+            await campaignService.resetMpLimit(campaignId, { combatantId });
+            enqueueSnackbar('Limite de MP resetado', { variant: 'success' });
+        } catch (err) {
+            enqueueSnackbar(errorMessage(err, 'Erro ao resetar o limite de MP'), { variant: 'error' });
+        }
+    }, [ campaignId, enqueueSnackbar ]);
+
     const handleToggleMpLimitOverride = useCallback(async (combatantId: string, enabled: boolean) => {
         try {
             await campaignService.setCombatMpLimitOverride(campaignId, { combatantId, enabled });
-            enqueueSnackbar(enabled ? 'Limite de MP liberado até o próximo turno do jogador' : 'Limite de MP restabelecido', { variant: 'success' });
+            enqueueSnackbar(enabled ? 'Limite de MP liberado até a rodada virar' : 'Limite de MP restabelecido', { variant: 'success' });
         } catch (err) {
             enqueueSnackbar(errorMessage(err, 'Erro ao atualizar o limite de MP'), { variant: 'error' });
         }
@@ -244,39 +259,8 @@ export default function CombatDialog({
             return;
         }
 
-        const playersData = selectedPlayers.map(id => {
-            const player = players.find(p => p.id === id);
-            return {
-                odacId: player?.id,
-                charsheetId: player?.charsheet?.id,
-                name: player?.charsheet?.name || player?.name || 'Jogador',
-                agility: legacyAgility(player?.charsheet?.attributes) || 0,
-                dexterity: player?.charsheet?.attributes?.des || 0,
-                avatar: player?.avatar,
-                lp: player?.charsheet?.stats?.lp || 0,
-                maxLp: player?.charsheet?.stats?.maxLp || 0,
-                mp: player?.charsheet?.stats?.mp || 0,
-                maxMp: player?.charsheet?.stats?.maxMp || 0
-            };
-        }).filter(p => p.charsheetId);
-
-        const creaturesData = selectedCreatures.flatMap(id => {
-            const creature = creatures.find(c => c.id === id);
-            if (!creature) return [];
-
-            const count = Math.max(1, creatureQuantities[id] ?? 1);
-
-            return Array.from({ length: count }, (_, index) => ({
-                id: `${creature.id}-${index + 1}`,
-                name: count > 1 ? `${creature.name} (${index + 1})` : (creature.name || 'Criatura'),
-                agility: legacyAgility(creature.attributes) ?? creature.attributes?.des ?? 0,
-                dexterity: creature.attributes?.des ?? 0,
-                lp: creature.stats?.lp ?? 0,
-                maxLp: creature.stats?.maxLp ?? creature.stats?.lp ?? 0,
-                mp: creature.stats?.mp ?? 0,
-                maxMp: creature.stats?.maxMp ?? creature.stats?.mp ?? 0
-            }));
-        });
+        const playersData = buildStartPlayers(players, selectedPlayers);
+        const creaturesData = buildStartCreatures(creatures, selectedCreatures, creatureQuantities);
 
         await executeCombatAction('start', { 
             players: playersData, 
@@ -313,42 +297,15 @@ export default function CombatDialog({
         }
     };
 
-    const togglePlayer = (playerId: string) => {
-        setSelectedPlayers(prev => 
-            prev.includes(playerId) 
-                ? prev.filter(id => id !== playerId)
-                : [ ...prev, playerId ]
-        );
-    };
-
-    const toggleCreature = (creatureId: string) => {
-        setSelectedCreatures(prev => {
-            const isSelected = prev.includes(creatureId);
-            if (isSelected) {
-                return prev.filter(id => id !== creatureId);
-            }
-
-            setCreatureQuantities(prevQty => ({
-                ...prevQty,
-                [creatureId]: prevQty[creatureId] || 1
-            }));
-
-            return [ ...prev, creatureId ];
-        });
-    };
-
-    const handleCreatureQuantityChange = (creatureId: string, value: number) => {
-        const safeValue = Number.isNaN(value) ? 1 : Math.max(1, value);
-
-        setCreatureQuantities(prev => ({
-            ...prev,
-            [creatureId]: safeValue
-        }));
-
-        setSelectedCreatures(prev =>
-            prev.includes(creatureId) ? prev : [ ...prev, creatureId ]
-        );
-    };
+    // Entrada no meio do combate (ver `add_combatants` na rota): avisos do servidor aparecem como alerta
+    const handleAddCombatants = useCallback(async (payload: JoinPayload): Promise<boolean> => {
+        const result = await executeCombatAction('add_combatants', { join: payload });
+        if (!result) return false;
+        for (const warning of (result.warnings as string[] | undefined) ?? []) {
+            enqueueSnackbar(warning, { variant: 'warning' });
+        }
+        return true;
+    }, [ executeCombatAction, enqueueSnackbar ]);
 
     // UI de configuração (antes de iniciar combate)
     const renderSetupUI = () => (
@@ -357,93 +314,7 @@ export default function CombatDialog({
                 Selecione os participantes do combate:
             </Typography>
 
-            {/* Jogadores */}
-            <Box>
-                <Typography variant="subtitle2" sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <PersonIcon fontSize="small" /> Jogadores
-                </Typography>
-                <Box sx={{ maxHeight: 150, overflow: 'auto', border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
-                    <List dense>
-                        {players.filter(p => p.charsheet).map(player => (
-                            <ListItem
-                                key={player.id}
-                                button
-                                onClick={() => togglePlayer(player.id)}
-                            >
-                                <Checkbox checked={selectedPlayers.includes(player.id)} size="small" />
-                                <ListItemAvatar>
-                                    <Avatar src={player.avatar} sx={{ width: 28, height: 28 }} />
-                                </ListItemAvatar>
-                                <ListItemText 
-                                    primary={player.charsheet?.name || player.name}
-                                    secondary={`AGI: ${player.charsheet?.stats?.agi || 0} | LP: ${player.charsheet?.stats?.lp || 0}/${player.charsheet?.stats?.maxLp || 0}`}
-                                />
-                            </ListItem>
-                        ))}
-                        {players.filter(p => p.charsheet).length === 0 && (
-                            <ListItem>
-                                <ListItemText secondary="Nenhum jogador com ficha disponível" />
-                            </ListItem>
-                        )}
-                    </List>
-                </Box>
-            </Box>
-
-            {/* Criaturas */}
-            <Box>
-                <Typography variant="subtitle2" sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <PetsIcon fontSize="small" /> Criaturas
-                </Typography>
-                <Box sx={{ maxHeight: 150, overflow: 'auto', border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
-                    <List dense>
-                        {creatures.map(creature => {
-                            const isSelected = selectedCreatures.includes(creature.id);
-                            const quantity = creatureQuantities[creature.id] ?? 1;
-
-                            return (
-                                <ListItem
-                                    key={creature.id}
-                                    secondaryAction={
-                                        <TextField
-                                            type="number"
-                                            label="Qtd."
-                                            size="small"
-                                            value={quantity}
-                                            onChange={(e) => handleCreatureQuantityChange(
-                                                creature.id,
-                                                parseInt(e.target.value, 10)
-                                            )}
-                                            inputProps={{ min: 1, max: 99 }}
-                                            sx={{ width: 80 }}
-                                            disabled={!isSelected}
-                                        />
-                                    }
-                                >
-                                    <Checkbox
-                                        checked={isSelected}
-                                        size="small"
-                                        onChange={() => toggleCreature(creature.id)}
-                                    />
-                                    <ListItemAvatar>
-                                        <Avatar sx={{ width: 28, height: 28, bgcolor: 'error.main' }}>
-                                            <PetsIcon fontSize="small" />
-                                        </Avatar>
-                                    </ListItemAvatar>
-                                    <ListItemText 
-                                        primary={creature.name}
-                                        secondary={`AGI: ${creature.expertises?.Agilidade.value ?? 0} | LP: ${creature.stats?.lp ?? 0}`}
-                                    />
-                                </ListItem>
-                            );
-                        })}
-                        {creatures.length === 0 && (
-                            <ListItem>
-                                <ListItemText secondary="Nenhuma criatura customizada disponível" />
-                            </ListItem>
-                        )}
-                    </List>
-                </Box>
-            </Box>
+            <ParticipantPicker players={players} creatures={creatures} selection={selection} />
 
             {/* Opções de Combate */}
             <Divider />
@@ -520,6 +391,15 @@ export default function CombatDialog({
                     )}
                 </Box>
 
+                <AddCombatantsPanel
+                    players={players}
+                    creatures={creatures}
+                    inCombat={new Set(combat.combatants.map(c => c.id))}
+                    phase={combat.phase}
+                    disabled={isLoading}
+                    onAdd={handleAddCombatants}
+                />
+
                 {/* Lista de combatentes */}
                 <Box>
                     <Typography variant="subtitle2" sx={{ mb: 1 }}>
@@ -541,8 +421,12 @@ export default function CombatDialog({
                                 const mpSheet = combatant.type === 'player'
                                     ? charsheets.find(c => c.id === combatant.id || c.id === combatant.odacId)
                                     : undefined;
-                                const mpLimitEnforced = mpSheet !== undefined && isMpLimitEnforced(mpSheet, campaign?.mode);
-                                const mpLimit = mpSheet ? getMpLimit(mpSheet) : 0;
+                                // Criatura também tem limite: nível e Foco da criatura de origem
+                                const mpCreature = combatant.type === 'creature' ? findBaseCreature(combatant.id, campaign?.custom?.creatures ?? []) : undefined;
+                                const mpLimitEnforced = mpSheet !== undefined
+                                    ? isMpLimitEnforced(mpSheet, campaign?.mode)
+                                    : mpCreature !== undefined && isCreatureMpLimitEnforced(mpCreature, campaign?.mode);
+                                const mpLimit = mpSheet ? getMpLimit(mpSheet) : mpCreature ? getCreatureMpLimit(mpCreature) : 0;
                                 const mpSpent = combatant.mpSpentThisTurn ?? 0;
                                 const mpReleased = Boolean(combatant.mpLimitOverride);
 
@@ -637,9 +521,31 @@ export default function CombatDialog({
                                                         </IconButton>
                                                     </Tooltip>
                                                     {mpLimitEnforced && (
+                                                        <Tooltip title="Definir o MP gasto nesta rodada (o limite não muda)">
+                                                            <IconButton
+                                                                size="small"
+                                                                aria-label={`Definir o MP gasto de ${combatant.name}`}
+                                                                onClick={() => { openSetMpSpent({ id: combatant.id, name: combatant.name, spent: mpSpent, limit: mpLimit }); }}
+                                                            >
+                                                                <EditIcon fontSize="small" />
+                                                            </IconButton>
+                                                        </Tooltip>
+                                                    )}
+                                                    {mpLimitEnforced && (
+                                                        <Tooltip title="Resetar o MP gasto nesta rodada (limite de MP por turno)">
+                                                            <IconButton
+                                                                size="small"
+                                                                aria-label={`Resetar o limite de MP de ${combatant.name}`}
+                                                                onClick={() => { void handleResetMpLimit(combatant.id); }}
+                                                            >
+                                                                <RestartAltIcon fontSize="small" />
+                                                            </IconButton>
+                                                        </Tooltip>
+                                                    )}
+                                                    {mpLimitEnforced && (
                                                         <Tooltip title={mpReleased
                                                             ? 'Restabelecer o limite de MP por turno'
-                                                            : 'Liberar o limite de MP por turno (até o início do próximo turno do jogador)'}
+                                                            : 'Liberar o limite de MP por turno (até a rodada virar)'}
                                                         >
                                                             <IconButton
                                                                 size="small"
@@ -837,6 +743,7 @@ export default function CombatDialog({
                 appliedByName="GM"
                 onApplied={() => { void fetchCombat(); }}
             />
+            {setMpSpentDialog}
         </Dialog>
     );
 }

@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { charsheetRepository, combatEffectRepository } from '@repositories'
 import { adminUpdateDoc } from '@utils/firestore/adminDocs'
-import { Combat, Combatant, CombatLog, AppliedEffect, Message } from '@models'
+import { Combat, Combatant, CombatLog, AppliedEffect, Message, type Creature } from '@models'
 import { triggerPusher } from '@utils/pusher'
 import { PusherEvent } from '@enums'
 import { processEffectTicks, refreshPlayerCombatantsLp, syncPlayerCharsheets } from '@utils/combat/processEffectTicks'
@@ -11,18 +11,25 @@ import { stripUndefined } from '@utils/firestore/stripUndefined'
 import { appendCampaignMessage } from '@utils/firestore/campaignMessages'
 import { recordCampaignStats, type StatsEntry } from '@utils/campaignStatsHelper'
 import { badRequest, forbidden, handleRouteError, readJsonBody, requireCampaignMember, requireUser } from '@utils/api'
-import { evaluateMpSpend, getMpLimit, isMpLimitEnforced } from '@utils/mpLimit'
+import { evaluateMpSpend, getCreatureMpLimit, getMpLimit, isCreatureMpLimitEnforced, isMpLimitEnforced } from '@utils/mpLimit'
+import { combatantVitals } from '@utils/combatantVitals'
+import { insertCombatant, nextCreatureInstance } from '@utils/combat/addCombatants'
+import { creatureInitiativeDice, describeInitiativeRolls, playerInitiativeDice, resolveInitiative, type InitiativeDice } from '@utils/combat/initiativeRoll'
+import { resetMpLimitWindows } from '@utils/combat/mpLimitWindow'
+import { sustainedUpkeepFor } from '@utils/combat/sustainedSpells'
+import { applySustainedUpkeep, endSustained, startSustained } from '@utils/combat/sustainedUpkeep'
+import { findBaseCreature } from '@utils/combatCreatureLookup'
 
 /** Ações que conduzem o combate — exclusivas do mestre */
 const GM_ONLY_ACTIONS: CombatAction[] = [
-    'start', 'end', 'set_initiative', 'add_creature', 'remove_combatant', 'apply_effect', 'remove_effect',
-    'set_mp_limit_override'
+    'start', 'end', 'set_initiative', 'add_creature', 'add_combatants', 'remove_combatant', 'apply_effect', 'remove_effect',
+    'set_mp_limit_override', 'reset_mp_limit', 'set_mp_spent'
 ]
 
 /** Ações de jogador que só valem no turno do próprio personagem */
 const OWN_TURN_ACTIONS: CombatAction[] = [ 'next_turn', 'apply_damage', 'apply_heal' ]
 
-const KNOWN_ACTIONS: CombatAction[] = [ ...GM_ONLY_ACTIONS, ...OWN_TURN_ACTIONS, 'roll_initiative', 'spend_mp' ]
+const KNOWN_ACTIONS: CombatAction[] = [ ...GM_ONLY_ACTIONS, ...OWN_TURN_ACTIONS, 'roll_initiative', 'spend_mp', 'sustain_start', 'sustain_end' ]
 
 type CombatAction = 
     | 'start'           // Iniciar combate
@@ -32,12 +39,17 @@ type CombatAction =
     | 'next_turn'       // Passar para o próximo turno
     | 'apply_damage'    // Aplicar dano a um alvo
     | 'apply_heal'      // Aplicar cura a um alvo
-    | 'add_creature'    // Adicionar criatura ao combate
+    | 'add_creature'    // Adicionar criatura ao combate (dados vindos do cliente)
+    | 'add_combatants'  // Adicionar jogadores e criaturas da campanha a um combate em andamento
     | 'remove_combatant' // Remover combatente
     | 'apply_effect'    // Aplicar efeito de pipeline a um combatente
     | 'remove_effect'   // Remover efeito de pipeline de um combatente
     | 'spend_mp'        // Registrar MP gasto em magia (valida o limite por turno; valor negativo estorna)
     | 'set_mp_limit_override' // Mestre libera/restabelece o limite de MP por turno de um jogador
+    | 'reset_mp_limit'  // Mestre zera o MP gasto na rodada de um jogador ou criatura
+    | 'set_mp_spent'    // Mestre define exatamente o MP gasto na rodada (de 0 até o limite, que não muda)
+    | 'sustain_start'   // Jogador conjurou com sucesso uma magia sustentada em combate: ela vira um efeito sobre ele
+    | 'sustain_end'     // Desconjurar uma magia sustentada (ou todas, sem spellKey)
 
 interface CombatRequest {
     action: CombatAction
@@ -66,6 +78,11 @@ interface CombatRequest {
         mp?: number
         maxMp?: number
     }>
+    /** Para add_combatants: quem entra no combate em andamento (os dados vêm da campanha e das fichas, não do cliente) */
+    join?: {
+        players?: Array<{ charsheetId: string; avatar?: string }>
+        creatures?: Array<{ id: string; quantity?: number }>
+    }
     showEnemyLp?: boolean     // Se mostra LP dos inimigos para jogadores
     advantageType?: 'normal' | 'advantage' | 'disadvantage' // Para rolagem de iniciativa
 
@@ -84,28 +101,60 @@ interface CombatRequest {
 
     /** Para set_mp_limit_override: true libera o limite, false restabelece */
     enabled?: boolean
+
+    /** Para sustain_start / sustain_end: a magia sustentada (id ou nome), o estágio conjurado e o custo total de MP dele */
+    spellKey?: string
+    spellName?: string
+    stage?: number
+    cost?: number
+}
+
+/** Máximo de jogadores (e de criaturas diferentes) por chamada, e de cópias de uma criatura, ao entrar num combate em andamento */
+const MAX_JOIN_ENTRIES = 20
+const MAX_CREATURE_COPIES = 99
+
+interface Newcomer {
+    combatant: Combatant
+    dice: InitiativeDice
 }
 
 /**
- * Começa o turno de um combatente: o MP gasto em magias volta a 0 e a liberação do
- * limite pelo mestre acaba (a janela do limite vai do início do turno ao início do próximo).
+ * Põe quem chegou no combate em andamento e registra no log. Na fase de ação a ordem já está definida, então cada um rola a
+ * iniciativa na hora e entra no lugar dela (ver `insertCombatant`); na fase de iniciativa entra pendente e rola como os outros.
  */
-function startMpLimitWindow(combatant?: Combatant): void {
-    if (!combatant) return
-    combatant.mpSpentThisTurn = 0
-    combatant.mpLimitOverride = false
-}
+function joinCombat(combat: Combat, newcomers: Newcomer[]): void {
+    for (const { combatant, dice } of newcomers) {
+        if (combat.phase === 'ACTION') {
+            const { rolls, roll, total } = resolveInitiative(dice)
+            combatant.initiativeBonus = dice.expertiseValue
+            combatant.initiativeRoll = roll
+            combatant.initiativeTotal = total
+            combat.logs.push(new CombatLog({
+                round: combat.round,
+                type: 'initiative',
+                actorId: combatant.id,
+                actorName: combatant.name,
+                value: total,
+                message: `🎲 **${combatant.name}** rolou iniciativa: ${dice.numDice}d20 (${describeInitiativeRolls({ rolls, roll })}) + ${dice.expertiseValue} AGI = **${total}**`
+            }))
+        }
 
-/**
- * Rola um d20
- */
-function rollD20(): number {
-    return Math.floor(Math.random() * 20) + 1
-}
+        const { index, afterCurrent } = insertCombatant(combat, combatant)
+        const where = combat.phase !== 'ACTION'
+            ? 'e precisa rolar a iniciativa.'
+            : afterCurrent
+                ? `e age logo depois de **${combat.combatants[combat.currentTurnIndex]?.name ?? 'quem está agindo'}**.`
+                : `e age na posição ${index + 1} da ordem.`
 
-/**
- * Rola iniciativa com possível vantagem/desvantagem
- */
+        combat.logs.push(new CombatLog({
+            round: combat.round,
+            type: 'action',
+            actorId: 'system',
+            actorName: 'Sistema',
+            message: `➕ **${combatant.name}** entrou no combate ${where}`
+        }))
+    }
+}
 
 export async function POST(
     request: NextRequest,
@@ -135,6 +184,8 @@ export async function POST(
 
         // Eventos de estatística acumulados durante a ação
         const statsEntries: StatsEntry[] = []
+        // Avisos que não impedem a ação (ex: jogador que já estava no combate), devolvidos ao cliente
+        const warnings: string[] = []
 
         // Inicializa combat se não existir
         if (!campaign.session) {
@@ -167,6 +218,13 @@ export async function POST(
                 }
             }
 
+            if (action === 'sustain_start' || action === 'sustain_end') {
+                const target = combat.combatants?.find(c => c.id === body.combatantId || c.odacId === body.combatantId)
+                if (target && !ownsCombatant(target)) {
+                    throw forbidden('Você só pode mexer nas magias sustentadas do seu personagem')
+                }
+            }
+
             if (OWN_TURN_ACTIONS.includes(action) && !ownsCombatant(combat.combatants?.[combat.currentTurnIndex])) {
                 throw forbidden('Não é o turno do seu personagem')
             }
@@ -176,6 +234,8 @@ export async function POST(
         if (combat.isActive && [ 'next_turn', 'apply_damage', 'apply_heal', 'apply_effect' ].includes(action)) {
             await refreshPlayerCombatantsLp(combat)
         }
+
+        const logsBefore = combat.logs?.length ?? 0
 
         switch (action) {
         case 'start': {
@@ -252,8 +312,8 @@ export async function POST(
                 if (Array.isArray(c.effects) && c.effects.length > 0) {
                     c.effects = []
                 }
-                startMpLimitWindow(c)
             }
+            resetMpLimitWindows(combat.combatants)
 
             combat.logs.push(new CombatLog({
                 round: combat.round,
@@ -290,64 +350,21 @@ export async function POST(
                 return NextResponse.json({ error: 'Combatente não encontrado' }, { status: 404 })
             }
 
-            let numDice = 1
-            let expertiseValue = 0
-            const rolls: number[] = []
+            let dice = playerInitiativeDice(null)
 
             try {
                 if (combatant.type === 'player') {
-                    const charsheet = await charsheetRepository.findById(combatant.id)
-                    if (charsheet) {
-                        const agiExpertise = (charsheet as any).expertises?.Agilidade
-                        expertiseValue = Number(agiExpertise?.value ?? 0) || 0
-
-                        const defaultAttrKey = (agiExpertise?.defaultAttribute ?? 'des') as string
-                        let modsValue = Number((charsheet as any).mods?.attributes?.[defaultAttrKey] ?? 1)
-                        if (!Number.isFinite(modsValue) || modsValue < 1) modsValue = 1
-                        numDice = modsValue
-                    }
+                    dice = playerInitiativeDice(await charsheetRepository.findById(combatant.id))
                 } else if (combatant.type === 'creature') {
-                    const creatures = (campaign as any).custom?.creatures || []
-                    let baseId = combatant.id
-                    const lastDashIndex = baseId.lastIndexOf('-')
-                    if (lastDashIndex > 0) {
-                        const possibleBaseId = baseId.slice(0, lastDashIndex)
-                        if (creatures.some((c: any) => c.id === possibleBaseId)) {
-                            baseId = possibleBaseId
-                        }
-                    }
-
-                    const baseCreature = creatures.find((c: any) => c.id === baseId)
-                    if (baseCreature) {
-                        const agiExpertise = (baseCreature.expertises )?.Agilidade
-                        expertiseValue = Number(agiExpertise?.value ?? 0) || 0
-
-                        const defaultAttrKey = (agiExpertise?.defaultAttribute ?? 'des') as string
-                        const attrValue = Number(baseCreature.attributes?.[defaultAttrKey] ?? 0) || 0
-                        // Nova fórmula: 0=-1, 5=1, 10=2, 15=3, 20=4, 30+=5
-                        let attrMod = attrValue === 0 ? -1 : Math.min(5, Math.floor(attrValue / 5))
-                        if (!Number.isFinite(attrMod) || attrMod < 1) attrMod = 1
-                        numDice = attrMod
-                    }
+                    dice = creatureInitiativeDice(findBaseCreature(combatant.id, (campaign as any).custom?.creatures || []))
                 }
             } catch (err) {
                 console.error('[Combat API] Erro ao calcular iniciativa avançada:', err)
             }
 
-            if (!Number.isFinite(numDice) || numDice < 1) numDice = 1
-            if (!Number.isFinite(expertiseValue)) expertiseValue = 0
-
-            let roll: number
-
             // Se um valor foi passado (rolado manualmente), usa ele como resultado do dado
-            if (typeof value === 'number' && value > 0) {
-                roll = value
-            } else {
-                for (let i = 0; i < numDice; i++) {
-                    rolls.push(rollD20())
-                }
-                roll = rolls.length > 1 ? Math.max(...rolls) : rolls[0]
-            }
+            const { rolls, roll } = resolveInitiative(dice, { manual: value })
+            const { numDice, expertiseValue } = dice
 
             combatant.initiativeBonus = expertiseValue
             combatant.initiativeRoll = roll
@@ -361,17 +378,13 @@ export async function POST(
                 total: combatant.initiativeTotal
             })
 
-            const rollsDisplay = rolls.length > 0
-                ? `[${rolls.join(', ')}]${rolls.length > 1 ? `: ${roll}` : ''}`
-                : `${roll}`
-
             combat.logs.push(new CombatLog({
                 round: combat.round,
                 type: 'initiative',
                 actorId: combatant.id,
                 actorName: combatant.name,
                 value: combatant.initiativeTotal,
-                message: `🎲 **${combatant.name}** rolou iniciativa: ${numDice}d20 (${rollsDisplay}) + ${expertiseValue} AGI = **${combatant.initiativeTotal}**`
+                message: `🎲 **${combatant.name}** rolou iniciativa: ${numDice}d20 (${describeInitiativeRolls({ rolls, roll })}) + ${expertiseValue} AGI = **${combatant.initiativeTotal}**`
             }))
 
             if (combatant.type === 'player') {
@@ -411,7 +424,6 @@ export async function POST(
             })
             combat.phase = 'ACTION'
             combat.currentTurnIndex = 0
-            startMpLimitWindow(combat.combatants[0])
 
             // Formata a ordem de iniciativa de forma legível
             const orderLines = combat.combatants.map((c, i) => 
@@ -460,6 +472,9 @@ export async function POST(
                 })
                 combat.phase = 'INITIATIVE'
                 combat.currentTurnIndex = 0
+                // A rodada virou: o limite de MP por turno de todos recomeça e as magias sustentadas cobram a manutenção (já no limite novo)
+                resetMpLimitWindows(combat.combatants)
+                await applySustainedUpkeep(combat)
 
                 combat.logs.push(new CombatLog({
                     round: combat.round,
@@ -503,6 +518,8 @@ export async function POST(
                     })
                     combat.phase = 'INITIATIVE'
                     combat.currentTurnIndex = 0
+                    resetMpLimitWindows(combat.combatants)
+                    await applySustainedUpkeep(combat)
 
                     combat.logs.push(new CombatLog({
                         round: combat.round,
@@ -515,7 +532,6 @@ export async function POST(
                     combat.currentTurnIndex = nextIndex
 
                     const nextCombatant = combat.combatants[nextIndex]
-                    startMpLimitWindow(nextCombatant)
                     combat.logs.push(new CombatLog({
                         round: combat.round,
                         type: 'turn_pass',
@@ -694,36 +710,131 @@ export async function POST(
             break
         }
 
-        case 'add_creature': {
+        case 'add_creature':
+        case 'add_combatants': {
             if (!combat.isActive) {
                 return NextResponse.json({ error: 'Não há combate ativo' }, { status: 400 })
             }
 
-            const { creatures: newCreatures = [] } = body
-            
-            for (const creature of newCreatures) {
-                const combatant = new Combatant({
-                    id: creature.id,
-                    name: creature.name,
-                    type: 'creature',
-                    initiativeBonus: creature.agility || 0,
-                    currentLp: creature.lp,
-                    maxLp: creature.maxLp,
-                    effects: []
-                })
-                combat.combatants.push(combatant)
+            const campaignCreatures: Creature[] = (campaign as any).custom?.creatures || []
+            const newcomers: Newcomer[] = []
 
-                combat.logs.push(new CombatLog({
-                    round: combat.round,
-                    type: 'action',
-                    actorId: 'system',
-                    actorName: 'Sistema',
-                    message: `➕ **${creature.name}** entrou no combate!`
-                }))
+            if (action === 'add_creature') {
+                // Entrada antiga: a criatura vem pronta do cliente (só o mestre chega aqui)
+                for (const creature of body.creatures ?? []) {
+                    if (typeof creature?.id !== 'string' || typeof creature.name !== 'string') continue
+                    const { id: instanceId, name } = nextCreatureInstance(combat.combatants, creature.id, creature.name)
+                    newcomers.push({
+                        combatant: new Combatant({
+                            id: instanceId,
+                            name,
+                            type: 'creature',
+                            initiativeBonus: creature.agility || 0,
+                            dexterity: creature.dexterity || 0,
+                            currentLp: creature.lp,
+                            maxLp: creature.maxLp,
+                            currentMp: creature.mp,
+                            maxMp: creature.maxMp,
+                            effects: []
+                        }),
+                        dice: creatureInitiativeDice(campaignCreatures.find(c => c.id === creature.id))
+                    })
+                    // as cópias seguintes da mesma criatura nesta chamada precisam enxergar as anteriores
+                    combat.combatants.push(newcomers[newcomers.length - 1].combatant)
+                }
+                for (const { combatant } of newcomers) combat.combatants.splice(combat.combatants.indexOf(combatant), 1)
+            } else {
+                const join = body.join ?? {}
+                const joiningPlayers = Array.isArray(join.players) ? join.players : []
+                const joiningCreatures = Array.isArray(join.creatures) ? join.creatures : []
+
+                if (joiningPlayers.length + joiningCreatures.length === 0) {
+                    throw badRequest('Selecione ao menos um combatente')
+                }
+                if (joiningPlayers.length > MAX_JOIN_ENTRIES || joiningCreatures.length > MAX_JOIN_ENTRIES) {
+                    throw badRequest('Combatentes demais de uma vez')
+                }
+
+                // Jogadores: os dados vêm da ficha, e a ficha tem de ser de alguém da campanha
+                for (const entry of joiningPlayers) {
+                    if (typeof entry?.charsheetId !== 'string') throw badRequest('Jogador inválido')
+                    const member = campaign.players?.find(p => p.charsheetId === entry.charsheetId)
+                    if (!member) {
+                        warnings.push('Esse jogador não faz parte da campanha.')
+                        continue
+                    }
+                    if (combat.combatants.some(c => c.id === entry.charsheetId)) {
+                        warnings.push(`${combat.combatants.find(c => c.id === entry.charsheetId)?.name ?? 'O jogador'} já está no combate.`)
+                        continue
+                    }
+                    const charsheet = await charsheetRepository.findById(entry.charsheetId)
+                    if (!charsheet) {
+                        warnings.push('Não achei a ficha de um dos jogadores.')
+                        continue
+                    }
+                    const dice = playerInitiativeDice(charsheet)
+                    newcomers.push({
+                        combatant: new Combatant({
+                            id: entry.charsheetId,
+                            name: charsheet.name,
+                            type: 'player',
+                            odacId: member.userId,
+                            avatar: typeof entry.avatar === 'string' ? entry.avatar : undefined,
+                            initiativeBonus: dice.expertiseValue,
+                            dexterity: Number((charsheet as any).attributes?.des ?? 0) || 0,
+                            currentLp: charsheet.stats?.lp,
+                            maxLp: charsheet.stats?.maxLp,
+                            currentMp: charsheet.stats?.mp,
+                            maxMp: charsheet.stats?.maxMp,
+                            effects: []
+                        }),
+                        dice
+                    })
+                }
+
+                // Criaturas: os dados vêm da criatura da campanha; cada cópia ganha id e nome próprios
+                const planned: Combatant[] = []
+                for (const entry of joiningCreatures) {
+                    if (typeof entry?.id !== 'string') throw badRequest('Criatura inválida')
+                    const base = campaignCreatures.find(c => c.id === entry.id)
+                    if (!base) {
+                        warnings.push('Uma das criaturas não existe mais na campanha.')
+                        continue
+                    }
+                    const quantity: unknown = entry.quantity === undefined ? 1 : entry.quantity
+                    if (typeof quantity !== 'number' || !Number.isInteger(quantity) || quantity < 1 || quantity > MAX_CREATURE_COPIES) {
+                        throw badRequest(`A quantidade de ${base.name} deve ficar entre 1 e ${MAX_CREATURE_COPIES}`)
+                    }
+                    const dice = creatureInitiativeDice(base)
+                    for (let copy = 0; copy < quantity; copy++) {
+                        const { id: instanceId, name } = nextCreatureInstance([ ...combat.combatants, ...planned ], base.id, base.name)
+                        const combatant = new Combatant({
+                            id: instanceId,
+                            name,
+                            type: 'creature',
+                            initiativeBonus: dice.expertiseValue,
+                            dexterity: Number(base.attributes?.des ?? 0) || 0,
+                            currentLp: base.stats?.lp,
+                            maxLp: base.stats?.maxLp ?? base.stats?.lp,
+                            currentMp: base.stats?.mp,
+                            maxMp: base.stats?.maxMp ?? base.stats?.mp,
+                            effects: []
+                        })
+                        planned.push(combatant)
+                        newcomers.push({ combatant, dice })
+                    }
+                }
             }
 
-            if (newCreatures.length > 0) {
-                statsEntries.push({ gm: true, inc: { creaturesAdded: newCreatures.length } })
+            if (newcomers.length === 0) {
+                return NextResponse.json({ error: warnings.join(' ') || 'Nenhum combatente para adicionar', warnings }, { status: 400 })
+            }
+
+            joinCombat(combat, newcomers)
+
+            const addedCreatures = newcomers.filter(n => n.combatant.type === 'creature').length
+            if (addedCreatures > 0) {
+                statsEntries.push({ gm: true, inc: { creaturesAdded: addedCreatures } })
             }
 
             break
@@ -912,8 +1023,9 @@ export async function POST(
         }
 
         case 'spend_mp': {
+            // Fora do combate não há limite por turno: nada é registrado (e nada falha, para quem ainda tem o combate antigo na tela)
             if (!combat.isActive) {
-                return NextResponse.json({ error: 'Não há combate ativo' }, { status: 400 })
+                return NextResponse.json({ success: true, combat, enforced: false })
             }
 
             const { combatantId, value: amount } = body
@@ -926,9 +1038,34 @@ export async function POST(
                 return NextResponse.json({ error: 'Combatente não encontrado' }, { status: 404 })
             }
 
-            // Criaturas não têm ficha, então não têm limite de MP por turno
+            // Criatura: o limite sai do nível e do Foco da criatura de origem, e o MP dela mora no combatente (só o mestre chega aqui)
             if (combatant.type !== 'player') {
-                return NextResponse.json({ success: true, combat, enforced: false })
+                const creature = findBaseCreature(combatant.id, campaign.custom?.creatures ?? [])
+                const vitals = combatantVitals(combatant, creature)
+                if (amount > 0 && vitals.mp < amount) {
+                    return NextResponse.json({ error: `MP insuficiente (${vitals.mp} de ${amount})` }, { status: 400 })
+                }
+
+                const creatureDecision = evaluateMpSpend({
+                    spent: combatant.mpSpentThisTurn ?? 0,
+                    amount,
+                    limit: creature ? getCreatureMpLimit(creature) : 0,
+                    enforced: creature ? isCreatureMpLimitEnforced(creature, campaign.mode) : false,
+                    override: combatant.mpLimitOverride
+                })
+                if (!creatureDecision.allowed) {
+                    return NextResponse.json({
+                        error: creatureDecision.message,
+                        code: 'MP_LIMIT_EXCEEDED',
+                        spent: creatureDecision.spent,
+                        limit: creatureDecision.limit
+                    }, { status: 409 })
+                }
+
+                combatant.mpSpentThisTurn = creatureDecision.spent
+                combatant.maxMp = vitals.maxMp
+                combatant.currentMp = Math.min(vitals.maxMp, Math.max(0, vitals.mp - amount))
+                break
             }
 
             const sheet = await charsheetRepository.findById(combatant.id)
@@ -955,6 +1092,127 @@ export async function POST(
             break
         }
 
+        case 'reset_mp_limit': {
+            if (!combat.isActive) {
+                return NextResponse.json({ error: 'Não há combate ativo' }, { status: 400 })
+            }
+
+            const { combatantId } = body
+            const combatant = combat.combatants.find(c => c.id === combatantId || c.odacId === combatantId)
+            if (!combatant) {
+                return NextResponse.json({ error: 'Combatente não encontrado no combate' }, { status: 404 })
+            }
+
+            combatant.mpSpentThisTurn = 0
+
+            combat.logs.push(new CombatLog({
+                round: combat.round,
+                type: 'action',
+                actorId: 'gm',
+                actorName: 'Mestre',
+                targetId: combatant.id,
+                targetName: combatant.name,
+                message: `🔄 O mestre resetou o limite de MP por turno de **${combatant.name}**.`
+            }))
+
+            break
+        }
+
+        case 'set_mp_spent': {
+            if (!combat.isActive) {
+                return NextResponse.json({ error: 'Não há combate ativo' }, { status: 400 })
+            }
+
+            const { combatantId, value: spentValue } = body
+            if (typeof spentValue !== 'number' || !Number.isInteger(spentValue) || spentValue < 0 || spentValue > 1000) {
+                throw badRequest('Valor de MP gasto inválido')
+            }
+
+            const combatant = combat.combatants.find(c => c.id === combatantId || c.odacId === combatantId)
+            if (!combatant) {
+                return NextResponse.json({ error: 'Combatente não encontrado no combate' }, { status: 404 })
+            }
+
+            // O limite (o máximo) não muda aqui: só o gasto atual, de 0 até ele. Jogador: ficha; criatura: a criatura de origem
+            let limit = 0
+            let enforced = false
+            if (combatant.type === 'player') {
+                const sheet = await charsheetRepository.findById(combatant.id)
+                limit = sheet ? getMpLimit(sheet) : 0
+                enforced = sheet ? isMpLimitEnforced(sheet, campaign.mode) : false
+            } else {
+                const creature = findBaseCreature(combatant.id, campaign.custom?.creatures ?? [])
+                limit = creature ? getCreatureMpLimit(creature) : 0
+                enforced = creature ? isCreatureMpLimitEnforced(creature, campaign.mode) : false
+            }
+            if (!enforced) {
+                throw badRequest(`O limite de MP por turno não vale para ${combatant.name}`)
+            }
+            if (spentValue > limit) {
+                throw badRequest(`O MP gasto não pode passar do limite (${limit})`)
+            }
+
+            combatant.mpSpentThisTurn = spentValue
+
+            combat.logs.push(new CombatLog({
+                round: combat.round,
+                type: 'action',
+                actorId: 'gm',
+                actorName: 'Mestre',
+                targetId: combatant.id,
+                targetName: combatant.name,
+                message: `✏️ O mestre definiu o MP gasto na rodada de **${combatant.name}** em ${spentValue}/${limit}.`
+            }))
+
+            break
+        }
+
+        case 'sustain_start': {
+            // Fora do combate a sustentada é como uma imediata: nada fica ativo
+            if (!combat.isActive) {
+                return NextResponse.json({ success: true, combat, active: false })
+            }
+
+            const { combatantId, spellKey, spellName, stage, cost } = body
+            if (!combatantId || !spellKey || !spellName) {
+                throw badRequest('combatantId, spellKey e spellName são obrigatórios')
+            }
+            if (typeof stage !== 'number' || !Number.isInteger(stage) || stage < 1 || stage > 3) {
+                throw badRequest('Estágio inválido')
+            }
+            if (typeof cost !== 'number' || !Number.isInteger(cost) || cost < 1 || cost > 1000) {
+                throw badRequest('Custo de MP inválido')
+            }
+
+            const started = startSustained(combat, combatantId, {
+                spellKey: String(spellKey).slice(0, 200),
+                spellName: String(spellName).slice(0, 200),
+                stage,
+                cost,
+                upkeep: sustainedUpkeepFor(cost)
+            })
+            if (!started) {
+                return NextResponse.json({ error: 'Jogador não encontrado no combate' }, { status: 404 })
+            }
+
+            break
+        }
+
+        case 'sustain_end': {
+            if (!combat.isActive) {
+                return NextResponse.json({ success: true, combat, active: false })
+            }
+
+            const { combatantId, spellKey } = body
+            if (!combatantId) {
+                throw badRequest('combatantId é obrigatório')
+            }
+
+            endSustained(combat, combatantId, spellKey ? String(spellKey) : undefined)
+
+            break
+        }
+
         case 'set_mp_limit_override': {
             if (!combat.isActive) {
                 return NextResponse.json({ error: 'Não há combate ativo' }, { status: 400 })
@@ -962,8 +1220,8 @@ export async function POST(
 
             const { combatantId, enabled } = body
             const combatant = combat.combatants.find(c => c.id === combatantId || c.odacId === combatantId)
-            if (!combatant || combatant.type !== 'player') {
-                return NextResponse.json({ error: 'Jogador não encontrado no combate' }, { status: 404 })
+            if (!combatant) {
+                return NextResponse.json({ error: 'Combatente não encontrado no combate' }, { status: 404 })
             }
 
             const allow = enabled !== false
@@ -977,7 +1235,7 @@ export async function POST(
                 targetId: combatant.id,
                 targetName: combatant.name,
                 message: allow
-                    ? `🔓 O mestre liberou o limite de MP por turno de **${combatant.name}** até o início do próximo turno dele.`
+                    ? `🔓 O mestre liberou o limite de MP por turno de **${combatant.name}** até a rodada virar.`
                     : `🔒 O limite de MP por turno de **${combatant.name}** foi restabelecido.`
             }))
 
@@ -992,7 +1250,9 @@ export async function POST(
         // sem esta guarda o último log antigo seria repostado a cada conjuração.
         // A mensagem é gravada no chat (subcoleção) depois de salvar a campanha.
         let combatMessage: Message | undefined
-        if (action !== 'spend_mp' && combat.logs.length > 0) {
+        // `sustain_end` só gera log quando alguma magia estava ativa.
+        const logsGrew = combat.logs.length > logsBefore
+        if (action !== 'spend_mp' && (action !== 'sustain_end' || logsGrew) && combat.logs.length > 0) {
             const lastLog = combat.logs[combat.logs.length - 1]
             combatMessage = new Message({
                 id: crypto.randomUUID(),
@@ -1038,7 +1298,8 @@ export async function POST(
         return NextResponse.json({
             success: true,
             combat: campaign.session.combat,
-            message: getActionMessage(action)
+            message: getActionMessage(action),
+            ...(warnings.length > 0 ? { warnings } : {})
         })
 
     } catch (error) {
@@ -1056,11 +1317,16 @@ function getActionMessage(action: CombatAction): string {
         apply_damage: 'Dano aplicado',
         apply_heal: 'Cura aplicada',
         add_creature: 'Criatura adicionada',
+        add_combatants: 'Combatentes adicionados',
         remove_combatant: 'Combatente removido',
         apply_effect: 'Efeito aplicado',
         remove_effect: 'Efeito removido',
         spend_mp: 'MP registrado',
-        set_mp_limit_override: 'Limite de MP atualizado'
+        set_mp_limit_override: 'Limite de MP atualizado',
+        reset_mp_limit: 'Limite de MP resetado',
+        set_mp_spent: 'MP gasto definido',
+        sustain_start: 'Magia sustentada ativa',
+        sustain_end: 'Magia sustentada encerrada'
     }
     return messages[action] || 'Ação executada'
 }

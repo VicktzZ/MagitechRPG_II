@@ -1,6 +1,7 @@
 import { useCampaignContext } from '@contexts';
 import type { Combatant, Creature } from '@models';
 import { useMemo } from 'react';
+import { creatureCombatants, findBaseCreature } from '@utils/combatCreatureLookup';
 
 /** Criatura da campanha que está em combate, com o combatente que a representa */
 export interface CombatCreatureEntry {
@@ -23,21 +24,10 @@ export function useCombatCreatures() {
         }
 
         const current = combat.combatants[combat.currentTurnIndex];
-        
+
         if (!current || current.type !== 'creature') return null;
 
-        const rawId: string = current.id;
-        let baseId: string = rawId;
-
-        const lastDashIndex = rawId?.lastIndexOf('-') ?? -1;
-        if (lastDashIndex > 0) {
-            const possibleBaseId = rawId.slice(0, lastDashIndex);
-            if (creatures.some(c => c.id === possibleBaseId)) {
-                baseId = possibleBaseId;
-            }
-        }
-
-        const baseCreature = creatures.find(c => c.id === baseId);
+        const baseCreature = findBaseCreature(current.id, creatures);
         if (!baseCreature) return null;
 
         return {
@@ -51,25 +41,11 @@ export function useCombatCreatures() {
         const combat = campaign.session?.combat;
         const creatures = campaign.custom?.creatures || [];
 
-        if (!combat?.isActive || !Array.isArray(combat.combatants) || combat.combatants.length === 0) {
-            return [];
-        }
+        if (!combat?.isActive) return [];
 
-        return combat.combatants
-            .filter(combatant => combatant.type === 'creature')
+        return creatureCombatants(combat.combatants)
             .map(combatant => {
-                const rawId: string = combatant.id;
-                let baseId: string = rawId;
-
-                const lastDashIndex = rawId?.lastIndexOf('-') ?? -1;
-                if (lastDashIndex > 0) {
-                    const possibleBaseId = rawId.slice(0, lastDashIndex);
-                    if (creatures.some(c => c.id === possibleBaseId)) {
-                        baseId = possibleBaseId;
-                    }
-                }
-
-                const baseCreature = creatures.find(c => c.id === baseId);
+                const baseCreature = findBaseCreature(combatant.id, creatures);
                 if (!baseCreature) return null;
 
                 return {

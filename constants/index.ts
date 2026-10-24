@@ -1,4 +1,6 @@
-import { Gavel, Inventory2, Shield } from '@mui/icons-material'
+import { SECONDARY_ELEMENTS } from './secondaryElements'
+import { Inventory2, Shield } from '@mui/icons-material'
+import WeaponIcon from '@components/misc/WeaponIcon'
 import { classMark, color, element, rarity } from '@themes/tokens'
 import type { ItemAttributes } from '@models/types/item'
 import type { ClassNames, RarityType } from '@models/types/string'
@@ -60,13 +62,10 @@ export const elements = [
     'Não-Elemental'
 ]
 
-export const specialElements = [
-    'Sangue',
-    'Vácuo',
-    'Psíquico',
-    'Radiação',
-    'Explosão'
-]
+/** Elementos secundários (ver `SECONDARY_ELEMENTS`); o nome antigo segue nos filtros de magia */
+export { SECONDARY_ELEMENTS }
+
+export const specialElements: string[] = [ ...SECONDARY_ELEMENTS ]
 
 /**
  * Cor de marca de cada elemento (chave em maiúsculas, como no banco). Gerada de `themes/tokens.ts`:
@@ -85,7 +84,7 @@ export const classColor: Record<ClassNames, string> = { ...classMark }
 
 export const itemAttributes: ItemAttributes = {
     weapon: {
-        icon: Gavel,
+        icon: WeaponIcon,
         color: color.danger,
         label: 'Arma',
         badgeColor: 'error.main'

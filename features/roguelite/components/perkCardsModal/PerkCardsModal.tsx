@@ -445,6 +445,7 @@ export function PerkCardsModal({
                                                         level={cardProps.level}
                                                         stages={cardProps.stages}
                                                         mpCost={cardProps.mpCost}
+                                                        mpCostIncrease={cardProps.mpCostIncrease}
                                                         isSelected={isSelected}
                                                         onClick={() => !isConfirming && selectPerk(idx)}
                                                     />

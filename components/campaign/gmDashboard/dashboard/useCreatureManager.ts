@@ -1,81 +1,22 @@
-import { useCampaignContext } from '@contexts';
-import { useSnackbar } from 'notistack';
+import type { Creature } from '@models';
 import { useState } from 'react';
+import type { CreatureData } from '../creatureCreator/types';
+import { useCreatureDelete } from './useCreatureDelete';
 
 /**
- * Estado e ações das criaturas customizadas do dashboard do mestre: abrir o editor (leitura ou edição),
- * salvar na campanha e excluir com confirmação.
+ * Estado e ações das criaturas personalizadas do dashboard do mestre: abrir o editor e excluir com confirmação.
+ * Ver os detalhes é pela janela da criatura (`openWindow('creature', id)`), e o editor grava pela rota da campanha:
+ * o listener da campanha atualiza a lista, então não há nada a gravar de novo aqui.
  */
 export function useCreatureManager() {
-    const { campaign, updateCampaign } = useCampaignContext()
-    const { enqueueSnackbar } = useSnackbar()
-
     const [ creatureModalOpen, setCreatureModalOpen ] = useState(false);
-    const [ selectedCreature, setSelectedCreature ] = useState<any | null>(null);
-    const [ selectedCreatureReadOnly, setSelectedCreatureReadOnly ] = useState(false);
-    // Exclusão de criatura: o alvo fica guardado após fechar para o nome não sumir durante a animação do diálogo
-    const [ creatureToDelete, setCreatureToDelete ] = useState<{ id: string; name: string } | null>(null);
-    const [ deleteDialogOpen, setDeleteDialogOpen ] = useState(false);
-    const [ isDeletingCreature, setIsDeletingCreature ] = useState(false);
+    const [ selectedCreature, setSelectedCreature ] = useState<CreatureData | null>(null);
+    const deletion = useCreatureDelete();
 
-    // Excluir criatura customizada: primeiro pede confirmação, depois remove
-    const handleRequestDeleteCreature = (creatureId: string, creatureName: string) => {
-        setCreatureToDelete({ id: creatureId, name: creatureName });
-        setDeleteDialogOpen(true);
-    };
-
-    const handleConfirmDeleteCreature = async () => {
-        if (!creatureToDelete) return;
-
-        setIsDeletingCreature(true);
-        try {
-            const response = await fetch(`/api/campaign/${campaign.id}/custom/creatures`, {
-                method: 'DELETE',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ creatureId: creatureToDelete.id })
-            });
-
-            if (!response.ok) {
-                throw new Error('Erro ao excluir criatura');
-            }
-
-            // A rota DELETE já grava a remoção na campanha; o listener da campanha atualiza a lista.
-            // Gravar `custom` de novo aqui sobrescreveria o objeto inteiro com um valor possivelmente velho.
-        } catch (error) {
-            console.error('Erro ao deletar criatura:', error);
-            enqueueSnackbar('Erro ao excluir criatura', { variant: 'error' });
-        } finally {
-            setIsDeletingCreature(false);
-            setDeleteDialogOpen(false);
-        }
-    };
-
-    const handleViewCreature = (creature: any) => {
-        setSelectedCreature(creature);
-        setSelectedCreatureReadOnly(true);
+    const handleEditCreature = (creature: Creature) => {
+        // Fixa o objeto do clique: o editor reinicia o formulário quando recebe outro, e a campanha chega de novo a cada mudança
+        setSelectedCreature(creature as unknown as CreatureData);
         setCreatureModalOpen(true);
-    };
-
-    const handleEditCreature = (creature: any) => {
-        setSelectedCreature(creature);
-        setSelectedCreatureReadOnly(false);
-        setCreatureModalOpen(true);
-    };
-
-    const handleCreatureSaved = async (creature: any) => {
-        const existingCreatures = campaign.custom?.creatures || [];
-        const index = existingCreatures.findIndex((c) => c.id === creature.id);
-
-        const updatedCreatures = index === -1
-            ? [ ...existingCreatures, creature ]
-            : existingCreatures.map((c) => c.id === creature.id ? { ...c, ...creature } : c);
-
-        await updateCampaign({
-            custom: {
-                ...campaign.custom,
-                creatures: updatedCreatures
-            }
-        });
     };
 
     /** Fecha o editor de criatura e limpa a seleção */
@@ -87,16 +28,13 @@ export function useCreatureManager() {
     return {
         creatureModalOpen,
         selectedCreature,
-        selectedCreatureReadOnly,
-        creatureToDelete,
-        deleteDialogOpen,
-        isDeletingCreature,
-        setDeleteDialogOpen,
-        handleRequestDeleteCreature,
-        handleConfirmDeleteCreature,
-        handleViewCreature,
+        creatureToDelete: deletion.target,
+        deleteDialogOpen: deletion.open,
+        isDeletingCreature: deletion.deleting,
+        handleRequestDeleteCreature: deletion.request,
+        handleCancelDeleteCreature: deletion.cancel,
+        handleConfirmDeleteCreature: deletion.confirm,
         handleEditCreature,
-        handleCreatureSaved,
         handleCloseCreatureModal
     };
 }

@@ -82,7 +82,6 @@ export default memo(function InventoryCreateModalWrapper({ children, action, sub
     const rarityOptions = mapArrayToOptions(rarities);
 
     const onSubmit = (data: ItemFormData) => {
-        console.log(data);
         action?.(data);
     };
 

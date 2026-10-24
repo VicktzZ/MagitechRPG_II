@@ -153,7 +153,7 @@ export default function PlayerHeader({ avatar, rootRef }: { avatar: string | und
                             <Paper sx={tileSx}>
                                 <Typography sx={tileLabelSx}>Limite MP/turno</Typography>
                                 <Typography
-                                    title={mpLimitReleased ? 'Liberado pelo mestre até o início do seu próximo turno' : 'MP gasto neste turno / limite por turno'}
+                                    title={mpLimitReleased ? 'Liberado pelo mestre até a rodada virar' : 'MP gasto nesta rodada / limite por turno (zera quando a rodada vira)'}
                                     sx={{
                                         ...tileValueSx,
                                         color: mpLimitReleased ? 'success.main' : (myCombatant && mpSpentThisTurn >= mpLimit ? 'error.main' : 'info.main')

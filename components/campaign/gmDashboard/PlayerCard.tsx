@@ -1,13 +1,7 @@
-import { AddItemModal, WarningModal } from '@layout'
-import { Add, Backpack, Block, ChatBubbleOutline, DirectionsRun, Info, LocalPolice, MonetizationOn, MoreVert } from '@mui/icons-material'
+import { Add, Backpack, Block, Bolt, ChatBubbleOutline, Edit, RestartAlt, DirectionsRun, LocalPolice, MonetizationOn, MoreVert, Upgrade, ViewList, ViewSidebar } from '@mui/icons-material'
 import {
     Box,
-    Button,
     Chip,
-    DialogActions,
-    Dialog,
-    DialogContent,
-    DialogTitle,
     Divider,
     IconButton,
     ListItemIcon,
@@ -18,21 +12,24 @@ import {
     Paper,
     Typography
 } from '@mui/material'
-import { campaignService, charsheetService, notificationService } from '@services'
-import { enqueueSnackbar } from 'notistack'
 import { memo, useState } from 'react'
 import { useCampaignContext } from '@contexts';
-import { TextField } from '@mui/material'
-import { CharsheetDetailsModal } from './modals'
-import type { Armor, Item, Weapon } from '@models'
 import type { CharsheetDTO } from '@models/dtos'
 import useNumbersWithSpaces from '@hooks/useNumbersWithSpace'
-import { charsheetEntity } from '@utils/firestoreEntities'
-import { useCharsheetSystem } from '@hooks/useCharsheetSystem'
 import { color, font } from '@themes/tokens'
+import SheetMetricsView from './SheetMetricsView'
 import StatMeter from './StatMeter'
-import { errorMessage } from '@utils/errors';
-import { normalizeToArray } from '@utils/normalizeToArray'
+import { getSheetMetrics } from '@utils/charsheetMetrics'
+import { isCombatantInTurn } from '@utils/combatTurn'
+import { useCharsheetPointsView } from './useCharsheetPointsView'
+import { usePlayerActions } from './usePlayerActions'
+import { useGMWindowActions } from './windows/GMWindowProvider'
+import SectionMenu from './windows/SectionMenu'
+import { useQuickEffect } from './actions/useQuickEffect'
+import { useSetMpSpent } from './actions/useSetMpSpent'
+import { campaignService } from '@services'
+import { errorMessage } from '@utils/errors'
+import { enqueueSnackbar } from 'notistack'
 
 /** Texto só para leitor de tela (o rótulo do número ao lado, que a tela mostra por ícone) */
 const srOnly = {
@@ -47,35 +44,20 @@ const srOnly = {
 // memo: com as referências de ficha estabilizadas por item (useStableArrayItems),
 // só o card do jogador cuja ficha mudou re-renderiza.
 function PlayerCard({ charsheet }: { charsheet: Required<CharsheetDTO> }) {
-    const { campaign, charsheets } = useCampaignContext()
-    const { system: customSystem } = useCharsheetSystem(charsheet.systemId)
-    const weightUnit = customSystem ? (customSystem.weightConfig?.unit ?? '') : 'kg'
-
-    // Sistemas customizados podem desligar LP, MP e AP (mesma regra do PlayerHeader)
-    const hasLP = !customSystem || (customSystem.pointsConfig?.hasLP ?? customSystem.initialFields?.life?.enabled ?? true)
-    const hasMP = !customSystem || (customSystem.pointsConfig?.hasMP ?? customSystem.initialFields?.mana?.enabled ?? true)
-    const hasAP = !customSystem || (customSystem.pointsConfig?.hasAP ?? customSystem.initialFields?.armor?.enabled ?? true)
-    const lpName = customSystem?.pointsConfig?.lpName || customSystem?.initialFields?.life?.label || 'Vida'
-    const mpName = customSystem?.pointsConfig?.mpName || customSystem?.initialFields?.mana?.label || 'Mana'
-    const apName = customSystem?.pointsConfig?.apName || customSystem?.initialFields?.armor?.label || 'Armadura'
+    const { campaign } = useCampaignContext()
+    const { customSystem, weightUnit, hasLP, hasMP, hasAP, lpName, mpName, apName } = useCharsheetPointsView(charsheet)
+    const { openWindow } = useGMWindowActions()
+    const actions = usePlayerActions(charsheet)
+    const { openEffectFor, effectDialog } = useQuickEffect(campaign.id)
+    const { openSetMpSpent, setMpSpentDialog } = useSetMpSpent(campaign.id)
+    // Efeito só vale em combate ativo e para quem está nele
+    const inCombat = Boolean(campaign.session?.combat?.isActive && campaign.session.combat.combatants?.some(combatant => combatant.id === charsheet.id))
 
     // Combate ativo, fase de ação: o cartão de quem joga agora ganha o destaque "Em turno"
-    const combat = campaign.session?.combat
-    const currentCombatant = combat?.isActive && combat.phase === 'ACTION'
-        ? combat.combatants?.[combat.currentTurnIndex]
-        : undefined
-    const isMyTurn = Boolean(currentCombatant && (
-        currentCombatant.id === charsheet.id
-        || (currentCombatant.odacId && currentCombatant.odacId === charsheet.userId)
-    ))
+    const isMyTurn = isCombatantInTurn(campaign.session?.combat, charsheet)
+    const metrics = getSheetMetrics(charsheet, campaign.mode, campaign.session?.combat)
     const [ playerAnchorEl, setPlayerAnchorEl ] = useState<null | HTMLElement>(null)
-    const [ addItemModalOpen, setAddItemModalOpen ] = useState(false)
-    const [ removeUserDialogOpen, setRemoveUserDialogOpen ] = useState(false)
-    const [ charsheetDetailsOpen, setCharsheetDetailsOpen ] = useState(false)
-
-    const [ notificationDialogOpen, setNotificationDialogOpen ] = useState(false)
-    const [ notificationTitle, setNotificationTitle ] = useState('')
-    const [ notificationContent, setNotificationContent ] = useState('')
+    const [ sectionAnchorEl, setSectionAnchorEl ] = useState<null | HTMLElement>(null)
 
     const stats = charsheet.stats
     const spacedMoney = useNumbersWithSpaces()
@@ -88,80 +70,16 @@ function PlayerCard({ charsheet }: { charsheet: Required<CharsheetDTO> }) {
         setPlayerAnchorEl(null)
     }
 
-    const handleAddItem = async (item: Weapon | Item | Armor) => {
-        try {
-            // Busca a ficha mais recente do servidor em vez de usar a prop (que pode
-            // estar desatualizada) — evita sobrescrever itens adicionados por outra
-            // ação (ex: outro "adicionar item" ou depósito de widget) enquanto esta
-            // tela estava aberta.
-            const freshCharsheet = await charsheetEntity.findById(charsheet.id)
-            const inventory = freshCharsheet?.inventory ?? charsheet.inventory
-
-            // Verifica se é uma arma ou um item
-            const isWeapon = 'hit' in item
-            const isArmor = 'displacementPenalty' in item
-            const currentWeapons = normalizeToArray(inventory?.weapons)
-            const currentArmors = normalizeToArray(inventory?.armors)
-            const currentItems = normalizeToArray(inventory?.items)
-
-            if (isWeapon) {
-                await charsheetService.updateFields(charsheet.id, {
-                    'inventory.weapons': [ ...currentWeapons, item ]
-                })
-            } else if (isArmor) {
-                await charsheetService.updateFields(charsheet.id, {
-                    'inventory.armors': [ ...currentArmors, item ]
-                })
-            } else {
-                await charsheetService.updateFields(charsheet.id, {
-                    'inventory.items': [ ...currentItems, item ]
-                })
-            }
-
-            enqueueSnackbar(`Item ${item.name} adicionado com sucesso!`, { variant: 'success' })
-        } catch (error) {
-            console.error('Erro ao adicionar item:', error)
-            enqueueSnackbar('Erro ao adicionar item!', { variant: 'error' })
-        }
+    // Cada item do menu fecha o menu e depois faz a ação
+    const afterClosing = (action: () => void) => () => {
+        handlePlayerMenuClose()
+        action()
     }
 
-    const handleSendNotification = async () => {
-        try {
-            await notificationService.create({
-                title: notificationTitle,
-                content: notificationContent,
-                userId: charsheet.userId,
-                timestamp: new Date().toISOString(),
-                read: false,
-                type: 'other'
-            })
-
-            enqueueSnackbar('Notificação enviada com sucesso!', { variant: 'success' })
-        } catch (error) {
-            enqueueSnackbar(`Erro ao enviar notificação: ${errorMessage(error, 'tente novamente')}`, { variant: 'error' })
-        }
-        
-        setNotificationDialogOpen(false)
-    }
-
-    const viewCharsheetDetails = () => {
-        setCharsheetDetailsOpen(true);
-        handlePlayerMenuClose();
-    }
-
-    const handleRemoveUser = async () => {
-        try {
-            if (!charsheet.id) return
-
-            await campaignService.removeUser(campaign.id, charsheet.userId)
-
-            enqueueSnackbar('Usuário removido com sucesso!', { variant: 'success' })
-        } catch (error) {
-            console.error('Erro ao remover usuário:', error)
-            enqueueSnackbar(`Erro ao remover usuário: ${errorMessage(error, 'tente novamente')}`, { variant: 'error' })
-        }
-
-        setRemoveUserDialogOpen(false)
+    const openSummaryWindow = afterClosing(() => openWindow('summary', charsheet.id))
+    const openSectionMenu = () => {
+        setSectionAnchorEl(playerAnchorEl)
+        handlePlayerMenuClose()
     }
 
     return (
@@ -286,6 +204,8 @@ function PlayerCard({ charsheet }: { charsheet: Required<CharsheetDTO> }) {
                         <Box component="span" sx={srOnly}>Deslocamento:</Box>
                         <Typography component="span" className="value">{charsheet.displacement || 0}m</Typography>
                     </Box>
+
+                    <SheetMetricsView metrics={metrics} variant="inline" />
                 </Box>
             </Paper>
 
@@ -293,26 +213,69 @@ function PlayerCard({ charsheet }: { charsheet: Required<CharsheetDTO> }) {
             <Menu anchorEl={playerAnchorEl} open={Boolean(playerAnchorEl)} onClose={handlePlayerMenuClose}>
                 <Box sx={{ width: 320, maxWidth: '100%' }}>
                     <MenuList>
-                        <MenuItem onClick={viewCharsheetDetails}>
+                        <MenuItem onClick={openSummaryWindow}>
                             <ListItemIcon>
-                                <Info />
+                                <ViewSidebar fontSize="small" />
                             </ListItemIcon>
-                            <ListItemText>Ver detalhes</ListItemText>
+                            <ListItemText>Abrir resumo em janela</ListItemText>
                         </MenuItem>
-                        <MenuItem onClick={() => setAddItemModalOpen(true)}>
+                        <MenuItem onClick={openSectionMenu}>
+                            <ListItemIcon>
+                                <ViewList fontSize="small" />
+                            </ListItemIcon>
+                            <ListItemText>Abrir seção da ficha…</ListItemText>
+                        </MenuItem>
+                        {inCombat && (
+                            <MenuItem onClick={afterClosing(() => { openEffectFor({ id: charsheet.id, name: charsheet.name }) })}>
+                                <ListItemIcon>
+                                    <Bolt fontSize="small" />
+                                </ListItemIcon>
+                                <ListItemText>Aplicar efeito</ListItemText>
+                            </MenuItem>
+                        )}
+                        {inCombat && metrics.mpLimit !== null && (
+                            <MenuItem onClick={afterClosing(() => {
+                                openSetMpSpent({ id: charsheet.id, name: charsheet.name, spent: metrics.mpSpent ?? 0, limit: metrics.mpLimit ?? 0 })
+                            })}>
+                                <ListItemIcon>
+                                    <Edit fontSize="small" />
+                                </ListItemIcon>
+                                <ListItemText>Definir MP gasto no turno</ListItemText>
+                            </MenuItem>
+                        )}
+                        {inCombat && (
+                            <MenuItem onClick={afterClosing(() => {
+                                campaignService.resetMpLimit(campaign.id, { combatantId: charsheet.id })
+                                    .catch((error: unknown) => { enqueueSnackbar(errorMessage(error, 'Erro ao resetar o limite de MP'), { variant: 'error' }) })
+                            })}>
+                                <ListItemIcon>
+                                    <RestartAlt fontSize="small" />
+                                </ListItemIcon>
+                                <ListItemText>Resetar limite de MP</ListItemText>
+                            </MenuItem>
+                        )}
+                        <MenuItem onClick={afterClosing(actions.openAddItem)}>
                             <ListItemIcon>
                                 <Add fontSize="small" />
                             </ListItemIcon>
                             <ListItemText>Adicionar item</ListItemText>
                         </MenuItem>
-                        <MenuItem onClick={() => setNotificationDialogOpen(true)}>
+                        {actions.canGrantEvolution && (
+                            <MenuItem onClick={afterClosing(() => { void actions.grantEvolutionPoint() })}>
+                                <ListItemIcon>
+                                    <Upgrade fontSize="small" />
+                                </ListItemIcon>
+                                <ListItemText>Conceder ponto de evolução</ListItemText>
+                            </MenuItem>
+                        )}
+                        <MenuItem onClick={afterClosing(actions.openNotification)}>
                             <ListItemIcon>
                                 <ChatBubbleOutline fontSize="small" />
                             </ListItemIcon>
                             <ListItemText>Enviar Notificação</ListItemText>
                         </MenuItem>
                         <Divider />
-                        <MenuItem onClick={() => setRemoveUserDialogOpen(true)}>
+                        <MenuItem onClick={afterClosing(actions.openRemove)}>
                             <ListItemIcon>
                                 <Block sx={{ color: 'error.main' }} />
                             </ListItemIcon>
@@ -322,65 +285,16 @@ function PlayerCard({ charsheet }: { charsheet: Required<CharsheetDTO> }) {
                 </Box>
             </Menu>
 
-            {/* Modal de Adicionar Item */}
-            <AddItemModal
-                subtitle={`Adicionar item para ${charsheet.name} (${charsheet.id})`}
-                modalOpen={addItemModalOpen}
-                setModalOpen={setAddItemModalOpen}
-                disableDefaultCreate={true}
-                onConfirm={handleAddItem}
+            <SectionMenu
+                anchorEl={sectionAnchorEl}
+                onClose={() => setSectionAnchorEl(null)}
+                charsheetId={charsheet.id}
+                charsheetName={charsheet.name}
             />
 
-            {/* Modal de Notificação */}
-            <Dialog open={notificationDialogOpen} onClose={() => setNotificationDialogOpen(false)}>
-                <DialogTitle>Enviar Notificação</DialogTitle>
-                <DialogContent>
-                    <TextField
-                        autoFocus
-                        margin="dense"
-                        id="notification-title"
-                        label="Título"
-                        type="text"
-                        fullWidth
-                        variant="outlined"
-                        value={notificationTitle}
-                        onChange={(e) => setNotificationTitle(e.target.value)}
-                    />
-                    <TextField
-                        margin="dense"
-                        id="notification-content"
-                        label="Conteúdo"
-                        type="text"
-                        fullWidth
-                        variant="outlined"
-                        multiline
-                        rows={4}
-                        value={notificationContent}
-                        onChange={(e) => setNotificationContent(e.target.value)}
-                    />
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => setNotificationDialogOpen(false)}>Cancelar</Button>
-                    <Button onClick={handleSendNotification}>Enviar</Button>
-                </DialogActions>
-            </Dialog>
-
-            {/* Modal de aviso */}
-            <WarningModal
-                text={`Você tem certeza que deseja banir usuário ${charsheets.find(
-                    userCharsheet => userCharsheet.id === charsheet.id
-                )?.name} da campanha?`}
-                open={removeUserDialogOpen}
-                onClose={() => setRemoveUserDialogOpen(false)}
-                onConfirm={handleRemoveUser}
-            />
-
-            {/* Modal de Detalhes da Charsheet */}
-            <CharsheetDetailsModal
-                open={charsheetDetailsOpen}
-                onClose={() => setCharsheetDetailsOpen(false)}
-                charsheet={charsheet}
-            />
+            {actions.dialogs}
+            {effectDialog}
+            {setMpSpentDialog}
         </>
     )
 }

@@ -38,6 +38,10 @@ beforeEach(async () => {
         await setDoc(doc(fs, 'campaigns/camp1'), { id: 'camp1', campaignCode: 'ABCD1234', admin: [ 'bob' ], players: [ { userId: 'alice', charsheetId: 'sheetA' } ] });
         await setDoc(doc(fs, 'campaigns/camp1/messages/m1'), { id: 'm1', text: 'oi', timestamp: '2026-01-01T10:00:00.000Z', by: { id: 'alice', name: 'Aria', image: '' } });
         await setDoc(doc(fs, 'campaigns/camp1/messages/m2'), { id: 'm2', text: 'olá', timestamp: '2026-01-01T10:01:00.000Z', by: { id: 'bob', name: 'Borin', image: '' } });
+        await setDoc(doc(fs, 'campaigns/camp1/gmNotes/sheetA'), { text: 'Aria esconde um segredo', updatedBy: 'bob' });
+        await setDoc(doc(fs, 'campaigns/camp2'), { id: 'camp2', campaignCode: 'WXYZ9999', admin: [ 'carol' ], players: [ { userId: 'bob', charsheetId: 'sheetB' } ] });
+        await setDoc(doc(fs, 'campaigns/campSemMestre'), { id: 'campSemMestre', campaignCode: 'SEMM0001', players: [] });
+        await setDoc(doc(fs, 'campaigns/campSemMestre/gmNotes/x'), { text: 'sem mestre' });
         await setDoc(doc(fs, 'notifications/n1'), { id: 'n1', userId: 'alice', title: 'oi', timestamp: '2026-01-01' });
         await setDoc(doc(fs, 'notifications/n2'), { id: 'n2', userId: 'bob', title: 'oi', timestamp: '2026-01-01' });
         await setDoc(doc(fs, 'spells/s1'), { id: 's1', name: 'Bola de Fogo' });
@@ -153,6 +157,62 @@ describe('chat da campanha (campaigns/{id}/messages)', () => {
 
     it('a subcoleção não abre a listagem das campanhas', async () => {
         await assertFails(getDocs(collection(alice(), 'campaigns')));
+    });
+});
+
+describe('anotações privadas do mestre (campaigns/{id}/gmNotes)', () => {
+    const note = (user, path = 'campaigns/camp1/gmNotes/sheetA') => getDoc(doc(user, path));
+
+    it('o mestre da campanha lê', async () => {
+        await assertSucceeds(note(bob()));
+    });
+
+    it('o mestre lê também uma ficha que ainda não tem anotação (o listener abre antes da primeira nota)', async () => {
+        const snapshot = await assertSucceeds(note(bob(), 'campaigns/camp1/gmNotes/ficha-nova'));
+        assert.equal(snapshot.exists(), false);
+    });
+
+    it('o jogador da campanha não lê, nem a anotação da própria ficha', async () => {
+        await assertFails(note(alice()));
+        await assertFails(getDocs(collection(alice(), 'campaigns/camp1/gmNotes')));
+    });
+
+    it('quem não faz parte da campanha não lê', async () => {
+        await assertFails(note(db('carol')));
+        await assertFails(note(db('intruso')));
+    });
+
+    it('o mestre de OUTRA campanha não lê as anotações desta (nem entra pelo ID da campanha)', async () => {
+        await assertFails(note(db('carol')));
+        await assertFails(note(bob(), 'campaigns/camp2/gmNotes/sheetB'));
+    });
+
+    it('anônimo não lê', async () => {
+        await assertFails(note(anon()));
+    });
+
+    it('administrador do site lê', async () => {
+        await assertSucceeds(note(admin()));
+    });
+
+    it('campanha sem lista de mestres nega a todos (o get() falha) menos ao administrador do site', async () => {
+        await assertFails(note(alice(), 'campaigns/campSemMestre/gmNotes/x'));
+        await assertFails(note(bob(), 'campaigns/campSemMestre/gmNotes/x'));
+        await assertSucceeds(note(admin(), 'campaigns/campSemMestre/gmNotes/x'));
+    });
+
+    it('ninguém escreve direto (só a API, com o Admin SDK): nem o mestre, nem o administrador', async () => {
+        for (const user of [ alice(), bob(), admin(), anon() ]) {
+            await assertFails(setDoc(doc(user, 'campaigns/camp1/gmNotes/novo'), { text: 'x' }));
+            await assertFails(updateDoc(doc(user, 'campaigns/camp1/gmNotes/sheetA'), { text: 'editado' }));
+            await assertFails(deleteDoc(doc(user, 'campaigns/camp1/gmNotes/sheetA')));
+        }
+    });
+
+    it('a regra não abre o resto da campanha nem o chat: continua como antes', async () => {
+        await assertSucceeds(getDoc(doc(alice(), 'campaigns/camp1')));
+        await assertSucceeds(getDoc(doc(alice(), 'campaigns/camp1/messages/m1')));
+        await assertFails(setDoc(doc(bob(), 'campaigns/camp1'), { title: 'x' }));
     });
 });
 

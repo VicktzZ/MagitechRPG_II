@@ -184,6 +184,7 @@ function ResourceListModal({
     secondaryFilters: secondaryFilterMenus,
     title,
     renderResource,
+    itemFilter,
     itemMinWidth,
     itemMaxColumns,
     pageSize = 20,
@@ -236,7 +237,8 @@ function ResourceListModal({
         addFunction,
         validateAdd,
         sortFieldMap,
-        clientFilters
+        clientFilters,
+        itemFilter
     });
 
     // As opções saem dos itens carregados (e não dos já filtrados), para que marcar uma

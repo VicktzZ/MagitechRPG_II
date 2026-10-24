@@ -2,6 +2,7 @@
 'use client'
 
 import ElementIcon from '@components/misc/ElementIcon';
+import StageLadder from '@components/spells/StageLadder';
 import { useCampaignCurrentCharsheetContext, useCampaignContext } from '@contexts';
 import { useChatContext } from '@contexts/chatContext';
 import { postCampaignStats } from '@utils/campaignStatsClient';
@@ -9,18 +10,25 @@ import { MessageType } from '@enums';
 import { Message } from '@models';
 import type { SpellDTO } from '@models/dtos';
 import { charsheetEntity } from '@utils/firestoreEntities';
+import { rollSpellTest } from '@utils/combat/hitTest';
 import {
-    castSpell,
     buildSpellCastMessage,
+    buildSpellEffectMessage,
     buildInsufficientMpMessage,
-    buildMpLimitExceededMessage
+    buildMpLimitExceededMessage,
+    getSpellMpCost,
+    hasSpellEffectDice,
+    rollSpellEffect
 } from '@utils/combat/spellRoller';
+import { spellCastDifficulty, spellCastSucceeded } from '@utils/spellDifficulty';
+import { isSustainedSpell, sustainedEffects } from '@utils/combat/sustainedSpells';
+import { campaignRevealsSpellStages } from '@utils/spellReveal';
+import { usePendingSpellEffects } from '@hooks/usePendingSpellEffects';
 import { getMpLimit, isMpLimitEnforced } from '@utils/mpLimit';
 import { campaignService } from '@services';
 import { useSnackbar } from 'notistack';
 import { useSession } from 'next-auth/react';
 import {
-    Bolt,
     Delete,
     ExpandMore
 } from '@mui/icons-material';
@@ -30,7 +38,6 @@ import {
     AccordionSummary,
     alpha,
     Box,
-    Button,
     Chip,
     IconButton,
     Paper,
@@ -41,6 +48,7 @@ import {
 import { color } from '@themes/tokens';
 import { type ReactElement, useState } from 'react';
 import { asRequestError } from '@utils/errors';
+import { canEvolve, formatEvolutionPoints, getEvolutionPoints, getSpellProgress, spellStageLabel, usesStageUnlock, withoutSpell, type SpellStage } from '@utils/spellStages';
 
 /** Nível e estágio são escalas ordenadas: neutros que clareiam até o âmbar no topo (o número vai sempre em texto) */
 function getSpellLevelColor(level: number) {
@@ -57,149 +65,6 @@ function getSpellLevelColor(level: number) {
         return { color: color.inkMuted };
     }
 }
-interface SpellStageProps {
-    stage: number
-    description: string
-    spell: SpellDTO
-    onCast?: (stage: 1 | 2 | 3) => void | Promise<void>
-    isCasting?: boolean
-    canCast?: boolean
-    currentMp?: number
-    /** Preenchido quando a conjuração estouraria o limite de MP por turno */
-    blockedReason?: string
-}
-
-function SpellStage({ stage, description, spell, onCast, isCasting, canCast, currentMp, blockedReason }: SpellStageProps): ReactElement {
-    let mpCost = Number(spell.mpCost)
-    let extraCost: Record<string, number> = {
-        'estágio 1': 0,
-        'estágio 2': 1,
-        'estágio 3': 2
-    }
-
-    if (Number(spell.level) === 4)
-        extraCost = {
-            'estágio 1': 0,
-            'estágio 2': 4,
-            'maestria': 9
-        }
-        
-    if (Number(spell.level) === 3)
-        extraCost = {
-            'estágio 1': 0,
-            'estágio 2': 2,
-            'estágio 3': 5
-        }
-
-    if (Number(spell.level) === 2)
-        extraCost = {
-            'estágio 1': 0,
-            'estágio 2': 2,
-            'estágio 3': 4
-        }
-
-    if (stage === 2) mpCost += extraCost['estágio 2']
-    if (stage === 3) mpCost += extraCost['estágio 3']
-    if (stage === 4) mpCost += extraCost['maestria']
-
-    const getStageColor = (stageNum: number) => {
-        if (stageNum === 4) return { color: color.amberHover }; // Maestria
-        switch (stageNum) {
-        case 1:
-            return { color: color.inkMuted };
-        case 2:
-            return { color: color.ink };
-        case 3:
-            return { color: color.amber };
-        default:
-            return { color: color.inkMuted };
-        }
-    };
-
-    const stageConfig = getStageColor(stage);
-
-    return (
-        <Paper 
-            elevation={1}
-            sx={{ 
-                p: 2, 
-                mb: 2,
-                border: '1px solid',
-                borderColor: alpha(stageConfig.color, 0.25),
-                borderRadius: 2,
-                bgcolor: alpha(stageConfig.color, 0.06)
-            }}
-        >
-            <Box display="flex" alignItems="center" justifyContent="space-between" mb={1.5} gap={1} flexWrap="wrap">
-                <Typography 
-                    variant="h6" 
-                    sx={{ 
-                        color: stageConfig.color,
-                        fontWeight: 700
-                    }}
-                >
-                    {stage !== 4 ? `Estágio ${stage}` : 'Maestria'}
-                </Typography>
-                <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
-                    <Tooltip
-                        title={typeof currentMp === 'number'
-                            ? `${currentMp} / custo ${mpCost} MP`
-                            : `Custo ${mpCost} MP`
-                        }
-                    >
-                        <Chip
-                            label={`${mpCost} MP`}
-                            sx={{
-                                bgcolor: alpha(color.mp, 0.14),
-                                color: color.mp,
-                                fontWeight: 600
-                            }}
-                        />
-                    </Tooltip>
-                    {onCast && stage !== 4 && (
-                        <Tooltip title={canCast === false
-                            ? `MP insuficiente (precisa de ${mpCost})`
-                            : blockedReason ?? `Conjurar — gasta ${mpCost} MP`
-                        }>
-                            <span>
-                                <Button
-                                    size="small"
-                                    variant="contained"
-                                    startIcon={<Bolt fontSize="small" />}
-                                    disabled={isCasting || canCast === false}
-                                    onClick={() => { void onCast(stage as 1 | 2 | 3) }}
-                                    sx={{
-                                        bgcolor: stageConfig.color,
-                                        color: 'background.default',
-                                        fontWeight: 700,
-                                        textTransform: 'none',
-                                        opacity: blockedReason ? 0.55 : 1,
-                                        '&:hover': {
-                                            bgcolor: stageConfig.color,
-                                            filter: 'brightness(0.9)'
-                                        }
-                                    }}
-                                >
-                                    Conjurar
-                                </Button>
-                            </span>
-                        </Tooltip>
-                    )}
-                </Box>
-            </Box>
-            <Typography 
-                variant="body2" 
-                sx={{ 
-                    lineHeight: 1.6,
-                    textAlign: 'justify'
-                }}
-            >
-                {description}
-            </Typography>
-        </Paper>
-    )
-}
-
 export default function SpellsSection(): ReactElement {
     const { charsheet, updateCharsheet } = useCampaignCurrentCharsheetContext();
     const { campaign } = useCampaignContext();
@@ -209,6 +74,9 @@ export default function SpellsSection(): ReactElement {
 
     const [ expandedSpell, setExpandedSpell ] = useState<string | false>(false)
     const [ castingSpellId, setCastingSpellId ] = useState<string | null>(null)
+    const [ effectingSpellId, setEffectingSpellId ] = useState<string | null>(null)
+    // Conjurações com sucesso que ainda esperam o botão "Efetuar" (rolar dano, cura, duração...)
+    const { pending: pendingEffects, markPending, clearPending } = usePendingSpellEffects(campaign?.id, charsheet?.id)
 
     // Limite de MP por turno: só vale em combate ativo, para quem participa dele (utils/mpLimit.ts)
     const combat = campaign?.session?.combat
@@ -217,13 +85,19 @@ export default function SpellsSection(): ReactElement {
     const mpLimit = charsheet ? getMpLimit(charsheet) : 0
     const mpSpentThisTurn = myCombatant?.mpSpentThisTurn ?? 0
     const mpLimitReleased = Boolean(myCombatant?.mpLimitOverride)
+    // Magias sustentadas que ele mantém agora (efeito sobre o combatente): id da magia → estágio conjurado
+    const sustainedActive: Record<string, SpellStage> = {}
+    for (const effect of sustainedEffects(myCombatant?.effects)) {
+        if (effect.sustained) sustainedActive[effect.sustained.spellKey] = effect.sustained.stage as SpellStage
+    }
     const exceedsMpLimit = (cost: number): boolean => mpLimitEnforced && !mpLimitReleased && mpSpentThisTurn + cost > mpLimit
 
-    const sendCombatChatMessage = async (text: string) => {
+    // Avisos (MP insuficiente, limite de MP) são log de combate; a conjuração em si vai como mensagem de dados (cartão com dropdown)
+    const sendCombatChatMessage = async (text: string, type: MessageType = MessageType.COMBAT_LOG) => {
         if (!session?.user) return;
         await handleSendMessage(new Message({
             text,
-            type: MessageType.COMBAT_LOG,
+            type,
             by: {
                 id: session.user.id ?? '',
                 name: session.user.name ?? '',
@@ -235,23 +109,32 @@ export default function SpellsSection(): ReactElement {
         if (!isChatOpen) setIsChatOpen(true);
     };
 
-    const handleCastSpell = async (spell: SpellDTO, stage: 1 | 2 | 3) => {
+    // Desbloqueio de estágios (ver utils/spellStages.ts): vale no Magitech padrão, não em sistema customizado nem no Roguelite
+    const stageRule = usesStageUnlock(charsheet ?? {}, campaign?.mode);
+
+    const handleCastSpell = async (spell: SpellDTO, stage: SpellStage) => {
         if (!charsheet?.id) return;
         const spellKey = spell.id || spell.name;
         if (castingSpellId) return;
 
-        const result = castSpell(spell, stage);
+        const progress = getSpellProgress(spell, charsheet, { enabled: stageRule });
+        if (stage > progress.unlocked) {
+            enqueueSnackbar(`O estágio ${stage} de ${spell.name} ainda está bloqueado. Evolua a magia primeiro.`, { variant: 'warning' });
+            return;
+        }
+
+        const mpCost = getSpellMpCost(spell, stage);
         const playerName = charsheet.name || session?.user?.name || 'Jogador';
         const currentMp = Number(charsheet.stats?.mp ?? 0);
 
-        if (currentMp < result.mpCost) {
-            await sendCombatChatMessage(buildInsufficientMpMessage(playerName, spell, result.mpCost, currentMp));
+        if (currentMp < mpCost) {
+            await sendCombatChatMessage(buildInsufficientMpMessage(playerName, spell, mpCost, currentMp));
             enqueueSnackbar(`MP insuficiente para conjurar ${spell.name}`, { variant: 'warning' });
             return;
         }
 
-        if (exceedsMpLimit(result.mpCost)) {
-            await sendCombatChatMessage(buildMpLimitExceededMessage(playerName, spell, result.mpCost, mpSpentThisTurn, mpLimit));
+        if (exceedsMpLimit(mpCost)) {
+            await sendCombatChatMessage(buildMpLimitExceededMessage(playerName, spell, mpCost, mpSpentThisTurn, mpLimit));
             enqueueSnackbar(`Limite de MP por turno excedido (${mpSpentThisTurn}/${mpLimit})`, { variant: 'warning' });
             return;
         }
@@ -261,15 +144,36 @@ export default function SpellsSection(): ReactElement {
         try {
             setCastingSpellId(spellKey);
 
-            // O servidor é quem decide: registra o gasto no turno e recusa (409) o que passar do limite
+            // O servidor é quem decide: registra o gasto na rodada e recusa (409) o que passar do limite (só em combate)
             if (myCombatant) {
-                await campaignService.spendCombatMp(campaign.id, { combatantId: charsheet.id, value: result.mpCost });
+                await campaignService.spendCombatMp(campaign.id, { combatantId: charsheet.id, value: mpCost });
                 reservedMp = true;
             }
 
-            const newMp = Math.max(0, currentMp - result.mpCost);
+            const newMp = Math.max(0, currentMp - mpCost);
             await updateCharsheet({ 'stats.mp': newMp });
-            await sendCombatChatMessage(buildSpellCastMessage(playerName, result));
+
+            // Conjurar = teste de magia do jogador contra a DT do nível e do estágio; o MP é gasto de qualquer jeito
+            const test = rollSpellTest(charsheet);
+            const succeeded = spellCastSucceeded(test.total, spellCastDifficulty(spell.level, stage));
+            // Só uma conjuração com sucesso deixa efetuar a magia; o botão já está lá quando o cartão aparece no chat
+            if (succeeded && hasSpellEffectDice(spell, stage)) markPending(spellKey, stage);
+            await sendCombatChatMessage(buildSpellCastMessage(playerName, spell, stage, test, mpCost), MessageType.DICE);
+
+            // Magia sustentada em combate: o MP acabou, tudo que ele mantém acaba; senão, conjurada com sucesso ela fica ativa (fora do combate é como
+            // uma imediata). Erro aqui não desfaz a conjuração, que já foi paga e anunciada.
+            if (myCombatant) {
+                try {
+                    if (newMp <= 0) {
+                        await campaignService.endSustainedSpells(campaign.id, { combatantId: charsheet.id })
+                    } else if (succeeded && isSustainedSpell(spell.type)) {
+                        await campaignService.startSustainedSpell(campaign.id, { combatantId: charsheet.id, spellKey, spellName: spell.name, stage, cost: mpCost })
+                    }
+                } catch (sustainError) {
+                    console.error('Erro ao atualizar a magia sustentada:', sustainError)
+                    enqueueSnackbar('A magia foi conjurada, mas não ficou ativa no combate. Avise o mestre.', { variant: 'warning' })
+                }
+            }
 
             // Estatísticas: magia conjurada + MP gasto
             postCampaignStats(campaign.id, [ {
@@ -278,26 +182,66 @@ export default function SpellsSection(): ReactElement {
                 charsheetName: charsheet.name,
                 inc: {
                     'resources.spellsCast': 1,
-                    'resources.mpSpent': result.mpCost
+                    'resources.mpSpent': mpCost
                 }
             } ]);
+
+            if (!succeeded) {
+                enqueueSnackbar(`A conjuração de ${spell.name} falhou no teste (${test.total} contra DT ${spellCastDifficulty(spell.level, stage)}). O MP foi gasto.`, { variant: 'warning' });
+            }
         } catch (error) {
             const { response } = asRequestError(error);
             if (response?.status === 409 && response.data?.code === 'MP_LIMIT_EXCEEDED') {
-                // Estado local defasado: o servidor já tinha mais MP gasto neste turno
+                // Estado local defasado: o servidor já tinha mais MP gasto nesta rodada
                 const { spent = 0, limit = 0 } = response.data;
-                await sendCombatChatMessage(buildMpLimitExceededMessage(playerName, spell, result.mpCost, spent, limit));
+                await sendCombatChatMessage(buildMpLimitExceededMessage(playerName, spell, mpCost, spent, limit));
                 enqueueSnackbar(response.data.error ?? 'Limite de MP por turno excedido', { variant: 'warning' });
             } else {
                 if (reservedMp) {
-                    // Desfaz a reserva para a conjuração que falhou não consumir o limite do turno
-                    void campaignService.spendCombatMp(campaign.id, { combatantId: charsheet.id, value: -result.mpCost }).catch(() => undefined);
+                    // Desfaz a reserva para a conjuração que falhou não consumir o limite da rodada
+                    void campaignService.spendCombatMp(campaign.id, { combatantId: charsheet.id, value: -mpCost }).catch(() => undefined);
                 }
                 console.error('Erro ao conjurar magia:', error);
                 enqueueSnackbar('Erro ao conjurar magia', { variant: 'error' });
             }
         } finally {
             setCastingSpellId(null);
+        }
+    }
+
+    /** Desconjurar: encerra a magia sustentada que o jogador mantém (o MP já pago não volta) */
+    const handleEndSustained = async (spell: SpellDTO) => {
+        if (!charsheet?.id || !campaign?.id) return;
+        try {
+            await campaignService.endSustainedSpells(campaign.id, { combatantId: charsheet.id, spellKey: spell.id || spell.name });
+        } catch (error) {
+            console.error('Erro ao desconjurar magia:', error);
+            enqueueSnackbar('Erro ao desconjurar a magia', { variant: 'error' });
+        }
+    }
+
+    /** Efetuar a magia conjurada com sucesso: rola os dados do estágio (dano, cura, duração...) e manda o cartão do efeito ao chat */
+    const handleEffectSpell = async (spell: SpellDTO, stage: SpellStage) => {
+        if (!charsheet?.id || effectingSpellId) return;
+        const spellKey = spell.id || spell.name;
+        const playerName = charsheet.name || session?.user?.name || 'Jogador';
+
+        try {
+            setEffectingSpellId(spellKey);
+            const effect = rollSpellEffect(spell, stage);
+            // O botão some na hora; se o chat não receber a mensagem ele volta, para o jogador não perder a conjuração
+            clearPending(spellKey);
+            try {
+                await sendCombatChatMessage(buildSpellEffectMessage(playerName, effect), MessageType.DICE);
+            } catch (error) {
+                markPending(spellKey, stage);
+                throw error;
+            }
+        } catch (error) {
+            console.error('Erro ao efetuar magia:', error);
+            enqueueSnackbar('Erro ao efetuar a magia', { variant: 'error' });
+        } finally {
+            setEffectingSpellId(null);
         }
     }
 
@@ -324,9 +268,10 @@ export default function SpellsSection(): ReactElement {
 
             const currentStages = charsheet.spellStages || {};
             if (spellKey in currentStages) {
-                update['spellStages'] = Object.fromEntries(
-                    Object.entries(currentStages).filter(([ key ]) => key !== spellKey)
-                );
+                update['spellStages'] = withoutSpell(currentStages, spellKey);
+            }
+            if (spellKey in (charsheet.spellUnlocked || {})) {
+                update['spellUnlocked'] = withoutSpell(charsheet.spellUnlocked, spellKey);
             }
 
             // Mesma regra da ficha: excluir devolve o espaço e o ponto de magia
@@ -343,24 +288,35 @@ export default function SpellsSection(): ReactElement {
         }
     }
 
-    const handleSetSpellStage = async (spell: SpellDTO, stage: 1 | 2 | 3) => {
+    // Evoluir: gasta os pontos de evolução que o próximo estágio custa (ver `stageRule`) e libera o estágio
+    const evolutionPoints = getEvolutionPoints(charsheet?.points)
+    const handleEvolve = async (spell: SpellDTO) => {
         if (!charsheet?.id) return
 
         const spellId = spell.id || spell.name
         if (!spellId) return
 
+        const progress = getSpellProgress(spell, charsheet, { enabled: stageRule })
+        const stage = progress.next
+        const cost = progress.nextCost
+        if (stage === null || cost === null) return
+
+        if (!canEvolve(progress, evolutionPoints)) {
+            enqueueSnackbar(`Você precisa de ${formatEvolutionPoints(cost)} para evoluir ${spell.name}. Peça ao mestre.`, { variant: 'warning' })
+            return
+        }
+
         try {
             await charsheetEntity.update(charsheet.id, {
-                spellStages: {
-                    ...(charsheet.spellStages || {}),
-                    [spellId]: stage
-                }
+                'points.evolution': evolutionPoints - cost,
+                spellUnlocked: { ...(charsheet.spellUnlocked || {}), [spellId]: stage }
             } as any)
 
-            enqueueSnackbar(`Estágio da magia "${spell.name}" definido para ${stage}!`, { variant: 'success' })
+            const unlockedLabel = spellStageLabel(spell.level, stage, spell.element).toLowerCase()
+            enqueueSnackbar(`${spell.name} evoluiu: ${unlockedLabel} desbloqueado (-${formatEvolutionPoints(cost)})!`, { variant: 'success' })
         } catch (error) {
-            console.error('Erro ao atualizar estágio da magia:', error)
-            enqueueSnackbar('Erro ao atualizar estágio da magia', { variant: 'error' })
+            console.error('Erro ao evoluir magia:', error)
+            enqueueSnackbar('Erro ao evoluir a magia', { variant: 'error' })
         }
     }
 
@@ -410,12 +366,12 @@ export default function SpellsSection(): ReactElement {
                         {mpLimitEnforced && (
                             <Box sx={{ textAlign: 'center' }}>
                                 <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
-                                    MP neste turno
+                                    MP nesta rodada
                                 </Typography>
                                 <Tooltip
                                     title={mpLimitReleased
-                                        ? 'O mestre liberou o limite de MP por turno até o início do seu próximo turno.'
-                                        : 'MP gasto em magias desde o início do seu turno / limite por turno. Reações em turnos alheios contam.'}
+                                        ? 'O mestre liberou o limite de MP por turno até a rodada virar.'
+                                        : 'MP gasto em magias nesta rodada / limite por turno. Reações em turnos alheios contam, e o gasto zera quando a rodada vira.'}
                                 >
                                     <Chip
                                         label={`${mpSpentThisTurn} / ${mpLimit}${mpLimitReleased ? ' (liberado)' : ''}`}
@@ -472,11 +428,10 @@ export default function SpellsSection(): ReactElement {
                                 {allSpells.map(spell => {
                                     const levelConfig = getSpellLevelColor(Number(spell.level));
                                     const spellId = spell.id || spell.name
-                                    const selectedStage = (charsheet.spellStages?.[spellId] as 1 | 2 | 3 | undefined) || 1
-                                    const availableStages: Array<1 | 2 | 3> = [ 1 ]
-                                    if (spell.stages?.[1]) availableStages.push(2)
-                                    if (spell.stages?.[2]) availableStages.push(3)
-                                    
+                                    const progress = getSpellProgress(spell, charsheet, { enabled: stageRule })
+                                    const evolvable = progress.enabled && canEvolve(progress, evolutionPoints)
+                                    const currentMp = Number(charsheet.stats?.mp ?? 0)
+
                                     return (
                                         <Accordion
                                             key={spell.name}
@@ -553,6 +508,18 @@ export default function SpellsSection(): ReactElement {
                                                                     fontWeight: 600
                                                                 }}
                                                             />
+                                                            {progress.enabled && progress.count > 1 && (
+                                                                <Chip
+                                                                    label={`${progress.unlocked} de ${progress.count} estágios`}
+                                                                    size="small"
+                                                                    variant="outlined"
+                                                                    data-testid={`spell-progress-${spellId}`}
+                                                                    sx={{ borderColor: 'divider', color: 'text.secondary' }}
+                                                                />
+                                                            )}
+                                                            {evolvable && (
+                                                                <Chip label="Pode evoluir" size="small" variant="outlined" color="primary" />
+                                                            )}
                                                         </Box>
                                                     </Box>
                                                 </Box>
@@ -607,44 +574,36 @@ export default function SpellsSection(): ReactElement {
                                                 </Box>
                                             </AccordionSummary>
                                             
-                                            <AccordionDetails sx={{ p: 3 }}>
+                                            <AccordionDetails sx={{ p: { xs: 1.5, sm: 3 } }}>
                                                 <Stack spacing={2}>
-                                                    <Box display="flex" gap={1} flexWrap="wrap" alignItems="center">
-                                                        <Typography variant="caption" color="text.secondary">Estágio ativo:</Typography>
-                                                        {availableStages.map(stage => (
-                                                            <Chip
-                                                                key={stage}
-                                                                label={`Estágio ${stage}`}
-                                                                size="small"
-                                                                clickable
-                                                                onClick={() => { void handleSetSpellStage(spell, stage) }}
-                                                                color={selectedStage === stage ? 'primary' : 'default'}
-                                                                variant={selectedStage === stage ? 'filled' : 'outlined'}
-                                                            />
-                                                        ))}
-                                                    </Box>
-
-                                                    {(() => {
-                                                        const description = spell.stages?.[selectedStage - 1]
-                                                        if (!description) return null
-                                                        const previewCost = castSpell(spell, selectedStage).mpCost
-                                                        const currentMp = Number(charsheet.stats?.mp ?? 0)
-                                                        const limitBlockedReason = exceedsMpLimit(previewCost)
-                                                            ? `Limite de MP por turno: ${mpSpentThisTurn}/${mpLimit} gastos e esta conjuração custa ${previewCost}. Clique para avisar o mestre.`
-                                                            : undefined
-                                                        return (
-                                                            <SpellStage
-                                                                spell={spell}
-                                                                stage={selectedStage}
-                                                                description={description}
-                                                                onCast={(stg) => handleCastSpell(spell, stg)}
-                                                                isCasting={castingSpellId === (spell.id || spell.name)}
-                                                                canCast={currentMp >= previewCost}
-                                                                currentMp={currentMp}
-                                                                blockedReason={limitBlockedReason}
-                                                            />
-                                                        )
-                                                    })()}
+                                                    {progress.enabled && (
+                                                        <Typography variant="caption" color="text.secondary" data-testid="evolution-points">
+                                                            Pontos de evolução: {evolutionPoints}
+                                                        </Typography>
+                                                    )}
+                                                    <StageLadder
+                                                        spell={spell}
+                                                        progress={progress}
+                                                        revealLocked={progress.enabled && campaignRevealsSpellStages(campaign)}
+                                                        evolution={progress.enabled ? { points: evolutionPoints, onEvolve: async () => { await handleEvolve(spell) } } : undefined}
+                                                        cast={{
+                                                            onCast: async (stage) => { await handleCastSpell(spell, stage) },
+                                                            isCasting: castingSpellId === spellId,
+                                                            currentMp,
+                                                            sustained: isSustainedSpell(spell.type) && sustainedActive[spellId]
+                                                                ? { activeStage: sustainedActive[spellId], onEnd: async () => { await handleEndSustained(spell) } }
+                                                                : undefined,
+                                                            effect: {
+                                                                pendingStage: pendingEffects[spellId],
+                                                                onEffect: async (stage) => { await handleEffectSpell(spell, stage) },
+                                                                onDismiss: () => { clearPending(spellId) },
+                                                                busy: effectingSpellId === spellId
+                                                            },
+                                                            blockedReason: (_stage, cost) => (exceedsMpLimit(cost)
+                                                                ? `Limite de MP por turno: ${mpSpentThisTurn}/${mpLimit} gastos e esta conjuração custa ${cost}. Clique para avisar o mestre.`
+                                                                : undefined)
+                                                        }}
+                                                    />
                                                 </Stack>
                                             </AccordionDetails>
                                         </Accordion>

@@ -1,13 +1,13 @@
 /**
  * Limite de MP por turno.
  *
- * Um personagem só pode gastar em magias, entre o início do seu turno e o início do
- * próximo, até:
+ * Um personagem só pode gastar em magias, em cada rodada de combate (o gasto zera quando
+ * a rodada vira, ou seja, quando todos os presentes passaram o turno), até:
  *
  *     ⌈(Nível + Foco) ÷ 2⌉ + Nível de ORM   (+ bônus de perks/mestre)
  *
  * É independente do MP máximo: o MP máximo continua sendo o teto total, e o limite
- * só impede despejar o pool inteiro em um único turno.
+ * só impede despejar o pool inteiro em um único turno. Fora do combate não há limite.
  */
 
 export interface MpLimitSheet {
@@ -50,14 +50,31 @@ export function isMpLimitEnforced(sheet: MpLimitSheet, campaignMode?: string | n
     return calculateBaseMpLimit(sheet.level, sheet.attributes?.foc, sheet.ORMLevel) > 0
 }
 
+/** O que o limite de uma criatura usa: nível e Foco (a criatura não tem Nível de ORM) */
+export interface MpLimitCreature {
+    level?: number | null
+    attributes?: { foc?: number | null } | null
+}
+
+/** Limite de MP por turno de uma criatura personalizada: ⌈(Nível + Foco) ÷ 2⌉, sem ORM */
+export function getCreatureMpLimit(creature: MpLimitCreature): number {
+    return calculateBaseMpLimit(creature.level, creature.attributes?.foc, 0)
+}
+
+/** Criatura também tem limite de MP por turno, menos no Roguelite e quando o cálculo daria 0 (criatura sem nível e sem Foco) */
+export function isCreatureMpLimitEnforced(creature: MpLimitCreature, campaignMode?: string | null): boolean {
+    if (campaignMode === 'Roguelite') return false
+    return getCreatureMpLimit(creature) > 0
+}
+
 export interface MpSpendInput {
-    /** MP já gasto desde o início do turno */
+    /** MP já gasto nesta rodada */
     spent: number
     /** MP desta conjuração; negativo estorna (conjuração que falhou) */
     amount: number
     limit: number
     enforced: boolean
-    /** Liberado pelo mestre até o início do próximo turno do jogador */
+    /** Liberado pelo mestre até a rodada virar */
     override?: boolean
 }
 

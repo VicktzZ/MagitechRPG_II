@@ -3,6 +3,19 @@ import { IsBoolean, IsNumber, IsOptional, IsString, ValidateNested } from 'class
 import { Type } from 'class-transformer'
 import { CombatEffect } from './CombatEffect'
 
+/** Magia sustentada mantida por um jogador em combate (ver `utils/combat/sustainedSpells.ts`) */
+export interface SustainedSpellInfo {
+    /** Id da magia (nome, se não tiver id) */
+    spellKey: string
+    spellName: string
+    /** Estágio conjurado */
+    stage: number
+    /** Custo total de MP do estágio conjurado */
+    cost: number
+    /** MP pago a cada rodada para manter a magia: metade do custo, arredondada para baixo */
+    upkeep: number
+}
+
 export class AppliedEffect {
     @IsString() id: string = uuidv4()
 
@@ -42,6 +55,10 @@ export class AppliedEffect {
     @IsOptional()
     @IsNumber()
         lastTickAtTurnIndex?: number
+
+    /** Presente quando o efeito é uma magia sustentada (não tica; sai ao desconjurar, ao faltar MP ou ao fim do combate) */
+    @IsOptional()
+        sustained?: SustainedSpellInfo
 
     constructor(applied?: Partial<AppliedEffect>) {
         Object.assign(this, applied)

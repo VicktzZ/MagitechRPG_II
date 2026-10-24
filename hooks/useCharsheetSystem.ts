@@ -7,21 +7,32 @@ import type { RPGSystem } from '@models/entities';
 // cada montagem/re-render — dezenas de requisições idênticas por página.
 const systemCache = new Map<string, RPGSystem | null>();
 const inFlight = new Map<string, Promise<RPGSystem | null>>();
+// Falha (rede, 404, 500) não vai para o cache de sucesso: uma queda passageira não pode valer até recarregar a página.
+// Só evita repetir o pedido, por alguns segundos, para as dezenas de componentes que montam juntos.
+const FAILURE_RETRY_MS = 10_000;
+const failedAt = new Map<string, number>();
 
 async function fetchSystem(systemId: string): Promise<RPGSystem | null> {
     if (systemCache.has(systemId)) return systemCache.get(systemId) ?? null;
+    if (Date.now() - (failedAt.get(systemId) ?? 0) < FAILURE_RETRY_MS) return null;
 
     const pending = inFlight.get(systemId);
     if (pending) return await pending;
 
     const promise = fetch(`/api/rpg-system/${systemId}`)
-        .then(async res => (res.ok ? await res.json() : null))
+        .then(async res => (res.ok ? await res.json() as RPGSystem : null))
         .then((data: RPGSystem | null) => {
-            systemCache.set(systemId, data);
+            if (data) {
+                systemCache.set(systemId, data);
+                failedAt.delete(systemId);
+            } else {
+                failedAt.set(systemId, Date.now());
+            }
             return data;
         })
         .catch(err => {
             console.error('Erro ao carregar sistema:', err);
+            failedAt.set(systemId, Date.now());
             return null;
         })
         .finally(() => {
@@ -34,8 +45,13 @@ async function fetchSystem(systemId: string): Promise<RPGSystem | null> {
 
 /** Invalida o cache de um sistema (ex: após editá-lo no builder). */
 export function invalidateCharsheetSystemCache(systemId?: string) {
-    if (systemId) systemCache.delete(systemId);
-    else systemCache.clear();
+    if (systemId) {
+        systemCache.delete(systemId);
+        failedAt.delete(systemId);
+    } else {
+        systemCache.clear();
+        failedAt.clear();
+    }
 }
 
 export function useCharsheetSystem(systemId?: string) {

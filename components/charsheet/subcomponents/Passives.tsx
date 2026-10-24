@@ -160,7 +160,7 @@ export default function Passives({ realtime = false }: { realtime?: boolean }) {
             <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
                 <Box display="flex" alignItems="center">
                     <EventNote sx={{ mr: 1, color: theme.palette.primary.main }} />
-                    <Typography variant="h6" fontWeight="bold">
+                    <Typography variant="h6" component="h3" fontWeight="bold">
                         Habilidades Passivas
                     </Typography>
                 </Box>
@@ -192,7 +192,7 @@ export default function Passives({ realtime = false }: { realtime?: boolean }) {
                             >
                                 <CardContent sx={{ pb: 1 }}>
                                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                        <Typography variant="h6" gutterBottom fontWeight="bold">
+                                        <Typography variant="h6" component="h4" gutterBottom fontWeight="bold">
                                             {passive.title.length > 20 ? `${passive.title.slice(0, 20)}...` : passive.title}
                                         </Typography>
                                         <Box>
@@ -216,6 +216,7 @@ export default function Passives({ realtime = false }: { realtime?: boolean }) {
                                     <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
                                         <IconButton 
                                             size="small" 
+                                            aria-label={`Editar passiva ${passive.title}`}
                                             onClick={() => handleEdit(passive)}
                                             sx={{ color: 'primary.main' }}
                                         >
@@ -223,6 +224,7 @@ export default function Passives({ realtime = false }: { realtime?: boolean }) {
                                         </IconButton>
                                         <IconButton 
                                             size="small" 
+                                            aria-label={`Excluir passiva ${passive.title}`}
                                             onClick={() => handleDelete(passive.id)}
                                             sx={{ color: 'error.main' }}
                                         >

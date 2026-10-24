@@ -25,6 +25,7 @@ export interface PerkCardProps {
     level?: number
     stages?: string[]
     mpCost?: number
+    mpCostIncrease?: number[]
     attributes?: PerkAttribute[]
     // Seleção
     isSelected?: boolean

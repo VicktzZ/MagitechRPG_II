@@ -2,15 +2,47 @@
 'use client';
 
 import { Expertise } from '@components/charsheet';
-import { Box, Button, Grid, Typography, useTheme, FormHelperText, type ButtonProps, useMediaQuery, TextField } from '@mui/material';
+import { Box, Button, Grid, Typography, useTheme, FormHelperText, useMediaQuery, TextField } from '@mui/material';
 import { classColor } from '@constants';
 import { useFormContext, useWatch, type FieldError } from 'react-hook-form';
-import { useState, type ReactElement, useRef, useCallback, useMemo, useEffect } from 'react';
-import type { Charsheet, RPGSystem, SkillPointRules, SystemAttribute } from '@models/entities';
-import type { Expertises as ExpertisesType } from '@models';
+import { useState, type ReactElement, type ReactNode, useRef, useCallback, useMemo, useEffect } from 'react';
+import type { Charsheet } from '@models/entities';
+import type { Attributes, Expertises as ExpertisesType } from '@models';
 import { evaluateFormula } from '@utils/formulaEvaluator';
 import { computeAttributeInfluence } from '@utils/systemLookups';
 import { computeOriginBonuses } from '@utils/originBonuses';
+import { useCharsheetSystem } from '@hooks/useCharsheetSystem';
+
+/**
+ * Botão de modo de edição (+N / -N). Fica fora do componente de propósito: declarado
+ * dentro do render, o React o recria a cada renderização e o botão perde o foco.
+ */
+function ExpertiseButton({ children, active, disabled, label, onToggle }: {
+    children: ReactNode
+    active: boolean
+    disabled?: boolean
+    label: string
+    onToggle: () => void
+}): ReactElement {
+    return (
+        <Button
+            onClick={onToggle}
+            variant={active ? 'contained' : 'outlined'}
+            disabled={disabled}
+            aria-pressed={active}
+            aria-label={label}
+        >
+            {children}
+        </Button>
+    );
+}
+
+/** Multiplicador digitado: vazio é aceito durante a edição; ao usar, vale de 1 a 10. */
+function parseMultiplier(input: string): number {
+    const value = parseInt(input, 10);
+    if (Number.isNaN(value)) return 1;
+    return Math.min(10, Math.max(1, value));
+}
 
 export default function Expertises({ disabled }: { disabled?: boolean }): ReactElement {
     const { control, setValue, getValues, formState: { errors } } = useFormContext<Charsheet>()
@@ -20,56 +52,40 @@ export default function Expertises({ disabled }: { disabled?: boolean }): ReactE
     const buttonRef = useRef<'add' | 'sub' | null>(null)
     
     const [ editValue, setEditValue ] = useState(0)
-    const [ multiplier, setMultiplier ] = useState<number>(1)
-    const [ systemExpertises, setSystemExpertises ] = useState<RPGSystem['expertises'] | null>(null)
-    const [ skillPointRules, setSkillPointRules ] = useState<SkillPointRules | null>(null)
-    const [ systemAttributes, setSystemAttributes ] = useState<SystemAttribute[] | null>(null)
-    const [ customSystem, setCustomSystem ] = useState<RPGSystem | null>(null)
-    const [ , setLoadingSystem ] = useState(false)
+    const [ multiplierInput, setMultiplierInput ] = useState<string>('1')
+    const multiplier = useMemo(() => parseMultiplier(multiplierInput), [ multiplierInput ])
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
 
-    // Carregar perícias do sistema se houver systemId
+    // Sistema customizado (cache compartilhado em useCharsheetSystem). Falha ao carregar
+    // não vira "sistema": a ficha continua com systemId e mostra um aviso.
+    const { system: customSystem, loading: loadingSystem } = useCharsheetSystem(charsheet.systemId)
+    const systemExpertises = customSystem?.expertises && customSystem.expertises.length > 0 ? customSystem.expertises : null
+    const skillPointRules = customSystem?.skillPointRules ?? null
+    const systemAttributes = customSystem?.attributes && customSystem.attributes.length > 0 ? customSystem.attributes : null
+    const systemLoadFailed = Boolean(charsheet.systemId) && !loadingSystem && !customSystem
+
+    // Inicializa as perícias do sistema que a ficha ainda não tem
     useEffect(() => {
-        if (charsheet.systemId) {
-            setLoadingSystem(true)
-            fetch(`/api/rpg-system/${charsheet.systemId}`)
-                .then(async res => await res.json())
-                .then((data: RPGSystem) => {
-                    setCustomSystem(data)
-                    if (data.expertises && data.expertises.length > 0) {
-                        setSystemExpertises(data.expertises)
-                        
-                        // Inicializar perícias customizadas
-                        const currentExpertises = getValues('expertises') || {}
-                        const newExpertises: any = { ...currentExpertises }
-                        let hasChanges = false
-                        
-                        // Adicionar perícias do sistema que não existem
-                        data.expertises.forEach(exp => {
-                            if (!newExpertises[exp.key]) {
-                                newExpertises[exp.key] = {
-                                    value: 0,
-                                    defaultAttribute: exp.defaultAttribute || 'sab'
-                                }
-                                hasChanges = true
-                            }
-                        })
-                        
-                        if (hasChanges) {
-                            setValue('expertises', newExpertises, { shouldValidate: false })
-                        }
-                    }
-                    if (data.skillPointRules) {
-                        setSkillPointRules(data.skillPointRules)
-                    }
-                    if (data.attributes && data.attributes.length > 0) {
-                        setSystemAttributes(data.attributes)
-                    }
-                })
-                .catch(err => console.error('Erro ao carregar perícias do sistema:', err))
-                .finally(() => setLoadingSystem(false))
+        if (!customSystem?.expertises || customSystem.expertises.length === 0) return
+
+        const currentExpertises = getValues('expertises') || {}
+        const newExpertises: any = { ...currentExpertises }
+        let hasChanges = false
+
+        customSystem.expertises.forEach(exp => {
+            if (!newExpertises[exp.key]) {
+                newExpertises[exp.key] = {
+                    value: 0,
+                    defaultAttribute: exp.defaultAttribute || 'sab'
+                }
+                hasChanges = true
+            }
+        })
+
+        if (hasChanges) {
+            setValue('expertises', newExpertises, { shouldValidate: false })
         }
-    }, [ charsheet.systemId ])
+    }, [ customSystem, getValues, setValue ])
 
     const points = useWatch<Charsheet, 'points.expertises'>({
         control,
@@ -168,7 +184,7 @@ export default function Expertises({ disabled }: { disabled?: boolean }): ReactE
             const pointsToSpend = actualDifference * skillCost;
 
             setValue('points.expertises', points - pointsToSpend, { shouldValidate: true });
-            setValue(`expertises.${name}.value`, finalValue, { shouldValidate: true });
+            setValue(`expertises.${name}.value` as any, finalValue, { shouldValidate: true });
         } else if (newValue < currentValue) {
             // Só devolve pontos que foram gastos: nunca abaixo dos bônus de origem
             // (senão trocar a origem gerava pontos infinitos) nem abaixo de 0
@@ -178,33 +194,19 @@ export default function Expertises({ disabled }: { disabled?: boolean }): ReactE
 
             const difference = currentValue - finalValue;
             setValue('points.expertises', points + difference * skillCost, { shouldValidate: true });
-            setValue(`expertises.${name}.value`, finalValue, { shouldValidate: true });
+            setValue(`expertises.${name}.value` as any, finalValue, { shouldValidate: true });
         }
     }, [ disabled, expertises, setValue, points, skillPointRules, maxPerSkill, expertiseFloor ]);
     
-    function ExpertiseButton({ children, type }: { children: ReactElement, type: 'add' | 'sub' } & ButtonProps): ReactElement {
-        const isActive = buttonRef.current === type;
-        
-        const handleClick = () => {
-            if (isActive) {
-                buttonRef.current = null;
-                setEditValue(0);
-            } else {
-                buttonRef.current = type;
-                setEditValue(type === 'add' ? multiplier : -multiplier);
-            }
-        };
-        
-        return (
-            <Button 
-                onClick={handleClick} 
-                variant={isActive ? 'contained' : 'outlined'}
-                disabled={disabled}
-            >
-                {children}
-            </Button>
-        );
-    }
+    const toggleEditMode = (type: 'add' | 'sub'): void => {
+        if (buttonRef.current === type) {
+            buttonRef.current = null;
+            setEditValue(0);
+        } else {
+            buttonRef.current = type;
+            setEditValue(type === 'add' ? multiplier : -multiplier);
+        }
+    };
 
     const renderExpertises = useMemo<ReactElement[]>(() => {
         if (!expertises) return [];
@@ -227,7 +229,7 @@ export default function Expertises({ disabled }: { disabled?: boolean }): ReactE
                 if (!expertise) {
                     expertise = {
                         value: 0,
-                        defaultAttribute: sysExpertise.defaultAttribute || 'sab'
+                        defaultAttribute: (sysExpertise.defaultAttribute || 'sab') as keyof Attributes
                     }
                 }
 
@@ -303,11 +305,23 @@ export default function Expertises({ disabled }: { disabled?: boolean }): ReactE
                 {!disabled && (
                     <Box display='flex' flexDirection='column' gap={1}>
                         <Box display='flex' gap={1}>
-                            <ExpertiseButton type='add'>+{multiplier}</ExpertiseButton>
-                            <ExpertiseButton type='sub'>-{multiplier}</ExpertiseButton>
+                            <ExpertiseButton
+                                active={buttonRef.current === 'add'}
+                                label={`Adicionar ${multiplier} ponto(s) por clique`}
+                                onToggle={() => toggleEditMode('add')}
+                            >
+                                +{multiplier}
+                            </ExpertiseButton>
+                            <ExpertiseButton
+                                active={buttonRef.current === 'sub'}
+                                label={`Remover ${multiplier} ponto(s) por clique`}
+                                onToggle={() => toggleEditMode('sub')}
+                            >
+                                -{multiplier}
+                            </ExpertiseButton>
                         </Box>
                         <Box display='flex' alignItems='center' gap={1}>
-                            <Typography variant="caption" fontWeight="medium">
+                            <Typography variant="caption" fontWeight="medium" component='span' id='expertises-multiplier-label'>
                                 Multiplicador:
                             </Typography>
                             <TextField
@@ -318,13 +332,15 @@ export default function Expertises({ disabled }: { disabled?: boolean }): ReactE
                                     max: 15, 
                                     style: { padding: '4px 8px', width: '40px' } 
                                 }}
-                                value={multiplier}
+                                value={multiplierInput}
                                 onChange={(e) => {
-                                    const value = parseInt(e.target.value);
-                                    if (!isNaN(value) && value >= 1 && value <= 15) {
-                                        setMultiplier(value);
+                                    // Aceita campo vazio e até 2 dígitos enquanto digita
+                                    const value = e.target.value;
+                                    if (value === '' || /^\d{0,2}$/.test(value)) {
+                                        setMultiplierInput(value);
                                     }
                                 }}
+                                onBlur={() => setMultiplierInput(String(multiplier))}
                                 sx={{ 
                                     '& .MuiOutlinedInput-root': {
                                         borderRadius: 1
@@ -337,6 +353,12 @@ export default function Expertises({ disabled }: { disabled?: boolean }): ReactE
             </Box>
             
             {renderErrors()}
+
+            {systemLoadFailed && (
+                <Typography variant='body2' color='warning.light' role='alert'>
+                    Não foi possível carregar as perícias do sistema desta ficha. Recarregue a página para tentar de novo.
+                </Typography>
+            )}
             
             <Grid
                 sx={{ flexGrow: 1 }}

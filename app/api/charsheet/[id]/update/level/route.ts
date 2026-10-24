@@ -6,6 +6,9 @@ import type { RPGSystem } from '@models/entities/RPGSystem';
 import type { ClassNames } from '@models/types/string';
 import { charsheetRepository, notificationRepository, rpgSystemRepository } from '@repositories';
 import { handleRouteError, readJsonBody, requireCharsheetAccess, requireUser } from '@utils/api';
+import { secondaryElementsUnlockedNotice, unlocksSecondaryElements } from '@utils/elements';
+import { evolutionPointsForLevelUp } from '@utils/evolutionPoints';
+import { getEvolutionPoints, usesStageUnlock } from '@utils/spellStages';
 
 function normalizeToArray<T>(value: any): T[] {
     if (!value) return []
@@ -28,7 +31,8 @@ function normalizeToArray<T>(value: any): T[] {
 // Preservada integralmente para evitar regressões
 // ─────────────────────────────────────────────
 function calcMagitechProgression(charsheet: Charsheet, oldLevel: number, newLevel: number) {
-    const classRewards = levelDefaultRewards[charsheet.class as ClassNames];
+    // Classe vazia ou de sistema sem tabela própria não tem recompensas de LP/MP por nível: sem isto o nível par dava TypeError (500)
+    const classRewards = levelDefaultRewards[charsheet.class as ClassNames] ?? { lp: 0, mp: 0 };
     // ORM parte do nível atual e sobe 1 a cada múltiplo de 5 cruzado (máx. 4).
     // Antes, saltos de vários níveis terminando em múltiplo de 5 partiam de
     // floor(nível/5) e ainda somavam +1 por múltiplo (ex: 1→15 resultava em ORM 6).
@@ -88,6 +92,11 @@ function calcMagitechProgression(charsheet: Charsheet, oldLevel: number, newLeve
             }
         }
     }
+
+    // 3 pontos de evolução a cada nível múltiplo de 5 atingido. Só servem à regra de estágios das magias (ficha do
+    // Magitech padrão, com classe), então só ela os ganha
+    const evolutionPoints = usesStageUnlock(charsheet) ? evolutionPointsForLevelUp(oldLevel, newLevel) : 0;
+    if (evolutionPoints > 0) rewardsList.push(`+${evolutionPoints} pontos de evolução`);
 
     let newMaxLp = charsheet.stats.maxLp;
     let newMaxMp = charsheet.stats.maxMp;
@@ -160,6 +169,7 @@ function calcMagitechProgression(charsheet: Charsheet, oldLevel: number, newLeve
         attributePoints,
         magicPowerPoints,
         spellsPoints,
+        evolutionPoints,
         newClassSkills,
         newSubclassSkills,
         rewardsList
@@ -399,7 +409,8 @@ export async function POST(req: Request, { params }: { params: { id: string } })
                     expertises: charsheet.points.expertises + result.testPoints,
                     attributes: charsheet.points.attributes + result.attributePoints,
                     skills: charsheet.points.skills + result.magicPowerPoints,
-                    magics: charsheet.points.magics + result.spellsPoints
+                    magics: charsheet.points.magics + result.spellsPoints,
+                    ...(result.evolutionPoints > 0 ? { evolution: getEvolutionPoints(charsheet.points) + result.evolutionPoints } : {})
                 },
                 skills: {
                     ...charsheet.skills,
@@ -421,6 +432,21 @@ export async function POST(req: Request, { params }: { params: { id: string } })
             link: `/charsheet/${charsheet.id}`,
             read: false
         });
+
+        // Chegou ao nível dos elementos secundários: aviso à parte, com o título e, logo abaixo, os elementos. Sistema
+        // customizado sem magias não tem o que liberar
+        if (unlocksSecondaryElements(oldLevel, newLevel) && (!hasCustomProgression || system?.enabledFields?.spells !== false)) {
+            const { title, content } = secondaryElementsUnlockedNotice();
+            await notificationRepository.create({
+                userId: charsheet.userId,
+                title,
+                content,
+                timestamp: new Date().toISOString(),
+                type: 'levelUp',
+                link: `/charsheet/${charsheet.id}`,
+                read: false
+            });
+        }
 
         return Response.json(updatedCharsheet);
     } catch (error) {

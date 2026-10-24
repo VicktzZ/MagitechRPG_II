@@ -473,6 +473,9 @@ function ElementalMasteryModal({ open, onClose, onElementSelect }: ElementalMast
                                 <Typography variant="body2" color="text.secondary">
                                     Cada maestria elemental confere habilidades únicas e resistências específicas
                                 </Typography>
+                                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                                    Quem tem a maestria libera sozinho a Maestria (3º estágio) das magias de nível 4 do elemento, depois de evoluir a magia ao estágio 2.
+                                </Typography>
                             </Box>
                         )}
                     </Box>

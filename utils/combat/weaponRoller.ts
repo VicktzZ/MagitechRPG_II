@@ -1,103 +1,41 @@
 import type { Weapon } from '@models';
 import type { CharsheetDTO } from '@models/dtos';
-import type { Attributes } from '@models/Attributes';
-import type { Expertises } from '@models/Expertises';
 import { rollDice, type DiceResult } from '@utils/diceRoller';
+import { buildActionRollText } from './actionRollMessage';
+import { rollHitTest, type HitTestResult } from './hitTest';
+import { STEALTH_DAMAGE_MULTIPLIER, STEALTH_EXTRA_D20 } from './stealth';
 
-export type WeaponHitResult = {
-    notation: string;
-    rolls: number[];
-    bestRoll: number;
-    bonus: number;
-    bonusLabel: string;
-    total: number;
-};
-
-export type WeaponDamageResult = {
+export interface WeaponDamageResult {
     notation: string;
     display: string;
+    /** O dano final; com o efeito Furtivo é o dobro do rolado */
     total: number;
     isCritical: boolean;
-};
-
-const HIT_TO_EXPERTISE: Partial<Record<keyof Attributes, keyof Expertises>> = {
-    'vig': 'Luta',
-    'des': 'Pontaria',
-    'foc': 'Magia'
-};
-
-const ATTRIBUTE_LABELS: Record<keyof Attributes, string> = {
-    vig: 'VIG',
-    des: 'DES',
-    foc: 'FOC',
-    log: 'LOG',
-    sab: 'SAB',
-    car: 'CAR'
-};
-
-export interface ResolvedWeaponBonus {
-    value: number;
-    label: string;
+    /** Atacou furtivo: `total` já é o dano rolado vezes `STEALTH_DAMAGE_MULTIPLIER` */
+    stealth?: boolean;
 }
 
-/**
- * Resolve qual bonus aplicar ao teste de acerto.
- * Prefere a pericia equivalente (Luta/Pontaria/Magia) se existir;
- * caso contrario usa o atributo direto referenciado em weapon.hit.
- */
-export function resolveWeaponHitBonus(weapon: Weapon, charsheet: CharsheetDTO): ResolvedWeaponBonus {
-    const hitAttr = weapon.hit;
-    const expertiseKey = hitAttr ? HIT_TO_EXPERTISE[hitAttr] : undefined;
-
-    if (expertiseKey && charsheet.expertises?.[expertiseKey]) {
-        const value = Number(charsheet.expertises[expertiseKey].value ?? 0);
-        return { value, label: expertiseKey as string };
-    }
-
-    if (hitAttr && charsheet.attributes?.[hitAttr] !== undefined) {
-        return {
-            value: Number(charsheet.attributes[hitAttr] ?? 0),
-            label: ATTRIBUTE_LABELS[hitAttr] ?? String(hitAttr).toUpperCase()
-        };
-    }
-
-    return { value: 0, label: '—' };
+export interface WeaponRollOptions {
+    /** O atacante está com o efeito Furtivo (ver `stealth.ts`) */
+    stealth?: boolean;
 }
 
 /**
  * Rola o teste de acerto da arma. Numero de d20s vem de mods.attributes[hit] (>=1)
- * e o bonus do atributo/pericia equivalente.
+ * e o bonus do atributo/pericia equivalente. Furtivo: 1d20 a mais (vantagem, vale o maior).
  */
-export function rollWeaponHit(weapon: Weapon, charsheet: CharsheetDTO): WeaponHitResult {
-    const hitAttr = weapon.hit;
-    let numDice = Number(charsheet.mods?.attributes?.[hitAttr] ?? 1);
-    if (!Number.isFinite(numDice) || numDice < 1) numDice = 1;
-
-    const rolls: number[] = [];
-    for (let i = 0; i < numDice; i++) {
-        rolls.push(Math.floor(Math.random() * 20) + 1);
-    }
-
-    const bestRoll = rolls.length > 1 ? Math.max(...rolls) : rolls[0];
-    const { value: bonus, label: bonusLabel } = resolveWeaponHitBonus(weapon, charsheet);
-    const total = bestRoll + bonus;
-
-    return {
-        notation: `${numDice}d20${bonus >= 0 ? '+' : ''}${bonus}`,
-        rolls,
-        bestRoll,
-        bonus,
-        bonusLabel,
-        total
-    };
+export function rollWeaponHit(weapon: Weapon, charsheet: CharsheetDTO, options: WeaponRollOptions = {}): HitTestResult {
+    return rollHitTest(weapon.hit, charsheet, { extraDice: options.stealth ? STEALTH_EXTRA_D20 : 0 });
 }
 
 /**
  * Rola dano (normal ou critico) usando o roller padrao de dados.
  * Aceita expressoes como "2d6", "3d8+2", etc. Se a expressao for invalida
- * tenta interpretar valores numericos puros como dano fixo.
+ * tenta interpretar valores numericos puros como dano fixo. Furtivo: o dano (normal ou critico) sai dobrado.
  */
-export function rollWeaponDamage(weapon: Weapon, isCritical: boolean): WeaponDamageResult | null {
+export function rollWeaponDamage(weapon: Weapon, isCritical: boolean, options: WeaponRollOptions = {}): WeaponDamageResult | null {
+    const stealth = Boolean(options.stealth);
+    const factor = stealth ? STEALTH_DAMAGE_MULTIPLIER : 1;
     const formula = (isCritical ? weapon.effect?.critValue : weapon.effect?.value) ?? '';
     const trimmed = String(formula).trim();
     if (!trimmed) return null;
@@ -108,8 +46,9 @@ export function rollWeaponDamage(weapon: Weapon, isCritical: boolean): WeaponDam
         return {
             notation: trimmed,
             display: result.display ?? `[${result.rolls.join(', ')}]`,
-            total: result.total,
-            isCritical
+            total: result.total * factor,
+            isCritical,
+            ...(stealth ? { stealth } : {})
         };
     }
 
@@ -118,27 +57,41 @@ export function rollWeaponDamage(weapon: Weapon, isCritical: boolean): WeaponDam
         return {
             notation: trimmed,
             display: `${numeric}`,
-            total: numeric,
-            isCritical
+            total: numeric * factor,
+            isCritical,
+            ...(stealth ? { stealth } : {})
         };
     }
 
     return null;
 }
 
-export function buildHitMessageText(playerName: string, weapon: Weapon, hit: WeaponHitResult): string {
+export function buildHitMessageText(playerName: string, weapon: Weapon, hit: HitTestResult): string {
     const rollPart = hit.rolls.length > 1
         ? `${hit.rolls.join(', ')}: ${hit.bestRoll}`
         : `${hit.bestRoll}`;
     const sign = hit.bonus >= 0 ? '+' : '';
-    return `🎯 ${playerName} testou acerto com **${weapon.name}** (${hit.bonusLabel}): [${rollPart}] ${sign}${hit.bonus} = **${hit.total}**`;
+    const advantage = hit.extraDice > 0 ? `, furtivo: vantagem, +${hit.extraDice}d20` : '';
+    return `🎯 ${playerName} testou acerto com **${weapon.name}** (${hit.bonusLabel}${advantage}): [${rollPart}] ${sign}${hit.bonus} = **${hit.total}**`;
 }
 
+/**
+ * Texto do dano da arma para o chat (mensagem de dados, ver `actionRollMessage.ts`): o cartão mostra o total à vista e as
+ * rolagens no dropdown, com o dano crítico marcado.
+ */
 export function buildDamageMessageText(playerName: string, weapon: Weapon, damage: WeaponDamageResult): string {
-    const prefix = damage.isCritical ? '💥' : '⚔️';
-    const action = damage.isCritical ? 'acertou um **crítico** com' : 'usou';
-    const dmgType = weapon.effect?.effectType ? ` (${weapon.effect.effectType})` : '';
-    return `${prefix} ${playerName} ${action} **${weapon.name}**${dmgType}: **${damage.total}** de dano [${damage.notation}: ${damage.display}]`;
+    return buildActionRollText({
+        kind: 'arma',
+        player: playerName,
+        title: weapon.name,
+        detail: [ damage.isCritical ? 'Dano crítico' : 'Dano', weapon.effect?.effectType ].filter(Boolean).join(' · '),
+        critical: damage.isCritical,
+        ...(damage.stealth ? { stealth: true } : {}),
+        total: damage.total,
+        cost: null,
+        dt: null,
+        segments: [ { notation: damage.notation, display: damage.display, total: damage.stealth ? damage.total / STEALTH_DAMAGE_MULTIPLIER : damage.total } ]
+    });
 }
 
 export function buildDamageErrorText(weapon: Weapon, isCritical: boolean): string {

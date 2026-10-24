@@ -21,7 +21,7 @@ import {
     type DiceEffectTarget,
     type DiceEffectType
 } from '@models/types/dices'
-import { type ReactElement } from 'react'
+import { type KeyboardEvent, type ReactElement, useId } from 'react'
 import Fade from '@mui/material/Fade'
 import { useCustomDices } from '@hooks/useCustomDices'
 import DiceRollModal from '../misc/DiceRollModal'
@@ -38,6 +38,7 @@ interface DicePersonalizationProps {
 export default function CustomDices({ onClose, realtime = false, enableChatIntegration = true }: DicePersonalizationProps): ReactElement {
     const theme = useTheme()
     const matches = useMediaQuery(theme.breakpoints.down('sm'))
+    const fieldId = useId()
 
     const {
         newDice,
@@ -73,6 +74,14 @@ export default function CustomDices({ onClose, realtime = false, enableChatInteg
         setRollResult(null)
     }
 
+    // Botões tracejados "Adicionar ...": acessíveis por teclado (Enter e Espaço)
+    const activateOnKey = (action: () => void) => (event: KeyboardEvent) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault()
+            action()
+        }
+    }
+
     return (
         <Box>
             {/* Lista de Dados */}
@@ -97,7 +106,7 @@ export default function CustomDices({ onClose, realtime = false, enableChatInteg
                         }}
                     >
                         <Box flex={1}>
-                            <Typography variant="subtitle1" fontWeight="bold">
+                            <Typography variant="subtitle1" component="h3" fontWeight="bold">
                                 {dice.name}
                             </Typography>
                             <Typography variant="body2" color="text.secondary">
@@ -253,7 +262,7 @@ export default function CustomDices({ onClose, realtime = false, enableChatInteg
             {showCreateForm && (
                 <Fade in>
                     <Box sx={{ p: matches ? 2 : 3 }}>
-                        <Typography variant="h6" gutterBottom>
+                        <Typography variant="h6" component="h3" gutterBottom>
                             {editingDiceId ? 'Editar Dado Personalizado' : 'Criar Dado Personalizado'}
                         </Typography>
 
@@ -278,7 +287,7 @@ export default function CustomDices({ onClose, realtime = false, enableChatInteg
 
                             {/* Configurações dos Dados */}
                             <Box>
-                                <Typography variant="subtitle2" sx={{ mb: 2 }}>
+                                <Typography variant="subtitle2" component="h4" sx={{ mb: 2 }}>
                                     Dados
                                 </Typography>
                                 <Box display="flex" flexDirection="column" gap={2}>
@@ -298,8 +307,9 @@ export default function CustomDices({ onClose, realtime = false, enableChatInteg
                                             }}
                                         >
                                             <FormControl size="small" fullWidth>
-                                                <InputLabel>Faces</InputLabel>
+                                                <InputLabel id={`${fieldId}-faces-${index}`}>Faces</InputLabel>
                                                 <Select
+                                                    labelId={`${fieldId}-faces-${index}`}
                                                     value={diceConfig.faces}
                                                     label="Faces"
                                                     onChange={(e) => handleUpdateDiceConfig(
@@ -362,7 +372,10 @@ export default function CustomDices({ onClose, realtime = false, enableChatInteg
                                             borderColor: 'primary.main'
                                         }
                                     }}
+                                    role="button"
+                                    tabIndex={0}
                                     onClick={handleAddDiceConfig}
+                                    onKeyDown={activateOnKey(handleAddDiceConfig)}
                                 >
                                     <Box display="flex" alignItems="center" justifyContent="center" gap={1}>
                                         <Add fontSize="small" sx={{ color: 'primary.main' }} />
@@ -375,7 +388,7 @@ export default function CustomDices({ onClose, realtime = false, enableChatInteg
 
                             {/* Modificadores */}
                             <Box>
-                                <Typography variant="subtitle2" sx={{ mb: 2 }}>
+                                <Typography variant="subtitle2" component="h4" sx={{ mb: 2 }}>
                                     Modificadores
                                 </Typography>
                                 <Box display="flex" flexDirection="column" gap={2}>
@@ -395,8 +408,9 @@ export default function CustomDices({ onClose, realtime = false, enableChatInteg
                                             }}
                                         >
                                             <FormControl size="small" sx={{ minWidth: 120, width: '100%' }}>
-                                                <InputLabel>Atributo</InputLabel>
+                                                <InputLabel id={`${fieldId}-attribute-${index}`}>Atributo</InputLabel>
                                                 <Select
+                                                    labelId={`${fieldId}-attribute-${index}`}
                                                     value={modifier.attribute || ''}
                                                     label="Atributo"
                                                     onChange={(e) => handleUpdateModifier(
@@ -417,8 +431,9 @@ export default function CustomDices({ onClose, realtime = false, enableChatInteg
                                             </FormControl>
 
                                             <FormControl size="small" sx={{ minWidth: 120, width: '100%' }}>
-                                                <InputLabel>Perícia</InputLabel>
+                                                <InputLabel id={`${fieldId}-expertise-${index}`}>Perícia</InputLabel>
                                                 <Select
+                                                    labelId={`${fieldId}-expertise-${index}`}
                                                     value={modifier.expertise || ''}
                                                     label="Perícia"
                                                     onChange={(e) => handleUpdateModifier(
@@ -480,7 +495,10 @@ export default function CustomDices({ onClose, realtime = false, enableChatInteg
                                             borderColor: 'primary.main'
                                         }
                                     }}
+                                    role="button"
+                                    tabIndex={0}
                                     onClick={handleAddModifier}
+                                    onKeyDown={activateOnKey(handleAddModifier)}
                                 >
                                     <Box display="flex" alignItems="center" justifyContent="center" gap={1}>
                                         <Add fontSize="small" sx={{ color: 'primary.main' }} />
@@ -493,7 +511,7 @@ export default function CustomDices({ onClose, realtime = false, enableChatInteg
 
                             {/* Efeitos */}
                             <Box>
-                                <Typography variant="subtitle2" sx={{ mb: 2 }}>
+                                <Typography variant="subtitle2" component="h4" sx={{ mb: 2 }}>
                                     Efeitos
                                 </Typography>
                                 {newDice.effects?.map((effect, index) => (
@@ -512,8 +530,9 @@ export default function CustomDices({ onClose, realtime = false, enableChatInteg
                                             }}
                                         >
                                             <FormControl size="small" sx={{ minWidth: 120, width: '100%' }}>
-                                                <InputLabel>Operação</InputLabel>
+                                                <InputLabel id={`${fieldId}-operation-${index}`}>Operação</InputLabel>
                                                 <Select
+                                                    labelId={`${fieldId}-operation-${index}`}
                                                     value={effect.operation}
                                                     label="Operação"
                                                     onChange={(e) => handleUpdateEffect(
@@ -528,8 +547,9 @@ export default function CustomDices({ onClose, realtime = false, enableChatInteg
                                             </FormControl>
 
                                             <FormControl size="small" sx={{ minWidth: 120, width: '100%' }}>
-                                                <InputLabel>Tipo</InputLabel>
+                                                <InputLabel id={`${fieldId}-type-${index}`}>Tipo</InputLabel>
                                                 <Select
+                                                    labelId={`${fieldId}-type-${index}`}
                                                     value={effect.type}
                                                     label="Tipo"
                                                     onChange={(e) => handleUpdateEffect(
@@ -545,8 +565,9 @@ export default function CustomDices({ onClose, realtime = false, enableChatInteg
                                             </FormControl>
 
                                             <FormControl size="small" sx={{ minWidth: 120, width: '100%' }}>
-                                                <InputLabel>Alvo</InputLabel>
+                                                <InputLabel id={`${fieldId}-target-${index}`}>Alvo</InputLabel>
                                                 <Select
+                                                    labelId={`${fieldId}-target-${index}`}
                                                     value={effect.target}
                                                     label="Alvo"
                                                     onChange={(e) => handleUpdateEffect(
@@ -580,6 +601,7 @@ export default function CustomDices({ onClose, realtime = false, enableChatInteg
 
                                             <IconButton
                                                 size="small"
+                                                aria-label="Remover efeito"
                                                 onClick={() => handleRemoveEffect(index)}
                                                 sx={{ color: 'error.main' }}
                                             >
@@ -600,7 +622,10 @@ export default function CustomDices({ onClose, realtime = false, enableChatInteg
                                             borderColor: 'primary.main'
                                         }
                                     }}
+                                    role="button"
+                                    tabIndex={0}
                                     onClick={handleAddEffect}
+                                    onKeyDown={activateOnKey(handleAddEffect)}
                                 >
                                     <Box display="flex" alignItems="center" justifyContent="center" gap={1}>
                                         <Add fontSize="small" sx={{ color: 'primary.main' }} />
