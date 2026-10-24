@@ -4,6 +4,7 @@ import { AutoStories, ExpandMore } from '@mui/icons-material'
 import { useState } from 'react'
 import { color, font } from '@themes/tokens'
 import { rollModifier, rollNumbers, type ActionRoll, type ActionRollSegment } from '@utils/combat/actionRollMessage'
+import { STEALTH_DAMAGE_MULTIPLIER } from '@utils/combat/stealth'
 import WeaponIcon from './WeaponIcon'
 
 /** Faces do dado de uma expressão simples ("3d12+6" → 12); com mais de um tipo de dado não dá para saber qual é qual */
@@ -58,6 +59,11 @@ export function castOutcomeText(total: number, dt: number): string {
     return margin === 0 ? `Total ${total} contra DT ${dt}: passou na DT exata` : `Total ${total} contra DT ${dt}: passou por ${margin}`
 }
 
+/** "Furtivo: dano dobrado (9 × 2 = 18)": a regra do efeito Furtivo dita em texto, com a soma rolada e o total que foi para o chat */
+export function stealthDamageText(rolled: number, total: number): string {
+    return `Furtivo: dano dobrado (${rolled} × ${STEALTH_DAMAGE_MULTIPLIER} = ${total})`
+}
+
 /** O conteúdo do dropdown: cada expressão com seus dados e, fora do teste de magia, o subtotal e a média de todos os dados rolados */
 export function ActionRollDetails({ action }: { action: ActionRoll }) {
     const isTest = action.kind === 'conjuração'
@@ -70,6 +76,11 @@ export function ActionRollDetails({ action }: { action: ActionRoll }) {
             <Stack spacing={1}>
                 <Typography variant="body2" fontWeight={700}>{isTest ? 'Teste de magia (vale o maior dado):' : 'Rolagens:'}</Typography>
                 {action.segments.map((segment, index) => <SegmentRow key={index} segment={segment} isTest={isTest} />)}
+                {action.stealth && action.total !== null && (
+                    <Typography variant="body2" color="text.secondary" data-testid="action-roll-stealth">
+                        {stealthDamageText(action.segments.reduce((sum, segment) => sum + segment.total, 0), action.total)}
+                    </Typography>
+                )}
                 {isTest && action.dt !== null && action.total !== null && (
                     <Typography variant="body2" color="text.secondary" data-testid="action-roll-outcome">
                         {castOutcomeText(action.total, action.dt)}
@@ -90,7 +101,7 @@ export function ActionRollDetails({ action }: { action: ActionRoll }) {
  * Cartão do chat para o dano de uma arma ou os dois tempos de uma magia (ver `actionRollMessage.ts`).
  * Mesmo desenho dos testes e dos dados personalizados (`DiceMessage`): título, expressão em cinza, total à vista e as
  * rolagens num dropdown. A conjuração mostra o custo de MP e se o teste passou na DT; o efeito, o total do dano/cura/duração;
- * a arma, "Crítico" quando é o dano crítico.
+ * a arma, "Crítico" quando é o dano crítico e "Furtivo ×2" quando o ataque foi dado com o efeito Furtivo (dano dobrado).
  */
 export function ActionRollCard({ action }: { action: ActionRoll }) {
     const [ open, setOpen ] = useState(false)
@@ -136,6 +147,7 @@ export function ActionRollCard({ action }: { action: ActionRoll }) {
                     <Chip size="small" color={passed ? 'success' : 'error'} label={passed ? 'Sucesso' : 'Falhou'} data-testid="action-roll-result" />
                 )}
                 {action.critical && <Chip size="small" color="warning" label="Crítico" />}
+                {action.stealth && <Chip size="small" variant="outlined" label={`Furtivo ×${STEALTH_DAMAGE_MULTIPLIER}`} data-testid="action-roll-stealth-chip" />}
                 {action.total !== null && <Chip size="small" color="primary" label={`Total ${action.total}`} />}
                 {hasDetails && (
                     <Tooltip title={open ? 'Ocultar detalhes' : 'Ver detalhes'}>

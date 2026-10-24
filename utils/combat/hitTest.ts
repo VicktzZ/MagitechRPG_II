@@ -9,6 +9,13 @@ export interface HitTestResult {
     bonus: number;
     bonusLabel: string;
     total: number;
+    /** Quantos d20 a mais foram rolados por vantagem (efeito Furtivo na arma); 0 no teste comum */
+    extraDice: number;
+}
+
+export interface RollHitOptions {
+    /** d20 a mais no teste (vantagem): vale o maior de todos */
+    extraDice?: number;
 }
 
 export interface ResolvedHitBonus {
@@ -60,9 +67,11 @@ export function resolveHitBonus(hitAttr: keyof Attributes | undefined, charsheet
  * Rola um teste de acerto. O numero de d20s vem de mods.attributes[atributo] (>=1), vale o maior, e soma o bonus da
  * pericia/atributo equivalente. E o teste do botao "Acerto" da arma e o teste de magia ao conjurar.
  */
-export function rollHitTest(hitAttr: keyof Attributes | undefined, charsheet: CharsheetDTO): HitTestResult {
+export function rollHitTest(hitAttr: keyof Attributes | undefined, charsheet: CharsheetDTO, options: RollHitOptions = {}): HitTestResult {
     let numDice = Number(hitAttr ? charsheet.mods?.attributes?.[hitAttr] : 1);
     if (!Number.isFinite(numDice) || numDice < 1) numDice = 1;
+    const extraDice = Math.max(0, Math.floor(Number(options.extraDice) || 0));
+    numDice += extraDice;
 
     const rolls: number[] = [];
     for (let i = 0; i < numDice; i++) {
@@ -79,7 +88,8 @@ export function rollHitTest(hitAttr: keyof Attributes | undefined, charsheet: Ch
         bestRoll,
         bonus,
         bonusLabel,
-        total
+        total,
+        extraDice
     };
 }
 
