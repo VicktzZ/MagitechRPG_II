@@ -4,9 +4,10 @@ import type { Combatant, Creature, Expertise } from '@models';
 import { Pets } from '@mui/icons-material';
 import { Avatar, Box, Button, Chip, Stack, Typography, alpha } from '@mui/material';
 import { color, font } from '@themes/tokens';
+import { combatantVitals, type CombatantVitalKey } from '@utils/combatantVitals';
 import type { ReactElement, ReactNode } from 'react';
 import CreatureExpertiseButton from '../../dashboard/CreatureExpertiseButton';
-import StatMeter from '../../StatMeter';
+import VitalsPanel, { type VitalRow } from '../VitalsPanel';
 
 function Heading({ children }: { children: ReactNode }): ReactElement {
     return (
@@ -21,22 +22,24 @@ interface CombatantViewProps {
     /** A criatura personalizada que o combatente representa; sem ela (foi excluída) só dá para ver o estado no combate */
     creature: Creature | null;
     inTurn: boolean;
+    /** Dano ou cura rápidos: variação (negativa = dano ou gasto) de vida ou mana */
+    onAdjustVital: (key: CombatantVitalKey, delta: number) => void;
     onRollExpertise: (name: string, expertise: Expertise) => Promise<void>;
     /** Abre a ficha da criatura (a janela "Criatura") */
     onOpenCreature?: () => void;
 }
 
 /**
- * Uma criatura que está no combate agora: de quem é a vez, vida e mana atuais e as perícias, que o mestre rola pela
- * criatura (resultado no chat). Os valores vêm do combatente, que é onde o combate guarda o que mudou durante a luta.
+ * Uma criatura que está no combate agora: de quem é a vez, vida e mana atuais (com dano e cura rápidos) e as perícias, que o
+ * mestre rola pela criatura (resultado no chat). Os valores vêm do combatente, que é onde o combate guarda o que mudou durante a luta.
  */
-export function CombatantView({ combatant, creature, inTurn, onRollExpertise, onOpenCreature }: CombatantViewProps): ReactElement {
+export function CombatantView({ combatant, creature, inTurn, onAdjustVital, onRollExpertise, onOpenCreature }: CombatantViewProps): ReactElement {
     const expertises: Array<[ string, Expertise ]> = Object.entries(creature?.expertises ?? {});
-    const lp = combatant.currentLp ?? creature?.stats?.lp ?? 0;
-    const maxLp = combatant.maxLp ?? creature?.stats?.maxLp ?? creature?.stats?.lp ?? 0;
-    const mp = combatant.currentMp ?? creature?.stats?.mp ?? 0;
-    const maxMp = combatant.maxMp ?? creature?.stats?.maxMp ?? creature?.stats?.mp ?? 0;
+    const { lp, maxLp, mp, maxMp } = combatantVitals(combatant, creature);
     const name = combatant.name || creature?.name || 'Criatura';
+
+    const vitalRows: VitalRow[] = [ { key: 'lp', label: 'LP', name: 'Vida', value: lp, max: maxLp, barColor: color.lp } ];
+    if (maxMp > 0) vitalRows.push({ key: 'mp', label: 'MP', name: 'Mana', value: mp, max: maxMp, barColor: color.mp });
 
     return (
         <Stack spacing={2.5}>
@@ -63,10 +66,11 @@ export function CombatantView({ combatant, creature, inTurn, onRollExpertise, on
                 </Box>
             </Box>
 
-            <Stack spacing={1.25}>
-                <StatMeter label="LP" ariaLabel={`Vida de ${name}`} value={lp} max={maxLp} barColor={color.lp} />
-                {maxMp > 0 && <StatMeter label="MP" ariaLabel={`Mana de ${name}`} value={mp} max={maxMp} barColor={color.mp} />}
-            </Stack>
+            <VitalsPanel
+                charsheetName={name}
+                rows={vitalRows}
+                onAdjust={(key, delta) => { if (key === 'lp' || key === 'mp') onAdjustVital(key, delta); }}
+            />
 
             <Box>
                 <Heading>Perícias</Heading>

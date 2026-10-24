@@ -1,4 +1,5 @@
 import type { Expertise } from '@models';
+import { combatantVitals } from '@utils/combatantVitals';
 import { OpenInNew, Pets } from '@mui/icons-material';
 import { Avatar, Box, Chip, IconButton, Paper, Stack, Tooltip, Typography, alpha } from '@mui/material';
 import type { ReactElement } from 'react';
@@ -16,10 +17,7 @@ interface CombatCreatureCardProps extends CombatCreatureEntry {
 /** Cartão de uma criatura em combate: nome, LP/MP atuais e as perícias, com destaque quando é a vez dela */
 export default function CombatCreatureCard({ combatant, creature, isCurrentTurn, isLast, onOpenWindow, onRollExpertise }: CombatCreatureCardProps): ReactElement {
     const expertisesEntries: Array<[ string, Expertise ]> = Object.entries(creature.expertises || {});
-    const currentLp = combatant.currentLp ?? creature.stats?.lp ?? 0;
-    const maxLp = combatant.maxLp ?? creature.stats?.maxLp ?? creature.stats?.lp ?? 0;
-    const currentMp = combatant.currentMp ?? creature.stats?.mp ?? 0;
-    const maxMp = combatant.maxMp ?? creature.stats?.maxMp ?? creature.stats?.mp ?? 0;
+    const { lp: currentLp, maxLp, mp: currentMp, maxMp } = combatantVitals(combatant, creature);
 
     return (
         <Paper

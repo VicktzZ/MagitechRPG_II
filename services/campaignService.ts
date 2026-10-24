@@ -15,6 +15,11 @@ class CampaignService extends Service<Campaign, 'code' | 'userId'> {
     async getCampaignUsers(campaignId: string): Promise<User[]> { return await this.fetch({ param: `${campaignId}/users` }) as unknown as User[] }
     /** Anotação privada do mestre sobre uma ficha (texto vazio apaga); a leitura é direto no Firestore, em tempo real */
     async saveGmNote(campaignId: string, charsheetId: string, text: string) { return (await this.put({ param: `${campaignId}/gm-notes/${charsheetId}`, body: { text } })).data as unknown as { saved: boolean } }
+    /**
+     * Dano ou cura rápidos de uma criatura em combate: manda só a variação (negativa = dano ou gasto) e o servidor soma ao que está
+     * gravado, então cliques seguidos não se perdem. Nunca mande o valor final.
+     */
+    async adjustCombatantVitals(campaignId: string, combatantId: string, deltas: Partial<Record<'lp' | 'mp', number>>) { return (await this.post({ param: `${campaignId}/combat/vitals`, body: { combatantId, ...deltas } })).data }
     async createNote(campaignId: string, note: Pick<Note, 'content'>) { return (await this.post({ param: `${campaignId}/notes`, body: note })).data }
     async updateNote(campaignId: string, noteId: string, content: string) { return (await this.patch({ param: `${campaignId}/notes`, body: { noteId, content } })).data }
     async deleteNote(campaignId: string, noteId: string) { return (await this.delete({ param: `${campaignId}/notes`, body: { noteId } })).data }

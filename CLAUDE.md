@@ -178,9 +178,10 @@ gerenciador. Fases/PRs: 1 gerenciador + barra + resumo (feita) · 2 (feita) seç
 (item, ponto de evolução, notificação, remover), tirando o `CharsheetDetailsModal` · 3 (feita) dano/cura rápidos de LP/MP/AP por rota com transação (soma/subtrai,
 0 a máx., sem contar no limite de MP por turno) · 4 (feita, só perícias) rolagem do mestre pelo jogador (**regra do botão da perícia na ficha**: `mod + 1` d20, mod negativo rola 2;
 não unifica as regras) · 5 (feita) anotações privadas por ficha em `campaigns/{id}/gmNotes/{fichaId}` com regra do Firestore só para `campaign.admin` (regra publicada
-antes do código) · 6 (feita) criaturas em janelas: a criatura personalizada (`creature`) e a criatura em combate (`combatant`), com o alvo da janela generalizado (`targetId`).
-**Ainda em aberto nas criaturas** (perguntar ao dono antes): dano/cura rápidos de LP/MP do combatente (hoje só o diálogo de combate faz, pela rota `combat`, que reescreve a campanha
-inteira e registra no log; um atalho transacional seria uma rota nova) e levar o **editor de criatura** (`CreatureCreator`, ainda um diálogo) para dentro de uma janela. A ordem das fases pode mudar a pedido do dono.
+antes do código) · 6 (feita) criaturas em janelas: a criatura personalizada (`creature`) e a criatura em combate (`combatant`), com o alvo da janela generalizado (`targetId`) ·
+7 (feita) dano/cura rápidos de LP/MP da criatura em combate, por rota com transação.
+**Ainda em aberto nas criaturas** (perguntar ao dono antes): levar o **editor de criatura** (`CreatureCreator`, ainda um diálogo) para dentro de uma janela, e registrar o ajuste rápido no
+log do combate (hoje só o diálogo de combate narra dano e cura). A ordem das fases pode mudar a pedido do dono.
 
 - **Peças**: `windowState.ts` (reducer puro: abrir/focar/fechar/recolher/gravar posição, `sanitizeWindows` para o que vem do navegador), `windowGeometry.ts`
   (puro: área, clamp, cascata, mover, redimensionar), `windowKinds.ts` (tipos de janela, tamanhos, limite de 10), `GMWindowProvider` (estado, área útil,
@@ -199,10 +200,18 @@ inteira e registra no log; um atalho transacional seria uma rota nova) e levar o
 - **Criaturas em janelas** (`windows/creature/`): `creature` é a ficha da criatura personalizada, só leitura (`CreatureView` sobre `toCreatureCard`, que lê o formato real: o editor grava magia como
   `{ description, cost }` e não como o catálogo `{ stages, mpCost }`), com Editar (abre o `CreatureCreator`, que continua um diálogo; a criatura em edição é uma **cópia fixada no clique**, porque o editor
   reinicia o formulário quando recebe outro objeto e a campanha chega de novo a cada mudança) e Excluir (`useCreatureDelete`, com confirmação; a rota já grava, **não regrave `custom` pelo cliente**).
-  `combatant` é a criatura no combate agora (`CombatantView`): turno, LP/MP do **combatente** (é onde o combate guarda o que mudou, não a criatura base) e as perícias, rolando pela **regra da criatura**
+  `combatant` é a criatura no combate agora (`CombatantView`): turno, LP/MP do **combatente** (é onde o combate guarda o que mudou, não a criatura base), dano e cura rápidos e as perícias, rolando pela **regra da criatura**
   (`⌊atributo/5⌋` d20, `useCreatureExpertiseRoll`; não unifica as regras de d20). O combatente é ligado à criatura por `findBaseCreature` (`dashboard/combatCreatureLookup.ts`: o id do combatente é o da criatura,
   com sufixo `-n` quando há cópias). Entradas: grupo "Em combate" na `PartyBar` (só criaturas com criatura de origem, como a seção do dashboard), botão "Abrir em janela" no cartão de combate e "Ver detalhes" no cartão da
   criatura personalizada (que não abre mais o diálogo somente leitura).
+- **Dano e cura rápidos da criatura em combate** (`VitalsPanel` na janela `combatant`, o mesmo painel do resumo): o cliente manda só a variação
+  (`campaignService.adjustCombatantVitals(campaignId, combatantId, { lp: -7 })` → `POST /api/campaign/[id]/combat/vitals`, só o mestre; só `lp` e `mp`, a criatura em combate não tem armadura) e o servidor
+  soma numa transação (`adjustCombatantVitals`, `utils/firestore/combatantStats.ts`), com a regra pura de `applyCombatantDeltas` (`utils/combatantVitals.ts`, a mesma de `applyVitalDelta`). **Nunca mande o valor final.** O
+  Firestore não altera um item de lista por caminho, então grava `session.combat.combatants` inteiro, mas só o combatente alvo muda (rodada, turno, log e o resto da campanha saem como estavam).
+  `combatantVitals(combatant, criatura)` é a conta única de "vida e mana do combatente" (tela e servidor): o que o combatente guarda, e o que ele ainda não guarda (criatura que entrou no meio do combate não leva mana)
+  vem da criatura de origem (`findBaseCreature`, agora em `utils/combatCreatureLookup.ts`); ao ajustar, grava atual e máximo no combatente. Jogador em combate é recusado (400): a vida dele é da ficha
+  (`adjustCharsheetStats`). **Não registra no log do combate** (é bookkeeping do mestre, como o ajuste dos jogadores); a rota `combat` (`apply_damage`/`apply_heal`), que narra, reescreve a campanha inteira e
+  continua sendo o caminho do diálogo de combate. Teste do servidor: `utils/firestore/__tests__/combatantStats.emulator.test.ts`.
 - **Cada seção edita sozinha**: `EditableSection` tem o próprio `useCharsheetEditing` (Editar/Cancelar/Salvar). Salvar grava só os caminhos que o mestre
   mexeu naquela janela (`collectCharsheetChanges` contra o snapshot do início), então duas seções da mesma ficha em edição, ou o jogador mexendo ao mesmo tempo,
   não se desfazem. O corpo da janela é um container: as grades `md={6}` das abas viram uma coluna abaixo de 600px de largura útil (o Grid do MUI olha a tela, não a janela).

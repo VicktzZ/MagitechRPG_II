@@ -3,7 +3,11 @@
 import { useCampaignContext } from '@contexts';
 import { Typography } from '@mui/material';
 import type { ReactElement } from 'react';
-import { findBaseCreature } from '../../dashboard/combatCreatureLookup';
+import { campaignService } from '@services';
+import { findBaseCreature } from '@utils/combatCreatureLookup';
+import type { CombatantVitalKey } from '@utils/combatantVitals';
+import { errorMessage } from '@utils/errors';
+import { enqueueSnackbar } from 'notistack';
 import { useCreatureExpertiseRoll } from '../../dashboard/useCreatureExpertiseRoll';
 import { useGMWindowActions } from '../GMWindowProvider';
 import { CombatantView } from './CombatantView';
@@ -24,11 +28,22 @@ export default function CombatantWindow({ combatantId }: { combatantId: string }
     const creature = findBaseCreature(combatant.id, campaign.custom?.creatures ?? []) ?? null;
     const inTurn = combat?.combatants?.[combat.currentTurnIndex]?.id === combatant.id;
 
+    // O servidor soma a variação ao valor de agora; a barra muda sozinha quando o combate chega do Firestore
+    const adjustVital = async (key: CombatantVitalKey, delta: number): Promise<void> => {
+        try {
+            await campaignService.adjustCombatantVitals(campaign.id, combatant.id, { [key]: delta });
+        } catch (error) {
+            console.error('Erro ao ajustar a criatura em combate:', error);
+            enqueueSnackbar(`Erro ao ajustar pontos vitais: ${errorMessage(error, 'tente novamente')}`, { variant: 'error' });
+        }
+    };
+
     return (
         <CombatantView
             combatant={combatant}
             creature={creature}
             inTurn={inTurn}
+            onAdjustVital={(key, delta) => { void adjustVital(key, delta); }}
             onRollExpertise={async (name, expertise) => {
                 if (creature) await rollExpertise(name, expertise, creature, combatant);
             }}
