@@ -54,7 +54,7 @@ const ROOT_SECTION: Record<string, SectionInfo> = {
 };
 
 const POINTS_SECTION: Record<string, SectionInfo> = {
-    attributes: ATTRIBUTES, expertises: EXPERTISES, skills: SKILLS, magics: SPELLS
+    attributes: ATTRIBUTES, expertises: EXPERTISES, skills: SKILLS, magics: SPELLS, evolution: SPELLS
 };
 
 const ROOT_LABEL: Record<string, string> = {
@@ -86,7 +86,7 @@ const FIELD_LABEL: Record<string, string> = {
 
 // Rótulos que dependem do pai: `skills.class` é "Habilidades de classe", mas `class` na raiz é a classe do personagem
 const PARENT_LABEL: Record<string, Record<string, string>> = {
-    points: { attributes: 'Pontos de atributo', expertises: 'Pontos de perícia', skills: 'Pontos de habilidade', magics: 'Pontos de magia' },
+    points: { attributes: 'Pontos de atributo', expertises: 'Pontos de perícia', skills: 'Pontos de habilidade', magics: 'Pontos de magia', evolution: 'Pontos de evolução' },
     inventory: { items: 'Itens', weapons: 'Armas', armors: 'Armaduras', money: 'Dinheiro' },
     capacity: { cargo: 'Carga', max: 'Capacidade máxima' },
     attributes: { vig: 'Vigor', des: 'Destreza', foc: 'Foco', log: 'Lógica', sab: 'Sabedoria', car: 'Carisma' }

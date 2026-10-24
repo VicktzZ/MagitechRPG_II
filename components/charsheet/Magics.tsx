@@ -40,7 +40,7 @@ import { Magic } from '.';
 import MagicsModal, { spellKey } from './dialogs/MagicsModal';
 import { useCharsheetBaseline } from '@contexts';
 import { normalizeToArray } from '@utils/normalizeToArray';
-import { getStageProgress, materializeUnlocked, spellStageCount, usesStageUnlock, withoutSpell, type StageProgress } from '@utils/spellStages';
+import { EVOLUTION_POINT_COST, getEvolutionPoints, getStageProgress, materializeUnlocked, spellStageCount, usesStageUnlock, withoutSpell, type StageProgress } from '@utils/spellStages';
 
 function getSpellPointCost(level: number): 1 | 2 {
     return level >= 3 ? 2 : 1
@@ -174,11 +174,18 @@ const Spells = memo(() => {
         setValue('spellStages', { ...(spellStages || {}), [magicKey]: stage } as any, { shouldValidate: true })
     }, [ setValue, spellStages, spellUnlocked ])
 
-    // Evoluir: libera o próximo estágio, sem custo, e já o deixa ativo para o jogador ver o que ganhou
+    const evolutionPoints = getEvolutionPoints(points)
+
+    // Evoluir: gasta 1 ponto de evolução, libera o próximo estágio e já o deixa ativo para o jogador ver o que ganhou
     const unlockStage = useCallback((magicKey: string, stage: 1 | 2 | 3) => {
+        if (evolutionPoints < EVOLUTION_POINT_COST) {
+            enqueueSnackbar('Você precisa de 1 ponto de evolução para evoluir uma magia. Peça ao mestre.', toastDefault('noEvolutionPoint', 'warning'))
+            return
+        }
+        setValue('points.evolution', evolutionPoints - EVOLUTION_POINT_COST, { shouldValidate: true })
         setValue('spellUnlocked', { ...(spellUnlocked || {}), [magicKey]: stage } as any, { shouldValidate: true })
         setValue('spellStages', { ...(spellStages || {}), [magicKey]: stage } as any, { shouldValidate: true })
-    }, [ setValue, spellStages, spellUnlocked ])
+    }, [ setValue, spellStages, spellUnlocked, evolutionPoints, enqueueSnackbar ])
 
     const renderMagicCard = useCallback((magic: Spell) => {
         const magicKey = spellKey(magic)
@@ -214,6 +221,7 @@ const Spells = memo(() => {
                         selectedStage={selectedStage}
                         unlockedStage={progress.enabled ? progress.unlocked : undefined}
                         onUnlockStage={progress.enabled ? (stage: 1 | 2 | 3) => { unlockStage(magicKey, stage) } : undefined}
+                        evolutionPoints={progress.enabled ? evolutionPoints : undefined}
                         onStageChange={(stage: 1 | 2 | 3) => {
                             if (!magicKey) return
                             changeActiveStage(magicKey, stage, progress)
@@ -223,7 +231,7 @@ const Spells = memo(() => {
                 </motion.div>
             </Grid>
         )
-    }, [ handleRemoveMagic, changeActiveStage, unlockStage, spellStages, spellUnlocked, stageRule, legacyStages ])
+    }, [ handleRemoveMagic, changeActiveStage, unlockStage, spellStages, spellUnlocked, stageRule, legacyStages, evolutionPoints ])
 
     const spellsList = useMemo(() => {
         if (!filteredSpells?.length) {
@@ -483,6 +491,24 @@ const Spells = memo(() => {
                             </Tooltip>
                         </Stack>
                     </Box>
+
+                    {stageRule && (
+                        <Box sx={{ flex: 1 }}>
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                                Pontos de Evolução:
+                            </Typography>
+                            <Stack direction="row" alignItems="baseline" spacing={0.5}>
+                                <Typography fontWeight="bold" sx={{ fontSize: '1.1rem' }} data-testid="evolution-points">
+                                    {evolutionPoints}
+                                </Typography>
+                                <Tooltip title="Cada ponto libera o próximo estágio de uma magia. O mestre concede.">
+                                    <Typography variant="caption" color="text.secondary">
+                                        disponíveis
+                                    </Typography>
+                                </Tooltip>
+                            </Stack>
+                        </Box>
+                    )}
                 </Stack>
 
                 {/* Painel de filtros */}

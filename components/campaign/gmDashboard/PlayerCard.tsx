@@ -1,5 +1,5 @@
 import { AddItemModal, WarningModal } from '@layout'
-import { Add, Backpack, Block, ChatBubbleOutline, DirectionsRun, Info, LocalPolice, MonetizationOn, MoreVert } from '@mui/icons-material'
+import { Add, Backpack, Block, ChatBubbleOutline, DirectionsRun, Info, LocalPolice, MonetizationOn, MoreVert, Upgrade } from '@mui/icons-material'
 import {
     Box,
     Button,
@@ -33,6 +33,7 @@ import { color, font } from '@themes/tokens'
 import StatMeter from './StatMeter'
 import { errorMessage } from '@utils/errors';
 import { normalizeToArray } from '@utils/normalizeToArray'
+import { getEvolutionPoints, usesStageUnlock } from '@utils/spellStages'
 
 /** Texto só para leitor de tela (o rótulo do número ao lado, que a tela mostra por ícone) */
 const srOnly = {
@@ -142,6 +143,22 @@ function PlayerCard({ charsheet }: { charsheet: Required<CharsheetDTO> }) {
         }
         
         setNotificationDialogOpen(false)
+    }
+
+    // Ponto de evolução: cada um libera o próximo estágio de uma magia do jogador (ver utils/spellStages.ts)
+    const canGrantEvolution = usesStageUnlock(charsheet, campaign.mode)
+    const handleGrantEvolutionPoint = async () => {
+        handlePlayerMenuClose()
+        try {
+            // Lê a ficha mais recente: o jogador pode ter gasto ponto enquanto esta tela estava aberta
+            const fresh = await charsheetEntity.findById(charsheet.id)
+            const total = getEvolutionPoints(fresh?.points ?? charsheet.points) + 1
+            await charsheetService.updateFields(charsheet.id, { 'points.evolution': total })
+            enqueueSnackbar(`${charsheet.name} recebeu 1 ponto de evolução (agora tem ${total}).`, { variant: 'success' })
+        } catch (error) {
+            console.error('Erro ao conceder ponto de evolução:', error)
+            enqueueSnackbar(`Erro ao conceder ponto de evolução: ${errorMessage(error, 'tente novamente')}`, { variant: 'error' })
+        }
     }
 
     const viewCharsheetDetails = () => {
@@ -305,6 +322,14 @@ function PlayerCard({ charsheet }: { charsheet: Required<CharsheetDTO> }) {
                             </ListItemIcon>
                             <ListItemText>Adicionar item</ListItemText>
                         </MenuItem>
+                        {canGrantEvolution && (
+                            <MenuItem onClick={() => { void handleGrantEvolutionPoint() }}>
+                                <ListItemIcon>
+                                    <Upgrade fontSize="small" />
+                                </ListItemIcon>
+                                <ListItemText>Conceder ponto de evolução</ListItemText>
+                            </MenuItem>
+                        )}
                         <MenuItem onClick={() => setNotificationDialogOpen(true)}>
                             <ListItemIcon>
                                 <ChatBubbleOutline fontSize="small" />

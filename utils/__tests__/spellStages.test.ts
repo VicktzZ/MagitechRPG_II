@@ -1,4 +1,4 @@
-import { getStageProgress, materializeUnlocked, spellStageCount, spellStageKey, usesStageUnlock, withoutSpell } from '../spellStages'
+import { canEvolve, EVOLUTION_POINT_COST, getEvolutionPoints, getStageProgress, materializeUnlocked, spellStageCount, spellStageKey, usesStageUnlock, withoutSpell } from '../spellStages'
 
 describe('spellStageCount e spellStageKey', () => {
     it('conta os estágios pelos textos presentes', () => {
@@ -84,5 +84,32 @@ describe('materializeUnlocked e withoutSpell', () => {
     it('remove só a magia pedida', () => {
         expect(withoutSpell({ a: 1, b: 2 }, 'a')).toEqual({ b: 2 })
         expect(withoutSpell(undefined, 'a')).toEqual({})
+    })
+})
+
+describe('ponto de evolução', () => {
+    it('lê points.evolution; ficha antiga ou valor inválido vale 0', () => {
+        expect(getEvolutionPoints({ evolution: 3 })).toBe(3)
+        expect(getEvolutionPoints({ evolution: '2' })).toBe(2)
+        expect(getEvolutionPoints({})).toBe(0)
+        expect(getEvolutionPoints(undefined)).toBe(0)
+        expect(getEvolutionPoints({ evolution: -1 })).toBe(0)
+        expect(getEvolutionPoints({ evolution: 'x' })).toBe(0)
+    })
+
+    it('evoluir custa 1 ponto', () => {
+        expect(EVOLUTION_POINT_COST).toBe(1)
+    })
+
+    it('só evolui com a regra valendo, estágio seguinte e ponto de evolução', () => {
+        const progress = getStageProgress({}, 'm1', 3, true)
+        expect(canEvolve(progress, 1)).toBe(true)
+        expect(canEvolve(progress, 0)).toBe(false)
+
+        const maxed = getStageProgress({ spellUnlocked: { m1: 3 } }, 'm1', 3, true)
+        expect(canEvolve(maxed, 5)).toBe(false)
+
+        const noRule = getStageProgress({}, 'm1', 3, false)
+        expect(canEvolve(noRule, 5)).toBe(false)
     })
 })

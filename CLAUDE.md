@@ -151,6 +151,13 @@ do efeito, e não pode ser escolhido nem conjurado. O MP extra por estágio ao c
 - **Ficha antiga** não tem `spellUnlocked`: vale o estágio que a magia já usava, para ninguém perder o estágio 3 que conjurava. Esse valor tem de
   ser gravado junto da primeira mudança da magia (`materializeUnlocked`), senão voltar o ativo para 1 apagaria o liberado. Na ficha aberta para
   edição o valor antigo vem de `baseline.get().spellStages` (o formulário já mudou com os cliques).
+- **Evoluir custa 1 ponto de evolução**: novo atributo `points.evolution` (inteiro ≥ 0; ficha antiga não tem o campo e vale 0). O **mestre concede**: no cartão do
+  jogador na campanha (menu "Conceder ponto de evolução", +1) ou no detalhe da ficha, em edição ("Evolução (magias)"). Sem ponto, o botão Evoluir fica
+  desabilitado. O ajuste direto do estágio liberado pelo mestre (aba de magias do detalhe) não gasta ponto. Na página da ficha o formulário é uma foto:
+  a concessão de fora entra somada ao que o jogador já gastou ali (`mergeRemoteCounter`, `utils/counterSync.ts`, no `CharsheetFormProvider`), senão salvar
+  o valor velho desfaria o ponto concedido.
+- **O modal de magias também bloqueia**: magia que a ficha ainda não tem aparece com o estágio 1 liberado e os outros com cadeado; magia que a ficha tem
+  mostra o liberado dela (`MagicsModal.tsx`, cartão enxuto de `Magic.tsx`).
 - **Não vale** em sistema customizado (`systemId`), no Roguelite (`campaign.mode`) nem na ficha de classe "Sem Classe": lá todos os estágios ficam
   abertos como sempre (`usesStageUnlock`). Excluir a magia remove as duas chaves (`withoutSpell`).
 - Onde aparece: cartão da ficha (`subcomponents/Magic.tsx`, `Magics.tsx`), tela do jogador na campanha (`SpellsSection.tsx`, que também recusa

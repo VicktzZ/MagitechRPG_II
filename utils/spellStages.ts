@@ -5,6 +5,9 @@
  * o estágio seguinte, em ordem; o mestre também pode ajustar. Estágio acima do liberado fica bloqueado (sem texto do efeito)
  * e não pode ser escolhido nem conjurado. O MP extra de cada estágio ao conjurar (`calculateExtraManaCost`) continua valendo.
  *
+ * Evoluir custa 1 **ponto de evolução** (`points.evolution`), concedido pelo mestre no detalhe da ficha, na campanha. O ajuste direto do
+ * mestre (aba de magias do detalhe da ficha) não gasta ponto.
+ *
  * Dois campos da ficha:
  * - `spellStages[chave]`   estágio ATIVO: o que o jogador escolheu para conjurar;
  * - `spellUnlocked[chave]` estágio liberado até agora (o ativo nunca passa dele).
@@ -111,4 +114,18 @@ export function materializeUnlocked(
 /** Remove a magia dos dois mapas (ao excluí-la da ficha) */
 export function withoutSpell(map: StageMap, key: string): Record<string, number> {
     return Object.fromEntries(Object.entries(map ?? {}).filter(([ entry ]) => entry !== key)) as Record<string, number>;
+}
+
+/** Quanto custa evoluir uma magia (liberar o próximo estágio) */
+export const EVOLUTION_POINT_COST = 1;
+
+/** Pontos de evolução da ficha (`points.evolution`); ficha antiga não tem o campo, então vale 0 */
+export function getEvolutionPoints(points: { evolution?: unknown } | null | undefined): number {
+    const value = Math.floor(Number(points?.evolution ?? 0));
+    return Number.isFinite(value) && value > 0 ? value : 0;
+}
+
+/** Dá para evoluir agora? Precisa da regra valendo, de um estágio seguinte e de ponto de evolução */
+export function canEvolve(progress: Pick<StageProgress, 'enabled' | 'next'>, evolutionPoints: number): boolean {
+    return progress.enabled && progress.next !== null && evolutionPoints >= EVOLUTION_POINT_COST;
 }

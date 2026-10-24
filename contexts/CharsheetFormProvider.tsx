@@ -10,6 +10,8 @@ import type { ReactElement } from 'react';
 import type { UseFormReturn } from 'react-hook-form';
 import type { CharsheetDTO } from '@models/dtos';
 import { createCharsheetResolver } from '@schemas';
+import { mergeRemoteCounter } from '@utils/counterSync';
+import { getEvolutionPoints } from '@utils/spellStages';
 import type { DroppedEntries } from '@hooks/useCompleteCharsheet';
 
 export const CharsheetFormContext = createContext<UseFormReturn<CharsheetDTO> | null>(null);
@@ -98,12 +100,17 @@ export default function CharsheetFormProvider({
     const [ defaults ] = useState(getDefaultValues)
 
     const baselineRef = useRef<CharsheetDTO | null>(formData ? clone(defaults as CharsheetDTO) : null)
+    // Quando e com que valor a ficha foi salva por último: o eco do banco com o valor ANTIGO não pode passar por mudança de fora
+    const lastSaveRef = useRef<{ at: number; previousEvolution: number } | null>(null)
     const preservedRef = useRef(dropped)
     preservedRef.current = dropped
 
     const baseline = useMemo<CharsheetBaseline>(() => ({
         get: () => baselineRef.current,
-        markSaved: (values) => { baselineRef.current = clone(values) },
+        markSaved: (values) => {
+            lastSaveRef.current = { at: Date.now(), previousEvolution: getEvolutionPoints(baselineRef.current?.points) }
+            baselineRef.current = clone(values)
+        },
         get preserved() { return preservedRef.current }
     }), [])
 
@@ -119,6 +126,20 @@ export default function CharsheetFormProvider({
         shouldFocusError: true,
         criteriaMode: 'all'
     })
+
+    // Ponto de evolução: o mestre concede com a ficha aberta. A mudança de fora entra no formulário somada ao que o jogador já gastou aqui
+    // (o formulário é uma foto; salvar o valor velho desfaria a concessão)
+    const liveEvolution = formData ? getEvolutionPoints(formData.points) : undefined
+    useEffect(() => {
+        const base = baselineRef.current
+        if (!base || liveEvolution === undefined) return
+        const lastSave = lastSaveRef.current
+        if (lastSave && Date.now() - lastSave.at < 5000 && liveEvolution === lastSave.previousEvolution) return
+        const merged = mergeRemoteCounter(liveEvolution, getEvolutionPoints(base.points), getEvolutionPoints(form.getValues('points')))
+        if (!merged) return
+        baselineRef.current = { ...base, points: { ...base.points, evolution: merged.baseline } }
+        form.setValue('points.evolution', merged.current)
+    }, [ liveEvolution, form ])
 
     // A sessão pode chegar depois do primeiro render da criação
     useEffect(() => {

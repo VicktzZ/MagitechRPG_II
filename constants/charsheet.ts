@@ -161,7 +161,8 @@ export const charsheet: CharsheetDTO = {
         attributes: 25,
         expertises: 0,
         skills: 0,
-        magics: 1
+        magics: 1,
+        evolution: 0
     },
 
     attributes: {
