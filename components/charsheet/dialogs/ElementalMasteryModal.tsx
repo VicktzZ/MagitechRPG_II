@@ -23,6 +23,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import AutoStoriesIcon from '@mui/icons-material/AutoStories';
 import { elementColor } from '@constants';
 import ElementIcon, { resolveElement } from '@components/misc/ElementIcon';
+import { SECONDARY_ELEMENTS_RULE } from '@utils/elements';
 import { shadow } from '@themes/tokens';
 import type { Element } from '@models/types/string';
 
@@ -268,8 +269,11 @@ function ElementalMasteryModal({ open, onClose, onElementSelect }: ElementalMast
                                 <AutoStoriesIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
                                 Elementos Disponíveis
                             </Typography>
-                            <Typography variant="caption" color="text.secondary">
+                            <Typography variant="caption" color="text.secondary" component="p">
                                 Selecione um elemento para ver detalhes
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary" component="p" sx={{ mt: 0.5 }}>
+                                {SECONDARY_ELEMENTS_RULE}
                             </Typography>
                         </Box>
 

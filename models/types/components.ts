@@ -38,6 +38,8 @@ export interface ResourceListModalProps<T extends Record<string, any>> {
     filterOptions: string[];
     /** Rótulo do primeiro filtro (multi-seleção, resolvido no servidor), ex: "Elemento" */
     filterLabel?: string;
+    /** Observação curta ao lado de cada opção do primeiro filtro (ex.: "secundário" nos elementos secundários) */
+    filterOptionHint?: (option: string) => string | undefined;
     hasGroupsInFilter?: boolean;
     sortOptions: string[];
     /** Mapeia o rótulo de ordenação exibido para o campo real da entidade */

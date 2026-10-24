@@ -10,6 +10,7 @@ import { PartyPortrait, type PortraitVital } from '../PartyPortrait';
 import ExpertisesTab from '../../modals/charsheetDetails/ExpertisesTab';
 import EditableSection from '../EditableSection';
 import { SummaryView, type SummaryActions } from '../SummaryView';
+import SheetMetricsView from '../../SheetMetricsView';
 import VitalsPanel, { type VitalRow } from '../VitalsPanel';
 import type { Bounds } from '../windowGeometry';
 import type { WindowEntry } from '../windowState';
@@ -46,6 +47,7 @@ const entry = (overrides: Partial<WindowEntry> = {}): WindowEntry => ({
 });
 
 const noop = (): void => undefined;
+const metrics = { overall: 52, mpLimit: 8, mpSpent: null };
 
 // A edição de verdade grava na ficha pelo serviço; aqui só importa o estado que a casca mostra
 const mockEditing = { isEditing: false, isSaving: false };
@@ -242,7 +244,7 @@ describe('SummaryView', () => {
     });
 
     it('mostra quem é, os pontos vitais e os atributos com modificador', () => {
-        const html = render(<SummaryView charsheet={sheet()} inTurn={false} showEvolution onOpenSection={noop} onAdjustVital={noop} actions={playerActions} />);
+        const html = render(<SummaryView metrics={metrics} charsheet={sheet()} inTurn={false} showEvolution onOpenSection={noop} onAdjustVital={noop} actions={playerActions} />);
         expect(html).toContain('Aria Valen');
         expect(html).toContain('Nv. 7');
         expect(html).toContain('Piromante');
@@ -255,7 +257,7 @@ describe('SummaryView', () => {
     });
 
     it('mostra a bolsa: dinheiro com milhar, carga com unidade, deslocamento e esconde a munição vazia', () => {
-        const html = render(<SummaryView charsheet={sheet()} inTurn={false} showEvolution onOpenSection={noop} onAdjustVital={noop} actions={playerActions} />);
+        const html = render(<SummaryView metrics={metrics} charsheet={sheet()} inTurn={false} showEvolution onOpenSection={noop} onAdjustVital={noop} actions={playerActions} />);
         expect(html).toContain('12 500');
         expect(html).toContain('12/40 kg');
         expect(html).toContain('9m');
@@ -263,6 +265,7 @@ describe('SummaryView', () => {
 
         const withAmmo = render(
             <SummaryView
+                metrics={metrics}
                 charsheet={sheet({ ammoCounter: { current: 3, max: 10 } })}
                 inTurn={false}
                 showEvolution
@@ -276,19 +279,20 @@ describe('SummaryView', () => {
     });
 
     it('lista só os pontos para gastar que sobraram, e a evolução quando a regra vale', () => {
-        const html = render(<SummaryView charsheet={sheet()} inTurn={false} showEvolution onOpenSection={noop} onAdjustVital={noop} actions={playerActions} />);
+        const html = render(<SummaryView metrics={metrics} charsheet={sheet()} inTurn={false} showEvolution onOpenSection={noop} onAdjustVital={noop} actions={playerActions} />);
         expect(html).toContain('Perícias: 2');
         expect(html).toContain('Magias: 1');
         expect(html).not.toContain('Atributos: 0');
         expect(html).toContain('Evolução: 3');
 
-        const noRule = render(<SummaryView charsheet={sheet()} inTurn={false} showEvolution={false} onOpenSection={noop} onAdjustVital={noop} actions={playerActions} />);
+        const noRule = render(<SummaryView metrics={metrics} charsheet={sheet()} inTurn={false} showEvolution={false} onOpenSection={noop} onAdjustVital={noop} actions={playerActions} />);
         expect(noRule).not.toContain('Evolução');
     });
 
     it('sem pontos nem regra de evolução, a seção de pontos some', () => {
         const html = render(
             <SummaryView
+                metrics={metrics}
                 charsheet={sheet({ points: { attributes: 0, expertises: 0, skills: 0, magics: 0 } })}
                 inTurn={false}
                 showEvolution={false}
@@ -299,22 +303,23 @@ describe('SummaryView', () => {
     });
 
     it('em turno mostra o selo', () => {
-        const html = render(<SummaryView charsheet={sheet()} inTurn showEvolution onOpenSection={noop} onAdjustVital={noop} actions={playerActions} />);
+        const html = render(<SummaryView metrics={metrics} charsheet={sheet()} inTurn showEvolution onOpenSection={noop} onAdjustVital={noop} actions={playerActions} />);
         expect(html).toContain('Em turno');
     });
 
     it('tem um atalho para cada seção da ficha (menos o próprio resumo)', () => {
-        const html = render(<SummaryView charsheet={sheet()} inTurn={false} showEvolution onOpenSection={noop} onAdjustVital={noop} actions={playerActions} />);
+        const html = render(<SummaryView metrics={metrics} charsheet={sheet()} inTurn={false} showEvolution onOpenSection={noop} onAdjustVital={noop} actions={playerActions} />);
         [ 'Informações', 'Atributos', 'Perícias', 'Inventário', 'Habilidades', 'Magias', 'Anotações' ].forEach(label => expect(html).toContain(`>${label}<`));
         expect(html).not.toContain('>Resumo<');
     });
 
     it('tem as ações do jogador; o ponto de evolução some quando a regra não vale', () => {
-        const html = render(<SummaryView charsheet={sheet()} inTurn={false} showEvolution onOpenSection={noop} onAdjustVital={noop} actions={playerActions} />);
+        const html = render(<SummaryView metrics={metrics} charsheet={sheet()} inTurn={false} showEvolution onOpenSection={noop} onAdjustVital={noop} actions={playerActions} />);
         [ 'Adicionar item', 'Conceder ponto de evolução', 'Enviar notificação', 'Remover da campanha' ].forEach(label => expect(html).toContain(label));
 
         const noRule = render(
             <SummaryView
+                metrics={metrics}
                 charsheet={sheet()}
                 inTurn={false}
                 showEvolution={false}
@@ -329,6 +334,7 @@ describe('SummaryView', () => {
     it('ficha antiga com campos faltando não quebra', () => {
         const html = render(
             <SummaryView
+                metrics={metrics}
                 charsheet={sheet({ stats: undefined, mods: undefined, points: undefined, ammoCounter: undefined, capacity: undefined, inventory: undefined })}
                 inTurn={false}
                 showEvolution={false}
@@ -522,5 +528,56 @@ describe('NotesView (anotações privadas do mestre)', () => {
     it('o estado de salvamento é anunciado para leitor de tela', () => {
         expect(view()).toContain('role="status"');
         expect(view()).toContain('aria-live="polite"');
+    });
+});
+
+describe('SheetMetricsView (Overall e limite de MP por turno)', () => {
+    it('em blocos: mostra o Overall e o limite de MP por turno', () => {
+        const html = render(<SheetMetricsView metrics={{ overall: 52, mpLimit: 8, mpSpent: null }} />);
+        expect(html).toContain('Overall');
+        expect(html).toContain('>52<');
+        expect(html).toContain('MP por turno');
+        expect(html).toContain('>8<');
+        expect(html).toContain('aria-label="Limite de MP por turno: 8"');
+        expect(html).not.toContain('gasto / limite');
+    });
+
+    it('em combate mostra o gasto neste turno contra o limite, dito em texto também', () => {
+        const html = render(<SheetMetricsView metrics={{ overall: 52, mpLimit: 8, mpSpent: 3 }} />);
+        expect(html).toContain('>3/8<');
+        expect(html).toContain('gasto / limite');
+        expect(html).toContain('aria-label="Limite de MP por turno: gastou 3 de 8 neste turno"');
+    });
+
+    it('onde a regra não vale (limite nulo) só aparece o Overall', () => {
+        const html = render(<SheetMetricsView metrics={{ overall: 40, mpLimit: null, mpSpent: null }} />);
+        expect(html).toContain('Overall');
+        expect(html).toContain('>40<');
+        expect(html).not.toContain('MP por turno');
+    });
+
+    it('Overall zero aparece como 0, não some', () => {
+        expect(render(<SheetMetricsView metrics={{ overall: 0, mpLimit: null, mpSpent: null }} />)).toContain('>0<');
+    });
+
+    it('em linha (cartão do jogador): ícone, número e o rótulo para leitor de tela', () => {
+        const html = render(<SheetMetricsView variant="inline" metrics={{ overall: 52, mpLimit: 8, mpSpent: 3 }} />);
+        expect(html).toContain('Overall:');
+        expect(html).toContain('>52<');
+        expect(html).toContain('Limite de MP por turno: gastou 3 de 8 neste turno');
+        expect(html).toContain('3/8 MP');
+    });
+
+    it('em linha, sem limite não desenha o item de MP', () => {
+        const html = render(<SheetMetricsView variant="inline" metrics={{ overall: 52, mpLimit: null, mpSpent: null }} />);
+        expect(html).toContain('>52<');
+        expect(html).not.toContain('MP');
+    });
+
+    it('o resumo da ficha mostra os dois números', () => {
+        const html = render(<SummaryView metrics={{ overall: 61, mpLimit: 9, mpSpent: null }} charsheet={{ ...healthySheet(), id: 'a', name: 'Aria Valen' } as never} inTurn={false} showEvolution={false} onOpenSection={noop} onAdjustVital={noop} actions={playerActions} />);
+        expect(html).toContain('>61<');
+        expect(html).toContain('MP por turno');
+        expect(html).toContain('>9<');
     });
 });
