@@ -20,6 +20,8 @@ interface LadderSpell {
     level?: unknown;
     element?: unknown;
     mpCost?: unknown;
+    /** Acréscimo de MP do estágio 2 e do estágio 3 gravado na magia (opcional) */
+    mpCostIncrease?: ReadonlyArray<number | string | null | undefined> | null;
     stages?: ReadonlyArray<string | null | undefined> | null;
 }
 
@@ -94,7 +96,7 @@ export default function StageLadder({ spell, progress, evolution, cast }: StageL
     const baseCost = Number(spell.mpCost) || 0;
     const texts = spell.stages ?? [];
 
-    const costOf = (stage: number): number => calculateTotalManaCost(baseCost, level, stage - 1);
+    const costOf = (stage: number): number => calculateTotalManaCost(baseCost, level, stage - 1, spell.mpCostIncrease);
     const diffs = useMemo(
         () => progress.stages.map(info => (info.stage > 1 && info.status === 'unlocked'
             ? diffAgainst(texts[info.stage - 2], texts[info.stage - 1])

@@ -35,11 +35,13 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import BoltIcon from '@mui/icons-material/Bolt';
 import LockOpenIcon from '@mui/icons-material/LockOpen';
 import LockIcon from '@mui/icons-material/Lock';
+import RestartAltIcon from '@mui/icons-material/RestartAlt';
 import { color } from '@themes/tokens';
 import { useSnackbar } from 'notistack';
 import { useChannel } from '@contexts/channelContext';
 import { useCampaignContext } from '@contexts';
-import { getMpLimit, isMpLimitEnforced } from '@utils/mpLimit';
+import { getCreatureMpLimit, getMpLimit, isCreatureMpLimitEnforced, isMpLimitEnforced } from '@utils/mpLimit';
+import { findBaseCreature } from '@utils/combatCreatureLookup';
 import { PusherEvent } from '@enums';
 import type { PlayerInfo } from './types';
 import type { AppliedEffect, CombatLog, Creature } from '@models';
@@ -129,6 +131,15 @@ export default function CombatDialog({
             enqueueSnackbar('Efeito removido', { variant: 'success' });
         } catch (err) {
             enqueueSnackbar(errorMessage(err, 'Erro ao remover efeito'), { variant: 'error' });
+        }
+    }, [ campaignId, enqueueSnackbar ]);
+
+    const handleResetMpLimit = useCallback(async (combatantId: string) => {
+        try {
+            await campaignService.resetMpLimit(campaignId, { combatantId });
+            enqueueSnackbar('Limite de MP resetado', { variant: 'success' });
+        } catch (err) {
+            enqueueSnackbar(errorMessage(err, 'Erro ao resetar o limite de MP'), { variant: 'error' });
         }
     }, [ campaignId, enqueueSnackbar ]);
 
@@ -405,8 +416,12 @@ export default function CombatDialog({
                                 const mpSheet = combatant.type === 'player'
                                     ? charsheets.find(c => c.id === combatant.id || c.id === combatant.odacId)
                                     : undefined;
-                                const mpLimitEnforced = mpSheet !== undefined && isMpLimitEnforced(mpSheet, campaign?.mode);
-                                const mpLimit = mpSheet ? getMpLimit(mpSheet) : 0;
+                                // Criatura também tem limite: nível e Foco da criatura de origem
+                                const mpCreature = combatant.type === 'creature' ? findBaseCreature(combatant.id, campaign?.custom?.creatures ?? []) : undefined;
+                                const mpLimitEnforced = mpSheet !== undefined
+                                    ? isMpLimitEnforced(mpSheet, campaign?.mode)
+                                    : mpCreature !== undefined && isCreatureMpLimitEnforced(mpCreature, campaign?.mode);
+                                const mpLimit = mpSheet ? getMpLimit(mpSheet) : mpCreature ? getCreatureMpLimit(mpCreature) : 0;
                                 const mpSpent = combatant.mpSpentThisTurn ?? 0;
                                 const mpReleased = Boolean(combatant.mpLimitOverride);
 
@@ -500,6 +515,17 @@ export default function CombatDialog({
                                                             <BoltIcon fontSize="small" />
                                                         </IconButton>
                                                     </Tooltip>
+                                                    {mpLimitEnforced && (
+                                                        <Tooltip title="Resetar o MP gasto nesta rodada (limite de MP por turno)">
+                                                            <IconButton
+                                                                size="small"
+                                                                aria-label={`Resetar o limite de MP de ${combatant.name}`}
+                                                                onClick={() => { void handleResetMpLimit(combatant.id); }}
+                                                            >
+                                                                <RestartAltIcon fontSize="small" />
+                                                            </IconButton>
+                                                        </Tooltip>
+                                                    )}
                                                     {mpLimitEnforced && (
                                                         <Tooltip title={mpReleased
                                                             ? 'Restabelecer o limite de MP por turno'

@@ -39,6 +39,10 @@ Magia nova que recupera MP já deve nascer com a categoria.
 - Sempre 3 estágios; no nível 4 o 3º é a Maestria. Custo exibido = `mpCost` + extra do estágio
   (`calculateExtraManaCost`). Custo base médio no catálogo: N1 1,7 · N2 4,2 · N3 7 · N4 12.
 - `level` e `mpCost` como número nos documentos novos.
+- **Acréscimo de MP por estágio** (`mpCostIncrease`, opcional): sem o campo, o custo de cada estágio é `mpCost` + o acréscimo padrão do código por nível (N1 +1/+2, N2 +2/+4, N3 +2/+5, N4 +4/+9;
+  `calculateExtraManaCost`, `utils/roguelite/spellCost.ts`). Com o campo, é um **array de números, um por estágio acima do primeiro** (`[acréscimo do estágio 2, acréscimo do estágio 3]`; um só para magia de
+  2 estágios, nenhum para 1), somado ao `mpCost` no lugar do padrão; o estágio 1 nunca tem acréscimo, e número ausente, vazio ou inválido cai no padrão só daquele estágio. Vale em tudo que mostra ou cobra o custo
+  (cartão da ficha, `StageLadder`, conjurar na campanha, cartão do Roguelite); a sustentada paga metade desse custo. Nenhuma magia do catálogo tem o campo ainda (vale o padrão do código).
 - Texto no vocabulário do catálogo: "turnos" e "combate" (não "rodadas"/"cena"), metros como `4,5m`.
 - No máximo UMA expressão de dados (`XdY`) por estágio: `rollSpellEffect` (ao efetuar a magia) rola todas as que achar no texto.
 - Antes de criar magias, ler o catálogo para não repetir conceito e seguir o vocabulário real.
@@ -353,6 +357,12 @@ Janela (decisão do dono, 24/10/2026): **por rodada de combate**. O MP gasto em 
 rodada nova começava com o gasto antigo). Reações em turnos alheios contam na mesma rodada. **Fora do combate o limite não é consumido**: a tela só registra o gasto
 de quem está num combate ativo (`SpellsSection`), e o `spend_mp` do servidor sem combate ativo devolve sucesso sem gravar nada (não é mais 400). Recuperar MP não
 devolve limite; ao exceder, a conjuração é bloqueada e o mestre pode liberar (até a rodada virar). Não vale no Roguelite nem em sistemas customizados.
+
+**Criaturas também têm limite de MP por turno** (decisão do dono, 24/10/2026): `getCreatureMpLimit` = `⌈(Nível + Foco) ÷ 2⌉` da criatura personalizada de origem (sem ORM; `isCreatureMpLimitEnforced`:
+não vale no Roguelite nem com o cálculo em 0). O MP da criatura mora no combatente: o `spend_mp` do servidor, para criatura (só o mestre), confere o MP, aplica o limite (409 `MP_LIMIT_EXCEEDED`), grava o gasto na
+rodada e desconta o MP do combatente. A janela da criatura em combate (`CombatantView`) lista as magias dela com **Conjurar** (gasta o custo e conta no limite); o limite aparece como gasto/limite na janela, no cartão da
+criatura e no diálogo de combate. O mestre pode **resetar o MP gasto de qualquer jogador ou criatura** em combate (`reset_mp_limit`, só mestre; botão no diálogo de combate, no menu do cartão do jogador, no cartão e na janela da
+criatura) e liberar o limite (`set_mp_limit_override`, agora também para criatura). Mudança entregue sem testes novos.
 
 O mestre vê o **Overall** (o `overall` guardado na ficha, o mesmo da tela do jogador) e o limite no resumo, no cartão do jogador e na aba Informações
 (`SheetMetricsView`, `getSheetMetrics` em `utils/charsheetMetrics.ts`). Onde a regra não vale o limite some e o Overall fica; em combate ativo o limite

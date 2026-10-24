@@ -17,6 +17,8 @@ interface SpellCardProps {
     level?: number
     stages?: string[]
     mpCost?: number
+    /** Acréscimo de MP do estágio 2 e do estágio 3 gravado na magia (opcional) */
+    mpCostIncrease?: number[]
     // Seleção
     isSelected?: boolean
     onClick?: () => void
@@ -31,6 +33,7 @@ export function SpellCard({
     level,
     stages,
     mpCost,
+    mpCostIncrease,
     isSelected,
     onClick
 }: SpellCardProps) {
@@ -40,7 +43,7 @@ export function SpellCard({
     const currentDescription = stages?.[currentStage] ?? description
 
     // Custo de MP dinâmico baseado no estágio
-    const extraCost = calculateExtraManaCost(Number(level) || 1, currentStage)
+    const extraCost = calculateExtraManaCost(Number(level) || 1, currentStage, mpCostIncrease)
     const baseMpCost = Number(mpCost) || 0
     const totalMpCost = baseMpCost + extraCost
 
