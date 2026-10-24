@@ -1,4 +1,4 @@
-import { canEvolve, evolutionBlockReason, EVOLUTION_POINT_COST, formatEvolutionPoints, getEvolutionPoints, getSpellProgress, getStageProgress, materializeUnlocked, spellStageCount, spellStageKey, spellStageLabel, stageRule, usesStageUnlock, withoutSpell } from '../spellStages'
+import { canEvolve, evolutionBlockReason, EVOLUTION_POINT_COST, formatEvolutionPoints, getEvolutionPoints, getSpellProgress, getStageProgress, spellStageCount, spellStageKey, spellStageLabel, stageRule, usesStageUnlock, withoutSpell } from '../spellStages'
 
 describe('spellStageCount e spellStageKey', () => {
     it('conta os estágios pelos textos presentes', () => {
@@ -31,24 +31,20 @@ describe('usesStageUnlock', () => {
 
 describe('getStageProgress', () => {
     it('magia nova começa no estágio 1, com o 2 como próximo', () => {
-        const progress = getStageProgress({}, 'm1', 3, true)
-        expect(progress).toMatchObject({ unlocked: 1, active: 1, next: 2, needsMaterialize: true, count: 3 })
+        expect(getStageProgress({}, 'm1', 3, true)).toEqual({ enabled: true, count: 3, unlocked: 1, next: 2 })
     })
 
-    it('usa o estágio liberado gravado e limita o ativo a ele', () => {
-        const progress = getStageProgress({ spellUnlocked: { m1: 2 }, spellStages: { m1: 3 } }, 'm1', 3, true)
-        expect(progress).toMatchObject({ unlocked: 2, active: 2, next: 3, needsMaterialize: false })
+    it('usa o estágio liberado gravado', () => {
+        expect(getStageProgress({ spellUnlocked: { m1: 2 } }, 'm1', 3, true)).toMatchObject({ unlocked: 2, next: 3 })
     })
 
-    it('ficha antiga sem spellUnlocked: vale o estágio que o jogador já usava', () => {
-        const progress = getStageProgress({ spellStages: { m1: 3 } }, 'm1', 3, true)
-        expect(progress).toMatchObject({ unlocked: 3, active: 3, next: null, needsMaterialize: true })
+    it('o spellStages legado não passa do liberado gravado (não é mais um "estágio ativo")', () => {
+        expect(getStageProgress({ spellUnlocked: { m1: 2 }, spellStages: { m1: 3 } }, 'm1', 3, true)).toMatchObject({ unlocked: 2, next: 3 })
     })
 
-    it('o valor antigo vem do carregamento, não do formulário que já mudou', () => {
-        // o jogador carregou a ficha com a magia no estágio 3 e clicou no estágio 1: continua com 3 liberados
-        const progress = getStageProgress({ spellStages: { m1: 1 } }, 'm1', 3, true, { m1: 3 })
-        expect(progress).toMatchObject({ unlocked: 3, active: 1 })
+    it('ficha antiga sem spellUnlocked: vale o estágio que o jogador já usava (spellStages legado)', () => {
+        expect(getStageProgress({ spellStages: { m1: 3 } }, 'm1', 3, true)).toMatchObject({ unlocked: 3, next: null })
+        expect(getStageProgress({ spellStages: { m1: 2 } }, 'm1', 3, true)).toMatchObject({ unlocked: 2, next: 3 })
     })
 
     it('não passa do número de estágios que a magia tem', () => {
@@ -56,31 +52,20 @@ describe('getStageProgress', () => {
     })
 
     it('valores inválidos viram estágio 1', () => {
-        expect(getStageProgress({ spellUnlocked: { m1: 'x' }, spellStages: { m1: 0 } }, 'm1', 3, true)).toMatchObject({ unlocked: 1, active: 1 })
+        expect(getStageProgress({ spellUnlocked: { m1: 'x' }, spellStages: { m1: 0 } }, 'm1', 3, true)).toMatchObject({ unlocked: 1 })
         expect(getStageProgress({ spellUnlocked: { m1: 9 } }, 'm1', 3, true)).toMatchObject({ unlocked: 3 })
     })
 
-    it('sem a regra (customizado/Roguelite): tudo liberado e o estágio ativo vale como sempre', () => {
-        const progress = getStageProgress({ spellStages: { m1: 2 } }, 'm1', 3, false)
-        expect(progress).toMatchObject({ enabled: false, unlocked: 3, active: 2, next: null, needsMaterialize: false })
+    it('sem a regra (customizado/Roguelite): tudo liberado', () => {
+        expect(getStageProgress({ spellStages: { m1: 2 } }, 'm1', 3, false)).toEqual({ enabled: false, count: 3, unlocked: 3, next: null })
+    })
+
+    it('não existe estágio ativo no resultado', () => {
+        expect(getStageProgress({ spellStages: { m1: 2 } }, 'm1', 3, true)).not.toHaveProperty('active')
     })
 })
 
-describe('materializeUnlocked e withoutSpell', () => {
-    it('grava o liberado de ficha antiga e não mexe quando já está gravado', () => {
-        const legacy = getStageProgress({ spellStages: { m1: 3 } }, 'm1', 3, true)
-        expect(materializeUnlocked({}, 'm1', legacy)).toEqual({ m1: 3 })
-
-        const saved = getStageProgress({ spellUnlocked: { m1: 2 } }, 'm1', 3, true)
-        const map = { m1: 2 }
-        expect(materializeUnlocked(map, 'm1', saved)).toBe(map)
-    })
-
-    it('não grava nada sem a regra', () => {
-        const off = getStageProgress({ spellStages: { m1: 3 } }, 'm1', 3, false)
-        expect(materializeUnlocked(undefined, 'm1', off)).toEqual({})
-    })
-
+describe('withoutSpell', () => {
     it('remove só a magia pedida', () => {
         expect(withoutSpell({ a: 1, b: 2 }, 'a')).toEqual({ b: 2 })
         expect(withoutSpell(undefined, 'a')).toEqual({})
@@ -164,7 +149,7 @@ describe('getSpellProgress', () => {
 
     it('magia nova de nível 3: próximo estágio custa 2 pontos', () => {
         const progress = getSpellProgress(waterL3, {}, { enabled: true })
-        expect(progress).toMatchObject({ unlocked: 1, active: 1, next: 2, nextCost: 2, needsMastery: false, purchased: 1 })
+        expect(progress).toMatchObject({ unlocked: 1, next: 2, nextCost: 2, needsMastery: false, purchased: 1 })
         expect(progress.stages.map(s => s.status)).toEqual([ 'unlocked', 'next', 'locked' ])
         expect(progress.stages.map(s => s.rule.cost)).toEqual([ 0, 2, 2 ])
     })
@@ -181,7 +166,7 @@ describe('getSpellProgress', () => {
     it('nível 4 primário com maestria no elemento: a Maestria abre sozinha depois do estágio 2', () => {
         const withMastery = { elementalMastery: 'Fogo', spellUnlocked: { f4: 2 }, spellStages: { f4: 3 } }
         const progress = getSpellProgress(fireL4, withMastery, { enabled: true })
-        expect(progress).toMatchObject({ unlocked: 3, active: 3, next: null, nextCost: null, needsMastery: false, purchased: 2 })
+        expect(progress).toMatchObject({ unlocked: 3, next: null, nextCost: null, needsMastery: false, purchased: 2 })
         expect(progress.stages[2]).toMatchObject({ status: 'unlocked', byMastery: true })
         expect(progress.stages[1]).toMatchObject({ byMastery: false })
     })
@@ -203,20 +188,20 @@ describe('getSpellProgress', () => {
         expect(canEvolve(progress, 2)).toBe(false)
     })
 
-    it('o ativo escolhido não passa do liberado', () => {
+    it('o spellStages legado não libera nada acima do que está gravado em spellUnlocked', () => {
         const progress = getSpellProgress(waterL3, { spellUnlocked: { w3: 1 }, spellStages: { w3: 3 } }, { enabled: true })
-        expect(progress.active).toBe(1)
+        expect(progress).toMatchObject({ unlocked: 1, purchased: 1 })
+        expect(progress).not.toHaveProperty('active')
     })
 
-    it('ficha antiga: o liberado gravado é o comprado, não o que a maestria abriu', () => {
+    it('ficha antiga: o liberado por pontos é o legado, e a maestria abre a Maestria por cima dele', () => {
         const progress = getSpellProgress(fireL4, { elementalMastery: 'FOGO', spellStages: { f4: 2 } }, { enabled: true })
-        expect(progress).toMatchObject({ purchased: 2, unlocked: 3, needsMaterialize: true })
-        expect(materializeUnlocked({}, 'f4', progress)).toEqual({ f4: 2 })
+        expect(progress).toMatchObject({ purchased: 2, unlocked: 3 })
     })
 
     it('sem a regra (customizado/Roguelite): tudo liberado, sem custo nem maestria', () => {
         const progress = getSpellProgress(fireL4, { spellStages: { f4: 2 } }, { enabled: false })
-        expect(progress).toMatchObject({ enabled: false, unlocked: 3, active: 2, next: null, nextCost: null, needsMastery: false })
+        expect(progress).toMatchObject({ enabled: false, unlocked: 3, next: null, nextCost: null, needsMastery: false })
         expect(progress.stages.every(s => s.status === 'unlocked' && !s.byMastery)).toBe(true)
     })
 

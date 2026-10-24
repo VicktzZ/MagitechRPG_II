@@ -14,14 +14,12 @@
  *   nível 4 não tem esse atalho: o estágio 3 também custa 3 pontos.
  * O ajuste direto do mestre (aba de magias do detalhe da ficha) não gasta ponto.
  *
- * Dois campos da ficha:
- * - `spellStages[chave]`   estágio ATIVO: o que o jogador escolheu para conjurar;
- * - `spellUnlocked[chave]` estágio liberado até agora (o ativo nunca passa dele).
- * A chave é o id da magia (ou o nome, quando a magia não tem id).
+ * Não existe "estágio ativo": quem evoluiu a magia conjura o estágio liberado ou qualquer um dos anteriores, escolhendo na hora
+ * de conjurar (cada estágio traz o próprio custo de MP).
  *
- * Ficha criada antes desta regra não tem `spellUnlocked`: vale o estágio que o jogador já usava na magia, senão ninguém
- * perderia de repente o estágio 3 que conjurava. Esse valor antigo tem de ser gravado em `spellUnlocked` junto com a
- * primeira mudança da magia (`materializeUnlocked`), senão trocar o estágio ativo para 1 apagaria o estágio liberado.
+ * Campo da ficha: `spellUnlocked[chave]` é o estágio liberado até agora. A chave é o id da magia (ou o nome, quando a magia não tem id).
+ * `spellStages[chave]` é **legado**: guardava o estágio que o jogador escolhera usar. A tela não grava mais esse campo, e ele só vale
+ * como estágio liberado em ficha criada antes da regra (sem `spellUnlocked`), senão ninguém perderia de repente o estágio 3 que conjurava.
  */
 
 import { isSecondaryElement, sameElement } from './elements';
@@ -69,55 +67,19 @@ export interface StageProgress {
     /** A regra de desbloqueio vale para esta ficha? Se não, todos os estágios estão liberados */
     enabled: boolean;
     count: SpellStage;
-    /** Estágio liberado até agora */
+    /** Estágio liberado até agora: dele e de todos os anteriores se pode conjurar */
     unlocked: SpellStage;
-    /** Estágio ativo, sempre entre 1 e o liberado */
-    active: SpellStage;
     /** Próximo estágio a liberar, ou `null` se já liberou todos */
     next: SpellStage | null;
-    /** `spellUnlocked` ainda não tem esta magia (ficha antiga): o valor liberado precisa ser gravado junto da próxima mudança */
-    needsMaterialize: boolean;
 }
 
-/**
- * @param legacy `spellStages` de quando a ficha foi carregada. Na ficha aberta para edição o `spellStages` do formulário já
- *   mudou com os cliques, então o valor "antigo" tem de vir do que foi carregado; na campanha o documento é o próprio banco.
- */
-export function getStageProgress(
-    state: StageSheetState,
-    key: string,
-    stageCount: number,
-    enabled: boolean,
-    legacy?: StageMap
-): StageProgress {
+/** `spellUnlocked`; sem ele (ficha antiga) vale o `spellStages` legado; sem nenhum dos dois a magia está no estágio 1 */
+export function getStageProgress(state: StageSheetState, key: string, stageCount: number, enabled: boolean): StageProgress {
     const count = Math.max(1, Math.min(MAX_SPELL_STAGE, Math.floor(stageCount) || 1)) as SpellStage;
-    const explicit = toStage(state.spellUnlocked?.[key]);
-    const chosen = toStage(state.spellStages?.[key]) ?? 1;
+    if (!enabled) return { enabled, count, unlocked: count, next: null };
 
-    if (!enabled) {
-        const active = Math.min(chosen, count) as SpellStage;
-        return { enabled, count, unlocked: count, active, next: null, needsMaterialize: false };
-    }
-
-    const unlocked = Math.min(explicit ?? toStage((legacy ?? state.spellStages)?.[key]) ?? 1, count) as SpellStage;
-    const active = Math.min(chosen, unlocked) as SpellStage;
-    const next = unlocked < count ? (unlocked + 1) as SpellStage : null;
-    return { enabled, count, unlocked, active, next, needsMaterialize: explicit === undefined };
-}
-
-/**
- * `spellUnlocked` com esta magia gravada. Chamar antes de mudar o estágio ativo de uma magia de ficha antiga: grava o
- * estágio que ela já tinha liberado. Devolve o mesmo objeto quando não há o que gravar.
- */
-export function materializeUnlocked(
-    spellUnlocked: StageMap,
-    key: string,
-    progress: Pick<StageProgress, 'enabled' | 'unlocked' | 'needsMaterialize'> & { purchased?: SpellStage }
-): Record<string, number> {
-    const current = (spellUnlocked ?? {}) as Record<string, number>;
-    if (!progress.enabled || !progress.needsMaterialize) return current;
-    // Grava o que a ficha já tinha liberado, não o que a maestria abre sozinha (isso muda se a maestria mudar)
-    return { ...current, [key]: progress.purchased ?? progress.unlocked };
+    const unlocked = Math.min(toStage(state.spellUnlocked?.[key]) ?? toStage(state.spellStages?.[key]) ?? 1, count) as SpellStage;
+    return { enabled, count, unlocked, next: unlocked < count ? (unlocked + 1) as SpellStage : null };
 }
 
 /** Remove a magia dos dois mapas (ao excluí-la da ficha) */
@@ -199,7 +161,7 @@ export interface StageInfo {
 }
 
 export interface SpellProgress extends StageProgress {
-    /** Estágio liberado por pontos (ou herdado da ficha antiga): é o que fica gravado em `spellUnlocked` */
+    /** Estágio liberado por pontos (ou herdado da ficha antiga): é o que fica gravado em `spellUnlocked`; a maestria não entra */
     purchased: SpellStage;
     /** Pontos para liberar o próximo estágio; `null` quando não há próximo ou ele só abre pela maestria */
     nextCost: number | null;
@@ -212,8 +174,6 @@ export interface SpellProgress extends StageProgress {
 export interface SpellProgressOptions {
     /** A regra de desbloqueio vale para esta ficha? (`usesStageUnlock`) */
     enabled: boolean;
-    /** `spellStages` de quando a ficha foi carregada (ver `getStageProgress`) */
-    legacy?: StageMap;
 }
 
 /**
@@ -226,7 +186,7 @@ export function getSpellProgress(
     options: SpellProgressOptions
 ): SpellProgress {
     const key = spellStageKey(spell);
-    const base = getStageProgress(sheet, key, spellStageCount(spell), options.enabled, options.legacy);
+    const base = getStageProgress(sheet, key, spellStageCount(spell), options.enabled);
     const purchased = base.unlocked;
 
     const masteryOpens = base.enabled
@@ -235,8 +195,6 @@ export function getSpellProgress(
         && stageRule(spell, 3).access === 'mastery'
         && sameElement(sheet.elementalMastery, spell.element);
     const unlocked: SpellStage = masteryOpens ? 3 : purchased;
-    const chosen = toStage(sheet.spellStages?.[key]) ?? 1;
-    const active = Math.min(chosen, unlocked) as SpellStage;
     const next = unlocked < base.count ? (unlocked + 1) as SpellStage : null;
 
     const nextRule = next && base.enabled ? stageRule(spell, next) : null;
@@ -254,7 +212,6 @@ export function getSpellProgress(
     return {
         ...base,
         unlocked,
-        active,
         next,
         purchased,
         nextCost: nextRule?.access === 'points' ? nextRule.cost : null,

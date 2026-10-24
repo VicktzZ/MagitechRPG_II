@@ -38,9 +38,8 @@ import { memo, useCallback, useMemo, useState } from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
 import { Magic } from '.';
 import MagicsModal, { spellKey } from './dialogs/MagicsModal';
-import { useCharsheetBaseline } from '@contexts';
 import { normalizeToArray } from '@utils/normalizeToArray';
-import { canEvolve, formatEvolutionPoints, getEvolutionPoints, getSpellProgress, materializeUnlocked, usesStageUnlock, withoutSpell, type SpellProgress } from '@utils/spellStages';
+import { canEvolve, formatEvolutionPoints, getEvolutionPoints, getSpellProgress, usesStageUnlock, withoutSpell, type SpellProgress } from '@utils/spellStages';
 
 function getSpellPointCost(level: number): 1 | 2 {
     return level >= 3 ? 2 : 1
@@ -77,8 +76,6 @@ const Spells = memo(() => {
     // quando foi aberta vale como liberado nas fichas antigas, que ainda não têm `spellUnlocked`
     const systemId = useWatch({ control, name: 'systemId' })
     const charClass = useWatch({ control, name: 'class' })
-    const baseline = useCharsheetBaseline()
-    const legacyStages = baseline.get()?.spellStages
     const stageRule = usesStageUnlock({ systemId, class: charClass })
 
     const points = useWatch({ control, name: 'points' })
@@ -168,18 +165,10 @@ const Spells = memo(() => {
         }
     }, [ spells, points, spellSpace, enqueueSnackbar, closeSnackbar, setValue, spellStages, spellUnlocked ])
 
-    // Objetos inteiros: o nome da magia (chave de reserva) pode ter ponto, que o caminho do RHF separaria
-    const changeActiveStage = useCallback((magicKey: string, stage: 1 | 2 | 3, progress: SpellProgress) => {
-        const unlocked = materializeUnlocked(spellUnlocked, magicKey, progress)
-        // Ficha antiga: grava o estágio que a magia já tinha liberado antes de mudar o ativo (senão trocar para o 1 o perderia)
-        if (unlocked !== (spellUnlocked ?? {})) setValue('spellUnlocked', unlocked, { shouldValidate: true })
-        setValue('spellStages', { ...(spellStages || {}), [magicKey]: stage } as any, { shouldValidate: true })
-    }, [ setValue, spellStages, spellUnlocked ])
-
     const evolutionPoints = getEvolutionPoints(points)
 
-    // Evoluir: gasta os pontos de evolução que o próximo estágio custa (nível 1 e 2: 1, nível 3: 2, nível 4: 3), libera o estágio
-    // e já o deixa ativo para o jogador ver o que ganhou
+    // Evoluir: gasta os pontos de evolução que o próximo estágio custa (nível 1 e 2: 1, nível 3: 2, nível 4: 3) e libera o estágio.
+    // Objeto inteiro: o nome da magia (chave de reserva) pode ter ponto, que o caminho do RHF separaria
     const unlockStage = useCallback((magicKey: string, stage: 1 | 2 | 3, cost: number, progress: SpellProgress) => {
         if (!canEvolve(progress, evolutionPoints)) {
             enqueueSnackbar(`Você precisa de ${formatEvolutionPoints(cost)} para evoluir esta magia. Peça ao mestre.`, toastDefault('noEvolutionPoint', 'warning'))
@@ -187,13 +176,11 @@ const Spells = memo(() => {
         }
         setValue('points.evolution', evolutionPoints - cost, { shouldValidate: true })
         setValue('spellUnlocked', { ...(spellUnlocked || {}), [magicKey]: stage } as any, { shouldValidate: true })
-        setValue('spellStages', { ...(spellStages || {}), [magicKey]: stage } as any, { shouldValidate: true })
-    }, [ setValue, spellStages, spellUnlocked, evolutionPoints, enqueueSnackbar ])
+    }, [ setValue, spellUnlocked, evolutionPoints, enqueueSnackbar ])
 
     const renderMagicCard = useCallback((magic: Spell) => {
         const magicKey = spellKey(magic)
-        const progress = getSpellProgress(magic, { spellStages, spellUnlocked, elementalMastery }, { enabled: stageRule, legacy: legacyStages })
-        const selectedStage = progress.active
+        const progress = getSpellProgress(magic, { spellStages, spellUnlocked, elementalMastery }, { enabled: stageRule })
 
         return (
             <Grid
@@ -221,21 +208,16 @@ const Spells = memo(() => {
                         as='magic-spell'
                         id={magicKey}
                         magic={magic}
-                        selectedStage={selectedStage}
                         unlockedStage={progress.enabled ? progress.unlocked : undefined}
                         onUnlockStage={progress.enabled && progress.nextCost !== null ? (stage: 1 | 2 | 3) => { unlockStage(magicKey, stage, progress.nextCost ?? 0, progress) } : undefined}
                         evolutionPoints={progress.enabled ? evolutionPoints : undefined}
                         nextCost={progress.nextCost}
-                        onStageChange={(stage: 1 | 2 | 3) => {
-                            if (!magicKey) return
-                            changeActiveStage(magicKey, stage, progress)
-                        }}
                         onIconClick={() => { handleRemoveMagic(magicKey, magic.name) }}
                     />
                 </motion.div>
             </Grid>
         )
-    }, [ handleRemoveMagic, changeActiveStage, unlockStage, spellStages, spellUnlocked, elementalMastery, stageRule, legacyStages, evolutionPoints ])
+    }, [ handleRemoveMagic, unlockStage, spellStages, spellUnlocked, elementalMastery, stageRule, evolutionPoints ])
 
     const spellsList = useMemo(() => {
         if (!filteredSpells?.length) {

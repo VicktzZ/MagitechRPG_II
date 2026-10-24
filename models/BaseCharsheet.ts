@@ -50,12 +50,12 @@ export class BaseCharsheet {
     @IsOptional()
         systemId?: string;
 
-    /** Estágio ATIVO de cada magia (a que o jogador usa para conjurar), por id da magia */
+    /** LEGADO: estágio que a ficha usava em cada magia antes da regra de desbloqueio. Não é mais gravado; só vale como liberado em ficha sem `spellUnlocked` (ver `utils/spellStages.ts`) */
     @IsOptional()
     @IsObject()
         spellStages?: Record<string, number> = {};
 
-    /** Estágio liberado até agora em cada magia, por id; o ativo nunca passa dele (ver `utils/spellStages.ts`) */
+    /** Estágio liberado até agora em cada magia, por id: dele e dos anteriores se pode conjurar (ver `utils/spellStages.ts`) */
     @IsOptional()
     @IsObject()
         spellUnlocked?: Record<string, number> = {};

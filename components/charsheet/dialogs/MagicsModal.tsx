@@ -14,7 +14,6 @@ import { SPELL_FILTERS } from '@utils/spellCategory';
 import { color, shadow } from '@themes/tokens';
 import { normalizeToArray } from '@utils/normalizeToArray';
 import { getSpellProgress, usesStageUnlock } from '@utils/spellStages';
-import { useCharsheetBaseline } from '@contexts';
 
 import Magic from '../subcomponents/Magic';
 
@@ -32,7 +31,6 @@ function hasSpell(spells: unknown, spell: Spell): boolean {
 
 export default function SpellsModal({ open, onClose }: { open: boolean, onClose: () => void }): ReactElement {
     const { getValues, setValue } = useFormContext<CharsheetDTO>();
-    const baseline = useCharsheetBaseline();
     
     const invalidate = (message: string) => ({ isValid: false, errorMessage: message });
 
@@ -181,7 +179,7 @@ export default function SpellsModal({ open, onClose }: { open: boolean, onClose:
                                 const progress = getSpellProgress(
                                     item,
                                     { spellStages: getValues('spellStages'), spellUnlocked: getValues('spellUnlocked'), elementalMastery: getValues('elementalMastery') },
-                                    { enabled: stageRule, legacy: baseline.get()?.spellStages }
+                                    { enabled: stageRule }
                                 );
 
                                 return (
@@ -192,7 +190,6 @@ export default function SpellsModal({ open, onClose }: { open: boolean, onClose:
                                         magic={item}
                                         id={spellKey(item)}
                                         isAdding={!alreadyAdded}
-                                        selectedStage={stageRule ? (alreadyAdded ? progress.active : 1) : undefined}
                                         unlockedStage={stageRule ? (alreadyAdded ? progress.unlocked : 1) : undefined}
                                         onIconClick={alreadyAdded ? undefined : handleAddItem}
                                     />

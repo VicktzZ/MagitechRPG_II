@@ -20,13 +20,14 @@ const ladder = (spell: typeof water3, sheet: Parameters<typeof getSpellProgress>
     render(<StageLadder spell={spell} progress={getSpellProgress(spell, sheet, { enabled: true })} {...extra} />);
 
 describe('StageLadder', () => {
-    it('mostra os estágios liberados abertos, o ativo marcado e o texto de cada um', () => {
-        const html = ladder(water3, { spellUnlocked: { w3: 2 }, spellStages: { w3: 2 } });
+    it('mostra os estágios liberados abertos e o texto de cada um, sem "estágio ativo"', () => {
+        const html = ladder(water3, { spellUnlocked: { w3: 2 } });
         expect(html).toContain('data-testid="stage-row-1"');
         expect(html).toContain('data-testid="stage-row-2"');
         expect(html).toContain('Causa 2d6 de dano de fogo');
         expect(html).toContain('em chamas por 2 turnos');
-        expect(html.match(/data-testid="stage-active-chip"/g)).toHaveLength(1);
+        expect(html).not.toContain('stage-active-chip');
+        expect(html).not.toContain('>Ativo<');
         // o estágio 3 ainda está bloqueado (é o próximo a liberar) e não mostra o texto
         expect(html).toContain('data-status="next"');
         expect(html).not.toContain('4d6');
@@ -103,16 +104,33 @@ describe('StageLadder', () => {
         expect(html).not.toContain('data-testid="stage-evolve"');
     });
 
-    it('conjurar aparece só no estágio ativo e usar nos outros liberados', () => {
-        const html = ladder(water3, { spellUnlocked: { w3: 2 }, spellStages: { w3: 2 } }, { cast: { onCast: noop, currentMp: 20 }, onActivate: noop });
-        expect(html.match(/data-testid="stage-cast"/g)).toHaveLength(1);
-        expect(html).toContain('data-testid="stage-activate-1"');
-        expect(html).not.toContain('data-testid="stage-activate-2"');
+    it('cada estágio liberado tem o próprio botão de conjurar, e o bloqueado não tem', () => {
+        const html = ladder(water3, { spellUnlocked: { w3: 2 } }, { cast: { onCast: noop, currentMp: 20 } });
+        expect(html).toContain('data-testid="stage-cast-1"');
+        expect(html).toContain('data-testid="stage-cast-2"');
+        expect(html).not.toContain('data-testid="stage-cast-3"');
+        expect(html).toContain('aria-label="Conjurar Maré Alta no Estágio 1"');
+        expect(html).not.toContain('stage-activate');
+        expect(html).not.toContain('>Usar<');
+    });
+
+    it('o MP é conferido por estágio: dá para o estágio 1 e não para o 3 (custos 7, 9 e 12)', () => {
+        const html = ladder(water3, { spellUnlocked: { w3: 3 } }, { cast: { onCast: noop, currentMp: 10 } });
+        const button = (stage: number) => html.match(new RegExp(`<button[^>]*data-testid="stage-cast-${stage}"[^>]*>`))?.[0] ?? '';
+        expect(button(1)).not.toContain('disabled');
+        expect(button(2)).not.toContain('disabled');
+        expect(button(3)).toContain('disabled');
+    });
+
+    it('o limite de MP por turno é perguntado com o custo de cada estágio', () => {
+        const asked: Array<[number, number]> = [];
+        ladder(water3, { spellUnlocked: { w3: 2 } }, { cast: { onCast: noop, currentMp: 20, blockedReason: (stage, cost) => { asked.push([ stage, cost ]); return stage === 2 ? 'Limite' : undefined } } });
+        expect(asked).toEqual([ [ 1, 7 ], [ 2, 9 ] ]);
     });
 
     it('sem MP o botão de conjurar fica desabilitado', () => {
         const html = ladder(water3, {}, { cast: { onCast: noop, currentMp: 3 } });
-        expect(html).toMatch(/<button[^>]*disabled[^>]*data-testid="stage-cast"|<button[^>]*data-testid="stage-cast"[^>]*disabled/);
+        expect(html).toMatch(/<button[^>]*disabled[^>]*data-testid="stage-cast-1"|<button[^>]*data-testid="stage-cast-1"[^>]*disabled/);
     });
 
     it('recolher/expandir só aparece quando há mais de um estágio liberado', () => {

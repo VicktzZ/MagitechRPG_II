@@ -32,16 +32,17 @@ export interface StageLadderProps {
         onEvolve: () => void | Promise<void>;
         busy?: boolean;
     };
-    /** Trocar o estágio ativo; sem isso os estágios liberados não têm o botão "Usar" */
-    onActivate?: (stage: SpellStage) => void | Promise<void>;
-    /** Conjurar o estágio ativo (campanha) */
+    /**
+     * Conjurar (campanha): cada estágio liberado tem o próprio botão, com o custo dele; o jogador conjura o estágio mais novo ou qualquer
+     * anterior, sem trocar de "estágio ativo".
+     */
     cast?: {
         onCast: (stage: SpellStage) => void | Promise<void>;
         isCasting?: boolean;
-        /** MP atual de quem conjura; sem MP suficiente o botão fica desabilitado */
+        /** MP atual de quem conjura; sem MP suficiente para o custo do estágio o botão fica desabilitado */
         currentMp?: number;
-        /** Preenchido quando a conjuração estouraria o limite de MP por turno */
-        blockedReason?: string;
+        /** Devolve o motivo quando conjurar este estágio (com este custo de MP) estouraria o limite de MP por turno */
+        blockedReason?: (stage: SpellStage, cost: number) => string | undefined;
     };
 }
 
@@ -69,7 +70,7 @@ function StageMark({ children }: { children: string }): ReactElement {
  * Os estágios de uma magia, do primeiro ao último, como uma escada: os liberados ficam abertos (dá para recolher), com o que
  * cada um muda em relação ao anterior destacado, e os bloqueados mostram o custo para liberar.
  */
-export default function StageLadder({ spell, progress, evolution, onActivate, cast }: StageLadderProps): ReactElement {
+export default function StageLadder({ spell, progress, evolution, cast }: StageLadderProps): ReactElement {
     const [ collapsed, setCollapsed ] = useState<ReadonlySet<number>>(new Set());
     const level = Number(spell.level) || 1;
     const baseCost = Number(spell.mpCost) || 0;
@@ -121,12 +122,12 @@ export default function StageLadder({ spell, progress, evolution, onActivate, ca
             <Box component="ol" sx={{ listStyle: 'none', m: 0, p: 0 }}>
                 {progress.stages.map((info, index) => {
                     const unlocked = info.status === 'unlocked';
-                    const isActive = unlocked && info.stage === progress.active;
+                    const cost = costOf(info.stage);
+                    const castBlocked = unlocked && cast ? cast.blockedReason?.(info.stage, cost) : undefined;
                     const open = unlocked && !collapsed.has(info.stage);
                     const previous = progress.stages[index - 1];
                     const diff = diffs[index];
                     const text = texts[info.stage - 1];
-                    const cost = costOf(info.stage);
                     const delta = previous ? cost - costOf(previous.stage) : 0;
                     const isNext = info.status === 'next';
 
@@ -155,7 +156,7 @@ export default function StageLadder({ spell, progress, evolution, onActivate, ca
                                     borderRadius: '50%',
                                     border: '2px solid',
                                     borderColor: unlocked ? color.amber : color.borderStrong,
-                                    bgcolor: isActive ? color.amber : 'background.default'
+                                    bgcolor: unlocked ? color.amber : 'background.default'
                                 }
                             }}
                         >
@@ -163,9 +164,9 @@ export default function StageLadder({ spell, progress, evolution, onActivate, ca
                                 <Box
                                     sx={{
                                         border: '1px solid',
-                                        borderColor: isActive ? color.amberLine : 'divider',
+                                        borderColor: 'divider',
                                         borderRadius: 2,
-                                        bgcolor: isActive ? color.amberSubtle : 'background.raised',
+                                        bgcolor: 'background.raised',
                                         overflow: 'hidden'
                                     }}
                                 >
@@ -184,7 +185,6 @@ export default function StageLadder({ spell, progress, evolution, onActivate, ca
                                             <Typography variant="subtitle2" component="span" sx={{ fontWeight: 700 }}>
                                                 {info.label}
                                             </Typography>
-                                            {isActive && <Chip size="small" color="primary" label="Ativo" data-testid="stage-active-chip" />}
                                             {info.byMastery && <Chip size="small" variant="outlined" label="Aberta pela maestria" />}
                                         </ButtonBase>
 
@@ -197,11 +197,11 @@ export default function StageLadder({ spell, progress, evolution, onActivate, ca
                                             />
                                         </Tooltip>
 
-                                        {isActive && cast && (
+                                        {cast && (
                                             <Tooltip
                                                 title={cast.currentMp !== undefined && cast.currentMp < cost
                                                     ? `MP insuficiente (precisa de ${cost})`
-                                                    : cast.blockedReason ?? `Conjurar — gasta ${cost} MP`}
+                                                    : castBlocked ?? `Conjurar o ${info.label} — gasta ${cost} MP`}
                                             >
                                                 <span>
                                                     <Button
@@ -210,26 +210,14 @@ export default function StageLadder({ spell, progress, evolution, onActivate, ca
                                                         startIcon={<Bolt fontSize="small" />}
                                                         disabled={cast.isCasting || (cast.currentMp !== undefined && cast.currentMp < cost)}
                                                         onClick={() => { void cast.onCast(info.stage) }}
-                                                        data-testid="stage-cast"
-                                                        sx={{ textTransform: 'none', fontWeight: 700, opacity: cast.blockedReason ? 0.55 : 1 }}
+                                                        aria-label={`Conjurar ${spell.name ?? 'a magia'} no ${info.label}`}
+                                                        data-testid={`stage-cast-${info.stage}`}
+                                                        sx={{ textTransform: 'none', fontWeight: 700, opacity: castBlocked ? 0.55 : 1 }}
                                                     >
                                                         Conjurar
                                                     </Button>
                                                 </span>
                                             </Tooltip>
-                                        )}
-                                        {!isActive && onActivate && (
-                                            <Button
-                                                size="small"
-                                                variant="outlined"
-                                                color="secondary"
-                                                onClick={() => { void onActivate(info.stage) }}
-                                                aria-label={`Usar o ${info.label}`}
-                                                data-testid={`stage-activate-${info.stage}`}
-                                                sx={{ textTransform: 'none' }}
-                                            >
-                                                Usar
-                                            </Button>
                                         )}
                                     </Box>
 

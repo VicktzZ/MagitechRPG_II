@@ -41,7 +41,7 @@ import { color } from '@themes/tokens';
 import { type ReactElement, useState } from 'react';
 import { asRequestError } from '@utils/errors';
 import { SECONDARY_ELEMENT_LABEL, isSecondaryElement } from '@utils/elements';
-import { canEvolve, formatEvolutionPoints, getEvolutionPoints, getSpellProgress, materializeUnlocked, spellStageLabel, usesStageUnlock, withoutSpell, type SpellStage } from '@utils/spellStages';
+import { canEvolve, formatEvolutionPoints, getEvolutionPoints, getSpellProgress, spellStageLabel, usesStageUnlock, withoutSpell, type SpellStage } from '@utils/spellStages';
 
 /** Nível e estágio são escalas ordenadas: neutros que clareiam até o âmbar no topo (o número vai sempre em texto) */
 function getSpellLevelColor(level: number) {
@@ -211,36 +211,7 @@ export default function SpellsSection(): ReactElement {
         }
     }
 
-    const handleSetSpellStage = async (spell: SpellDTO, stage: SpellStage) => {
-        if (!charsheet?.id) return
-
-        const spellId = spell.id || spell.name
-        if (!spellId) return
-
-        const progress = getSpellProgress(spell, charsheet, { enabled: stageRule })
-        if (stage > progress.unlocked) return
-
-        try {
-            const update: Record<string, unknown> = {
-                spellStages: {
-                    ...(charsheet.spellStages || {}),
-                    [spellId]: stage
-                }
-            }
-            // Ficha antiga: grava o estágio que a magia já tinha liberado antes de trocar o ativo
-            const unlocked = materializeUnlocked(charsheet.spellUnlocked, spellId, progress)
-            if (unlocked !== (charsheet.spellUnlocked ?? {})) update['spellUnlocked'] = unlocked
-
-            await charsheetEntity.update(charsheet.id, update as any)
-
-            enqueueSnackbar(`Estágio da magia "${spell.name}" definido para ${stage}!`, { variant: 'success' })
-        } catch (error) {
-            console.error('Erro ao atualizar estágio da magia:', error)
-            enqueueSnackbar('Erro ao atualizar estágio da magia', { variant: 'error' })
-        }
-    }
-
-    // Evoluir: gasta os pontos de evolução que o próximo estágio custa (ver `stageRule`), libera o estágio e já o deixa ativo
+    // Evoluir: gasta os pontos de evolução que o próximo estágio custa (ver `stageRule`) e libera o estágio
     const evolutionPoints = getEvolutionPoints(charsheet?.points)
     const handleEvolve = async (spell: SpellDTO) => {
         if (!charsheet?.id) return
@@ -261,8 +232,7 @@ export default function SpellsSection(): ReactElement {
         try {
             await charsheetEntity.update(charsheet.id, {
                 'points.evolution': evolutionPoints - cost,
-                spellUnlocked: { ...(charsheet.spellUnlocked || {}), [spellId]: stage },
-                spellStages: { ...(charsheet.spellStages || {}), [spellId]: stage }
+                spellUnlocked: { ...(charsheet.spellUnlocked || {}), [spellId]: stage }
             } as any)
 
             const unlockedLabel = spellStageLabel(spell.level, stage).toLowerCase()
@@ -382,13 +352,8 @@ export default function SpellsSection(): ReactElement {
                                     const levelConfig = getSpellLevelColor(Number(spell.level));
                                     const spellId = spell.id || spell.name
                                     const progress = getSpellProgress(spell, charsheet, { enabled: stageRule })
-                                    const selectedStage = progress.active
                                     const evolvable = progress.enabled && canEvolve(progress, evolutionPoints)
-                                    const previewCost = castSpell(spell, selectedStage).mpCost
                                     const currentMp = Number(charsheet.stats?.mp ?? 0)
-                                    const limitBlockedReason = exceedsMpLimit(previewCost)
-                                        ? `Limite de MP por turno: ${mpSpentThisTurn}/${mpLimit} gastos e esta conjuração custa ${previewCost}. Clique para avisar o mestre.`
-                                        : undefined
 
                                     return (
                                         <Accordion
@@ -548,12 +513,13 @@ export default function SpellsSection(): ReactElement {
                                                         spell={spell}
                                                         progress={progress}
                                                         evolution={progress.enabled ? { points: evolutionPoints, onEvolve: async () => { await handleEvolve(spell) } } : undefined}
-                                                        onActivate={async (stage) => { await handleSetSpellStage(spell, stage) }}
                                                         cast={{
                                                             onCast: async (stage) => { await handleCastSpell(spell, stage) },
                                                             isCasting: castingSpellId === spellId,
                                                             currentMp,
-                                                            blockedReason: limitBlockedReason
+                                                            blockedReason: (_stage, cost) => (exceedsMpLimit(cost)
+                                                                ? `Limite de MP por turno: ${mpSpentThisTurn}/${mpLimit} gastos e esta conjuração custa ${cost}. Clique para avisar o mestre.`
+                                                                : undefined)
                                                         }}
                                                     />
                                                 </Stack>
