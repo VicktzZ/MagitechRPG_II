@@ -1,87 +1,98 @@
 'use client';
 
 import { useCampaignCurrentCharsheetContext } from '@contexts';
-import { Box, Paper } from '@mui/material';
-import type { ReactElement } from 'react';
+import { Box } from '@mui/material';
+import { useState, type ReactElement } from 'react';
 import { SubstitutionModal } from '@features/roguelite/components/perkCardsModal/components/SubstitutionModal';
 import { useCharsheetSystem } from '@hooks/useCharsheetSystem';
-import InventoryHeader from './inventory/InventoryHeader';
+import ConfirmRemoveDialog from './inventory/ConfirmRemoveDialog';
 import InventoryItemList from './inventory/InventoryItemList';
-import InventoryTabsBar from './inventory/InventoryTabsBar';
+import InventorySummary from './inventory/InventorySummary';
+import InventoryToolbar from './inventory/InventoryToolbar';
+import type { InventoryItemType } from './inventory/inventoryTypes';
 import { useInventoryActions } from './inventory/useInventoryActions';
-import { useInventoryFilters } from './inventory/useInventoryFilters';
-import { useInventoryTotals } from './inventory/useInventoryTotals';
+import { useInventoryView } from './inventory/useInventoryFilters';
 import { useSessionPlayers } from './inventory/useSessionPlayers';
 import { useWeaponRolls } from './inventory/useWeaponRolls';
-import { normalizeToArray } from '@utils/normalizeToArray';
 
+/** Inventário do jogador na campanha: capacidade, filtro por tipo, busca, ordem e os itens (a moldura e o título vêm do `Section`) */
 export default function InventorySection(): ReactElement {
     const { charsheet } = useCampaignCurrentCharsheetContext();
     // Unidade de peso do sistema customizado (ex: "kg", "slots", "" = simbólico)
     const { system: customSystem } = useCharsheetSystem(charsheet.systemId);
     const weightUnit = customSystem ? (customSystem.weightConfig?.unit ?? '') : 'kg';
     const weightUnitSuffix = weightUnit ? ` ${weightUnit}` : '';
-    const { activeTab, setActiveTab, searchQuery, setSearchQuery, filteredItems } = useInventoryFilters();
+
+    const view = useInventoryView();
     const { handleWeaponHit, handleWeaponDamage } = useWeaponRolls();
     const sessionPlayers = useSessionPlayers();
-    const {
-        donationModal,
-        handleOpenDonationModal,
-        handleCloseDonationModal,
-        handleDonate,
-        handleDeleteItem
-    } = useInventoryActions();
-    const {
-        totalWeight,
-        totalItems,
-        capacityPercent,
-        isOverloaded,
-        isNearLimit,
-        capacityRole
-    } = useInventoryTotals();
+    const { donationModal, handleOpenDonationModal, handleCloseDonationModal, handleDonate, handleDeleteItem } = useInventoryActions();
+
+    // Remover pede confirmação; o alvo fica guardado depois de fechar para o texto não sumir durante a animação
+    const [ removal, setRemoval ] = useState<{ item: unknown; type: InventoryItemType; name: string } | null>(null);
+    const [ confirmOpen, setConfirmOpen ] = useState(false);
+    const [ removing, setRemoving ] = useState(false);
+
+    const requestRemoval = (item: any, type: InventoryItemType): void => {
+        setRemoval({ item, type, name: item.name });
+        setConfirmOpen(true);
+    };
+
+    const confirmRemoval = async (): Promise<void> => {
+        if (!removal) return;
+        setRemoving(true);
+        try {
+            await handleDeleteItem(removal.item, removal.type);
+        } finally {
+            setRemoving(false);
+            setConfirmOpen(false);
+        }
+    };
 
     return (
-        <Box sx={{ width: '100%' }}>
-            {/* A moldura e o título da seção vêm do Section da campanha */}
-            <Paper elevation={0} sx={{ bgcolor: 'transparent', overflow: 'hidden' }}>
-                {/* Header */}
-                <InventoryHeader
-                    totalItems={totalItems}
-                    totalWeight={totalWeight}
-                    maxCapacity={charsheet.capacity.max}
-                    weightUnitSuffix={weightUnitSuffix}
-                    capacityPercent={capacityPercent}
-                    isOverloaded={isOverloaded}
-                    isNearLimit={isNearLimit}
-                    capacityRole={capacityRole}
-                />
+        <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <InventorySummary
+                totalItems={view.totalItems}
+                counts={view.counts}
+                totalWeight={view.totalWeight}
+                maxCapacity={view.maxCapacity}
+                weightUnitSuffix={weightUnitSuffix}
+                capacity={view.capacity}
+                armorAp={view.armorAp}
+                heaviest={view.heaviest}
+            />
 
-                {/* Tabs e Busca */}
-                <InventoryTabsBar
-                    activeTab={activeTab}
-                    onTabChange={setActiveTab}
-                    searchQuery={searchQuery}
-                    onSearchChange={setSearchQuery}
-                    counts={{
-                        all: totalItems,
-                        weapons: normalizeToArray(charsheet.inventory.weapons).length,
-                        armors: normalizeToArray(charsheet.inventory.armors).length,
-                        items: normalizeToArray(charsheet.inventory.items).length
-                    }}
-                />
+            <InventoryToolbar
+                activeTab={view.activeTab}
+                onTabChange={view.setActiveTab}
+                searchQuery={view.searchQuery}
+                onSearchChange={view.setSearchQuery}
+                sort={view.sort}
+                onSortChange={view.setSort}
+                counts={{ all: view.totalItems, weapons: view.counts.weapon, armors: view.counts.armor, items: view.counts.item }}
+                shown={view.filtered.length}
+                isFiltering={view.isFiltering}
+            />
 
-                {/* Lista de Itens */}
-                <InventoryItemList
-                    entries={filteredItems}
-                    searchQuery={searchQuery}
-                    weightUnitSuffix={weightUnitSuffix}
-                    canDonate={sessionPlayers.length > 0}
-                    onWeaponHit={handleWeaponHit}
-                    onWeaponDamage={handleWeaponDamage}
-                    onDonate={handleOpenDonationModal}
-                    onDelete={handleDeleteItem}
-                />
-            </Paper>
+            <InventoryItemList
+                entries={view.filtered}
+                isFiltering={view.isFiltering}
+                onClearFilters={view.clearFilters}
+                weightUnitSuffix={weightUnitSuffix}
+                canDonate={sessionPlayers.length > 0}
+                onWeaponHit={handleWeaponHit}
+                onWeaponDamage={handleWeaponDamage}
+                onDonate={handleOpenDonationModal}
+                onRemove={requestRemoval}
+            />
+
+            <ConfirmRemoveDialog
+                open={confirmOpen}
+                target={removal ? { name: removal.name, type: removal.type } : null}
+                busy={removing}
+                onCancel={() => { setConfirmOpen(false) }}
+                onConfirm={() => { void confirmRemoval() }}
+            />
 
             {/* Modal de Doação */}
             {donationModal.open && donationModal.item && (

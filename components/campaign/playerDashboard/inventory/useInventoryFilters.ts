@@ -1,52 +1,48 @@
 import { useCampaignCurrentCharsheetContext } from '@contexts';
-import type { Armor, Item, Weapon } from '@models';
 import { useMemo, useState } from 'react';
-import type { InventoryEntry, InventoryTab } from './inventoryTypes';
-import { normalizeToArray } from '@utils/normalizeToArray';
+import { capacityState, carriedWeight, collectEntries, countByType, filterAndSortEntries, heaviestEntries, totalArmorPoints } from './inventoryList';
+import type { InventorySort, InventoryTab } from './inventoryTypes';
 
-/** Aba ativa e busca do inventário, com a lista de itens já filtrada e sem repetições */
-export function useInventoryFilters() {
+/**
+ * Tudo que a tela do inventário mostra: a aba, a busca e a ordem, a lista já filtrada, as contagens e o estado da capacidade
+ * (peso carregado contra `capacity.max`).
+ */
+export function useInventoryView() {
     const { charsheet } = useCampaignCurrentCharsheetContext();
     const [ activeTab, setActiveTab ] = useState<InventoryTab>('all');
     const [ searchQuery, setSearchQuery ] = useState('');
+    const [ sort, setSort ] = useState<InventorySort>('type');
 
-    // Filtra itens baseado na busca e tab ativa
-    const filteredItems = useMemo(() => {
-        let items: InventoryEntry[] = [];
+    const { weapons, armors, items } = charsheet.inventory;
+    const entries = useMemo(() => collectEntries({ weapons, armors, items }), [ weapons, armors, items ]);
+    const filtered = useMemo(() => filterAndSortEntries(entries, { tab: activeTab, query: searchQuery, sort }), [ entries, activeTab, searchQuery, sort ]);
 
-        if (activeTab === 'all' || activeTab === 'weapons') {
-            items = items.concat(normalizeToArray<Weapon>(charsheet.inventory.weapons).map(w => ({ item: w, type: 'weapon' as const })));
-        }
-        if (activeTab === 'all' || activeTab === 'armors') {
-            items = items.concat(normalizeToArray<Armor>(charsheet.inventory.armors).map(a => ({ item: a, type: 'armor' as const })));
-        }
-        if (activeTab === 'all' || activeTab === 'items') {
-            items = items.concat(normalizeToArray<Item>(charsheet.inventory.items).map(i => ({ item: i, type: 'item' as const })));
-        }
+    const totalWeight = useMemo(() => carriedWeight(entries), [ entries ]);
+    const capacity = capacityState(totalWeight, charsheet.capacity.max);
+    const counts = useMemo(() => countByType(entries), [ entries ]);
+    const armorAp = useMemo(() => totalArmorPoints(entries), [ entries ]);
+    const heaviest = useMemo(() => heaviestEntries(entries, 3), [ entries ]);
 
-        // Filtro por busca
-        if (searchQuery) {
-            const term = searchQuery.toLowerCase();
-            items = items.filter(({ item }) => (item?.name ?? '').toLowerCase().includes(term));
-        }
+    const isFiltering = searchQuery.trim() !== '' || activeTab !== 'all';
+    const clearFilters = (): void => { setSearchQuery(''); setActiveTab('all') };
 
-        // Deduplica por chave composta (type + name) para evitar repetições visuais
-        const seen = new Set<string>();
-        const unique = items.filter(({ item, type }) => {
-            const key = `${type}::${item?.name}`;
-            if (seen.has(key)) return false;
-            seen.add(key);
-            return true;
-        });
-
-        return unique;
-    }, [
+    return {
+        entries,
+        filtered,
         activeTab,
+        setActiveTab,
         searchQuery,
-        charsheet.inventory.weapons,
-        charsheet.inventory.armors,
-        charsheet.inventory.items
-    ]);
-
-    return { activeTab, setActiveTab, searchQuery, setSearchQuery, filteredItems };
+        setSearchQuery,
+        sort,
+        setSort,
+        isFiltering,
+        clearFilters,
+        counts,
+        totalItems: entries.length,
+        totalWeight,
+        maxCapacity: charsheet.capacity.max,
+        capacity,
+        armorAp,
+        heaviest
+    };
 }
