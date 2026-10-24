@@ -13,6 +13,8 @@ class CampaignService extends Service<Campaign, 'code' | 'userId'> {
     async updateFields(campaignId: string, fields: Record<string, unknown>) { return (await this.patch({ param: `${campaignId}/fields`, body: { fields } })).data }
 
     async getCampaignUsers(campaignId: string): Promise<User[]> { return await this.fetch({ param: `${campaignId}/users` }) as unknown as User[] }
+    /** Anotação privada do mestre sobre uma ficha (texto vazio apaga); a leitura é direto no Firestore, em tempo real */
+    async saveGmNote(campaignId: string, charsheetId: string, text: string) { return (await this.put({ param: `${campaignId}/gm-notes/${charsheetId}`, body: { text } })).data as unknown as { saved: boolean } }
     async createNote(campaignId: string, note: Pick<Note, 'content'>) { return (await this.post({ param: `${campaignId}/notes`, body: note })).data }
     async updateNote(campaignId: string, noteId: string, content: string) { return (await this.patch({ param: `${campaignId}/notes`, body: { noteId, content } })).data }
     async deleteNote(campaignId: string, noteId: string) { return (await this.delete({ param: `${campaignId}/notes`, body: { noteId } })).data }

@@ -59,6 +59,17 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Anotações privadas do mestre sobre cada ficha (campaigns/{id}/gmNotes/{charsheetId}): só quem é mestre da
+    // campanha lê (a lista `admin` da campanha tem IDs de usuário), e o administrador do site. O jogador não vê, nem
+    // por ID. Sem `admin` na campanha o get() falha e a leitura é negada. Escrita só pela API, que confere o mestre.
+    match /campaigns/{campaignId}/gmNotes/{charsheetId} {
+      allow read: if signedIn() && (
+        isAdmin()
+        || request.auth.uid in get(/databases/$(database)/documents/campaigns/$(campaignId)).data.admin
+      );
+      allow write: if false;
+    }
+
     // Notificações: só as do próprio usuário. Criar/marcar como lida: pela API.
     match /notifications/{notificationId} {
       allow read: if signedIn() && (resource.data.userId == request.auth.uid || isAdmin());

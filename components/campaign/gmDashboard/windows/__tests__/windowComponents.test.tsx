@@ -5,6 +5,7 @@ import { healthySheet } from '@utils/__tests__/charsheetFixture';
 import theme from '../../../../../themes/theme';
 import { color } from '../../../../../themes/tokens';
 import FloatingWindow from '../FloatingWindow';
+import { NotesView } from '../NotesView';
 import { PartyPortrait, type PortraitVital } from '../PartyPortrait';
 import ExpertisesTab from '../../modals/charsheetDetails/ExpertisesTab';
 import EditableSection from '../EditableSection';
@@ -278,7 +279,7 @@ describe('SummaryView', () => {
 
     it('tem um atalho para cada seção da ficha (menos o próprio resumo)', () => {
         const html = render(<SummaryView charsheet={sheet()} inTurn={false} showEvolution onOpenSection={noop} onAdjustVital={noop} actions={playerActions} />);
-        [ 'Informações', 'Atributos', 'Perícias', 'Inventário', 'Habilidades', 'Magias' ].forEach(label => expect(html).toContain(`>${label}<`));
+        [ 'Informações', 'Atributos', 'Perícias', 'Inventário', 'Habilidades', 'Magias', 'Anotações' ].forEach(label => expect(html).toContain(`>${label}<`));
         expect(html).not.toContain('>Resumo<');
     });
 
@@ -433,5 +434,67 @@ describe('ExpertisesTab (rolar pelo jogador)', () => {
         const html = renderTab({ roll, isEditing: true });
         expect(html).not.toContain('>Rolar<');
         expect(html).not.toContain('aria-label="Rolar Atletismo');
+    });
+});
+
+describe('NotesView (anotações privadas do mestre)', () => {
+    const view = (props: Partial<Parameters<typeof NotesView>[0]> = {}) => render(
+        <NotesView
+            charsheetName="Aria Valen"
+            value="O barão é o espião."
+            status="saved"
+            loading={false}
+            loadError={false}
+            onChange={noop}
+            onRetry={noop}
+            {...props}
+        />
+    );
+
+    it('mostra o texto, o aviso de que só o mestre vê, o estado do salvamento e o contador', () => {
+        const html = view();
+        expect(html).toContain('O barão é o espião.');
+        expect(html).toContain('Só o mestre vê estas anotações');
+        expect(html).toContain('aria-label="Anotações privadas sobre Aria Valen"');
+        expect(html).toContain('Salvo');
+        expect(html).toContain('19 / 20000');
+    });
+
+    it('o campo tem limite de caracteres igual ao do servidor', () => {
+        expect(view()).toContain('maxLength="20000"');
+    });
+
+    it('lendo o salvo, o campo fica travado e diz que está carregando', () => {
+        const html = view({ loading: true, value: '' });
+        expect(html).toMatch(/<textarea[^>]*disabled/);
+        expect(html).toContain('Carregando…');
+    });
+
+    it('se não deu para ler o salvo, o campo fica travado e o aviso manda recarregar sem prometer nada além', () => {
+        const html = view({ loadError: true, value: '' });
+        expect(html).toMatch(/<textarea[^>]*disabled/);
+        expect(html).toContain('Não foi possível carregar as anotações');
+        expect(html).toContain('nada foi alterado');
+    });
+
+    it('com tudo certo o campo está liberado e não há aviso de erro', () => {
+        const html = view();
+        expect(html).not.toMatch(/<textarea[^>]*disabled/);
+        expect(html).not.toContain('Não foi possível carregar');
+        expect(html).not.toContain('Tentar de novo');
+    });
+
+    it('cada estado de salvamento aparece em texto, e só o erro oferece tentar de novo', () => {
+        expect(view({ status: 'unsaved' })).toContain('Alterações não salvas');
+        expect(view({ status: 'saving' })).toContain('Salvando…');
+        const error = view({ status: 'error' });
+        expect(error).toContain('Não foi possível salvar');
+        expect(error).toContain('Tentar de novo');
+        expect(view({ status: 'saving' })).not.toContain('Tentar de novo');
+    });
+
+    it('o estado de salvamento é anunciado para leitor de tela', () => {
+        expect(view()).toContain('role="status"');
+        expect(view()).toContain('aria-live="polite"');
     });
 });

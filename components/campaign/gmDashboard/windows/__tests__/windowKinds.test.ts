@@ -9,8 +9,8 @@ import {
 } from '../windowKinds';
 
 describe('tipos de janela', () => {
-    it('o resumo vem primeiro e as demais são as abas do antigo modal, na ordem dele', () => {
-        expect(WINDOW_KINDS).toEqual([ 'summary', 'info', 'attributes', 'expertises', 'inventory', 'skills', 'spells' ]);
+    it('o resumo vem primeiro, depois as abas do antigo modal na ordem dele e, por último, as anotações do mestre', () => {
+        expect(WINDOW_KINDS).toEqual([ 'summary', 'info', 'attributes', 'expertises', 'inventory', 'skills', 'spells', 'notes' ]);
     });
 
     it('todo tipo tem rótulo e um tamanho inicial que cabe numa tela comum', () => {

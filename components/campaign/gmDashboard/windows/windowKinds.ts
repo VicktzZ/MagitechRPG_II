@@ -1,9 +1,9 @@
 /**
  * Tipos de janela do mestre: cada tipo é uma seção da ficha de um jogador. A ordem é a do menu de seções.
  * `summary` é a visão rápida (só leitura, com as ações do jogador); as demais são as abas do antigo modal de
- * detalhes, cada uma com a própria edição.
+ * detalhes, cada uma com a própria edição; `notes` são as anotações privadas do mestre sobre a ficha (o jogador não vê).
  */
-export const WINDOW_KINDS = [ 'summary', 'info', 'attributes', 'expertises', 'inventory', 'skills', 'spells' ] as const;
+export const WINDOW_KINDS = [ 'summary', 'info', 'attributes', 'expertises', 'inventory', 'skills', 'spells', 'notes' ] as const;
 
 export type WindowKind = typeof WINDOW_KINDS[number];
 
@@ -14,7 +14,8 @@ export const WINDOW_KIND_LABEL: Record<WindowKind, string> = {
     expertises: 'Perícias',
     inventory: 'Inventário',
     skills: 'Habilidades',
-    spells: 'Magias'
+    spells: 'Magias',
+    notes: 'Anotações'
 };
 
 export interface WindowSize {
@@ -30,7 +31,8 @@ export const WINDOW_DEFAULT_SIZE: Record<WindowKind, WindowSize> = {
     expertises: { w: 480, h: 600 },
     inventory: { w: 720, h: 600 },
     skills: { w: 720, h: 600 },
-    spells: { w: 760, h: 600 }
+    spells: { w: 760, h: 600 },
+    notes: { w: 480, h: 460 }
 };
 
 export const WINDOW_MIN_SIZE: WindowSize = { w: 300, h: 200 };
