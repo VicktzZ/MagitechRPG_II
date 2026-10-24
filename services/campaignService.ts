@@ -124,6 +124,17 @@ class CampaignService extends Service<Campaign, 'code' | 'userId'> {
         })).data
     }
 
+    /**
+     * Mestre: adiciona jogadores (por ficha) e criaturas (por id, com cópias) a um combate em andamento. O servidor lê os dados da ficha e
+     * da criatura, rola a iniciativa na fase de ação e põe cada um no lugar dela na ordem. Devolve `warnings` do que ficou de fora.
+     */
+    async addCombatants(campaignId: string, join: { players?: Array<{ charsheetId: string; avatar?: string }>; creatures?: Array<{ id: string; quantity?: number }> }) {
+        return (await this.post({
+            param: `${campaignId}/combat`,
+            body: { action: 'add_combatants', join }
+        })).data as unknown as { success: boolean; message: string; warnings?: string[] }
+    }
+
     /** Mestre: libera (true) ou restabelece (false) o limite de MP por turno de um jogador */
     async setCombatMpLimitOverride(campaignId: string, payload: { combatantId: string; enabled: boolean }) {
         return (await this.post({
