@@ -169,7 +169,7 @@ O mestre gerencia fichas em **janelas flutuantes** (estilo BG3), em `components/
 uma janela **por seção** da ficha de um jogador; entrada pela **barra do grupo** (um retrato por jogador) e pelos cartões; conteúdo = as abas atuais
 do mestre (fase 1), a visão do jogador fica para a fase 2. **Criaturas também entram no escopo** (decisão do dono): a criatura ganha janelas pelo mesmo
 gerenciador. Fases/PRs: 1 gerenciador + barra + resumo (feita) · 2 (feita) seções em janelas (atributos, perícias, inventário, habilidades, magias) + ações do jogador
-(item, ponto de evolução, notificação, remover), tirando o `CharsheetDetailsModal` · 3 dano/cura rápidos de LP/MP/AP por rota com transação (soma/subtrai,
+(item, ponto de evolução, notificação, remover), tirando o `CharsheetDetailsModal` · 3 (feita) dano/cura rápidos de LP/MP/AP por rota com transação (soma/subtrai,
 0 a máx., sem contar no limite de MP por turno) · 4 rolagem do mestre pelo jogador (**regra do botão da perícia na ficha**: `mod + 1` d20, mod negativo rola 2;
 não unifica as regras) · 5 anotações privadas por ficha em `campaigns/{id}/gmNotes/{fichaId}` com regra do Firestore só para `campaign.admin` (**publicar
 `firestore.rules` antes do código**) · 6 criaturas em janelas (as de combate e as personalizadas, hoje em `dashboard/CombatCreatureCard`, `CustomCreatureCard` e
@@ -190,6 +190,12 @@ as janelas de criatura, que não são fichas); a ordem das fases pode mudar a pe
 - **Ações do jogador** (`usePlayerActions`, compartilhado pelo cartão e pelo resumo): adicionar item, conceder ponto de evolução, notificar e remover; o hook
   devolve os diálogos em `dialogs`, que quem usa precisa renderizar. A notificação vai por `POST /api/notification/[userId]` (`notificationService.create(body,
   { param: userId })`); sem o `userId` na URL o servidor responde 405 (era assim no cartão e o envio não funcionava).
+- **Dano e cura rápidos** (`VitalsPanel`, no resumo): o mestre digita um valor (inteiro de 1 a 9999, um por janela) e usa − ou + em LP, MP e AP. O cliente manda só a
+  variação (`charsheetService.adjustStats(id, { lp: -7 })` → `POST /api/charsheet/[id]/stats`) e o servidor soma numa transação (`adjustCharsheetStats`,
+  `utils/firestore/charsheetStats.ts`), então cliques seguidos e o jogador mexendo ao mesmo tempo não se perdem; **nunca mande o valor final** (sobrescreveria o
+  que mudou de fora). Regra pura em `utils/vitals.ts` (`applyVitalDelta`): dano para em zero, cura para no máximo, e quem está acima do máximo (pontos dados pelo
+  mestre) não perde nada ao ser curado. Grava só `stats.<lp|mp|ap>`; o MP gasto no turno (limite de MP por turno) não conta. A barra muda sozinha pelo listener
+  da campanha. Teste do servidor: `utils/firestore/__tests__/charsheetStats.emulator.test.ts`.
 - **Dois contextos de propósito**: ações (estáveis; cartões e barra só abrem janelas) e estado. Sem provider, as ações são no-ops (testes).
 - **Arrastar não passa pelo estado**: enquanto arrasta, a posição fica local na `FloatingWindow` e vai ao reducer ao soltar. Posição guardada pode estar
   fora da área (janela menor, chat aberto): a tela mostra clampada e não altera o guardado.
