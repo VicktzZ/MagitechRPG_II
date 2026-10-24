@@ -14,6 +14,7 @@ import GMActions from './gmDashboard/GMActions';
 import GMWindowLayer from './gmDashboard/windows/GMWindowLayer';
 import { GMWindowProvider } from './gmDashboard/windows/GMWindowProvider';
 import { creatureWindowTargets } from './gmDashboard/windows/windowTargets';
+import { resolveViewerCharsheetId } from '@utils/campaignViewer';
 import PartyBar from './gmDashboard/windows/PartyBar';
 import { PARTY_BAR_GAP } from './gmDashboard/windows/layout';
 import CampaignFinishedBanner from './CampaignFinishedBanner';
@@ -25,16 +26,15 @@ import FloatingDock from './FloatingDock';
 const DEV_MODE = process.env.NEXT_PUBLIC_NODE_ENV === 'development';
 
 export default function CampaignComponent(): ReactElement {
-    const { isUserGM, campaign, charsheets  } = useCampaignContext();
+    const { isUserGM, campaign, charsheets, selectedCharsheetId } = useCampaignContext();
     const { campaignCode } = campaign;
     const { data: session } = useSession();
     const userId = session?.user?.id ?? '';
 
     // A ficha de quem está vendo vem da própria campanha (campaign.players); um localStorage global
-    // misturava a ficha de campanhas abertas em abas diferentes
-    const charsheetId = campaign.players?.find(player => player.userId === userId)?.charsheetId
-        ?? charsheets.find(sheet => sheet.userId === userId)?.id
-        ?? '';
+    // misturava a ficha de campanhas abertas em abas diferentes. Quem entra pela primeira vez ainda não está
+    // em players: vale a ficha que escolheu no modal de entrada (ver resolveViewerCharsheetId)
+    const charsheetId = resolveViewerCharsheetId({ players: campaign.players, userId, selectedCharsheetId, charsheets });
 
     // MODO DEV: permite ao mestre pré-visualizar a campanha como jogador,
     // usando uma ficha da própria conta anexada como jogador de teste.

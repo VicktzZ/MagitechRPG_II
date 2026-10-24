@@ -9,6 +9,11 @@ export interface CampaignContextValue extends CampaignData {
     rpgSystem: RPGSystem | null
     loadingSystem: boolean
     isDefaultSystem: boolean
+    /**
+     * Ficha que o jogador escolheu (ou criou, no Roguelite) no modal de entrada. Quem entra pela primeira vez ainda não
+     * está em `campaign.players`: a entrada na sessão é que o registra, e precisa saber qual ficha ele escolheu.
+     */
+    selectedCharsheetId: string
 }
 
 export const campaignContext = createContext<CampaignContextValue>({
@@ -48,7 +53,8 @@ export const campaignContext = createContext<CampaignContextValue>({
     updateCampaign: async () => {},
     rpgSystem: null,
     loadingSystem: false,
-    isDefaultSystem: true
+    isDefaultSystem: true,
+    selectedCharsheetId: ''
 })
 
 export const useCampaignContext = (): CampaignContextValue => useContext(campaignContext)

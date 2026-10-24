@@ -98,8 +98,8 @@ export function CampaignProvider({ children, code }: { children: ReactElement, c
     usePusher(code, isUserGM, session)
 
     // Contexto principal memoizado: só muda quando a campanha (sem mensagens),
-    // fichas, usuários ou sistema realmente mudam — nunca por estado local
-    // deste provider (formulário roguelite, seleção de ficha etc.).
+    // fichas, usuários, sistema ou a ficha escolhida na entrada (uma vez só) mudam —
+    // nunca por outro estado local deste provider (formulário roguelite etc.).
     const updateCampaign = useCallback(async (data: Partial<Campaign>) => {
         const id = campaignData?.campaign?.id;
         if (!id) return;
@@ -114,9 +114,10 @@ export function CampaignProvider({ children, code }: { children: ReactElement, c
             updateCampaign,
             rpgSystem,
             loadingSystem,
-            isDefaultSystem: !campaignData.campaign.systemId
+            isDefaultSystem: !campaignData.campaign.systemId,
+            selectedCharsheetId: charsheetId
         };
-    }, [ campaignData, updateCampaign, rpgSystem, loadingSystem ]);
+    }, [ campaignData, updateCampaign, rpgSystem, loadingSystem, charsheetId ]);
 
     // Função para criar ficha roguelite
     const handleCreateRogueliteCharsheet = async () => {

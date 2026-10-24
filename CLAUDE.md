@@ -63,6 +63,12 @@ lote (senão alguém editou à mão), sobrescrever só os ids do lote e reler pa
 - Avise o Pusher sempre com `triggerPusher` (`utils/pusher.ts`): o aviso é um extra e uma falha dele não pode virar 500
   depois de a gravação já ter sido feita. A presença (quem está online) é `campaign.session.users`; o navegador
   conecta ao abrir a campanha e desconecta ao sair da tela e no `pagehide` (fetch com `keepalive`).
+  **Primeira entrada de jogador**: quem ainda não está em `campaign.players` escolhe a ficha no modal do `CampaignProvider` (ou cria,
+  no Roguelite), e é o `POST /api/session/connect` que o registra em `players`. O provedor expõe a escolha em
+  `selectedCharsheetId` e `resolveViewerCharsheetId` (`utils/campaignViewer.ts`) decide a ficha de quem vê (registrada, depois escolhida,
+  depois uma do usuário entre as da campanha). Sem a escolhida o navegador mandava `charsheetId: ""` e o servidor recusava (400): o jogador
+  via "Não foi possível registrar sua entrada na sessão" e ficava sem painel (regressão do PR #86). **Teste a entrada com um usuário que
+  ainda não está na campanha**, não só com quem já joga ou com o mestre.
 - **Erros em `catch`**: use `errorMessage(error, 'texto padrão')` e `asRequestError` de `utils/errors.ts`; nada de
   `catch (error: any)`. Listas que o Firestore devolve como objeto de chaves numéricas: `utils/normalizeToArray.ts`.
 
