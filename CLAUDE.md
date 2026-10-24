@@ -284,6 +284,21 @@ log do combate (hoje só o diálogo de combate narra dano e cura). A ordem das f
 - Teste de componente que importa `useCharsheetPointsView` precisa de `jest.mock` dele: o hook de sistema customizado puxa `@contexts`, e o ts-jest
   barra um erro de tipo antigo em `contexts/charsheetContext.ts`.
 
+## Campanha: inventário do jogador
+
+`components/campaign/playerDashboard/InventorySection.tsx` (composição) + `inventory/`. Regras da tela:
+
+- **Resumo** (`InventorySummary`): peso carregado contra `capacity.max` com o **estado por extenso** (Dentro da capacidade / Perto do limite, acima de 80% / Sobrecarga, acima de 100%; `capacityState`), medidor
+  `role="meter"`, contagem por tipo e a soma dos AP das armaduras. Perto do limite ou em sobrecarga mostra "Para aliviar:" com os 3 itens mais pesados. Capacidade 0 (ficha sem limite) nunca avisa.
+- **Item do tipo Capacidade** (mochila) **soma à capacidade máxima e não conta como peso carregado** (`entryWeight`): é o que a doação e a remoção já faziam (mexem em `capacity.max`, não na carga); a tela antiga somava o peso dele.
+- **Lista** (`utils` puras em `inventoryList.ts`): `collectEntries` junta armas, armaduras e itens. **Só some o mesmo item gravado duas vezes (mesmo `id`)**; dois itens com o mesmo nome e ids diferentes aparecem os dois (a tela antiga
+  escondia o segundo). Filtro por tipo (com contagem), busca sem acento nem caixa por nome, tipo do item e raridade, e ordem (por tipo, nome A → Z, mais pesados, mais raros; empate pelo nome). Estado vazio com "Limpar busca e filtros".
+- **Cartão** (`InventoryItemCard`): superfície plana (`background.raised`, borda `divider`), **filete lateral de 3px na cor do tipo** (arma `danger`, armadura `ap`, item `success`; `getItemTypeConfig`, ícones `Gavel`/`Shield`/`Inventory2` como em
+  `itemAttributes`), raridade como ponto + nome (não como bloco colorido), número principal em mono (dano, +AP, xN) e peso. Não usa mais o Accordion do MUI: o botão que abre é irmão das ações, para não aninhar botão em botão.
+  **Arma mostra Acerto e Dano à vista na linha** (sem abrir); aberta, mostra também o Crítico. Detalhes e descrição só ao abrir.
+- **Remover pede confirmação** (`ConfirmRemoveDialog`; antes apagava no clique). A gravação é `buildRemovalUpdate` (`inventoryRemoval.ts`, compartilhada com a doação): tira o item **pelo id** (sem id, só aquele item, não todos os sem id),
+  armadura devolve os AP (atual e máximo, nunca abaixo da base 5), item de Capacidade diminui `capacity.max` e não mexe na carga, o resto diminui `capacity.cargo` pelo peso x quantidade (nunca negativo).
+
 ## Limite de MP por turno e Overall
 
 `⌈(Nível + Foco) ÷ 2⌉ + Nível de ORM` (+ bônus em `mpLimit` da ficha), em `utils/mpLimit.ts`.
