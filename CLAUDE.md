@@ -170,7 +170,7 @@ uma janela **por seção** da ficha de um jogador; entrada pela **barra do grupo
 do mestre (fase 1), a visão do jogador fica para a fase 2. **Criaturas também entram no escopo** (decisão do dono): a criatura ganha janelas pelo mesmo
 gerenciador. Fases/PRs: 1 gerenciador + barra + resumo (feita) · 2 (feita) seções em janelas (atributos, perícias, inventário, habilidades, magias) + ações do jogador
 (item, ponto de evolução, notificação, remover), tirando o `CharsheetDetailsModal` · 3 (feita) dano/cura rápidos de LP/MP/AP por rota com transação (soma/subtrai,
-0 a máx., sem contar no limite de MP por turno) · 4 rolagem do mestre pelo jogador (**regra do botão da perícia na ficha**: `mod + 1` d20, mod negativo rola 2;
+0 a máx., sem contar no limite de MP por turno) · 4 (feita, só perícias) rolagem do mestre pelo jogador (**regra do botão da perícia na ficha**: `mod + 1` d20, mod negativo rola 2;
 não unifica as regras) · 5 anotações privadas por ficha em `campaigns/{id}/gmNotes/{fichaId}` com regra do Firestore só para `campaign.admin` (**publicar
 `firestore.rules` antes do código**) · 6 criaturas em janelas (as de combate e as personalizadas, hoje em `dashboard/CombatCreatureCard`, `CustomCreatureCard` e
 `CreatureCreator`). Ao entrar criaturas, `WindowEntry.charsheetId` precisa virar um id genérico do alvo e `keepSheets` passa a podar por tipo (senão fecharia
@@ -196,6 +196,13 @@ as janelas de criatura, que não são fichas); a ordem das fases pode mudar a pe
   que mudou de fora). Regra pura em `utils/vitals.ts` (`applyVitalDelta`): dano para em zero, cura para no máximo, e quem está acima do máximo (pontos dados pelo
   mestre) não perde nada ao ser curado. Grava só `stats.<lp|mp|ap>`; o MP gasto no turno (limite de MP por turno) não conta. A barra muda sozinha pelo listener
   da campanha. Teste do servidor: `utils/firestore/__tests__/charsheetStats.emulator.test.ts`.
+- **Rolagem do mestre pelo jogador** (janela de Perícias, coluna "Rolar"): `utils/sheetRoll.ts` é a regra do **botão da perícia na ficha** (`planSheetRoll`: `mod + 1` d20 e vale
+  o maior; mod negativo rola 2 e vale o menor, "desvantagem"; sistema customizado: `1 + dados extras` e bônus da influência do atributo, e sem o sistema carregado não rola) mais a
+  perícia. Resultado no chat em nome do mestre, no formato do chat (`🎲 [Aria Valen] ATLETISMO - 2d20+3: [12, 7: 12] = 15`), por uma `Message` pronta (`useGMExpertiseRoll`): mandar o
+  texto cru faria o chat tentar rolar a notação que está nele. **São três regras de d20 hoje** (ficha, teste do mestre e perícia na tela da campanha do jogador, que usa o mod com mínimo 1);
+  a regra única é decisão pendente do dono, e **atributo não rola** (a ficha não rola atributo, então não há regra): não invente uma sem resposta.
+- **Chat**: `SessionChat` rola a própria lista (`chatBoxRef`, a `MessageList` é quem tem o scroll; o marcador `messagesEndRef` fica fora dela e não serve para isso). Mensagem do próprio usuário,
+  inclusive rolagem feita fora do chat, sempre vem à vista, mesmo com o histórico rolado para cima.
 - **Dois contextos de propósito**: ações (estáveis; cartões e barra só abrem janelas) e estado. Sem provider, as ações são no-ops (testes).
 - **Arrastar não passa pelo estado**: enquanto arrasta, a posição fica local na `FloatingWindow` e vai ao reducer ao soltar. Posição guardada pode estar
   fora da área (janela menor, chat aberto): a tela mostra clampada e não altera o guardado.
