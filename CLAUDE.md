@@ -167,11 +167,14 @@ do efeito, e não pode ser escolhido nem conjurado. O MP extra por estágio ao c
 
 O mestre gerencia fichas em **janelas flutuantes** (estilo BG3), em `components/campaign/gmDashboard/windows/`. Escopo combinado com o dono:
 uma janela **por seção** da ficha de um jogador; entrada pela **barra do grupo** (um retrato por jogador) e pelos cartões; conteúdo = as abas atuais
-do mestre (fase 1), a visão do jogador fica para a fase 2; criaturas ficam fora da fase 1 (o gerenciador é genérico). Fases/PRs: 1 gerenciador + barra +
-resumo · 2 seções em janelas (atributos, perícias, inventário, habilidades, magias) + ações do jogador (item, ponto de evolução, notificação, remover),
-tirando o `CharsheetDetailsModal` · 3 dano/cura rápidos de LP/MP/AP por rota com transação (soma/subtrai, 0 a máx., sem contar no limite de MP por turno) ·
-4 rolagem do mestre pelo jogador (**regra do botão da perícia na ficha**: `mod + 1` d20, mod negativo rola 2; não unifica as regras) · 5 anotações
-privadas por ficha em `campaigns/{id}/gmNotes/{fichaId}` com regra do Firestore só para `campaign.admin` (**publicar `firestore.rules` antes do código**).
+do mestre (fase 1), a visão do jogador fica para a fase 2. **Criaturas também entram no escopo** (decisão do dono): a criatura ganha janelas pelo mesmo
+gerenciador. Fases/PRs: 1 gerenciador + barra + resumo (feita) · 2 seções em janelas (atributos, perícias, inventário, habilidades, magias) + ações do jogador
+(item, ponto de evolução, notificação, remover), tirando o `CharsheetDetailsModal` · 3 dano/cura rápidos de LP/MP/AP por rota com transação (soma/subtrai,
+0 a máx., sem contar no limite de MP por turno) · 4 rolagem do mestre pelo jogador (**regra do botão da perícia na ficha**: `mod + 1` d20, mod negativo rola 2;
+não unifica as regras) · 5 anotações privadas por ficha em `campaigns/{id}/gmNotes/{fichaId}` com regra do Firestore só para `campaign.admin` (**publicar
+`firestore.rules` antes do código**) · 6 criaturas em janelas (as de combate e as personalizadas, hoje em `dashboard/CombatCreatureCard`, `CustomCreatureCard` e
+`CreatureCreator`). Ao entrar criaturas, `WindowEntry.charsheetId` precisa virar um id genérico do alvo e `keepSheets` passa a podar por tipo (senão fecharia
+as janelas de criatura, que não são fichas); a ordem das fases pode mudar a pedido do dono.
 
 - **Peças**: `windowState.ts` (reducer puro: abrir/focar/fechar/recolher/gravar posição, `sanitizeWindows` para o que vem do navegador), `windowGeometry.ts`
   (puro: área, clamp, cascata, mover, redimensionar), `windowKinds.ts` (tipos de janela, tamanhos, limite de 8), `GMWindowProvider` (estado, área útil,
