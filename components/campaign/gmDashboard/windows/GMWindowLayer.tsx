@@ -7,13 +7,33 @@ import FloatingWindow from './FloatingWindow';
 import { useGMWindowActions, useGMWindowView } from './GMWindowProvider';
 import { WINDOW_KIND_LABEL } from './windowKinds';
 import type { WindowEntry } from './windowState';
+import {
+    AttributesWindow,
+    ExpertisesWindow,
+    InfoWindow,
+    InventoryWindow,
+    SkillsWindow,
+    SpellsWindow
+} from './SectionWindows';
 import SummaryWindow from './SummaryWindow';
 
-/** Conteúdo de cada tipo de janela; as próximas seções da ficha entram aqui */
+/** Conteúdo de cada tipo de janela */
 function WindowContent({ entry }: { entry: WindowEntry }): ReactElement {
     switch (entry.kind) {
     case 'summary':
         return <SummaryWindow charsheetId={entry.charsheetId} />;
+    case 'info':
+        return <InfoWindow charsheetId={entry.charsheetId} />;
+    case 'attributes':
+        return <AttributesWindow charsheetId={entry.charsheetId} />;
+    case 'expertises':
+        return <ExpertisesWindow charsheetId={entry.charsheetId} />;
+    case 'inventory':
+        return <InventoryWindow charsheetId={entry.charsheetId} />;
+    case 'skills':
+        return <SkillsWindow charsheetId={entry.charsheetId} />;
+    case 'spells':
+        return <SpellsWindow charsheetId={entry.charsheetId} />;
     }
 }
 

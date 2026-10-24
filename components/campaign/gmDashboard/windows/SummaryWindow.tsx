@@ -1,37 +1,45 @@
 'use client';
 
 import { useCampaignContext } from '@contexts';
-import type { CharsheetDTO } from '@models/dtos';
-import { Typography } from '@mui/material';
 import { isCombatantInTurn } from '@utils/combatTurn';
 import { usesStageUnlock } from '@utils/spellStages';
-import { useState, type ReactElement } from 'react';
-import { CharsheetDetailsModal } from '../modals';
-import { SummaryView } from './SummaryView';
+import type { ReactElement } from 'react';
+import { usePlayerActions } from '../usePlayerActions';
+import { useGMWindowActions } from './GMWindowProvider';
+import { SheetWindow } from './SectionWindows';
+import { SummaryView, type SummarySheet } from './SummaryView';
 
-type Sheet = Required<CharsheetDTO>;
-
-/** Conteúdo da janela de resumo: acompanha a ficha em tempo real pela campanha */
-export default function SummaryWindow({ charsheetId }: { charsheetId: string }): ReactElement {
-    const { campaign, charsheets } = useCampaignContext();
-    const [ fullSheetOpen, setFullSheetOpen ] = useState(false);
-
-    const charsheet = charsheets.find(sheet => sheet.id === charsheetId);
-    if (!charsheet) {
-        return <Typography color="text.secondary">Esta ficha não está mais na campanha.</Typography>;
-    }
-
-    const sheet = charsheet as unknown as Sheet;
+/** Corpo da janela de resumo: acompanha a ficha em tempo real e leva as ações do jogador junto dos diálogos delas */
+function SummaryBody({ charsheet }: { charsheet: SummarySheet }): ReactElement {
+    const { campaign } = useCampaignContext();
+    const { openWindow } = useGMWindowActions();
+    const actions = usePlayerActions(charsheet);
 
     return (
         <>
             <SummaryView
-                charsheet={sheet}
-                inTurn={isCombatantInTurn(campaign.session?.combat, sheet)}
-                showEvolution={usesStageUnlock(sheet, campaign.mode)}
-                onOpenFullSheet={() => setFullSheetOpen(true)}
+                charsheet={charsheet}
+                inTurn={isCombatantInTurn(campaign.session?.combat, charsheet)}
+                showEvolution={usesStageUnlock(charsheet, campaign.mode)}
+                onOpenSection={kind => openWindow(kind, charsheet.id)}
+                actions={{
+                    canGrantEvolution: actions.canGrantEvolution,
+                    onAddItem: actions.openAddItem,
+                    onGrantEvolution: () => { void actions.grantEvolutionPoint(); },
+                    onNotify: actions.openNotification,
+                    onRemove: actions.openRemove
+                }}
             />
-            <CharsheetDetailsModal open={fullSheetOpen} onClose={() => setFullSheetOpen(false)} charsheet={sheet} />
+            {actions.dialogs}
         </>
+    );
+}
+
+/** Conteúdo da janela de resumo */
+export default function SummaryWindow({ charsheetId }: { charsheetId: string }): ReactElement {
+    return (
+        <SheetWindow charsheetId={charsheetId}>
+            {charsheet => <SummaryBody charsheet={charsheet} />}
+        </SheetWindow>
     );
 }
