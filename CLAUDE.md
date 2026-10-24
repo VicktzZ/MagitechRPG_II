@@ -103,6 +103,11 @@ lote (senão alguém editou à mão), sobrescrever só os ids do lote e reler pa
   `SpellsSection` mandam o `Message` pronto (texto cru no `handleSendMessage` faria o chat tentar rolar a notação). Visto no e2e: um dropdown aberto no primeiro segundo depois do envio fechou
   sozinho (a mensagem otimista tem a chave `tempId` e a confirmada pelo servidor `id-índice` em `MessageList`, então o cartão remonta); vale para todos os cartões de dados, e o teste espera uns 2 s antes de abrir.
   Teste de componente que importa `DiceMessage` ou `diceRoller` precisa de `jest.mock('@enums', ...)`: o barril puxa `subscriptionEnum.ts`, que o ts-jest barra por um erro de tipo antigo.
+- **Furtivo na arma** (decisão do dono, 24/10/2026; `utils/combat/stealth.ts`; **entrou sem teste nem e2e a pedido do dono: a primeira coisa a conferir se algo estranhar**): o jogador com o efeito **Furtivo** em combate ativo (`isCombatantStealthy`:
+  efeito aplicado ao combatente cujo nome é "Furtivo", sem caixa nem acento, ou id `seed-furtivo`) que usa o botão **Acerto** da arma rola **1d20 a mais** (vantagem: vale o maior; `rollHitTest(..., { extraDice })`, a linha do log diz
+  "furtivo: vantagem, +1d20") e, se rolar o dano da arma (normal ou crítico), o dano sai **dobrado** (`rollWeaponDamage(..., { stealth })`). O cartão do dano mostra o chip "Furtivo ×2" e, no dropdown, "Furtivo: dano dobrado (9 × 2 = 18)"; o
+  marcador do texto é `[AÇÃO] arma [crítico] furtivo` (`ActionRoll.stealth`) e as linhas `-` continuam com o valor rolado, sem dobrar (só o `Total` é o dobro). **Só arma**: o teste de magia, a conjuração e o efeito da magia não mudam. Fora de combate
+  ativo não há efeito, então nada muda. O catálogo `seed-furtivo` ainda descreve a vantagem de ataque só a partir do nível 2 e +25% de dano no nível 3 (modificadores informativos); a regra acima vale para o efeito em qualquer nível.
 - **Verificar contra o Firestore de verdade (emulador)**: `(cd tests/firestore-rules && npm install)` uma vez; depois
   `npm test` nessa pasta (regras) e `npm run test:emulator` na raiz (helpers do servidor com o Admin SDK).
 - **Ver a campanha rodando, sem banco real**: emuladores (`firebase emulators:start --only firestore,auth --project
