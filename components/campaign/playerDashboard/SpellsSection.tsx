@@ -40,7 +40,6 @@ import {
 import { color } from '@themes/tokens';
 import { type ReactElement, useState } from 'react';
 import { asRequestError } from '@utils/errors';
-import { SECONDARY_ELEMENT_LABEL, isSecondaryElement } from '@utils/elements';
 import { canEvolve, formatEvolutionPoints, getEvolutionPoints, getSpellProgress, spellStageLabel, usesStageUnlock, withoutSpell, type SpellStage } from '@utils/spellStages';
 
 /** Nível e estágio são escalas ordenadas: neutros que clareiam até o âmbar no topo (o número vai sempre em texto) */
@@ -431,11 +430,6 @@ export default function SpellsSection(): ReactElement {
                                                                     fontWeight: 600
                                                                 }}
                                                             />
-                                                            {isSecondaryElement(spell.element) && (
-                                                                <Tooltip title="Elemento secundário: Sangue, Vácuo, Psíquico, Radiação e Explosão" arrow>
-                                                                    <Chip label={SECONDARY_ELEMENT_LABEL} size="small" variant="outlined" sx={{ borderColor: 'divider', color: 'text.secondary' }} />
-                                                                </Tooltip>
-                                                            )}
                                                             {progress.enabled && progress.count > 1 && (
                                                                 <Chip
                                                                     label={`${progress.unlocked} de ${progress.count} estágios`}

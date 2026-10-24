@@ -7,9 +7,9 @@ import { elements, specialElements } from '@constants';
 import { AnimatePresence, motion } from 'framer-motion';
 import { alpha, Box, Backdrop } from '@mui/material';
 import type { Spell } from '@models/entities';
-import type { ReactElement } from 'react';
+import { useCallback, type ReactElement } from 'react';
 import type { CharsheetDTO } from '@models/dtos';
-import { elementHint } from '@utils/elements';
+import { isHiddenSpell, secondaryElementsUnlocked } from '@utils/elements';
 import { SPELL_FILTERS } from '@utils/spellCategory';
 import { color, shadow } from '@themes/tokens';
 import { normalizeToArray } from '@utils/normalizeToArray';
@@ -31,7 +31,13 @@ function hasSpell(spells: unknown, spell: Spell): boolean {
 
 export default function SpellsModal({ open, onClose }: { open: boolean, onClose: () => void }): ReactElement {
     const { getValues, setValue } = useFormContext<CharsheetDTO>();
-    
+
+    // Elementos secundários só existem para a ficha a partir do nível de liberação (nível 10): antes disso as magias deles
+    // não aparecem de jeito nenhum (lista, busca, tipo, subtipo...), e o filtro de elemento nem oferece as opções
+    const sheetLevel = Number(getValues('level'));
+    const secondaryUnlocked = secondaryElementsUnlocked(sheetLevel);
+    const isVisibleSpell = useCallback((spell: Spell) => !isHiddenSpell(spell, sheetLevel), [ sheetLevel ]);
+
     const invalidate = (message: string) => ({ isValid: false, errorMessage: message });
 
     const getSpellPointCost = (level: number): 1 | 2 => {
@@ -163,9 +169,9 @@ export default function SpellsModal({ open, onClose }: { open: boolean, onClose:
                             validateAdd={validateAdd}
                             successMessage={(spell) => `Magia ${spell.name} adicionada!`}
                             errorMessage={(err) => err.message || 'Erro ao adicionar magia'}
-                            filterOptions={getValues('level') < 15 ? elements : [ ...elements, ...specialElements ]}
+                            filterOptions={secondaryUnlocked ? [ ...elements, ...specialElements ] : elements}
+                            itemFilter={isVisibleSpell}
                             filterLabel="Elemento"
-                            filterOptionHint={elementHint}
                             secondaryFilters={SPELL_FILTERS}
                             sortOptions={[ 'Nível', 'Elemento', 'Alfabética' ]}
                             itemMinWidth={360}

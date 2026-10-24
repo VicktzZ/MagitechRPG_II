@@ -182,8 +182,8 @@ do efeito, e não pode ser conjurado. O MP extra por estágio ao conjurar (`calc
   abertos por padrão** (cada um recolhe; "Recolher/Expandir estágios") com o que mudou em relação ao anterior **destacado** (`utils/textDiff.ts`, diferença por palavra; texto reescrito
   não é destacado), custo total de MP e a diferença (`9 MP (+2)`); **cada estágio liberado tem o próprio "Conjurar"** (MP e limite de MP por turno são conferidos por estágio, com o custo dele); os bloqueados mostram o custo e, só o próximo, o botão Evoluir. O custo do
   estágio 3 do nível 4 usa o extra da Maestria (`calculateTotalManaCost`; o `SpellStage` antigo da campanha dava NaN aí).
-- **Aba de magias do mestre** (`SpellsTab` + `spells/SpellsOverview`, `spells/SpellCard`): resumo (magias, por nível, custo médio de MP base, maestria, estágios liberados, pontos de evolução, elementos
-  com o selo secundário), busca/filtros de elemento e nível (a partir de 4 magias, `utils/spellsOverview.ts`, `utils/searchText.ts`: sem acento nem caixa) e um cartão por magia (até 3 magias abrem já
+- **Aba de magias do mestre** (`SpellsTab` + `spells/SpellsOverview`, `spells/SpellCard`): resumo (magias, por nível, custo médio de MP base, maestria, estágios liberados, pontos de evolução, elementos),
+  busca/filtros de elemento e nível (a partir de 4 magias, `utils/spellsOverview.ts`, `utils/searchText.ts`: sem acento nem caixa) e um cartão por magia (até 3 magias abrem já
   expandidas). Em edição o mestre ajusta o estágio liberado por botões (não gasta ponto) e exclui a magia **pela chave** (a tabela antiga excluía pelo índice, que não batia quando a ficha mistura ids e
   objetos).
 - **O modal de magias também bloqueia**: magia que a ficha ainda não tem aparece com o estágio 1 liberado e os outros com cadeado; magia que a ficha tem
@@ -191,9 +191,13 @@ do efeito, e não pode ser conjurado. O MP extra por estágio ao conjurar (`calc
 - **Pontos de evolução por nível**: ao subir de nível a ficha ganha **3 pontos de evolução a cada nível múltiplo de 5** atingido (5, 10, 15, 20; saltos de vários
   níveis contam cada múltiplo do caminho: `evolutionPointsForLevelUp`, `utils/evolutionPoints.ts`), na rota `POST /api/charsheet/[id]/update/level` (caminho do Magitech padrão, só
   para quem usa a regra de estágios: `usesStageUnlock`). A notificação de nível lista os pontos.
-- **Elementos secundários**: Sangue, Vácuo, Psíquico, Radiação e Explosão (`SECONDARY_ELEMENTS`, `constants/secondaryElements.ts`; `specialElements` é a mesma lista com o nome antigo
-  dos filtros). `isSecondaryElement` (`utils/elements.ts`, ignora caixa e acento) alimenta o selo "Secundário" nos cartões de magia, a observação "secundário" nos filtros de elemento
-  (`filterOptionHint` do `ResourceListModal`), o aviso do modal de maestria elemental e o título da seção do grimório em PDF.
+- **Elementos secundários**: Sangue, Vácuo, Psíquico, Radiação e Explosão (`SECONDARY_ELEMENTS`, `constants/secondaryElements.ts`; `specialElements` é a mesma lista com o nome antigo dos filtros). **Sem selo nem observação "secundário"
+  na tela** (o dono tirou: cartões de magia, filtro de elemento, maestria elemental e título do grimório em PDF, "Elementos Especiais", voltaram ao que eram); `isSecondaryElement` (`utils/elements.ts`, ignora caixa e acento) só serve às regras:
+  o custo do estágio 3 no nível 4 (acima) e a liberação por nível. **Liberação no nível 10** (`SECONDARY_ELEMENTS_UNLOCK_LEVEL`; o código antigo usava 15 no filtro, o dono definiu 10): antes dele as magias desses elementos **não aparecem de
+  nenhuma maneira no modal de magias da ficha** (`MagicsModal`): nem na lista, nem na busca por nome, nem nos filtros de Tipo/Subtipo/Execução (uma magia "Psíquico" de tipo Mentalização não entra em "Mentalização"), nem na contagem, e o filtro
+  de Elemento nem oferece as cinco opções. Quem faz isso é `itemFilter` (`ResourceListModal` → `useResourceList`: o item vetado some da lista carregada, então de tudo que sai dela) com `isHiddenSpell(spell, nível)`. O criador de criatura do mestre
+  (`CreatureResourceModals`) não tem nível e mostra todas. Ao **chegar ao nível 10** (subida de nível que cruza o 10, só uma vez; `unlocksSecondaryElements`) a rota `POST /api/charsheet/[id]/update/level` cria uma **notificação à parte**,
+  "Elementos secundários desbloqueados!", com os cinco elementos um por linha logo abaixo (`secondaryElementsUnlockedNotice`); sistema customizado com magias desligadas não recebe.
 - **Não vale** em sistema customizado (`systemId`), no Roguelite (`campaign.mode`) nem na ficha de classe "Sem Classe": lá todos os estágios ficam
   abertos como sempre (`usesStageUnlock`). Excluir a magia remove as duas chaves (`withoutSpell`).
 - Onde aparece: cartão da ficha (`subcomponents/Magic.tsx`, `Magics.tsx`), tela do jogador na campanha (`SpellsSection.tsx`, que também recusa

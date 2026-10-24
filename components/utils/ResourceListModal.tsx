@@ -38,8 +38,6 @@ interface FilterSection {
     selected: string[];
     onToggle: (value: string) => void;
     onClear: () => void;
-    /** Observação curta ao lado de uma opção (ex.: "secundário" nos elementos secundários) */
-    hint?: (option: string) => string | undefined;
 }
 
 /**
@@ -118,16 +116,7 @@ function MultiSelectFilter({
                                                         onChange={() => section.onToggle(option)}
                                                     />
                                                 }
-                                                label={
-                                                    <Typography variant="body2">
-                                                        {option}
-                                                        {section.hint?.(option) && (
-                                                            <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 0.75 }}>
-                                                                {section.hint(option)}
-                                                            </Typography>
-                                                        )}
-                                                    </Typography>
-                                                }
+                                                label={<Typography variant="body2">{option}</Typography>}
                                             />
                                         ))}
                                     </FormGroup>
@@ -190,12 +179,12 @@ function ResourceListModal({
     errorMessage,
     filterOptions,
     filterLabel = 'Filtro',
-    filterOptionHint,
     sortOptions,
     sortFieldMap,
     secondaryFilters: secondaryFilterMenus,
     title,
     renderResource,
+    itemFilter,
     itemMinWidth,
     itemMaxColumns,
     pageSize = 20,
@@ -248,7 +237,8 @@ function ResourceListModal({
         addFunction,
         validateAdd,
         sortFieldMap,
-        clientFilters
+        clientFilters,
+        itemFilter
     });
 
     // As opções saem dos itens carregados (e não dos já filtrados), para que marcar uma
@@ -401,8 +391,7 @@ function ResourceListModal({
                                 options: filterOptions,
                                 selected: filters,
                                 onToggle: toggleFilter,
-                                onClear: clearFilters,
-                                hint: filterOptionHint
+                                onClear: clearFilters
                             } ]}
                         />
                     )}

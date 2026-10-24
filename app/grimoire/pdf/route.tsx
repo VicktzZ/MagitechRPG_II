@@ -294,14 +294,14 @@ function SpellsDocument({ spells }: { spells: Spell[] }) {
                 })}
             </Page>
 
-            {/* Página para Elementos Secundários */}
+            {/* Página para Elementos Especiais */}
             <Page size="A4" style={styles.page}>
                 <View style={styles.header}>
                     <Text style={styles.title}>MAGITECH - GRIMÓRIO</Text>
                     <Text style={styles.subtitle}>V1.4</Text>
                 </View>
 
-                <Text style={styles.specialElementsTitle}>Elementos Secundários</Text>
+                <Text style={styles.specialElementsTitle}>⚠ Elementos Especiais ⚠</Text>
 
                 {specialElements.map(element => {
                     if (!organized[element] || organized[element].length === 0) return null;

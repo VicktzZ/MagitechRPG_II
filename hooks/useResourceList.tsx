@@ -38,7 +38,8 @@ export const useResourceList = <T extends Record<string, any>>(
         successMessage = (item) => `Item ${item['name'] || item['nome']} adicionado com sucesso!`,
         errorMessage = (error) => error.message || 'Ocorreu um erro ao adicionar o item.',
         sortFieldMap,
-        clientFilters = NO_CLIENT_FILTERS
+        clientFilters = NO_CLIENT_FILTERS,
+        itemFilter
     } = options;
 
     const { enqueueSnackbar, closeSnackbar } = useSnackbar();
@@ -206,6 +207,9 @@ export const useResourceList = <T extends Record<string, any>>(
 
         let uniqueItems = Array.from(uniqueMap.values());
 
+        // Itens vetados somem de tudo: lista, busca, contagem e opções dos filtros
+        if (itemFilter) uniqueItems = uniqueItems.filter(itemFilter);
+
         if (sort.value && sort.value !== 'Nenhum') {
             const sortField = sortFieldMap?.[sort.value] ?? DEFAULT_SORT_FIELD_MAP[sort.value] ?? 'name';
 
@@ -227,7 +231,7 @@ export const useResourceList = <T extends Record<string, any>>(
         }
 
         return uniqueItems;
-    }, [ infData, sort.value, sort.order, sortFieldMap ]);
+    }, [ infData, sort.value, sort.order, sortFieldMap, itemFilter ]);
 
     // Filtros do cliente (ex: Tipo, Subtipo, Execução). Combinam por E; cada um é OU entre as
     // opções marcadas. Se só um deles estiver ativo, filtra sozinho.

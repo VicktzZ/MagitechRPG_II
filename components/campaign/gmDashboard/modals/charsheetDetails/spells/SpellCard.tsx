@@ -3,7 +3,6 @@ import StageLadder from '@components/spells/StageLadder';
 import { Delete, ExpandMore } from '@mui/icons-material';
 import { alpha, Box, ButtonBase, Chip, Collapse, IconButton, ToggleButton, ToggleButtonGroup, Tooltip, Typography } from '@mui/material';
 import { color } from '@themes/tokens';
-import { isSecondaryElement, SECONDARY_ELEMENT_LABEL } from '@utils/elements';
 import { spellStageLabel, type SpellProgress, type SpellStage } from '@utils/spellStages';
 import type { SpellDTO } from '@models/dtos';
 import type { Spell } from '@models/entities';
@@ -27,7 +26,6 @@ const levelColor = (level: number): string => (level >= 4 ? color.amberHover : l
 export default function SpellCard({ spell, progress, expanded, onToggle, onSetUnlocked, onDelete }: SpellCardProps): ReactElement {
     const level = Number(spell.level) || 1;
     const accent = levelColor(level);
-    const secondary = isSecondaryElement(spell.element);
     const id = `gm-spell-${String(spell.id || spell.name).replace(/\W+/g, '-')}`;
     const baseCost = Number(spell.mpCost) || 0;
     const complete = progress.unlocked === progress.count;
@@ -53,11 +51,6 @@ export default function SpellCard({ spell, progress, expanded, onToggle, onSetUn
                         <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap', mt: 0.5, alignItems: 'center' }}>
                             <Chip size="small" label={`Nível ${level}`} sx={{ bgcolor: alpha(accent, 0.14), color: accent, fontWeight: 600 }} />
                             <Chip size="small" variant="outlined" label={spell.element} sx={{ borderColor: 'divider', fontWeight: 600 }} />
-                            {secondary && (
-                                <Tooltip title="Elemento secundário: Sangue, Vácuo, Psíquico, Radiação e Explosão" arrow>
-                                    <Chip size="small" variant="outlined" label={SECONDARY_ELEMENT_LABEL} sx={{ borderColor: 'divider', color: 'text.secondary' }} />
-                                </Tooltip>
-                            )}
                             {spell.execution && <Chip size="small" label={spell.execution} sx={{ bgcolor: 'action.hover' }} />}
                             {spell.range && <Chip size="small" label={spell.range} sx={{ bgcolor: 'action.hover' }} />}
                         </Box>

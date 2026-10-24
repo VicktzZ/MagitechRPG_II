@@ -67,10 +67,10 @@ describe('SpellsTab (visão do mestre)', () => {
         expect(view([ spell({ id: 'f4', name: 'Inferno', level: 4, element: 'FOGO' }) ], { spellUnlocked: { f4: 2 } })).toContain('Abre sozinho com maestria em fogo');
     });
 
-    it('elemento secundário vem sinalizado na magia e no resumo', () => {
+    it('elemento secundário não ganha selo nem observação (só o nome do elemento)', () => {
         const html = view([ blood ]);
-        expect(html).toContain('Secundário');
-        expect(html).toContain('(secundário) 1');
+        expect(html).not.toMatch(/secundári/i);
+        expect(html).toContain('SANGUE 1');
     });
 
     it('maestria no elemento abre a Maestria do nível 4 sozinha, sem editar nada', () => {

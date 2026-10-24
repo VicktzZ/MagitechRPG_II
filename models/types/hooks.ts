@@ -83,6 +83,11 @@ export interface UseResourceListOptions<T> {
      * Combinam por E; dentro de cada um, vale o OU entre as opções marcadas.
      */
     clientFilters?: Array<ClientFilter<T>>;
+    /**
+     * Itens que a lista não pode mostrar de nenhuma maneira (nem na lista, nem na busca, nem nas opções dos
+     * filtros, nem na contagem). Devolve `false` para esconder. Precisa ter identidade estável (`useCallback`).
+     */
+    itemFilter?: (item: T) => boolean;
 }
 
 export interface UseResourceListReturn<T> {

@@ -1,7 +1,6 @@
 import ElementIcon from '@components/misc/ElementIcon';
 import { Box, Chip, Typography } from '@mui/material';
 import { font } from '@themes/tokens';
-import { SECONDARY_ELEMENT_LABEL } from '@utils/elements';
 import type { SpellOverview } from '@utils/spellsOverview';
 import type { ReactElement, ReactNode } from 'react';
 
@@ -94,7 +93,7 @@ export default function SpellsOverview({ overview, spellSpace, elementalMastery,
                             size="small"
                             variant="outlined"
                             icon={<ElementIcon element={entry.element} colored />}
-                            label={`${entry.element}${entry.secondary ? ` (${SECONDARY_ELEMENT_LABEL.toLowerCase()})` : ''} ${entry.count}`}
+                            label={`${entry.element} ${entry.count}`}
                             sx={{ borderColor: 'divider' }}
                         />
                     ))}
