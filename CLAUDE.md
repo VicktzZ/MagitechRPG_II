@@ -163,6 +163,32 @@ do efeito, e não pode ser escolhido nem conjurado. O MP extra por estágio ao c
 - Onde aparece: cartão da ficha (`subcomponents/Magic.tsx`, `Magics.tsx`), tela do jogador na campanha (`SpellsSection.tsx`, que também recusa
   conjurar estágio bloqueado) e detalhe da ficha do mestre (`SpellsTab.tsx`, `charsheetEdit.ts`).
 
+## Campanha do mestre: janelas e barra do grupo
+
+O mestre gerencia fichas em **janelas flutuantes** (estilo BG3), em `components/campaign/gmDashboard/windows/`. Escopo combinado com o dono:
+uma janela **por seção** da ficha de um jogador; entrada pela **barra do grupo** (um retrato por jogador) e pelos cartões; conteúdo = as abas atuais
+do mestre (fase 1), a visão do jogador fica para a fase 2; criaturas ficam fora da fase 1 (o gerenciador é genérico). Fases/PRs: 1 gerenciador + barra +
+resumo · 2 seções em janelas (atributos, perícias, inventário, habilidades, magias) + ações do jogador (item, ponto de evolução, notificação, remover),
+tirando o `CharsheetDetailsModal` · 3 dano/cura rápidos de LP/MP/AP por rota com transação (soma/subtrai, 0 a máx., sem contar no limite de MP por turno) ·
+4 rolagem do mestre pelo jogador (**regra do botão da perícia na ficha**: `mod + 1` d20, mod negativo rola 2; não unifica as regras) · 5 anotações
+privadas por ficha em `campaigns/{id}/gmNotes/{fichaId}` com regra do Firestore só para `campaign.admin` (**publicar `firestore.rules` antes do código**).
+
+- **Peças**: `windowState.ts` (reducer puro: abrir/focar/fechar/recolher/gravar posição, `sanitizeWindows` para o que vem do navegador), `windowGeometry.ts`
+  (puro: área, clamp, cascata, mover, redimensionar), `windowKinds.ts` (tipos de janela, tamanhos, limite de 8), `GMWindowProvider` (estado, área útil,
+  persistência), `FloatingWindow` (casca: arrastar, redimensionar, recolher, teclado), `GMWindowLayer` (portal no `body`), `PartyBar`/`PartyPortrait`
+  (retratos) e `SummaryWindow`/`SummaryView` (resumo). Provider montado em `CampaignComponent` só para o mestre.
+- **Dois contextos de propósito**: ações (estáveis; cartões e barra só abrem janelas) e estado. Sem provider, as ações são no-ops (testes).
+- **Arrastar não passa pelo estado**: enquanto arrasta, a posição fica local na `FloatingWindow` e vai ao reducer ao soltar. Posição guardada pode estar
+  fora da área (janela menor, chat aberto): a tela mostra clampada e não altera o guardado.
+- **Área das janelas**: começa depois da barra do grupo (`WINDOW_AREA_LEFT`, depende do preenchimento de `app/app/layout.tsx` + `CampaignShell`; mudou um,
+  atualize `layout.ts`) e termina antes do chat encaixado e aberto. Camada `zIndex` 1100+, abaixo do dock (1200), do chat e dos modais (1300); no celular
+  a janela da frente ocupa a tela toda (1250) e a barra do grupo some (abre-se pelo menu do cartão: "Abrir resumo em janela").
+- **Persistência**: `localStorage` `gm-windows:{campaignId}` (lista de janelas); lido depois da montagem, JSON inválido é ignorado, janelas de fichas que
+  saíram da campanha fecham (`keepSheets`, só com a lista de fichas já carregada).
+- **Teclado**: barra de título focável (setas movem 16px, Shift 64, Alt+setas redimensionam, Enter recolhe); Esc fecha, menos de dentro de campo/menu.
+- Teste de componente que importa `useCharsheetPointsView` precisa de `jest.mock` dele: o hook de sistema customizado puxa `@contexts`, e o ts-jest
+  barra um erro de tipo antigo em `contexts/charsheetContext.ts`.
+
 ## Limite de MP por turno
 
 `⌈(Nível + Foco) ÷ 2⌉ + Nível de ORM` (+ bônus em `mpLimit` da ficha), em `utils/mpLimit.ts`.

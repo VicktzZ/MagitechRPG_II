@@ -2,7 +2,7 @@
 
 import { campaignCurrentCharsheetContext, useCampaignContext } from '@contexts';
 import { useCompleteCharsheet } from '@hooks/useCompleteCharsheet';
-import { Backdrop, CircularProgress, Stack } from '@mui/material';
+import { Backdrop, Box, CircularProgress, Stack } from '@mui/material';
 import { sessionService } from '@services';
 import { enqueueSnackbar } from 'notistack';
 import { useSession } from 'next-auth/react';
@@ -11,6 +11,10 @@ import { FormProvider, useForm } from 'react-hook-form';
 import { CampaignGMDashboard, CampaignHeader, CampaignNotes, CampaignPlayerDashboard, SessionChat } from '.';
 import type { CharsheetDTO } from '@models/dtos';
 import GMActions from './gmDashboard/GMActions';
+import GMWindowLayer from './gmDashboard/windows/GMWindowLayer';
+import { GMWindowProvider } from './gmDashboard/windows/GMWindowProvider';
+import PartyBar from './gmDashboard/windows/PartyBar';
+import { PARTY_BAR_GAP } from './gmDashboard/windows/layout';
 import CampaignFinishedBanner from './CampaignFinishedBanner';
 import CampaignWidgetPanel from './widget/CampaignWidgetPanel';
 import CombatStatus from './CombatStatus';
@@ -97,27 +101,42 @@ export default function CampaignComponent(): ReactElement {
 
     // Uma coluna só: faixa da campanha, avisos, ações do mestre, notas e o painel de quem está vendo.
     // O chat e o dock (combate e widgets) ficam fixos na borda e não entram no fluxo.
+    const main = (
+        <Stack spacing={2} sx={{ width: '100%', minWidth: 0, flex: 1 }}>
+            <CampaignHeader />
+            <CampaignFinishedBanner />
+            {DEV_MODE && isUserGM && (
+                <DevViewSwitcher
+                    campaignId={campaign.id}
+                    userId={userId}
+                    activeCharsheetId={devPreviewCharsheetId}
+                    onChange={handleDevPreviewChange}
+                />
+            )}
+            {effectiveIsUserGM && <GMActions />}
+            <CampaignNotes />
+            {effectiveIsUserGM ? (
+                <CampaignGMDashboard />
+            ) : (
+                <CampaignPlayerDashboard />
+            )}
+        </Stack>
+    );
+
+    // Mestre: a barra do grupo fica ao lado da coluna e as janelas abertas por ela flutuam sobre a página
+    const body = effectiveIsUserGM ? (
+        <GMWindowProvider campaignId={campaign.id} charsheetIds={charsheets.map(sheet => sheet.id)}>
+            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: `${PARTY_BAR_GAP}px` }}>
+                <PartyBar />
+                {main}
+            </Box>
+            <GMWindowLayer />
+        </GMWindowProvider>
+    ) : main;
+
     const content = (
         <>
-            <Stack spacing={2} sx={{ width: '100%', minWidth: 0 }}>
-                <CampaignHeader />
-                <CampaignFinishedBanner />
-                {DEV_MODE && isUserGM && (
-                    <DevViewSwitcher
-                        campaignId={campaign.id}
-                        userId={userId}
-                        activeCharsheetId={devPreviewCharsheetId}
-                        onChange={handleDevPreviewChange}
-                    />
-                )}
-                {effectiveIsUserGM && <GMActions />}
-                <CampaignNotes />
-                {effectiveIsUserGM ? (
-                    <CampaignGMDashboard />
-                ) : (
-                    <CampaignPlayerDashboard />
-                )}
-            </Stack>
+            {body}
             <SessionChat />
             <FloatingDock>
                 <CombatStatus

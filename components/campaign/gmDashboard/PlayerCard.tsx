@@ -1,5 +1,5 @@
 import { AddItemModal, WarningModal } from '@layout'
-import { Add, Backpack, Block, ChatBubbleOutline, DirectionsRun, Info, LocalPolice, MonetizationOn, MoreVert, Upgrade } from '@mui/icons-material'
+import { Add, Backpack, Block, ChatBubbleOutline, DirectionsRun, Info, LocalPolice, MonetizationOn, MoreVert, Upgrade, ViewSidebar } from '@mui/icons-material'
 import {
     Box,
     Button,
@@ -28,7 +28,9 @@ import type { Armor, Item, Weapon } from '@models'
 import type { CharsheetDTO } from '@models/dtos'
 import useNumbersWithSpaces from '@hooks/useNumbersWithSpace'
 import { charsheetEntity } from '@utils/firestoreEntities'
-import { useCharsheetSystem } from '@hooks/useCharsheetSystem'
+import { useCharsheetPointsView } from './useCharsheetPointsView'
+import { useGMWindowActions } from './windows/GMWindowProvider'
+import { isCombatantInTurn } from '@utils/combatTurn'
 import { color, font } from '@themes/tokens'
 import StatMeter from './StatMeter'
 import { errorMessage } from '@utils/errors';
@@ -49,26 +51,11 @@ const srOnly = {
 // só o card do jogador cuja ficha mudou re-renderiza.
 function PlayerCard({ charsheet }: { charsheet: Required<CharsheetDTO> }) {
     const { campaign, charsheets } = useCampaignContext()
-    const { system: customSystem } = useCharsheetSystem(charsheet.systemId)
-    const weightUnit = customSystem ? (customSystem.weightConfig?.unit ?? '') : 'kg'
-
-    // Sistemas customizados podem desligar LP, MP e AP (mesma regra do PlayerHeader)
-    const hasLP = !customSystem || (customSystem.pointsConfig?.hasLP ?? customSystem.initialFields?.life?.enabled ?? true)
-    const hasMP = !customSystem || (customSystem.pointsConfig?.hasMP ?? customSystem.initialFields?.mana?.enabled ?? true)
-    const hasAP = !customSystem || (customSystem.pointsConfig?.hasAP ?? customSystem.initialFields?.armor?.enabled ?? true)
-    const lpName = customSystem?.pointsConfig?.lpName || customSystem?.initialFields?.life?.label || 'Vida'
-    const mpName = customSystem?.pointsConfig?.mpName || customSystem?.initialFields?.mana?.label || 'Mana'
-    const apName = customSystem?.pointsConfig?.apName || customSystem?.initialFields?.armor?.label || 'Armadura'
+    const { customSystem, weightUnit, hasLP, hasMP, hasAP, lpName, mpName, apName } = useCharsheetPointsView(charsheet)
+    const { openWindow } = useGMWindowActions()
 
     // Combate ativo, fase de ação: o cartão de quem joga agora ganha o destaque "Em turno"
-    const combat = campaign.session?.combat
-    const currentCombatant = combat?.isActive && combat.phase === 'ACTION'
-        ? combat.combatants?.[combat.currentTurnIndex]
-        : undefined
-    const isMyTurn = Boolean(currentCombatant && (
-        currentCombatant.id === charsheet.id
-        || (currentCombatant.odacId && currentCombatant.odacId === charsheet.userId)
-    ))
+    const isMyTurn = isCombatantInTurn(campaign.session?.combat, charsheet)
     const [ playerAnchorEl, setPlayerAnchorEl ] = useState<null | HTMLElement>(null)
     const [ addItemModalOpen, setAddItemModalOpen ] = useState(false)
     const [ removeUserDialogOpen, setRemoveUserDialogOpen ] = useState(false)
@@ -164,6 +151,11 @@ function PlayerCard({ charsheet }: { charsheet: Required<CharsheetDTO> }) {
     const viewCharsheetDetails = () => {
         setCharsheetDetailsOpen(true);
         handlePlayerMenuClose();
+    }
+
+    const openSummaryWindow = () => {
+        openWindow('summary', charsheet.id)
+        handlePlayerMenuClose()
     }
 
     const handleRemoveUser = async () => {
@@ -310,6 +302,12 @@ function PlayerCard({ charsheet }: { charsheet: Required<CharsheetDTO> }) {
             <Menu anchorEl={playerAnchorEl} open={Boolean(playerAnchorEl)} onClose={handlePlayerMenuClose}>
                 <Box sx={{ width: 320, maxWidth: '100%' }}>
                     <MenuList>
+                        <MenuItem onClick={openSummaryWindow}>
+                            <ListItemIcon>
+                                <ViewSidebar fontSize="small" />
+                            </ListItemIcon>
+                            <ListItemText>Abrir resumo em janela</ListItemText>
+                        </MenuItem>
                         <MenuItem onClick={viewCharsheetDetails}>
                             <ListItemIcon>
                                 <Info />
