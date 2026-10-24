@@ -41,7 +41,7 @@ const stageText = (spell: SpellDTO, stage: SpellStage): string => spell.stages?.
 
 /** Custo total de MP de conjurar a magia neste estagio (base + extra do estagio) */
 export function getSpellMpCost(spell: SpellDTO, stage: SpellStage): number {
-    return calculateTotalManaCost(Number(spell.mpCost) || 0, Number(spell.level) || 1, stage - 1);
+    return calculateTotalManaCost(Number(spell.mpCost) || 0, Number(spell.level) || 1, stage - 1, spell.mpCostIncrease);
 }
 
 /** Se o texto do estagio tem dados a rolar ao efetuar a magia; sem eles conjurar basta */

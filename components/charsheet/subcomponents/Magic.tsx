@@ -94,7 +94,7 @@ function MagicSpell({
     // Estados
     const [ description, setDescription ] = useState<string>(magic.stages[startStage] ?? magic.stages[0]);
     const [ shownStage, setShownStage ] = useState<number>(startStage);
-    const [ extraManaCost, setExtraManaCost ] = useState<number>(calculateExtraManaCost(Number(magic.level), startStage));
+    const [ extraManaCost, setExtraManaCost ] = useState<number>(calculateExtraManaCost(Number(magic.level), startStage, magic.mpCostIncrease));
 
     // Elemento para a marca (glifo)
     const elementoColor = elementColor[resolveElement(magic.element)];
@@ -108,7 +108,7 @@ function MagicSpell({
     useEffect(() => {
         setShownStage(startStage)
         setDescription(magic.stages[startStage] ?? magic.stages[0])
-        setExtraManaCost(calculateExtraManaCost(Number(magic.level), startStage))
+        setExtraManaCost(calculateExtraManaCost(Number(magic.level), startStage, magic.mpCostIncrease))
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [ magic.level, magic.stages, initialStage, unlockedIndex ])
     
@@ -117,7 +117,7 @@ function MagicSpell({
         if (stage > unlockedIndex) return;
         setShownStage(stage);
         setDescription(magic.stages[stage]!);
-        setExtraManaCost(calculateExtraManaCost(Number(magic.level), stage));
+        setExtraManaCost(calculateExtraManaCost(Number(magic.level), stage, magic.mpCostIncrease));
     };
 
     // Animações
@@ -642,7 +642,7 @@ function MagicSpellCompact({
     const actionColor = isAdding ? theme.palette.primary.main : theme.palette.error.main;
 
     const level = Number(magic.level);
-    const extraManaCost = calculateExtraManaCost(level, shownStage);
+    const extraManaCost = calculateExtraManaCost(level, shownStage, magic.mpCostIncrease);
     const description = magic.stages[shownStage] ?? magic.stages[0];
     const availableStages = ([ 0, 1, 2 ] as const).filter(stage => stage === 0 || Boolean(magic.stages[stage]));
 

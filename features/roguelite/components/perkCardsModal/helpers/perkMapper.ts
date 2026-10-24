@@ -161,6 +161,14 @@ function getSpellMpCost(perk: PerkData): number | undefined {
     return data?.mpCost ?? (perk as any).mpCost
 }
 
+function getSpellMpCostIncrease(perk: PerkData): number[] | undefined {
+    if (perk.perkType !== PerkTypeEnum.SPELL) return undefined
+
+    const data = perk.data || perk
+    const increase = data?.mpCostIncrease ?? (perk as any).mpCostIncrease
+    return Array.isArray(increase) ? increase : undefined
+}
+
 export function mapPerkToCardProps(perk: PerkData, icon: React.ReactNode): Omit<PerkCardProps, 'bgImage'> {
     return {
         title: perk.name ?? perk.title ?? 'Sem nome',
@@ -173,6 +181,7 @@ export function mapPerkToCardProps(perk: PerkData, icon: React.ReactNode): Omit<
         level: getSpellLevel(perk),
         stages: getSpellStages(perk),
         mpCost: getSpellMpCost(perk),
+        mpCostIncrease: getSpellMpCostIncrease(perk),
         weapon: perk.perkType === PerkTypeEnum.WEAPON ? (perk.data || perk) : undefined,
         armor: perk.perkType === PerkTypeEnum.ARMOR ? (perk.data || perk) : undefined,
         attributes: mapPerkAttributes(perk)
