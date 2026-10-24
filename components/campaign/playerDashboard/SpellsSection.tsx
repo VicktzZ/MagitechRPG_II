@@ -21,6 +21,7 @@ import {
     rollSpellEffect
 } from '@utils/combat/spellRoller';
 import { spellCastDifficulty, spellCastSucceeded } from '@utils/spellDifficulty';
+import { isSustainedSpell, sustainedEffects } from '@utils/combat/sustainedSpells';
 import { usePendingSpellEffects } from '@hooks/usePendingSpellEffects';
 import { getMpLimit, isMpLimitEnforced } from '@utils/mpLimit';
 import { campaignService } from '@services';
@@ -83,6 +84,11 @@ export default function SpellsSection(): ReactElement {
     const mpLimit = charsheet ? getMpLimit(charsheet) : 0
     const mpSpentThisTurn = myCombatant?.mpSpentThisTurn ?? 0
     const mpLimitReleased = Boolean(myCombatant?.mpLimitOverride)
+    // Magias sustentadas que ele mantém agora (efeito sobre o combatente): id da magia → estágio conjurado
+    const sustainedActive: Record<string, SpellStage> = {}
+    for (const effect of sustainedEffects(myCombatant?.effects)) {
+        if (effect.sustained) sustainedActive[effect.sustained.spellKey] = effect.sustained.stage as SpellStage
+    }
     const exceedsMpLimit = (cost: number): boolean => mpLimitEnforced && !mpLimitReleased && mpSpentThisTurn + cost > mpLimit
 
     // Avisos (MP insuficiente, limite de MP) são log de combate; a conjuração em si vai como mensagem de dados (cartão com dropdown)
@@ -153,6 +159,21 @@ export default function SpellsSection(): ReactElement {
             if (succeeded && hasSpellEffectDice(spell, stage)) markPending(spellKey, stage);
             await sendCombatChatMessage(buildSpellCastMessage(playerName, spell, stage, test, mpCost), MessageType.DICE);
 
+            // Magia sustentada em combate: o MP acabou, tudo que ele mantém acaba; senão, conjurada com sucesso ela fica ativa (fora do combate é como
+            // uma imediata). Erro aqui não desfaz a conjuração, que já foi paga e anunciada.
+            if (myCombatant) {
+                try {
+                    if (newMp <= 0) {
+                        await campaignService.endSustainedSpells(campaign.id, { combatantId: charsheet.id })
+                    } else if (succeeded && isSustainedSpell(spell.type)) {
+                        await campaignService.startSustainedSpell(campaign.id, { combatantId: charsheet.id, spellKey, spellName: spell.name, stage, cost: mpCost })
+                    }
+                } catch (sustainError) {
+                    console.error('Erro ao atualizar a magia sustentada:', sustainError)
+                    enqueueSnackbar('A magia foi conjurada, mas não ficou ativa no combate. Avise o mestre.', { variant: 'warning' })
+                }
+            }
+
             // Estatísticas: magia conjurada + MP gasto
             postCampaignStats(campaign.id, [ {
                 charsheetId: charsheet.id,
@@ -184,6 +205,17 @@ export default function SpellsSection(): ReactElement {
             }
         } finally {
             setCastingSpellId(null);
+        }
+    }
+
+    /** Desconjurar: encerra a magia sustentada que o jogador mantém (o MP já pago não volta) */
+    const handleEndSustained = async (spell: SpellDTO) => {
+        if (!charsheet?.id || !campaign?.id) return;
+        try {
+            await campaignService.endSustainedSpells(campaign.id, { combatantId: charsheet.id, spellKey: spell.id || spell.name });
+        } catch (error) {
+            console.error('Erro ao desconjurar magia:', error);
+            enqueueSnackbar('Erro ao desconjurar a magia', { variant: 'error' });
         }
     }
 
@@ -556,6 +588,9 @@ export default function SpellsSection(): ReactElement {
                                                             onCast: async (stage) => { await handleCastSpell(spell, stage) },
                                                             isCasting: castingSpellId === spellId,
                                                             currentMp,
+                                                            sustained: isSustainedSpell(spell.type) && sustainedActive[spellId]
+                                                                ? { activeStage: sustainedActive[spellId], onEnd: async () => { await handleEndSustained(spell) } }
+                                                                : undefined,
                                                             effect: {
                                                                 pendingStage: pendingEffects[spellId],
                                                                 onEffect: async (stage) => { await handleEffectSpell(spell, stage) },

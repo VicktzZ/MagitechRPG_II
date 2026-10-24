@@ -124,6 +124,22 @@ class CampaignService extends Service<Campaign, 'code' | 'userId'> {
         })).data
     }
 
+    /** Magia sustentada conjurada com sucesso em combate: vira um efeito sobre o conjurador, com manutenção a cada rodada */
+    async startSustainedSpell(campaignId: string, payload: { combatantId: string; spellKey: string; spellName: string; stage: number; cost: number }) {
+        return (await this.post({
+            param: `${campaignId}/combat`,
+            body: { action: 'sustain_start', ...payload }
+        })).data
+    }
+
+    /** Desconjura a magia sustentada (ou todas, sem `spellKey`) */
+    async endSustainedSpells(campaignId: string, payload: { combatantId: string; spellKey?: string }) {
+        return (await this.post({
+            param: `${campaignId}/combat`,
+            body: { action: 'sustain_end', ...payload }
+        })).data
+    }
+
     /**
      * Mestre: adiciona jogadores (por ficha) e criaturas (por id, com cópias) a um combate em andamento. O servidor lê os dados da ficha e
      * da criatura, rola a iniciativa na fase de ação e põe cada um no lugar dela na ordem. Devolve `warnings` do que ficou de fora.

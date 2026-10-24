@@ -15,6 +15,8 @@ import { evaluateMpSpend, getMpLimit, isMpLimitEnforced } from '@utils/mpLimit'
 import { insertCombatant, nextCreatureInstance } from '@utils/combat/addCombatants'
 import { creatureInitiativeDice, describeInitiativeRolls, playerInitiativeDice, resolveInitiative, type InitiativeDice } from '@utils/combat/initiativeRoll'
 import { resetMpLimitWindows } from '@utils/combat/mpLimitWindow'
+import { sustainedUpkeepFor } from '@utils/combat/sustainedSpells'
+import { applySustainedUpkeep, endSustained, startSustained } from '@utils/combat/sustainedUpkeep'
 import { findBaseCreature } from '@utils/combatCreatureLookup'
 
 /** Ações que conduzem o combate — exclusivas do mestre */
@@ -26,7 +28,7 @@ const GM_ONLY_ACTIONS: CombatAction[] = [
 /** Ações de jogador que só valem no turno do próprio personagem */
 const OWN_TURN_ACTIONS: CombatAction[] = [ 'next_turn', 'apply_damage', 'apply_heal' ]
 
-const KNOWN_ACTIONS: CombatAction[] = [ ...GM_ONLY_ACTIONS, ...OWN_TURN_ACTIONS, 'roll_initiative', 'spend_mp' ]
+const KNOWN_ACTIONS: CombatAction[] = [ ...GM_ONLY_ACTIONS, ...OWN_TURN_ACTIONS, 'roll_initiative', 'spend_mp', 'sustain_start', 'sustain_end' ]
 
 type CombatAction = 
     | 'start'           // Iniciar combate
@@ -43,6 +45,8 @@ type CombatAction =
     | 'remove_effect'   // Remover efeito de pipeline de um combatente
     | 'spend_mp'        // Registrar MP gasto em magia (valida o limite por turno; valor negativo estorna)
     | 'set_mp_limit_override' // Mestre libera/restabelece o limite de MP por turno de um jogador
+    | 'sustain_start'   // Jogador conjurou com sucesso uma magia sustentada em combate: ela vira um efeito sobre ele
+    | 'sustain_end'     // Desconjurar uma magia sustentada (ou todas, sem spellKey)
 
 interface CombatRequest {
     action: CombatAction
@@ -94,6 +98,12 @@ interface CombatRequest {
 
     /** Para set_mp_limit_override: true libera o limite, false restabelece */
     enabled?: boolean
+
+    /** Para sustain_start / sustain_end: a magia sustentada (id ou nome), o estágio conjurado e o custo total de MP dele */
+    spellKey?: string
+    spellName?: string
+    stage?: number
+    cost?: number
 }
 
 /** Máximo de jogadores (e de criaturas diferentes) por chamada, e de cópias de uma criatura, ao entrar num combate em andamento */
@@ -205,6 +215,13 @@ export async function POST(
                 }
             }
 
+            if (action === 'sustain_start' || action === 'sustain_end') {
+                const target = combat.combatants?.find(c => c.id === body.combatantId || c.odacId === body.combatantId)
+                if (target && !ownsCombatant(target)) {
+                    throw forbidden('Você só pode mexer nas magias sustentadas do seu personagem')
+                }
+            }
+
             if (OWN_TURN_ACTIONS.includes(action) && !ownsCombatant(combat.combatants?.[combat.currentTurnIndex])) {
                 throw forbidden('Não é o turno do seu personagem')
             }
@@ -214,6 +231,8 @@ export async function POST(
         if (combat.isActive && [ 'next_turn', 'apply_damage', 'apply_heal', 'apply_effect' ].includes(action)) {
             await refreshPlayerCombatantsLp(combat)
         }
+
+        const logsBefore = combat.logs?.length ?? 0
 
         switch (action) {
         case 'start': {
@@ -450,8 +469,9 @@ export async function POST(
                 })
                 combat.phase = 'INITIATIVE'
                 combat.currentTurnIndex = 0
-                // A rodada virou: o limite de MP por turno de todos recomeça
+                // A rodada virou: o limite de MP por turno de todos recomeça e as magias sustentadas cobram a manutenção (já no limite novo)
                 resetMpLimitWindows(combat.combatants)
+                await applySustainedUpkeep(combat)
 
                 combat.logs.push(new CombatLog({
                     round: combat.round,
@@ -496,6 +516,7 @@ export async function POST(
                     combat.phase = 'INITIATIVE'
                     combat.currentTurnIndex = 0
                     resetMpLimitWindows(combat.combatants)
+                    await applySustainedUpkeep(combat)
 
                     combat.logs.push(new CombatLog({
                         round: combat.round,
@@ -1043,6 +1064,52 @@ export async function POST(
             break
         }
 
+        case 'sustain_start': {
+            // Fora do combate a sustentada é como uma imediata: nada fica ativo
+            if (!combat.isActive) {
+                return NextResponse.json({ success: true, combat, active: false })
+            }
+
+            const { combatantId, spellKey, spellName, stage, cost } = body
+            if (!combatantId || !spellKey || !spellName) {
+                throw badRequest('combatantId, spellKey e spellName são obrigatórios')
+            }
+            if (typeof stage !== 'number' || !Number.isInteger(stage) || stage < 1 || stage > 3) {
+                throw badRequest('Estágio inválido')
+            }
+            if (typeof cost !== 'number' || !Number.isInteger(cost) || cost < 1 || cost > 1000) {
+                throw badRequest('Custo de MP inválido')
+            }
+
+            const started = startSustained(combat, combatantId, {
+                spellKey: String(spellKey).slice(0, 200),
+                spellName: String(spellName).slice(0, 200),
+                stage,
+                cost,
+                upkeep: sustainedUpkeepFor(cost)
+            })
+            if (!started) {
+                return NextResponse.json({ error: 'Jogador não encontrado no combate' }, { status: 404 })
+            }
+
+            break
+        }
+
+        case 'sustain_end': {
+            if (!combat.isActive) {
+                return NextResponse.json({ success: true, combat, active: false })
+            }
+
+            const { combatantId, spellKey } = body
+            if (!combatantId) {
+                throw badRequest('combatantId é obrigatório')
+            }
+
+            endSustained(combat, combatantId, spellKey ? String(spellKey) : undefined)
+
+            break
+        }
+
         case 'set_mp_limit_override': {
             if (!combat.isActive) {
                 return NextResponse.json({ error: 'Não há combate ativo' }, { status: 400 })
@@ -1080,7 +1147,9 @@ export async function POST(
         // sem esta guarda o último log antigo seria repostado a cada conjuração.
         // A mensagem é gravada no chat (subcoleção) depois de salvar a campanha.
         let combatMessage: Message | undefined
-        if (action !== 'spend_mp' && combat.logs.length > 0) {
+        // `sustain_end` só gera log quando alguma magia estava ativa.
+        const logsGrew = combat.logs.length > logsBefore
+        if (action !== 'spend_mp' && (action !== 'sustain_end' || logsGrew) && combat.logs.length > 0) {
             const lastLog = combat.logs[combat.logs.length - 1]
             combatMessage = new Message({
                 id: crypto.randomUUID(),
@@ -1150,7 +1219,9 @@ function getActionMessage(action: CombatAction): string {
         apply_effect: 'Efeito aplicado',
         remove_effect: 'Efeito removido',
         spend_mp: 'MP registrado',
-        set_mp_limit_override: 'Limite de MP atualizado'
+        set_mp_limit_override: 'Limite de MP atualizado',
+        sustain_start: 'Magia sustentada ativa',
+        sustain_end: 'Magia sustentada encerrada'
     }
     return messages[action] || 'Ação executada'
 }

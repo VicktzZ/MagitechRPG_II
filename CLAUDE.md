@@ -216,6 +216,15 @@ do efeito, e não pode ser conjurado. O MP extra por estágio ao conjurar (`calc
   26/28/30 por estágio 1/2/3 (o 3º do nível 4 é a Maestria, ou o "Estágio 3" comprado em elemento secundário); nível ou estágio fora da tabela não tem DT e a conjuração vale. **O MP é gasto mesmo se o teste
   falhar** (a magia só não pode ser efetuada); estágio sem dado no texto não tem o que efetuar. A conjuração pendente de efetuar fica em `localStorage` (`hooks/usePendingSpellEffects.ts`, `utils/pendingSpellEffects.ts`:
   uma por magia, a mais nova troca a anterior) para recarregar a página não fazer o jogador pagar de novo, e tem o botão de descartar; não vai para o banco. O mestre não vê nem interfere (ainda).
+- **Magia sustentada em combate** (decisão do dono, 24/10/2026; `utils/combat/sustainedSpells.ts`, `utils/combat/sustainedUpkeep.ts`; **entrou sem teste nem e2e a pedido do dono: a primeira coisa a conferir se algo estranhar**): magia
+  com subtipo "sustentado" conjurada **com sucesso no teste** (total ≥ DT) **em combate ativo** vira um **efeito sobre o conjurador** (`AppliedEffect` com `sustained`, indefinido, nome da magia, sem tick; a rota `combat` ganhou
+  `sustain_start`/`sustain_end`). **Fora do combate ou com o teste falho ela é como uma imediata** (nada fica ativo, nenhum limite de MP). **Manutenção**: quando a **rodada vira**, depois de zerar o limite de MP por turno,
+  cada jogador paga **metade do custo do estágio conjurado, arredondada para baixo** por magia mantida (`applySustainedUpkeep`): o MP sai da ficha (`adjustCharsheetStats`) e **conta no limite de MP da rodada nova**; ao
+  conjurar o custo cheio também conta (é o `spend_mp` de sempre). A que não couber no MP acaba, e se o MP chegar a 0 (na manutenção, ou ao conjurar outra magia) todas acabam; o combate encerrado limpa os efeitos. **Desconjurar**: no
+  estágio ativo o botão "Conjurar" vira "Desconjurar" (`StageLadder` `cast.sustained`), que encerra a magia sem devolver MP; enquanto ativa, os outros estágios dela não conjuram. A manutenção é cobrada **na virada da rodada**,
+  não no turno de cada um (interpretação da regra do dono: "gasta limite de MP ao conjurar e ao virar a rodada"). GM mexendo no MP à mão não encerra a magia (só a próxima manutenção ou conjuração).
+- **Aplicar efeito de combate sem abrir o diálogo de combate**: `useQuickEffect` (`gmDashboard/actions/useQuickEffect.tsx`) abre o `ApplyEffectDialog` já com o alvo escolhido. Entradas: menu do cartão do jogador ("Aplicar efeito",
+  só com ele no combate ativo) e botão no cartão da criatura em combate. O diálogo de combate continua funcionando como antes.
 - **Não vale** em sistema customizado (`systemId`), no Roguelite (`campaign.mode`) nem na ficha de classe "Sem Classe": lá todos os estágios ficam
   abertos como sempre (`usesStageUnlock`). Excluir a magia remove as duas chaves (`withoutSpell`).
 - Onde aparece: cartão da ficha (`subcomponents/Magic.tsx`, `Magics.tsx`), tela do jogador na campanha (`SpellsSection.tsx`, que também recusa
