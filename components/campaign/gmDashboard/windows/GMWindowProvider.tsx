@@ -17,13 +17,13 @@ import {
 } from 'react';
 import { CHAT_DOCK_GAP, CHAT_PANEL_WIDTH, useChatDocked } from '../../campaignLayout';
 import { cascadeRect, computeBounds, type Bounds, type Rect } from './windowGeometry';
-import { MAX_OPEN_WINDOWS, WINDOW_DEFAULT_SIZE, windowKey, type WindowKind } from './windowKinds';
+import { MAX_OPEN_WINDOWS, WINDOW_DEFAULT_SIZE, windowKey, type WindowKind, type WindowTarget } from './windowKinds';
 import { frontWindowKey, initialWindowsState, windowsReducer, type FocusRequest, type WindowEntry } from './windowState';
 import { WINDOW_AREA_EDGE, WINDOW_AREA_LEFT, WINDOW_AREA_TOP } from './layout';
 
 /** O que as janelas fazem: estável, para quem só abre janelas (cartões, barra do grupo) não re-renderizar a cada arrasto */
 export interface GMWindowActions {
-    openWindow: (kind: WindowKind, charsheetId: string) => void;
+    openWindow: (kind: WindowKind, targetId: string) => void;
     focusWindow: (key: string) => void;
     closeWindow: (key: string) => void;
     commitRect: (key: string, rect: Rect) => void;
@@ -67,6 +67,10 @@ interface GMWindowProviderProps {
     campaignId: string;
     /** Fichas que existem na campanha; janelas de fichas que saíram são fechadas */
     charsheetIds: string[];
+    /** Criaturas personalizadas que existem na campanha; janelas das excluídas são fechadas (lista vazia vale: não há nenhuma) */
+    creatureIds?: string[];
+    /** Combatentes que estão no combate agora; janelas de quem saiu (ou de combate encerrado) são fechadas */
+    combatantIds?: string[];
     children: ReactNode;
 }
 
@@ -74,7 +78,7 @@ interface GMWindowProviderProps {
  * Estado das janelas do mestre: quais estão abertas, onde, em que ordem e recolhidas ou não.
  * A disposição fica guardada por campanha no navegador e volta ao reabrir a página.
  */
-export function GMWindowProvider({ campaignId, charsheetIds, children }: GMWindowProviderProps): ReactElement {
+export function GMWindowProvider({ campaignId, charsheetIds, creatureIds, combatantIds, children }: GMWindowProviderProps): ReactElement {
     const [ state, dispatch ] = useReducer(windowsReducer, initialWindowsState);
     const [ hydrated, setHydrated ] = useState(false);
     const [ viewport, setViewport ] = useState({ width: 1280, height: 800 });
@@ -128,16 +132,27 @@ export function GMWindowProvider({ campaignId, charsheetIds, children }: GMWindo
         return () => window.clearTimeout(timeout);
     }, [ state.windows, hydrated, campaignId ]);
 
-    // Jogador removido da campanha: fecha as janelas dele. Lista vazia é "ainda carregando", não "ninguém"
-    const idsKey = charsheetIds.join('|');
+    // Alvo que saiu da campanha (jogador removido, criatura excluída, combatente fora do combate): fecha as janelas dele.
+    // Fichas: lista vazia é "ainda carregando", não "ninguém". Criaturas e combatentes vêm da própria campanha, que já
+    // está carregada aqui, então lista vazia vale (e só se a lista foi passada: sem ela, nada é podado).
+    const sheetsKey = charsheetIds.join('|');
+    const creaturesKey = creatureIds?.join('|');
+    const combatantsKey = combatantIds?.join('|');
     useEffect(() => {
-        if (!hydrated || idsKey === '') return;
-        dispatch({ type: 'keepSheets', ids: idsKey.split('|') });
-    }, [ hydrated, idsKey ]);
+        if (!hydrated) return;
 
-    const openWindow = useCallback((kind: WindowKind, charsheetId: string) => {
+        const split = (key: string): string[] => (key === '' ? [] : key.split('|'));
+        const keep: Partial<Record<WindowTarget, string[]>> = {};
+        if (sheetsKey !== '') keep.sheet = split(sheetsKey);
+        if (creaturesKey !== undefined) keep.creature = split(creaturesKey);
+        if (combatantsKey !== undefined) keep.combatant = split(combatantsKey);
+
+        dispatch({ type: 'keepTargets', keep });
+    }, [ hydrated, sheetsKey, creaturesKey, combatantsKey ]);
+
+    const openWindow = useCallback((kind: WindowKind, targetId: string) => {
         const current = stateRef.current;
-        const key = windowKey(kind, charsheetId);
+        const key = windowKey(kind, targetId);
         const alreadyOpen = current.windows.some(entry => entry.key === key);
 
         if (!alreadyOpen && current.windows.length >= MAX_OPEN_WINDOWS) {
@@ -148,7 +163,7 @@ export function GMWindowProvider({ campaignId, charsheetIds, children }: GMWindo
         dispatch({
             type: 'open',
             kind,
-            charsheetId,
+            targetId,
             rect: cascadeRect(current.windows.length, WINDOW_DEFAULT_SIZE[kind], boundsRef.current)
         });
     }, []);

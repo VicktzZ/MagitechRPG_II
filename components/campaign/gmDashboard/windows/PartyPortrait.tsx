@@ -17,13 +17,17 @@ export interface PortraitVital {
 
 interface PartyPortraitProps {
     name: string;
-    level: number;
+    /** Sem nível (criatura sem ficha de origem), a linha mostra só o turno */
+    level?: number;
     image?: string;
-    online: boolean;
+    /** Presença do jogador; sem ela (criaturas) não há ponto de presença nem "online" no nome acessível */
+    online?: boolean;
     inTurn: boolean;
-    /** Há uma janela aberta desta ficha */
+    /** Há uma janela aberta deste retrato */
     open: boolean;
     vitals: PortraitVital[];
+    /** O que o clique faz, no nome acessível: "Abrir resumo" para jogador, "Abrir criatura" para criatura em combate */
+    actionLabel?: string;
     onClick: () => void;
     /** Abre o menu das outras seções da ficha; sem ele, o retrato só abre o resumo */
     onOpenMenu?: (anchor: HTMLElement) => void;
@@ -38,11 +42,13 @@ const describeVitals = (vitals: PortraitVital[]): string =>
  * Clicar abre (ou traz para a frente) a janela de resumo da ficha. A presença e o turno não dependem só
  * da cor: o ponto é cheio quando está online e vazado quando não está, e o turno tem texto.
  */
-export function PartyPortrait({ name, level, image, online, inTurn, open, vitals, onClick, onOpenMenu }: PartyPortraitProps): ReactElement {
+export function PartyPortrait({ name, level, image, online, inTurn, open, vitals, actionLabel = 'Abrir resumo', onClick, onOpenMenu }: PartyPortraitProps): ReactElement {
+    const hasPresence = online !== undefined;
+    const isOnline = online ?? true;
     const label = [
-        `${name}, nível ${level}`,
+        level === undefined ? name : `${name}, nível ${level}`,
         inTurn ? 'em turno' : null,
-        online ? 'online' : 'offline',
+        hasPresence ? (isOnline ? 'online' : 'offline') : null,
         describeVitals(vitals)
     ].filter(Boolean).join(', ');
 
@@ -50,7 +56,7 @@ export function PartyPortrait({ name, level, image, online, inTurn, open, vitals
         <Box sx={{ position: 'relative' }}>
             <ButtonBase
                 onClick={onClick}
-                aria-label={`${label}. Abrir resumo`}
+                aria-label={`${label}. ${actionLabel}`}
                 aria-pressed={open}
                 sx={{
                     display: 'flex',
@@ -80,15 +86,16 @@ export function PartyPortrait({ name, level, image, online, inTurn, open, vitals
                             minWidth: 12,
                             borderRadius: '50%',
                             border: '2px solid',
-                            borderColor: online ? 'background.raised' : 'text.disabled',
-                            bgcolor: online ? 'success.main' : 'background.raised'
+                            display: hasPresence ? undefined : 'none',
+                            borderColor: isOnline ? 'background.raised' : 'text.disabled',
+                            bgcolor: isOnline ? 'success.main' : 'background.raised'
                         }
                     }}
                 >
                     <Avatar
                         src={image || undefined}
                         alt=""
-                        sx={{ width: 44, height: 44, filter: online ? 'none' : 'grayscale(100%)', opacity: online ? 1 : 0.75 }}
+                        sx={{ width: 44, height: 44, filter: isOnline ? 'none' : 'grayscale(100%)', opacity: isOnline ? 1 : 0.75 }}
                     >
                         {name.charAt(0).toUpperCase()}
                     </Avatar>
@@ -98,7 +105,7 @@ export function PartyPortrait({ name, level, image, online, inTurn, open, vitals
                     {name}
                 </Typography>
                 <Typography aria-hidden sx={{ fontSize: 12, fontFamily: font.mono, color: 'text.secondary', lineHeight: 1.2 }}>
-                    {inTurn ? 'Em turno' : `Nv. ${level}`}
+                    {inTurn ? 'Em turno' : level === undefined ? '\u00A0' : `Nv. ${level}`}
                 </Typography>
 
                 {vitals.length > 0 && (

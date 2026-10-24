@@ -2,7 +2,7 @@ import type { Expertise } from '@models';
 import { Box, Button, Chip, Stack, Typography, alpha } from '@mui/material';
 import { color } from '@themes/tokens';
 import type { ReactElement } from 'react';
-import { getGMExpertiseConfig, getGMExpertiseLevel } from './expertiseConfig';
+import { getGMExpertiseConfig } from './expertiseConfig';
 
 interface CreatureExpertiseButtonProps {
     name: string;
@@ -87,7 +87,7 @@ export default function CreatureExpertiseButton({ name, expertise, onRoll }: Cre
                         />
                     )}
                     <Chip 
-                        label={getGMExpertiseLevel(expertise.value).replace(/^(\w)/, (_, c) => c.toUpperCase())}
+                        label={config.label}
                         size="small"
                         variant="outlined"
                         sx={{

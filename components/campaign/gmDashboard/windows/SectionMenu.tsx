@@ -3,7 +3,7 @@
 import { Menu, MenuItem } from '@mui/material';
 import type { ReactElement } from 'react';
 import { useGMWindowActions } from './GMWindowProvider';
-import { WINDOW_KINDS, WINDOW_KIND_LABEL } from './windowKinds';
+import { SHEET_WINDOW_KINDS, WINDOW_KIND_LABEL } from './windowKinds';
 
 interface SectionMenuProps {
     anchorEl: HTMLElement | null;
@@ -24,7 +24,7 @@ export default function SectionMenu({ anchorEl, onClose, charsheetId, charsheetN
             onClose={onClose}
             slotProps={{ paper: { 'aria-label': `Seções de ${charsheetName}` } }}
         >
-            {WINDOW_KINDS.map(kind => (
+            {SHEET_WINDOW_KINDS.map(kind => (
                 <MenuItem
                     key={kind}
                     onClick={() => {

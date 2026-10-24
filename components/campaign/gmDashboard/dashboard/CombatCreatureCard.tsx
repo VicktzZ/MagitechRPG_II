@@ -1,6 +1,6 @@
 import type { Expertise } from '@models';
-import { Pets } from '@mui/icons-material';
-import { Avatar, Box, Chip, Paper, Stack, Typography, alpha } from '@mui/material';
+import { OpenInNew, Pets } from '@mui/icons-material';
+import { Avatar, Box, Chip, IconButton, Paper, Stack, Tooltip, Typography, alpha } from '@mui/material';
 import type { ReactElement } from 'react';
 import type { CombatCreatureEntry } from './useCombatCreatures';
 import CreatureExpertiseButton from './CreatureExpertiseButton';
@@ -8,11 +8,13 @@ import CreatureExpertiseButton from './CreatureExpertiseButton';
 interface CombatCreatureCardProps extends CombatCreatureEntry {
     /** Último card da lista: sem margem inferior */
     isLast: boolean;
+    /** Abre a criatura numa janela flutuante do mestre */
+    onOpenWindow: () => void;
     onRollExpertise: (expertiseName: string, expertise: Expertise) => Promise<void>;
 }
 
 /** Cartão de uma criatura em combate: nome, LP/MP atuais e as perícias, com destaque quando é a vez dela */
-export default function CombatCreatureCard({ combatant, creature, isCurrentTurn, isLast, onRollExpertise }: CombatCreatureCardProps): ReactElement {
+export default function CombatCreatureCard({ combatant, creature, isCurrentTurn, isLast, onOpenWindow, onRollExpertise }: CombatCreatureCardProps): ReactElement {
     const expertisesEntries: Array<[ string, Expertise ]> = Object.entries(creature.expertises || {});
     const currentLp = combatant.currentLp ?? creature.stats?.lp ?? 0;
     const maxLp = combatant.maxLp ?? creature.stats?.maxLp ?? creature.stats?.lp ?? 0;
@@ -57,7 +59,7 @@ export default function CombatCreatureCard({ combatant, creature, isCurrentTurn,
                     }}>
                         <Pets />
                     </Avatar>
-                    <Box>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
                         <Typography variant="subtitle1" fontWeight={700}>
                             {combatant?.name || creature.name}
                             {isCurrentTurn && (
@@ -78,6 +80,11 @@ export default function CombatCreatureCard({ combatant, creature, isCurrentTurn,
                             Nível {creature.level} • LP {currentLp}/{maxLp} • MP {currentMp}/{maxMp}
                         </Typography>
                     </Box>
+                    <Tooltip title="Abrir em janela">
+                        <IconButton size="small" aria-label={`Abrir ${combatant?.name || creature.name} em janela`} onClick={onOpenWindow}>
+                            <OpenInNew fontSize="small" />
+                        </IconButton>
+                    </Tooltip>
                 </Box>
 
                 {/* Lista de Perícias da Criatura */}

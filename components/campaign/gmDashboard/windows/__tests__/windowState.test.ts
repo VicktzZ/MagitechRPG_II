@@ -6,20 +6,21 @@ import {
     type WindowsAction,
     type WindowsState
 } from '../windowState';
-import { MAX_OPEN_WINDOWS, WINDOW_DEFAULT_SIZE } from '../windowKinds';
+import { MAX_OPEN_WINDOWS, WINDOW_DEFAULT_SIZE, type WindowKind } from '../windowKinds';
 
 const rect = { x: 120, y: 90, w: 380, h: 560 };
 
 const run = (actions: WindowsAction[], from: WindowsState = initialWindowsState): WindowsState =>
     actions.reduce(windowsReducer, from);
 
-const open = (charsheetId: string): WindowsAction => ({ type: 'open', kind: 'summary', charsheetId, rect });
+const open = (targetId: string): WindowsAction => ({ type: 'open', kind: 'summary', targetId, rect });
+const openKind = (kind: WindowKind, targetId: string): WindowsAction => ({ type: 'open', kind, targetId, rect });
 
 describe('windowsReducer', () => {
     it('abre uma janela na frente, com o foco pedido', () => {
         const state = run([ open('a') ]);
         expect(state.windows).toHaveLength(1);
-        expect(state.windows[0]).toMatchObject({ key: 'summary:a', charsheetId: 'a', ...rect, collapsed: false });
+        expect(state.windows[0]).toMatchObject({ key: 'summary:a', targetId: 'a', ...rect, collapsed: false });
         expect(state.focusRequest).toEqual({ key: 'summary:a', n: 1 });
         expect(frontWindowKey(state)).toBe('summary:a');
     });
@@ -28,7 +29,7 @@ describe('windowsReducer', () => {
         let state = run([ open('a'), open('b'), { type: 'toggleCollapse', key: 'summary:a' } ]);
         expect(frontWindowKey(state)).toBe('summary:b');
 
-        state = windowsReducer(state, { type: 'open', kind: 'summary', charsheetId: 'a', rect: { x: 700, y: 700, w: 300, h: 300 } });
+        state = windowsReducer(state, { type: 'open', kind: 'summary', targetId: 'a', rect: { x: 700, y: 700, w: 300, h: 300 } });
         expect(state.windows).toHaveLength(2);
         const reopened = state.windows.find(entry => entry.key === 'summary:a');
         expect(reopened).toMatchObject({ x: rect.x, y: rect.y, collapsed: false });
@@ -40,7 +41,7 @@ describe('windowsReducer', () => {
         const ids = Array.from({ length: MAX_OPEN_WINDOWS + 3 }, (_, index) => `sheet-${index}`);
         const state = run(ids.map(open));
         expect(state.windows).toHaveLength(MAX_OPEN_WINDOWS);
-        expect(state.windows.some(entry => entry.charsheetId === ids[MAX_OPEN_WINDOWS])).toBe(false);
+        expect(state.windows.some(entry => entry.targetId === ids[MAX_OPEN_WINDOWS])).toBe(false);
     });
 
     it('focar traz para a frente; focar a que já está na frente não muda nada', () => {
@@ -59,11 +60,35 @@ describe('windowsReducer', () => {
         expect(windowsReducer(state, { type: 'close', key: 'summary:b' })).toBe(state);
     });
 
-    it('keepSheets fecha só as janelas de fichas que saíram da campanha', () => {
+    it('keepTargets fecha só as janelas de fichas que saíram da campanha', () => {
         const state = run([ open('a'), open('b'), open('c') ]);
-        const next = windowsReducer(state, { type: 'keepSheets', ids: [ 'a', 'c' ] });
-        expect(next.windows.map(entry => entry.charsheetId)).toEqual([ 'a', 'c' ]);
-        expect(windowsReducer(next, { type: 'keepSheets', ids: [ 'a', 'c', 'x' ] })).toBe(next);
+        const next = windowsReducer(state, { type: 'keepTargets', keep: { sheet: [ 'a', 'c' ] } });
+        expect(next.windows.map(entry => entry.targetId)).toEqual([ 'a', 'c' ]);
+        expect(windowsReducer(next, { type: 'keepTargets', keep: { sheet: [ 'a', 'c', 'x' ] } })).toBe(next);
+    });
+
+    it('keepTargets poda cada tipo de alvo pela própria lista: ficha, criatura e combatente não se misturam', () => {
+        const state = run([ open('x'), openKind('creature', 'x'), openKind('combatant', 'x'), openKind('combatant', 'y') ]);
+
+        // o mesmo id em tipos diferentes são alvos diferentes: tirar a criatura "x" não fecha a ficha "x"
+        const withoutCreature = windowsReducer(state, { type: 'keepTargets', keep: { sheet: [ 'x' ], creature: [], combatant: [ 'x', 'y' ] } });
+        expect(withoutCreature.windows.map(entry => entry.key)).toEqual([ 'summary:x', 'combatant:x', 'combatant:y' ]);
+
+        const withoutCombatY = windowsReducer(state, { type: 'keepTargets', keep: { sheet: [ 'x' ], creature: [ 'x' ], combatant: [ 'x' ] } });
+        expect(withoutCombatY.windows.map(entry => entry.key)).toEqual([ 'summary:x', 'creature:x', 'combatant:x' ]);
+    });
+
+    it('keepTargets não poda o tipo que não veio na lista (ainda carregando) e lista vazia fecha todas daquele tipo', () => {
+        const state = run([ open('a'), openKind('creature', 'c1'), openKind('combatant', 'k1') ]);
+
+        expect(windowsReducer(state, { type: 'keepTargets', keep: {} })).toBe(state);
+        expect(windowsReducer(state, { type: 'keepTargets', keep: { creature: [ 'c1' ] } })).toBe(state);
+
+        const noCreatures = windowsReducer(state, { type: 'keepTargets', keep: { creature: [] } });
+        expect(noCreatures.windows.map(entry => entry.key)).toEqual([ 'summary:a', 'combatant:k1' ]);
+
+        const noCombat = windowsReducer(state, { type: 'keepTargets', keep: { combatant: [] } });
+        expect(noCombat.windows.map(entry => entry.key)).toEqual([ 'summary:a', 'creature:c1' ]);
     });
 
     it('commit grava posição e tamanho, mas ignora números inválidos', () => {
@@ -84,7 +109,7 @@ describe('windowsReducer', () => {
         const state = run([ open('a') ]);
         const restored = windowsReducer(state, {
             type: 'restore',
-            windows: [ { kind: 'summary', charsheetId: 'z', x: 10, y: 20, w: 400, h: 300, collapsed: true, z: 4 } ]
+            windows: [ { kind: 'summary', targetId: 'z', x: 10, y: 20, w: 400, h: 300, collapsed: true, z: 4 } ]
         });
         expect(restored.windows).toHaveLength(1);
         expect(restored.windows[0]).toMatchObject({ key: 'summary:z', collapsed: true, z: 1 });
@@ -102,10 +127,10 @@ describe('sanitizeWindows', () => {
 
     it('descarta tipos desconhecidos, itens sem ficha, lixo e repetidas', () => {
         const result = sanitizeWindows([
-            { kind: 'summary', charsheetId: 'a', x: 1, y: 2, w: 400, h: 300 },
-            { kind: 'summary', charsheetId: 'a', x: 9, y: 9, w: 400, h: 300 },
-            { kind: 'bestiary', charsheetId: 'a' },
-            { kind: 'summary', charsheetId: '' },
+            { kind: 'summary', targetId: 'a', x: 1, y: 2, w: 400, h: 300 },
+            { kind: 'summary', targetId: 'a', x: 9, y: 9, w: 400, h: 300 },
+            { kind: 'bestiary', targetId: 'a' },
+            { kind: 'summary', targetId: '' },
             { kind: 'summary' },
             null,
             7,
@@ -115,20 +140,33 @@ describe('sanitizeWindows', () => {
         expect(result[0]).toMatchObject({ key: 'summary:a', x: 1, y: 2 });
     });
 
+    it('lê janelas guardadas antes das criaturas, que usavam charsheetId, e as de criatura e combatente', () => {
+        const result = sanitizeWindows([
+            { kind: 'notes', charsheetId: 'old', x: 1, y: 2, w: 400, h: 300, z: 1 },
+            { kind: 'creature', targetId: 'goblin', x: 5, y: 6, w: 500, h: 600, z: 2 },
+            { kind: 'combatant', targetId: 'goblin-1', x: 7, y: 8, w: 500, h: 500, z: 3 },
+            // o campo novo manda sobre o antigo
+            { kind: 'info', targetId: 'new', charsheetId: 'old', z: 4 }
+        ]);
+        expect(result.map(entry => entry.key)).toEqual([ 'notes:old', 'creature:goblin', 'combatant:goblin-1', 'info:new' ]);
+        expect(result.map(entry => entry.targetId)).toEqual([ 'old', 'goblin', 'goblin-1', 'new' ]);
+        expect(result[0]).not.toHaveProperty('charsheetId');
+    });
+
     it('corrige números inválidos com o tamanho padrão da seção e mantém o booleano estrito', () => {
-        const [ entry ] = sanitizeWindows([ { kind: 'summary', charsheetId: 'a', x: 'oi', y: Infinity, w: -5, h: NaN, collapsed: 'sim' } ]);
+        const [ entry ] = sanitizeWindows([ { kind: 'summary', targetId: 'a', x: 'oi', y: Infinity, w: -5, h: NaN, collapsed: 'sim' } ]);
         expect(entry).toMatchObject({ x: 0, y: 0, w: WINDOW_DEFAULT_SIZE.summary.w, h: WINDOW_DEFAULT_SIZE.summary.h, collapsed: false });
     });
 
     it('renumera a ordem de empilhamento pelo z guardado e respeita o limite', () => {
         const stored = Array.from({ length: MAX_OPEN_WINDOWS + 2 }, (_, index) => ({
-            kind: 'summary', charsheetId: `s${index}`, x: 0, y: 0, w: 400, h: 300, collapsed: false, z: 100 - index
+            kind: 'summary', targetId: `s${index}`, x: 0, y: 0, w: 400, h: 300, collapsed: false, z: 100 - index
         }));
         const result = sanitizeWindows(stored);
         expect(result).toHaveLength(MAX_OPEN_WINDOWS);
         expect(result.map(entry => entry.z)).toEqual(Array.from({ length: MAX_OPEN_WINDOWS }, (_, index) => index + 1));
         // as que estavam mais na frente (z maior) sobrevivem ao corte
-        expect(result[result.length - 1].charsheetId).toBe('s0');
+        expect(result[result.length - 1].targetId).toBe('s0');
     });
 
     it('sobrevive a um JSON de ida e volta', () => {

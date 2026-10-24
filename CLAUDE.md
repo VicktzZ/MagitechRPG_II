@@ -165,25 +165,38 @@ do efeito, e não pode ser escolhido nem conjurado. O MP extra por estágio ao c
 
 ## Campanha do mestre: janelas e barra do grupo
 
-O mestre gerencia fichas em **janelas flutuantes** (estilo BG3), em `components/campaign/gmDashboard/windows/`. Escopo combinado com o dono:
+O mestre gerencia fichas e criaturas em **janelas flutuantes** (estilo BG3), em `components/campaign/gmDashboard/windows/`. Escopo combinado com o dono:
 uma janela **por seção** da ficha de um jogador; entrada pela **barra do grupo** (um retrato por jogador) e pelos cartões; conteúdo = as abas atuais
 do mestre (fase 1), a visão do jogador fica para a fase 2. **Criaturas também entram no escopo** (decisão do dono): a criatura ganha janelas pelo mesmo
 gerenciador. Fases/PRs: 1 gerenciador + barra + resumo (feita) · 2 (feita) seções em janelas (atributos, perícias, inventário, habilidades, magias) + ações do jogador
 (item, ponto de evolução, notificação, remover), tirando o `CharsheetDetailsModal` · 3 (feita) dano/cura rápidos de LP/MP/AP por rota com transação (soma/subtrai,
 0 a máx., sem contar no limite de MP por turno) · 4 (feita, só perícias) rolagem do mestre pelo jogador (**regra do botão da perícia na ficha**: `mod + 1` d20, mod negativo rola 2;
 não unifica as regras) · 5 (feita) anotações privadas por ficha em `campaigns/{id}/gmNotes/{fichaId}` com regra do Firestore só para `campaign.admin` (regra publicada
-antes do código) · 6 criaturas em janelas (as de combate e as personalizadas, hoje em `dashboard/CombatCreatureCard`, `CustomCreatureCard` e
-`CreatureCreator`). Ao entrar criaturas, `WindowEntry.charsheetId` precisa virar um id genérico do alvo e `keepSheets` passa a podar por tipo (senão fecharia
-as janelas de criatura, que não são fichas); a ordem das fases pode mudar a pedido do dono.
+antes do código) · 6 (feita) criaturas em janelas: a criatura personalizada (`creature`) e a criatura em combate (`combatant`), com o alvo da janela generalizado (`targetId`).
+**Ainda em aberto nas criaturas** (perguntar ao dono antes): dano/cura rápidos de LP/MP do combatente (hoje só o diálogo de combate faz, pela rota `combat`, que reescreve a campanha
+inteira e registra no log; um atalho transacional seria uma rota nova) e levar o **editor de criatura** (`CreatureCreator`, ainda um diálogo) para dentro de uma janela. A ordem das fases pode mudar a pedido do dono.
 
 - **Peças**: `windowState.ts` (reducer puro: abrir/focar/fechar/recolher/gravar posição, `sanitizeWindows` para o que vem do navegador), `windowGeometry.ts`
   (puro: área, clamp, cascata, mover, redimensionar), `windowKinds.ts` (tipos de janela, tamanhos, limite de 10), `GMWindowProvider` (estado, área útil,
   persistência), `FloatingWindow` (casca: arrastar, redimensionar, recolher, teclado), `GMWindowLayer` (portal no `body`; escolhe o conteúdo por tipo),
   `PartyBar`/`PartyPortrait` (retratos, com o menu de seções em `SectionMenu`), `SummaryWindow`/`SummaryView` (resumo, atalhos de seção e ações do jogador),
-  `SectionWindows` + `EditableSection` (as seções editáveis). Provider montado em `CampaignComponent` só para o mestre.
-- **Tipos de janela** (`WINDOW_KINDS`): `summary` (só leitura) e as ex-abas do modal de detalhes, que não existe mais: `info`, `attributes`, `expertises`,
-  `inventory`, `skills`, `spells`, mais `notes` (anotações privadas do mestre, não é aba antiga). Os componentes das abas continuam em `modals/charsheetDetails/` e são reaproveitados; `ChangePlayerStatusModal` segue
+  `SectionWindows` + `EditableSection` (as seções editáveis), `creature/` (janelas de criatura) e `windowTargets.ts` (alvos que existem agora e nome do alvo para o título).
+  Provider montado em `CampaignComponent` só para o mestre.
+- **Tipos de janela** (`WINDOW_KINDS` = `SHEET_WINDOW_KINDS` + `CREATURE_WINDOW_KINDS`): das fichas, `summary` (só leitura) e as ex-abas do modal de detalhes, que não existe mais: `info`, `attributes`, `expertises`,
+  `inventory`, `skills`, `spells`, mais `notes` (anotações privadas do mestre, não é aba antiga); das criaturas, `creature` e `combatant`. O menu de seções e os atalhos do resumo
+  usam só `SHEET_WINDOW_KINDS`. Os componentes das abas continuam em `modals/charsheetDetails/` e são reaproveitados; `ChangePlayerStatusModal` segue
   como diálogo aberto pela janela de informações. Para um tipo novo: `windowKinds.ts` (nome, rótulo, tamanho) + `GMWindowLayer` (conteúdo).
+- **Alvo da janela**: `WindowEntry.targetId` (era `charsheetId`) é o id do que a janela mostra, e `windowTargetOf(kind)` diz o que ele identifica: `sheet` (id da ficha), `creature` (id da criatura
+  personalizada, `campaign.custom.creatures[].id`) ou `combatant` (id do combatente em `session.combat.combatants`). A chave da janela é `tipo:alvo`, então o mesmo id em tipos diferentes não colide.
+  O que o navegador guardou antes (`charsheetId`) ainda é lido por `sanitizeWindows`. `keepTargets` fecha as janelas cujo alvo saiu, **por tipo de alvo e só para os tipos que vieram na lista**: ficha
+  vazia significa "ainda carregando" (não poda), mas criatura e combatente vêm da própria campanha, então lista vazia vale (criatura excluída fecha a janela; combate encerrado fecha as de combatente).
+- **Criaturas em janelas** (`windows/creature/`): `creature` é a ficha da criatura personalizada, só leitura (`CreatureView` sobre `toCreatureCard`, que lê o formato real: o editor grava magia como
+  `{ description, cost }` e não como o catálogo `{ stages, mpCost }`), com Editar (abre o `CreatureCreator`, que continua um diálogo; a criatura em edição é uma **cópia fixada no clique**, porque o editor
+  reinicia o formulário quando recebe outro objeto e a campanha chega de novo a cada mudança) e Excluir (`useCreatureDelete`, com confirmação; a rota já grava, **não regrave `custom` pelo cliente**).
+  `combatant` é a criatura no combate agora (`CombatantView`): turno, LP/MP do **combatente** (é onde o combate guarda o que mudou, não a criatura base) e as perícias, rolando pela **regra da criatura**
+  (`⌊atributo/5⌋` d20, `useCreatureExpertiseRoll`; não unifica as regras de d20). O combatente é ligado à criatura por `findBaseCreature` (`dashboard/combatCreatureLookup.ts`: o id do combatente é o da criatura,
+  com sufixo `-n` quando há cópias). Entradas: grupo "Em combate" na `PartyBar` (só criaturas com criatura de origem, como a seção do dashboard), botão "Abrir em janela" no cartão de combate e "Ver detalhes" no cartão da
+  criatura personalizada (que não abre mais o diálogo somente leitura).
 - **Cada seção edita sozinha**: `EditableSection` tem o próprio `useCharsheetEditing` (Editar/Cancelar/Salvar). Salvar grava só os caminhos que o mestre
   mexeu naquela janela (`collectCharsheetChanges` contra o snapshot do início), então duas seções da mesma ficha em edição, ou o jogador mexendo ao mesmo tempo,
   não se desfazem. O corpo da janela é um container: as grades `md={6}` das abas viram uma coluna abaixo de 600px de largura útil (o Grid do MUI olha a tela, não a janela).
@@ -217,8 +230,8 @@ as janelas de criatura, que não são fichas); a ordem das fases pode mudar a pe
 - **Área das janelas**: começa depois da barra do grupo (`WINDOW_AREA_LEFT`, depende do preenchimento de `app/app/layout.tsx` + `CampaignShell`; mudou um,
   atualize `layout.ts`) e termina antes do chat encaixado e aberto. Camada `zIndex` 1100+, abaixo do dock (1200), do chat e dos modais (1300); no celular
   a janela da frente ocupa a tela toda (1250) e a barra do grupo some (abre-se pelo menu do cartão: "Abrir resumo em janela").
-- **Persistência**: `localStorage` `gm-windows:{campaignId}` (lista de janelas); lido depois da montagem, JSON inválido é ignorado, janelas de fichas que
-  saíram da campanha fecham (`keepSheets`, só com a lista de fichas já carregada).
+- **Persistência**: `localStorage` `gm-windows:{campaignId}` (lista de janelas); lido depois da montagem, JSON inválido é ignorado, janelas cujo alvo saiu da campanha
+  fecham (`keepTargets`, ver "Alvo da janela").
 - **Teclado**: barra de título focável (setas movem 16px, Shift 64, Alt+setas redimensionam, Enter recolhe); Esc fecha, menos de dentro de campo/menu.
 - Teste de componente que importa `useCharsheetPointsView` precisa de `jest.mock` dele: o hook de sistema customizado puxa `@contexts`, e o ts-jest
   barra um erro de tipo antigo em `contexts/charsheetContext.ts`.

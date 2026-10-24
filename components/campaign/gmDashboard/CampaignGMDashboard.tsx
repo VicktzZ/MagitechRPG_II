@@ -12,11 +12,13 @@ import PerksSection from './dashboard/PerksSection';
 import PlayersSection from './dashboard/PlayersSection';
 import { useCreatureManager } from './dashboard/useCreatureManager';
 import { useGMDashboardData } from './dashboard/useGMDashboardData';
+import { useGMWindowActions } from './windows/GMWindowProvider';
 
 export default function CampaignGMDashboard(): ReactElement | null {
     const { campaign } = useCampaignContext()
     const { playerCharsheets, isPlayerCharsheetsPending, campaignStats } = useGMDashboardData();
     const creatureManager = useCreatureManager();
+    const { openWindow } = useGMWindowActions();
 
     return (
         <Stack spacing={2} sx={{ width: '100%' }}>
@@ -41,7 +43,7 @@ export default function CampaignGMDashboard(): ReactElement | null {
 
             {/* Seção de Criaturas Customizadas */}
             <CustomCreaturesSection
-                onView={creatureManager.handleViewCreature}
+                onView={creature => openWindow('creature', creature.id)}
                 onEdit={creatureManager.handleEditCreature}
                 onDelete={creatureManager.handleRequestDeleteCreature}
             />
@@ -50,8 +52,6 @@ export default function CampaignGMDashboard(): ReactElement | null {
                 open={creatureManager.creatureModalOpen}
                 onClose={creatureManager.handleCloseCreatureModal}
                 editingCreature={creatureManager.selectedCreature || undefined}
-                readOnly={creatureManager.selectedCreatureReadOnly}
-                onSave={creatureManager.handleCreatureSaved}
             />
 
             <DeleteCreatureDialog
@@ -59,7 +59,7 @@ export default function CampaignGMDashboard(): ReactElement | null {
                 creatureName={creatureManager.creatureToDelete?.name ?? ''}
                 deleting={creatureManager.isDeletingCreature}
                 onConfirm={creatureManager.handleConfirmDeleteCreature}
-                onCancel={() => creatureManager.setDeleteDialogOpen(false)}
+                onCancel={creatureManager.handleCancelDeleteCreature}
             />
         </Stack>
     )
