@@ -549,11 +549,11 @@ describe('SheetMetricsView (Overall e limite de MP por turno)', () => {
         expect(html).not.toContain('gasto / limite');
     });
 
-    it('em combate mostra o gasto neste turno contra o limite, dito em texto também', () => {
+    it('em combate mostra o gasto nesta rodada contra o limite, dito em texto também', () => {
         const html = render(<SheetMetricsView metrics={{ overall: 52, mpLimit: 8, mpSpent: 3 }} />);
         expect(html).toContain('>3/8<');
         expect(html).toContain('gasto / limite');
-        expect(html).toContain('aria-label="Limite de MP por turno: gastou 3 de 8 neste turno"');
+        expect(html).toContain('aria-label="Limite de MP por turno: gastou 3 de 8 nesta rodada"');
     });
 
     it('onde a regra não vale (limite nulo) só aparece o Overall', () => {
@@ -571,7 +571,7 @@ describe('SheetMetricsView (Overall e limite de MP por turno)', () => {
         const html = render(<SheetMetricsView variant="inline" metrics={{ overall: 52, mpLimit: 8, mpSpent: 3 }} />);
         expect(html).toContain('Overall:');
         expect(html).toContain('>52<');
-        expect(html).toContain('Limite de MP por turno: gastou 3 de 8 neste turno');
+        expect(html).toContain('Limite de MP por turno: gastou 3 de 8 nesta rodada');
         expect(html).toContain('3/8 MP');
     });
 

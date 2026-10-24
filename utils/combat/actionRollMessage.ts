@@ -1,23 +1,30 @@
 /**
- * Mensagem de chat do dano de um ataque com arma ou de uma conjuração de magia.
+ * Mensagem de chat de uma ação de combate rolada: o dano de um ataque com arma, ou os dois tempos de uma magia (a conjuração e o efeito).
  *
- * O texto é legível e tem uma primeira linha que o `DiceMessage` reconhece (`[AÇÃO] magia` ou `[AÇÃO] arma`): em vez de uma
- * linha "por extenso", o chat mostra o cartão dos testes e dos dados personalizados, com o total à vista e as rolagens
- * num dropdown (e, na magia, o custo de MP).
+ * O texto é legível e tem uma primeira linha que o `DiceMessage` reconhece (`[AÇÃO] conjuração`, `[AÇÃO] efeito` ou `[AÇÃO] arma`): em vez
+ * de uma linha "por extenso", o chat mostra o cartão dos testes e dos dados personalizados, com o total à vista e as rolagens num dropdown.
  *
- *   [AÇÃO] magia
+ *   [AÇÃO] conjuração                     (o teste de magia; gasta o MP, que aparece em "Custo")
  *   **Arco de Luz**
  *   Detalhe: LUZ · Estágio 3
  *   Jogador: TESTE da SILVA
- *   Total: **44**
+ *   Total: **17**
+ *   DT: **18**                            (a dificuldade do nível e estágio: o teste só passa com Total ≥ DT)
  *   Custo: **4 MP**
+ *   - 2d20+5: [12, 7] + 5 Magia = 17
+ *
+ *   [AÇÃO] efeito                         (os dados de dano, cura, duração... do estágio, depois de efetuar a magia)
+ *   **Arco de Luz**
+ *   Detalhe: LUZ · Estágio 3
+ *   Jogador: TESTE da SILVA
+ *   Total: **31**
  *   - 3d12+6: [1, 8, 4] + 6 = 19
  *   - 2d12+4: [4, 4] + 4 = 12
  *
- * Sem `Total` e sem rolagens a magia não rola dado (só gasta MP). `[AÇÃO] arma crítico` marca o dano crítico.
+ * `[AÇÃO] arma crítico` marca o dano crítico. Sem `Total` e sem rolagens não há dado a mostrar (só o custo, se houver).
  */
 
-export type ActionRollKind = 'magia' | 'arma';
+export type ActionRollKind = 'conjuração' | 'efeito' | 'arma';
 
 export interface ActionRollSegment {
     /** Expressão rolada, como "3d12+6" */
@@ -36,10 +43,12 @@ export interface ActionRoll {
     detail: string;
     /** Dano crítico (só na arma) */
     critical: boolean;
-    /** Soma do dano; `null` quando a magia não rola dado */
+    /** Soma do dano, ou o resultado do teste na conjuração; `null` quando não há dado a mostrar */
     total: number | null;
-    /** MP gasto (só na magia) */
+    /** MP gasto (só na conjuração) */
     cost: number | null;
+    /** DT do teste de magia (só na conjuração; `null` quando a tabela não cobre o nível/estágio) */
+    dt: number | null;
     segments: ActionRollSegment[];
 }
 
@@ -71,6 +80,7 @@ export function buildActionRollText(action: ActionRoll): string {
     if (detail) lines.push(`Detalhe: ${detail}`);
     lines.push(`Jogador: ${clean(action.player)}`);
     if (action.total !== null) lines.push(`Total: **${action.total}**`);
+    if (action.dt !== null) lines.push(`DT: **${action.dt}**`);
     if (action.cost !== null) lines.push(`Custo: **${action.cost} MP**`);
     for (const segment of action.segments) lines.push(`- ${clean(segment.notation)}: ${clean(segment.display)} = ${segment.total}`);
     return lines.join('\n');
@@ -81,7 +91,7 @@ const SEGMENT = /^-\s+(.+?):\s+(.*)\s+=\s+(-?\d+)$/;
 /** Lê o texto de `buildActionRollText`; `null` quando o texto é outra coisa (mensagem comum, log de combate, dado avulso) */
 export function parseActionRoll(text: string): ActionRoll | null {
     const lines = text.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
-    const head = /^\[AÇÃO\]\s+(magia|arma)(\s+crítico)?$/i.exec(lines[0] ?? '');
+    const head = /^\[AÇÃO\]\s+(conjuração|efeito|arma)(\s+crítico)?$/i.exec(lines[0] ?? '');
     if (!head) return null;
 
     const title = /^\*\*(.+)\*\*$/.exec(lines[1] ?? '')?.[1];
@@ -95,6 +105,7 @@ export function parseActionRoll(text: string): ActionRoll | null {
         critical: Boolean(head[2]),
         total: null,
         cost: null,
+        dt: null,
         segments: []
     };
 
@@ -102,6 +113,7 @@ export function parseActionRoll(text: string): ActionRoll | null {
         if (line.startsWith('Detalhe:')) action.detail = line.slice('Detalhe:'.length).trim();
         else if (line.startsWith('Jogador:')) action.player = line.slice('Jogador:'.length).trim();
         else if (line.startsWith('Total:')) action.total = Number(/-?\d+/.exec(line)?.[0] ?? NaN);
+        else if (line.startsWith('DT:')) action.dt = Number(/\d+/.exec(line)?.[0] ?? NaN);
         else if (line.startsWith('Custo:')) action.cost = Number(/\d+/.exec(line)?.[0] ?? NaN);
         else {
             const segment = SEGMENT.exec(line);
@@ -109,6 +121,6 @@ export function parseActionRoll(text: string): ActionRoll | null {
         }
     }
 
-    if (Number.isNaN(action.total) || Number.isNaN(action.cost)) return null;
+    if (Number.isNaN(action.total) || Number.isNaN(action.cost) || Number.isNaN(action.dt)) return null;
     return action;
 }

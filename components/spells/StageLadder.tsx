@@ -1,7 +1,7 @@
 'use client'
 
-import { Bolt, ExpandMore, LockOutlined, Upgrade } from '@mui/icons-material';
-import { alpha, Box, Button, ButtonBase, Chip, Collapse, Stack, Tooltip, Typography } from '@mui/material';
+import { Bolt, Casino, Close, ExpandMore, LockOutlined, Upgrade } from '@mui/icons-material';
+import { alpha, Box, Button, ButtonBase, Chip, Collapse, IconButton, Stack, Tooltip, Typography } from '@mui/material';
 import { color } from '@themes/tokens';
 import { calculateTotalManaCost } from '@utils/roguelite/spellCost';
 import {
@@ -34,7 +34,8 @@ export interface StageLadderProps {
     };
     /**
      * Conjurar (campanha): cada estágio liberado tem o próprio botão, com o custo dele; o jogador conjura o estágio mais novo ou qualquer
-     * anterior, sem trocar de "estágio ativo".
+     * anterior, sem trocar de "estágio ativo". Conjurar rola o teste de magia e gasta o MP; só uma conjuração com sucesso deixa o botão
+     * "Efetuar" (`effect`) no estágio conjurado, para rolar dano, cura, duração...
      */
     cast?: {
         onCast: (stage: SpellStage) => void | Promise<void>;
@@ -43,6 +44,14 @@ export interface StageLadderProps {
         currentMp?: number;
         /** Devolve o motivo quando conjurar este estágio (com este custo de MP) estouraria o limite de MP por turno */
         blockedReason?: (stage: SpellStage, cost: number) => string | undefined;
+        /** Conjuração com sucesso à espera de ser efetuada: o botão "Efetuar" aparece no estágio `pendingStage` */
+        effect?: {
+            pendingStage?: SpellStage;
+            onEffect: (stage: SpellStage) => void | Promise<void>;
+            /** Abre mão de efetuar essa conjuração (o MP já foi gasto) */
+            onDismiss: () => void;
+            busy?: boolean;
+        };
     };
 }
 
@@ -218,6 +227,37 @@ export default function StageLadder({ spell, progress, evolution, cast }: StageL
                                                     </Button>
                                                 </span>
                                             </Tooltip>
+                                        )}
+
+                                        {cast?.effect && cast.effect.pendingStage === info.stage && (
+                                            <>
+                                                <Tooltip title={`Conjuração com sucesso: rolar os dados do efeito do ${info.label} (dano, cura, duração...)`}>
+                                                    <span>
+                                                        <Button
+                                                            size="small"
+                                                            variant="outlined"
+                                                            startIcon={<Casino fontSize="small" />}
+                                                            disabled={cast.effect.busy}
+                                                            onClick={() => { void cast.effect?.onEffect(info.stage) }}
+                                                            aria-label={`Efetuar ${spell.name ?? 'a magia'} no ${info.label}`}
+                                                            data-testid={`stage-effect-${info.stage}`}
+                                                            sx={{ textTransform: 'none', fontWeight: 700 }}
+                                                        >
+                                                            Efetuar
+                                                        </Button>
+                                                    </span>
+                                                </Tooltip>
+                                                <Tooltip title="Não efetuar esta conjuração (o MP já foi gasto)">
+                                                    <IconButton
+                                                        size="small"
+                                                        onClick={cast.effect.onDismiss}
+                                                        aria-label={`Descartar a conjuração de ${spell.name ?? 'a magia'}`}
+                                                        data-testid={`stage-effect-dismiss-${info.stage}`}
+                                                    >
+                                                        <Close fontSize="small" />
+                                                    </IconButton>
+                                                </Tooltip>
+                                            </>
                                         )}
                                     </Box>
 

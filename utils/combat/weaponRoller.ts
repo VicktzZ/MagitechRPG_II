@@ -1,96 +1,22 @@
 import type { Weapon } from '@models';
 import type { CharsheetDTO } from '@models/dtos';
-import type { Attributes } from '@models/Attributes';
-import type { Expertises } from '@models/Expertises';
 import { rollDice, type DiceResult } from '@utils/diceRoller';
 import { buildActionRollText } from './actionRollMessage';
+import { rollHitTest, type HitTestResult } from './hitTest';
 
-export type WeaponHitResult = {
-    notation: string;
-    rolls: number[];
-    bestRoll: number;
-    bonus: number;
-    bonusLabel: string;
-    total: number;
-};
-
-export type WeaponDamageResult = {
+export interface WeaponDamageResult {
     notation: string;
     display: string;
     total: number;
     isCritical: boolean;
-};
-
-const HIT_TO_EXPERTISE: Partial<Record<keyof Attributes, keyof Expertises>> = {
-    'vig': 'Luta',
-    'des': 'Pontaria',
-    'foc': 'Magia'
-};
-
-const ATTRIBUTE_LABELS: Record<keyof Attributes, string> = {
-    vig: 'VIG',
-    des: 'DES',
-    foc: 'FOC',
-    log: 'LOG',
-    sab: 'SAB',
-    car: 'CAR'
-};
-
-export interface ResolvedWeaponBonus {
-    value: number;
-    label: string;
-}
-
-/**
- * Resolve qual bonus aplicar ao teste de acerto.
- * Prefere a pericia equivalente (Luta/Pontaria/Magia) se existir;
- * caso contrario usa o atributo direto referenciado em weapon.hit.
- */
-export function resolveWeaponHitBonus(weapon: Weapon, charsheet: CharsheetDTO): ResolvedWeaponBonus {
-    const hitAttr = weapon.hit;
-    const expertiseKey = hitAttr ? HIT_TO_EXPERTISE[hitAttr] : undefined;
-
-    if (expertiseKey && charsheet.expertises?.[expertiseKey]) {
-        const value = Number(charsheet.expertises[expertiseKey].value ?? 0);
-        return { value, label: expertiseKey as string };
-    }
-
-    if (hitAttr && charsheet.attributes?.[hitAttr] !== undefined) {
-        return {
-            value: Number(charsheet.attributes[hitAttr] ?? 0),
-            label: ATTRIBUTE_LABELS[hitAttr] ?? String(hitAttr).toUpperCase()
-        };
-    }
-
-    return { value: 0, label: '—' };
 }
 
 /**
  * Rola o teste de acerto da arma. Numero de d20s vem de mods.attributes[hit] (>=1)
  * e o bonus do atributo/pericia equivalente.
  */
-export function rollWeaponHit(weapon: Weapon, charsheet: CharsheetDTO): WeaponHitResult {
-    const hitAttr = weapon.hit;
-    let numDice = Number(charsheet.mods?.attributes?.[hitAttr] ?? 1);
-    if (!Number.isFinite(numDice) || numDice < 1) numDice = 1;
-
-    const rolls: number[] = [];
-    for (let i = 0; i < numDice; i++) {
-        rolls.push(Math.floor(Math.random() * 20) + 1);
-    }
-
-    const bestRoll = rolls.length > 1 ? Math.max(...rolls) : rolls[0];
-    const { value: bonus, label: bonusLabel } = resolveWeaponHitBonus(weapon, charsheet);
-    const total = bestRoll + bonus;
-
-    return {
-        notation: `${numDice}d20${bonus >= 0 ? '+' : ''}${bonus}`,
-        rolls,
-        bestRoll,
-        bonus,
-        bonusLabel,
-        total
-    };
+export function rollWeaponHit(weapon: Weapon, charsheet: CharsheetDTO): HitTestResult {
+    return rollHitTest(weapon.hit, charsheet);
 }
 
 /**
@@ -127,7 +53,7 @@ export function rollWeaponDamage(weapon: Weapon, isCritical: boolean): WeaponDam
     return null;
 }
 
-export function buildHitMessageText(playerName: string, weapon: Weapon, hit: WeaponHitResult): string {
+export function buildHitMessageText(playerName: string, weapon: Weapon, hit: HitTestResult): string {
     const rollPart = hit.rolls.length > 1
         ? `${hit.rolls.join(', ')}: ${hit.bestRoll}`
         : `${hit.bestRoll}`;
@@ -148,6 +74,7 @@ export function buildDamageMessageText(playerName: string, weapon: Weapon, damag
         critical: damage.isCritical,
         total: damage.total,
         cost: null,
+        dt: null,
         segments: [ { notation: damage.notation, display: damage.display, total: damage.total } ]
     });
 }

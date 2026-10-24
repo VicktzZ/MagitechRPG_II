@@ -12,7 +12,7 @@ import type { SeedSpell } from './manaRecoverySpells'
  *
  * Mesmas convenções do lote de recuperação de mana: elemento em MAIÚSCULAS, tipo
  * "Categoria (detalhe)", 3 estágios (no nível 4 o 3º é a Maestria), texto em "turnos"/
- * "combate", no máximo UMA expressão de dados por estágio (castSpell rola todas as achadas).
+ * "combate", no máximo UMA expressão de dados por estágio (rollSpellEffect rola todas as achadas).
  */
 export const REACTION_SPELLS: SeedSpell[] = [
     // ═══════════════════════════════════════════════════════════════════════

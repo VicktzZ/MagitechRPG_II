@@ -18,10 +18,12 @@ function rollChipColor(value: number, sides: number | null): 'success' | 'error'
     return 'default'
 }
 
-function SegmentRow({ segment }: { segment: ActionRollSegment }) {
+/** `isTest`: teste de magia (vale o maior d20), então o dado que vale vem destacado em vez das faces máxima e mínima */
+function SegmentRow({ segment, isTest }: { segment: ActionRollSegment; isTest: boolean }) {
     const rolls = rollNumbers(segment.display)
     const modifier = rollModifier(segment.display)
     const sides = diceSides(segment.notation)
+    const best = rolls.length > 0 ? Math.max(...rolls) : null
 
     return (
         <Stack direction="row" alignItems="center" flexWrap="wrap" gap={0.75} data-testid="action-roll-segment">
@@ -33,7 +35,7 @@ function SegmentRow({ segment }: { segment: ActionRollSegment }) {
                     key={index}
                     size="small"
                     label={value}
-                    color={rollChipColor(value, sides)}
+                    color={isTest ? (value === best ? 'primary' : 'default') : rollChipColor(value, sides)}
                     sx={{ fontFamily: font.mono }}
                 />
             ))}
@@ -49,8 +51,16 @@ function SegmentRow({ segment }: { segment: ActionRollSegment }) {
     )
 }
 
-/** O conteúdo do dropdown: cada expressão com seus dados, e o subtotal e a média de todos os dados rolados */
+/** "Total 17 contra DT 18: falhou por 1": o resultado do teste de magia contra a dificuldade, dito em texto também */
+export function castOutcomeText(total: number, dt: number): string {
+    const margin = total - dt
+    if (margin < 0) return `Total ${total} contra DT ${dt}: falhou por ${-margin}`
+    return margin === 0 ? `Total ${total} contra DT ${dt}: passou na DT exata` : `Total ${total} contra DT ${dt}: passou por ${margin}`
+}
+
+/** O conteúdo do dropdown: cada expressão com seus dados e, fora do teste de magia, o subtotal e a média de todos os dados rolados */
 export function ActionRollDetails({ action }: { action: ActionRoll }) {
+    const isTest = action.kind === 'conjuração'
     const allRolls = action.segments.flatMap(segment => rollNumbers(segment.display))
     const subtotal = allRolls.reduce((sum, value) => sum + value, 0)
 
@@ -58,10 +68,15 @@ export function ActionRollDetails({ action }: { action: ActionRoll }) {
         <>
             <Divider sx={{ my: 1 }} />
             <Stack spacing={1}>
-                <Typography variant="body2" fontWeight={700}>Rolagens:</Typography>
-                {action.segments.map((segment, index) => <SegmentRow key={index} segment={segment} />)}
+                <Typography variant="body2" fontWeight={700}>{isTest ? 'Teste de magia (vale o maior dado):' : 'Rolagens:'}</Typography>
+                {action.segments.map((segment, index) => <SegmentRow key={index} segment={segment} isTest={isTest} />)}
+                {isTest && action.dt !== null && action.total !== null && (
+                    <Typography variant="body2" color="text.secondary" data-testid="action-roll-outcome">
+                        {castOutcomeText(action.total, action.dt)}
+                    </Typography>
+                )}
             </Stack>
-            {allRolls.length > 0 && (
+            {!isTest && allRolls.length > 0 && (
                 <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 1 }}>
                     <Chip size="small" label={`Subtotal ${subtotal}`} />
                     <Chip size="small" label={`Média ${(subtotal / allRolls.length).toFixed(2)}`} />
@@ -72,15 +87,17 @@ export function ActionRollDetails({ action }: { action: ActionRoll }) {
 }
 
 /**
- * Cartão do chat para o dano de uma arma ou a conjuração de uma magia (ver `actionRollMessage.ts`).
+ * Cartão do chat para o dano de uma arma ou os dois tempos de uma magia (ver `actionRollMessage.ts`).
  * Mesmo desenho dos testes e dos dados personalizados (`DiceMessage`): título, expressão em cinza, total à vista e as
- * rolagens num dropdown. A magia mostra também o custo de MP; a arma, "Crítico" quando é o dano crítico.
+ * rolagens num dropdown. A conjuração mostra o custo de MP e se o teste passou na DT; o efeito, o total do dano/cura/duração;
+ * a arma, "Crítico" quando é o dano crítico.
  */
 export function ActionRollCard({ action }: { action: ActionRoll }) {
     const [ open, setOpen ] = useState(false)
-    const Icon = action.kind === 'magia' ? AutoStories : WeaponIcon
+    const Icon = action.kind === 'arma' ? WeaponIcon : AutoStories
     const notations = action.segments.map(segment => segment.notation).join(' · ')
     const hasDetails = action.segments.length > 0
+    const passed = action.dt === null || action.total === null || action.total >= action.dt
 
     return (
         <Box sx={{ wordBreak: 'break-word' }} data-testid="action-roll-card">
@@ -95,7 +112,7 @@ export function ActionRollCard({ action }: { action: ActionRoll }) {
                     {action.detail}
                 </Typography>
             )}
-            <Stack direction="row" alignItems="center" spacing={1} sx={{ minWidth: 0 }}>
+            <Stack direction="row" alignItems="center" flexWrap="wrap" columnGap={1} rowGap={0.5} sx={{ minWidth: 0 }}>
                 {!!notations && (
                     <Typography
                         component="span"
@@ -113,6 +130,10 @@ export function ActionRollCard({ action }: { action: ActionRoll }) {
                         label={`Custo ${action.cost} MP`}
                         sx={{ bgcolor: alpha(color.mp, 0.14), color: color.mp, fontFamily: font.mono }}
                     />
+                )}
+                {action.dt !== null && <Chip size="small" variant="outlined" label={`DT ${action.dt}`} sx={{ fontFamily: font.mono }} />}
+                {action.dt !== null && (
+                    <Chip size="small" color={passed ? 'success' : 'error'} label={passed ? 'Sucesso' : 'Falhou'} data-testid="action-roll-result" />
                 )}
                 {action.critical && <Chip size="small" color="warning" label="Crítico" />}
                 {action.total !== null && <Chip size="small" color="primary" label={`Total ${action.total}`} />}

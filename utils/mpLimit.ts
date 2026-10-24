@@ -1,13 +1,13 @@
 /**
  * Limite de MP por turno.
  *
- * Um personagem só pode gastar em magias, entre o início do seu turno e o início do
- * próximo, até:
+ * Um personagem só pode gastar em magias, em cada rodada de combate (o gasto zera quando
+ * a rodada vira, ou seja, quando todos os presentes passaram o turno), até:
  *
  *     ⌈(Nível + Foco) ÷ 2⌉ + Nível de ORM   (+ bônus de perks/mestre)
  *
  * É independente do MP máximo: o MP máximo continua sendo o teto total, e o limite
- * só impede despejar o pool inteiro em um único turno.
+ * só impede despejar o pool inteiro em um único turno. Fora do combate não há limite.
  */
 
 export interface MpLimitSheet {
@@ -51,13 +51,13 @@ export function isMpLimitEnforced(sheet: MpLimitSheet, campaignMode?: string | n
 }
 
 export interface MpSpendInput {
-    /** MP já gasto desde o início do turno */
+    /** MP já gasto nesta rodada */
     spent: number
     /** MP desta conjuração; negativo estorna (conjuração que falhou) */
     amount: number
     limit: number
     enforced: boolean
-    /** Liberado pelo mestre até o início do próximo turno do jogador */
+    /** Liberado pelo mestre até a rodada virar */
     override?: boolean
 }
 
