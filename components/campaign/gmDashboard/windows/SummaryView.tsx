@@ -6,9 +6,10 @@ import { Box, Button, Chip, Divider, Stack, Typography } from '@mui/material';
 import { color, font } from '@themes/tokens';
 import useNumbersWithSpaces from '@hooks/useNumbersWithSpace';
 import { getEvolutionPoints } from '@utils/spellStages';
+import type { VitalKey } from '@utils/vitals';
 import type { ReactElement, ReactNode } from 'react';
-import StatMeter from '../StatMeter';
 import { useCharsheetPointsView } from '../useCharsheetPointsView';
+import VitalsPanel, { type VitalRow } from './VitalsPanel';
 import { WINDOW_KINDS, WINDOW_KIND_LABEL, type WindowKind } from './windowKinds';
 
 export type SummarySheet = Required<CharsheetDTO>;
@@ -57,19 +58,25 @@ interface SummaryViewProps {
     /** A regra de estágios (e o ponto de evolução) vale para esta ficha */
     showEvolution: boolean;
     onOpenSection: (kind: WindowKind) => void;
+    /** Dano ou cura rápidos: variação (negativa = dano ou gasto) de um ponto vital */
+    onAdjustVital: (key: VitalKey, delta: number) => void;
     actions: SummaryActions;
 }
 
 /**
- * Resumo de uma ficha para o mestre: quem é, pontos vitais, atributos, bolsa e pontos para gastar, mais as ações
- * do jogador e os atalhos para as seções. Só leitura; cada seção se edita na própria janela.
+ * Resumo de uma ficha para o mestre: quem é, pontos vitais (com dano e cura rápidos), atributos, bolsa e pontos para
+ * gastar, mais as ações do jogador e os atalhos para as seções. O resto é só leitura; cada seção se edita na própria janela.
  */
-export function SummaryView({ charsheet, inTurn, showEvolution, onOpenSection, actions }: SummaryViewProps): ReactElement {
+export function SummaryView({ charsheet, inTurn, showEvolution, onOpenSection, onAdjustVital, actions }: SummaryViewProps): ReactElement {
     const view = useCharsheetPointsView(charsheet);
     const spacedMoney = useNumbersWithSpaces();
 
     const stats = charsheet.stats;
     const ammo = charsheet.ammoCounter;
+    const vitalRows: VitalRow[] = [];
+    if (view.hasLP) vitalRows.push({ key: 'lp', label: view.customSystem ? view.lpName : 'LP', name: view.lpName, value: stats?.lp ?? 0, max: stats?.maxLp ?? 0, barColor: color.lp });
+    if (view.hasMP) vitalRows.push({ key: 'mp', label: view.customSystem ? view.mpName : 'MP', name: view.mpName, value: stats?.mp ?? 0, max: stats?.maxMp ?? 0, barColor: color.mp });
+    if (view.hasAP) vitalRows.push({ key: 'ap', label: view.customSystem ? view.apName : 'AP', name: view.apName, value: stats?.ap ?? 0, max: stats?.maxAp ?? 0, barColor: color.ap });
     const pendingPoints = SPENDABLE_POINTS
         .map(point => ({ ...point, value: asNumber(charsheet.points?.[point.key]) }))
         .filter(point => point.value > 0);
@@ -91,39 +98,8 @@ export function SummaryView({ charsheet, inTurn, showEvolution, onOpenSection, a
                 </Typography>
             </Box>
 
-            {(view.hasLP || view.hasMP || view.hasAP) && (
-                <Box>
-                    <Heading>Pontos vitais</Heading>
-                    <Stack spacing={1.25}>
-                        {view.hasLP && (
-                            <StatMeter
-                                label={view.customSystem ? view.lpName : 'LP'}
-                                ariaLabel={`${view.lpName} de ${charsheet.name}`}
-                                value={stats?.lp ?? 0}
-                                max={stats?.maxLp ?? 0}
-                                barColor={color.lp}
-                            />
-                        )}
-                        {view.hasMP && (
-                            <StatMeter
-                                label={view.customSystem ? view.mpName : 'MP'}
-                                ariaLabel={`${view.mpName} de ${charsheet.name}`}
-                                value={stats?.mp ?? 0}
-                                max={stats?.maxMp ?? 0}
-                                barColor={color.mp}
-                            />
-                        )}
-                        {view.hasAP && (
-                            <StatMeter
-                                label={view.customSystem ? view.apName : 'AP'}
-                                ariaLabel={`${view.apName} de ${charsheet.name}`}
-                                value={stats?.ap ?? 0}
-                                max={stats?.maxAp ?? 0}
-                                barColor={color.ap}
-                            />
-                        )}
-                    </Stack>
-                </Box>
+            {vitalRows.length > 0 && (
+                <VitalsPanel charsheetName={charsheet.name} rows={vitalRows} onAdjust={onAdjustVital} />
             )}
 
             <Box>
