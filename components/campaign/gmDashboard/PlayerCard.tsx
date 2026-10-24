@@ -1,4 +1,4 @@
-import { Add, Backpack, Block, ChatBubbleOutline, DirectionsRun, LocalPolice, MonetizationOn, MoreVert, Upgrade, ViewList, ViewSidebar } from '@mui/icons-material'
+import { Add, Backpack, Block, Bolt, ChatBubbleOutline, DirectionsRun, LocalPolice, MonetizationOn, MoreVert, Upgrade, ViewList, ViewSidebar } from '@mui/icons-material'
 import {
     Box,
     Chip,
@@ -25,6 +25,7 @@ import { useCharsheetPointsView } from './useCharsheetPointsView'
 import { usePlayerActions } from './usePlayerActions'
 import { useGMWindowActions } from './windows/GMWindowProvider'
 import SectionMenu from './windows/SectionMenu'
+import { useQuickEffect } from './actions/useQuickEffect'
 
 /** Texto só para leitor de tela (o rótulo do número ao lado, que a tela mostra por ícone) */
 const srOnly = {
@@ -43,6 +44,9 @@ function PlayerCard({ charsheet }: { charsheet: Required<CharsheetDTO> }) {
     const { customSystem, weightUnit, hasLP, hasMP, hasAP, lpName, mpName, apName } = useCharsheetPointsView(charsheet)
     const { openWindow } = useGMWindowActions()
     const actions = usePlayerActions(charsheet)
+    const { openEffectFor, effectDialog } = useQuickEffect(campaign.id)
+    // Efeito só vale em combate ativo e para quem está nele
+    const inCombat = Boolean(campaign.session?.combat?.isActive && campaign.session.combat.combatants?.some(combatant => combatant.id === charsheet.id))
 
     // Combate ativo, fase de ação: o cartão de quem joga agora ganha o destaque "Em turno"
     const isMyTurn = isCombatantInTurn(campaign.session?.combat, charsheet)
@@ -216,6 +220,14 @@ function PlayerCard({ charsheet }: { charsheet: Required<CharsheetDTO> }) {
                             </ListItemIcon>
                             <ListItemText>Abrir seção da ficha…</ListItemText>
                         </MenuItem>
+                        {inCombat && (
+                            <MenuItem onClick={afterClosing(() => { openEffectFor({ id: charsheet.id, name: charsheet.name }) })}>
+                                <ListItemIcon>
+                                    <Bolt fontSize="small" />
+                                </ListItemIcon>
+                                <ListItemText>Aplicar efeito</ListItemText>
+                            </MenuItem>
+                        )}
                         <MenuItem onClick={afterClosing(actions.openAddItem)}>
                             <ListItemIcon>
                                 <Add fontSize="small" />
@@ -255,6 +267,7 @@ function PlayerCard({ charsheet }: { charsheet: Required<CharsheetDTO> }) {
             />
 
             {actions.dialogs}
+            {effectDialog}
         </>
     )
 }

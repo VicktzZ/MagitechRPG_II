@@ -1,7 +1,7 @@
 import type { Expertise } from '@models';
 import { combatantVitals } from '@utils/combatantVitals';
 import { filterAndSortExpertises } from '@utils/expertiseList';
-import { OpenInNew, Pets } from '@mui/icons-material';
+import { Bolt, OpenInNew, Pets } from '@mui/icons-material';
 import { Avatar, Box, Chip, IconButton, Paper, Stack, Tooltip, Typography, alpha } from '@mui/material';
 import type { ReactElement } from 'react';
 import type { CombatCreatureEntry } from './useCombatCreatures';
@@ -13,11 +13,13 @@ interface CombatCreatureCardProps extends CombatCreatureEntry {
     isLast: boolean;
     /** Abre a criatura numa janela flutuante do mestre */
     onOpenWindow: () => void;
+    /** Abre direto o diálogo de aplicar efeito nesta criatura (sem passar pelo diálogo de combate) */
+    onApplyEffect?: () => void;
     onRollExpertise: (expertiseName: string, expertise: Expertise) => Promise<void>;
 }
 
 /** Cartão de uma criatura em combate: nome, LP/MP atuais e as perícias, com destaque quando é a vez dela */
-export default function CombatCreatureCard({ combatant, creature, isCurrentTurn, isLast, onOpenWindow, onRollExpertise }: CombatCreatureCardProps): ReactElement {
+export default function CombatCreatureCard({ combatant, creature, isCurrentTurn, isLast, onOpenWindow, onApplyEffect, onRollExpertise }: CombatCreatureCardProps): ReactElement {
     const expertisesEntries: Array<[ string, Expertise ]> = Object.entries(creature.expertises || {});
     const list = useExpertiseListState();
     const visibleEntries = filterAndSortExpertises(expertisesEntries, { query: list.query, sort: list.sort, nameOf: ([ nome ]) => nome, valueOf: ([ , expertise ]) => expertise.value });
@@ -82,6 +84,13 @@ export default function CombatCreatureCard({ combatant, creature, isCurrentTurn,
                             Nível {creature.level} • LP {currentLp}/{maxLp} • MP {currentMp}/{maxMp}
                         </Typography>
                     </Box>
+                    {onApplyEffect && (
+                        <Tooltip title="Aplicar efeito">
+                            <IconButton size="small" aria-label={`Aplicar efeito em ${combatant?.name || creature.name}`} onClick={onApplyEffect}>
+                                <Bolt fontSize="small" />
+                            </IconButton>
+                        </Tooltip>
+                    )}
                     <Tooltip title="Abrir em janela">
                         <IconButton size="small" aria-label={`Abrir ${combatant?.name || creature.name} em janela`} onClick={onOpenWindow}>
                             <OpenInNew fontSize="small" />

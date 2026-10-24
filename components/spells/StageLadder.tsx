@@ -44,6 +44,15 @@ export interface StageLadderProps {
         currentMp?: number;
         /** Devolve o motivo quando conjurar este estágio (com este custo de MP) estouraria o limite de MP por turno */
         blockedReason?: (stage: SpellStage, cost: number) => string | undefined;
+        /**
+         * Magia sustentada em combate: enquanto ativa, o botão do estágio conjurado vira "Desconjurar" (encerra a magia) e os outros estágios
+         * não conjuram. Fora do combate, ou sem a magia ativa, `activeStage` fica vazio e tudo segue como uma magia comum.
+         */
+        sustained?: {
+            activeStage?: SpellStage;
+            onEnd: () => void | Promise<void>;
+            busy?: boolean;
+        };
         /** Conjuração com sucesso à espera de ser efetuada: o botão "Efetuar" aparece no estágio `pendingStage` */
         effect?: {
             pendingStage?: SpellStage;
@@ -133,6 +142,8 @@ export default function StageLadder({ spell, progress, evolution, cast }: StageL
                     const unlocked = info.status === 'unlocked';
                     const cost = costOf(info.stage);
                     const castBlocked = unlocked && cast ? cast.blockedReason?.(info.stage, cost) : undefined;
+                    const sustainedActive = cast?.sustained?.activeStage === info.stage;
+                    const sustainedLocked = cast?.sustained?.activeStage !== undefined && !sustainedActive;
                     const open = unlocked && !collapsed.has(info.stage);
                     const previous = progress.stages[index - 1];
                     const diff = diffs[index];
@@ -208,22 +219,30 @@ export default function StageLadder({ spell, progress, evolution, cast }: StageL
 
                                         {cast && (
                                             <Tooltip
-                                                title={cast.currentMp !== undefined && cast.currentMp < cost
-                                                    ? `MP insuficiente (precisa de ${cost})`
-                                                    : castBlocked ?? `Conjurar o ${info.label} — gasta ${cost} MP`}
+                                                title={sustainedActive
+                                                    ? 'Encerrar a magia sustentada (o MP já pago não volta)'
+                                                    : sustainedLocked
+                                                        ? 'Desconjure esta magia antes de conjurar outro estágio'
+                                                        : cast.currentMp !== undefined && cast.currentMp < cost
+                                                            ? `MP insuficiente (precisa de ${cost})`
+                                                            : castBlocked ?? `Conjurar o ${info.label} — gasta ${cost} MP`}
                                             >
                                                 <span>
                                                     <Button
                                                         size="small"
-                                                        variant="contained"
-                                                        startIcon={<Bolt fontSize="small" />}
-                                                        disabled={cast.isCasting || (cast.currentMp !== undefined && cast.currentMp < cost)}
-                                                        onClick={() => { void cast.onCast(info.stage) }}
-                                                        aria-label={`Conjurar ${spell.name ?? 'a magia'} no ${info.label}`}
+                                                        variant={sustainedActive ? 'outlined' : 'contained'}
+                                                        startIcon={sustainedActive ? <Close fontSize="small" /> : <Bolt fontSize="small" />}
+                                                        disabled={sustainedActive
+                                                            ? cast.sustained?.busy
+                                                            : cast.isCasting || sustainedLocked || (cast.currentMp !== undefined && cast.currentMp < cost)}
+                                                        onClick={() => { void (sustainedActive ? cast.sustained?.onEnd() : cast.onCast(info.stage)) }}
+                                                        aria-label={sustainedActive
+                                                            ? `Desconjurar ${spell.name ?? 'a magia'}`
+                                                            : `Conjurar ${spell.name ?? 'a magia'} no ${info.label}`}
                                                         data-testid={`stage-cast-${info.stage}`}
-                                                        sx={{ textTransform: 'none', fontWeight: 700, opacity: castBlocked ? 0.55 : 1 }}
+                                                        sx={{ textTransform: 'none', fontWeight: 700, opacity: castBlocked && !sustainedActive ? 0.55 : 1 }}
                                                     >
-                                                        Conjurar
+                                                        {sustainedActive ? 'Desconjurar' : 'Conjurar'}
                                                     </Button>
                                                 </span>
                                             </Tooltip>

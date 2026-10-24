@@ -36,6 +36,9 @@ function shouldTick(
     combatant: Combatant,
     trigger: TickTrigger
 ): boolean {
+    // Magia sustentada não tica: o MP dela é cobrado na virada da rodada (utils/combat/sustainedUpkeep.ts)
+    if (applied.sustained) return false
+
     // Efeitos indefinidos continuam ticando (para aplicar dano/cura por tick),
     // só não expiram. Se não for indefinido e remaining esgotou, pula.
     if (!applied.indefinite && applied.remaining <= 0) return false
