@@ -7,7 +7,7 @@ import { getSpellSubtypes } from '@utils/spellCategory';
  * imediata (nada fica ativo). A magia vira um efeito sobre o conjurador, e acaba ao desconjurar, ao faltar MP para pagar, quando o MP chega
  * a 0 ou quando o combate termina.
  */
-export const sustainedUpkeepFor = (cost: number): number => Math.max(0, Math.floor(cost / 2));
+export const sustainedUpkeepFor = (cost: number): number => Math.max(0, Math.round(cost / 2));
 
 /** Se o `type` da magia tem o subtipo "sustentado" (aceita as grafias do catálogo: sustentada, Sustentado...) */
 export const isSustainedSpell = (type?: string | null): boolean => getSpellSubtypes(type).includes('Sustentado');
