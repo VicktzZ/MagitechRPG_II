@@ -153,6 +153,39 @@ describe('PendingAttackCard com o jogador como alvo', () => {
     });
 });
 
+describe('ataque de oportunidade no painel do mestre', () => {
+    const opportunity = { id: 'o1', moverId: 'aria', moverName: 'Aria', reactorId: 'goblin-1', reactorName: 'Goblin', createdAt: '2026-10-28T12:00:00.000Z' };
+
+    it('o cartão marca o ataque que veio de uma oportunidade', () => {
+        mockContext.mockReturnValue(campaignWith({}));
+
+        expect(render(<PendingAttackCard attack={attack({ opportunity: true })} />)).toContain('Ataque de oportunidade');
+        expect(render(<PendingAttackCard attack={attack()} />)).not.toContain('Ataque de oportunidade');
+    });
+
+    it('o painel lista as saídas abertas e diz quem decide: a criatura pelo ataque manual, o jogador por conta própria', () => {
+        mockContext.mockReturnValue(campaignWith({
+            opportunities: [ opportunity, { ...opportunity, id: 'o2', moverId: 'goblin-1', moverName: 'Goblin', reactorId: 'aria', reactorName: 'Aria' } ]
+        }));
+        const html = render(<PendingAttacksPanel />);
+
+        expect(html).toContain('opportunities-list');
+        expect(html).toContain('Aria saiu do alcance de Goblin');
+        expect(html).toContain('declare o ataque em &quot;Ataque manual&quot;');
+        expect(html).toContain('Goblin saiu do alcance de Aria');
+        expect(html).toContain('o jogador decide se ataca');
+        expect(html).toContain('Dispensar');
+    });
+
+    it('sem saídas abertas a lista não aparece, e o botão de declarar a saída está sempre à mão', () => {
+        mockContext.mockReturnValue(campaignWith({ opportunities: [] }));
+        const html = render(<PendingAttacksPanel />);
+
+        expect(html).not.toContain('opportunities-list');
+        expect(html).toContain('Saída de alcance');
+    });
+});
+
 describe('PendingAttacksPanel', () => {
     it('some fora do combate ou fora da fase de ação', () => {
         mockContext.mockReturnValue(campaignWith({ isActive: false }));

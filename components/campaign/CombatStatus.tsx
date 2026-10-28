@@ -42,9 +42,12 @@ import { campaignService } from '@services';
 import { asRequestError, errorMessage } from '@utils/errors';
 import { combatantBudget, SLOT_EXECUTION } from '@utils/combat/actionBudgets';
 import type { ActionSlot } from '@utils/combat/engine/actionBudget';
+import { opportunitiesForReactor } from '@utils/combat/opportunities';
 import { incomingAttacks } from '@utils/combat/pendingAttacks';
 import ActionPips from './ActionPips';
 import EffectBadges from './gmDashboard/actions/EffectBadges';
+import LeaveReachButton from './opportunity/LeaveReachButton';
+import OpportunityOffers from './opportunity/OpportunityOffers';
 import IncomingAttacks from './playerDashboard/attacks/IncomingAttacks';
 
 interface CombatStatusProps {
@@ -161,6 +164,25 @@ function CombatStatus({
         // awaitingDefense muda de identidade a cada render; o que interessa são os ids
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [ awaitingIds, enqueueSnackbar ]);
+
+    // Ataque de oportunidade: um inimigo saiu do alcance do personagem do jogador. Abre o card e avisa uma vez por oportunidade
+    const offers = isGM ? [] : opportunitiesForReactor(combat?.opportunities, userCombatant?.id);
+    const offerIds = offers.map(offer => offer.id).join(',');
+    const notifiedOffers = useRef<Set<string>>(new Set());
+    useEffect(() => {
+        const fresh = offers.filter(offer => !notifiedOffers.current.has(offer.id));
+        if (fresh.length === 0) return;
+
+        fresh.forEach(offer => notifiedOffers.current.add(offer.id));
+        setExpanded(true);
+        enqueueSnackbar(`${fresh[0].moverName} está saindo do seu alcance! Dá para fazer um ataque de oportunidade.`, {
+            variant: 'info',
+            autoHideDuration: 6000,
+            anchorOrigin: { vertical: 'top', horizontal: 'center' }
+        });
+        // offers muda de identidade a cada render; o que interessa são os ids
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [ offerIds, enqueueSnackbar ]);
 
     // Notifica quando é o turno do jogador
     useEffect(() => {
@@ -417,6 +439,14 @@ function CombatStatus({
                         {/* Ataques ao personagem do jogador: escolher e rolar a defesa */}
                         {combat.phase === 'ACTION' && userCombatant && !isGM && (
                             <IncomingAttacks combat={combat} combatantId={userCombatant.id} />
+                        )}
+
+                        {/* Ataque de oportunidade: ofertas para reagir e a declaração de saída do alcance */}
+                        {combat.phase === 'ACTION' && userCombatant && !isGM && (
+                            <>
+                                <OpportunityOffers combat={combat} combatantId={userCombatant.id} />
+                                <LeaveReachButton combat={combat} combatantId={userCombatant.id} />
+                            </>
                         )}
 
                         {/* Ações da rodada do próprio personagem (Padrão, Bônus, Movimento, Reação) */}

@@ -32,6 +32,7 @@ export default function PendingAttackCard({ attack }: { attack: PendingAttackDat
                 <Typography sx={{ fontFamily: font.display, fontWeight: 600 }}>{attack.attackerName} → {attack.targetName}</Typography>
                 <Chip size="small" label={`${attack.name}${attack.attackType ? ` · ${attack.attackType}` : ''}`} />
                 {attack.critical && <Chip size="small" color="warning" label="Crítico" />}
+                {attack.opportunity && <Chip size="small" color="info" variant="outlined" label="Ataque de oportunidade" />}
                 {proposal.weak && <Chip size="small" color="info" label="Alvo fraco a este ataque" />}
                 {resolution.awaitingPlayerDefense && <Chip size="small" variant="outlined" label={`Aguardando a defesa de ${attack.targetName}`} />}
                 {attack.defense && (

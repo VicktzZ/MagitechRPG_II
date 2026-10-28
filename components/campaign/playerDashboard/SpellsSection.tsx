@@ -4,7 +4,8 @@
 import ElementIcon from '@components/misc/ElementIcon';
 import StageLadder from '@components/spells/StageLadder';
 import AttackTargetPicker from './attacks/AttackTargetPicker';
-import { useSpellAttack } from './attacks/useSpellAttack';
+import { isAttackSpell, useSpellAttack } from './attacks/useSpellAttack';
+import { isOpportunitySpell, OPPORTUNITY_SPELL_HELP } from '@utils/combat/opportunities';
 import { useCampaignCurrentCharsheetContext, useCampaignContext } from '@contexts';
 import { useChatContext } from '@contexts/chatContext';
 import { postCampaignStats } from '@utils/campaignStatsClient';
@@ -128,6 +129,13 @@ export default function SpellsSection(): ReactElement {
             return;
         }
 
+        // Ataque de oportunidade em curso (um inimigo saiu do alcance dele): a magia de ataque tem de ser de Reação e alcance Curto. Antes de gastar o MP.
+        const opportunity = spellAttack.targeting.opportunity.active && isAttackSpell(spell);
+        if (opportunity && !isOpportunitySpell(spell)) {
+            enqueueSnackbar(OPPORTUNITY_SPELL_HELP, { variant: 'warning' });
+            return;
+        }
+
         const mpCost = getSpellMpCost(spell, stage);
         const playerName = charsheet.name || session?.user?.name || 'Jogador';
         const currentMp = Number(charsheet.stats?.mp ?? 0);
@@ -165,7 +173,7 @@ export default function SpellsSection(): ReactElement {
             if (succeeded && hasSpellEffectDice(spell, stage)) markPending(spellKey, stage);
             await sendCombatChatMessage(buildSpellCastMessage(playerName, spell, stage, test, mpCost), MessageType.DICE);
             // Conjuração com sucesso de magia de ataque: o teste de magia é o acerto e o mestre confirma o resultado contra o alvo
-            if (succeeded) await spellAttack.declareSpell(spell, test);
+            if (succeeded) await spellAttack.declareSpell(spell, test, { opportunity });
 
             // Gasta a ação da rodada que a magia pede (Padrão, Bônus, Movimento, Reação, Completa). É aviso, nunca trava: o mestre decide
             // o que vale quando a ação já tinha acabado.

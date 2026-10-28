@@ -2,6 +2,7 @@ import { IsArray, IsBoolean, IsNumber, IsOptional, IsString, ValidateNested } fr
 import { Type } from 'class-transformer';
 import { AppliedEffect } from './AppliedEffect';
 import type { ActionBudget } from '../utils/combat/engine/actionBudget';
+import type { OpportunityData } from '../utils/combat/opportunities';
 import type { PendingAttackData } from '../utils/combat/pendingAttacks';
 
 /**
@@ -183,6 +184,11 @@ export class Combat {
     @IsOptional()
     @IsArray()
         pendingAttacks?: PendingAttackData[];
+
+    /** Saídas de alcance declaradas: cada uma abre a um inimigo a chance de um ataque de oportunidade (ver utils/combat/opportunities.ts) */
+    @IsOptional()
+    @IsArray()
+        opportunities?: OpportunityData[];
 
     constructor(combat?: Partial<Combat>) {
         Object.assign(this, combat);

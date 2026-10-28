@@ -158,7 +158,7 @@ class CampaignService extends Service<Campaign, 'code' | 'userId'> {
     }
 
     /** Ataque assistido: declara um ataque com alvo (o jogador com o próprio personagem; o mestre com qualquer um). O mestre resolve depois */
-    async declareAttack(campaignId: string, payload: { combatantId: string; targetId: string; attack: Record<string, unknown>; damage?: number }) {
+    async declareAttack(campaignId: string, payload: { combatantId: string; targetId: string; attack: Record<string, unknown>; damage?: number; opportunityId?: string }) {
         return (await this.post({ param: `${campaignId}/combat`, body: { action: 'declare_attack', ...payload } })).data
     }
 
@@ -176,6 +176,19 @@ class CampaignService extends Service<Campaign, 'code' | 'userId'> {
         payload: { attackId: string; defense: { choice: 'dodge' | 'resist' | 'none'; skill?: string; total?: number; rolls?: number[]; used?: number; bonus?: number } }
     ) {
         return (await this.post({ param: `${campaignId}/combat`, body: { action: 'declare_defense', ...payload } })).data
+    }
+
+    /**
+     * Quem saiu do alcance corpo a corpo de inimigos declara a saída (`combatantId` é quem saiu): cada inimigo que pode reagir ganha uma oportunidade de ataque.
+     * Devolve `warnings` com quem não pôde reagir (sem Reação...).
+     */
+    async declareLeave(campaignId: string, payload: { combatantId: string; reactorIds: string[] }) {
+        return (await this.post({ param: `${campaignId}/combat`, body: { action: 'declare_leave', ...payload } })).data as unknown as { warnings?: string[] }
+    }
+
+    /** Dispensa uma oportunidade de ataque aberta (o inimigo que ia reagir, quem se moveu ou o mestre) */
+    async dismissOpportunity(campaignId: string, opportunityId: string) {
+        return (await this.post({ param: `${campaignId}/combat`, body: { action: 'dismiss_opportunity', opportunityId } })).data
     }
 
     /** Descarta um ataque pendente (quem atacou ou o mestre) */

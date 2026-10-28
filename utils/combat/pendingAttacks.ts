@@ -53,6 +53,8 @@ export interface PendingAttackData extends AttackDeclaration {
     damageRolled?: number;
     /** A defesa que o jogador alvo rolou; o mestre parte dela ao resolver, mas pode trocar tudo */
     defense?: PendingDefense;
+    /** Ataque de oportunidade: declarado em cima de uma saída de alcance, com a Reação (ver utils/combat/opportunities.ts) */
+    opportunity?: boolean;
     createdAt: string;
 }
 

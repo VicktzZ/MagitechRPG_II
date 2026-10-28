@@ -1,4 +1,4 @@
-import { Box, MenuItem, TextField, Typography } from '@mui/material';
+import { Box, Checkbox, FormControlLabel, MenuItem, TextField, Typography } from '@mui/material';
 import type { ReactElement } from 'react';
 import type { AttackTargeting } from './useAttackTargeting';
 
@@ -28,6 +28,26 @@ export default function AttackTargetPicker({ targeting }: { targeting: AttackTar
                     <MenuItem key={target.id} value={target.id}>{target.name}{target.type === 'creature' ? '' : ' (jogador)'}</MenuItem>
                 ))}
             </TextField>
+            {targeting.opportunity.current && (
+                <FormControlLabel
+                    data-testid="opportunity-toggle"
+                    control={(
+                        <Checkbox
+                            size="small"
+                            checked={targeting.opportunity.active}
+                            onChange={(event) => { targeting.opportunity.setUse(event.target.checked); }}
+                        />
+                    )}
+                    label={(
+                        <Typography variant="body2">
+                            Ataque de oportunidade contra {targeting.opportunity.current.moverName}
+                            <Typography component="span" variant="caption" sx={{ display: 'block', color: 'text.secondary' }}>
+                                Gasta a Reação. Só arma branca ou magia de Reação de alcance Curto.
+                            </Typography>
+                        </Typography>
+                    )}
+                />
+            )}
             {targeting.pending.length > 0 && (
                 <Box component="ul" sx={{ m: 0, pl: 2 }}>
                     {targeting.pending.map(attack => (
