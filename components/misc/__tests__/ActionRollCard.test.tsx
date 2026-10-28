@@ -50,6 +50,19 @@ const castAction: ActionRoll = {
     segments: [ { notation: '2d20+5', display: '[12, 7] + 5 Magia', total: 17 } ]
 };
 
+// A defesa de quem foi atacado: o teste de resistência contra a DT (metade do total do ataque), sem custo
+const defenseAction: ActionRoll = {
+    kind: 'defesa',
+    player: 'Aria',
+    title: 'RES Mágica',
+    detail: 'Resistência · Bola de Fogo de Orc',
+    critical: false,
+    total: 12,
+    cost: null,
+    dt: 13,
+    segments: [ { notation: '2d20+2', display: '[10, 4] + 2 RES Mágica', total: 12 } ]
+};
+
 describe('ActionRollCard', () => {
     it('efeito da magia: título com o jogador, detalhe, expressões em cinza e total à vista, sem custo', () => {
         const html = renderToStaticMarkup(<ActionRollCard action={spellAction} />);
@@ -74,6 +87,19 @@ describe('ActionRollCard', () => {
         expect(passed).toMatch(/data-testid="action-roll-result"[^>]*>.*?Sucesso/);
         expect(passed).toContain('MuiChip-colorSuccess');
         expect(failed).toContain('MuiChip-colorError');
+    });
+
+    it('defesa: a DT e Sucesso/Falhou à vista, como na conjuração, e sem custo de MP', () => {
+        const failed = renderToStaticMarkup(<ActionRollCard action={defenseAction} />);
+        const passed = renderToStaticMarkup(<ActionRollCard action={{ ...defenseAction, total: 13 }} />);
+
+        expect(failed).toContain('[Aria] RES Mágica');
+        expect(failed).toContain('Resistência · Bola de Fogo de Orc');
+        expect(failed).toContain('DT 13');
+        expect(failed).toContain('Total 12');
+        expect(failed).not.toContain('Custo');
+        expect(failed).toMatch(/data-testid="action-roll-result"[^>]*>.*?Falhou/);
+        expect(passed).toMatch(/data-testid="action-roll-result"[^>]*>.*?Sucesso/);
     });
 
     it('as rolagens ficam no dropdown, fechado de início', () => {
@@ -129,6 +155,15 @@ describe('ActionRollDetails (conteúdo do dropdown)', () => {
         // d12: o 12 (sucesso) e o 1 (erro); o 8 não destaca
         expect(html).toMatch(/MuiChip-colorSuccess[^>]*>.*?<span class="MuiChip-label[^"]*">12</);
         expect(html).toMatch(/MuiChip-colorError[^>]*>.*?<span class="MuiChip-label[^"]*">1</);
+    });
+
+    it('teste de defesa: o dropdown diz que é defesa e quanto faltou para a DT', () => {
+        const html = renderToStaticMarkup(<ActionRollDetails action={defenseAction} />);
+
+        expect(html).toContain('Teste de defesa (vale o maior dado):');
+        expect(html).not.toContain('Teste de magia');
+        expect(html).toContain('Total 12 contra DT 13: falhou por 1');
+        expect(html).not.toContain('Subtotal');
     });
 
     it('teste de magia: o maior dado vem destacado, sem subtotal nem média, e o texto diz se passou na DT', () => {

@@ -87,6 +87,8 @@ export function buildSpellCastMessage(playerName: string, spell: SpellDTO, stage
         title: spell.name,
         detail: spellDetail(spell, stage, 'Conjuração'),
         critical: false,
+        ...(test.keep === 'lowest' ? { keepLowest: true } : {}),
+        ...(test.notes && test.notes.length > 0 ? { notes: test.notes } : {}),
         total: test.total,
         cost: mpCost,
         dt: spellCastDifficulty(spell.level, stage),

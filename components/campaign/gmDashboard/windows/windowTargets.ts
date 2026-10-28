@@ -1,5 +1,4 @@
 import type { Campaign } from '@models/entities';
-import { creatureCombatants } from '@utils/combatCreatureLookup';
 import { windowTargetOf, type WindowKind, type WindowTarget } from './windowKinds';
 
 /** Texto para quando o alvo da janela já não existe (ficha removida, criatura excluída, combate encerrado) */
@@ -27,9 +26,9 @@ export function windowTargetName(kind: WindowKind, targetId: string, { charsheet
 }
 
 /**
- * Alvos de janela de criatura que existem agora na campanha: as criaturas personalizadas e os combatentes que são
- * criaturas (só com o combate ativo; combate encerrado não deixa janela de combatente). O provedor das janelas usa
- * isso para fechar as janelas de quem saiu.
+ * Alvos de janela de criatura e de combate que existem agora na campanha: as criaturas personalizadas e os combatentes
+ * (criaturas e jogadores; só com o combate ativo, combate encerrado não deixa janela de combatente). O provedor das
+ * janelas usa isso para fechar as janelas de quem saiu.
  */
 export function creatureWindowTargets(campaign: Pick<Campaign, 'custom' | 'session'> | null | undefined): {
     creatureIds: string[];
@@ -40,6 +39,6 @@ export function creatureWindowTargets(campaign: Pick<Campaign, 'custom' | 'sessi
 
     return {
         creatureIds: (Array.isArray(creatures) ? creatures : []).map(creature => creature.id),
-        combatantIds: combat?.isActive ? creatureCombatants(combat.combatants).map(combatant => combatant.id) : []
+        combatantIds: combat?.isActive ? (Array.isArray(combat.combatants) ? combat.combatants : []).map(combatant => combatant.id) : []
     };
 }

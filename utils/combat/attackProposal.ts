@@ -133,6 +133,8 @@ export function buildAttackProposal(
     if (weaknessDice > 0) {
         header.push(line('Fraqueza do alvo ao ataque', `+${weakness.advantages}d20 no acerto e dano ×${weakness.damageMultiplier}`, 'gm'));
     }
+    // O jogador rolou o acerto com desvantagem líquida dos efeitos dele (Cegueira...): vale o menor d20 (o total já vem assim; a linha só explica)
+    if (attack.keep === 'lowest' && hasD20) header.push(line('Acerto com desvantagem', 'vale o menor d20'));
     if (choice.surprised && choice.surprise) {
         const { cause, advantages, alreadyRolled = 0 } = choice.surprise;
         const dice = advantages > 0 ? `+${advantages}d20 no acerto${alreadyRolled > 0 ? ` (${Math.min(alreadyRolled, advantages)} já rolado pelo atacante)` : ''}; ` : '';

@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 'use client'
 
-import { useCampaignCurrentCharsheetContext } from '@contexts';
+import { useCampaignContext, useCampaignCurrentCharsheetContext } from '@contexts';
 import { useChatContext } from '@contexts/chatContext'
 import { MessageType } from '@enums'
 import { 
@@ -40,6 +40,7 @@ import { color } from '@themes/tokens'
 import { useSession } from 'next-auth/react'
 import { type ReactElement, useState, useMemo, useEffect } from 'react'
 import type { RPGSystem, SystemAttribute } from '@models/entities';
+import { adjustDice, combatantEffects, effectDice, expertiseScope, keptDie } from '@utils/combat/effectDice';
 import { expertiseOverweightPenalty } from '@utils/combat/engine/overweight';
 import { sheetOverweight } from '@utils/combat/sheetOverweight';
 import { filterAndSortExpertises, type ExpertiseSort } from '@utils/expertiseList';
@@ -69,6 +70,7 @@ interface ExpertiseEntry {
 
 export default function ExpertiseSection(): ReactElement {
     const { charsheet } = useCampaignCurrentCharsheetContext();
+    const { campaign } = useCampaignContext();
     const [ filterLevel, setFilterLevel ] = useState<ExpertiseLevel>('all');
     const [ sortOrder, setSortOrder ] = useState<SortOrder>('alpha-asc');
     const [ query, setQuery ] = useState('');
@@ -200,14 +202,20 @@ export default function ExpertiseSection(): ReactElement {
         let numDice = Number(charsheet.mods?.attributes?.[attrKey] ?? 1)
         if (!Number.isFinite(numDice) || numDice < 1) numDice = 1
 
+        // Percepção e Furtividade levam as vantagens e desvantagens dos efeitos aplicados no combate (Cegueira, Visão Verdadeira...): o saldo decide
+        // quantos d20 rolar e se vale o maior ou o menor
+        const scope = expertiseScope(entry.label)
+        const effects = scope ? effectDice(combatantEffects(campaign?.session?.combat, charsheet.id), scope) : undefined
+        const { dice, keep } = effects ? adjustDice({ dice: numDice, keep: 'highest' }, effects) : { dice: numDice, keep: 'highest' as const }
+
         // Rola os dados
         const rolls: number[] = []
-        for (let i = 0; i < numDice; i++) {
+        for (let i = 0; i < dice; i++) {
             rolls.push(Math.floor(Math.random() * 20) + 1)
         }
 
-        // Seleciona o melhor resultado entre os dados rolados
-        const roll = rolls.length > 1 ? Math.max(...rolls) : rolls[0]
+        // O d20 que vale: o maior (ou o menor, com desvantagem líquida)
+        const roll = keptDie(rolls, keep)
 
         const total = roll + expertiseValue
 
@@ -216,7 +224,9 @@ export default function ExpertiseSection(): ReactElement {
             `${rolls.join(', ')}: ${roll}` :
             `${roll}`
 
-        const text = `🎲 ${entry.label.toUpperCase()} - ${numDice}d20${expertiseValue >= 0 ? '+' : ''}${expertiseValue}: [${rollPart}] = ${total}`
+        const remarks = [ ...(keep === 'lowest' ? [ 'desvantagem' ] : []), ...(effects?.notes ?? []) ]
+        const name = `${entry.label.toUpperCase()}${remarks.length > 0 ? ` (${remarks.join('; ')})` : ''}`
+        const text = `🎲 ${name} - ${dice}d20${expertiseValue >= 0 ? '+' : ''}${expertiseValue}: [${rollPart}] = ${total}`
         
         // Envia a mensagem diretamente
         if (session?.user) {

@@ -51,6 +51,33 @@ const PartyMember = memo(function PartyMember({ charsheet }: { charsheet: Requir
     );
 });
 
+/** Retrato de um jogador no grupo "Em combate": abre a janela "Em combate" dele (a do resumo continua no retrato do grupo, acima) */
+const PlayerCombatMember = memo(function PlayerCombatMember({ charsheet, isCurrentTurn }: { charsheet: Required<CharsheetDTO>; isCurrentTurn: boolean }): ReactElement {
+    const { campaign, users } = useCampaignContext();
+    const { windows } = useGMWindowView();
+    const { openWindow } = useGMWindowActions();
+    const view = useCharsheetPointsView(charsheet);
+
+    const stats = charsheet.stats;
+    const vitals: PortraitVital[] = [];
+    if (view.hasLP) vitals.push({ key: 'lp', name: view.lpName, value: stats?.lp ?? 0, max: stats?.maxLp ?? 0, barColor: color.lp });
+    if (view.hasMP) vitals.push({ key: 'mp', name: view.mpName, value: stats?.mp ?? 0, max: stats?.maxMp ?? 0, barColor: color.mp });
+
+    return (
+        <PartyPortrait
+            name={charsheet.name}
+            level={charsheet.level}
+            image={users.players?.find(user => user.id === charsheet.userId)?.image}
+            online={campaign.session?.users?.includes(charsheet.userId) ?? false}
+            inTurn={isCurrentTurn}
+            open={windows.some(entry => entry.key === windowKey('combatant', charsheet.id))}
+            vitals={vitals}
+            actionLabel="Abrir em combate"
+            onClick={() => openWindow('combatant', charsheet.id)}
+        />
+    );
+});
+
 /** Retrato de uma criatura em combate: o mesmo molde do jogador, sem presença nem menu de seções */
 const CombatantMember = memo(function CombatantMember({ combatant, creature, isCurrentTurn }: CombatCreatureEntry): ReactElement {
     const { windows } = useGMWindowView();
@@ -77,14 +104,28 @@ const CombatantMember = memo(function CombatantMember({ combatant, creature, isC
 
 /**
  * Barra do grupo do mestre: um retrato por jogador, fixa ao lado do conteúdo enquanto a página rola.
- * Com combate ativo, as criaturas em combate vêm num segundo grupo, abaixo, com o mesmo molde de retrato.
+ * Com combate ativo, quem está nele (jogadores e criaturas, na ordem do combate) vem num segundo grupo, "Em combate", abaixo, com o mesmo molde de retrato:
+ * o clique abre a janela "Em combate" do combatente (a do jogador mostra a ficha dele no combate).
  * Só aparece do `md` em diante; no celular as janelas se abrem pelo menu do cartão do jogador e pelo cartão da criatura.
  */
 export default function PartyBar(): ReactElement | null {
-    const { charsheets } = useCampaignContext();
+    const { campaign, charsheets } = useCampaignContext();
     const { allCreaturesInCombat } = useCombatCreatures();
 
     if (charsheets.length === 0) return null;
+
+    // O grupo "Em combate" segue a ordem do combate e traz jogadores e criaturas
+    const combat = campaign.session?.combat;
+    const inCombat = combat?.isActive ? (Array.isArray(combat.combatants) ? combat.combatants : []) : [];
+    const currentId = combat?.combatants?.[combat.currentTurnIndex]?.id;
+    const combatMembers = inCombat.flatMap(combatant => {
+        if (combatant.type === 'player') {
+            const charsheet = charsheets.find(sheet => sheet.id === combatant.id);
+            return charsheet ? [ { key: combatant.id, node: <PlayerCombatMember key={combatant.id} charsheet={charsheet as unknown as Required<CharsheetDTO>} isCurrentTurn={combatant.id === currentId} /> } ] : [];
+        }
+        const entry = allCreaturesInCombat.find(candidate => candidate.combatant.id === combatant.id);
+        return entry ? [ { key: combatant.id, node: <CombatantMember key={combatant.id} {...entry} /> } ] : [];
+    });
 
     return (
         <Box
@@ -107,18 +148,16 @@ export default function PartyBar(): ReactElement | null {
                 <PartyMember key={charsheet.id} charsheet={charsheet as unknown as Required<CharsheetDTO>} />
             ))}
 
-            {allCreaturesInCombat.length > 0 && (
+            {combatMembers.length > 0 && (
                 <Box
                     role="group"
-                    aria-label="Criaturas em combate"
+                    aria-label="Em combate"
                     sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 1, pt: 1.5, borderTop: '1px solid', borderColor: 'divider' }}
                 >
                     <Typography aria-hidden sx={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'text.secondary', textAlign: 'center' }}>
                         Em combate
                     </Typography>
-                    {allCreaturesInCombat.map(entry => (
-                        <CombatantMember key={entry.combatant.id} {...entry} />
-                    ))}
+                    {combatMembers.map(member => member.node)}
                 </Box>
             )}
         </Box>

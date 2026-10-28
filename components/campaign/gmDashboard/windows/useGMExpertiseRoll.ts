@@ -1,8 +1,9 @@
 import { useChatContext } from '@contexts/chatContext';
 import { MessageType } from '@enums';
 import { useCharsheetSystem } from '@hooks/useCharsheetSystem';
-import { Message } from '@models';
+import { Message, type AppliedEffect } from '@models';
 import type { CharsheetDTO } from '@models/dtos';
+import { effectDice, expertiseScope } from '@utils/combat/effectDice';
 import { formatSheetRollText, planSheetRoll, rollSheetPlan, type SheetRollPlan } from '@utils/sheetRoll';
 import { useSession } from 'next-auth/react';
 import { useCallback } from 'react';
@@ -21,18 +22,24 @@ export interface GMExpertiseRoll {
  * com o bônus do personagem, e o resultado vai ao chat no formato `🎲 [Personagem] PERÍCIA - 2d20+3: [12, 7: 12] = 15`.
  * Manda uma mensagem pronta (não um texto), senão o chat tentaria rolar a notação de dados que está no texto.
  */
-export function useGMExpertiseRoll(charsheet: Sheet): GMExpertiseRoll {
+export function useGMExpertiseRoll(charsheet: Sheet, effects?: readonly AppliedEffect[]): GMExpertiseRoll {
     const { system } = useCharsheetSystem(charsheet.systemId);
     const { handleSendMessage, isChatOpen, setIsChatOpen } = useChatContext();
     const { data: session } = useSession();
 
+    // Percepção e Furtividade levam as vantagens e desvantagens dos efeitos aplicados ao personagem no combate (`effectDice`)
+    const dicePlan = useCallback((expertise: string) => {
+        const scope = expertiseScope(expertise);
+        return scope ? effectDice(effects, scope) : undefined;
+    }, [ effects ]);
+
     const planFor = useCallback(
-        (expertise: string) => planSheetRoll(charsheet, expertise, system),
-        [ charsheet, system ]
+        (expertise: string) => planSheetRoll(charsheet, expertise, system, dicePlan(expertise)),
+        [ charsheet, system, dicePlan ]
     );
 
     const roll = useCallback(async (expertise: string): Promise<void> => {
-        const plan = planSheetRoll(charsheet, expertise, system);
+        const plan = planSheetRoll(charsheet, expertise, system, dicePlan(expertise));
         if (!plan || !session?.user) return;
 
         const result = rollSheetPlan(plan);
@@ -51,7 +58,7 @@ export function useGMExpertiseRoll(charsheet: Sheet): GMExpertiseRoll {
         }));
 
         if (!isChatOpen) setIsChatOpen(true);
-    }, [ charsheet, system, session?.user, handleSendMessage, isChatOpen, setIsChatOpen ]);
+    }, [ charsheet, system, dicePlan, session?.user, handleSendMessage, isChatOpen, setIsChatOpen ]);
 
     return { planFor, roll };
 }

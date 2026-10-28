@@ -1,4 +1,5 @@
 import type { Expertise } from '@models';
+import { completeCreatureExpertises } from '@utils/combat/creatureExpertises';
 import { combatantVitals } from '@utils/combatantVitals';
 import { filterAndSortExpertises } from '@utils/expertiseList';
 import { Bolt, Edit, OpenInNew, Pets, RestartAlt } from '@mui/icons-material';
@@ -26,7 +27,7 @@ interface CombatCreatureCardProps extends CombatCreatureEntry {
 
 /** Cartão de uma criatura em combate: nome, LP/MP atuais e as perícias, com destaque quando é a vez dela */
 export default function CombatCreatureCard({ combatant, creature, isCurrentTurn, isLast, onOpenWindow, onApplyEffect, mpLimit = 0, onResetMpLimit, onSetMpSpent, onRollExpertise }: CombatCreatureCardProps): ReactElement {
-    const expertisesEntries: Array<[ string, Expertise ]> = Object.entries(creature.expertises || {});
+    const expertisesEntries: Array<[ string, Expertise ]> = Object.entries(completeCreatureExpertises<Expertise>(creature.expertises));
     const list = useExpertiseListState();
     const visibleEntries = filterAndSortExpertises(expertisesEntries, { query: list.query, sort: list.sort, nameOf: ([ nome ]) => nome, valueOf: ([ , expertise ]) => expertise.value });
     const { lp: currentLp, maxLp, mp: currentMp, maxMp } = combatantVitals(combatant, creature);

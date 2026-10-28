@@ -2,6 +2,7 @@ import type { Weapon } from '@models';
 import type { CharsheetDTO } from '@models/dtos';
 import { rollDice, type DiceResult } from '@utils/diceRoller';
 import { buildActionRollText } from './actionRollMessage';
+import { effectDice, type EffectDice } from './effectDice';
 import { rollHitTest, type HitTestResult } from './hitTest';
 import { STEALTH_DAMAGE_MULTIPLIER, STEALTH_EXTRA_D20 } from './stealth';
 
@@ -20,12 +21,24 @@ export interface WeaponRollOptions {
     stealth?: boolean;
 }
 
+export interface WeaponHitOptions extends WeaponRollOptions {
+    /** Vantagens e desvantagens de ataque dos efeitos aplicados (`effectDice(efeitos, 'attack')`) */
+    effects?: EffectDice;
+}
+
 /**
  * Rola o teste de acerto da arma. Numero de d20s vem de mods.attributes[hit] (>=1)
- * e o bonus do atributo/pericia equivalente. Furtivo: 1d20 a mais (vantagem, vale o maior).
+ * e o bonus do atributo/pericia equivalente. Furtivo: 1d20 a mais (vantagem, vale o maior). Os efeitos aplicados somam vantagens e
+ * desvantagens (`effectDice.ts`): o saldo líquido decide quantos d20 rolar e se vale o maior ou o menor.
  */
-export function rollWeaponHit(weapon: Weapon, charsheet: CharsheetDTO, options: WeaponRollOptions = {}): HitTestResult {
-    return rollHitTest(weapon.hit, charsheet, { extraDice: options.stealth ? STEALTH_EXTRA_D20 : 0 });
+export function rollWeaponHit(weapon: Weapon, charsheet: CharsheetDTO, options: WeaponHitOptions = {}): HitTestResult {
+    const effects = options.effects ?? effectDice([], 'attack');
+    const stealthDice = options.stealth ? STEALTH_EXTRA_D20 : 0;
+    return rollHitTest(weapon.hit, charsheet, {
+        extraDice: stealthDice + effects.advantages,
+        lessDice: effects.disadvantages,
+        notes: [ ...(stealthDice > 0 ? [ `furtivo: vantagem, +${stealthDice}d20` ] : []), ...effects.notes ]
+    });
 }
 
 /**
@@ -71,8 +84,10 @@ export function buildHitMessageText(playerName: string, weapon: Weapon, hit: Hit
         ? `${hit.rolls.join(', ')}: ${hit.bestRoll}`
         : `${hit.bestRoll}`;
     const sign = hit.bonus >= 0 ? '+' : '';
-    const advantage = hit.extraDice > 0 ? `, furtivo: vantagem, +${hit.extraDice}d20` : '';
-    return `🎯 ${playerName} testou acerto com **${weapon.name}** (${hit.bonusLabel}${advantage}): [${rollPart}] ${sign}${hit.bonus} = **${hit.total}**`;
+    // Furtivo e efeitos que dão vantagem ou desvantagem, e qual d20 vale quando a desvantagem passa das vantagens
+    const notes = hit.notes ?? (hit.extraDice > 0 ? [ `furtivo: vantagem, +${hit.extraDice}d20` ] : []);
+    const detail = [ ...notes, ...(hit.keep === 'lowest' ? [ 'vale o menor' ] : []) ].map(note => `, ${note}`).join('');
+    return `🎯 ${playerName} testou acerto com **${weapon.name}** (${hit.bonusLabel}${detail}): [${rollPart}] ${sign}${hit.bonus} = **${hit.total}**`;
 }
 
 /**

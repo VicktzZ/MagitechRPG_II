@@ -1,8 +1,9 @@
 'use client';
 
 import { useCampaignContext } from '@contexts';
-import { Autocomplete, Button, Checkbox, FormControlLabel, MenuItem, Stack, TextField } from '@mui/material';
+import { Autocomplete, Button, Checkbox, FormControlLabel, MenuItem, Stack, TextField, Typography } from '@mui/material';
 import { campaignService } from '@services';
+import { effectDice } from '@utils/combat/effectDice';
 import { findOpportunity } from '@utils/combat/opportunities';
 import type { DamageKind } from '@utils/combat/engine/types';
 import { errorMessage } from '@utils/errors';
@@ -32,6 +33,8 @@ export default function ManualAttackForm({ onDone }: { onDone: () => void }): Re
     const [ damage, setDamage ] = useState('');
     const [ busy, setBusy ] = useState(false);
     // Ataque de oportunidade: o atacante tem uma saída de alcance aberta contra esse alvo. Marcado de início; o mestre desmarca para um ataque comum
+    // Os efeitos aplicados ao atacante (Cegueira, Precisão...) dão vantagem ou desvantagem no acerto: o mestre rola a criatura fora do app, então o formulário lembra
+    const attackerNotes = effectDice(combatants.find(combatant => combatant.id === attackerId)?.effects, 'attack').notes;
     const opportunity = attackerId && targetId ? findOpportunity(campaign.session?.combat?.opportunities, attackerId, targetId) : undefined;
     const [ declinedOpportunity, setDeclinedOpportunity ] = useState<string | null>(null);
     const extras = extraTargetIds.filter(id => id !== attackerId && id !== targetId);
@@ -103,6 +106,11 @@ export default function ManualAttackForm({ onDone }: { onDone: () => void }): Re
             />
             <TextField size="small" type="number" label="Total do acerto" value={total} onChange={(event) => { setTotal(event.target.value); }} sx={{ width: 140 }} />
             <TextField size="small" type="number" label="Dano rolado" value={damage} onChange={(event) => { setDamage(event.target.value); }} sx={{ width: 130 }} />
+            {attackerNotes.length > 0 && (
+                <Typography variant="caption" sx={{ color: 'text.secondary', flexBasis: '100%' }} data-testid="manual-attack-effects">
+                    Efeitos do atacante no acerto: {attackerNotes.join('; ')}. O total é o que você digita: role os d20 já com isso.
+                </Typography>
+            )}
             {opportunity && (
                 <FormControlLabel
                     control={<Checkbox size="small" checked={useOpportunity} onChange={(event) => { setDeclinedOpportunity(event.target.checked ? null : opportunity.id); }} />}

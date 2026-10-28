@@ -22,6 +22,9 @@ import { color as colorToken } from '@themes/tokens';
 import { classColor } from '@constants';
 import { sheetExpertisePenalty } from '@utils/combat/sheetOverweight';
 
+/** "+3", "+0" e "-2": o sinal vem do número (valor negativo de traço negativo não vira "+-2") */
+const signedValue = (value: number): string => (value < 0 ? String(value) : `+${value}`);
+
 interface ExpertiseProps {
     name: keyof Expertises | string;
     expertise: ExpertiseType;
@@ -267,7 +270,7 @@ export default function Expertise({
                                         -
                                     </Typography>
                                     <Typography fontSize='inherit' fontWeight='inherit'>
-                                        +{isEditing ? previewValue : expertise.value}
+                                        {signedValue(isEditing ? previewValue : expertise.value)}
                                     </Typography>
                                 </Box>
                             </Box>

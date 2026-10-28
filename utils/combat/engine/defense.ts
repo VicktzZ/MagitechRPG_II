@@ -7,7 +7,7 @@ import type { DamageKind } from './types';
  *  - ESQUIVA: teste de Reflexos MAIOR que o total do atacante anula o dano por completo. Gasta a Reação. Não vale contra ataque mental, contra área
  *    maior que 3m nem contra quem ataca de surpresa.
  *  - RESISTÊNCIA: teste contra a DT = metade do total do atacante, arredondada para cima. Passando, o dano cai pelo AP do alvo + metade do mod da
- *    perícia (arredondada para baixo); no ataque mental cai pela metade. Falhando, vem inteiro.
+ *    perícia (arredondada para baixo); no ataque mental cai pela metade. Falhando, vem inteiro. Também gasta a Reação (decisão do dono, 28/10/2026).
  *  - Esquiva e resistência são alternativas: o alvo escolhe uma.
  */
 
@@ -91,7 +91,7 @@ export interface DefenseResult {
     rolled: number | null;
     /** Esquiva pedida mas impedida: vale como sem defesa */
     ignored: DodgeBlock | null;
-    /** A Reação foi gasta (esquivar, com sucesso ou não) */
+    /** A Reação foi gasta (esquivar ou resistir, com sucesso ou não) */
     spentReaction: boolean;
 }
 
@@ -107,7 +107,7 @@ export function resolveDefense({ choice, attackTotal, defenseTotal = null, eligi
     }
 
     const needed = resistanceDT(attackTotal);
-    return { status: defenseTotal >= needed ? 'resisted' : 'resist-failed', needed, rolled: defenseTotal, ignored: null, spentReaction: false };
+    return { status: defenseTotal >= needed ? 'resisted' : 'resist-failed', needed, rolled: defenseTotal, ignored: null, spentReaction: true };
 }
 
 /** Quanto o AP e o mod da resistência tiram do dano de quem resistiu (ataque físico ou mágico): AP + ⌊mod ÷ 2⌋, nunca negativo */

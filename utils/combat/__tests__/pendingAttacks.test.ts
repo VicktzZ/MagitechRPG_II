@@ -28,6 +28,13 @@ const attack = (patch: Partial<PendingAttackData> = {}): PendingAttackData => ({
 describe('sanitizeAttackDeclaration', () => {
     const valid = { source: 'weapon', name: 'Espada', kind: 'fisico', attackType: 'Cortante', attackTotal: 17, rolls: [ 12, 9 ], bonus: 5 };
 
+    it('guarda que vale o menor d20 (desvantagem) e ignora qualquer outro valor de `keep`', () => {
+        expect(sanitizeAttackDeclaration({ ...valid, keep: 'lowest' })).toMatchObject({ keep: 'lowest' });
+        expect(sanitizeAttackDeclaration({ ...valid, keep: 'highest' })).not.toHaveProperty('keep');
+        expect(sanitizeAttackDeclaration({ ...valid, keep: 'x' })).not.toHaveProperty('keep');
+        expect(sanitizeAttackDeclaration(valid)).not.toHaveProperty('keep');
+    });
+
     it('aceita uma declaração completa', () => {
         expect(sanitizeAttackDeclaration(valid)).toEqual({ source: 'weapon', name: 'Espada', kind: 'fisico', attackType: 'Cortante', attackTotal: 17, rolls: [ 12, 9 ], bonus: 5 });
     });
@@ -119,6 +126,24 @@ describe('totalWithExtraDice', () => {
     it('um d20 extra que sai maior vira o dado que vale (vantagem)', () => {
         expect(totalWithExtraDice(attack(), [ 18 ])).toBe(23);
         expect(totalWithExtraDice(attack(), [ 3 ])).toBe(17);
+    });
+
+    it('desvantagem (vale o menor): o total é o do menor d20, e um d20 extra de vantagem cancela a desvantagem', () => {
+        const lowest = attack({ rolls: [ 15, 4 ], keep: 'lowest', bonus: 5 });
+
+        expect(totalWithExtraDice(lowest)).toBe(9);
+        // saldo −1 + 1 = 0: um d20 só (o primeiro dos já rolados), sem o "menor"
+        expect(totalWithExtraDice(lowest, [ 18 ])).toBe(20);
+        // saldo −1 + 2 = +1: 2 dados e vale o maior (os dois primeiros dos rolados, sem escolher os melhores)
+        expect(totalWithExtraDice(lowest, [ 18, 2 ])).toBe(20);
+    });
+
+    it('desvantagem com mais de um d20 a menos: continua valendo o menor até as vantagens passarem', () => {
+        const lowest = attack({ rolls: [ 15, 4, 11 ], keep: 'lowest', bonus: 5 });
+
+        expect(totalWithExtraDice(lowest)).toBe(9);
+        // saldo −2 + 1 = −1: 2 dados, vale o menor dos dois primeiros
+        expect(totalWithExtraDice(lowest, [ 19 ])).toBe(9);
     });
 
     it('ataque sem d20 (manual) mantém o total, mesmo com dado extra solto', () => {

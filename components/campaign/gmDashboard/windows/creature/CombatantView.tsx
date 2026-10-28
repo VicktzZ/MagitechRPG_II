@@ -5,6 +5,7 @@ import { Bolt, Edit, Pets, RestartAlt } from '@mui/icons-material';
 import { Avatar, Box, Button, Chip, Stack, Typography, alpha } from '@mui/material';
 import { color, font } from '@themes/tokens';
 import { combatantBudget } from '@utils/combat/actionBudgets';
+import { completeCreatureExpertises } from '@utils/combat/creatureExpertises';
 import type { ActionSlot } from '@utils/combat/engine/actionBudget';
 import { combatantVitals, type CombatantVitalKey } from '@utils/combatantVitals';
 import { filterAndSortExpertises } from '@utils/expertiseList';
@@ -52,7 +53,7 @@ interface CombatantViewProps {
 export function CombatantView({
     combatant, creature, inTurn, onAdjustVital, onRollExpertise, onOpenCreature, mpLimit = 0, onCastSpell, onResetMpLimit, onSetMpSpent, onToggleAction
 }: CombatantViewProps): ReactElement {
-    const expertises: Array<[ string, Expertise ]> = Object.entries(creature?.expertises ?? {});
+    const expertises: Array<[ string, Expertise ]> = creature ? Object.entries(completeCreatureExpertises<Expertise>(creature.expertises)) : [];
     const list = useExpertiseListState();
     const visibleExpertises = filterAndSortExpertises(expertises, { query: list.query, sort: list.sort, nameOf: ([ expertiseName ]) => expertiseName, valueOf: ([ , expertise ]) => expertise.value });
     const { lp, maxLp, mp, maxMp } = combatantVitals(combatant, creature);

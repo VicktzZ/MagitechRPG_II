@@ -13,9 +13,13 @@ import { useSetMpSpent } from '../../actions/useSetMpSpent';
 import { useToggleCombatAction } from '../../actions/useToggleCombatAction';
 import { useCreatureExpertiseRoll } from '../../dashboard/useCreatureExpertiseRoll';
 import { useGMWindowActions } from '../GMWindowProvider';
+import PlayerCombatantWindow from '../combatant/PlayerCombatantWindow';
 import { CombatantView } from './CombatantView';
 
-/** Conteúdo da janela de uma criatura em combate: acompanha o combatente em tempo real e rola as perícias dela */
+/**
+ * Conteúdo da janela "Em combate": acompanha o combatente em tempo real. Criatura rola as perícias dela; jogador (o combatente leva o id da ficha) mostra a
+ * ficha dele no combate (`PlayerCombatantWindow`).
+ */
 export default function CombatantWindow({ combatantId }: { combatantId: string }): ReactElement {
     const { campaign } = useCampaignContext();
     const { openWindow } = useGMWindowActions();
@@ -27,8 +31,10 @@ export default function CombatantWindow({ combatantId }: { combatantId: string }
     const combatant = combat?.isActive ? combat.combatants?.find(candidate => candidate.id === combatantId) : undefined;
 
     if (!combatant) {
-        return <Typography color="text.secondary">Esta criatura não está mais no combate.</Typography>;
+        return <Typography color="text.secondary">Este combatente não está mais no combate.</Typography>;
     }
+
+    if (combatant.type === 'player') return <PlayerCombatantWindow combatantId={combatant.id} />;
 
     const creature = findBaseCreature(combatant.id, campaign.custom?.creatures ?? []) ?? null;
     const inTurn = combat?.combatants?.[combat.currentTurnIndex]?.id === combatant.id;

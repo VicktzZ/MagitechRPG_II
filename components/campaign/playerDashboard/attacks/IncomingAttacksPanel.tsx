@@ -12,7 +12,7 @@ interface IncomingAttacksPanelProps {
     awaiting: readonly PendingAttackData[];
     /** Ataques que ele já respondeu e esperam o mestre */
     answered: readonly PendingAttackData[];
-    /** O personagem ainda tem a Reação da rodada (a esquiva gasta) */
+    /** O personagem ainda tem a Reação da rodada (a esquiva e a resistência gastam) */
     hasReaction: boolean;
     /** O personagem não via quem atacou (matriz de percepção do mestre): ataque de surpresa não se esquiva */
     isSurprised?: (attack: PendingAttackData) => boolean;
@@ -64,7 +64,7 @@ export default function IncomingAttacksPanel({ awaiting, answered, hasReaction, 
                                     </Button>
                                 </span>
                             </Tooltip>
-                            <Tooltip title="Teste de resistência: passando, o dano cai">
+                            <Tooltip title="Teste de resistência: passando, o dano cai. Gasta a sua Reação">
                                 <span>
                                     <Button
                                         size="small"

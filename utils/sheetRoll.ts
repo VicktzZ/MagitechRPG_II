@@ -1,5 +1,6 @@
 import type { RPGSystem } from '@models/entities';
 import { MAX_TEST_DICE, rollD20, type TestCharsheet } from './campaignTest';
+import { adjustDice, type EffectDice } from './combat/effectDice';
 import { sheetExpertisePenalty } from './combat/sheetOverweight';
 import { computeAttributeInfluence, findSystemAttribute } from './systemLookups';
 
@@ -18,6 +19,8 @@ export interface SheetRollPlan {
     keep: 'highest' | 'lowest';
     /** Valor da perícia (mais o bônus do atributo, nos sistemas customizados) */
     bonus: number;
+    /** De onde vêm as vantagens e desvantagens dos efeitos aplicados ("Cegueira: desvantagem, −1d20"), para o chat dizer */
+    notes?: string[];
 }
 
 export interface SheetRollResult {
@@ -31,14 +34,22 @@ const asRecord = (value: unknown): Record<string, unknown> =>
 
 const clampDice = (n: number): number => Math.min(Math.max(1, Math.floor(n)), MAX_TEST_DICE);
 
+/** Soma as vantagens e desvantagens dos efeitos aplicados (`effectDice.ts`) ao plano: o saldo líquido decide quantos d20 e qual vale */
+function withEffects(plan: SheetRollPlan, effects: EffectDice | undefined): SheetRollPlan {
+    if (!effects || (effects.advantages <= 0 && effects.disadvantages <= 0)) return plan;
+    return { ...plan, ...adjustDice({ dice: plan.dice, keep: plan.keep }, effects, MAX_TEST_DICE), notes: effects.notes };
+}
+
 /**
  * Como rolar uma perícia da ficha. Devolve `null` quando não dá para saber: a ficha não tem a perícia, ou é de
- * sistema customizado e o sistema ainda não chegou (rolar pela regra padrão daria o resultado errado).
+ * sistema customizado e o sistema ainda não chegou (rolar pela regra padrão daria o resultado errado). `effects` são as vantagens
+ * e desvantagens dos efeitos aplicados ao personagem para esse teste (`effectDice`): entram no saldo de d20.
  */
 export function planSheetRoll(
     charsheet: TestCharsheet | null | undefined,
     expertise: string,
-    rpgSystem?: Pick<RPGSystem, 'attributes'> | null
+    rpgSystem?: Pick<RPGSystem, 'attributes'> | null,
+    effects?: EffectDice
 ): SheetRollPlan | null {
     if (!charsheet || !expertise) return null;
 
@@ -54,7 +65,7 @@ export function planSheetRoll(
         const attrDef = findSystemAttribute(rpgSystem, attrRef);
         const attrValue = attrDef ? Number(asRecord(charsheet.attributes)[attrDef.key]) || 0 : 0;
         const influence = computeAttributeInfluence(attrDef, attrValue, charsheet.level || 1);
-        return { dice: clampDice(1 + influence.extraDice), keep: 'highest', bonus: base + influence.bonus };
+        return withEffects({ dice: clampDice(1 + influence.extraDice), keep: 'highest', bonus: base + influence.bonus }, effects);
     }
 
     const mods = asRecord(asRecord(charsheet.mods)['attributes']);
@@ -63,8 +74,8 @@ export function planSheetRoll(
     // Sobrepeso: −1 por kg excedido nas perícias de DES e VIG (só no Magitech padrão; o sistema customizado voltou acima)
     const bonus = base + sheetExpertisePenalty(charsheet, attrRef);
 
-    if (attributeMod < 0) return { dice: 2, keep: 'lowest', bonus };
-    return { dice: clampDice(attributeMod + 1), keep: 'highest', bonus };
+    if (attributeMod < 0) return withEffects({ dice: 2, keep: 'lowest', bonus }, effects);
+    return withEffects({ dice: clampDice(attributeMod + 1), keep: 'highest', bonus }, effects);
 }
 
 /** Rola os d20 do plano e aplica a regra de qual vale */
@@ -89,7 +100,9 @@ interface RollTextInput {
  * d20 valendo não pareça erro.
  */
 export function formatSheetRollText({ who, label, plan, result }: RollTextInput): string {
-    const name = `${who ? `[${who}] ` : ''}${label.toUpperCase()}${plan.keep === 'lowest' ? ' (desvantagem)' : ''}`;
+    // Desvantagem (o menor d20 vale) e a origem das vantagens e desvantagens dos efeitos, para o d20 que vale não parecer erro
+    const remarks = [ ...(plan.keep === 'lowest' ? [ 'desvantagem' ] : []), ...(plan.notes ?? []) ];
+    const name = `${who ? `[${who}] ` : ''}${label.toUpperCase()}${remarks.length > 0 ? ` (${remarks.join('; ')})` : ''}`;
     const notation = `${plan.dice}d20${plan.bonus >= 0 ? '+' : ''}${plan.bonus}`;
     const rollPart = result.rolls.length > 1 ? `${result.rolls.join(', ')}: ${result.used}` : `${result.used}`;
 

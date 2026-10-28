@@ -150,9 +150,20 @@ describe('CombatantView', () => {
         expect(html.indexOf('Atletismo')).toBeLessThan(html.indexOf('Furtividade'));
     });
 
-    it('criatura sem perícias não mostra os controles', () => {
+    it('criatura sem bônus nem ônus em perícia tem todas as perícias padrão, em 0 (não ficam inexistentes)', () => {
         const html = view({ creature: { ...rawCreature, expertises: {} } as unknown as Creature });
-        expect(html).not.toContain('aria-label="Buscar perícia"');
+
+        expect(html).toContain('aria-label="Buscar perícia"');
+        for (const name of [ 'Agilidade', 'Percepção', 'Furtividade', 'RES Física', 'Sobrevivência' ]) expect(html).toContain(name);
+        expect(html).not.toContain('Esta criatura não possui perícias configuradas.');
+    });
+
+    it('as perícias com bônus ou ônus continuam com o valor delas e as demais entram em 0', () => {
+        const html = view({ creature: { ...rawCreature, expertises: { Diplomacia: { value: 8, defaultAttribute: 'car' } } } as unknown as Creature });
+
+        expect(html).toContain('Diplomacia');
+        expect(html).toContain('+8');
+        expect(html).toContain('Percepção');
     });
 
     it('o nível de cada perícia aparece em português, não com o nome interno em inglês', () => {
@@ -175,9 +186,11 @@ describe('CombatantView', () => {
         expect(html).not.toContain('Ver ficha da criatura');
     });
 
-    it('criatura sem perícias configuradas avisa', () => {
-        const html = view({ creature: { ...rawCreature, expertises: {} } as unknown as Creature });
-        expect(html).toContain('Esta criatura não possui perícias configuradas.');
+    it('criatura de sistema customizado sem perícias do Magitech mantém só as dela', () => {
+        const html = view({ creature: { ...rawCreature, expertises: { forca_bruta: { value: 3, defaultAttribute: 'str' } } } as unknown as Creature });
+
+        expect(html).toContain('forca_bruta');
+        expect(html).not.toContain('Percepção');
     });
 
     it('sem mana máxima não desenha a barra de mana', () => {

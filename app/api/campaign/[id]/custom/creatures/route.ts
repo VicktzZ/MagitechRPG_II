@@ -1,8 +1,9 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { campaignRepository } from '@repositories'
 import { v4 as uuidv4 } from 'uuid'
-import { Expertises } from '@models'
+import { Expertises, type Expertise, type Creature } from '@models'
 import { sanitizeDamageModifiers, sanitizeWeaknesses } from '@utils/combat/creatureDefense'
+import { completeCreatureExpertises } from '@utils/combat/creatureExpertises'
 import { assertMaxLength, handleRouteError, readJsonBody, requireCampaignGM, requireCampaignMember, requireUser, TEXT_LIMITS } from '@utils/api'
 
 export async function POST(
@@ -72,7 +73,8 @@ export async function POST(
                 maxMp: body.stats?.maxMp || body.stats?.mp || 5,
                 ap: body.stats?.ap || 0
             },
-            expertises: plainExpertises,
+            // Toda criatura tem todas as perícias: as sem bônus nem ônus valem 0 (o editor só manda as que o mestre mexeu)
+            expertises: completeCreatureExpertises(plainExpertises),
             skills: body.skills || [],
             spells: body.spells || [],
             // Defesas (só o mestre vê): elemento da criatura, fraquezas declaradas e resistências/vulnerabilidades
@@ -165,7 +167,7 @@ export async function PUT(
             level: body.level ?? existingCreatures[creatureIndex].level,
             attributes: body.attributes ?? existingCreatures[creatureIndex].attributes,
             stats: body.stats ?? existingCreatures[creatureIndex].stats,
-            expertises: body.expertises ?? existingCreatures[creatureIndex].expertises,
+            expertises: completeCreatureExpertises<Expertise>(body.expertises ?? existingCreatures[creatureIndex].expertises) as unknown as Creature['expertises'],
             skills: body.skills ?? existingCreatures[creatureIndex].skills,
             spells: body.spells ?? existingCreatures[creatureIndex].spells,
             // Defesas: só muda o que o editor mandou (criatura salva por um cliente antigo mantém as dela)

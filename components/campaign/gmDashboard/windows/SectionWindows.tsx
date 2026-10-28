@@ -15,6 +15,7 @@ import SkillsTab from '../modals/charsheetDetails/SkillsTab';
 import SpellsTab from '../modals/charsheetDetails/SpellsTab';
 import { useCharsheetSpells } from '../modals/charsheetDetails/useCharsheetSpells';
 import EditableSection from './EditableSection';
+import { combatantEffects } from '@utils/combat/effectDice';
 import { useGMExpertiseRoll } from './useGMExpertiseRoll';
 
 type Sheet = Required<CharsheetDTO>;
@@ -94,7 +95,9 @@ export function AttributesWindow({ charsheetId }: { charsheetId: string }): Reac
 
 /** Perícias: além de editar, o mestre rola a perícia pelo jogador (resultado no chat) */
 function ExpertisesBody({ charsheet }: { charsheet: Sheet }): ReactElement {
-    const { planFor, roll } = useGMExpertiseRoll(charsheet);
+    const { campaign } = useCampaignContext();
+    // Os efeitos do personagem no combate mexem nos d20 de Percepção e Furtividade
+    const { planFor, roll } = useGMExpertiseRoll(charsheet, combatantEffects(campaign.session?.combat, charsheet.id));
 
     return (
         <EditableSection charsheet={charsheet}>

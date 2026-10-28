@@ -1,5 +1,5 @@
 /**
- * Mensagem de chat de uma ação de combate rolada: o dano de um ataque com arma, ou os dois tempos de uma magia (a conjuração e o efeito).
+ * Mensagem de chat de uma ação de combate rolada: o dano de um ataque com arma, os dois tempos de uma magia (a conjuração e o efeito) ou a defesa de quem foi atacado.
  *
  * O texto é legível e tem uma primeira linha que o `DiceMessage` reconhece (`[AÇÃO] conjuração`, `[AÇÃO] efeito` ou `[AÇÃO] arma`): em vez
  * de uma linha "por extenso", o chat mostra o cartão dos testes e dos dados personalizados, com o total à vista e as rolagens num dropdown.
@@ -23,9 +23,15 @@
  *
  * `[AÇÃO] arma crítico` marca o dano crítico e `[AÇÃO] arma furtivo` (ou `arma crítico furtivo`) o dano dado por quem estava com o efeito Furtivo: o
  * `Total` já é o dobro da soma das rolagens (cada `-` mostra o valor rolado, sem dobrar). Sem `Total` e sem rolagens não há dado a mostrar (só o custo, se houver).
+ *
+ * `[AÇÃO] defesa` é o teste de defesa de quem foi atacado (resistência ou esquiva): o mesmo desenho da conjuração, sem custo; `DT` é o que o teste precisava tirar
+ * (resistência: metade do total do ataque, para cima; esquiva: o total do ataque + 1) e o cartão diz Sucesso ou Falhou.
+ *
+ * Na conjuração, `[AÇÃO] conjuração menor` marca o teste em que a desvantagem passou das vantagens (vale o **menor** d20, não o maior) e a linha
+ * `Efeitos: Cegueira: desvantagem, −1d20 | Precisão: vantagem, +1d20` diz de onde vêm os d20 a mais e a menos (efeitos aplicados ao conjurador).
  */
 
-export type ActionRollKind = 'conjuração' | 'efeito' | 'arma';
+export type ActionRollKind = 'conjuração' | 'efeito' | 'arma' | 'defesa';
 
 export interface ActionRollSegment {
     /** Expressão rolada, como "3d12+6" */
@@ -46,11 +52,15 @@ export interface ActionRoll {
     critical: boolean;
     /** Dano de quem atacava furtivo (só na arma): o `total` é o dobro da soma das rolagens */
     stealth?: boolean;
+    /** Teste em que vale o **menor** d20 (desvantagem líquida dos efeitos); sem isso vale o maior */
+    keepLowest?: boolean;
+    /** De onde vêm as vantagens e desvantagens do teste ("Cegueira: desvantagem, −1d20") */
+    notes?: string[];
     /** Soma do dano, ou o resultado do teste na conjuração; `null` quando não há dado a mostrar */
     total: number | null;
     /** MP gasto (só na conjuração) */
     cost: number | null;
-    /** DT do teste de magia (só na conjuração; `null` quando a tabela não cobre o nível/estágio) */
+    /** DT do teste de magia (na conjuração; `null` quando a tabela não cobre o nível/estágio) ou do teste de defesa (na defesa) */
     dt: number | null;
     segments: ActionRollSegment[];
 }
@@ -76,7 +86,7 @@ export function rollModifier(display: string): string {
 
 export function buildActionRollText(action: ActionRoll): string {
     const lines = [
-        `${MARKER} ${action.kind}${action.critical ? ' crítico' : ''}${action.stealth ? ' furtivo' : ''}`,
+        `${MARKER} ${action.kind}${action.critical ? ' crítico' : ''}${action.stealth ? ' furtivo' : ''}${action.keepLowest ? ' menor' : ''}`,
         `**${clean(action.title)}**`
     ];
     const detail = clean(action.detail);
@@ -85,6 +95,8 @@ export function buildActionRollText(action: ActionRoll): string {
     if (action.total !== null) lines.push(`Total: **${action.total}**`);
     if (action.dt !== null) lines.push(`DT: **${action.dt}**`);
     if (action.cost !== null) lines.push(`Custo: **${action.cost} MP**`);
+    const notes = (action.notes ?? []).map(clean).filter(Boolean);
+    if (notes.length > 0) lines.push(`Efeitos: ${notes.join(' | ')}`);
     for (const segment of action.segments) lines.push(`- ${clean(segment.notation)}: ${clean(segment.display)} = ${segment.total}`);
     return lines.join('\n');
 }
@@ -94,7 +106,7 @@ const SEGMENT = /^-\s+(.+?):\s+(.*)\s+=\s+(-?\d+)$/;
 /** Lê o texto de `buildActionRollText`; `null` quando o texto é outra coisa (mensagem comum, log de combate, dado avulso) */
 export function parseActionRoll(text: string): ActionRoll | null {
     const lines = text.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
-    const head = /^\[AÇÃO\]\s+(conjuração|efeito|arma)(\s+crítico)?(\s+furtivo)?$/i.exec(lines[0] ?? '');
+    const head = /^\[AÇÃO\]\s+(conjuração|efeito|arma|defesa)(\s+crítico)?(\s+furtivo)?(\s+menor)?$/i.exec(lines[0] ?? '');
     if (!head) return null;
 
     const title = /^\*\*(.+)\*\*$/.exec(lines[1] ?? '')?.[1];
@@ -107,6 +119,7 @@ export function parseActionRoll(text: string): ActionRoll | null {
         detail: '',
         critical: Boolean(head[2]),
         ...(head[3] ? { stealth: true } : {}),
+        ...(head[4] ? { keepLowest: true } : {}),
         total: null,
         cost: null,
         dt: null,
@@ -119,6 +132,7 @@ export function parseActionRoll(text: string): ActionRoll | null {
         else if (line.startsWith('Total:')) action.total = Number(/-?\d+/.exec(line)?.[0] ?? NaN);
         else if (line.startsWith('DT:')) action.dt = Number(/\d+/.exec(line)?.[0] ?? NaN);
         else if (line.startsWith('Custo:')) action.cost = Number(/\d+/.exec(line)?.[0] ?? NaN);
+        else if (line.startsWith('Efeitos:')) action.notes = line.slice('Efeitos:'.length).split('|').map(note => note.trim()).filter(Boolean);
         else {
             const segment = SEGMENT.exec(line);
             if (segment) action.segments.push({ notation: segment[1]!, display: segment[2]!, total: Number(segment[3]) });

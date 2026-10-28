@@ -3,7 +3,7 @@
 import type { CharsheetDTO } from '@models/dtos';
 import { Backpack, DirectionsRun, LocalPolice, MonetizationOn } from '@mui/icons-material';
 import { Box, Button, Chip, Divider, Stack, Typography } from '@mui/material';
-import { color, font } from '@themes/tokens';
+import { font } from '@themes/tokens';
 import useNumbersWithSpaces from '@hooks/useNumbersWithSpace';
 import { getEvolutionPoints } from '@utils/spellStages';
 import type { SheetMetrics } from '@utils/charsheetMetrics';
@@ -11,7 +11,8 @@ import type { VitalKey } from '@utils/vitals';
 import type { ReactElement, ReactNode } from 'react';
 import { useCharsheetPointsView } from '../useCharsheetPointsView';
 import SheetMetricsView from '../SheetMetricsView';
-import VitalsPanel, { type VitalRow } from './VitalsPanel';
+import VitalsPanel from './VitalsPanel';
+import { charsheetVitalRows } from './vitalRows';
 import { SHEET_WINDOW_KINDS, WINDOW_KIND_LABEL, type SheetWindowKind } from './windowKinds';
 
 export type SummarySheet = Required<CharsheetDTO>;
@@ -75,12 +76,8 @@ export function SummaryView({ charsheet, inTurn, metrics, showEvolution, onOpenS
     const view = useCharsheetPointsView(charsheet);
     const spacedMoney = useNumbersWithSpaces();
 
-    const stats = charsheet.stats;
     const ammo = charsheet.ammoCounter;
-    const vitalRows: VitalRow[] = [];
-    if (view.hasLP) vitalRows.push({ key: 'lp', label: view.customSystem ? view.lpName : 'LP', name: view.lpName, value: stats?.lp ?? 0, max: stats?.maxLp ?? 0, barColor: color.lp });
-    if (view.hasMP) vitalRows.push({ key: 'mp', label: view.customSystem ? view.mpName : 'MP', name: view.mpName, value: stats?.mp ?? 0, max: stats?.maxMp ?? 0, barColor: color.mp });
-    if (view.hasAP) vitalRows.push({ key: 'ap', label: view.customSystem ? view.apName : 'AP', name: view.apName, value: stats?.ap ?? 0, max: stats?.maxAp ?? 0, barColor: color.ap });
+    const vitalRows = charsheetVitalRows(charsheet, view);
     const pendingPoints = SPENDABLE_POINTS
         .map(point => ({ ...point, value: asNumber(charsheet.points?.[point.key]) }))
         .filter(point => point.value > 0);

@@ -205,3 +205,45 @@ describe('planSheetRoll com Sobrepeso (−1 por kg excedido nas perícias de DES
         expect(planSheetRoll(custom, 'Atletismo', { attributes: [] })?.bonus).toBe(3);
     });
 });
+
+describe('planSheetRoll com vantagem e desvantagem dos efeitos', () => {
+    const blind = { advantages: 0, disadvantages: 1, notes: [ 'Cegueira: desvantagem, −1d20' ] };
+    const precision = { advantages: 1, disadvantages: 0, notes: [ 'Precisão: vantagem, +1d20' ] };
+
+    it('desvantagem num teste de 1 d20 rola 2 e vale o menor; o plano guarda a origem', () => {
+        expect(planSheetRoll(sheet({ vig: 0 }), 'Atletismo', null, blind)).toEqual({ dice: 2, keep: 'lowest', bonus: 3, notes: [ 'Cegueira: desvantagem, −1d20' ] });
+    });
+
+    it('a desvantagem dos efeitos cancela com os d20 do mod: mod 2 (3 dados) e 1 desvantagem rolam 2 e valem o maior', () => {
+        expect(planSheetRoll(sheet({ vig: 2 }), 'Atletismo', null, blind)).toMatchObject({ dice: 2, keep: 'highest' });
+    });
+
+    it('vantagem num teste de mod zero rola 2 e vale o maior', () => {
+        expect(planSheetRoll(sheet({ vig: 0 }), 'Atletismo', null, precision)).toMatchObject({ dice: 2, keep: 'highest', notes: [ 'Precisão: vantagem, +1d20' ] });
+    });
+
+    it('mod negativo (2 dados, o menor) mais uma vantagem vira 1 dado; mais uma desvantagem, 3 dados e o menor', () => {
+        expect(planSheetRoll(sheet({ vig: -1 }), 'Atletismo', null, precision)).toMatchObject({ dice: 1, keep: 'highest' });
+        expect(planSheetRoll(sheet({ vig: -1 }), 'Atletismo', null, blind)).toMatchObject({ dice: 3, keep: 'lowest' });
+    });
+
+    it('sem efeitos (ou com saldo zero) o plano é o de sempre, sem notas', () => {
+        expect(planSheetRoll(sheet({ vig: 2 }), 'Atletismo', null, { advantages: 0, disadvantages: 0, notes: [] })).toEqual({ dice: 3, keep: 'highest', bonus: 3 });
+        expect(planSheetRoll(sheet({ vig: 2 }), 'Atletismo')).toEqual({ dice: 3, keep: 'highest', bonus: 3 });
+    });
+
+    it('o texto do chat diz a origem e continua no formato que o chat reconhece', () => {
+        const plan = planSheetRoll(sheet({ vig: 0 }), 'Atletismo', null, blind)!;
+        const text = formatSheetRollText({ who: 'Aria Valen', label: 'Atletismo', plan, result: { rolls: [ 15, 4 ], used: 4, total: 7 } });
+
+        expect(text).toBe('🎲 [Aria Valen] ATLETISMO (desvantagem; Cegueira: desvantagem, −1d20) - 2d20+3: [15, 4: 4] = 7');
+        expect(CHAT_PATTERN.test(text)).toBe(true);
+    });
+
+    it('vantagem aparece no nome com a origem', () => {
+        const plan = planSheetRoll(sheet({ vig: 0 }), 'Atletismo', null, precision)!;
+        const text = formatSheetRollText({ who: 'Aria Valen', label: 'Atletismo', plan, result: { rolls: [ 4, 15 ], used: 15, total: 18 } });
+
+        expect(text).toBe('🎲 [Aria Valen] ATLETISMO (Precisão: vantagem, +1d20) - 2d20+3: [4, 15: 15] = 18');
+    });
+});

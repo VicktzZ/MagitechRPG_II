@@ -35,7 +35,7 @@ const weapon = (patch: Record<string, unknown> = {}): Weapon => ({
 }) as unknown as Weapon;
 
 const test = (patch: Partial<HitTestResult> = {}): HitTestResult => ({
-    notation: '2d20+5', rolls: [ 12, 7 ], bestRoll: 12, bonus: 5, bonusLabel: 'Magia', total: 17, extraDice: 0, ...patch
+    notation: '2d20+5', rolls: [ 12, 7 ], bestRoll: 12, bonus: 5, bonusLabel: 'Magia', total: 17, extraDice: 0, lessDice: 0, keep: 'highest', notes: [], ...patch
 });
 
 describe('rollNumbers / rollModifier', () => {
@@ -256,6 +256,41 @@ describe('mensagens reais de magia e arma', () => {
             notation: '1d4', display: '[2]', total: 2, isCritical: false
         }));
         expect(parsed?.detail).toBe('Dano');
+    });
+
+    it('conjuração com desvantagem líquida: o marcador diz que vale o menor e os efeitos vão numa linha, e tudo volta na leitura', () => {
+        const text = buildSpellCastMessage('Aria', spell(), 1, test({
+            rolls: [ 15, 4 ], bestRoll: 4, total: 9, keep: 'lowest', lessDice: 1, notes: [ 'Cegueira: desvantagem, −1d20' ]
+        }), 2);
+        const parsed = parseActionRoll(text);
+
+        expect(text.split('\n')[0]).toBe('[AÇÃO] conjuração menor');
+        expect(text).toContain('Efeitos: Cegueira: desvantagem, −1d20');
+        expect(parsed).toMatchObject({ kind: 'conjuração', keepLowest: true, notes: [ 'Cegueira: desvantagem, −1d20' ], total: 9 });
+    });
+
+    it('vários efeitos ficam separados na linha e voltam como lista; sem efeitos não há linha', () => {
+        const text = buildSpellCastMessage('Aria', spell(), 1, test({ notes: [ 'Precisão: vantagem, +1d20', 'Cegueira: desvantagem, −1d20' ] }), 2);
+
+        expect(text).toContain('Efeitos: Precisão: vantagem, +1d20 | Cegueira: desvantagem, −1d20');
+        expect(parseActionRoll(text)?.notes).toEqual([ 'Precisão: vantagem, +1d20', 'Cegueira: desvantagem, −1d20' ]);
+        expect(buildSpellCastMessage('Aria', spell(), 1, test(), 2)).not.toContain('Efeitos:');
+        expect(parseActionRoll(buildSpellCastMessage('Aria', spell(), 1, test(), 2))).not.toHaveProperty('keepLowest');
+    });
+
+    it('a mensagem de acerto diz a origem das vantagens e desvantagens e qual d20 vale', () => {
+        const text = buildHitMessageText('Aria', weapon(), test({
+            notation: '2d20+2', rolls: [ 18, 6 ], bestRoll: 6, bonus: 2, bonusLabel: 'Pontaria', total: 8, keep: 'lowest', lessDice: 1, notes: [ 'Cegueira: desvantagem, −1d20' ]
+        }));
+
+        expect(text).toContain('(Pontaria, Cegueira: desvantagem, −1d20, vale o menor)');
+        expect(text).toContain('[18, 6: 6] +2 = **8**');
+    });
+
+    it('o furtivo continua escrito como sempre no acerto', () => {
+        const text = buildHitMessageText('Aria', weapon(), test({ rolls: [ 12, 9 ], bestRoll: 12, extraDice: 1, notes: [ 'furtivo: vantagem, +1d20' ] }));
+
+        expect(text).toContain('(Magia, furtivo: vantagem, +1d20)');
     });
 
     it('a mensagem de acerto continua sendo a linha comum (não é um cartão)', () => {
