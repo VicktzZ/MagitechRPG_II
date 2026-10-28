@@ -1,4 +1,4 @@
-import type { Combatant, Creature } from '@models';
+import type { AppliedEffect, Combatant, Creature } from '@models';
 import { applyCombatantDeltas, combatantVitals } from '../combatantVitals';
 
 const combatant = (overrides: Record<string, unknown> = {}): Combatant => ({
@@ -76,5 +76,40 @@ describe('applyCombatantDeltas', () => {
     it('sem criatura de origem usa só o combatente', () => {
         const { combatant: next } = applyCombatantDeltas(combatant(), null, { lp: 100 });
         expect(next.currentLp).toBe(20);
+    });
+});
+
+describe('applyCombatantDeltas com efeitos aplicados (Fase 6.3)', () => {
+    const effect = (name: string, modifiers: Array<Record<string, unknown>>): AppliedEffect =>
+        ({ id: name, effectId: name, level: 1, remaining: 2, snapshot: { name, levels: [ { level: 1, modifiers } ] } }) as unknown as AppliedEffect;
+    const sobrecura = effect('Sobrecura', [ { kind: 'overflow_stat', target: 'lp', value: '+50%' } ]);
+    const sobremana = effect('Sobremana', [ { kind: 'overflow_stat', target: 'mp', value: '+100%' } ]);
+    const fragilidade = effect('Fragilidade', [ { kind: 'stat_penalty', target: 'maxLp', value: '-25%' } ]);
+
+    it('Sobrecura deixa a cura passar do máximo, até a margem; o máximo gravado não muda', () => {
+        const target = combatant({ currentLp: 18, maxLp: 20, effects: [ sobrecura ] });
+        const { combatant: next, changes } = applyCombatantDeltas(target, creature, { lp: 50 });
+
+        expect(next.currentLp).toBe(30);
+        expect(next.maxLp).toBe(20);
+        expect(changes.lp).toEqual({ before: 18, after: 30 });
+    });
+
+    it('Sobremana vale para o MP e Sobrecura não', () => {
+        expect(applyCombatantDeltas(combatant({ currentMp: 5, maxMp: 6, effects: [ sobremana ] }), creature, { mp: 50 }).combatant.currentMp).toBe(12);
+        expect(applyCombatantDeltas(combatant({ currentMp: 5, maxMp: 6, effects: [ sobrecura ] }), creature, { mp: 50 }).combatant.currentMp).toBe(6);
+    });
+
+    it('Fragilidade baixa o teto da cura, mas não corta o LP que já está acima dele', () => {
+        const healthy = combatant({ currentLp: 12, maxLp: 20, effects: [ fragilidade ] });
+        expect(applyCombatantDeltas(healthy, creature, { lp: 50 }).combatant.currentLp).toBe(15);
+
+        const above = combatant({ currentLp: 19, maxLp: 20, effects: [ fragilidade ] });
+        expect(applyCombatantDeltas(above, creature, { lp: 5 }).combatant.currentLp).toBe(19);
+        expect(applyCombatantDeltas(above, creature, { lp: -4 }).combatant.currentLp).toBe(15);
+    });
+
+    it('sem efeitos tudo segue como antes', () => {
+        expect(applyCombatantDeltas(combatant({ effects: undefined }), creature, { lp: 50 }).combatant.currentLp).toBe(20);
     });
 });

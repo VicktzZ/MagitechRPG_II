@@ -74,6 +74,22 @@ describeEmulator('dano e cura rápidos (transação)', () => {
         expect(await stats()).toMatchObject({ lp: 0, mp: 20 })
     })
 
+    it('o teto de agora dos efeitos troca o máximo da ficha: Sobrecura passa dele e Fragilidade baixa (Fase 6.3)', async () => {
+        const over = await lib.adjustCharsheetStats(id, { lp: 999, mp: 999 }, { lp: 60 })
+        expect(over).toEqual({ lp: { before: 30, after: 60 }, mp: { before: 10, after: 20 } })
+        expect(await stats()).toMatchObject({ lp: 60, maxLp: 40, mp: 20, maxMp: 20 })
+
+        await db.collection('charsheets').doc(id).update({ 'stats.lp': 10 })
+        const low = await lib.adjustCharsheetStats(id, { lp: 999 }, { lp: 30 })
+        expect(low.lp).toEqual({ before: 10, after: 30 })
+        expect(await stats()).toMatchObject({ lp: 30, maxLp: 40 })
+    })
+
+    it('quem está acima do teto de agora não perde nada ao ser curado', async () => {
+        await db.collection('charsheets').doc(id).update({ 'stats.lp': 38 })
+        expect((await lib.adjustCharsheetStats(id, { lp: 5 }, { lp: 30 })).lp).toEqual({ before: 38, after: 38 })
+    })
+
     it('quem está acima do máximo não é rebaixado pela cura', async () => {
         await db.collection('charsheets').doc(id).update({ 'stats.lp': 55 })
         const result = await lib.adjustCharsheetStats(id, { lp: 5 })

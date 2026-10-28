@@ -19,7 +19,10 @@ class CharsheetService extends Service<DbCharsheet, 'userId'> {
      * Soma variações a LP, MP e AP ({ lp: -5 } tira 5 de vida), de 0 até o máximo, numa transação no servidor:
      * várias variações seguidas, ou junto de uma mudança do jogador, não se perdem.
      */
-    async adjustStats(charsheetId: string, deltas: VitalDeltas) { return (await this.post({ param: `${charsheetId}/stats`, body: deltas })).data }
+    /** `campaignId`: em qual campanha a ficha está em combate, para o servidor usar os efeitos dela (Fragilidade, Sobrecura) no teto da cura */
+    async adjustStats(charsheetId: string, deltas: VitalDeltas, campaignId?: string) {
+        return (await this.post({ param: `${charsheetId}/stats`, body: campaignId ? { ...deltas, campaignId } : deltas })).data
+    }
 
     /** Alguma campanha onde a ficha joga liberou a visualização de todos os estágios das magias? (ver `utils/spellReveal.ts`) */
     async getSpellStagesRevealed(charsheetId: string) { return (await this.get({ param: `${charsheetId}/reveal-spell-stages` })).data as { revealed: boolean } }

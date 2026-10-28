@@ -103,6 +103,25 @@ describeEmulator('dano e cura em combatente', () => {
         expect(state.combatants[0]!.currentLp).toBe(30)
     })
 
+    it('Sobrecura deixa a cura passar do máximo (até a margem) e Fragilidade baixa o teto (Fase 6.3)', async () => {
+        const effect = (name: string, modifiers: Array<Record<string, unknown>>): any =>
+            ({ id: name, effectId: name, level: 1, remaining: 3, snapshot: { name, levels: [ { level: 1, modifiers } ] } })
+
+        const state = combat()
+        state.combatants[0]!.effects = [ effect('Sobrecura', [ { kind: 'overflow_stat', target: 'lp', value: '+50%' } ]) ]
+        await lib.healCombatant(state, sheetId, 99)
+        expect(state.combatants[0]!.currentLp).toBe(37) // 25 + 50% = 37,5, para baixo
+        expect((await sheet())['stats']['lp']).toBe(37)
+
+        const fragile = combat()
+        fragile.combatants[0]!.effects = [ effect('Fragilidade', [ { kind: 'stat_penalty', target: 'maxLp', value: '-40%' } ]) ]
+        await lib.healCombatant(fragile, sheetId, 99)
+        expect(fragile.combatants[0]!.currentLp).toBe(20) // teto 15 < LP atual 20: a cura não sobe e também não corta
+        fragile.combatants[0]!.currentLp = 10
+        await lib.healCombatant(fragile, sheetId, 99)
+        expect(fragile.combatants[0]!.currentLp).toBe(15)
+    })
+
     it('estatísticas de cura: valor efetivo, recebido por jogador e feito pelo mestre', async () => {
         const state = combat()
         const change = (await lib.healCombatant(state, sheetId, 99))!

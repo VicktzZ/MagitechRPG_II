@@ -3,6 +3,8 @@ import { CombatLog } from '@models'
 import { charsheetRepository } from '@repositories'
 import { rollDice } from '@utils/diceRoller'
 import { getEffectDisplayName } from '@utils/combatEffectLabels'
+import { vitalCeiling } from './effectStats'
+import { collectModifiers } from './engine/modifiers'
 
 export type TickTrigger =
     | {
@@ -107,7 +109,10 @@ function applyValueToCombatant(
 
     if (category === 'heal') {
         const lp = typeof combatant.currentLp === 'number' ? combatant.currentLp : 0
-        const maxLp = typeof combatant.maxLp === 'number' && combatant.maxLp > 0 ? combatant.maxLp : Number.MAX_SAFE_INTEGER
+        // O teto de agora: o máximo depois dos efeitos (Fragilidade) mais a margem de Sobrecura
+        const maxLp = typeof combatant.maxLp === 'number' && combatant.maxLp > 0
+            ? vitalCeiling(combatant.maxLp, collectModifiers(combatant.effects), 'lp')
+            : Number.MAX_SAFE_INTEGER
         // Cura nunca reduz o LP (ex: jogador com LP acima do máximo por overheal)
         combatant.currentLp = Math.max(lp, Math.min(maxLp, lp + rolled))
     }

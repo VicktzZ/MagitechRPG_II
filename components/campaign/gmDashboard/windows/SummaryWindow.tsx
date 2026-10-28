@@ -4,6 +4,7 @@ import { useCampaignContext } from '@contexts';
 import { charsheetService } from '@services';
 import { errorMessage } from '@utils/errors';
 import { getSheetMetrics } from '@utils/charsheetMetrics';
+import { combatantEffects } from '@utils/combat/effectDice';
 import { isCombatantInTurn } from '@utils/combatTurn';
 import { usesStageUnlock } from '@utils/spellStages';
 import type { VitalKey } from '@utils/vitals';
@@ -23,7 +24,7 @@ function SummaryBody({ charsheet }: { charsheet: SummarySheet }): ReactElement {
     // O servidor soma a variação ao valor de agora; a barra muda sozinha quando a ficha chega do Firestore
     const adjustVital = async (key: VitalKey, delta: number): Promise<void> => {
         try {
-            await charsheetService.adjustStats(charsheet.id, { [key]: delta });
+            await charsheetService.adjustStats(charsheet.id, { [key]: delta }, campaign.id);
         } catch (error) {
             console.error('Erro ao ajustar pontos vitais:', error);
             enqueueSnackbar(`Erro ao ajustar pontos vitais: ${errorMessage(error, 'tente novamente')}`, { variant: 'error' });
@@ -35,6 +36,7 @@ function SummaryBody({ charsheet }: { charsheet: SummarySheet }): ReactElement {
             <SummaryView
                 charsheet={charsheet}
                 inTurn={isCombatantInTurn(campaign.session?.combat, charsheet)}
+                effects={combatantEffects(campaign.session?.combat, charsheet.id)}
                 metrics={getSheetMetrics(charsheet, campaign.mode, campaign.session?.combat)}
                 showEvolution={usesStageUnlock(charsheet, campaign.mode)}
                 onOpenSection={kind => openWindow(kind, charsheet.id)}

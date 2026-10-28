@@ -1,4 +1,5 @@
-import { creatureInitiativeDice, describeInitiativeRolls, playerInitiativeDice, resolveInitiative } from '../initiativeRoll'
+import type { AppliedEffect } from '@models'
+import { creatureInitiativeDice, describeInitiativeEffects, describeInitiativeRolls, initiativeWithEffects, playerInitiativeDice, resolveInitiative } from '../initiativeRoll'
 
 describe('playerInitiativeDice', () => {
     it('usa o modificador do atributo padrão da Agilidade (mínimo 1) e o valor da perícia', () => {
@@ -70,5 +71,56 @@ describe('playerInitiativeDice com Sobrepeso', () => {
     it('sem excesso de peso, ou com a perícia ligada a outro atributo, nada muda', () => {
         expect(playerInitiativeDice({ ...sheet, capacity: { max: 40 } })).toEqual({ numDice: 2, expertiseValue: 3 })
         expect(playerInitiativeDice({ ...sheet, expertises: { Agilidade: { value: 3, defaultAttribute: 'foc' } }, mods: { attributes: { foc: 2 } } })).toEqual({ numDice: 2, expertiseValue: 3 })
+    })
+})
+
+describe('iniciativa com os efeitos aplicados (Fase 6.3)', () => {
+    const effect = (name: string, modifiers: Array<Record<string, unknown>>): AppliedEffect =>
+        ({ id: name, effectId: name, level: 1, remaining: 2, snapshot: { name, levels: [ { level: 1, modifiers } ] } }) as unknown as AppliedEffect
+    const seq = (...values: number[]) => { let i = 0; return () => values[i++] ?? 1 }
+
+    const velocidade = effect('Velocidade', [ { kind: 'stat_bonus', target: 'initiative', value: 2 } ])
+    const lentidao = effect('Lentidão', [ { kind: 'stat_penalty', target: 'initiative', value: 3 } ])
+    const sorte = effect('Sorte', [ { kind: 'advantage', target: 'initiative' } ])
+    const azar = effect('Azar', [ { kind: 'disadvantage', target: 'initiative' } ])
+
+    it('sem efeito os dados ficam como vieram', () => {
+        const dice = { numDice: 2, expertiseValue: 3 }
+        expect(initiativeWithEffects(dice, [])).toBe(dice)
+        expect(initiativeWithEffects(dice, undefined)).toBe(dice)
+        expect(initiativeWithEffects(dice, [ effect('Cegueira', [ { kind: 'disadvantage', target: 'attack' } ]) ])).toMatchObject({ numDice: 2, keep: 'highest', effectBonus: 0 })
+    })
+
+    it('o bônus fixo soma ao total, além da perícia, e a penalidade tira', () => {
+        const fast = initiativeWithEffects({ numDice: 1, expertiseValue: 3 }, [ velocidade ])
+        expect(fast).toMatchObject({ effectBonus: 2, effectNotes: [ '+2 de Velocidade' ] })
+        expect(resolveInitiative(fast, { d20: seq(10) })).toEqual({ rolls: [ 10 ], roll: 10, total: 15 })
+        expect(resolveInitiative(fast, { manual: 14 })).toEqual({ rolls: [], roll: 14, total: 19 })
+
+        const slow = initiativeWithEffects({ numDice: 1, expertiseValue: 3 }, [ velocidade, lentidao ])
+        expect(slow.effectBonus).toBe(-1)
+        expect(resolveInitiative(slow, { d20: seq(10) }).total).toBe(12)
+    })
+
+    it('vantagem rola um d20 a mais e vale o maior; desvantagem sem dado extra rola dois e vale o menor', () => {
+        const lucky = initiativeWithEffects({ numDice: 1, expertiseValue: 0 }, [ sorte ])
+        expect(lucky).toMatchObject({ numDice: 2, keep: 'highest' })
+        expect(resolveInitiative(lucky, { d20: seq(4, 17) }).roll).toBe(17)
+
+        const unlucky = initiativeWithEffects({ numDice: 1, expertiseValue: 0 }, [ azar ])
+        expect(unlucky).toMatchObject({ numDice: 2, keep: 'lowest' })
+        expect(resolveInitiative(unlucky, { d20: seq(4, 17) })).toEqual({ rolls: [ 4, 17 ], roll: 4, total: 4 })
+    })
+
+    it('a conta é a do saldo: vantagem e desvantagem se anulam e os d20 do mod entram como vantagens', () => {
+        expect(initiativeWithEffects({ numDice: 1, expertiseValue: 0 }, [ sorte, azar ])).toMatchObject({ numDice: 1, keep: 'highest' })
+        // 3 d20 do mod = saldo 2; uma desvantagem deixa saldo 1: 2 dados, vale o maior
+        expect(initiativeWithEffects({ numDice: 3, expertiseValue: 0 }, [ azar ])).toMatchObject({ numDice: 2, keep: 'highest' })
+    })
+
+    it('o log diz de onde vem o bônus e os d20', () => {
+        const dice = initiativeWithEffects({ numDice: 1, expertiseValue: 0 }, [ velocidade, azar ])
+        expect(describeInitiativeEffects(dice)).toBe(' [Azar: desvantagem, −1d20; +2 de Velocidade]')
+        expect(describeInitiativeEffects({ numDice: 1, expertiseValue: 0 })).toBe('')
     })
 })

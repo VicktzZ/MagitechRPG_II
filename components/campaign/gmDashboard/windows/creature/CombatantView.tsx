@@ -7,12 +7,15 @@ import { color, font } from '@themes/tokens';
 import { combatantBudget } from '@utils/combat/actionBudgets';
 import { actionBlocks } from '@utils/combat/actionFlags';
 import { completeCreatureExpertises } from '@utils/combat/creatureExpertises';
+import { effectiveMaxVital } from '@utils/combat/effectStats';
 import type { ActionSlot } from '@utils/combat/engine/actionBudget';
+import { collectModifiers } from '@utils/combat/engine/modifiers';
 import { combatantVitals, type CombatantVitalKey } from '@utils/combatantVitals';
 import { filterAndSortExpertises } from '@utils/expertiseList';
 import type { ReactElement, ReactNode } from 'react';
 import { toCreatureCard } from './creatureCard';
 import ActionBlocksNotice from '../../../ActionBlocksNotice';
+import EffectStatsNotice from '../../../EffectStatsNotice';
 import ActionPips from '../../../ActionPips';
 import ExpertiseListControls, { ExpertiseNoResults, useExpertiseListState } from '../../../ExpertiseListControls';
 import CreatureExpertiseButton from '../../dashboard/CreatureExpertiseButton';
@@ -64,8 +67,10 @@ export function CombatantView({
     const mpSpent = combatant.mpSpentThisTurn ?? 0;
     const mpReleased = Boolean(combatant.mpLimitOverride);
 
-    const vitalRows: VitalRow[] = [ { key: 'lp', label: 'LP', name: 'Vida', value: lp, max: maxLp, barColor: color.lp } ];
-    if (maxMp > 0) vitalRows.push({ key: 'mp', label: 'MP', name: 'Mana', value: mp, max: maxMp, barColor: color.mp });
+    // O máximo de agora (Fragilidade...): o gravado no combatente não muda
+    const modifiers = collectModifiers(combatant.effects);
+    const vitalRows: VitalRow[] = [ { key: 'lp', label: 'LP', name: 'Vida', value: lp, max: effectiveMaxVital(maxLp, modifiers, 'lp'), barColor: color.lp } ];
+    if (maxMp > 0) vitalRows.push({ key: 'mp', label: 'MP', name: 'Mana', value: mp, max: effectiveMaxVital(maxMp, modifiers, 'mp'), barColor: color.mp });
 
     return (
         <Stack spacing={2.5}>
@@ -93,6 +98,8 @@ export function CombatantView({
             </Box>
 
             <ActionBlocksNotice blocks={actionBlocks(combatant.effects)} who={name} />
+
+            <EffectStatsNotice effects={combatant.effects} bases={{ ap: creature?.stats?.ap, maxLp, maxMp }} />
 
             <VitalsPanel
                 charsheetName={name}

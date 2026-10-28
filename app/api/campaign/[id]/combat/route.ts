@@ -15,7 +15,9 @@ import { acquireCombatLock, type CombatLock } from '@utils/firestore/combatLock'
 import { evaluateMpSpend, getCreatureMpLimit, getMpLimit, isCreatureMpLimitEnforced, isMpLimitEnforced } from '@utils/mpLimit'
 import { combatantVitals } from '@utils/combatantVitals'
 import { insertCombatant, nextCreatureInstance } from '@utils/combat/addCombatants'
-import { creatureInitiativeDice, describeInitiativeRolls, playerInitiativeDice, resolveInitiative, type InitiativeDice } from '@utils/combat/initiativeRoll'
+import {
+    creatureInitiativeDice, describeInitiativeEffects, describeInitiativeRolls, initiativeWithEffects, playerInitiativeDice, resolveInitiative, type InitiativeDice
+} from '@utils/combat/initiativeRoll'
 import { resetRoundWindows } from '@utils/combat/roundWindow'
 import { actionBlocks, blockReason, isBlocked } from '@utils/combat/actionFlags'
 import { applyBudgetPatch, combatantBudget, describeBudget } from '@utils/combat/actionBudgets'
@@ -539,13 +541,18 @@ export async function POST(
                 console.error('[Combat API] Erro ao calcular iniciativa avançada:', err)
             }
 
-            // Se um valor foi passado (rolado manualmente), usa ele como resultado do dado
-            const { rolls, roll } = resolveInitiative(dice, { manual: value })
-            const { numDice, expertiseValue } = dice
+            // Efeitos aplicados (Velocidade, Cegueira...): bônus fixo na iniciativa e vantagem ou desvantagem nos d20 (Fase 6.3)
+            dice = initiativeWithEffects(dice, combatant.effects)
 
-            combatant.initiativeBonus = expertiseValue
+            // Se um valor foi passado (rolado manualmente), usa ele como resultado do dado
+            const { rolls, roll, total: rolledTotal } = resolveInitiative(dice, { manual: value })
+            const { numDice, expertiseValue } = dice
+            const effectBonus = dice.effectBonus ?? 0
+            const effectsPart = effectBonus !== 0 ? ` ${effectBonus > 0 ? '+' : '−'} ${Math.abs(effectBonus)} efeitos` : ''
+
+            combatant.initiativeBonus = expertiseValue + effectBonus
             combatant.initiativeRoll = roll
-            combatant.initiativeTotal = roll + expertiseValue
+            combatant.initiativeTotal = rolledTotal
             
             console.log('[Combat API] Iniciativa atualizada:', {
                 name: combatant.name,
@@ -561,7 +568,8 @@ export async function POST(
                 actorId: combatant.id,
                 actorName: combatant.name,
                 value: combatant.initiativeTotal,
-                message: `🎲 **${combatant.name}** rolou iniciativa: ${numDice}d20 (${describeInitiativeRolls({ rolls, roll })}) + ${expertiseValue} AGI = **${combatant.initiativeTotal}**`
+                message: `🎲 **${combatant.name}** rolou iniciativa: ${numDice}d20 (${describeInitiativeRolls({ rolls, roll })}) + ${expertiseValue} AGI${effectsPart}`
+                    + ` = **${combatant.initiativeTotal}**${describeInitiativeEffects(dice)}`
             }))
 
             if (combatant.type === 'player') {

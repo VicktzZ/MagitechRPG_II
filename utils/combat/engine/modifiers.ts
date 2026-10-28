@@ -138,3 +138,17 @@ export function modifiedStat(set: ModifierSet, stat: string, base: number): numb
     if (!delta) return base;
     return Math.max(0, Math.round((base + (base * delta.pct) / 100 + delta.flat) * 100) / 100);
 }
+
+/**
+ * Quanto os efeitos mudam uma estatística (negativo = perda), com até 2 casas e **sem** o piso em zero de `modifiedStat`: serve a bônus que se soma a uma rolagem
+ * (a iniciativa), onde a base é zero e uma penalidade tem de poder ficar negativa.
+ */
+export function statShift(set: ModifierSet, stat: string, base: number = 0): number {
+    const delta = set.stats[normalize(stat)];
+    if (!delta) return 0;
+    const shift = Math.round(((base * delta.pct) / 100 + delta.flat) * 100) / 100;
+    return shift === 0 ? 0 : shift;
+}
+
+/** Quanto o ponto vital ('lp', 'mp') pode passar do máximo por efeito (sobrecura e sobremana), em % do máximo; 0 se nenhum efeito deixa */
+export const overflowFor = (set: ModifierSet, stat: string): number => set.overflow[normalize(stat)] ?? 0;

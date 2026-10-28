@@ -33,3 +33,14 @@ export function assertVitalDeltas(body: unknown, { allowed = VITAL_KEYS, extraKe
     if (Object.keys(deltas).length === 0) throw badRequest('Nenhuma variação para aplicar');
     return deltas;
 }
+
+/**
+ * A campanha informada no corpo de POST /api/charsheet/[id]/stats (`campaignId`, opcional): serve para o servidor achar os efeitos de combate da ficha e usar o teto de
+ * agora (Fragilidade, Sobrecura, Sobremana). Quem manda só diz **qual** campanha; os efeitos são lidos dela, nunca vêm do cliente. `undefined` se não veio.
+ */
+export function readStatsCampaignId(body: unknown): string | undefined {
+    const value = typeof body === 'object' && body !== null ? (body as Record<string, unknown>)['campaignId'] : undefined;
+    if (value === undefined || value === null) return undefined;
+    if (typeof value !== 'string' || value.length === 0 || value.length > 128) throw badRequest('"campaignId" inválido');
+    return value;
+}
