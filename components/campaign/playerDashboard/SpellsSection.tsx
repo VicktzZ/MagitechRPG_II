@@ -3,6 +3,8 @@
 
 import ElementIcon from '@components/misc/ElementIcon';
 import StageLadder from '@components/spells/StageLadder';
+import AttackTargetPicker from './attacks/AttackTargetPicker';
+import { useSpellAttack } from './attacks/useSpellAttack';
 import { useCampaignCurrentCharsheetContext, useCampaignContext } from '@contexts';
 import { useChatContext } from '@contexts/chatContext';
 import { postCampaignStats } from '@utils/campaignStatsClient';
@@ -72,6 +74,8 @@ export default function SpellsSection(): ReactElement {
     const { handleSendMessage, setIsChatOpen, isChatOpen } = useChatContext();
     const { data: session } = useSession();
     const { enqueueSnackbar } = useSnackbar();
+    // Ataque assistido: em combate, na fase de ação, a magia de ataque conjurada com sucesso vai ao mestre para o alvo escolhido aqui
+    const spellAttack = useSpellAttack();
 
     const [ expandedSpell, setExpandedSpell ] = useState<string | false>(false)
     const [ castingSpellId, setCastingSpellId ] = useState<string | null>(null)
@@ -160,6 +164,8 @@ export default function SpellsSection(): ReactElement {
             // Só uma conjuração com sucesso deixa efetuar a magia; o botão já está lá quando o cartão aparece no chat
             if (succeeded && hasSpellEffectDice(spell, stage)) markPending(spellKey, stage);
             await sendCombatChatMessage(buildSpellCastMessage(playerName, spell, stage, test, mpCost), MessageType.DICE);
+            // Conjuração com sucesso de magia de ataque: o teste de magia é o acerto e o mestre confirma o resultado contra o alvo
+            if (succeeded) await spellAttack.declareSpell(spell, test);
 
             // Gasta a ação da rodada que a magia pede (Padrão, Bônus, Movimento, Reação, Completa). É aviso, nunca trava: o mestre decide
             // o que vale quando a ação já tinha acabado.
@@ -253,6 +259,8 @@ export default function SpellsSection(): ReactElement {
                 markPending(spellKey, stage);
                 throw error;
             }
+            // O dano rolado se junta ao ataque que a conjuração declarou ao mestre (se houve alvo)
+            await spellAttack.attachSpellDamage(spell, effect.totalDamage);
         } catch (error) {
             console.error('Erro ao efetuar magia:', error);
             enqueueSnackbar('Erro ao efetuar a magia', { variant: 'error' });
@@ -352,6 +360,8 @@ export default function SpellsSection(): ReactElement {
             {/* A moldura e o título vêm do Section da campanha */}
             <Paper elevation={0} sx={{ bgcolor: 'transparent' }}>
                 <Stack spacing={3}>
+                    <AttackTargetPicker targeting={spellAttack.targeting} />
+
                     {/* Espaço de Magias */}
                     <Box 
                         sx={{

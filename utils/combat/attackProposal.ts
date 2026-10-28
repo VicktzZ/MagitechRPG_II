@@ -1,9 +1,8 @@
 import type { AppliedEffect } from '@models';
 import { creatureTakenModifiers, creatureWeaknessProfile } from './creatureDefense';
-import { hits, resistanceExpertise, type DefenseChoice } from './engine/defense';
+import { dodgeEligibility, effectiveDamageKind, hits, resistanceExpertise, type DefenseChoice, type DodgeEligibility } from './engine/defense';
 import { collectModifiers, modifiedStat } from './engine/modifiers';
 import { resolveAttack, type AttackResolution } from './engine/attack';
-import { dodgeEligibility, type DodgeEligibility } from './engine/defense';
 import { weaknessAgainst, type WeaknessProfile } from './engine/weakness';
 import { line, type DamageKind, type ExplainLine } from './engine/types';
 import { totalWithExtraDice, type PendingAttackData } from './pendingAttacks';
@@ -92,7 +91,8 @@ export function buildAttackProposal(
     target: ProposalTarget,
     choice: ProposalChoice
 ): AttackProposal {
-    const kind = choice.kind ?? attack.kind;
+    // Magia de elemento Psíquico vale como mental: a RES, a esquiva e o dano da proposta partem da mesma natureza que o motor usa
+    const kind = effectiveDamageKind(choice.kind ?? attack.kind, attack.attackType);
     const profile: WeaknessProfile = target.creature
         ? creatureWeaknessProfile(target.creature)
         : { mastery: target.sheet?.elementalMastery };

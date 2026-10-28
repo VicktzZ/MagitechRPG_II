@@ -89,6 +89,22 @@ describe('buildAttackProposal', () => {
         expect(proposal).toMatchObject({ kind: 'magico', resistanceSkill: 'RES Mágica' });
     });
 
+    it('magia de elemento Psíquico vale como mental: RES Mental, sem esquiva e dano pela metade', () => {
+        const psychic = attack({ source: 'spell', name: 'Pulso Mental', kind: 'magico', attackType: 'PSÍQUICO', damageRolled: 10 });
+        const mentalGoblin = { ...goblin, expertises: { ...goblin.expertises, 'RES Mental': { value: 6 } } };
+
+        const none = buildAttackProposal(psychic, [], { creature: mentalGoblin }, { defense: 'none' });
+        expect(none).toMatchObject({ kind: 'mental', resistanceSkill: 'RES Mental', resistanceMod: 6 });
+        expect(none.dodge).toMatchObject({ allowed: false, reason: 'mental' });
+
+        // DT = ⌈17 ÷ 2⌉ = 9: passando, o dano mental cai pela metade
+        const resisted = buildAttackProposal(psychic, [], { creature: mentalGoblin }, { defense: 'resist', defenseTotal: 9 });
+        expect(resisted.finalDamage).toBe(5);
+
+        // O mestre ainda pode trocar a natureza para físico ("e se fosse físico?"); só a magia (mágica) de elemento Psíquico vira mental
+        expect(buildAttackProposal(psychic, [], { creature: mentalGoblin }, { defense: 'none', kind: 'fisico' }).kind).toBe('fisico');
+    });
+
     it('resistência e vulnerabilidade da criatura entram no dano (e são linhas só do mestre)', () => {
         const proposal = buildAttackProposal(attack({ attackType: 'Fogo', kind: 'magico', damageRolled: 10 }), [], {
             creature: { ...goblin, damageModifiers: [ { kind: 'resistance', element: 'Fogo', value: '50%' } ] }

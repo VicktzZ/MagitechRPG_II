@@ -60,7 +60,15 @@ export default function PendingAttackCard({ attack }: { attack: PendingAttackDat
             </Stack>
 
             <Stack direction="row" spacing={1.5} flexWrap="wrap" useFlexGap sx={{ mb: 1.5 }} alignItems="flex-start">
-                <TextField select size="small" label="Natureza do ataque" value={resolution.kind} onChange={(event) => { resolution.setKind(event.target.value as DamageKind); }} sx={{ width: 170 }}>
+                <TextField
+                    select
+                    size="small"
+                    label="Natureza do ataque"
+                    value={resolution.kind}
+                    onChange={(event) => { resolution.setKind(event.target.value as DamageKind); }}
+                    helperText={proposal.kind === resolution.kind ? ' ' : 'Elemento Psíquico vale como mental'}
+                    sx={{ width: 170 }}
+                >
                     {(Object.keys(KIND_LABEL) as DamageKind[]).map(kind => <MenuItem key={kind} value={kind}>{KIND_LABEL[kind]}</MenuItem>)}
                 </TextField>
                 <TextField
