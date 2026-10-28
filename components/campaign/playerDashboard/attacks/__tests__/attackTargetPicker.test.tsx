@@ -5,7 +5,7 @@ import type { ReactElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import theme from '../../../../../themes/theme';
 import AttackTargetPicker from '../AttackTargetPicker';
-import type { AttackTargeting } from '../useWeaponRolls';
+import type { AttackTargeting } from '../useAttackTargeting';
 
 const render = (element: ReactElement): string => renderToStaticMarkup(<ThemeProvider theme={theme}>{element}</ThemeProvider>).replace(/<style[\s\S]*?<\/style>/g, '');
 
@@ -28,18 +28,20 @@ describe('AttackTargetPicker', () => {
 
         expect(html).toContain('attack-target-picker');
         expect(html).toContain('Alvo do ataque');
-        expect(html).toContain('Com um alvo, o acerto e o dano vão para o mestre confirmar.');
+        expect(html).toContain('Com um alvo, o ataque da arma ou da magia vai para o mestre confirmar.');
         expect(html).toContain('Goblin');
     });
 
     it('mostra o que cada ataque dele espera', () => {
         const pending = [
-            { id: 'a1', name: 'Espada', targetName: 'Goblin' },
-            { id: 'a2', name: 'Adaga', targetName: 'Orc', damageRolled: 6 }
+            { id: 'a1', name: 'Espada', source: 'weapon', targetName: 'Goblin' },
+            { id: 'a2', name: 'Adaga', source: 'weapon', targetName: 'Orc', damageRolled: 6 },
+            { id: 'a3', name: 'Faca de Vento', source: 'spell', targetName: 'Goblin' }
         ] as unknown as PendingAttackData[];
         const html = render(<AttackTargetPicker targeting={targeting({ pending })} />);
 
         expect(html).toContain('Espada contra Goblin: role o dano');
         expect(html).toContain('Adaga contra Orc: aguardando o mestre');
+        expect(html).toContain('Faca de Vento contra Goblin: efetue a magia');
     });
 });

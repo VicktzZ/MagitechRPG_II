@@ -86,6 +86,8 @@ describe('lista de ataques pendentes', () => {
         const list = [ attack({ id: 'velho', damageRolled: 4 }), attack({ id: 'novo' }) ];
         expect(findAwaitingDamage(list, 'aria', 'Espada')?.id).toBe('novo');
         expect(findAwaitingDamage(list, 'aria', 'Adaga')).toBeUndefined();
+        expect(findAwaitingDamage(list, 'aria', 'Espada', 'weapon')?.id).toBe('novo');
+        expect(findAwaitingDamage(list, 'aria', 'Espada', 'spell')).toBeUndefined();
 
         const updated = setPendingDamage(list, 'novo', 9, true);
         expect(updated?.find(entry => entry.id === 'novo')).toMatchObject({ damageRolled: 9, critical: true });

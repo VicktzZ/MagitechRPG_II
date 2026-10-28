@@ -1,9 +1,9 @@
 import { Box, MenuItem, TextField, Typography } from '@mui/material';
 import type { ReactElement } from 'react';
-import type { AttackTargeting } from './useWeaponRolls';
+import type { AttackTargeting } from './useAttackTargeting';
 
 /**
- * Alvo do ataque, só em combate: com um alvo escolhido, o "Acerto" e o "Dano" da arma são declarados ao mestre, que confirma o resultado.
+ * Alvo do ataque, só em combate: com um alvo escolhido, o "Acerto" e o "Dano" da arma (e a conjuração e o "Efetuar" de uma magia de ataque) são declarados ao mestre, que confirma o resultado.
  * Sem alvo, as rolagens vão ao chat como sempre. Mostra os ataques que o mestre ainda não resolveu.
  */
 export default function AttackTargetPicker({ targeting }: { targeting: AttackTargeting }): ReactElement | null {
@@ -20,7 +20,7 @@ export default function AttackTargetPicker({ targeting }: { targeting: AttackTar
                 label="Alvo do ataque"
                 value={targeting.targetId}
                 onChange={(event) => { targeting.setTargetId(event.target.value); }}
-                helperText="Com um alvo, o acerto e o dano vão para o mestre confirmar."
+                helperText="Com um alvo, o ataque da arma ou da magia vai para o mestre confirmar."
                 sx={{ maxWidth: 320 }}
             >
                 <MenuItem value="">Sem alvo (só rolar no chat)</MenuItem>
@@ -32,7 +32,7 @@ export default function AttackTargetPicker({ targeting }: { targeting: AttackTar
                 <Box component="ul" sx={{ m: 0, pl: 2 }}>
                     {targeting.pending.map(attack => (
                         <Typography key={attack.id} component="li" variant="caption" sx={{ color: 'text.secondary' }}>
-                            {attack.name} contra {attack.targetName}: {attack.damageRolled === undefined ? 'role o dano' : 'aguardando o mestre'}
+                            {attack.name} contra {attack.targetName}: {attack.damageRolled === undefined ? (attack.source === 'spell' ? 'efetue a magia' : 'role o dano') : 'aguardando o mestre'}
                         </Typography>
                     ))}
                 </Box>

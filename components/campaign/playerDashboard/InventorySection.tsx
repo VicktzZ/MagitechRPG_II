@@ -5,7 +5,7 @@ import { Box } from '@mui/material';
 import { useState, type ReactElement } from 'react';
 import { SubstitutionModal } from '@features/roguelite/components/perkCardsModal/components/SubstitutionModal';
 import { useCharsheetSystem } from '@hooks/useCharsheetSystem';
-import AttackTargetPicker from './inventory/AttackTargetPicker';
+import AttackTargetPicker from './attacks/AttackTargetPicker';
 import ConfirmRemoveDialog from './inventory/ConfirmRemoveDialog';
 import InventoryItemList from './inventory/InventoryItemList';
 import InventorySummary from './inventory/InventorySummary';

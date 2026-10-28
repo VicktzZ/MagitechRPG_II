@@ -94,9 +94,9 @@ export function addPendingAttack(list: readonly PendingAttackData[] | undefined,
     return [ ...kept, attack ].slice(-MAX_PENDING_ATTACKS);
 }
 
-/** O ataque mais novo desse atacante com essa arma ou magia que ainda espera o dano */
-export function findAwaitingDamage(list: readonly PendingAttackData[] | undefined, attackerId: string, name: string): PendingAttackData | undefined {
-    return [ ...(list ?? []) ].reverse().find(entry => entry.attackerId === attackerId && entry.name === name && entry.damageRolled === undefined);
+/** O ataque mais novo desse atacante com essa arma ou magia (de `source`, se informado: uma arma e uma magia podem ter o mesmo nome) que ainda espera o dano */
+export function findAwaitingDamage(list: readonly PendingAttackData[] | undefined, attackerId: string, name: string, source?: AttackSource): PendingAttackData | undefined {
+    return [ ...(list ?? []) ].reverse().find(entry => entry.attackerId === attackerId && entry.name === name && entry.damageRolled === undefined && (!source || entry.source === source));
 }
 
 /** Registra o dano rolado no ataque; `null` se o ataque não existe */
