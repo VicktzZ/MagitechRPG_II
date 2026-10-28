@@ -78,6 +78,7 @@ function PlayerCombatantBody({ charsheet, combatantId }: { charsheet: SummaryShe
                 inTurn={inTurn}
                 imageUrl={users.players?.find(user => user.id === charsheet.userId)?.image ?? undefined}
                 metrics={metrics}
+                environment={combat.environment}
                 onAdjustVital={(key, delta) => { void adjustVital(key, delta); }}
                 onToggleAction={(slot, available) => { void toggleAction(combatant.id, slot, available); }}
                 onSetMpSpent={() => {

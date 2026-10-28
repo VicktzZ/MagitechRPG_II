@@ -29,7 +29,7 @@ export interface ModifierSet {
     taken: TakenModifier[];
     /** Bônus e penalidades de estatística: 'ap', 'displacement', 'initiative', 'maxLp'... */
     stats: Record<string, Amount>;
-    /** Marcadores: invisible, stealth, true_sight, dim_vision, skip_turn, no_actions, no_spells, no_healing. O valor é o texto do catálogo ou `true` */
+    /** Marcadores: invisible, stealth, true_sight, dim_vision, terrain_immunity, skip_turn, no_actions, no_spells, no_healing. O valor é o texto do catálogo ou `true` */
     flags: Record<string, string | true>;
     /** Quanto o LP/MP pode passar do máximo (sobrecura e sobremana), em % */
     overflow: Record<string, number>;

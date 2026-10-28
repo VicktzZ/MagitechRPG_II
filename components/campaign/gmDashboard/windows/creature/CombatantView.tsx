@@ -10,11 +10,13 @@ import { completeCreatureExpertises } from '@utils/combat/creatureExpertises';
 import { effectiveMaxVital } from '@utils/combat/effectStats';
 import type { ActionSlot } from '@utils/combat/engine/actionBudget';
 import { collectModifiers } from '@utils/combat/engine/modifiers';
+import { isInDifficultTerrain, type CombatEnvironment } from '@utils/combat/environment';
 import { combatantVitals, type CombatantVitalKey } from '@utils/combatantVitals';
 import { filterAndSortExpertises } from '@utils/expertiseList';
 import type { ReactElement, ReactNode } from 'react';
 import { toCreatureCard } from './creatureCard';
 import ActionBlocksNotice from '../../../ActionBlocksNotice';
+import AmbientNotice from '../../../AmbientNotice';
 import EffectStatsNotice from '../../../EffectStatsNotice';
 import ActionPips from '../../../ActionPips';
 import ExpertiseListControls, { ExpertiseNoResults, useExpertiseListState } from '../../../ExpertiseListControls';
@@ -49,6 +51,8 @@ interface CombatantViewProps {
     onSetMpSpent?: () => void;
     /** O mestre gasta ou devolve uma ação da rodada da criatura; sem isso os marcadores só mostram o que resta */
     onToggleAction?: (slot: ActionSlot, available: boolean) => void;
+    /** O ambiente da cena (luz e terreno difícil), para os avisos e o deslocamento de agora */
+    environment?: CombatEnvironment | null;
 }
 
 /**
@@ -56,7 +60,7 @@ interface CombatantViewProps {
  * mestre rola pela criatura (resultado no chat). Os valores vêm do combatente, que é onde o combate guarda o que mudou durante a luta.
  */
 export function CombatantView({
-    combatant, creature, inTurn, onAdjustVital, onRollExpertise, onOpenCreature, mpLimit = 0, onCastSpell, onResetMpLimit, onSetMpSpent, onToggleAction
+    combatant, creature, inTurn, onAdjustVital, onRollExpertise, onOpenCreature, mpLimit = 0, onCastSpell, onResetMpLimit, onSetMpSpent, onToggleAction, environment
 }: CombatantViewProps): ReactElement {
     const expertises: Array<[ string, Expertise ]> = creature ? Object.entries(completeCreatureExpertises<Expertise>(creature.expertises)) : [];
     const list = useExpertiseListState();
@@ -99,7 +103,13 @@ export function CombatantView({
 
             <ActionBlocksNotice blocks={actionBlocks(combatant.effects)} who={name} />
 
-            <EffectStatsNotice effects={combatant.effects} bases={{ ap: creature?.stats?.ap, maxLp, maxMp }} />
+            <EffectStatsNotice
+                effects={combatant.effects}
+                bases={{ ap: creature?.stats?.ap, maxLp, maxMp }}
+                options={{ difficultTerrain: isInDifficultTerrain(environment ?? undefined, combatant.id) }}
+            />
+
+            <AmbientNotice environment={environment} combatantId={combatant.id} effects={combatant.effects} />
 
             <VitalsPanel
                 charsheetName={name}

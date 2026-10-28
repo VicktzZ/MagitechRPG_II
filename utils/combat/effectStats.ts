@@ -1,6 +1,7 @@
 import type { AppliedEffect, Combat } from '@models';
 import { combatantEffects } from './effectDice';
-import { collectModifiers, modifiedStat, overflowFor, statShift, type Amount, type ModifierSet } from './engine/modifiers';
+import { collectModifiers, hasFlag, modifiedStat, overflowFor, statShift, type Amount, type ModifierSet } from './engine/modifiers';
+import { effectiveDisplacement } from './engine/terrain';
 
 /**
  * Estatísticas dos efeitos aplicados (Fase 6.3; catálogo `CombatEffect`: `stat_bonus`/`stat_penalty` em `displacement`, `initiative`, `ap` e `maxLp`, e
@@ -41,6 +42,13 @@ export const initiativeEffectBonus = (set: ModifierSet): number => Math.round(st
 
 /** O deslocamento em metros depois dos efeitos (Velocidade, Congelamento...), com até 2 casas */
 export const displacementWithEffects = (base: unknown, set: ModifierSet): number => modifiedStat(set, 'displacement', finite(base) ?? 0);
+
+/** Algum efeito dá imunidade ao terreno difícil (a marca `terrain_immunity` do catálogo de efeitos) */
+export const terrainImmune = (set: ModifierSet): boolean => hasFlag(set, 'terrain_immunity');
+
+/** O deslocamento de agora: com os efeitos (Velocidade, Congelamento...) e depois o terreno difícil, que o corta pela metade salvo imunidade */
+export const displacementWithTerrain = (base: unknown, set: ModifierSet, difficultTerrain: boolean): number =>
+    effectiveDisplacement(displacementWithEffects(base, set), { difficultTerrain, immune: terrainImmune(set) });
 
 /** O AP depois dos efeitos (Eletrização...), nunca abaixo de zero */
 export const apWithEffects = (base: unknown, set: ModifierSet): number => modifiedStat(set, 'ap', finite(base) ?? 0);
@@ -122,28 +130,42 @@ const BASED_STATS = [
     { key: 'maxMp', stat: 'maxmp', label: 'MP máximo', unit: '', now: (base: number, set: ModifierSet): number => effectiveMaxVital(base, set, 'mp') }
 ] as const;
 
+export interface StatChangeOptions {
+    /** O combatente está em terreno difícil (marcado pelo mestre): o deslocamento cai pela metade, salvo imunidade */
+    difficultTerrain?: boolean;
+}
+
 /**
  * As estatísticas que os efeitos aplicados mudam agora, na ordem da tela. Só entram as que mudaram. Cada uma traz o texto ("AP 8 → 6"), se é ganho ou perda
- * e quais efeitos a causam, para a tela e a dica dizerem de onde vem.
+ * e quais efeitos a causam, para a tela e a dica dizerem de onde vem. O terreno difícil também entra no deslocamento, mesmo sem efeito nenhum.
  */
-export function statChanges(effects: readonly AppliedEffect[] | null | undefined, bases: StatBases = {}): StatChange[] {
+export function statChanges(effects: readonly AppliedEffect[] | null | undefined, bases: StatBases = {}, options: StatChangeOptions = {}): StatChange[] {
     const list = effects ?? [];
-    if (list.length === 0) return [];
-
     const set = collectModifiers(list);
+    const halved = Boolean(options.difficultTerrain) && !terrainImmune(set);
+    if (list.length === 0 && !halved) return [];
+
     const found: Partial<Record<StatChangeKey, StatChange>> = {};
 
     for (const { key, stat, label, unit, now } of BASED_STATS) {
         const delta = set.stats[stat];
-        if (!delta || (delta.pct === 0 && delta.flat === 0)) continue;
+        const byEffects = Boolean(delta && (delta.pct !== 0 || delta.flat !== 0));
+        const byTerrain = key === 'displacement' && halved;
+        if (!byEffects && !byTerrain) continue;
 
         const base = finite(bases[key]);
+        const effectUp = (delta?.pct ?? 0) + (delta?.flat ?? 0) > 0;
+        const value = base !== null ? (byTerrain ? now(base, set) / 2 : now(base, set)) : null;
+        const sources = sourcesOf(list, each => Boolean(each.stats[stat]));
+
         found[key] = {
             key,
             label,
-            text: base !== null ? `${format(base)}${unit} → ${format(now(base, set))}${unit}` : describeDelta(delta, unit),
-            direction: delta.pct + delta.flat > 0 ? 'up' : 'down',
-            sources: sourcesOf(list, each => Boolean(each.stats[stat]))
+            text: base !== null && value !== null
+                ? `${format(base)}${unit} → ${format(value)}${unit}`
+                : [ byEffects && delta ? describeDelta(delta, unit) : '', byTerrain ? 'pela metade' : '' ].filter(Boolean).join(', '),
+            direction: base !== null && value !== null && value !== base ? (value > base ? 'up' : 'down') : (byEffects && effectUp ? 'up' : 'down'),
+            sources: byTerrain ? [ ...sources, 'Terreno difícil' ] : sources
         };
     }
 

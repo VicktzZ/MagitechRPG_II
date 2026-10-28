@@ -16,6 +16,9 @@ import { evaluateMpSpend, getCreatureMpLimit, getMpLimit, isCreatureMpLimitEnfor
 import { combatantVitals } from '@utils/combatantVitals'
 import { insertCombatant, nextCreatureInstance } from '@utils/combat/addCombatants'
 import {
+    LIGHT_LABEL, LIGHT_RULE, defaultEnvironment, dropTerrainFor, readEnvironment, sanitizeLight, sanitizeTerrainIds, setTerrain
+} from '@utils/combat/environment'
+import {
     creatureInitiativeDice, describeInitiativeEffects, describeInitiativeRolls, initiativeWithEffects, playerInitiativeDice, resolveInitiative, type InitiativeDice
 } from '@utils/combat/initiativeRoll'
 import { resetRoundWindows } from '@utils/combat/roundWindow'
@@ -39,7 +42,7 @@ import { undoCombatEvent } from '@utils/firestore/combatUndo'
 /** Ações que conduzem o combate — exclusivas do mestre */
 const GM_ONLY_ACTIONS: CombatAction[] = [
     'start', 'end', 'set_initiative', 'add_creature', 'add_combatants', 'remove_combatant', 'apply_effect', 'remove_effect',
-    'set_mp_limit_override', 'reset_mp_limit', 'set_mp_spent', 'set_actions', 'undo', 'resolve_attack', 'set_unseen', 'reveal_unseen'
+    'set_mp_limit_override', 'reset_mp_limit', 'set_mp_spent', 'set_actions', 'undo', 'resolve_attack', 'set_unseen', 'reveal_unseen', 'set_light', 'set_terrain'
 ]
 
 /** Ações que entram no histórico do combate (o mestre pode desfazê-las): as que mudam o rumo da luta, não o controle de MP e de ações */
@@ -89,6 +92,8 @@ type CombatAction =
     | 'resolve_attack'  // Mestre confirma o ataque: aplica o dano, gasta a Reação de quem esquivou e registra no log
     | 'set_unseen'      // Mestre marca quem não vê um combatente escondido (furtivo, invisível...): matriz de percepção
     | 'reveal_unseen'   // Mestre revela o combatente escondido a alguns observadores, ou a todos
+    | 'set_light'       // Mestre define a iluminação da cena (claro, penumbra ou escuridão): ambiente manual
+    | 'set_terrain'     // Mestre marca (ou desmarca) combatentes em terreno difícil: ambiente manual
 
 interface CombatRequest {
     action: CombatAction
@@ -162,6 +167,11 @@ interface CombatRequest {
     defense?: unknown
     /** Para declare_leave: quem estava ao alcance corpo a corpo e pode reagir (`combatantId` é quem saiu) */
     reactorIds?: unknown
+    /** Para set_light: a iluminação da cena ("claro", "penumbra" ou "escuridao") */
+    light?: unknown
+    /** Para set_terrain: os combatentes marcados e se estão (true) ou saíram (false) do terreno difícil */
+    combatantIds?: unknown
+    difficult?: unknown
     /** Para set_unseen e reveal_unseen: quem não vê o combatente (`combatantId` é quem está escondido). Em reveal_unseen, sem a lista revela a todos */
     observerIds?: unknown
     /** Para set_unseen: por que ele não é visto ("furtivo", "invisivel" ou "outro") */
@@ -259,7 +269,9 @@ function getActionMessage(action: CombatAction): string {
         dismiss_opportunity: 'Oportunidade dispensada',
         resolve_attack: 'Ataque resolvido',
         set_unseen: 'Percepção atualizada',
-        reveal_unseen: 'Escondido revelado'
+        reveal_unseen: 'Escondido revelado',
+        set_light: 'Iluminação atualizada',
+        set_terrain: 'Terreno atualizado'
     }
     return messages[action] || 'Ação executada'
 }
@@ -457,6 +469,7 @@ export async function POST(
             combat.pendingAttacks = []
             combat.opportunities = []
             combat.unseen = []
+            combat.environment = defaultEnvironment()
             combat.startedAt = new Date().toISOString()
             combat.showEnemyLp = body.showEnemyLp ?? false
 
@@ -493,6 +506,7 @@ export async function POST(
             combat.pendingAttacks = []
             combat.opportunities = []
             combat.unseen = []
+            combat.environment = defaultEnvironment()
 
             combat.logs.push(new CombatLog({
                 round: combat.round,
@@ -977,6 +991,7 @@ export async function POST(
             combat.pendingAttacks = dropPendingFor(combat.pendingAttacks, removed.id)
             combat.opportunities = dropOpportunitiesFor(combat.opportunities, removed.id)
             combat.unseen = dropUnseenFor(combat.unseen, removed.id)
+            combat.environment = dropTerrainFor(combat.environment, removed.id)
             
             // Ajusta índice atual se necessário
             if (combat.currentTurnIndex >= combat.combatants.length) {
@@ -1663,6 +1678,71 @@ export async function POST(
             break
         }
 
+        case 'set_light': {
+            if (!combat.isActive) {
+                return NextResponse.json({ error: 'Não há combate ativo' }, { status: 400 })
+            }
+
+            const light = sanitizeLight(body.light)
+            if (!light) {
+                throw badRequest('Escolha a iluminação: claro, penumbra ou escuridão')
+            }
+
+            const environment = readEnvironment(combat.environment)
+            // Mesma luz: nada muda e nada vai ao log nem ao chat
+            if (environment.light !== light) {
+                combat.environment = { ...environment, light }
+                combat.logs.push(new CombatLog({
+                    round: combat.round,
+                    type: 'action',
+                    actorId: 'system',
+                    actorName: 'Sistema',
+                    message: `💡 **Iluminação:** ${LIGHT_LABEL[light]}. ${LIGHT_RULE[light]}`
+                }))
+            }
+
+            break
+        }
+
+        case 'set_terrain': {
+            if (!combat.isActive) {
+                return NextResponse.json({ error: 'Não há combate ativo' }, { status: 400 })
+            }
+            if (typeof body.difficult !== 'boolean') {
+                throw badRequest('Diga se estão em terreno difícil (true) ou se saíram dele (false)')
+            }
+
+            const requested = sanitizeTerrainIds(body.combatantIds)
+            if (requested.length === 0) {
+                throw badRequest('Escolha quem está no terreno')
+            }
+
+            const inCombat = requested.filter(requestedId => combat.combatants.some(c => c.id === requestedId))
+            if (inCombat.length < requested.length) warnings.push('Um dos combatentes escolhidos não está mais no combate.')
+            if (inCombat.length === 0) {
+                throw badRequest('Escolha quem está no terreno')
+            }
+
+            const environment = readEnvironment(combat.environment)
+            // Só quem muda de fato entra no log (marcar de novo quem já está marcado não diz nada)
+            const changed = inCombat.filter(changedId => environment.difficultTerrainIds.includes(changedId) !== body.difficult)
+            if (changed.length > 0) {
+                combat.environment = setTerrain(environment, changed, body.difficult)
+                const names = changed.map(changedId => combat.combatants.find(c => c.id === changedId)?.name ?? changedId).join(', ')
+                combat.logs.push(new CombatLog({
+                    round: combat.round,
+                    type: 'action',
+                    actorId: 'system',
+                    actorName: 'Sistema',
+                    message: body.difficult
+                        ? `🪨 **${names}** ${changed.length > 1 ? 'estão' : 'está'} em terreno difícil: deslocamento pela metade.`
+                        : `🪨 **${names}** ${changed.length > 1 ? 'saíram' : 'saiu'} do terreno difícil.`
+                }))
+            }
+
+            break
+        }
+
         case 'resolve_attack': {
             if (!combat.isActive) {
                 return NextResponse.json({ error: 'Não há combate ativo' }, { status: 400 })
@@ -1729,7 +1809,9 @@ export async function POST(
         const silentActions: CombatAction[] = [
             'spend_mp', 'spend_action', 'declare_attack', 'attack_damage', 'dismiss_attack', 'declare_defense', 'declare_leave', 'dismiss_opportunity', 'set_unseen', 'reveal_unseen'
         ]
-        if (!silentActions.includes(action) && (action !== 'sustain_end' || logsGrew) && combat.logs.length > 0) {
+        // Estas só falam no chat quando de fato geraram um log (mesma luz ou terreno já marcado não repostam o último log antigo)
+        const logOnlyIfGrew: CombatAction[] = [ 'sustain_end', 'set_light', 'set_terrain' ]
+        if (!silentActions.includes(action) && (!logOnlyIfGrew.includes(action) || logsGrew) && combat.logs.length > 0) {
             const lastLog = combat.logs[combat.logs.length - 1]
             combatMessage = new Message({
                 id: crypto.randomUUID(),

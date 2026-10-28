@@ -15,9 +15,9 @@ import Image from 'next/image';
 import { StatusBar } from './StatusBar';
 import { usePlayerVitals } from './usePlayerVitals';
 import EffectBadges from '@components/campaign/gmDashboard/actions/EffectBadges';
+import AmbientNotice from '@components/campaign/AmbientNotice';
 import EffectStatsNotice from '@components/campaign/EffectStatsNotice';
-import { displacementWithEffects } from '@utils/combat/effectStats';
-import { collectModifiers } from '@utils/combat/engine/modifiers';
+import { combatantInDifficultTerrain, displacementNow } from '@utils/combat/environment';
 import { getMpLimit, isMpLimitEnforced } from '@utils/mpLimit';
 
 /** Etiqueta pequena (≥ 12px) de um dado da ficha */
@@ -55,8 +55,9 @@ export default function PlayerHeader({ avatar, rootRef }: { avatar: string | und
         ? combat.combatants?.find(c => c.id === charsheet.id || (c as any).odacId === charsheet.id)
         : undefined;
     const myEffects = myCombatant?.effects;
-    // Deslocamento de agora (Velocidade, Congelamento...): a ficha guarda o base, os efeitos só valem em combate
-    const displacement = displacementWithEffects(charsheet.displacement, collectModifiers(myEffects));
+    // Deslocamento de agora (Velocidade, Congelamento, terreno difícil...): a ficha guarda o base, os efeitos e o terreno só valem em combate
+    const inDifficultTerrain = combatantInDifficultTerrain(combat, myCombatant?.id);
+    const displacement = displacementNow(charsheet.displacement, myEffects, inDifficultTerrain);
     const displacementChanged = displacement !== Number(charsheet.displacement);
     const isMyTurn = combat?.isActive && combat.phase === 'ACTION'
         && combat.combatants?.[combat.currentTurnIndex]?.id === myCombatant?.id;
@@ -180,7 +181,7 @@ export default function PlayerHeader({ avatar, rootRef }: { avatar: string | und
                         <Paper sx={{ ...tileSx, bgcolor: alpha(color.success, 0.1), borderColor: alpha(color.success, 0.4) }}>
                             <Typography sx={tileLabelSx}>Deslocamento</Typography>
                             <Typography
-                                title={displacementChanged ? `Base ${charsheet.displacement}m, mudado pelos efeitos ativos` : undefined}
+                                title={displacementChanged ? `Base ${charsheet.displacement}m, mudado pelos efeitos ativos e pelo terreno` : undefined}
                                 sx={{ ...tileValueSx, color: 'success.main' }}
                             >
                                 {displacement}m
@@ -189,6 +190,13 @@ export default function PlayerHeader({ avatar, rootRef }: { avatar: string | und
                     </Grid>
                 </Grid>
             </Box>
+
+            {/* Ambiente da cena (luz e terreno difícil) para este personagem: só aparece se algo muda */}
+            {myCombatant && (
+                <Box sx={{ mb: 2 }}>
+                    <AmbientNotice environment={combat?.environment} combatantId={myCombatant.id} effects={myEffects} />
+                </Box>
+            )}
 
             {/* Efeitos de combate ativos */}
             {myEffects && myEffects.length > 0 && (
@@ -217,6 +225,7 @@ export default function PlayerHeader({ avatar, rootRef }: { avatar: string | und
                             effects={myEffects}
                             heading={null}
                             bases={{ displacement: charsheet.displacement, ap: charsheet.stats?.ap, maxLp: charsheet.stats?.maxLp, maxMp: charsheet.stats?.maxMp }}
+                            options={{ difficultTerrain: inDifficultTerrain }}
                         />
                     </Box>
                 </Box>

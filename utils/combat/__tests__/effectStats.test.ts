@@ -138,3 +138,29 @@ describe('o que a tela mostra', () => {
         expect(statChanges([ { ...levels, level: 2 } as AppliedEffect ])[0]?.text).toBe('+6');
     });
 });
+
+describe('terreno difícil no deslocamento (Fase 7)', () => {
+    const botas = effect('Botas do Pântano', [ { kind: 'flag', target: 'terrain_immunity' } ]);
+
+    it('sem efeito nenhum o terreno difícil já mostra o deslocamento pela metade', () => {
+        const [ change ] = statChanges([], { displacement: 9 }, { difficultTerrain: true });
+        expect(change).toMatchObject({ key: 'displacement', text: '9 m → 4,5 m', direction: 'down', sources: [ 'Terreno difícil' ] });
+    });
+
+    it('soma aos efeitos: Velocidade e depois a metade, com as duas origens', () => {
+        const [ change ] = statChanges([ velocidade ], { displacement: 9 }, { difficultTerrain: true });
+        expect(change).toMatchObject({ key: 'displacement', text: '9 m → 5,63 m', direction: 'down', sources: [ 'Velocidade', 'Terreno difícil' ] });
+        // fora do terreno, o mesmo efeito dá o ganho
+        expect(statChanges([ velocidade ], { displacement: 9 })[0]).toMatchObject({ text: '9 m → 11,25 m', direction: 'up' });
+    });
+
+    it('imunidade ou terreno normal não cortam', () => {
+        expect(statChanges([ botas ], { displacement: 9 }, { difficultTerrain: true })).toEqual([]);
+        expect(statChanges([], { displacement: 9 }, { difficultTerrain: false })).toEqual([]);
+        expect(statChanges([], { displacement: 9 })).toEqual([]);
+    });
+
+    it('sem o deslocamento de origem o texto diz só "pela metade"', () => {
+        expect(statChanges([], {}, { difficultTerrain: true })[0]).toMatchObject({ key: 'displacement', text: 'pela metade', direction: 'down' });
+    });
+});

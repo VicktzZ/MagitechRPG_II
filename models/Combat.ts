@@ -3,6 +3,7 @@ import { Type } from 'class-transformer';
 import { AppliedEffect } from './AppliedEffect';
 import type { UnseenData } from '../utils/combat/awareness';
 import type { ActionBudget } from '../utils/combat/engine/actionBudget';
+import type { CombatEnvironment } from '../utils/combat/environment';
 import type { OpportunityData } from '../utils/combat/opportunities';
 import type { PendingAttackData } from '../utils/combat/pendingAttacks';
 
@@ -195,6 +196,10 @@ export class Combat {
     @IsOptional()
     @IsArray()
         unseen?: UnseenData[];
+
+    /** Ambiente manual da cena: a iluminação e quem está em terreno difícil, marcados pelo mestre. Sem o campo, luz clara e sem terreno difícil. Ver utils/combat/environment.ts */
+    @IsOptional()
+        environment?: CombatEnvironment;
 
     constructor(combat?: Partial<Combat>) {
         Object.assign(this, combat);
