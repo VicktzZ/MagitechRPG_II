@@ -27,7 +27,7 @@ export type EffectName =
     // Buff
     'Velocidade' |
     'Invisível' |
-    'Visão na Penumbra' |
+    'Visão Aprimorada' |
     'Visão Verdadeira' |
     `Resistência (${DamageType})` |
     'Sobrecura' |

@@ -482,7 +482,11 @@ mas o cálculo em si vai num dropdown no cartão de rolagem para todos; (4) incl
 **Premissas minhas, a rever:** acerto com ≥ (como as DTs); a Completa exige as três ações livres; ordem do dano (rolado → bônus de quem ataca → fraqueza → defesa → resistências do alvo → piso 0, arredondando para baixo); resistências/vulnerabilidades em % de efeitos entram **depois** da defesa; Toque = 1,5m; magia Psíquica = ataque mental;
 fraquezas declaradas valem mesmo em elemento secundário (o ciclo é que não); o ×2 e o +1d20 da fraqueza valem também para tipos físicos declarados.
 
-**Pendências de ligação:** renomear o efeito "Visão na Penumbra" para "Visão Aprimorada"; trocar o Furtivo do #109 pela
+**Efeito "Visão Aprimorada"** (antes "Visão na Penumbra"; o id `seed-visao-penumbra` e a flag `dim_vision` não mudam, o motor decide pela flag e não pelo nome): o nome está trocado no seed (`scripts/seedCombatEffects.ts`), na lista de nomes (`constants/dataTypes.ts`) e no tipo antigo das pipelines. O documento do catálogo
+global é renomeado por `scripts/renameCombatEffect.ts` (simulação por padrão; `--apply` troca só o campo `name` do `combatEffects/seed-visao-penumbra`, numa transação, e só se o nome ainda for o antigo; `--revert --apply` desfaz; as cópias que os mestres fizeram em campanhas têm outros ids e ficam como estão; teste com o emulador em
+`utils/firestore/__tests__/renameCombatEffect.emulator.test.ts`). **Grava no banco: só com liberação do dono.** Um efeito já aplicado em combate em andamento guarda o nome antigo em `snapshot.name` até acabar.
+
+**Pendências de ligação:** trocar o Furtivo do #109 pela
 regra acima; aplicar Sobrepeso às perícias; condição "Desprevenido"/surpresa e matriz de percepção (quem viu quem) no estado do combate.
 
 ## Design system
