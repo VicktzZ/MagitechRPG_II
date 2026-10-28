@@ -55,10 +55,16 @@ export interface PendingAttackData extends AttackDeclaration {
     defense?: PendingDefense;
     /** Ataque de oportunidade: declarado em cima de uma saída de alcance, com a Reação (ver utils/combat/opportunities.ts) */
     opportunity?: boolean;
+    /** Ataque com vários alvos: um ataque pendente por alvo, todos com o mesmo `groupId` e o mesmo acerto; o dano rolado vale para o grupo todo */
+    groupId?: string;
+    /** Quantos alvos o ataque do grupo tem (para o mestre ver que há outros cartões do mesmo ataque) */
+    groupSize?: number;
     createdAt: string;
 }
 
 export const MAX_PENDING_ATTACKS = 20;
+/** Alvos de um mesmo ataque (o principal e os outros) */
+export const MAX_ATTACK_TARGETS = 8;
 const MAX_NAME_LENGTH = 80;
 const MAX_ROLLS = 10;
 
@@ -106,10 +112,25 @@ export function sanitizeAttackDeclaration(raw: unknown): AttackDeclaration | nul
     };
 }
 
-/** Põe o ataque na lista. Quem declara de novo antes de rolar o dano troca o ataque anterior (refez o acerto); são no máximo 20, o mais velho sai */
-export function addPendingAttack(list: readonly PendingAttackData[] | undefined, attack: PendingAttackData): PendingAttackData[] {
-    const kept = (list ?? []).filter(entry => !(entry.attackerId === attack.attackerId && entry.source === attack.source && entry.name === attack.name && entry.damageRolled === undefined));
-    return [ ...kept, attack ].slice(-MAX_PENDING_ATTACKS);
+/**
+ * Põe o(s) ataque(s) da mesma declaração na lista (um por alvo). Quem declara de novo antes de rolar o dano troca os ataques anteriores da mesma arma ou magia
+ * (refez o acerto, inclusive todos os alvos do grupo anterior); são no máximo 20, o mais velho sai
+ */
+export function addPendingAttacks(list: readonly PendingAttackData[] | undefined, attacks: readonly PendingAttackData[]): PendingAttackData[] {
+    const first = attacks[0];
+    if (!first) return [ ...(list ?? []) ];
+
+    const kept = (list ?? []).filter(entry => !(entry.attackerId === first.attackerId && entry.source === first.source && entry.name === first.name && entry.damageRolled === undefined));
+    return [ ...kept, ...attacks ].slice(-MAX_PENDING_ATTACKS);
+}
+
+export const addPendingAttack = (list: readonly PendingAttackData[] | undefined, attack: PendingAttackData): PendingAttackData[] => addPendingAttacks(list, [ attack ]);
+
+/** Ids dos alvos extras de um ataque: texto, sem repetir, até o limite de alvos (o que vem do cliente) */
+export function sanitizeTargetIds(raw: unknown): string[] {
+    if (!Array.isArray(raw)) return [];
+    const ids = raw.filter((entry): entry is string => typeof entry === 'string' && entry.trim() !== '' && entry.length <= 80);
+    return [ ...new Set(ids) ].slice(0, MAX_ATTACK_TARGETS);
 }
 
 /** O ataque mais novo desse atacante com essa arma ou magia (de `source`, se informado: uma arma e uma magia podem ter o mesmo nome) que ainda espera o dano */
@@ -117,11 +138,15 @@ export function findAwaitingDamage(list: readonly PendingAttackData[] | undefine
     return [ ...(list ?? []) ].reverse().find(entry => entry.attackerId === attackerId && entry.name === name && entry.damageRolled === undefined && (!source || entry.source === source));
 }
 
-/** Registra o dano rolado no ataque; `null` se o ataque não existe */
+/** Registra o dano rolado no ataque (e nos outros alvos do mesmo ataque que ainda esperam o dano: um dano só para o grupo); `null` se o ataque não existe */
 export function setPendingDamage(list: readonly PendingAttackData[] | undefined, attackId: string, damage: number, critical?: boolean): PendingAttackData[] | null {
     const entries = list ?? [];
-    if (!entries.some(entry => entry.id === attackId)) return null;
-    return entries.map(entry => (entry.id === attackId ? { ...entry, damageRolled: damage, ...(critical ? { critical: true } : {}) } : entry));
+    const target = entries.find(entry => entry.id === attackId);
+    if (!target) return null;
+
+    const inGroup = (entry: PendingAttackData): boolean => entry.id === attackId
+        || (target.groupId !== undefined && entry.groupId === target.groupId && entry.attackerId === target.attackerId && entry.damageRolled === undefined);
+    return entries.map(entry => (inGroup(entry) ? { ...entry, damageRolled: damage, ...(critical ? { critical: true } : {}) } : entry));
 }
 
 const DEFENSE_CHOICES: readonly DefenseChoice[] = [ 'dodge', 'resist', 'none' ];

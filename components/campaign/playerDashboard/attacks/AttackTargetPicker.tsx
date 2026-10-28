@@ -1,4 +1,4 @@
-import { Box, Checkbox, FormControlLabel, MenuItem, TextField, Typography } from '@mui/material';
+import { Autocomplete, Box, Checkbox, FormControlLabel, MenuItem, TextField, Typography } from '@mui/material';
 import type { ReactElement } from 'react';
 import type { AttackTargeting } from './useAttackTargeting';
 
@@ -28,6 +28,26 @@ export default function AttackTargetPicker({ targeting }: { targeting: AttackTar
                     <MenuItem key={target.id} value={target.id}>{target.name}{target.type === 'creature' ? '' : ' (jogador)'}</MenuItem>
                 ))}
             </TextField>
+            {targeting.targetId && (
+                <Autocomplete
+                    multiple
+                    size="small"
+                    options={targeting.targets.filter(target => target.id !== targeting.targetId)}
+                    value={targeting.targets.filter(target => targeting.extraTargetIds.includes(target.id))}
+                    getOptionLabel={(target) => target.name}
+                    isOptionEqualToValue={(option, value) => option.id === value.id}
+                    onChange={(_, value) => { targeting.setExtraTargetIds(value.map(target => target.id)); }}
+                    data-testid="extra-targets"
+                    renderInput={(params) => (
+                        <TextField
+                            {...params}
+                            label="Outros alvos (ataque em área)"
+                            helperText="O mesmo acerto e o mesmo dano valem para todos; o mestre resolve um cartão por alvo."
+                        />
+                    )}
+                    sx={{ maxWidth: 420 }}
+                />
+            )}
             {targeting.opportunity.current && (
                 <FormControlLabel
                     data-testid="opportunity-toggle"

@@ -23,6 +23,8 @@ export default function ManualAttackForm({ onDone }: { onDone: () => void }): Re
 
     const [ attackerId, setAttackerId ] = useState('');
     const [ targetId, setTargetId ] = useState('');
+    // Ataque em área: outros alvos além do principal, cada um com o seu cartão (o acerto e o dano são os mesmos)
+    const [ extraTargetIds, setExtraTargetIds ] = useState<string[]>([]);
     const [ name, setName ] = useState('');
     const [ kind, setKind ] = useState<DamageKind>('fisico');
     const [ attackType, setAttackType ] = useState('');
@@ -32,7 +34,9 @@ export default function ManualAttackForm({ onDone }: { onDone: () => void }): Re
     // Ataque de oportunidade: o atacante tem uma saída de alcance aberta contra esse alvo. Marcado de início; o mestre desmarca para um ataque comum
     const opportunity = attackerId && targetId ? findOpportunity(campaign.session?.combat?.opportunities, attackerId, targetId) : undefined;
     const [ declinedOpportunity, setDeclinedOpportunity ] = useState<string | null>(null);
-    const useOpportunity = Boolean(opportunity) && declinedOpportunity !== opportunity?.id;
+    const extras = extraTargetIds.filter(id => id !== attackerId && id !== targetId);
+    // O ataque de oportunidade tem um alvo só
+    const useOpportunity = Boolean(opportunity) && declinedOpportunity !== opportunity?.id && extras.length === 0;
 
     const totalNumber = Number(total);
     const damageNumber = damage.trim() === '' ? undefined : Number(damage);
@@ -47,6 +51,7 @@ export default function ManualAttackForm({ onDone }: { onDone: () => void }): Re
                 targetId,
                 attack: { source: 'manual', name: name.trim(), kind, attackType: attackType.trim() || undefined, attackTotal: totalNumber, rolls: [], bonus: 0 },
                 ...(damageNumber !== undefined ? { damage: damageNumber } : {}),
+                ...(extras.length > 0 ? { targetIds: extras } : {}),
                 ...(useOpportunity && opportunity ? { opportunityId: opportunity.id } : {})
             });
             // A Reação do atacante é gasta aqui (o servidor só consome a oportunidade), como o jogador gasta a dele: é aviso, nunca trava
@@ -71,6 +76,18 @@ export default function ManualAttackForm({ onDone }: { onDone: () => void }): Re
             <TextField select size="small" label="Alvo" value={targetId} onChange={(event) => { setTargetId(event.target.value); }} sx={{ width: 190 }}>
                 {combatants.filter(combatant => combatant.id !== attackerId).map(combatant => <MenuItem key={combatant.id} value={combatant.id}>{combatant.name}</MenuItem>)}
             </TextField>
+            <Autocomplete
+                multiple
+                size="small"
+                options={combatants.filter(combatant => combatant.id !== attackerId && combatant.id !== targetId)}
+                value={combatants.filter(combatant => extras.includes(combatant.id))}
+                getOptionLabel={(combatant) => combatant.name}
+                isOptionEqualToValue={(option, value) => option.id === value.id}
+                onChange={(_, value) => { setExtraTargetIds(value.map(combatant => combatant.id)); }}
+                disabled={!targetId}
+                sx={{ width: 240 }}
+                renderInput={(params) => <TextField {...params} label="Outros alvos (área)" />}
+            />
             <TextField size="small" label="Ataque (arma ou magia)" value={name} onChange={(event) => { setName(event.target.value); }} sx={{ width: 200 }} />
             <TextField select size="small" label="Natureza" value={kind} onChange={(event) => { setKind(event.target.value as DamageKind); }} sx={{ width: 130 }}>
                 {(Object.keys(KIND_LABEL) as DamageKind[]).map(option => <MenuItem key={option} value={option}>{KIND_LABEL[option]}</MenuItem>)}
