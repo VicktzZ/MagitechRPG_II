@@ -126,14 +126,18 @@ export const SPELL_EXECUTIONS = [
     'Padrão',
     'Completa',
     'Movimento',
-    'Livre',
+    'Bônus',
     'Reação'
 ];
 
-/** Forma canônica das execuções, indexada pela chave sem acento/caixa (o catálogo tem "padrão" em minúsculas) */
-const EXECUTION_ALIASES: Record<string, string> = Object.fromEntries(
-    SPELL_EXECUTIONS.map(execution => [ normalizeKey(execution), execution ])
-);
+/**
+ * Forma canônica das execuções, indexada pela chave sem acento/caixa (o catálogo tem "padrão" em minúsculas).
+ * "Livre" é o nome antigo de "Bônus" (regra do combate): magia ainda gravada como "Livre" cai no filtro "Bônus".
+ */
+const EXECUTION_ALIASES: Record<string, string> = {
+    ...Object.fromEntries(SPELL_EXECUTIONS.map(execution => [ normalizeKey(execution), execution ])),
+    livre: 'Bônus'
+};
 
 /** Execução de uma magia na forma canônica: "padrão" → ["Padrão"]. Sem execução devolve lista vazia. */
 export function getSpellExecution(execution?: string | null): string[] {

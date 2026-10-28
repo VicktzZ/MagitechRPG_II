@@ -1,5 +1,6 @@
 import { PerkTypeEnum } from '@enums/rogueliteEnum'
 import { spellRepository } from '@repositories'
+import { getSpellExecution } from '@utils/spellCategory'
 import type { ProcessorFilters, ProcessedItem } from './types'
 
 export async function processSpells(filters: ProcessorFilters): Promise<ProcessedItem[]> {
@@ -50,11 +51,9 @@ export async function processSpells(filters: ProcessorFilters): Promise<Processe
     
     // Filtro por tipo de execução
     if (filters.execution) {
-        const executionLower = filters.execution.toLowerCase()
-        processedSpells = processedSpells.filter(spell => {
-            const spellExecution = (spell.execution ?? '').toLowerCase()
-            return spellExecution === executionLower
-        })
+        // "Livre" é o nome antigo de "Bônus": getSpellExecution trata os dois como a mesma execução
+        const wanted = getSpellExecution(filters.execution)[0]
+        processedSpells = processedSpells.filter(spell => getSpellExecution(spell.execution)[0] === wanted)
     }
     
     return processedSpells as ProcessedItem[]

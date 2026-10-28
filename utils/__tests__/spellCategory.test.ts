@@ -95,7 +95,9 @@ describe('getSpellExecution', () => {
         [ 'reacao', 'Reação' ],
         [ ' Completa ', 'Completa' ],
         [ 'Movimento', 'Movimento' ],
-        [ 'Livre', 'Livre' ],
+        [ 'Livre', 'Bônus' ],
+        [ 'livre', 'Bônus' ],
+        [ 'Bônus', 'Bônus' ],
         [ 'bônus', 'Bônus' ]
     ])('%s → %s', (execution, expected) => {
         expect(getSpellExecution(execution)).toEqual([ expected ])
@@ -108,7 +110,7 @@ describe('getSpellExecution', () => {
     })
 
     it('a lista do filtro cobre as execuções do catálogo', () => {
-        expect(SPELL_EXECUTION_FILTER.options).toEqual([ 'Padrão', 'Completa', 'Movimento', 'Livre', 'Reação' ])
+        expect(SPELL_EXECUTION_FILTER.options).toEqual([ 'Padrão', 'Completa', 'Movimento', 'Bônus', 'Reação' ])
     })
 })
 
