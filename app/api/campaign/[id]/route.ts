@@ -1,6 +1,7 @@
 import { campaignRepository } from '@repositories';
 import { deleteCampaignMessages } from '@utils/firestore/campaignMessages';
 import { deleteGmNotes } from '@utils/firestore/gmNotes';
+import { deleteCombatEvents } from '@utils/firestore/combatEvents';
 import type { Campaign } from '@models/entities/Campaign';
 import {
     assertMaxLength,
@@ -46,6 +47,13 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
             await deleteGmNotes(campaign.id);
         } catch (error) {
             console.error('[Campanha] Campanha excluída, mas as anotações do mestre não foram apagadas:', error);
+        }
+
+        // Idem para o histórico do combate
+        try {
+            await deleteCombatEvents(campaign.id);
+        } catch (error) {
+            console.error('[Campanha] Campanha excluída, mas o histórico do combate não foi apagado:', error);
         }
 
         return Response.json({ message: 'SUCCESS' });

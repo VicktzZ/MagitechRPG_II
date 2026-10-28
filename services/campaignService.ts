@@ -3,6 +3,7 @@ import type { Campaign, Charsheet, User } from '@models/entities'
 import type { ActiveTest, CampaignData, TestData, TestResponse } from '@models/types/session'
 import { Service } from '@utils/apiRequest'
 import type { CreateCombatEffectPayload } from './combatEffectService'
+import type { CombatEventItem } from '@utils/combat/history'
 
 class CampaignService extends Service<Campaign, 'code' | 'userId'> {
     async listByUser(userId: string) {
@@ -153,6 +154,22 @@ class CampaignService extends Service<Campaign, 'code' | 'userId'> {
         return (await this.post({
             param: `${campaignId}/combat`,
             body: { action: 'set_actions', ...payload }
+        })).data
+    }
+
+    /** Histórico do combate (só o mestre): os últimos eventos, o mais novo primeiro */
+    async getCombatEvents(campaignId: string) {
+        return (await this.get({ param: `${campaignId}/combat/events` })).data as unknown as { events: CombatEventItem[] }
+    }
+
+    /**
+     * Mestre desfaz um evento do histórico: devolve só os campos que ele mudou. Se algum já mudou de novo depois, o servidor responde
+     * 409 `UNDO_CONFLICT` com a lista; repita com `force: true` para desfazer mesmo assim.
+     */
+    async undoCombatEvent(campaignId: string, payload: { eventId: string; force?: boolean }) {
+        return (await this.post({
+            param: `${campaignId}/combat`,
+            body: { action: 'undo', ...payload }
         })).data
     }
 
