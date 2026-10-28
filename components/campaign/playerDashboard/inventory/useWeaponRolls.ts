@@ -12,6 +12,7 @@ import {
     buildDamageErrorText
 } from '@utils/combat/weaponRoller';
 import { isCombatantStealthy } from '@utils/combat/stealth';
+import { isOpportunityWeapon, OPPORTUNITY_WEAPON_HELP } from '@utils/combat/opportunities';
 import { useSession } from 'next-auth/react';
 import { useSnackbar } from 'notistack';
 import type { MouseEvent as ReactMouseEvent } from 'react';
@@ -49,6 +50,12 @@ export function useWeaponRolls() {
 
     const handleWeaponHit = async (weapon: Weapon, e: ReactMouseEvent) => {
         e.stopPropagation();
+        // Ataque de oportunidade (um inimigo saiu do alcance dele): só arma branca, e a ação gasta é a Reação. Antes de rolar, para não deixar rolagem solta no chat
+        const opportunity = targeting.opportunity.active;
+        if (opportunity && !isOpportunityWeapon(weapon)) {
+            enqueueSnackbar(OPPORTUNITY_WEAPON_HELP, { variant: 'warning' });
+            return;
+        }
         const hit = rollWeaponHit(weapon, charsheet, { stealth: isCombatantStealthy(campaign?.session?.combat, charsheet?.id) });
         const playerName = charsheet?.name || session?.user?.name || 'Jogador';
         await sendCombatChatMessage(buildHitMessageText(playerName, weapon, hit));
@@ -62,16 +69,17 @@ export function useWeaponRolls() {
             attackTotal: hit.total,
             rolls: hit.rolls,
             bonus: hit.bonus
-        });
+        }, { opportunity });
         if (!declared || !isNew || !campaign?.id || !charsheet?.id) return;
 
-        // Atacar gasta a ação Padrão: é aviso, nunca trava (o mestre decide)
+        // Atacar gasta a ação Padrão (a Reação, no ataque de oportunidade): é aviso, nunca trava (o mestre decide)
+        const execution = opportunity ? 'Reação' : 'Padrão';
         try {
-            await campaignService.spendCombatAction(campaign.id, { combatantId: charsheet.id, execution: 'Padrão' });
+            await campaignService.spendCombatAction(campaign.id, { combatantId: charsheet.id, execution });
         } catch (error) {
             const { response } = asRequestError(error);
             if (response?.status === 409 && response.data?.code === 'ACTION_UNAVAILABLE') {
-                enqueueSnackbar('Você já não tinha a ação Padrão disponível nesta rodada. Avise o mestre.', { variant: 'warning' });
+                enqueueSnackbar(`Você já não tinha a ação ${execution} disponível nesta rodada. Avise o mestre.`, { variant: 'warning' });
             } else {
                 console.error('Erro ao gastar a ação do ataque:', error);
             }

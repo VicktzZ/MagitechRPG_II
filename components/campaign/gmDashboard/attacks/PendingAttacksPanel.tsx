@@ -1,11 +1,14 @@
 'use client';
 
 import { useCampaignContext } from '@contexts';
-import { Add, Close } from '@mui/icons-material';
+import { Add, Close, DirectionsRun } from '@mui/icons-material';
 import { Button, Stack, Typography } from '@mui/material';
 import { useState, type ReactElement } from 'react';
+import LeaveReachDialog from '../../opportunity/LeaveReachDialog';
+import { useLeaveReach } from '../../opportunity/useLeaveReach';
 import Section from '../../Section';
 import ManualAttackForm from './ManualAttackForm';
+import OpportunitiesList from './OpportunitiesList';
 import PendingAttackCard from './PendingAttackCard';
 
 /**
@@ -15,6 +18,8 @@ import PendingAttackCard from './PendingAttackCard';
 export default function PendingAttacksPanel(): ReactElement | null {
     const { campaign } = useCampaignContext();
     const [ manualOpen, setManualOpen ] = useState(false);
+    const [ leaveOpen, setLeaveOpen ] = useState(false);
+    const { busy, declare } = useLeaveReach();
     const combat = campaign.session?.combat;
 
     if (!combat?.isActive || combat.phase !== 'ACTION') return null;
@@ -25,18 +30,37 @@ export default function PendingAttacksPanel(): ReactElement | null {
             id="ataques"
             title="Ataques"
             action={(
-                <Button
-                    size="small"
-                    variant="outlined"
-                    startIcon={manualOpen ? <Close fontSize="small" /> : <Add fontSize="small" />}
-                    onClick={() => { setManualOpen(open => !open); }}
-                    sx={{ textTransform: 'none' }}
-                >
-                    {manualOpen ? 'Fechar' : 'Ataque manual'}
-                </Button>
+                <Stack direction="row" spacing={1}>
+                    <Button
+                        size="small"
+                        variant="outlined"
+                        startIcon={<DirectionsRun fontSize="small" />}
+                        onClick={() => { setLeaveOpen(true); }}
+                        sx={{ textTransform: 'none' }}
+                    >
+                        Saída de alcance
+                    </Button>
+                    <Button
+                        size="small"
+                        variant="outlined"
+                        startIcon={manualOpen ? <Close fontSize="small" /> : <Add fontSize="small" />}
+                        onClick={() => { setManualOpen(open => !open); }}
+                        sx={{ textTransform: 'none' }}
+                    >
+                        {manualOpen ? 'Fechar' : 'Ataque manual'}
+                    </Button>
+                </Stack>
             )}
         >
             <Stack spacing={1.5}>
+                <LeaveReachDialog
+                    open={leaveOpen}
+                    onClose={() => { setLeaveOpen(false); }}
+                    combatants={combat.combatants ?? []}
+                    busy={busy}
+                    onDeclare={(moverId, reactorIds) => { void declare(moverId, reactorIds).then(done => { if (done) setLeaveOpen(false); }); }}
+                />
+                <OpportunitiesList />
                 {manualOpen && <ManualAttackForm onDone={() => { setManualOpen(false); }} />}
                 {pending.length === 0 && !manualOpen && (
                     <Typography variant="body2" color="text.secondary">

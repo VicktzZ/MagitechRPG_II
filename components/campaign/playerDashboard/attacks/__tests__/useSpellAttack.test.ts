@@ -53,7 +53,13 @@ describe('useSpellAttack', () => {
             attackTotal: 21,
             rolls: [ 14, 9 ],
             bonus: 7
-        });
+        }, undefined);
+    });
+
+    it('no ataque de oportunidade a declaração leva a opção para o servidor ligar a oportunidade', async () => {
+        await useSpellAttack().declareSpell(spell(), test, { opportunity: true });
+
+        expect(mockDeclare).toHaveBeenCalledWith(expect.objectContaining({ source: 'spell', name: 'Faca de Vento' }), { opportunity: true });
     });
 
     it('magia que não é de ataque não declara nada', async () => {

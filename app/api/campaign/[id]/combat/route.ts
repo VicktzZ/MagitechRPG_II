@@ -27,6 +27,7 @@ import {
     addPendingAttack, buildAttackLogMessage, dropPendingFor, removePendingAttack, sanitizeAttackDeclaration, sanitizeDefenseDeclaration, sanitizeExplainLines, setPendingDamage,
     setPendingDefense
 } from '@utils/combat/pendingAttacks'
+import { addOpportunities, dropOpportunitiesFor, findOpportunity, planLeaveReach, removeOpportunity, sanitizeReactorIds } from '@utils/combat/opportunities'
 import { diffSheetVitals, diffSnapshots, snapshotCombat, summarizeChanges, type CombatSnapshot, type SheetVitals } from '@utils/combat/history'
 import { deleteCombatEvents, getCombatEvent, isCombatEventId, markCombatEventUndone, readPlayerVitals, recordCombatEvent } from '@utils/firestore/combatEvents'
 import { undoCombatEvent } from '@utils/firestore/combatUndo'
@@ -49,7 +50,8 @@ const SHEET_ACTIONS: CombatAction[] = [ 'next_turn', 'apply_damage', 'apply_heal
 const OWN_TURN_ACTIONS: CombatAction[] = [ 'next_turn', 'apply_damage', 'apply_heal' ]
 
 const KNOWN_ACTIONS: CombatAction[] = [
-    ...GM_ONLY_ACTIONS, ...OWN_TURN_ACTIONS, 'roll_initiative', 'spend_mp', 'spend_action', 'sustain_start', 'sustain_end', 'declare_attack', 'attack_damage', 'dismiss_attack', 'declare_defense'
+    ...GM_ONLY_ACTIONS, ...OWN_TURN_ACTIONS, 'roll_initiative', 'spend_mp', 'spend_action', 'sustain_start', 'sustain_end', 'declare_attack', 'attack_damage', 'dismiss_attack', 'declare_defense',
+    'declare_leave', 'dismiss_opportunity'
 ]
 
 type CombatAction = 
@@ -78,6 +80,8 @@ type CombatAction =
     | 'attack_damage'   // O dano rolado se junta ao ataque pendente
     | 'dismiss_attack'  // Descarta um ataque pendente (quem atacou ou o mestre)
     | 'declare_defense' // O jogador atacado escolhe e rola a própria defesa (esquiva, resistência ou nenhuma); o mestre parte dela ao resolver
+    | 'declare_leave'   // Quem sai do alcance corpo a corpo de inimigos declara a saída: cada inimigo ganha uma oportunidade de ataque
+    | 'dismiss_opportunity' // Dispensa uma oportunidade aberta (o inimigo que ia reagir, quem se moveu ou o mestre)
     | 'resolve_attack'  // Mestre confirma o ataque: aplica o dano, gasta a Reação de quem esquivou e registra no log
 
 interface CombatRequest {
@@ -148,6 +152,10 @@ interface CombatRequest {
     attackId?: string
     /** Para declare_defense: a escolha e o teste rolado; o servidor limpa (`sanitizeDefenseDeclaration`) */
     defense?: unknown
+    /** Para declare_leave: quem estava ao alcance corpo a corpo e pode reagir (`combatantId` é quem saiu) */
+    reactorIds?: unknown
+    /** Para dismiss_opportunity e declare_attack (ataque de oportunidade): a oportunidade aberta */
+    opportunityId?: string
     /** Para attack_damage: o dano foi crítico */
     critical?: boolean
     /** Para resolve_attack: acertou, o dano final (o mestre pode trocar o que o motor propôs), se o alvo gastou a Reação esquivando e as linhas públicas do cálculo */
@@ -235,6 +243,8 @@ function getActionMessage(action: CombatAction): string {
         attack_damage: 'Dano do ataque registrado',
         dismiss_attack: 'Ataque descartado',
         declare_defense: 'Defesa declarada',
+        declare_leave: 'Saída de alcance declarada',
+        dismiss_opportunity: 'Oportunidade dispensada',
         resolve_attack: 'Ataque resolvido'
     }
     return messages[action] || 'Ação executada'
@@ -340,6 +350,22 @@ export async function POST(
                 }
             }
 
+            if (action === 'declare_leave') {
+                const mover = combat.combatants?.find(c => c.id === body.combatantId || c.odacId === body.combatantId)
+                if (!mover || !ownsCombatant(mover)) {
+                    throw forbidden('Você só pode declarar a saída do seu personagem')
+                }
+            }
+
+            if (action === 'dismiss_opportunity') {
+                const opportunity = combat.opportunities?.find(entry => entry.id === body.opportunityId)
+                const mover = opportunity && combat.combatants?.find(c => c.id === opportunity.moverId)
+                const reactor = opportunity && combat.combatants?.find(c => c.id === opportunity.reactorId)
+                if (opportunity && !ownsCombatant(mover) && !ownsCombatant(reactor)) {
+                    throw forbidden('Essa oportunidade não é do seu personagem')
+                }
+            }
+
             if (action === 'sustain_start' || action === 'sustain_end') {
                 const target = combat.combatants?.find(c => c.id === body.combatantId || c.odacId === body.combatantId)
                 if (target && !ownsCombatant(target)) {
@@ -415,6 +441,7 @@ export async function POST(
             combat.combatants = [ ...playerCombatants, ...creatureCombatants ]
             combat.logs = []
             combat.pendingAttacks = []
+            combat.opportunities = []
             combat.startedAt = new Date().toISOString()
             combat.showEnemyLp = body.showEnemyLp ?? false
 
@@ -449,6 +476,7 @@ export async function POST(
             }
             resetRoundWindows(combat.combatants)
             combat.pendingAttacks = []
+            combat.opportunities = []
 
             combat.logs.push(new CombatLog({
                 round: combat.round,
@@ -585,6 +613,8 @@ export async function POST(
             if (currentCombatant) {
                 currentCombatant.hasActed = true
             }
+            // As oportunidades de ataque só duram o turno de quem se moveu
+            combat.opportunities = []
 
             // Verifica se todos agiram (recalcula após marcar o atual)
             const allActed = combat.combatants.every(c => c.hasActed)
@@ -908,6 +938,7 @@ export async function POST(
 
             const removed = combat.combatants.splice(removeIndex, 1)[0]
             combat.pendingAttacks = dropPendingFor(combat.pendingAttacks, removed.id)
+            combat.opportunities = dropOpportunitiesFor(combat.opportunities, removed.id)
             
             // Ajusta índice atual se necessário
             if (combat.currentTurnIndex >= combat.combatants.length) {
@@ -1412,9 +1443,22 @@ export async function POST(
             // O mestre declarando um ataque manual (de criatura) já traz o dano; o do jogador chega depois, em attack_damage
             const rolledDamage = typeof body.damage === 'number' && Number.isInteger(body.damage) && body.damage >= 0 && body.damage <= 100_000 ? body.damage : undefined
 
+            // Ataque de oportunidade: precisa de uma oportunidade aberta desse atacante contra esse alvo; ela se consome. A Reação é gasta por quem declara
+            // (o jogador, pela arma ou pela magia de Reação; o mestre, pelo ataque manual), como os outros gastos de ação.
+            let opportunity = false
+            if (body.opportunityId !== undefined) {
+                const open = findOpportunity(combat.opportunities, attacker.id, target.id)
+                if (!open || open.id !== body.opportunityId) {
+                    return NextResponse.json({ error: 'Essa oportunidade já não está aberta (o mestre pode tê-la dispensado)', code: 'OPPORTUNITY_GONE' }, { status: 409 })
+                }
+                combat.opportunities = removeOpportunity(combat.opportunities, open.id)
+                opportunity = true
+            }
+
             combat.pendingAttacks = addPendingAttack(combat.pendingAttacks, {
                 ...declaration,
                 ...(isGM && rolledDamage !== undefined ? { damageRolled: rolledDamage } : {}),
+                ...(opportunity ? { opportunity: true } : {}),
                 id: uuidv4(),
                 attackerId: attacker.id,
                 attackerName: attacker.name,
@@ -1467,6 +1511,38 @@ export async function POST(
             }
 
             combat.pendingAttacks = setPendingDefense(combat.pendingAttacks, pending.id, defense) ?? combat.pendingAttacks
+
+            break
+        }
+
+        case 'declare_leave': {
+            if (!combat.isActive || combat.phase !== 'ACTION') {
+                return NextResponse.json({ error: 'Só dá para declarar a saída na fase de ação' }, { status: 400 })
+            }
+
+            const mover = combat.combatants.find(c => c.id === body.combatantId || c.odacId === body.combatantId)
+            if (!mover) {
+                return NextResponse.json({ error: 'Quem saiu do alcance não está no combate' }, { status: 404 })
+            }
+
+            const reactorIds = sanitizeReactorIds(body.reactorIds)
+            if (reactorIds.length === 0) {
+                throw badRequest('Escolha quem estava ao alcance')
+            }
+
+            const plan = planLeaveReach(combat.combatants, mover.id, reactorIds)
+            const now = new Date().toISOString()
+            combat.opportunities = addOpportunities(combat.opportunities, plan.opportunities.map(entry => ({ ...entry, id: uuidv4(), createdAt: now })))
+            warnings.push(...plan.warnings)
+
+            break
+        }
+
+        case 'dismiss_opportunity': {
+            if (!combat.opportunities?.some(entry => entry.id === body.opportunityId)) {
+                return NextResponse.json({ error: 'Oportunidade não encontrada (ela pode já ter sido usada)' }, { status: 404 })
+            }
+            combat.opportunities = removeOpportunity(combat.opportunities, String(body.opportunityId))
 
             break
         }
@@ -1534,7 +1610,7 @@ export async function POST(
         let combatMessage: Message | undefined
         // `sustain_end` só gera log quando alguma magia estava ativa.
         const logsGrew = combat.logs.length > logsBefore
-        const silentActions: CombatAction[] = [ 'spend_mp', 'spend_action', 'declare_attack', 'attack_damage', 'dismiss_attack', 'declare_defense' ]
+        const silentActions: CombatAction[] = [ 'spend_mp', 'spend_action', 'declare_attack', 'attack_damage', 'dismiss_attack', 'declare_defense', 'declare_leave', 'dismiss_opportunity' ]
         if (!silentActions.includes(action) && (action !== 'sustain_end' || logsGrew) && combat.logs.length > 0) {
             const lastLog = combat.logs[combat.logs.length - 1]
             combatMessage = new Message({

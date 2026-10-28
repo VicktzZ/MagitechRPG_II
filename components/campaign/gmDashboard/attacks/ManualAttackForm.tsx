@@ -1,8 +1,9 @@
 'use client';
 
 import { useCampaignContext } from '@contexts';
-import { Autocomplete, Button, MenuItem, Stack, TextField } from '@mui/material';
+import { Autocomplete, Button, Checkbox, FormControlLabel, MenuItem, Stack, TextField } from '@mui/material';
 import { campaignService } from '@services';
+import { findOpportunity } from '@utils/combat/opportunities';
 import type { DamageKind } from '@utils/combat/engine/types';
 import { errorMessage } from '@utils/errors';
 import { useSnackbar } from 'notistack';
@@ -28,6 +29,10 @@ export default function ManualAttackForm({ onDone }: { onDone: () => void }): Re
     const [ total, setTotal ] = useState('');
     const [ damage, setDamage ] = useState('');
     const [ busy, setBusy ] = useState(false);
+    // Ataque de oportunidade: o atacante tem uma saída de alcance aberta contra esse alvo. Marcado de início; o mestre desmarca para um ataque comum
+    const opportunity = attackerId && targetId ? findOpportunity(campaign.session?.combat?.opportunities, attackerId, targetId) : undefined;
+    const [ declinedOpportunity, setDeclinedOpportunity ] = useState<string | null>(null);
+    const useOpportunity = Boolean(opportunity) && declinedOpportunity !== opportunity?.id;
 
     const totalNumber = Number(total);
     const damageNumber = damage.trim() === '' ? undefined : Number(damage);
@@ -41,8 +46,15 @@ export default function ManualAttackForm({ onDone }: { onDone: () => void }): Re
                 combatantId: attackerId,
                 targetId,
                 attack: { source: 'manual', name: name.trim(), kind, attackType: attackType.trim() || undefined, attackTotal: totalNumber, rolls: [], bonus: 0 },
-                ...(damageNumber !== undefined ? { damage: damageNumber } : {})
+                ...(damageNumber !== undefined ? { damage: damageNumber } : {}),
+                ...(useOpportunity && opportunity ? { opportunityId: opportunity.id } : {})
             });
+            // A Reação do atacante é gasta aqui (o servidor só consome a oportunidade), como o jogador gasta a dele: é aviso, nunca trava
+            if (useOpportunity) {
+                await campaignService.spendCombatAction(campaign.id, { combatantId: attackerId, execution: 'Reação' }).catch(() => {
+                    enqueueSnackbar('A Reação desse combatente já tinha sido usada nesta rodada.', { variant: 'warning' });
+                });
+            }
             onDone();
         } catch (error) {
             enqueueSnackbar(errorMessage(error, 'Erro ao declarar o ataque'), { variant: 'error' });
@@ -74,6 +86,12 @@ export default function ManualAttackForm({ onDone }: { onDone: () => void }): Re
             />
             <TextField size="small" type="number" label="Total do acerto" value={total} onChange={(event) => { setTotal(event.target.value); }} sx={{ width: 140 }} />
             <TextField size="small" type="number" label="Dano rolado" value={damage} onChange={(event) => { setDamage(event.target.value); }} sx={{ width: 130 }} />
+            {opportunity && (
+                <FormControlLabel
+                    control={<Checkbox size="small" checked={useOpportunity} onChange={(event) => { setDeclinedOpportunity(event.target.checked ? null : opportunity.id); }} />}
+                    label="Ataque de oportunidade (gasta a Reação)"
+                />
+            )}
             <Button variant="contained" size="small" disabled={!valid || busy} onClick={() => { void submit(); }} sx={{ textTransform: 'none', mt: 0.5 }}>
                 Declarar ataque
             </Button>

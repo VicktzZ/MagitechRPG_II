@@ -15,6 +15,7 @@ const targeting = (patch: Partial<AttackTargeting> = {}): AttackTargeting => ({
     targetId: '',
     setTargetId: () => undefined,
     pending: [],
+    opportunity: { current: null, active: false, setUse: () => undefined },
     ...patch
 });
 
@@ -30,6 +31,28 @@ describe('AttackTargetPicker', () => {
         expect(html).toContain('Alvo do ataque');
         expect(html).toContain('Com um alvo, o ataque da arma ou da magia vai para o mestre confirmar.');
         expect(html).toContain('Goblin');
+    });
+
+    it('sem saída de alcance aberta não oferece ataque de oportunidade', () => {
+        expect(render(<AttackTargetPicker targeting={targeting({ targetId: 'goblin-1' })} />)).not.toContain('Ataque de oportunidade');
+    });
+
+    it('com uma saída aberta contra o alvo oferece o ataque de oportunidade, marcado por padrão', () => {
+        const current = { id: 'o1', moverId: 'goblin-1', moverName: 'Goblin', reactorId: 'caio', reactorName: 'Caio', createdAt: '2026-10-28T12:00:00.000Z' };
+        const html = render(<AttackTargetPicker targeting={targeting({ targetId: 'goblin-1', opportunity: { current, active: true, setUse: () => undefined } })} />);
+
+        expect(html).toContain('opportunity-toggle');
+        expect(html).toContain('Ataque de oportunidade contra Goblin');
+        expect(html).toContain('Gasta a Reação');
+        expect(html).toMatch(/<input[^>]*checked[^>]*type="checkbox"|<input[^>]*type="checkbox"[^>]*checked/);
+    });
+
+    it('desmarcado, o ataque volta a ser comum', () => {
+        const current = { id: 'o1', moverId: 'goblin-1', moverName: 'Goblin', reactorId: 'caio', reactorName: 'Caio', createdAt: '2026-10-28T12:00:00.000Z' };
+        const html = render(<AttackTargetPicker targeting={targeting({ targetId: 'goblin-1', opportunity: { current, active: false, setUse: () => undefined } })} />);
+
+        expect(html).toContain('opportunity-toggle');
+        expect(html).not.toMatch(/<input[^>]*checked[^>]*type="checkbox"|<input[^>]*type="checkbox"[^>]*checked/);
     });
 
     it('mostra o que cada ataque dele espera', () => {

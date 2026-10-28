@@ -11,7 +11,7 @@ export const isAttackSpell = (spell: Pick<SpellDTO, 'type'>): boolean => getSpel
 export interface SpellAttackApi {
     targeting: AttackTargetingApi['targeting'];
     /** Conjuração com sucesso de uma magia de ataque: declara o ataque ao alvo escolhido (o teste de magia é o acerto, que também passa pelo AP) */
-    declareSpell: (spell: SpellDTO, test: HitTestResult) => Promise<void>;
+    declareSpell: (spell: SpellDTO, test: HitTestResult, options?: { opportunity?: boolean }) => Promise<void>;
     /** "Efetuar": o dano rolado da magia se junta ao ataque que ela declarou */
     attachSpellDamage: (spell: SpellDTO, damage: number) => Promise<void>;
 }
@@ -22,7 +22,7 @@ export function useSpellAttack(): SpellAttackApi {
 
     return {
         targeting,
-        declareSpell: async (spell, test) => {
+        declareSpell: async (spell, test, options) => {
             if (!isAttackSpell(spell)) return;
             await declare({
                 source: 'spell',
@@ -32,7 +32,7 @@ export function useSpellAttack(): SpellAttackApi {
                 attackTotal: test.total,
                 rolls: test.rolls,
                 bonus: test.bonus
-            });
+            }, options);
         },
         attachSpellDamage: async (spell, damage) => {
             if (!isAttackSpell(spell) || damage <= 0) return;

@@ -45,6 +45,13 @@ describe('snapshotCombat / diffSnapshots', () => {
         expect(diffSnapshots(before, snapshotCombat(combat))).toEqual([]);
     });
 
+    it('as oportunidades de ataque ficam de fora (duram só o turno de quem se move; desfazer a passagem do turno não as traz de volta)', () => {
+        const combat = makeCombat();
+        const before = snapshotCombat(combat);
+        combat.opportunities = [ { id: 'o1' } as never ];
+        expect(diffSnapshots(before, snapshotCombat(combat))).toEqual([]);
+    });
+
     it('a foto é uma cópia: mexer no combate depois não muda a foto', () => {
         const combat = makeCombat();
         const before = snapshotCombat(combat);
