@@ -172,3 +172,36 @@ describe('describeSheetPlan', () => {
         expect(describeSheetPlan({ dice: 2, keep: 'lowest', bonus: 0 })).toBe('2d20 (desvantagem: vale o menor) +0');
     });
 });
+
+describe('planSheetRoll com Sobrepeso (−1 por kg excedido nas perícias de DES e VIG)', () => {
+    // 10 kg carregados contra 8 de capacidade: 2 kg acima
+    const heavy = (mods: Record<string, number>, expertises?: Record<string, unknown>) => ({ ...sheet(mods, expertises), ...{ capacity: { max: 8 }, inventory: { weapons: [ { id: 'w1', name: 'Marreta', weight: 10 } ] } } });
+    const expertises = {
+        Atletismo: { value: 3, defaultAttribute: 'vig' },
+        Furtividade: { value: 4, defaultAttribute: 'des' },
+        Investigação: { value: 5, defaultAttribute: 'log' }
+    };
+
+    it('tira do bônus das perícias de VIG e de DES', () => {
+        expect(planSheetRoll(heavy({ vig: 1, des: 0 }, expertises), 'Atletismo')).toEqual({ dice: 2, keep: 'highest', bonus: 1 });
+        expect(planSheetRoll(heavy({ vig: 1, des: 0 }, expertises), 'Furtividade')).toEqual({ dice: 1, keep: 'highest', bonus: 2 });
+    });
+
+    it('também na desvantagem (modificador negativo)', () => {
+        expect(planSheetRoll(heavy({ vig: -1 }, expertises), 'Atletismo')).toEqual({ dice: 2, keep: 'lowest', bonus: 1 });
+    });
+
+    it('perícias de outros atributos não sofrem', () => {
+        expect(planSheetRoll(heavy({ log: 2 }, expertises), 'Investigação')).toEqual({ dice: 3, keep: 'highest', bonus: 5 });
+    });
+
+    it('sem excesso de peso nada muda', () => {
+        const light = { ...sheet({ vig: 1 }, expertises), capacity: { max: 30 }, inventory: { weapons: [ { id: 'w1', name: 'Marreta', weight: 10 } ] } };
+        expect(planSheetRoll(light, 'Atletismo')).toEqual({ dice: 2, keep: 'highest', bonus: 3 });
+    });
+
+    it('ficha de sistema customizado não sofre a penalidade', () => {
+        const custom = { ...heavy({ vig: 1 }, expertises), systemId: 'sys-1' };
+        expect(planSheetRoll(custom, 'Atletismo', { attributes: [] })?.bonus).toBe(3);
+    });
+});

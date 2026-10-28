@@ -1,5 +1,6 @@
 import type { RPGSystem } from '@models/entities';
 import { MAX_TEST_DICE, rollD20, type TestCharsheet } from './campaignTest';
+import { sheetExpertisePenalty } from './combat/sheetOverweight';
 import { computeAttributeInfluence, findSystemAttribute } from './systemLookups';
 
 /**
@@ -59,9 +60,11 @@ export function planSheetRoll(
     const mods = asRecord(asRecord(charsheet.mods)['attributes']);
     const mod = Number(mods[attrRef] ?? mods[attrRef.toLowerCase()]);
     const attributeMod = Number.isFinite(mod) ? mod : 0;
+    // Sobrepeso: −1 por kg excedido nas perícias de DES e VIG (só no Magitech padrão; o sistema customizado voltou acima)
+    const bonus = base + sheetExpertisePenalty(charsheet, attrRef);
 
-    if (attributeMod < 0) return { dice: 2, keep: 'lowest', bonus: base };
-    return { dice: clampDice(attributeMod + 1), keep: 'highest', bonus: base };
+    if (attributeMod < 0) return { dice: 2, keep: 'lowest', bonus };
+    return { dice: clampDice(attributeMod + 1), keep: 'highest', bonus };
 }
 
 /** Rola os d20 do plano e aplica a regra de qual vale */

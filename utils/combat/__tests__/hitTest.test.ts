@@ -68,3 +68,35 @@ describe('rollHitTest (o mesmo teste do botão Acerto da arma)', () => {
         expect(rollHitTest('log', sheet())).toMatchObject({ bonus: 5, bonusLabel: 'LOG' });
     });
 });
+
+describe('teste de acerto com Sobrepeso', () => {
+    afterEach(() => jest.restoreAllMocks());
+    // 10 kg carregados contra 8: 2 kg acima = −2 em Luta (VIG) e em Pontaria (DES); Magia (FOC) não sofre
+    const heavy = (patch: Record<string, unknown> = {}) => sheet({ ...{ capacity: { max: 8 }, inventory: { weapons: [ { id: 'w1', name: 'Marreta', weight: 10 } ] } }, ...patch });
+
+    it('tira do bônus de Luta e de Pontaria e o chat diz de onde vem o desconto', () => {
+        jest.spyOn(Math, 'random').mockReturnValue(0.5);
+
+        expect(rollHitTest('vig', heavy())).toMatchObject({ bonus: 0, bonusLabel: 'Luta, sobrepeso -2' });
+        expect(rollHitTest('des', heavy())).toMatchObject({ bonus: 2, bonusLabel: 'Pontaria, sobrepeso -2' });
+    });
+
+    it('o teste de magia (Foco) não sofre', () => {
+        jest.spyOn(Math, 'random').mockReturnValue(0.5);
+
+        expect(rollSpellTest(heavy())).toMatchObject({ bonus: 6, bonusLabel: 'Magia' });
+    });
+
+    it('a perícia sem o atributo gravado vale pelo atributo do teste (Luta = VIG)', () => {
+        jest.spyOn(Math, 'random').mockReturnValue(0.5);
+
+        // o `sheet()` base grava as perícias sem defaultAttribute
+        expect(rollHitTest('vig', heavy()).bonus).toBe(0);
+    });
+
+    it('sem excesso de peso o teste é o de sempre', () => {
+        jest.spyOn(Math, 'random').mockReturnValue(0.5);
+
+        expect(rollHitTest('vig', heavy({ capacity: { max: 40 } }))).toMatchObject({ bonus: 2, bonusLabel: 'Luta' });
+    });
+});

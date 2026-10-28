@@ -1,5 +1,6 @@
 import type { ActiveTest, TestResponse } from '@models/types/session';
 import type { RPGSystem } from '@models/entities';
+import { sheetExpertisePenalty } from './combat/sheetOverweight';
 import { computeAttributeInfluence, findSystemAttribute } from './systemLookups';
 
 /**
@@ -83,6 +84,9 @@ export interface TestCharsheet {
     attributes?: unknown;
     mods?: { attributes?: unknown } | null;
     expertises?: unknown;
+    /** Inventário e capacidade: o Sobrepeso tira das perícias de DES e VIG (ver `utils/combat/sheetOverweight.ts`) */
+    inventory?: unknown;
+    capacity?: unknown;
 }
 
 const asRecord = (value: unknown): Record<string, unknown> =>
@@ -116,7 +120,7 @@ export function resolveTestModifiers(
     }
 
     const mods = asRecord(asRecord(charsheet.mods)['attributes']);
-    return { dice: resolveDiceCount(mods[attrRef] ?? mods[attrRef.toLowerCase()]), bonus: base };
+    return { dice: resolveDiceCount(mods[attrRef] ?? mods[attrRef.toLowerCase()]), bonus: base + sheetExpertisePenalty(charsheet, attrRef) };
 }
 
 export const rollD20 = (random: () => number = Math.random): number => Math.floor(random() * 20) + 1;

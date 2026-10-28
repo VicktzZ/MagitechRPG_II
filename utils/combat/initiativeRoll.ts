@@ -3,6 +3,8 @@
  * mora aqui para a rolagem normal e a de quem entra no meio do combate usarem a mesma regra.
  */
 
+import { sheetExpertisePenalty } from './sheetOverweight';
+
 export interface InitiativeDice {
     numDice: number;
     /** Valor da perícia Agilidade, somado ao dado */
@@ -42,7 +44,8 @@ export function playerInitiativeDice(charsheet: unknown): InitiativeDice {
     if (!source) return sanitize(1, 0);
     const { expertiseValue, attributeKey } = agility(source);
     const mod = finiteOr(source.mods?.attributes?.[attributeKey] ?? 1, 1);
-    return sanitize(mod < 1 ? 1 : mod, expertiseValue);
+    // Agilidade é perícia de DES: o Sobrepeso (−1 por kg excedido) também tira da iniciativa
+    return sanitize(mod < 1 ? 1 : mod, expertiseValue + sheetExpertisePenalty(charsheet, attributeKey));
 }
 
 /** Criatura: ⌊atributo ÷ 5⌋ d20 (mínimo 1, máximo 5; atributo 0 vale o mínimo) */

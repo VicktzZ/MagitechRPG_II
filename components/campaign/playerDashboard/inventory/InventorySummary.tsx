@@ -19,6 +19,8 @@ interface InventorySummaryProps {
     armorAp: number;
     /** Os itens mais pesados, para sugerir o que largar quando a mochila está cheia */
     heaviest: InventoryEntry[];
+    /** O que o Sobrepeso tira das perícias de DES e VIG (negativo; 0 ou ausente = sem Sobrepeso, ou sistema customizado) */
+    overweightPenalty?: number;
 }
 
 const STATE = {
@@ -30,7 +32,7 @@ const STATE = {
 const TYPES: InventoryItemType[] = [ 'weapon', 'armor', 'item' ];
 
 /** Resumo do inventário: peso carregado contra a capacidade (com o estado por extenso, não só pela cor), contagem por tipo e o que largar se estiver cheio */
-export default function InventorySummary({ totalItems, counts, totalWeight, maxCapacity, weightUnitSuffix, capacity, armorAp, heaviest }: InventorySummaryProps): ReactElement {
+export default function InventorySummary({ totalItems, counts, totalWeight, maxCapacity, weightUnitSuffix, capacity, armorAp, heaviest, overweightPenalty = 0 }: InventorySummaryProps): ReactElement {
     const { role, label, Icon } = STATE[capacity.state];
     const excess = totalWeight - maxCapacity;
 
@@ -77,6 +79,11 @@ export default function InventorySummary({ totalItems, counts, totalWeight, maxC
                 {capacity.state === 'over' && (
                     <Typography variant="caption" sx={{ display: 'block', mt: 0.75, color: 'error.light' }} data-testid="capacity-excess">
                         {`${formatWeight(excess, weightUnitSuffix)} acima da capacidade`}
+                    </Typography>
+                )}
+                {overweightPenalty < 0 && (
+                    <Typography variant="caption" sx={{ display: 'block', mt: 0.75, color: 'warning.light' }} data-testid="capacity-overweight">
+                        {`Sobrepeso: ${overweightPenalty} no modificador das perícias de DES e VIG`}
                     </Typography>
                 )}
                 {capacity.state !== 'ok' && heaviest.length > 0 && (

@@ -54,6 +54,18 @@ describe('InventorySummary', () => {
         expect(html).toContain('5 kg acima da capacidade')
     })
 
+    it('sobrecarga com Sobrepeso: diz o desconto nas perícias de DES e VIG', () => {
+        const html = summary(25, 20, { overweightPenalty: -5 })
+        expect(html).toContain('capacity-overweight')
+        expect(html).toContain('Sobrepeso: -5 no modificador das perícias de DES e VIG')
+    })
+
+    it('sem Sobrepeso (dentro da capacidade, ou sistema customizado) não avisa', () => {
+        expect(summary(10, 40)).not.toContain('capacity-overweight')
+        expect(summary(25, 20)).not.toContain('capacity-overweight')
+        expect(summary(25, 20, { overweightPenalty: 0 })).not.toContain('capacity-overweight')
+    })
+
     it('mostra a contagem por tipo e os pontos de armadura só quando há', () => {
         const html = summary(10, 40)
         expect(html).toContain('Armas')

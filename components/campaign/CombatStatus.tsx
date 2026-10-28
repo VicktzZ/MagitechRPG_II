@@ -43,6 +43,7 @@ import { asRequestError, errorMessage } from '@utils/errors';
 import { combatantBudget, SLOT_EXECUTION } from '@utils/combat/actionBudgets';
 import type { ActionSlot } from '@utils/combat/engine/actionBudget';
 import { opportunitiesForReactor } from '@utils/combat/opportunities';
+import { sheetExpertisePenalty } from '@utils/combat/sheetOverweight';
 import { incomingAttacks } from '@utils/combat/pendingAttacks';
 import ActionPips from './ActionPips';
 import EffectBadges from './gmDashboard/actions/EffectBadges';
@@ -107,7 +108,8 @@ function CombatStatus({
         let modsValue = Number(charsheet.mods?.attributes?.[defaultAttrKey as keyof Attributes] ?? 1);
         if (!Number.isFinite(modsValue) || modsValue < 1) modsValue = 1;
 
-        return { numDice: modsValue, expertiseValue };
+        // Agilidade é perícia de DES: o Sobrepeso (−1 por kg excedido) também tira da iniciativa
+        return { numDice: modsValue, expertiseValue: expertiseValue + sheetExpertisePenalty(charsheet, defaultAttrKey) };
     }, [ charsheets, userCombatant ]);
 
     // Encontra o combatente do usuário atual - busca por charsheetId, odacId ou session user id
@@ -713,7 +715,7 @@ function CombatStatus({
                             {initiativeFormula
                                 ? (
                                     <>
-                                        Sua rolagem: <strong>{initiativeFormula.numDice}d20 + {initiativeFormula.expertiseValue}</strong> (Agilidade)
+                                        Sua rolagem: <strong>{initiativeFormula.numDice}d20 {initiativeFormula.expertiseValue >= 0 ? '+' : '−'} {Math.abs(initiativeFormula.expertiseValue)}</strong> (Agilidade)
                                     </>
                                 ) : (
                                     <>

@@ -61,6 +61,7 @@ export default function InventorySection(): ReactElement {
                 capacity={view.capacity}
                 armorAp={view.armorAp}
                 heaviest={view.heaviest}
+                overweightPenalty={view.overweightPenalty}
             />
 
             <InventoryToolbar

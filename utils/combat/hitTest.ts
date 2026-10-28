@@ -1,6 +1,7 @@
 import type { CharsheetDTO } from '@models/dtos';
 import type { Attributes } from '@models/Attributes';
 import type { Expertises } from '@models/Expertises';
+import { sheetExpertisePenalty } from './sheetOverweight';
 
 export interface HitTestResult {
     notation: string;
@@ -49,8 +50,11 @@ export function resolveHitBonus(hitAttr: keyof Attributes | undefined, charsheet
     const expertiseKey = hitAttr ? HIT_TO_EXPERTISE[hitAttr] : undefined;
 
     if (expertiseKey && charsheet.expertises?.[expertiseKey]) {
-        const value = Number(charsheet.expertises[expertiseKey].value ?? 0);
-        return { value, label: expertiseKey as string };
+        const expertise = charsheet.expertises[expertiseKey];
+        const value = Number(expertise.value ?? 0);
+        // Sobrepeso: −1 por kg excedido nas perícias de DES e VIG (Luta e Pontaria); o chat diz de onde vem o desconto
+        const penalty = sheetExpertisePenalty(charsheet, expertise.defaultAttribute ?? hitAttr);
+        return { value: value + penalty, label: penalty === 0 ? expertiseKey as string : `${expertiseKey as string}, sobrepeso ${penalty}` };
     }
 
     if (hitAttr && charsheet.attributes?.[hitAttr] !== undefined) {
