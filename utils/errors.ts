@@ -7,7 +7,7 @@ export interface RequestErrorLike {
     isAxiosError?: boolean
     response?: {
         status?: number
-        data?: { error?: string, code?: string, spent?: number, limit?: number }
+        data?: { error?: string, code?: string, spent?: number, limit?: number, conflicts?: string[] }
     }
 }
 

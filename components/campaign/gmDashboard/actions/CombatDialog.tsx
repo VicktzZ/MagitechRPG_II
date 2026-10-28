@@ -50,6 +50,7 @@ import type { Charsheet } from '@models/entities';
 import EffectBadges from './EffectBadges';
 import AddCombatantsPanel from './combat/AddCombatantsPanel';
 import { buildStartCreatures, buildStartPlayers, type JoinPayload } from './combat/combatPayload';
+import CombatHistoryPanel from './combat/CombatHistoryPanel';
 import ParticipantPicker from './combat/ParticipantPicker';
 import { useParticipantSelection } from './combat/useParticipantSelection';
 import ApplyEffectDialog from './ApplyEffectDialog';
@@ -722,6 +723,13 @@ export default function CombatDialog({
             <DialogContent>
                 {isLoading && <LinearProgress sx={{ mb: 2 }} />}
                 {isSetupMode ? renderSetupUI() : renderCombatUI()}
+                {combat && (
+                    <CombatHistoryPanel
+                        campaignId={campaignId}
+                        signature={`${combat.isActive}|${combat.round}|${combat.logs?.length ?? 0}`}
+                        onChanged={() => { void fetchCombat(); onCombatUpdate?.(); }}
+                    />
+                )}
             </DialogContent>
             <DialogActions sx={{ p: 2, gap: 1 }}>
                 <Button onClick={handleClose} disabled={isLoading} variant="outlined">

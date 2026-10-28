@@ -22,12 +22,23 @@ import { executionSlot, spendAction } from '@utils/combat/engine/actionBudget'
 import { sustainedUpkeepFor } from '@utils/combat/sustainedSpells'
 import { applySustainedUpkeep, endSustained, startSustained } from '@utils/combat/sustainedUpkeep'
 import { findBaseCreature } from '@utils/combatCreatureLookup'
+import { diffSheetVitals, diffSnapshots, snapshotCombat, summarizeChanges, type CombatSnapshot, type SheetVitals } from '@utils/combat/history'
+import { deleteCombatEvents, getCombatEvent, isCombatEventId, markCombatEventUndone, readPlayerVitals, recordCombatEvent } from '@utils/firestore/combatEvents'
+import { undoCombatEvent } from '@utils/firestore/combatUndo'
 
 /** Ações que conduzem o combate — exclusivas do mestre */
 const GM_ONLY_ACTIONS: CombatAction[] = [
     'start', 'end', 'set_initiative', 'add_creature', 'add_combatants', 'remove_combatant', 'apply_effect', 'remove_effect',
-    'set_mp_limit_override', 'reset_mp_limit', 'set_mp_spent', 'set_actions'
+    'set_mp_limit_override', 'reset_mp_limit', 'set_mp_spent', 'set_actions', 'undo'
 ]
+
+/** Ações que entram no histórico do combate (o mestre pode desfazê-las): as que mudam o rumo da luta, não o controle de MP e de ações */
+const RECORDED_ACTIONS: CombatAction[] = [
+    'next_turn', 'apply_damage', 'apply_heal', 'apply_effect', 'remove_effect', 'add_creature', 'add_combatants', 'remove_combatant', 'set_initiative', 'end'
+]
+
+/** Dessas, as que também mexem na vida e na mana das fichas dos jogadores (o histórico guarda o antes e o depois delas) */
+const SHEET_ACTIONS: CombatAction[] = [ 'next_turn', 'apply_damage', 'apply_heal', 'apply_effect' ]
 
 /** Ações de jogador que só valem no turno do próprio personagem */
 const OWN_TURN_ACTIONS: CombatAction[] = [ 'next_turn', 'apply_damage', 'apply_heal' ]
@@ -55,6 +66,7 @@ type CombatAction =
     | 'set_actions'     // Mestre ajusta as ações que restam a um combatente (devolver uma ação, dar extras)
     | 'sustain_start'   // Jogador conjurou com sucesso uma magia sustentada em combate: ela vira um efeito sobre ele
     | 'sustain_end'     // Desconjurar uma magia sustentada (ou todas, sem spellKey)
+    | 'undo'            // Mestre desfaz um evento do histórico do combate (devolve só os campos que ele mudou)
 
 interface CombatRequest {
     action: CombatAction
@@ -117,6 +129,10 @@ interface CombatRequest {
     spellName?: string
     stage?: number
     cost?: number
+
+    /** Para undo: o evento do histórico a desfazer; `force` desfaz mesmo que algum campo tenha mudado de novo depois (sobrescreve) */
+    eventId?: string
+    force?: boolean
 }
 
 /** Máximo de jogadores (e de criaturas diferentes) por chamada, e de cópias de uma criatura, ao entrar num combate em andamento */
@@ -164,6 +180,33 @@ function joinCombat(combat: Combat, newcomers: Newcomer[]): void {
             message: `➕ **${combatant.name}** entrou no combate ${where}`
         }))
     }
+}
+
+function getActionMessage(action: CombatAction): string {
+    const messages: Record<CombatAction, string> = {
+        start: 'Combate iniciado',
+        end: 'Combate encerrado',
+        roll_initiative: 'Iniciativa rolada',
+        set_initiative: 'Ordem de iniciativa definida',
+        next_turn: 'Turno passado',
+        apply_damage: 'Dano aplicado',
+        apply_heal: 'Cura aplicada',
+        add_creature: 'Criatura adicionada',
+        add_combatants: 'Combatentes adicionados',
+        remove_combatant: 'Combatente removido',
+        apply_effect: 'Efeito aplicado',
+        remove_effect: 'Efeito removido',
+        spend_mp: 'MP registrado',
+        set_mp_limit_override: 'Limite de MP atualizado',
+        reset_mp_limit: 'Limite de MP resetado',
+        set_mp_spent: 'MP gasto definido',
+        spend_action: 'Ação gasta',
+        set_actions: 'Ações ajustadas',
+        sustain_start: 'Magia sustentada ativa',
+        sustain_end: 'Magia sustentada encerrada',
+        undo: 'Evento desfeito'
+    }
+    return messages[action] || 'Ação executada'
 }
 
 export async function POST(
@@ -261,6 +304,17 @@ export async function POST(
         }
 
         const logsBefore = combat.logs?.length ?? 0
+
+        // Histórico: a foto de antes (depois de sincronizar a vida das fichas, que não é obra do evento) e a vida e mana das fichas
+        const recording = RECORDED_ACTIONS.includes(action) && combat.isActive
+        let snapshotBefore: CombatSnapshot | null = null
+        let sheetsBefore: SheetVitals | null = null
+        if (recording) {
+            snapshotBefore = snapshotCombat(combat)
+            sheetsBefore = SHEET_ACTIONS.includes(action) ? await readPlayerVitals(combat) : null
+        }
+        // Evento desfeito por esta ação (marcado só depois de o combate ser salvo)
+        let undoneEventId: string | null = null
 
         switch (action) {
         case 'start': {
@@ -1328,6 +1382,35 @@ export async function POST(
             break
         }
 
+        case 'undo': {
+            if (!isCombatEventId(body.eventId)) {
+                throw badRequest('Evento inválido')
+            }
+
+            const event = await getCombatEvent(campaign.id, body.eventId)
+            if (!event) {
+                return NextResponse.json({ error: 'Evento não encontrado: o histórico guarda só os últimos eventos' }, { status: 404 })
+            }
+            if (event.undone) {
+                return NextResponse.json({ error: 'Este evento já foi desfeito', code: 'ALREADY_UNDONE' }, { status: 409 })
+            }
+
+            // Algum campo que o evento mexeu já mudou de novo? Sem `force`, nada é desfeito
+            const outcome = await undoCombatEvent(combat, event, body.force === true)
+            if (!outcome.ok) {
+                return NextResponse.json({
+                    error: 'Algo que este evento mudou mudou de novo depois. Desfazer mesmo assim sobrescreve esses valores.',
+                    code: 'UNDO_CONFLICT',
+                    conflicts: outcome.conflicts
+                }, { status: 409 })
+            }
+
+            combat.logs.push(outcome.log)
+            undoneEventId = event.id
+
+            break
+        }
+
         default:
             return NextResponse.json({ error: 'Ação inválida' }, { status: 400 })
         }
@@ -1359,6 +1442,35 @@ export async function POST(
         const plainCombat = JSON.parse(JSON.stringify(campaign.session.combat))
 
         await adminUpdateDoc('campaigns', campaign.id, { 'session.combat': plainCombat })
+
+        // Histórico (best effort: o combate já foi salvo, e falhar aqui só deixa a ação sem "Desfazer")
+        try {
+            if (action === 'start') {
+                await deleteCombatEvents(campaign.id)
+            } else if (undoneEventId) {
+                await markCombatEventUndone(campaign.id, undoneEventId, user.name || 'Mestre')
+            } else if (snapshotBefore) {
+                const snapshotAfter = snapshotCombat(campaign.session.combat)
+                const changes = diffSnapshots(snapshotBefore, snapshotAfter)
+                const sheets = sheetsBefore ? diffSheetVitals(sheetsBefore, await readPlayerVitals(campaign.session.combat)) : []
+                if (changes.length > 0 || sheets.length > 0) {
+                    const names = Object.fromEntries([ ...snapshotBefore.order, ...snapshotAfter.order ].map(combatantId => [
+                        combatantId, String((snapshotAfter.combatants[combatantId] ?? snapshotBefore.combatants[combatantId])?.['name'] ?? '')
+                    ]))
+                    await recordCombatEvent(campaign.id, {
+                        action,
+                        label: getActionMessage(action),
+                        byUserId: user.id,
+                        byName: user.name || 'Jogador',
+                        changes,
+                        sheets,
+                        summary: summarizeChanges(changes, names, sheets)
+                    })
+                }
+            }
+        } catch (error) {
+            console.error('[Combat API] Erro ao registrar o evento no histórico:', error)
+        }
 
         if (combatMessage) {
             try {
@@ -1393,32 +1505,6 @@ export async function POST(
     } finally {
         await lock?.release()
     }
-}
-
-function getActionMessage(action: CombatAction): string {
-    const messages: Record<CombatAction, string> = {
-        start: 'Combate iniciado',
-        end: 'Combate encerrado',
-        roll_initiative: 'Iniciativa rolada',
-        set_initiative: 'Ordem de iniciativa definida',
-        next_turn: 'Turno passado',
-        apply_damage: 'Dano aplicado',
-        apply_heal: 'Cura aplicada',
-        add_creature: 'Criatura adicionada',
-        add_combatants: 'Combatentes adicionados',
-        remove_combatant: 'Combatente removido',
-        apply_effect: 'Efeito aplicado',
-        remove_effect: 'Efeito removido',
-        spend_mp: 'MP registrado',
-        set_mp_limit_override: 'Limite de MP atualizado',
-        reset_mp_limit: 'Limite de MP resetado',
-        set_mp_spent: 'MP gasto definido',
-        spend_action: 'Ação gasta',
-        set_actions: 'Ações ajustadas',
-        sustain_start: 'Magia sustentada ativa',
-        sustain_end: 'Magia sustentada encerrada'
-    }
-    return messages[action] || 'Ação executada'
 }
 
 /**
