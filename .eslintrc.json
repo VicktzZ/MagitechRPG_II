@@ -163,6 +163,10 @@
       "no-restricted-syntax": [
           "warn",
           {
+              "selector": "CallExpression[callee.name='useWatch'] > ObjectExpression > Property[key.name='defaultValue']",
+              "message": "useWatch com defaultValue devolve o padrão (e não o valor do formulário) na primeira renderização, até o próximo evento do formulário: leia sem defaultValue e use `?? padrão` depois."
+          },
+          {
               "selector": "Literal[value=/#[0-9a-fA-F]{3,8}\\b/], TemplateElement[value.raw=/#[0-9a-fA-F]{3,8}\\b/]",
               "message": "Cor solta: use um token de themes/tokens.ts ou o tema (primary.main, background.paper, text.secondary...)."
           },

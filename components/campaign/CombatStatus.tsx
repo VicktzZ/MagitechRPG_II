@@ -35,12 +35,14 @@ import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
 import SkipNextIcon from '@mui/icons-material/SkipNext';
 import { color, duration, easing } from '@themes/tokens';
 import { useSnackbar } from 'notistack';
+import { handleHealingBlocked } from './healBlocked';
 import { useCampaignContext } from '@contexts';
 import { useSession } from 'next-auth/react';
 import type { Attributes, Combat } from '@models';
 import { campaignService } from '@services';
 import { asRequestError, errorMessage } from '@utils/errors';
-import { combatantBudget, SLOT_EXECUTION } from '@utils/combat/actionBudgets';
+import { SLOT_EXECUTION } from '@utils/combat/actionBudgets';
+import { effectiveBudget } from '@utils/combat/actionFlags';
 import type { ActionSlot } from '@utils/combat/engine/actionBudget';
 import { opportunitiesForReactor } from '@utils/combat/opportunities';
 import { sheetExpertisePenalty } from '@utils/combat/sheetOverweight';
@@ -65,7 +67,7 @@ function CombatStatus({
     userCharsheetId,
     onActionComplete
 }: CombatStatusProps) {
-    const { enqueueSnackbar } = useSnackbar();
+    const { enqueueSnackbar, closeSnackbar } = useSnackbar();
     const { data: session } = useSession();
     const { campaign, charsheets } = useCampaignContext();
     const theme = useTheme();
@@ -299,7 +301,7 @@ function CombatStatus({
     }, [ campaignId, enqueueSnackbar, onActionComplete ]);
 
     // Aplicar dano/cura
-    const handleApplyAction = useCallback(async () => {
+    const applyAction = useCallback(async (force: boolean) => {
         if (!targetId || actionValue <= 0) {
             enqueueSnackbar('Selecione um alvo e um valor válido', { variant: 'warning' });
             return;
@@ -319,11 +321,15 @@ function CombatStatus({
                     action: actionType === 'damage' ? 'apply_damage' : 'apply_heal',
                     combatantId: actorId,
                     targetId,
-                    value: actionValue
+                    value: actionValue,
+                    ...(force ? { force: true } : {})
                 })
             });
 
             const result = await response.json();
+
+            // Necrose, Incurável...: o alvo não recebe cura. O mestre pode curar mesmo assim
+            if (!response.ok && handleHealingBlocked(result, { enqueueSnackbar, closeSnackbar }, () => { void applyAction(true); })) return;
 
             if (!response.ok) {
                 throw new Error(result.error || 'Erro ao aplicar ação');
@@ -346,7 +352,9 @@ function CombatStatus({
         } finally {
             setIsApplying(false);
         }
-    }, [ campaignId, targetId, actionValue, actionType, isGM, currentCombatant, userCombatant, enqueueSnackbar, onActionComplete ]);
+    }, [ campaignId, targetId, actionValue, actionType, isGM, currentCombatant, userCombatant, enqueueSnackbar, closeSnackbar, onActionComplete ]);
+
+    const handleApplyAction = useCallback(async () => { await applyAction(false); }, [ applyAction ]);
 
     // Não mostra nada se não houver combate ativo
     if (!combat?.isActive) return null;
@@ -464,7 +472,7 @@ function CombatStatus({
                                     Suas ações nesta rodada
                                 </Typography>
                                 <ActionPips
-                                    budget={combatantBudget(userCombatant)}
+                                    budget={effectiveBudget(userCombatant)}
                                     onSelect={handleSpendAction}
                                     disableSpent
                                     busy={isSpendingAction}

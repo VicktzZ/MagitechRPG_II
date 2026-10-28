@@ -23,6 +23,8 @@ import { useCharsheetSystem } from '@hooks/useCharsheetSystem';
 
 const NO_RESOURCES: CustomResource[] = [];
 const NO_ATTRIBUTES: SystemAttribute[] = [];
+/** Ficha sem recursos salvos: o mesmo objeto vazio a cada render */
+const NO_RESOURCE_VALUES: Record<string, number> = {};
 
 export default function CustomResources(): ReactElement | null {
     const { control, setValue, getValues } = useFormContext<Charsheet>();
@@ -53,17 +55,16 @@ export default function CustomResources(): ReactElement | null {
         if (changed) setValue('customResources', updated);
     }, [ resourceDefs, getValues, setValue ]);
 
+    // Sem `defaultValue`: na primeira renderização ele vence o valor da ficha (ver `Expertises.tsx`) e os recursos salvos apareciam vazios
     const customResources = useWatch<Charsheet, 'customResources'>({
         control,
-        name: 'customResources',
-        defaultValue: {}
-    });
+        name: 'customResources'
+    }) ?? NO_RESOURCE_VALUES;
 
     const customResourceMaxes = useWatch<Charsheet, 'customResourceMaxes'>({
         control,
-        name: 'customResourceMaxes',
-        defaultValue: {}
-    });
+        name: 'customResourceMaxes'
+    }) ?? NO_RESOURCE_VALUES;
 
     const attributesValues = useWatch({ control, name: 'attributes' });
     const level = useWatch({ control, name: 'level' });

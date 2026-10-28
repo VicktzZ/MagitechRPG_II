@@ -10,6 +10,7 @@ import { campaignService } from '@services';
 import { postCampaignStats } from '@utils/campaignStatsClient';
 import { executionSlot } from '@utils/combat/engine/actionBudget';
 import { rollSpellTest } from '@utils/combat/hitTest';
+import { blockReason, combatantActionBlocks, isBlocked } from '@utils/combat/actionFlags';
 import { combatantEffects, effectDice } from '@utils/combat/effectDice';
 import { isOpportunitySpell, OPPORTUNITY_SPELL_HELP } from '@utils/combat/opportunities';
 import {
@@ -111,6 +112,13 @@ export function useSpellCastingState(): SpellCasting {
         if (!charsheet?.id) return;
         const spellKey = spell.id || spell.name;
         if (castingSpellId) return;
+
+        // Silenciamento, Paralisia... (flag `no_spells`): não conjura. Antes de rolar ou gastar MP; o mestre libera tirando o efeito
+        const spellBlocks = combatantActionBlocks(combat, charsheet.id);
+        if (isBlocked(spellBlocks, 'no_spells')) {
+            enqueueSnackbar(`${blockReason(spellBlocks, 'no_spells', 'Você')}.`, { variant: 'warning' });
+            return;
+        }
 
         const progress = getSpellProgress(spell, charsheet, { enabled: stageRule });
         if (stage > progress.unlocked) {

@@ -3,6 +3,7 @@
 import { useCampaignContext } from '@contexts';
 import { campaignService, charsheetService } from '@services';
 import { getSheetMetrics } from '@utils/charsheetMetrics';
+import { actionBlocks, blockReason, isBlocked } from '@utils/combat/actionFlags';
 import { combatantEffects } from '@utils/combat/effectDice';
 import { errorMessage } from '@utils/errors';
 import type { VitalKey } from '@utils/vitals';
@@ -38,6 +39,11 @@ function PlayerCombatantBody({ charsheet, combatantId }: { charsheet: SummaryShe
 
     // O servidor soma a variação ao valor de agora; a barra muda sozinha quando a ficha chega do Firestore
     const adjustVital = async (key: VitalKey, delta: number): Promise<void> => {
+        // Necrose, Incurável...: a cura é bloqueada. O ajuste rápido é do mestre, então só avisa e aplica
+        const blocks = actionBlocks(combatant.effects);
+        if (key === 'lp' && delta > 0 && isBlocked(blocks, 'no_healing')) {
+            enqueueSnackbar(`${blockReason(blocks, 'no_healing', combatant.name || charsheet.name)}.`, { variant: 'warning' });
+        }
         try {
             await charsheetService.adjustStats(charsheet.id, { [key]: delta });
         } catch (error) {
