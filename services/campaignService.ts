@@ -167,6 +167,17 @@ class CampaignService extends Service<Campaign, 'code' | 'userId'> {
         return (await this.post({ param: `${campaignId}/combat`, body: { action: 'attack_damage', ...payload } })).data
     }
 
+    /**
+     * O jogador atacado declara a própria defesa (esquiva, resistência ou nenhuma) com o teste que rolou. Uma vez só: repetir dá 409
+     * `DEFENSE_ALREADY_DECLARED` (o mestre troca o que quiser ao resolver).
+     */
+    async declareDefense(
+        campaignId: string,
+        payload: { attackId: string; defense: { choice: 'dodge' | 'resist' | 'none'; skill?: string; total?: number; rolls?: number[]; used?: number; bonus?: number } }
+    ) {
+        return (await this.post({ param: `${campaignId}/combat`, body: { action: 'declare_defense', ...payload } })).data
+    }
+
     /** Descarta um ataque pendente (quem atacou ou o mestre) */
     async dismissAttack(campaignId: string, attackId: string) {
         return (await this.post({ param: `${campaignId}/combat`, body: { action: 'dismiss_attack', attackId } })).data

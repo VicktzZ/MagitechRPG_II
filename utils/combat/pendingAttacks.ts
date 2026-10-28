@@ -1,3 +1,4 @@
+import { DODGE_EXPERTISE, effectiveDamageKind, resistanceExpertise, type DefenseChoice } from './engine/defense';
 import type { DamageKind, ExplainLine } from './engine/types';
 
 /**
@@ -29,6 +30,19 @@ export interface AttackDeclaration {
     areaMeters?: number;
 }
 
+/** A defesa do jogador atacado (esquiva, resistência ou nenhuma) e o teste que ele rolou */
+export interface PendingDefense {
+    choice: DefenseChoice;
+    /** Perícia rolada: Reflexos na esquiva, a RES da natureza do ataque na resistência; vazio sem defesa */
+    skill: string;
+    /** Total do teste; 0 sem defesa */
+    total: number;
+    /** Os d20, o que valeu e o bônus somado: o mestre vê como saiu */
+    rolls: number[];
+    used: number;
+    bonus: number;
+}
+
 export interface PendingAttackData extends AttackDeclaration {
     id: string;
     attackerId: string;
@@ -37,6 +51,8 @@ export interface PendingAttackData extends AttackDeclaration {
     targetName: string;
     /** Dano rolado (com o crítico e o furtivo); falta até o jogador rolar o dano */
     damageRolled?: number;
+    /** A defesa que o jogador alvo rolou; o mestre parte dela ao resolver, mas pode trocar tudo */
+    defense?: PendingDefense;
     createdAt: string;
 }
 
@@ -104,6 +120,59 @@ export function setPendingDamage(list: readonly PendingAttackData[] | undefined,
     const entries = list ?? [];
     if (!entries.some(entry => entry.id === attackId)) return null;
     return entries.map(entry => (entry.id === attackId ? { ...entry, damageRolled: damage, ...(critical ? { critical: true } : {}) } : entry));
+}
+
+const DEFENSE_CHOICES: readonly DefenseChoice[] = [ 'dodge', 'resist', 'none' ];
+
+/** Perícias que valem como defesa: Reflexos na esquiva; uma das RES na resistência */
+const DODGE_SKILLS: readonly string[] = [ 'Reflexos' ];
+const RESIST_SKILLS: readonly string[] = [ 'RES Física', 'RES Mágica', 'RES Mental' ];
+
+/** Valida a defesa que o jogador mandou; `null` se não serve. O total tem de ser o d20 que valeu mais o bônus, e o d20 que valeu, um dos rolados */
+export function sanitizeDefenseDeclaration(raw: unknown): PendingDefense | null {
+    if (typeof raw !== 'object' || raw === null) return null;
+    const entry = raw as Record<string, unknown>;
+
+    const choice = DEFENSE_CHOICES.find(candidate => candidate === entry['choice']);
+    if (!choice) return null;
+    if (choice === 'none') return { choice, skill: '', total: 0, rolls: [], used: 0, bonus: 0 };
+
+    const skill = asText(entry['skill'], 40);
+    if (!(choice === 'dodge' ? DODGE_SKILLS : RESIST_SKILLS).includes(skill)) return null;
+
+    const rawRolls = Array.isArray(entry['rolls']) ? entry['rolls'].slice(0, MAX_ROLLS) : [];
+    const rolls = rawRolls.map(roll => asInt(roll, 1, 20));
+    const used = asInt(entry['used'], 1, 20);
+    const bonus = asInt(entry['bonus'] ?? 0, -1000, 1000);
+    const total = asInt(entry['total'], -1000, 2000);
+    if (rolls.length === 0 || rolls.some(roll => roll === null) || used === null || bonus === null || total === null) return null;
+    if (!(rolls as number[]).includes(used) || total !== used + bonus) return null;
+
+    return { choice, skill, total, rolls: rolls as number[], used, bonus };
+}
+
+/** Guarda a defesa do jogador no ataque; `null` se o ataque não existe */
+export function setPendingDefense(list: readonly PendingAttackData[] | undefined, attackId: string, defense: PendingDefense): PendingAttackData[] | null {
+    const entries = list ?? [];
+    if (!entries.some(entry => entry.id === attackId)) return null;
+    return entries.map(entry => (entry.id === attackId ? { ...entry, defense } : entry));
+}
+
+/** Os ataques pendentes contra esse alvo: os que esperam a defesa dele e os que ele já respondeu (esperam o mestre) */
+export function incomingAttacks(list: readonly PendingAttackData[] | undefined, targetId: string | undefined): { awaiting: PendingAttackData[]; answered: PendingAttackData[] } {
+    const mine = (list ?? []).filter(entry => Boolean(targetId) && entry.targetId === targetId);
+    return { awaiting: mine.filter(entry => !entry.defense), answered: mine.filter(entry => Boolean(entry.defense)) };
+}
+
+/** A perícia que cada defesa rola: Reflexos na esquiva; na resistência, a RES da natureza do ataque (magia Psíquica conta como mental) */
+export const defenseSkillFor = (attack: Pick<PendingAttackData, 'kind' | 'attackType'>, choice: DefenseChoice): string =>
+    (choice === 'dodge' ? DODGE_EXPERTISE : resistanceExpertise(effectiveDamageKind(attack.kind, attack.attackType)));
+
+/** "Reflexos: [12, 7: 12] + 3 = 15" (ou "sem defesa") */
+export function describeDefense(defense: PendingDefense): string {
+    if (defense.choice === 'none') return 'sem defesa';
+    const dice = `${defense.rolls.join(', ')}${defense.rolls.length > 1 ? `: ${defense.used}` : ''}`;
+    return `${defense.skill}: [${dice}] ${defense.bonus >= 0 ? '+' : '−'} ${Math.abs(defense.bonus)} = ${defense.total}`;
 }
 
 export const removePendingAttack = (list: readonly PendingAttackData[] | undefined, attackId: string): PendingAttackData[] =>

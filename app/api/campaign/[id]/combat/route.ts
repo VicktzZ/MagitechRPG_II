@@ -24,7 +24,8 @@ import { applySustainedUpkeep, endSustained, startSustained } from '@utils/comba
 import { findBaseCreature } from '@utils/combatCreatureLookup'
 import { damageCombatant, damageStats, healCombatant, healStats } from '@utils/firestore/combatDamage'
 import {
-    addPendingAttack, buildAttackLogMessage, dropPendingFor, removePendingAttack, sanitizeAttackDeclaration, sanitizeExplainLines, setPendingDamage
+    addPendingAttack, buildAttackLogMessage, dropPendingFor, removePendingAttack, sanitizeAttackDeclaration, sanitizeDefenseDeclaration, sanitizeExplainLines, setPendingDamage,
+    setPendingDefense
 } from '@utils/combat/pendingAttacks'
 import { diffSheetVitals, diffSnapshots, snapshotCombat, summarizeChanges, type CombatSnapshot, type SheetVitals } from '@utils/combat/history'
 import { deleteCombatEvents, getCombatEvent, isCombatEventId, markCombatEventUndone, readPlayerVitals, recordCombatEvent } from '@utils/firestore/combatEvents'
@@ -48,7 +49,7 @@ const SHEET_ACTIONS: CombatAction[] = [ 'next_turn', 'apply_damage', 'apply_heal
 const OWN_TURN_ACTIONS: CombatAction[] = [ 'next_turn', 'apply_damage', 'apply_heal' ]
 
 const KNOWN_ACTIONS: CombatAction[] = [
-    ...GM_ONLY_ACTIONS, ...OWN_TURN_ACTIONS, 'roll_initiative', 'spend_mp', 'spend_action', 'sustain_start', 'sustain_end', 'declare_attack', 'attack_damage', 'dismiss_attack'
+    ...GM_ONLY_ACTIONS, ...OWN_TURN_ACTIONS, 'roll_initiative', 'spend_mp', 'spend_action', 'sustain_start', 'sustain_end', 'declare_attack', 'attack_damage', 'dismiss_attack', 'declare_defense'
 ]
 
 type CombatAction = 
@@ -76,6 +77,7 @@ type CombatAction =
     | 'declare_attack'  // Ataque assistido: o jogador (ou o mestre) declara um ataque com alvo; fica pendente até o mestre resolver
     | 'attack_damage'   // O dano rolado se junta ao ataque pendente
     | 'dismiss_attack'  // Descarta um ataque pendente (quem atacou ou o mestre)
+    | 'declare_defense' // O jogador atacado escolhe e rola a própria defesa (esquiva, resistência ou nenhuma); o mestre parte dela ao resolver
     | 'resolve_attack'  // Mestre confirma o ataque: aplica o dano, gasta a Reação de quem esquivou e registra no log
 
 interface CombatRequest {
@@ -142,8 +144,10 @@ interface CombatRequest {
 
     /** Para declare_attack: o ataque (arma/magia, natureza, tipo, total do acerto, d20 e bônus); o servidor limpa (`sanitizeAttackDeclaration`) */
     attack?: unknown
-    /** Para attack_damage, dismiss_attack e resolve_attack: o ataque pendente */
+    /** Para attack_damage, dismiss_attack, declare_defense e resolve_attack: o ataque pendente */
     attackId?: string
+    /** Para declare_defense: a escolha e o teste rolado; o servidor limpa (`sanitizeDefenseDeclaration`) */
+    defense?: unknown
     /** Para attack_damage: o dano foi crítico */
     critical?: boolean
     /** Para resolve_attack: acertou, o dano final (o mestre pode trocar o que o motor propôs), se o alvo gastou a Reação esquivando e as linhas públicas do cálculo */
@@ -230,6 +234,7 @@ function getActionMessage(action: CombatAction): string {
         declare_attack: 'Ataque declarado',
         attack_damage: 'Dano do ataque registrado',
         dismiss_attack: 'Ataque descartado',
+        declare_defense: 'Defesa declarada',
         resolve_attack: 'Ataque resolvido'
     }
     return messages[action] || 'Ação executada'
@@ -324,6 +329,14 @@ export async function POST(
                 const attacker = pending && combat.combatants?.find(c => c.id === pending.attackerId)
                 if (pending && !ownsCombatant(attacker)) {
                     throw forbidden('Esse ataque não é do seu personagem')
+                }
+            }
+
+            if (action === 'declare_defense') {
+                const pending = combat.pendingAttacks?.find(entry => entry.id === body.attackId)
+                const defender = pending && combat.combatants?.find(c => c.id === pending.targetId)
+                if (pending && !ownsCombatant(defender)) {
+                    throw forbidden('Você só pode se defender dos ataques ao seu personagem')
                 }
             }
 
@@ -1437,6 +1450,27 @@ export async function POST(
             break
         }
 
+        case 'declare_defense': {
+            const pending = combat.pendingAttacks?.find(entry => entry.id === body.attackId)
+            if (!pending) {
+                return NextResponse.json({ error: 'Ataque pendente não encontrado (o mestre pode já tê-lo resolvido)' }, { status: 404 })
+            }
+
+            const defense = sanitizeDefenseDeclaration(body.defense)
+            if (!defense) {
+                throw badRequest('Defesa inválida')
+            }
+
+            // Uma defesa só: o jogador não refaz a rolagem para melhorar o resultado. O mestre troca o que quiser ao resolver.
+            if (pending.defense && !isGM) {
+                return NextResponse.json({ error: 'Você já declarou a defesa desse ataque', code: 'DEFENSE_ALREADY_DECLARED' }, { status: 409 })
+            }
+
+            combat.pendingAttacks = setPendingDefense(combat.pendingAttacks, pending.id, defense) ?? combat.pendingAttacks
+
+            break
+        }
+
         case 'resolve_attack': {
             if (!combat.isActive) {
                 return NextResponse.json({ error: 'Não há combate ativo' }, { status: 400 })
@@ -1500,7 +1534,7 @@ export async function POST(
         let combatMessage: Message | undefined
         // `sustain_end` só gera log quando alguma magia estava ativa.
         const logsGrew = combat.logs.length > logsBefore
-        const silentActions: CombatAction[] = [ 'spend_mp', 'spend_action', 'declare_attack', 'attack_damage', 'dismiss_attack' ]
+        const silentActions: CombatAction[] = [ 'spend_mp', 'spend_action', 'declare_attack', 'attack_damage', 'dismiss_attack', 'declare_defense' ]
         if (!silentActions.includes(action) && (action !== 'sustain_end' || logsGrew) && combat.logs.length > 0) {
             const lastLog = combat.logs[combat.logs.length - 1]
             combatMessage = new Message({
