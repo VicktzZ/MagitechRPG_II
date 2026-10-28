@@ -8,7 +8,7 @@ import { rollCreatureExpertise } from '@utils/combat/creatureRoll';
 import { DODGE_EXPERTISE, type DefenseChoice } from '@utils/combat/engine/defense';
 import { rollD20 } from '@utils/campaignTest';
 import type { DamageKind } from '@utils/combat/engine/types';
-import type { PendingAttackData } from '@utils/combat/pendingAttacks';
+import { defenseSkillFor, describeDefense, type PendingAttackData } from '@utils/combat/pendingAttacks';
 import { findBaseCreature } from '@utils/combatCreatureLookup';
 import { errorMessage } from '@utils/errors';
 import { planSheetRoll, rollSheetPlan } from '@utils/sheetRoll';
@@ -26,6 +26,10 @@ export interface AttackResolution {
     setDefenseTotal: (value: string) => void;
     /** Como saiu a última rolagem de defesa ("[12, 7: 12] + 3 = 15") */
     defenseRollText: string;
+    /** A defesa vem do teste que o jogador alvo rolou (e o mestre não trocou a escolha nem o total) */
+    defenseFromPlayer: boolean;
+    /** O alvo é um jogador que ainda não declarou a defesa */
+    awaitingPlayerDefense: boolean;
     surprised: boolean;
     setSurprised: (value: boolean) => void;
     area: string;
@@ -63,9 +67,10 @@ export function useAttackResolution(attack: PendingAttackData): AttackResolution
     const { enqueueSnackbar } = useSnackbar();
 
     const [ kind, setKind ] = useState<DamageKind>(attack.kind);
-    const [ defense, setDefense ] = useState<DefenseChoice>('none');
-    const [ defenseTotal, setDefenseTotal ] = useState('');
-    const [ defenseRollText, setDefenseRollText ] = useState('');
+    // A defesa parte da que o jogador alvo declarou (`attack.defense`, que pode chegar depois de o cartão abrir); o que o mestre mexer vale no lugar dela
+    const [ defenseOverride, setDefenseOverride ] = useState<DefenseChoice | null>(null);
+    const [ totalOverride, setTotalOverride ] = useState<string | null>(null);
+    const [ rollTextOverride, setRollTextOverride ] = useState<string | null>(null);
     const [ surprised, setSurprised ] = useState(false);
     const [ area, setArea ] = useState(attack.areaMeters ? String(attack.areaMeters) : '');
     const [ extraRolls, setExtraRolls ] = useState<number[]>([]);
@@ -84,6 +89,28 @@ export function useAttackResolution(attack: PendingAttackData): AttackResolution
         () => (targetCombatant?.type === 'player' ? charsheets.find(candidate => candidate.id === targetCombatant.id) ?? null : null),
         [ targetCombatant, charsheets ]
     );
+
+    // O teste do jogador só vale para a escolha e a perícia que ele rolou: trocar a esquiva por resistência, ou a natureza do ataque (outra RES), pede outro teste
+    const playerDefense = attack.defense;
+    const defense: DefenseChoice = defenseOverride ?? playerDefense?.choice ?? 'none';
+    const playerTestApplies = Boolean(
+        playerDefense && playerDefense.choice !== 'none' && playerDefense.choice === defense
+        && playerDefense.skill === defenseSkillFor({ kind, attackType: attack.attackType }, defense)
+    );
+    const defenseTotal = totalOverride ?? (playerTestApplies && playerDefense ? String(playerDefense.total) : '');
+    const defenseRollText = rollTextOverride ?? (playerTestApplies && playerDefense ? `${describeDefense(playerDefense)} (rolado pelo jogador)` : '');
+    const defenseFromPlayer = playerTestApplies && totalOverride === null;
+    const awaitingPlayerDefense = targetCombatant?.type === 'player' && !playerDefense;
+
+    const setDefense = (value: DefenseChoice): void => {
+        setDefenseOverride(value);
+        setTotalOverride(null);
+        setRollTextOverride(null);
+    };
+    const setDefenseTotal = (value: string): void => {
+        setTotalOverride(value);
+        setRollTextOverride('');
+    };
 
     const target: ProposalTarget = { effects: targetCombatant?.effects, creature, sheet };
     const choice: ProposalChoice = {
@@ -114,8 +141,8 @@ export function useAttackResolution(attack: PendingAttackData): AttackResolution
                 enqueueSnackbar(`${targetCombatant?.name ?? 'A criatura'} não tem a perícia ${skill}. Digite o total.`, { variant: 'warning' });
                 return;
             }
-            setDefenseTotal(String(result.total));
-            setDefenseRollText(describeRoll(skill, result.rolls, result.used, result.bonus, result.total));
+            setTotalOverride(String(result.total));
+            setRollTextOverride(describeRoll(skill, result.rolls, result.used, result.bonus, result.total));
             return;
         }
 
@@ -125,8 +152,8 @@ export function useAttackResolution(attack: PendingAttackData): AttackResolution
             return;
         }
         const result = rollSheetPlan(plan);
-        setDefenseTotal(String(result.total));
-        setDefenseRollText(describeRoll(skill, result.rolls, result.used, plan.bonus, result.total));
+        setTotalOverride(String(result.total));
+        setRollTextOverride(describeRoll(skill, result.rolls, result.used, plan.bonus, result.total));
     };
 
     const confirm = async (): Promise<void> => {
@@ -162,7 +189,7 @@ export function useAttackResolution(attack: PendingAttackData): AttackResolution
     };
 
     return {
-        proposal, kind, setKind, defense, setDefense, defenseTotal, setDefenseTotal, defenseRollText, surprised, setSurprised, area, setArea,
+        proposal, kind, setKind, defense, setDefense, defenseTotal, setDefenseTotal, defenseRollText, defenseFromPlayer, awaitingPlayerDefense, surprised, setSurprised, area, setArea,
         extraRolls, hitOverride, setHitOverride, damageOverride, setDamageOverride, hit, finalDamage, canConfirm, busy,
         rollExtraDie, rollDefense, confirm, dismiss
     };

@@ -87,6 +87,72 @@ describe('PendingAttackCard', () => {
     });
 });
 
+describe('PendingAttackCard com o jogador como alvo', () => {
+    const caio = {
+        id: 'caio', name: 'Caio', stats: { ap: 12, lp: 30 },
+        expertises: { Reflexos: { value: 3, defaultAttribute: 'des' }, 'RES Física': { value: 4 }, 'RES Mágica': { value: 2 }, 'RES Mental': { value: 5 } }
+    };
+    const asPlayerTarget = () => {
+        const context = campaignWith({
+            combatants: [
+                { id: 'goblin-1', name: 'Goblin', type: 'creature', effects: [] },
+                { id: 'caio', name: 'Caio', type: 'player', effects: [] }
+            ]
+        });
+        return { ...context, charsheets: [ caio ] };
+    };
+    const incoming = (patch: Partial<PendingAttackData> = {}): PendingAttackData => attack({ attackerId: 'goblin-1', attackerName: 'Goblin', targetId: 'caio', targetName: 'Caio', ...patch });
+    const dodge = { choice: 'dodge' as const, skill: 'Reflexos', total: 19, rolls: [ 16, 4 ], used: 16, bonus: 3 };
+
+    it('enquanto o jogador não defendeu, avisa que espera a defesa dele (o mestre ainda pode resolver)', () => {
+        mockContext.mockReturnValue(asPlayerTarget());
+        const html = render(<PendingAttackCard attack={incoming()} />);
+
+        expect(html).toContain('Aguardando a defesa de Caio');
+        expect(html).not.toContain('Defesa rolada por Caio');
+    });
+
+    it('parte da esquiva que o jogador rolou: escolha, total e como saiu', () => {
+        mockContext.mockReturnValue(asPlayerTarget());
+        const html = render(<PendingAttackCard attack={incoming({ defense: dodge })} />);
+
+        expect(html).toContain('Defesa rolada por Caio');
+        expect(html).not.toContain('Aguardando a defesa de Caio');
+        expect(html).toContain('Esquiva (Reflexos)');
+        expect(html).toContain('value="19"');
+        expect(html).toContain('Reflexos: [16, 4: 16] + 3 = 19 (rolado pelo jogador)');
+        // Reflexos 19 passa do total 17 do ataque: anulou o dano
+        expect(html).toContain('Aplicar 0 de dano');
+    });
+
+    it('jogador que escolheu não se defender: o dano vem inteiro', () => {
+        mockContext.mockReturnValue(asPlayerTarget());
+        const html = render(<PendingAttackCard attack={incoming({ defense: { choice: 'none', skill: '', total: 0, rolls: [], used: 0, bonus: 0 } })} />);
+
+        expect(html).toContain('Caio não se defende');
+        expect(html).toContain('Aplicar 10 de dano');
+    });
+
+    it('resistência rolada: usa o teste do jogador na RES da natureza do ataque', () => {
+        mockContext.mockReturnValue(asPlayerTarget());
+        // DT = ⌈17 ÷ 2⌉ = 9; 11 passa: o dano cai AP 12 + ⌊4 ÷ 2⌋ = 14, então 10 de dano vira 0
+        const resist = { choice: 'resist' as const, skill: 'RES Física', total: 11, rolls: [ 8 ], used: 8, bonus: 3 };
+        const html = render(<PendingAttackCard attack={incoming({ defense: resist })} />);
+
+        expect(html).toContain('Resistência (RES Física)');
+        expect(html).toContain('value="11"');
+        expect(html).toContain('RES Física: [8] + 3 = 11 (rolado pelo jogador)');
+        expect(html).toContain('Aplicar 0 de dano');
+    });
+
+    it('criatura como alvo não espera defesa de ninguém', () => {
+        mockContext.mockReturnValue(campaignWith({}));
+        const html = render(<PendingAttackCard attack={attack()} />);
+
+        expect(html).not.toContain('Aguardando a defesa');
+    });
+});
+
 describe('PendingAttacksPanel', () => {
     it('some fora do combate ou fora da fase de ação', () => {
         mockContext.mockReturnValue(campaignWith({ isActive: false }));

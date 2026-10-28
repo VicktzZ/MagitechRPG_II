@@ -1,13 +1,18 @@
 import {
     addPendingAttack,
     buildAttackLogMessage,
+    defenseSkillFor,
+    describeDefense,
     dropPendingFor,
     findAwaitingDamage,
+    incomingAttacks,
     MAX_PENDING_ATTACKS,
     removePendingAttack,
     sanitizeAttackDeclaration,
+    sanitizeDefenseDeclaration,
     sanitizeExplainLines,
     setPendingDamage,
+    setPendingDefense,
     totalWithExtraDice,
     type PendingAttackData
 } from '../pendingAttacks';
@@ -144,5 +149,70 @@ describe('linhas públicas e mensagem do combate', () => {
         expect(message).toBe('⚔️ **Aria** atacou **Goblin** com **Espada**: 9 de dano.\n• Acerto: 18 contra AP 15: acertou\n• Dano final: 9');
         expect(buildAttackLogMessage(attack(), false, 0, [])).toBe('⚔️ **Aria** atacou **Goblin** com **Espada**: errou.');
         expect(buildAttackLogMessage(attack(), true, 0, [])).toBe('⚔️ **Aria** atacou **Goblin** com **Espada**: sem dano.');
+    });
+});
+
+describe('defesa do jogador atacado', () => {
+    const dodge = { choice: 'dodge', skill: 'Reflexos', total: 18, rolls: [ 15, 9 ], used: 15, bonus: 3 };
+
+    it('aceita a esquiva e a resistência com o teste rolado', () => {
+        expect(sanitizeDefenseDeclaration(dodge)).toEqual(dodge);
+        expect(sanitizeDefenseDeclaration({ ...dodge, choice: 'resist', skill: 'RES Mental' })).toMatchObject({ choice: 'resist', skill: 'RES Mental' });
+    });
+
+    it('"não me defender" não leva teste, mesmo que venha lixo junto', () => {
+        expect(sanitizeDefenseDeclaration({ choice: 'none', total: 99, skill: 'Reflexos' })).toEqual({ choice: 'none', skill: '', total: 0, rolls: [], used: 0, bonus: 0 });
+    });
+
+    it('recusa escolha desconhecida, perícia que não é da defesa e corpo que não é objeto', () => {
+        expect(sanitizeDefenseDeclaration({ ...dodge, choice: 'parry' })).toBeNull();
+        expect(sanitizeDefenseDeclaration({ ...dodge, skill: 'Atletismo' })).toBeNull();
+        expect(sanitizeDefenseDeclaration({ ...dodge, skill: 'RES Física' })).toBeNull();
+        expect(sanitizeDefenseDeclaration({ ...dodge, choice: 'resist' })).toBeNull();
+        expect(sanitizeDefenseDeclaration(null)).toBeNull();
+        expect(sanitizeDefenseDeclaration('dodge')).toBeNull();
+    });
+
+    it('o total tem de fechar com o d20 que valeu mais o bônus, e o d20 que valeu tem de ter sido rolado', () => {
+        expect(sanitizeDefenseDeclaration({ ...dodge, total: 30 })).toBeNull();
+        expect(sanitizeDefenseDeclaration({ ...dodge, used: 12, total: 15 })).toBeNull();
+        expect(sanitizeDefenseDeclaration({ ...dodge, rolls: [] })).toBeNull();
+        expect(sanitizeDefenseDeclaration({ ...dodge, rolls: [ 15, 21 ] })).toBeNull();
+        expect(sanitizeDefenseDeclaration({ ...dodge, total: 18.5 })).toBeNull();
+    });
+
+    it('guarda a defesa no ataque certo, e devolve null se o ataque não existe', () => {
+        const list = [ attack({ id: 'a1' }), attack({ id: 'a2' }) ];
+        const updated = setPendingDefense(list, 'a2', { choice: 'dodge', skill: 'Reflexos', total: 18, rolls: [ 15 ], used: 15, bonus: 3 });
+
+        expect(updated?.find(entry => entry.id === 'a2')?.defense?.total).toBe(18);
+        expect(updated?.find(entry => entry.id === 'a1')?.defense).toBeUndefined();
+        expect(setPendingDefense(list, 'a9', { choice: 'none', skill: '', total: 0, rolls: [], used: 0, bonus: 0 })).toBeNull();
+        expect(setPendingDefense(undefined, 'a1', { choice: 'none', skill: '', total: 0, rolls: [], used: 0, bonus: 0 })).toBeNull();
+    });
+
+    it('separa os ataques ao alvo entre os que esperam a defesa e os que ele já respondeu', () => {
+        const answered = attack({ id: 'a2', targetId: 'caio', defense: { choice: 'none', skill: '', total: 0, rolls: [], used: 0, bonus: 0 } });
+        const list = [ attack({ id: 'a1', targetId: 'caio' }), answered, attack({ id: 'a3', targetId: 'goblin' }) ];
+
+        const { awaiting, answered: done } = incomingAttacks(list, 'caio');
+        expect(awaiting.map(entry => entry.id)).toEqual([ 'a1' ]);
+        expect(done.map(entry => entry.id)).toEqual([ 'a2' ]);
+        expect(incomingAttacks(list, undefined)).toEqual({ awaiting: [], answered: [] });
+        expect(incomingAttacks(undefined, 'caio')).toEqual({ awaiting: [], answered: [] });
+    });
+
+    it('a perícia da defesa: Reflexos na esquiva e a RES da natureza na resistência (magia Psíquica é mental)', () => {
+        expect(defenseSkillFor({ kind: 'fisico', attackType: 'Cortante' }, 'dodge')).toBe('Reflexos');
+        expect(defenseSkillFor({ kind: 'fisico', attackType: 'Cortante' }, 'resist')).toBe('RES Física');
+        expect(defenseSkillFor({ kind: 'magico', attackType: 'FOGO' }, 'resist')).toBe('RES Mágica');
+        expect(defenseSkillFor({ kind: 'magico', attackType: 'PSÍQUICO' }, 'resist')).toBe('RES Mental');
+        expect(defenseSkillFor({ kind: 'mental' }, 'resist')).toBe('RES Mental');
+    });
+
+    it('descreve o teste como o mestre vai ler', () => {
+        expect(describeDefense({ choice: 'dodge', skill: 'Reflexos', total: 18, rolls: [ 15, 9 ], used: 15, bonus: 3 })).toBe('Reflexos: [15, 9: 15] + 3 = 18');
+        expect(describeDefense({ choice: 'resist', skill: 'RES Física', total: 7, rolls: [ 9 ], used: 9, bonus: -2 })).toBe('RES Física: [9] − 2 = 7');
+        expect(describeDefense({ choice: 'none', skill: '', total: 0, rolls: [], used: 0, bonus: 0 })).toBe('sem defesa');
     });
 });

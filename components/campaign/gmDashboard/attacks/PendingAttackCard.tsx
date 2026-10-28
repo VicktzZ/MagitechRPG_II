@@ -33,6 +33,15 @@ export default function PendingAttackCard({ attack }: { attack: PendingAttackDat
                 <Chip size="small" label={`${attack.name}${attack.attackType ? ` · ${attack.attackType}` : ''}`} />
                 {attack.critical && <Chip size="small" color="warning" label="Crítico" />}
                 {proposal.weak && <Chip size="small" color="info" label="Alvo fraco a este ataque" />}
+                {resolution.awaitingPlayerDefense && <Chip size="small" variant="outlined" label={`Aguardando a defesa de ${attack.targetName}`} />}
+                {attack.defense && (
+                    <Chip
+                        size="small"
+                        variant="outlined"
+                        color={attack.defense.choice === 'none' ? 'default' : 'success'}
+                        label={attack.defense.choice === 'none' ? `${attack.targetName} não se defende` : `Defesa rolada por ${attack.targetName}`}
+                    />
+                )}
             </Stack>
 
             <Stack direction="row" spacing={3} flexWrap="wrap" useFlexGap sx={{ mb: 1.5 }}>

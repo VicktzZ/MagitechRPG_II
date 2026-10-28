@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo, memo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef, memo } from 'react';
 import {
     alpha,
     Box,
@@ -42,8 +42,10 @@ import { campaignService } from '@services';
 import { asRequestError, errorMessage } from '@utils/errors';
 import { combatantBudget, SLOT_EXECUTION } from '@utils/combat/actionBudgets';
 import type { ActionSlot } from '@utils/combat/engine/actionBudget';
+import { incomingAttacks } from '@utils/combat/pendingAttacks';
 import ActionPips from './ActionPips';
 import EffectBadges from './gmDashboard/actions/EffectBadges';
+import IncomingAttacks from './playerDashboard/attacks/IncomingAttacks';
 
 interface CombatStatusProps {
     campaignId: string;
@@ -140,6 +142,25 @@ function CombatStatus({
     useEffect(() => {
         if (isUserTurn) setExpanded(true);
     }, [ isUserTurn ]);
+
+    // Ataque assistido contra o personagem do jogador: abre o card e avisa uma vez por ataque, para ele escolher a defesa (ver IncomingAttacks)
+    const awaitingDefense = isGM ? [] : incomingAttacks(combat?.pendingAttacks, userCombatant?.id).awaiting;
+    const awaitingIds = awaitingDefense.map(attack => attack.id).join(',');
+    const notifiedAttacks = useRef<Set<string>>(new Set());
+    useEffect(() => {
+        const fresh = awaitingDefense.filter(attack => !notifiedAttacks.current.has(attack.id));
+        if (fresh.length === 0) return;
+
+        fresh.forEach(attack => notifiedAttacks.current.add(attack.id));
+        setExpanded(true);
+        enqueueSnackbar(`${fresh[0].attackerName} atacou você! Escolha a sua defesa.`, {
+            variant: 'warning',
+            autoHideDuration: 6000,
+            anchorOrigin: { vertical: 'top', horizontal: 'center' }
+        });
+        // awaitingDefense muda de identidade a cada render; o que interessa são os ids
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [ awaitingIds, enqueueSnackbar ]);
 
     // Notifica quando é o turno do jogador
     useEffect(() => {
@@ -391,6 +412,11 @@ function CombatStatus({
                                     }
                                 </Typography>
                             </Alert>
+                        )}
+
+                        {/* Ataques ao personagem do jogador: escolher e rolar a defesa */}
+                        {combat.phase === 'ACTION' && userCombatant && !isGM && (
+                            <IncomingAttacks combat={combat} combatantId={userCombatant.id} />
                         )}
 
                         {/* Ações da rodada do próprio personagem (Padrão, Bônus, Movimento, Reação) */}
