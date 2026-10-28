@@ -26,6 +26,7 @@ import PersonIcon from '@mui/icons-material/Person';
 import PetsIcon from '@mui/icons-material/Pets';
 import { color as tokenColor } from '@themes/tokens';
 import { useSnackbar } from 'notistack';
+import { handleHealingBlocked } from './healBlocked';
 import type { Combat, Combatant } from '@models';
 import type { Charsheet } from '@models/entities';
 import { useTheme } from '@mui/material';
@@ -45,7 +46,7 @@ export default function CombatActionButton({
     charsheets = [],
     onActionComplete 
 }: CombatActionButtonProps) {
-    const { enqueueSnackbar } = useSnackbar();
+    const { enqueueSnackbar, closeSnackbar } = useSnackbar();
     const theme = useTheme();
 
     // Função para obter LP/MP de charsheet.stats
@@ -87,7 +88,7 @@ export default function CombatActionButton({
         }
     };
 
-    const handleApply = useCallback(async () => {
+    const apply = useCallback(async (force: boolean) => {
         if (!targetId || value <= 0) {
             enqueueSnackbar('Selecione um alvo e um valor válido', { variant: 'warning' });
             return;
@@ -105,11 +106,18 @@ export default function CombatActionButton({
                     action: actionType === 'damage' ? 'apply_damage' : 'apply_heal',
                     combatantId: currentCombatant?.id,
                     targetId,
-                    value
+                    value,
+                    ...(force ? { force: true } : {})
                 })
             });
 
             const result = await response.json();
+
+            // Necrose, Incurável...: o alvo não recebe cura. O mestre pode curar mesmo assim
+            if (!response.ok && handleHealingBlocked(result, { enqueueSnackbar, closeSnackbar }, () => { void apply(true); })) {
+                handleClose();
+                return;
+            }
 
             if (!response.ok) {
                 throw new Error(result.error || 'Erro ao aplicar ação');
@@ -130,7 +138,9 @@ export default function CombatActionButton({
         } finally {
             setIsLoading(false);
         }
-    }, [ campaignId, actionType, targetId, value, enqueueSnackbar, onActionComplete ]);
+    }, [ campaignId, actionType, targetId, value, enqueueSnackbar, closeSnackbar, onActionComplete ]);
+
+    const handleApply = useCallback(async () => { await apply(false); }, [ apply ]);
 
     // Não mostra nada se não houver combate ativo
     if (!combat?.isActive) return null;

@@ -6,9 +6,10 @@ import type { SpellDTO } from '@models/dtos';
 import { SportsKabaddi } from '@mui/icons-material';
 import { Box, Button, Chip, Menu, MenuItem, Stack, Typography } from '@mui/material';
 import { font } from '@themes/tokens';
+import ActionBlocksNotice from '../../ActionBlocksNotice';
 import ActionPips from '../../ActionPips';
 import Section from '../../Section';
-import { combatantBudget } from '@utils/combat/actionBudgets';
+import { actionBlocks, blockReason, effectiveBudget, isBlocked } from '@utils/combat/actionFlags';
 import {
     buildActionTiles,
     countByExecution,
@@ -73,7 +74,10 @@ export default function ActionsSection(): ReactElement | null {
 
     if (!charsheet || !combat || !me) return null;
 
-    const budget = combatantBudget(me);
+    // Efeitos que impedem agir (Paralisia: sem ações e sem magias) ou conjurar (Silenciamento): os quadrados ficam sem uso e dizem por quê. É aviso, o mestre remove o efeito para liberar
+    const blocks = actionBlocks(me.effects);
+    const noActions = isBlocked(blocks, 'no_actions');
+    const budget = effectiveBudget(me);
     const acting = combat.phase === 'ACTION';
     const isMyTurn = acting && combat.combatants?.[combat.currentTurnIndex]?.id === me.id;
     const target = targeting.targets.find(candidate => candidate.id === targeting.targetId);
@@ -90,6 +94,8 @@ export default function ActionsSection(): ReactElement | null {
 
         if (!acting) return { state: 'blocked', hint: 'As ações abrem quando a iniciativa estiver definida.', active };
         if (active) return { state: 'ready', hint: 'Magia sustentada ativa. Clique para desconjurar.', active };
+        if (tile.kind === 'spell' && isBlocked(blocks, 'no_spells')) return { state: 'blocked', hint: `${blockReason(blocks, 'no_spells', 'Você')}.`, active };
+        if (noActions) return { state: 'spent', hint: `${blockReason(blocks, 'no_actions', 'Você')}.`, active };
         if (isTileSpent(tile, budget)) return { state: 'spent', hint: `Sem a ação ${tile.execution} nesta rodada.`, active };
         if (tile.category === 'attack' && !targeting.targetId) {
             return { state: 'blocked', hint: targeting.targets.length > 0 ? 'Defina o alvo do ataque no campo acima.' : 'Não há alvos no combate.', active };
@@ -167,6 +173,7 @@ export default function ActionsSection(): ReactElement | null {
     return (
         <Section id="acoes" title="Ações" icon={<SportsKabaddi sx={{ color: 'text.secondary' }} />}>
             <Stack spacing={2} data-testid="actions-section">
+                <ActionBlocksNotice blocks={blocks} who="Você" />
                 <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center', flexWrap: 'wrap' }}>
                     <ActionPips budget={budget} />
                     {isMyTurn && <Chip size="small" color="primary" label="Sua vez" />}

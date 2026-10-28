@@ -5,11 +5,13 @@ import { Edit, RestartAlt } from '@mui/icons-material';
 import { Avatar, Box, Button, Chip, Divider, Stack, Typography } from '@mui/material';
 import { font } from '@themes/tokens';
 import { combatantBudget } from '@utils/combat/actionBudgets';
+import { actionBlocks } from '@utils/combat/actionFlags';
 import type { ActionSlot } from '@utils/combat/engine/actionBudget';
 import type { SheetMetrics } from '@utils/charsheetMetrics';
 import { filterAndSortExpertises } from '@utils/expertiseList';
 import type { VitalKey } from '@utils/vitals';
 import type { ReactElement, ReactNode } from 'react';
+import ActionBlocksNotice from '../../../ActionBlocksNotice';
 import ActionPips from '../../../ActionPips';
 import ExpertiseListControls, { ExpertiseNoResults, useExpertiseListState } from '../../../ExpertiseListControls';
 import CreatureExpertiseButton from '../../dashboard/CreatureExpertiseButton';
@@ -90,6 +92,8 @@ export function PlayerCombatantView({
                     </Typography>
                 </Box>
             </Box>
+
+            <ActionBlocksNotice blocks={actionBlocks(combatant.effects)} who={charsheet.name} />
 
             {vitalRows.length > 0 && <VitalsPanel charsheetName={charsheet.name} rows={vitalRows} onAdjust={onAdjustVital} />}
 

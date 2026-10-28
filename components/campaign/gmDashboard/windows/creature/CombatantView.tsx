@@ -5,12 +5,14 @@ import { Bolt, Edit, Pets, RestartAlt } from '@mui/icons-material';
 import { Avatar, Box, Button, Chip, Stack, Typography, alpha } from '@mui/material';
 import { color, font } from '@themes/tokens';
 import { combatantBudget } from '@utils/combat/actionBudgets';
+import { actionBlocks } from '@utils/combat/actionFlags';
 import { completeCreatureExpertises } from '@utils/combat/creatureExpertises';
 import type { ActionSlot } from '@utils/combat/engine/actionBudget';
 import { combatantVitals, type CombatantVitalKey } from '@utils/combatantVitals';
 import { filterAndSortExpertises } from '@utils/expertiseList';
 import type { ReactElement, ReactNode } from 'react';
 import { toCreatureCard } from './creatureCard';
+import ActionBlocksNotice from '../../../ActionBlocksNotice';
 import ActionPips from '../../../ActionPips';
 import ExpertiseListControls, { ExpertiseNoResults, useExpertiseListState } from '../../../ExpertiseListControls';
 import CreatureExpertiseButton from '../../dashboard/CreatureExpertiseButton';
@@ -89,6 +91,8 @@ export function CombatantView({
                     )}
                 </Box>
             </Box>
+
+            <ActionBlocksNotice blocks={actionBlocks(combatant.effects)} who={name} />
 
             <VitalsPanel
                 charsheetName={name}

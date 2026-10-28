@@ -4,6 +4,7 @@ import { useCampaignContext } from '@contexts';
 import { Typography } from '@mui/material';
 import type { ReactElement } from 'react';
 import { campaignService } from '@services';
+import { actionBlocks, blockReason, isBlocked } from '@utils/combat/actionFlags';
 import { findBaseCreature } from '@utils/combatCreatureLookup';
 import type { CombatantVitalKey } from '@utils/combatantVitals';
 import { errorMessage, asRequestError } from '@utils/errors';
@@ -41,6 +42,11 @@ export default function CombatantWindow({ combatantId }: { combatantId: string }
 
     // O servidor soma a variação ao valor de agora; a barra muda sozinha quando o combate chega do Firestore
     const adjustVital = async (key: CombatantVitalKey, delta: number): Promise<void> => {
+        // Necrose, Incurável...: a cura é bloqueada. O ajuste rápido é do mestre, então só avisa e aplica
+        const blocks = actionBlocks(combatant.effects);
+        if (key === 'lp' && delta > 0 && isBlocked(blocks, 'no_healing')) {
+            enqueueSnackbar(`${blockReason(blocks, 'no_healing', combatant.name)}.`, { variant: 'warning' });
+        }
         try {
             await campaignService.adjustCombatantVitals(campaign.id, combatant.id, { [key]: delta });
         } catch (error) {
@@ -53,6 +59,12 @@ export default function CombatantWindow({ combatantId }: { combatantId: string }
 
     // Conjurar gasta o MP da criatura e conta no limite da rodada; o servidor recusa (409) o que passar dele
     const castSpell = async (spell: { name: string; cost: number }): Promise<void> => {
+        // Silenciamento, Paralisia... (flag `no_spells`): a criatura não conjura. O mestre libera tirando o efeito
+        const castBlocks = actionBlocks(combatant.effects);
+        if (isBlocked(castBlocks, 'no_spells')) {
+            enqueueSnackbar(`${blockReason(castBlocks, 'no_spells', combatant.name)}.`, { variant: 'warning' });
+            return;
+        }
         try {
             await campaignService.spendCombatMp(campaign.id, { combatantId: combatant.id, value: spell.cost });
             enqueueSnackbar(`${combatant.name} conjurou ${spell.name} (${spell.cost} MP)`, { variant: 'success' });

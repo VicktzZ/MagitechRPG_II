@@ -17,6 +17,7 @@ import { combatantVitals } from '@utils/combatantVitals'
 import { insertCombatant, nextCreatureInstance } from '@utils/combat/addCombatants'
 import { creatureInitiativeDice, describeInitiativeRolls, playerInitiativeDice, resolveInitiative, type InitiativeDice } from '@utils/combat/initiativeRoll'
 import { resetRoundWindows } from '@utils/combat/roundWindow'
+import { actionBlocks, blockReason, isBlocked } from '@utils/combat/actionFlags'
 import { applyBudgetPatch, combatantBudget, describeBudget } from '@utils/combat/actionBudgets'
 import { executionSlot, spendAction } from '@utils/combat/engine/actionBudget'
 import { sustainedUpkeepFor } from '@utils/combat/sustainedSpells'
@@ -710,12 +711,15 @@ export async function POST(
                     combat.currentTurnIndex = nextIndex
 
                     const nextCombatant = combat.combatants[nextIndex]
+                    // Efeito que faz perder o turno (Paralisia, Atordoamento, Medo...): o aviso entra no anúncio da vez, antes de o tick tirar o efeito. É aviso, o
+                    // mestre decide (o catálogo às vezes diz "chance de pular o turno")
+                    const skipReason = blockReason(actionBlocks(nextCombatant.effects), 'skip_turn', `**${nextCombatant.name}**`)
                     combat.logs.push(new CombatLog({
                         round: combat.round,
                         type: 'turn_pass',
                         actorId: currentCombatant?.id || 'system',
                         actorName: currentCombatant?.name || 'Sistema',
-                        message: `➡️ **${currentCombatant?.name || 'Alguém'}** passou o turno.\n🎯 Vez de **${nextCombatant.name}**!`
+                        message: `➡️ **${currentCombatant?.name || 'Alguém'}** passou o turno.\n🎯 Vez de **${nextCombatant.name}**!${skipReason ? `\n⏭️ ${skipReason}.` : ''}`
                     }))
 
                     // Processa tick de efeitos ao avançar o turno
@@ -781,6 +785,18 @@ export async function POST(
             }
 
             const healer = combat.combatants.find(c => c.id === healerId)
+
+            // Necrose, Incurável... (flag `no_healing`): a cura é bloqueada. O mestre pode curar mesmo assim (`force`); o jogador não
+            const healBlocks = actionBlocks(combat.combatants.find(c => c.id === healTargetId)?.effects)
+            if (isBlocked(healBlocks, 'no_healing') && !(isGM && body.force === true)) {
+                const healTargetName = combat.combatants.find(c => c.id === healTargetId)?.name ?? 'O alvo'
+                return NextResponse.json({
+                    error: `${blockReason(healBlocks, 'no_healing', healTargetName)}.${isGM ? '' : ' Peça ao mestre.'}`,
+                    code: 'HEALING_BLOCKED',
+                    blockedBy: healBlocks.no_healing,
+                    canForce: isGM
+                }, { status: 409 })
+            }
             const healChange = await healCombatant(combat, healTargetId, heal)
 
             if (!healChange) {
@@ -1233,6 +1249,17 @@ export async function POST(
             const combatant = combat.combatants.find(c => c.id === combatantId || c.odacId === combatantId)
             if (!combatant) {
                 return NextResponse.json({ error: 'Combatente não encontrado' }, { status: 404 })
+            }
+
+            // Paralisia (flag `no_actions`): o combatente não pode agir. Mesma resposta de "sem a ação", que os clientes já tratam como aviso (o mestre decide)
+            const actionBlocked = actionBlocks(combatant.effects)
+            if (isBlocked(actionBlocked, 'no_actions')) {
+                return NextResponse.json({
+                    error: `${blockReason(actionBlocked, 'no_actions', combatant.name)}`,
+                    code: 'ACTION_UNAVAILABLE',
+                    blockedBy: actionBlocked.no_actions,
+                    missing: [ slot ]
+                }, { status: 409 })
             }
 
             const spent = spendAction(combatantBudget(combatant), execution)
