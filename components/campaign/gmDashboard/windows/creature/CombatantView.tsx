@@ -4,10 +4,13 @@ import type { Combatant, Creature, Expertise } from '@models';
 import { Bolt, Edit, Pets, RestartAlt } from '@mui/icons-material';
 import { Avatar, Box, Button, Chip, Stack, Typography, alpha } from '@mui/material';
 import { color, font } from '@themes/tokens';
+import { combatantBudget } from '@utils/combat/actionBudgets';
+import type { ActionSlot } from '@utils/combat/engine/actionBudget';
 import { combatantVitals, type CombatantVitalKey } from '@utils/combatantVitals';
 import { filterAndSortExpertises } from '@utils/expertiseList';
 import type { ReactElement, ReactNode } from 'react';
 import { toCreatureCard } from './creatureCard';
+import ActionPips from '../../../ActionPips';
 import ExpertiseListControls, { ExpertiseNoResults, useExpertiseListState } from '../../../ExpertiseListControls';
 import CreatureExpertiseButton from '../../dashboard/CreatureExpertiseButton';
 import VitalsPanel, { type VitalRow } from '../VitalsPanel';
@@ -38,13 +41,17 @@ interface CombatantViewProps {
     onResetMpLimit?: () => void;
     /** O mestre define exatamente o MP gasto na rodada (de 0 até o limite) */
     onSetMpSpent?: () => void;
+    /** O mestre gasta ou devolve uma ação da rodada da criatura; sem isso os marcadores só mostram o que resta */
+    onToggleAction?: (slot: ActionSlot, available: boolean) => void;
 }
 
 /**
  * Uma criatura que está no combate agora: de quem é a vez, vida e mana atuais (com dano e cura rápidos) e as perícias, que o
  * mestre rola pela criatura (resultado no chat). Os valores vêm do combatente, que é onde o combate guarda o que mudou durante a luta.
  */
-export function CombatantView({ combatant, creature, inTurn, onAdjustVital, onRollExpertise, onOpenCreature, mpLimit = 0, onCastSpell, onResetMpLimit, onSetMpSpent }: CombatantViewProps): ReactElement {
+export function CombatantView({
+    combatant, creature, inTurn, onAdjustVital, onRollExpertise, onOpenCreature, mpLimit = 0, onCastSpell, onResetMpLimit, onSetMpSpent, onToggleAction
+}: CombatantViewProps): ReactElement {
     const expertises: Array<[ string, Expertise ]> = Object.entries(creature?.expertises ?? {});
     const list = useExpertiseListState();
     const visibleExpertises = filterAndSortExpertises(expertises, { query: list.query, sort: list.sort, nameOf: ([ expertiseName ]) => expertiseName, valueOf: ([ , expertise ]) => expertise.value });
@@ -87,6 +94,11 @@ export function CombatantView({ combatant, creature, inTurn, onAdjustVital, onRo
                 rows={vitalRows}
                 onAdjust={(key, delta) => { if (key === 'lp' || key === 'mp') onAdjustVital(key, delta); }}
             />
+
+            <Box>
+                <Heading>Ações da rodada</Heading>
+                <ActionPips budget={combatantBudget(combatant)} onSelect={onToggleAction} />
+            </Box>
 
             {mpLimit > 0 && (
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }} data-testid="creature-mp-limit">

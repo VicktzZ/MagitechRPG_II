@@ -48,6 +48,7 @@ import {
 import { color } from '@themes/tokens';
 import { type ReactElement, useState } from 'react';
 import { asRequestError } from '@utils/errors';
+import { executionSlot } from '@utils/combat/engine/actionBudget';
 import { canEvolve, formatEvolutionPoints, getEvolutionPoints, getSpellProgress, spellStageLabel, usesStageUnlock, withoutSpell, type SpellStage } from '@utils/spellStages';
 
 /** Nível e estágio são escalas ordenadas: neutros que clareiam até o âmbar no topo (o número vai sempre em texto) */
@@ -159,6 +160,21 @@ export default function SpellsSection(): ReactElement {
             // Só uma conjuração com sucesso deixa efetuar a magia; o botão já está lá quando o cartão aparece no chat
             if (succeeded && hasSpellEffectDice(spell, stage)) markPending(spellKey, stage);
             await sendCombatChatMessage(buildSpellCastMessage(playerName, spell, stage, test, mpCost), MessageType.DICE);
+
+            // Gasta a ação da rodada que a magia pede (Padrão, Bônus, Movimento, Reação, Completa). É aviso, nunca trava: o mestre decide
+            // o que vale quando a ação já tinha acabado.
+            if (myCombatant && combat?.phase === 'ACTION' && executionSlot(spell.execution)) {
+                try {
+                    await campaignService.spendCombatAction(campaign.id, { combatantId: charsheet.id, execution: String(spell.execution) })
+                } catch (actionError) {
+                    const { response: actionResponse } = asRequestError(actionError)
+                    if (actionResponse?.status === 409 && actionResponse.data?.code === 'ACTION_UNAVAILABLE') {
+                        enqueueSnackbar(`Você já não tinha a ação ${String(spell.execution)} disponível nesta rodada. Avise o mestre.`, { variant: 'warning' })
+                    } else {
+                        console.error('Erro ao gastar a ação da magia:', actionError)
+                    }
+                }
+            }
 
             // Magia sustentada em combate: o MP acabou, tudo que ele mantém acaba; senão, conjurada com sucesso ela fica ativa (fora do combate é como
             // uma imediata). Erro aqui não desfaz a conjuração, que já foi paga e anunciada.

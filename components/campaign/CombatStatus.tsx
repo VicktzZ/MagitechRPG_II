@@ -38,6 +38,11 @@ import { useSnackbar } from 'notistack';
 import { useCampaignContext } from '@contexts';
 import { useSession } from 'next-auth/react';
 import type { Attributes, Combat } from '@models';
+import { campaignService } from '@services';
+import { asRequestError, errorMessage } from '@utils/errors';
+import { combatantBudget, SLOT_EXECUTION } from '@utils/combat/actionBudgets';
+import type { ActionSlot } from '@utils/combat/engine/actionBudget';
+import ActionPips from './ActionPips';
 import EffectBadges from './gmDashboard/actions/EffectBadges';
 
 interface CombatStatusProps {
@@ -70,6 +75,7 @@ function CombatStatus({
     const [ isApplying, setIsApplying ] = useState(false);
     const [ turnNotificationShown, setTurnNotificationShown ] = useState(false);
     const [ isPassingTurn, setIsPassingTurn ] = useState(false);
+    const [ isSpendingAction, setIsSpendingAction ] = useState(false);
 
     const isGM = campaign?.admin?.includes(session?.user?.id || '');
 
@@ -198,6 +204,23 @@ function CombatStatus({
             enqueueSnackbar(error instanceof Error ? error.message : 'Erro ao rolar iniciativa', { variant: 'error' });
         } finally {
             setIsRolling(false);
+        }
+    }, [ campaignId, userCombatant, enqueueSnackbar, onActionComplete ]);
+
+    // Marcar uma ação da rodada como usada (o jogador só gasta; quem devolve é o mestre)
+    const handleSpendAction = useCallback(async (slot: ActionSlot, available: boolean) => {
+        if (!userCombatant || !available) return;
+
+        setIsSpendingAction(true);
+        try {
+            await campaignService.spendCombatAction(campaignId, { combatantId: userCombatant.id, execution: SLOT_EXECUTION[slot] });
+            onActionComplete?.();
+        } catch (error) {
+            const { response } = asRequestError(error);
+            const unavailable = response?.status === 409 && response.data?.code === 'ACTION_UNAVAILABLE';
+            enqueueSnackbar(errorMessage(error, 'Erro ao gastar a ação'), { variant: unavailable ? 'warning' : 'error' });
+        } finally {
+            setIsSpendingAction(false);
         }
     }, [ campaignId, userCombatant, enqueueSnackbar, onActionComplete ]);
 
@@ -368,6 +391,21 @@ function CombatStatus({
                                     }
                                 </Typography>
                             </Alert>
+                        )}
+
+                        {/* Ações da rodada do próprio personagem (Padrão, Bônus, Movimento, Reação) */}
+                        {combat.phase === 'ACTION' && userCombatant && !isGM && (
+                            <Box sx={{ mb: 1.5 }}>
+                                <Typography variant="caption" component="div" sx={{ color: 'text.secondary', mb: 0.5 }}>
+                                    Suas ações nesta rodada
+                                </Typography>
+                                <ActionPips
+                                    budget={combatantBudget(userCombatant)}
+                                    onSelect={handleSpendAction}
+                                    disableSpent
+                                    busy={isSpendingAction}
+                                />
+                            </Box>
                         )}
 
                         {/* Fase de Iniciativa - Alerta para rolar */}

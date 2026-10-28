@@ -140,6 +140,22 @@ class CampaignService extends Service<Campaign, 'code' | 'userId'> {
         })).data
     }
 
+    /** Gasta uma ação da rodada do combatente (`execution`: Padrão, Bônus/Livre, Movimento, Reação ou Completa); 409 `ACTION_UNAVAILABLE` se não tem */
+    async spendCombatAction(campaignId: string, payload: { combatantId: string; execution: string }) {
+        return (await this.post({
+            param: `${campaignId}/combat`,
+            body: { action: 'spend_action', ...payload }
+        })).data
+    }
+
+    /** Mestre ajusta as ações que restam a um combatente ({ reacao: 1 } devolve a Reação); só os espaços informados mudam */
+    async setCombatActions(campaignId: string, payload: { combatantId: string; actions: Partial<Record<'padrao' | 'bonus' | 'movimento' | 'reacao', number>> }) {
+        return (await this.post({
+            param: `${campaignId}/combat`,
+            body: { action: 'set_actions', ...payload }
+        })).data
+    }
+
     /** Magia sustentada conjurada com sucesso em combate: vira um efeito sobre o conjurador, com manutenção a cada rodada */
     async startSustainedSpell(campaignId: string, payload: { combatantId: string; spellKey: string; spellName: string; stage: number; cost: number }) {
         return (await this.post({
