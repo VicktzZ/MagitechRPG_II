@@ -38,6 +38,13 @@ describe('snapshotCombat / diffSnapshots', () => {
         expect(diffSnapshots(before, snapshotCombat(combat))).toEqual([]);
     });
 
+    it('os ataques pendentes ficam de fora (desfazer não apaga ataques declarados depois)', () => {
+        const combat = makeCombat();
+        const before = snapshotCombat(combat);
+        combat.pendingAttacks = [ { id: 'a1' } as never ];
+        expect(diffSnapshots(before, snapshotCombat(combat))).toEqual([]);
+    });
+
     it('a foto é uma cópia: mexer no combate depois não muda a foto', () => {
         const combat = makeCombat();
         const before = snapshotCombat(combat);

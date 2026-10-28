@@ -2,6 +2,7 @@ import { IsArray, IsBoolean, IsNumber, IsOptional, IsString, ValidateNested } fr
 import { Type } from 'class-transformer';
 import { AppliedEffect } from './AppliedEffect';
 import type { ActionBudget } from '../utils/combat/engine/actionBudget';
+import type { PendingAttackData } from '../utils/combat/pendingAttacks';
 
 /**
  * Fases do combate
@@ -177,6 +178,11 @@ export class Combat {
     @IsOptional()
     @IsBoolean()
         showEnemyLp?: boolean = false; // Se mostra LP dos inimigos para jogadores
+
+    /** Ataques declarados que o mestre ainda não resolveu (ataque assistido; ver utils/combat/pendingAttacks.ts) */
+    @IsOptional()
+    @IsArray()
+        pendingAttacks?: PendingAttackData[];
 
     constructor(combat?: Partial<Combat>) {
         Object.assign(this, combat);

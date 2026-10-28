@@ -22,6 +22,10 @@ import { executionSlot, spendAction } from '@utils/combat/engine/actionBudget'
 import { sustainedUpkeepFor } from '@utils/combat/sustainedSpells'
 import { applySustainedUpkeep, endSustained, startSustained } from '@utils/combat/sustainedUpkeep'
 import { findBaseCreature } from '@utils/combatCreatureLookup'
+import { damageCombatant, damageStats, healCombatant, healStats } from '@utils/firestore/combatDamage'
+import {
+    addPendingAttack, buildAttackLogMessage, dropPendingFor, removePendingAttack, sanitizeAttackDeclaration, sanitizeExplainLines, setPendingDamage
+} from '@utils/combat/pendingAttacks'
 import { diffSheetVitals, diffSnapshots, snapshotCombat, summarizeChanges, type CombatSnapshot, type SheetVitals } from '@utils/combat/history'
 import { deleteCombatEvents, getCombatEvent, isCombatEventId, markCombatEventUndone, readPlayerVitals, recordCombatEvent } from '@utils/firestore/combatEvents'
 import { undoCombatEvent } from '@utils/firestore/combatUndo'
@@ -29,21 +33,23 @@ import { undoCombatEvent } from '@utils/firestore/combatUndo'
 /** Ações que conduzem o combate — exclusivas do mestre */
 const GM_ONLY_ACTIONS: CombatAction[] = [
     'start', 'end', 'set_initiative', 'add_creature', 'add_combatants', 'remove_combatant', 'apply_effect', 'remove_effect',
-    'set_mp_limit_override', 'reset_mp_limit', 'set_mp_spent', 'set_actions', 'undo'
+    'set_mp_limit_override', 'reset_mp_limit', 'set_mp_spent', 'set_actions', 'undo', 'resolve_attack'
 ]
 
 /** Ações que entram no histórico do combate (o mestre pode desfazê-las): as que mudam o rumo da luta, não o controle de MP e de ações */
 const RECORDED_ACTIONS: CombatAction[] = [
-    'next_turn', 'apply_damage', 'apply_heal', 'apply_effect', 'remove_effect', 'add_creature', 'add_combatants', 'remove_combatant', 'set_initiative', 'end'
+    'next_turn', 'apply_damage', 'apply_heal', 'apply_effect', 'remove_effect', 'add_creature', 'add_combatants', 'remove_combatant', 'set_initiative', 'end', 'resolve_attack'
 ]
 
 /** Dessas, as que também mexem na vida e na mana das fichas dos jogadores (o histórico guarda o antes e o depois delas) */
-const SHEET_ACTIONS: CombatAction[] = [ 'next_turn', 'apply_damage', 'apply_heal', 'apply_effect' ]
+const SHEET_ACTIONS: CombatAction[] = [ 'next_turn', 'apply_damage', 'apply_heal', 'apply_effect', 'resolve_attack' ]
 
 /** Ações de jogador que só valem no turno do próprio personagem */
 const OWN_TURN_ACTIONS: CombatAction[] = [ 'next_turn', 'apply_damage', 'apply_heal' ]
 
-const KNOWN_ACTIONS: CombatAction[] = [ ...GM_ONLY_ACTIONS, ...OWN_TURN_ACTIONS, 'roll_initiative', 'spend_mp', 'spend_action', 'sustain_start', 'sustain_end' ]
+const KNOWN_ACTIONS: CombatAction[] = [
+    ...GM_ONLY_ACTIONS, ...OWN_TURN_ACTIONS, 'roll_initiative', 'spend_mp', 'spend_action', 'sustain_start', 'sustain_end', 'declare_attack', 'attack_damage', 'dismiss_attack'
+]
 
 type CombatAction = 
     | 'start'           // Iniciar combate
@@ -67,6 +73,10 @@ type CombatAction =
     | 'sustain_start'   // Jogador conjurou com sucesso uma magia sustentada em combate: ela vira um efeito sobre ele
     | 'sustain_end'     // Desconjurar uma magia sustentada (ou todas, sem spellKey)
     | 'undo'            // Mestre desfaz um evento do histórico do combate (devolve só os campos que ele mudou)
+    | 'declare_attack'  // Ataque assistido: o jogador (ou o mestre) declara um ataque com alvo; fica pendente até o mestre resolver
+    | 'attack_damage'   // O dano rolado se junta ao ataque pendente
+    | 'dismiss_attack'  // Descarta um ataque pendente (quem atacou ou o mestre)
+    | 'resolve_attack'  // Mestre confirma o ataque: aplica o dano, gasta a Reação de quem esquivou e registra no log
 
 interface CombatRequest {
     action: CombatAction
@@ -129,6 +139,18 @@ interface CombatRequest {
     spellName?: string
     stage?: number
     cost?: number
+
+    /** Para declare_attack: o ataque (arma/magia, natureza, tipo, total do acerto, d20 e bônus); o servidor limpa (`sanitizeAttackDeclaration`) */
+    attack?: unknown
+    /** Para attack_damage, dismiss_attack e resolve_attack: o ataque pendente */
+    attackId?: string
+    /** Para attack_damage: o dano foi crítico */
+    critical?: boolean
+    /** Para resolve_attack: acertou, o dano final (o mestre pode trocar o que o motor propôs), se o alvo gastou a Reação esquivando e as linhas públicas do cálculo */
+    hit?: boolean
+    damage?: number
+    reactionSpent?: boolean
+    lines?: unknown
 
     /** Para undo: o evento do histórico a desfazer; `force` desfaz mesmo que algum campo tenha mudado de novo depois (sobrescreve) */
     eventId?: string
@@ -204,7 +226,11 @@ function getActionMessage(action: CombatAction): string {
         set_actions: 'Ações ajustadas',
         sustain_start: 'Magia sustentada ativa',
         sustain_end: 'Magia sustentada encerrada',
-        undo: 'Evento desfeito'
+        undo: 'Evento desfeito',
+        declare_attack: 'Ataque declarado',
+        attack_damage: 'Dano do ataque registrado',
+        dismiss_attack: 'Ataque descartado',
+        resolve_attack: 'Ataque resolvido'
     }
     return messages[action] || 'Ação executada'
 }
@@ -286,6 +312,21 @@ export async function POST(
                 }
             }
 
+            if (action === 'declare_attack') {
+                const attacker = combat.combatants?.find(c => c.id === body.combatantId || c.odacId === body.combatantId)
+                if (!attacker || !ownsCombatant(attacker)) {
+                    throw forbidden('Você só pode atacar com o seu personagem')
+                }
+            }
+
+            if (action === 'attack_damage' || action === 'dismiss_attack') {
+                const pending = combat.pendingAttacks?.find(entry => entry.id === body.attackId)
+                const attacker = pending && combat.combatants?.find(c => c.id === pending.attackerId)
+                if (pending && !ownsCombatant(attacker)) {
+                    throw forbidden('Esse ataque não é do seu personagem')
+                }
+            }
+
             if (action === 'sustain_start' || action === 'sustain_end') {
                 const target = combat.combatants?.find(c => c.id === body.combatantId || c.odacId === body.combatantId)
                 if (target && !ownsCombatant(target)) {
@@ -299,7 +340,7 @@ export async function POST(
         }
 
         // Ações que alteram LP partem do LP atual das fichas, não do snapshot do início do combate
-        if (combat.isActive && [ 'next_turn', 'apply_damage', 'apply_heal', 'apply_effect' ].includes(action)) {
+        if (combat.isActive && [ 'next_turn', 'apply_damage', 'apply_heal', 'apply_effect', 'resolve_attack' ].includes(action)) {
             await refreshPlayerCombatantsLp(combat)
         }
 
@@ -360,6 +401,7 @@ export async function POST(
             combat.currentTurnIndex = 0
             combat.combatants = [ ...playerCombatants, ...creatureCombatants ]
             combat.logs = []
+            combat.pendingAttacks = []
             combat.startedAt = new Date().toISOString()
             combat.showEnemyLp = body.showEnemyLp ?? false
 
@@ -393,6 +435,7 @@ export async function POST(
                 }
             }
             resetRoundWindows(combat.combatants)
+            combat.pendingAttacks = []
 
             combat.logs.push(new CombatLog({
                 round: combat.round,
@@ -645,29 +688,12 @@ export async function POST(
             }
 
             const attacker = combat.combatants.find(c => c.id === combatantId)
-            const target = combat.combatants.find(c => c.id === targetId)
+            const change = await damageCombatant(combat, targetId, damage)
 
-            if (!target) {
+            if (!change) {
                 return NextResponse.json({ error: 'Alvo não encontrado' }, { status: 404 })
             }
-
-            const oldLp = target.currentLp || 0
-
-            target.currentLp = Math.max(0, oldLp - damage)
-
-            // Se for jogador, atualiza charsheet.stats diretamente
-            if (target.type === 'player') {
-                const charsheet = await charsheetRepository.findById(target.id)
-                if (charsheet) {
-                    await charsheetRepository.update({
-                        ...charsheet,
-                        stats: {
-                            ...charsheet.stats,
-                            lp: target.currentLp
-                        }
-                    })
-                }
-            }
+            const { target } = change
 
             // Mensagem de dano - não revela LP restante para ninguém
             const damageMessage = `⚔️ **${attacker?.name || 'Desconhecido'}** causou **${damage} de dano** em **${target.name}**!`
@@ -683,31 +709,7 @@ export async function POST(
                 message: damageMessage
             }))
 
-            // ── Estatísticas de dano ──
-            const wasDowned = oldLp > 0 && target.currentLp === 0
-            if (target.type === 'player') {
-                const inc: Record<string, number> = { 'combat.damageTaken': damage }
-                if (wasDowned) inc['combat.knockouts'] = 1
-                statsEntries.push({
-                    charsheetId: target.id,
-                    userId: target.odacId,
-                    charsheetName: target.name,
-                    inc
-                })
-            }
-            if (attacker?.type === 'player') {
-                const inc: Record<string, number> = { 'combat.damageDealt': damage }
-                if (target.type === 'creature' && wasDowned) inc['combat.kills'] = 1
-                statsEntries.push({
-                    charsheetId: attacker.id,
-                    userId: attacker.odacId,
-                    charsheetName: attacker.name,
-                    inc
-                })
-            } else {
-                // Dano causado por criatura ou pelo mestre diretamente
-                statsEntries.push({ gm: true, inc: { damageDealt: damage } })
-            }
+            statsEntries.push(...damageStats(attacker, change, damage))
 
             break
         }
@@ -723,31 +725,12 @@ export async function POST(
             }
 
             const healer = combat.combatants.find(c => c.id === healerId)
-            const healTarget = combat.combatants.find(c => c.id === healTargetId)
+            const healChange = await healCombatant(combat, healTargetId, heal)
 
-            if (!healTarget) {
+            if (!healChange) {
                 return NextResponse.json({ error: 'Alvo não encontrado' }, { status: 404 })
             }
-
-            const oldHp = healTarget.currentLp || 0
-            const maxHp = healTarget.maxLp || 999
-            
-            // Cura nunca reduz o LP (ex: jogador com LP acima do máximo por overheal)
-            healTarget.currentLp = Math.max(oldHp, Math.min(maxHp, oldHp + heal))
-
-            // Se for jogador, atualiza charsheet.stats diretamente
-            if (healTarget.type === 'player') {
-                const charsheet = await charsheetRepository.findById(healTarget.id)
-                if (charsheet) {
-                    await charsheetRepository.update({
-                        ...charsheet,
-                        stats: {
-                            ...charsheet.stats,
-                            lp: healTarget.currentLp
-                        }
-                    })
-                }
-            }
+            const healTarget = healChange.target
 
             // Mensagem de cura - não revela LP restante para ninguém
             const healMessage = `💚 **${healer?.name || 'Desconhecido'}** curou **${heal} de LP** em **${healTarget.name}**!`
@@ -763,28 +746,7 @@ export async function POST(
                 message: healMessage
             }))
 
-            // ── Estatísticas de cura (valor efetivo, respeitando o LP máximo) ──
-            const effectiveHeal = healTarget.currentLp - oldHp
-            if (effectiveHeal > 0) {
-                if (healTarget.type === 'player') {
-                    statsEntries.push({
-                        charsheetId: healTarget.id,
-                        userId: healTarget.odacId,
-                        charsheetName: healTarget.name,
-                        inc: { 'combat.healingReceived': effectiveHeal }
-                    })
-                }
-                if (healer?.type === 'player') {
-                    statsEntries.push({
-                        charsheetId: healer.id,
-                        userId: healer.odacId,
-                        charsheetName: healer.name,
-                        inc: { 'combat.healingDone': effectiveHeal }
-                    })
-                } else {
-                    statsEntries.push({ gm: true, inc: { healingDone: effectiveHeal } })
-                }
-            }
+            statsEntries.push(...healStats(healer, healChange))
 
             break
         }
@@ -932,6 +894,7 @@ export async function POST(
             }
 
             const removed = combat.combatants.splice(removeIndex, 1)[0]
+            combat.pendingAttacks = dropPendingFor(combat.pendingAttacks, removed.id)
             
             // Ajusta índice atual se necessário
             if (combat.currentTurnIndex >= combat.combatants.length) {
@@ -1411,6 +1374,122 @@ export async function POST(
             break
         }
 
+        case 'declare_attack': {
+            if (!combat.isActive || combat.phase !== 'ACTION') {
+                return NextResponse.json({ error: 'Só dá para declarar ataque na fase de ação' }, { status: 400 })
+            }
+
+            const attacker = combat.combatants.find(c => c.id === body.combatantId || c.odacId === body.combatantId)
+            const target = combat.combatants.find(c => c.id === body.targetId)
+            if (!attacker) {
+                return NextResponse.json({ error: 'Atacante não encontrado no combate' }, { status: 404 })
+            }
+            if (!target) {
+                return NextResponse.json({ error: 'Alvo não encontrado no combate' }, { status: 404 })
+            }
+            if (attacker.id === target.id) {
+                throw badRequest('Não dá para atacar a si mesmo')
+            }
+
+            const declaration = sanitizeAttackDeclaration(body.attack)
+            if (!declaration) {
+                throw badRequest('Ataque inválido')
+            }
+
+            // O mestre declarando um ataque manual (de criatura) já traz o dano; o do jogador chega depois, em attack_damage
+            const rolledDamage = typeof body.damage === 'number' && Number.isInteger(body.damage) && body.damage >= 0 && body.damage <= 100_000 ? body.damage : undefined
+
+            combat.pendingAttacks = addPendingAttack(combat.pendingAttacks, {
+                ...declaration,
+                ...(isGM && rolledDamage !== undefined ? { damageRolled: rolledDamage } : {}),
+                id: uuidv4(),
+                attackerId: attacker.id,
+                attackerName: attacker.name,
+                targetId: target.id,
+                targetName: target.name,
+                createdAt: new Date().toISOString()
+            })
+
+            break
+        }
+
+        case 'attack_damage': {
+            const damage = body.damage
+            if (typeof damage !== 'number' || !Number.isInteger(damage) || damage < 0 || damage > 100_000) {
+                throw badRequest('Dano inválido')
+            }
+
+            const updated = setPendingDamage(combat.pendingAttacks, String(body.attackId), damage, body.critical === true)
+            if (!updated) {
+                return NextResponse.json({ error: 'Ataque pendente não encontrado (o mestre pode já tê-lo resolvido)' }, { status: 404 })
+            }
+            combat.pendingAttacks = updated
+
+            break
+        }
+
+        case 'dismiss_attack': {
+            if (!combat.pendingAttacks?.some(entry => entry.id === body.attackId)) {
+                return NextResponse.json({ error: 'Ataque pendente não encontrado' }, { status: 404 })
+            }
+            combat.pendingAttacks = removePendingAttack(combat.pendingAttacks, String(body.attackId))
+
+            break
+        }
+
+        case 'resolve_attack': {
+            if (!combat.isActive) {
+                return NextResponse.json({ error: 'Não há combate ativo' }, { status: 400 })
+            }
+
+            const pending = combat.pendingAttacks?.find(entry => entry.id === body.attackId)
+            if (!pending) {
+                return NextResponse.json({ error: 'Ataque pendente não encontrado' }, { status: 404 })
+            }
+
+            const damage = body.damage
+            if (typeof body.hit !== 'boolean' || typeof damage !== 'number' || !Number.isInteger(damage) || damage < 0 || damage > 100_000) {
+                throw badRequest('Acerto e dano finais são obrigatórios (dano inteiro de 0 a 100000)')
+            }
+
+            const attacker = combat.combatants.find(c => c.id === pending.attackerId)
+            const lines = sanitizeExplainLines(body.lines)
+            const dealt = body.hit ? damage : 0
+
+            let change = null
+            if (dealt > 0) {
+                change = await damageCombatant(combat, pending.targetId, dealt)
+                if (!change) {
+                    return NextResponse.json({ error: 'O alvo já não está no combate' }, { status: 404 })
+                }
+                statsEntries.push(...damageStats(attacker, change, dealt))
+            }
+
+            // Esquivar gasta a Reação do alvo (é aviso, não trava: o mestre decidiu)
+            if (body.reactionSpent === true) {
+                const dodger = combat.combatants.find(c => c.id === pending.targetId)
+                if (dodger) {
+                    const spent = spendAction(combatantBudget(dodger), 'Reação')
+                    if (spent.ok) dodger.actions = spent.budget
+                }
+            }
+
+            combat.logs.push(new CombatLog({
+                round: combat.round,
+                type: dealt > 0 ? 'damage' : 'action',
+                actorId: pending.attackerId,
+                actorName: pending.attackerName,
+                targetId: pending.targetId,
+                targetName: pending.targetName,
+                value: dealt,
+                message: buildAttackLogMessage(pending, body.hit, dealt, lines)
+            }))
+
+            combat.pendingAttacks = removePendingAttack(combat.pendingAttacks, pending.id)
+
+            break
+        }
+
         default:
             return NextResponse.json({ error: 'Ação inválida' }, { status: 400 })
         }
@@ -1421,7 +1500,8 @@ export async function POST(
         let combatMessage: Message | undefined
         // `sustain_end` só gera log quando alguma magia estava ativa.
         const logsGrew = combat.logs.length > logsBefore
-        if (action !== 'spend_mp' && action !== 'spend_action' && (action !== 'sustain_end' || logsGrew) && combat.logs.length > 0) {
+        const silentActions: CombatAction[] = [ 'spend_mp', 'spend_action', 'declare_attack', 'attack_damage', 'dismiss_attack' ]
+        if (!silentActions.includes(action) && (action !== 'sustain_end' || logsGrew) && combat.logs.length > 0) {
             const lastLog = combat.logs[combat.logs.length - 1]
             combatMessage = new Message({
                 id: crypto.randomUUID(),
