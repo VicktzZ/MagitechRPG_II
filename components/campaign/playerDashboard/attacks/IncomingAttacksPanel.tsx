@@ -14,6 +14,8 @@ interface IncomingAttacksPanelProps {
     answered: readonly PendingAttackData[];
     /** O personagem ainda tem a Reação da rodada (a esquiva gasta) */
     hasReaction: boolean;
+    /** O personagem não via quem atacou (matriz de percepção do mestre): ataque de surpresa não se esquiva */
+    isSurprised?: (attack: PendingAttackData) => boolean;
     busyId: string | null;
     onDefend: (attack: PendingAttackData, choice: DefenseChoice) => void;
 }
@@ -24,14 +26,14 @@ const attackLabel = (attack: PendingAttackData): string => `${attack.name}${atta
  * "Você foi atacado": o jogador alvo de um ataque assistido escolhe a defesa e rola na hora (esquiva, resistência ou nenhuma). Mostra só o que ele já viu no chat
  * (quem atacou, o ataque e o total): fraqueza e resistências são do mestre, então não há DT aqui. Quem decide o resultado é o mestre.
  */
-export default function IncomingAttacksPanel({ awaiting, answered, hasReaction, busyId, onDefend }: IncomingAttacksPanelProps): ReactElement | null {
+export default function IncomingAttacksPanel({ awaiting, answered, hasReaction, isSurprised, busyId, onDefend }: IncomingAttacksPanelProps): ReactElement | null {
     if (awaiting.length === 0 && answered.length === 0) return null;
 
     return (
         <Stack spacing={1} sx={{ mb: 1.5 }} data-testid="incoming-attacks">
             {awaiting.map(attack => {
                 const kind = effectiveDamageKind(attack.kind, attack.attackType);
-                const dodge = dodgeEligibility({ kind, areaMeters: attack.areaMeters, hasReaction });
+                const dodge = dodgeEligibility({ kind, areaMeters: attack.areaMeters, hasReaction, surprised: isSurprised?.(attack) ?? false });
                 const resistSkill = defenseSkillFor(attack, 'resist');
                 const busy = busyId === attack.id;
 

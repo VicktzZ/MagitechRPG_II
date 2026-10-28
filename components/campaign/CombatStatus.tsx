@@ -47,6 +47,7 @@ import { sheetExpertisePenalty } from '@utils/combat/sheetOverweight';
 import { incomingAttacks } from '@utils/combat/pendingAttacks';
 import ActionPips from './ActionPips';
 import EffectBadges from './gmDashboard/actions/EffectBadges';
+import HiddenFromNotice from './awareness/HiddenFromNotice';
 import LeaveReachButton from './opportunity/LeaveReachButton';
 import OpportunityOffers from './opportunity/OpportunityOffers';
 import IncomingAttacks from './playerDashboard/attacks/IncomingAttacks';
@@ -441,6 +442,11 @@ function CombatStatus({
                         {/* Ataques ao personagem do jogador: escolher e rolar a defesa */}
                         {combat.phase === 'ACTION' && userCombatant && !isGM && (
                             <IncomingAttacks combat={combat} combatantId={userCombatant.id} />
+                        )}
+
+                        {/* Quem se esconde sabe de quem (a matriz de percepção é do mestre) */}
+                        {combat.phase === 'ACTION' && userCombatant && !isGM && (
+                            <HiddenFromNotice combat={combat} combatantId={userCombatant.id} />
                         )}
 
                         {/* Ataque de oportunidade: ofertas para reagir e a declaração de saída do alcance */}

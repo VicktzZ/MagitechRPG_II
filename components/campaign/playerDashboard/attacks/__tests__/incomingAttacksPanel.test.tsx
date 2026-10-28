@@ -46,6 +46,16 @@ describe('IncomingAttacksPanel', () => {
         expect(panel()).not.toMatch(disabledDodge);
     });
 
+    it('não oferece a esquiva contra quem ele não via (ataque de surpresa); a resistência continua', () => {
+        const disabledDodge = /<button[^>]*disabled[^>]*>[^<]*(<span[^>]*>.*?<\/span>)?Esquivar/;
+
+        expect(panel({ isSurprised: () => true })).toMatch(disabledDodge);
+        expect(panel({ isSurprised: () => false })).not.toMatch(disabledDodge);
+        const resist = panel({ isSurprised: () => true }).split('<button').find(chunk => chunk.includes('Resistir ('));
+        expect(resist).toBeDefined();
+        expect(resist).not.toContain('disabled');
+    });
+
     it('enquanto responde um ataque, os botões dele ficam desabilitados', () => {
         expect(panel({ busyId: 'a1' })).toMatch(/<button[^>]*disabled[^>]*>[^<]*(<span[^>]*>.*?<\/span>)?Não me defender/);
     });

@@ -73,6 +73,7 @@ export default function LeaveReachDialog({ open, onClose, combatants, moverId, b
                 )}
                 <Typography variant="body2" sx={{ color: 'text.secondary', mb: 1, mt: moverId === undefined ? 0 : 1 }}>
                     Marque quem estava ao alcance corpo a corpo e já tinha visto quem saiu. Cada um pode fazer um ataque de oportunidade (gasta a Reação) antes do movimento.
+                    Quem o mestre marcou em Furtividade como sem ver quem saiu não ganha o ataque.
                 </Typography>
                 <FormGroup>
                     {others.map(candidate => (

@@ -1,4 +1,5 @@
 import { combatantBudget } from './actionBudgets';
+import { combatantVision, observerBlocked, unseenEntry, type UnseenData } from './awareness';
 import { isOpportunitySpell, meleeReach, opportunityCheck, type OpportunityBlock } from './engine/opportunity';
 
 /**
@@ -26,6 +27,8 @@ interface LeaveCombatant {
     id: string;
     name: string;
     actions?: unknown;
+    /** Os efeitos dão a visão de quem reage (Visão Verdadeira vê o furtivo) */
+    effects?: Parameters<typeof combatantVision>[0]['effects'];
 }
 
 /** Quem pode reagir: ids de texto, sem repetir, no máximo 20 (o que vem do cliente) */
@@ -51,10 +54,15 @@ export interface LeavePlan {
 }
 
 /**
- * Quem ganha uma oportunidade quando `moverId` sai do alcance de `reactorIds`. Quem não tem Reação não ganha (o mestre devolve a ação se quiser); a percepção
- * ("já viu o alvo") é de quem declara a saída, então não se checa aqui.
+ * Quem ganha uma oportunidade quando `moverId` sai do alcance de `reactorIds`. Quem não tem Reação não ganha (o mestre devolve a ação se quiser). "Já viu o alvo"
+ * é a palavra de quem declara a saída, **salvo** quando a matriz de percepção (`unseen`) diz que o inimigo não vê quem saiu (furtivo, invisível...): aí ele não reage.
  */
-export function planLeaveReach(combatants: readonly LeaveCombatant[], moverId: string, reactorIds: readonly string[]): LeavePlan {
+export function planLeaveReach(
+    combatants: readonly LeaveCombatant[],
+    moverId: string,
+    reactorIds: readonly string[],
+    unseen?: readonly UnseenData[]
+): LeavePlan {
     const mover = combatants.find(candidate => candidate.id === moverId);
     const plan: LeavePlan = { opportunities: [], warnings: [] };
     if (!mover) return plan;
@@ -67,7 +75,9 @@ export function planLeaveReach(combatants: readonly LeaveCombatant[], moverId: s
         }
         if (reactor.id === mover.id) continue;
 
-        const check = opportunityCheck({ reactor: { hasReaction: combatantBudget(reactor).reacao > 0, sawMover: true }, mover: {} });
+        const hidden = unseenEntry(unseen, mover.id, reactor.id);
+        const sawMover = !hidden || !observerBlocked(hidden.cause, combatantVision(reactor));
+        const check = opportunityCheck({ reactor: { hasReaction: combatantBudget(reactor).reacao > 0, sawMover }, mover: {} });
         if (!check.provoked) {
             plan.warnings.push(`${reactor.name} ${check.reason ? BLOCK_TEXT[check.reason] : 'não pode reagir'}: sem ataque de oportunidade.`);
             continue;

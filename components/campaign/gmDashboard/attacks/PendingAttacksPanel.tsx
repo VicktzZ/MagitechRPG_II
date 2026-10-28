@@ -1,15 +1,18 @@
 'use client';
 
 import { useCampaignContext } from '@contexts';
-import { Add, Close, DirectionsRun } from '@mui/icons-material';
+import { Add, Close, DirectionsRun, VisibilityOff } from '@mui/icons-material';
 import { Button, Stack, Typography } from '@mui/material';
 import { useState, type ReactElement } from 'react';
 import LeaveReachDialog from '../../opportunity/LeaveReachDialog';
 import { useLeaveReach } from '../../opportunity/useLeaveReach';
 import Section from '../../Section';
+import HideDialog from './HideDialog';
 import ManualAttackForm from './ManualAttackForm';
 import OpportunitiesList from './OpportunitiesList';
 import PendingAttackCard from './PendingAttackCard';
+import UnseenList from './UnseenList';
+import { useAwareness } from './useAwareness';
 
 /**
  * Ataques declarados que o mestre ainda não resolveu (ataque assistido), com o ataque manual para as criaturas. Só aparece com combate na fase de ação.
@@ -19,7 +22,9 @@ export default function PendingAttacksPanel(): ReactElement | null {
     const { campaign } = useCampaignContext();
     const [ manualOpen, setManualOpen ] = useState(false);
     const [ leaveOpen, setLeaveOpen ] = useState(false);
+    const [ hideOpen, setHideOpen ] = useState(false);
     const { busy, declare } = useLeaveReach();
+    const awareness = useAwareness();
     const combat = campaign.session?.combat;
 
     if (!combat?.isActive || combat.phase !== 'ACTION') return null;
@@ -30,7 +35,16 @@ export default function PendingAttacksPanel(): ReactElement | null {
             id="ataques"
             title="Ataques"
             action={(
-                <Stack direction="row" spacing={1}>
+                <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                    <Button
+                        size="small"
+                        variant="outlined"
+                        startIcon={<VisibilityOff fontSize="small" />}
+                        onClick={() => { setHideOpen(true); }}
+                        sx={{ textTransform: 'none' }}
+                    >
+                        Furtividade
+                    </Button>
                     <Button
                         size="small"
                         variant="outlined"
@@ -60,6 +74,14 @@ export default function PendingAttacksPanel(): ReactElement | null {
                     busy={busy}
                     onDeclare={(moverId, reactorIds) => { void declare(moverId, reactorIds).then(done => { if (done) setLeaveOpen(false); }); }}
                 />
+                <HideDialog
+                    open={hideOpen}
+                    onClose={() => { setHideOpen(false); }}
+                    combatants={combat.combatants ?? []}
+                    busy={awareness.busy}
+                    onConfirm={(hiderId, observerIds, cause) => { void awareness.hide(hiderId, observerIds, cause).then(done => { if (done) setHideOpen(false); }); }}
+                />
+                <UnseenList />
                 <OpportunitiesList />
                 {manualOpen && <ManualAttackForm onDone={() => { setManualOpen(false); }} />}
                 {pending.length === 0 && !manualOpen && (

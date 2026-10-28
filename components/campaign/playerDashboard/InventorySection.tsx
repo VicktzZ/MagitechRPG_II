@@ -5,7 +5,6 @@ import { Box } from '@mui/material';
 import { useState, type ReactElement } from 'react';
 import { SubstitutionModal } from '@features/roguelite/components/perkCardsModal/components/SubstitutionModal';
 import { useCharsheetSystem } from '@hooks/useCharsheetSystem';
-import AttackTargetPicker from './attacks/AttackTargetPicker';
 import ConfirmRemoveDialog from './inventory/ConfirmRemoveDialog';
 import InventoryItemList from './inventory/InventoryItemList';
 import InventorySummary from './inventory/InventorySummary';
@@ -25,7 +24,7 @@ export default function InventorySection(): ReactElement {
     const weightUnitSuffix = weightUnit ? ` ${weightUnit}` : '';
 
     const view = useInventoryView();
-    const { handleWeaponHit, handleWeaponDamage, targeting } = useWeaponRolls();
+    const { handleWeaponHit, handleWeaponDamage } = useWeaponRolls();
     const sessionPlayers = useSessionPlayers();
     const { donationModal, handleOpenDonationModal, handleCloseDonationModal, handleDonate, handleDeleteItem } = useInventoryActions();
 
@@ -75,8 +74,6 @@ export default function InventorySection(): ReactElement {
                 shown={view.filtered.length}
                 isFiltering={view.isFiltering}
             />
-
-            <AttackTargetPicker targeting={targeting} />
 
             <InventoryItemList
                 entries={view.filtered}

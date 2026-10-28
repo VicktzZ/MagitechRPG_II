@@ -3,8 +3,10 @@ import type { PendingAttackData } from '@utils/combat/pendingAttacks';
 import type { ReactElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import theme from '../../../../../themes/theme';
+import HiddenFromNotice from '../../../awareness/HiddenFromNotice';
 import PendingAttackCard from '../PendingAttackCard';
 import PendingAttacksPanel from '../PendingAttacksPanel';
+import UnseenList from '../UnseenList';
 
 const mockContext = jest.fn();
 jest.mock('@contexts', () => ({ useCampaignContext: () => mockContext() }));
@@ -204,6 +206,116 @@ describe('ataque de oportunidade no painel do mestre', () => {
 
         expect(html).not.toContain('opportunities-list');
         expect(html).toContain('Saída de alcance');
+    });
+});
+
+describe('alvo desprevenido (matriz de percepção) no painel do mestre', () => {
+    const hidden = { id: 'u1', hiderId: 'aria', hiderName: 'Aria', observerId: 'goblin-1', observerName: 'Goblin', cause: 'furtivo', createdAt: '2026-10-28T12:00:00.000Z' };
+    const stealthEffect = { id: 'e1', effectId: 'seed-furtivo', level: 1, remaining: 3, snapshot: { name: 'Furtivo', levels: [] } };
+
+    it('o atacante fora da vista do alvo: o cartão já parte do desprevenido, pede o d20 extra e a esquiva fica negada', () => {
+        mockContext.mockReturnValue(campaignWith({ unseen: [ hidden ] }));
+        const html = render(<PendingAttackCard attack={attack()} />);
+
+        expect(html).toContain('Alvo desprevenido: não via o atacante (furtivo)');
+        expect(html).toContain('Vantagem: +1d20 no acerto (surpresa)');
+        expect(html).toContain('Rolar d20 extra');
+        expect(html).toMatch(/type="checkbox"[^>]*checked/);
+    });
+
+    it('sem o par na matriz o alvo via o atacante: nada de desprevenido', () => {
+        mockContext.mockReturnValue(campaignWith({ unseen: [] }));
+        const html = render(<PendingAttackCard attack={attack()} />);
+
+        expect(html).not.toContain('Alvo desprevenido: não via');
+        expect(html).not.toContain('Vantagem: +');
+        expect(html).not.toMatch(/type="checkbox"[^>]*checked/);
+    });
+
+    it('o atacante com o efeito Furtivo na arma já rolou o 1d20: o mestre não rola de novo', () => {
+        const context = campaignWith({ unseen: [ hidden ] });
+        context.campaign.session.combat.combatants[0] = { id: 'aria', name: 'Aria', type: 'player', effects: [ stealthEffect ] } as never;
+        mockContext.mockReturnValue(context);
+        const html = render(<PendingAttackCard attack={attack()} />);
+
+        expect(html).toContain('Alvo desprevenido: não via o atacante (furtivo)');
+        expect(html).not.toContain('Rolar d20 extra');
+    });
+
+    it('invisível: dois d20, e o furtivo só vale para a arma (na magia o efeito não deu d20)', () => {
+        mockContext.mockReturnValue(campaignWith({ unseen: [ { ...hidden, cause: 'invisivel' } ] }));
+        expect(render(<PendingAttackCard attack={attack()} />)).toContain('Vantagem: +2d20 no acerto (surpresa)');
+
+        const context = campaignWith({ unseen: [ hidden ] });
+        context.campaign.session.combat.combatants[0] = { id: 'aria', name: 'Aria', type: 'player', effects: [ stealthEffect ] } as never;
+        mockContext.mockReturnValue(context);
+        expect(render(<PendingAttackCard attack={attack({ source: 'spell' })} />)).toContain('Vantagem: +1d20 no acerto (surpresa)');
+    });
+
+    it('fraqueza e surpresa juntas somam os d20 e dizem de onde vêm', () => {
+        mockContext.mockReturnValue(campaignWith({ unseen: [ hidden ] }, { ...goblin, weaknesses: [ 'Cortante' ] }));
+
+        expect(render(<PendingAttackCard attack={attack()} />)).toContain('Vantagem: +2d20 no acerto (fraqueza e surpresa)');
+    });
+});
+
+describe('Furtividade no painel do mestre', () => {
+    const hidden = { id: 'u1', hiderId: 'aria', hiderName: 'Aria', observerId: 'goblin-1', observerName: 'Goblin', cause: 'furtivo', createdAt: '2026-10-28T12:00:00.000Z' };
+
+    it('o botão está sempre à mão e a lista só aparece com alguém escondido', () => {
+        mockContext.mockReturnValue(campaignWith({ unseen: [] }));
+        const empty = render(<PendingAttacksPanel />);
+        expect(empty).toContain('Furtividade');
+        expect(empty).not.toContain('unseen-list');
+
+        mockContext.mockReturnValue(campaignWith({ unseen: [ hidden ] }));
+        expect(render(<PendingAttacksPanel />)).toContain('unseen-list');
+    });
+
+    it('lista o escondido, quem não o vê, a DT de Percepção e as ações', () => {
+        mockContext.mockReturnValue(campaignWith({ unseen: [ hidden, { ...hidden, id: 'u2', observerId: 'orc-1', observerName: 'Orc', cause: 'invisivel' } ] }));
+        const html = render(<UnseenList />);
+
+        expect(html).toContain('unseen-group-aria');
+        expect(html).toContain('Goblin não o vê');
+        expect(html).toContain('(furtivo)');
+        expect(html).toContain('Percepção DT 20');
+        expect(html).toContain('Orc não o vê');
+        expect(html).toContain('Percepção DT 30');
+        expect(html).toContain('Testar Percepção');
+        expect(html).toContain('Revelar a todos');
+    });
+
+    it('fora da vista não tem DT na regra: só revelar na mão', () => {
+        mockContext.mockReturnValue(campaignWith({ unseen: [ { ...hidden, cause: 'outro' } ] }));
+        const html = render(<UnseenList />);
+
+        expect(html).toContain('Goblin não o vê');
+        expect(html).not.toContain('Testar Percepção');
+        expect(html).not.toContain('Percepção DT');
+        expect(html).toContain('Revelar');
+    });
+
+    it('observador com Visão Verdadeira vê o furtivo sem teste', () => {
+        const context = campaignWith({ unseen: [ hidden ] });
+        context.campaign.session.combat.combatants[1] = {
+            id: 'goblin-1', name: 'Goblin', type: 'creature',
+            effects: [ { id: 'e1', effectId: 'x', level: 1, remaining: 3, snapshot: { name: 'Visão Verdadeira', levels: [ { level: 1, modifiers: [ { kind: 'flag', target: 'true_sight' } ] } ] } } ]
+        } as never;
+        mockContext.mockReturnValue(context);
+        const html = render(<UnseenList />);
+
+        expect(html).toContain('Visão Verdadeira: vê sem teste');
+        expect(html).not.toContain('Testar Percepção');
+    });
+
+    it('a notificação de quem se esconde mostra de quem; quem não o vê não recebe nada', () => {
+        const combat = { unseen: [ hidden, { ...hidden, id: 'u2', observerId: 'orc-1', observerName: 'Orc' } ] } as never;
+
+        const html = render(<HiddenFromNotice combat={combat} combatantId="aria" />);
+        expect(html).toContain('Você está fora da vista de Goblin, Orc (furtivo)');
+        expect(render(<HiddenFromNotice combat={combat} combatantId="goblin-1" />)).toBe('');
+        expect(render(<HiddenFromNotice combat={{} as never} combatantId="aria" />)).toBe('');
     });
 });
 

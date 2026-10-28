@@ -12,6 +12,7 @@ import {
     sanitizeReactorIds,
     type OpportunityData
 } from '../opportunities';
+import type { UnseenData } from '../awareness';
 
 const entry = (patch: Partial<OpportunityData> = {}): OpportunityData => ({
     id: 'o1', moverId: 'caio', moverName: 'Caio', reactorId: 'goblin-1', reactorName: 'Goblin', createdAt: '2026-10-28T12:00:00.000Z', ...patch
@@ -55,6 +56,34 @@ describe('planLeaveReach', () => {
         expect(plan.opportunities.map(opportunity => opportunity.reactorId)).toEqual([ 'goblin-1' ]);
         expect(plan.warnings).toEqual([ 'Um dos combatentes escolhidos não está mais no combate.' ]);
         expect(planLeaveReach([ goblin ], 'caio', [ 'goblin-1' ])).toEqual({ opportunities: [], warnings: [] });
+    });
+});
+
+describe('planLeaveReach com a matriz de percepção', () => {
+    const hiddenFromGoblin: UnseenData = { id: 'u1', hiderId: 'caio', hiderName: 'Caio', observerId: 'goblin-1', observerName: 'Goblin', cause: 'furtivo', createdAt: '2026-10-28T12:00:00.000Z' };
+
+    it('o inimigo que não vê quem saiu não ganha oportunidade, e o aviso diz o porquê', () => {
+        const plan = planLeaveReach([ caio, goblin, orc ], 'caio', [ 'goblin-1', 'orc-1' ], [ hiddenFromGoblin ]);
+
+        expect(plan.opportunities).toEqual([]);
+        expect(plan.warnings).toEqual([
+            'Goblin não tinha visto quem saiu: sem ataque de oportunidade.',
+            'Orc não tem a Reação disponível: sem ataque de oportunidade.'
+        ]);
+    });
+
+    it('só vale para o par da matriz: outro inimigo que o via ainda reage', () => {
+        const plan = planLeaveReach([ caio, goblin, { id: 'imp-1', name: 'Imp' } ], 'caio', [ 'goblin-1', 'imp-1' ], [ hiddenFromGoblin ]);
+
+        expect(plan.opportunities.map(opportunity => opportunity.reactorId)).toEqual([ 'imp-1' ]);
+    });
+
+    it('Visão Verdadeira vê o furtivo sozinha, mas não o invisível', () => {
+        const sight = { id: 'e1', effectId: 'x', level: 1, remaining: 3, snapshot: { name: 'Visão Verdadeira', levels: [ { level: 1, modifiers: [ { kind: 'flag', target: 'true_sight' } ] } ] } };
+        const trueSight = { ...goblin, effects: [ sight as never ] };
+
+        expect(planLeaveReach([ caio, trueSight ], 'caio', [ 'goblin-1' ], [ hiddenFromGoblin ]).opportunities).toHaveLength(1);
+        expect(planLeaveReach([ caio, trueSight ], 'caio', [ 'goblin-1' ], [ { ...hiddenFromGoblin, cause: 'invisivel' } ]).opportunities).toHaveLength(0);
     });
 });
 
