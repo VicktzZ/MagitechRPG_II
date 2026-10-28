@@ -201,6 +201,16 @@ class CampaignService extends Service<Campaign, 'code' | 'userId'> {
         return (await this.post({ param: `${campaignId}/combat`, body: { action: 'reveal_unseen', ...payload } })).data
     }
 
+    /** Mestre define a iluminação da cena: ambiente manual (`utils/combat/environment.ts`). Vai ao log e ao chat quando muda */
+    async setLight(campaignId: string, light: 'claro' | 'penumbra' | 'escuridao') {
+        return (await this.post({ param: `${campaignId}/combat`, body: { action: 'set_light', light } })).data
+    }
+
+    /** Mestre marca (`difficult: true`) ou desmarca combatentes em terreno difícil: o deslocamento deles cai pela metade, salvo imunidade */
+    async setTerrain(campaignId: string, payload: { combatantIds: string[]; difficult: boolean }) {
+        return (await this.post({ param: `${campaignId}/combat`, body: { action: 'set_terrain', ...payload } })).data as unknown as { warnings?: string[] }
+    }
+
     /** Descarta um ataque pendente (quem atacou ou o mestre) */
     async dismissAttack(campaignId: string, attackId: string) {
         return (await this.post({ param: `${campaignId}/combat`, body: { action: 'dismiss_attack', attackId } })).data

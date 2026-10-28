@@ -7,6 +7,7 @@ import CreatureCreator from './CreatureCreator';
 import CampaignStatsStrip from './CampaignStatsStrip';
 import PendingAttacksPanel from './attacks/PendingAttacksPanel';
 import DeleteCreatureDialog from './DeleteCreatureDialog';
+import EnvironmentPanel from './environment/EnvironmentPanel';
 import CombatCreaturesSection from './dashboard/CombatCreaturesSection';
 import CustomCreaturesSection from './dashboard/CustomCreaturesSection';
 import PerksSection from './dashboard/PerksSection';
@@ -34,6 +35,9 @@ export default function CampaignGMDashboard(): ReactElement | null {
 
             {/* Lista de Jogadores */}
             <PlayersSection playerCharsheets={playerCharsheets} pending={isPlayerCharsheetsPending} />
+
+            {/* Ambiente manual: iluminação da cena e terreno difícil (só com combate ativo) */}
+            <EnvironmentPanel />
 
             {/* Ataques declarados esperando o mestre (só no combate, na fase de ação) */}
             <PendingAttacksPanel />

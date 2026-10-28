@@ -7,12 +7,14 @@ import { font } from '@themes/tokens';
 import { combatantBudget } from '@utils/combat/actionBudgets';
 import { actionBlocks } from '@utils/combat/actionFlags';
 import type { ActionSlot } from '@utils/combat/engine/actionBudget';
+import { isInDifficultTerrain, type CombatEnvironment } from '@utils/combat/environment';
 import type { SheetMetrics } from '@utils/charsheetMetrics';
 import { filterAndSortExpertises } from '@utils/expertiseList';
 import type { VitalKey } from '@utils/vitals';
 import type { ReactElement, ReactNode } from 'react';
 import ActionBlocksNotice from '../../../ActionBlocksNotice';
 import ActionPips from '../../../ActionPips';
+import AmbientNotice from '../../../AmbientNotice';
 import EffectStatsNotice from '../../../EffectStatsNotice';
 import ExpertiseListControls, { ExpertiseNoResults, useExpertiseListState } from '../../../ExpertiseListControls';
 import CreatureExpertiseButton from '../../dashboard/CreatureExpertiseButton';
@@ -48,6 +50,8 @@ interface PlayerCombatantViewProps {
     onOpenSection: (kind: SheetWindowKind) => void;
     /** O mestre rola a perícia pelo jogador (resultado no chat) */
     onRollExpertise: (name: string) => void;
+    /** O ambiente da cena (luz e terreno difícil), para os avisos e o deslocamento de agora */
+    environment?: CombatEnvironment | null;
 }
 
 /** "Atordoamento (nível 2, 3 turnos)": o efeito aplicado, com o nível e quanto falta */
@@ -63,7 +67,7 @@ function describeEffect(effect: NonNullable<Combatant['effects']>[number]): stri
  * ações da rodada, o limite de MP por turno, os efeitos aplicados e as perícias, que o mestre rola pelo jogador. A ficha inteira abre pelos atalhos de seção.
  */
 export function PlayerCombatantView({
-    charsheet, combatant, inTurn, imageUrl, metrics, onAdjustVital, onToggleAction, onSetMpSpent, onResetMpLimit, onApplyEffect, onOpenSection, onRollExpertise
+    charsheet, combatant, inTurn, imageUrl, metrics, onAdjustVital, onToggleAction, onSetMpSpent, onResetMpLimit, onApplyEffect, onOpenSection, onRollExpertise, environment
 }: PlayerCombatantViewProps): ReactElement {
     const view = useCharsheetPointsView(charsheet);
     const list = useExpertiseListState();
@@ -99,7 +103,10 @@ export function PlayerCombatantView({
             <EffectStatsNotice
                 effects={combatant.effects}
                 bases={{ displacement: charsheet.displacement, ap: charsheet.stats?.ap, maxLp: charsheet.stats?.maxLp, maxMp: charsheet.stats?.maxMp }}
+                options={{ difficultTerrain: isInDifficultTerrain(environment ?? undefined, combatant.id) }}
             />
+
+            <AmbientNotice environment={environment} combatantId={combatant.id} effects={combatant.effects} />
 
             {vitalRows.length > 0 && <VitalsPanel charsheetName={charsheet.name} rows={vitalRows} onAdjust={onAdjustVital} />}
 

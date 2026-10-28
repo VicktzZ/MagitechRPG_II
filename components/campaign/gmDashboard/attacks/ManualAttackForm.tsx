@@ -3,7 +3,7 @@
 import { useCampaignContext } from '@contexts';
 import { Autocomplete, Button, Checkbox, FormControlLabel, MenuItem, Stack, TextField, Typography } from '@mui/material';
 import { campaignService } from '@services';
-import { effectDice } from '@utils/combat/effectDice';
+import { combatantAttackDice } from '@utils/combat/environment';
 import { findOpportunity } from '@utils/combat/opportunities';
 import type { DamageKind } from '@utils/combat/engine/types';
 import { errorMessage } from '@utils/errors';
@@ -33,8 +33,8 @@ export default function ManualAttackForm({ onDone }: { onDone: () => void }): Re
     const [ damage, setDamage ] = useState('');
     const [ busy, setBusy ] = useState(false);
     // Ataque de oportunidade: o atacante tem uma saída de alcance aberta contra esse alvo. Marcado de início; o mestre desmarca para um ataque comum
-    // Os efeitos aplicados ao atacante (Cegueira, Precisão...) dão vantagem ou desvantagem no acerto: o mestre rola a criatura fora do app, então o formulário lembra
-    const attackerNotes = effectDice(combatants.find(combatant => combatant.id === attackerId)?.effects, 'attack').notes;
+    // Os efeitos aplicados ao atacante (Cegueira, Precisão...) e a luz da cena dão vantagem ou desvantagem no acerto: o mestre rola a criatura fora do app, então o formulário lembra
+    const attackerNotes = combatantAttackDice(campaign.session?.combat, attackerId).notes;
     const opportunity = attackerId && targetId ? findOpportunity(campaign.session?.combat?.opportunities, attackerId, targetId) : undefined;
     const [ declinedOpportunity, setDeclinedOpportunity ] = useState<string | null>(null);
     const extras = extraTargetIds.filter(id => id !== attackerId && id !== targetId);

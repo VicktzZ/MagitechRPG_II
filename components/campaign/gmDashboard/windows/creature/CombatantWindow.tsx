@@ -93,6 +93,7 @@ export default function CombatantWindow({ combatantId }: { combatantId: string }
                 combatant={combatant}
                 creature={creature}
                 inTurn={inTurn}
+                environment={combat?.environment}
                 onAdjustVital={(key, delta) => { void adjustVital(key, delta); }}
                 onRollExpertise={async (name, expertise) => {
                     if (creature) await rollExpertise(name, expertise, creature, combatant);

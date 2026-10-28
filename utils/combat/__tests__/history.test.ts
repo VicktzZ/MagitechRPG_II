@@ -59,6 +59,13 @@ describe('snapshotCombat / diffSnapshots', () => {
         expect(diffSnapshots(before, snapshotCombat(combat))).toEqual([]);
     });
 
+    it('o ambiente (luz e terreno difícil) fica de fora: é decisão do mestre', () => {
+        const combat = makeCombat();
+        const before = snapshotCombat(combat);
+        combat.environment = { light: 'escuridao', difficultTerrainIds: [ 'a' ] };
+        expect(diffSnapshots(before, snapshotCombat(combat))).toEqual([]);
+    });
+
     it('a foto é uma cópia: mexer no combate depois não muda a foto', () => {
         const combat = makeCombat();
         const before = snapshotCombat(combat);

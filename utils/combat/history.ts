@@ -54,9 +54,10 @@ export interface CombatEventItem {
  * Campos do combate que ficam de fora do histórico: a lista de combatentes (vai à parte), os logs e os **ataques pendentes** (desfazer a
  * resolução de um ataque devolve a vida e a Reação, mas não põe o ataque de volta na fila: isso apagaria os ataques declarados depois) e as
  * **oportunidades de ataque** (duram só o turno de quem se move; desfazer a passagem do turno não as traz de volta) e a **matriz de percepção**
- * (`unseen`: é decisão do mestre, não consequência de uma ação da luta, e desfazer um dano não deve esconder nem revelar ninguém)
+ * (`unseen`: é decisão do mestre, não consequência de uma ação da luta, e desfazer um dano não deve esconder nem revelar ninguém) e o **ambiente** (`environment`: a luz
+ * e o terreno difícil também são decisão do mestre)
  */
-const EXCLUDED_FIELDS = new Set([ 'combatants', 'logs', 'pendingAttacks', 'opportunities', 'unseen' ]);
+const EXCLUDED_FIELDS = new Set([ 'combatants', 'logs', 'pendingAttacks', 'opportunities', 'unseen', 'environment' ]);
 
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value ?? null)) as T;
 

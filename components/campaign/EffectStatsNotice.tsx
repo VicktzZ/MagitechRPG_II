@@ -1,7 +1,7 @@
 import type { AppliedEffect } from '@models';
 import { Chip, Stack, Tooltip, Typography } from '@mui/material';
 import { font } from '@themes/tokens';
-import { statChanges, type StatBases, type StatChange } from '@utils/combat/effectStats';
+import { statChanges, type StatBases, type StatChange, type StatChangeOptions } from '@utils/combat/effectStats';
 import { joinNames } from '@utils/combat/actionFlags';
 import type { ReactElement } from 'react';
 
@@ -11,17 +11,19 @@ interface EffectStatsNoticeProps {
     bases?: StatBases;
     /** Já tem um título perto? Então só os marcadores */
     heading?: string | null;
+    /** Em terreno difícil (ambiente da cena): o deslocamento cai pela metade, salvo imunidade */
+    options?: StatChangeOptions;
 }
 
 const chipLabel = (change: StatChange): string => `${change.label}: ${change.text}`;
 
 /**
  * As estatísticas que os efeitos aplicados mudam agora (Fase 6.3, `utils/combat/effectStats.ts`): deslocamento, iniciativa, AP, LP/MP máximo e a margem de Sobrecura e
- * Sobremana. Um marcador por estatística, verde quando o efeito aumenta e vermelho quando diminui, com a dica dizendo qual efeito causa. O valor não é gravado em lugar
- * nenhum (é base + efeitos): tirar o efeito devolve o número de antes. Não desenha nada quando nenhum efeito mexe nelas.
+ * Sobremana; o terreno difícil da cena (Fase 7) também corta o deslocamento. Um marcador por estatística, verde quando aumenta e vermelho quando diminui, com a dica
+ * dizendo a origem. O valor não é gravado em lugar nenhum (é base + efeitos): tirar o efeito devolve o número de antes. Não desenha nada quando nada mexe nelas.
  */
-export default function EffectStatsNotice({ effects, bases, heading = 'Efeitos nas estatísticas' }: EffectStatsNoticeProps): ReactElement | null {
-    const changes = statChanges(effects, bases);
+export default function EffectStatsNotice({ effects, bases, heading = 'Efeitos nas estatísticas', options }: EffectStatsNoticeProps): ReactElement | null {
+    const changes = statChanges(effects, bases, options);
     if (changes.length === 0) return null;
 
     return (
