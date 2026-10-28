@@ -60,11 +60,11 @@ export interface StageLadderProps {
             onEnd: () => void | Promise<void>;
             busy?: boolean;
         };
-        /** Conjuração com sucesso à espera de ser efetuada: o botão "Efetuar" aparece no estágio `pendingStage` */
+        /** Conjuração com sucesso: o botão "Efetuar" aparece no estágio `pendingStage` e **permanece depois de apertado** (sai ao descartar ou com uma nova conjuração) */
         effect?: {
             pendingStage?: SpellStage;
             onEffect: (stage: SpellStage) => void | Promise<void>;
-            /** Abre mão de efetuar essa conjuração (o MP já foi gasto) */
+            /** Tira o botão "Efetuar" dessa conjuração (o MP já foi gasto) */
             onDismiss: () => void;
             busy?: boolean;
         };
@@ -273,7 +273,7 @@ export default function StageLadder({ spell, progress, revealLocked, evolution, 
                                                         </Button>
                                                     </span>
                                                 </Tooltip>
-                                                <Tooltip title="Não efetuar esta conjuração (o MP já foi gasto)">
+                                                <Tooltip title="Tirar o botão Efetuar desta conjuração (o MP já foi gasto)">
                                                     <IconButton
                                                         size="small"
                                                         onClick={cast.effect.onDismiss}

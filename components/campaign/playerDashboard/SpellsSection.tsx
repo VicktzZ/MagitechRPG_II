@@ -259,14 +259,8 @@ export default function SpellsSection(): ReactElement {
         try {
             setEffectingSpellId(spellKey);
             const effect = rollSpellEffect(spell, stage);
-            // O botão some na hora; se o chat não receber a mensagem ele volta, para o jogador não perder a conjuração
-            clearPending(spellKey);
-            try {
-                await sendCombatChatMessage(buildSpellEffectMessage(playerName, effect), MessageType.DICE);
-            } catch (error) {
-                markPending(spellKey, stage);
-                throw error;
-            }
+            // O botão "Efetuar" permanece depois de apertado (decisão do dono): só sai ao descartar a conjuração (X) ou quando uma nova conjuração da magia o troca
+            await sendCombatChatMessage(buildSpellEffectMessage(playerName, effect), MessageType.DICE);
             // O dano rolado se junta ao ataque que a conjuração declarou ao mestre (se houve alvo)
             await spellAttack.attachSpellDamage(spell, effect.totalDamage);
         } catch (error) {
