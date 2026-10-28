@@ -382,6 +382,40 @@ O mestre vê o **Overall** (o `overall` guardado na ficha, o mesmo da tela do jo
 (`SheetMetricsView`, `getSheetMetrics` em `utils/charsheetMetrics.ts`). Onde a regra não vale o limite some e o Overall fica; em combate ativo o limite
 aparece como gasto/limite (`mpSpentThisTurn` do combatente).
 
+## Combate automatizado (regras do dono; em construção)
+
+Projeto grande, em fases (estimativa de 38 a 51 PRs; fatia jogável de ponta a ponta em 15 a 20). **Fase 1 entregue: o motor de regras puro, `utils/combat/engine/` (barril `index.ts`), ainda NÃO ligado à rota de combate nem às telas.** Falta: combate em documento próprio
+com eventos reversíveis e linhas só do mestre (a rota `combat` reescreve a campanha inteira e 31 arquivos leem `session.combat`), fluxo de ataque assistido, reações, ambiente manual, catálogo de status ligado ao motor, passivas de classe e interface. Os 124 modificadores
+dos 33 efeitos do catálogo (`CombatEffect`) hoje só são exibidos; o motor (`collectModifiers`) é o que os transforma em regra, e `defaultStates.ts` e `features/pipelines` são modelos antigos a unificar.
+
+**Princípios (decisão do dono):** (1) **assistido**: o motor propõe, o mestre confirma, e **tudo é sobrescrevível** (editar a resolução antes de confirmar, mudar o estado final entre turnos, trocar a natureza do ataque físico/mágico/mental para "e se...", desfazer); (2) o mapa é de
+**terceiros**: **só movimento e distância (e o que deriva deles) são manuais**, o app não valida alcance nem posição; (3) **resistências, fraquezas e vulnerabilidades dos alvos só o mestre vê**: as linhas do cálculo carregam `visibility: 'gm' | 'all'` (`ExplainLine`, `visibleLines`),
+mas o cálculo em si vai num dropdown no cartão de rolagem para todos; (4) incluir, se possível, as **passivas de classe e subclasse** (as 149 habilidades de `constants/skills.ts` são só prosa, cerca de 86 tocam combate: precisam de dados estruturados, primeira leva de 30 a 40).
+
+**Regras:**
+- **Acerto**: o total do ataque (arma ou magia) precisa ser **≥ o AP do alvo** (criatura ou **objeto**; AP é a CA do D&D, decisão que fecha o "papel do AP"). A magia também passa pelo AP, além da DT de conjuração da tabela.
+- **Ações por rodada**: Padrão, **Bônus** (o antigo "Livre": renomear no app todo), Movimento e Reação. **Completa** gasta todas menos a Reação. Movimento = andar até o deslocamento em metros, conjurar magia de Movimento, pegar item da bolsa etc.
+  **Quando a rodada vira e todos rolam iniciativa de novo, as ações de todos voltam (inclusive a Reação).** Passivas podem dar ações extras (o ladino furtivo).
+- **Vantagem e desvantagem acumulam**: cada fonte soma/tira 1d20 pelo saldo líquido. Conta única: `saldo = (dados base − 1) + vantagens − desvantagens`; saldo ≥ 0 rola 1 + saldo e vale o **maior**, saldo < 0 rola 1 + |saldo| e vale o **menor** (`dicePool`). Os d20 do mod do atributo são as vantagens "de graça".
+- **Surpresa** (alvo não vê o atacante): atacante furtivo **+1d20**, **invisível +2d20**; o alvo **não pode esquivar**. **Furtividade**: quem passa em Furtividade num local visível ainda pode ser notado: os que o veem testam Percepção **DT 20** (**DT 30** se invisível); passando, enxergam e o furtivo perde a condição.
+  **Visão Verdadeira** anula a furtividade e baixa a DT para notar invisível a **15**. O **dobro de dano furtivo NÃO é regra geral**: é passiva do ladino (o PR #109 fez geral; falta trocar quando as passivas existirem).
+- **Fraqueza elemental**: ciclo **Água → Fogo → Terra → Ar → Eletricidade → Água** (cada um vence o seguinte) e **Trevas ⇄ Luz**; não vale para secundários nem Não-elemental. Atacar alvo **fraco** ao elemento dá **+1d20 e dano ×2**. Não precisa de maestria: basta o alvo ter fraqueza. Ela vem de fraquezas declaradas
+  (inclusive tipos físicos como Cortante e Impactante, que não têm tabela), do elemento da criatura e da **maestria elemental do personagem** (adquirir a maestria em X dá fraqueza ao elemento que vence X). `weaknessAgainst`.
+- **Defesa do alvo** (escolhe **uma**): **Esquiva** = Reflexos **maior que** o total do atacante, anula o dano por completo e **gasta a Reação**; não vale contra ataque mental, área maior que 3m nem surpresa. **Resistência** = teste de **RES Física** (ataque físico), **RES Mágica** (magia, exceto Psíquico) ou
+  **RES Mental** (dano na mente; magia de elemento Psíquico conta como mental) contra **DT = ⌈total do atacante ÷ 2⌉** (25 → 13; esquivar pede 26). Passando: o dano cai **AP + ⌊mod da perícia ÷ 2⌋** (subtração fixa); no ataque mental cai **pela metade**; falhando (ou sem defender) vem inteiro. `defense.ts`, `damage.ts`.
+- **Ataque de oportunidade**: **sair** do alcance corpo a corpo de um inimigo que **já te viu** provoca (alcance 1,5m, ou o da arma branca se maior; **feito antes** de o alvo andar). É **opcional** e gasta a **Reação**. Só vale **corpo a corpo** com a arma em mãos (ou desarmado, sem arma) ou **magia de Reação de alcance Curto** (Toque, Visão e Pessoal não).
+  **Desengajar (ação Padrão)** e tudo que tira o alvo instantaneamente do alcance anulam. O gatilho é manual (o mestre ou o jogador declara que saiu). `opportunity.ts`.
+- **Alcance**: Curto **3m**, Médio **18m**, Longo **30m** (o catálogo ainda tem Padrão 9m e Ampliado 90m; corpo a corpo e Toque = 1,5m). O alcance da arma sai do campo `range` dela (`Corpo-a-corpo`, `Curto (3m)`...): **não existe campo `reach` novo**. `rangeMeters`.
+- **Terreno e ambiente**: terreno difícil (pântano, neve, montanha...) corta o **deslocamento pela metade** de todos nele, salvo imunidade. **Luz** é da cena (claro, penumbra, escuridão) e a **visão** é de cada combatente (Normal, **Aprimorada**, Verdadeira; "Visão Aprimorada" é o antigo efeito "Visão na Penumbra", flag `dim_vision`).
+  Penumbra = cobertura parcial para todos (desvantagem no acerto), salvo visão aprimorada; escuridão = Cegueira para visão normal, cobertura parcial para aprimorada, nada para verdadeira. `terrain.ts`, `lighting.ts`.
+- **Sobrepeso** (condição derivada do inventário): **−1** nos modificadores de todas as perícias de atributo base **DES e VIG** para cada kg excedido (kg começado conta). `overweight.ts`; ainda não aplicado às perícias da ficha.
+
+**Premissas minhas, a rever:** acerto com ≥ (como as DTs); a Completa exige as três ações livres; ordem do dano (rolado → bônus de quem ataca → fraqueza → defesa → resistências do alvo → piso 0, arredondando para baixo); resistências/vulnerabilidades em % de efeitos entram **depois** da defesa; Toque = 1,5m; magia Psíquica = ataque mental;
+fraquezas declaradas valem mesmo em elemento secundário (o ciclo é que não); o ×2 e o +1d20 da fraqueza valem também para tipos físicos declarados.
+
+**Pendências de ligação:** renomear "Livre" para "Bônus" (26 magias no catálogo, uma com "padrão" em minúscula, e `EXECUTION_OPTIONS`, `FilterControls`, `spellCategory`, `manaRecoverySpells`; **escrita no banco só com liberação do dono**; `executionSlot` já aceita os dois); renomear o efeito "Visão na Penumbra" para "Visão Aprimorada"; trocar o Furtivo do #109 pela
+regra acima; aplicar Sobrepeso às perícias; condição "Desprevenido"/surpresa e matriz de percepção (quem viu quem) no estado do combate.
+
 ## Design system
 
 Fonte única de cor, tipografia, espaço, raio, sombra e movimento: `themes/tokens.ts`. O tema do MUI

@@ -35,7 +35,7 @@ const weapon = (patch: Record<string, unknown> = {}): Weapon => ({
 }) as unknown as Weapon;
 
 const test = (patch: Partial<HitTestResult> = {}): HitTestResult => ({
-    notation: '2d20+5', rolls: [ 12, 7 ], bestRoll: 12, bonus: 5, bonusLabel: 'Magia', total: 17, ...patch
+    notation: '2d20+5', rolls: [ 12, 7 ], bestRoll: 12, bonus: 5, bonusLabel: 'Magia', total: 17, extraDice: 0, ...patch
 });
 
 describe('rollNumbers / rollModifier', () => {
