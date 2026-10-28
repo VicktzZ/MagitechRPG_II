@@ -50,7 +50,11 @@ export interface CombatEventItem {
 }
 
 /** Campos do combate que ficam de fora do histórico (a lista de logs vai à parte) */
-const EXCLUDED_FIELDS = new Set([ 'combatants', 'logs' ]);
+/**
+ * Campos do combate que ficam de fora do histórico: a lista de combatentes (vai à parte), os logs e os **ataques pendentes** (desfazer a
+ * resolução de um ataque devolve a vida e a Reação, mas não põe o ataque de volta na fila: isso apagaria os ataques declarados depois)
+ */
+const EXCLUDED_FIELDS = new Set([ 'combatants', 'logs', 'pendingAttacks' ]);
 
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value ?? null)) as T;
 

@@ -5,6 +5,7 @@ import { Stack } from '@mui/material';
 import type { ReactElement } from 'react';
 import CreatureCreator from './CreatureCreator';
 import CampaignStatsStrip from './CampaignStatsStrip';
+import PendingAttacksPanel from './attacks/PendingAttacksPanel';
 import DeleteCreatureDialog from './DeleteCreatureDialog';
 import CombatCreaturesSection from './dashboard/CombatCreaturesSection';
 import CustomCreaturesSection from './dashboard/CustomCreaturesSection';
@@ -33,6 +34,9 @@ export default function CampaignGMDashboard(): ReactElement | null {
 
             {/* Lista de Jogadores */}
             <PlayersSection playerCharsheets={playerCharsheets} pending={isPlayerCharsheetsPending} />
+
+            {/* Ataques declarados esperando o mestre (só no combate, na fase de ação) */}
+            <PendingAttacksPanel />
 
             {/* Ficha das criaturas em combate (sempre visível durante combate) */}
             <CombatCreaturesSection />

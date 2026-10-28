@@ -157,6 +157,26 @@ class CampaignService extends Service<Campaign, 'code' | 'userId'> {
         })).data
     }
 
+    /** Ataque assistido: declara um ataque com alvo (o jogador com o próprio personagem; o mestre com qualquer um). O mestre resolve depois */
+    async declareAttack(campaignId: string, payload: { combatantId: string; targetId: string; attack: Record<string, unknown>; damage?: number }) {
+        return (await this.post({ param: `${campaignId}/combat`, body: { action: 'declare_attack', ...payload } })).data
+    }
+
+    /** O dano rolado se junta ao ataque pendente */
+    async setAttackDamage(campaignId: string, payload: { attackId: string; damage: number; critical?: boolean }) {
+        return (await this.post({ param: `${campaignId}/combat`, body: { action: 'attack_damage', ...payload } })).data
+    }
+
+    /** Descarta um ataque pendente (quem atacou ou o mestre) */
+    async dismissAttack(campaignId: string, attackId: string) {
+        return (await this.post({ param: `${campaignId}/combat`, body: { action: 'dismiss_attack', attackId } })).data
+    }
+
+    /** Mestre confirma o ataque: aplica o dano final, gasta a Reação de quem esquivou e registra no log (só as linhas públicas do cálculo vão ao chat) */
+    async resolveAttack(campaignId: string, payload: { attackId: string; hit: boolean; damage: number; reactionSpent?: boolean; lines?: Array<{ label: string; detail?: string; visibility: 'all' | 'gm' }> }) {
+        return (await this.post({ param: `${campaignId}/combat`, body: { action: 'resolve_attack', ...payload } })).data
+    }
+
     /** Histórico do combate (só o mestre): os últimos eventos, o mais novo primeiro */
     async getCombatEvents(campaignId: string) {
         return (await this.get({ param: `${campaignId}/combat/events` })).data as unknown as { events: CombatEventItem[] }
