@@ -62,6 +62,27 @@ export function CreatureView({ creature, onEdit, onDelete }: CreatureViewProps):
                 )}
             </Stack>
 
+            {(creature.defenses.element || creature.defenses.weaknesses.length > 0 || creature.defenses.modifiers.length > 0) && (
+                <Box data-testid="creature-defenses">
+                    <Heading>Defesas</Heading>
+                    <Stack spacing={0.5}>
+                        {creature.defenses.element && (
+                            <Typography variant="body2" color="text.secondary">
+                                Elemento: <Box component="span" sx={{ color: 'text.primary' }}>{creature.defenses.element}</Box>
+                            </Typography>
+                        )}
+                        {creature.defenses.weaknesses.length > 0 && (
+                            <Typography variant="body2" color="text.secondary">
+                                Fraquezas: <Box component="span" sx={{ color: 'text.primary' }}>{creature.defenses.weaknesses.join(', ')}</Box>
+                            </Typography>
+                        )}
+                        {creature.defenses.modifiers.map(modifier => (
+                            <Typography key={modifier} variant="body2" color="text.secondary">{modifier}</Typography>
+                        ))}
+                    </Stack>
+                </Box>
+            )}
+
             {creature.attributes.length > 0 && (
                 <Box>
                     <Heading>Atributos</Heading>

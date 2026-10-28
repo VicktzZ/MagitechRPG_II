@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { campaignRepository } from '@repositories'
 import { v4 as uuidv4 } from 'uuid'
 import { Expertises } from '@models'
+import { sanitizeDamageModifiers, sanitizeWeaknesses } from '@utils/combat/creatureDefense'
 import { assertMaxLength, handleRouteError, readJsonBody, requireCampaignGM, requireCampaignMember, requireUser, TEXT_LIMITS } from '@utils/api'
 
 export async function POST(
@@ -73,7 +74,11 @@ export async function POST(
             },
             expertises: plainExpertises,
             skills: body.skills || [],
-            spells: body.spells || []
+            spells: body.spells || [],
+            // Defesas (só o mestre vê): elemento da criatura, fraquezas declaradas e resistências/vulnerabilidades
+            elementalMastery: typeof body.elementalMastery === 'string' ? body.elementalMastery.trim().slice(0, 40) : '',
+            weaknesses: sanitizeWeaknesses(body.weaknesses),
+            damageModifiers: sanitizeDamageModifiers(body.damageModifiers)
         }
 
         // Adiciona a criatura ao array de criaturas customizadas
@@ -162,7 +167,11 @@ export async function PUT(
             stats: body.stats ?? existingCreatures[creatureIndex].stats,
             expertises: body.expertises ?? existingCreatures[creatureIndex].expertises,
             skills: body.skills ?? existingCreatures[creatureIndex].skills,
-            spells: body.spells ?? existingCreatures[creatureIndex].spells
+            spells: body.spells ?? existingCreatures[creatureIndex].spells,
+            // Defesas: só muda o que o editor mandou (criatura salva por um cliente antigo mantém as dela)
+            elementalMastery: typeof body.elementalMastery === 'string' ? body.elementalMastery.trim().slice(0, 40) : (existingCreatures[creatureIndex].elementalMastery ?? ''),
+            weaknesses: body.weaknesses !== undefined ? sanitizeWeaknesses(body.weaknesses) : (existingCreatures[creatureIndex].weaknesses ?? []),
+            damageModifiers: body.damageModifiers !== undefined ? sanitizeDamageModifiers(body.damageModifiers) : (existingCreatures[creatureIndex].damageModifiers ?? [])
         }
 
         const updatedCreatures = [ ...existingCreatures ]

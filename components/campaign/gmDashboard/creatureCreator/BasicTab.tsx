@@ -6,6 +6,7 @@ import IdentitySection from './IdentitySection';
 import RolePresets from './RolePresets';
 import AttributesSection from './AttributesSection';
 import StatsSection from './StatsSection';
+import DefensesSection from './DefensesSection';
 import ScalingSection from './ScalingSection';
 import type { AttributeDef, CreatureData } from './types';
 
@@ -27,7 +28,7 @@ interface BasicTabProps {
     handleApplyScaling: () => void;
 }
 
-/** Aba "Básico": identidade, presets de papel, atributos, status e escalonamento */
+/** Aba "Básico": identidade, presets de papel, atributos, status, defesas e escalonamento */
 export default function BasicTab({
     creatureData,
     setCreatureData,
@@ -67,6 +68,13 @@ export default function BasicTab({
 
             {/* Status */}
             <StatsSection
+                creatureData={creatureData}
+                setCreatureData={setCreatureData}
+                isReadOnly={isReadOnly}
+            />
+
+            {/* Defesas: elemento, fraquezas e resistências (só o mestre vê) */}
+            <DefensesSection
                 creatureData={creatureData}
                 setCreatureData={setCreatureData}
                 isReadOnly={isReadOnly}

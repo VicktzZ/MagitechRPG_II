@@ -43,7 +43,7 @@ export default function StatsSection({ creatureData, setCreatureData, isReadOnly
                     InputProps={{ startAdornment: <InputAdornment position="start"><BoltOutlined sx={{ color: color.mp, fontSize: 18 }} /></InputAdornment> }}
                 />
                 <TextField
-                    label="AP (Ações)"
+                    label="AP (Armadura)"
                     type="number"
                     value={creatureData.stats.ap}
                     onChange={(e) => setCreatureData(prev => ({ ...prev, stats: { ...prev.stats, ap: Math.max(0, parseInt(e.target.value) || 0) } }))}

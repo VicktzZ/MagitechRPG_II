@@ -49,7 +49,10 @@ export function buildInitialCreature(
             stats: { lp: 10, maxLp: 10, mp: 5, maxMp: 5, ap: 3 },
             skills: [],
             spells: [],
-            expertises: {}
+            expertises: {},
+            elementalMastery: '',
+            weaknesses: [],
+            damageModifiers: []
         };
     }
 
@@ -67,7 +70,10 @@ export function buildInitialCreature(
         },
         skills: editing.skills ?? [],
         spells: editing.spells ?? [],
-        expertises: editing.expertises ?? {}
+        expertises: editing.expertises ?? {},
+        elementalMastery: editing.elementalMastery ?? '',
+        weaknesses: editing.weaknesses ?? [],
+        damageModifiers: editing.damageModifiers ?? []
     };
 }
 
