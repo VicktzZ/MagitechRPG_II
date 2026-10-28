@@ -1,3 +1,5 @@
+import type { DamageModifierData } from '@utils/combat/creatureDefense';
+
 export interface SkillData {
     id: string;
     name: string;
@@ -34,6 +36,12 @@ export interface CreatureData {
     skills: SkillData[];
     spells: SpellData[];
     expertises: Record<string, { value: number; defaultAttribute?: string | null }>;
+    /** Elemento da criatura (dá a ela a fraqueza do elemento que o vence) */
+    elementalMastery?: string;
+    /** Fraquezas declaradas: elementos ou tipos de dano físico */
+    weaknesses?: string[];
+    /** Resistências e vulnerabilidades ao dano recebido */
+    damageModifiers?: DamageModifierData[];
 }
 
 export interface AttributeDef { key: string; label: string; name: string }

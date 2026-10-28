@@ -1,4 +1,6 @@
+import { elements, SECONDARY_ELEMENTS } from '@constants';
 import { Expertises, type Expertise as ExpertiseModel } from '@models';
+import { PHYSICAL_ANY, PHYSICAL_DAMAGE_TYPES } from '@utils/combat/creatureDefense';
 import type { AttributeDef, ExpertiseDef } from './types';
 
 export const DEFAULT_ATTRIBUTE_DEFS: AttributeDef[] = [
@@ -52,3 +54,12 @@ export const ROLE_PRESETS = [
 ] as const;
 
 export type RolePreset = typeof ROLE_PRESETS[number];
+
+/** Elementos para a criatura ter ou ser fraca: os do ciclo de fraquezas e os secundários (Não-elemental não tem ciclo) */
+export const CREATURE_ELEMENT_OPTIONS: string[] = [ ...elements.filter(element => element !== 'Não-Elemental'), ...SECONDARY_ELEMENTS ];
+
+/** Fraquezas declaráveis: elementos e tipos de dano físico */
+export const WEAKNESS_OPTIONS: string[] = [ ...CREATURE_ELEMENT_OPTIONS, ...PHYSICAL_DAMAGE_TYPES ];
+
+/** Resistências e vulnerabilidades: tudo acima, mais Não-elemental e "Físico" (qualquer dano físico) */
+export const DAMAGE_MODIFIER_TARGETS: string[] = [ ...WEAKNESS_OPTIONS, 'Não-Elemental', PHYSICAL_ANY ];

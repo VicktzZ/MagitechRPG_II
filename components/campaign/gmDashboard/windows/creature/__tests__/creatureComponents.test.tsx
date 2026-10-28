@@ -51,6 +51,21 @@ describe('CreatureView', () => {
         expect(html).toContain('Nv. 1 • FOGO • 2 MP');
     });
 
+    it('mostra as defesas declaradas (elemento, fraquezas, resistências) e some quando não há nenhuma', () => {
+        expect(view()).not.toContain('creature-defenses');
+
+        const html = view({
+            elementalMastery: 'Fogo',
+            weaknesses: [ 'Cortante', 'Água' ],
+            damageModifiers: [ { kind: 'resistance', element: 'Fogo', value: '25%' }, { kind: 'vulnerability', value: '3' } ]
+        });
+        expect(html).toContain('creature-defenses');
+        expect(html).toContain('Elemento: ');
+        expect(html).toContain('Cortante, Água');
+        expect(html).toContain('Resistência a Fogo: 25%');
+        expect(html).toContain('Vulnerabilidade a todo dano: 3');
+    });
+
     it('perícia sem valor não aparece (só poluiria a janela)', () => {
         expect(view()).not.toContain('Atletismo');
     });
