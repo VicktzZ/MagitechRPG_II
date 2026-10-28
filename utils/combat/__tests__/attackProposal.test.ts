@@ -82,6 +82,10 @@ describe('buildAttackProposal', () => {
         expect(proposal.resistanceSkill).toBe('RES Física');
         expect(proposal.resistanceMod).toBe(4);
         expect(proposal.finalDamage).toBe(13);
+        // Resistir também gasta a Reação (decisão do dono), com sucesso ou não
+        expect(proposal.resolution).toMatchObject({ targetSpentReaction: true });
+        expect(buildAttackProposal(attack({ damageRolled: 30 }), [], { creature: goblin }, { defense: 'resist', defenseTotal: 8 }).resolution).toMatchObject({ targetSpentReaction: true });
+        expect(buildAttackProposal(attack({ damageRolled: 30 }), [], { creature: goblin }, { defense: 'none' }).resolution).toMatchObject({ targetSpentReaction: false });
     });
 
     it('trocar a natureza muda a resistência testada ("e se fosse mágico?")', () => {

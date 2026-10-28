@@ -69,9 +69,9 @@ describe('teste de defesa', () => {
         expect(resolveDefense({ choice: 'dodge', attackTotal: 25, defenseTotal: 25, eligibility: ok })).toMatchObject({ status: 'dodge-failed', spentReaction: true });
     });
 
-    it('resistência: RES 13 contra DT 13 resiste; 12 não; não gasta a Reação', () => {
-        expect(resolveDefense({ choice: 'resist', attackTotal: 25, defenseTotal: 13, eligibility: ok })).toMatchObject({ status: 'resisted', needed: 13, spentReaction: false });
-        expect(resolveDefense({ choice: 'resist', attackTotal: 25, defenseTotal: 12, eligibility: ok })).toMatchObject({ status: 'resist-failed' });
+    it('resistência: RES 13 contra DT 13 resiste; 12 não; gasta a Reação nos dois casos', () => {
+        expect(resolveDefense({ choice: 'resist', attackTotal: 25, defenseTotal: 13, eligibility: ok })).toMatchObject({ status: 'resisted', needed: 13, spentReaction: true });
+        expect(resolveDefense({ choice: 'resist', attackTotal: 25, defenseTotal: 12, eligibility: ok })).toMatchObject({ status: 'resist-failed', spentReaction: true });
     });
 
     it('esquiva pedida mas impedida vale como sem defesa e diz o motivo', () => {

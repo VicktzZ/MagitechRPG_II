@@ -137,7 +137,7 @@ export interface AttackResolution {
     kind: DamageKind;
     defense: DefenseResult;
     damage: number;
-    /** A Reação do alvo foi gasta na esquiva */
+    /** A Reação do alvo foi gasta na defesa (esquiva ou resistência) */
     targetSpentReaction: boolean;
     lines: ExplainLine[];
 }

@@ -1,6 +1,6 @@
 import { Box, Chip, Collapse, Divider, IconButton, Stack, Tooltip, Typography } from '@mui/material'
 import { alpha } from '@mui/material/styles'
-import { AutoStories, ExpandMore } from '@mui/icons-material'
+import { AutoStories, ExpandMore, Shield } from '@mui/icons-material'
 import { useState } from 'react'
 import { color, font } from '@themes/tokens'
 import { rollModifier, rollNumbers, type ActionRoll, type ActionRollSegment } from '@utils/combat/actionRollMessage'
@@ -19,7 +19,7 @@ function rollChipColor(value: number, sides: number | null): 'success' | 'error'
     return 'default'
 }
 
-/** `isTest`: teste de magia (vale o maior d20, ou o menor com desvantagem), então o dado que vale vem destacado em vez das faces máxima e mínima */
+/** `isTest`: teste de magia ou de defesa (vale o maior d20, ou o menor com desvantagem), então o dado que vale vem destacado em vez das faces máxima e mínima */
 function SegmentRow({ segment, isTest, keepLowest = false }: { segment: ActionRollSegment; isTest: boolean; keepLowest?: boolean }) {
     const rolls = rollNumbers(segment.display)
     const modifier = rollModifier(segment.display)
@@ -52,7 +52,7 @@ function SegmentRow({ segment, isTest, keepLowest = false }: { segment: ActionRo
     )
 }
 
-/** "Total 17 contra DT 18: falhou por 1": o resultado do teste de magia contra a dificuldade, dito em texto também */
+/** "Total 17 contra DT 18: falhou por 1": o resultado do teste (de magia ou de defesa) contra a dificuldade, dito em texto também */
 export function castOutcomeText(total: number, dt: number): string {
     const margin = total - dt
     if (margin < 0) return `Total ${total} contra DT ${dt}: falhou por ${-margin}`
@@ -66,7 +66,8 @@ export function stealthDamageText(rolled: number, total: number): string {
 
 /** O conteúdo do dropdown: cada expressão com seus dados e, fora do teste de magia, o subtotal e a média de todos os dados rolados */
 export function ActionRollDetails({ action }: { action: ActionRoll }) {
-    const isTest = action.kind === 'conjuração'
+    const isTest = action.kind === 'conjuração' || action.kind === 'defesa'
+    const testName = action.kind === 'defesa' ? 'Teste de defesa' : 'Teste de magia'
     const allRolls = action.segments.flatMap(segment => rollNumbers(segment.display))
     const subtotal = allRolls.reduce((sum, value) => sum + value, 0)
 
@@ -74,7 +75,7 @@ export function ActionRollDetails({ action }: { action: ActionRoll }) {
         <>
             <Divider sx={{ my: 1 }} />
             <Stack spacing={1}>
-                <Typography variant="body2" fontWeight={700}>{isTest ? `Teste de magia (vale o ${action.keepLowest ? 'menor' : 'maior'} dado):` : 'Rolagens:'}</Typography>
+                <Typography variant="body2" fontWeight={700}>{isTest ? `${testName} (vale o ${action.keepLowest ? 'menor' : 'maior'} dado):` : 'Rolagens:'}</Typography>
                 {action.segments.map((segment, index) => <SegmentRow key={index} segment={segment} isTest={isTest} keepLowest={action.keepLowest} />)}
                 {isTest && (action.notes ?? []).map(note => (
                     <Typography key={note} variant="body2" color="text.secondary" data-testid="action-roll-note">{note}</Typography>
@@ -101,14 +102,14 @@ export function ActionRollDetails({ action }: { action: ActionRoll }) {
 }
 
 /**
- * Cartão do chat para o dano de uma arma ou os dois tempos de uma magia (ver `actionRollMessage.ts`).
+ * Cartão do chat para o dano de uma arma, os dois tempos de uma magia ou o teste de defesa de quem foi atacado (ver `actionRollMessage.ts`).
  * Mesmo desenho dos testes e dos dados personalizados (`DiceMessage`): título, expressão em cinza, total à vista e as
- * rolagens num dropdown. A conjuração mostra o custo de MP e se o teste passou na DT; o efeito, o total do dano/cura/duração;
+ * rolagens num dropdown. A conjuração mostra o custo de MP e se o teste passou na DT; a defesa, a DT e se passou (sem custo); o efeito, o total do dano/cura/duração;
  * a arma, "Crítico" quando é o dano crítico e "Furtivo ×2" quando o ataque foi dado com o efeito Furtivo (dano dobrado).
  */
 export function ActionRollCard({ action }: { action: ActionRoll }) {
     const [ open, setOpen ] = useState(false)
-    const Icon = action.kind === 'arma' ? WeaponIcon : AutoStories
+    const Icon = action.kind === 'arma' ? WeaponIcon : action.kind === 'defesa' ? Shield : AutoStories
     const notations = action.segments.map(segment => segment.notation).join(' · ')
     const hasDetails = action.segments.length > 0
     const passed = action.dt === null || action.total === null || action.total >= action.dt

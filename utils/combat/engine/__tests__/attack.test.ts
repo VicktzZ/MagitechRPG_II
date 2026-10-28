@@ -72,11 +72,13 @@ describe('resolução do ataque (exemplo do dono: atacante tirou 25)', () => {
         expect(resolveAttack({ ...base, defense: { choice: 'dodge', total: 25 } })).toMatchObject({ damage: 30, targetSpentReaction: true });
     });
 
-    it('resistência com 13 reduz AP + metade do mod: 30 − (15 + 2) = 13', () => {
+    it('resistência com 13 reduz AP + metade do mod: 30 − (15 + 2) = 13, e gasta a Reação', () => {
         const result = resolveAttack({ ...base, defense: { choice: 'resist', total: 13 } });
-        expect(result).toMatchObject({ damage: 13, targetSpentReaction: false });
+        expect(result).toMatchObject({ damage: 13, targetSpentReaction: true });
         expect(result.defense.needed).toBe(13);
-        expect(resolveAttack({ ...base, defense: { choice: 'resist', total: 12 } }).damage).toBe(30);
+        expect(resolveAttack({ ...base, defense: { choice: 'resist', total: 12 } })).toMatchObject({ damage: 30, targetSpentReaction: true });
+        // Sem defesa, nada se gasta
+        expect(resolveAttack({ ...base, defense: { choice: 'none' } }).targetSpentReaction).toBe(false);
     });
 
     it('magia Psíquica é mental: não se esquiva e a resistência dá metade', () => {

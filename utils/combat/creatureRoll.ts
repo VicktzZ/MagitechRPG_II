@@ -3,6 +3,7 @@
  * 10 vale 2... até 5), vale o maior, e soma o valor da perícia. É a mesma conta do botão de perícia da criatura (`useCreatureExpertiseRoll`), sem mandar ao chat:
  * serve ao teste de defesa (Reflexos, RES) que o mestre rola pela criatura no painel do ataque.
  */
+import { completeCreatureExpertises } from './creatureExpertises';
 import { adjustDice, keptDie, type EffectDice } from './effectDice';
 
 interface CreatureRollSource {
@@ -33,14 +34,15 @@ export function creatureDiceFor(attributeValue: number): number {
     return Number.isFinite(mod) && mod >= 1 ? mod : 1;
 }
 
-/** Rola a perícia da criatura; `null` se ela não tem a perícia */
+/** Rola a perícia da criatura; `null` se ela não tem a perícia (perícia padrão do Magitech sem bônus vale 0: toda criatura a tem) */
 export function rollCreatureExpertise(
     creature: CreatureRollSource | null | undefined,
     name: string,
     random: () => number = Math.random,
     effects?: EffectDice
 ): CreatureRoll | null {
-    const expertise = (creature?.expertises as Record<string, { value?: unknown; defaultAttribute?: unknown } | undefined> | undefined)?.[name];
+    if (!creature) return null;
+    const expertise = completeCreatureExpertises<{ value?: unknown; defaultAttribute?: unknown }>(creature.expertises)[name];
     if (!expertise) return null;
 
     const attribute = typeof expertise.defaultAttribute === 'string' ? expertise.defaultAttribute : '';

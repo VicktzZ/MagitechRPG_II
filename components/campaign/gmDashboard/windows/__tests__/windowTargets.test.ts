@@ -17,8 +17,8 @@ const campaign = (overrides: Record<string, unknown> = {}): Campaign => ({
 }) as unknown as Campaign;
 
 describe('creatureWindowTargets', () => {
-    it('lista as criaturas da campanha e só os combatentes que são criaturas', () => {
-        expect(creatureWindowTargets(campaign())).toEqual({ creatureIds: [ 'goblin', 'wolf' ], combatantIds: [ 'goblin-1', 'goblin-2' ] });
+    it('lista as criaturas da campanha e todos os combatentes (criaturas e jogadores)', () => {
+        expect(creatureWindowTargets(campaign())).toEqual({ creatureIds: [ 'goblin', 'wolf' ], combatantIds: [ 'cs-ana', 'goblin-1', 'goblin-2' ] });
     });
 
     it('sem combate ativo não sobra combatente (combate encerrado fecha as janelas dele)', () => {
