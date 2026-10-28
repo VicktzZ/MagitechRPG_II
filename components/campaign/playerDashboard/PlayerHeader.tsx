@@ -15,6 +15,9 @@ import Image from 'next/image';
 import { StatusBar } from './StatusBar';
 import { usePlayerVitals } from './usePlayerVitals';
 import EffectBadges from '@components/campaign/gmDashboard/actions/EffectBadges';
+import EffectStatsNotice from '@components/campaign/EffectStatsNotice';
+import { displacementWithEffects } from '@utils/combat/effectStats';
+import { collectModifiers } from '@utils/combat/engine/modifiers';
 import { getMpLimit, isMpLimitEnforced } from '@utils/mpLimit';
 
 /** Etiqueta pequena (≥ 12px) de um dado da ficha */
@@ -52,6 +55,9 @@ export default function PlayerHeader({ avatar, rootRef }: { avatar: string | und
         ? combat.combatants?.find(c => c.id === charsheet.id || (c as any).odacId === charsheet.id)
         : undefined;
     const myEffects = myCombatant?.effects;
+    // Deslocamento de agora (Velocidade, Congelamento...): a ficha guarda o base, os efeitos só valem em combate
+    const displacement = displacementWithEffects(charsheet.displacement, collectModifiers(myEffects));
+    const displacementChanged = displacement !== Number(charsheet.displacement);
     const isMyTurn = combat?.isActive && combat.phase === 'ACTION'
         && combat.combatants?.[combat.currentTurnIndex]?.id === myCombatant?.id;
 
@@ -173,7 +179,12 @@ export default function PlayerHeader({ avatar, rootRef }: { avatar: string | und
                     <Grid item xs={12} sm={4}>
                         <Paper sx={{ ...tileSx, bgcolor: alpha(color.success, 0.1), borderColor: alpha(color.success, 0.4) }}>
                             <Typography sx={tileLabelSx}>Deslocamento</Typography>
-                            <Typography sx={{ ...tileValueSx, color: 'success.main' }}>{charsheet.displacement}m</Typography>
+                            <Typography
+                                title={displacementChanged ? `Base ${charsheet.displacement}m, mudado pelos efeitos ativos` : undefined}
+                                sx={{ ...tileValueSx, color: 'success.main' }}
+                            >
+                                {displacement}m
+                            </Typography>
                         </Paper>
                     </Grid>
                 </Grid>
@@ -201,6 +212,13 @@ export default function PlayerHeader({ avatar, rootRef }: { avatar: string | und
                         )}
                     </Box>
                     <EffectBadges effects={myEffects} />
+                    <Box sx={{ mt: 1 }}>
+                        <EffectStatsNotice
+                            effects={myEffects}
+                            heading={null}
+                            bases={{ displacement: charsheet.displacement, ap: charsheet.stats?.ap, maxLp: charsheet.stats?.maxLp, maxMp: charsheet.stats?.maxMp }}
+                        />
+                    </Box>
                 </Box>
             )}
 

@@ -1,5 +1,5 @@
 import { ApiError } from '../errors';
-import { assertVitalDeltas } from '../charsheetStats';
+import { assertVitalDeltas, readStatsCampaignId } from '../charsheetStats';
 
 const fails = (body: unknown): ApiError => {
     try {
@@ -41,5 +41,28 @@ describe('assertVitalDeltas', () => {
 
     it('aceita os extremos do limite', () => {
         expect(assertVitalDeltas({ lp: 9999, mp: -9999 })).toEqual({ lp: 9999, mp: -9999 });
+    });
+});
+
+describe('campaignId no corpo (Fase 6.3)', () => {
+    it('o campo é aceito quando a rota o declara, e some das variações', () => {
+        expect(assertVitalDeltas({ lp: 5, campaignId: 'camp-1' }, { extraKeys: [ 'campaignId' ] })).toEqual({ lp: 5 });
+    });
+
+    it('sem a declaração da rota continua sendo campo desconhecido', () => {
+        expect(fails({ lp: 5, campaignId: 'camp-1' }).message).toContain('campaignId');
+    });
+
+    it('lê o id da campanha: opcional, texto curto', () => {
+        expect(readStatsCampaignId({ lp: 5, campaignId: 'camp-1' })).toBe('camp-1');
+        expect(readStatsCampaignId({ lp: 5 })).toBeUndefined();
+        expect(readStatsCampaignId({ campaignId: null })).toBeUndefined();
+        expect(readStatsCampaignId(null)).toBeUndefined();
+    });
+
+    it('recusa id que não é texto, vazio ou enorme', () => {
+        [ 5, '', 'x'.repeat(129), {}, [ 'a' ], true ].forEach(value => {
+            expect(() => readStatsCampaignId({ campaignId: value })).toThrow(ApiError);
+        });
     });
 });

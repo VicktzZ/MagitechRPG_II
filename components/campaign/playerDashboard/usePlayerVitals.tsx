@@ -1,12 +1,15 @@
 'use client';
 
-import { useCampaignCurrentCharsheetContext } from '@contexts';
+import { useCampaignContext, useCampaignCurrentCharsheetContext } from '@contexts';
 import { useCharsheetSystem } from '@hooks/useCharsheetSystem';
 import { Favorite, Shield, WaterDrop } from '@mui/icons-material';
 import { color as tokenColor } from '@themes/tokens';
 import { enqueueSnackbar } from 'notistack';
 import { useCallback, useMemo, type ReactNode } from 'react';
 import type { Stats } from '@models';
+import { combatantEffects } from '@utils/combat/effectDice';
+import { effectiveMaxVital, vitalCeiling } from '@utils/combat/effectStats';
+import { collectModifiers } from '@utils/combat/engine/modifiers';
 
 export type VitalKey = 'lp' | 'mp' | 'ap';
 
@@ -29,8 +32,14 @@ export interface Vital {
  */
 export function usePlayerVitals() {
     const { charsheet, updateCharsheet } = useCampaignCurrentCharsheetContext();
+    const { campaign } = useCampaignContext();
     const { system: customSystem } = useCharsheetSystem(charsheet?.systemId);
     const stats = charsheet.stats;
+    // Efeitos de combate aplicados a este personagem (só com o combate ativo): mudam o máximo de LP e MP e a margem de Sobrecura e Sobremana
+    const combat = campaign?.session?.combat;
+    const effects = useMemo(() => combatantEffects(combat, charsheet?.id), [ combat, charsheet?.id ]);
+    const modifiers = useMemo(() => collectModifiers(effects), [ effects ]);
+    const inCombat = Boolean(combat?.isActive && combat.combatants?.some(combatant => combatant.id === charsheet?.id));
 
     const vitals = useMemo((): Vital[] => {
         const hasLP = !customSystem || (customSystem.pointsConfig?.hasLP ?? customSystem.initialFields?.life?.enabled ?? true);
@@ -47,7 +56,7 @@ export function usePlayerVitals() {
                 label: customSystem ? lpName : 'Pontos de Vida (LP)',
                 shortLabel: 'LP',
                 current: stats.lp,
-                max: stats.maxLp,
+                max: effectiveMaxVital(stats.maxLp, modifiers, 'lp'),
                 color: tokenColor.lp,
                 icon: <Favorite fontSize="inherit" />
             });
@@ -58,7 +67,7 @@ export function usePlayerVitals() {
                 label: customSystem ? mpName : 'Pontos de Mana (MP)',
                 shortLabel: 'MP',
                 current: stats.mp,
-                max: stats.maxMp,
+                max: effectiveMaxVital(stats.maxMp, modifiers, 'mp'),
                 color: tokenColor.mp,
                 icon: <WaterDrop fontSize="inherit" />
             });
@@ -75,19 +84,24 @@ export function usePlayerVitals() {
             });
         }
         return list;
-    }, [ customSystem, stats.lp, stats.maxLp, stats.mp, stats.maxMp, stats.ap, stats.maxAp ]);
+    }, [ customSystem, modifiers, stats.lp, stats.maxLp, stats.mp, stats.maxMp, stats.ap, stats.maxAp ]);
 
     const update = useCallback((stat: VitalKey, delta: number) => {
         const maxKey = `max${stat.charAt(0).toUpperCase() + stat.slice(1)}` as keyof Stats;
+        // Em combate, a cura de LP e MP sobe até o teto de agora (Fragilidade baixa o máximo; Sobrecura e Sobremana deixam passar dele) e nunca reduz o que já está
+        // acima dele; fora do combate, onde os efeitos não existem, vale o limite de sempre (o dobro do máximo)
+        const ceiling = inCombat && (stat === 'lp' || stat === 'mp')
+            ? Math.max(stats[stat], vitalCeiling(stats[maxKey], modifiers, stat))
+            : stats[maxKey] * 2;
         // Atualiza só o campo alterado: gravar o objeto `stats` inteiro sobrescrevia
         // alterações simultâneas do mestre (ex: dano aplicado no LP enquanto o jogador gasta MP)
         updateCharsheet({
-            [`stats.${stat}`]: Math.max(0, Math.min(stats[stat] + delta, stats[maxKey] * 2))
+            [`stats.${stat}`]: Math.max(0, Math.min(stats[stat] + delta, ceiling))
         } as any).catch((error: unknown) => {
             console.error('Erro ao atualizar os pontos da ficha:', error);
             enqueueSnackbar('Não foi possível atualizar a ficha. Tente de novo.', { variant: 'error' });
         });
-    }, [ stats, updateCharsheet ]);
+    }, [ stats, inCombat, modifiers, updateCharsheet ]);
 
     return { charsheet, customSystem, vitals, update };
 }

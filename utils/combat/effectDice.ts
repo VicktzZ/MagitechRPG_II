@@ -7,13 +7,14 @@ import { isStealthEffect } from './stealth';
 /**
  * Vantagem e desvantagem **dos efeitos aplicados** nas rolagens (catálogo `CombatEffect`: `advantage` e `disadvantage` com um alvo do teste). Cada efeito que mexe no
  * teste soma +1d20 (vantagem) ou tira 1d20 (desvantagem), pelo saldo líquido da regra do dono (`engine/dicePool.ts`): saldo ≥ 0 rola 1 + saldo e vale o maior, saldo < 0
- * rola 1 + |saldo| e vale o menor. Os alvos do catálogo são `attack` (o acerto da arma e o teste das magias de ataque), `dodge` (a esquiva, Reflexos), `perception` e `stealth`.
+ * rola 1 + |saldo| e vale o menor. Os alvos do catálogo são `attack` (o acerto da arma e o teste das magias de ataque), `dodge` (a esquiva, Reflexos), `perception`, `stealth` e
+ * `initiative` (a rolagem de iniciativa, Fase 6.3).
  *
  * Fica de fora o efeito **Furtivo** no acerto: o dono já deu a ele +1d20 (e dano ×2) por regra própria (`stealth.ts`, #109), e contar também o `advantage:attack` do catálogo
  * dobraria a vantagem. O catálogo `seed-furtivo` segue só informativo, como já era.
  */
 
-export type DiceScope = 'attack' | 'dodge' | 'perception' | 'stealth';
+export type DiceScope = 'attack' | 'dodge' | 'perception' | 'stealth' | 'initiative';
 
 export interface DiceBalance {
     advantages: number;

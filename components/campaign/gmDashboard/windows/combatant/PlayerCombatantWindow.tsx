@@ -45,7 +45,7 @@ function PlayerCombatantBody({ charsheet, combatantId }: { charsheet: SummaryShe
             enqueueSnackbar(`${blockReason(blocks, 'no_healing', combatant.name || charsheet.name)}.`, { variant: 'warning' });
         }
         try {
-            await charsheetService.adjustStats(charsheet.id, { [key]: delta });
+            await charsheetService.adjustStats(charsheet.id, { [key]: delta }, campaign.id);
         } catch (error) {
             console.error('Erro ao ajustar pontos vitais:', error);
             enqueueSnackbar(`Erro ao ajustar pontos vitais: ${errorMessage(error, 'tente novamente')}`, { variant: 'error' });

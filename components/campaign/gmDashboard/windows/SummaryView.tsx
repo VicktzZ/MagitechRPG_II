@@ -1,5 +1,6 @@
 'use client';
 
+import type { AppliedEffect } from '@models';
 import type { CharsheetDTO } from '@models/dtos';
 import { Backpack, DirectionsRun, LocalPolice, MonetizationOn } from '@mui/icons-material';
 import { Box, Button, Chip, Divider, Stack, Typography } from '@mui/material';
@@ -11,6 +12,7 @@ import type { VitalKey } from '@utils/vitals';
 import type { ReactElement, ReactNode } from 'react';
 import { useCharsheetPointsView } from '../useCharsheetPointsView';
 import SheetMetricsView from '../SheetMetricsView';
+import EffectStatsNotice from '../../EffectStatsNotice';
 import VitalsPanel from './VitalsPanel';
 import { charsheetVitalRows } from './vitalRows';
 import { SHEET_WINDOW_KINDS, WINDOW_KIND_LABEL, type SheetWindowKind } from './windowKinds';
@@ -58,6 +60,8 @@ export interface SummaryActions {
 interface SummaryViewProps {
     charsheet: SummarySheet;
     inTurn: boolean;
+    /** Efeitos aplicados ao jogador no combate ativo (vazio fora dele): mudam o máximo das barras e as estatísticas mostradas */
+    effects?: readonly AppliedEffect[] | null;
     /** Overall e limite de MP por turno (o limite some onde a regra não vale) */
     metrics: SheetMetrics;
     /** A regra de estágios (e o ponto de evolução) vale para esta ficha */
@@ -72,12 +76,12 @@ interface SummaryViewProps {
  * Resumo de uma ficha para o mestre: quem é, pontos vitais (com dano e cura rápidos), atributos, bolsa e pontos para
  * gastar, mais as ações do jogador e os atalhos para as seções. O resto é só leitura; cada seção se edita na própria janela.
  */
-export function SummaryView({ charsheet, inTurn, metrics, showEvolution, onOpenSection, onAdjustVital, actions }: SummaryViewProps): ReactElement {
+export function SummaryView({ charsheet, inTurn, effects, metrics, showEvolution, onOpenSection, onAdjustVital, actions }: SummaryViewProps): ReactElement {
     const view = useCharsheetPointsView(charsheet);
     const spacedMoney = useNumbersWithSpaces();
 
     const ammo = charsheet.ammoCounter;
-    const vitalRows = charsheetVitalRows(charsheet, view);
+    const vitalRows = charsheetVitalRows(charsheet, view, effects);
     const pendingPoints = SPENDABLE_POINTS
         .map(point => ({ ...point, value: asNumber(charsheet.points?.[point.key]) }))
         .filter(point => point.value > 0);
@@ -101,6 +105,11 @@ export function SummaryView({ charsheet, inTurn, metrics, showEvolution, onOpenS
                     {[ charsheet.race, charsheet.playerName ].filter(Boolean).join(' • ')}
                 </Typography>
             </Box>
+
+            <EffectStatsNotice
+                effects={effects}
+                bases={{ displacement: charsheet.displacement, ap: charsheet.stats?.ap, maxLp: charsheet.stats?.maxLp, maxMp: charsheet.stats?.maxMp }}
+            />
 
             {vitalRows.length > 0 && (
                 <VitalsPanel charsheetName={charsheet.name} rows={vitalRows} onAdjust={onAdjustVital} />

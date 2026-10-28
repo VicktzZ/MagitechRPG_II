@@ -1,4 +1,6 @@
 import type { Combatant, Creature } from '@models';
+import { vitalCeiling } from './combat/effectStats';
+import { collectModifiers } from './combat/engine/modifiers';
 import { applyVitalDelta, type VitalDeltas } from './vitals';
 
 /** Pontos vitais que o combate guarda para uma criatura: só vida e mana (a armadura não é do combatente) */
@@ -44,7 +46,7 @@ export function combatantVitals(combatant: VitalSource, creature?: { stats?: Bas
 }
 
 /**
- * Soma as variações à vida e à mana de um combatente (dano para em zero, cura para no máximo, quem está acima do máximo
+ * Soma as variações à vida e à mana de um combatente (dano para em zero, cura para no máximo de agora, quem está acima do máximo
  * não perde nada ao ser curado: `applyVitalDelta`). Devolve o combatente novo e o que mudou, sem alterar o original.
  * Só os pontos vitais ajustados são gravados no combatente (atual e máximo, para o valor de origem não se perder).
  */
@@ -56,16 +58,18 @@ export function applyCombatantDeltas<T extends Combatant>(
     const vitals = combatantVitals(combatant, creature);
     const next: T = { ...combatant };
     const changes: CombatantVitalChange = {};
+    // O teto da cura é o de agora: Fragilidade baixa o máximo, Sobrecura e Sobremana deixam passar dele (o máximo gravado no combatente não muda)
+    const modifiers = collectModifiers(combatant.effects);
 
     if (deltas.lp !== undefined) {
-        const after = applyVitalDelta(vitals.lp, vitals.maxLp, deltas.lp);
+        const after = applyVitalDelta(vitals.lp, vitalCeiling(vitals.maxLp, modifiers, 'lp'), deltas.lp);
         changes.lp = { before: vitals.lp, after };
         next.currentLp = after;
         next.maxLp = vitals.maxLp;
     }
 
     if (deltas.mp !== undefined) {
-        const after = applyVitalDelta(vitals.mp, vitals.maxMp, deltas.mp);
+        const after = applyVitalDelta(vitals.mp, vitalCeiling(vitals.maxMp, modifiers, 'mp'), deltas.mp);
         changes.mp = { before: vitals.mp, after };
         next.currentMp = after;
         next.maxMp = vitals.maxMp;

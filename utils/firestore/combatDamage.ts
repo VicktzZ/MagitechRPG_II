@@ -1,5 +1,7 @@
 import type { Combat, Combatant } from '@models';
 import type { StatsEntry } from '@utils/campaignStatsHelper';
+import { vitalCeiling } from '@utils/combat/effectStats';
+import { collectModifiers } from '@utils/combat/engine/modifiers';
 import { adminGetDoc, adminUpdateDoc } from './adminDocs';
 
 /**
@@ -30,13 +32,16 @@ export async function damageCombatant(combat: Combat, targetId: string, damage: 
     return { target, oldLp };
 }
 
-/** O alvo recupera `heal` de LP até o máximo; cura nunca reduz o LP (jogador com LP acima do máximo por sobrecura); `null` se ele não está no combate */
+/**
+ * O alvo recupera `heal` de LP até o máximo **de agora** (Fragilidade o reduz; Sobrecura deixa passar dele, `vitalCeiling`); cura nunca reduz o LP (jogador com LP acima do
+ * máximo por sobrecura); `null` se ele não está no combate
+ */
 export async function healCombatant(combat: Combat, targetId: string, heal: number): Promise<LpChange | null> {
     const target = combat.combatants.find(combatant => combatant.id === targetId);
     if (!target) return null;
 
     const oldLp = target.currentLp || 0;
-    const maxLp = target.maxLp || 999;
+    const maxLp = target.maxLp ? vitalCeiling(target.maxLp, collectModifiers(target.effects), 'lp') : 999;
     target.currentLp = Math.max(oldLp, Math.min(maxLp, oldLp + heal));
     await writeSheetLp(target);
     return { target, oldLp };

@@ -13,6 +13,7 @@ import type { VitalKey } from '@utils/vitals';
 import type { ReactElement, ReactNode } from 'react';
 import ActionBlocksNotice from '../../../ActionBlocksNotice';
 import ActionPips from '../../../ActionPips';
+import EffectStatsNotice from '../../../EffectStatsNotice';
 import ExpertiseListControls, { ExpertiseNoResults, useExpertiseListState } from '../../../ExpertiseListControls';
 import CreatureExpertiseButton from '../../dashboard/CreatureExpertiseButton';
 import { useCharsheetPointsView } from '../../useCharsheetPointsView';
@@ -66,7 +67,7 @@ export function PlayerCombatantView({
 }: PlayerCombatantViewProps): ReactElement {
     const view = useCharsheetPointsView(charsheet);
     const list = useExpertiseListState();
-    const vitalRows = charsheetVitalRows(charsheet, view);
+    const vitalRows = charsheetVitalRows(charsheet, view, combatant.effects);
     const expertises = Object.entries((charsheet.expertises ?? {}) as unknown as Record<string, Expertise>);
     const visibleExpertises = filterAndSortExpertises(expertises, { query: list.query, sort: list.sort, nameOf: ([ expertiseName ]) => expertiseName, valueOf: ([ , expertise ]) => Number(expertise?.value) || 0 });
     const effects = Array.isArray(combatant.effects) ? combatant.effects : [];
@@ -94,6 +95,11 @@ export function PlayerCombatantView({
             </Box>
 
             <ActionBlocksNotice blocks={actionBlocks(combatant.effects)} who={charsheet.name} />
+
+            <EffectStatsNotice
+                effects={combatant.effects}
+                bases={{ displacement: charsheet.displacement, ap: charsheet.stats?.ap, maxLp: charsheet.stats?.maxLp, maxMp: charsheet.stats?.maxMp }}
+            />
 
             {vitalRows.length > 0 && <VitalsPanel charsheetName={charsheet.name} rows={vitalRows} onAdjust={onAdjustVital} />}
 
