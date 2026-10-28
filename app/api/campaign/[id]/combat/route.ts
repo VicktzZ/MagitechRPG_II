@@ -10,7 +10,8 @@ import { v4 as uuidv4 } from 'uuid'
 import { stripUndefined } from '@utils/firestore/stripUndefined'
 import { appendCampaignMessage } from '@utils/firestore/campaignMessages'
 import { recordCampaignStats, type StatsEntry } from '@utils/campaignStatsHelper'
-import { badRequest, forbidden, handleRouteError, readJsonBody, requireCampaignMember, requireUser } from '@utils/api'
+import { badRequest, findCampaignOrThrow, forbidden, handleRouteError, readJsonBody, requireCampaignMember, requireUser } from '@utils/api'
+import { acquireCombatLock, type CombatLock } from '@utils/firestore/combatLock'
 import { evaluateMpSpend, getCreatureMpLimit, getMpLimit, isCreatureMpLimitEnforced, isMpLimitEnforced } from '@utils/mpLimit'
 import { combatantVitals } from '@utils/combatantVitals'
 import { insertCombatant, nextCreatureInstance } from '@utils/combat/addCombatants'
@@ -160,6 +161,9 @@ export async function POST(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
+    // Uma ação de combate por vez em cada campanha (utils/firestore/combatLock.ts); solta no `finally`
+    let lock: CombatLock | null = null
+
     try {
         const { id } = await params
         const user = await requireUser()
@@ -177,6 +181,11 @@ export async function POST(
         if (!isGM && GM_ONLY_ACTIONS.includes(action)) {
             throw forbidden('Apenas o mestre pode fazer isso no combate')
         }
+
+        // A vez desta ação: sem a trava, duas ações quase juntas leem o mesmo combate e a última a gravar apaga a outra. O que foi lido
+        // antes de pegar a trava pode estar velho, então a campanha é relida com a trava na mão.
+        lock = await acquireCombatLock(campaign.id)
+        Object.assign(campaign, await findCampaignOrThrow(campaign.id))
 
         if (campaign.status === 'finished') {
             return NextResponse.json({ error: 'Campanha finalizada — ações de combate bloqueadas' }, { status: 403 })
@@ -1304,6 +1313,8 @@ export async function POST(
 
     } catch (error) {
         return handleRouteError(error, 'Erro ao executar ação de combate')
+    } finally {
+        await lock?.release()
     }
 }
 

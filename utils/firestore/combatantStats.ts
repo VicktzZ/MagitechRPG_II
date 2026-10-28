@@ -4,6 +4,7 @@ import { findBaseCreature } from '@utils/combatCreatureLookup';
 import { applyCombatantDeltas, type CombatantVitalChange } from '@utils/combatantVitals';
 import type { VitalDeltas } from '@utils/vitals';
 import { adminUpdateDocInTransaction } from './adminDocs';
+import { withCombatLock } from './combatLock';
 
 /**
  * Soma as variações à vida e à mana de uma criatura em combate, numa transação: o combate é lido e gravado sem que outra
@@ -11,9 +12,10 @@ import { adminUpdateDocInTransaction } from './adminDocs';
  * porque o Firestore não altera um item de lista por caminho; os outros combatentes saem como estavam) e não registra no log do combate:
  * é o ajuste rápido do mestre, não um ataque (o diálogo de combate é quem narra dano e cura).
  * Jogadores não passam por aqui: a vida deles é da ficha (`adjustCharsheetStats`).
+ * Pega a mesma trava das ações de combate (`combatLock.ts`): a rota `combat` regrava o combate inteiro no fim e, sem a trava, apagaria este ajuste.
  */
 export async function adjustCombatantVitals(campaignId: string, combatantId: string, deltas: VitalDeltas): Promise<CombatantVitalChange> {
-    return await adminUpdateDocInTransaction<CombatantVitalChange, Campaign>('campaigns', campaignId, data => {
+    return await withCombatLock(campaignId, async () => await adminUpdateDocInTransaction<CombatantVitalChange, Campaign>('campaigns', campaignId, data => {
         if (!data) throw notFound('Campanha não encontrada');
 
         const combat = data.session?.combat;
@@ -33,5 +35,5 @@ export async function adjustCombatantVitals(campaignId: string, combatantId: str
         next[index] = combatant;
 
         return { fields: { 'session.combat.combatants': next }, result: changes };
-    });
+    }));
 }

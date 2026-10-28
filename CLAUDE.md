@@ -384,9 +384,15 @@ aparece como gasto/limite (`mpSpentThisTurn` do combatente).
 
 ## Combate automatizado (regras do dono; em construção)
 
-Projeto grande, em fases (estimativa de 38 a 51 PRs; fatia jogável de ponta a ponta em 15 a 20). **Fase 1 entregue: o motor de regras puro, `utils/combat/engine/` (barril `index.ts`), ainda NÃO ligado à rota de combate nem às telas.** Falta: combate em documento próprio
-com eventos reversíveis e linhas só do mestre (a rota `combat` reescreve a campanha inteira e 31 arquivos leem `session.combat`), fluxo de ataque assistido, reações, ambiente manual, catálogo de status ligado ao motor, passivas de classe e interface. Os 124 modificadores
+Projeto grande, em fases (estimativa de 38 a 51 PRs; fatia jogável de ponta a ponta em 15 a 20). **Fase 1 entregue: o motor de regras puro, `utils/combat/engine/` (barril `index.ts`), ainda NÃO ligado à rota de combate nem às telas.** **Fase 2.1 entregue: uma ação de combate por vez em cada campanha** (`utils/firestore/combatLock.ts`, abaixo). Falta: orçamento de ações no combatente, eventos reversíveis ("desfazer") e linhas só do mestre
+num documento privado (31 arquivos leem `session.combat`, então o estado fica onde está e qualquer mudança de lugar precisa de uma camada de compatibilidade), fluxo de ataque assistido, reações, ambiente manual, catálogo de status ligado ao motor, passivas de classe e interface. Os 124 modificadores
 dos 33 efeitos do catálogo (`CombatEffect`) hoje só são exibidos; o motor (`collectModifiers`) é o que os transforma em regra, e `defaultStates.ts` e `features/pipelines` são modelos antigos a unificar.
+
+**Trava do combate** (`acquireCombatLock`/`withCombatLock`): a rota `POST /api/campaign/[id]/combat` lê o combate, muda tudo na memória e grava `session.combat` inteiro por caminho de campo, **sem conferir se mudou nesse meio tempo**; duas ações quase juntas (um jogador gasta MP
+enquanto o mestre aplica um efeito) se apagavam, e as ações têm efeitos fora do combate (vida da ficha, MP da manutenção), então repetir a ação numa nova tentativa os duplicaria. Por isso as ações **entram numa fila**: cada uma pega uma trava curta (documento
+`campaigns/{id}/locks/combat`, `{ owner, until }`, só o servidor acessa; as regras do Firestore negam o resto), **relê a campanha já com a trava na mão**, executa, grava e solta no `finally`. Quem chega com a trava ocupada espera a vez (por até 8s, com pausas curtas e variadas) e,
+sem conseguir, recebe **409 `COMBAT_BUSY`**. A trava vale 20s e vence sozinha se a função cair; soltar uma trava vencida não derruba a de quem pegou depois. O ajuste rápido de vida da criatura (`adjustCombatantVitals`) pega a mesma trava. **Qualquer código novo que grave
+`session.combat` precisa passar por ela.** Testado no emulador (`combatLock.emulator.test.ts`: cinco ações juntas somam 5, e sem a trava se perdem).
 
 **Princípios (decisão do dono):** (1) **assistido**: o motor propõe, o mestre confirma, e **tudo é sobrescrevível** (editar a resolução antes de confirmar, mudar o estado final entre turnos, trocar a natureza do ataque físico/mágico/mental para "e se...", desfazer); (2) o mapa é de
 **terceiros**: **só movimento e distância (e o que deriva deles) são manuais**, o app não valida alcance nem posição; (3) **resistências, fraquezas e vulnerabilidades dos alvos só o mestre vê**: as linhas do cálculo carregam `visibility: 'gm' | 'all'` (`ExplainLine`, `visibleLines`),
