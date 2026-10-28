@@ -1,4 +1,5 @@
 import { useCampaignCurrentCharsheetContext } from '@contexts';
+import { sheetOverweight } from '@utils/combat/sheetOverweight';
 import { useMemo, useState } from 'react';
 import { capacityState, carriedWeight, collectEntries, countByType, filterAndSortEntries, heaviestEntries, totalArmorPoints } from './inventoryList';
 import type { InventorySort, InventoryTab } from './inventoryTypes';
@@ -22,6 +23,8 @@ export function useInventoryView() {
     const counts = useMemo(() => countByType(entries), [ entries ]);
     const armorAp = useMemo(() => totalArmorPoints(entries), [ entries ]);
     const heaviest = useMemo(() => heaviestEntries(entries, 3), [ entries ]);
+    // Sobrepeso: condição derivada daqui; tira das perícias de DES e VIG (só no Magitech padrão)
+    const overweightPenalty = useMemo(() => sheetOverweight(charsheet).penalty, [ charsheet ]);
 
     const isFiltering = searchQuery.trim() !== '' || activeTab !== 'all';
     const clearFilters = (): void => { setSearchQuery(''); setActiveTab('all') };
@@ -43,6 +46,7 @@ export function useInventoryView() {
         maxCapacity: charsheet.capacity.max,
         capacity,
         armorAp,
-        heaviest
+        heaviest,
+        overweightPenalty
     };
 }

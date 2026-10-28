@@ -20,6 +20,7 @@ import type { Attributes, Expertise as ExpertiseType, Expertises } from '@models
 import type { Charsheet } from '@models/entities';
 import { color as colorToken } from '@themes/tokens';
 import { classColor } from '@constants';
+import { sheetExpertisePenalty } from '@utils/combat/sheetOverweight';
 
 interface ExpertiseProps {
     name: keyof Expertises | string;
@@ -118,6 +119,9 @@ export default function Expertise({
         ? 1 + customInfluence.extraDice
         : (attrModifier < 0 ? 2 : attrModifier + 1);
 
+    // Sobrepeso (condição do inventário): −1 no modificador para cada kg acima da capacidade, nas perícias de DES e VIG. Não vale no sistema customizado.
+    const overweightPenalty = customInfluence ? 0 : sheetExpertisePenalty(getValues(), expertise.defaultAttribute);
+
     return (
         <>
             <Grid
@@ -146,6 +150,11 @@ export default function Expertise({
                             {customInfluence && customInfluence.bonus > 0 && (
                                 <Typography variant="body2" color="success.main">
                                     Bônus do atributo: +{customInfluence.bonus}
+                                </Typography>
+                            )}
+                            {overweightPenalty < 0 && (
+                                <Typography variant="body2" color="warning.main">
+                                    Sobrepeso: {overweightPenalty} no modificador
                                 </Typography>
                             )}
                             {customInfluence && customInfluence.extraDice > 0 && (
@@ -347,9 +356,11 @@ export default function Expertise({
                 <DiceRollModal
                     open={open}
                     onClose={() => setOpen(false)}
-                    bonus={customInfluence && customInfluence.bonus > 0
-                        ? [ expertise.value, customInfluence.bonus ]
-                        : [ expertise.value ]}
+                    bonus={[
+                        expertise.value,
+                        ...(customInfluence && customInfluence.bonus > 0 ? [ customInfluence.bonus ] : []),
+                        ...(overweightPenalty < 0 ? [ overweightPenalty ] : [])
+                    ]}
                     isDisadvantage={isDisadvantage}
                     isAdvantage={isAdvantage}
                     visibleBaseAttribute

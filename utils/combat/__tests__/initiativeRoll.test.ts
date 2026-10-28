@@ -59,3 +59,16 @@ describe('describeInitiativeRolls', () => {
         expect(describeInitiativeRolls({ rolls: [], roll: 14 })).toBe('14')
     })
 })
+
+describe('playerInitiativeDice com Sobrepeso', () => {
+    const sheet = { expertises: { Agilidade: { value: 3, defaultAttribute: 'des' } }, mods: { attributes: { des: 2 } }, ...{ capacity: { max: 8 }, inventory: { weapons: [ { id: 'w1', name: 'Marreta', weight: 10 } ] } } }
+
+    it('Agilidade é perícia de DES: 2 kg acima da capacidade tiram 2 do bônus da iniciativa', () => {
+        expect(playerInitiativeDice(sheet)).toEqual({ numDice: 2, expertiseValue: 1 })
+    })
+
+    it('sem excesso de peso, ou com a perícia ligada a outro atributo, nada muda', () => {
+        expect(playerInitiativeDice({ ...sheet, capacity: { max: 40 } })).toEqual({ numDice: 2, expertiseValue: 3 })
+        expect(playerInitiativeDice({ ...sheet, expertises: { Agilidade: { value: 3, defaultAttribute: 'foc' } }, mods: { attributes: { foc: 2 } } })).toEqual({ numDice: 2, expertiseValue: 3 })
+    })
+})

@@ -278,3 +278,27 @@ describe('texto', () => {
         expect(falhou.severity).toBe('error')
     })
 })
+
+describe('resolveTestModifiers com Sobrepeso', () => {
+    const heavy = {
+        level: 4,
+        mods: { attributes: { des: 3, vig: 1, foc: 2 } },
+        expertises: {
+            Furtividade: { value: 4, defaultAttribute: 'des' },
+            Atletismo: { value: 1, defaultAttribute: 'vig' },
+            Magia: { value: 5, defaultAttribute: 'foc' }
+        },
+        ...{ capacity: { max: 8 }, inventory: { weapons: [ { id: 'w1', name: 'Marreta', weight: 10 } ] } }
+    }
+
+    it('tira 1 por kg excedido do bônus das perícias de DES e VIG, e só delas', () => {
+        expect(resolveTestModifiers(heavy, 'Furtividade')).toEqual({ dice: 3, bonus: 2 })
+        expect(resolveTestModifiers(heavy, 'Atletismo')).toEqual({ dice: 1, bonus: -1 })
+        expect(resolveTestModifiers(heavy, 'Magia')).toEqual({ dice: 2, bonus: 5 })
+    })
+
+    it('sem a ficha completa (sem inventário) não há penalidade', () => {
+        const bare = { level: 4, mods: heavy.mods, expertises: heavy.expertises }
+        expect(resolveTestModifiers(bare, 'Furtividade')).toEqual({ dice: 3, bonus: 4 })
+    })
+})

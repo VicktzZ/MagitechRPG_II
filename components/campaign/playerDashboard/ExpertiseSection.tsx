@@ -6,6 +6,7 @@ import { useChatContext } from '@contexts/chatContext'
 import { MessageType } from '@enums'
 import { 
     alpha,
+    Alert,
     Box, 
     Button, 
     Chip, 
@@ -39,6 +40,8 @@ import { color } from '@themes/tokens'
 import { useSession } from 'next-auth/react'
 import { type ReactElement, useState, useMemo, useEffect } from 'react'
 import type { RPGSystem, SystemAttribute } from '@models/entities';
+import { expertiseOverweightPenalty } from '@utils/combat/engine/overweight';
+import { sheetOverweight } from '@utils/combat/sheetOverweight';
 import { filterAndSortExpertises, type ExpertiseSort } from '@utils/expertiseList';
 import { matchesSearch } from '@utils/searchText';
 
@@ -60,6 +63,8 @@ interface ExpertiseEntry {
     value: number;
     defaultAttribute?: string;
     attributeLabel?: string;
+    /** O que o Sobrepeso tira do modificador desta perícia (negativo, ou 0); só DES e VIG sofrem */
+    penalty: number;
 }
 
 export default function ExpertiseSection(): ReactElement {
@@ -96,6 +101,9 @@ export default function ExpertiseSection(): ReactElement {
         return 'legendary';
     };
 
+    // Sobrepeso (condição do inventário): −1 por kg excedido nas perícias de atributo base DES e VIG (só no Magitech padrão)
+    const overweight = useMemo(() => sheetOverweight(charsheet), [ charsheet ]);
+
     const entries = useMemo<ExpertiseEntry[]>(() => {
         if (systemExpertises && systemExpertises.length > 0) {
             return systemExpertises.map(sysExp => {
@@ -107,7 +115,8 @@ export default function ExpertiseSection(): ReactElement {
                     label: sysExp.name,
                     value: stored?.value ?? 0,
                     defaultAttribute,
-                    attributeLabel: attrDef?.abbreviation ?? defaultAttribute?.toUpperCase()
+                    attributeLabel: attrDef?.abbreviation ?? defaultAttribute?.toUpperCase(),
+                    penalty: 0
                 };
             });
         }
@@ -117,9 +126,10 @@ export default function ExpertiseSection(): ReactElement {
             label: key,
             value: exp?.value ?? 0,
             defaultAttribute: exp?.defaultAttribute,
-            attributeLabel: exp?.defaultAttribute?.toUpperCase()
+            attributeLabel: exp?.defaultAttribute?.toUpperCase(),
+            penalty: expertiseOverweightPenalty(exp?.defaultAttribute, overweight.penalty) || 0
         }));
-    }, [ expertises, systemExpertises, systemAttributes ]);
+    }, [ expertises, systemExpertises, systemAttributes, overweight ]);
 
     const filteredAndSortedExpertises = useMemo(() => {
         const byLevel = filterLevel === 'all' ? entries : entries.filter(e => getExpertiseLevel(e.value) === filterLevel);
@@ -182,7 +192,8 @@ export default function ExpertiseSection(): ReactElement {
     }
 
     const handleExpertiseClick = async (entry: ExpertiseEntry) => {
-        const expertiseValue = entry.value
+        // O Sobrepeso entra no modificador da rolagem (a perícia na ficha continua com o valor dela)
+        const expertiseValue = entry.value + entry.penalty
 
         // Determina quantos d20s rolar baseado nos mods do atributo padrão da perícia
         const attrKey = (entry.defaultAttribute ?? '') as keyof typeof charsheet.mods.attributes
@@ -264,6 +275,12 @@ export default function ExpertiseSection(): ReactElement {
                             </Stack>
                         ))}
                     </Box>
+
+                    {overweight.penalty < 0 && (
+                        <Alert severity="warning" data-testid="overweight-notice">
+                            {`Sobrepeso: ${overweight.excess} kg acima da capacidade (${overweight.carried} de ${overweight.max} kg). As perícias de DES e VIG têm ${overweight.penalty} no modificador até você largar peso.`}
+                        </Alert>
+                    )}
 
                     {/* Filtros e Ordenação */}
                     <Box 
@@ -517,6 +534,18 @@ export default function ExpertiseSection(): ReactElement {
                                                                 fontSize: '0.8rem'
                                                             }}
                                                         />
+                                                        {entry.penalty < 0 && (
+                                                            <Tooltip title="Sobrepeso: −1 no modificador para cada kg acima da capacidade">
+                                                                <Chip
+                                                                    label={`Sobrepeso ${entry.penalty}`}
+                                                                    size="small"
+                                                                    color="warning"
+                                                                    variant="outlined"
+                                                                    data-testid="expertise-overweight"
+                                                                    sx={{ fontWeight: 600, fontSize: '0.75rem' }}
+                                                                />
+                                                            </Tooltip>
+                                                        )}
                                                         {entry.attributeLabel && (
                                                             <Chip
                                                                 label={entry.attributeLabel}
