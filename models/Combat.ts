@@ -1,6 +1,7 @@
 import { IsArray, IsBoolean, IsNumber, IsOptional, IsString, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 import { AppliedEffect } from './AppliedEffect';
+import type { ActionBudget } from '../utils/combat/engine/actionBudget';
 
 /**
  * Fases do combate
@@ -78,6 +79,13 @@ export class Combatant {
     @IsOptional()
     @IsBoolean()
         mpLimitOverride?: boolean = false;
+
+    /**
+     * Ações que ainda restam na rodada (Padrão, Bônus, Movimento, Reação). Sem o campo, tudo disponível. Voltam quando a rodada vira.
+     * Ver utils/combat/actionBudgets.ts.
+     */
+    @IsOptional()
+        actions?: ActionBudget;
 
     @ValidateNested({ each: true })
     @Type(() => AppliedEffect)

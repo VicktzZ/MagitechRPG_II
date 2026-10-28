@@ -56,6 +56,10 @@ import ApplyEffectDialog from './ApplyEffectDialog';
 import { useSetMpSpent } from './useSetMpSpent';
 import { campaignService } from '@services';
 import { errorMessage } from '@utils/errors';
+import { combatantBudget } from '@utils/combat/actionBudgets';
+import type { ActionBudget } from '@utils/combat/engine/actionBudget';
+import ActionPips from '../../ActionPips';
+import { useToggleCombatAction } from './useToggleCombatAction';
 
 interface CombatDialogProps {
     open: boolean;
@@ -88,6 +92,8 @@ interface Combatant {
     mpSpentThisTurn?: number;
     /** Mestre liberou o limite de MP por turno até a rodada virar */
     mpLimitOverride?: boolean;
+    /** Ações que restam na rodada (ver utils/combat/actionBudgets.ts) */
+    actions?: ActionBudget;
 }
 
 interface Combat {
@@ -129,6 +135,8 @@ export default function CombatDialog({
 
     // O mestre define o MP gasto na rodada de um combatente
     const { openSetMpSpent, setMpSpentDialog } = useSetMpSpent(campaignId);
+    // O mestre gasta ou devolve as ações da rodada (Padrão, Bônus, Movimento, Reação)
+    const { toggleAction, busy: togglingAction } = useToggleCombatAction(campaignId);
 
     const handleRemoveEffect = useCallback(async (combatantId: string, appliedEffectId: string) => {
         try {
@@ -590,6 +598,13 @@ export default function CombatDialog({
                                                         >
                                                             MP no turno: {mpSpent}/{mpLimit}{mpReleased ? ' (liberado)' : ''}
                                                         </Typography>
+                                                    )}
+                                                    {combat.phase === 'ACTION' && (
+                                                        <ActionPips
+                                                            budget={combatantBudget(combatant)}
+                                                            onSelect={(slot, available) => { void toggleAction(combatant.id, slot, available); }}
+                                                            busy={togglingAction}
+                                                        />
                                                     )}
                                                     {combatant.effects && combatant.effects.length > 0 && (
                                                         <Box sx={{ mt: 0.5 }} onClick={e => e.stopPropagation()}>

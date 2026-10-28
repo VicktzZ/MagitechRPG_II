@@ -16,7 +16,9 @@ import { evaluateMpSpend, getCreatureMpLimit, getMpLimit, isCreatureMpLimitEnfor
 import { combatantVitals } from '@utils/combatantVitals'
 import { insertCombatant, nextCreatureInstance } from '@utils/combat/addCombatants'
 import { creatureInitiativeDice, describeInitiativeRolls, playerInitiativeDice, resolveInitiative, type InitiativeDice } from '@utils/combat/initiativeRoll'
-import { resetMpLimitWindows } from '@utils/combat/mpLimitWindow'
+import { resetRoundWindows } from '@utils/combat/roundWindow'
+import { applyBudgetPatch, combatantBudget, describeBudget } from '@utils/combat/actionBudgets'
+import { executionSlot, spendAction } from '@utils/combat/engine/actionBudget'
 import { sustainedUpkeepFor } from '@utils/combat/sustainedSpells'
 import { applySustainedUpkeep, endSustained, startSustained } from '@utils/combat/sustainedUpkeep'
 import { findBaseCreature } from '@utils/combatCreatureLookup'
@@ -24,13 +26,13 @@ import { findBaseCreature } from '@utils/combatCreatureLookup'
 /** Ações que conduzem o combate — exclusivas do mestre */
 const GM_ONLY_ACTIONS: CombatAction[] = [
     'start', 'end', 'set_initiative', 'add_creature', 'add_combatants', 'remove_combatant', 'apply_effect', 'remove_effect',
-    'set_mp_limit_override', 'reset_mp_limit', 'set_mp_spent'
+    'set_mp_limit_override', 'reset_mp_limit', 'set_mp_spent', 'set_actions'
 ]
 
 /** Ações de jogador que só valem no turno do próprio personagem */
 const OWN_TURN_ACTIONS: CombatAction[] = [ 'next_turn', 'apply_damage', 'apply_heal' ]
 
-const KNOWN_ACTIONS: CombatAction[] = [ ...GM_ONLY_ACTIONS, ...OWN_TURN_ACTIONS, 'roll_initiative', 'spend_mp', 'sustain_start', 'sustain_end' ]
+const KNOWN_ACTIONS: CombatAction[] = [ ...GM_ONLY_ACTIONS, ...OWN_TURN_ACTIONS, 'roll_initiative', 'spend_mp', 'spend_action', 'sustain_start', 'sustain_end' ]
 
 type CombatAction = 
     | 'start'           // Iniciar combate
@@ -49,6 +51,8 @@ type CombatAction =
     | 'set_mp_limit_override' // Mestre libera/restabelece o limite de MP por turno de um jogador
     | 'reset_mp_limit'  // Mestre zera o MP gasto na rodada de um jogador ou criatura
     | 'set_mp_spent'    // Mestre define exatamente o MP gasto na rodada (de 0 até o limite, que não muda)
+    | 'spend_action'    // Gasta uma ação da rodada (Padrão, Bônus, Movimento, Reação ou Completa); o jogador só gasta as do próprio personagem
+    | 'set_actions'     // Mestre ajusta as ações que restam a um combatente (devolver uma ação, dar extras)
     | 'sustain_start'   // Jogador conjurou com sucesso uma magia sustentada em combate: ela vira um efeito sobre ele
     | 'sustain_end'     // Desconjurar uma magia sustentada (ou todas, sem spellKey)
 
@@ -102,6 +106,11 @@ interface CombatRequest {
 
     /** Para set_mp_limit_override: true libera o limite, false restabelece */
     enabled?: boolean
+
+    /** Para spend_action: a execução que gasta a ação ("Padrão", "Bônus"/"Livre", "Movimento", "Reação", "Completa") */
+    execution?: string
+    /** Para set_actions: as ações que restam, por espaço ({ padrao: 0, bonus: 1, movimento: 1, reacao: 1 }); só os espaços informados mudam */
+    actions?: Record<string, number>
 
     /** Para sustain_start / sustain_end: a magia sustentada (id ou nome), o estágio conjurado e o custo total de MP dele */
     spellKey?: string
@@ -227,6 +236,13 @@ export async function POST(
                 }
             }
 
+            if (action === 'spend_action') {
+                const target = combat.combatants?.find(c => c.id === body.combatantId || c.odacId === body.combatantId)
+                if (target && !ownsCombatant(target)) {
+                    throw forbidden('Você só pode gastar ações do seu personagem')
+                }
+            }
+
             if (action === 'sustain_start' || action === 'sustain_end') {
                 const target = combat.combatants?.find(c => c.id === body.combatantId || c.odacId === body.combatantId)
                 if (target && !ownsCombatant(target)) {
@@ -322,7 +338,7 @@ export async function POST(
                     c.effects = []
                 }
             }
-            resetMpLimitWindows(combat.combatants)
+            resetRoundWindows(combat.combatants)
 
             combat.logs.push(new CombatLog({
                 round: combat.round,
@@ -482,7 +498,7 @@ export async function POST(
                 combat.phase = 'INITIATIVE'
                 combat.currentTurnIndex = 0
                 // A rodada virou: o limite de MP por turno de todos recomeça e as magias sustentadas cobram a manutenção (já no limite novo)
-                resetMpLimitWindows(combat.combatants)
+                resetRoundWindows(combat.combatants)
                 await applySustainedUpkeep(combat)
 
                 combat.logs.push(new CombatLog({
@@ -527,7 +543,7 @@ export async function POST(
                     })
                     combat.phase = 'INITIATIVE'
                     combat.currentTurnIndex = 0
-                    resetMpLimitWindows(combat.combatants)
+                    resetRoundWindows(combat.combatants)
                     await applySustainedUpkeep(combat)
 
                     combat.logs.push(new CombatLog({
@@ -1127,6 +1143,67 @@ export async function POST(
             break
         }
 
+        case 'spend_action': {
+            // Fora do combate não há orçamento de ações: nada é registrado (e nada falha)
+            if (!combat.isActive) {
+                return NextResponse.json({ success: true, combat, enforced: false })
+            }
+
+            const { combatantId, execution } = body
+            const slot = executionSlot(execution)
+            if (!slot) {
+                throw badRequest('Ação inválida: use Padrão, Bônus, Movimento, Reação ou Completa')
+            }
+
+            const combatant = combat.combatants.find(c => c.id === combatantId || c.odacId === combatantId)
+            if (!combatant) {
+                return NextResponse.json({ error: 'Combatente não encontrado' }, { status: 404 })
+            }
+
+            const spent = spendAction(combatantBudget(combatant), execution)
+            if (!spent.ok) {
+                return NextResponse.json({
+                    error: `${combatant.name} não tem a ação ${String(execution)} disponível nesta rodada`,
+                    code: 'ACTION_UNAVAILABLE',
+                    missing: spent.missing
+                }, { status: 409 })
+            }
+
+            combatant.actions = spent.budget
+
+            break
+        }
+
+        case 'set_actions': {
+            if (!combat.isActive) {
+                return NextResponse.json({ error: 'Não há combate ativo' }, { status: 400 })
+            }
+
+            const combatant = combat.combatants.find(c => c.id === body.combatantId || c.odacId === body.combatantId)
+            if (!combatant) {
+                return NextResponse.json({ error: 'Combatente não encontrado no combate' }, { status: 404 })
+            }
+
+            const next = applyBudgetPatch(combatantBudget(combatant), body.actions)
+            if (!next) {
+                throw badRequest('Ações inválidas: informe Padrão, Bônus, Movimento ou Reação com inteiros de 0 a 9')
+            }
+
+            combatant.actions = next
+
+            combat.logs.push(new CombatLog({
+                round: combat.round,
+                type: 'action',
+                actorId: 'gm',
+                actorName: 'Mestre',
+                targetId: combatant.id,
+                targetName: combatant.name,
+                message: `✏️ O mestre ajustou as ações de **${combatant.name}**: ${describeBudget(next)}.`
+            }))
+
+            break
+        }
+
         case 'set_mp_spent': {
             if (!combat.isActive) {
                 return NextResponse.json({ error: 'Não há combate ativo' }, { status: 400 })
@@ -1261,7 +1338,7 @@ export async function POST(
         let combatMessage: Message | undefined
         // `sustain_end` só gera log quando alguma magia estava ativa.
         const logsGrew = combat.logs.length > logsBefore
-        if (action !== 'spend_mp' && (action !== 'sustain_end' || logsGrew) && combat.logs.length > 0) {
+        if (action !== 'spend_mp' && action !== 'spend_action' && (action !== 'sustain_end' || logsGrew) && combat.logs.length > 0) {
             const lastLog = combat.logs[combat.logs.length - 1]
             combatMessage = new Message({
                 id: crypto.randomUUID(),
@@ -1336,6 +1413,8 @@ function getActionMessage(action: CombatAction): string {
         set_mp_limit_override: 'Limite de MP atualizado',
         reset_mp_limit: 'Limite de MP resetado',
         set_mp_spent: 'MP gasto definido',
+        spend_action: 'Ação gasta',
+        set_actions: 'Ações ajustadas',
         sustain_start: 'Magia sustentada ativa',
         sustain_end: 'Magia sustentada encerrada'
     }

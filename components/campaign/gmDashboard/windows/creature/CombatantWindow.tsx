@@ -10,6 +10,7 @@ import { errorMessage, asRequestError } from '@utils/errors';
 import { getCreatureMpLimit, isCreatureMpLimitEnforced } from '@utils/mpLimit';
 import { enqueueSnackbar } from 'notistack';
 import { useSetMpSpent } from '../../actions/useSetMpSpent';
+import { useToggleCombatAction } from '../../actions/useToggleCombatAction';
 import { useCreatureExpertiseRoll } from '../../dashboard/useCreatureExpertiseRoll';
 import { useGMWindowActions } from '../GMWindowProvider';
 import { CombatantView } from './CombatantView';
@@ -20,6 +21,7 @@ export default function CombatantWindow({ combatantId }: { combatantId: string }
     const { openWindow } = useGMWindowActions();
     const rollExpertise = useCreatureExpertiseRoll(null);
     const { openSetMpSpent, setMpSpentDialog } = useSetMpSpent(campaign.id);
+    const { toggleAction } = useToggleCombatAction(campaign.id);
 
     const combat = campaign.session?.combat;
     const combatant = combat?.isActive ? combat.combatants?.find(candidate => candidate.id === combatantId) : undefined;
@@ -81,6 +83,7 @@ export default function CombatantWindow({ combatantId }: { combatantId: string }
                 mpLimit={mpLimit}
                 onCastSpell={spell => { void castSpell(spell); }}
                 onResetMpLimit={() => { void resetMpLimit(); }}
+                onToggleAction={(slot, available) => { void toggleAction(combatant.id, slot, available); }}
                 onSetMpSpent={() => {
                     openSetMpSpent({ id: combatant.id, name: combatant.name, spent: combatant.mpSpentThisTurn ?? 0, limit: mpLimit });
                 }}
