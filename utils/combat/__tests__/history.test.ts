@@ -52,6 +52,13 @@ describe('snapshotCombat / diffSnapshots', () => {
         expect(diffSnapshots(before, snapshotCombat(combat))).toEqual([]);
     });
 
+    it('a matriz de percepção fica de fora (é decisão do mestre; desfazer um dano não esconde nem revela ninguém)', () => {
+        const combat = makeCombat();
+        const before = snapshotCombat(combat);
+        combat.unseen = [ { id: 'u1' } as never ];
+        expect(diffSnapshots(before, snapshotCombat(combat))).toEqual([]);
+    });
+
     it('a foto é uma cópia: mexer no combate depois não muda a foto', () => {
         const combat = makeCombat();
         const before = snapshotCombat(combat);

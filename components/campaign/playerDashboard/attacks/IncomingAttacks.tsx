@@ -2,6 +2,7 @@
 
 import type { Combat } from '@models';
 import { combatantBudget } from '@utils/combat/actionBudgets';
+import { attackSurprise } from '@utils/combat/awareness';
 import { incomingAttacks } from '@utils/combat/pendingAttacks';
 import type { ReactElement } from 'react';
 import IncomingAttacksPanel from './IncomingAttacksPanel';
@@ -18,6 +19,7 @@ export default function IncomingAttacks({ combat, combatantId }: { combat: Comba
             awaiting={awaiting}
             answered={answered}
             hasReaction={combatant ? combatantBudget(combatant).reacao > 0 : true}
+            isSurprised={(attack) => attackSurprise(combat.unseen, attack.attackerId, combatant) !== null}
             busyId={busyId}
             onDefend={(attack, choice) => { void defend(attack, choice); }}
         />

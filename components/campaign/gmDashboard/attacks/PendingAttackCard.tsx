@@ -3,6 +3,7 @@
 import { Casino } from '@mui/icons-material';
 import { Box, Button, Checkbox, Chip, FormControlLabel, MenuItem, Paper, Stack, TextField, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
 import { font } from '@themes/tokens';
+import { HIDDEN_CAUSE_LABEL } from '@utils/combat/awareness';
 import { resistanceExpertise, DODGE_BLOCK_TEXT, type DefenseChoice } from '@utils/combat/engine/defense';
 import type { DamageKind } from '@utils/combat/engine/types';
 import type { PendingAttackData } from '@utils/combat/pendingAttacks';
@@ -37,6 +38,9 @@ export default function PendingAttackCard({ attack }: { attack: PendingAttackDat
                     <Chip size="small" variant="outlined" label={`Ataque em área: ${attack.groupSize} alvos, um cartão por alvo`} />
                 )}
                 {proposal.weak && <Chip size="small" color="info" label="Alvo fraco a este ataque" />}
+                {resolution.surprise && resolution.surprised && (
+                    <Chip size="small" color="info" variant="outlined" label={`Alvo desprevenido: não via o atacante (${HIDDEN_CAUSE_LABEL[resolution.surprise.cause].toLowerCase()})`} />
+                )}
                 {resolution.awaitingPlayerDefense && <Chip size="small" variant="outlined" label={`Aguardando a defesa de ${attack.targetName}`} />}
                 {attack.defense && (
                     <Chip
@@ -64,7 +68,9 @@ export default function PendingAttackCard({ attack }: { attack: PendingAttackDat
                 </Box>
                 {proposal.extraDiceOwed > 0 && (
                     <Box>
-                        <Typography variant="caption" color="text.secondary" component="div">Fraqueza: +1d20 no acerto</Typography>
+                        <Typography variant="caption" color="text.secondary" component="div">
+                            Vantagem: +{proposal.extraDiceOwed}d20 no acerto ({proposal.extraDiceSources.join(' e ')})
+                        </Typography>
                         <Button size="small" variant="outlined" startIcon={<Casino fontSize="small" />} onClick={resolution.rollExtraDie} sx={{ textTransform: 'none' }}>
                             Rolar d20 extra
                         </Button>
@@ -115,7 +121,7 @@ export default function PendingAttackCard({ attack }: { attack: PendingAttackDat
                 )}
                 <FormControlLabel
                     control={<Checkbox size="small" checked={resolution.surprised} onChange={(event) => { resolution.setSurprised(event.target.checked); }} />}
-                    label="Alvo não viu o atacante"
+                    label="Alvo desprevenido (não viu o atacante)"
                     sx={{ mt: 0.25 }}
                 />
                 <TextField size="small" type="number" label="Área (m)" value={resolution.area} onChange={(event) => { resolution.setArea(event.target.value); }} sx={{ width: 110 }} />

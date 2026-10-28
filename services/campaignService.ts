@@ -191,6 +191,16 @@ class CampaignService extends Service<Campaign, 'code' | 'userId'> {
         return (await this.post({ param: `${campaignId}/combat`, body: { action: 'dismiss_opportunity', opportunityId } })).data
     }
 
+    /** Mestre marca quem não vê `combatantId` (furtivo, invisível ou fora da vista): matriz de percepção (`utils/combat/awareness.ts`). Silencioso: não vai ao log nem ao chat */
+    async setUnseen(campaignId: string, payload: { combatantId: string; observerIds: string[]; cause: 'furtivo' | 'invisivel' | 'outro' }) {
+        return (await this.post({ param: `${campaignId}/combat`, body: { action: 'set_unseen', ...payload } })).data as unknown as { warnings?: string[] }
+    }
+
+    /** Mestre revela `combatantId` a alguns observadores, ou a todos se `observerIds` não vier */
+    async revealUnseen(campaignId: string, payload: { combatantId: string; observerIds?: string[] }) {
+        return (await this.post({ param: `${campaignId}/combat`, body: { action: 'reveal_unseen', ...payload } })).data
+    }
+
     /** Descarta um ataque pendente (quem atacou ou o mestre) */
     async dismissAttack(campaignId: string, attackId: string) {
         return (await this.post({ param: `${campaignId}/combat`, body: { action: 'dismiss_attack', attackId } })).data

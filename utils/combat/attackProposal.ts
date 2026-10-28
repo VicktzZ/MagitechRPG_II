@@ -1,4 +1,5 @@
 import type { AppliedEffect } from '@models';
+import { HIDDEN_CAUSE_LABEL, surpriseDiceOwed, type AttackSurprise } from './awareness';
 import { creatureTakenModifiers, creatureWeaknessProfile } from './creatureDefense';
 import { dodgeEligibility, effectiveDamageKind, hits, resistanceExpertise, type DefenseChoice, type DodgeEligibility } from './engine/defense';
 import { collectModifiers, modifiedStat } from './engine/modifiers';
@@ -46,8 +47,13 @@ export interface ProposalChoice {
     defense: DefenseChoice;
     /** Total do teste do alvo (Reflexos na esquiva, RES na resistência) */
     defenseTotal?: number | null;
-    /** O alvo não viu o atacante: sem esquiva */
+    /** O alvo não viu o atacante (desprevenido): sem esquiva */
     surprised?: boolean;
+    /**
+     * A surpresa que vem da matriz de percepção (`awareness.ts`), com os d20 dela. Só vale com `surprised` ligado (o mestre pode desmarcar). `alreadyRolled` são os
+     * d20 de surpresa que o jogador já rolou no acerto (o efeito Furtivo na arma): o mestre só rola o que falta
+     */
+    surprise?: (Pick<AttackSurprise, 'cause' | 'advantages'> & { alreadyRolled?: number }) | null;
     /** Sobrescreve a área do ataque (em metros) */
     areaMeters?: number | null;
     /** d20 extras que o mestre rolou pelo ataque (vantagem da fraqueza do alvo) */
@@ -60,8 +66,10 @@ export interface AttackProposal {
     kind: DamageKind;
     /** O alvo é fraco ao ataque (+1d20 no acerto e dano ×2) */
     weak: boolean;
-    /** Quantos d20 extras de vantagem o mestre ainda tem de rolar pelo ataque (0 ou 1) */
+    /** Quantos d20 extras de vantagem o mestre ainda tem de rolar pelo ataque (fraqueza do alvo: 1; surpresa: 1 ou 2) */
     extraDiceOwed: number;
+    /** De onde vêm os d20 extras ("fraqueza", "surpresa"), para o cartão explicar */
+    extraDiceSources: string[];
     attackTotal: number;
     targetAp: number;
     hit: boolean;
@@ -98,11 +106,16 @@ export function buildAttackProposal(
         : { mastery: target.sheet?.elementalMastery };
     const weakness = weaknessAgainst(profile, attack.attackType);
 
-    const extraRolls = choice.extraRolls ?? [];
-    // O d20 extra da fraqueza só existe se o ataque tem d20 (ataque manual do mestre vale pelo total declarado)
-    const rollsExtra = weakness.weak && attack.rolls.length > 0;
-    const attackTotal = totalWithExtraDice(attack, rollsExtra ? extraRolls : []);
-    const extraDiceOwed = rollsExtra && extraRolls.length < weakness.advantages ? weakness.advantages - extraRolls.length : 0;
+    // O d20 extra só existe se o ataque tem d20 (ataque manual do mestre vale pelo total declarado)
+    const hasD20 = attack.rolls.length > 0;
+    const weaknessDice = weakness.weak && hasD20 ? weakness.advantages : 0;
+    const surpriseDice = choice.surprised && choice.surprise && hasD20 ? surpriseDiceOwed(choice.surprise.advantages, choice.surprise.alreadyRolled ?? 0) : 0;
+    const diceOwed = weaknessDice + surpriseDice;
+    const extraDiceSources = [ ...(weaknessDice > 0 ? [ 'fraqueza' ] : []), ...(surpriseDice > 0 ? [ 'surpresa' ] : []) ];
+    // Os d20 que o mestre rolou além do devido não valem (desmarcar a surpresa depois de rolar não deixa a vantagem ficar)
+    const extraRolls = (choice.extraRolls ?? []).slice(0, diceOwed);
+    const attackTotal = totalWithExtraDice(attack, extraRolls);
+    const extraDiceOwed = Math.max(0, diceOwed - extraRolls.length);
 
     const targetModifiers = collectModifiers(target.effects);
     const baseAp = asNumber(target.creature?.stats?.ap ?? target.sheet?.stats?.ap);
@@ -117,14 +130,19 @@ export function buildAttackProposal(
     const hit = hits(attackTotal, targetAp);
 
     const header: ExplainLine[] = [];
-    if (rollsExtra) {
+    if (weaknessDice > 0) {
         header.push(line('Fraqueza do alvo ao ataque', `+${weakness.advantages}d20 no acerto e dano ×${weakness.damageMultiplier}`, 'gm'));
-        if (extraRolls.length > 0) header.push(line('d20 extra', `[${extraRolls.join(', ')}]: total ${attackTotal}`));
     }
+    if (choice.surprised && choice.surprise) {
+        const { cause, advantages, alreadyRolled = 0 } = choice.surprise;
+        const dice = advantages > 0 ? `+${advantages}d20 no acerto${alreadyRolled > 0 ? ` (${Math.min(alreadyRolled, advantages)} já rolado pelo atacante)` : ''}; ` : '';
+        header.push(line('Alvo desprevenido', `não via o atacante (${HIDDEN_CAUSE_LABEL[cause].toLowerCase()}): ${dice}sem esquiva`));
+    }
+    if (extraRolls.length > 0) header.push(line('d20 extra', `[${extraRolls.join(', ')}]: total ${attackTotal}`));
 
     if (attack.damageRolled === undefined) {
         return {
-            kind, weak: weakness.weak, extraDiceOwed, attackTotal, targetAp, hit, resistanceSkill, resistanceMod, dodge,
+            kind, weak: weakness.weak, extraDiceOwed, extraDiceSources, attackTotal, targetAp, hit, resistanceSkill, resistanceMod, dodge,
             resolution: null,
             finalDamage: 0,
             lines: [ ...header, line('Acerto', `${attackTotal} contra AP ${targetAp}: ${hit ? 'acertou' : 'errou'}`) ]
@@ -147,7 +165,7 @@ export function buildAttackProposal(
     });
 
     return {
-        kind: resolution.kind, weak: weakness.weak, extraDiceOwed, attackTotal, targetAp, hit: resolution.hit, resistanceSkill, resistanceMod, dodge,
+        kind: resolution.kind, weak: weakness.weak, extraDiceOwed, extraDiceSources, attackTotal, targetAp, hit: resolution.hit, resistanceSkill, resistanceMod, dodge,
         resolution,
         finalDamage: resolution.damage,
         lines: [ ...header, ...resolution.lines ]

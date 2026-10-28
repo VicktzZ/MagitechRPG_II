@@ -27,6 +27,7 @@ import {
     addPendingAttacks, buildAttackLogMessage, dropPendingFor, removePendingAttack, sanitizeAttackDeclaration, sanitizeDefenseDeclaration, sanitizeExplainLines, sanitizeTargetIds, setPendingDamage,
     setPendingDefense, MAX_ATTACK_TARGETS
 } from '@utils/combat/pendingAttacks'
+import { addUnseen, dropUnseenFor, planHide, revealUnseen, sanitizeHiddenCause, sanitizeObserverIds } from '@utils/combat/awareness'
 import { addOpportunities, dropOpportunitiesFor, findOpportunity, planLeaveReach, removeOpportunity, sanitizeReactorIds } from '@utils/combat/opportunities'
 import { diffSheetVitals, diffSnapshots, snapshotCombat, summarizeChanges, type CombatSnapshot, type SheetVitals } from '@utils/combat/history'
 import { deleteCombatEvents, getCombatEvent, isCombatEventId, markCombatEventUndone, readPlayerVitals, recordCombatEvent } from '@utils/firestore/combatEvents'
@@ -35,7 +36,7 @@ import { undoCombatEvent } from '@utils/firestore/combatUndo'
 /** Ações que conduzem o combate — exclusivas do mestre */
 const GM_ONLY_ACTIONS: CombatAction[] = [
     'start', 'end', 'set_initiative', 'add_creature', 'add_combatants', 'remove_combatant', 'apply_effect', 'remove_effect',
-    'set_mp_limit_override', 'reset_mp_limit', 'set_mp_spent', 'set_actions', 'undo', 'resolve_attack'
+    'set_mp_limit_override', 'reset_mp_limit', 'set_mp_spent', 'set_actions', 'undo', 'resolve_attack', 'set_unseen', 'reveal_unseen'
 ]
 
 /** Ações que entram no histórico do combate (o mestre pode desfazê-las): as que mudam o rumo da luta, não o controle de MP e de ações */
@@ -83,6 +84,8 @@ type CombatAction =
     | 'declare_leave'   // Quem sai do alcance corpo a corpo de inimigos declara a saída: cada inimigo ganha uma oportunidade de ataque
     | 'dismiss_opportunity' // Dispensa uma oportunidade aberta (o inimigo que ia reagir, quem se moveu ou o mestre)
     | 'resolve_attack'  // Mestre confirma o ataque: aplica o dano, gasta a Reação de quem esquivou e registra no log
+    | 'set_unseen'      // Mestre marca quem não vê um combatente escondido (furtivo, invisível...): matriz de percepção
+    | 'reveal_unseen'   // Mestre revela o combatente escondido a alguns observadores, ou a todos
 
 interface CombatRequest {
     action: CombatAction
@@ -156,6 +159,10 @@ interface CombatRequest {
     defense?: unknown
     /** Para declare_leave: quem estava ao alcance corpo a corpo e pode reagir (`combatantId` é quem saiu) */
     reactorIds?: unknown
+    /** Para set_unseen e reveal_unseen: quem não vê o combatente (`combatantId` é quem está escondido). Em reveal_unseen, sem a lista revela a todos */
+    observerIds?: unknown
+    /** Para set_unseen: por que ele não é visto ("furtivo", "invisivel" ou "outro") */
+    cause?: unknown
     /** Para dismiss_opportunity e declare_attack (ataque de oportunidade): a oportunidade aberta */
     opportunityId?: string
     /** Para attack_damage: o dano foi crítico */
@@ -247,7 +254,9 @@ function getActionMessage(action: CombatAction): string {
         declare_defense: 'Defesa declarada',
         declare_leave: 'Saída de alcance declarada',
         dismiss_opportunity: 'Oportunidade dispensada',
-        resolve_attack: 'Ataque resolvido'
+        resolve_attack: 'Ataque resolvido',
+        set_unseen: 'Percepção atualizada',
+        reveal_unseen: 'Escondido revelado'
     }
     return messages[action] || 'Ação executada'
 }
@@ -444,6 +453,7 @@ export async function POST(
             combat.logs = []
             combat.pendingAttacks = []
             combat.opportunities = []
+            combat.unseen = []
             combat.startedAt = new Date().toISOString()
             combat.showEnemyLp = body.showEnemyLp ?? false
 
@@ -479,6 +489,7 @@ export async function POST(
             resetRoundWindows(combat.combatants)
             combat.pendingAttacks = []
             combat.opportunities = []
+            combat.unseen = []
 
             combat.logs.push(new CombatLog({
                 round: combat.round,
@@ -941,6 +952,7 @@ export async function POST(
             const removed = combat.combatants.splice(removeIndex, 1)[0]
             combat.pendingAttacks = dropPendingFor(combat.pendingAttacks, removed.id)
             combat.opportunities = dropOpportunitiesFor(combat.opportunities, removed.id)
+            combat.unseen = dropUnseenFor(combat.unseen, removed.id)
             
             // Ajusta índice atual se necessário
             if (combat.currentTurnIndex >= combat.combatants.length) {
@@ -1546,7 +1558,7 @@ export async function POST(
                 throw badRequest('Escolha quem estava ao alcance')
             }
 
-            const plan = planLeaveReach(combat.combatants, mover.id, reactorIds)
+            const plan = planLeaveReach(combat.combatants, mover.id, reactorIds, combat.unseen)
             const now = new Date().toISOString()
             combat.opportunities = addOpportunities(combat.opportunities, plan.opportunities.map(entry => ({ ...entry, id: uuidv4(), createdAt: now })))
             warnings.push(...plan.warnings)
@@ -1559,6 +1571,59 @@ export async function POST(
                 return NextResponse.json({ error: 'Oportunidade não encontrada (ela pode já ter sido usada)' }, { status: 404 })
             }
             combat.opportunities = removeOpportunity(combat.opportunities, String(body.opportunityId))
+
+            break
+        }
+
+        case 'set_unseen': {
+            if (!combat.isActive) {
+                return NextResponse.json({ error: 'Não há combate ativo' }, { status: 400 })
+            }
+
+            const hider = combat.combatants.find(c => c.id === body.combatantId || c.odacId === body.combatantId)
+            if (!hider) {
+                return NextResponse.json({ error: 'Quem está escondido não está no combate' }, { status: 404 })
+            }
+
+            const cause = sanitizeHiddenCause(body.cause)
+            if (!cause) {
+                throw badRequest('Escolha por que ele não é visto (furtivo, invisível ou fora da vista)')
+            }
+
+            const observerIds = sanitizeObserverIds(body.observerIds)
+            if (observerIds.length === 0) {
+                throw badRequest('Escolha quem não o vê')
+            }
+
+            const plan = planHide(combat.combatants, hider.id, observerIds, cause)
+            if (plan.entries.length === 0) {
+                throw badRequest(plan.warnings[0] ?? 'Escolha quem não o vê')
+            }
+
+            const now = new Date().toISOString()
+            combat.unseen = addUnseen(combat.unseen, plan.entries.map(entry => ({ ...entry, id: uuidv4(), createdAt: now })))
+            warnings.push(...plan.warnings)
+
+            break
+        }
+
+        case 'reveal_unseen': {
+            if (!combat.isActive) {
+                return NextResponse.json({ error: 'Não há combate ativo' }, { status: 400 })
+            }
+
+            const hider = combat.combatants.find(c => c.id === body.combatantId || c.odacId === body.combatantId)
+            if (!hider) {
+                return NextResponse.json({ error: 'Quem está escondido não está no combate' }, { status: 404 })
+            }
+
+            // Sem a lista revela a todos; com a lista (mesmo vazia) só a quem foi indicado
+            const observerIds = body.observerIds === undefined ? undefined : sanitizeObserverIds(body.observerIds)
+            const before = combat.unseen?.length ?? 0
+            combat.unseen = revealUnseen(combat.unseen, hider.id, observerIds)
+            if (combat.unseen.length === before) {
+                return NextResponse.json({ error: 'Não havia ninguém sem ver esse combatente' }, { status: 404 })
+            }
 
             break
         }
@@ -1626,7 +1691,9 @@ export async function POST(
         let combatMessage: Message | undefined
         // `sustain_end` só gera log quando alguma magia estava ativa.
         const logsGrew = combat.logs.length > logsBefore
-        const silentActions: CombatAction[] = [ 'spend_mp', 'spend_action', 'declare_attack', 'attack_damage', 'dismiss_attack', 'declare_defense', 'declare_leave', 'dismiss_opportunity' ]
+        const silentActions: CombatAction[] = [
+            'spend_mp', 'spend_action', 'declare_attack', 'attack_damage', 'dismiss_attack', 'declare_defense', 'declare_leave', 'dismiss_opportunity', 'set_unseen', 'reveal_unseen'
+        ]
         if (!silentActions.includes(action) && (action !== 'sustain_end' || logsGrew) && combat.logs.length > 0) {
             const lastLog = combat.logs[combat.logs.length - 1]
             combatMessage = new Message({

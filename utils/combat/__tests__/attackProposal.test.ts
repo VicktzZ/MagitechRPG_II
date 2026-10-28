@@ -128,4 +128,72 @@ describe('buildAttackProposal', () => {
         const proposal = buildAttackProposal(attack({ damageRolled: 10 }), [ effect([ { kind: 'damage_dealt_bonus', value: '+3' } ]) ], { creature: goblin }, { defense: 'none' });
         expect(proposal.finalDamage).toBe(13);
     });
+
+    describe('alvo desprevenido (matriz de percepção)', () => {
+        const furtivo = { cause: 'furtivo' as const, advantages: 1 };
+
+        it('furtivo: pede 1d20 extra, tira a esquiva e explica a surpresa para todos', () => {
+            const proposal = buildAttackProposal(attack(), [], { creature: goblin }, { defense: 'dodge', defenseTotal: 30, surprised: true, surprise: furtivo });
+
+            expect(proposal).toMatchObject({ extraDiceOwed: 1, extraDiceSources: [ 'surpresa' ] });
+            expect(proposal.dodge).toEqual({ allowed: false, reason: 'surpresa' });
+            const surprise = proposal.lines.find(entry => entry.label === 'Alvo desprevenido');
+            expect(surprise?.detail).toContain('+1d20 no acerto');
+            expect(surprise?.detail).toContain('sem esquiva');
+            expect(surprise?.visibility).toBe('all');
+        });
+
+        it('com o d20 extra rolado o acerto sobe e a dívida zera', () => {
+            const proposal = buildAttackProposal(attack(), [], { creature: goblin }, { defense: 'none', surprised: true, surprise: furtivo, extraRolls: [ 19 ] });
+
+            expect(proposal).toMatchObject({ extraDiceOwed: 0, attackTotal: 24 });
+        });
+
+        it('invisível: 2d20; o efeito Furtivo na arma já deu 1, então o mestre rola só 1', () => {
+            const invisible = { cause: 'invisivel' as const, advantages: 2 };
+
+            expect(buildAttackProposal(attack(), [], { creature: goblin }, { defense: 'none', surprised: true, surprise: invisible }).extraDiceOwed).toBe(2);
+
+            const rolled = buildAttackProposal(attack(), [], { creature: goblin }, { defense: 'none', surprised: true, surprise: { ...invisible, alreadyRolled: 1 } });
+            expect(rolled.extraDiceOwed).toBe(1);
+            expect(rolled.lines.find(entry => entry.label === 'Alvo desprevenido')?.detail).toContain('1 já rolado pelo atacante');
+        });
+
+        it('fraqueza e surpresa somam os d20 devidos e explicam de onde vêm', () => {
+            const fragile = { ...goblin, weaknesses: [ 'Cortante' ] };
+            const proposal = buildAttackProposal(attack(), [], { creature: fragile }, { defense: 'none', surprised: true, surprise: furtivo });
+
+            expect(proposal).toMatchObject({ extraDiceOwed: 2, extraDiceSources: [ 'fraqueza', 'surpresa' ] });
+        });
+
+        it('o mestre desmarcou o desprevenido: sem d20, sem linha e a esquiva volta', () => {
+            const proposal = buildAttackProposal(attack(), [], { creature: goblin }, { defense: 'dodge', defenseTotal: 30, surprised: false, surprise: furtivo });
+
+            expect(proposal.extraDiceOwed).toBe(0);
+            expect(proposal.dodge.allowed).toBe(true);
+            expect(proposal.lines.some(entry => entry.label === 'Alvo desprevenido')).toBe(false);
+        });
+
+        it('d20 rolado a mais não vale: desmarcar a surpresa depois de rolar tira o dado', () => {
+            const proposal = buildAttackProposal(attack(), [], { creature: goblin }, { defense: 'none', surprised: false, surprise: furtivo, extraRolls: [ 20 ] });
+
+            expect(proposal.attackTotal).toBe(17);
+        });
+
+        it('fora da vista (sem d20) só tira a esquiva; ataque manual sem d20 também não pede dado', () => {
+            const outro = buildAttackProposal(attack(), [], { creature: goblin }, { defense: 'none', surprised: true, surprise: { cause: 'outro', advantages: 0 } });
+            expect(outro.extraDiceOwed).toBe(0);
+            expect(outro.dodge.reason).toBe('surpresa');
+
+            const manual = buildAttackProposal(attack({ rolls: [], bonus: 0 }), [], { creature: goblin }, { defense: 'none', surprised: true, surprise: furtivo });
+            expect(manual.extraDiceOwed).toBe(0);
+        });
+
+        it('marcar desprevenido na mão (sem a matriz) continua só tirando a esquiva', () => {
+            const proposal = buildAttackProposal(attack(), [], { creature: goblin }, { defense: 'dodge', defenseTotal: 30, surprised: true });
+
+            expect(proposal.extraDiceOwed).toBe(0);
+            expect(proposal.dodge.reason).toBe('surpresa');
+        });
+    });
 });

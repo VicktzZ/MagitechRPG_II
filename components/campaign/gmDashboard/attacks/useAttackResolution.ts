@@ -4,6 +4,7 @@ import { useCampaignContext } from '@contexts';
 import type { Charsheet } from '@models/entities';
 import { campaignService } from '@services';
 import { buildAttackProposal, type AttackProposal, type ProposalChoice, type ProposalTarget } from '@utils/combat/attackProposal';
+import { attackSurprise, stealthDiceAlreadyRolled, type AttackSurprise } from '@utils/combat/awareness';
 import { rollCreatureExpertise } from '@utils/combat/creatureRoll';
 import { DODGE_EXPERTISE, type DefenseChoice } from '@utils/combat/engine/defense';
 import { rollD20 } from '@utils/campaignTest';
@@ -30,8 +31,11 @@ export interface AttackResolution {
     defenseFromPlayer: boolean;
     /** O alvo é um jogador que ainda não declarou a defesa */
     awaitingPlayerDefense: boolean;
+    /** O alvo está desprevenido: não via o atacante (parte da matriz de percepção; o mestre pode trocar) */
     surprised: boolean;
     setSurprised: (value: boolean) => void;
+    /** O que a matriz de percepção diz do atacante contra esse alvo (furtivo, invisível...); `null` se o alvo o via */
+    surprise: AttackSurprise | null;
     area: string;
     setArea: (value: string) => void;
     extraRolls: number[];
@@ -52,7 +56,7 @@ export interface AttackResolution {
 }
 
 /** "Reflexos: [12, 7: 12] + 3 = 15" */
-const describeRoll = (skill: string, rolls: readonly number[], used: number, bonus: number, total: number): string =>
+export const describeRoll = (skill: string, rolls: readonly number[], used: number, bonus: number, total: number): string =>
     `${skill}: [${rolls.join(', ')}${rolls.length > 1 ? `: ${used}` : ''}] ${bonus >= 0 ? '+' : '−'} ${Math.abs(bonus)} = ${total}`;
 
 const toInt = (text: string): number | null => {
@@ -71,7 +75,8 @@ export function useAttackResolution(attack: PendingAttackData): AttackResolution
     const [ defenseOverride, setDefenseOverride ] = useState<DefenseChoice | null>(null);
     const [ totalOverride, setTotalOverride ] = useState<string | null>(null);
     const [ rollTextOverride, setRollTextOverride ] = useState<string | null>(null);
-    const [ surprised, setSurprised ] = useState(false);
+    // Desprevenido parte da matriz de percepção (o atacante está fora da vista do alvo); o que o mestre marcar vale no lugar dela
+    const [ surprisedOverride, setSurprised ] = useState<boolean | null>(null);
     const [ area, setArea ] = useState(attack.areaMeters ? String(attack.areaMeters) : '');
     const [ extraRolls, setExtraRolls ] = useState<number[]>([]);
     const [ hitOverride, setHitOverride ] = useState<boolean | null>(null);
@@ -112,12 +117,16 @@ export function useAttackResolution(attack: PendingAttackData): AttackResolution
         setRollTextOverride('');
     };
 
+    const surprise = attackSurprise(campaign.session?.combat?.unseen, attack.attackerId, targetCombatant);
+    const surprised = surprisedOverride ?? surprise !== null;
+
     const target: ProposalTarget = { effects: targetCombatant?.effects, creature, sheet };
     const choice: ProposalChoice = {
         kind,
         defense,
         defenseTotal: toInt(defenseTotal),
         surprised,
+        surprise: surprise ? { cause: surprise.cause, advantages: surprise.advantages, alreadyRolled: stealthDiceAlreadyRolled(attack.source, attackerCombatant?.effects) } : null,
         areaMeters: toInt(area),
         extraRolls,
         hasReaction: (targetCombatant?.actions?.reacao ?? 1) > 0
@@ -189,7 +198,7 @@ export function useAttackResolution(attack: PendingAttackData): AttackResolution
     };
 
     return {
-        proposal, kind, setKind, defense, setDefense, defenseTotal, setDefenseTotal, defenseRollText, defenseFromPlayer, awaitingPlayerDefense, surprised, setSurprised, area, setArea,
+        proposal, kind, setKind, defense, setDefense, defenseTotal, setDefenseTotal, defenseRollText, defenseFromPlayer, awaitingPlayerDefense, surprised, setSurprised, surprise, area, setArea,
         extraRolls, hitOverride, setHitOverride, damageOverride, setDamageOverride, hit, finalDamage, canConfirm, busy,
         rollExtraDie, rollDefense, confirm, dismiss
     };

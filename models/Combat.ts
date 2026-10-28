@@ -1,6 +1,7 @@
 import { IsArray, IsBoolean, IsNumber, IsOptional, IsString, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 import { AppliedEffect } from './AppliedEffect';
+import type { UnseenData } from '../utils/combat/awareness';
 import type { ActionBudget } from '../utils/combat/engine/actionBudget';
 import type { OpportunityData } from '../utils/combat/opportunities';
 import type { PendingAttackData } from '../utils/combat/pendingAttacks';
@@ -189,6 +190,11 @@ export class Combat {
     @IsOptional()
     @IsArray()
         opportunities?: OpportunityData[];
+
+    /** Quem não vê quem (furtivo, invisível...): cada par é "o observador não vê o escondido". Sem o campo, todos se veem. Ver utils/combat/awareness.ts */
+    @IsOptional()
+    @IsArray()
+        unseen?: UnseenData[];
 
     constructor(combat?: Partial<Combat>) {
         Object.assign(this, combat);
