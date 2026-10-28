@@ -6,6 +6,7 @@ import { campaignService } from '@services';
 import { buildAttackProposal, type AttackProposal, type ProposalChoice, type ProposalTarget } from '@utils/combat/attackProposal';
 import { attackSurprise, stealthDiceAlreadyRolled, type AttackSurprise } from '@utils/combat/awareness';
 import { rollCreatureExpertise } from '@utils/combat/creatureRoll';
+import { effectDice } from '@utils/combat/effectDice';
 import { DODGE_EXPERTISE, type DefenseChoice } from '@utils/combat/engine/defense';
 import { rollD20 } from '@utils/campaignTest';
 import type { DamageKind } from '@utils/combat/engine/types';
@@ -55,9 +56,9 @@ export interface AttackResolution {
     dismiss: () => Promise<void>;
 }
 
-/** "Reflexos: [12, 7: 12] + 3 = 15" */
-export const describeRoll = (skill: string, rolls: readonly number[], used: number, bonus: number, total: number): string =>
-    `${skill}: [${rolls.join(', ')}${rolls.length > 1 ? `: ${used}` : ''}] ${bonus >= 0 ? '+' : '−'} ${Math.abs(bonus)} = ${total}`;
+/** "Reflexos: [12, 7: 12] + 3 = 15"; com efeitos, "... (Cegueira: desvantagem, −1d20)" (de onde vêm os d20 a mais e a menos) */
+export const describeRoll = (skill: string, rolls: readonly number[], used: number, bonus: number, total: number, notes: readonly string[] = []): string =>
+    `${skill}: [${rolls.join(', ')}${rolls.length > 1 ? `: ${used}` : ''}] ${bonus >= 0 ? '+' : '−'} ${Math.abs(bonus)} = ${total}${notes.length > 0 ? ` (${notes.join('; ')})` : ''}`;
 
 const toInt = (text: string): number | null => {
     if (text.trim() === '') return null;
@@ -144,25 +145,28 @@ export function useAttackResolution(attack: PendingAttackData): AttackResolution
         const skill = defense === 'dodge' ? DODGE_EXPERTISE : proposal.resistanceSkill;
         if (defense === 'none') return;
 
+        // A esquiva do alvo leva as vantagens e desvantagens de esquiva dos efeitos aplicados a ele; a resistência não tem alvo próprio no catálogo
+        const effects = defense === 'dodge' ? effectDice(targetCombatant?.effects, 'dodge') : undefined;
+
         if (creature) {
-            const result = rollCreatureExpertise(creature, skill);
+            const result = rollCreatureExpertise(creature, skill, undefined, effects);
             if (!result) {
                 enqueueSnackbar(`${targetCombatant?.name ?? 'A criatura'} não tem a perícia ${skill}. Digite o total.`, { variant: 'warning' });
                 return;
             }
             setTotalOverride(String(result.total));
-            setRollTextOverride(describeRoll(skill, result.rolls, result.used, result.bonus, result.total));
+            setRollTextOverride(describeRoll(skill, result.rolls, result.used, result.bonus, result.total, result.notes));
             return;
         }
 
-        const plan = planSheetRoll(sheet, skill, rpgSystem);
+        const plan = planSheetRoll(sheet, skill, rpgSystem, effects);
         if (!plan) {
             enqueueSnackbar(`Não deu para rolar ${skill} pela ficha. Digite o total.`, { variant: 'warning' });
             return;
         }
         const result = rollSheetPlan(plan);
         setTotalOverride(String(result.total));
-        setRollTextOverride(describeRoll(skill, result.rolls, result.used, plan.bonus, result.total));
+        setRollTextOverride(describeRoll(skill, result.rolls, result.used, plan.bonus, result.total, plan.notes));
     };
 
     const confirm = async (): Promise<void> => {

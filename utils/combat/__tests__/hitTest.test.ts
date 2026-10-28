@@ -100,3 +100,58 @@ describe('teste de acerto com Sobrepeso', () => {
         expect(rollHitTest('vig', heavy({ capacity: { max: 40 } }))).toMatchObject({ bonus: 2, bonusLabel: 'Luta' });
     });
 });
+
+describe('vantagem e desvantagem dos efeitos no teste de acerto', () => {
+    afterEach(() => jest.restoreAllMocks());
+
+    it('uma desvantagem rola um d20 a mais e vale o menor (o mod de 1 dado vira 2 dados, o menor)', () => {
+        const rolls = [ 0.95, 0.1 ]; // d20: 20, 3
+        jest.spyOn(Math, 'random').mockImplementation(() => rolls.shift() ?? 0);
+
+        const hit = rollHitTest('vig', sheet(), { lessDice: 1, notes: [ 'Cegueira: desvantagem, −1d20' ] });
+
+        expect(hit.rolls).toEqual([ 20, 3 ]);
+        expect(hit.keep).toBe('lowest');
+        expect(hit.bestRoll).toBe(3);
+        expect(hit.total).toBe(5);
+        expect(hit.notation).toBe('2d20+2');
+        expect(hit.lessDice).toBe(1);
+        expect(hit.notes).toEqual([ 'Cegueira: desvantagem, −1d20' ]);
+    });
+
+    it('vantagem e desvantagem se cancelam pelo saldo: 1 dado só', () => {
+        jest.spyOn(Math, 'random').mockReturnValue(0.5);
+
+        const hit = rollHitTest('vig', sheet(), { extraDice: 1, lessDice: 1 });
+
+        expect(hit.rolls).toHaveLength(1);
+        expect(hit.keep).toBe('highest');
+    });
+
+    it('os d20 do mod de Foco já são vantagens: com 3 dados, uma desvantagem rola 2 e vale o maior', () => {
+        jest.spyOn(Math, 'random').mockReturnValue(0.5);
+
+        const test = rollSpellTest(sheet(), { lessDice: 1 });
+
+        expect(test.rolls).toHaveLength(2);
+        expect(test.keep).toBe('highest');
+    });
+
+    it('o teste de magia aceita as vantagens e desvantagens dos efeitos', () => {
+        jest.spyOn(Math, 'random').mockReturnValue(0.5);
+
+        const test = rollSpellTest(sheet({ mods: { attributes: { foc: 1 } } }), { lessDice: 2, notes: [ 'Cegueira: desvantagem, −2d20' ] });
+
+        expect(test.rolls).toHaveLength(3);
+        expect(test.keep).toBe('lowest');
+        expect(test.notes).toEqual([ 'Cegueira: desvantagem, −2d20' ]);
+    });
+
+    it('sem efeitos o teste é o de sempre (maior, sem notas)', () => {
+        jest.spyOn(Math, 'random').mockReturnValue(0.5);
+
+        const hit = rollHitTest('des', sheet());
+
+        expect(hit).toMatchObject({ keep: 'highest', lessDice: 0, extraDice: 0, notes: [] });
+    });
+});

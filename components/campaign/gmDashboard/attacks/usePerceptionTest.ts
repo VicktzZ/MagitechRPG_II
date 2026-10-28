@@ -4,6 +4,7 @@ import { useCampaignContext } from '@contexts';
 import type { Charsheet } from '@models/entities';
 import { rollCreatureExpertise } from '@utils/combat/creatureRoll';
 import { PERCEPTION_EXPERTISE } from '@utils/combat/awareness';
+import { effectDice } from '@utils/combat/effectDice';
 import { findBaseCreature } from '@utils/combatCreatureLookup';
 import { planSheetRoll, rollSheetPlan } from '@utils/sheetRoll';
 import { describeRoll } from './useAttackResolution';
@@ -27,24 +28,27 @@ export function usePerceptionTest(): (observerId: string, dt: number) => Percept
         const observer = campaign.session?.combat?.combatants?.find(candidate => candidate.id === observerId);
         if (!observer) return null;
 
+        // Os efeitos do observador mexem no teste (Cegueira nível 3, Visão Verdadeira, Visão Aprimorada nível 2...)
+        const effects = effectDice(observer.effects, 'perception');
+
         if (observer.type === 'creature') {
             const creature = findBaseCreature(observer.id, campaign.custom?.creatures ?? []);
-            const result = rollCreatureExpertise(creature, PERCEPTION_EXPERTISE);
+            const result = rollCreatureExpertise(creature, PERCEPTION_EXPERTISE, undefined, effects);
             if (!result) return null;
             return {
                 total: result.total,
-                text: describeRoll(PERCEPTION_EXPERTISE, result.rolls, result.used, result.bonus, result.total),
+                text: describeRoll(PERCEPTION_EXPERTISE, result.rolls, result.used, result.bonus, result.total, result.notes),
                 passed: result.total >= dt
             };
         }
 
         const sheet = charsheets.find((candidate: Charsheet) => candidate.id === observer.id) ?? null;
-        const plan = planSheetRoll(sheet, PERCEPTION_EXPERTISE, rpgSystem);
+        const plan = planSheetRoll(sheet, PERCEPTION_EXPERTISE, rpgSystem, effects);
         if (!plan) return null;
         const result = rollSheetPlan(plan);
         return {
             total: result.total,
-            text: describeRoll(PERCEPTION_EXPERTISE, result.rolls, result.used, plan.bonus, result.total),
+            text: describeRoll(PERCEPTION_EXPERTISE, result.rolls, result.used, plan.bonus, result.total, plan.notes),
             passed: result.total >= dt
         };
     };

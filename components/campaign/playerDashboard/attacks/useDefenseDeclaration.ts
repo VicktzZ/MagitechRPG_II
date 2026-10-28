@@ -5,6 +5,7 @@ import { useChatContext } from '@contexts/chatContext';
 import { MessageType } from '@enums';
 import { Message } from '@models';
 import { campaignService } from '@services';
+import { combatantEffects, effectDice } from '@utils/combat/effectDice';
 import type { DefenseChoice } from '@utils/combat/engine/defense';
 import { defenseSkillFor, type PendingAttackData } from '@utils/combat/pendingAttacks';
 import { asRequestError, errorMessage } from '@utils/errors';
@@ -37,7 +38,9 @@ export function useDefenseDeclaration(): DefenseDeclaration {
         if (busyId || !campaign?.id) return;
 
         const skill = choice === 'none' ? '' : defenseSkillFor(attack, choice);
-        const plan = choice === 'none' ? null : planSheetRoll(charsheet, skill, rpgSystem);
+        // Esquivar leva as vantagens e desvantagens de esquiva dos efeitos (Atordoamento, Evasão...); resistir não tem alvo próprio no catálogo
+        const effects = choice === 'dodge' ? effectDice(combatantEffects(campaign.session?.combat, charsheet?.id), 'dodge') : undefined;
+        const plan = choice === 'none' ? null : planSheetRoll(charsheet, skill, rpgSystem, effects);
         if (choice !== 'none' && !plan) {
             enqueueSnackbar(`Não deu para rolar ${skill} pela ficha. Peça ao mestre para rolar por você.`, { variant: 'warning' });
             return;

@@ -19,12 +19,12 @@ function rollChipColor(value: number, sides: number | null): 'success' | 'error'
     return 'default'
 }
 
-/** `isTest`: teste de magia (vale o maior d20), então o dado que vale vem destacado em vez das faces máxima e mínima */
-function SegmentRow({ segment, isTest }: { segment: ActionRollSegment; isTest: boolean }) {
+/** `isTest`: teste de magia (vale o maior d20, ou o menor com desvantagem), então o dado que vale vem destacado em vez das faces máxima e mínima */
+function SegmentRow({ segment, isTest, keepLowest = false }: { segment: ActionRollSegment; isTest: boolean; keepLowest?: boolean }) {
     const rolls = rollNumbers(segment.display)
     const modifier = rollModifier(segment.display)
     const sides = diceSides(segment.notation)
-    const best = rolls.length > 0 ? Math.max(...rolls) : null
+    const best = rolls.length > 0 ? (keepLowest ? Math.min(...rolls) : Math.max(...rolls)) : null
 
     return (
         <Stack direction="row" alignItems="center" flexWrap="wrap" gap={0.75} data-testid="action-roll-segment">
@@ -74,8 +74,11 @@ export function ActionRollDetails({ action }: { action: ActionRoll }) {
         <>
             <Divider sx={{ my: 1 }} />
             <Stack spacing={1}>
-                <Typography variant="body2" fontWeight={700}>{isTest ? 'Teste de magia (vale o maior dado):' : 'Rolagens:'}</Typography>
-                {action.segments.map((segment, index) => <SegmentRow key={index} segment={segment} isTest={isTest} />)}
+                <Typography variant="body2" fontWeight={700}>{isTest ? `Teste de magia (vale o ${action.keepLowest ? 'menor' : 'maior'} dado):` : 'Rolagens:'}</Typography>
+                {action.segments.map((segment, index) => <SegmentRow key={index} segment={segment} isTest={isTest} keepLowest={action.keepLowest} />)}
+                {isTest && (action.notes ?? []).map(note => (
+                    <Typography key={note} variant="body2" color="text.secondary" data-testid="action-roll-note">{note}</Typography>
+                ))}
                 {action.stealth && action.total !== null && (
                     <Typography variant="body2" color="text.secondary" data-testid="action-roll-stealth">
                         {stealthDamageText(action.segments.reduce((sum, segment) => sum + segment.total, 0), action.total)}

@@ -25,6 +25,8 @@ export interface AttackDeclaration {
     /** Os d20 do teste e o bônus somado: o mestre precisa deles para somar um d20 extra de vantagem (fraqueza do alvo) */
     rolls: number[];
     bonus: number;
+    /** Vale o **menor** d20 (a desvantagem dos efeitos passou das vantagens); sem isso vale o maior. O mestre precisa saber para refazer o total com d20 extras */
+    keep?: 'lowest';
     critical?: boolean;
     /** Tamanho da área do ataque em metros; vazio = alvo único */
     areaMeters?: number;
@@ -106,6 +108,7 @@ export function sanitizeAttackDeclaration(raw: unknown): AttackDeclaration | nul
         // sem os d20 (ataque manual do mestre), o total já vale e não há dado a somar
         rolls: rolls as number[],
         bonus,
+        ...(entry['keep'] === 'lowest' ? { keep: 'lowest' as const } : {}),
         ...(attackType ? { attackType } : {}),
         ...(entry['critical'] === true ? { critical: true } : {}),
         ...(areaMeters ? { areaMeters } : {})
@@ -210,10 +213,16 @@ export const dropPendingFor = (list: readonly PendingAttackData[] | undefined, c
     (list ?? []).filter(entry => entry.attackerId !== combatantId && entry.targetId !== combatantId);
 
 /** O d20 que vale no teste (o maior) somado ao bônus, depois de somar os d20 extras (vantagem, como a fraqueza do alvo) */
-export function totalWithExtraDice(attack: Pick<PendingAttackData, 'attackTotal' | 'rolls' | 'bonus'>, extraRolls: readonly number[] = []): number {
+export function totalWithExtraDice(attack: Pick<PendingAttackData, 'attackTotal' | 'rolls' | 'bonus' | 'keep'>, extraRolls: readonly number[] = []): number {
     // ataque manual do mestre, sem os d20: o total declarado vale e não há dado a somar
     if (attack.rolls.length === 0) return attack.attackTotal;
-    return Math.max(...attack.rolls, ...extraRolls) + attack.bonus;
+
+    // Vantagem e desvantagem pelo saldo (`engine/dicePool.ts`): os d20 do ataque valem o saldo dele (+ vantagens, − desvantagens) e cada d20 extra de vantagem soma 1.
+    // Com o saldo ainda ≥ 0 rola-se 1 + saldo e vale o maior; abaixo de zero, 1 + |saldo| e vale o menor. Os dados já rolados bastam para qualquer um dos dois
+    const base = attack.rolls.length;
+    const score = (attack.keep === 'lowest' ? -(base - 1) : base - 1) + extraRolls.length;
+    const pool = [ ...attack.rolls, ...extraRolls ].slice(0, 1 + Math.abs(score));
+    return (score >= 0 ? Math.max(...pool) : Math.min(...pool)) + attack.bonus;
 }
 
 const MAX_LINES = 12;

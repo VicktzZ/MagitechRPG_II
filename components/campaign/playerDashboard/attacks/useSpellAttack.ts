@@ -31,7 +31,8 @@ export function useSpellAttack(): SpellAttackApi {
                 attackType: spell.element ? String(spell.element) : undefined,
                 attackTotal: test.total,
                 rolls: test.rolls,
-                bonus: test.bonus
+                bonus: test.bonus,
+                ...(test.keep === 'lowest' ? { keep: 'lowest' } : {})
             }, options);
         },
         attachSpellDamage: async (spell, damage) => {

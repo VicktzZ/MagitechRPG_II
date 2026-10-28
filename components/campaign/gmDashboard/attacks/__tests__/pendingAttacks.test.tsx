@@ -83,6 +83,15 @@ describe('PendingAttackCard', () => {
         expect(html).toContain('Aplicar 20 de dano');
     });
 
+    it('acerto rolado com desvantagem dos efeitos: o cartão marca e usa o menor d20', () => {
+        mockContext.mockReturnValue(campaignWith({}));
+        const html = render(<PendingAttackCard attack={attack({ rolls: [ 15, 4 ], keep: 'lowest', bonus: 5, attackTotal: 9 })} />);
+
+        expect(html).toContain('Acerto com desvantagem: vale o menor d20');
+        expect(html).toContain('9 contra AP 15');
+        expect(html).toContain('Errou');
+    });
+
     it('ataque crítico aparece marcado', () => {
         mockContext.mockReturnValue(campaignWith({}));
         expect(render(<PendingAttackCard attack={attack({ critical: true })} />)).toContain('Crítico');

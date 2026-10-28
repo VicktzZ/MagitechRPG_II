@@ -196,4 +196,29 @@ describe('buildAttackProposal', () => {
             expect(proposal.dodge.reason).toBe('surpresa');
         });
     });
+
+    describe('acerto com desvantagem dos efeitos', () => {
+        const lowest = attack({ rolls: [ 15, 4 ], keep: 'lowest', bonus: 5, attackTotal: 9 });
+
+        it('o total é o do menor d20 e uma linha pública explica', () => {
+            const proposal = buildAttackProposal(lowest, [], { creature: goblin }, { defense: 'none' });
+
+            expect(proposal.attackTotal).toBe(9);
+            expect(proposal.hit).toBe(false);
+            expect(proposal.lines.find(entry => entry.label === 'Acerto com desvantagem')).toMatchObject({ detail: 'vale o menor d20', visibility: 'all' });
+        });
+
+        it('um d20 extra de vantagem (fraqueza do alvo) cancela a desvantagem pelo saldo, em vez de valer o maior', () => {
+            const fragile = { ...goblin, weaknesses: [ 'Cortante' ] };
+            const proposal = buildAttackProposal(lowest, [], { creature: fragile }, { defense: 'none', extraRolls: [ 18 ] });
+
+            expect(proposal.attackTotal).toBe(20);
+        });
+
+        it('sem desvantagem não há a linha', () => {
+            const proposal = buildAttackProposal(attack(), [], { creature: goblin }, { defense: 'none' });
+
+            expect(proposal.lines.some(entry => entry.label === 'Acerto com desvantagem')).toBe(false);
+        });
+    });
 });

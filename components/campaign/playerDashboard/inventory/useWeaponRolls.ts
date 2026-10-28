@@ -11,6 +11,7 @@ import {
     buildDamageMessageText,
     buildDamageErrorText
 } from '@utils/combat/weaponRoller';
+import { combatantEffects, effectDice } from '@utils/combat/effectDice';
 import { isCombatantStealthy } from '@utils/combat/stealth';
 import { isOpportunityWeapon, OPPORTUNITY_WEAPON_HELP } from '@utils/combat/opportunities';
 import { useSession } from 'next-auth/react';
@@ -56,7 +57,9 @@ export function useWeaponRolls() {
             enqueueSnackbar(OPPORTUNITY_WEAPON_HELP, { variant: 'warning' });
             return;
         }
-        const hit = rollWeaponHit(weapon, charsheet, { stealth: isCombatantStealthy(campaign?.session?.combat, charsheet?.id) });
+        // Os efeitos aplicados ao personagem (Cegueira, Precisão...) somam vantagens e desvantagens de ataque; o chat e o mestre sabem de onde vêm
+        const effects = effectDice(combatantEffects(campaign?.session?.combat, charsheet?.id), 'attack');
+        const hit = rollWeaponHit(weapon, charsheet, { stealth: isCombatantStealthy(campaign?.session?.combat, charsheet?.id), effects });
         const playerName = charsheet?.name || session?.user?.name || 'Jogador';
         await sendCombatChatMessage(buildHitMessageText(playerName, weapon, hit));
 
@@ -68,7 +71,8 @@ export function useWeaponRolls() {
             attackType: weapon.effect?.effectType ?? undefined,
             attackTotal: hit.total,
             rolls: hit.rolls,
-            bonus: hit.bonus
+            bonus: hit.bonus,
+            ...(hit.keep === 'lowest' ? { keep: 'lowest' } : {})
         }, { opportunity });
         if (!declared || !isNew || !campaign?.id || !charsheet?.id) return;
 

@@ -10,6 +10,7 @@ import { campaignService } from '@services';
 import { postCampaignStats } from '@utils/campaignStatsClient';
 import { executionSlot } from '@utils/combat/engine/actionBudget';
 import { rollSpellTest } from '@utils/combat/hitTest';
+import { combatantEffects, effectDice } from '@utils/combat/effectDice';
 import { isOpportunitySpell, OPPORTUNITY_SPELL_HELP } from '@utils/combat/opportunities';
 import {
     buildSpellCastMessage,
@@ -155,7 +156,9 @@ export function useSpellCastingState(): SpellCasting {
             await updateCharsheet({ 'stats.mp': newMp });
 
             // Conjurar = teste de magia do jogador contra a DT do nível e do estágio; o MP é gasto de qualquer jeito
-            const test = rollSpellTest(charsheet);
+            // Os efeitos de ataque (Cegueira, Precisão...) valem para o teste das magias de ataque, que é o acerto delas; cura, defesa e controle não atacam
+            const effects = isAttackSpell(spell) ? effectDice(combatantEffects(combat, charsheet.id), 'attack') : undefined;
+            const test = rollSpellTest(charsheet, { extraDice: effects?.advantages, lessDice: effects?.disadvantages, notes: effects?.notes });
             const succeeded = spellCastSucceeded(test.total, spellCastDifficulty(spell.level, stage));
             // Só uma conjuração com sucesso deixa efetuar a magia; o botão já está lá quando o cartão aparece no chat
             if (succeeded && hasSpellEffectDice(spell, stage)) markPending(spellKey, stage);

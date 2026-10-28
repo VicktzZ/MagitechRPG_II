@@ -3,6 +3,7 @@
  * 10 vale 2... até 5), vale o maior, e soma o valor da perícia. É a mesma conta do botão de perícia da criatura (`useCreatureExpertiseRoll`), sem mandar ao chat:
  * serve ao teste de defesa (Reflexos, RES) que o mestre rola pela criatura no painel do ataque.
  */
+import { adjustDice, keptDie, type EffectDice } from './effectDice';
 
 interface CreatureRollSource {
     attributes?: object;
@@ -15,6 +16,10 @@ export interface CreatureRoll {
     used: number;
     bonus: number;
     total: number;
+    /** Qual d20 valeu: o maior (normal ou vantagem) ou o menor (a desvantagem dos efeitos passou das vantagens) */
+    keep: 'highest' | 'lowest';
+    /** De onde vêm as vantagens e desvantagens ("Cegueira: desvantagem, −1d20") */
+    notes: string[];
 }
 
 const asNumber = (value: unknown): number => {
@@ -29,14 +34,21 @@ export function creatureDiceFor(attributeValue: number): number {
 }
 
 /** Rola a perícia da criatura; `null` se ela não tem a perícia */
-export function rollCreatureExpertise(creature: CreatureRollSource | null | undefined, name: string, random: () => number = Math.random): CreatureRoll | null {
+export function rollCreatureExpertise(
+    creature: CreatureRollSource | null | undefined,
+    name: string,
+    random: () => number = Math.random,
+    effects?: EffectDice
+): CreatureRoll | null {
     const expertise = (creature?.expertises as Record<string, { value?: unknown; defaultAttribute?: unknown } | undefined> | undefined)?.[name];
     if (!expertise) return null;
 
     const attribute = typeof expertise.defaultAttribute === 'string' ? expertise.defaultAttribute : '';
-    const dice = attribute ? creatureDiceFor(asNumber((creature?.attributes as Record<string, unknown> | undefined)?.[attribute])) : 1;
+    const baseDice = attribute ? creatureDiceFor(asNumber((creature?.attributes as Record<string, unknown> | undefined)?.[attribute])) : 1;
+    // Os efeitos aplicados à criatura (vantagem e desvantagem do teste) entram no saldo de d20, como no jogador
+    const { dice, keep } = effects ? adjustDice({ dice: baseDice, keep: 'highest' }, effects) : { dice: baseDice, keep: 'highest' as const };
     const rolls = Array.from({ length: dice }, () => Math.floor(random() * 20) + 1);
-    const used = Math.max(...rolls);
+    const used = keptDie(rolls, keep);
     const bonus = asNumber(expertise.value);
-    return { dice, rolls, used, bonus, total: used + bonus };
+    return { dice, rolls, used, bonus, total: used + bonus, keep, notes: effects?.notes ?? [] };
 }
