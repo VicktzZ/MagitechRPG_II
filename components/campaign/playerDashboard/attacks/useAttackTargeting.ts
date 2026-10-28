@@ -7,7 +7,7 @@ import { opportunitiesForReactor, type OpportunityData } from '@utils/combat/opp
 import { findAwaitingDamage, type AttackSource, type PendingAttackData } from '@utils/combat/pendingAttacks';
 import { errorMessage } from '@utils/errors';
 import { useSnackbar } from 'notistack';
-import { useState } from 'react';
+import { useAttackTargetState } from './AttackTargetContext';
 
 /** Ataque de oportunidade do jogador: um inimigo saiu do alcance dele e ele ainda pode reagir (ver `utils/combat/opportunities.ts`) */
 export interface OpportunityTargeting {
@@ -19,12 +19,13 @@ export interface OpportunityTargeting {
 }
 
 /** O ataque assistido do jogador: em combate ativo ele escolhe o alvo e o ataque (arma ou magia) vai para o mestre confirmar */
+/** `null` em `selectedTarget` = o jogador ainda não escolheu: com uma oportunidade aberta, o alvo já vem como quem saiu do alcance */
 export interface AttackTargeting {
     /** O jogador está no combate, na fase de ação: dá para atacar com alvo */
     enabled: boolean;
     targets: Combatant[];
     targetId: string;
-    setTargetId: (id: string) => void;
+    setTargetId: (id: string | null) => void;
     /** Outros alvos do mesmo ataque (ataque em área), além do principal: cada um ganha o seu cartão para o mestre, com um dano só */
     extraTargetIds: string[];
     setExtraTargetIds: (ids: string[]) => void;
@@ -49,10 +50,8 @@ export function useAttackTargeting(): AttackTargetingApi {
     const { charsheet } = useCampaignCurrentCharsheetContext();
     const { campaign } = useCampaignContext();
     const { enqueueSnackbar } = useSnackbar();
-    // `null` = o jogador ainda não escolheu: com uma oportunidade aberta, o alvo já vem como quem saiu do alcance
-    const [ selectedTarget, setTargetId ] = useState<string | null>(null);
-    const [ declinedOpportunity, setDeclinedOpportunity ] = useState<string | null>(null);
-    const [ pickedExtras, setExtraTargetIds ] = useState<string[]>([]);
+    // A escolha do jogador (alvo, extras, oportunidade desmarcada) é única para o painel: ver `AttackTargetContext`
+    const { selectedTarget, setTargetId, declinedOpportunity, setDeclinedOpportunity, pickedExtras, setExtraTargetIds } = useAttackTargetState();
 
     // Só em combate ativo, na fase de ação, para quem está nele
     const combat = campaign?.session?.combat;

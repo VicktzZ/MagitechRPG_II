@@ -24,11 +24,14 @@ import { CustomDices, Passives, Skills } from '@components/charsheet';
 import Section from '../Section';
 import NotesSection from './NotesSection';
 import PlayerStickyBar, { type PlayerSectionLink } from './PlayerStickyBar';
+import ActionsSection from './actions/ActionsSection';
+import { AttackTargetProvider } from './attacks/AttackTargetContext';
 import ExpertiseSection from './ExpertiseSection';
 import InventorySection from './InventorySection';
 import MoneyAndAmmo from './MoneyAndAmmo';
 import PlayerHeader from './PlayerHeader';
 import SpellsSection from './SpellsSection';
+import { SpellCastingProvider } from './spells/SpellCastingContext';
 import AcquiredPerks from './AcquiredPerks';
 import CampaignCustomResources from './CampaignCustomResources';
 import ShopDrawer from './ShopDrawer';
@@ -55,7 +58,7 @@ interface EquipmentLike { id?: string, name: string, description?: string, effec
 const equipmentDescription = (item: EquipmentLike): string =>
     item.description || (typeof item.effect === 'string' ? item.effect : '')
 
-export default function CampaignPlayerDashboard(): ReactElement | null {
+function PlayerDashboardContent(): ReactElement | null {
     const { users, campaign, charsheets } = useCampaignContext();
     const { charsheet, updateCharsheet } = useCampaignCurrentCharsheetContext()
     const { data: session } = useSession()
@@ -254,7 +257,9 @@ export default function CampaignPlayerDashboard(): ReactElement | null {
     const avatar = charsheetUser?.image ?? '/assets/default-avatar.jpg';
 
     // Atalhos da barra fixa: um por seção, na ordem em que aparecem
+    const inCombat = Boolean(campaign.session?.combat?.isActive && campaign.session.combat.combatants?.some(combatant => combatant.id === charsheet.id))
     const sections: PlayerSectionLink[] = [
+        ...(inCombat ? [ { id: 'acoes', label: 'Ações' } ] : []),
         { id: 'passivas', label: 'Passivas' },
         { id: 'inventario', label: 'Inventário' },
         { id: 'habilidades', label: 'Habilidades' },
@@ -290,6 +295,8 @@ export default function CampaignPlayerDashboard(): ReactElement | null {
             <PlayerStickyBar headerElement={headerElement} sections={sections} />
 
             <Stack spacing={3} sx={{ mt: 3 }}>
+                <ActionsSection />
+
                 <Section id="passivas" title="Passivas" icon={<SelfImprovement sx={sectionIcon} />}>
                     <Passives realtime={true} />
                 </Section>
@@ -378,5 +385,19 @@ export default function CampaignPlayerDashboard(): ReactElement | null {
             {/* Drawer de loja - disponível em qualquer campanha quando a loja está aberta */}
             <ShopDrawer />
         </Box>
+    );
+}
+
+/**
+ * O painel do jogador na campanha. O alvo do ataque e a conjuração de magias são do painel inteiro: a seção Ações, o Inventário e as Magias usam os mesmos
+ * (`AttackTargetProvider` e `SpellCastingProvider`).
+ */
+export default function CampaignPlayerDashboard(): ReactElement | null {
+    return (
+        <AttackTargetProvider>
+            <SpellCastingProvider>
+                <PlayerDashboardContent />
+            </SpellCastingProvider>
+        </AttackTargetProvider>
     );
 }
