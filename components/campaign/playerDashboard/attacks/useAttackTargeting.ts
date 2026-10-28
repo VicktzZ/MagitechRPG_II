@@ -25,6 +25,9 @@ export interface AttackTargeting {
     targets: Combatant[];
     targetId: string;
     setTargetId: (id: string) => void;
+    /** Outros alvos do mesmo ataque (ataque em área), além do principal: cada um ganha o seu cartão para o mestre, com um dano só */
+    extraTargetIds: string[];
+    setExtraTargetIds: (ids: string[]) => void;
     /** Ataques dele que o mestre ainda não resolveu */
     pending: PendingAttackData[];
     opportunity: OpportunityTargeting;
@@ -49,6 +52,7 @@ export function useAttackTargeting(): AttackTargetingApi {
     // `null` = o jogador ainda não escolheu: com uma oportunidade aberta, o alvo já vem como quem saiu do alcance
     const [ selectedTarget, setTargetId ] = useState<string | null>(null);
     const [ declinedOpportunity, setDeclinedOpportunity ] = useState<string | null>(null);
+    const [ pickedExtras, setExtraTargetIds ] = useState<string[]>([]);
 
     // Só em combate ativo, na fase de ação, para quem está nele
     const combat = campaign?.session?.combat;
@@ -58,8 +62,11 @@ export function useAttackTargeting(): AttackTargetingApi {
     const suggestedTarget = offers.find(offer => targets.some(c => c.id === offer.moverId))?.moverId ?? '';
     const chosenTarget = selectedTarget ?? suggestedTarget;
     const targetId = targets.some(c => c.id === chosenTarget) ? chosenTarget : '';
+    // Só vale quem ainda está no combate e não é o alvo principal; sem alvo principal não há ataque em área
+    const extraTargetIds = targetId ? pickedExtras.filter(id => id !== targetId && targets.some(c => c.id === id)) : [];
     const currentOpportunity = offers.find(offer => offer.moverId === targetId) ?? null;
-    const opportunityActive = Boolean(currentOpportunity) && declinedOpportunity !== currentOpportunity?.id;
+    // O ataque de oportunidade tem um alvo só
+    const opportunityActive = Boolean(currentOpportunity) && declinedOpportunity !== currentOpportunity?.id && extraTargetIds.length === 0;
     const pending = (combat?.pendingAttacks ?? []).filter(entry => entry.attackerId === charsheet?.id);
 
     const declare: AttackTargetingApi['declare'] = async (attack, options) => {
@@ -71,6 +78,7 @@ export function useAttackTargeting(): AttackTargetingApi {
                 combatantId: charsheet.id,
                 targetId,
                 attack,
+                ...(extraTargetIds.length > 0 ? { targetIds: extraTargetIds } : {}),
                 ...(options?.opportunity && currentOpportunity ? { opportunityId: currentOpportunity.id } : {})
             });
             enqueueSnackbar('Ataque declarado. O mestre confirma o resultado.', { variant: 'info' });
@@ -97,5 +105,5 @@ export function useAttackTargeting(): AttackTargetingApi {
         setUse: (use) => { setDeclinedOpportunity(use ? null : currentOpportunity?.id ?? null); }
     };
 
-    return { targeting: { enabled, targets, targetId, setTargetId, pending, opportunity }, declare, attachDamage };
+    return { targeting: { enabled, targets, targetId, setTargetId, extraTargetIds, setExtraTargetIds, pending, opportunity }, declare, attachDamage };
 }

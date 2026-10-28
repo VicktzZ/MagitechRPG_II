@@ -14,6 +14,8 @@ const targeting = (patch: Partial<AttackTargeting> = {}): AttackTargeting => ({
     targets: [ { id: 'goblin-1', name: 'Goblin', type: 'creature' }, { id: 'caio', name: 'Caio', type: 'player' } ] as unknown as Combatant[],
     targetId: '',
     setTargetId: () => undefined,
+    extraTargetIds: [],
+    setExtraTargetIds: () => undefined,
     pending: [],
     opportunity: { current: null, active: false, setUse: () => undefined },
     ...patch
@@ -31,6 +33,20 @@ describe('AttackTargetPicker', () => {
         expect(html).toContain('Alvo do ataque');
         expect(html).toContain('Com um alvo, o ataque da arma ou da magia vai para o mestre confirmar.');
         expect(html).toContain('Goblin');
+    });
+
+    it('sem alvo principal não oferece alvos extras; com ele, oferece o ataque em área', () => {
+        expect(render(<AttackTargetPicker targeting={targeting()} />)).not.toContain('extra-targets');
+
+        const html = render(<AttackTargetPicker targeting={targeting({ targetId: 'goblin-1' })} />);
+        expect(html).toContain('extra-targets');
+        expect(html).toContain('Outros alvos (ataque em área)');
+        expect(html).toContain('um cartão por alvo');
+    });
+
+    it('mostra os alvos extras já escolhidos', () => {
+        const html = render(<AttackTargetPicker targeting={targeting({ targetId: 'goblin-1', extraTargetIds: [ 'caio' ] })} />);
+        expect(html).toContain('Caio');
     });
 
     it('sem saída de alcance aberta não oferece ataque de oportunidade', () => {

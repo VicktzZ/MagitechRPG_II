@@ -1,16 +1,19 @@
 import {
     addPendingAttack,
+    addPendingAttacks,
     buildAttackLogMessage,
     defenseSkillFor,
     describeDefense,
     dropPendingFor,
     findAwaitingDamage,
     incomingAttacks,
+    MAX_ATTACK_TARGETS,
     MAX_PENDING_ATTACKS,
     removePendingAttack,
     sanitizeAttackDeclaration,
     sanitizeDefenseDeclaration,
     sanitizeExplainLines,
+    sanitizeTargetIds,
     setPendingDamage,
     setPendingDefense,
     totalWithExtraDice,
@@ -214,5 +217,70 @@ describe('defesa do jogador atacado', () => {
         expect(describeDefense({ choice: 'dodge', skill: 'Reflexos', total: 18, rolls: [ 15, 9 ], used: 15, bonus: 3 })).toBe('Reflexos: [15, 9: 15] + 3 = 18');
         expect(describeDefense({ choice: 'resist', skill: 'RES Física', total: 7, rolls: [ 9 ], used: 9, bonus: -2 })).toBe('RES Física: [9] − 2 = 7');
         expect(describeDefense({ choice: 'none', skill: '', total: 0, rolls: [], used: 0, bonus: 0 })).toBe('sem defesa');
+    });
+});
+
+describe('ataque com vários alvos', () => {
+    const group = (ids: string[], patch: Partial<PendingAttackData> = {}): PendingAttackData[] => ids.map(targetId => attack({
+        id: `a-${targetId}`, targetId, targetName: targetId, groupId: 'g1', groupSize: ids.length, ...patch
+    }));
+
+    it('sanitizeTargetIds: texto, sem repetir e até o limite de alvos', () => {
+        expect(sanitizeTargetIds([ 'goblin-1', 'orc-1', 'goblin-1' ])).toEqual([ 'goblin-1', 'orc-1' ]);
+        expect(sanitizeTargetIds([ 'a', '', 3, null, 'x'.repeat(81) ])).toEqual([ 'a' ]);
+        expect(sanitizeTargetIds('goblin-1')).toEqual([]);
+        expect(sanitizeTargetIds(Array.from({ length: 20 }, (_, index) => `c${index}`))).toHaveLength(MAX_ATTACK_TARGETS);
+    });
+
+    it('addPendingAttacks põe um ataque por alvo', () => {
+        const list = addPendingAttacks([], group([ 'goblin-1', 'orc-1', 'orc-2' ]));
+
+        expect(list.map(entry => entry.targetId)).toEqual([ 'goblin-1', 'orc-1', 'orc-2' ]);
+        expect(addPendingAttacks(undefined, [])).toEqual([]);
+    });
+
+    it('declarar de novo a mesma arma antes do dano troca o grupo anterior inteiro, e não só um alvo', () => {
+        const first = addPendingAttacks([], group([ 'goblin-1', 'orc-1' ]));
+        const second = addPendingAttacks(first, group([ 'orc-2', 'orc-3' ], { id: 'b', groupId: 'g2' }).map((entry, index) => ({ ...entry, id: `b${index}` })));
+
+        expect(second.map(entry => entry.targetId)).toEqual([ 'orc-2', 'orc-3' ]);
+    });
+
+    it('os ataques de outras armas ou de quem já tem dano ficam', () => {
+        const withDamage = attack({ id: 'done', name: 'Espada', damageRolled: 7 });
+        const other = attack({ id: 'other', name: 'Adaga' });
+        const list = addPendingAttacks([ withDamage, other ], group([ 'goblin-1', 'orc-1' ]));
+
+        expect(list.map(entry => entry.id)).toEqual([ 'done', 'other', 'a-goblin-1', 'a-orc-1' ]);
+    });
+
+    it('um alvo só continua como antes (addPendingAttack)', () => {
+        const list = addPendingAttack(addPendingAttack([], attack({ id: 'a1' })), attack({ id: 'a2' }));
+        expect(list.map(entry => entry.id)).toEqual([ 'a2' ]);
+    });
+
+    it('o dano rolado vale para o grupo todo, com o crítico', () => {
+        const list = [ ...group([ 'goblin-1', 'orc-1', 'orc-2' ]), attack({ id: 'outro', name: 'Adaga' }) ];
+        const updated = setPendingDamage(list, 'a-orc-1', 9, true)!;
+
+        expect(updated.filter(entry => entry.groupId === 'g1').map(entry => [ entry.damageRolled, entry.critical ])).toEqual([ [ 9, true ], [ 9, true ], [ 9, true ] ]);
+        expect(updated.find(entry => entry.id === 'outro')?.damageRolled).toBeUndefined();
+    });
+
+    it('o dano do grupo não mexe em quem já tinha dano nem no grupo de outro atacante', () => {
+        const done = attack({ id: 'a-done', groupId: 'g1', groupSize: 3, damageRolled: 4 });
+        const foreign = attack({ id: 'a-foreign', attackerId: 'caio', groupId: 'g1' });
+        const updated = setPendingDamage([ ...group([ 'goblin-1' ]), done, foreign ], 'a-goblin-1', 9)!;
+
+        expect(updated.find(entry => entry.id === 'a-goblin-1')?.damageRolled).toBe(9);
+        expect(updated.find(entry => entry.id === 'a-done')?.damageRolled).toBe(4);
+        expect(updated.find(entry => entry.id === 'a-foreign')?.damageRolled).toBeUndefined();
+    });
+
+    it('ataque sem grupo recebe o dano sozinho', () => {
+        const list = [ attack({ id: 'a1' }), attack({ id: 'a2', targetId: 'orc-1' }) ];
+        const updated = setPendingDamage(list, 'a1', 5)!;
+
+        expect(updated.map(entry => entry.damageRolled)).toEqual([ 5, undefined ]);
     });
 });

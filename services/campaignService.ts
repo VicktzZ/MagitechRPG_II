@@ -158,7 +158,7 @@ class CampaignService extends Service<Campaign, 'code' | 'userId'> {
     }
 
     /** Ataque assistido: declara um ataque com alvo (o jogador com o próprio personagem; o mestre com qualquer um). O mestre resolve depois */
-    async declareAttack(campaignId: string, payload: { combatantId: string; targetId: string; attack: Record<string, unknown>; damage?: number; opportunityId?: string }) {
+    async declareAttack(campaignId: string, payload: { combatantId: string; targetId: string; attack: Record<string, unknown>; damage?: number; opportunityId?: string; targetIds?: string[] }) {
         return (await this.post({ param: `${campaignId}/combat`, body: { action: 'declare_attack', ...payload } })).data
     }
 

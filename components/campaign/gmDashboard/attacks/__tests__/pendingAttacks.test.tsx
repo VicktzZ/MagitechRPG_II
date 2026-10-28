@@ -153,6 +153,27 @@ describe('PendingAttackCard com o jogador como alvo', () => {
     });
 });
 
+describe('ataque com vários alvos no painel do mestre', () => {
+    it('cada alvo tem o seu cartão e o cartão avisa que o ataque é em área', () => {
+        mockContext.mockReturnValue(campaignWith({
+            pendingAttacks: [
+                attack({ id: 'a1', groupId: 'g1', groupSize: 2 }),
+                attack({ id: 'a2', targetId: 'goblin-2', targetName: 'Goblin (2)', groupId: 'g1', groupSize: 2 })
+            ]
+        }));
+        const html = render(<PendingAttacksPanel />);
+
+        expect(html).toContain('pending-attack-a1');
+        expect(html).toContain('pending-attack-a2');
+        expect(html).toContain('Ataque em área: 2 alvos, um cartão por alvo');
+    });
+
+    it('ataque de um alvo só não leva o aviso de área', () => {
+        mockContext.mockReturnValue(campaignWith({}));
+        expect(render(<PendingAttackCard attack={attack()} />)).not.toContain('Ataque em área');
+    });
+});
+
 describe('ataque de oportunidade no painel do mestre', () => {
     const opportunity = { id: 'o1', moverId: 'aria', moverName: 'Aria', reactorId: 'goblin-1', reactorName: 'Goblin', createdAt: '2026-10-28T12:00:00.000Z' };
 

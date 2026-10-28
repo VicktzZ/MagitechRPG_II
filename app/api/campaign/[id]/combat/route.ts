@@ -24,8 +24,8 @@ import { applySustainedUpkeep, endSustained, startSustained } from '@utils/comba
 import { findBaseCreature } from '@utils/combatCreatureLookup'
 import { damageCombatant, damageStats, healCombatant, healStats } from '@utils/firestore/combatDamage'
 import {
-    addPendingAttack, buildAttackLogMessage, dropPendingFor, removePendingAttack, sanitizeAttackDeclaration, sanitizeDefenseDeclaration, sanitizeExplainLines, setPendingDamage,
-    setPendingDefense
+    addPendingAttacks, buildAttackLogMessage, dropPendingFor, removePendingAttack, sanitizeAttackDeclaration, sanitizeDefenseDeclaration, sanitizeExplainLines, sanitizeTargetIds, setPendingDamage,
+    setPendingDefense, MAX_ATTACK_TARGETS
 } from '@utils/combat/pendingAttacks'
 import { addOpportunities, dropOpportunitiesFor, findOpportunity, planLeaveReach, removeOpportunity, sanitizeReactorIds } from '@utils/combat/opportunities'
 import { diffSheetVitals, diffSnapshots, snapshotCombat, summarizeChanges, type CombatSnapshot, type SheetVitals } from '@utils/combat/history'
@@ -88,6 +88,8 @@ interface CombatRequest {
     action: CombatAction
     combatantId?: string       // ID do combatente que está agindo
     targetId?: string          // ID do alvo (para dano/cura)
+    /** Para declare_attack: outros alvos do mesmo ataque (ataque em área); cada alvo ganha o seu ataque pendente */
+    targetIds?: unknown
     value?: number             // Valor (dano, cura, resultado de dado)
     players?: Array<{          // Jogadores para iniciar combate
         odacId: string
@@ -1435,6 +1437,16 @@ export async function POST(
                 throw badRequest('Não dá para atacar a si mesmo')
             }
 
+            // Vários alvos (ataque em área): o principal mais os extras que existem no combate, sem repetir e sem o próprio atacante
+            const extraTargets = sanitizeTargetIds(body.targetIds)
+                .filter(extraId => extraId !== target.id && extraId !== attacker.id)
+                .map(extraId => combat.combatants.find(c => c.id === extraId))
+                .filter((extra): extra is Combatant => extra !== undefined)
+            const targets = [ target, ...extraTargets ].slice(0, MAX_ATTACK_TARGETS)
+            if (body.opportunityId !== undefined && targets.length > 1) {
+                throw badRequest('O ataque de oportunidade tem um alvo só')
+            }
+
             const declaration = sanitizeAttackDeclaration(body.attack)
             if (!declaration) {
                 throw badRequest('Ataque inválido')
@@ -1455,17 +1467,21 @@ export async function POST(
                 opportunity = true
             }
 
-            combat.pendingAttacks = addPendingAttack(combat.pendingAttacks, {
+            // Um ataque pendente por alvo, todos do mesmo grupo e com o mesmo acerto: o mestre resolve cada um (AP, fraqueza e defesa são do alvo) e o dano rolado vale para todos
+            const groupId = targets.length > 1 ? uuidv4() : undefined
+            const createdAt = new Date().toISOString()
+            combat.pendingAttacks = addPendingAttacks(combat.pendingAttacks, targets.map(each => ({
                 ...declaration,
                 ...(isGM && rolledDamage !== undefined ? { damageRolled: rolledDamage } : {}),
                 ...(opportunity ? { opportunity: true } : {}),
+                ...(groupId ? { groupId, groupSize: targets.length } : {}),
                 id: uuidv4(),
                 attackerId: attacker.id,
                 attackerName: attacker.name,
-                targetId: target.id,
-                targetName: target.name,
-                createdAt: new Date().toISOString()
-            })
+                targetId: each.id,
+                targetName: each.name,
+                createdAt
+            })))
 
             break
         }

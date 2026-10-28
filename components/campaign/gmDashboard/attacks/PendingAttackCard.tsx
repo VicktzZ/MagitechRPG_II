@@ -33,6 +33,9 @@ export default function PendingAttackCard({ attack }: { attack: PendingAttackDat
                 <Chip size="small" label={`${attack.name}${attack.attackType ? ` · ${attack.attackType}` : ''}`} />
                 {attack.critical && <Chip size="small" color="warning" label="Crítico" />}
                 {attack.opportunity && <Chip size="small" color="info" variant="outlined" label="Ataque de oportunidade" />}
+                {attack.groupSize !== undefined && attack.groupSize > 1 && (
+                    <Chip size="small" variant="outlined" label={`Ataque em área: ${attack.groupSize} alvos, um cartão por alvo`} />
+                )}
                 {proposal.weak && <Chip size="small" color="info" label="Alvo fraco a este ataque" />}
                 {resolution.awaitingPlayerDefense && <Chip size="small" variant="outlined" label={`Aguardando a defesa de ${attack.targetName}`} />}
                 {attack.defense && (
