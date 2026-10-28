@@ -87,17 +87,17 @@ export default function Expertises({ disabled }: { disabled?: boolean }): ReactE
         }
     }, [ customSystem, getValues, setValue ])
 
+    // Sem `defaultValue` de propósito: na primeira renderização o formulário ainda não está "montado" e o `useWatch` devolve o `defaultValue` no lugar do valor da
+    // ficha, e só se corrige no próximo evento do formulário. Era o "Pontos de Perícia: 0" que aparecia (e depois voltava) logo depois de subir de nível.
     const points = useWatch<Charsheet, 'points.expertises'>({
         control,
-        name: 'points.expertises' as const,
-        defaultValue: 0
-    })
+        name: 'points.expertises' as const
+    }) ?? 0
 
     const charsheetLevel = useWatch<Charsheet, 'level'>({
         control,
-        name: 'level',
-        defaultValue: 1
-    })
+        name: 'level'
+    }) ?? 1
 
     const maxPerSkill = useMemo<number>(() => {
         if (!skillPointRules?.maxPointsPerSkillFormula) return 15;
@@ -330,6 +330,7 @@ export default function Expertises({ disabled }: { disabled?: boolean }): ReactE
                                 inputProps={{ 
                                     min: 1, 
                                     max: 15, 
+                                    'aria-labelledby': 'expertises-multiplier-label',
                                     style: { padding: '4px 8px', width: '40px' } 
                                 }}
                                 value={multiplierInput}

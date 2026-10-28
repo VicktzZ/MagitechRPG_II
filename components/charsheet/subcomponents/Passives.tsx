@@ -32,6 +32,9 @@ import type { Charsheet } from '@models/entities';
 import type { Passive } from '@models';
 import { useCampaignCurrentCharsheetContext } from '@contexts';
 
+/** Ficha sem passivas: a mesma lista vazia a cada render (não cria um array novo) */
+const NO_PASSIVES: Passive[] = [];
+
 const occasionOptions: PassiveOccasion[] = [
     'Início do turno',
     'Final do turno',
@@ -81,12 +84,11 @@ export default function Passives({ realtime = false }: { realtime?: boolean }) {
     const [ open, setOpen ] = useState(false);
     const [ editingPassive, setEditingPassive ] = useState<PassiveFormData | null>(null);
     
-    // Observar as passivas
+    // Observar as passivas. Sem `defaultValue`: na primeira renderização ele vence o valor da ficha (ver `Expertises.tsx`) e as passivas salvas não apareciam
     const passives = useWatch<Charsheet, 'passives'>({
         control,
-        name: 'passives',
-        defaultValue: []
-    });
+        name: 'passives'
+    }) ?? NO_PASSIVES;
     
     const handleOpen = () => {
         setEditingPassive({
