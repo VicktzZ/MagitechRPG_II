@@ -8,7 +8,7 @@
  *    o subtipo, o filtro "Subtipo". Magias que duram uma QUANTIDADE FIXA DE TURNOS são
  *    "(contínuo)"; "(sustentado)" é só para a magia que exige pagar metade do custo a cada
  *    turno, como ação livre, até o conjurador parar de pagar ou perder a concentração;
- *  - `execution`: Padrão, Completa, Livre, Reação ou Movimento (o catálogo não usa "Bônus");
+ *  - `execution`: Padrão, Completa, Bônus (o antigo "Livre"), Reação ou Movimento;
  *  - `range`: Pessoal, Toque, Curto, Médio ou Longo;
  *  - `stages` sempre com 3 entradas (Estágio 1/2/3; no nível 4 o 3º é a Maestria);
  *  - o custo exibido de cada estágio é `mpCost` + custo extra do estágio
@@ -184,7 +184,7 @@ export const MANA_RECOVERY_SPELLS: SeedSpell[] = [
         level: 2,
         mpCost: 4,
         type: 'Recuperação (imediato)',
-        execution: 'Livre',
+        execution: 'Bônus',
         range: 'Pessoal',
         stages: [
             'Você libera uma descarga controlada contra o próprio corpo: sofre 1d4 de dano elétrico (ignora AP) e recupera 7 MP. Só pode ser usada uma vez por combate.',
@@ -233,7 +233,7 @@ export const MANA_RECOVERY_SPELLS: SeedSpell[] = [
         level: 3,
         mpCost: 6,
         type: 'Recuperação (contínuo)',
-        execution: 'Livre',
+        execution: 'Bônus',
         range: 'Pessoal',
         stages: [
             'Você isola uma reserva de energia no seu subconsciente por 5 turnos. Na primeira vez em que seu MP chegar a 0 durante esse tempo, a reserva se libera e você recupera 12 MP imediatamente, sem gastar ação.',

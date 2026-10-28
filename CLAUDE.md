@@ -20,7 +20,7 @@ Definições dadas pelo dono do projeto:
 **Reação é uma execução, não um subtipo.** Magias de reação têm `execution: 'Reação'` e, no catálogo,
 quase todas são `(imediato)` no `type`. Duas (Rajada Refletora, Retribuição Cinética) têm `(Reação)` no
 `type`; o filtro de subtipo ignora esse texto. Para listar reações, usa-se o filtro "Execução"
-(Padrão, Completa, Movimento, Livre, Reação) do modal de magias.
+(Padrão, Completa, Movimento, Bônus, Reação) do modal de magias.
 
 **Recuperação** é uma categoria do filtro "Tipo" (`SPELL_CATEGORIES`): a magia devolve MP ao conjurador ou a aliados em algum estágio. Se só faz isso, o
 `type` é `Recuperação (subtipo)`; se faz outra coisa também (dano, cura, defesa, controle...), a categoria é somada: `Ataque/Recuperação (imediato)`. O filtro
@@ -34,7 +34,7 @@ Magia nova que recupera MP já deve nascer com a categoria.
 ## Convenções do catálogo de magias (conferidas no Firestore real, coleção `spells`)
 
 - `element` em MAIÚSCULAS (`FOGO`, `ÁGUA`, `NÃO-ELEMENTAL`, `PSÍQUICO`...). A API filtra assim.
-- `execution`: `Padrão`, `Completa`, `Livre`, `Reação` ou `Movimento` (não existe "Bônus").
+- `execution`: `Padrão`, `Completa`, `Bônus`, `Reação` ou `Movimento`. **"Bônus" é o antigo "Livre"** (regra do combate: a ação Livre virou Bônus); o app aceita os dois como a mesma execução (`getSpellExecution`, `executionSlot`), então magia ainda gravada como "Livre" continua valendo. O catálogo foi trocado por `scripts/renameSpellExecution.ts` (simulação por padrão; `--apply` troca só o campo `execution` e só nas magias em que ele ainda é "Livre"; `--backup F` guarda as trocas e `--revert F --apply` desfaz).
 - `range`: `Pessoal`, `Toque`, `Curto`, `Médio`, `Longo`... (forma abreviada, sem metros).
 - Sempre 3 estágios; no nível 4 o 3º é a Maestria. Custo exibido = `mpCost` + extra do estágio
   (`calculateExtraManaCost`). Custo base médio no catálogo: N1 1,7 · N2 4,2 · N3 7 · N4 12.
@@ -417,7 +417,7 @@ mas o cálculo em si vai num dropdown no cartão de rolagem para todos; (4) incl
 
 **Regras:**
 - **Acerto**: o total do ataque (arma ou magia) precisa ser **≥ o AP do alvo** (criatura ou **objeto**; AP é a CA do D&D, decisão que fecha o "papel do AP"). A magia também passa pelo AP, além da DT de conjuração da tabela.
-- **Ações por rodada**: Padrão, **Bônus** (o antigo "Livre": renomear no app todo), Movimento e Reação. **Completa** gasta todas menos a Reação. Movimento = andar até o deslocamento em metros, conjurar magia de Movimento, pegar item da bolsa etc.
+- **Ações por rodada**: Padrão, **Bônus** (o antigo "Livre", já renomeado no app e no catálogo), Movimento e Reação. **Completa** gasta todas menos a Reação. Movimento = andar até o deslocamento em metros, conjurar magia de Movimento, pegar item da bolsa etc.
   **Quando a rodada vira e todos rolam iniciativa de novo, as ações de todos voltam (inclusive a Reação).** Passivas podem dar ações extras (o ladino furtivo).
 - **Vantagem e desvantagem acumulam**: cada fonte soma/tira 1d20 pelo saldo líquido. Conta única: `saldo = (dados base − 1) + vantagens − desvantagens`; saldo ≥ 0 rola 1 + saldo e vale o **maior**, saldo < 0 rola 1 + |saldo| e vale o **menor** (`dicePool`). Os d20 do mod do atributo são as vantagens "de graça".
 - **Surpresa** (alvo não vê o atacante): atacante furtivo **+1d20**, **invisível +2d20**; o alvo **não pode esquivar**. **Furtividade**: quem passa em Furtividade num local visível ainda pode ser notado: os que o veem testam Percepção **DT 20** (**DT 30** se invisível); passando, enxergam e o furtivo perde a condição.
@@ -436,7 +436,7 @@ mas o cálculo em si vai num dropdown no cartão de rolagem para todos; (4) incl
 **Premissas minhas, a rever:** acerto com ≥ (como as DTs); a Completa exige as três ações livres; ordem do dano (rolado → bônus de quem ataca → fraqueza → defesa → resistências do alvo → piso 0, arredondando para baixo); resistências/vulnerabilidades em % de efeitos entram **depois** da defesa; Toque = 1,5m; magia Psíquica = ataque mental;
 fraquezas declaradas valem mesmo em elemento secundário (o ciclo é que não); o ×2 e o +1d20 da fraqueza valem também para tipos físicos declarados.
 
-**Pendências de ligação:** renomear "Livre" para "Bônus" (26 magias no catálogo, uma com "padrão" em minúscula, e `EXECUTION_OPTIONS`, `FilterControls`, `spellCategory`, `manaRecoverySpells`; **escrita no banco só com liberação do dono**; `executionSlot` já aceita os dois); renomear o efeito "Visão na Penumbra" para "Visão Aprimorada"; trocar o Furtivo do #109 pela
+**Pendências de ligação:** renomear o efeito "Visão na Penumbra" para "Visão Aprimorada"; trocar o Furtivo do #109 pela
 regra acima; aplicar Sobrepeso às perícias; condição "Desprevenido"/surpresa e matriz de percepção (quem viu quem) no estado do combate.
 
 ## Design system

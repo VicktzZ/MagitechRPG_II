@@ -42,7 +42,7 @@ const elementOptions = [
 
 const spellLevelOptions = [ '1', '2', '3', '4' ]
 
-const executionOptions = [ 'Livre', 'Completa', 'Padrão', 'Movimento', 'Reação', 'Bônus' ]
+const executionOptions = [ 'Completa', 'Padrão', 'Movimento', 'Reação', 'Bônus' ]
 
 const itemKindOptions = [ 'Especial', 'Utilidade', 'Consumível', 'Item Chave', 'Munição', 'Capacidade', 'Padrão', 'Arremessável', 'Equipamento' ]
 
