@@ -281,7 +281,7 @@ function CombatStatus({
                         )}
 
                         {/* Quem se esconde sabe de quem (a matriz de percepção é do mestre) */}
-                        {asPlayer && userCombatant && <HiddenFromNotice combat={combat} combatantId={userCombatant.id} />}
+                        {asPlayer && userCombatant && <HiddenFromNotice combatantId={userCombatant.id} />}
 
                         {/* Ataque de oportunidade: ofertas para reagir e a declaração de saída do alcance */}
                         {asPlayer && userCombatant && (

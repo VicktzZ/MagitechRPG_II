@@ -3,6 +3,7 @@ import { deleteCampaignMessages } from '@utils/firestore/campaignMessages';
 import { deleteGmNotes } from '@utils/firestore/gmNotes';
 import { deleteCombatEvents } from '@utils/firestore/combatEvents';
 import { deleteGmData } from '@utils/firestore/gmData';
+import { deletePlayerData } from '@utils/firestore/playerData';
 import type { Campaign } from '@models/entities/Campaign';
 import {
     assertMaxLength,
@@ -57,6 +58,13 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
             await deleteGmData(campaign.id);
         } catch (error) {
             console.error('[Campanha] Campanha excluída, mas os dados privados do mestre não foram apagados:', error);
+        }
+
+        // Idem para o que só cada jogador vê (avisos da matriz de percepção)
+        try {
+            await deletePlayerData(campaign.id);
+        } catch (error) {
+            console.error('[Campanha] Campanha excluída, mas os dados privados dos jogadores não foram apagados:', error);
         }
 
         // Idem para o histórico do combate

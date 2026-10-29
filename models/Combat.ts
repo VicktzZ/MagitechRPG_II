@@ -193,7 +193,11 @@ export class Combat {
     @IsArray()
         opportunities?: OpportunityData[];
 
-    /** Quem não vê quem (furtivo, invisível...): cada par é "o observador não vê o escondido". Sem o campo, todos se veem. Ver utils/combat/awareness.ts */
+    /**
+     * Quem não vê quem (furtivo, invisível...): cada par é "o observador não vê o escondido". Sem o campo, todos se veem. Ver utils/combat/awareness.ts. **É segredo do mestre e não é
+     * gravado em `session.combat`**: vive em `campaigns/{id}/gmData/awareness` (utils/combat/awarenessSecrets.ts); o servidor o põe aqui só na memória da ação, e o navegador do mestre o
+     * junta de volta. Um combate antigo ainda pode carregá-lo no documento da campanha até a primeira ação depois da mudança.
+     */
     @IsOptional()
     @IsArray()
         unseen?: UnseenData[];

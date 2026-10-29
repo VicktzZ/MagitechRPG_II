@@ -36,7 +36,10 @@ import {
     addPendingAttacks, buildAttackLogMessage, dropPendingFor, removePendingAttack, sanitizeAttackDeclaration, sanitizeDefenseDeclaration, sanitizeExplainLines, sanitizeTargetIds, setPendingDamage,
     setPendingDefense, MAX_ATTACK_TARGETS
 } from '@utils/combat/pendingAttacks'
-import { addUnseen, dropUnseenFor, planHide, revealUnseen, sanitizeHiddenCause, sanitizeObserverIds } from '@utils/combat/awareness'
+import { addUnseen, dropUnseenFor, planHide, revealUnseen, sanitizeHiddenCause, sanitizeObserverIds, surprisedField } from '@utils/combat/awareness'
+import { combatWithoutUnseen, hiddenNoticesByUser, resolveUnseen, sameUnseen } from '@utils/combat/awarenessSecrets'
+import { readAwareness, saveAwareness } from '@utils/firestore/gmData'
+import { syncHiddenNotices } from '@utils/firestore/playerData'
 import { addOpportunities, dropOpportunitiesFor, findOpportunity, planLeaveReach, removeOpportunity, sanitizeReactorIds } from '@utils/combat/opportunities'
 import { diffSheetVitals, diffSnapshots, snapshotCombat, summarizeChanges, type CombatSnapshot, type SheetVitals } from '@utils/combat/history'
 import { deleteCombatEvents, getCombatEvent, isCombatEventId, markCombatEventUndone, readPlayerVitals, recordCombatEvent } from '@utils/firestore/combatEvents'
@@ -338,6 +341,13 @@ export async function POST(
         }
 
         const combat = campaign.session.combat
+
+        // A matriz de percepção é segredo do mestre e não mora no `session.combat` (qualquer membro lê a campanha): vem do documento privado `gmData/awareness`. Em memória ela
+        // continua em `combat.unseen`, então a lógica abaixo não muda; ao salvar, sai do combate e volta ao documento (ver "Salva só o estado do combate"). Combate que já estava
+        // rolando antes da mudança ainda a carrega no `session.combat`: vale até o documento existir.
+        const storedAwareness = await readAwareness(campaign.id)
+        combat.unseen = resolveUnseen(storedAwareness, combat.unseen)
+        const unseenBefore = [ ...combat.unseen ]
 
         if (!isGM) {
             // Combatente de jogador pertence ao usuário se a ficha dele está na campanha
@@ -1567,6 +1577,8 @@ export async function POST(
                 ...declaration,
                 ...(isGM && rolledDamage !== undefined ? { damageRolled: rolledDamage } : {}),
                 ...(opportunity ? { opportunity: true } : {}),
+                // O jogador alvo que não via o atacante (a matriz é do mestre, o jogador não a lê): a tela dele só desabilita a esquiva ("ataque de surpresa não se esquiva")
+                ...surprisedField(combat.unseen, attacker.id, each),
                 ...(groupId ? { groupId, groupSize: targets.length } : {}),
                 id: uuidv4(),
                 attackerId: attacker.id,
@@ -1911,6 +1923,15 @@ export async function POST(
         // Salva só o estado do combate (caminho de campo): o resto da campanha (presença, notas, jogadores)
         // pode ter mudado desde a leitura no início da requisição, e regravá-la inteira desfazia isso
         const plainCombat = JSON.parse(JSON.stringify(campaign.session.combat))
+        delete plainCombat.unseen
+
+        // A matriz vai para o documento privado do mestre (e o que cada jogador escondido pode saber, para o documento dele) só quando mudou, ou para tirar a matriz antiga do combate
+        // (primeira ação depois da mudança). Antes de gravar o combate: se este falhar, sobra uma matriz sem efeito, que o próximo `start` ou `end` apaga.
+        const unseenAfter = combat.unseen ?? []
+        if (!sameUnseen(unseenBefore, unseenAfter) || (storedAwareness === null && unseenAfter.length > 0)) {
+            await saveAwareness(campaign.id, unseenAfter, user.id)
+            await syncHiddenNotices(campaign.id, hiddenNoticesByUser(combat.combatants, unseenAfter))
+        }
 
         await adminUpdateDoc('campaigns', campaign.id, { 'session.combat': plainCombat })
 
@@ -1961,12 +1982,12 @@ export async function POST(
         await triggerPusher(
             `presence-${campaign.campaignCode}`,
             PusherEvent.COMBAT_UPDATED,
-            { combat: campaign.session.combat, action }
+            { combat: plainCombat, action }
         )
 
         return NextResponse.json({
             success: true,
-            combat: campaign.session.combat,
+            combat: plainCombat,
             message: getActionMessage(action),
             ...(warnings.length > 0 ? { warnings } : {})
         })
@@ -1990,9 +2011,11 @@ export async function GET(
         const user = await requireUser()
         const { campaign } = await requireCampaignMember(id, user)
 
+        // Sem a matriz de percepção (é do mestre; ele a lê do documento privado)
+        const combat = campaign.session?.combat
         return NextResponse.json({
             success: true,
-            combat: campaign.session?.combat || null,
+            combat: combat ? combatWithoutUnseen(combat) : null,
             isActive: campaign.session?.combat?.isActive || false
         })
 

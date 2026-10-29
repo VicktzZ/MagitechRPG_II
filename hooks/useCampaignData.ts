@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { CampaignLookupError, resolveCampaignLoadStatus, type CampaignLoadStatus } from '@utils/campaignLoadStatus';
 import { useCampaignChatFeed, type CampaignChat } from './useCampaignChatFeed';
+import { attachAwareness } from '@utils/combat/awarenessSecrets';
 import { attachCreatureDefenses } from '@utils/combat/creatureSecrets';
 import { useFirestoreRealtime } from './useFirestoreRealtime';
 import { useGmData } from './useGmData';
@@ -117,10 +118,10 @@ export function useCampaignData({
     const isMember = !!userId && !!c && (c.admin?.includes(userId) || c.players?.some(player => player.userId === userId));
     const { messages, chat } = useCampaignChatFeed({ campaignId: c?.id, enabled: !!isMember, legacyMessages });
 
-    // Dados que só o mestre vê (defesas das criaturas): moram à parte, nunca no documento da campanha, e o navegador do mestre os junta de volta
-    // nas criaturas, então o resto da tela continua lendo `campaign.custom.creatures` como sempre. Os jogadores não abrem esse listener.
+    // Dados que só o mestre vê (defesas das criaturas e matriz de percepção): moram à parte, nunca no documento da campanha, e o navegador do mestre os junta de volta
+    // nas criaturas e no combate, então o resto da tela continua lendo `campaign.custom.creatures` e `session.combat.unseen` como sempre. Os jogadores não abrem esse listener.
     const isGM = !!userId && !!c?.admin?.includes(userId);
-    const { creatureDefenses } = useGmData({ campaignId: c?.id, enabled: isGM });
+    const { creatureDefenses, awareness } = useGmData({ campaignId: c?.id, enabled: isGM });
 
     // Campanha sem as mensagens, estabilizada por conteúdo: um snapshot que só
     // acrescentou mensagem mantém a MESMA referência de campanha.
@@ -128,12 +129,14 @@ export function useCampaignData({
         if (!c) return null;
         const stored = c.custom?.creatures;
         const creatures = isGM && Array.isArray(stored) ? attachCreatureDefenses(stored, creatureDefenses) : stored;
+        const storedCombat = c.session?.combat;
+        const combat = isGM && storedCombat ? attachAwareness(storedCombat, awareness) : storedCombat;
         return {
             ...c,
             ...(creatures !== stored ? { custom: { ...c.custom, creatures: creatures as typeof stored } } : {}),
-            session: { ...c.session, messages: EMPTY_MESSAGES }
+            session: { ...c.session, messages: EMPTY_MESSAGES, ...(combat !== storedCombat ? { combat } : {}) }
         };
-    }, [ c, isGM, creatureDefenses ]);
+    }, [ c, isGM, creatureDefenses, awareness ]);
     const stableCampaign = useStableValue(campaignSansMessages);
 
     const campaignData = useMemo((): CampaignData | null => {

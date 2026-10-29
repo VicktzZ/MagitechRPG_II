@@ -3,7 +3,7 @@ import type { PendingAttackData } from '@utils/combat/pendingAttacks';
 import type { ReactElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import theme from '../../../../../themes/theme';
-import HiddenFromNotice from '../../../awareness/HiddenFromNotice';
+import { HiddenFromNoticeView } from '../../../awareness/HiddenFromNotice';
 import PendingAttackCard from '../PendingAttackCard';
 import PendingAttacksPanel from '../PendingAttacksPanel';
 import UnseenList from '../UnseenList';
@@ -318,13 +318,16 @@ describe('Furtividade no painel do mestre', () => {
         expect(html).not.toContain('Testar Percepção');
     });
 
-    it('a notificação de quem se esconde mostra de quem; quem não o vê não recebe nada', () => {
-        const combat = { unseen: [ hidden, { ...hidden, id: 'u2', observerId: 'orc-1', observerName: 'Orc' } ] } as never;
+    it('a notificação de quem se esconde mostra de quem (o servidor a deixa para o jogador escondido); sem aviso não desenha nada', () => {
+        const notices = [
+            { hiderId: 'aria', observerName: 'Goblin', cause: 'furtivo' as const },
+            { hiderId: 'aria', observerName: 'Orc', cause: 'furtivo' as const }
+        ];
 
-        const html = render(<HiddenFromNotice combat={combat} combatantId="aria" />);
+        const html = render(<HiddenFromNoticeView notices={notices} />);
         expect(html).toContain('Você está fora da vista de Goblin, Orc (furtivo)');
-        expect(render(<HiddenFromNotice combat={combat} combatantId="goblin-1" />)).toBe('');
-        expect(render(<HiddenFromNotice combat={{} as never} combatantId="aria" />)).toBe('');
+        expect(html).toContain('hidden-from-notice');
+        expect(render(<HiddenFromNoticeView notices={[]} />)).toBe('');
     });
 });
 

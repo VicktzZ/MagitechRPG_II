@@ -154,6 +154,14 @@ export function attackSurprise(list: readonly UnseenData[] | undefined, attacker
 }
 
 /**
+ * O campo `surprised` do ataque pendente: só quando o alvo é **jogador** e não via o atacante. A matriz é segredo do mestre e o jogador não a lê, então o servidor marca o ataque ao
+ * declará-lo e a tela do jogador desabilita a esquiva ("ataque de surpresa não se esquiva"). Alvo criatura não leva a marca (quem decide é o mestre, pelo cartão dele).
+ */
+export function surprisedField(list: readonly UnseenData[] | undefined, attackerId: string, target: (AwarenessCombatant & { type: 'player' | 'creature' }) | undefined): { surprised?: true } {
+    return target?.type === 'player' && attackSurprise(list, attackerId, target) !== null ? { surprised: true } : {};
+}
+
+/**
  * Os d20 da surpresa que o jogador **já rolou** no acerto: o efeito Furtivo (#109) dá +1d20 no acerto da arma (só da arma), então o mestre só rola
  * o que falta (o invisível, por exemplo, rola 2 e o efeito já deu 1)
  */

@@ -4,6 +4,7 @@ import { authOptions } from '@app/api/auth/[...nextauth]/route';
 import { campaignRepository, charsheetRepository } from '@repositories';
 import type { Campaign, Charsheet } from '@models/entities';
 import { findCampaignByCodeOrId } from '@utils/helpers/findCampaignByCodeOrId';
+import { campaignWithoutUnseen } from '@utils/combat/awarenessSecrets';
 import { campaignWithoutCreatureDefenses } from '@utils/combat/creatureSecrets';
 import { isAdminEmail } from '@utils/adminCheck';
 import { forbidden, notFound, unauthorized } from './errors';
@@ -97,10 +98,10 @@ export function getCampaignRole(campaign: Campaign, user: AuthUser): CampaignRol
 
 /**
  * A campanha como o usuário pode vê-la: o mestre recebe tudo; os demais, sem os segredos do mestre que ainda moram dentro do documento
- * (defesas das criaturas gravadas antes de irem para `campaigns/{id}/gmData`). Toda rota que devolve a campanha inteira passa por aqui.
+ * (defesas das criaturas e matriz de percepção gravadas antes de irem para `campaigns/{id}/gmData`). Toda rota que devolve a campanha inteira passa por aqui.
  */
 export function campaignForRole(campaign: Campaign, role: Pick<CampaignRole, 'isGM'>): Campaign {
-    return role.isGM ? campaign : campaignWithoutCreatureDefenses(campaign);
+    return role.isGM ? campaign : campaignWithoutUnseen(campaignWithoutCreatureDefenses(campaign));
 }
 
 export async function findCampaignOrThrow(idOrCode: string): Promise<Campaign> {

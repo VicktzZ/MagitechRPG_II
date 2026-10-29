@@ -57,6 +57,11 @@ export interface PendingAttackData extends AttackDeclaration {
     defense?: PendingDefense;
     /** Ataque de oportunidade: declarado em cima de uma saída de alcance, com a Reação (ver utils/combat/opportunities.ts) */
     opportunity?: boolean;
+    /**
+     * O alvo, jogador, não via o atacante (desprevenido: sem esquiva). A matriz de percepção é segredo do mestre e o jogador não a lê, então o servidor marca isto ao declarar o ataque,
+     * só quando o alvo é jogador: a tela dele desabilita a esquiva ("ataque de surpresa não se esquiva"). O mestre decide pelo cartão dele, não por este campo.
+     */
+    surprised?: boolean;
     /** Ataque com vários alvos: um ataque pendente por alvo, todos com o mesmo `groupId` e o mesmo acerto; o dano rolado vale para o grupo todo */
     groupId?: string;
     /** Quantos alvos o ataque do grupo tem (para o mestre ver que há outros cartões do mesmo ataque) */

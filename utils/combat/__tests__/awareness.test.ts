@@ -15,6 +15,7 @@ import {
     sanitizeHiddenCause,
     sanitizeObserverIds,
     stealthDiceAlreadyRolled,
+    surprisedField,
     surpriseDiceOwed,
     unseenEntry,
     type UnseenData
@@ -134,6 +135,27 @@ describe('visão e causa', () => {
         expect(perceptionDT('invisivel', 'verdadeira')).toBe(15);
         expect(perceptionDT('furtivo', 'verdadeira')).toBeNull();
         expect(perceptionDT('outro')).toBeNull();
+    });
+});
+
+describe('surprisedField (a marca que o servidor põe no ataque pendente)', () => {
+    const player = { id: 'borin', name: 'Borin', type: 'player' as const };
+    const creature = { id: 'orc-1', name: 'Orc', type: 'creature' as const };
+
+    it('jogador alvo que não via o atacante leva a marca, para a tela dele tirar a esquiva', () => {
+        expect(surprisedField([ entry({ hiderId: 'kira', observerId: 'borin' }) ], 'kira', player)).toEqual({ surprised: true });
+    });
+
+    it('sem o par na matriz, ou com a Visão Verdadeira vendo o furtivo, não leva marca nenhuma', () => {
+        expect(surprisedField([ entry({ hiderId: 'kira', observerId: 'outro' }) ], 'kira', player)).toEqual({});
+        expect(surprisedField([], 'kira', player)).toEqual({});
+        expect(surprisedField(undefined, 'kira', player)).toEqual({});
+        expect(surprisedField([ entry({ hiderId: 'kira', observerId: 'borin' }) ], 'kira', { ...player, effects: sage.effects })).toEqual({});
+    });
+
+    it('alvo criatura não leva a marca (quem decide é o mestre, pelo cartão dele), nem alvo que não existe', () => {
+        expect(surprisedField([ entry() ], 'kira', creature)).toEqual({});
+        expect(surprisedField([ entry() ], 'kira', undefined)).toEqual({});
     });
 });
 
