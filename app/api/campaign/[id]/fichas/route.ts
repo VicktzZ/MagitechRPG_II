@@ -1,14 +1,13 @@
 /* eslint-disable @typescript-eslint/promise-function-async */
 import { charsheetRepository } from '@repositories';
 import { chunk } from '@utils/helpers/chunk';
-import { handleRouteError, requireCampaignMember, requireUser } from '@utils/api';
+import { handleRouteError, requireCampaignMemberOrApiKey } from '@utils/api';
 
 interface id { id: string }
 
-export async function GET(_req: Request, { params }: { params: id }): Promise<Response> {
+export async function GET(req: Request, { params }: { params: id }): Promise<Response> {
     try {
-        const user = await requireUser();
-        const { campaign } = await requireCampaignMember(params.id, user);
+        const { campaign } = await requireCampaignMemberOrApiKey(params.id, req);
 
         const charsheetIds = campaign.players.map(p => p.charsheetId);
 

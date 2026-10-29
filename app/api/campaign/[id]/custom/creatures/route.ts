@@ -8,7 +8,7 @@ import {
     attachCreatureDefenses, embeddedDefensesOf, sanitizeCreatureDefenses, sanitizeCreatureElement, stripCreatureDefenses, stripCreatureListDefenses
 } from '@utils/combat/creatureSecrets'
 import { deleteCreatureDefenses, getCreatureDefenses, readCreatureDefenses, saveCreatureDefenses } from '@utils/firestore/gmData'
-import { assertMaxLength, handleRouteError, readJsonBody, requireCampaignGM, requireCampaignMember, requireUser, TEXT_LIMITS } from '@utils/api'
+import { assertMaxLength, handleRouteError, hasValidApiKey, readJsonBody, requireCampaignGMOrApiKey, requireCampaignMember, requireUser, TEXT_LIMITS } from '@utils/api'
 
 export async function POST(
     request: NextRequest,
@@ -16,9 +16,8 @@ export async function POST(
 ) {
     try {
         const { id } = await params
-        const user = await requireUser()
-        // Criaturas customizadas são criadas pelo mestre
-        const { campaign } = await requireCampaignGM(id, user)
+        // Criaturas customizadas são criadas pelo mestre (ou automação com API key)
+        const { campaign, userId } = await requireCampaignGMOrApiKey(id, request)
 
         const body = await readJsonBody(request)
 
@@ -87,7 +86,7 @@ export async function POST(
         const defenses = sanitizeCreatureDefenses(body)
 
         // Grava o segredo primeiro: se a campanha falhar sobra um documento sem criatura, que ninguém lê; o contrário deixaria a criatura sem defesas
-        await saveCreatureDefenses(campaign.id, newCreature.id, defenses, user.id)
+        await saveCreatureDefenses(campaign.id, newCreature.id, defenses, userId)
 
         // Adiciona a criatura ao array de criaturas customizadas
         const existingCreatures = campaign.custom?.creatures || []
@@ -118,8 +117,9 @@ export async function GET(
 ) {
     try {
         const { id } = await params
-        const user = await requireUser()
-        const { campaign, isGM } = await requireCampaignMember(id, user)
+        const { campaign, isGM } = hasValidApiKey(request)
+            ? await requireCampaignGMOrApiKey(id, request)
+            : await requireCampaignMember(id, await requireUser())
 
         // As defesas são do mestre: ele as recebe juntadas, os jogadores não recebem nada delas
         const stored = campaign.custom?.creatures || []
@@ -141,8 +141,7 @@ export async function PUT(
 ) {
     try {
         const { id } = await params
-        const user = await requireUser()
-        const { campaign } = await requireCampaignGM(id, user)
+        const { campaign, userId } = await requireCampaignGMOrApiKey(id, request)
 
         const body = await readJsonBody(request)
 
@@ -189,7 +188,7 @@ export async function PUT(
             weaknesses: body.weaknesses !== undefined ? sanitizeWeaknesses(body.weaknesses) : currentDefenses.weaknesses,
             damageModifiers: body.damageModifiers !== undefined ? sanitizeDamageModifiers(body.damageModifiers) : currentDefenses.damageModifiers
         }
-        await saveCreatureDefenses(campaign.id, body.id, defenses, user.id)
+        await saveCreatureDefenses(campaign.id, body.id, defenses, userId)
 
         const updatedCreatures = [ ...existingCreatures ]
         // Sem os campos de defesa (o tipo `Creature` os exige, mas no documento da campanha eles não existem mais)
@@ -222,8 +221,7 @@ export async function DELETE(
 ) {
     try {
         const { id } = await params
-        const user = await requireUser()
-        const { campaign } = await requireCampaignGM(id, user)
+        const { campaign } = await requireCampaignGMOrApiKey(id, request)
 
         const { creatureId } = await readJsonBody(request)
 

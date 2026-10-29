@@ -118,12 +118,38 @@ export async function requireCampaignMember(idOrCode: string, user: AuthUser): P
     return { campaign, ...role };
 }
 
+/** Busca a campanha e exige que o usuário seja membro dela, ou automação com API key interna (lê como o mestre) */
+export async function requireCampaignMemberOrApiKey(idOrCode: string, req: Request): Promise<{ campaign: Campaign } & CampaignRole> {
+    const campaign = await findCampaignOrThrow(idOrCode);
+    if (hasValidApiKey(req)) return { campaign, isGM: true, isPlayer: false, isMember: true };
+
+    const user = await requireUser();
+    const role = getCampaignRole(campaign, user);
+    if (!role.isMember) throw forbidden('Você não participa desta campanha');
+    return { campaign, ...role };
+}
+
 /** Busca a campanha e exige que o usuário seja o mestre */
 export async function requireCampaignGM(idOrCode: string, user: AuthUser): Promise<{ campaign: Campaign } & CampaignRole> {
     const campaign = await findCampaignOrThrow(idOrCode);
     const role = getCampaignRole(campaign, user);
     if (!role.isGM) throw forbidden('Apenas o mestre da campanha pode fazer isso');
     return { campaign, ...role };
+}
+
+/**
+ * Mestre da campanha logado, ou automação com API key interna válida (age como mestre, sem checar dono —
+ * a chave já é secreta o bastante). `userId` é quem assinou a mudança (auditoria em `saveCreatureDefenses`
+ * etc.); automações usam `'api-key'` por não terem usuário.
+ */
+export async function requireCampaignGMOrApiKey(idOrCode: string, req: Request): Promise<{ campaign: Campaign; userId: string } & CampaignRole> {
+    const campaign = await findCampaignOrThrow(idOrCode);
+    if (hasValidApiKey(req)) return { campaign, userId: 'api-key', isGM: true, isPlayer: false, isMember: true };
+
+    const user = await requireUser();
+    const role = getCampaignRole(campaign, user);
+    if (!role.isGM) throw forbidden('Apenas o mestre da campanha pode fazer isso');
+    return { campaign, userId: user.id, ...role };
 }
 
 /**

@@ -193,9 +193,12 @@ export async function middleware(request: NextRequest) {
     }
 
     // 5. Autenticação: tudo exige sessão, menos o próprio NextAuth.
-    //    Rotas de admin também aceitam API key interna — validada na rota (comparação em tempo constante).
+    //    Rotas de admin e a de criaturas customizadas também aceitam API key interna (automação do
+    //    mestre, ex.: MCP) — a presença do header só libera a sessão aqui; a validação de verdade
+    //    (comparação em tempo constante) acontece na rota via requireCampaignGMOrApiKey/requireAdminOrApiKey.
     const isPublic = pathname.startsWith('/api/auth/');
-    const carriesApiKey = pathname.startsWith('/api/admin/') && request.headers.has('x-api-key');
+    const acceptsApiKey = pathname.startsWith('/api/admin/') || /\/api\/campaign\/[^/]+\/(custom\/creatures|fichas)$/.test(pathname);
+    const carriesApiKey = acceptsApiKey && request.headers.has('x-api-key');
 
     if (!isPublic && !carriesApiKey) {
         const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
