@@ -21,12 +21,14 @@ import { initFirebaseAdmin } from '../utils/initializeFireOrm'
 import { invertSpellTypeChanges, planSpellTypeChanges, type SpellTypeChange, type SpellTypePlan } from '../utils/spellTypeChanges'
 import { MANA_RECOVERY_TYPE_CHANGES } from './data/manaRecoveryTypes'
 
+export type SpellChangeField = 'type' | 'name' | 'element'
+
 export interface ApplySpellTypeOptions {
     apply?: boolean
     /** Trocas a aplicar (padrão: as de Recuperação) */
     changes?: SpellTypeChange[]
-    /** O campo da magia que as trocas mexem: `type` (padrão) ou `name` (renomear, `scripts/applySpellRenames.ts`). Só ele é lido e gravado */
-    field?: 'type' | 'name'
+    /** O campo da magia que as trocas mexem: `type` (padrão), `name` (renomear, `scripts/applySpellRenames.ts`) ou `element` (grafia, `scripts/applySpellCatalogFixes.ts`). Só ele é lido e gravado */
+    field?: SpellChangeField
 }
 
 export interface ApplySpellTypeReport {
@@ -69,7 +71,7 @@ export async function applySpellTypeChanges({ apply = false, changes = MANA_RECO
     return report
 }
 
-export function printReport(report: ApplySpellTypeReport, apply: boolean, field: 'type' | 'name' = 'type'): void {
+export function printReport(report: ApplySpellTypeReport, apply: boolean, field: SpellChangeField = 'type'): void {
     const { plan } = report
     const row = (change: SpellTypeChange): { magia: string; de: string; para: string } => ({ magia: field === 'name' ? change.id : change.name, de: change.from, para: change.to })
 

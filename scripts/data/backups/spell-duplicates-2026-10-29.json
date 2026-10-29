@@ -1,0 +1,17 @@
+[
+  {
+    "id": "67806103878f9dc617521f3d",
+    "name": "Magnetismo",
+    "stages": [
+      "Você escolhe um alvo que esteja usando ou carregando algum objeto metálico e o torna magneticamente atraente ou repulsivo. Você pode escolher o sentido e a intensidade da força magnética. A força magnética pode causar efeitos como atrair ou repelir outros objetos metálicos, alterar o equilíbrio ou a direção do alvo, interferir em dispositivos eletrônicos ou causar dano por impacto ou pressão. A magia dura 1d4 turnos ou até você perder a concentração.",
+      "Aumenta a duração para 1d6 turnos ou até você perder a concentração. Além disso, você pode escolher dois alvos que estejam usando ou carregando algum objeto metálico e torná-los magneticamente atraentes ou repulsivos entre si ou em relação a outros objetos metálicos.",
+      "Aumenta a duração para 1d8 turnos ou até você perder a concentração."
+    ],
+    "execution": "Padrão",
+    "range": "Visão",
+    "level": "2",
+    "type": "Encantamento (conjurado)",
+    "element": "TERRA",
+    "mpCost": "6"
+  }
+]

@@ -1,5 +1,6 @@
 import { MANA_RECOVERY_SPELLS } from '../../scripts/data/manaRecoverySpells'
 import { REACTION_SPELLS } from '../../scripts/data/reactionSpells'
+import { BATCH_DURATION_TYPE_FIXES } from '../../scripts/data/spellCatalogFixes'
 import { SPELL_RENAMES } from '../../scripts/data/spellRenames'
 import { UTILITY_SUPPORT_MOVEMENT_SPELLS } from '../../scripts/data/utilitySupportMovementSpells'
 import { extractDiceExpressions } from '../combat/spellRoller'
@@ -142,18 +143,32 @@ describe('lote de 30 magias de Utilidade, Suporte e Movimento (scripts/data/util
         expect(BATCH.some(spell => getSpellSubtypes(spell.type).some(subtype => normalize(subtype) === 'invocacao'))).toBe(false)
     })
 
-    it('"sustentado" só quando o texto fala em manter a magia (gasto por turno); "contínuo" tem duração fixa em turnos', () => {
+    it('"sustentado" só quando o texto fala em manter a magia; "contínuo" é tudo que dura; "imediato" é instantâneo, sem duração', () => {
+        // Definição do dono (29/10/2026): imediato = instantâneo, executado na hora; tudo que dura (turnos, minutos, horas) é contínuo
+        const DURATION = /\b\d+ (turnos?|minutos?|horas?)\b|\bdura\b|enquanto (a magia )?durar|até o fim do combate/i
         for (const spell of BATCH) {
             const subtypes = getSpellSubtypes(spell.type).map(normalize)
+            const text = spell.stages.join(' ')
             if (subtypes.includes('sustentado')) {
-                expect(spell.stages.join(' ')).toMatch(/mantiver|manter|mantém|mantid|sustent/i)
+                expect(text).toMatch(/mantiver|manter|mantém|mantid|sustent/i)
             }
             if (subtypes.includes('continuo')) {
-                // Contínuo = quantidade fixa de TURNOS (definição do dono): duração em minutos ou horas é fora de combate, o catálogo a trata como "imediato"
-                expect(spell.stages.join(' ')).toMatch(/\d+ turnos?/i)
-                expect(spell.stages.join(' ')).not.toMatch(/\d+ (minutos?|horas?)/i)
+                expect(text).toMatch(DURATION)
+            }
+            if (subtypes.includes('imediato')) {
+                expect(`${spell.name}: ${text.match(DURATION)?.[0] ?? ''}`).toBe(`${spell.name}: `)
             }
         }
+    })
+
+    it('as 7 correções de tipo do banco (BATCH_DURATION_TYPE_FIXES) levam ao tipo que o lote tem no código', () => {
+        for (const fix of BATCH_DURATION_TYPE_FIXES) {
+            const spell = BATCH.find(entry => entry.id === fix.id)
+            expect(spell?.type).toBe(fix.to)
+            expect(spell?.name).toBe(fix.name)
+            expect(fix.from).toBe(fix.to.replace('contínuo', 'imediato'))
+        }
+        expect(BATCH_DURATION_TYPE_FIXES).toHaveLength(7)
     })
 
     it('o 3º estágio do nível 4 é a Maestria: mais forte que o 2º (texto maior)', () => {

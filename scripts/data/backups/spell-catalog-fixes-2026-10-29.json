@@ -1,0 +1,102 @@
+{
+  "element": [
+    {
+      "id": "68afec438f3889f0ef902328",
+      "name": "Convergência de Impacto",
+      "from": "NãO-ELEMENTAL",
+      "to": "NÃO-ELEMENTAL"
+    },
+    {
+      "id": "68afec438f3889f0ef90232b",
+      "name": "Campo de Instabilidade Quântica",
+      "from": "NãO-ELEMENTAL",
+      "to": "NÃO-ELEMENTAL"
+    },
+    {
+      "id": "68afec438f3889f0ef902335",
+      "name": "Infusão de Vitalidade",
+      "from": "NãO-ELEMENTAL",
+      "to": "NÃO-ELEMENTAL"
+    },
+    {
+      "id": "68afec438f3889f0ef902346",
+      "name": "Retribuição Cinética",
+      "from": "NãO-ELEMENTAL",
+      "to": "NÃO-ELEMENTAL"
+    },
+    {
+      "id": "68afec438f3889f0ef90234a",
+      "name": "Campo de Ressonância Energética",
+      "from": "NãO-ELEMENTAL",
+      "to": "NÃO-ELEMENTAL"
+    },
+    {
+      "id": "68afec438f3889f0ef90234d",
+      "name": "Troca de Posição Interplanar",
+      "from": "NãO-ELEMENTAL",
+      "to": "NÃO-ELEMENTAL"
+    },
+    {
+      "id": "68afec438f3889f0ef902354",
+      "name": "Deformação Temporal Localizada",
+      "from": "NãO-ELEMENTAL",
+      "to": "NÃO-ELEMENTAL"
+    },
+    {
+      "id": "68afec438f3889f0ef902356",
+      "name": "Campo de Nulificação",
+      "from": "NãO-ELEMENTAL",
+      "to": "NÃO-ELEMENTAL"
+    },
+    {
+      "id": "68afec438f3889f0ef90235b",
+      "name": "Campo de Reversão Gravitacional",
+      "from": "NãO-ELEMENTAL",
+      "to": "NÃO-ELEMENTAL"
+    }
+  ],
+  "type": [
+    {
+      "id": "seed-ut-vigia-luminoso",
+      "name": "Vigia Luminoso",
+      "from": "Utilidade (imediato)",
+      "to": "Utilidade (contínuo)"
+    },
+    {
+      "id": "seed-ut-interprete-arcano",
+      "name": "Intérprete Arcano",
+      "from": "Utilidade (imediato)",
+      "to": "Utilidade (contínuo)"
+    },
+    {
+      "id": "seed-ut-fogueira-eterna",
+      "name": "Fogueira Eterna",
+      "from": "Utilidade (imediato)",
+      "to": "Utilidade (contínuo)"
+    },
+    {
+      "id": "seed-ut-passagem-rochosa",
+      "name": "Passagem Rochosa",
+      "from": "Utilidade (imediato)",
+      "to": "Utilidade (contínuo)"
+    },
+    {
+      "id": "seed-ut-sonar-voltaico",
+      "name": "Sonar Voltaico",
+      "from": "Utilidade (imediato/Área)",
+      "to": "Utilidade (contínuo/Área)"
+    },
+    {
+      "id": "seed-mv-passo-de-chamas",
+      "name": "Passo de Chamas",
+      "from": "Movimento (imediato)",
+      "to": "Movimento (contínuo)"
+    },
+    {
+      "id": "seed-mv-cavalgar-a-luz",
+      "name": "Cavalgar a Luz",
+      "from": "Movimento (imediato/Área)",
+      "to": "Movimento (contínuo/Área)"
+    }
+  ]
+}

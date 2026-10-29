@@ -26,7 +26,7 @@ export const UTILITY_SUPPORT_MOVEMENT_SPELLS: SeedSpell[] = [
         name: 'Vigia Luminoso',
         level: 1,
         mpCost: 1,
-        type: 'Utilidade (imediato)',
+        type: 'Utilidade (contínuo)',
         execution: 'Padrão',
         range: 'Curto',
         stages: [
@@ -56,7 +56,7 @@ export const UTILITY_SUPPORT_MOVEMENT_SPELLS: SeedSpell[] = [
         name: 'Intérprete Arcano',
         level: 1,
         mpCost: 1,
-        type: 'Utilidade (imediato)',
+        type: 'Utilidade (contínuo)',
         execution: 'Padrão',
         range: 'Toque',
         stages: [
@@ -71,7 +71,7 @@ export const UTILITY_SUPPORT_MOVEMENT_SPELLS: SeedSpell[] = [
         name: 'Fogueira Eterna',
         level: 1,
         mpCost: 1,
-        type: 'Utilidade (imediato)',
+        type: 'Utilidade (contínuo)',
         execution: 'Padrão',
         range: 'Curto',
         stages: [
@@ -131,7 +131,7 @@ export const UTILITY_SUPPORT_MOVEMENT_SPELLS: SeedSpell[] = [
         name: 'Sonar Voltaico',
         level: 3,
         mpCost: 6,
-        type: 'Utilidade (imediato/Área)',
+        type: 'Utilidade (contínuo/Área)',
         execution: 'Padrão',
         range: 'Pessoal',
         stages: [
@@ -161,7 +161,7 @@ export const UTILITY_SUPPORT_MOVEMENT_SPELLS: SeedSpell[] = [
         name: 'Passagem Rochosa',
         level: 4,
         mpCost: 10,
-        type: 'Utilidade (imediato)',
+        type: 'Utilidade (contínuo)',
         execution: 'Completa',
         range: 'Médio',
         stages: [
@@ -334,7 +334,7 @@ export const UTILITY_SUPPORT_MOVEMENT_SPELLS: SeedSpell[] = [
         name: 'Passo de Chamas',
         level: 1,
         mpCost: 2,
-        type: 'Movimento (imediato)',
+        type: 'Movimento (contínuo)',
         execution: 'Movimento',
         range: 'Pessoal',
         stages: [
@@ -454,7 +454,7 @@ export const UTILITY_SUPPORT_MOVEMENT_SPELLS: SeedSpell[] = [
         name: 'Cavalgar a Luz',
         level: 3,
         mpCost: 6,
-        type: 'Movimento (imediato/Área)',
+        type: 'Movimento (contínuo/Área)',
         execution: 'Padrão',
         range: 'Pessoal',
         stages: [
