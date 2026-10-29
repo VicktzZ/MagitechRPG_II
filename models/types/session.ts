@@ -41,8 +41,10 @@ export interface TestResponse {
     rolls: number[]
     /** Quantidade de d20 do teste */
     dice: number
-    /** Valor usado: o maior d20 rolado */
+    /** Valor usado: o maior d20 rolado, ou o menor quando `keep` é `lowest` */
     usedRoll: number
+    /** Só quando o modificador do atributo é negativo (regra única de d20): vale o menor d20 */
+    keep?: 'lowest'
     /** Bônus somado ao d20 (perícia + influência do atributo) */
     bonus: number
     total: number

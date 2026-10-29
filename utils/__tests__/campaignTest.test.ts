@@ -160,35 +160,39 @@ describe('resolveTestModifiers', () => {
     }
 
     it('sem perícia é um d20 puro', () => {
-        expect(resolveTestModifiers(charsheet, undefined)).toEqual({ dice: 1, bonus: 0 })
+        expect(resolveTestModifiers(charsheet, undefined)).toEqual({ dice: 1, keep: 'highest', bonus: 0 })
     })
 
-    it('com perícia: dados = modificador do atributo padrão, bônus = valor da perícia', () => {
-        expect(resolveTestModifiers(charsheet, 'Furtividade')).toEqual({ dice: 3, bonus: 4 })
-        expect(resolveTestModifiers(charsheet, 'Atletismo')).toEqual({ dice: 1, bonus: 1 })
+    it('com perícia: dados = modificador do atributo padrão + 1 (regra única de d20), bônus = valor da perícia', () => {
+        expect(resolveTestModifiers(charsheet, 'Furtividade')).toEqual({ dice: 4, keep: 'highest', bonus: 4 })
+        expect(resolveTestModifiers(charsheet, 'Atletismo')).toEqual({ dice: 2, keep: 'highest', bonus: 1 })
     })
 
-    it('é a regra da perícia da ficha: o atributo cru não conta (antes 5 pontos davam 2 dados e o 3 nunca saía)', () => {
-        // des = 10 pontos vale mod 3 aqui; a regra antiga olharia o 10 e daria 2 dados
-        expect(resolveTestModifiers(charsheet, 'Furtividade').dice).toBe(3)
+    it('é a regra da perícia da ficha: o atributo cru não conta (des = 10 pontos vale mod 3, que dá 4 dados)', () => {
+        expect(resolveTestModifiers(charsheet, 'Furtividade').dice).toBe(4)
     })
 
     it('perícia sem atributo padrão rola um dado', () => {
-        expect(resolveTestModifiers(charsheet, 'Sorte')).toEqual({ dice: 1, bonus: 2 })
+        expect(resolveTestModifiers(charsheet, 'Sorte')).toEqual({ dice: 1, keep: 'highest', bonus: 2 })
     })
 
     it('perícia que a ficha não tem volta ao d20 puro', () => {
-        expect(resolveTestModifiers(charsheet, 'Tecnologia')).toEqual({ dice: 1, bonus: 0 })
+        expect(resolveTestModifiers(charsheet, 'Tecnologia')).toEqual({ dice: 1, keep: 'highest', bonus: 0 })
     })
 
     it('sem ficha volta ao d20 puro', () => {
-        expect(resolveTestModifiers(null, 'Furtividade')).toEqual({ dice: 1, bonus: 0 })
-        expect(resolveTestModifiers(undefined, 'Furtividade')).toEqual({ dice: 1, bonus: 0 })
+        expect(resolveTestModifiers(null, 'Furtividade')).toEqual({ dice: 1, keep: 'highest', bonus: 0 })
+        expect(resolveTestModifiers(undefined, 'Furtividade')).toEqual({ dice: 1, keep: 'highest', bonus: 0 })
     })
 
-    it('modificador -1 (atributo zerado) rola um dado, como no botão da perícia', () => {
+    it('modificador 0 rola um dado', () => {
+        const neutra = { ...charsheet, mods: { attributes: { des: 0 } } }
+        expect(resolveTestModifiers(neutra, 'Furtividade')).toEqual({ dice: 1, keep: 'highest', bonus: 4 })
+    })
+
+    it('modificador negativo (atributo zerado) rola 2 d20 e vale o menor, como no botão da perícia', () => {
         const zerada = { ...charsheet, mods: { attributes: { des: -1 } } }
-        expect(resolveTestModifiers(zerada, 'Furtividade')).toEqual({ dice: 1, bonus: 4 })
+        expect(resolveTestModifiers(zerada, 'Furtividade')).toEqual({ dice: 2, keep: 'lowest', bonus: 4 })
     })
 
     it('sistema customizado soma a influência do atributo (dados extras e bônus fixo)', () => {
@@ -238,6 +242,13 @@ describe('evaluateTest — a conta única do teste', () => {
         expect(success).toBe(false)
     })
 
+    it('com keep lowest vale o menor d20 (modificador negativo, regra única de d20)', () => {
+        expect(evaluateTest({ rolls: [ 7, 12 ], bonus: 3, dt: 10, keep: 'lowest' })).toEqual({ usedRoll: 7, total: 10, success: true })
+        expect(evaluateTest({ rolls: [ 7, 12 ], bonus: 3, dt: 11, keep: 'lowest' })).toEqual({ usedRoll: 7, total: 10, success: false })
+        // sem keep vale o maior, como sempre
+        expect(evaluateTest({ rolls: [ 7, 12 ], bonus: 3, dt: 15 }).usedRoll).toBe(12)
+    })
+
     it('bônus negativo pode levar o total abaixo de zero', () => {
         expect(evaluateTest({ rolls: [ 1 ], bonus: -3, dt: 5 })).toEqual({ usedRoll: 1, total: -2, success: false })
     })
@@ -250,6 +261,11 @@ describe('texto', () => {
         expect(formatTestRollText(response, 'Furtividade')).toBe('FURTIVIDADE - 2d20+3: [12, 7: 12] = 15')
         expect(formatTestRollText(makeResponse(), 'Atletismo')).toBe('ATLETISMO - 1d20+3: [14] = 17')
         expect(formatTestRollText(makeResponse({ bonus: -2, total: 12 }), 'Atletismo')).toBe('ATLETISMO - 1d20-2: [14] = 12')
+    })
+
+    it('modificador negativo: o nome diz "desvantagem" e o d20 que vale é o menor', () => {
+        const menor = makeResponse({ rolls: [ 12, 7 ], dice: 2, usedRoll: 7, bonus: 3, total: 10, keep: 'lowest' })
+        expect(formatTestRollText(menor, 'Furtividade')).toBe('FURTIVIDADE (desvantagem) - 2d20+3: [12, 7: 7] = 10')
     })
 
     it('sem perícia é o d20 simples de sempre', () => {
@@ -292,13 +308,13 @@ describe('resolveTestModifiers com Sobrepeso', () => {
     }
 
     it('tira 1 por kg excedido do bônus das perícias de DES e VIG, e só delas', () => {
-        expect(resolveTestModifiers(heavy, 'Furtividade')).toEqual({ dice: 3, bonus: 2 })
-        expect(resolveTestModifiers(heavy, 'Atletismo')).toEqual({ dice: 1, bonus: -1 })
-        expect(resolveTestModifiers(heavy, 'Magia')).toEqual({ dice: 2, bonus: 5 })
+        expect(resolveTestModifiers(heavy, 'Furtividade')).toEqual({ dice: 4, keep: 'highest', bonus: 2 })
+        expect(resolveTestModifiers(heavy, 'Atletismo')).toEqual({ dice: 2, keep: 'highest', bonus: -1 })
+        expect(resolveTestModifiers(heavy, 'Magia')).toEqual({ dice: 3, keep: 'highest', bonus: 5 })
     })
 
     it('sem a ficha completa (sem inventário) não há penalidade', () => {
         const bare = { level: 4, mods: heavy.mods, expertises: heavy.expertises }
-        expect(resolveTestModifiers(bare, 'Furtividade')).toEqual({ dice: 3, bonus: 4 })
+        expect(resolveTestModifiers(bare, 'Furtividade')).toEqual({ dice: 4, keep: 'highest', bonus: 4 })
     })
 })

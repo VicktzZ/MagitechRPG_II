@@ -1,6 +1,7 @@
 import type { CharsheetDTO } from '@models/dtos';
 import type { Attributes } from '@models/Attributes';
 import type { Expertises } from '@models/Expertises';
+import { d20Pool, SINGLE_D20 } from '../d20Rule';
 import { DEFAULT_CRIT_MARGIN, isCriticalRoll } from './critical';
 import { adjustDice, keptDie } from './effectDice';
 import { sheetExpertisePenalty } from './sheetOverweight';
@@ -88,16 +89,15 @@ export function resolveHitBonus(hitAttr: keyof Attributes | undefined, charsheet
 }
 
 /**
- * Rola um teste de acerto. O numero de d20s vem de mods.attributes[atributo] (>=1), vale o maior (o menor se as desvantagens passarem das vantagens), e soma o bonus da
+ * Rola um teste de acerto. O numero de d20s segue a regra unica (`d20Rule.ts`): mods.attributes[atributo] + 1, vale o maior (o menor se o modificador for negativo ou se as desvantagens passarem das vantagens), e soma o bonus da
  * pericia/atributo equivalente. E o teste do botao "Acerto" da arma e o teste de magia ao conjurar.
  */
 export function rollHitTest(hitAttr: keyof Attributes | undefined, charsheet: CharsheetDTO, options: RollHitOptions = {}): HitTestResult {
-    let numDice = Number(hitAttr ? charsheet.mods?.attributes?.[hitAttr] : 1);
-    if (!Number.isFinite(numDice) || numDice < 1) numDice = 1;
+    const pool = hitAttr ? d20Pool(charsheet.mods?.attributes?.[hitAttr]) : SINGLE_D20;
     const extraDice = Math.max(0, Math.floor(Number(options.extraDice) || 0));
     const lessDice = Math.max(0, Math.floor(Number(options.lessDice) || 0));
-    // Os d20 do mod do atributo são vantagens "de graça": o saldo com as vantagens e desvantagens dá a quantidade de dados e qual vale
-    const { dice, keep } = adjustDice({ dice: numDice, keep: 'highest' }, { advantages: extraDice, disadvantages: lessDice });
+    // Os d20 do mod do atributo (mod + 1) são vantagens "de graça": o saldo com as vantagens e desvantagens dá a quantidade de dados e qual vale
+    const { dice, keep } = adjustDice(pool, { advantages: extraDice, disadvantages: lessDice });
 
     const rolls: number[] = [];
     for (let i = 0; i < dice; i++) {

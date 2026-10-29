@@ -47,7 +47,7 @@ export interface WeaponHitOptions extends WeaponRollOptions {
 }
 
 /**
- * Rola o teste de acerto da arma. Numero de d20s vem de mods.attributes[hit] (>=1)
+ * Rola o teste de acerto da arma. Numero de d20s: regra unica (`d20Rule.ts`), mods.attributes[hit] + 1
  * e o bonus do atributo/pericia equivalente. Furtivo: 1d20 a mais (vantagem, vale o maior). Os efeitos aplicados somam vantagens e
  * desvantagens (`effectDice.ts`): o saldo líquido decide quantos d20 rolar e se vale o maior ou o menor.
  */

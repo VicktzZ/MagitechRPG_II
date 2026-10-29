@@ -13,11 +13,11 @@ import { duration, easing } from '@themes/tokens';
 import { useSnackbar } from 'notistack';
 import { useCampaignContext } from '@contexts';
 import { useSession } from 'next-auth/react';
-import type { Attributes, Combat } from '@models';
+import type { Combat } from '@models';
 import { combatantPerRound } from '@utils/combat/actionBudgets';
 import { effectiveBudget } from '@utils/combat/actionFlags';
 import { opportunitiesForReactor } from '@utils/combat/opportunities';
-import { sheetExpertisePenalty } from '@utils/combat/sheetOverweight';
+import { playerInitiativeDice } from '@utils/combat/initiativeRoll';
 import { incomingAttacks } from '@utils/combat/pendingAttacks';
 import ActionPips from './ActionPips';
 import HiddenFromNotice from './awareness/HiddenFromNotice';
@@ -84,15 +84,9 @@ function CombatStatus({
 
         if (!charsheet) return null;
 
-        const agiExpertise = charsheet.expertises?.Agilidade;
-        const expertiseValue = Number(agiExpertise?.value ?? 0) || 0;
-
-        const defaultAttrKey = (agiExpertise?.defaultAttribute ?? 'des') as string;
-        let modsValue = Number(charsheet.mods?.attributes?.[defaultAttrKey as keyof Attributes] ?? 1);
-        if (!Number.isFinite(modsValue) || modsValue < 1) modsValue = 1;
-
-        // Agilidade é perícia de DES: o Sobrepeso (−1 por kg excedido) também tira da iniciativa
-        return { numDice: modsValue, expertiseValue: expertiseValue + sheetExpertisePenalty(charsheet, defaultAttrKey) };
+        // A mesma conta do servidor (`roll_initiative`): regra única de d20 sobre o modificador da Agilidade, e o Sobrepeso tira do bônus
+        const { numDice, keep, expertiseValue } = playerInitiativeDice(charsheet);
+        return { numDice, expertiseValue, ...(keep === 'lowest' ? { keep } : {}) };
     }, [ charsheets, userCombatant ]);
 
     const isUserTurn = combat?.isActive &&

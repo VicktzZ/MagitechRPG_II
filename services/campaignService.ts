@@ -53,7 +53,7 @@ class CampaignService extends Service<Campaign, 'code' | 'userId'> {
         return (await this.post({ param: `${campaignId}/session/test-request`, body: data })).data as unknown as { success: boolean, request: ActiveTest }
     }
 
-    async respondTest(campaignId: string, body: { requestId: string, rolls: number[], bonus: number }) {
+    async respondTest(campaignId: string, body: { requestId: string, rolls: number[], bonus: number, keep?: 'lowest' }) {
         return (await this.post({ param: `${campaignId}/session/test-response`, body })).data as unknown as { success: boolean, response: TestResponse }
     }
 

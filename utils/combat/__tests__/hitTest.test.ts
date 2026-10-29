@@ -11,18 +11,31 @@ const sheet = (patch: Record<string, unknown> = {}): CharsheetDTO => ({
 describe('rollSpellTest (teste de magia ao conjurar)', () => {
     afterEach(() => jest.restoreAllMocks());
 
-    it('rola um d20 por ponto do mod de Foco, vale o maior e soma a perícia Magia', () => {
-        const rolls = [ 0.5, 0.95, 0.1 ]; // d20: 11, 20, 3
+    it('regra única de d20: mod de Foco + 1 dados, vale o maior e soma a perícia Magia', () => {
+        const rolls = [ 0.5, 0.95, 0.1, 0.3 ]; // d20: 11, 20, 3, 7
         jest.spyOn(Math, 'random').mockImplementation(() => rolls.shift() ?? 0);
 
         const test = rollSpellTest(sheet());
 
-        expect(test.rolls).toEqual([ 11, 20, 3 ]);
+        expect(test.rolls).toEqual([ 11, 20, 3, 7 ]);
         expect(test.bestRoll).toBe(20);
         expect(test.bonus).toBe(6);
         expect(test.bonusLabel).toBe('Magia');
         expect(test.total).toBe(26);
-        expect(test.notation).toBe('3d20+6');
+        expect(test.notation).toBe('4d20+6');
+    });
+
+    it('mod de Foco negativo rola 2 d20 e vale o menor (a mesma regra do botão da perícia na ficha)', () => {
+        const rolls = [ 0.95, 0.1 ]; // d20: 20, 3
+        jest.spyOn(Math, 'random').mockImplementation(() => rolls.shift() ?? 0);
+
+        const test = rollSpellTest(sheet({ mods: { attributes: { foc: -1 } } }));
+
+        expect(test.rolls).toEqual([ 20, 3 ]);
+        expect(test.keep).toBe('lowest');
+        expect(test.bestRoll).toBe(3);
+        expect(test.total).toBe(9);
+        expect(test.notation).toBe('2d20+6');
     });
 
     it('sempre o mesmo teste, seja qual for a magia: não depende de arma nem de outro atributo', () => {
@@ -48,7 +61,7 @@ describe('rollSpellTest (teste de magia ao conjurar)', () => {
     it('bônus negativo aparece com o sinal certo na expressão', () => {
         jest.spyOn(Math, 'random').mockReturnValue(0.5);
 
-        expect(rollSpellTest(sheet({ mods: { attributes: { foc: 1 } }, expertises: { Magia: { value: -2 } } })).notation).toBe('1d20-2');
+        expect(rollSpellTest(sheet({ mods: { attributes: { foc: 0 } }, expertises: { Magia: { value: -2 } } })).notation).toBe('1d20-2');
     });
 });
 
@@ -104,11 +117,14 @@ describe('teste de acerto com Sobrepeso', () => {
 describe('vantagem e desvantagem dos efeitos no teste de acerto', () => {
     afterEach(() => jest.restoreAllMocks());
 
-    it('uma desvantagem rola um d20 a mais e vale o menor (o mod de 1 dado vira 2 dados, o menor)', () => {
+    // mod 0 em VIG: 1 d20 de base, para a conta do saldo aparecer inteira
+    const neutral = (): CharsheetDTO => sheet({ mods: { attributes: { vig: 0, des: 0, foc: 0 } } });
+
+    it('uma desvantagem rola um d20 a mais e vale o menor (o mod 0, de 1 dado, vira 2 dados, o menor)', () => {
         const rolls = [ 0.95, 0.1 ]; // d20: 20, 3
         jest.spyOn(Math, 'random').mockImplementation(() => rolls.shift() ?? 0);
 
-        const hit = rollHitTest('vig', sheet(), { lessDice: 1, notes: [ 'Cegueira: desvantagem, −1d20' ] });
+        const hit = rollHitTest('vig', neutral(), { lessDice: 1, notes: [ 'Cegueira: desvantagem, −1d20' ] });
 
         expect(hit.rolls).toEqual([ 20, 3 ]);
         expect(hit.keep).toBe('lowest');
@@ -122,25 +138,25 @@ describe('vantagem e desvantagem dos efeitos no teste de acerto', () => {
     it('vantagem e desvantagem se cancelam pelo saldo: 1 dado só', () => {
         jest.spyOn(Math, 'random').mockReturnValue(0.5);
 
-        const hit = rollHitTest('vig', sheet(), { extraDice: 1, lessDice: 1 });
+        const hit = rollHitTest('vig', neutral(), { extraDice: 1, lessDice: 1 });
 
         expect(hit.rolls).toHaveLength(1);
         expect(hit.keep).toBe('highest');
     });
 
-    it('os d20 do mod de Foco já são vantagens: com 3 dados, uma desvantagem rola 2 e vale o maior', () => {
+    it('os d20 do mod de Foco já são vantagens: com 4 dados, uma desvantagem rola 3 e vale o maior', () => {
         jest.spyOn(Math, 'random').mockReturnValue(0.5);
 
         const test = rollSpellTest(sheet(), { lessDice: 1 });
 
-        expect(test.rolls).toHaveLength(2);
+        expect(test.rolls).toHaveLength(3);
         expect(test.keep).toBe('highest');
     });
 
     it('o teste de magia aceita as vantagens e desvantagens dos efeitos', () => {
         jest.spyOn(Math, 'random').mockReturnValue(0.5);
 
-        const test = rollSpellTest(sheet({ mods: { attributes: { foc: 1 } } }), { lessDice: 2, notes: [ 'Cegueira: desvantagem, −2d20' ] });
+        const test = rollSpellTest(neutral(), { lessDice: 2, notes: [ 'Cegueira: desvantagem, −2d20' ] });
 
         expect(test.rolls).toHaveLength(3);
         expect(test.keep).toBe('lowest');
@@ -177,7 +193,7 @@ describe('acerto crítico no teste (rollHitTest)', () => {
     it('conta o d20 que valeu: o 20 que a desvantagem descartou não marca crítico', () => {
         const rolls = [ 0.99, 0.1 ]; // 20 e 3; com uma desvantagem valem 2d20 e o menor (mod 1 + 1 desvantagem rolam 2)
         jest.spyOn(Math, 'random').mockImplementation(() => rolls.shift() ?? 0);
-        const hit = rollHitTest('vig', sheet(), { lessDice: 1 });
+        const hit = rollHitTest('vig', sheet({ mods: { attributes: { vig: 0 } } }), { lessDice: 1 });
         expect(hit.keep).toBe('lowest');
         expect(hit.bestRoll).toBe(3);
         expect(hit.critical).toBe(false);

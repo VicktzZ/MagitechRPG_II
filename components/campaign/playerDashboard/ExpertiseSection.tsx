@@ -1,6 +1,7 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 'use client'
 
+import { d20Pool } from '@utils/d20Rule'
 import { useCampaignContext, useCampaignCurrentCharsheetContext } from '@contexts';
 import { useChatContext } from '@contexts/chatContext'
 import { MessageType } from '@enums'
@@ -197,16 +198,15 @@ export default function ExpertiseSection(): ReactElement {
         // O Sobrepeso entra no modificador da rolagem (a perícia na ficha continua com o valor dela)
         const expertiseValue = entry.value + entry.penalty
 
-        // Determina quantos d20s rolar baseado nos mods do atributo padrão da perícia
+        // Regra única de d20: o modificador do atributo padrão da perícia + 1; negativo rola 2 e vale o menor
         const attrKey = (entry.defaultAttribute ?? '') as keyof typeof charsheet.mods.attributes
-        let numDice = Number(charsheet.mods?.attributes?.[attrKey] ?? 1)
-        if (!Number.isFinite(numDice) || numDice < 1) numDice = 1
+        const pool = d20Pool(charsheet.mods?.attributes?.[attrKey])
 
         // Percepção e Furtividade levam as vantagens e desvantagens dos efeitos aplicados no combate (Cegueira, Visão Verdadeira...): o saldo decide
         // quantos d20 rolar e se vale o maior ou o menor
         const scope = expertiseScope(entry.label)
         const effects = scope ? effectDice(combatantEffects(campaign?.session?.combat, charsheet.id), scope) : undefined
-        const { dice, keep } = effects ? adjustDice({ dice: numDice, keep: 'highest' }, effects) : { dice: numDice, keep: 'highest' as const }
+        const { dice, keep } = effects ? adjustDice(pool, effects) : pool
 
         // Rola os dados
         const rolls: number[] = []

@@ -50,7 +50,7 @@ describe('rolagem de perícia da criatura sem bônus', () => {
         const roll = rollCreatureExpertise(creature, 'Percepção', () => 0.5);
 
         expect(roll).not.toBeNull();
-        expect(roll).toMatchObject({ bonus: 0, dice: 2 });
+        expect(roll).toMatchObject({ bonus: 0, dice: 3 });
     });
 
     it('perícia que não existe em lugar nenhum continua sem rolagem', () => {

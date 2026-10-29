@@ -2,6 +2,7 @@ import { useChatContext } from '@contexts/chatContext';
 import { MessageType } from '@enums';
 import type { Combatant, Creature, Expertise } from '@models';
 import { adjustDice, effectDice, expertiseScope, keptDie } from '@utils/combat/effectDice';
+import { creatureD20Pool, SINGLE_D20 } from '@utils/d20Rule';
 
 /** Criatura em turno (com seu combatente), usada quando a rolagem não indica uma criatura específica */
 interface CreatureInTurn {
@@ -29,22 +30,13 @@ export function useCreatureExpertiseRoll(currentCreatureInTurn: CreatureInTurn |
         const expertiseValue = Number(expertise?.value ?? 0) || 0;
 
         const defaultAttrKey = expertise?.defaultAttribute;
-        let numDice = 1;
-
-        if (defaultAttrKey) {
-            const attrValue = Number(creature.attributes?.[defaultAttrKey] ?? 0) || 0;
-            // Nova fórmula: 0=-1, 5=1, 10=2, 15=3, 20=4, 30+=5
-            let attrMod = attrValue === 0 ? -1 : Math.min(5, Math.floor(attrValue / 5));
-            if (!Number.isFinite(attrMod)) attrMod = 1;
-            numDice = attrMod;
-        }
-
-        if (!Number.isFinite(numDice) || numDice < 1) numDice = 1;
+        // Regra única de d20: o modificador do atributo da criatura (0 vale -1, 5 vale 1, 10 vale 2... até 5) + 1; negativo rola 2 e vale o menor
+        const pool = defaultAttrKey ? creatureD20Pool(Number(creature.attributes?.[defaultAttrKey] ?? 0) || 0) : SINGLE_D20;
 
         // Percepção e Furtividade levam as vantagens e desvantagens dos efeitos aplicados à criatura (saldo de d20, como no jogador)
         const scope = expertiseScope(expertiseName);
         const effects = scope ? effectDice(combatant?.effects, scope) : undefined;
-        const { dice, keep } = effects ? adjustDice({ dice: numDice, keep: 'highest' }, effects) : { dice: numDice, keep: 'highest' as const };
+        const { dice, keep } = effects ? adjustDice(pool, effects) : pool;
 
         const rolls: number[] = [];
         for (let i = 0; i < dice; i++) {

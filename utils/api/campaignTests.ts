@@ -87,7 +87,7 @@ interface BuildTestResponseContext {
 
 /**
  * Rolagem do jogador (`requestId`, `rolls`, `bonus`) → resposta a gravar. O servidor
- * confere o pedido e refaz a conta (maior d20 + bônus contra a DT): o veredito nunca
+ * confere o pedido e refaz a conta (o d20 que vale + bônus contra a DT): o veredito nunca
  * vem do navegador.
  */
 export function buildTestResponse(body: unknown, { request, user, now }: BuildTestResponseContext): TestResponse {
@@ -104,13 +104,16 @@ export function buildTestResponse(body: unknown, { request, user, now }: BuildTe
         throw badRequest(`"rolls" deve ter de 1 a ${MAX_TEST_DICE} dados`);
     }
     const rolls = body['rolls'].map((roll, index) => assertInteger(roll, 1, 20, `rolls[${index}]`));
+    // Modificador de atributo negativo: o menor d20 vale (regra única de d20); qualquer outro valor é o maior
+    const keep = body['keep'] === 'lowest' ? 'lowest' : 'highest';
 
     return {
         userName: user.name,
         rolls,
         dice: rolls.length,
         bonus,
-        ...evaluateTest({ rolls, bonus, dt: request.dt }),
+        ...(keep === 'lowest' ? { keep } : {}),
+        ...evaluateTest({ rolls, bonus, dt: request.dt, keep }),
         respondedAt: now.toISOString()
     };
 }
