@@ -14,6 +14,7 @@ import { useSnackbar } from 'notistack';
 import { useCampaignContext } from '@contexts';
 import { useSession } from 'next-auth/react';
 import type { Attributes, Combat } from '@models';
+import { combatantPerRound } from '@utils/combat/actionBudgets';
 import { effectiveBudget } from '@utils/combat/actionFlags';
 import { opportunitiesForReactor } from '@utils/combat/opportunities';
 import { sheetExpertisePenalty } from '@utils/combat/sheetOverweight';
@@ -299,6 +300,7 @@ function CombatStatus({
                                 </Typography>
                                 <ActionPips
                                     budget={effectiveBudget(userCombatant)}
+                                    perRound={combatantPerRound(userCombatant)}
                                     onSelect={calls.spendAction}
                                     disableSpent
                                     busy={calls.isSpendingAction}

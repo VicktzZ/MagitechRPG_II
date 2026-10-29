@@ -19,6 +19,12 @@ export function useCreatureManager() {
         setCreatureModalOpen(true);
     };
 
+    /** Abre o editor para uma criatura nova (sem criatura selecionada) */
+    const handleNewCreature = () => {
+        setSelectedCreature(null);
+        setCreatureModalOpen(true);
+    };
+
     /** Fecha o editor de criatura e limpa a seleção */
     const handleCloseCreatureModal = () => {
         setCreatureModalOpen(false);
@@ -35,6 +41,7 @@ export function useCreatureManager() {
         handleCancelDeleteCreature: deletion.cancel,
         handleConfirmDeleteCreature: deletion.confirm,
         handleEditCreature,
+        handleNewCreature,
         handleCloseCreatureModal
     };
 }

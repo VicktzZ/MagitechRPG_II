@@ -46,6 +46,7 @@ export default function CampaignGMDashboard(): ReactElement | null {
                 onView={creature => openWindow('creature', creature.id)}
                 onEdit={creatureManager.handleEditCreature}
                 onDelete={creatureManager.handleRequestDeleteCreature}
+                onCreate={creatureManager.handleNewCreature}
             />
 
             <CreatureCreator

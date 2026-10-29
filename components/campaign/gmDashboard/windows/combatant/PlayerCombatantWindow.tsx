@@ -11,6 +11,7 @@ import { enqueueSnackbar } from 'notistack';
 import type { ReactElement } from 'react';
 import { useQuickEffect } from '../../actions/useQuickEffect';
 import { useSetMpSpent } from '../../actions/useSetMpSpent';
+import { useGrantActions } from '../../actions/useGrantActions';
 import { useToggleCombatAction } from '../../actions/useToggleCombatAction';
 import { useGMWindowActions } from '../GMWindowProvider';
 import { SheetWindow } from '../SectionWindows';
@@ -25,6 +26,7 @@ function PlayerCombatantBody({ charsheet, combatantId }: { charsheet: SummaryShe
     const { openEffectFor, effectDialog } = useQuickEffect(campaign.id);
     const { openSetMpSpent, setMpSpentDialog } = useSetMpSpent(campaign.id);
     const { toggleAction } = useToggleCombatAction(campaign.id);
+    const { openGrantActions, grantActionsDialog } = useGrantActions(campaign.id);
     // Os efeitos do personagem no combate mexem nos d20 de Percepção e Furtividade
     const { planFor, roll } = useGMExpertiseRoll(charsheet, combatantEffects(campaign.session?.combat, charsheet.id));
 
@@ -90,6 +92,7 @@ function PlayerCombatantBody({ charsheet, combatantId }: { charsheet: SummaryShe
                 environment={combat.environment}
                 onAdjustVital={(key, delta) => { void adjustVital(key, delta); }}
                 onToggleAction={(slot, available) => { void toggleAction(combatant.id, slot, available); }}
+                onGrantActions={() => { openGrantActions({ ...combatant, name: combatant.name || charsheet.name }); }}
                 onSetMpSpent={() => {
                     openSetMpSpent({ id: combatant.id, name: combatant.name || charsheet.name, spent: metrics.mpSpent ?? combatant.mpSpentThisTurn ?? 0, limit: metrics.mpLimit ?? 0 });
                 }}
@@ -101,6 +104,7 @@ function PlayerCombatantBody({ charsheet, combatantId }: { charsheet: SummaryShe
             />
             {effectDialog}
             {setMpSpentDialog}
+            {grantActionsDialog}
         </>
     );
 }

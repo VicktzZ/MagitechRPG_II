@@ -8,6 +8,7 @@ import type { ActionSlot } from '@utils/combat/engine/actionBudget';
 import { errorMessage } from '@utils/errors';
 import { useSnackbar } from 'notistack';
 import { useCallback, type ReactNode } from 'react';
+import { useGrantActions } from '../actions/useGrantActions';
 import { useQuickEffect } from '../actions/useQuickEffect';
 import { useSetMpSpent } from '../actions/useSetMpSpent';
 import { useToggleCombatAction } from '../actions/useToggleCombatAction';
@@ -24,6 +25,8 @@ export interface CombatantActions {
     resetMpLimit: (combatantId: string) => Promise<void>;
     releaseMpLimit: (combatantId: string, enabled: boolean) => Promise<void>;
     toggleAction: (combatantId: string, slot: ActionSlot, available: boolean) => Promise<void>;
+    /** Abre o diálogo para dar ou tirar ações (Padrão, Bônus, Movimento) do combatente */
+    grantActions: (combatant: Combatant) => void;
     openWindow: (combatant: Combatant) => void;
     /** A rolagem de perícia da criatura (a regra da criatura, não a da ficha) */
     rollCreatureExpertise: (name: string, expertise: Expertise, creature: Creature, combatant: Combatant) => Promise<void>;
@@ -34,7 +37,7 @@ export interface CombatantActions {
 }
 
 /**
- * As ações do mestre sobre um combatente (efeito, limite de MP, ações da rodada, janela, rolagem da criatura), numa instância só para a lista inteira: os diálogos
+ * As ações do mestre sobre um combatente (efeito, limite de MP, ações da rodada e dar ações, janela, rolagem da criatura), numa instância só para a lista inteira: os diálogos
  * (`dialogs`) são um só e as linhas apenas chamam, em vez de cada uma montar o seu.
  */
 export function useCombatantActions(onDamageHeal: (type: DamageHealKind, targetId: string) => void): CombatantActions {
@@ -44,6 +47,7 @@ export function useCombatantActions(onDamageHeal: (type: DamageHealKind, targetI
     const { openEffectFor, effectDialog } = useQuickEffect(campaign.id);
     const { openSetMpSpent, setMpSpentDialog } = useSetMpSpent(campaign.id);
     const { toggleAction, busy: togglingAction } = useToggleCombatAction(campaign.id);
+    const { openGrantActions, grantActionsDialog } = useGrantActions(campaign.id);
     // Sem criatura em turno: a rolagem sempre diz de qual criatura é
     const rollExpertise = useCreatureExpertiseRoll(null);
 
@@ -84,10 +88,11 @@ export function useCombatantActions(onDamageHeal: (type: DamageHealKind, targetI
         resetMpLimit,
         releaseMpLimit,
         toggleAction,
+        grantActions: openGrantActions,
         // Jogador em combate abre a janela de combatente (id da ficha); criatura, a do combatente dela
         openWindow: (combatant) => { openWindow('combatant', combatant.id); },
         rollCreatureExpertise: async (name, expertise, creature, combatant) => { await rollExpertise(name, expertise, creature, combatant); },
         togglingAction,
-        dialogs: <>{effectDialog}{setMpSpentDialog}</>
+        dialogs: <>{effectDialog}{setMpSpentDialog}{grantActionsDialog}</>
     };
 }

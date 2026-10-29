@@ -38,6 +38,7 @@ const view = (props: Partial<Parameters<typeof PlayerCombatantView>[0]> = {}) =>
         metrics={{ overall: 52, mpLimit: 8, mpSpent: 3 }}
         onAdjustVital={noop}
         onToggleAction={noop}
+        onGrantActions={noop}
         onSetMpSpent={noop}
         onResetMpLimit={noop}
         onApplyEffect={noop}

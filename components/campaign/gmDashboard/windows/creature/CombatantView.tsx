@@ -4,7 +4,7 @@ import type { Combatant, Creature, Expertise } from '@models';
 import { Bolt, Edit, Pets, RestartAlt } from '@mui/icons-material';
 import { Avatar, Box, Button, Chip, Stack, Typography, alpha } from '@mui/material';
 import { color, font } from '@themes/tokens';
-import { combatantBudget } from '@utils/combat/actionBudgets';
+import { combatantBudget, combatantPerRound } from '@utils/combat/actionBudgets';
 import { actionBlocks } from '@utils/combat/actionFlags';
 import { completeCreatureExpertises } from '@utils/combat/creatureExpertises';
 import { effectiveMaxVital } from '@utils/combat/effectStats';
@@ -14,7 +14,9 @@ import { isInDifficultTerrain, type CombatEnvironment } from '@utils/combat/envi
 import { combatantVitals, type CombatantVitalKey } from '@utils/combatantVitals';
 import { filterAndSortExpertises } from '@utils/expertiseList';
 import type { ReactElement, ReactNode } from 'react';
+import type { CreatureDice } from '@utils/combat/creatureDice';
 import { toCreatureCard } from './creatureCard';
+import CreatureDiceList from './CreatureDiceList';
 import ActionBlocksNotice from '../../../ActionBlocksNotice';
 import AmbientNotice from '../../../AmbientNotice';
 import EffectStatsNotice from '../../../EffectStatsNotice';
@@ -51,6 +53,10 @@ interface CombatantViewProps {
     onSetMpSpent?: () => void;
     /** O mestre gasta ou devolve uma ação da rodada da criatura; sem isso os marcadores só mostram o que resta */
     onToggleAction?: (slot: ActionSlot, available: boolean) => void;
+    /** O mestre dá ou tira ações Padrão, Bônus e de Movimento (agora e por rodada); sem isso não há o botão */
+    onGrantActions?: () => void;
+    /** O mestre rola um dado customizado da criatura (o resultado vai ao chat); sem isso a lista de dados é só de leitura */
+    onRollDice?: (dice: CreatureDice) => void;
     /** O ambiente da cena (luz e terreno difícil), para os avisos e o deslocamento de agora */
     environment?: CombatEnvironment | null;
 }
@@ -60,14 +66,16 @@ interface CombatantViewProps {
  * mestre rola pela criatura (resultado no chat). Os valores vêm do combatente, que é onde o combate guarda o que mudou durante a luta.
  */
 export function CombatantView({
-    combatant, creature, inTurn, onAdjustVital, onRollExpertise, onOpenCreature, mpLimit = 0, onCastSpell, onResetMpLimit, onSetMpSpent, onToggleAction, environment
+    combatant, creature, inTurn, onAdjustVital, onRollExpertise, onOpenCreature, mpLimit = 0, onCastSpell, onResetMpLimit, onSetMpSpent, onToggleAction, onGrantActions, onRollDice, environment
 }: CombatantViewProps): ReactElement {
     const expertises: Array<[ string, Expertise ]> = creature ? Object.entries(completeCreatureExpertises<Expertise>(creature.expertises)) : [];
     const list = useExpertiseListState();
     const visibleExpertises = filterAndSortExpertises(expertises, { query: list.query, sort: list.sort, nameOf: ([ expertiseName ]) => expertiseName, valueOf: ([ , expertise ]) => expertise.value });
     const { lp, maxLp, mp, maxMp } = combatantVitals(combatant, creature);
     const name = combatant.name || creature?.name || 'Criatura';
-    const spells = creature ? toCreatureCard(creature).spells : [];
+    const card = creature ? toCreatureCard(creature) : null;
+    const spells = card?.spells ?? [];
+    const dices = card?.dices ?? [];
     const mpSpent = combatant.mpSpentThisTurn ?? 0;
     const mpReleased = Boolean(combatant.mpLimitOverride);
 
@@ -119,7 +127,7 @@ export function CombatantView({
 
             <Box>
                 <Heading>Ações da rodada</Heading>
-                <ActionPips budget={combatantBudget(combatant)} onSelect={onToggleAction} />
+                <ActionPips budget={combatantBudget(combatant)} perRound={combatantPerRound(combatant)} onSelect={onToggleAction} onGrant={onGrantActions} ownerName={name} />
             </Box>
 
             {mpLimit > 0 && (
@@ -168,6 +176,13 @@ export function CombatantView({
                             </Box>
                         ))}
                     </Stack>
+                </Box>
+            )}
+
+            {dices.length > 0 && (
+                <Box>
+                    <Heading>Dados ({dices.length})</Heading>
+                    <CreatureDiceList dices={dices} onRoll={onRollDice} />
                 </Box>
             )}
 

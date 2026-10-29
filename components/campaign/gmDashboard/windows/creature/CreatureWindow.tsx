@@ -7,6 +7,7 @@ import CreatureCreator from '../../CreatureCreator';
 import type { CreatureData } from '../../creatureCreator/types';
 import DeleteCreatureDialog from '../../DeleteCreatureDialog';
 import { useCreatureDelete } from '../../dashboard/useCreatureDelete';
+import { useCreatureDiceRoll } from '../../dashboard/useCreatureDiceRoll';
 import { toCreatureCard } from './creatureCard';
 import { CreatureView } from './CreatureView';
 
@@ -20,6 +21,7 @@ export default function CreatureWindow({ creatureId }: { creatureId: string }): 
     // e a campanha chega de novo do Firestore a cada mudança (o que apagaria o que o mestre estava digitando)
     const [ editing, setEditing ] = useState<CreatureData | null>(null);
     const deletion = useCreatureDelete();
+    const rollDice = useCreatureDiceRoll();
 
     if (!creature || !card) {
         return <Typography color="text.secondary">Esta criatura não está mais na campanha.</Typography>;
@@ -29,6 +31,7 @@ export default function CreatureWindow({ creatureId }: { creatureId: string }): 
         <>
             <CreatureView
                 creature={card}
+                onRollDice={dice => { void rollDice(creature, dice); }}
                 onEdit={() => setEditing(creature as unknown as CreatureData)}
                 onDelete={() => deletion.request(creature.id, creature.name)}
             />

@@ -10,6 +10,7 @@ import ActionBlocksNotice from '../../ActionBlocksNotice';
 import { SHOW_REACTION_TILES_EVENT } from '../../reaction/events';
 import ActionPips from '../../ActionPips';
 import Section from '../../Section';
+import { combatantPerRound } from '@utils/combat/actionBudgets';
 import { actionBlocks, blockReason, effectiveBudget, isBlocked } from '@utils/combat/actionFlags';
 import {
     buildActionTiles,
@@ -224,7 +225,7 @@ export default function ActionsSection(): ReactElement | null {
             <Stack spacing={2} data-testid="actions-section">
                 <ActionBlocksNotice blocks={blocks} who="Você" />
                 <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center', flexWrap: 'wrap' }}>
-                    <ActionPips budget={budget} />
+                    <ActionPips budget={budget} perRound={combatantPerRound(me)} />
                     {isMyTurn && <Chip size="small" color="primary" label="Sua vez" />}
                     <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                         {acting ? 'Quadrado cinza: a ação dele já foi gasta nesta rodada.' : 'As ações abrem quando a iniciativa estiver definida.'}

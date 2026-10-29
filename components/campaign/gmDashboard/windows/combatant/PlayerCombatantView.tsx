@@ -4,7 +4,7 @@ import type { Combatant, Expertise } from '@models';
 import { Edit, RestartAlt } from '@mui/icons-material';
 import { Avatar, Box, Button, Chip, Divider, Stack, Typography } from '@mui/material';
 import { font } from '@themes/tokens';
-import { combatantBudget } from '@utils/combat/actionBudgets';
+import { combatantBudget, combatantPerRound } from '@utils/combat/actionBudgets';
 import { actionBlocks } from '@utils/combat/actionFlags';
 import type { ActionSlot } from '@utils/combat/engine/actionBudget';
 import { isInDifficultTerrain, type CombatEnvironment } from '@utils/combat/environment';
@@ -47,6 +47,8 @@ interface PlayerCombatantViewProps {
     onAdjustVital: (key: VitalKey, delta: number) => void;
     /** O mestre gasta ou devolve uma ação da rodada */
     onToggleAction: (slot: ActionSlot, available: boolean) => void;
+    /** O mestre dá ou tira ações Padrão, Bônus e de Movimento (agora e por rodada) */
+    onGrantActions: () => void;
     onSetMpSpent: () => void;
     onResetMpLimit: () => void;
     onApplyEffect: () => void;
@@ -72,7 +74,7 @@ function describeEffect(effect: NonNullable<Combatant['effects']>[number]): stri
  * ações da rodada, o limite de MP por turno, os efeitos aplicados e as perícias, que o mestre rola pelo jogador. A ficha inteira abre pelos atalhos de seção.
  */
 export function PlayerCombatantView({
-    charsheet, combatant, inTurn, imageUrl, metrics, onAdjustVital, onToggleAction, onSetMpSpent, onResetMpLimit, onApplyEffect, onOpenSection, onRollExpertise, onRest, environment
+    charsheet, combatant, inTurn, imageUrl, metrics, onAdjustVital, onToggleAction, onGrantActions, onSetMpSpent, onResetMpLimit, onApplyEffect, onOpenSection, onRollExpertise, onRest, environment
 }: PlayerCombatantViewProps): ReactElement {
     const view = useCharsheetPointsView(charsheet);
     const list = useExpertiseListState();
@@ -117,7 +119,13 @@ export function PlayerCombatantView({
 
             <Box>
                 <Heading>Ações da rodada</Heading>
-                <ActionPips budget={combatantBudget(combatant)} onSelect={onToggleAction} />
+                <ActionPips
+                    budget={combatantBudget(combatant)}
+                    perRound={combatantPerRound(combatant)}
+                    onSelect={onToggleAction}
+                    onGrant={onGrantActions}
+                    ownerName={combatant.name || charsheet.name}
+                />
             </Box>
 
             {metrics.mpLimit !== null && (

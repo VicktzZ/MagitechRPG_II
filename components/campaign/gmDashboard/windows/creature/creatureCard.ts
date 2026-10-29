@@ -1,5 +1,6 @@
 import type { Creature } from '@models';
 import { describeDamageModifier, sanitizeDamageModifiers, sanitizeWeaknesses } from '@utils/combat/creatureDefense';
+import { sanitizeCreatureDices, type CreatureDice } from '@utils/combat/creatureDice';
 import { attributeModifier } from '../../creatureCreator/creatureStats';
 
 /** O que a janela da criatura mostra, já em texto e número (a criatura guardada pode ter formatos antigos ou incompletos) */
@@ -16,6 +17,8 @@ export interface CreatureCard {
     expertises: Array<{ name: string; value: number; attribute: string }>;
     skills: Array<{ id: string; name: string; type: string; description: string }>;
     spells: Array<{ id: string; name: string; level: number; element: string; cost: number; description: string }>;
+    /** Dados customizáveis ("Mordida: 2d6 + 3"), já limpos */
+    dices: CreatureDice[];
     /** Defesas declaradas para o combate (só o mestre vê esta janela): o elemento, as fraquezas e as resistências/vulnerabilidades já em texto */
     defenses: { element: string; weaknesses: string[]; modifiers: string[] };
 }
@@ -74,6 +77,7 @@ export function toCreatureCard(creature: Creature): CreatureCard {
             type: asText(skill['type']),
             description: asText(skill['description'])
         })),
+        dices: sanitizeCreatureDices(raw['dices']),
         defenses: {
             element: asText(raw['elementalMastery']),
             weaknesses: sanitizeWeaknesses(raw['weaknesses']),

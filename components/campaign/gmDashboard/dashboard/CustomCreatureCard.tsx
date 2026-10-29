@@ -1,131 +1,144 @@
+import { ContentCopy, Delete as DeleteIcon, Edit as EditIcon, ExpandLess, ExpandMore, GroupAdd, OpenInNew, Pets } from '@mui/icons-material';
+import { Avatar, Box, Button, Chip, Collapse, IconButton, Tooltip, Typography, alpha } from '@mui/material';
+import { color, font } from '@themes/tokens';
 import type { Creature } from '@models';
-import { Delete as DeleteIcon, Edit as EditIcon, Pets, Search as SearchIcon } from '@mui/icons-material';
-import { Avatar, Box, Chip, IconButton, Paper, Tooltip, Typography, alpha } from '@mui/material';
-import { color } from '@themes/tokens';
-import type { ReactElement } from 'react';
+import type { CreatureDice } from '@utils/combat/creatureDice';
+import { useMemo, type ReactElement } from 'react';
+import { toCreatureCard } from '../windows/creature/creatureCard';
+import CreatureCardDetails from './creatures/CreatureCardDetails';
 
 interface CustomCreatureCardProps {
     creature: Creature;
+    /** A ficha completa está aberta no cartão */
+    expanded: boolean;
+    onToggle: (creatureId: string) => void;
+    /** Abre a janela da criatura */
     onView: (creature: Creature) => void;
     onEdit: (creature: Creature) => void;
     onDelete: (creatureId: string, creatureName: string) => void;
+    onDuplicate: (creature: Creature) => void;
+    /** Põe uma cópia no combate em andamento; sem isso (não há combate ativo) o botão não aparece */
+    onAddToCombat?: (creature: Creature) => void;
+    onRollDice?: (creature: Creature, dice: CreatureDice) => void;
+    /** Quantas cópias dela estão no combate agora */
+    copiesInCombat?: number;
+    /** Esperando o servidor (duplicando ou adicionando ao combate): os botões que mexem no servidor ficam desligados */
+    busy?: boolean;
 }
 
-/** Cartão de uma criatura customizada da campanha: resumo (nível, LP, MP, habilidades, magias) e ações de ver, editar e excluir */
-export default function CustomCreatureCard({ creature, onView, onEdit, onDelete }: CustomCreatureCardProps): ReactElement {
+const statChipSx = (tint: string) => ({ height: 22, fontSize: 12, fontFamily: font.mono, bgcolor: alpha(tint, 0.14), color: tint });
+
+/**
+ * Cartão de uma criatura customizada da campanha: o essencial à vista (nível, tipo, LP, MP, AP, elemento, quantas habilidades, magias e dados), as ações rápidas (ver a
+ * janela, editar, duplicar, excluir e, com combate ativo, adicionar ao combate) e a ficha completa que abre ali mesmo, sem trocar de tela.
+ */
+export default function CustomCreatureCard({
+    creature, expanded, onToggle, onView, onEdit, onDelete, onDuplicate, onAddToCombat, onRollDice, copiesInCombat = 0, busy = false
+}: CustomCreatureCardProps): ReactElement {
+    const card = useMemo(() => toCreatureCard(creature), [ creature ]);
+    const counts = [
+        card.skills.length > 0 ? `${card.skills.length} ${card.skills.length === 1 ? 'habilidade' : 'habilidades'}` : '',
+        card.spells.length > 0 ? `${card.spells.length} ${card.spells.length === 1 ? 'magia' : 'magias'}` : '',
+        card.dices.length > 0 ? `${card.dices.length} ${card.dices.length === 1 ? 'dado' : 'dados'}` : ''
+    ].filter(Boolean);
+
     return (
-        <Paper
+        <Box
+            component="article"
+            data-testid="custom-creature-card"
+            data-expanded={expanded}
+            aria-label={card.name}
             sx={{
-                p: 2,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 1,
+                p: 1.5,
+                minWidth: 0,
                 border: '1px solid',
                 borderColor: 'divider',
+                borderLeft: '3px solid',
+                borderLeftColor: copiesInCombat > 0 ? 'primary.main' : 'divider',
                 borderRadius: 2,
-                bgcolor: 'background.raised'
+                bgcolor: 'background.raised',
+                gridColumn: expanded ? '1 / -1' : undefined,
+                '&:hover': { borderColor: color.borderStrong, borderLeftColor: copiesInCombat > 0 ? 'primary.main' : color.borderStrong }
             }}
         >
-            <Box display="flex" alignItems="center" justifyContent="space-between">
-                <Box display="flex" alignItems="center" gap={2}>
-                    <Avatar
-                        src={creature.imageUrl || undefined}
-                        sx={{ bgcolor: (theme) => alpha(theme.palette.warning.main, 0.14), color: 'warning.main' }}
-                    >
-                        <Pets />
-                    </Avatar>
-                    <Box>
-                        <Typography variant="subtitle1" fontWeight={600}>
-                            {creature.name}
-                            {creature.type && (
-                                <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 1 }}>
-                                    {creature.type}
-                                </Typography>
-                            )}
-                        </Typography>
-                        <Box display="flex" gap={0.5} mt={0.5} flexWrap="wrap">
-                            <Chip
-                                label={`Nível ${creature.level}`}
-                                size="small"
-                                sx={{ height: 20, fontSize: '0.75rem', bgcolor: (theme) => alpha(theme.palette.success.main, 0.14), color: 'success.main' }}
-                            />
-                            <Chip 
-                                label={`LP: ${creature.stats?.lp || 0}`} 
-                                size="small" 
-                                sx={{ height: 20, fontSize: '0.75rem', bgcolor: alpha(color.lp, 0.14), color: 'error.light' }} 
-                            />
-                            <Chip 
-                                label={`MP: ${creature.stats?.mp || 0}`} 
-                                size="small" 
-                                sx={{ height: 20, fontSize: '0.75rem', bgcolor: alpha(color.mp, 0.14), color: color.mp }} 
-                            />
-                            {creature.skills != null && creature.skills.length > 0 && (
-                                <Chip 
-                                    label={`${creature.skills.length} habilidade(s)`} 
-                                    size="small" 
-                                    sx={{ height: 20, fontSize: '0.75rem', bgcolor: (theme) => alpha(theme.palette.primary.main, 0.14), color: 'primary.main' }} 
-                                />
-                            )}
-                            {creature.spells != null && creature.spells.length > 0 && (
-                                <Chip 
-                                    label={`${creature.spells.length} magia(s)`} 
-                                    size="small" 
-                                    sx={{ height: 20, fontSize: '0.75rem', bgcolor: (theme) => alpha(theme.palette.info.main, 0.14), color: 'info.main' }} 
-                                />
-                            )}
-                        </Box>
-                        {creature.description && (
-                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
-                                {creature.description}
-                            </Typography>
-                        )}
-                    </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+                <Avatar src={card.imageUrl || undefined} alt="" sx={{ width: 40, height: 40, bgcolor: theme => alpha(theme.palette.warning.main, 0.14), color: 'warning.main' }}>
+                    <Pets />
+                </Avatar>
+                <Box sx={{ minWidth: 0, flex: 1 }}>
+                    <Typography component="h3" noWrap sx={{ fontWeight: 600, fontSize: 15 }}>{card.name}</Typography>
+                    <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>Nv. {card.level}{card.type ? ` • ${card.type}` : ''}</Typography>
                 </Box>
-                <Box display="flex" alignItems="center" gap={0.5}>
-                    <Tooltip title="Ver detalhes da criatura">
-                        <IconButton
-                            size="small"
-                            onClick={() => onView(creature)}
-                            sx={{ 
-                                color: 'info.main',
-                                '&:hover': { 
-                                    bgcolor: (theme) => alpha(theme.palette.info.main, 0.14),
-                                    color: 'info.light'
-                                }
-                            }}
-                        >
-                            <SearchIcon fontSize="small" />
-                        </IconButton>
+                {copiesInCombat > 0 && <Chip size="small" color="primary" label={copiesInCombat > 1 ? `Em combate ×${copiesInCombat}` : 'Em combate'} />}
+                <Tooltip title={expanded ? 'Recolher' : 'Mostrar tudo'}>
+                    <IconButton size="small" aria-expanded={expanded} aria-label={`${expanded ? 'Recolher' : 'Mostrar tudo de'} ${card.name}`} onClick={() => { onToggle(creature.id); }}>
+                        {expanded ? <ExpandLess fontSize="small" /> : <ExpandMore fontSize="small" />}
+                    </IconButton>
+                </Tooltip>
+            </Box>
+
+            <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap', alignItems: 'center' }}>
+                <Chip size="small" label={`LP ${card.stats.maxLp}`} sx={statChipSx(color.lp)} />
+                {card.stats.maxMp > 0 && <Chip size="small" label={`MP ${card.stats.maxMp}`} sx={statChipSx(color.mp)} />}
+                <Chip size="small" label={`AP ${card.stats.ap}`} sx={statChipSx(color.ap)} />
+                {card.defenses.element && <Chip size="small" variant="outlined" label={card.defenses.element} sx={{ height: 22, fontSize: 12 }} />}
+                {counts.length > 0 && <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>{counts.join(' • ')}</Typography>}
+            </Box>
+
+            {card.description && (
+                <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={expanded ? { whiteSpace: 'pre-wrap' } : { display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}
+                >
+                    {card.description}
+                </Typography>
+            )}
+
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap' }}>
+                {onAddToCombat && (
+                    <Button
+                        size="small"
+                        variant="outlined"
+                        startIcon={<GroupAdd fontSize="small" />}
+                        disabled={busy}
+                        onClick={() => { onAddToCombat(creature); }}
+                        aria-label={`Adicionar ${card.name} ao combate`}
+                        sx={{ textTransform: 'none', mr: 'auto' }}
+                    >
+                        Adicionar ao combate
+                    </Button>
+                )}
+                <Box sx={{ display: 'flex', gap: 0.25, ml: onAddToCombat ? 0 : 'auto' }}>
+                    <Tooltip title="Abrir a ficha em janela">
+                        <IconButton size="small" aria-label={`Abrir a ficha de ${card.name} em janela`} onClick={() => { onView(creature); }}><OpenInNew fontSize="small" /></IconButton>
                     </Tooltip>
                     <Tooltip title="Editar criatura">
-                        <IconButton
-                            size="small"
-                            onClick={() => onEdit(creature)}
-                            sx={{ 
-                                color: 'primary.main',
-                                '&:hover': { 
-                                    bgcolor: (theme) => alpha(theme.palette.primary.main, 0.14),
-                                    color: 'primary.light'
-                                }
-                            }}
-                        >
-                            <EditIcon fontSize="small" />
-                        </IconButton>
+                        <IconButton size="small" aria-label={`Editar ${card.name}`} onClick={() => { onEdit(creature); }}><EditIcon fontSize="small" /></IconButton>
+                    </Tooltip>
+                    <Tooltip title="Duplicar criatura">
+                        <span>
+                            <IconButton size="small" aria-label={`Duplicar ${card.name}`} disabled={busy} onClick={() => { onDuplicate(creature); }}>
+                                <ContentCopy fontSize="small" />
+                            </IconButton>
+                        </span>
                     </Tooltip>
                     <Tooltip title="Excluir criatura">
-                        <IconButton
-                            size="small"
-                            onClick={() => onDelete(creature.id, creature.name)}
-                            sx={{ 
-                                color: 'error.main',
-                                '&:hover': { 
-                                    bgcolor: (theme) => alpha(theme.palette.error.main, 0.14),
-                                    color: 'error.light'
-                                }
-                            }}
-                        >
+                        <IconButton size="small" aria-label={`Excluir ${card.name}`} onClick={() => { onDelete(creature.id, creature.name); }} sx={{ color: 'error.main' }}>
                             <DeleteIcon fontSize="small" />
                         </IconButton>
                     </Tooltip>
                 </Box>
             </Box>
-        </Paper>
+
+            <Collapse in={expanded} unmountOnExit>
+                <Box sx={{ pt: 1.5, borderTop: '1px solid', borderColor: 'divider' }}>
+                    <CreatureCardDetails creature={card} onRollDice={onRollDice ? dice => { onRollDice(creature, dice); } : undefined} />
+                </Box>
+            </Collapse>
+        </Box>
     );
 }

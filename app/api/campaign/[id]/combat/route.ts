@@ -26,8 +26,8 @@ import {
 } from '@utils/combat/initiativeRoll'
 import { resetRoundWindows } from '@utils/combat/roundWindow'
 import { actionBlocks, blockReason, isBlocked } from '@utils/combat/actionFlags'
-import { applyBudgetPatch, combatantBudget, describeBudget } from '@utils/combat/actionBudgets'
-import { executionSlot, spendAction } from '@utils/combat/engine/actionBudget'
+import { applyBudgetDelta, applyBudgetPatch, combatantBudget, combatantPerRound, describeBudget, describePerRound, SLOT_LABEL } from '@utils/combat/actionBudgets'
+import { ACTION_SLOTS, executionSlot, spendAction, type ActionSlot } from '@utils/combat/engine/actionBudget'
 import { sustainedUpkeepFor } from '@utils/combat/sustainedSpells'
 import { applySustainedUpkeep, endSustained, startSustained } from '@utils/combat/sustainedUpkeep'
 import { findBaseCreature } from '@utils/combatCreatureLookup'
@@ -52,7 +52,7 @@ import { isStealthEffect } from '@utils/combat/stealth'
 /** Ações que conduzem o combate — exclusivas do mestre */
 const GM_ONLY_ACTIONS: CombatAction[] = [
     'start', 'end', 'set_initiative', 'add_creature', 'add_combatants', 'remove_combatant', 'apply_effect', 'remove_effect',
-    'set_mp_limit_override', 'reset_mp_limit', 'set_mp_spent', 'set_actions', 'undo', 'resolve_attack', 'set_unseen', 'reveal_unseen', 'set_light', 'set_terrain', 'open_reaction'
+    'set_mp_limit_override', 'reset_mp_limit', 'set_mp_spent', 'set_actions', 'adjust_actions', 'undo', 'resolve_attack', 'set_unseen', 'reveal_unseen', 'set_light', 'set_terrain', 'open_reaction'
 ]
 
 /** Ações que entram no histórico do combate (o mestre pode desfazê-las): as que mudam o rumo da luta, não o controle de MP e de ações */
@@ -90,6 +90,7 @@ type CombatAction =
     | 'set_mp_spent'    // Mestre define exatamente o MP gasto na rodada (de 0 até o limite, que não muda)
     | 'spend_action'    // Gasta uma ação da rodada (Padrão, Bônus, Movimento, Reação ou Completa); o jogador só gasta as do próprio personagem
     | 'set_actions'     // Mestre ajusta as ações que restam a um combatente (devolver uma ação, dar extras)
+    | 'adjust_actions'  // Mestre soma ou tira ações de agora (variação) e/ou muda quantas o combatente recupera por rodada
     | 'sustain_start'   // Jogador conjurou com sucesso uma magia sustentada em combate: ela vira um efeito sobre ele
     | 'sustain_end'     // Desconjurar uma magia sustentada (ou todas, sem spellKey)
     | 'undo'            // Mestre desfaz um evento do histórico do combate (devolve só os campos que ele mudou)
@@ -165,6 +166,10 @@ interface CombatRequest {
     execution?: string
     /** Para set_actions: as ações que restam, por espaço ({ padrao: 0, bonus: 1, movimento: 1, reacao: 1 }); só os espaços informados mudam */
     actions?: Record<string, number>
+    /** Para adjust_actions: a variação das ações de agora por espaço ({ padrao: 1, movimento: -1 }), somada ao que o combatente tem (de 0 a 9) */
+    delta?: Record<string, number>
+    /** Para adjust_actions: quantas ações de cada tipo o combatente recupera por rodada ({ padrao: 2 }); só os espaços informados mudam (de 0 a 9) */
+    perRound?: Record<string, number>
 
     /** Para sustain_start / sustain_end: a magia sustentada (id ou nome), o estágio conjurado e o custo total de MP dele */
     spellKey?: string
@@ -281,6 +286,7 @@ function getActionMessage(action: CombatAction): string {
         set_mp_spent: 'MP gasto definido',
         spend_action: 'Ação gasta',
         set_actions: 'Ações ajustadas',
+        adjust_actions: 'Ações ajustadas',
         sustain_start: 'Magia sustentada ativa',
         sustain_end: 'Magia sustentada encerrada',
         undo: 'Evento desfeito',
@@ -1427,6 +1433,61 @@ export async function POST(
                 targetId: combatant.id,
                 targetName: combatant.name,
                 message: `✏️ O mestre ajustou as ações de **${combatant.name}**: ${describeBudget(next)}.`
+            }))
+
+            break
+        }
+
+        case 'adjust_actions': {
+            if (!combat.isActive) {
+                return NextResponse.json({ error: 'Não há combate ativo' }, { status: 400 })
+            }
+
+            const combatant = combat.combatants.find(c => c.id === body.combatantId || c.odacId === body.combatantId)
+            if (!combatant) {
+                return NextResponse.json({ error: 'Combatente não encontrado no combate' }, { status: 404 })
+            }
+
+            if (body.delta === undefined && body.perRound === undefined) {
+                throw badRequest('Informe a variação das ações (delta) ou quantas ele recupera por rodada (perRound)')
+            }
+
+            // A variação é somada ao que ele tem agora (dentro da trava do combate): um jogador que gastou uma ação ao mesmo tempo não é desfeito
+            const before = combatantBudget(combatant)
+            const nextNow = body.delta === undefined ? before : applyBudgetDelta(before, body.delta)
+            if (!nextNow) {
+                throw badRequest('Variação inválida: informe Padrão, Bônus, Movimento ou Reação com inteiros de -9 a 9, algum diferente de zero')
+            }
+
+            const perRoundBefore = combatantPerRound(combatant)
+            const nextPerRound = body.perRound === undefined ? perRoundBefore : applyBudgetPatch(perRoundBefore, body.perRound)
+            if (!nextPerRound) {
+                throw badRequest('Ações por rodada inválidas: informe Padrão, Bônus, Movimento ou Reação com inteiros de 0 a 9')
+            }
+
+            combatant.actions = nextNow
+            // Sem mudar nada do padrão (1 de cada) o campo nem é gravado: combatente que o mestre não mexeu continua como sempre
+            const customPerRound = ACTION_SLOTS.some((slot: ActionSlot) => nextPerRound[slot] !== 1)
+            if (customPerRound) combatant.actionsPerRound = nextPerRound
+            else delete combatant.actionsPerRound
+
+            const gained = ACTION_SLOTS
+                .filter((slot: ActionSlot) => nextNow[slot] !== before[slot])
+                .map((slot: ActionSlot) => `${SLOT_LABEL[slot]} ${nextNow[slot] > before[slot] ? '+' : '-'}${Math.abs(nextNow[slot] - before[slot])}`)
+            const perRoundChanged = ACTION_SLOTS.some((slot: ActionSlot) => nextPerRound[slot] !== perRoundBefore[slot])
+            const parts = [
+                gained.length > 0 ? `ações agora: ${gained.join(', ')}` : '',
+                perRoundChanged ? `por rodada: ${describePerRound(nextPerRound) || 'o padrão (1 de cada)'}` : ''
+            ].filter(Boolean)
+
+            combat.logs.push(new CombatLog({
+                round: combat.round,
+                type: 'action',
+                actorId: 'gm',
+                actorName: 'Mestre',
+                targetId: combatant.id,
+                targetName: combatant.name,
+                message: `✏️ O mestre ajustou as ações de **${combatant.name}** (${parts.join('; ') || 'sem mudança'}).`
             }))
 
             break

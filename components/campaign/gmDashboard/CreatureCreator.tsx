@@ -14,11 +14,13 @@ import {
     Pets as PetsIcon,
     Psychology,
     AutoStories,
+    Casino,
     Star
 } from '@mui/icons-material';
 import BasicTab from './creatureCreator/BasicTab';
 import CreatureHeader from './creatureCreator/CreatureHeader';
 import CreatureResourceModals from './creatureCreator/CreatureResourceModals';
+import DicesTab from './creatureCreator/DicesTab';
 import ExpertisesTab from './creatureCreator/ExpertisesTab';
 import SkillsTab from './creatureCreator/SkillsTab';
 import SpellsTab from './creatureCreator/SpellsTab';
@@ -59,6 +61,7 @@ export default function CreatureCreator({ open, onClose, onSave, editingCreature
                 <Tab label="Habilidades" icon={<Psychology />} iconPosition="start" />
                 <Tab label="Magias" icon={<AutoStories />} iconPosition="start" />
                 <Tab label="Perícias" icon={<Star />} iconPosition="start" />
+                <Tab label="Dados" icon={<Casino />} iconPosition="start" />
             </Tabs>
 
             <DialogContent sx={{ minHeight: 440 }}>
@@ -120,6 +123,17 @@ export default function CreatureCreator({ open, onClose, onSave, editingCreature
                         filteredExpertiseDefs={creator.filteredExpertiseDefs}
                         clearExpertises={creator.clearExpertises}
                         updateExpertise={creator.updateExpertise}
+                    />
+                )}
+
+                {/* ── Tab: Dados ── */}
+                {activeTab === 4 && (
+                    <DicesTab
+                        creatureData={creatureData}
+                        isReadOnly={isReadOnly}
+                        attrDefs={creator.attrDefs}
+                        expertiseDefs={creator.expertiseDefs}
+                        setDices={creator.setDices}
                     />
                 )}
             </DialogContent>

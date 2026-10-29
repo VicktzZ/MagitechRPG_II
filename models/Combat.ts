@@ -92,6 +92,13 @@ export class Combatant {
     @IsOptional()
         actions?: ActionBudget;
 
+    /**
+     * Quantas ações de cada tipo o combatente recupera a cada rodada. Sem o campo, 1 de cada. O mestre dá mais (até 9) a um jogador ou a uma criatura e elas voltam
+     * toda rodada até ele mudar (`adjust_actions`); `actions` guarda o que resta agora. Ver utils/combat/actionBudgets.ts.
+     */
+    @IsOptional()
+        actionsPerRound?: ActionBudget;
+
     /** Usos das habilidades ativadas **neste combate**, por chave de armazenamento (ver `utils/combat/passives/abilities.ts`); recomeça a cada combate */
     @IsOptional()
         abilityUses?: Record<string, number>;

@@ -9,6 +9,7 @@ import { Stats } from './Stats'
 import type { Effect } from '@features/pipelines/types/effects'
 import type { Element } from './types/string'
 import type { DamageModifierData } from '../utils/combat/creatureDefense'
+import type { CreatureDice } from '../utils/combat/creatureDice'
 
 export class Creature {
     @IsString() id: string = uuidv4()
@@ -33,6 +34,9 @@ export class Creature {
     @IsArray()
     @IsOptional()
         spells?: Spell[]
+
+    /** Dados customizáveis da criatura ("Mordida: 2d6 + 3"), cadastrados pelo mestre e rolados no chat (ver `utils/combat/creatureDice.ts`) */
+    @IsArray() @IsOptional() dices?: CreatureDice[];
 
     @ValidateNested()
     @Type(() => Attributes)

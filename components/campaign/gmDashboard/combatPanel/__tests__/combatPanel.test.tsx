@@ -34,6 +34,7 @@ const actions: CombatantActions = {
     resetMpLimit: jest.fn(),
     releaseMpLimit: jest.fn(),
     toggleAction: jest.fn(),
+    grantActions: jest.fn(),
     openWindow: jest.fn(),
     rollCreatureExpertise: jest.fn(),
     togglingAction: false,

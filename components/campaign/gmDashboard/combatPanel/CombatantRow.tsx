@@ -10,7 +10,7 @@ import { alpha, Avatar, Box, Button, Chip, Collapse, IconButton, Tooltip, Typogr
 import type { Combatant, Creature } from '@models';
 import { color, font } from '@themes/tokens';
 import type { MpLimitView } from '@utils/combat/combatPanel';
-import { combatantBudget } from '@utils/combat/actionBudgets';
+import { combatantBudget, combatantPerRound } from '@utils/combat/actionBudgets';
 import { initialsOf } from '@utils/combat/turnOrder';
 import type { CombatantVitals } from '@utils/combatantVitals';
 import { useState, type ReactElement } from 'react';
@@ -144,7 +144,14 @@ export default function CombatantRow({ combatant, phase, current, vitals, mp, cr
             )}
 
             {phase === 'ACTION' && (
-                <ActionPips budget={combatantBudget(combatant)} busy={actions.togglingAction} onSelect={(slot, available) => { void actions.toggleAction(combatant.id, slot, available); }} />
+                <ActionPips
+                    budget={combatantBudget(combatant)}
+                    perRound={combatantPerRound(combatant)}
+                    busy={actions.togglingAction}
+                    onSelect={(slot, available) => { void actions.toggleAction(combatant.id, slot, available); }}
+                    onGrant={() => { actions.grantActions(combatant); }}
+                    ownerName={combatant.name}
+                />
             )}
 
             {hasEffects && <EffectBadges effects={combatant.effects ?? []} canRemove onRemove={(id) => { void actions.removeEffect(combatant.id, id); }} />}

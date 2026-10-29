@@ -177,6 +177,21 @@ class CampaignService extends Service<Campaign, 'code' | 'userId'> {
         })).data
     }
 
+    /**
+     * Mestre dá (ou tira) ações a um combatente: `delta` soma às ações de agora ({ padrao: 1 } dá uma Padrão extra, { movimento: -1 } tira uma de Movimento; sempre de 0 a 9) e
+     * `perRound` muda quantas ele recupera a cada rodada ({ padrao: 2 }). O servidor soma a variação ao que o combatente tem, então um gasto simultâneo não se perde.
+     */
+    async adjustCombatActions(campaignId: string, payload: {
+        combatantId: string;
+        delta?: Partial<Record<'padrao' | 'bonus' | 'movimento' | 'reacao', number>>;
+        perRound?: Partial<Record<'padrao' | 'bonus' | 'movimento' | 'reacao', number>>;
+    }) {
+        return (await this.post({
+            param: `${campaignId}/combat`,
+            body: { action: 'adjust_actions', ...payload }
+        })).data
+    }
+
     /** Ataque assistido: declara um ataque com alvo (o jogador com o próprio personagem; o mestre com qualquer um). O mestre resolve depois */
     async declareAttack(campaignId: string, payload: { combatantId: string; targetId: string; attack: Record<string, unknown>; damage?: number; opportunityId?: string; targetIds?: string[] }) {
         return (await this.post({ param: `${campaignId}/combat`, body: { action: 'declare_attack', ...payload } })).data

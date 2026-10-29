@@ -5,7 +5,9 @@ import { Avatar, Box, Button, Chip, Divider, Stack, Typography, alpha } from '@m
 import { color, font } from '@themes/tokens';
 import type { ReactElement, ReactNode } from 'react';
 import StatMeter from '../../StatMeter';
+import type { CreatureDice } from '@utils/combat/creatureDice';
 import type { CreatureCard } from './creatureCard';
+import CreatureDiceList from './CreatureDiceList';
 
 function Heading({ children }: { children: ReactNode }): ReactElement {
     return (
@@ -17,6 +19,8 @@ function Heading({ children }: { children: ReactNode }): ReactElement {
 
 interface CreatureViewProps {
     creature: CreatureCard;
+    /** O mestre rola um dado customizado da criatura (o resultado vai ao chat); sem isso a lista de dados é só de leitura */
+    onRollDice?: (dice: CreatureDice) => void;
     onEdit: () => void;
     onDelete: () => void;
 }
@@ -25,7 +29,7 @@ interface CreatureViewProps {
  * Ficha de uma criatura personalizada para o mestre, só leitura: quem é, vida e mana base, atributos, perícias,
  * habilidades e magias. Editar abre o editor de criatura; excluir pede confirmação.
  */
-export function CreatureView({ creature, onEdit, onDelete }: CreatureViewProps): ReactElement {
+export function CreatureView({ creature, onRollDice, onEdit, onDelete }: CreatureViewProps): ReactElement {
     return (
         <Stack spacing={2.5}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
@@ -168,6 +172,13 @@ export function CreatureView({ creature, onEdit, onDelete }: CreatureViewProps):
                     </Stack>
                 )}
             </Box>
+
+            {creature.dices.length > 0 && (
+                <Box>
+                    <Heading>Dados ({creature.dices.length})</Heading>
+                    <CreatureDiceList dices={creature.dices} onRoll={onRollDice} />
+                </Box>
+            )}
 
             <Divider />
 

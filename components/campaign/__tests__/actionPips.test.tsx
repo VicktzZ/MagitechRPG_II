@@ -51,4 +51,20 @@ describe('ActionPips', () => {
 
         expect(pip(html, 'padrao')).toContain('disabled');
     });
+
+    it('mostra o botão de dar ações só quando o mestre passa onGrant, com o nome de quem recebe', () => {
+        expect(render({ budget })).not.toContain('action-pips-grant');
+
+        const html = render({ budget, onGrant: () => undefined, ownerName: 'Goblin' });
+        expect(html).toContain('data-testid="action-pips-grant"');
+        expect(html).toContain('aria-label="Dar ou tirar ações de Goblin"');
+    });
+
+    it('diz quantas ações ele recupera por rodada só quando foge do padrão de 1 de cada', () => {
+        expect(render({ budget, perRound: { padrao: 1, bonus: 1, movimento: 1, reacao: 1 } })).not.toContain('action-pips-per-round');
+
+        const html = render({ budget, perRound: { padrao: 2, bonus: 1, movimento: 3, reacao: 1 } });
+        expect(html).toContain('data-testid="action-pips-per-round"');
+        expect(html).toContain('Padrão 2, Movimento 3');
+    });
 });

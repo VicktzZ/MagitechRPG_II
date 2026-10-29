@@ -1,8 +1,9 @@
 'use client';
 
-import { Box, ButtonBase, Typography } from '@mui/material';
+import { AddCircleOutline } from '@mui/icons-material';
+import { Box, ButtonBase, IconButton, Tooltip, Typography } from '@mui/material';
 import { ACTION_SLOTS, type ActionBudget, type ActionSlot } from '@utils/combat/engine/actionBudget';
-import { SLOT_LABEL } from '@utils/combat/actionBudgets';
+import { describePerRound, SLOT_LABEL } from '@utils/combat/actionBudgets';
 
 interface ActionPipsProps {
     budget: ActionBudget;
@@ -12,10 +13,18 @@ interface ActionPipsProps {
     disableSpent?: boolean;
     /** Esperando o servidor: nada é clicável */
     busy?: boolean;
+    /** Quantas ações de cada tipo ele recupera por rodada; quando difere do padrão (1 de cada) uma linha embaixo diz */
+    perRound?: ActionBudget;
+    /** O mestre dá ou tira ações (abre o diálogo "Dar ações"); sem isso não há o botão */
+    onGrant?: () => void;
+    /** De quem são as ações, para o rótulo acessível do botão de dar ações */
+    ownerName?: string;
 }
 
 /** Quatro marcadores por rodada: Padrão, Bônus, Movimento e Reação. Cheio = disponível; vazado = gasto; mais de uma ação mostra a quantidade */
-export default function ActionPips({ budget, onSelect, disableSpent = false, busy = false }: ActionPipsProps) {
+export default function ActionPips({ budget, onSelect, disableSpent = false, busy = false, perRound, onGrant, ownerName }: ActionPipsProps) {
+    const perRoundText = perRound ? describePerRound(perRound) : '';
+
     return (
         <Box role="group" aria-label="Ações da rodada" sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap' }}>
             {ACTION_SLOTS.map(slot => {
@@ -65,6 +74,26 @@ export default function ActionPips({ budget, onSelect, disableSpent = false, bus
                     </ButtonBase>
                 );
             })}
+            {onGrant && (
+                <Tooltip title="Dar ou tirar ações">
+                    <span>
+                        <IconButton
+                            size="small"
+                            onClick={onGrant}
+                            disabled={busy}
+                            aria-label={ownerName ? `Dar ou tirar ações de ${ownerName}` : 'Dar ou tirar ações'}
+                            data-testid="action-pips-grant"
+                        >
+                            <AddCircleOutline fontSize="small" />
+                        </IconButton>
+                    </span>
+                </Tooltip>
+            )}
+            {perRoundText && (
+                <Typography data-testid="action-pips-per-round" sx={{ flexBasis: '100%', fontSize: 12, color: 'text.secondary' }}>
+                    Por rodada: <Box component="span" sx={{ color: 'text.primary' }}>{perRoundText}</Box>
+                </Typography>
+            )}
         </Box>
     );
 }
