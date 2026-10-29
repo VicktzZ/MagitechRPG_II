@@ -142,6 +142,41 @@ server.registerTool(
 )
 
 server.registerTool(
+    'update_creature',
+    {
+        description:
+            'Atualiza campos de uma criatura customizada já existente numa campanha (ex.: troncar spells/skills, ajustar stats). Só os campos enviados são sobrescritos; o resto é mantido.',
+        inputSchema: {
+            campaignId: z.string(),
+            id: z.string().describe('id da criatura (retornado por create_creature ou pela listagem)'),
+            name: z.string().optional(),
+            description: z.string().optional(),
+            type: z.string().optional(),
+            imageUrl: z.string().optional(),
+            level: z.number().optional(),
+            attributes: z.record(z.number()).optional(),
+            stats: z
+                .object({
+                    lp: z.number().optional(),
+                    maxLp: z.number().optional(),
+                    mp: z.number().optional(),
+                    maxMp: z.number().optional(),
+                    ap: z.number().optional()
+                })
+                .optional(),
+            expertises: z.record(z.any()).optional(),
+            skills: z.array(z.any()).optional(),
+            spells: z.array(z.any()).optional()
+        }
+    },
+    async ({ campaignId, ...body }) =>
+        callApi(`/api/campaign/${encodeURIComponent(campaignId)}/custom/creatures`, {
+            method: 'PUT',
+            body: JSON.stringify(body)
+        })
+)
+
+server.registerTool(
     'create_character',
     {
         description:
