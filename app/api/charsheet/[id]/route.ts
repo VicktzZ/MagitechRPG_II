@@ -69,7 +69,7 @@ export async function DELETE(_req: Request, { params: { id } }: { params: id }):
 }
 
 /** Chaves que o corpo do PATCH nunca grava: identidade, dono, data de criação e o que a campanha escreve em `session` */
-const PROTECTED_KEYS = [ 'id', 'userId', 'createdAt', 'updatedAt', 'session' ];
+const PROTECTED_KEYS = [ 'id', 'userId', 'createdAt', 'updatedAt', 'session', 'abilityUses' ];
 
 /**
  * Atualização parcial da ficha: grava só as chaves de topo que vieram no corpo.

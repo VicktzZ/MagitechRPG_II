@@ -5,6 +5,8 @@ import { spellStageLabel, type SpellStage } from '@utils/spellStages';
 import { spellCastDifficulty } from '@utils/spellDifficulty';
 import { buildActionRollText } from './actionRollMessage';
 import type { HitTestResult } from './hitTest';
+import { rollExtraDice } from './passives/roller';
+import { firstDie, isDurationExpression, rollSpecs, sumSegments, type ExtraSegment, type ExtraSpec, type SpellCostAdjustment } from './passives/rolls';
 
 export interface SpellRollSegment {
     notation: string;
@@ -18,6 +20,8 @@ export interface SpellEffectResult {
     stage: SpellStage;
     segments: SpellRollSegment[];
     totalDamage: number;
+    /** Os acréscimos das passivas e das habilidades ativadas ao dano ou à cura (já dentro de `segments` e `totalDamage`) */
+    extras?: ExtraSegment[];
 }
 
 const DICE_REGEX = /(\d+d\d+(?:\s*[+-]\s*\d+)?)/gi;
@@ -39,9 +43,17 @@ export function extractDiceExpressions(text: string): string[] {
 
 const stageText = (spell: SpellDTO, stage: SpellStage): string => spell.stages?.[Math.max(0, Math.min(2, stage - 1))] ?? '';
 
-/** Custo total de MP de conjurar a magia neste estagio (base + extra do estagio) */
-export function getSpellMpCost(spell: SpellDTO, stage: SpellStage): number {
-    return calculateTotalManaCost(Number(spell.mpCost) || 0, Number(spell.level) || 1, stage - 1, spell.mpCostIncrease);
+/**
+ * Custo total de MP de conjurar a magia neste estagio (base + extra do estagio). `adjustment` são as passivas que mexem no custo (Magismo Total: −1 MP e o estágio Maestria do
+ * nível 4 sem o MP extra, ou seja, custa o mesmo que o estágio anterior); o custo nunca fica abaixo de zero.
+ */
+export function getSpellMpCost(spell: SpellDTO, stage: SpellStage, adjustment?: Pick<SpellCostAdjustment, 'delta' | 'freeMasteryExtra'>): number {
+    const base = Number(spell.mpCost) || 0;
+    const level = Number(spell.level) || 1;
+    const masteryStage = level === 4 && stage === 3;
+    const costStage = adjustment?.freeMasteryExtra && masteryStage ? 2 : stage;
+    const cost = calculateTotalManaCost(base, level, costStage - 1, spell.mpCostIncrease);
+    return Math.max(0, cost + (adjustment?.delta ?? 0));
 }
 
 /** Se o texto do estagio tem dados a rolar ao efetuar a magia; sem eles conjurar basta */
@@ -52,12 +64,16 @@ export function hasSpellEffectDice(spell: SpellDTO, stage: SpellStage): boolean 
 /**
  * Efetua a magia: extrai e rola todas as expressoes de dados encontradas no texto do estagio
  * (dano, cura, duracao em turnos...). O custo de MP e o teste de magia ja foram feitos ao conjurar.
+ * `extras` são os acréscimos das passivas e das habilidades ativadas (Feitiçaria +1, Manipulação Elemental +1d8...): entram no dano ou na cura, nunca numa duração, e viram
+ * segmentos à parte no cartão, com a origem no nome. Sem dado de dano ou cura no estágio não há acréscimo.
  */
-export function rollSpellEffect(spell: SpellDTO, stage: SpellStage): SpellEffectResult {
+export function rollSpellEffect(spell: SpellDTO, stage: SpellStage, extras: readonly ExtraSpec[] = []): SpellEffectResult {
     const segments: SpellRollSegment[] = [];
     let totalDamage = 0;
+    let die: { sides: number } | null = null;
+    const text = stageText(spell, stage);
 
-    for (const expr of extractDiceExpressions(stageText(spell, stage))) {
+    for (const expr of extractDiceExpressions(text)) {
         const result = rollDice(expr);
         if (!result || result.error) continue;
         segments.push({
@@ -66,6 +82,15 @@ export function rollSpellEffect(spell: SpellDTO, stage: SpellStage): SpellEffect
             display: result.display ?? `[${result.rolls.join(', ')}]`
         });
         totalDamage += result.total;
+        if (!die && !isDurationExpression(text, expr)) die = firstDie(expr);
+    }
+
+    // Os acréscimos valem só se o estágio tem dado de dano ou cura (a duração em turnos não recebe nada)
+    if (die && extras.length > 0) {
+        const added = rollSpecs(extras, rollExtraDice, die);
+        for (const { notation, display, total } of added) segments.push({ notation, display, total });
+        totalDamage += sumSegments(added);
+        return { spell, stage, segments, totalDamage, extras: added };
     }
 
     return { spell, stage, segments, totalDamage };

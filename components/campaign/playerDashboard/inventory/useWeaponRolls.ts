@@ -14,10 +14,12 @@ import {
 import { combatantAttackDice } from '@utils/combat/environment';
 import { isCombatantStealthy } from '@utils/combat/stealth';
 import { isOpportunityWeapon, OPPORTUNITY_WEAPON_HELP } from '@utils/combat/opportunities';
+import { effectDamageSpecs, effectHitBonus, weaponDamageSpecs } from '@utils/combat/passives';
 import { useSession } from 'next-auth/react';
 import { useSnackbar } from 'notistack';
 import type { MouseEvent as ReactMouseEvent } from 'react';
 import { useAttackTargeting } from '../attacks/useAttackTargeting';
+import { usePassives } from '../passives/usePassives';
 
 /**
  * Rolagens de acerto e dano das armas do inventário, enviadas ao chat da sessão: o acerto como log de combate e o dano
@@ -32,6 +34,8 @@ export function useWeaponRolls() {
     const { handleSendMessage, setIsChatOpen, isChatOpen } = useChatContext();
     // Ataque assistido: em combate, na fase de ação, o acerto e o dano da arma vão ao mestre (alvo escolhido no inventário)
     const { targeting, declare, attachDamage } = useAttackTargeting();
+    // Passivas de classe e subclasse: somam ao acerto e ao dano (Armado, Bom de Briga, Sempre Distante...) e as habilidades ativadas também (Ritmo da Batalha, Postura do Lobo...)
+    const { passives, myEffects, contextFor } = usePassives();
 
     const sendCombatChatMessage = async (text: string, type: MessageType = MessageType.COMBAT_LOG) => {
         if (!session?.user) return;
@@ -60,7 +64,7 @@ export function useWeaponRolls() {
         // Os efeitos aplicados (Cegueira, Precisão...) e a luz da cena (penumbra, escuridão, conforme a visão dele) somam vantagens e desvantagens de ataque;
         // o chat e o mestre sabem de onde vêm
         const effects = combatantAttackDice(campaign?.session?.combat, charsheet?.id);
-        const hit = rollWeaponHit(weapon, charsheet, { stealth: isCombatantStealthy(campaign?.session?.combat, charsheet?.id), effects });
+        const hit = rollWeaponHit(weapon, charsheet, { stealth: isCombatantStealthy(campaign?.session?.combat, charsheet?.id), effects, flatBonus: effectHitBonus(myEffects) });
         const playerName = charsheet?.name || session?.user?.name || 'Jogador';
         await sendCombatChatMessage(buildHitMessageText(playerName, weapon, hit));
 
@@ -93,7 +97,9 @@ export function useWeaponRolls() {
 
     const handleWeaponDamage = async (weapon: Weapon, isCritical: boolean, e: ReactMouseEvent) => {
         e.stopPropagation();
-        const result = rollWeaponDamage(weapon, isCritical, { stealth: isCombatantStealthy(campaign?.session?.combat, charsheet?.id) });
+        const context = contextFor(targeting.targetId);
+        const extras = [ ...weaponDamageSpecs(passives, context, weapon), ...effectDamageSpecs(myEffects, context, 'weapon', weapon) ];
+        const result = rollWeaponDamage(weapon, isCritical, { stealth: isCombatantStealthy(campaign?.session?.combat, charsheet?.id), extras });
         const playerName = charsheet?.name || session?.user?.name || 'Jogador';
         if (!result) {
             await sendCombatChatMessage(buildDamageErrorText(weapon, isCritical));

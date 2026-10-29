@@ -12,13 +12,13 @@ import { executionSlot } from '@utils/combat/engine/actionBudget';
 import { rollSpellTest } from '@utils/combat/hitTest';
 import { blockReason, combatantActionBlocks, isBlocked } from '@utils/combat/actionFlags';
 import { combatantAttackDice } from '@utils/combat/environment';
+import { effectDamageSpecs, effectHitBonus, spellEffectSpecs, spellHitExtras } from '@utils/combat/passives';
 import { isOpportunitySpell, OPPORTUNITY_SPELL_HELP } from '@utils/combat/opportunities';
 import {
     buildSpellCastMessage,
     buildSpellEffectMessage,
     buildInsufficientMpMessage,
     buildMpLimitExceededMessage,
-    getSpellMpCost,
     hasSpellEffectDice,
     rollSpellEffect
 } from '@utils/combat/spellRoller';
@@ -31,6 +31,7 @@ import { useSession } from 'next-auth/react';
 import { useSnackbar } from 'notistack';
 import { useState } from 'react';
 import { isAttackSpell, useSpellAttack, type SpellAttackApi } from '../attacks/useSpellAttack';
+import { usePassives } from '../passives/usePassives';
 
 export interface SpellCasting {
     /** Ataque assistido das magias: o alvo é o do painel inteiro (seção "Ações") */
@@ -49,6 +50,8 @@ export interface SpellCasting {
     /** Magias sustentadas que ele mantém agora: id da magia → estágio conjurado */
     sustainedActive: Record<string, SpellStage>;
     exceedsMpLimit: (cost: number) => boolean;
+    /** O custo de MP do estágio com as passivas (Magismo Total): é o que se cobra ao conjurar e o que as telas mostram */
+    spellCost: (spell: SpellDTO, stage: SpellStage) => number;
     /** Desbloqueio de estágios vale para esta ficha (`usesStageUnlock`) */
     stageRule: boolean;
     castSpell: (spell: SpellDTO, stage: SpellStage) => Promise<void>;
@@ -68,6 +71,8 @@ export function useSpellCastingState(): SpellCasting {
     const { enqueueSnackbar } = useSnackbar();
     // Ataque assistido: em combate, na fase de ação, a magia de ataque conjurada com sucesso vai ao mestre para o alvo escolhido
     const spellAttack = useSpellAttack();
+    // Passivas de classe e subclasse: custo de MP, teste de magia e dano ou cura do efeito
+    const { passives, myEffects, contextFor, spellCost } = usePassives();
 
     const [ castingSpellId, setCastingSpellId ] = useState<string | null>(null)
     const [ effectingSpellId, setEffectingSpellId ] = useState<string | null>(null)
@@ -133,7 +138,7 @@ export function useSpellCastingState(): SpellCasting {
             return;
         }
 
-        const mpCost = getSpellMpCost(spell, stage);
+        const mpCost = spellCost(spell, stage);
         const playerName = charsheet.name || session?.user?.name || 'Jogador';
         const currentMp = Number(charsheet.stats?.mp ?? 0);
 
@@ -165,8 +170,17 @@ export function useSpellCastingState(): SpellCasting {
 
             // Conjurar = teste de magia do jogador contra a DT do nível e do estágio; o MP é gasto de qualquer jeito
             // Os efeitos de ataque (Cegueira, Precisão...) e a luz da cena valem para o teste das magias de ataque, que é o acerto delas; cura, defesa e controle não atacam
-            const effects = isAttackSpell(spell) ? combatantAttackDice(combat, charsheet.id) : undefined;
-            const test = rollSpellTest(charsheet, { extraDice: effects?.advantages, lessDice: effects?.disadvantages, notes: effects?.notes });
+            const attacking = isAttackSpell(spell);
+            const effects = attacking ? combatantAttackDice(combat, charsheet.id) : undefined;
+            // Passivas (Não-Elementalista +1d20, Domínio Elemental +2) e habilidades ativadas (Ritmo da Batalha +2 no acerto das magias de ataque) somam ao teste
+            const fromPassives = spellHitExtras(passives, contextFor(), spell);
+            const fromAbilities = attacking ? effectHitBonus(myEffects) : { flat: 0, notes: [] as string[] };
+            const test = rollSpellTest(charsheet, {
+                extraDice: (effects?.advantages ?? 0) + fromPassives.advantages,
+                lessDice: effects?.disadvantages,
+                notes: [ ...(effects?.notes ?? []), ...fromPassives.notes, ...fromAbilities.notes ],
+                flatBonus: fromPassives.flat + fromAbilities.flat
+            });
             const succeeded = spellCastSucceeded(test.total, spellCastDifficulty(spell.level, stage));
             // Só uma conjuração com sucesso deixa efetuar a magia; o botão já está lá quando o cartão aparece no chat
             if (succeeded && hasSpellEffectDice(spell, stage)) markPending(spellKey, stage);
@@ -257,7 +271,9 @@ export function useSpellCastingState(): SpellCasting {
 
         try {
             setEffectingSpellId(spellKey);
-            const effect = rollSpellEffect(spell, stage);
+            // Passivas (Feitiçaria, Magia Resiliente, Manipulação Elemental...) e habilidades ativadas (Trilha da Fortuna) somam ao dano ou à cura do estágio
+            const context = contextFor(spellAttack.targeting.targetId);
+            const effect = rollSpellEffect(spell, stage, [ ...spellEffectSpecs(passives, context, spell), ...effectDamageSpecs(myEffects, context, 'spell') ]);
             // O botão "Efetuar" permanece depois de apertado (decisão do dono): só sai ao descartar a conjuração (X) ou quando uma nova conjuração da magia o troca
             await sendCombatChatMessage(buildSpellEffectMessage(playerName, effect), MessageType.DICE);
             // O dano rolado se junta ao ataque que a conjuração declarou ao mestre (se houve alvo)
@@ -283,6 +299,7 @@ export function useSpellCastingState(): SpellCasting {
         mpLimitReleased,
         sustainedActive,
         exceedsMpLimit,
+        spellCost,
         stageRule,
         castSpell,
         endSustained,

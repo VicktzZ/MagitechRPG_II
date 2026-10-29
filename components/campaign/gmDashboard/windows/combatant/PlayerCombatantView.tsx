@@ -16,10 +16,13 @@ import ActionBlocksNotice from '../../../ActionBlocksNotice';
 import ActionPips from '../../../ActionPips';
 import AmbientNotice from '../../../AmbientNotice';
 import EffectStatsNotice from '../../../EffectStatsNotice';
+import { ownedPassives, withPassiveEffects } from '@utils/combat/passives';
+import { hasStealthEffect } from '@utils/combat/stealth';
 import ExpertiseListControls, { ExpertiseNoResults, useExpertiseListState } from '../../../ExpertiseListControls';
 import CreatureExpertiseButton from '../../dashboard/CreatureExpertiseButton';
 import { useCharsheetPointsView } from '../../useCharsheetPointsView';
 import VitalsPanel from '../VitalsPanel';
+import AbilitiesPanel from './AbilitiesPanel';
 import { charsheetVitalRows } from '../vitalRows';
 import { SHEET_WINDOW_KINDS, WINDOW_KIND_LABEL, type SheetWindowKind } from '../windowKinds';
 import type { SummarySheet } from '../SummaryView';
@@ -50,6 +53,8 @@ interface PlayerCombatantViewProps {
     onOpenSection: (kind: SheetWindowKind) => void;
     /** O mestre rola a perícia pelo jogador (resultado no chat) */
     onRollExpertise: (name: string) => void;
+    /** O mestre renova os usos por dia das habilidades do jogador (descanso) */
+    onRest: () => void;
     /** O ambiente da cena (luz e terreno difícil), para os avisos e o deslocamento de agora */
     environment?: CombatEnvironment | null;
 }
@@ -67,7 +72,7 @@ function describeEffect(effect: NonNullable<Combatant['effects']>[number]): stri
  * ações da rodada, o limite de MP por turno, os efeitos aplicados e as perícias, que o mestre rola pelo jogador. A ficha inteira abre pelos atalhos de seção.
  */
 export function PlayerCombatantView({
-    charsheet, combatant, inTurn, imageUrl, metrics, onAdjustVital, onToggleAction, onSetMpSpent, onResetMpLimit, onApplyEffect, onOpenSection, onRollExpertise, environment
+    charsheet, combatant, inTurn, imageUrl, metrics, onAdjustVital, onToggleAction, onSetMpSpent, onResetMpLimit, onApplyEffect, onOpenSection, onRollExpertise, onRest, environment
 }: PlayerCombatantViewProps): ReactElement {
     const view = useCharsheetPointsView(charsheet);
     const list = useExpertiseListState();
@@ -101,7 +106,7 @@ export function PlayerCombatantView({
             <ActionBlocksNotice blocks={actionBlocks(combatant.effects)} who={charsheet.name} />
 
             <EffectStatsNotice
-                effects={combatant.effects}
+                effects={withPassiveEffects(combatant.effects, ownedPassives(charsheet), { sheet: charsheet, stealthy: hasStealthEffect(combatant.effects) })}
                 bases={{ displacement: charsheet.displacement, ap: charsheet.stats?.ap, maxLp: charsheet.stats?.maxLp, maxMp: charsheet.stats?.maxMp }}
                 options={{ difficultTerrain: isInDifficultTerrain(environment ?? undefined, combatant.id) }}
             />
@@ -132,6 +137,8 @@ export function PlayerCombatantView({
                     </Button>
                 </Box>
             )}
+
+            <AbilitiesPanel charsheet={charsheet} combatant={combatant} onRest={onRest} />
 
             <Box>
                 <Heading>Efeitos</Heading>

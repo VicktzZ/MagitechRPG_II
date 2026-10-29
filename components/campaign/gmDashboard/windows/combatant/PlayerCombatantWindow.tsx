@@ -60,6 +60,15 @@ function PlayerCombatantBody({ charsheet, combatantId }: { charsheet: SummaryShe
         }
     };
 
+    const restPlayer = async (): Promise<void> => {
+        try {
+            await campaignService.restPlayers(campaign.id, [ charsheet.id ]);
+            enqueueSnackbar(`Usos por dia de ${charsheet.name} renovados.`, { variant: 'success' });
+        } catch (error) {
+            enqueueSnackbar(errorMessage(error, 'Erro ao renovar os usos por dia'), { variant: 'error' });
+        }
+    };
+
     const rollExpertise = (name: string): void => {
         if (!planFor(name)) {
             enqueueSnackbar(`Não deu para rolar ${name} pela ficha agora.`, { variant: 'warning' });
@@ -88,6 +97,7 @@ function PlayerCombatantBody({ charsheet, combatantId }: { charsheet: SummaryShe
                 onApplyEffect={() => { openEffectFor({ id: combatant.id, name: combatant.name || charsheet.name }); }}
                 onOpenSection={kind => openWindow(kind, charsheet.id)}
                 onRollExpertise={rollExpertise}
+                onRest={() => { void restPlayer(); }}
             />
             {effectDialog}
             {setMpSpentDialog}

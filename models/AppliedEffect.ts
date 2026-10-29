@@ -16,6 +16,14 @@ export interface SustainedSpellInfo {
     upkeep: number
 }
 
+/** Efeito que vem de uma habilidade de classe ou subclasse (ver `utils/combat/passives`): a passiva derivada da ficha ou a habilidade ativada */
+export interface AbilityEffectInfo {
+    /** Chave da habilidade no catálogo (`class:cura interior`) */
+    key: string;
+    /** A variação escolhida, quando a habilidade tem (Postura Bestial) */
+    choiceId?: string;
+}
+
 export class AppliedEffect {
     @IsString() id: string = uuidv4()
 
@@ -59,6 +67,13 @@ export class AppliedEffect {
     /** Presente quando o efeito é uma magia sustentada (não tica; sai ao desconjurar, ao faltar MP ou ao fim do combate) */
     @IsOptional()
         sustained?: SustainedSpellInfo
+
+    /** Presente quando o efeito vem de uma habilidade de classe/subclasse: `passive` é derivado da ficha (nunca é gravado), `ability` é a habilidade ativada pelo jogador */
+    @IsOptional()
+        ability?: AbilityEffectInfo
+
+    @IsOptional()
+        passive?: AbilityEffectInfo
 
     constructor(applied?: Partial<AppliedEffect>) {
         Object.assign(this, applied)

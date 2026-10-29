@@ -28,6 +28,8 @@ export interface RollHitOptions {
     lessDice?: number;
     /** A origem de cada vantagem e desvantagem, só para o texto */
     notes?: string[];
+    /** Valor fixo somado ao teste (passivas e habilidades: Domínio Elemental +2, Ritmo da Batalha +2); a origem vai em `notes` */
+    flatBonus?: number;
 }
 
 export interface ResolvedHitBonus {
@@ -96,7 +98,9 @@ export function rollHitTest(hitAttr: keyof Attributes | undefined, charsheet: Ch
     }
 
     const bestRoll = keptDie(rolls, keep);
-    const { value: bonus, label: bonusLabel } = resolveHitBonus(hitAttr, charsheet);
+    const { value: skillBonus, label: bonusLabel } = resolveHitBonus(hitAttr, charsheet);
+    const flatBonus = Number.isFinite(Number(options.flatBonus)) ? Math.trunc(Number(options.flatBonus)) : 0;
+    const bonus = skillBonus + flatBonus;
     const total = bestRoll + bonus;
 
     return {

@@ -17,6 +17,8 @@ export interface Amount {
 export interface TakenModifier extends Amount {
     kind: 'resistance' | 'vulnerability';
     element?: string;
+    /** Só vale contra esta natureza de ataque (a passiva Imunidade Mágica só vale contra magia); sem isso vale contra qualquer uma */
+    against?: 'fisico' | 'magico' | 'mental';
 }
 
 export interface ModifierSet {
@@ -92,7 +94,15 @@ export function addModifier(set: ModifierSet, modifier: Pick<CombatEffectModifie
         if (amount) {
             const sign = modifier.kind === 'damage_resistance' ? -1 : 1;
             const element = normalize(modifier.element);
-            set.taken.push({ kind: sign === -1 ? 'resistance' : 'vulnerability', ...scale(amount, sign), ...(element ? { element } : {}) });
+            // O `target` do catálogo é texto livre; aqui ele só restringe a natureza do ataque quando é uma das três
+            const against = normalize(modifier.target);
+            const kindOnly = against === 'fisico' || against === 'magico' || against === 'mental' ? against : undefined;
+            set.taken.push({
+                kind: sign === -1 ? 'resistance' : 'vulnerability',
+                ...scale(amount, sign),
+                ...(element ? { element } : {}),
+                ...(kindOnly ? { against: kindOnly } : {})
+            });
         }
         break;
     case 'stat_bonus':

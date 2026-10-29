@@ -92,6 +92,10 @@ export class Combatant {
     @IsOptional()
         actions?: ActionBudget;
 
+    /** Usos das habilidades ativadas **neste combate**, por chave de armazenamento (ver `utils/combat/passives/abilities.ts`); recomeça a cada combate */
+    @IsOptional()
+        abilityUses?: Record<string, number>;
+
     @ValidateNested({ each: true })
     @Type(() => AppliedEffect)
     @IsArray()

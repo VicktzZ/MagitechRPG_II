@@ -1,6 +1,7 @@
 import type { Item, Weapon } from '@models';
 import type { SpellDTO } from '@models/dtos';
 import { freshBudget } from '../engine/actionBudget';
+import { findPassive } from '../passives/catalog';
 import {
     buildActionTiles,
     classifyItem,
@@ -201,5 +202,30 @@ describe('isTileSpent', () => {
     it('com ações extras (passivas) o quadrado só apaga quando acabam todas; sem ação reconhecida nunca apaga', () => {
         expect(isTileSpent(tile('Padrão'), { ...freshBudget(), padrao: 1 })).toBe(false);
         expect(isTileSpent({ execution: null }, { padrao: 0, bonus: 0, movimento: 0, reacao: 0 })).toBe(false);
+    });
+});
+
+describe('quadrados das habilidades ativadas', () => {
+    const abilities = [ 'Cura Interior', 'Postura Defensiva', 'Avatar da Destruição' ].map(name => findPassive(name === 'Cura Interior' ? 'class' : 'subclass', name)!);
+
+    it('cada habilidade ativada vira um quadrado: a que cura em Cura, as outras em Outros, com a ação dela', () => {
+        const tiles = buildActionTiles({ weapons: [], spells: [], items: [], abilities, abilityDetail: ability => ability.name.length > 15 ? 'longa' : 'curta' });
+
+        expect(tiles.map(tile => [ tile.name, tile.kind, tile.category, tile.execution, tile.detail ])).toEqual([
+            [ 'Cura Interior', 'ability', 'heal', 'Bônus', 'curta' ],
+            [ 'Postura Defensiva', 'ability', 'other', 'Bônus', 'longa' ],
+            [ 'Avatar da Destruição', 'ability', 'other', 'Completa', 'longa' ]
+        ]);
+        expect(countByExecution(tiles)).toMatchObject({ 'Bônus': 2, 'Completa': 1, 'Padrão': 0 });
+    });
+
+    it('passiva automática não vira quadrado, e a ação gasta apaga o quadrado como nos outros', () => {
+        const tiles = buildActionTiles({ weapons: [], spells: [], items: [], abilities: [ findPassive('class', 'Armado')!, ...abilities ] });
+        expect(tiles).toHaveLength(3);
+
+        const bonus = tiles.find(tile => tile.name === 'Cura Interior')!;
+        expect(isTileSpent(bonus, { ...freshBudget(), bonus: 0 })).toBe(true);
+        const complete = tiles.find(tile => tile.name === 'Avatar da Destruição')!;
+        expect(isTileSpent(complete, { ...freshBudget(), movimento: 0 })).toBe(true);
     });
 });

@@ -243,8 +243,8 @@ describe('mensagens reais de magia e arma', () => {
     });
 
     it('dano da arma: normal e crítico', () => {
-        const normal = parseActionRoll(buildDamageMessageText('Aria', weapon(), { notation: '2d6+2', display: '[3, 4] + 2', total: 9, isCritical: false }));
-        const critical = parseActionRoll(buildDamageMessageText('Aria', weapon(), { notation: '4d6+2', display: '[3, 4, 1, 6] + 2', total: 16, isCritical: true }));
+        const normal = parseActionRoll(buildDamageMessageText('Aria', weapon(), { notation: '2d6+2', display: '[3, 4] + 2', total: 9, rolled: 9, extras: [], isCritical: false }));
+        const critical = parseActionRoll(buildDamageMessageText('Aria', weapon(), { notation: '4d6+2', display: '[3, 4, 1, 6] + 2', total: 16, rolled: 16, extras: [], isCritical: true }));
 
         expect(normal).toMatchObject({ kind: 'arma', title: 'Pistola', detail: 'Dano · Perfurante', critical: false, total: 9, cost: null, dt: null });
         expect(critical).toMatchObject({ critical: true, detail: 'Dano crítico · Perfurante', total: 16 });
@@ -253,7 +253,7 @@ describe('mensagens reais de magia e arma', () => {
 
     it('arma sem tipo de efeito: o detalhe é só "Dano"', () => {
         const parsed = parseActionRoll(buildDamageMessageText('Aria', weapon({ effect: { value: '1d4', critValue: '2d4' } }), {
-            notation: '1d4', display: '[2]', total: 2, isCritical: false
+            notation: '1d4', display: '[2]', total: 2, rolled: 2, extras: [], isCritical: false
         }));
         expect(parsed?.detail).toBe('Dano');
     });

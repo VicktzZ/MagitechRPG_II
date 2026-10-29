@@ -28,6 +28,8 @@ import {
 import { color } from '@themes/tokens';
 import { useState, type ReactElement } from 'react';
 import type { Skill } from '@models';
+import { findPassive, type PassiveDef, type PassiveSource } from '@utils/combat/passives';
+import { normalizeToArray } from '@utils/normalizeToArray';
 
 interface SkillFilterChipProps {
     label: string;
@@ -76,6 +78,20 @@ function SkillFilterChip({ label, type, selected, onClick }: SkillFilterChipProp
             }}
         />
     );
+}
+
+/** Como o app trata a habilidade de classe ou subclasse (ver `utils/combat/passives`) */
+const MODE_LABEL: Record<PassiveDef['mode'], { label: string; hint: string }> = {
+    automatica: { label: 'Automática', hint: 'O app aplica sozinho nas rolagens e no combate.' },
+    ativada: { label: 'Ativada', hint: 'Aparece como quadrado na seção Ações, em combate: o app gasta o MP e a ação e conta os usos.' },
+    texto: { label: 'Só texto', hint: 'O app só mostra a descrição; quem aplica é o mestre.' }
+};
+
+/** A habilidade está na lista de classe ou de subclasse da ficha (as outras, como linhagem e bônus, não são passivas de combate) */
+function skillSource(skills: { class?: unknown; subclass?: unknown } | undefined, name: string): PassiveSource | null {
+    if (normalizeToArray<{ name?: string }>(skills?.class).some(skill => skill?.name === name)) return 'class';
+    if (normalizeToArray<{ name?: string }>(skills?.subclass).some(skill => skill?.name === name)) return 'subclass';
+    return null;
 }
 
 interface SkillsSectionProps {
@@ -266,6 +282,26 @@ export default function SkillsSection({ selectedSkillType, setSelectedSkillType 
                                             }}
                                         >
                                             <Stack spacing={2}>
+                                                {/* Como o app trata a habilidade (classe e subclasse) */}
+                                                {(() => {
+                                                    const source = charsheet.systemId ? null : skillSource(charsheet.skills, skill.name);
+                                                    if (!source) return null;
+                                                    const def = findPassive(source, skill.name);
+                                                    const mode = MODE_LABEL[def?.mode ?? 'texto'];
+                                                    return (
+                                                        <Box>
+                                                            <Tooltip title={mode.hint}>
+                                                                <Chip size="small" variant="outlined" label={mode.label} data-testid="skill-mode" sx={{ fontWeight: 600 }} />
+                                                            </Tooltip>
+                                                            {def?.pending && (
+                                                                <Typography variant="caption" component="p" sx={{ color: 'text.secondary', mt: 0.75 }}>
+                                                                    Fora do automático: {def.pending}
+                                                                </Typography>
+                                                            )}
+                                                        </Box>
+                                                    );
+                                                })()}
+
                                                 {/* Header da Habilidade */}
                                                 <Box display="flex" alignItems="center" justifyContent="space-between">
                                                     <Typography 

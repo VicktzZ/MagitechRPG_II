@@ -18,6 +18,7 @@ jest.mock('@enums', () => ({ MessageType: { TEXT: 'text', DICE: 'dice', COMBAT_L
 jest.mock('../../inventory/useWeaponRolls', () => ({ useWeaponRolls: () => mockWeaponRolls() }));
 jest.mock('../../spells/SpellCastingContext', () => ({ useSpellCasting: () => mockCasting() }));
 jest.mock('../useItemUse', () => ({ useItemUse: () => ({ activateItem: jest.fn() }) }));
+jest.mock('../useAbilityUse', () => ({ useAbilityUse: () => ({ busyKey: null, activateAbility: jest.fn() }) }));
 
 const render = (element: ReactElement): string => renderToStaticMarkup(<ThemeProvider theme={theme}>{element}</ThemeProvider>).replace(/<style[\s\S]*?<\/style>/g, '');
 
@@ -62,6 +63,7 @@ const setup = (options: { combat?: Record<string, unknown> | null; me?: Record<s
     mockWeaponRolls.mockReturnValue({ handleWeaponHit: jest.fn(), handleWeaponDamage: jest.fn(), targeting });
     mockCasting.mockReturnValue({
         stageRule: false, sustainedActive: {}, pendingEffects: {}, castingSpellId: null, effectingSpellId: null,
+        spellCost: (candidate: { mpCost?: unknown }) => Number(candidate.mpCost) || 0,
         castSpell: jest.fn(), endSustained: jest.fn(), effectSpell: jest.fn()
     });
 };
@@ -169,5 +171,67 @@ describe('ActionsSection', () => {
 
         setup({ combat: { currentTurnIndex: 1 } });
         expect(render(<ActionsSection />)).not.toContain('Sua vez');
+    });
+
+    describe('habilidades ativadas de classe e subclasse', () => {
+        const withAbilities = (mp = 30, extra: Record<string, unknown> = {}) => ({
+            skills: { class: [ { name: 'Cura Interior' }, { name: 'Armado' } ], subclass: [ { name: 'Postura Defensiva' }, { name: 'Forma Primordial' } ] },
+            stats: { mp },
+            ...extra
+        });
+
+        it('vira quadrado: a que cura em Cura, as outras em Outros; passiva automática e texto não viram quadrado', () => {
+            setup({ sheetPatch: withAbilities() });
+            const html = render(<ActionsSection />);
+
+            expect(tilesOf(html, 'heal').map(([ name ]) => name)).toEqual([ 'Cura Leve', 'Poção de Cura', 'Cura Interior' ]);
+            expect(tilesOf(html, 'other').map(([ name ]) => name)).toEqual([ 'Escudo', 'Corda', 'Postura Defensiva', 'Forma Primordial' ]);
+            expect(html).not.toContain('>Armado<');
+            expect(html).toContain('data-kind="ability"');
+            // O custo de MP aparece sob o nome
+            expect(html).toContain('5 MP');
+            expect(html).toContain('todo o MP');
+        });
+
+        it('a ação do quadrado é a da habilidade e gastá-la apaga o quadrado', () => {
+            setup({ sheetPatch: withAbilities(), me: { actions: { padrao: 1, bonus: 0, movimento: 1, reacao: 1 } } });
+            const html = render(<ActionsSection />);
+
+            // Cura Interior e Postura Defensiva gastam Bônus
+            expect(tilesOf(html, 'heal').find(([ name ]) => name === 'Cura Interior')?.[1]).toBe('spent');
+            expect(tilesOf(html, 'other').find(([ name ]) => name === 'Postura Defensiva')?.[1]).toBe('spent');
+        });
+
+        it('sem MP suficiente fica bloqueada e a dica diz o que falta', () => {
+            setup({ sheetPatch: withAbilities(3) });
+            const html = render(<ActionsSection />);
+
+            expect(tilesOf(html, 'other').find(([ name ]) => name === 'Postura Defensiva')?.[1]).toBe('blocked');
+            expect(html).toContain('Postura Defensiva: precisa de 5 MP e você tem 3.');
+            // Cura Interior não custa MP
+            expect(tilesOf(html, 'heal').find(([ name ]) => name === 'Cura Interior')?.[1]).toBe('ready');
+        });
+
+        it('com os usos acabados fica bloqueada: por combate (no combatente) e por dia (na ficha)', () => {
+            setup({ sheetPatch: withAbilities(), me: { abilityUses: { 'class-cura-interior': 1 } } });
+            let html = render(<ActionsSection />);
+            expect(tilesOf(html, 'heal').find(([ name ]) => name === 'Cura Interior')?.[1]).toBe('blocked');
+            expect(html).toContain('acabaram os usos deste combate');
+
+            setup({ sheetPatch: withAbilities(30, { abilityUses: { 'subclass-postura-defensiva': 3 } }) });
+            html = render(<ActionsSection />);
+            expect(tilesOf(html, 'other').find(([ name ]) => name === 'Postura Defensiva')?.[1]).toBe('blocked');
+            expect(html).toContain('acabaram os usos do dia');
+        });
+
+        it('a dica mostra o custo, a ação e os usos que sobram', () => {
+            setup({ sheetPatch: withAbilities(30, { abilityUses: { 'class-cura-interior': 2 } }) });
+            expect(render(<ActionsSection />)).toContain('Usar a habilidade. Gasta a ação Bônus. Usos: 1 de 3 por dia · 1 de 1 por combate.');
+        });
+
+        it('ficha de sistema customizado não tem habilidades de classe estruturadas', () => {
+            setup({ sheetPatch: withAbilities(30, { systemId: 'meu-sistema' }) });
+            expect(render(<ActionsSection />)).not.toContain('data-kind="ability"');
+        });
     });
 });

@@ -43,6 +43,7 @@ const view = (props: Partial<Parameters<typeof PlayerCombatantView>[0]> = {}) =>
         onApplyEffect={noop}
         onOpenSection={noop}
         onRollExpertise={noop}
+        onRest={noop}
         {...props}
     />
 );
@@ -69,6 +70,30 @@ describe('PlayerCombatantView (janela "Em combate" do jogador)', () => {
         expect(withLimit).toContain('Resetar limite');
 
         expect(view({ metrics: { overall: 52, mpLimit: null, mpSpent: null } })).not.toContain('player-mp-limit');
+    });
+
+    it('habilidades de classe: automáticas com o estado de agora e ativadas com os usos que sobram, e o botão de descanso', () => {
+        const withSkills = {
+            ...sheet,
+            skills: { class: [ { name: 'Cura Interior' }, { name: 'Muralha' }, { name: 'Perspectiva' } ], subclass: [] },
+            stats: { ...sheet.stats, lp: 80, maxLp: 100 },
+            abilityUses: { 'class-cura-interior': 2 }
+        } as unknown as SummarySheet;
+        const html = view({ charsheet: withSkills, combatant: combatant({ abilityUses: { 'class-cura-interior': 1 } }) });
+
+        expect(html).toContain('player-abilities');
+        expect(html).toContain('Cura Interior');
+        expect(html).toContain('1 de 3 por dia');
+        expect(html).toContain('0 de 1 por combate');
+        expect(html).toContain('Renovar usos do dia');
+        // Muralha só vale com o LP em 10% ou menos: com 80% a condição não vale; a habilidade que é só texto (Perspectiva) não aparece
+        expect(html).toContain('Muralha');
+        expect(html).toContain('condição não atendida agora');
+        expect(html).not.toContain('Perspectiva');
+    });
+
+    it('sem habilidades estruturadas a seção não aparece', () => {
+        expect(view()).not.toContain('player-abilities');
     });
 
     it('limite liberado pelo mestre aparece no chip', () => {

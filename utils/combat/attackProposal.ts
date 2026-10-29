@@ -2,7 +2,7 @@ import type { AppliedEffect } from '@models';
 import { HIDDEN_CAUSE_LABEL, surpriseDiceOwed, type AttackSurprise } from './awareness';
 import { creatureTakenModifiers, creatureWeaknessProfile } from './creatureDefense';
 import { dodgeEligibility, effectiveDamageKind, hits, resistanceExpertise, type DefenseChoice, type DodgeEligibility } from './engine/defense';
-import { collectModifiers, modifiedStat } from './engine/modifiers';
+import { collectModifiers, hasFlag, modifiedStat, statShift } from './engine/modifiers';
 import { resolveAttack, type AttackResolution } from './engine/attack';
 import { weaknessAgainst, type WeaknessProfile } from './engine/weakness';
 import { line, type DamageKind, type ExplainLine } from './engine/types';
@@ -39,6 +39,8 @@ export interface ProposalTarget {
     creature?: TargetCreature | null;
     /** A ficha, se o alvo é jogador */
     sheet?: TargetSheet | null;
+    /** Lembretes das habilidades do alvo que dependem de dado ou de escolha do mestre (Resiliência Inata: reduza 1d8+1); só o mestre vê */
+    reminders?: readonly string[];
 }
 
 export interface ProposalChoice {
@@ -119,9 +121,14 @@ export function buildAttackProposal(
 
     const targetModifiers = collectModifiers(target.effects);
     const baseAp = asNumber(target.creature?.stats?.ap ?? target.sheet?.stats?.ap);
-    const targetAp = modifiedStat(targetModifiers, 'ap', baseAp);
     const taken = [ ...(target.creature ? creatureTakenModifiers(target.creature) : []), ...targetModifiers.taken ];
-    const dealt = collectModifiers(attackerEffects).dealt;
+    const attackerModifiers = collectModifiers(attackerEffects);
+    const dealt = attackerModifiers.dealt;
+    // Habilidades do atacante que furam a armadura: ignorar todo o AP (Forma Primordial, Avatar da Destruição) ou parte dele (Ritmo da Batalha: 2 pontos)
+    const ignoresAp = hasFlag(attackerModifiers, 'ignore_ap');
+    const apPierced = Math.max(0, statShift(attackerModifiers, 'apIgnore'));
+    const armor = modifiedStat(targetModifiers, 'ap', baseAp);
+    const targetAp = ignoresAp ? 0 : Math.max(0, armor - apPierced);
 
     const resistanceSkill = resistanceExpertise(kind);
     const resistanceMod = expertiseValue(target, resistanceSkill);
@@ -130,6 +137,9 @@ export function buildAttackProposal(
     const hit = hits(attackTotal, targetAp);
 
     const header: ExplainLine[] = [];
+    if (ignoresAp) header.push(line('Ignora a armadura', `habilidade do atacante: o AP do alvo (${armor}) não conta`));
+    else if (apPierced > 0) header.push(line('Fura a armadura', `habilidade do atacante: ${Math.min(apPierced, armor)} pontos do AP do alvo não contam`));
+    for (const reminder of target.reminders ?? []) header.push(line('Habilidade do alvo', reminder, 'gm'));
     if (weaknessDice > 0) {
         header.push(line('Fraqueza do alvo ao ataque', `+${weakness.advantages}d20 no acerto e dano ×${weakness.damageMultiplier}`, 'gm'));
     }

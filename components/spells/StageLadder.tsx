@@ -33,6 +33,8 @@ export interface StageLadderProps {
      * Só visualização: continuam bloqueados para conjurar e evoluir.
      */
     revealLocked?: boolean;
+    /** Custo de MP de cada estágio, quando não é o da tabela (as passivas de quem joga mexem nele: Magismo Total) */
+    costOf?: (stage: number) => number;
     /** Só quem evolui a magia (o jogador) passa isto; sem isso o custo aparece mas não há botão (visão do mestre) */
     evolution?: {
         points: number;
@@ -95,13 +97,13 @@ function StageMark({ children }: { children: string }): ReactElement {
  * Os estágios de uma magia, do primeiro ao último, como uma escada: os liberados ficam abertos (dá para recolher), com o que
  * cada um muda em relação ao anterior destacado, e os bloqueados mostram o custo para liberar.
  */
-export default function StageLadder({ spell, progress, revealLocked, evolution, cast }: StageLadderProps): ReactElement {
+export default function StageLadder({ spell, progress, revealLocked, costOf: costOverride, evolution, cast }: StageLadderProps): ReactElement {
     const [ collapsed, setCollapsed ] = useState<ReadonlySet<number>>(new Set());
     const level = Number(spell.level) || 1;
     const baseCost = Number(spell.mpCost) || 0;
     const texts = spell.stages ?? [];
 
-    const costOf = (stage: number): number => calculateTotalManaCost(baseCost, level, stage - 1, spell.mpCostIncrease);
+    const costOf = (stage: number): number => costOverride?.(stage) ?? calculateTotalManaCost(baseCost, level, stage - 1, spell.mpCostIncrease);
     const diffs = useMemo(
         () => progress.stages.map(info => (info.stage > 1 && info.status === 'unlocked'
             ? diffAgainst(texts[info.stage - 2], texts[info.stage - 1])

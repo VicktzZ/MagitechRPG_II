@@ -4,6 +4,7 @@ import type { ActiveTest, CampaignData, TestData, TestResponse } from '@models/t
 import { Service } from '@utils/apiRequest'
 import type { CreateCombatEffectPayload } from './combatEffectService'
 import type { CombatEventItem } from '@utils/combat/history'
+import type { AbilityUseResponse } from '@utils/combat/passives/types'
 
 class CampaignService extends Service<Campaign, 'code' | 'userId'> {
     async listByUser(userId: string) {
@@ -146,6 +147,25 @@ class CampaignService extends Service<Campaign, 'code' | 'userId'> {
         return (await this.post({
             param: `${campaignId}/combat`,
             body: { action: 'spend_action', ...payload }
+        })).data
+    }
+
+    /**
+     * Usa uma habilidade ativada de classe ou subclasse (`abilityKey`: `class:cura interior`). O servidor confere a ficha, os usos e o MP, gasta o MP e a ação e devolve a rolagem da
+     * cura (`ability.heal`) para o chat. 409 `ABILITY_BLOCKED` (com `block`) quando não dá; `force` é do mestre e libera os usos esgotados e a cura bloqueada.
+     */
+    async useAbility(campaignId: string, payload: { combatantId: string; abilityKey: string; choiceId?: string; force?: boolean }): Promise<AbilityUseResponse> {
+        return (await this.post({
+            param: `${campaignId}/combat`,
+            body: { action: 'use_ability', ...payload }
+        })).data as unknown as AbilityUseResponse
+    }
+
+    /** Mestre renova os usos por dia das habilidades (descanso) das fichas indicadas, ou de todos os jogadores da campanha */
+    async restPlayers(campaignId: string, charsheetIds?: string[]) {
+        return (await this.post({
+            param: `${campaignId}/rest`,
+            body: charsheetIds ? { charsheetIds } : {}
         })).data
     }
 

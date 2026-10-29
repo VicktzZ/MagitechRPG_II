@@ -4,6 +4,7 @@ import { getSpellCategories } from '@utils/spellCategory';
 import { normalizeSearchText } from '@utils/searchText';
 import { canSpend, executionSlot, type ActionBudget } from './engine/actionBudget';
 import { isOpportunityWeapon } from './opportunities';
+import type { PassiveDef } from './passives/types';
 
 /**
  * Os "quadrados" da seção Ações do painel do jogador (estilo hotbar): tudo que o personagem pode fazer em combate, separado em **Ataque**, **Cura** e **Outros**, cada um
@@ -51,7 +52,8 @@ interface TileBase {
 export type ActionTile =
     | (TileBase & { kind: 'weapon'; weapon: Weapon })
     | (TileBase & { kind: 'spell'; spell: SpellDTO })
-    | (TileBase & { kind: 'item'; item: Item });
+    | (TileBase & { kind: 'item'; item: Item })
+    | (TileBase & { kind: 'ability'; ability: PassiveDef });
 
 export type TileKind = ActionTile['kind'];
 
@@ -98,12 +100,16 @@ export interface BuildTilesInput {
     opportunityActive?: boolean;
     /** O texto curto sob o nome da magia (o custo de MP dos estágios liberados) */
     spellDetail?: (spell: SpellDTO) => string;
+    /** As habilidades ativadas de classe e subclasse que a ficha tem (`ownedPassives` filtrado por `mode: 'ativada'`) */
+    abilities?: readonly PassiveDef[];
+    /** O texto curto sob o nome da habilidade (custo de MP e usos que sobram) */
+    abilityDetail?: (ability: PassiveDef) => string;
 }
 
 const slug = (value: unknown): string => String(value ?? '').trim() || 'sem-nome';
 
 /** Todos os quadrados do personagem: armas, depois magias, depois itens (cada um na ordem em que aparece na ficha) */
-export function buildActionTiles({ weapons, spells, items, opportunityActive = false, spellDetail }: BuildTilesInput): ActionTile[] {
+export function buildActionTiles({ weapons, spells, items, opportunityActive = false, spellDetail, abilities = [], abilityDetail }: BuildTilesInput): ActionTile[] {
     const tiles: ActionTile[] = [];
 
     weapons.forEach((weapon, index) => {
@@ -150,6 +156,20 @@ export function buildActionTiles({ weapons, spells, items, opportunityActive = f
             item
         });
     });
+
+    // Habilidades ativadas de classe e subclasse: as que curam entram em Cura, as outras em Outros
+    for (const ability of abilities) {
+        if (ability.mode !== 'ativada' || !ability.activation) continue;
+        tiles.push({
+            id: `ability:${ability.key}`,
+            kind: 'ability',
+            category: ability.activation.heal ? 'heal' : 'other',
+            name: ability.name,
+            execution: tileExecution(ability.activation.execution),
+            detail: abilityDetail?.(ability) ?? '',
+            ability
+        });
+    }
 
     return tiles;
 }

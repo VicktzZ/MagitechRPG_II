@@ -13,6 +13,8 @@ import type { ReactElement, ReactNode } from 'react';
 import { useCharsheetPointsView } from '../useCharsheetPointsView';
 import SheetMetricsView from '../SheetMetricsView';
 import EffectStatsNotice from '../../EffectStatsNotice';
+import { ownedPassives, withPassiveEffects } from '@utils/combat/passives';
+import { hasStealthEffect } from '@utils/combat/stealth';
 import VitalsPanel from './VitalsPanel';
 import { charsheetVitalRows } from './vitalRows';
 import { SHEET_WINDOW_KINDS, WINDOW_KIND_LABEL, type SheetWindowKind } from './windowKinds';
@@ -107,7 +109,7 @@ export function SummaryView({ charsheet, inTurn, effects, metrics, showEvolution
             </Box>
 
             <EffectStatsNotice
-                effects={effects}
+                effects={effects ? withPassiveEffects(effects, ownedPassives(charsheet), { sheet: charsheet, stealthy: hasStealthEffect(effects) }) : effects}
                 bases={{ displacement: charsheet.displacement, ap: charsheet.stats?.ap, maxLp: charsheet.stats?.maxLp, maxMp: charsheet.stats?.maxMp }}
             />
 

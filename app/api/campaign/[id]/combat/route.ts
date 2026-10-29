@@ -44,6 +44,10 @@ import { addOpportunities, dropOpportunitiesFor, findOpportunity, planLeaveReach
 import { diffSheetVitals, diffSnapshots, snapshotCombat, summarizeChanges, type CombatSnapshot, type SheetVitals } from '@utils/combat/history'
 import { deleteCombatEvents, getCombatEvent, isCombatEventId, markCombatEventUndone, readPlayerVitals, recordCombatEvent } from '@utils/firestore/combatEvents'
 import { undoCombatEvent } from '@utils/firestore/combatUndo'
+import { initiativeAdvantages, ownedPassives, type AbilityUseResult } from '@utils/combat/passives'
+import { runAbilityUse } from '@utils/combat/abilityUse'
+import { applyStealthEntryPassives, applyTurnStartPassives } from '@utils/combat/turnPassives'
+import { isStealthEffect } from '@utils/combat/stealth'
 
 /** Ações que conduzem o combate — exclusivas do mestre */
 const GM_ONLY_ACTIONS: CombatAction[] = [
@@ -53,18 +57,18 @@ const GM_ONLY_ACTIONS: CombatAction[] = [
 
 /** Ações que entram no histórico do combate (o mestre pode desfazê-las): as que mudam o rumo da luta, não o controle de MP e de ações */
 const RECORDED_ACTIONS: CombatAction[] = [
-    'next_turn', 'apply_damage', 'apply_heal', 'apply_effect', 'remove_effect', 'add_creature', 'add_combatants', 'remove_combatant', 'set_initiative', 'end', 'resolve_attack'
+    'next_turn', 'apply_damage', 'apply_heal', 'apply_effect', 'remove_effect', 'add_creature', 'add_combatants', 'remove_combatant', 'set_initiative', 'end', 'resolve_attack', 'use_ability'
 ]
 
 /** Dessas, as que também mexem na vida e na mana das fichas dos jogadores (o histórico guarda o antes e o depois delas) */
-const SHEET_ACTIONS: CombatAction[] = [ 'next_turn', 'apply_damage', 'apply_heal', 'apply_effect', 'resolve_attack' ]
+const SHEET_ACTIONS: CombatAction[] = [ 'next_turn', 'apply_damage', 'apply_heal', 'apply_effect', 'resolve_attack', 'set_initiative', 'use_ability' ]
 
 /** Ações de jogador que só valem no turno do próprio personagem */
 const OWN_TURN_ACTIONS: CombatAction[] = [ 'next_turn', 'apply_damage', 'apply_heal' ]
 
 const KNOWN_ACTIONS: CombatAction[] = [
     ...GM_ONLY_ACTIONS, ...OWN_TURN_ACTIONS, 'roll_initiative', 'spend_mp', 'spend_action', 'sustain_start', 'sustain_end', 'declare_attack', 'attack_damage', 'dismiss_attack', 'declare_defense',
-    'declare_leave', 'dismiss_opportunity', 'dismiss_reaction'
+    'declare_leave', 'dismiss_opportunity', 'dismiss_reaction', 'use_ability'
 ]
 
 type CombatAction = 
@@ -102,6 +106,7 @@ type CombatAction =
     | 'set_terrain'     // Mestre marca (ou desmarca) combatentes em terreno difícil: ambiente manual
     | 'open_reaction'   // Mestre abre uma reação: o que aconteceu e quem pode reagir (cada reator com a Reação disponível ganha uma oferta)
     | 'dismiss_reaction' // Dispensa uma oferta de reação (quem ia reagir ou o mestre)
+    | 'use_ability'     // O jogador usa uma habilidade ativada de classe ou subclasse: gasta MP e ação, conta o uso, cura ou põe o efeito sobre ele
 
 interface CombatRequest {
     action: CombatAction
@@ -201,6 +206,9 @@ interface CombatRequest {
     reactionSpent?: boolean
     lines?: unknown
 
+    /** Para use_ability: a chave da habilidade no catálogo (`class:cura interior`) e, quando ela tem variações, a escolhida */
+    abilityKey?: string
+    choiceId?: string
     /** Para undo: o evento do histórico a desfazer; `force` desfaz mesmo que algum campo tenha mudado de novo depois (sobrescreve) */
     eventId?: string
     force?: boolean
@@ -288,7 +296,8 @@ function getActionMessage(action: CombatAction): string {
         set_light: 'Iluminação atualizada',
         set_terrain: 'Terreno atualizado',
         open_reaction: 'Reação aberta',
-        dismiss_reaction: 'Reação dispensada'
+        dismiss_reaction: 'Reação dispensada',
+        use_ability: 'Habilidade usada'
     }
     return messages[action] || 'Ação executada'
 }
@@ -331,6 +340,8 @@ export async function POST(
         const statsEntries: StatsEntry[] = []
         // Avisos que não impedem a ação (ex: jogador que já estava no combate), devolvidos ao cliente
         const warnings: string[] = []
+        // O que a habilidade usada rendeu (cura rolada, efeito), devolvido ao cliente para o chat
+        let abilityResult: AbilityUseResult | null = null
 
         // Inicializa combat se não existir
         if (!campaign.session) {
@@ -424,6 +435,13 @@ export async function POST(
                 }
             }
 
+            if (action === 'use_ability') {
+                const target = combat.combatants?.find(c => c.id === body.combatantId || c.odacId === body.combatantId)
+                if (!target || !ownsCombatant(target)) {
+                    throw forbidden('Você só pode usar as habilidades do seu personagem')
+                }
+            }
+
             if (action === 'sustain_start' || action === 'sustain_end') {
                 const target = combat.combatants?.find(c => c.id === body.combatantId || c.odacId === body.combatantId)
                 if (target && !ownsCombatant(target)) {
@@ -437,7 +455,7 @@ export async function POST(
         }
 
         // Ações que alteram LP partem do LP atual das fichas, não do snapshot do início do combate
-        if (combat.isActive && [ 'next_turn', 'apply_damage', 'apply_heal', 'apply_effect', 'resolve_attack' ].includes(action)) {
+        if (combat.isActive && [ 'next_turn', 'apply_damage', 'apply_heal', 'apply_effect', 'resolve_attack', 'use_ability' ].includes(action)) {
             await refreshPlayerCombatantsLp(combat)
         }
 
@@ -578,10 +596,14 @@ export async function POST(
             }
 
             let dice = playerInitiativeDice(null)
+            // Passivas de classe do jogador (Reflexos Aumentados: +1 dado na iniciativa)
+            let passiveInitiative = initiativeAdvantages([])
 
             try {
                 if (combatant.type === 'player') {
-                    dice = playerInitiativeDice(await charsheetRepository.findById(combatant.id))
+                    const sheet = await charsheetRepository.findById(combatant.id)
+                    dice = playerInitiativeDice(sheet)
+                    passiveInitiative = initiativeAdvantages(ownedPassives(sheet))
                 } else if (combatant.type === 'creature') {
                     dice = creatureInitiativeDice(findBaseCreature(combatant.id, (campaign as any).custom?.creatures || []))
                 }
@@ -590,7 +612,7 @@ export async function POST(
             }
 
             // Efeitos aplicados (Velocidade, Cegueira...): bônus fixo na iniciativa e vantagem ou desvantagem nos d20 (Fase 6.3)
-            dice = initiativeWithEffects(dice, combatant.effects)
+            dice = initiativeWithEffects(dice, combatant.effects, passiveInitiative)
 
             // Se um valor foi passado (rolado manualmente), usa ele como resultado do dado
             const { rolls, roll, total: rolledTotal } = resolveInitiative(dice, { manual: value })
@@ -663,12 +685,15 @@ export async function POST(
                 `${i + 1}º ${c.name} — Iniciativa: ${c.initiativeTotal}`
             ).join('\n')
             
+            // Passivas do começo do turno de quem abre a rodada (regenera LP, ações extras de quem está furtivo): o aviso entra no anúncio da vez
+            const firstTurnNotes = await applyTurnStartPassives(combat, combat.combatants[0])
+
             combat.logs.push(new CombatLog({
                 round: combat.round,
                 type: 'phase_change',
                 actorId: 'system',
                 actorName: 'Sistema',
-                message: `📋 **Ordem de Iniciativa**\n${orderLines}\n\n🎯 Vez de **${combat.combatants[0].name}**!`
+                message: `📋 **Ordem de Iniciativa**\n${orderLines}\n\n🎯 Vez de **${combat.combatants[0].name}**!${firstTurnNotes}`
             }))
 
             break
@@ -771,12 +796,14 @@ export async function POST(
                     // Efeito que faz perder o turno (Paralisia, Atordoamento, Medo...): o aviso entra no anúncio da vez, antes de o tick tirar o efeito. É aviso, o
                     // mestre decide (o catálogo às vezes diz "chance de pular o turno")
                     const skipReason = blockReason(actionBlocks(nextCombatant.effects), 'skip_turn', `**${nextCombatant.name}**`)
+                    // Passivas do começo do turno (regenera LP, ações extras de quem está furtivo): o aviso entra no anúncio da vez
+                    const turnNotes = await applyTurnStartPassives(combat, nextCombatant)
                     combat.logs.push(new CombatLog({
                         round: combat.round,
                         type: 'turn_pass',
                         actorId: currentCombatant?.id || 'system',
                         actorName: currentCombatant?.name || 'Sistema',
-                        message: `➡️ **${currentCombatant?.name || 'Alguém'}** passou o turno.\n🎯 Vez de **${nextCombatant.name}**!${skipReason ? `\n⏭️ ${skipReason}.` : ''}`
+                        message: `➡️ **${currentCombatant?.name || 'Alguém'}** passou o turno.\n🎯 Vez de **${nextCombatant.name}**!${skipReason ? `\n⏭️ ${skipReason}.` : ''}${turnNotes}`
                     }))
 
                     // Processa tick de efeitos ao avançar o turno
@@ -1137,6 +1164,9 @@ export async function POST(
                 ? `${levelConfig.formula} · `
                 : ''
 
+            // Entrar em furtividade no próprio turno dá ações extras a quem tem a passiva (Disfarce): o aviso entra no log do efeito
+            const stealthNotes = isStealthEffect(newApplied) ? await applyStealthEntryPassives(combat, target) : ''
+
             combat.logs.push(new CombatLog({
                 round: combat.round,
                 type: 'effect_applied',
@@ -1144,7 +1174,7 @@ export async function POST(
                 actorName: appliedByName || 'GM',
                 targetId: target.id,
                 targetName: target.name,
-                message: `${effectIconPrefix(effect)}**${target.name}** ganhou o efeito **${fullName}** (${formulaTxt}${durationTxt})${customTag}.`
+                message: `${effectIconPrefix(effect)}**${target.name}** ganhou o efeito **${fullName}** (${formulaTxt}${durationTxt})${customTag}.${stealthNotes}`
             }))
 
             // timing='turn' aplica o primeiro tick imediatamente
@@ -1336,6 +1366,38 @@ export async function POST(
             combatant.actions = spent.budget
             // Gastou a Reação: as ofertas de reação dele se fecham (ele já reagiu, ou esquivou)
             if (slot === 'reacao') combat.reactions = closeReactionsOf(combat.reactions, combatant.id)
+
+            break
+        }
+
+        case 'use_ability': {
+            if (!combat.isActive) {
+                return NextResponse.json({ error: 'Não há combate ativo' }, { status: 400 })
+            }
+
+            const combatant = combat.combatants.find(c => c.id === body.combatantId || c.odacId === body.combatantId)
+            if (!combatant || combatant.type !== 'player') {
+                return NextResponse.json({ error: 'Jogador não encontrado no combate' }, { status: 404 })
+            }
+            if (typeof body.abilityKey !== 'string' || body.abilityKey.length === 0 || body.abilityKey.length > 120) {
+                throw badRequest('abilityKey é obrigatório')
+            }
+
+            const outcome = await runAbilityUse({
+                combat,
+                combatant,
+                abilityKey: body.abilityKey,
+                choiceId: typeof body.choiceId === 'string' ? body.choiceId.slice(0, 60) : null,
+                isGM,
+                force: body.force === true
+            })
+            if (!outcome.ok) {
+                return NextResponse.json(outcome.body, { status: outcome.status })
+            }
+
+            warnings.push(...outcome.warnings)
+            statsEntries.push(...outcome.stats)
+            abilityResult = outcome.result
 
             break
         }
@@ -1989,7 +2051,8 @@ export async function POST(
             success: true,
             combat: plainCombat,
             message: getActionMessage(action),
-            ...(warnings.length > 0 ? { warnings } : {})
+            ...(warnings.length > 0 ? { warnings } : {}),
+            ...(abilityResult ? { ability: abilityResult } : {})
         })
 
     } catch (error) {

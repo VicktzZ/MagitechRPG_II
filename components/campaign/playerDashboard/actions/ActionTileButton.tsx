@@ -2,7 +2,7 @@
 
 import ElementIcon from '@components/misc/ElementIcon';
 import WeaponIcon from '@components/misc/WeaponIcon';
-import { Inventory2 } from '@mui/icons-material';
+import { Bolt, Inventory2 } from '@mui/icons-material';
 import { Box, ButtonBase, Tooltip, Typography } from '@mui/material';
 import { color, font } from '@themes/tokens';
 import type { ActionTile } from '@utils/combat/actionTiles';
@@ -26,7 +26,7 @@ interface ActionTileButtonProps {
     extras?: ReactNode;
 }
 
-const KIND_MARK: Record<ActionTile['kind'], string> = { weapon: color.danger, spell: color.cyan, item: color.success };
+const KIND_MARK: Record<ActionTile['kind'], string> = { weapon: color.danger, spell: color.cyan, item: color.success, ability: color.amber };
 
 function TileGlyph({ tile, dimmed }: { tile: ActionTile; dimmed: boolean }): ReactElement {
     const iconSx = { fontSize: 22, color: 'text.secondary' };
@@ -35,6 +35,7 @@ function TileGlyph({ tile, dimmed }: { tile: ActionTile; dimmed: boolean }): Rea
             {tile.kind === 'weapon' && <WeaponIcon sx={iconSx} />}
             {tile.kind === 'spell' && <ElementIcon element={tile.spell.element} colored sx={{ fontSize: 22 }} />}
             {tile.kind === 'item' && <Inventory2 sx={iconSx} />}
+            {tile.kind === 'ability' && <Bolt sx={iconSx} />}
         </Box>
     );
 }
