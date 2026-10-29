@@ -8,7 +8,7 @@ import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { adminUpdateDoc, adminUpdateDocInTransaction } from '@utils/firestore/adminDocs';
 import { connectFields } from '@utils/campaignPresence';
-import { assertId, findCampaignOrThrow, forbidden, getCampaignRole, handleRouteError, readJsonBody, requireUser } from '@utils/api';
+import { assertId, campaignForRole, findCampaignOrThrow, forbidden, getCampaignRole, handleRouteError, readJsonBody, requireUser } from '@utils/api';
 
 export async function POST(req: Request): Promise<Response> {
     try {
@@ -86,7 +86,7 @@ export async function POST(req: Request): Promise<Response> {
 
         campaign = await findCampaignOrThrow(campaign.campaignCode);
 
-        return Response.json({ campaign });
+        return Response.json({ campaign: campaignForRole(campaign, { isGM }) });
     } catch (error) {
         return handleRouteError(error, 'Erro ao conectar à sessão');
     }

@@ -8,6 +8,7 @@ import { Campaign } from '@models/entities';
 import {
     assertId,
     assertMaxLength,
+    campaignForRole,
     forbidden,
     getCampaignRole,
     handleRouteError,
@@ -31,8 +32,9 @@ export async function GET(req: NextRequest): Promise<Response> {
             if (!campaign) {
                 return Response.json({ message: 'NOT FOUND' }, { status: 404 });
             }
-            // Membros recebem a campanha inteira; quem só tem o código, uma prévia
-            return Response.json(getCampaignRole(campaign, user).isMember ? campaign : toCampaignPreview(campaign));
+            // Membros recebem a campanha inteira (os jogadores sem os segredos do mestre); quem só tem o código, uma prévia
+            const role = getCampaignRole(campaign, user);
+            return Response.json(role.isMember ? campaignForRole(campaign, role) : toCampaignPreview(campaign));
         }
 
         if (userId) {
@@ -62,7 +64,8 @@ export async function GET(req: NextRequest): Promise<Response> {
             throw forbidden('Apenas administradores podem listar todas as campanhas');
         }
         const allCampaigns = await campaignRepository.find();
-        return Response.json(allCampaigns);
+        // O administrador do site vê todas as campanhas, mas os segredos do mestre são só do mestre de cada uma
+        return Response.json(allCampaigns.map(each => campaignForRole(each, getCampaignRole(each, user))));
 
     } catch (error) {
         return handleRouteError(error, 'Erro ao buscar campanhas');

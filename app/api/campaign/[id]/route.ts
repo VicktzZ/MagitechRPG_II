@@ -2,10 +2,12 @@ import { campaignRepository } from '@repositories';
 import { deleteCampaignMessages } from '@utils/firestore/campaignMessages';
 import { deleteGmNotes } from '@utils/firestore/gmNotes';
 import { deleteCombatEvents } from '@utils/firestore/combatEvents';
+import { deleteGmData } from '@utils/firestore/gmData';
 import type { Campaign } from '@models/entities/Campaign';
 import {
     assertMaxLength,
     badRequest,
+    campaignForRole,
     findCampaignOrThrow,
     getCampaignRole,
     handleRouteError,
@@ -21,8 +23,9 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
         const user = await requireUser();
         const campaign = await findCampaignOrThrow(params.id);
 
-        // Membros recebem a campanha inteira; quem só tem o código (ex.: ao entrar), uma prévia
-        return Response.json(getCampaignRole(campaign, user).isMember ? campaign : toCampaignPreview(campaign));
+        // Membros recebem a campanha inteira (os jogadores sem os segredos do mestre); quem só tem o código (ex.: ao entrar), uma prévia
+        const role = getCampaignRole(campaign, user);
+        return Response.json(role.isMember ? campaignForRole(campaign, role) : toCampaignPreview(campaign));
     } catch (error) {
         return handleRouteError(error, 'Erro ao buscar campanha');
     }
@@ -47,6 +50,13 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
             await deleteGmNotes(campaign.id);
         } catch (error) {
             console.error('[Campanha] Campanha excluída, mas as anotações do mestre não foram apagadas:', error);
+        }
+
+        // Idem para os dados privados do mestre (defesas das criaturas...)
+        try {
+            await deleteGmData(campaign.id);
+        } catch (error) {
+            console.error('[Campanha] Campanha excluída, mas os dados privados do mestre não foram apagados:', error);
         }
 
         // Idem para o histórico do combate
