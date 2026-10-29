@@ -6,6 +6,7 @@ import type { ActionBudget } from '../utils/combat/engine/actionBudget';
 import type { CombatEnvironment } from '../utils/combat/environment';
 import type { OpportunityData } from '../utils/combat/opportunities';
 import type { PendingAttackData } from '../utils/combat/pendingAttacks';
+import type { ReactionOfferData } from '../utils/combat/reactions';
 
 /**
  * Fases do combate
@@ -196,6 +197,11 @@ export class Combat {
     @IsOptional()
     @IsArray()
         unseen?: UnseenData[];
+
+    /** Ofertas de reação abertas (o que aconteceu e quem pode reagir com a Reação); duram o turno em andamento. Ver utils/combat/reactions.ts */
+    @IsOptional()
+    @IsArray()
+        reactions?: ReactionOfferData[];
 
     /** Ambiente manual da cena: a iluminação e quem está em terreno difícil, marcados pelo mestre. Sem o campo, luz clara e sem terreno difícil. Ver utils/combat/environment.ts */
     @IsOptional()

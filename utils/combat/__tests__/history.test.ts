@@ -66,6 +66,13 @@ describe('snapshotCombat / diffSnapshots', () => {
         expect(diffSnapshots(before, snapshotCombat(combat))).toEqual([]);
     });
 
+    it('as ofertas de reação ficam de fora: desfazer um dano não apaga uma oferta aberta depois', () => {
+        const combat = makeCombat();
+        const before = snapshotCombat(combat);
+        combat.reactions = [ { id: 'r1' } as never ];
+        expect(diffSnapshots(before, snapshotCombat(combat))).toEqual([]);
+    });
+
     it('a foto é uma cópia: mexer no combate depois não muda a foto', () => {
         const combat = makeCombat();
         const before = snapshotCombat(combat);

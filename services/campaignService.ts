@@ -211,6 +211,16 @@ class CampaignService extends Service<Campaign, 'code' | 'userId'> {
         return (await this.post({ param: `${campaignId}/combat`, body: { action: 'set_terrain', ...payload } })).data as unknown as { warnings?: string[] }
     }
 
+    /** Mestre abre uma reação: o que aconteceu (`trigger`, e `subjectId` quem sofreu ou fez) e quem pode reagir; cada reator com a Reação disponível ganha uma oferta (`utils/combat/reactions.ts`). Silencioso */
+    async openReaction(campaignId: string, payload: { trigger: string; subjectId?: string; text?: string; reactorIds: string[] }) {
+        return (await this.post({ param: `${campaignId}/combat`, body: { action: 'open_reaction', ...payload } })).data as unknown as { warnings?: string[] }
+    }
+
+    /** Dispensa uma oferta de reação (quem ia reagir ou o mestre) */
+    async dismissReaction(campaignId: string, reactionId: string) {
+        return (await this.post({ param: `${campaignId}/combat`, body: { action: 'dismiss_reaction', reactionId } })).data
+    }
+
     /** Descarta um ataque pendente (quem atacou ou o mestre) */
     async dismissAttack(campaignId: string, attackId: string) {
         return (await this.post({ param: `${campaignId}/combat`, body: { action: 'dismiss_attack', attackId } })).data

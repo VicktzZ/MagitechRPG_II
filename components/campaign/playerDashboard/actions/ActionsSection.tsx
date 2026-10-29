@@ -7,6 +7,7 @@ import { SportsKabaddi } from '@mui/icons-material';
 import { Box, Button, Chip, Menu, MenuItem, Stack, Typography } from '@mui/material';
 import { font } from '@themes/tokens';
 import ActionBlocksNotice from '../../ActionBlocksNotice';
+import { SHOW_REACTION_TILES_EVENT } from '../../reaction/events';
 import ActionPips from '../../ActionPips';
 import Section from '../../Section';
 import { actionBlocks, blockReason, effectiveBudget, isBlocked } from '@utils/combat/actionFlags';
@@ -26,7 +27,7 @@ import { getSpellMpCost } from '@utils/combat/spellRoller';
 import { findAwaitingDamage } from '@utils/combat/pendingAttacks';
 import { normalizeToArray } from '@utils/normalizeToArray';
 import { getSpellProgress, spellStageLabel } from '@utils/spellStages';
-import { useMemo, useState, type MouseEvent as ReactMouseEvent, type ReactElement } from 'react';
+import { useEffect, useMemo, useState, type MouseEvent as ReactMouseEvent, type ReactElement } from 'react';
 import AttackTargetPicker from '../attacks/AttackTargetPicker';
 import { collectEntries } from '../inventory/inventoryList';
 import { useWeaponRolls } from '../inventory/useWeaponRolls';
@@ -50,6 +51,16 @@ export default function ActionsSection(): ReactElement | null {
     const { activateItem } = useItemUse();
     const [ filter, setFilter ] = useState<TileExecution | null>(null);
     const [ stageMenu, setStageMenu ] = useState<{ anchor: HTMLElement; spell: SpellDTO } | null>(null);
+
+    // "Ver magias de Reação" (oferta de reação no card de combate): liga o filtro Reação e leva até aqui
+    useEffect(() => {
+        const show = (): void => {
+            setFilter('Reação');
+            document.getElementById('acoes')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        };
+        window.addEventListener(SHOW_REACTION_TILES_EVENT, show);
+        return () => { window.removeEventListener(SHOW_REACTION_TILES_EVENT, show); };
+    }, []);
 
     const combat = campaign?.session?.combat;
     const me = combat?.isActive ? combat.combatants?.find(candidate => candidate.id === charsheet?.id) : undefined;

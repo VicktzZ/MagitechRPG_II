@@ -52,6 +52,7 @@ import EffectBadges from './gmDashboard/actions/EffectBadges';
 import HiddenFromNotice from './awareness/HiddenFromNotice';
 import LeaveReachButton from './opportunity/LeaveReachButton';
 import OpportunityOffers from './opportunity/OpportunityOffers';
+import ReactionOffers from './reaction/ReactionOffers';
 import IncomingAttacks from './playerDashboard/attacks/IncomingAttacks';
 
 interface CombatStatusProps {
@@ -450,6 +451,18 @@ function CombatStatus({
                         {/* Ataques ao personagem do jogador: escolher e rolar a defesa */}
                         {combat.phase === 'ACTION' && userCombatant && !isGM && (
                             <IncomingAttacks combat={combat} combatantId={userCombatant.id} />
+                        )}
+
+                        {/* Reação aberta (o mestre abriu, ou o ataque resolvido abriu): o que aconteceu e as magias de Reação que combinam */}
+                        {combat.phase === 'ACTION' && userCombatant && !isGM && (
+                            <ReactionOffers
+                                combat={combat}
+                                combatantId={userCombatant.id}
+                                onFresh={(text) => {
+                                    setExpanded(true);
+                                    enqueueSnackbar(`${text}. Dá para reagir.`, { variant: 'info', autoHideDuration: 6000, anchorOrigin: { vertical: 'top', horizontal: 'center' } });
+                                }}
+                            />
                         )}
 
                         {/* Quem se esconde sabe de quem (a matriz de percepção é do mestre) */}
