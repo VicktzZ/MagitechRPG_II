@@ -79,6 +79,10 @@ export type PassiveRule =
     | { kind: 'turnRegen'; stat: 'lp'; dice: string; when: PassiveCondition; untilPct: number }
     /** Ação extra enquanto furtivo: ao entrar em furtividade no turno dele (`enter`) ou no começo do turno (`turnStart`) */
     | { kind: 'stealthActions'; on: 'enter' | 'turnStart'; add: { padrao?: number; movimento?: number } }
+    /** Baixa a margem de crítico do ataque do personagem (`delta` negativo: −1 faz a margem 19; ver `critical.ts`); `scope` limita à arma ou à magia, sem ele vale nas duas */
+    | { kind: 'critMargin'; delta: number; scope?: 'weapon' | 'spell'; spell?: SpellFilter; when?: PassiveCondition }
+    /** Sobe o multiplicador do crítico (×3 do Furtivo do ladino); só vale onde o crítico é multiplicador: magia e arma sem fórmula própria de crítico (`effect.critValue`) */
+    | { kind: 'critMultiplier'; value: number; scope?: 'weapon' | 'spell'; spell?: SpellFilter; when?: PassiveCondition }
     /** Lembrete que o mestre vê na resolução do ataque (a regra depende de dado ou de escolha dele) */
     | { kind: 'reminder'; side: 'defender' | 'attacker'; text: string };
 

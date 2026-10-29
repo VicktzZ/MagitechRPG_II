@@ -9,10 +9,12 @@ interface WeaponCombatActionsProps {
     onDamage: (weapon: Weapon, isCritical: boolean, e: ReactMouseEvent) => Promise<void>;
     /** `quick`: só acerto e dano, para a linha do cartão; `full`: com o crítico e o título, dentro do cartão aberto */
     variant?: 'quick' | 'full';
+    /** O último acerto foi crítico (o d20 natural passou da margem): o botão de dano rola o crítico sozinho */
+    hitCritical?: boolean;
 }
 
 /** Ações de combate de uma arma: rolar acerto, dano e dano crítico no chat */
-export default function WeaponCombatActions({ weapon, onHit, onDamage, variant = 'full' }: WeaponCombatActionsProps): ReactElement {
+export default function WeaponCombatActions({ weapon, onHit, onDamage, variant = 'full', hitCritical = false }: WeaponCombatActionsProps): ReactElement {
     const full = variant === 'full';
 
     return (
@@ -33,17 +35,17 @@ export default function WeaponCombatActions({ weapon, onHit, onDamage, variant =
                     Acerto
                 </Button>
             </Tooltip>
-            <Tooltip title={`Rolar dano (${weapon.effect?.value || '—'})`}>
+            <Tooltip title={hitCritical ? `Acerto crítico: o dano sai crítico (${weapon.effect?.critValue || `${weapon.effect?.value || '—'} × 2`})` : `Rolar dano (${weapon.effect?.value || '—'})`}>
                 <Button
                     size="small"
-                    variant="outlined"
-                    color="secondary"
+                    variant={hitCritical ? 'contained' : 'outlined'}
+                    color={hitCritical ? 'primary' : 'secondary'}
                     startIcon={<Whatshot fontSize="small" />}
-                    aria-label={`Rolar dano de ${weapon.name}`}
+                    aria-label={hitCritical ? `Rolar dano crítico de ${weapon.name} (acerto crítico)` : `Rolar dano de ${weapon.name}`}
                     onClick={(event) => { void onDamage(weapon, false, event) }}
                     sx={{ textTransform: 'none' }}
                 >
-                    {`Dano${full && weapon.effect?.value ? ` ${weapon.effect.value}` : ''}`}
+                    {hitCritical ? 'Dano crítico' : `Dano${full && weapon.effect?.value ? ` ${weapon.effect.value}` : ''}`}
                 </Button>
             </Tooltip>
             {full && (

@@ -88,7 +88,7 @@ A coluna "Fora do automático" lista o que da descrição o app **não** faz soz
 | Magia Furtiva | Só texto |  |  |
 | Magia Resiliente | Automática |  | Forçar novo teste de resistência (3 MP) é na mão. |
 | Adiar Magia | Só texto |  |  |
-| Ascensão Arcana | Automática |  | Margem de crítico de magias em 19: o crítico é marcado na mão. |
+| Ascensão Arcana | Automática |  |  |
 
 ### Ladino
 
@@ -109,7 +109,7 @@ A coluna "Fora do automático" lista o que da descrição o app **não** faz soz
 | --- | --- | --- | --- |
 | Metamorfose Adaptativa | Só texto |  |  |
 | Pele Resistente | Automática |  |  |
-| Forma Primordial | Ativada | Bônus · todo o MP · 1 de 1 por dia | Margem de crítico −2 é na mão; a ação gasta é premissa minha (o texto não diz). |
+| Forma Primordial | Ativada | Bônus · todo o MP · 1 de 1 por dia | A ação gasta é premissa minha (o texto não diz). |
 
 ### Comandante
 

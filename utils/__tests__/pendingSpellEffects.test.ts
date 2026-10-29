@@ -1,6 +1,9 @@
 import {
+    parsePendingSpellCriticals,
     parsePendingSpellEffects,
+    pendingCriticalsStorageKey,
     pendingEffectsStorageKey,
+    withPendingCritical,
     withPendingEffect,
     withoutPendingEffect
 } from '../pendingSpellEffects';
@@ -46,5 +49,27 @@ describe('pendingEffectsStorageKey', () => {
     it('é por campanha e por ficha', () => {
         expect(pendingEffectsStorageKey('camp-1', 'cs-1')).not.toBe(pendingEffectsStorageKey('camp-1', 'cs-2'));
         expect(pendingEffectsStorageKey('camp-1', 'cs-1')).not.toBe(pendingEffectsStorageKey('camp-2', 'cs-1'));
+    });
+});
+
+
+describe('conjurada em crítico (guardada à parte)', () => {
+    it('lê só o que é verdadeiro e ignora o resto, sem lançar', () => {
+        expect(parsePendingSpellCriticals('{"brasa":true,"mare":false,"x":1,"":true}')).toEqual({ brasa: true });
+        for (const raw of [ null, '', '{brasa:', '[true]', '5', 'null' ]) expect(parsePendingSpellCriticals(raw)).toEqual({});
+    });
+
+    it('marca e desmarca sem mexer no original', () => {
+        const base = { a: true } as const;
+        const marked = withPendingCritical(base, 'b', true);
+        expect(marked).toEqual({ a: true, b: true });
+        expect(base).toEqual({ a: true });
+        expect(withPendingCritical(marked, 'a', false)).toEqual({ b: true });
+        expect(withPendingCritical({}, 'x', false)).toEqual({});
+    });
+
+    it('a chave é de cada campanha e ficha, e diferente da dos efeitos pendentes', () => {
+        expect(pendingCriticalsStorageKey('camp', 'ficha')).toBe('spell-effects-critical:camp:ficha');
+        expect(pendingCriticalsStorageKey('camp', 'ficha')).not.toBe(pendingEffectsStorageKey('camp', 'ficha'));
     });
 });

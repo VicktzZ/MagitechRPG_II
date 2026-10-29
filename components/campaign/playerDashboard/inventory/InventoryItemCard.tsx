@@ -18,6 +18,8 @@ export interface InventoryItemCardActions {
     canDonate: boolean;
     onWeaponHit: (weapon: Weapon, e: ReactMouseEvent) => Promise<void>;
     onWeaponDamage: (weapon: Weapon, isCritical: boolean, e: ReactMouseEvent) => Promise<void>;
+    /** O último acerto da arma foi crítico e espera o dano: o botão de dano rola o crítico sozinho */
+    isWeaponCritical?: (weapon: Weapon) => boolean;
     onDonate: (item: any, type: InventoryItemType, e: ReactMouseEvent) => void;
     /** Pede para remover o item; quem usa abre a confirmação */
     onRemove: (item: any, type: InventoryItemType) => void;
@@ -41,7 +43,7 @@ function keyStat(item: any, type: InventoryItemType): { value: string; caption: 
  * Cartão de um item do inventário: na linha fechada o tipo (filete e ícone), o nome, a raridade, o número principal e o peso; as armas
  * trazem acerto e dano à vista. Aberto, mostra descrição, detalhes, acessórios, o crítico da arma, doar e remover.
  */
-export default function InventoryItemCard({ item, type, weightUnitSuffix, canDonate, onWeaponHit, onWeaponDamage, onDonate, onRemove }: InventoryItemCardProps): ReactElement {
+export default function InventoryItemCard({ item, type, weightUnitSuffix, canDonate, onWeaponHit, onWeaponDamage, isWeaponCritical, onDonate, onRemove }: InventoryItemCardProps): ReactElement {
     const [ open, setOpen ] = useState(false);
     const config = getItemTypeConfig(type);
     const Glyph = config.icon;
@@ -130,7 +132,7 @@ export default function InventoryItemCard({ item, type, weightUnitSuffix, canDon
 
                 {type === 'weapon' && (
                     <Box sx={{ pb: { xs: 1, sm: 0 }, pl: { xs: 1.5, sm: 0 } }}>
-                        <WeaponCombatActions weapon={item as Weapon} onHit={onWeaponHit} onDamage={onWeaponDamage} variant="quick" />
+                        <WeaponCombatActions weapon={item as Weapon} onHit={onWeaponHit} onDamage={onWeaponDamage} variant="quick" hitCritical={isWeaponCritical?.(item as Weapon) ?? false} />
                     </Box>
                 )}
             </Box>
@@ -174,7 +176,7 @@ export default function InventoryItemCard({ item, type, weightUnitSuffix, canDon
                         </Box>
                     )}
 
-                    {type === 'weapon' && <WeaponCombatActions weapon={item as Weapon} onHit={onWeaponHit} onDamage={onWeaponDamage} variant="full" />}
+                    {type === 'weapon' && <WeaponCombatActions weapon={item as Weapon} onHit={onWeaponHit} onDamage={onWeaponDamage} variant="full" hitCritical={isWeaponCritical?.(item as Weapon) ?? false} />}
 
                     <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, flexWrap: 'wrap' }}>
                         {canDonate && (

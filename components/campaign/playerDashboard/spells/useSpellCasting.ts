@@ -9,10 +9,11 @@ import type { SpellDTO } from '@models/dtos';
 import { campaignService } from '@services';
 import { postCampaignStats } from '@utils/campaignStatsClient';
 import { executionSlot } from '@utils/combat/engine/actionBudget';
+import { critMargin, critMultiplier } from '@utils/combat/critical';
 import { rollSpellTest } from '@utils/combat/hitTest';
 import { blockReason, combatantActionBlocks, isBlocked } from '@utils/combat/actionFlags';
 import { combatantAttackDice } from '@utils/combat/environment';
-import { effectDamageSpecs, effectHitBonus, spellEffectSpecs, spellHitExtras } from '@utils/combat/passives';
+import { critMarginReduction, critMultiplierSources, effectCritMarginReduction, effectDamageSpecs, effectHitBonus, spellEffectSpecs, spellHitExtras } from '@utils/combat/passives';
 import { isOpportunitySpell, OPPORTUNITY_SPELL_HELP } from '@utils/combat/opportunities';
 import {
     buildSpellCastMessage,
@@ -40,6 +41,8 @@ export interface SpellCasting {
     effectingSpellId: string | null;
     /** Magia (por id ou nome) → estágio conjurado com sucesso que ainda tem o botão "Efetuar" */
     pendingEffects: Readonly<Record<string, SpellStage>>;
+    /** Magia (por id ou nome) → foi conjurada em crítico: ao efetuar, o dano sai vezes o multiplicador */
+    pendingCriticals: Readonly<Record<string, true>>;
     clearPending: (spellKey: string) => void;
     /** O personagem no combate ativo, se estiver */
     myCombatantId: string | undefined;
@@ -77,7 +80,7 @@ export function useSpellCastingState(): SpellCasting {
     const [ castingSpellId, setCastingSpellId ] = useState<string | null>(null)
     const [ effectingSpellId, setEffectingSpellId ] = useState<string | null>(null)
     // Conjurações com sucesso que ainda esperam o botão "Efetuar" (rolar dano, cura, duração...)
-    const { pending: pendingEffects, markPending, clearPending } = usePendingSpellEffects(campaign?.id, charsheet?.id)
+    const { pending: pendingEffects, criticals: pendingCriticals, markPending, clearPending } = usePendingSpellEffects(campaign?.id, charsheet?.id)
 
     // Limite de MP por turno: só vale em combate ativo, para quem participa dele (utils/mpLimit.ts)
     const combat = campaign?.session?.combat
@@ -175,18 +178,25 @@ export function useSpellCastingState(): SpellCasting {
             // Passivas (Não-Elementalista +1d20, Domínio Elemental +2) e habilidades ativadas (Ritmo da Batalha +2 no acerto das magias de ataque) somam ao teste
             const fromPassives = spellHitExtras(passives, contextFor(), spell);
             const fromAbilities = attacking ? effectHitBonus(myEffects) : { flat: 0, notes: [] as string[] };
+            // Margem de crítico das magias de ataque: 20, menos o que as passivas (Ascensão Arcana 19) e as habilidades ativadas (Forma Primordial −2) tiram
+            const marginCut = attacking
+                ? { fromPassives: critMarginReduction(passives, contextFor(spellAttack.targeting.targetId), 'spell', spell), fromEffects: effectCritMarginReduction(myEffects) }
+                : undefined;
             const test = rollSpellTest(charsheet, {
                 extraDice: (effects?.advantages ?? 0) + fromPassives.advantages,
                 lessDice: effects?.disadvantages,
-                notes: [ ...(effects?.notes ?? []), ...fromPassives.notes, ...fromAbilities.notes ],
-                flatBonus: fromPassives.flat + fromAbilities.flat
+                notes: [ ...(effects?.notes ?? []), ...fromPassives.notes, ...fromAbilities.notes, ...(marginCut?.fromPassives.notes ?? []), ...(marginCut?.fromEffects.notes ?? []) ],
+                flatBonus: fromPassives.flat + fromAbilities.flat,
+                critMargin: critMargin(20, (marginCut?.fromPassives.reduction ?? 0) + (marginCut?.fromEffects.reduction ?? 0))
             });
             const succeeded = spellCastSucceeded(test.total, spellCastDifficulty(spell.level, stage));
+            // Acerto crítico: só a magia de ataque conjurada com sucesso (cura, defesa e controle não atacam); o dano dela sai vezes o multiplicador ao efetuar
+            const critical = attacking && succeeded && test.critical;
             // Só uma conjuração com sucesso deixa efetuar a magia; o botão já está lá quando o cartão aparece no chat
-            if (succeeded && hasSpellEffectDice(spell, stage)) markPending(spellKey, stage);
-            await sendCombatChatMessage(buildSpellCastMessage(playerName, spell, stage, test, mpCost), MessageType.DICE);
+            if (succeeded && hasSpellEffectDice(spell, stage)) markPending(spellKey, stage, critical);
+            await sendCombatChatMessage(buildSpellCastMessage(playerName, spell, stage, test, mpCost, { critical }), MessageType.DICE);
             // Conjuração com sucesso de magia de ataque: o teste de magia é o acerto e o mestre confirma o resultado contra o alvo
-            if (succeeded) await spellAttack.declareSpell(spell, test, { opportunity });
+            if (succeeded) await spellAttack.declareSpell(spell, test, { opportunity, critical });
 
             // Gasta a ação da rodada que a magia pede (Padrão, Bônus, Movimento, Reação, Completa). É aviso, nunca trava: o mestre decide
             // o que vale quando a ação já tinha acabado.
@@ -273,11 +283,17 @@ export function useSpellCastingState(): SpellCasting {
             setEffectingSpellId(spellKey);
             // Passivas (Feitiçaria, Magia Resiliente, Manipulação Elemental...) e habilidades ativadas (Trilha da Fortuna) somam ao dano ou à cura do estágio
             const context = contextFor(spellAttack.targeting.targetId);
-            const effect = rollSpellEffect(spell, stage, [ ...spellEffectSpecs(passives, context, spell), ...effectDamageSpecs(myEffects, context, 'spell') ]);
+            // Conjurada em crítico: o dano do estágio sai vezes o multiplicador (×2, ou o que uma habilidade sobe); a duração não dobra
+            const effect = rollSpellEffect(
+                spell,
+                stage,
+                [ ...spellEffectSpecs(passives, context, spell), ...effectDamageSpecs(myEffects, context, 'spell') ],
+                pendingCriticals[spellKey] ? { critMultiplier: critMultiplier(critMultiplierSources(passives, context, 'spell', spell)) } : {}
+            );
             // O botão "Efetuar" permanece depois de apertado (decisão do dono): só sai ao descartar a conjuração (X) ou quando uma nova conjuração da magia o troca
             await sendCombatChatMessage(buildSpellEffectMessage(playerName, effect), MessageType.DICE);
             // O dano rolado se junta ao ataque que a conjuração declarou ao mestre (se houve alvo)
-            await spellAttack.attachSpellDamage(spell, effect.totalDamage);
+            await spellAttack.attachSpellDamage(spell, effect.totalDamage, effect.critMultiplier !== undefined);
         } catch (error) {
             console.error('Erro ao efetuar magia:', error);
             enqueueSnackbar('Erro ao efetuar a magia', { variant: 'error' });
@@ -291,6 +307,7 @@ export function useSpellCastingState(): SpellCasting {
         castingSpellId,
         effectingSpellId,
         pendingEffects,
+        pendingCriticals,
         clearPending,
         myCombatantId: myCombatant?.id,
         mpLimitEnforced,

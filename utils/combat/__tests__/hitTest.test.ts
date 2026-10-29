@@ -155,3 +155,45 @@ describe('vantagem e desvantagem dos efeitos no teste de acerto', () => {
         expect(hit).toMatchObject({ keep: 'highest', lessDice: 0, extraDice: 0, notes: [] });
     });
 });
+
+describe('acerto crítico no teste (rollHitTest)', () => {
+    afterEach(() => jest.restoreAllMocks());
+
+    it('o 20 natural marca o crítico sozinho, sem margem informada', () => {
+        jest.spyOn(Math, 'random').mockReturnValue(0.99); // d20: 20
+        const hit = rollHitTest('des', sheet());
+        expect(hit.bestRoll).toBe(20);
+        expect(hit.critical).toBe(true);
+        expect(hit.critMargin).toBe(20);
+    });
+
+    it('19 natural só marca com a margem em 19', () => {
+        jest.spyOn(Math, 'random').mockReturnValue(0.9); // d20: 19
+        expect(rollHitTest('des', sheet()).critical).toBe(false);
+        expect(rollHitTest('des', sheet(), { critMargin: 19 }).critical).toBe(true);
+        expect(rollHitTest('des', sheet(), { critMargin: 19 }).critMargin).toBe(19);
+    });
+
+    it('conta o d20 que valeu: o 20 que a desvantagem descartou não marca crítico', () => {
+        const rolls = [ 0.99, 0.1 ]; // 20 e 3; com uma desvantagem valem 2d20 e o menor (mod 1 + 1 desvantagem rolam 2)
+        jest.spyOn(Math, 'random').mockImplementation(() => rolls.shift() ?? 0);
+        const hit = rollHitTest('vig', sheet(), { lessDice: 1 });
+        expect(hit.keep).toBe('lowest');
+        expect(hit.bestRoll).toBe(3);
+        expect(hit.critical).toBe(false);
+    });
+
+    it('com vantagem, o 20 que valeu marca o crítico', () => {
+        const rolls = [ 0.1, 0.99, 0.5 ];
+        jest.spyOn(Math, 'random').mockImplementation(() => rolls.shift() ?? 0);
+        const hit = rollHitTest('vig', sheet(), { extraDice: 2 });
+        expect(hit.bestRoll).toBe(20);
+        expect(hit.critical).toBe(true);
+    });
+
+    it('o teste de magia também traz o crítico, com a margem da magia', () => {
+        jest.spyOn(Math, 'random').mockReturnValue(0.9); // 19
+        expect(rollSpellTest(sheet(), { critMargin: 19 }).critical).toBe(true);
+        expect(rollSpellTest(sheet()).critical).toBe(false);
+    });
+});

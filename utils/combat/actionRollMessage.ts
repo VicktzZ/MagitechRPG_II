@@ -21,8 +21,10 @@
  *   - 3d12+6: [1, 8, 4] + 6 = 19
  *   - 2d12+4: [4, 4] + 4 = 12
  *
- * `[AÇÃO] arma crítico` marca o dano crítico e `[AÇÃO] arma furtivo` (ou `arma crítico furtivo`) o dano dado por quem estava com o efeito Furtivo: o
- * `Total` já é o dobro da soma das rolagens (cada `-` mostra o valor rolado, sem dobrar). Sem `Total` e sem rolagens não há dado a mostrar (só o custo, se houver).
+ * `[AÇÃO] arma crítico` marca o dano crítico (o d20 natural passou da margem, ver `critical.ts`); na conjuração, `[AÇÃO] conjuração crítico` é o acerto crítico. A linha `Multiplicador: ×2` diz que o
+ * `Total` é a soma das rolagens vezes o multiplicador do crítico (arma sem fórmula própria de crítico, efeito de magia de ataque conjurada em crítico); arma com `critValue` rola a fórmula e não leva a linha.
+ * `[AÇÃO] arma furtivo` (ou `arma crítico furtivo`) é o dano dado por quem estava com o efeito Furtivo: o `Total` já é o dobro da soma (do crítico, se houver); cada `-` mostra o valor rolado,
+ * sem multiplicar. Sem `Total` e sem rolagens não há dado a mostrar (só o custo, se houver).
  *
  * `[AÇÃO] defesa` é o teste de defesa de quem foi atacado (resistência ou esquiva): o mesmo desenho da conjuração, sem custo; `DT` é o que o teste precisava tirar
  * (resistência: metade do total do ataque, para cima; esquiva: o total do ataque + 1) e o cartão diz Sucesso ou Falhou.
@@ -48,8 +50,10 @@ export interface ActionRoll {
     title: string;
     /** Linha de apoio sob o título: "LUZ · Estágio 3" na magia, "Dano · Perfurante" na arma */
     detail: string;
-    /** Dano crítico (só na arma) */
+    /** Dano crítico na arma; acerto crítico na conjuração (o d20 natural passou da margem, ver `critical.ts`); efeito de magia de ataque conjurada em crítico */
     critical: boolean;
+    /** O crítico saiu do multiplicador (arma sem fórmula própria de crítico, efeito de magia): o `total` é a soma das rolagens vezes isto. Sem isso o total é a soma das rolagens */
+    multiplier?: number;
     /** Dano de quem atacava furtivo (só na arma): o `total` é o dobro da soma das rolagens */
     stealth?: boolean;
     /** Teste em que vale o **menor** d20 (desvantagem líquida dos efeitos); sem isso vale o maior */
@@ -95,6 +99,7 @@ export function buildActionRollText(action: ActionRoll): string {
     if (action.total !== null) lines.push(`Total: **${action.total}**`);
     if (action.dt !== null) lines.push(`DT: **${action.dt}**`);
     if (action.cost !== null) lines.push(`Custo: **${action.cost} MP**`);
+    if (action.multiplier) lines.push(`Multiplicador: ×${action.multiplier}`);
     const notes = (action.notes ?? []).map(clean).filter(Boolean);
     if (notes.length > 0) lines.push(`Efeitos: ${notes.join(' | ')}`);
     for (const segment of action.segments) lines.push(`- ${clean(segment.notation)}: ${clean(segment.display)} = ${segment.total}`);
@@ -132,6 +137,7 @@ export function parseActionRoll(text: string): ActionRoll | null {
         else if (line.startsWith('Total:')) action.total = Number(/-?\d+/.exec(line)?.[0] ?? NaN);
         else if (line.startsWith('DT:')) action.dt = Number(/\d+/.exec(line)?.[0] ?? NaN);
         else if (line.startsWith('Custo:')) action.cost = Number(/\d+/.exec(line)?.[0] ?? NaN);
+        else if (line.startsWith('Multiplicador:')) action.multiplier = Number(/\d+/.exec(line)?.[0] ?? NaN);
         else if (line.startsWith('Efeitos:')) action.notes = line.slice('Efeitos:'.length).split('|').map(note => note.trim()).filter(Boolean);
         else {
             const segment = SEGMENT.exec(line);

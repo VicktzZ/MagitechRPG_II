@@ -51,7 +51,7 @@ const spellKey = (spell: Pick<SpellDTO, 'id' | 'name'>): string => spell.id || s
 export default function ActionsSection(): ReactElement | null {
     const { campaign } = useCampaignContext();
     const { charsheet } = useCampaignCurrentCharsheetContext();
-    const { handleWeaponHit, handleWeaponDamage, targeting } = useWeaponRolls();
+    const { handleWeaponHit, handleWeaponDamage, isWeaponCritical, targeting } = useWeaponRolls();
     const casting = useSpellCasting();
     const { activateItem } = useItemUse();
     const { passives } = usePassives();
@@ -190,12 +190,12 @@ export default function ActionsSection(): ReactElement | null {
                 <>
                     <Button
                         size="small"
-                        variant="outlined"
-                        color="secondary"
+                        variant={isWeaponCritical(tile.weapon) ? 'contained' : 'outlined'}
+                        color={isWeaponCritical(tile.weapon) ? 'primary' : 'secondary'}
                         onClick={(event) => { void handleWeaponDamage(tile.weapon, false, event); }}
                         sx={{ textTransform: 'none', minWidth: 0, px: 1 }}
                     >
-                        Dano
+                        {isWeaponCritical(tile.weapon) ? 'Dano crítico' : 'Dano'}
                     </Button>
                     <Button
                         size="small"

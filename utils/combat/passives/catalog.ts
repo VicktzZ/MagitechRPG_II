@@ -56,7 +56,7 @@ add('class', 'Concentração', active({
     heal: { dice: '2d6', plusFoc: true }
 }, 'O limite é "uma vez por cena": o app conta uma vez por combate.'));
 add('class', 'Magia Resiliente', auto([ { kind: 'spellEffect', extra: { plus: 'attr:foc' } } ], 'Forçar novo teste de resistência (3 MP) é na mão.'));
-add('class', 'Ascensão Arcana', auto([ { kind: 'defense', against: 'magico', pct: 50 } ], 'Margem de crítico de magias em 19: o crítico é marcado na mão.'));
+add('class', 'Ascensão Arcana', auto([ { kind: 'defense', against: 'magico', pct: 50 }, { kind: 'critMargin', delta: -1, scope: 'spell' } ]));
 
 // Ladino
 add('class', 'Disfarce', auto([ { kind: 'stealthActions', on: 'enter', add: { padrao: 1 } } ], 'Vale quando o efeito Furtivo é aplicado no turno dele.'));
@@ -81,8 +81,11 @@ add('subclass', 'Forma Primordial', active({
     execution: 'Bônus',
     cost: { allMp: true },
     limits: [ { per: 'dia', max: 1 } ],
-    effect: effect({ unit: 'combate' }, 'Brutamonte: ignora o AP do alvo até o fim do combate.', [ { kind: 'flag', target: 'ignore_ap' } ])
-}, 'Margem de crítico −2 é na mão; a ação gasta é premissa minha (o texto não diz).'));
+    effect: effect({ unit: 'combate' }, 'Brutamonte: ignora o AP do alvo e a margem de crítico cai 2 (18) até o fim do combate.', [
+        { kind: 'flag', target: 'ignore_ap' },
+        { kind: 'stat_bonus', target: 'critMargin', value: -2 }
+    ])
+}, 'A ação gasta é premissa minha (o texto não diz).'));
 
 // Comandante
 add('subclass', 'Postura Defensiva', active({

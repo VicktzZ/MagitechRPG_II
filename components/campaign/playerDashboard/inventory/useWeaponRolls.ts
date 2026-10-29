@@ -11,13 +11,16 @@ import {
     buildDamageMessageText,
     buildDamageErrorText
 } from '@utils/combat/weaponRoller';
+import { critMultiplier } from '@utils/combat/critical';
 import { combatantAttackDice } from '@utils/combat/environment';
+import { findAwaitingDamage } from '@utils/combat/pendingAttacks';
 import { isCombatantStealthy } from '@utils/combat/stealth';
 import { isOpportunityWeapon, OPPORTUNITY_WEAPON_HELP } from '@utils/combat/opportunities';
-import { effectDamageSpecs, effectHitBonus, weaponDamageSpecs } from '@utils/combat/passives';
+import { critMarginReduction, critMultiplierSources, effectCritMarginReduction, effectDamageSpecs, effectHitBonus, weaponDamageSpecs } from '@utils/combat/passives';
 import { useSession } from 'next-auth/react';
 import { useSnackbar } from 'notistack';
 import type { MouseEvent as ReactMouseEvent } from 'react';
+import { hitMarkKey, setHitCritical, useHitCriticals } from '../attacks/hitCriticals';
 import { useAttackTargeting } from '../attacks/useAttackTargeting';
 import { usePassives } from '../passives/usePassives';
 
@@ -36,6 +39,13 @@ export function useWeaponRolls() {
     const { targeting, declare, attachDamage } = useAttackTargeting();
     // Passivas de classe e subclasse: somam ao acerto e ao dano (Armado, Bom de Briga, Sempre Distante...) e as habilidades ativadas também (Ritmo da Batalha, Postura do Lobo...)
     const { passives, myEffects, contextFor } = usePassives();
+    // Acerto crítico (o d20 natural passou da margem): marcado sozinho; o botão de dano rola o crítico enquanto o acerto espera o dano
+    const hitMarks = useHitCriticals();
+    const markKey = (weapon: Weapon): string => hitMarkKey(charsheet?.id, 'weapon', weapon.name);
+    const isWeaponCritical = (weapon: Weapon): boolean => {
+        const awaiting = charsheet?.id ? findAwaitingDamage(campaign?.session?.combat?.pendingAttacks, charsheet.id, weapon.name, 'weapon') : undefined;
+        return hitMarks.has(markKey(weapon)) || awaiting?.critical === true;
+    };
 
     const sendCombatChatMessage = async (text: string, type: MessageType = MessageType.COMBAT_LOG) => {
         if (!session?.user) return;
@@ -64,7 +74,16 @@ export function useWeaponRolls() {
         // Os efeitos aplicados (Cegueira, Precisão...) e a luz da cena (penumbra, escuridão, conforme a visão dele) somam vantagens e desvantagens de ataque;
         // o chat e o mestre sabem de onde vêm
         const effects = combatantAttackDice(campaign?.session?.combat, charsheet?.id);
-        const hit = rollWeaponHit(weapon, charsheet, { stealth: isCombatantStealthy(campaign?.session?.combat, charsheet?.id), effects, flatBonus: effectHitBonus(myEffects) });
+        // A margem de crítico da arma (`effect.critChance`, 20 se vazia) cai com as passivas e as habilidades ativadas (Forma Primordial −2)
+        const marginCut = { fromPassives: critMarginReduction(passives, contextFor(targeting.targetId), 'weapon'), fromEffects: effectCritMarginReduction(myEffects) };
+        const hitBonus = effectHitBonus(myEffects);
+        const hit = rollWeaponHit(weapon, charsheet, {
+            stealth: isCombatantStealthy(campaign?.session?.combat, charsheet?.id),
+            effects,
+            flatBonus: { flat: hitBonus.flat, notes: [ ...hitBonus.notes, ...marginCut.fromPassives.notes, ...marginCut.fromEffects.notes ] },
+            critMarginReduction: marginCut.fromPassives.reduction + marginCut.fromEffects.reduction
+        });
+        setHitCritical(markKey(weapon), hit.critical);
         const playerName = charsheet?.name || session?.user?.name || 'Jogador';
         await sendCombatChatMessage(buildHitMessageText(playerName, weapon, hit));
 
@@ -77,7 +96,8 @@ export function useWeaponRolls() {
             attackTotal: hit.total,
             rolls: hit.rolls,
             bonus: hit.bonus,
-            ...(hit.keep === 'lowest' ? { keep: 'lowest' } : {})
+            ...(hit.keep === 'lowest' ? { keep: 'lowest' } : {}),
+            ...(hit.critical ? { critical: true } : {})
         }, { opportunity });
         if (!declared || !isNew || !campaign?.id || !charsheet?.id) return;
 
@@ -97,19 +117,26 @@ export function useWeaponRolls() {
 
     const handleWeaponDamage = async (weapon: Weapon, isCritical: boolean, e: ReactMouseEvent) => {
         e.stopPropagation();
+        // O botão "Dano" rola crítico sozinho quando o acerto foi crítico; "Crítico" continua forçando o crítico na mão
+        const critical = isCritical || isWeaponCritical(weapon);
         const context = contextFor(targeting.targetId);
         const extras = [ ...weaponDamageSpecs(passives, context, weapon), ...effectDamageSpecs(myEffects, context, 'weapon', weapon) ];
-        const result = rollWeaponDamage(weapon, isCritical, { stealth: isCombatantStealthy(campaign?.session?.combat, charsheet?.id), extras });
+        const result = rollWeaponDamage(weapon, critical, {
+            stealth: isCombatantStealthy(campaign?.session?.combat, charsheet?.id),
+            extras,
+            critMultiplier: critMultiplier(critMultiplierSources(passives, context, 'weapon'))
+        });
         const playerName = charsheet?.name || session?.user?.name || 'Jogador';
         if (!result) {
-            await sendCombatChatMessage(buildDamageErrorText(weapon, isCritical));
+            await sendCombatChatMessage(buildDamageErrorText(weapon, critical));
             return;
         }
         await sendCombatChatMessage(buildDamageMessageText(playerName, weapon, result), MessageType.DICE);
+        setHitCritical(markKey(weapon), false);
 
         // O dano se junta ao ataque que esperava por ele (o que o jogador declarou no acerto)
-        await attachDamage(weapon.name, 'weapon', result.total, isCritical);
+        await attachDamage(weapon.name, 'weapon', result.total, critical);
     };
 
-    return { handleWeaponHit, handleWeaponDamage, targeting };
+    return { handleWeaponHit, handleWeaponDamage, isWeaponCritical, targeting };
 }

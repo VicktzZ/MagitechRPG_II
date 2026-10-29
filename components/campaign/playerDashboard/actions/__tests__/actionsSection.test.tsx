@@ -60,7 +60,7 @@ const setup = (options: { combat?: Record<string, unknown> | null; me?: Record<s
         pending: [],
         opportunity: { current: null, active: false, setUse: jest.fn() }
     };
-    mockWeaponRolls.mockReturnValue({ handleWeaponHit: jest.fn(), handleWeaponDamage: jest.fn(), targeting });
+    mockWeaponRolls.mockReturnValue({ handleWeaponHit: jest.fn(), handleWeaponDamage: jest.fn(), isWeaponCritical: () => false, targeting });
     mockCasting.mockReturnValue({
         stageRule: false, sustainedActive: {}, pendingEffects: {}, castingSpellId: null, effectingSpellId: null,
         spellCost: (candidate: { mpCost?: unknown }) => Number(candidate.mpCost) || 0,
@@ -163,6 +163,16 @@ describe('ActionsSection', () => {
         expect(html).toContain('>Dano<');
         expect(html).toContain('>Crítico<');
         expect(html).toContain('aria-label="Efetuar Brasa Voraz"');
+    });
+
+    it('acerto crítico: o botão de dano do quadrado vira "Dano crítico" (rola o crítico sozinho)', () => {
+        setup({ targetId: 'goblin-1', combat: { pendingAttacks: [ { id: 'p1', attackerId: 'aria', source: 'weapon', name: 'Espada Longa', targetId: 'goblin-1', critical: true, createdAt: 'x' } ] } });
+        mockWeaponRolls.mockReturnValue({ ...mockWeaponRolls(), isWeaponCritical: () => true });
+        const html = render(<ActionsSection />);
+
+        expect(html).toContain('>Dano crítico<');
+        expect(html).not.toContain('>Dano<');
+        expect(html).toContain('>Crítico<');
     });
 
     it('a vez do personagem aparece marcada', () => {

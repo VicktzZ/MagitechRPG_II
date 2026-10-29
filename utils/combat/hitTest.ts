@@ -1,6 +1,7 @@
 import type { CharsheetDTO } from '@models/dtos';
 import type { Attributes } from '@models/Attributes';
 import type { Expertises } from '@models/Expertises';
+import { DEFAULT_CRIT_MARGIN, isCriticalRoll } from './critical';
 import { adjustDice, keptDie } from './effectDice';
 import { sheetExpertisePenalty } from './sheetOverweight';
 
@@ -19,6 +20,10 @@ export interface HitTestResult {
     keep: 'highest' | 'lowest';
     /** De onde vieram as vantagens e desvantagens, para o chat dizer ("furtivo: vantagem, +1d20", "Cegueira: desvantagem, −1d20") */
     notes: string[];
+    /** O d20 natural que valeu passou da margem de crítico (`critMargin`): acerto crítico, marcado sozinho (ver `critical.ts`) */
+    critical: boolean;
+    /** A margem usada: 20 por padrão, a da arma e as reduções das passivas e dos efeitos */
+    critMargin: number;
 }
 
 export interface RollHitOptions {
@@ -30,6 +35,8 @@ export interface RollHitOptions {
     notes?: string[];
     /** Valor fixo somado ao teste (passivas e habilidades: Domínio Elemental +2, Ritmo da Batalha +2); a origem vai em `notes` */
     flatBonus?: number;
+    /** A margem de crítico já calculada (`critMargin` de `critical.ts`); sem ela vale 20 (só o 20 natural) */
+    critMargin?: number;
 }
 
 export interface ResolvedHitBonus {
@@ -102,6 +109,7 @@ export function rollHitTest(hitAttr: keyof Attributes | undefined, charsheet: Ch
     const flatBonus = Number.isFinite(Number(options.flatBonus)) ? Math.trunc(Number(options.flatBonus)) : 0;
     const bonus = skillBonus + flatBonus;
     const total = bestRoll + bonus;
+    const margin = options.critMargin ?? DEFAULT_CRIT_MARGIN;
 
     return {
         notation: `${dice}d20${bonus >= 0 ? '+' : ''}${bonus}`,
@@ -113,7 +121,9 @@ export function rollHitTest(hitAttr: keyof Attributes | undefined, charsheet: Ch
         extraDice,
         lessDice,
         keep,
-        notes: options.notes ?? []
+        notes: options.notes ?? [],
+        critical: isCriticalRoll(bestRoll, margin),
+        critMargin: margin
     };
 }
 
