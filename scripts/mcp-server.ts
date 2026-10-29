@@ -52,7 +52,8 @@ server.registerTool(
 server.registerTool(
     'list_charsheets',
     {
-        description: 'Lista as fichas de personagem dos jogadores de uma campanha (pra ver atributos/stats reais e calibrar criaturas).',
+        description:
+            'Lista as fichas de personagem dos jogadores de uma campanha (pra ver atributos/stats reais e calibrar criaturas).',
         inputSchema: { campaignId: z.string() }
     },
     async ({ campaignId }) => callApi(`/api/campaign/${encodeURIComponent(campaignId)}/fichas`)
@@ -123,21 +124,38 @@ server.registerTool(
 )
 
 const damageModifierSchema = z.object({
-    kind: z.enum([ 'resistance', 'vulnerability' ]),
-    element: z.string().optional().describe('Elemento/tipo de dano ("Fogo", "Cortante") ou "Físico"; vazio = todo dano'),
+    kind: z.enum(['resistance', 'vulnerability']),
+    element: z
+        .string()
+        .optional()
+        .describe('Elemento/tipo de dano ("Fogo", "Cortante") ou "Físico"; vazio = todo dano'),
     value: z.string().describe('"25%" (percentual) ou "3" (fixo)')
 })
 
 const defensesSchema = {
-    elementalMastery: z.string().optional().describe('Elemento da criatura (ex.: "Água"); dá a ela a fraqueza do elemento que vence este. Segredo do mestre.'),
-    weaknesses: z.array(z.string()).optional().describe('Fraquezas declaradas: elementos ou tipos físicos ("Cortante", "Perfurante", "Impactante"). Segredo do mestre.'),
-    damageModifiers: z.array(damageModifierSchema).optional().describe('Resistências/vulnerabilidades ao dano recebido. Segredo do mestre.')
+    elementalMastery: z
+        .string()
+        .optional()
+        .describe(
+            'Elemento da criatura (ex.: "Água"); dá a ela a fraqueza do elemento que vence este. Segredo do mestre.'
+        ),
+    weaknesses: z
+        .array(z.string())
+        .optional()
+        .describe(
+            'Fraquezas declaradas: elementos ou tipos físicos ("Cortante", "Perfurante", "Impactante"). Segredo do mestre.'
+        ),
+    damageModifiers: z
+        .array(damageModifierSchema)
+        .optional()
+        .describe('Resistências/vulnerabilidades ao dano recebido. Segredo do mestre.')
 }
 
 server.registerTool(
     'list_creatures',
     {
-        description: 'Lista as criaturas customizadas de uma campanha (painel do mestre), com defesas (elemento/fraquezas/resistências) já juntadas.',
+        description:
+            'Lista as criaturas customizadas de uma campanha (painel do mestre), com defesas (elemento/fraquezas/resistências) já juntadas.',
         inputSchema: { campaignId: z.string() }
     },
     async ({ campaignId }) => callApi(`/api/campaign/${encodeURIComponent(campaignId)}/custom/creatures`)
