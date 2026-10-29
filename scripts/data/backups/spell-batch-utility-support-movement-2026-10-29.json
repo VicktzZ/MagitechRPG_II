@@ -1,0 +1,122 @@
+[
+  {
+    "id": "seed-ut-vigia-luminoso",
+    "name": "Vigia Luminoso"
+  },
+  {
+    "id": "seed-ut-ponte-de-gelo",
+    "name": "Ponte de Gelo"
+  },
+  {
+    "id": "seed-ut-interprete-arcano",
+    "name": "Intérprete Arcano"
+  },
+  {
+    "id": "seed-ut-fogueira-eterna",
+    "name": "Fogueira Eterna"
+  },
+  {
+    "id": "seed-ut-bolso-do-vazio",
+    "name": "Bolso do Vazio"
+  },
+  {
+    "id": "seed-ut-mapa-telurico",
+    "name": "Mapa Telúrico"
+  },
+  {
+    "id": "seed-ut-eco-distante",
+    "name": "Eco Distante"
+  },
+  {
+    "id": "seed-ut-sonar-voltaico",
+    "name": "Sonar Voltaico"
+  },
+  {
+    "id": "seed-ut-olhar-arcano",
+    "name": "Olhar Arcano"
+  },
+  {
+    "id": "seed-ut-passagem-rochosa",
+    "name": "Passagem Rochosa"
+  },
+  {
+    "id": "seed-su-vento-nas-costas",
+    "name": "Vento nas Costas"
+  },
+  {
+    "id": "seed-su-chama-da-coragem",
+    "name": "Chama da Coragem"
+  },
+  {
+    "id": "seed-su-gota-de-clareza",
+    "name": "Gota de Clareza"
+  },
+  {
+    "id": "seed-su-raizes-firmes",
+    "name": "Raízes Firmes"
+  },
+  {
+    "id": "seed-su-estandarte-de-luz",
+    "name": "Estandarte de Luz"
+  },
+  {
+    "id": "seed-su-adrenalina-voltaica",
+    "name": "Adrenalina Voltaica"
+  },
+  {
+    "id": "seed-su-alvo-prioritario",
+    "name": "Alvo Prioritário"
+  },
+  {
+    "id": "seed-su-foco-coletivo",
+    "name": "Foco Coletivo"
+  },
+  {
+    "id": "seed-su-frenesi-compartilhado",
+    "name": "Frenesi Compartilhado"
+  },
+  {
+    "id": "seed-su-estrategia-perfeita",
+    "name": "Estratégia Perfeita"
+  },
+  {
+    "id": "seed-mv-passo-de-chamas",
+    "name": "Passo de Chamas"
+  },
+  {
+    "id": "seed-mv-patinacao-glacial",
+    "name": "Patinação Glacial"
+  },
+  {
+    "id": "seed-mv-salto-sismico",
+    "name": "Salto Sísmico"
+  },
+  {
+    "id": "seed-mv-passo-entre-sombras",
+    "name": "Passo entre Sombras"
+  },
+  {
+    "id": "seed-mv-salto-relampago",
+    "name": "Salto Relâmpago"
+  },
+  {
+    "id": "seed-mv-corrente-ascendente",
+    "name": "Corrente Ascendente"
+  },
+  {
+    "id": "seed-mv-asas-de-vento",
+    "name": "Asas de Vento"
+  },
+  {
+    "id": "seed-mv-passo-dimensional",
+    "name": "Passo Dimensional"
+  },
+  {
+    "id": "seed-mv-cavalgar-a-luz",
+    "name": "Cavalgar a Luz"
+  },
+  {
+    "id": "seed-mv-dobra-espacial",
+    "name": "Dobra Espacial"
+  }
+]

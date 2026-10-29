@@ -54,9 +54,15 @@ Magia nova que recupera MP já deve nascer com a categoria.
 - No máximo UMA expressão de dados (`XdY`) por estágio: `rollSpellEffect` (ao efetuar a magia) rola todas as que achar no texto.
 - Antes de criar magias, ler o catálogo para não repetir conceito e seguir o vocabulário real.
 
-Lotes já criados: `scripts/data/manaRecoverySpells.ts` (ids `seed-mp-*`) e
-`scripts/data/reactionSpells.ts` (ids `seed-rx-*`). Usar `scripts/seedSpellBatch.ts` para gravar
-(upsert idempotente por id fixo). Gravação direta no Firestore de produção só com liberação
+Lotes já criados: `scripts/data/manaRecoverySpells.ts` (ids `seed-mp-*`), `scripts/data/reactionSpells.ts` (ids `seed-rx-*`) e
+`scripts/data/utilitySupportMovementSpells.ts` (ids `seed-ut-*`, `seed-su-*`, `seed-mv-*`: 10 Utilidade, 10 Suporte e 10 Movimento, **gravados em produção em 29/10/2026**,
+catálogo de 443 para 473 magias, releitura conferida campo a campo, ids guardados em `scripts/data/backups/spell-batch-utility-support-movement-2026-10-29.json`). Usar `scripts/seedSpellBatch.ts` para gravar
+(upsert idempotente por id fixo) **ou, para magia nova em produção, `scripts/createSpellBatch.ts`**: só CRIA (simulação por padrão; `--apply` aborta sem gravar nada se algum id ou nome, sem acento nem caixa, já existir ou
+se o lote se repetir; cada documento nasce numa transação `create`; depois relê todos; `--batch NOME`; `--backup F`; `--revert F --apply` apaga só os ids do backup cujo nome ainda é o gravado, e é para ser feito antes de alguém aprender a magia).
+O planejamento é puro (`utils/spellBatchPlan.ts`) e há teste no emulador (`utils/firestore/__tests__/createSpellBatch.emulator.test.ts`). O teste do lote é `utils/__tests__/utilitySupportMovementSpells.test.ts` (30 magias, 10 por categoria,
+vocabulário "turnos"/"combate", no máximo um `XdY` por estágio, faixa de `mpCost` por nível, `/Área` só quando o texto fala de área). **Duração em minutos ou horas não é "contínuo"** (contínuo = quantidade fixa de TURNOS, definição do dono):
+as de exploração fora de combate (Vigia Luminoso, Intérprete Arcano, Fogueira Eterna) são `(imediato)`, como Respirar na Água e Audição Sobre-humana já eram; **premissa minha, a rever** quando o dono definir "imediato". Magia `(sustentado)` precisa dizer
+no texto que dura enquanto o conjurador mantiver a concentração. Gravação direta no Firestore de produção só com liberação
 explícita do dono: criar apenas ids novos, abortar se houver colisão de id ou nome, e reler para conferir.
 Para alterar um lote já gravado, conferir antes que os documentos ainda estão na versão anterior do
 lote (senão alguém editou à mão), sobrescrever só os ids do lote e reler para conferir.
