@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "magitech-rpg": {
+      "command": "bun",
+      "args": [ "run", "scripts/mcp-server.ts" ],
+      "env": {
+        "MCP_RPG_BASE_URL": "http://localhost:3000"
+      }
+    }
+  }
+}
