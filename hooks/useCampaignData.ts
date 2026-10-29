@@ -6,7 +6,9 @@ import { useQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { CampaignLookupError, resolveCampaignLoadStatus, type CampaignLoadStatus } from '@utils/campaignLoadStatus';
 import { useCampaignChatFeed, type CampaignChat } from './useCampaignChatFeed';
+import { attachCreatureDefenses } from '@utils/combat/creatureSecrets';
 import { useFirestoreRealtime } from './useFirestoreRealtime';
+import { useGmData } from './useGmData';
 import { useStableArrayItems, useStableValue } from './useStableValue';
 
 interface UseCampaignDataOptions {
@@ -115,12 +117,23 @@ export function useCampaignData({
     const isMember = !!userId && !!c && (c.admin?.includes(userId) || c.players?.some(player => player.userId === userId));
     const { messages, chat } = useCampaignChatFeed({ campaignId: c?.id, enabled: !!isMember, legacyMessages });
 
+    // Dados que só o mestre vê (defesas das criaturas): moram à parte, nunca no documento da campanha, e o navegador do mestre os junta de volta
+    // nas criaturas, então o resto da tela continua lendo `campaign.custom.creatures` como sempre. Os jogadores não abrem esse listener.
+    const isGM = !!userId && !!c?.admin?.includes(userId);
+    const { creatureDefenses } = useGmData({ campaignId: c?.id, enabled: isGM });
+
     // Campanha sem as mensagens, estabilizada por conteúdo: um snapshot que só
     // acrescentou mensagem mantém a MESMA referência de campanha.
     const campaignSansMessages = useMemo(() => {
         if (!c) return null;
-        return { ...c, session: { ...c.session, messages: EMPTY_MESSAGES } };
-    }, [ c ]);
+        const stored = c.custom?.creatures;
+        const creatures = isGM && Array.isArray(stored) ? attachCreatureDefenses(stored, creatureDefenses) : stored;
+        return {
+            ...c,
+            ...(creatures !== stored ? { custom: { ...c.custom, creatures: creatures as typeof stored } } : {}),
+            session: { ...c.session, messages: EMPTY_MESSAGES }
+        };
+    }, [ c, isGM, creatureDefenses ]);
     const stableCampaign = useStableValue(campaignSansMessages);
 
     const campaignData = useMemo((): CampaignData | null => {

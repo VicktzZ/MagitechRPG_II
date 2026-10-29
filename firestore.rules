@@ -20,6 +20,11 @@ service cloud.firestore {
       return signedIn() && request.auth.token.admin == true;
     }
 
+    // Mestre da campanha: a lista `admin` da campanha tem IDs de usuário. Sem `admin` o get() falha e a leitura é negada.
+    function isCampaignGM(campaignId) {
+      return signedIn() && request.auth.uid in get(/databases/$(database)/documents/campaigns/$(campaignId)).data.admin;
+    }
+
     // Usuários: têm e-mail e assinatura — cada um lê só o próprio documento.
     // Perfis públicos dos membros de uma campanha vêm da API.
     match /users/{userId} {
@@ -63,10 +68,15 @@ service cloud.firestore {
     // campanha lê (a lista `admin` da campanha tem IDs de usuário), e o administrador do site. O jogador não vê, nem
     // por ID. Sem `admin` na campanha o get() falha e a leitura é negada. Escrita só pela API, que confere o mestre.
     match /campaigns/{campaignId}/gmNotes/{charsheetId} {
-      allow read: if signedIn() && (
-        isAdmin()
-        || request.auth.uid in get(/databases/$(database)/documents/campaigns/$(campaignId)).data.admin
-      );
+      allow read: if isAdmin() || isCampaignGM(campaignId);
+      allow write: if false;
+    }
+
+    // Dados que só o mestre pode ver (campaigns/{id}/gmData/{docId}): as defesas das criaturas (elemento, fraquezas, resistências),
+    // que o documento da campanha, legível por qualquer logado, não pode carregar. Mesma regra das anotações: só o mestre da campanha
+    // (e o administrador do site) lê, e só o servidor escreve (Admin SDK).
+    match /campaigns/{campaignId}/gmData/{docId} {
+      allow read: if isAdmin() || isCampaignGM(campaignId);
       allow write: if false;
     }
 

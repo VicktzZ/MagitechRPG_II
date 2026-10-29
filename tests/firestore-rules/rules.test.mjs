@@ -39,9 +39,11 @@ beforeEach(async () => {
         await setDoc(doc(fs, 'campaigns/camp1/messages/m1'), { id: 'm1', text: 'oi', timestamp: '2026-01-01T10:00:00.000Z', by: { id: 'alice', name: 'Aria', image: '' } });
         await setDoc(doc(fs, 'campaigns/camp1/messages/m2'), { id: 'm2', text: 'olá', timestamp: '2026-01-01T10:01:00.000Z', by: { id: 'bob', name: 'Borin', image: '' } });
         await setDoc(doc(fs, 'campaigns/camp1/gmNotes/sheetA'), { text: 'Aria esconde um segredo', updatedBy: 'bob' });
+        await setDoc(doc(fs, 'campaigns/camp1/gmData/creature-defenses:goblin'), { kind: 'creatureDefenses', creatureId: 'goblin', elementalMastery: 'Fogo', weaknesses: [ 'Cortante' ], damageModifiers: [] });
         await setDoc(doc(fs, 'campaigns/camp2'), { id: 'camp2', campaignCode: 'WXYZ9999', admin: [ 'carol' ], players: [ { userId: 'bob', charsheetId: 'sheetB' } ] });
         await setDoc(doc(fs, 'campaigns/campSemMestre'), { id: 'campSemMestre', campaignCode: 'SEMM0001', players: [] });
         await setDoc(doc(fs, 'campaigns/campSemMestre/gmNotes/x'), { text: 'sem mestre' });
+        await setDoc(doc(fs, 'campaigns/campSemMestre/gmData/x'), { kind: 'creatureDefenses', creatureId: 'x' });
         await setDoc(doc(fs, 'notifications/n1'), { id: 'n1', userId: 'alice', title: 'oi', timestamp: '2026-01-01' });
         await setDoc(doc(fs, 'notifications/n2'), { id: 'n2', userId: 'bob', title: 'oi', timestamp: '2026-01-01' });
         await setDoc(doc(fs, 'spells/s1'), { id: 's1', name: 'Bola de Fogo' });
@@ -213,6 +215,56 @@ describe('anotações privadas do mestre (campaigns/{id}/gmNotes)', () => {
         await assertSucceeds(getDoc(doc(alice(), 'campaigns/camp1')));
         await assertSucceeds(getDoc(doc(alice(), 'campaigns/camp1/messages/m1')));
         await assertFails(setDoc(doc(bob(), 'campaigns/camp1'), { title: 'x' }));
+    });
+});
+
+describe('dados privados do mestre (campaigns/{id}/gmData)', () => {
+    const secret = (user, path = 'campaigns/camp1/gmData/creature-defenses:goblin') => getDoc(doc(user, path));
+
+    it('o mestre da campanha lê o documento e lista a subcoleção (é assim que o navegador dele escuta)', async () => {
+        const snapshot = await assertSucceeds(secret(bob()));
+        assert.equal(snapshot.data().elementalMastery, 'Fogo');
+        const all = await assertSucceeds(getDocs(collection(bob(), 'campaigns/camp1/gmData')));
+        assert.equal(all.size, 1);
+    });
+
+    it('o mestre lê também um documento que ainda não existe (o listener abre antes da primeira defesa)', async () => {
+        const snapshot = await assertSucceeds(secret(bob(), 'campaigns/camp1/gmData/creature-defenses:orc'));
+        assert.equal(snapshot.exists(), false);
+    });
+
+    it('o jogador da campanha não lê nem lista: fraquezas e resistências são do mestre', async () => {
+        await assertFails(secret(alice()));
+        await assertFails(getDocs(collection(alice(), 'campaigns/camp1/gmData')));
+        await assertFails(getDocs(query(collection(alice(), 'campaigns/camp1/gmData'), where('kind', '==', 'creatureDefenses'))));
+    });
+
+    it('quem não faz parte da campanha e o mestre de OUTRA campanha não leem', async () => {
+        await assertFails(secret(db('carol')));
+        await assertFails(secret(db('intruso')));
+        await assertFails(secret(bob(), 'campaigns/camp2/gmData/creature-defenses:x'));
+    });
+
+    it('anônimo não lê', async () => {
+        await assertFails(secret(anon()));
+    });
+
+    it('administrador do site lê', async () => {
+        await assertSucceeds(secret(admin()));
+    });
+
+    it('campanha sem lista de mestres nega a todos (o get() falha) menos ao administrador do site', async () => {
+        await assertFails(secret(alice(), 'campaigns/campSemMestre/gmData/x'));
+        await assertFails(secret(bob(), 'campaigns/campSemMestre/gmData/x'));
+        await assertSucceeds(secret(admin(), 'campaigns/campSemMestre/gmData/x'));
+    });
+
+    it('ninguém escreve direto (só a API, com o Admin SDK): nem o mestre, nem o administrador', async () => {
+        for (const user of [ alice(), bob(), admin(), anon() ]) {
+            await assertFails(setDoc(doc(user, 'campaigns/camp1/gmData/novo'), { kind: 'creatureDefenses' }));
+            await assertFails(updateDoc(doc(user, 'campaigns/camp1/gmData/creature-defenses:goblin'), { weaknesses: [] }));
+            await assertFails(deleteDoc(doc(user, 'campaigns/camp1/gmData/creature-defenses:goblin')));
+        }
     });
 });
 
