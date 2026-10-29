@@ -3,12 +3,12 @@
 'use client';
 
 import { elementColor as elementColors, toastDefault } from '@constants';
+import { font } from '@themes/tokens'
 import { type CharsheetDTO } from '@models/dtos';
 import type { Spell } from '@models/entities';
 import {
     AddCircle,
-    AutoAwesome,
-    AutoFixHigh,
+    AutoStories,
     Close,
     EmojiSymbols,
     FilterList,
@@ -37,29 +37,10 @@ import { useSnackbar } from 'notistack';
 import { memo, useCallback, useMemo, useState } from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
 import { Magic } from '.';
-import MagicsModal from './dialogs/MagicsModal';
-
-/**
- * Normaliza um valor que pode ser um array ou um objeto com chaves numéricas
- */
-function normalizeToArray<T>(value: any): T[] {
-    if (!value) return [];
-    if (Array.isArray(value)) return value;
-    
-    // Se é um objeto com chaves numéricas, converter para array
-    if (typeof value === 'object') {
-        const keys = Object.keys(value);
-        const isNumericKeys = keys.every(key => !isNaN(Number(key)));
-        if (isNumericKeys) {
-            return keys
-                .map(key => Number(key))
-                .sort((a, b) => a - b)
-                .map(key => value[key]);
-        }
-    }
-    
-    return [];
-}
+import MagicsModal, { spellKey } from './dialogs/MagicsModal';
+import { normalizeToArray } from '@utils/normalizeToArray';
+import { useSpellStagesRevealed } from '@hooks/useSpellStagesRevealed';
+import { canEvolve, formatEvolutionPoints, getEvolutionPoints, getSpellProgress, usesStageUnlock, withoutSpell, type SpellProgress } from '@utils/spellStages';
 
 function getSpellPointCost(level: number): 1 | 2 {
     return level >= 3 ? 2 : 1
@@ -79,15 +60,27 @@ const Spells = memo(() => {
     const [ sortType, setSortType ] = useState<'elemento' | 'level' | 'name'>('name')
 
     // Hooks e contexto
-    const { control, setValue, getValues } = useFormContext<CharsheetDTO>()
+    const { control, setValue } = useFormContext<CharsheetDTO>()
     const { enqueueSnackbar, closeSnackbar } = useSnackbar()
     const theme = useTheme()
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
 
     const spellsRaw = useWatch({ control, name: 'spells' })
-    const spells = useMemo(() => normalizeToArray(spellsRaw), [ spellsRaw ])
+    const spells = useMemo(() => normalizeToArray<Spell>(spellsRaw), [ spellsRaw ])
 
     const spellStages = useWatch({ control, name: 'spellStages' })
+    const spellUnlocked = useWatch({ control, name: 'spellUnlocked' })
+    // A maestria no elemento abre sozinha o 3º estágio das magias de nível 4 (ver utils/spellStages.ts)
+    const elementalMastery = useWatch({ control, name: 'elementalMastery' })
+
+    // Desbloqueio de estágios: vale na ficha do Magitech padrão (ver utils/spellStages.ts). O estágio que a ficha já usava
+    // quando foi aberta vale como liberado nas fichas antigas, que ainda não têm `spellUnlocked`
+    const systemId = useWatch({ control, name: 'systemId' })
+    const charClass = useWatch({ control, name: 'class' })
+    const stageRule = usesStageUnlock({ systemId, class: charClass })
+    // O mestre da campanha onde a ficha joga pode liberar a leitura de todos os estágios (utils/spellReveal.ts): só visualização
+    const charsheetId = useWatch({ control, name: 'id' })
+    const revealStages = useSpellStagesRevealed(charsheetId, stageRule)
 
     const points = useWatch({ control, name: 'points' })
     const spellSpace = useWatch({ control, name: 'spellSpace' })
@@ -148,24 +141,24 @@ const Spells = memo(() => {
         }
     }, [ spells ])
 
-    const handleRemoveMagic = useCallback((magicId: string, magicName: string) => {
-        const currentSpells = normalizeToArray(spells)
-        const magicIndex = currentSpells.findIndex(m => m.id === magicId)
+    const handleRemoveMagic = useCallback((magicKey: string, magicName: string) => {
+        const magicIndex = spells.findIndex(m => spellKey(m) === magicKey)
 
         if (magicIndex !== -1) {
-            const removedMagic = currentSpells[magicIndex]
+            const removedMagic = spells[magicIndex]
             const refundCost = getSpellPointCost(Number(removedMagic?.level ?? 1))
-            currentSpells.splice(magicIndex, 1)
+            // Lista nova: o array observado pelo formulário não pode ser alterado no lugar
+            const remainingSpells = spells.filter((_, index) => index !== magicIndex)
 
             const currentStages: Record<string, number> = spellStages || {}
-            if (magicId in currentStages) {
-                const restStages = Object.fromEntries(
-                    Object.entries(currentStages).filter(([ key ]) => key !== magicId)
-                ) as Record<string, number>
-                setValue('spellStages', restStages, { shouldValidate: true })
+            if (magicKey in currentStages) {
+                setValue('spellStages', withoutSpell(currentStages, magicKey), { shouldValidate: true })
+            }
+            if (spellUnlocked && magicKey in spellUnlocked) {
+                setValue('spellUnlocked', withoutSpell(spellUnlocked, magicKey), { shouldValidate: true })
             }
 
-            setValue('spells', currentSpells, { shouldValidate: true })
+            setValue('spells', remainingSpells as CharsheetDTO['spells'], { shouldValidate: true })
             setValue('points.magics', (points.magics ?? 0) + refundCost, { shouldValidate: true })
             setValue('spellSpace', spellSpace + 1, { shouldValidate: true })
 
@@ -174,18 +167,29 @@ const Spells = memo(() => {
                 action: () => <Close sx={{ cursor: 'pointer' }} onClick={() => { closeSnackbar(magicName) }} />
             })
         }
-    }, [ spells, points, spellSpace, enqueueSnackbar, closeSnackbar, setValue, spellStages ])
+    }, [ spells, points, spellSpace, enqueueSnackbar, closeSnackbar, setValue, spellStages, spellUnlocked ])
+
+    const evolutionPoints = getEvolutionPoints(points)
+
+    // Evoluir: gasta os pontos de evolução que o próximo estágio custa (nível 1 e 2: 1, nível 3: 2, nível 4: 3) e libera o estágio.
+    // Objeto inteiro: o nome da magia (chave de reserva) pode ter ponto, que o caminho do RHF separaria
+    const unlockStage = useCallback((magicKey: string, stage: 1 | 2 | 3, cost: number, progress: SpellProgress) => {
+        if (!canEvolve(progress, evolutionPoints)) {
+            enqueueSnackbar(`Você precisa de ${formatEvolutionPoints(cost)} para evoluir esta magia. Peça ao mestre.`, toastDefault('noEvolutionPoint', 'warning'))
+            return
+        }
+        setValue('points.evolution', evolutionPoints - cost, { shouldValidate: true })
+        setValue('spellUnlocked', { ...(spellUnlocked || {}), [magicKey]: stage } as any, { shouldValidate: true })
+    }, [ setValue, spellUnlocked, evolutionPoints, enqueueSnackbar ])
 
     const renderMagicCard = useCallback((magic: Spell) => {
-        const selectedStage = Math.min(
-            3,
-            Math.max(1, Number((spellStages as any)?.[magic.id ?? ''] ?? 1))
-        )
+        const magicKey = spellKey(magic)
+        const progress = getSpellProgress(magic, { spellStages, spellUnlocked, elementalMastery }, { enabled: stageRule })
 
         return (
             <Grid
                 item
-                key={magic.id ?? ''}
+                key={magicKey}
 
                 xs={12}
                 sm={6}
@@ -203,26 +207,22 @@ const Spells = memo(() => {
                         damping: 30,
                         delay: Math.random() * 0.1 // Efeito cascata sutil
                     }}
-                    whileHover={{
-                        y: -5,
-                        transition: { duration: 0.2 }
-                    }}
                 >
                     <Magic
                         as='magic-spell'
-                        id={magic.id ?? ''}
+                        id={magicKey}
                         magic={magic}
-                        selectedStage={selectedStage}
-                        onStageChange={(stage: 1 | 2 | 3) => {
-                            if (!magic.id) return
-                            setValue(`spellStages.${magic.id}` as any, stage, { shouldValidate: true })
-                        }}
-                        onIconClick={() => { handleRemoveMagic(magic.id ?? '', magic.name) }}
+                        unlockedStage={progress.enabled ? progress.unlocked : undefined}
+                        revealStages={progress.enabled && revealStages}
+                        onUnlockStage={progress.enabled && progress.nextCost !== null ? (stage: 1 | 2 | 3) => { unlockStage(magicKey, stage, progress.nextCost ?? 0, progress) } : undefined}
+                        evolutionPoints={progress.enabled ? evolutionPoints : undefined}
+                        nextCost={progress.nextCost}
+                        onIconClick={() => { handleRemoveMagic(magicKey, magic.name) }}
                     />
                 </motion.div>
             </Grid>
         )
-    }, [ handleRemoveMagic, setValue, spellStages ])
+    }, [ handleRemoveMagic, unlockStage, spellStages, spellUnlocked, elementalMastery, stageRule, evolutionPoints, revealStages ])
 
     const spellsList = useMemo(() => {
         if (!filteredSpells?.length) {
@@ -247,7 +247,7 @@ const Spells = memo(() => {
                         gap: '1rem'
                     }}
                 >
-                    <AutoAwesome
+                    <AutoStories
                         sx={{
                             fontSize: '3rem',
                             opacity: 0.4,
@@ -332,27 +332,11 @@ const Spells = memo(() => {
                     p: 3,
                     mb: 2,
                     borderRadius: 2,
-                    background: `linear-gradient(135deg, ${alpha(theme.palette.background.paper, 0.9)}, ${alpha(theme.palette.background.paper, 0.98)})`,
-                    backdropFilter: 'blur(10px)',
-                    borderBottom: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+                    bgcolor: 'background.paper',
                     position: 'relative',
                     overflow: 'hidden'
                 }}
             >
-                {/* Efeito decorativo */}
-                <Box
-                    sx={{
-                        position: 'absolute',
-                        right: -20,
-                        top: -20,
-                        width: 200,
-                        height: 200,
-                        borderRadius: '50%',
-                        background: `radial-gradient(circle, ${alpha(theme.palette.primary.main, 0.1)} 0%, transparent 70%)`,
-                        zIndex: 0
-                    }}
-                />
-
                 {/* Header Principal */}
                 <Stack
                     direction="row"
@@ -376,7 +360,7 @@ const Spells = memo(() => {
                                 }
                             }}
                         >
-                            <AutoFixHigh
+                            <AutoStories
                                 sx={{
                                     fontSize: '2rem',
                                     color: theme.palette.primary.main
@@ -385,11 +369,10 @@ const Spells = memo(() => {
                         </Badge>
                         <Box>
                             <Typography
-                                fontFamily='Sakana'
+                                fontFamily={font.display}
                                 variant={isMobile ? 'h5' : 'h4'}
                                 sx={{
-                                    lineHeight: 1,
-                                    textShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                                    lineHeight: 1
                                 }}
                             >
                                 Magias
@@ -399,7 +382,8 @@ const Spells = memo(() => {
                                 color="text.secondary"
                                 sx={{ display: 'block' }}
                             >
-                                {`${spells?.length ?? 0} de ${spells?.length ?? 0 + getValues().attributes.log + 1} espaços utilizados`}
+                                {/* `spellSpace` guarda os espaços livres: usados = magias aprendidas; total = usados + livres */}
+                                {`${spells.length} de ${spells.length + Math.max(0, Number(spellSpace) || 0)} espaços utilizados`}
                             </Typography>
                         </Box>
                     </Stack>
@@ -409,6 +393,8 @@ const Spells = memo(() => {
                         <Tooltip title="Filtrar magias">
                             <IconButton
                                 onClick={() => setFilterOpen(!filterOpen)}
+                                aria-label="Filtrar magias"
+                                aria-expanded={filterOpen}
                                 color={filterOpen || elementFilter ? 'primary' : 'default'}
                                 sx={{
                                     borderRadius: 1.5,
@@ -427,27 +413,29 @@ const Spells = memo(() => {
                         </Tooltip>
 
                         <Tooltip title="Adicionar magia">
-                            <IconButton
-                                onClick={() => { setOpen(true) }}
-                                color="primary"
-                                disabled={spellSpace === 0 || points.magics === 0}
-                                sx={{
-                                    borderRadius: 1.5,
-                                    bgcolor: alpha(theme.palette.primary.main, 0.1),
-                                    border: `1px solid ${alpha(theme.palette.primary.main, 0.5)}`,
-                                    '&:hover': {
-                                        bgcolor: alpha(theme.palette.primary.main, 0.15),
-                                        transform: 'scale(1.05)',
-                                        transition: 'all 0.2s'
-                                    },
-                                    '&:disabled': {
-                                        opacity: 0.5,
-                                        cursor: 'not-allowed'
-                                    }
-                                }}
-                            >
-                                <AddCircle />
-                            </IconButton>
+                            {/* span: o Tooltip não recebe eventos de um botão desabilitado */}
+                            <span>
+                                <IconButton
+                                    onClick={() => { setOpen(true) }}
+                                    aria-label="Adicionar magia"
+                                    color="primary"
+                                    disabled={spellSpace === 0 || points.magics === 0}
+                                    sx={{
+                                        borderRadius: 1.5,
+                                        bgcolor: alpha(theme.palette.primary.main, 0.1),
+                                        border: `1px solid ${alpha(theme.palette.primary.main, 0.5)}`,
+                                        '&:hover': {
+                                            bgcolor: alpha(theme.palette.primary.main, 0.15)
+                                        },
+                                        '&:disabled': {
+                                            opacity: 0.5,
+                                            cursor: 'not-allowed'
+                                        }
+                                    }}
+                                >
+                                    <AddCircle />
+                                </IconButton>
+                            </span>
                         </Tooltip>
                     </Stack>
                 </Stack>
@@ -494,6 +482,24 @@ const Spells = memo(() => {
                             </Tooltip>
                         </Stack>
                     </Box>
+
+                    {stageRule && (
+                        <Box sx={{ flex: 1 }}>
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                                Pontos de Evolução:
+                            </Typography>
+                            <Stack direction="row" alignItems="baseline" spacing={0.5}>
+                                <Typography fontWeight="bold" sx={{ fontSize: '1.1rem' }} data-testid="evolution-points">
+                                    {evolutionPoints}
+                                </Typography>
+                                <Tooltip title="Evoluir uma magia custa 1 ponto por estágio (nível 1 e 2), 2 pontos (nível 3) ou 3 pontos (nível 4); no nível 4 a Maestria abre sozinha para quem tem maestria no elemento. O mestre concede pontos e você ganha 3 a cada 5 níveis.">
+                                    <Typography variant="caption" color="text.secondary">
+                                        disponíveis
+                                    </Typography>
+                                </Tooltip>
+                            </Stack>
+                        </Box>
+                    )}
                 </Stack>
 
                 {/* Painel de filtros */}
@@ -630,6 +636,7 @@ const Spells = memo(() => {
             <MagicsModal
                 open={open}
                 onClose={() => { setOpen(false) }}
+                revealStages={revealStages}
             />
         </>
     )

@@ -16,11 +16,18 @@ class BaseRequest<T> {
             }
             
             if (config?.queryParams) {
-                const queryString = new URLSearchParams(config.queryParams as Record<string, string>).toString();
-                url += `?${queryString}`;
+                // Remove chaves undefined/null antes de montar a query string: o
+                // construtor de URLSearchParams as converte em texto literal
+                // ("undefined"/"null"), o que corrompe silenciosamente filtros
+                // no servidor (ex: cursor=undefined sendo tratado como cursor real).
+                const cleanParams = Object.fromEntries(
+                    Object.entries(config.queryParams).filter(([ , value ]) => value !== undefined && value !== null)
+                );
+                const queryString = new URLSearchParams(cleanParams as Record<string, string>).toString();
+                if (queryString) {
+                    url += `?${queryString}`;
+                }
             }
-
-            console.log({ requestUrl: url, method: requestMethod, baseURL: instance.defaults.baseURL });
 
             const requestConfig = { data: config?.body };
 
@@ -54,10 +61,11 @@ export class ApiInstance<T> {
     constructor(baseURL: ApiRoutes) {
         const instance = axios.create({
             baseURL: '/api' + baseURL,
+            // A API é autenticada pelo cookie de sessão do NextAuth (enviado
+            // automaticamente em requisições same-origin). Não há chave no cliente:
+            // qualquer valor NEXT_PUBLIC_* fica visível no bundle do navegador.
             headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${process.env.NEXT_PUBLIC_API_KEY}`
-                // TODO: Implementar autenticação e segurança
+                'Content-Type': 'application/json'
             }
         })
 

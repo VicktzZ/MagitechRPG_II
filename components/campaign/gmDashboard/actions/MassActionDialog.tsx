@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import {
+    alpha,
     Avatar,
     Box,
     Button,
@@ -21,7 +22,7 @@ import {
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import BoltIcon from '@mui/icons-material/Bolt';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
-import { blue, green, red } from '@mui/material/colors';
+import { color } from '@themes/tokens';
 import { useSnackbar } from 'notistack';
 import type { PlayerInfo, MassActionType } from './types';
 
@@ -50,15 +51,6 @@ export default function MassActionDialog({
         if (open) {
             setSelectedPlayers(players.map(p => p.id));
             setAmount(actionType === 'addMoney' ? 100 : 0);
-            
-            // Debug: verificar dados dos jogadores
-            if (actionType === 'addMoney') {
-                console.log('[MassActionDialog] Players data:', players.map(p => ({
-                    name: p.charsheet?.name || p.name,
-                    money: p.charsheet?.inventory?.money,
-                    inventory: p.charsheet?.inventory
-                })));
-            }
         }
     }, [ open, players, actionType ]);
 
@@ -118,9 +110,9 @@ export default function MassActionDialog({
 
     const getIcon = () => {
         switch (actionType) {
-        case 'restoreLP': return <FavoriteIcon sx={{ color: red[500] }} />;
-        case 'restoreMP': return <BoltIcon sx={{ color: blue[500] }} />;
-        case 'addMoney': return <AttachMoneyIcon sx={{ color: green[500] }} />;
+        case 'restoreLP': return <FavoriteIcon sx={{ color: color.lp }} />;
+        case 'restoreMP': return <BoltIcon sx={{ color: color.mp }} />;
+        case 'addMoney': return <AttachMoneyIcon sx={{ color: 'success.main' }} />;
         default: return null;
         }
     };
@@ -136,9 +128,9 @@ export default function MassActionDialog({
 
     const getButtonColor = () => {
         switch (actionType) {
-        case 'restoreLP': return red[600];
-        case 'restoreMP': return blue[600];
-        case 'addMoney': return green[600];
+        case 'restoreLP': return color.lp;
+        case 'restoreMP': return color.mp;
+        case 'addMoney': return 'success.main';
         default: return 'primary.main';
         }
     };
@@ -166,27 +158,21 @@ export default function MassActionDialog({
                         <Box 
                             sx={{ 
                                 p: 2, 
-                                bgcolor: (theme) => theme.palette.mode === 'dark'
-                                    ? (actionType === 'restoreLP' ? 'rgba(239, 83, 80, 0.15)' : 'rgba(66, 165, 245, 0.15)')
-                                    : (actionType === 'restoreLP' ? red[50] : blue[50]), 
+                                bgcolor: actionType === 'restoreLP' ? alpha(color.lp, 0.15) : alpha(color.mp, 0.15),
                                 borderRadius: 2, 
                                 border: '1px solid', 
-                                borderColor: (theme) => theme.palette.mode === 'dark'
-                                    ? (actionType === 'restoreLP' ? red[800] : blue[800])
-                                    : (actionType === 'restoreLP' ? red[200] : blue[200])
+                                borderColor: actionType === 'restoreLP' ? alpha(color.lp, 0.5) : alpha(color.mp, 0.5)
                             }}
                         >
                             <Typography 
                                 variant="body2" 
                                 sx={{ 
-                                    color: (theme) => theme.palette.mode === 'dark'
-                                        ? (actionType === 'restoreLP' ? red[300] : blue[300])
-                                        : 'text.secondary'
+                                    color: actionType === 'restoreLP' ? 'error.light' : color.mp
                                 }}
                             >
                                 {actionType === 'restoreLP' 
-                                    ? '❤️ O LP de todos os jogadores selecionados será restaurado ao máximo.'
-                                    : '⚡ O MP de todos os jogadores selecionados será restaurado ao máximo.'
+                                    ? 'O LP de todos os jogadores selecionados será restaurado ao máximo.'
+                                    : 'O MP de todos os jogadores selecionados será restaurado ao máximo.'
                                 }
                             </Typography>
                         </Box>
@@ -237,7 +223,8 @@ export default function MassActionDialog({
                     startIcon={isLoading ? <CircularProgress size={20} /> : getIcon()}
                     sx={{ 
                         bgcolor: getButtonColor(),
-                        '&:hover': { bgcolor: actionType === 'restoreLP' ? red[700] : actionType === 'restoreMP' ? blue[700] : green[700] }
+                        color: actionType ? color.canvas : 'primary.contrastText',
+                        '&:hover': { bgcolor: actionType === 'restoreLP' ? 'error.dark' : actionType === 'restoreMP' ? 'info.dark' : 'success.dark' }
                     }}
                 >
                     {isLoading ? 'Processando...' : 'Aplicar'}

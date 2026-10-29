@@ -29,6 +29,10 @@ export class BaseCharsheet {
     @IsNumber() ORMLevel: number = 0;
     @IsNumber() displacement: number = 9;
     @IsNumber() spellSpace: number = 0;
+    /**
+     * BÔNUS ao limite de MP por turno (perks/mestre). O limite em si não é salvo: é
+     * calculado por `getMpLimit` (utils/mpLimit.ts) como ⌈(Nível + Foco) ÷ 2⌉ + ORM + este bônus.
+     */
     @IsNumber() mpLimit: number = 0;
     @IsNumber() overall: number = 0;
     @IsNumber() level: number = 0;
@@ -46,9 +50,15 @@ export class BaseCharsheet {
     @IsOptional()
         systemId?: string;
 
+    /** LEGADO: estágio que a ficha usava em cada magia antes da regra de desbloqueio. Não é mais gravado; só vale como liberado em ficha sem `spellUnlocked` (ver `utils/spellStages.ts`) */
     @IsOptional()
     @IsObject()
         spellStages?: Record<string, number> = {};
+
+    /** Estágio liberado até agora em cada magia, por id: dele e dos anteriores se pode conjurar (ver `utils/spellStages.ts`) */
+    @IsOptional()
+    @IsObject()
+        spellUnlocked?: Record<string, number> = {};
 
     @IsEnum([ 'Masculino', 'Feminino', 'Não-binário', 'Outro', 'Não definido' ]) gender: Gender;
     @IsEnum([ 'Miserável', 'Pobre', 'Estável', 'Rico' ]) financialCondition: FinancialCondition;

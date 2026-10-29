@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { combatEffectRepository } from '@repositories'
-import { findCampaignByCodeOrId } from '@utils/helpers/findCampaignByCodeOrId'
+import { assertId, handleRouteError, readJsonBody, requireCampaignGM, requireUser } from '@utils/api'
 import { stripUndefined } from '@utils/firestore/stripUndefined'
 
 export async function PATCH(
@@ -9,14 +9,11 @@ export async function PATCH(
 ) {
     try {
         const { id, effectId } = await params
-        const body = await request.json()
+        const user = await requireUser()
+        const { campaign } = await requireCampaignGM(id, user)
+        const body = await readJsonBody(request)
 
-        const campaign = await findCampaignByCodeOrId(id)
-        if (!campaign) {
-            return NextResponse.json({ error: 'Campanha não encontrada' }, { status: 404 })
-        }
-
-        const existing = await combatEffectRepository.findById(effectId)
+        const existing = await combatEffectRepository.findById(assertId(effectId, 'effectId'))
         if (!existing) {
             return NextResponse.json({ error: 'Efeito não encontrado' }, { status: 404 })
         }
@@ -38,8 +35,7 @@ export async function PATCH(
 
         return NextResponse.json({ success: true, effect: updated })
     } catch (error) {
-        console.error('[Campaign Custom Effects] Erro no PATCH:', error)
-        return NextResponse.json({ error: 'Erro interno' }, { status: 500 })
+        return handleRouteError(error, 'Erro ao atualizar efeito da campanha')
     }
 }
 
@@ -49,13 +45,10 @@ export async function DELETE(
 ) {
     try {
         const { id, effectId } = await params
+        const user = await requireUser()
+        const { campaign } = await requireCampaignGM(id, user)
 
-        const campaign = await findCampaignByCodeOrId(id)
-        if (!campaign) {
-            return NextResponse.json({ error: 'Campanha não encontrada' }, { status: 404 })
-        }
-
-        const existing = await combatEffectRepository.findById(effectId)
+        const existing = await combatEffectRepository.findById(assertId(effectId, 'effectId'))
         if (!existing) {
             return NextResponse.json({ error: 'Efeito não encontrado' }, { status: 404 })
         }
@@ -66,7 +59,6 @@ export async function DELETE(
         await combatEffectRepository.delete(effectId)
         return NextResponse.json({ success: true })
     } catch (error) {
-        console.error('[Campaign Custom Effects] Erro no DELETE:', error)
-        return NextResponse.json({ error: 'Erro interno' }, { status: 500 })
+        return handleRouteError(error, 'Erro ao remover efeito da campanha')
     }
 }

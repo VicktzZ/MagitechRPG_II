@@ -1,5 +1,17 @@
 import { NextResponse, type NextRequest } from 'next/server'
-import { campaignEntity } from '@utils/firestoreEntities'
+// Admin SDK no servidor: o SDK do navegador aqui não tem usuário autenticado e
+// seria recusado pelas regras do Firestore
+import { adminGetDoc, adminUpdateDoc } from '@utils/firestore/adminDocs'
+import type { Campaign } from '@models/entities'
+import { assertIdList, badRequest, handleRouteError, readJsonBody, requireCampaignGM, requireCampaignMember, requireUser } from '@utils/api'
+
+/** Lista opcional de textos curtos (raridades, tipos, categorias) */
+function assertShortStringList(value: unknown, field: string): void {
+    if (value === undefined) return
+    if (!Array.isArray(value) || value.length > 50 || value.some(v => typeof v !== 'string' || v.length > 60)) {
+        throw badRequest(`"${field}" inválido`)
+    }
+}
 
 interface ShopConfig {
     itemCount: number
@@ -23,19 +35,31 @@ interface ShopBody {
 export async function POST(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
-): Promise<NextResponse> {
+): Promise<Response> {
     try {
-        const { id: campaignId } = await params
-        const body: ShopBody = await request.json()
+        const { id } = await params
+        const user = await requireUser()
+        // Abrir/fechar/configurar a loja é ação do mestre
+        const { campaign: authorizedCampaign } = await requireCampaignGM(id, user)
+        const campaignId = authorizedCampaign.id
+
+        const body: ShopBody = await readJsonBody(request)
         const { isOpen, config } = body
 
-        // Verifica se a campanha existe
-        const campaign = await campaignEntity.findById(campaignId)
-        if (!campaign) {
-            return NextResponse.json(
-                { error: 'Campanha não encontrada' },
-                { status: 404 }
-            )
+        if (config) {
+            if (config.itemCount !== undefined && (!Number.isInteger(config.itemCount) || config.itemCount < 1 || config.itemCount > 50)) {
+                throw badRequest('"itemCount" deve ser um inteiro entre 1 e 50')
+            }
+            if (config.priceMultiplier !== undefined && (typeof config.priceMultiplier !== 'number' || !(config.priceMultiplier > 0) || config.priceMultiplier > 100)) {
+                throw badRequest('"priceMultiplier" deve ser um número entre 0 e 100')
+            }
+            if (config.currency !== undefined && config.currency !== 'SCRAP' && config.currency !== 'YEN') {
+                throw badRequest('"currency" inválida')
+            }
+            assertShortStringList(config.rarities, 'rarities')
+            assertShortStringList(config.types, 'types')
+            assertShortStringList(config.itemKinds, 'itemKinds')
+            if (config.visibleToPlayers?.length) assertIdList(config.visibleToPlayers, 'visibleToPlayers')
         }
 
         // Atualiza a configuração da loja
@@ -56,7 +80,7 @@ export async function POST(
             lastUpdated: new Date().toISOString()
         }
 
-        await campaignEntity.update(campaignId, {
+        await adminUpdateDoc('campaigns', campaignId, {
             shop: shopData
         })
 
@@ -67,11 +91,7 @@ export async function POST(
         })
 
     } catch (error) {
-        console.error('Erro ao gerenciar loja:', error)
-        return NextResponse.json(
-            { error: 'Erro interno do servidor' },
-            { status: 500 }
-        )
+        return handleRouteError(error, 'Erro ao gerenciar loja')
     }
 }
 
@@ -81,11 +101,13 @@ export async function POST(
 export async function GET(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
-): Promise<NextResponse> {
+): Promise<Response> {
     try {
-        const { id: campaignId } = await params
+        const { id } = await params
+        const user = await requireUser()
+        const { campaign: authorizedCampaign } = await requireCampaignMember(id, user)
 
-        const campaign = await campaignEntity.findById(campaignId)
+        const campaign = await adminGetDoc<Campaign>('campaigns', authorizedCampaign.id)
         if (!campaign) {
             return NextResponse.json(
                 { error: 'Campanha não encontrada' },
@@ -109,10 +131,6 @@ export async function GET(
         })
 
     } catch (error) {
-        console.error('Erro ao obter loja:', error)
-        return NextResponse.json(
-            { error: 'Erro interno do servidor' },
-            { status: 500 }
-        )
+        return handleRouteError(error, 'Erro ao obter loja')
     }
 }

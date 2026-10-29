@@ -82,7 +82,6 @@ export default memo(function InventoryCreateModalWrapper({ children, action, sub
     const rarityOptions = mapArrayToOptions(rarities);
 
     const onSubmit = (data: ItemFormData) => {
-        console.log(data);
         action?.(data);
     };
 
@@ -178,7 +177,7 @@ export default memo(function InventoryCreateModalWrapper({ children, action, sub
                 </Typography>
 
                 <Box display='flex' justifyContent='flex-end'>
-                    <Button onClick={handleSubmit(onSubmit)} type='submit' variant='contained' color={'terciary' as any}
+                    <Button onClick={handleSubmit(onSubmit)} type='submit' variant='contained' color='primary'
                         sx={{ px: 3, textTransform: 'none' }}>
                         {submitLabel}
                     </Button>

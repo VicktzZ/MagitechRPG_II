@@ -5,6 +5,7 @@ import type { Campaign, Charsheet, Power, Spell, User, Notification } from '@mod
 import type { FirestoreQueryOptions, RealtimeOptions } from '@models/types/firestoreRealtime';
 import { campaignEntity, charsheetEntity, notificationEntity, powerEntity, spellEntity, userEntity, type FirestoreEntity } from '@utils/firestoreEntities';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useFirebaseAuth } from './useFirebaseAuth';
 
 interface EntityNameToType {
     charsheet: Charsheet;
@@ -41,6 +42,10 @@ export function useFirestoreRealtime<T extends EntityName>(
     // criariam novos arrays idênticos e re-renderizariam toda a árvore.
     const lastPayloadRef = useRef<string | null>(null);
 
+    // Listeners só depois que o navegador estiver autenticado no Firebase
+    // (as regras exigem login); reabre quando o usuário muda
+    const { ready: authReady, uid: firebaseUid } = useFirebaseAuth();
+
     // Remova o type assertion desnecessário
     const entity = firestoreEntities[entityName] as unknown as FirestoreEntity<EntityType>;
 
@@ -68,8 +73,17 @@ export function useFirestoreRealtime<T extends EntityName>(
         setLoading(true);
         setError(null);
 
+        if (!authReady) return;
+
         const unsubscribe = entity.subscribe(
-            stableOptions,
+            {
+                ...stableOptions,
+                onError: (err) => {
+                    setError(err);
+                    setLoading(false);
+                    stableOptions.onError?.(err);
+                }
+            },
             (newData) => {
                 const serialized = JSON.stringify(newData);
                 if (lastPayloadRef.current !== serialized) {
@@ -83,7 +97,7 @@ export function useFirestoreRealtime<T extends EntityName>(
         return () => {
             unsubscribe?.();
         };
-    },  [ entity, stableOptions, options?.enabled ]);
+    },  [ entity, stableOptions, options?.enabled, authReady, firebaseUid ]);
 
     return { data, loading, error };
 }

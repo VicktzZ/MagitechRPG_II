@@ -36,10 +36,12 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import SaveIcon from '@mui/icons-material/Save'
 import CasinoIcon from '@mui/icons-material/Casino'
 import { useSnackbar } from 'notistack'
+import { color } from '@themes/tokens'
 import type { CombatEffect, CombatEffectCategory, CombatEffectTiming, CombatEffectElement, CombatEffectLevel } from '@models'
 import { campaignService, combatEffectService } from '@services'
 import type { CreateCombatEffectPayload } from '@services/combatEffectService'
 import { getCategoryLabel, getLevelLabel } from '@utils/combatEffectLabels'
+import { errorMessage } from '@utils/errors';
 
 interface CombatEffectsCatalogDialogProps {
     open: boolean
@@ -80,7 +82,7 @@ const EMPTY_FORM: CreateCombatEffectPayload = {
     category: 'damage',
     timing: 'turn',
     element: '',
-    color: '#ff5722',
+    color: color.warning,
     icon: '💥',
     usesLevels: true,
     levels: [ { level: 1, formula: '1d6', duration: 2, description: '' } ]
@@ -236,9 +238,9 @@ export default function CombatEffectsCatalogDialog({
             }
             resetForm()
             await load()
-        } catch (err: any) {
+        } catch (err) {
             console.error('Erro ao salvar efeito:', err)
-            enqueueSnackbar(err?.response?.data?.error ?? 'Erro ao salvar efeito', { variant: 'error' })
+            enqueueSnackbar(errorMessage(err, 'Erro ao salvar efeito'), { variant: 'error' })
         } finally {
             setSaving(false)
         }
@@ -265,9 +267,9 @@ export default function CombatEffectsCatalogDialog({
             resetForm()
             setTab('campaign')
             await load()
-        } catch (err: any) {
+        } catch (err) {
             console.error('Erro ao clonar efeito:', err)
-            enqueueSnackbar(err?.response?.data?.error ?? 'Erro ao clonar efeito', { variant: 'error' })
+            enqueueSnackbar(errorMessage(err, 'Erro ao clonar efeito'), { variant: 'error' })
         } finally {
             setSaving(false)
         }
@@ -282,8 +284,8 @@ export default function CombatEffectsCatalogDialog({
                 enqueueSnackbar('Efeito global removido', { variant: 'success' })
                 resetForm()
                 await load()
-            } catch (err: any) {
-                enqueueSnackbar(err?.response?.data?.error ?? 'Falha ao remover efeito global', { variant: 'error' })
+            } catch (err) {
+                enqueueSnackbar(errorMessage(err, 'Falha ao remover efeito global'), { variant: 'error' })
             }
             return
         }
@@ -293,8 +295,8 @@ export default function CombatEffectsCatalogDialog({
             enqueueSnackbar('Efeito removido', { variant: 'success' })
             resetForm()
             await load()
-        } catch (err: any) {
-            enqueueSnackbar(err?.response?.data?.error ?? 'Falha ao remover efeito', { variant: 'error' })
+        } catch (err) {
+            enqueueSnackbar(errorMessage(err, 'Falha ao remover efeito'), { variant: 'error' })
         }
     }
 
@@ -336,7 +338,7 @@ export default function CombatEffectsCatalogDialog({
                                         <Chip
                                             label={eff.icon}
                                             size="small"
-                                            sx={{ bgcolor: eff.color, color: '#fff', mr: 1 }}
+                                            sx={{ bgcolor: eff.color, color: theme => (eff.color ? theme.palette.getContrastText(eff.color) : theme.palette.text.primary), mr: 1 }}
                                         />
                                         <ListItemText
                                             primary={eff.name}
@@ -550,7 +552,7 @@ export default function CombatEffectsCatalogDialog({
                                                             mod.value !== undefined ? `= ${mod.value}` : '',
                                                             mod.element ? `[${mod.element}]` : ''
                                                         ].filter(Boolean).join(' ')}
-                                                        sx={{ height: 20, fontSize: '0.65rem' }}
+                                                        sx={{ height: 20, fontSize: '0.75rem' }}
                                                     />
                                                 ))}
                                             </Stack>

@@ -1,31 +1,11 @@
 /* eslint-disable @typescript-eslint/prefer-nullish-coalescing */
 import type { CharsheetDTO, SpellDTO } from '@models/dtos';
-import { useMemo } from 'react';
+import { normalizeCharsheet } from '@utils/charsheetNormalize';
+import { isInitialCharsheetLoad } from '@utils/charsheetLoad';
+import { normalizeToArray } from '@utils/normalizeToArray';
+import { useMemo, useRef } from 'react';
 import { useFirestoreByIds } from './useFirestoreByIds';
 import { useFirestoreRealtime } from './useFirestoreRealtime';
-
-/**
- * Normaliza um valor que pode ser um array ou um objeto com chaves numéricas
- * Converte Record<number, T> para T[]
- */
-function normalizeToArray<T>(value: any): T[] {
-    if (!value) return [];
-    if (Array.isArray(value)) return value;
-    
-    // Se é um objeto com chaves numéricas, converter para array
-    if (typeof value === 'object') {
-        const keys = Object.keys(value);
-        const isNumericKeys = keys.every(key => !isNaN(Number(key)));
-        if (isNumericKeys) {
-            return keys
-                .map(key => Number(key))
-                .sort((a, b) => a - b)
-                .map(key => value[key]);
-        }
-    }
-    
-    return [];
-}
 
 interface UseCompleteCharsheetOptions {
     charsheetId: string;
@@ -34,9 +14,27 @@ interface UseCompleteCharsheetOptions {
 
 interface UseCompleteCharsheetResult {
     data: CharsheetDTO | null;
+    /**
+     * Só a PRIMEIRA carga de cada ficha. Depois dela, trocar os ids de magias/poderes
+     * recarrega esses documentos em segundo plano sem voltar a `true`: quem usa `loading`
+     * para mostrar um spinner no lugar da tela (campanha, ficha) desmontaria tudo — chat,
+     * widgets, modais abertos e o formulário com edições não salvas.
+     */
     loading: boolean;
     error: Error | null;
+    /**
+     * Magias e poderes que a ficha tem mas a tela não mostra (id que não achou no catálogo, magia sem estágios).
+     * Quem salva a lista precisa devolvê-los junto, senão o salvamento os apaga do banco.
+     */
+    dropped: DroppedEntries;
 }
+
+export interface DroppedEntries {
+    spells: unknown[];
+    powers: unknown[];
+}
+
+const NO_DROPPED: DroppedEntries = { spells: [], powers: [] };
 
 export function useCompleteCharsheet({
     charsheetId,
@@ -52,7 +50,9 @@ export function useCompleteCharsheet({
         enabled: enabled && !!charsheetId
     });
 
-    const charsheet = useMemo(() => charsheetData?.[0] || null, [ charsheetData ]);
+    // Fichas antigas guardam listas como objeto de chaves numéricas, campos nulos etc.: o formato é corrigido aqui,
+    // uma vez, para que o formulário, o schema e o resto da tela vejam sempre o mesmo formato
+    const charsheet = useMemo(() => charsheetData?.[0] ? normalizeCharsheet(charsheetData[0]) : null, [ charsheetData ]);
 
     const spellsInput = useMemo<unknown[]>(() => normalizeToArray(charsheet?.spells), [ charsheet?.spells ]);
     const spellObjects = useMemo<SpellDTO[]>(
@@ -90,10 +90,11 @@ export function useCompleteCharsheet({
         enabled: enabled && powerIdsToFetch.length > 0
     });
 
-    const completeCharsheet = useMemo((): CharsheetDTO | null => {
-        if (!charsheet || !enabled) return null;
+    const { completeCharsheet, dropped } = useMemo((): { completeCharsheet: CharsheetDTO | null; dropped: DroppedEntries } => {
+        if (!charsheet || !enabled) return { completeCharsheet: null, dropped: NO_DROPPED };
 
         const charsheetWithRelations: CharsheetDTO = { ...charsheet };
+        const droppedEntries: DroppedEntries = { spells: [], powers: [] };
 
         // Monta spells finais: mantém objetos existentes e adiciona os buscados; remove IDs não resolvidos
         {
@@ -106,6 +107,11 @@ export function useCompleteCharsheet({
             // Mantém apenas spells com stages válidos para não quebrar os componentes
             const validSpells = allSpells.filter(s => Array.isArray(s?.stages) && s.stages.length > 0);
             (charsheetWithRelations as any).spells = validSpells as SpellDTO[];
+
+            // O que ficou de fora continua na ficha: id que não achou no catálogo e magia sem estágios
+            droppedEntries.spells = spellsInput.filter(entry => typeof entry === 'string'
+                ? !fetchedMap.has(entry) || !validSpells.includes(fetchedMap.get(entry))
+                : !validSpells.includes(entry));
         }
 
         // Monta powers finais: mantém objetos existentes e adiciona os buscados formatados; remove IDs não resolvidos
@@ -124,20 +130,30 @@ export function useCompleteCharsheet({
                 }));
 
             charsheetWithRelations.skills.powers = [ ...powerObjects, ...fetchedPowers ];
+
+            droppedEntries.powers = powersInput.filter(entry => typeof entry === 'string'
+                ? !fetchedMap.has(entry)
+                : !powerObjects.includes(entry));
         }
 
-        return charsheetWithRelations;
-    }, [ charsheet, relatedSpells, relatedPowers, enabled, spellIdsToFetch, powerIdsToFetch, spellObjects, powerObjects ]);
+        return { completeCharsheet: charsheetWithRelations, dropped: droppedEntries };
+    }, [ charsheet, relatedSpells, relatedPowers, enabled, spellIdsToFetch, powerIdsToFetch, spellObjects, powerObjects, spellsInput, powersInput ]);
 
     // Considera carregando enquanto ainda precisamos resolver IDs e estamos tentando buscar
     const needsSpellFetch = enabled && spellIdsToFetch.length > 0;
     const needsPowerFetch = enabled && powerIdsToFetch.length > 0;
-    const loading = enabled ? (charsheetLoading || (needsSpellFetch && spellsLoading) || (needsPowerFetch && powersLoading)) : false;
+    const stillLoading = enabled ? (charsheetLoading || (needsSpellFetch && spellsLoading) || (needsPowerFetch && powersLoading)) : false;
+
+    // Marca a ficha como carregada na primeira vez que terminou; trocar de ficha reinicia
+    const loadedIdRef = useRef<string>();
+    if (!stillLoading && charsheet?.id) loadedIdRef.current = charsheet.id;
+    const loading = isInitialCharsheetLoad(stillLoading, loadedIdRef.current, charsheetId);
     const error = charsheetError || spellsError || powersError;
 
     return {
         data: completeCharsheet,
         loading,
-        error
+        error,
+        dropped
     };
 }

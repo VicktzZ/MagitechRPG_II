@@ -1,316 +1,98 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 'use client'
 
-import { elementColor } from '@constants';
+import ElementIcon from '@components/misc/ElementIcon';
+import StageLadder from '@components/spells/StageLadder';
 import { useCampaignCurrentCharsheetContext, useCampaignContext } from '@contexts';
-import { useChatContext } from '@contexts/chatContext';
-import { postCampaignStats } from '@utils/campaignStatsClient';
-import { MessageType } from '@enums';
-import { Message } from '@models';
 import type { SpellDTO } from '@models/dtos';
 import { charsheetEntity } from '@utils/firestoreEntities';
-import {
-    castSpell,
-    buildSpellCastMessage,
-    buildInsufficientMpMessage
-} from '@utils/combat/spellRoller';
+import { isSustainedSpell } from '@utils/combat/sustainedSpells';
+import { campaignRevealsSpellStages } from '@utils/spellReveal';
 import { useSnackbar } from 'notistack';
-import { useSession } from 'next-auth/react';
 import {
-    Air,
-    AutoAwesome,
-    AutoFixHigh,
-    Brightness2,
-    Circle,
     Delete,
-    ExpandMore,
-    FlashOn,
-    LocalFireDepartment,
-    Terrain,
-    WaterDrop,
-    WbSunny
+    ExpandMore
 } from '@mui/icons-material';
 import {
     Accordion,
     AccordionDetails,
     AccordionSummary,
+    alpha,
     Box,
-    Button,
     Chip,
     IconButton,
     Paper,
     Stack,
     Tooltip,
-    Typography,
-    useTheme
+    Typography
 } from '@mui/material';
-import { blue, green, grey, orange, purple, red } from '@mui/material/colors';
+import { color } from '@themes/tokens';
 import { type ReactElement, useState } from 'react';
+import { canEvolve, formatEvolutionPoints, getEvolutionPoints, getSpellProgress, spellStageLabel, withoutSpell } from '@utils/spellStages';
+import { useSpellCasting } from './spells/SpellCastingContext';
 
-function getSpellColor(spell: SpellDTO): string {
-    switch (spell.element?.toUpperCase()) {
-    case 'AR':
-    case 'LUZ':
-    case 'NÃO-ELEMENTAL':
-        return 'black'
-    default:
-        return 'white'
-    }
-}
-
-function getElementIcon(element: string) {
-    switch (element) {
-    case 'FOGO':
-        return LocalFireDepartment;
-    case 'ÁGUA':
-        return WaterDrop;
-    case 'TERRA':
-        return Terrain;
-    case 'AR':
-        return Air;
-    case 'ELETRICIDADE':
-        return FlashOn;
-    case 'TREVAS':
-        return Brightness2;
-    case 'LUZ':
-        return WbSunny;
-    case 'NÃO-ELEMENTAL':
-        return Circle;
-    default:
-        return AutoAwesome;
-    }
-}
-
+/** Nível e estágio são escalas ordenadas: neutros que clareiam até o âmbar no topo (o número vai sempre em texto) */
 function getSpellLevelColor(level: number) {
     switch (level) {
     case 1:
-        return { color: green[600], bg: green[100] };
+        return { color: color.inkMuted };
     case 2:
-        return { color: blue[600], bg: blue[100] };
+        return { color: color.ink };
     case 3:
-        return { color: purple[600], bg: purple[100] };
+        return { color: color.amber };
     case 4:
-        return { color: orange[600], bg: orange[100] };
+        return { color: color.amberHover };
     default:
-        return { color: grey[600], bg: grey[100] };
+        return { color: color.inkMuted };
     }
 }
-interface SpellStageProps {
-    stage: number
-    description: string
-    spell: SpellDTO
-    onCast?: (stage: 1 | 2 | 3) => void | Promise<void>
-    isCasting?: boolean
-    canCast?: boolean
-    currentMp?: number
-}
-
-function SpellStage({ stage, description, spell, onCast, isCasting, canCast, currentMp }: SpellStageProps): ReactElement {
-    let mpCost = Number(spell.mpCost)
-    let extraCost: Record<string, number> = {
-        'estágio 1': 0,
-        'estágio 2': 1,
-        'estágio 3': 2
-    }
-
-    if (Number(spell.level) === 4)
-        extraCost = {
-            'estágio 1': 0,
-            'estágio 2': 4,
-            'maestria': 9
-        }
-        
-    if (Number(spell.level) === 3)
-        extraCost = {
-            'estágio 1': 0,
-            'estágio 2': 2,
-            'estágio 3': 5
-        }
-
-    if (Number(spell.level) === 2)
-        extraCost = {
-            'estágio 1': 0,
-            'estágio 2': 2,
-            'estágio 3': 4
-        }
-
-    if (stage === 2) mpCost += extraCost['estágio 2']
-    if (stage === 3) mpCost += extraCost['estágio 3']
-    if (stage === 4) mpCost += extraCost['maestria']
-
-    const getStageColor = (stageNum: number) => {
-        if (stageNum === 4) return { color: purple[600], bg: purple[100] }; // Maestria
-        switch (stageNum) {
-        case 1:
-            return { color: green[600], bg: green[100] };
-        case 2:
-            return { color: blue[600], bg: blue[100] };
-        case 3:
-            return { color: orange[600], bg: orange[100] };
-        default:
-            return { color: grey[600], bg: grey[100] };
-        }
-    };
-
-    const stageConfig = getStageColor(stage);
-
-    return (
-        <Paper 
-            elevation={1}
-            sx={{ 
-                p: 2, 
-                mb: 2,
-                border: '1px solid',
-                borderColor: stageConfig.color + '40',
-                borderRadius: 2,
-                bgcolor: stageConfig.bg + '20'
-            }}
-        >
-            <Box display="flex" alignItems="center" justifyContent="space-between" mb={1.5} gap={1} flexWrap="wrap">
-                <Typography 
-                    variant="h6" 
-                    sx={{ 
-                        color: stageConfig.color,
-                        fontWeight: 700
-                    }}
-                >
-                    {stage !== 4 ? `✨ Estágio ${stage}` : '🌟 Maestria'}
-                </Typography>
-                <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
-                    <Tooltip
-                        title={typeof currentMp === 'number'
-                            ? `${currentMp} / custo ${mpCost} MP`
-                            : `Custo ${mpCost} MP`
-                        }
-                    >
-                        <Chip
-                            label={`${mpCost} MP`}
-                            sx={{
-                                bgcolor: blue[100],
-                                color: blue[800],
-                                fontWeight: 600
-                            }}
-                        />
-                    </Tooltip>
-                    {onCast && stage !== 4 && (
-                        <Tooltip title={canCast === false
-                            ? `MP insuficiente (precisa de ${mpCost})`
-                            : `Conjurar — gasta ${mpCost} MP`
-                        }>
-                            <span>
-                                <Button
-                                    size="small"
-                                    variant="contained"
-                                    startIcon={<AutoFixHigh fontSize="small" />}
-                                    disabled={isCasting || canCast === false}
-                                    onClick={() => { void onCast(stage as 1 | 2 | 3) }}
-                                    sx={{
-                                        bgcolor: stageConfig.color,
-                                        color: 'white',
-                                        fontWeight: 700,
-                                        textTransform: 'none',
-                                        '&:hover': {
-                                            bgcolor: stageConfig.color,
-                                            filter: 'brightness(0.9)'
-                                        }
-                                    }}
-                                >
-                                    Conjurar
-                                </Button>
-                            </span>
-                        </Tooltip>
-                    )}
-                </Box>
-            </Box>
-            <Typography 
-                variant="body2" 
-                sx={{ 
-                    lineHeight: 1.6,
-                    textAlign: 'justify'
-                }}
-            >
-                {description}
-            </Typography>
-        </Paper>
-    )
-}
-
 export default function SpellsSection(): ReactElement {
-    const { charsheet, updateCharsheet } = useCampaignCurrentCharsheetContext();
+    const { charsheet } = useCampaignCurrentCharsheetContext();
     const { campaign } = useCampaignContext();
-    const { handleSendMessage, setIsChatOpen, isChatOpen } = useChatContext();
-    const { data: session } = useSession();
-    const theme = useTheme();
     const { enqueueSnackbar } = useSnackbar();
+    // Conjurar, efetuar e desconjurar: o estado é do painel inteiro (a seção "Ações" conjura pelos mesmos caminhos)
+    const {
+        castingSpellId, effectingSpellId, pendingEffects, clearPending, mpLimitEnforced, mpLimit, mpSpentThisTurn, mpLimitReleased, sustainedActive, exceedsMpLimit, stageRule,
+        castSpell: handleCastSpell, endSustained: handleEndSustained, effectSpell: handleEffectSpell
+    } = useSpellCasting();
 
     const [ expandedSpell, setExpandedSpell ] = useState<string | false>(false)
-    const [ castingSpellId, setCastingSpellId ] = useState<string | null>(null)
-
-    const sendCombatChatMessage = async (text: string) => {
-        if (!session?.user) return;
-        await handleSendMessage(new Message({
-            text,
-            type: MessageType.COMBAT_LOG,
-            by: {
-                id: session.user.id ?? '',
-                name: session.user.name ?? '',
-                image: session.user.image ?? ''
-            },
-            timestamp: new Date().toISOString(),
-            isHTML: true
-        }));
-        if (!isChatOpen) setIsChatOpen(true);
-    };
-
-    const handleCastSpell = async (spell: SpellDTO, stage: 1 | 2 | 3) => {
-        if (!charsheet?.id) return;
-        const spellKey = spell.id || spell.name;
-        if (castingSpellId) return;
-
-        const result = castSpell(spell, stage);
-        const playerName = charsheet.name || session?.user?.name || 'Jogador';
-        const currentMp = Number(charsheet.stats?.mp ?? 0);
-
-        if (currentMp < result.mpCost) {
-            await sendCombatChatMessage(buildInsufficientMpMessage(playerName, spell, result.mpCost, currentMp));
-            enqueueSnackbar(`MP insuficiente para conjurar ${spell.name}`, { variant: 'warning' });
-            return;
-        }
-
-        try {
-            setCastingSpellId(spellKey);
-            const newMp = Math.max(0, currentMp - result.mpCost);
-            await updateCharsheet({ 'stats.mp': newMp } as any);
-            await sendCombatChatMessage(buildSpellCastMessage(playerName, result));
-
-            // Estatísticas: magia conjurada + MP gasto
-            postCampaignStats(campaign.id, [ {
-                charsheetId: charsheet.id,
-                userId: session?.user?.id,
-                charsheetName: charsheet.name,
-                inc: {
-                    'resources.spellsCast': 1,
-                    'resources.mpSpent': result.mpCost
-                }
-            } ]);
-        } catch (error) {
-            console.error('Erro ao conjurar magia:', error);
-            enqueueSnackbar('Erro ao conjurar magia', { variant: 'error' });
-        } finally {
-            setCastingSpellId(null);
-        }
-    }
-
     const handleSpellExpand = (spellName: string) => (event: React.SyntheticEvent, isExpanded: boolean) => {
         setExpandedSpell(isExpanded ? spellName : false)
     }
 
-    const handleDeleteSpell = async (spellName: string) => {
+    // Fora do Roguelite, `spellSpace` guarda os espaços LIVRES (a criação da ficha
+    // desconta 1 por magia aprendida); no Roguelite ele é a capacidade total.
+    const isRoguelite = campaign?.mode === 'Roguelite';
+
+    const handleDeleteSpell = async (spellToDelete: SpellDTO) => {
         if (!charsheet?.id) return;
         
         try {
-            const newSpells = charsheet.spells.filter(spell => spell.name !== spellName);
-            await charsheetEntity.update(charsheet.id, { spells: newSpells });
+            // Remove só a magia clicada (por id) — filtrar por nome apagava
+            // todas as cópias com o mesmo nome
+            const spellKey = spellToDelete.id || spellToDelete.name;
+            const index = charsheet.spells.findIndex(spell => (spell.id || spell.name) === spellKey);
+            if (index === -1) return;
+
+            const newSpells = charsheet.spells.filter((_, i) => i !== index);
+            const update: Record<string, unknown> = { spells: newSpells };
+
+            const currentStages = charsheet.spellStages || {};
+            if (spellKey in currentStages) {
+                update['spellStages'] = withoutSpell(currentStages, spellKey);
+            }
+            if (spellKey in (charsheet.spellUnlocked || {})) {
+                update['spellUnlocked'] = withoutSpell(charsheet.spellUnlocked, spellKey);
+            }
+
+            // Mesma regra da ficha: excluir devolve o espaço e o ponto de magia
+            if (!isRoguelite) {
+                update['spellSpace'] = (charsheet.spellSpace || 0) + 1;
+                update['points.magics'] = (charsheet.points?.magics ?? 0) + (Number(spellToDelete.level) >= 3 ? 2 : 1);
+            }
+
+            await charsheetEntity.update(charsheet.id, update as any);
             enqueueSnackbar('Magia excluída com sucesso!', { variant: 'success' });
         } catch (error) {
             console.error('Erro ao excluir magia:', error);
@@ -318,28 +100,42 @@ export default function SpellsSection(): ReactElement {
         }
     }
 
-    const handleSetSpellStage = async (spell: SpellDTO, stage: 1 | 2 | 3) => {
+    // Evoluir: gasta os pontos de evolução que o próximo estágio custa (ver `stageRule`) e libera o estágio
+    const evolutionPoints = getEvolutionPoints(charsheet?.points)
+    const handleEvolve = async (spell: SpellDTO) => {
         if (!charsheet?.id) return
 
         const spellId = spell.id || spell.name
         if (!spellId) return
 
+        const progress = getSpellProgress(spell, charsheet, { enabled: stageRule })
+        const stage = progress.next
+        const cost = progress.nextCost
+        if (stage === null || cost === null) return
+
+        if (!canEvolve(progress, evolutionPoints)) {
+            enqueueSnackbar(`Você precisa de ${formatEvolutionPoints(cost)} para evoluir ${spell.name}. Peça ao mestre.`, { variant: 'warning' })
+            return
+        }
+
         try {
             await charsheetEntity.update(charsheet.id, {
-                spellStages: {
-                    ...(charsheet.spellStages || {}),
-                    [spellId]: stage
-                }
+                'points.evolution': evolutionPoints - cost,
+                spellUnlocked: { ...(charsheet.spellUnlocked || {}), [spellId]: stage }
             } as any)
 
-            enqueueSnackbar(`Estágio da magia "${spell.name}" definido para ${stage}!`, { variant: 'success' })
+            const unlockedLabel = spellStageLabel(spell.level, stage, spell.element).toLowerCase()
+            enqueueSnackbar(`${spell.name} evoluiu: ${unlockedLabel} desbloqueado (-${formatEvolutionPoints(cost)})!`, { variant: 'success' })
         } catch (error) {
-            console.error('Erro ao atualizar estágio da magia:', error)
-            enqueueSnackbar('Erro ao atualizar estágio da magia', { variant: 'error' })
+            console.error('Erro ao evoluir magia:', error)
+            enqueueSnackbar('Erro ao evoluir a magia', { variant: 'error' })
         }
     }
 
     const allSpells = charsheet.spells
+    const totalSpellSlots = isRoguelite
+        ? (charsheet.spellSpace || 0)
+        : allSpells.length + Math.max(0, charsheet.spellSpace || 0)
     const spellsByLevel = {
         1: allSpells.filter(spell => Number(spell.level) === 1),
         2: allSpells.filter(spell => Number(spell.level) === 2),
@@ -349,32 +145,17 @@ export default function SpellsSection(): ReactElement {
 
     return (
         <Box sx={{ width: '100%' }}>
-            <Paper 
-                elevation={2}
-                sx={{ 
-                    p: 3, 
-                    borderRadius: 3,
-                    background: theme.palette.mode === 'dark'
-                        ? 'linear-gradient(145deg, #1e293b 0%, #334155 100%)'
-                        : 'linear-gradient(145deg, #f8fafc 0%, #e2e8f0 100%)',
-                    border: '1px solid',
-                    borderColor: 'divider',
-                    transition: 'all 0.3s ease',
-                    '&:hover': {
-                        boxShadow: 4,
-                        transform: 'translateY(-2px)'
-                    }
-                }}
-            >
+            {/* A moldura e o título vêm do Section da campanha */}
+            <Paper elevation={0} sx={{ bgcolor: 'transparent' }}>
                 <Stack spacing={3}>
-                    {/* Header com Espaço de Magias */}
+                    {/* Espaço de Magias */}
                     <Box 
                         sx={{
                             display: 'flex',
                             justifyContent: 'space-between',
                             alignItems: 'center',
                             p: 2,
-                            bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
+                            bgcolor: 'background.raised',
                             borderRadius: 2,
                             border: '1px solid',
                             borderColor: 'divider'
@@ -386,12 +167,33 @@ export default function SpellsSection(): ReactElement {
                                 Espaço de Magias
                             </Typography>
                             <Chip
-                                label={`${allSpells.length} / ${charsheet.spellSpace || 0}`}
-                                color={allSpells.length >= (charsheet.spellSpace || 0) ? 'warning' : 'primary'}
+                                label={`${allSpells.length} / ${totalSpellSlots}`}
+                                color={allSpells.length >= totalSpellSlots ? 'warning' : 'primary'}
                                 variant="filled"
                                 sx={{ fontWeight: 700, fontSize: '0.9rem' }}
                             />
                         </Box>
+
+                        {/* Limite de MP por turno (só em combate) */}
+                        {mpLimitEnforced && (
+                            <Box sx={{ textAlign: 'center' }}>
+                                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                                    MP nesta rodada
+                                </Typography>
+                                <Tooltip
+                                    title={mpLimitReleased
+                                        ? 'O mestre liberou o limite de MP por turno até a rodada virar.'
+                                        : 'MP gasto em magias nesta rodada / limite por turno. Reações em turnos alheios contam, e o gasto zera quando a rodada vira.'}
+                                >
+                                    <Chip
+                                        label={`${mpSpentThisTurn} / ${mpLimit}${mpLimitReleased ? ' (liberado)' : ''}`}
+                                        color={mpLimitReleased ? 'success' : mpSpentThisTurn >= mpLimit ? 'error' : 'info'}
+                                        variant="filled"
+                                        sx={{ fontWeight: 700, fontSize: '0.9rem' }}
+                                    />
+                                </Tooltip>
+                            </Box>
+                        )}
 
                         {/* Estatísticas por Nível */}
                         <Stack direction="row" spacing={3}>
@@ -436,14 +238,12 @@ export default function SpellsSection(): ReactElement {
                         ) : (
                             <Stack spacing={2}>
                                 {allSpells.map(spell => {
-                                    const ElementIcon = getElementIcon(spell.element);
                                     const levelConfig = getSpellLevelColor(Number(spell.level));
                                     const spellId = spell.id || spell.name
-                                    const selectedStage = (charsheet.spellStages?.[spellId] as 1 | 2 | 3 | undefined) || 1
-                                    const availableStages: Array<1 | 2 | 3> = [ 1 ]
-                                    if (spell.stages?.[1]) availableStages.push(2)
-                                    if (spell.stages?.[2]) availableStages.push(3)
-                                    
+                                    const progress = getSpellProgress(spell, charsheet, { enabled: stageRule })
+                                    const evolvable = progress.enabled && canEvolve(progress, evolutionPoints)
+                                    const currentMp = Number(charsheet.stats?.mp ?? 0)
+
                                     return (
                                         <Accordion
                                             key={spell.name}
@@ -451,13 +251,14 @@ export default function SpellsSection(): ReactElement {
                                             onChange={handleSpellExpand(spell.name)}
                                             elevation={2}
                                             sx={{
+                                                bgcolor: 'background.raised',
                                                 border: '1px solid',
                                                 borderColor: 'divider',
                                                 borderRadius: 2,
+                                                transition: 'border-color 120ms',
                                                 '&:before': { display: 'none' },
                                                 '&:hover': {
-                                                    borderColor: levelConfig.color + '60',
-                                                    boxShadow: 3
+                                                    borderColor: color.borderStrong
                                                 }
                                             }}
                                         >
@@ -465,7 +266,7 @@ export default function SpellsSection(): ReactElement {
                                                 expandIcon={<ExpandMore sx={{ color: levelConfig.color }} />}
                                                 sx={{
                                                     minHeight: 64,
-                                                    bgcolor: levelConfig.bg + '40',
+                                                    bgcolor: alpha(levelConfig.color, 0.08),
                                                     borderRadius: '8px 8px 0 0',
                                                     '& .MuiAccordionSummary-content': {
                                                         alignItems: 'center',
@@ -478,16 +279,14 @@ export default function SpellsSection(): ReactElement {
                                                         sx={{
                                                             p: 0.8,
                                                             borderRadius: 1,
-                                                            bgcolor: elementColor[spell.element] || grey[300],
                                                             border: '1px solid',
-                                                            borderColor: 'rgba(0,0,0,0.2)'
+                                                            borderColor: 'divider'
                                                         }}
                                                     >
                                                         <ElementIcon 
-                                                            sx={{ 
-                                                                color: getSpellColor(spell),
-                                                                fontSize: '1.2rem'
-                                                            }} 
+                                                            element={spell.element}
+                                                            colored
+                                                            sx={{ fontSize: '1.2rem' }} 
                                                         />
                                                     </Box>
                                                     <Box flex={1}>
@@ -505,9 +304,10 @@ export default function SpellsSection(): ReactElement {
                                                             <Chip 
                                                                 label={spell.element} 
                                                                 size="small" 
+                                                                variant="outlined"
                                                                 sx={{ 
-                                                                    bgcolor: elementColor[spell.element] || grey[300], 
-                                                                    color: getSpellColor(spell),
+                                                                    borderColor: 'divider',
+                                                                    color: 'text.primary',
                                                                     fontWeight: 600
                                                                 }} 
                                                             />
@@ -515,11 +315,23 @@ export default function SpellsSection(): ReactElement {
                                                                 label={`Nível ${spell.level}`} 
                                                                 size="small" 
                                                                 sx={{
-                                                                    bgcolor: levelConfig.bg,
+                                                                    bgcolor: alpha(levelConfig.color, 0.14),
                                                                     color: levelConfig.color,
                                                                     fontWeight: 600
                                                                 }}
                                                             />
+                                                            {progress.enabled && progress.count > 1 && (
+                                                                <Chip
+                                                                    label={`${progress.unlocked} de ${progress.count} estágios`}
+                                                                    size="small"
+                                                                    variant="outlined"
+                                                                    data-testid={`spell-progress-${spellId}`}
+                                                                    sx={{ borderColor: 'divider', color: 'text.secondary' }}
+                                                                />
+                                                            )}
+                                                            {evolvable && (
+                                                                <Chip label="Pode evoluir" size="small" variant="outlined" color="primary" />
+                                                            )}
                                                         </Box>
                                                     </Box>
                                                 </Box>
@@ -530,8 +342,8 @@ export default function SpellsSection(): ReactElement {
                                                             label={spell.range} 
                                                             size="small" 
                                                             sx={{
-                                                                bgcolor: blue[100],
-                                                                color: blue[800],
+                                                                bgcolor: 'action.hover',
+                                                                color: 'text.primary',
                                                                 fontWeight: 600
                                                             }}
                                                         />
@@ -541,8 +353,8 @@ export default function SpellsSection(): ReactElement {
                                                             label={spell.execution} 
                                                             size="small" 
                                                             sx={{
-                                                                bgcolor: green[100],
-                                                                color: green[800],
+                                                                bgcolor: 'action.hover',
+                                                                color: 'text.primary',
                                                                 fontWeight: 600
                                                             }}
                                                         />
@@ -552,8 +364,8 @@ export default function SpellsSection(): ReactElement {
                                                             label={spell.type} 
                                                             size="small" 
                                                             sx={{
-                                                                bgcolor: red[100],
-                                                                color: red[800],
+                                                                bgcolor: 'action.hover',
+                                                                color: 'text.primary',
                                                                 fontWeight: 600
                                                             }}
                                                         />
@@ -564,7 +376,7 @@ export default function SpellsSection(): ReactElement {
                                                             color="error"
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
-                                                                handleDeleteSpell(spell.name);
+                                                                void handleDeleteSpell(spell);
                                                             }}
                                                             sx={{ ml: 1 }}
                                                         >
@@ -574,40 +386,36 @@ export default function SpellsSection(): ReactElement {
                                                 </Box>
                                             </AccordionSummary>
                                             
-                                            <AccordionDetails sx={{ p: 3 }}>
+                                            <AccordionDetails sx={{ p: { xs: 1.5, sm: 3 } }}>
                                                 <Stack spacing={2}>
-                                                    <Box display="flex" gap={1} flexWrap="wrap" alignItems="center">
-                                                        <Typography variant="caption" color="text.secondary">Estágio ativo:</Typography>
-                                                        {availableStages.map(stage => (
-                                                            <Chip
-                                                                key={stage}
-                                                                label={`Estágio ${stage}`}
-                                                                size="small"
-                                                                clickable
-                                                                onClick={() => { void handleSetSpellStage(spell, stage) }}
-                                                                color={selectedStage === stage ? 'primary' : 'default'}
-                                                                variant={selectedStage === stage ? 'filled' : 'outlined'}
-                                                            />
-                                                        ))}
-                                                    </Box>
-
-                                                    {(() => {
-                                                        const description = spell.stages?.[selectedStage - 1]
-                                                        if (!description) return null
-                                                        const previewCost = castSpell(spell, selectedStage).mpCost
-                                                        const currentMp = Number(charsheet.stats?.mp ?? 0)
-                                                        return (
-                                                            <SpellStage
-                                                                spell={spell}
-                                                                stage={selectedStage}
-                                                                description={description}
-                                                                onCast={(stg) => handleCastSpell(spell, stg)}
-                                                                isCasting={castingSpellId === (spell.id || spell.name)}
-                                                                canCast={currentMp >= previewCost}
-                                                                currentMp={currentMp}
-                                                            />
-                                                        )
-                                                    })()}
+                                                    {progress.enabled && (
+                                                        <Typography variant="caption" color="text.secondary" data-testid="evolution-points">
+                                                            Pontos de evolução: {evolutionPoints}
+                                                        </Typography>
+                                                    )}
+                                                    <StageLadder
+                                                        spell={spell}
+                                                        progress={progress}
+                                                        revealLocked={progress.enabled && campaignRevealsSpellStages(campaign)}
+                                                        evolution={progress.enabled ? { points: evolutionPoints, onEvolve: async () => { await handleEvolve(spell) } } : undefined}
+                                                        cast={{
+                                                            onCast: async (stage) => { await handleCastSpell(spell, stage) },
+                                                            isCasting: castingSpellId === spellId,
+                                                            currentMp,
+                                                            sustained: isSustainedSpell(spell.type) && sustainedActive[spellId]
+                                                                ? { activeStage: sustainedActive[spellId], onEnd: async () => { await handleEndSustained(spell) } }
+                                                                : undefined,
+                                                            effect: {
+                                                                pendingStage: pendingEffects[spellId],
+                                                                onEffect: async (stage) => { await handleEffectSpell(spell, stage) },
+                                                                onDismiss: () => { clearPending(spellId) },
+                                                                busy: effectingSpellId === spellId
+                                                            },
+                                                            blockedReason: (_stage, cost) => (exceedsMpLimit(cost)
+                                                                ? `Limite de MP por turno: ${mpSpentThisTurn}/${mpLimit} gastos e esta conjuração custa ${cost}. Clique para avisar o mestre.`
+                                                                : undefined)
+                                                        }}
+                                                    />
                                                 </Stack>
                                             </AccordionDetails>
                                         </Accordion>

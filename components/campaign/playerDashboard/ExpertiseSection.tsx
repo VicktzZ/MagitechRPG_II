@@ -1,10 +1,12 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 'use client'
 
-import { useCampaignCurrentCharsheetContext } from '@contexts';
+import { useCampaignContext, useCampaignCurrentCharsheetContext } from '@contexts';
 import { useChatContext } from '@contexts/chatContext'
 import { MessageType } from '@enums'
 import { 
+    alpha,
+    Alert,
     Box, 
     Button, 
     Chip, 
@@ -12,9 +14,11 @@ import {
     Typography,
     Stack,
     Tooltip,
-    useTheme,
     FormControl,
+    IconButton,
+    InputAdornment,
     Select,
+    TextField,
     MenuItem,
     InputLabel,
     ToggleButtonGroup,
@@ -26,17 +30,33 @@ import {
     TrendingUp,
     Star,
     EmojiEvents,
+    Close,
     FilterList,
+    Search,
     SortByAlpha,
     TrendingDown
 } from '@mui/icons-material'
-import { blue, green, grey, purple, orange, red } from '@mui/material/colors'
+import { color } from '@themes/tokens'
 import { useSession } from 'next-auth/react'
 import { type ReactElement, useState, useMemo, useEffect } from 'react'
 import type { RPGSystem, SystemAttribute } from '@models/entities';
+import { adjustDice, combatantEffects, effectDice, expertiseScope, keptDie } from '@utils/combat/effectDice';
+import { expertiseOverweightPenalty } from '@utils/combat/engine/overweight';
+import { sheetOverweight } from '@utils/combat/sheetOverweight';
+import { filterAndSortExpertises, type ExpertiseSort } from '@utils/expertiseList';
+import { matchesSearch } from '@utils/searchText';
 
 type ExpertiseLevel = 'all' | 'novice' | 'trained' | 'expert' | 'master' | 'legendary';
-type SortOrder = 'alpha-asc' | 'alpha-desc' | 'value-asc' | 'value-desc';
+type SortOrder = ExpertiseSort;
+
+/** Cor de cada nível de perícia, do neutro (destreinado) ao topo da escala: papéis do tema, não cores soltas */
+const levelColor = {
+    novice: color.inkMuted,
+    trained: color.success,
+    expert: color.cyan,
+    master: color.amber,
+    legendary: color.warning
+} as const
 
 interface ExpertiseEntry {
     key: string;
@@ -44,13 +64,16 @@ interface ExpertiseEntry {
     value: number;
     defaultAttribute?: string;
     attributeLabel?: string;
+    /** O que o Sobrepeso tira do modificador desta perícia (negativo, ou 0); só DES e VIG sofrem */
+    penalty: number;
 }
 
 export default function ExpertiseSection(): ReactElement {
     const { charsheet } = useCampaignCurrentCharsheetContext();
-    const theme = useTheme();
+    const { campaign } = useCampaignContext();
     const [ filterLevel, setFilterLevel ] = useState<ExpertiseLevel>('all');
     const [ sortOrder, setSortOrder ] = useState<SortOrder>('alpha-asc');
+    const [ query, setQuery ] = useState('');
     const [ systemExpertises, setSystemExpertises ] = useState<RPGSystem['expertises'] | null>(null);
     const [ systemAttributes, setSystemAttributes ] = useState<SystemAttribute[] | null>(null);
 
@@ -80,6 +103,9 @@ export default function ExpertiseSection(): ReactElement {
         return 'legendary';
     };
 
+    // Sobrepeso (condição do inventário): −1 por kg excedido nas perícias de atributo base DES e VIG (só no Magitech padrão)
+    const overweight = useMemo(() => sheetOverweight(charsheet), [ charsheet ]);
+
     const entries = useMemo<ExpertiseEntry[]>(() => {
         if (systemExpertises && systemExpertises.length > 0) {
             return systemExpertises.map(sysExp => {
@@ -91,7 +117,8 @@ export default function ExpertiseSection(): ReactElement {
                     label: sysExp.name,
                     value: stored?.value ?? 0,
                     defaultAttribute,
-                    attributeLabel: attrDef?.abbreviation ?? defaultAttribute?.toUpperCase()
+                    attributeLabel: attrDef?.abbreviation ?? defaultAttribute?.toUpperCase(),
+                    penalty: 0
                 };
             });
         }
@@ -101,34 +128,16 @@ export default function ExpertiseSection(): ReactElement {
             label: key,
             value: exp?.value ?? 0,
             defaultAttribute: exp?.defaultAttribute,
-            attributeLabel: exp?.defaultAttribute?.toUpperCase()
+            attributeLabel: exp?.defaultAttribute?.toUpperCase(),
+            penalty: expertiseOverweightPenalty(exp?.defaultAttribute, overweight.penalty) || 0
         }));
-    }, [ expertises, systemExpertises, systemAttributes ]);
+    }, [ expertises, systemExpertises, systemAttributes, overweight ]);
 
     const filteredAndSortedExpertises = useMemo(() => {
-        let list = [ ...entries ];
-
-        if (filterLevel !== 'all') {
-            list = list.filter(e => getExpertiseLevel(e.value) === filterLevel);
-        }
-
-        list.sort((a, b) => {
-            switch (sortOrder) {
-            case 'alpha-asc':
-                return a.label.localeCompare(b.label);
-            case 'alpha-desc':
-                return b.label.localeCompare(a.label);
-            case 'value-asc':
-                return a.value - b.value;
-            case 'value-desc':
-                return b.value - a.value;
-            default:
-                return 0;
-            }
-        });
-
-        return list;
-    }, [ entries, filterLevel, sortOrder ]);
+        const byLevel = filterLevel === 'all' ? entries : entries.filter(e => getExpertiseLevel(e.value) === filterLevel);
+        const bySearch = byLevel.filter(e => matchesSearch(e.label, query));
+        return filterAndSortExpertises(bySearch, { sort: sortOrder, nameOf: e => e.label, valueOf: e => e.value });
+    }, [ entries, filterLevel, sortOrder, query ]);
 
     const expertiseStats = useMemo(() => ({
         total: entries.length,
@@ -142,36 +151,31 @@ export default function ExpertiseSection(): ReactElement {
     const getExpertiseConfig = (value: number) => {
         if (value < 2) {
             return { 
-                color: grey[600], 
-                bg: grey[100], 
+                color: levelColor.novice, 
                 label: 'Destreinado',
                 icon: Person
             }
         } else if (value < 5) {
             return { 
-                color: green[600], 
-                bg: green[100], 
+                color: levelColor.trained, 
                 label: 'Treinado',
                 icon: TrendingUp
             }
         } else if (value < 7) {
             return { 
-                color: blue[600], 
-                bg: blue[100], 
+                color: levelColor.expert, 
                 label: 'Especialista',
                 icon: Star
             }
         } else if (value < 9) {
             return { 
-                color: purple[600], 
-                bg: purple[100], 
+                color: levelColor.master, 
                 label: 'Mestre',
                 icon: EmojiEvents
             }
         } else {
             return { 
-                color: orange[600], 
-                bg: orange[100], 
+                color: levelColor.legendary, 
                 label: 'Lendário',
                 icon: Casino
             }
@@ -180,31 +184,38 @@ export default function ExpertiseSection(): ReactElement {
 
     const getAttributeColor = (attr: string) => {
         const colors: Record<string, string> = {
-            'FOR': red[600],
-            'AGI': green[600],
-            'INT': blue[600],
-            'PRE': purple[600],
-            'VIG': orange[600]
+            'FOR': color.danger,
+            'AGI': color.success,
+            'INT': color.cyan,
+            'PRE': color.amber,
+            'VIG': color.warning
         }
-        return colors[attr] || grey[600]
+        return colors[attr] || color.inkMuted
     }
 
     const handleExpertiseClick = async (entry: ExpertiseEntry) => {
-        const expertiseValue = entry.value
+        // O Sobrepeso entra no modificador da rolagem (a perícia na ficha continua com o valor dela)
+        const expertiseValue = entry.value + entry.penalty
 
         // Determina quantos d20s rolar baseado nos mods do atributo padrão da perícia
         const attrKey = (entry.defaultAttribute ?? '') as keyof typeof charsheet.mods.attributes
         let numDice = Number(charsheet.mods?.attributes?.[attrKey] ?? 1)
         if (!Number.isFinite(numDice) || numDice < 1) numDice = 1
 
+        // Percepção e Furtividade levam as vantagens e desvantagens dos efeitos aplicados no combate (Cegueira, Visão Verdadeira...): o saldo decide
+        // quantos d20 rolar e se vale o maior ou o menor
+        const scope = expertiseScope(entry.label)
+        const effects = scope ? effectDice(combatantEffects(campaign?.session?.combat, charsheet.id), scope) : undefined
+        const { dice, keep } = effects ? adjustDice({ dice: numDice, keep: 'highest' }, effects) : { dice: numDice, keep: 'highest' as const }
+
         // Rola os dados
         const rolls: number[] = []
-        for (let i = 0; i < numDice; i++) {
+        for (let i = 0; i < dice; i++) {
             rolls.push(Math.floor(Math.random() * 20) + 1)
         }
 
-        // Seleciona o melhor resultado entre os dados rolados
-        const roll = rolls.length > 1 ? Math.max(...rolls) : rolls[0]
+        // O d20 que vale: o maior (ou o menor, com desvantagem líquida)
+        const roll = keptDie(rolls, keep)
 
         const total = roll + expertiseValue
 
@@ -213,7 +224,9 @@ export default function ExpertiseSection(): ReactElement {
             `${rolls.join(', ')}: ${roll}` :
             `${roll}`
 
-        const text = `🎲 ${entry.label.toUpperCase()} - ${numDice}d20${expertiseValue >= 0 ? '+' : ''}${expertiseValue}: [${rollPart}] = ${total}`
+        const remarks = [ ...(keep === 'lowest' ? [ 'desvantagem' ] : []), ...(effects?.notes ?? []) ]
+        const name = `${entry.label.toUpperCase()}${remarks.length > 0 ? ` (${remarks.join('; ')})` : ''}`
+        const text = `🎲 ${name} - ${dice}d20${expertiseValue >= 0 ? '+' : ''}${expertiseValue}: [${rollPart}] = ${total}`
         
         // Envia a mensagem diretamente
         if (session?.user) {
@@ -237,25 +250,9 @@ export default function ExpertiseSection(): ReactElement {
 
     return (
         <Box sx={{ width: '100%' }}>
-            <Paper 
-                elevation={2}
-                sx={{ 
-                    p: 3, 
-                    borderRadius: 3,
-                    background: theme.palette.mode === 'dark'
-                        ? 'linear-gradient(145deg, #1e293b 0%, #334155 100%)'
-                        : 'linear-gradient(145deg, #f8fafc 0%, #e2e8f0 100%)',
-                    border: '1px solid',
-                    borderColor: 'divider',
-                    transition: 'all 0.3s ease',
-                    '&:hover': {
-                        boxShadow: 4,
-                        transform: 'translateY(-2px)'
-                    }
-                }}
-            >
+            {/* A moldura e o título vêm do Section da campanha */}
+            <Paper elevation={0} sx={{ bgcolor: 'transparent' }}>
                 <Stack spacing={3}>
-                    {/* Header */}
 
                     {/* Estatísticas por Nível */}
                     <Box 
@@ -263,7 +260,7 @@ export default function ExpertiseSection(): ReactElement {
                             display: 'flex',
                             justifyContent: 'space-around',
                             p: 2,
-                            bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
+                            bgcolor: 'background.raised',
                             borderRadius: 2,
                             border: '1px solid',
                             borderColor: 'divider',
@@ -272,11 +269,11 @@ export default function ExpertiseSection(): ReactElement {
                         }}
                     >
                         {[
-                            { key: 'novice', label: 'Destreinado', count: expertiseStats.novice, color: grey[600] },
-                            { key: 'trained', label: 'Treinado', count: expertiseStats.trained, color: green[600] },
-                            { key: 'expert', label: 'Competente', count: expertiseStats.expert, color: blue[600] },
-                            { key: 'master', label: 'Experiente', count: expertiseStats.master, color: purple[600] },
-                            { key: 'legendary', label: 'Especialista', count: expertiseStats.legendary, color: orange[600] }
+                            { key: 'novice', label: 'Destreinado', count: expertiseStats.novice, color: levelColor.novice },
+                            { key: 'trained', label: 'Treinado', count: expertiseStats.trained, color: levelColor.trained },
+                            { key: 'expert', label: 'Competente', count: expertiseStats.expert, color: levelColor.expert },
+                            { key: 'master', label: 'Experiente', count: expertiseStats.master, color: levelColor.master },
+                            { key: 'legendary', label: 'Especialista', count: expertiseStats.legendary, color: levelColor.legendary }
                         ].map(stat => (
                             <Stack key={stat.key} alignItems="center" spacing={0.5}>
                                 <Typography variant="h6" sx={{ color: stat.color, fontWeight: 700 }}>
@@ -289,6 +286,12 @@ export default function ExpertiseSection(): ReactElement {
                         ))}
                     </Box>
 
+                    {overweight.penalty < 0 && (
+                        <Alert severity="warning" data-testid="overweight-notice">
+                            {`Sobrepeso: ${overweight.excess} kg acima da capacidade (${overweight.carried} de ${overweight.max} kg). As perícias de DES e VIG têm ${overweight.penalty} no modificador até você largar peso.`}
+                        </Alert>
+                    )}
+
                     {/* Filtros e Ordenação */}
                     <Box 
                         sx={{
@@ -297,12 +300,31 @@ export default function ExpertiseSection(): ReactElement {
                             flexWrap: 'wrap',
                             alignItems: 'center',
                             p: 2,
-                            bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.01)',
+                            bgcolor: 'background.raised',
                             borderRadius: 2,
                             border: '1px solid',
                             borderColor: 'divider'
                         }}
                     >
+                        <TextField
+                            size="small"
+                            placeholder="Buscar perícia"
+                            value={query}
+                            onChange={(e) => setQuery(e.target.value)}
+                            inputProps={{ 'aria-label': 'Buscar perícia' }}
+                            InputProps={{
+                                startAdornment: <InputAdornment position="start"><Search fontSize="small" /></InputAdornment>,
+                                endAdornment: query ? (
+                                    <InputAdornment position="end">
+                                        <IconButton size="small" aria-label="Limpar busca de perícias" onClick={() => setQuery('')} edge="end">
+                                            <Close fontSize="small" />
+                                        </IconButton>
+                                    </InputAdornment>
+                                ) : undefined
+                            }}
+                            sx={{ minWidth: 200, flex: '1 1 200px', maxWidth: 320 }}
+                        />
+
                         <FormControl size="small" sx={{ minWidth: 200 }}>
                             <InputLabel>
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -318,31 +340,31 @@ export default function ExpertiseSection(): ReactElement {
                                 <MenuItem value="all">Todas as Perícias</MenuItem>
                                 <MenuItem value="novice">
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                        <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: grey[600] }} />
+                                        <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: levelColor.novice }} />
                                         Destreinado
                                     </Box>
                                 </MenuItem>
                                 <MenuItem value="trained">
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                        <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: green[600] }} />
+                                        <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: levelColor.trained }} />
                                         Treinado
                                     </Box>
                                 </MenuItem>
                                 <MenuItem value="expert">
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                        <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: blue[600] }} />
+                                        <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: levelColor.expert }} />
                                         Competente
                                     </Box>
                                 </MenuItem>
                                 <MenuItem value="master">
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                        <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: purple[600] }} />
+                                        <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: levelColor.master }} />
                                         Experiente
                                     </Box>
                                 </MenuItem>
                                 <MenuItem value="legendary">
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                        <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: orange[600] }} />
+                                        <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: levelColor.legendary }} />
                                         Especialista
                                     </Box>
                                 </MenuItem>
@@ -394,13 +416,14 @@ export default function ExpertiseSection(): ReactElement {
                             </ToggleButton>
                         </ToggleButtonGroup>
 
-                        {(filterLevel !== 'all' || sortOrder !== 'alpha-asc') && (
+                        {(filterLevel !== 'all' || sortOrder !== 'alpha-asc' || query.trim() !== '') && (
                             <Button
                                 size="small"
                                 variant="outlined"
                                 onClick={() => {
                                     setFilterLevel('all');
                                     setSortOrder('alpha-asc');
+                                    setQuery('');
                                 }}
                                 sx={{ ml: 'auto' }}
                             >
@@ -422,14 +445,16 @@ export default function ExpertiseSection(): ReactElement {
                                 }}
                             >
                                 <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
-                                    {filterLevel !== 'all' 
-                                        ? 'Nenhuma perícia encontrada com este filtro'
-                                        : 'Nenhuma perícia encontrada'
+                                    {query.trim() !== ''
+                                        ? `Nenhuma perícia encontrada para "${query.trim()}"`
+                                        : filterLevel !== 'all'
+                                            ? 'Nenhuma perícia encontrada com este filtro'
+                                            : 'Nenhuma perícia encontrada'
                                     }
                                 </Typography>
                                 <Typography variant="body2" color="text.secondary">
-                                    {filterLevel !== 'all' 
-                                        ? 'Tente ajustar os filtros para ver mais perícias.'
+                                    {filterLevel !== 'all' || query.trim() !== ''
+                                        ? 'Tente ajustar a busca ou os filtros para ver mais perícias.'
                                         : 'As perícias do personagem aparecerão aqui.'
                                     }
                                 </Typography>
@@ -460,22 +485,21 @@ export default function ExpertiseSection(): ReactElement {
                                         >
                                             <Button
                                                 fullWidth
+                                                data-testid="expertise-card"
                                                 onClick={async () => await handleExpertiseClick(entry)}
                                                 elevation={1}
                                                 sx={{
                                                     p: 2.5,
-                                                    bgcolor: config.bg + '40',
+                                                    bgcolor: alpha(config.color, 0.1),
                                                     border: '1px solid',
-                                                    borderColor: config.color + '40',
+                                                    borderColor: alpha(config.color, 0.25),
                                                     borderRadius: 2,
                                                     justifyContent: 'flex-start',
                                                     textAlign: 'left',
                                                     transition: 'all 0.3s ease',
                                                     '&:hover': {
-                                                        bgcolor: config.bg + '60',
-                                                        borderColor: config.color + '80',
-                                                        transform: 'translateY(-2px)',
-                                                        boxShadow: 3
+                                                        bgcolor: alpha(config.color, 0.18),
+                                                        borderColor: alpha(config.color, 0.5)
                                                     }
                                                 }}
                                             >
@@ -485,9 +509,9 @@ export default function ExpertiseSection(): ReactElement {
                                                             sx={{
                                                                 p: 0.8,
                                                                 borderRadius: 1,
-                                                                bgcolor: config.color + '20',
+                                                                bgcolor: alpha(config.color, 0.12),
                                                                 border: '1px solid',
-                                                                borderColor: config.color + '40'
+                                                                borderColor: alpha(config.color, 0.25)
                                                             }}
                                                         >
                                                             <IconComponent 
@@ -515,17 +539,29 @@ export default function ExpertiseSection(): ReactElement {
                                                             size="small"
                                                             sx={{
                                                                 bgcolor: config.color,
-                                                                color: 'white',
+                                                                color: 'background.default',
                                                                 fontWeight: 700,
                                                                 fontSize: '0.8rem'
                                                             }}
                                                         />
+                                                        {entry.penalty < 0 && (
+                                                            <Tooltip title="Sobrepeso: −1 no modificador para cada kg acima da capacidade">
+                                                                <Chip
+                                                                    label={`Sobrepeso ${entry.penalty}`}
+                                                                    size="small"
+                                                                    color="warning"
+                                                                    variant="outlined"
+                                                                    data-testid="expertise-overweight"
+                                                                    sx={{ fontWeight: 600, fontSize: '0.75rem' }}
+                                                                />
+                                                            </Tooltip>
+                                                        )}
                                                         {entry.attributeLabel && (
                                                             <Chip
                                                                 label={entry.attributeLabel}
                                                                 size="small"
                                                                 sx={{
-                                                                    bgcolor: getAttributeColor(entry.attributeLabel) + '20',
+                                                                    bgcolor: alpha(getAttributeColor(entry.attributeLabel), 0.12),
                                                                     color: getAttributeColor(entry.attributeLabel),
                                                                     fontWeight: 600,
                                                                     fontSize: '0.75rem'
@@ -537,10 +573,10 @@ export default function ExpertiseSection(): ReactElement {
                                                             size="small"
                                                             variant="outlined"
                                                             sx={{
-                                                                borderColor: config.color + '60',
+                                                                borderColor: alpha(config.color, 0.38),
                                                                 color: config.color,
                                                                 fontWeight: 600,
-                                                                fontSize: '0.7rem'
+                                                                fontSize: '0.75rem'
                                                             }}
                                                         />
                                                     </Box>

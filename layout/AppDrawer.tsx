@@ -1,14 +1,14 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
-import { Avatar, Box, Divider, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Typography, useTheme, alpha, Tooltip, IconButton, Dialog, DialogTitle, DialogContent, Grid, Pagination, Chip } from '@mui/material';
+import { Avatar, Box, Divider, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Typography, useTheme, alpha, Tooltip, Dialog, DialogTitle, DialogContent, Grid, Pagination, Chip } from '@mui/material';
 
 import { type KeyboardEvent, type MouseEvent, type ReactElement, type ReactNode, useState, useMemo } from 'react';
-import { Article, AutoStories, Home, Logout, Menu, Start, LightMode, DarkMode, Person, Build, WorkspacePremium } from '@mui/icons-material';
-import { useThemeContext } from '@contexts';
+import { Article, AutoStories, Home, Logout, Menu, Start, Person, Build, WorkspacePremium } from '@mui/icons-material';
 import { signOut, useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import CustomIconButton from './CustomIconButton';
 import Image from 'next/image';
 import { useFirestoreRealtime } from '@hooks/useFirestoreRealtime';
+import { useCurrentUserDoc } from '@hooks/useCurrentUserDoc';
 import { useCustomSystemsAccess } from '@hooks/useSubscription';
 import { PlanBadge } from '@components/subscription';
 import { isAdminEmail } from '@utils/adminCheck';
@@ -17,7 +17,6 @@ import type { User } from '@models/entities';
 export default function AppDrawer(): ReactElement {
     const theme = useTheme();
     const { data: session, update } = useSession();
-    const { themeMode, toggleTheme } = useThemeContext();
     const { canCreate: canAccessCustomSystems } = useCustomSystemsAccess();
     const canAccessSystems = canAccessCustomSystems || isAdminEmail(session?.user?.email);
     
@@ -28,13 +27,10 @@ export default function AppDrawer(): ReactElement {
     const router = useRouter()
     
     // Buscar todos os usuários do Firestore em tempo real
-    const { data: allUsers } = useFirestoreRealtime('user');
+    const { user: currentUserDoc } = useCurrentUserDoc();
     
     // Encontrar o usuário atual baseado na sessão
-    const currentUser = useMemo(() => {
-        if (!session?.user?.id || !allUsers) return null;
-        return (allUsers ).find((u: User) => u.id === session.user.id) || null;
-    }, [ session?.user?.id, allUsers ]);
+    const currentUser = useMemo((): User | null => currentUserDoc, [ currentUserDoc ]);
 
     const toggleDrawer =
         (openParam: boolean) =>
@@ -50,7 +46,11 @@ export default function AppDrawer(): ReactElement {
                 setDrawerOpen(openParam)
             };
 
-    const { data: users } = useFirestoreRealtime('user');
+    // Lista de usuários do seletor de personificação (somente dev). Só administradores
+    // podem listar a coleção `users` nas regras do Firestore.
+    const { data: users } = useFirestoreRealtime('user', {
+        enabled: process.env.NEXT_PUBLIC_NODE_ENV === 'development' && isAdminEmail(session?.user?.email) && usersModalOpen
+    });
 
     function handleImpersonate(u: any) {
         try {
@@ -68,7 +68,7 @@ export default function AppDrawer(): ReactElement {
             flexDirection='column'
             justifyContent='space-between'
             py={1.5}
-            bgcolor={theme.palette.mode === 'dark' ? '#1a2234' : '#f8fafc'}
+            bgcolor='background.paper'
             width='280px'
             role="presentation"
             height='100%'
@@ -103,26 +103,6 @@ export default function AppDrawer(): ReactElement {
                     <Typography variant="h6" fontWeight={600} color="primary.main">
                         MagitechRPG
                     </Typography>
-                    <Tooltip title={themeMode === 'dark' ? 'Mudar para tema claro' : 'Mudar para tema escuro'}>
-                        <IconButton
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                toggleTheme();
-                            }}
-                            sx={{
-                                color: theme.palette.primary.main,
-                                bgcolor: alpha(theme.palette.primary.main, 0.08),
-                                '&:hover': {
-                                    bgcolor: alpha(theme.palette.primary.main, 0.15)
-                                },
-                                transition: 'all 0.2s ease-in-out',
-                                borderRadius: 1.5
-                            }}
-                            size="small"
-                        >
-                            {themeMode === 'dark' ? <LightMode fontSize="small" /> : <DarkMode fontSize="small" />}
-                        </IconButton>
-                    </Tooltip>
                 </Box>
                 <List sx={{ px: 1 }}>
                     <ListItem disablePadding onClick={() => { router.push('/app') }}>
@@ -265,7 +245,7 @@ export default function AppDrawer(): ReactElement {
                     p: 2,
                     gap: 1.5,
                     borderTop: '1px solid',
-                    borderColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+                    borderColor: 'divider',
                     mt: 1,
                     mx: 1.5,
                     pt: 2
@@ -277,9 +257,8 @@ export default function AppDrawer(): ReactElement {
                             sx={{
                                 height: '2.5rem',
                                 width: '2.5rem',
-                                color: 'white',
-                                bgcolor: theme.palette.primary.main,
-                                boxShadow: 1
+                                color: 'primary.contrastText',
+                                bgcolor: theme.palette.primary.main
                             }}
                         >
                             {
@@ -309,7 +288,6 @@ export default function AppDrawer(): ReactElement {
                                         alignItems: 'center',
                                         justifyContent: 'center',
                                         fontSize: '0.7rem',
-                                        boxShadow: 1,
                                         border: `2px solid ${theme.palette.background.paper}`
                                     }}
                                 >
@@ -357,10 +335,7 @@ export default function AppDrawer(): ReactElement {
                 onClose={toggleDrawer(false)}
                 PaperProps={{
                     sx: {
-                        borderRight: 'none',
-                        boxShadow: theme.palette.mode === 'dark'
-                            ? '0 8px 16px rgba(0,0,0,0.5)'
-                            : '0 8px 16px rgba(0,0,0,0.1)'
+                        borderRight: 'none'
                     }
                 }}
             >

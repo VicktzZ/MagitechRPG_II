@@ -26,11 +26,14 @@ import {
 } from '@mui/material';
 import { Add, Delete, Edit, EventNote } from '@mui/icons-material';
 import { useFormContext, useWatch } from 'react-hook-form';
-import { amber, blue, grey, red } from '@mui/material/colors';
+import { color } from '@themes/tokens';
 import type { PassiveOccasion } from '@models/types/string';
 import type { Charsheet } from '@models/entities';
 import type { Passive } from '@models';
 import { useCampaignCurrentCharsheetContext } from '@contexts';
+
+/** Ficha sem passivas: a mesma lista vazia a cada render (não cria um array novo) */
+const NO_PASSIVES: Passive[] = [];
 
 const occasionOptions: PassiveOccasion[] = [
     'Início do turno',
@@ -47,20 +50,21 @@ const occasionOptions: PassiveOccasion[] = [
     'Personalizado'
 ];
 
-// Mapeamento de cores para ocasiões
+// Mapeamento de cores para ocasiões (pelo papel: dano/ataque sofrido em vermelho, turno e magia em ciano,
+// cura em verde, aviso em laranja, neutros para o que não tem gatilho próprio)
 const occasionColors: Record<PassiveOccasion, string> = {
-    'Início do turno': blue[200],
-    'Final do turno': blue[300],
-    'Ao ser atacado': red[200],
-    'Ao atacar': amber[500],
-    'Ao usar magia': '#9c27b0',
-    'Ao sofrer dano': red[400],
-    'Ao causar dano': red[300],
-    'Sempre ativo': grey[500],
-    'Quando curar': '#4caf50',
-    'Ao se deslocar': '#2196f3',
-    'Condição específica': '#ff9800',
-    'Personalizado': grey[400]
+    'Início do turno': color.cyan,
+    'Final do turno': color.cyan,
+    'Ao ser atacado': color.danger,
+    'Ao atacar': color.amber,
+    'Ao usar magia': color.mp,
+    'Ao sofrer dano': color.danger,
+    'Ao causar dano': color.danger,
+    'Sempre ativo': color.inkMuted,
+    'Quando curar': color.success,
+    'Ao se deslocar': color.cyan,
+    'Condição específica': color.warning,
+    'Personalizado': color.inkFaint
 };
 
 interface PassiveFormData {
@@ -80,12 +84,11 @@ export default function Passives({ realtime = false }: { realtime?: boolean }) {
     const [ open, setOpen ] = useState(false);
     const [ editingPassive, setEditingPassive ] = useState<PassiveFormData | null>(null);
     
-    // Observar as passivas
+    // Observar as passivas. Sem `defaultValue`: na primeira renderização ele vence o valor da ficha (ver `Expertises.tsx`) e as passivas salvas não apareciam
     const passives = useWatch<Charsheet, 'passives'>({
         control,
-        name: 'passives',
-        defaultValue: []
-    });
+        name: 'passives'
+    }) ?? NO_PASSIVES;
     
     const handleOpen = () => {
         setEditingPassive({
@@ -159,7 +162,7 @@ export default function Passives({ realtime = false }: { realtime?: boolean }) {
             <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
                 <Box display="flex" alignItems="center">
                     <EventNote sx={{ mr: 1, color: theme.palette.primary.main }} />
-                    <Typography variant="h6" fontWeight="bold">
+                    <Typography variant="h6" component="h3" fontWeight="bold">
                         Habilidades Passivas
                     </Typography>
                 </Box>
@@ -186,16 +189,12 @@ export default function Passives({ realtime = false }: { realtime?: boolean }) {
                                 variant="outlined" 
                                 sx={{ 
                                     position: 'relative',
-                                    borderLeft: `4px solid ${occasionColors[passive.occasion] || grey[500]}`,
-                                    transition: 'all 0.2s',
-                                    '&:hover': {
-                                        boxShadow: theme.shadows[3]
-                                    }
+                                    borderLeft: `4px solid ${occasionColors[passive.occasion] || color.inkMuted}`
                                 }}
                             >
                                 <CardContent sx={{ pb: 1 }}>
                                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                        <Typography variant="h6" gutterBottom fontWeight="bold">
+                                        <Typography variant="h6" component="h4" gutterBottom fontWeight="bold">
                                             {passive.title.length > 20 ? `${passive.title.slice(0, 20)}...` : passive.title}
                                         </Typography>
                                         <Box>
@@ -203,8 +202,8 @@ export default function Passives({ realtime = false }: { realtime?: boolean }) {
                                                 size="small" 
                                                 label={passive.occasion}
                                                 sx={{ 
-                                                    bgcolor: occasionColors[passive.occasion] || grey[300],
-                                                    color: theme.palette.getContrastText(occasionColors[passive.occasion] || grey[300]),
+                                                    bgcolor: occasionColors[passive.occasion] || color.inkMuted,
+                                                    color: theme.palette.getContrastText(occasionColors[passive.occasion] || color.inkMuted),
                                                     fontSize: '0.7rem',
                                                     mb: 1
                                                 }} 
@@ -219,15 +218,17 @@ export default function Passives({ realtime = false }: { realtime?: boolean }) {
                                     <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
                                         <IconButton 
                                             size="small" 
+                                            aria-label={`Editar passiva ${passive.title}`}
                                             onClick={() => handleEdit(passive)}
-                                            sx={{ color: blue[500] }}
+                                            sx={{ color: 'primary.main' }}
                                         >
                                             <Edit fontSize="small" />
                                         </IconButton>
                                         <IconButton 
                                             size="small" 
+                                            aria-label={`Excluir passiva ${passive.title}`}
                                             onClick={() => handleDelete(passive.id)}
-                                            sx={{ color: red[500] }}
+                                            sx={{ color: 'error.main' }}
                                         >
                                             <Delete fontSize="small" />
                                         </IconButton>

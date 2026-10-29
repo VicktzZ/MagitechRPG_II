@@ -10,7 +10,6 @@ import {
     FitnessCenter,
     LocalFireDepartment,
     Speed,
-    Flare,
     Diamond,
     Star
 } from '@mui/icons-material'
@@ -75,7 +74,7 @@ export function Weapon(props: ItemTyping<'weapon'>): ReactElement {
                         p: 2,
                         backgroundColor: alpha(theme.palette.background.paper, 0.3),
                         borderRadius: 2,
-                        border: `1px solid ${alpha('#ef5350', 0.2)}`
+                        border: `1px solid ${alpha(theme.palette.error.main, 0.2)}`
                     }}
                 >
                     <Stack direction="row" justifyContent="space-between" mb={1}>
@@ -84,6 +83,8 @@ export function Weapon(props: ItemTyping<'weapon'>): ReactElement {
                         </Typography>
                         <IconButton
                             size="small"
+                            aria-label={showStats ? 'Ocultar detalhes da arma' : 'Mostrar detalhes da arma'}
+                            aria-expanded={showStats}
                             onClick={() => setShowStats(!showStats)}
                             sx={{
                                 transform: showStats ? 'rotate(180deg)' : 'rotate(0deg)',
@@ -151,7 +152,7 @@ export function Weapon(props: ItemTyping<'weapon'>): ReactElement {
 
                             {props.accessories && (
                                 <Box display='flex' alignItems='center' gap={1}>
-                                    <Flare fontSize="small" color="error" />
+                                    <Diamond fontSize="small" color="error" />
                                     <Typography variant="body2">
                                         <strong>Acessórios:</strong> {props.accessories}
                                     </Typography>

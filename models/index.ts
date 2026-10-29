@@ -3,7 +3,7 @@ export { Item } from './Item';
 export { Message } from './Message';
 export { Session, type PerkFilters } from './Session';
 export { Combat, Combatant, CombatLog, type CombatPhase, type CombatantType } from './Combat';
-export { AppliedEffect } from './AppliedEffect';
+export { AppliedEffect, type SustainedSpellInfo } from './AppliedEffect';
 export {
     CombatEffect,
     CombatEffectLevel,

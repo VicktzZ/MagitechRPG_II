@@ -1,6 +1,12 @@
 import { IsArray, IsBoolean, IsNumber, IsOptional, IsString, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 import { AppliedEffect } from './AppliedEffect';
+import type { UnseenData } from '../utils/combat/awareness';
+import type { ActionBudget } from '../utils/combat/engine/actionBudget';
+import type { CombatEnvironment } from '../utils/combat/environment';
+import type { OpportunityData } from '../utils/combat/opportunities';
+import type { PendingAttackData } from '../utils/combat/pendingAttacks';
+import type { ReactionOfferData } from '../utils/combat/reactions';
 
 /**
  * Fases do combate
@@ -65,6 +71,26 @@ export class Combatant {
     @IsOptional()
     @IsNumber()
         dexterity?: number; // Destreza (DES) para desempate de iniciativa
+
+    /**
+     * MP gasto em magias nesta rodada de combate (reações em turnos alheios contam). Volta a 0 para
+     * todos quando a rodada vira. Ver utils/mpLimit.ts e utils/combat/mpLimitWindow.ts.
+     */
+    @IsOptional()
+    @IsNumber()
+        mpSpentThisTurn?: number = 0;
+
+    /** Mestre liberou o limite de MP por turno até a rodada virar */
+    @IsOptional()
+    @IsBoolean()
+        mpLimitOverride?: boolean = false;
+
+    /**
+     * Ações que ainda restam na rodada (Padrão, Bônus, Movimento, Reação). Sem o campo, tudo disponível. Voltam quando a rodada vira.
+     * Ver utils/combat/actionBudgets.ts.
+     */
+    @IsOptional()
+        actions?: ActionBudget;
 
     @ValidateNested({ each: true })
     @Type(() => AppliedEffect)
@@ -156,6 +182,30 @@ export class Combat {
     @IsOptional()
     @IsBoolean()
         showEnemyLp?: boolean = false; // Se mostra LP dos inimigos para jogadores
+
+    /** Ataques declarados que o mestre ainda não resolveu (ataque assistido; ver utils/combat/pendingAttacks.ts) */
+    @IsOptional()
+    @IsArray()
+        pendingAttacks?: PendingAttackData[];
+
+    /** Saídas de alcance declaradas: cada uma abre a um inimigo a chance de um ataque de oportunidade (ver utils/combat/opportunities.ts) */
+    @IsOptional()
+    @IsArray()
+        opportunities?: OpportunityData[];
+
+    /** Quem não vê quem (furtivo, invisível...): cada par é "o observador não vê o escondido". Sem o campo, todos se veem. Ver utils/combat/awareness.ts */
+    @IsOptional()
+    @IsArray()
+        unseen?: UnseenData[];
+
+    /** Ofertas de reação abertas (o que aconteceu e quem pode reagir com a Reação); duram o turno em andamento. Ver utils/combat/reactions.ts */
+    @IsOptional()
+    @IsArray()
+        reactions?: ReactionOfferData[];
+
+    /** Ambiente manual da cena: a iluminação e quem está em terreno difícil, marcados pelo mestre. Sem o campo, luz clara e sem terreno difícil. Ver utils/combat/environment.ts */
+    @IsOptional()
+        environment?: CombatEnvironment;
 
     constructor(combat?: Partial<Combat>) {
         Object.assign(this, combat);

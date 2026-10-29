@@ -1,0 +1,14 @@
+{
+  "name": "magitechrpg-firestore-rules-tests",
+  "private": true,
+  "type": "module",
+  "description": "Testes das regras do Firestore (firestore.rules) contra o emulador",
+  "scripts": {
+    "test": "firebase emulators:exec --only firestore --project demo-magitech --config ../../firebase.firestore.json \"node --test rules.test.mjs\""
+  },
+  "dependencies": {
+    "@firebase/rules-unit-testing": "^4.0.1",
+    "firebase": "^11.10.0",
+    "firebase-tools": "^14.11.0"
+  }
+}

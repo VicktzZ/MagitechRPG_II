@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@app/api/auth/[...nextauth]/route';
 import { campaignStatsRepository } from '@repositories';
 import { findCampaignByCodeOrId } from '@utils/helpers/findCampaignByCodeOrId';
+import { handleRouteError, readJsonBody } from '@utils/api';
 import { recordCampaignStats, type StatsEntry } from '@utils/campaignStatsHelper';
 import { CampaignStats, emptyGMStats } from '@models/entities';
 
@@ -42,8 +43,8 @@ export async function GET(
         }
 
         return Response.json(stats);
-    } catch (error: any) {
-        return Response.json({ message: 'ERROR', error: error.message }, { status: 500 });
+    } catch (error) {
+        return handleRouteError(error);
     }
 }
 
@@ -79,7 +80,10 @@ export async function POST(
             return Response.json({ message: 'CAMPAIGN_FINISHED' }, { status: 200 });
         }
 
-        const body: { entries?: StatsEntry[] } = await req.json();
+        const body: { entries?: StatsEntry[] } = await readJsonBody(req);
+        if (!Array.isArray(body.entries ?? []) || (body.entries?.length ?? 0) > 100) {
+            return Response.json({ message: 'BAD REQUEST', error: 'entries deve ser uma lista de até 100 itens' }, { status: 400 });
+        }
         const entries = (body.entries ?? []).filter(e => {
             // Jogador só registra nas próprias estatísticas; mestre pode tudo
             if (e.gm) return isGM;
@@ -91,7 +95,7 @@ export async function POST(
         await recordCampaignStats(campaign.id, entries);
 
         return Response.json({ message: 'OK' });
-    } catch (error: any) {
-        return Response.json({ message: 'ERROR', error: error.message }, { status: 500 });
+    } catch (error) {
+        return handleRouteError(error);
     }
 }

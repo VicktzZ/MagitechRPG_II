@@ -1,0 +1,104 @@
+rules_version = '2';
+
+// Regras do Firestore do MagitechRPG.
+//
+// Quem é o usuário: o navegador entra no Firebase Auth com um token customizado
+// emitido por /api/firebase/token (FirebaseAuthBridge). request.auth.uid é o id
+// do usuário no banco e administradores têm a claim `admin`.
+//
+// O servidor (rotas /api) usa o Admin SDK, que não passa por estas regras —
+// escritas privilegiadas (mestre editando ficha de jogador, campanha, catálogos)
+// acontecem lá, com autorização própria.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return signedIn() && request.auth.token.admin == true;
+    }
+
+    // Mestre da campanha: a lista `admin` da campanha tem IDs de usuário. Sem `admin` o get() falha e a leitura é negada.
+    function isCampaignGM(campaignId) {
+      return signedIn() && request.auth.uid in get(/databases/$(database)/documents/campaigns/$(campaignId)).data.admin;
+    }
+
+    // Usuários: têm e-mail e assinatura — cada um lê só o próprio documento.
+    // Perfis públicos dos membros de uma campanha vêm da API.
+    match /users/{userId} {
+      allow get: if signedIn() && (request.auth.uid == userId || isAdmin());
+      allow list: if isAdmin();
+      allow write: if false;
+    }
+
+    // Fichas: o mestre e os colegas de campanha abrem fichas pelo ID; listar,
+    // só as próprias. O dono edita a própria ficha direto (sem trocar dono nem
+    // id); o mestre edita fichas de jogadores pela API. Criar/apagar: só API.
+    match /charsheets/{charsheetId} {
+      allow get: if signedIn();
+      allow list: if signedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow update: if signedIn()
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == resource.data.userId
+        && request.resource.data.id == resource.data.id;
+      allow create, delete: if false;
+    }
+
+    // Campanhas: leitura pelo ID (o código da campanha é o convite; a API
+    // converte código em ID). Sem listagem da coleção. Escrita só pela API.
+    match /campaigns/{campaignId} {
+      allow get: if signedIn();
+      allow list: if isAdmin();
+      allow write: if false;
+    }
+
+    // Chat da campanha (campaigns/{id}/messages, uma mensagem por documento). Leitura para
+    // logados, o mesmo alcance de abrir a campanha pelo ID (onde as mensagens ficavam antes):
+    // o ID só chega a quem tem o convite. As regras não conseguem checar se o usuário é jogador
+    // (a lista `players` é de mapas), então a checagem de membro fica na API, que também faz a
+    // paginação do histórico. Escrita só pela API.
+    match /campaigns/{campaignId}/messages/{messageId} {
+      allow read: if signedIn();
+      allow write: if false;
+    }
+
+    // Anotações privadas do mestre sobre cada ficha (campaigns/{id}/gmNotes/{charsheetId}): só quem é mestre da
+    // campanha lê (a lista `admin` da campanha tem IDs de usuário), e o administrador do site. O jogador não vê, nem
+    // por ID. Sem `admin` na campanha o get() falha e a leitura é negada. Escrita só pela API, que confere o mestre.
+    match /campaigns/{campaignId}/gmNotes/{charsheetId} {
+      allow read: if isAdmin() || isCampaignGM(campaignId);
+      allow write: if false;
+    }
+
+    // Dados que só o mestre pode ver (campaigns/{id}/gmData/{docId}): as defesas das criaturas (elemento, fraquezas, resistências),
+    // que o documento da campanha, legível por qualquer logado, não pode carregar. Mesma regra das anotações: só o mestre da campanha
+    // (e o administrador do site) lê, e só o servidor escreve (Admin SDK).
+    match /campaigns/{campaignId}/gmData/{docId} {
+      allow read: if isAdmin() || isCampaignGM(campaignId);
+      allow write: if false;
+    }
+
+    // Notificações: só as do próprio usuário. Criar/marcar como lida: pela API.
+    match /notifications/{notificationId} {
+      allow read: if signedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow write: if false;
+    }
+
+    // Catálogos lidos direto pelo navegador
+    match /spells/{spellId} {
+      allow read: if signedIn();
+      allow write: if false;
+    }
+
+    match /powers/{powerId} {
+      allow read: if signedIn();
+      allow write: if false;
+    }
+
+    // Todo o resto (rpg_systems, campaign_stats, jobs, perks, items, weapons,
+    // armors, skills, combatEffects...) não tem regra e, portanto, só é
+    // acessível pelo servidor.
+  }
+}

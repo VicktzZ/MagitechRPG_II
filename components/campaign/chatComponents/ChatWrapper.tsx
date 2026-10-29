@@ -6,36 +6,48 @@ import {
     Box,
     IconButton,
     Tooltip,
+    useMediaQuery,
     useTheme
 } from '@mui/material';
 import { Chat, ChevronRight } from '@mui/icons-material';
+import { duration, easing } from '@themes/tokens';
+import { CHAT_PANEL_WIDTH } from '../campaignLayout';
 
 interface ChatWrapperProps {
     children: ReactElement;
     isChatOpen: boolean;
     setIsChatOpen: (value: boolean) => void;
-    messageCount?: number;
+    /** Mensagens que chegaram com o chat fechado (o selo do botão) */
+    unreadCount?: number;
 }
 
-const ChatWrapper = memo(function ChatWrapper({ 
-    children, 
-    isChatOpen, 
+const ChatWrapper = memo(function ChatWrapper({
+    children,
+    isChatOpen,
     setIsChatOpen,
-    messageCount = 0
+    unreadCount = 0
 }: ChatWrapperProps) {
     const theme = useTheme();
-    
+    // Em janelas estreitas o painel ocupa a tela toda e o botão (que fica para fora dele) sairia da tela:
+    // aberto, ele passa a ficar dentro do painel, no canto superior direito
+    const fillsScreen = useMediaQuery(`(max-width: ${CHAT_PANEL_WIDTH + 60}px)`);
+    const buttonInside = fillsScreen && isChatOpen;
+
     return (
         <Box sx={{
             position: 'fixed',
-            right: isChatOpen ? 0 : -400,
+            right: 0,
             top: 0,
             height: '100vh',
-            width: '400px',
-            background: theme.palette.mode === 'dark'
-                ? 'linear-gradient(145deg, #1e293b 0%, #334155 100%)'
-                : 'linear-gradient(145deg, #f8fafc 0%, #e2e8f0 100%)',
-            transition: 'right 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+            width: `min(${CHAT_PANEL_WIDTH}px, 100vw)`,
+            // transform em vez de animar `right`: `right` dispara reflow de
+            // layout a cada frame (o painel é fixed, mas o navegador ainda
+            // recalcula posição/composição); transform é só compositor/GPU,
+            // o que elimina o travamento da animação com o chat cheio de mensagens.
+            transform: isChatOpen ? 'translateX(0)' : 'translateX(100%)',
+            willChange: 'transform',
+            bgcolor: 'background.paper',
+            transition: `transform ${duration.slow}ms ${easing.standard}`,
             borderLeft: '2px solid',
             borderColor: 'primary.main',
             zIndex: 1300,
@@ -43,32 +55,31 @@ const ChatWrapper = memo(function ChatWrapper({
             boxShadow: theme.shadows[8]
         }}>
             <Tooltip title={isChatOpen ? 'Fechar chat' : 'Abrir chat'} placement="left">
-                <Badge 
-                    badgeContent={!isChatOpen && messageCount > 0 ? messageCount : 0} 
+                <Badge
+                    badgeContent={!isChatOpen ? unreadCount : 0}
+                    max={99}
                     color="error"
                     sx={{
                         position: 'absolute',
-                        left: -30,
-                        top: '50%',
-                        transform: 'translateY(-50%)',
+                        ...(buttonInside
+                            ? { right: 8, top: 8 }
+                            : { left: -30, top: '50%', transform: 'translateY(-50%)' }),
                         zIndex: 1300
                     }}
                 >
                     <IconButton
                         onClick={() => setIsChatOpen(!isChatOpen)}
+                        aria-label={isChatOpen ? 'Fechar chat' : 'Abrir chat'}
                         sx={{
                             bgcolor: 'primary.main',
-                            color: 'white',
+                            color: 'primary.contrastText',
                             border: '2px solid',
                             borderColor: 'primary.main',
-                            width: 50,
-                            height: 50,
+                            width: buttonInside ? 40 : 50,
+                            height: buttonInside ? 40 : 50,
                             '&:hover': {
-                                bgcolor: 'primary.dark',
-                                transform: 'scale(1.1)',
-                                boxShadow: 4
-                            },
-                            transition: 'all 0.3s ease'
+                                bgcolor: 'primary.dark'
+                            }
                         }}
                     >
                         {isChatOpen ? <ChevronRight /> : <Chat />}

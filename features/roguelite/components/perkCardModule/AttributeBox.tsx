@@ -1,11 +1,11 @@
 import { Box, Typography } from '@mui/material'
 import type { AttributeBoxProps } from './types'
-import { getAttributeBoxSx, getAttributeLabelSx, attributeValueSx } from './styles'
+import { attributeBoxSx, attributeLabelSx, attributeValueSx } from './styles'
 
-export function AttributeBox({ label, value, borderColor }: AttributeBoxProps) {
+export function AttributeBox({ label, value }: AttributeBoxProps) {
     return (
-        <Box sx={getAttributeBoxSx(borderColor)}>
-            <Typography variant="caption" sx={getAttributeLabelSx(borderColor)}>
+        <Box sx={attributeBoxSx}>
+            <Typography variant="caption" sx={attributeLabelSx}>
                 {label}
             </Typography>
             <Typography variant="body2" sx={attributeValueSx}>

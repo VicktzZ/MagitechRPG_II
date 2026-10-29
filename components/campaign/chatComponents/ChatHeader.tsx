@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import {
     Box,
     Button,
@@ -7,12 +8,10 @@ import {
     Paper,
     Stack,
     Tooltip,
-    Typography,
-    useTheme
+    Typography
 } from '@mui/material';
 import { Chat, Casino } from '@mui/icons-material';
 import SportsKabaddiIcon from '@mui/icons-material/SportsKabaddi';
-import { red } from '@mui/material/colors';
 import CombatActionButton from '../CombatActionButton';
 import type { Combat } from '@models';
 import { useCampaignContext } from '@contexts';
@@ -25,7 +24,7 @@ interface ChatHeaderProps {
     onTestClick: () => void;
 }
 
-export default function ChatHeader({
+function ChatHeader({
     messageCount,
     isAdmin,
     combat,
@@ -33,30 +32,17 @@ export default function ChatHeader({
     onTestClick
 }: ChatHeaderProps) {
     const { campaign, charsheets } = useCampaignContext();
-    const theme = useTheme();
 
     return (
         <Paper 
             elevation={2}
             sx={{
                 p: 3,
-                background: theme.palette.mode === 'dark'
-                    ? 'linear-gradient(135deg, #1a2332 0%, #2d3748 100%)'
-                    : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                color: 'white',
+                bgcolor: 'background.paper',
+                color: 'text.primary',
                 borderRadius: '0 0 16px 0',
                 position: 'relative',
-                overflow: 'hidden',
-                '&::before': {
-                    content: '""',
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    background: 'rgba(255,255,255,0.1)',
-                    backdropFilter: 'blur(10px)'
-                }
+                overflow: 'hidden'
             }}
         >
             <Box position="relative" zIndex={1}>
@@ -65,8 +51,9 @@ export default function ChatHeader({
                         sx={{
                             p: 1,
                             borderRadius: 2,
-                            bgcolor: 'rgba(255,255,255,0.2)',
-                            border: '1px solid rgba(255,255,255,0.3)'
+                            bgcolor: 'background.raised',
+                            border: '1px solid',
+                            borderColor: 'divider'
                         }}
                     >
                         <Chat sx={{ fontSize: '1.5rem' }} />
@@ -80,8 +67,8 @@ export default function ChatHeader({
                                 label={`${messageCount} mensagem${messageCount !== 1 ? 's' : ''}`}
                                 size="small"
                                 sx={{
-                                    bgcolor: 'rgba(255,255,255,0.2)',
-                                    color: 'white',
+                                    bgcolor: 'background.raised',
+                                    color: 'text.primary',
                                     fontWeight: 600
                                 }}
                             />
@@ -98,14 +85,13 @@ export default function ChatHeader({
                                 startIcon={<Casino />}
                                 onClick={onTestClick}
                                 sx={{
-                                    bgcolor: 'rgba(255,255,255,0.2)',
-                                    color: 'white',
-                                    border: '1px solid rgba(255,255,255,0.3)',
+                                    bgcolor: 'primary.main',
+                                    color: 'primary.contrastText',
+                                    border: '1px solid',
+                                    borderColor: 'primary.main',
                                     fontWeight: 600,
                                     '&:hover': {
-                                        bgcolor: 'rgba(255,255,255,0.3)',
-                                        transform: 'translateY(-1px)',
-                                        boxShadow: 3
+                                        bgcolor: 'primary.light'
                                     },
                                     transition: 'all 0.2s ease'
                                 }}
@@ -118,7 +104,7 @@ export default function ChatHeader({
                         <CombatActionButton 
                             campaignId={campaignId}
                             campaignCode={campaign?.campaignCode}
-                            combat={combat as any}
+                            combat={combat}
                             charsheets={charsheets}
                         />
                     </Box>
@@ -131,10 +117,10 @@ export default function ChatHeader({
                         label={`Combate R${combat.round} - ${combat.phase === 'INITIATIVE' ? 'Iniciativa' : 'Ação'}`}
                         sx={{
                             mt: 1,
-                            bgcolor: red[500],
-                            color: 'white',
+                            bgcolor: 'error.main',
+                            color: 'error.contrastText',
                             fontWeight: 600,
-                            '& .MuiChip-icon': { color: 'white' }
+                            '& .MuiChip-icon': { color: 'error.contrastText' }
                         }}
                     />
                 )}
@@ -142,3 +128,5 @@ export default function ChatHeader({
         </Paper>
     );
 }
+
+export default memo(ChatHeader);

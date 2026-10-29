@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, type KeyboardEvent } from 'react'
 import {
     Modal,
     Box,
@@ -18,13 +18,14 @@ import {
 import {
     Public as PublicIcon,
     Lock as LockIcon,
-    AutoAwesome as MagicIcon,
+    AutoStories as MagicIcon,
     Category as SystemIcon,
     CheckCircle as CheckIcon
 } from '@mui/icons-material'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import type { RPGSystem } from '@models/entities'
+import { color, shadow } from '@themes/tokens'
 
 interface SystemSelectionModalProps {
     open: boolean
@@ -37,18 +38,24 @@ export default function SystemSelectionModal({ open, onSelect }: SystemSelection
     const [ systems, setSystems ] = useState<RPGSystem[]>([])
     const [ loading, setLoading ] = useState(true)
     const [ selectedId, setSelectedId ] = useState<string | null>(null)
+    const [ loadFailed, setLoadFailed ] = useState(false)
 
     useEffect(() => {
         if (open && session?.user?.id) {
             setLoading(true)
+            setLoadFailed(false)
             fetch(`/api/rpg-system?userId=${session.user.id}`)
-                .then(res => res.json())
+                .then(async res => {
+                    // Resposta de erro não é lista de sistemas
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+                    return await res.json()
+                })
                 .then(data => {
                     setSystems(Array.isArray(data) ? data : [])
                 })
-                .catch(err => {
-                    console.error('Erro ao carregar sistemas:', err)
+                .catch(() => {
                     setSystems([])
+                    setLoadFailed(true)
                 })
                 .finally(() => setLoading(false))
         }
@@ -68,9 +75,17 @@ export default function SystemSelectionModal({ open, onSelect }: SystemSelection
         router.push('/app')
     }
 
+    const selectOnKey = (event: KeyboardEvent, id: string | null) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault()
+            setSelectedId(id)
+        }
+    }
+
     return (
         <Modal
             open={open}
+            aria-labelledby='system-selection-title'
             onClose={() => {}}
             disableEscapeKeyDown
             sx={{
@@ -87,7 +102,7 @@ export default function SystemSelectionModal({ open, onSelect }: SystemSelection
                         maxHeight: '90vh',
                         bgcolor: 'background.paper',
                         borderRadius: 3,
-                        boxShadow: 24,
+                        boxShadow: shadow.overlay,
                         overflow: 'hidden',
                         display: 'flex',
                         flexDirection: 'column'
@@ -97,7 +112,7 @@ export default function SystemSelectionModal({ open, onSelect }: SystemSelection
                     <Box 
                         sx={{ 
                             p: 3, 
-                            background: 'linear-gradient(135deg, rgba(39, 136, 205, 0.2), rgba(156, 39, 176, 0.1))',
+                            bgcolor: 'background.raised',
                             borderBottom: '1px solid',
                             borderColor: 'divider'
                         }}
@@ -105,7 +120,7 @@ export default function SystemSelectionModal({ open, onSelect }: SystemSelection
                         <Box display="flex" alignItems="center" gap={2}>
                             <SystemIcon sx={{ fontSize: 40, color: 'primary.main' }} />
                             <Box>
-                                <Typography variant="h5" fontWeight={700}>
+                                <Typography variant="h5" component="h2" id='system-selection-title' fontWeight={700}>
                                     Selecione um Sistema de RPG
                                 </Typography>
                                 <Typography variant="body2" color="text.secondary">
@@ -122,27 +137,29 @@ export default function SystemSelectionModal({ open, onSelect }: SystemSelection
                                 <CircularProgress />
                             </Box>
                         ) : (
-                            <Grid container spacing={2}>
+                            <Grid container spacing={2} role='radiogroup' aria-labelledby='system-selection-title'>
                                 {/* Sistema Padrão Magitech */}
                                 <Grid item xs={12} sm={6} md={4}>
                                     <Paper
+                                        role='radio'
+                                        tabIndex={0}
+                                        aria-checked={selectedId === null}
                                         onClick={() => setSelectedId(null)}
+                                        onKeyDown={event => selectOnKey(event, null)}
                                         sx={{
                                             p: 2,
                                             cursor: 'pointer',
                                             border: '2px solid',
-                                            borderColor: selectedId === null ? 'primary.main' : 'transparent',
-                                            bgcolor: selectedId === null ? 'primary.dark' : 'background.default',
-                                            transition: 'all 0.2s ease',
+                                            borderColor: selectedId === null ? color.amberLine : 'transparent',
+                                            bgcolor: selectedId === null ? color.amberSubtle : 'background.raised',
+                                            transition: 'border-color 120ms, background-color 120ms',
                                             height: '100%',
                                             minHeight: 180,
                                             display: 'flex',
                                             flexDirection: 'column',
                                             position: 'relative',
                                             '&:hover': {
-                                                borderColor: 'primary.main',
-                                                transform: 'translateY(-2px)',
-                                                boxShadow: 4
+                                                borderColor: selectedId === null ? color.amberLine : color.borderStrong
                                             }
                                         }}
                                     >
@@ -158,7 +175,7 @@ export default function SystemSelectionModal({ open, onSelect }: SystemSelection
                                         )}
                                         <Box display="flex" alignItems="center" gap={1} mb={1}>
                                             <MagicIcon sx={{ color: 'primary.main' }} />
-                                            <Typography variant="h6" fontWeight={600}>
+                                            <Typography variant="h6" component="h3" fontWeight={600}>
                                                 Magitech RPG
                                             </Typography>
                                         </Box>
@@ -183,23 +200,25 @@ export default function SystemSelectionModal({ open, onSelect }: SystemSelection
                                 {systems.map((system) => (
                                     <Grid item xs={12} sm={6} md={4} key={system.id}>
                                         <Paper
+                                            role='radio'
+                                            tabIndex={0}
+                                            aria-checked={selectedId === system.id}
                                             onClick={() => setSelectedId(system.id)}
+                                            onKeyDown={event => selectOnKey(event, system.id)}
                                             sx={{
                                                 p: 2,
                                                 cursor: 'pointer',
                                                 border: '2px solid',
-                                                borderColor: selectedId === system.id ? 'secondary.main' : 'transparent',
-                                                bgcolor: selectedId === system.id ? 'secondary.dark' : 'background.default',
-                                                transition: 'all 0.2s ease',
+                                                borderColor: selectedId === system.id ? color.amberLine : 'transparent',
+                                                bgcolor: selectedId === system.id ? color.amberSubtle : 'background.raised',
+                                                transition: 'border-color 120ms, background-color 120ms',
                                                 height: '100%',
                                                 minHeight: 180,
                                                 display: 'flex',
                                                 flexDirection: 'column',
                                                 position: 'relative',
                                                 '&:hover': {
-                                                    borderColor: 'secondary.main',
-                                                    transform: 'translateY(-2px)',
-                                                    boxShadow: 4
+                                                    borderColor: selectedId === system.id ? color.amberLine : color.borderStrong
                                                 }
                                             }}
                                         >
@@ -215,7 +234,7 @@ export default function SystemSelectionModal({ open, onSelect }: SystemSelection
                                             )}
                                             <Box display="flex" alignItems="center" gap={1} mb={1}>
                                                 <SystemIcon sx={{ color: 'secondary.main' }} />
-                                                <Typography variant="h6" fontWeight={600} noWrap>
+                                                <Typography variant="h6" component="h3" fontWeight={600} noWrap>
                                                     {system.name}
                                                 </Typography>
                                             </Box>
@@ -269,7 +288,15 @@ export default function SystemSelectionModal({ open, onSelect }: SystemSelection
                                     </Grid>
                                 ))}
 
-                                {systems.length === 0 && (
+                                {loadFailed && (
+                                    <Grid item xs={12}>
+                                        <Alert severity="error" sx={{ mt: 2 }}>
+                                            Não foi possível carregar seus sistemas. Você pode continuar com o sistema padrão ou recarregar a página.
+                                        </Alert>
+                                    </Grid>
+                                )}
+
+                                {systems.length === 0 && !loadFailed && (
                                     <Grid item xs={12}>
                                         <Alert severity="info" sx={{ mt: 2 }}>
                                             Você ainda não tem sistemas customizados. Use o sistema padrão Magitech RPG ou crie um novo sistema em <strong>Admin → Sistemas</strong>.

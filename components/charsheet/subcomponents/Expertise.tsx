@@ -13,12 +13,17 @@ import {
     alpha
 } from '@mui/material';
 import { useState, type ReactElement, useCallback } from 'react';
-import { blue, green, grey, purple, yellow, red } from '@mui/material/colors';
 import DiceRollModal from '@components/misc/DiceRollModal';
 import { useFormContext } from 'react-hook-form';
 import { Casino, Edit, TrendingUp } from '@mui/icons-material';
 import type { Attributes, Expertise as ExpertiseType, Expertises } from '@models';
 import type { Charsheet } from '@models/entities';
+import { color as colorToken } from '@themes/tokens';
+import { classColor } from '@constants';
+import { sheetExpertisePenalty } from '@utils/combat/sheetOverweight';
+
+/** "+3", "+0" e "-2": o sinal vem do número (valor negativo de traço negativo não vira "+-2") */
+const signedValue = (value: number): string => (value < 0 ? String(value) : `+${value}`);
 
 interface ExpertiseProps {
     name: keyof Expertises | string;
@@ -45,29 +50,28 @@ export default function Expertise({
     edit,
     onClick,
     customLabel,
-    maxValue = 10,
+    maxValue = 15,
     attributeLabel,
     customInfluence
 }: ExpertiseProps): ReactElement {
     const theme = useTheme();
     const matches = useMediaQuery(theme.breakpoints.down('md'));
     const [ open, setOpen ] = useState<boolean>(false);
-    const [ isHovered, setIsHovered ] = useState<boolean>(false);
     const { getValues } = useFormContext<Charsheet>();
 
     const determinateColor = useCallback((): string => {
         if (expertise.value < 0) {
-            return red[500] // Valores negativos em vermelho
+            return colorToken.danger // Valores negativos em vermelho
         } else if (expertise.value < 2) {
-            return grey[500]
+            return colorToken.inkMuted
         } else if (expertise.value < 5) {
-            return green[500]
+            return colorToken.success
         } else if (expertise.value < 7) {
-            return blue[500]
+            return colorToken.cyan
         } else if (expertise.value < 9) {
-            return purple[500]
+            return classColor.Bruxo
         } else {
-            return yellow[500]
+            return colorToken.amber
         }
     }, [ expertise.value ]);
 
@@ -118,6 +122,9 @@ export default function Expertise({
         ? 1 + customInfluence.extraDice
         : (attrModifier < 0 ? 2 : attrModifier + 1);
 
+    // Sobrepeso (condição do inventário): −1 no modificador para cada kg acima da capacidade, nas perícias de DES e VIG. Não vale no sistema customizado.
+    const overweightPenalty = customInfluence ? 0 : sheetExpertisePenalty(getValues(), expertise.defaultAttribute);
+
     return (
         <>
             <Grid
@@ -148,6 +155,11 @@ export default function Expertise({
                                     Bônus do atributo: +{customInfluence.bonus}
                                 </Typography>
                             )}
+                            {overweightPenalty < 0 && (
+                                <Typography variant="body2" color="warning.main">
+                                    Sobrepeso: {overweightPenalty} no modificador
+                                </Typography>
+                            )}
                             {customInfluence && customInfluence.extraDice > 0 && (
                                 <Typography variant="body2" color="info.main">
                                     Vantagem: {1 + customInfluence.extraDice} dados
@@ -169,25 +181,14 @@ export default function Expertise({
                     <ButtonBase
                         onClick={handleClick}
                         disabled={disabled}
-                        onMouseEnter={() => setIsHovered(true)}
-                        onMouseLeave={() => setIsHovered(false)}
                         sx={{
                             width: '100%',
                             height: matches ? '140px' : '180px',
-                            borderRadius: 2,
-                            transition: 'all 0.3s ease',
-                            transform: isHovered ? 'translateY(-4px)' : 'translateY(0)',
-                            '&:hover': {
-                                transform: 'translateY(-4px)',
-                                boxShadow: theme.shadows[8]
-                            },
-                            '&:active': {
-                                transform: 'translateY(-2px)'
-                            }
+                            borderRadius: 2
                         }}
                     >
                         <Paper
-                            elevation={isHovered ? 8 : 2}
+                            elevation={0}
                             sx={{
                                 width: '100%',
                                 height: '100%',
@@ -203,7 +204,8 @@ export default function Expertise({
                                     : alpha(color, 0.05),
                                 position: 'relative',
                                 overflow: 'hidden',
-                                transition: 'all 0.3s ease',
+                                transition: 'border-color 120ms',
+                                ...(!isEditing && { '&:hover': { borderColor: colorToken.borderStrong } }),
                                 '&::before': {
                                     content: '""',
                                     position: 'absolute',
@@ -211,8 +213,7 @@ export default function Expertise({
                                     left: 0,
                                     right: 0,
                                     height: '4px',
-                                    bgcolor: color,
-                                    transition: 'all 0.3s ease'
+                                    bgcolor: color
                                 }
                             }}
                         >
@@ -229,13 +230,7 @@ export default function Expertise({
                                     <Edit
                                         sx={{
                                             fontSize: '1.2rem',
-                                            color: theme.palette.warning.main,
-                                            animation: 'pulse 2s infinite',
-                                            '@keyframes pulse': {
-                                                '0%': { opacity: 0.5 },
-                                                '50%': { opacity: 1 },
-                                                '100%': { opacity: 0.5 }
-                                            }
+                                            color: theme.palette.warning.main
                                         }}
                                     />
                                 </Box>
@@ -259,13 +254,13 @@ export default function Expertise({
                                     sx={{
                                         fontSize: matches ? '1.8rem' : '2.2rem',
                                         fontWeight: 'bold',
-                                        color,
-                                        textShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                                        color
                                     }}
                                 >
                                     <Typography 
                                         fontSize='inherit' 
                                         fontFamily='D20'
+                                        aria-hidden='true'
                                         sx={{ 
                                             transform: 'rotate(-15deg)',
                                             display: 'inline-block',
@@ -275,7 +270,7 @@ export default function Expertise({
                                         -
                                     </Typography>
                                     <Typography fontSize='inherit' fontWeight='inherit'>
-                                        +{isEditing ? previewValue : expertise.value}
+                                        {signedValue(isEditing ? previewValue : expertise.value)}
                                     </Typography>
                                 </Box>
                             </Box>
@@ -299,7 +294,6 @@ export default function Expertise({
                                         overflow: 'hidden',
                                         textOverflow: 'ellipsis',
                                         wordBreak: 'break-word',
-                                        textShadow: '0 1px 2px rgba(0,0,0,0.1)',
                                         minHeight: matches ? '32px' : '40px'
                                     }}
                                 >
@@ -339,8 +333,8 @@ export default function Expertise({
                                         position: 'absolute',
                                         bottom: 6,
                                         right: 6,
-                                        bgcolor: (edit?.value ?? 0) > 0 ? green[500] : red[500],
-                                        color: 'white',
+                                        bgcolor: (edit?.value ?? 0) > 0 ? 'success.main' : 'error.main',
+                                        color: (edit?.value ?? 0) > 0 ? 'success.contrastText' : 'error.contrastText',
                                         borderRadius: '50%',
                                         width: '24px',
                                         height: '24px',
@@ -365,9 +359,11 @@ export default function Expertise({
                 <DiceRollModal
                     open={open}
                     onClose={() => setOpen(false)}
-                    bonus={customInfluence && customInfluence.bonus > 0
-                        ? [ expertise.value, customInfluence.bonus ]
-                        : [ expertise.value ]}
+                    bonus={[
+                        expertise.value,
+                        ...(customInfluence && customInfluence.bonus > 0 ? [ customInfluence.bonus ] : []),
+                        ...(overweightPenalty < 0 ? [ overweightPenalty ] : [])
+                    ]}
                     isDisadvantage={isDisadvantage}
                     isAdvantage={isAdvantage}
                     visibleBaseAttribute

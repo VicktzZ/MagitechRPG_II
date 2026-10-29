@@ -1,7 +1,6 @@
 import AnimateOnScroll from './AnimateOnScroll'
 import RequireAuth from './RequireAuth'
 import RequireCharsheet from './RequireCharsheet'
-import { Parallax, Background as ParallaxBackground } from './Parallax'
 import Animate from './Animate'
 import RadarChart from './RadarChart'
 import RPGIcon from './rpg-icons'
@@ -13,8 +12,6 @@ import NumberField from './NumberField'
 export {
     NumberField,
     AnimateOnScroll,
-    Parallax,
-    ParallaxBackground,
     DiceRollModal,
     DiceMessage,
     Animate,

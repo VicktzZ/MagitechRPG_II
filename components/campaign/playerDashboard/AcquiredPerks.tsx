@@ -1,7 +1,7 @@
 'use client';
 
 import { useCampaignContext, useCampaignCurrentCharsheetContext } from '@contexts';
-import { AutoAwesome, ExpandLess, ExpandMore } from '@mui/icons-material';
+import { ExpandLess, ExpandMore, Star } from '@mui/icons-material';
 import {
     Badge,
     Box,
@@ -11,22 +11,12 @@ import {
     Paper,
     Stack,
     Tooltip,
-    Typography,
-    useTheme
+    Typography
 } from '@mui/material';
 import { useMemo, useState } from 'react';
+import { rarityColor } from '@constants';
 
-const rarityColors: Record<string, string> = {
-    'Comum': '#9e9e9e',
-    'Incomum': '#4caf50',
-    'Raro': '#2196f3',
-    'Épico': '#9c27b0',
-    'Lendário': '#ff9800',
-    'Único': '#f44336',
-    'Mágico': '#00bcd4',
-    'Amaldiçoado': '#880e4f',
-    'Especial': '#ffd700'
-};
+const rarityColors: Record<string, string> = rarityColor;
 
 const perkTypeLabels: Record<string, string> = {
     'WEAPON': 'Arma',
@@ -41,14 +31,13 @@ const perkTypeLabels: Record<string, string> = {
 export default function AcquiredPerks() {
     const { campaign } = useCampaignContext();
     const { charsheet } = useCampaignCurrentCharsheetContext();
-    const theme = useTheme();
     const [ expanded, setExpanded ] = useState(false);
 
     const perks = useMemo(() => {
         if (!charsheet?.session || !campaign?.campaignCode) return [];
 
         const sessionData = charsheet.session.find(
-            (s: any) => s.campaignCode === campaign.campaignCode
+            s => s.campaignCode === campaign.campaignCode
         );
 
         return sessionData?.perks || [];
@@ -71,14 +60,9 @@ export default function AcquiredPerks() {
                 minWidth: expanded ? 280 : 'auto',
                 maxWidth: 320,
                 maxHeight: expanded ? '60vh' : 'auto',
-                bgcolor: theme.palette.mode === 'dark' 
-                    ? 'rgba(30, 30, 40, 0.95)' 
-                    : 'rgba(255, 255, 255, 0.95)',
-                backdropFilter: 'blur(10px)',
+                bgcolor: 'background.overlay',
                 border: '1px solid',
-                borderColor: theme.palette.mode === 'dark'
-                    ? 'rgba(255, 255, 255, 0.1)'
-                    : 'rgba(0, 0, 0, 0.1)',
+                borderColor: 'divider',
                 transition: 'all 0.3s ease'
             }}
         >
@@ -101,7 +85,7 @@ export default function AcquiredPerks() {
                     color="primary"
                     max={99}
                 >
-                    <AutoAwesome 
+                    <Star 
                         sx={{ 
                             color: 'primary.main',
                             fontSize: '1.3rem'
@@ -143,7 +127,7 @@ export default function AcquiredPerks() {
                         </Typography>
                     ) : (
                         <Stack spacing={1}>
-                            {perks.map((perk: any, index: number) => (
+                            {perks.map((perk, index) => (
                                 <Tooltip 
                                     key={perk.id || index}
                                     title={perk.description || 'Sem descrição'}
@@ -157,17 +141,12 @@ export default function AcquiredPerks() {
                                             gap: 1,
                                             p: 1,
                                             borderRadius: 1,
-                                            bgcolor: theme.palette.mode === 'dark'
-                                                ? 'rgba(255, 255, 255, 0.05)'
-                                                : 'rgba(0, 0, 0, 0.03)',
+                                            bgcolor: 'background.raised',
                                             borderLeft: '3px solid',
                                             borderColor: rarityColors[perk.rarity] || rarityColors['Comum'],
                                             transition: 'all 0.2s ease',
                                             '&:hover': {
-                                                bgcolor: theme.palette.mode === 'dark'
-                                                    ? 'rgba(255, 255, 255, 0.1)'
-                                                    : 'rgba(0, 0, 0, 0.06)',
-                                                transform: 'translateX(2px)'
+                                                bgcolor: 'action.hover'
                                             }
                                         }}
                                     >
@@ -189,7 +168,7 @@ export default function AcquiredPerks() {
                                             size="small"
                                             sx={{
                                                 height: 20,
-                                                fontSize: '0.65rem',
+                                                fontSize: '0.75rem',
                                                 bgcolor: `${rarityColors[perk.rarity] || rarityColors['Comum']}20`,
                                                 color: rarityColors[perk.rarity] || rarityColors['Comum'],
                                                 border: '1px solid',

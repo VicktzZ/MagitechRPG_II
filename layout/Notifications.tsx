@@ -65,7 +65,7 @@ export default function Notifications() {
                 size="large"
                 color="inherit"
                 onClick={handleClick}
-                sx={{ border: '1px solid #aaa', height: 40, width: 40 }}
+                sx={{ border: '1px solid', borderColor: 'text.disabled', height: 40, width: 40 }}
             >
                 <Badge badgeContent={unreadCount} color="error">
                     <NotificationsIcon />

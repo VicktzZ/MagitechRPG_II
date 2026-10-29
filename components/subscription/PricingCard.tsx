@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { PlanIcon } from './PlanIcon';
 import {
     Card,
     CardContent,
@@ -13,15 +14,15 @@ import {
     ListItemIcon,
     ListItemText,
     Chip,
-    Divider,
-    alpha
+    Divider
 } from '@mui/material';
 import {
     CheckCircle as CheckCircleIcon,
     Cancel as CancelIcon,
-    Stars as StarsIcon
+    WorkspacePremium as WorkspacePremiumIcon
 } from '@mui/icons-material';
 import { SubscriptionPlan, SubscriptionPlanMetadata } from '@enums/subscriptionEnum';
+import { color } from '@themes/tokens';
 
 interface PricingCardProps {
   plan: SubscriptionPlan;
@@ -51,19 +52,13 @@ export function PricingCard({
         <Card
             sx={{
                 position: 'relative',
+                overflow: 'visible',
                 height: '100%',
                 display: 'flex',
                 flexDirection: 'column',
                 border: isPopular ? 3 : 1,
-                borderColor: isPopular ? 'primary.main' : 'divider',
-                transition: 'all 0.3s ease-in-out',
-                '&:hover': {
-                    transform: !disabled ? 'translateY(-8px)' : 'none',
-                    boxShadow: !disabled ? 8 : 1
-                },
-                background: isCurrentPlan 
-                    ? (theme) => alpha(theme.palette.primary.main, 0.05)
-                    : 'background.paper'
+                borderColor: isPopular ? color.amberLine : 'divider',
+                bgcolor: isPopular || isCurrentPlan ? color.amberSubtle : 'background.paper'
             }}
         >
             {/* Badge */}
@@ -78,7 +73,7 @@ export function PricingCard({
                     }}
                 >
                     <Chip
-                        icon={isPopular ? <StarsIcon /> : undefined}
+                        icon={isPopular ? <WorkspacePremiumIcon /> : undefined}
                         label={isCurrentPlan ? 'PLANO ATUAL' : metadata.badge}
                         color={isCurrentPlan ? 'success' : 'primary'}
                         size="small"
@@ -98,7 +93,7 @@ export function PricingCard({
                         variant="h2"
                         sx={{ fontSize: '3rem', mb: 1 }}
                     >
-                        {metadata.icon}
+                        <PlanIcon plan={plan} />
                     </Typography>
                     <Typography
                         variant="h5"
@@ -206,12 +201,7 @@ export function PricingCard({
                     disabled={disabled || isCurrentPlan}
                     sx={{
                         py: 1.5,
-                        fontWeight: 'bold',
-                        backgroundColor: !isCurrentPlan ? metadata.color : undefined,
-                        '&:hover': {
-                            backgroundColor: !isCurrentPlan ? metadata.color : undefined,
-                            filter: 'brightness(0.9)'
-                        }
+                        fontWeight: 'bold'
                     }}
                 >
                     {loading

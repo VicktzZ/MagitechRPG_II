@@ -3,7 +3,6 @@
 import { useState, type ReactElement } from 'react'
 import {
     Box,
-    Paper,
     Typography,
     Button,
     Dialog,
@@ -12,18 +11,22 @@ import {
     DialogActions,
     TextField,
     IconButton,
-    Card,
-    CardContent,
-    CardActions
+    Paper,
+    Tooltip
 } from '@mui/material'
 import { useSnackbar } from 'notistack'
 import { campaignService } from '@services'
 import { useCampaignContext } from '@contexts';
 import EditIcon from '@mui/icons-material/Edit'
 import DeleteIcon from '@mui/icons-material/Delete'
+import NoteAddIcon from '@mui/icons-material/NoteAdd'
+import StickyNote2Icon from '@mui/icons-material/StickyNote2'
 import type { Note } from '@models'
+import Section from './Section'
 
-const NOTE_HEIGHT = 200 // Altura padrão para as notas em pixels
+// Cartão de nota: a altura vem do conteúdo, entre o mínimo e o máximo (acima disso o texto rola)
+const NOTE_MIN_HEIGHT = 96
+const NOTE_MAX_HEIGHT = 220
 
 export default function CampaignNotes(): ReactElement {
     const { campaign, isUserGM } = useCampaignContext()
@@ -31,6 +34,17 @@ export default function CampaignNotes(): ReactElement {
     const [ noteDialogOpen, setNoteDialogOpen ] = useState(false)
     const [ editingNote, setEditingNote ] = useState<Note | null>(null)
     const [ noteContent, setNoteContent ] = useState('')
+
+    const notes = campaign.notes ?? []
+
+    // Sem nota, o jogador não vê nada; o mestre vê o estado vazio e o botão de criar
+    if (notes.length === 0 && !isUserGM) return <></>
+
+    const handleNewNote = () => {
+        setEditingNote(null)
+        setNoteContent('')
+        setNoteDialogOpen(true)
+    }
 
     const handleEditNote = (note: Note) => {
         setEditingNote(note)
@@ -68,56 +82,64 @@ export default function CampaignNotes(): ReactElement {
 
     return (
         <Box sx={{ width: '100%' }}>
-            <Paper sx={{ display: 'flex', flexDirection: 'column', gap: 2, p: 2, mb: 2 }}>
-                <Typography variant="h6">Notas da Campanha</Typography>
-                <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 2 }}>
-                    {campaign.notes?.length === 0 && (
-                        <Typography variant="body1">A campanha não possui nenhuma nota.</Typography>
-                    )}
-                    {campaign.notes?.map((note) => (
-                        <Card 
-                            key={note.id} 
-                            sx={{ 
-                                height: NOTE_HEIGHT, 
-                                display: 'flex', 
-                                flexDirection: 'column',
-                                bgcolor: 'background.paper3'
-                            }}
-                        >
-                            <CardContent 
-                                sx={{ 
-                                    flexGrow: 1,
-                                    overflow: 'auto',
-                                    '&::-webkit-scrollbar': {
-                                        width: '8px'
-                                    },
-                                    '&::-webkit-scrollbar-track': {
-                                        backgroundColor: 'background.paper'
-                                    },
-                                    '&::-webkit-scrollbar-thumb': {
-                                        backgroundColor: 'primary.main',
-                                        borderRadius: '4px'
-                                    }
+            <Section
+                title="Notas da campanha"
+                icon={<StickyNote2Icon sx={{ color: 'text.secondary' }} />}
+                action={isUserGM ? (
+                    <Button
+                        variant="outlined"
+                        color="secondary"
+                        startIcon={<NoteAddIcon />}
+                        onClick={handleNewNote}
+                        sx={{ minHeight: 40 }}
+                    >
+                        Nova nota
+                    </Button>
+                ) : undefined}
+            >
+                {notes.length === 0 ? (
+                    <Typography variant="body2" color="text.secondary">
+                        Nenhuma nota ainda. Registre pistas e lembretes para os jogadores.
+                    </Typography>
+                ) : (
+                    <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))', alignItems: 'start', gap: 2 }}>
+                        {notes.map((note) => (
+                            <Paper
+                                key={note.id}
+                                variant="outlined"
+                                sx={{
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    minHeight: NOTE_MIN_HEIGHT,
+                                    maxHeight: NOTE_MAX_HEIGHT,
+                                    bgcolor: 'background.raised',
+                                    borderRadius: 2
                                 }}
                             >
-                                <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
-                                    {note.content}
-                                </Typography>
-                            </CardContent>
-                            {isUserGM && (
-                                <CardActions>
-                                    <IconButton size="small" onClick={() => handleEditNote(note)}>
-                                        <EditIcon />
-                                    </IconButton>
-                                    <IconButton size="small" onClick={async () => await handleDeleteNote(note.id)}>
-                                        <DeleteIcon />
-                                    </IconButton>
-                                </CardActions>
-                            )}
-                        </Card>
-                    ))}
-                </Box>
-            </Paper>
+                                <Box sx={{ flex: 1, minHeight: 0, overflowY: 'auto', p: 2 }}>
+                                    <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
+                                        {note.content}
+                                    </Typography>
+                                </Box>
+                                {isUserGM && (
+                                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5, px: 1, pb: 1 }}>
+                                        <Tooltip title="Editar nota">
+                                            <IconButton size="small" aria-label="Editar nota" onClick={() => handleEditNote(note)}>
+                                                <EditIcon fontSize="small" />
+                                            </IconButton>
+                                        </Tooltip>
+                                        <Tooltip title="Excluir nota">
+                                            <IconButton size="small" aria-label="Excluir nota" onClick={async () => await handleDeleteNote(note.id)}>
+                                                <DeleteIcon fontSize="small" />
+                                            </IconButton>
+                                        </Tooltip>
+                                    </Box>
+                                )}
+                            </Paper>
+                        ))}
+                    </Box>
+                )}
+            </Section>
 
             <Dialog 
                 open={noteDialogOpen} 

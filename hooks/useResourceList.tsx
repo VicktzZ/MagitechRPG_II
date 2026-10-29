@@ -1,18 +1,34 @@
 /* eslint-disable @typescript-eslint/prefer-nullish-coalescing */
-import { useCallback, useMemo, useState, useRef } from 'react';
-import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSnackbar } from 'notistack';
 import { Close } from '@mui/icons-material';
 import { toastDefault } from '@constants';
 import { useDebounce } from '@uidotdev/usehooks';
 import type { UseResourceListOptions, UseResourceListReturn } from '@models/types/hooks';
+import { filterBySelections, type ClientFilter } from '@utils/filterSelection';
+
+const DEFAULT_SORT_FIELD_MAP: Record<string, string> = {
+    'Alfabética': 'name',
+    'Nome': 'name',
+    'Nível': 'level',
+    'Custo': 'mpCost',
+    'Elemento': 'element'
+};
+
+// Maior página que a API aceita (as rotas limitam `limit` a 100)
+const MAX_PAGE_SIZE = 100;
+
+// Identidade estável: um `[]` novo a cada renderização refaria a filtragem dos itens
+const NO_CLIENT_FILTERS: Array<ClientFilter<any>> = [];
 
 export const useResourceList = <T extends Record<string, any>>(
     options: UseResourceListOptions<T>
 ): UseResourceListReturn<T> => {
     const {
         initialSearch = '',
-        initialFilter = '',
+        initialFilters = [],
+        initialClientSelections = {},
         initialSort = { value: 'Nível', order: 'ASC' as const },
         pageSize = 20,
         queryKey,
@@ -20,18 +36,21 @@ export const useResourceList = <T extends Record<string, any>>(
         addFunction,
         validateAdd,
         successMessage = (item) => `Item ${item['name'] || item['nome']} adicionado com sucesso!`,
-        errorMessage = (error) => error.message || 'Ocorreu um erro ao adicionar o item.'
+        errorMessage = (error) => error.message || 'Ocorreu um erro ao adicionar o item.',
+        sortFieldMap,
+        clientFilters = NO_CLIENT_FILTERS,
+        itemFilter
     } = options;
 
     const { enqueueSnackbar, closeSnackbar } = useSnackbar();
     const queryClient = useQueryClient();
 
     const [ search, setSearch ] = useState(initialSearch);
-    // Aumentando o tempo de debounce para evitar chamadas excessivas
-    // e permitir que o usuário termine de digitar antes de fazer a busca
+    // Debounce para evitar chamadas excessivas enquanto o usuário digita
     const debouncedSearch = useDebounce(search, 600);
 
-    const [ filter, setFilter ] = useState(initialFilter);
+    const [ filters, setFilters ] = useState<string[]>(initialFilters);
+    const [ clientSelections, setClientSelections ] = useState<Record<string, string[]>>(initialClientSelections);
     const [ sort, setSort ] = useState(initialSort);
     const [ buttonSelected, setButtonSelected ] = useState({
         add: true,
@@ -39,18 +58,42 @@ export const useResourceList = <T extends Record<string, any>>(
         remove: false
     });
 
-    // Quando houver filtro aplicado, buscam-se todos os itens de uma vez
-    const isAllMode = useMemo(() => Boolean(filter && filter !== 'Nenhum'), [ filter ]);
+    const toggleFilter = useCallback((value: string) => {
+        setFilters(prev => prev.includes(value) ? prev.filter(v => v !== value) : [ ...prev, value ]);
+    }, []);
 
+    const clearFilters = useCallback(() => setFilters([]), []);
+
+    const toggleClientFilter = useCallback((key: string, value: string) => {
+        setClientSelections(prev => {
+            const current = prev[key] ?? [];
+            return { ...prev, [key]: current.includes(value) ? current.filter(v => v !== value) : [ ...current, value ] };
+        });
+    }, []);
+
+    const clearClientFilter = useCallback((key: string) => {
+        setClientSelections(prev => ({ ...prev, [key]: [] }));
+    }, []);
+
+    const clearClientFilters = useCallback(() => setClientSelections({}), []);
+
+    // Com qualquer filtro (busca, elemento, tipo, subtipo) o catálogo é carregado inteiro, em
+    // páginas grandes encadeadas: os filtros de tipo/subtipo são resolvidos no cliente e, como
+    // o catálogo é pequeno, não vale a pena paginar o resultado. Sem filtro, pagina (scroll infinito).
+    const hasClientSelection = Object.values(clientSelections).some(selected => selected.length > 0);
+    const isFiltering = debouncedSearch.trim() !== '' || filters.length > 0 || hasClientSelection;
+    const requestPageSize = isFiltering ? MAX_PAGE_SIZE : pageSize;
+
+    // Sempre pagina via cursor — o filtro de elemento(s) é resolvido no servidor (whereIn/whereEqualTo).
     const fetchItems = useCallback(
         async ({ pageParam = null }: { pageParam?: string | null }) => {
             const params = {
                 queryParams: {
                     search: debouncedSearch,
-                    filter,
+                    elements: filters.join(','),
                     sort: sort.value,
                     order: sort.order,
-                    limit: pageSize.toString(),
+                    limit: requestPageSize.toString(),
                     cursor: pageParam || undefined
                 }
             };
@@ -62,52 +105,39 @@ export const useResourceList = <T extends Record<string, any>>(
                 nextPage: data.hasMore ? data.nextCursor : undefined
             };
         },
-        [ debouncedSearch, filter, sort, pageSize, fetchFunction ]
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [ debouncedSearch, filters, sort, requestPageSize, fetchFunction ]
     );
 
-    // Modo sem paginação: busca todos os itens de uma vez quando existir filtro
-    const allQuery = useQuery({
-        queryKey: [ queryKey, { search: debouncedSearch, filter, sort, mode: 'all' } ],
-        queryFn: async () => {
-            const params = {
-                queryParams: {
-                    search: debouncedSearch,
-                    filter,
-                    sort: sort.value,
-                    order: sort.order,
-                    limit: '100'
-                }
-            };
-            const data = await fetchFunction(params);
-            return data?.data?.sort((a, b) => (a['nível'] || 0) - (b['nível'] || 0)) || [];
-        },
-        enabled: isAllMode,
-        staleTime: 60000,
-        gcTime: 300000,
-        refetchOnWindowFocus: false,
-        refetchOnMount: false
-    });
-
-    // Configuração da query infinita (usada apenas quando não há filtro)
     const {
         data: infData,
         fetchNextPage,
         hasNextPage,
         isFetchingNextPage,
-        isLoading: infLoading,
-        isError: infIsError,
-        error: infError
+        isFetchNextPageError,
+        isLoading,
+        isError,
+        error
     } = useInfiniteQuery({
-        queryKey: [ queryKey, { search: debouncedSearch, filter, sort } ],
+        queryKey: [ queryKey, { search: debouncedSearch, filters, sort, isFiltering } ],
         queryFn: fetchItems,
-        staleTime: 60000, // Aumentado para 1 minuto para evitar consultas desnecessárias
-        gcTime: 300000, // 5 minutos de cache
+        staleTime: 60000,
+        gcTime: 300000,
         getNextPageParam: (lastPage) => lastPage.nextPage,
         initialPageParam: null,
-        refetchOnWindowFocus: false, // Evita refetch quando a janela ganha foco
-        refetchOnMount: false, // Evita refetch quando o componente é montado
-        enabled: !isAllMode
+        refetchOnWindowFocus: false,
+        refetchOnMount: false
     });
+
+    // Em modo filtrado, busca as páginas restantes assim que a anterior chega. Para se uma
+    // página falhar, para não ficar repetindo a requisição.
+    useEffect(() => {
+        if (isFiltering && hasNextPage && !isFetchingNextPage && !isFetchNextPageError) {
+            fetchNextPage();
+        }
+    }, [ isFiltering, hasNextPage, isFetchingNextPage, isFetchNextPageError, fetchNextPage ]);
+
+    const isLoadingAll = isFiltering && !isFetchNextPageError && (Boolean(hasNextPage) || isFetchingNextPage);
 
     // Mutação para adicionar um item
     const { mutate: addItem } = useMutation({
@@ -122,7 +152,7 @@ export const useResourceList = <T extends Record<string, any>>(
             if (addFunction) {
                 return addFunction(item);
             }
-            
+
             return item;
         },
         onSuccess: (_, item) => {
@@ -130,7 +160,7 @@ export const useResourceList = <T extends Record<string, any>>(
                 ...toastDefault(item['name'] || item['nome'] || 'success', 'success'),
                 action: () => <Close sx={{ cursor: 'pointer' }} onClick={() => closeSnackbar(item['name'] || item['nome'])} />
             });
-            
+
             // Atualiza o cache em vez de invalidar a query
             queryClient.setQueryData(
                 [ queryKey ],
@@ -156,96 +186,93 @@ export const useResourceList = <T extends Record<string, any>>(
         }
     });
 
-    // Achatando a lista de páginas para facilitar o uso e removendo duplicatas
-    const items = useMemo(() => {
-        // Modo ALL: retorna os dados diretamente
-        if (isAllMode) {
-            return Array.isArray(allQuery.data) ? allQuery.data : [];
-        }
-
+    // Achatando a lista de páginas, removendo duplicatas e ordenando. Esta é a lista
+    // "carregada": as opções do segundo filtro e do subfiltro saem dela, para que marcar
+    // uma opção não faça as demais sumirem do menu.
+    const loadedItems = useMemo(() => {
         if (!infData?.pages) return [];
-        
-        // Extrai todos os itens e remove duplicatas por ID
+
         const allItems = infData.pages.flatMap((page) => page.data || []);
         const uniqueMap = new Map();
-        
-        // Processa os itens em ordem reversa para garantir que os mais recentes tenham prioridade
-        // (itens da primeira página substituem itens duplicados de páginas posteriores)
+
+        // Processa em ordem reversa para que itens de páginas mais recentes
+        // (ex: adicionados via mutation) tenham prioridade
         for (let i = allItems.length - 1; i >= 0; i--) {
-            const item = allItems[i];
-            const id = item.id || item.id;
+            const item = allItems[i]!;
+            const id = (item as { id?: string }).id;
             if (id) {
                 uniqueMap.set(id, item);
             }
         }
-        
-        // Converte o Map em array e ordena conforme a ordenação atual
-        const uniqueItems = Array.from(uniqueMap.values());
-        
-        // Aplica ordenação consistente com a API
+
+        let uniqueItems = Array.from(uniqueMap.values());
+
+        // Itens vetados somem de tudo: lista, busca, contagem e opções dos filtros
+        if (itemFilter) uniqueItems = uniqueItems.filter(itemFilter);
+
         if (sort.value && sort.value !== 'Nenhum') {
-            const sortField = sort.value === 'Alfabética' ? 'nome' : 
-                sort.value === 'Nível' ? 'nível' : 
-                    sort.value === 'Custo' ? 'custo' : 
-                        sort.value === 'Elemento' ? 'elemento' : 'nome';
-            
-            uniqueItems.sort((a, b) => {
+            const sortField = sortFieldMap?.[sort.value] ?? DEFAULT_SORT_FIELD_MAP[sort.value] ?? 'name';
+
+            uniqueItems = [ ...uniqueItems ].sort((a, b) => {
                 const valA = a[sortField];
                 const valB = b[sortField];
-                
+
                 if (typeof valA === 'number' && typeof valB === 'number') {
                     return sort.order === 'ASC' ? valA - valB : valB - valA;
                 }
-                
-                const strA = String(valA || '');
-                const strB = String(valB || '');
-                
-                return sort.order === 'ASC' ? 
-                    strA.localeCompare(strB, 'pt-BR') : 
+
+                const strA = String(valA ?? '');
+                const strB = String(valB ?? '');
+
+                return sort.order === 'ASC' ?
+                    strA.localeCompare(strB, 'pt-BR') :
                     strB.localeCompare(strA, 'pt-BR');
             });
         }
-        
-        return uniqueItems;
-    }, [ isAllMode, allQuery.data, infData, sort.value, sort.order ]);
 
-    // Referência para controlar o tempo da última chamada
-    const lastFetchRef = useRef(0);
-    
+        return uniqueItems;
+    }, [ infData, sort.value, sort.order, sortFieldMap, itemFilter ]);
+
+    // Filtros do cliente (ex: Tipo, Subtipo, Execução). Combinam por E; cada um é OU entre as
+    // opções marcadas. Se só um deles estiver ativo, filtra sozinho.
+    const items = useMemo(() => filterBySelections(loadedItems, clientFilters.map(filter => ({
+        getValue: filter.getValue,
+        selected: clientSelections[filter.key] ?? []
+    }))), [ loadedItems, clientFilters, clientSelections ]);
+
+    // Sem ressalvas de tempo: `isFetchingNextPage` já impede chamadas simultâneas
     const loadMore = useCallback(() => {
-        if (isAllMode) return; // Desabilita carregamento infinito quando buscando tudo
-        // Verifica se passou tempo suficiente desde a última chamada (500ms)
-        const now = Date.now();
-        if (now - lastFetchRef.current < 500) {
-            return;
-        }
-        
-        // Atualiza o timestamp da última chamada
-        lastFetchRef.current = now;
-        
         if (hasNextPage && !isFetchingNextPage) {
             fetchNextPage();
         }
-    }, [ isAllMode, fetchNextPage, hasNextPage, isFetchingNextPage ]);
+    }, [ fetchNextPage, hasNextPage, isFetchingNextPage ]);
 
     return {
         // Estados
         search,
-        filter,
+        filters,
+        clientSelections,
         sort,
         buttonSelected,
 
         // Dados
         items,
-        isLoading: isAllMode ? allQuery.isLoading : infLoading,
-        isError: isAllMode ? allQuery.isError : infIsError,
-        error: (isAllMode ? allQuery.error : infError) as any,
-        hasNextPage: isAllMode ? false : hasNextPage,
-        isFetchingNextPage: isAllMode ? false : isFetchingNextPage,
+        loadedItems,
+        isFiltering,
+        isLoadingAll,
+        isLoading,
+        isError,
+        error: error as any,
+        hasNextPage: hasNextPage ?? false,
+        isFetchingNextPage,
 
         // Ações
         setSearch,
-        setFilter,
+        toggleFilter,
+        clearFilters,
+        toggleClientFilter,
+        clearClientFilter,
+        clearClientFilters,
         setSort,
         setButtonSelected,
         addItem,

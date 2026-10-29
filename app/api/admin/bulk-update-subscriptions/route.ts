@@ -5,6 +5,7 @@ import { authOptions } from '@app/api/auth/[...nextauth]/route';
 import * as admin from 'firebase-admin';
 import { SubscriptionPlan, SubscriptionStatus } from '@enums/subscriptionEnum';
 import { isAdminEmail } from '@utils/adminCheck';
+import { assertIdList, handleRouteError, readJsonBody } from '@utils/api';
 
 if (!admin.apps.length) {
     admin.initializeApp({
@@ -39,15 +40,9 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        const body = await request.json();
-        const { userIds, plan } = body;
-
-        if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
-            return NextResponse.json(
-                { error: 'Lista de usuários inválida' },
-                { status: 400 }
-            );
-        }
+        const body = await readJsonBody(request);
+        const { plan } = body;
+        const userIds = assertIdList(body.userIds, 'userIds', 500);
 
         if (!Object.values(SubscriptionPlan).includes(plan)) {
             return NextResponse.json(
@@ -126,13 +121,6 @@ export async function POST(request: NextRequest) {
         });
 
     } catch (error) {
-        console.error('Erro na atualização em massa:', error);
-        return NextResponse.json(
-            { 
-                error: 'Erro ao executar atualização em massa',
-                details: error instanceof Error ? error.message : String(error)
-            },
-            { status: 500 }
-        );
+        return handleRouteError(error, 'Erro ao executar atualização em massa');
     }
 }

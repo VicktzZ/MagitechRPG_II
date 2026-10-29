@@ -1,6 +1,7 @@
-import { IconButton } from '@mui/material'
+import { alpha, IconButton } from '@mui/material'
 import VisibilityIcon from '@mui/icons-material/Visibility'
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff'
+import { color } from '@themes/tokens'
 
 interface VisibilityToggleProps {
     isVisible: boolean
@@ -16,13 +17,13 @@ export function VisibilityToggle({ isVisible, onToggle }: VisibilityToggleProps)
                 top: 40,
                 right: 20,
                 zIndex: 9999,
-                bgcolor: 'rgba(0, 0, 0, 0.8)',
-                color: 'white',
+                bgcolor: alpha(color.canvas, 0.8),
+                color: 'text.primary',
                 width: 56,
                 height: 56,
                 m: 0,
                 '&:hover': {
-                    bgcolor: 'rgba(0, 0, 0, 0.9)'
+                    bgcolor: alpha(color.canvas, 0.9)
                 }
             }}
         >

@@ -5,6 +5,7 @@ import { useCampaignCurrentCharsheetContext } from '@contexts';
 import { SkillType } from '@enums';
 import Masonry from '@mui/lab/Masonry';
 import { 
+    alpha,
     Box, 
     Chip, 
     Paper, 
@@ -13,7 +14,6 @@ import {
     Tooltip,
     IconButton,
     Collapse,
-    useTheme,
     Badge
 } from '@mui/material';
 import {
@@ -21,11 +21,11 @@ import {
     ExpandLess,
     Star,
     Shield,
-    AutoAwesome,
+    AutoStories,
     EmojiEvents,
     Whatshot
 } from '@mui/icons-material';
-import { blue, green, orange, purple, red } from '@mui/material/colors';
+import { color } from '@themes/tokens';
 import { useState, type ReactElement } from 'react';
 import type { Skill } from '@models';
 
@@ -36,25 +36,25 @@ interface SkillFilterChipProps {
     onClick: () => void;
 }
 
-function SkillFilterChip({ label , selected, onClick }: SkillFilterChipProps) {
-    const getChipConfig = (type: SkillType) => {
+function SkillFilterChip({ label, type, selected, onClick }: SkillFilterChipProps) {
+    const getChipConfig = () => {
         switch (type) {
         case SkillType.ALL:
-            return { color: blue[600], bg: blue[100], icon: Star };
+            return { color: color.amber, bg: alpha(color.amber, 0.14), icon: Star };
         case SkillType.CLASS:
-            return { color: green[600], bg: green[100], icon: Shield };
+            return { color: color.success, bg: alpha(color.success, 0.14), icon: Shield };
         case SkillType.LINEAGE:
-            return { color: purple[600], bg: purple[100], icon: AutoAwesome };
+            return { color: color.inkMuted, bg: alpha(color.inkMuted, 0.14), icon: AutoStories };
         case SkillType.POWERS:
-            return { color: red[600], bg: red[100], icon: Whatshot };
+            return { color: color.danger, bg: alpha(color.danger, 0.14), icon: Whatshot };
         case SkillType.BONUS:
-            return { color: orange[600], bg: orange[100], icon: EmojiEvents };
+            return { color: color.warning, bg: alpha(color.warning, 0.14), icon: EmojiEvents };
         default:
-            return { color: blue[600], bg: blue[100], icon: Star };
+            return { color: color.amber, bg: alpha(color.amber, 0.14), icon: Star };
         }
     };
 
-    const config = getChipConfig(label as any);
+    const config = getChipConfig();
     const ChipIcon = config.icon;
 
     return (
@@ -66,14 +66,12 @@ function SkillFilterChip({ label , selected, onClick }: SkillFilterChipProps) {
             sx={{
                 bgcolor: selected ? config.bg : 'transparent',
                 color: selected ? config.color : 'text.primary',
-                borderColor: config.color + '60',
+                borderColor: alpha(config.color, 0.38),
                 fontWeight: selected ? 700 : 500,
                 transition: 'all 0.2s ease',
                 '&:hover': {
                     bgcolor: config.bg,
-                    color: config.color,
-                    transform: 'translateY(-1px)',
-                    boxShadow: `0 4px 8px ${config.color}40`
+                    color: config.color
                 }
             }}
         />
@@ -87,7 +85,6 @@ interface SkillsSectionProps {
 
 export default function SkillsSection({ selectedSkillType, setSelectedSkillType }: SkillsSectionProps): ReactElement {
     const { charsheet } = useCampaignCurrentCharsheetContext();
-    const theme = useTheme();
     
     const filteredSkills = selectedSkillType === SkillType.ALL
         ? Object.values(charsheet.skills).flat()
@@ -105,15 +102,15 @@ export default function SkillsSection({ selectedSkillType, setSelectedSkillType 
     const getSkillTypeColor = (type: SkillType) => {
         switch (type) {
         case SkillType.CLASS:
-            return green[600];
+            return color.success;
         case SkillType.LINEAGE:
-            return purple[600];
+            return color.inkMuted;
         case SkillType.POWERS:
-            return red[600];
+            return color.danger;
         case SkillType.BONUS:
-            return orange[600];
+            return color.warning;
         default:
-            return blue[600];
+            return color.amber;
         }
     };
 
@@ -124,16 +121,9 @@ export default function SkillsSection({ selectedSkillType, setSelectedSkillType 
                 sx={{ 
                     p: 3, 
                     borderRadius: 3,
-                    background: theme.palette.mode === 'dark'
-                        ? 'linear-gradient(145deg, #1e293b 0%, #334155 100%)'
-                        : 'linear-gradient(145deg, #f8fafc 0%, #e2e8f0 100%)',
+                    bgcolor: 'background.paper',
                     border: '1px solid',
-                    borderColor: 'divider',
-                    transition: 'all 0.3s ease',
-                    '&:hover': {
-                        boxShadow: 4,
-                        transform: 'translateY(-2px)'
-                    }
+                    borderColor: 'divider'
                 }}
             >
                 <Stack spacing={3}>
@@ -144,12 +134,12 @@ export default function SkillsSection({ selectedSkillType, setSelectedSkillType 
                                 sx={{
                                     p: 1.5,
                                     borderRadius: 2,
-                                    bgcolor: blue[100],
+                                    bgcolor: (theme) => alpha(theme.palette.primary.main, 0.14),
                                     border: '2px solid',
-                                    borderColor: blue[200]
+                                    borderColor: (theme) => alpha(theme.palette.primary.main, 0.38)
                                 }}
                             >
-                                <Star sx={{ color: blue[700], fontSize: '2rem' }} />
+                                <Star sx={{ color: 'primary.main', fontSize: '2rem' }} />
                             </Box>
                             <Box>
                                 <Typography 
@@ -174,11 +164,9 @@ export default function SkillsSection({ selectedSkillType, setSelectedSkillType 
                                 startIcon={<AccountTree />}
                                 onClick={() => setTreeModalOpen(true)}
                                 sx={{
-                                    bgcolor: blue[600],
+                                    bgcolor: 'primary.main',
                                     '&:hover': {
-                                        bgcolor: blue[700],
-                                        transform: 'translateY(-1px)',
-                                        boxShadow: 3
+                                        bgcolor: 'primary.dark'
                                     }
                                 }}
                             >
@@ -268,13 +256,12 @@ export default function SkillsSection({ selectedSkillType, setSelectedSkillType 
                                             sx={{ 
                                                 p: 2.5, 
                                                 borderRadius: 2,
+                                                bgcolor: 'background.raised',
                                                 border: '1px solid',
                                                 borderColor: 'divider',
-                                                transition: 'all 0.3s ease',
+                                                transition: 'border-color 120ms',
                                                 '&:hover': {
-                                                    transform: 'translateY(-4px)',
-                                                    boxShadow: 4,
-                                                    borderColor: getSkillTypeColor(selectedSkillType) + '60'
+                                                    borderColor: alpha(getSkillTypeColor(selectedSkillType), 0.38)
                                                 }
                                             }}
                                         >
@@ -301,7 +288,7 @@ export default function SkillsSection({ selectedSkillType, setSelectedSkillType 
                                                                 sx={{
                                                                     color: getSkillTypeColor(selectedSkillType),
                                                                     '&:hover': {
-                                                                        bgcolor: getSkillTypeColor(selectedSkillType) + '20'
+                                                                        bgcolor: alpha(getSkillTypeColor(selectedSkillType), 0.12)
                                                                     }
                                                                 }}
                                                             >

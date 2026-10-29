@@ -24,7 +24,7 @@ export const ELEMENT_OPTIONS = [
 
 export const SPELL_LEVEL_OPTIONS = [ '1', '2', '3', '4' ];
 
-export const EXECUTION_OPTIONS = [ 'Livre', 'Completa', 'Padrão', 'Movimento', 'Reação', 'Bônus' ];
+export const EXECUTION_OPTIONS = [ 'Completa', 'Padrão', 'Movimento', 'Reação', 'Bônus' ];
 
 export const ITEM_KIND_OPTIONS = [
     'Especial', 'Utilidade', 'Consumível', 'Item Chave', 'Munição', 

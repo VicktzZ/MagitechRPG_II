@@ -9,6 +9,7 @@ import {
     Campaign as CampaignIcon    
 } from '@mui/icons-material';
 import {
+    alpha,
     Avatar,
     Box,
     Card,
@@ -21,6 +22,7 @@ import {
     useMediaQuery,
     useTheme
 } from '@mui/material';
+import { color } from '@themes/tokens';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { type ReactElement, useState } from 'react';
@@ -65,23 +67,15 @@ export default function CampaingCard({
                     width: !matches ? 320 : '100%',
                     maxWidth: 360,
                     borderRadius: 3,
-                    background: theme.palette.mode === 'dark'
-                        ? 'linear-gradient(160deg, #1a2234 0%, #2a3441 100%)'
-                        : 'linear-gradient(160deg, #f8fafc 0%, #edf2f7 100%)',
+                    bgcolor: 'background.paper',
                     border: '1px solid',
-                    borderColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
-                    boxShadow: theme.palette.mode === 'dark' 
-                        ? '0 8px 16px rgba(0,0,0,0.3)'
-                        : '0 8px 16px rgba(0,0,0,0.08)',
+                    borderColor: 'divider',
                     cursor: 'pointer',
-                    transition: 'all 0.2s ease',
+                    transition: 'border-color 120ms, background-color 120ms',
                     overflow: 'hidden',
                     '&:hover': {
-                        transform: 'translateY(-6px)',
-                        boxShadow: theme.palette.mode === 'dark'
-                            ? '0 12px 20px rgba(0,0,0,0.4)'
-                            : '0 12px 20px rgba(0,0,0,0.12)',
-                        borderColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.12)'
+                        bgcolor: 'background.raised',
+                        borderColor: color.borderStrong
                     },
                     '&:before': {
                         content: '""',
@@ -147,7 +141,7 @@ export default function CampaingCard({
                             variant='filled'
                             sx={{
                                 fontWeight: 600,
-                                fontSize: '0.7rem',
+                                fontSize: '0.75rem',
                                 height: 24
                             }}
                         />
@@ -182,7 +176,7 @@ export default function CampaingCard({
                             sx={{
                                 px: 0.8,
                                 py: 0.2,
-                                bgcolor: theme.palette.mode === 'dark' ? 'rgba(76, 175, 80, 0.15)' : 'rgba(76, 175, 80, 0.08)',
+                                bgcolor: alpha(theme.palette.success.main, 0.15),
                                 borderRadius: 1.5,
                                 gap: 0.5
                             }}
@@ -222,9 +216,9 @@ export default function CampaingCard({
                                 size='small'
                                 sx={{
                                     color: theme.palette.primary.main,
-                                    bgcolor: theme.palette.mode === 'dark' ? 'rgba(144, 202, 249, 0.12)' : 'rgba(25, 118, 210, 0.08)',
+                                    bgcolor: alpha(theme.palette.primary.main, 0.12),
                                     '&:hover': {
-                                        bgcolor: theme.palette.mode === 'dark' ? 'rgba(144, 202, 249, 0.2)' : 'rgba(25, 118, 210, 0.12)'
+                                        bgcolor: alpha(theme.palette.primary.main, 0.2)
                                     }
                                 }}
                             >

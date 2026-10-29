@@ -4,6 +4,7 @@
     "module": "commonjs",
     "moduleResolution": "node",
     "isolatedModules": false,
+    "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {
       "@*": ["./*"]

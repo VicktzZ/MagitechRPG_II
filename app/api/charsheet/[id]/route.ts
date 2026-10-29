@@ -1,20 +1,20 @@
 /* eslint-disable @typescript-eslint/promise-function-async */
 /* eslint-disable @typescript-eslint/prefer-nullish-coalescing */
-import { DbCharsheet } from '@models';
 import { CharsheetDTO } from '@models/dtos';
 import { charsheetRepository, powerRepository, spellRepository } from '@repositories';
 import { chunk } from '@utils/helpers/chunk';
 import { plainToInstance } from 'class-transformer';
+import { badRequest, handleRouteError, readJsonBody, requireCharsheetAccess, requireUser } from '@utils/api';
+import { toSpellIds } from '@utils/charsheetDiff';
+import { adminUpdateDoc, assertFieldUpdates } from '@utils/firestore/adminDocs';
 
 interface id { id: string }
 
 export async function GET(_req: Request, { params: { id } }: { params: id }): Promise<Response> {
     try {
-        const charsheet = await charsheetRepository.findById(id);
-
-        if (!charsheet) {
-            return Response.json({ message: 'NOT FOUND' }, { status: 404 });
-        }
+        const user = await requireUser();
+        // Dono, mestre de uma campanha onde a ficha joga ou colega de campanha
+        const { charsheet } = await requireCharsheetAccess(id, user, 'read');
 
         // Criar o DTO a partir da entidade
         const charsheetDto = plainToInstance(CharsheetDTO, charsheet);
@@ -52,74 +52,63 @@ export async function GET(_req: Request, { params: { id } }: { params: id }): Pr
         }
 
         return Response.json(charsheetDto);
-    } catch (error: any) {
-        return Response.json({ message: 'INTERNAL SERVER ERROR', error: error.message }, { status: 500 });
+    } catch (error) {
+        return handleRouteError(error, 'Erro ao buscar ficha');
     }
 }
 
 export async function DELETE(_req: Request, { params: { id } }: { params: id }): Promise<Response> {
     try {
-        const charsheet = await charsheetRepository.findById(id);
-        if (!charsheet) {
-            return Response.json({ message: 'NOT FOUND' }, { status: 404 });
-        }
+        const user = await requireUser();
+        await requireCharsheetAccess(id, user, 'owner');
         await charsheetRepository.delete(id);
         return Response.json({ message: 'SUCCESS' });
-    } catch (error: any) {
-        return Response.json({ message: 'BAD REQUEST', error: error.message }, { status: 400 });
+    } catch (error) {
+        return handleRouteError(error, 'Erro ao remover ficha');
     }
 }
 
+/** Chaves que o corpo do PATCH nunca grava: identidade, dono, data de criação e o que a campanha escreve em `session` */
+const PROTECTED_KEYS = [ 'id', 'userId', 'createdAt', 'updatedAt', 'session' ];
+
+/**
+ * Atualização parcial da ficha: grava só as chaves de topo que vieram no corpo.
+ *
+ * Antes a rota remontava a ficha inteira (`{ ...salva, ...corpo }` passando por `plainToInstance`) e regravava o
+ * documento todo: o `session` do corpo (uma foto antiga) substituía o salvo e apagava as vantagens da campanha, os
+ * valores padrão das classes (`effects: []`, ids novos) vazavam para o banco e uma lista de traços vazia nunca persistia.
+ * A tela da ficha agora usa `PATCH /api/charsheet/[id]/fields` (só o que mudou); esta rota fica para abas abertas
+ * antes da atualização e clientes externos.
+ */
 export async function PATCH(req: Request, { params: { id } }: { params: id }): Promise<Response> {
     try {
-        const body: CharsheetDTO | DbCharsheet = await req.json();
-        // Não usar excludeExtraneousValues para não perder propriedades enviadas pelo cliente
-        const defaultDto = plainToInstance(CharsheetDTO, body);
-        // const dbDto = plainToInstance(DbCharsheet, body);
+        const user = await requireUser();
+        // Dono da ficha ou mestre de uma campanha onde ela joga
+        const { charsheet } = await requireCharsheetAccess(id, user, 'write');
 
-        // TODO: REMOVER EM PRODUÇÃO - Validação de DTO desabilitada temporariamente
-        // const defaultDtoErrors = await validate(defaultDto, { skipMissingProperties: true });
-        // const dbDtoErrors = await validate(dbDto, { skipMissingProperties: true });
-
-        // if (defaultDtoErrors.length > 0 && dbDtoErrors.length > 0) {
-        //     return Response.json({ message: 'BAD REQUEST', errors: defaultDtoErrors }, { status: 400 });
-        // }
-
-        const charsheet = await charsheetRepository.findById(id);
-        if (!charsheet) {
-            return Response.json({ message: 'NOT FOUND' }, { status: 404 });
+        const body = await readJsonBody<Record<string, unknown>>(req);
+        if (typeof body !== 'object' || body === null || Array.isArray(body)) {
+            throw badRequest('O corpo deve ser um objeto com os campos da ficha');
         }
 
-        // Converte spells de objetos para IDs para salvar no banco
-        let spellsToSave: string[] | null = null;
-        if (defaultDto.spells && defaultDto.spells.length > 0) {
-            spellsToSave = defaultDto.spells
-                .map(spell => spell.id || spell.name || '')
-                .filter(spellId => spellId.trim() !== ''); // Remove IDs vazios
+        const fields: Record<string, unknown> = {};
+        for (const [ key, value ] of Object.entries(body)) {
+            if (PROTECTED_KEYS.includes(key) || value === undefined) continue;
+            // Magias ficam salvas como ids. A ficha pode chegar com ids (edição do mestre sobre os dados crus do
+            // Firestore) ou com objetos; lista vazia é uma alteração válida (o jogador removeu todas as magias).
+            if (key === 'spells') {
+                if (Array.isArray(value)) fields[key] = toSpellIds(value);
+                continue;
+            }
+            fields[key] = value;
         }
 
-        // Mantém valores existentes se não vierem no body
-        const traitsToSave = defaultDto.traits?.length ? defaultDto.traits : (charsheet.traits ?? []);
-        const ormLevelToSave = defaultDto.ORMLevel ?? charsheet.ORMLevel ?? 0;
-        const spellsFinal = spellsToSave !== null ? spellsToSave : (charsheet.spells ?? []);
+        if (Object.keys(fields).length === 0) return Response.json({ message: 'SUCCESS' });
 
-        const updatedCharsheet = new DbCharsheet({ 
-            ...charsheet, // preserva valores existentes
-            ...defaultDto, 
-            id,
-            ORMLevel: ormLevelToSave,
-            traits: traitsToSave,
-            spells: spellsFinal // Garante que spells seja array de strings
-        } as unknown as DbCharsheet);
-
-        // Firestore não aceita instâncias com protótipo customizado; converte para objeto plano
-        const plainCharsheet = JSON.parse(JSON.stringify(updatedCharsheet));
-
-        await charsheetRepository.update(plainCharsheet as DbCharsheet);
+        await adminUpdateDoc('charsheets', charsheet.id, assertFieldUpdates(fields, { protectedPaths: PROTECTED_KEYS }));
 
         return Response.json({ message: 'SUCCESS' });
-    } catch (error: any) {
-        console.error('Erro ao atualizar charsheet:', error);
-        return Response.json({ message: 'NOT FOUND', error: error.message }, { status: 404 });
+    } catch (error) {
+        return handleRouteError(error, 'Erro ao atualizar ficha');
     }
 }

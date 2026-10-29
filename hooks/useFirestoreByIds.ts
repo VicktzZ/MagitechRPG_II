@@ -5,6 +5,8 @@ import type { Campaign, Charsheet, Notification, Power, Spell, User } from '@mod
 import { campaignEntity, charsheetEntity, notificationEntity, powerEntity, spellEntity, userEntity, type FirestoreEntity } from '@utils/firestoreEntities';
 import type { Unsubscribe } from '@firebase/firestore';
 import { useEffect, useMemo, useState } from 'react';
+import { isFetchByIdsPending } from '@utils/charsheetLoad';
+import { useFirebaseAuth } from './useFirebaseAuth';
 
 interface EntityNameToType {
     charsheet: Charsheet;
@@ -62,29 +64,36 @@ export function useFirestoreByIds<T extends EntityName>(
 
     const entity = firestoreEntities[entityName] as unknown as FirestoreEntity<EntityType>;
 
+    // Listeners só depois que o navegador estiver autenticado no Firebase (as regras exigem login)
+    const { ready: authReady, uid: firebaseUid } = useFirebaseAuth();
+
     const stableIds = useMemo(() => {
         const unique = Array.from(new Set(ids.filter(id => typeof id === 'string' && id.trim() !== '')));
         unique.sort();
         return unique;
     }, [ JSON.stringify(ids) ]);
 
+    const idsKey = stableIds.join('|');
     const [ data, setData ] = useState<EntityType[]>([]);
-    const [ loading, setLoading ] = useState<boolean>(enabled && stableIds.length > 0);
+    // Para quais ids a entrega já terminou; `loading` sai daqui a cada render (ver isFetchByIdsPending)
+    const [ loadedKey, setLoadedKey ] = useState<string | null>(null);
     const [ error, setError ] = useState<Error | null>(null);
+    const loading = isFetchByIdsPending(enabled, idsKey, loadedKey, error !== null);
 
     useEffect(() => {
         if (!enabled || stableIds.length === 0) {
             setData([]);
-            setLoading(false);
+            setLoadedKey(null);
             setError(null);
             return;
         }
+
+        if (!authReady) return;
 
         const chunks = chunkArray(stableIds, FIRESTORE_IN_CHUNK_SIZE);
         const chunkResults: EntityType[][] = chunks.map(() => []);
         const chunkLoaded: boolean[] = chunks.map(() => false);
 
-        setLoading(true);
         setError(null);
 
         const flushAggregated = () => {
@@ -97,7 +106,7 @@ export function useFirestoreByIds<T extends EntityName>(
             });
             setData(Array.from(merged.values()));
             if (chunkLoaded.every(Boolean)) {
-                setLoading(false);
+                setLoadedKey(idsKey);
             }
         };
 
@@ -121,7 +130,7 @@ export function useFirestoreByIds<T extends EntityName>(
         return () => {
             unsubscribers.forEach(unsub => unsub?.());
         };
-    }, [ entity, stableIds, enabled ]);
+    }, [ entity, stableIds, idsKey, enabled, authReady, firebaseUid ]);
 
     return { data, loading, error };
 }

@@ -5,14 +5,24 @@ import { PowerDTO } from '@models/dtos/PowerDTO';
 import { validate } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
 import type { NextRequest } from 'next/server';
+import { clampInt, handleRouteError, limitQueryString, readJsonBody, requireAdmin } from '@utils/api';
 
 export async function GET(req: NextRequest): Promise<Response> {
     try {
-        const search = req.nextUrl.searchParams.get('search');
+        const search = limitQueryString(req.nextUrl.searchParams.get('search'));
         const order = req.nextUrl.searchParams.get('order')?.toLowerCase() || 'asc';
-        const filter = req.nextUrl.searchParams.get('filter');
-        const limit = Number(req.nextUrl.searchParams.get('limit')) || 20;
-        const cursor = req.nextUrl.searchParams.get('cursor'); // cursor pelo nome
+        const elementsParam = limitQueryString(req.nextUrl.searchParams.get('elements'), 200);
+        const legacyFilter = limitQueryString(req.nextUrl.searchParams.get('filter'), 50);
+        // Teto de página para ninguém pedir a coleção inteira de uma vez
+        const limit = clampInt(req.nextUrl.searchParams.get('limit'), 1, 100, 20);
+        const cursor = limitQueryString(req.nextUrl.searchParams.get('cursor'), 200); // cursor pelo nome
+
+        // Firestore limita cláusulas "in" a 10 valores
+        const elements = (elementsParam
+            ? elementsParam.split(',').map(e => e.trim()).filter(Boolean)
+            : (legacyFilter && legacyFilter !== 'Nenhum' ? [ legacyFilter ] : []))
+            .slice(0, 10)
+            .map(e => e.toUpperCase());
 
         // Busca um item a mais para saber se há próxima página
         let query = powerRepository.limit(limit + 1);
@@ -25,10 +35,11 @@ export async function GET(req: NextRequest): Promise<Response> {
                 .whereLessThan('name', `${trimmedSearch}\uf8ff`);
         }
 
-        // Aplicar filtro de elemento
-        const trimmedFilter = filter?.trim();
-        if (trimmedFilter && trimmedFilter !== 'Nenhum') {
-            query = query.whereEqualTo('element', trimmedFilter.toUpperCase());
+        // Aplicar filtro de elemento(s) — múltipla seleção via whereIn
+        if (elements.length === 1) {
+            query = query.whereEqualTo('element', elements[0]);
+        } else if (elements.length > 1) {
+            query = query.whereIn('element', elements);
         }
 
         // Ordenação SEMPRE por name para compatibilidade com cursor e busca
@@ -57,15 +68,15 @@ export async function GET(req: NextRequest): Promise<Response> {
             hasMore,
             nextCursor
         });
-    } catch (error: any) {
-        console.error('[POWER API] Erro:', error);
-        return Response.json({ message: 'INTERNAL ERROR', error: error.message }, { status: 500 });
+    } catch (error) {
+        return handleRouteError(error, 'Erro ao buscar poderes');
     }
 }
 
 export async function POST(req: Request): Promise<Response> {
     try {
-        const body: PowerDTO = await req.json();
+        await requireAdmin();
+        const body: PowerDTO = await readJsonBody(req);
         const dto = plainToInstance(PowerDTO, body);
         const errors = await validate(dto);
 
@@ -77,7 +88,7 @@ export async function POST(req: Request): Promise<Response> {
         const createdPower = await powerRepository.create(power);
         
         return Response.json(createdPower, { status: 201 });
-    } catch (error: any) {
-        return Response.json({ message: 'BAD REQUEST', error: error.message }, { status: 400 });
+    } catch (error) {
+        return handleRouteError(error, 'Erro ao criar registro');
     }
 }

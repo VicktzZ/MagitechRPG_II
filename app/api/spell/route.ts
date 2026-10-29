@@ -4,17 +4,27 @@ import { spellRepository } from '@repositories';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import type { NextRequest } from 'next/server';
+import { clampInt, handleRouteError, limitQueryString, readJsonBody, requireAdmin } from '@utils/api';
 import { Spell } from '@models/entities';
 
 export async function GET(req: NextRequest): Promise<Response> {
     try {
-        const search = req.nextUrl.searchParams.get('search');
+        const search = limitQueryString(req.nextUrl.searchParams.get('search'));
         const order = req.nextUrl.searchParams.get('order')?.toLowerCase() || 'asc';
-        const filter = req.nextUrl.searchParams.get('filter');
-        const limit = Number(req.nextUrl.searchParams.get('limit')) || 20;
-        const cursor = req.nextUrl.searchParams.get('cursor'); // usaremos o NOME como cursor
+        const elementsParam = limitQueryString(req.nextUrl.searchParams.get('elements'), 200);
+        const legacyFilter = limitQueryString(req.nextUrl.searchParams.get('filter'), 50);
+        // Teto de página para ninguém pedir a coleção inteira de uma vez
+        const limit = clampInt(req.nextUrl.searchParams.get('limit'), 1, 100, 20);
+        const cursor = limitQueryString(req.nextUrl.searchParams.get('cursor'), 200); // cursor pelo nome
 
-        console.log('[SPELL API] Parâmetros recebidos:', { search, order, filter, limit, cursor });
+        // Firestore limita cláusulas "in" a 10 valores
+        const elements = (elementsParam
+            ? elementsParam.split(',').map(e => e.trim()).filter(Boolean)
+            : (legacyFilter && legacyFilter !== 'Nenhum' ? [ legacyFilter ] : []))
+            .slice(0, 10)
+            .map(e => e.toUpperCase());
+
+        console.log('[SPELL API] Parâmetros recebidos:', { search, order, elements, limit, cursor });
 
         // Busca um item a mais para saber se há próxima página
         let query = spellRepository.limit(limit + 1);
@@ -27,10 +37,11 @@ export async function GET(req: NextRequest): Promise<Response> {
                 .whereLessThan('name', `${trimmedSearch}\uf8ff`);
         }
 
-        // Filtro por elemento
-        const trimmedFilter = filter?.trim();
-        if (trimmedFilter && trimmedFilter !== 'Nenhum') {
-            query = query.whereEqualTo('element', trimmedFilter.toUpperCase());
+        // Filtro por elemento(s) — múltipla seleção via whereIn
+        if (elements.length === 1) {
+            query = query.whereEqualTo('element', elements[0]);
+        } else if (elements.length > 1) {
+            query = query.whereIn('element', elements);
         }
 
         // Ordenação SEMPRE por name para compatibilidade com buscas e cursor
@@ -59,15 +70,15 @@ export async function GET(req: NextRequest): Promise<Response> {
             hasMore,
             nextCursor
         });
-    } catch (error: any) {
-        console.error('[SPELL API] Erro:', error);
-        return Response.json({ message: 'INTERNAL ERROR', error: error.message }, { status: 500 });
+    } catch (error) {
+        return handleRouteError(error, 'Erro ao buscar magias');
     }
 }
 
 export async function POST(req: Request): Promise<Response> {
     try {
-        const body: SpellDTO = await req.json();
+        await requireAdmin();
+        const body: SpellDTO = await readJsonBody(req);
         const dto = plainToInstance(SpellDTO, body);
         const errors = await validate(dto);
         
@@ -79,7 +90,7 @@ export async function POST(req: Request): Promise<Response> {
         const createdSpell = await spellRepository.create(spell);
         
         return Response.json(createdSpell, { status: 201 });
-    } catch (error: any) {
-        return Response.json({ message: 'BAD REQUEST', error: error.message }, { status: 400 });
+    } catch (error) {
+        return handleRouteError(error, 'Erro ao criar registro');
     }
 }

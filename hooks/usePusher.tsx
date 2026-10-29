@@ -7,7 +7,7 @@ import type { Session } from 'next-auth';
 const PUSHER_KEY = process.env.NEXT_PUBLIC_PUSHER_KEY;
 const CLUSTER = 'sa1';
 
-export function usePusher(campaignName: string, isUserGM: boolean, session: Session | null) {
+export function usePusher(campaignName: string, isUserGM: boolean, _session: Session | null) {
     const pusherRef = useRef<PusherClient | null>(null);
     const channelRef = useRef<PresenceChannel | null>(null);
     const { setChannel } = useChannel();
@@ -25,9 +25,11 @@ export function usePusher(campaignName: string, isUserGM: boolean, session: Sess
 
     useEffect(() => {
         if (!pusherRef.current) {
+            // A identidade no canal vem do cookie de sessão no servidor — não é
+            // preciso (nem seguro) mandar a sessão na URL, que acaba em logs
             pusherRef.current = new PusherClient(PUSHER_KEY, {
                 cluster: CLUSTER,
-                authEndpoint: `/api/pusher/auth?session=${JSON.stringify(session)}`,
+                authEndpoint: '/api/pusher/auth',
                 forceTLS: true
             });
         }
@@ -45,7 +47,6 @@ export function usePusher(campaignName: string, isUserGM: boolean, session: Sess
         };
 
         document.addEventListener('visibilitychange', onVisible);
-        console.log('[Pusher Client] Connected')
 
         return () => {
             document.removeEventListener('visibilitychange', onVisible);

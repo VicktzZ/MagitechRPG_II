@@ -1,63 +1,102 @@
 import { campaignRepository } from '@repositories';
-import { CampaignDTO } from '@models/dtos/CampaignDTO';
-import { validate } from 'class-validator';
-import { plainToInstance } from 'class-transformer';
-import { findCampaignByCodeOrId } from '@utils/helpers/findCampaignByCodeOrId';
+import { deleteCampaignMessages } from '@utils/firestore/campaignMessages';
+import { deleteGmNotes } from '@utils/firestore/gmNotes';
+import { deleteCombatEvents } from '@utils/firestore/combatEvents';
+import { deleteGmData } from '@utils/firestore/gmData';
 import type { Campaign } from '@models/entities/Campaign';
+import {
+    assertMaxLength,
+    badRequest,
+    campaignForRole,
+    findCampaignOrThrow,
+    getCampaignRole,
+    handleRouteError,
+    readJsonBody,
+    requireCampaignGM,
+    requireUser,
+    TEXT_LIMITS,
+    toCampaignPreview
+} from '@utils/api';
 
 export async function GET(_req: Request, { params }: { params: { id: string } }): Promise<Response> {
     try {
-        const { id } = params;
+        const user = await requireUser();
+        const campaign = await findCampaignOrThrow(params.id);
 
-        const campaign = await findCampaignByCodeOrId(id);
-        if (!campaign) {
-            return Response.json({ message: 'NOT FOUND' }, { status: 404 });
-        }
-
-        return Response.json(campaign);
-    } catch (error: any) {
-        return Response.json({ message: 'FORBIDDEN', error: error.message }, { status: 403 });
+        // Membros recebem a campanha inteira (os jogadores sem os segredos do mestre); quem só tem o código (ex.: ao entrar), uma prévia
+        const role = getCampaignRole(campaign, user);
+        return Response.json(role.isMember ? campaignForRole(campaign, role) : toCampaignPreview(campaign));
+    } catch (error) {
+        return handleRouteError(error, 'Erro ao buscar campanha');
     }
 }
- 
+
 export async function DELETE(_req: Request, { params }: { params: { id: string } }): Promise<Response> {
     try {
-        const { id } = params;
-        const campaign = await findCampaignByCodeOrId(id);
-
-        if (!campaign) {
-            return Response.json({ message: 'NOT FOUND' }, { status: 404 });
-        }
+        const user = await requireUser();
+        const { campaign } = await requireCampaignGM(params.id, user);
 
         await campaignRepository.delete(campaign.id);
-        
+
+        // O Firestore não apaga as subcoleções junto com o documento: sem isto o chat ficaria órfão
+        try {
+            await deleteCampaignMessages(campaign.id);
+        } catch (error) {
+            console.error('[Campanha] Campanha excluída, mas as mensagens do chat não foram apagadas:', error);
+        }
+
+        // Idem para as anotações privadas do mestre
+        try {
+            await deleteGmNotes(campaign.id);
+        } catch (error) {
+            console.error('[Campanha] Campanha excluída, mas as anotações do mestre não foram apagadas:', error);
+        }
+
+        // Idem para os dados privados do mestre (defesas das criaturas...)
+        try {
+            await deleteGmData(campaign.id);
+        } catch (error) {
+            console.error('[Campanha] Campanha excluída, mas os dados privados do mestre não foram apagados:', error);
+        }
+
+        // Idem para o histórico do combate
+        try {
+            await deleteCombatEvents(campaign.id);
+        } catch (error) {
+            console.error('[Campanha] Campanha excluída, mas o histórico do combate não foi apagado:', error);
+        }
+
         return Response.json({ message: 'SUCCESS' });
-    } catch (error: any) {
-        return Response.json({ message: 'BAD REQUEST', error: error.message }, { status: 400 });
+    } catch (error) {
+        return handleRouteError(error, 'Erro ao remover campanha');
     }
 }
 
+/**
+ * Edita dados básicos da campanha (somente mestre). Jogadores, mestres,
+ * sessão e código não mudam por aqui — cada um tem sua própria rota.
+ */
 export async function PATCH(req: Request, { params }: { params: { id: string } }): Promise<Response> {
     try {
-        const { id } = params;
-        const body: CampaignDTO = await req.json();
+        const user = await requireUser();
+        const { campaign } = await requireCampaignGM(params.id, user);
+        const body = await readJsonBody<Partial<Pick<Campaign, 'title' | 'description' | 'mode'>>>(req);
 
-        const dto = plainToInstance(CampaignDTO, body, { excludeExtraneousValues: true });
-        const errors = await validate(dto, { skipMissingProperties: true });
-
-        if (errors.length > 0) {
-            return Response.json({ message: 'BAD REQUEST', errors }, { status: 400 });
+        assertMaxLength(body.title, TEXT_LIMITS.title, 'title');
+        assertMaxLength(body.description, TEXT_LIMITS.description, 'description');
+        if (body.mode !== undefined && body.mode !== 'Classic' && body.mode !== 'Roguelite') {
+            throw badRequest('"mode" deve ser Classic ou Roguelite');
         }
 
-        const campaign = await findCampaignByCodeOrId(id);
-        if (!campaign) {
-            return Response.json({ message: 'NOT FOUND' }, { status: 404 });
-        }
+        await campaignRepository.update({
+            ...campaign,
+            ...(body.title !== undefined ? { title: body.title } : {}),
+            ...(body.description !== undefined ? { description: body.description } : {}),
+            ...(body.mode !== undefined ? { mode: body.mode } : {})
+        });
 
-        await campaignRepository.update({ ...dto, id } as Campaign);
-        
         return Response.json({ message: 'SUCCESS' });
-    } catch (error: any) {
-        return Response.json({ message: 'NOT FOUND', error: error.message }, { status: 404 });
+    } catch (error) {
+        return handleRouteError(error, 'Erro ao atualizar campanha');
     }
 }

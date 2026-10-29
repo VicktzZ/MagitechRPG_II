@@ -1,6 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import { PlanIcon } from './PlanIcon';
 import React from 'react';
 import {
     Box,
@@ -22,12 +23,13 @@ import {
     Lock as LockIcon,
     CheckCircle as CheckCircleIcon,
     ArrowForward as ArrowForwardIcon,
-    Stars as StarsIcon
+    WorkspacePremium as WorkspacePremiumIcon
 } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
 import type { Permission } from '@enums/subscriptionEnum';
 import { SubscriptionPlanMetadata } from '@enums/subscriptionEnum';
 import { usePermission, useSubscription } from '@hooks';
+import { color } from '@themes/tokens';
 
 interface SubscriptionGuardProps {
   children: ReactNode;
@@ -111,7 +113,7 @@ export function SubscriptionGuard({
                         <CardContent sx={{ p: 4 }}>
                             <Box sx={{ textAlign: 'center', mb: 3 }}>
                                 <Typography variant="h2" sx={{ mb: 1 }}>
-                                    {currentPlanMetadata.icon}
+                                    <PlanIcon plan={currentPlan} />
                                 </Typography>
                                 <Typography variant="h5" sx={{ fontWeight: 'bold', color: currentPlanMetadata.color }}>
                   Seu Plano Atual
@@ -163,10 +165,8 @@ export function SubscriptionGuard({
                             flex: 1,
                             position: 'relative',
                             border: 3,
-                            borderColor: requiredPlanMetadata.color,
-                            boxShadow: 8,
-                            background: (theme) =>
-                                `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(requiredPlanMetadata.color, 0.1)} 100%)`
+                            borderColor: color.amberLine,
+                            bgcolor: color.amberSubtle
                         }}
                     >
                         {/* Badge "Necessário" */}
@@ -180,11 +180,11 @@ export function SubscriptionGuard({
                             }}
                         >
                             <Chip
-                                icon={<StarsIcon />}
+                                icon={<WorkspacePremiumIcon />}
                                 label="NECESSÁRIO"
                                 sx={{
                                     bgcolor: requiredPlanMetadata.color,
-                                    color: 'white',
+                                    color: 'primary.contrastText',
                                     fontWeight: 'bold',
                                     fontSize: '0.75rem',
                                     px: 1
@@ -195,7 +195,7 @@ export function SubscriptionGuard({
                         <CardContent sx={{ p: 4, pt: 5 }}>
                             <Box sx={{ textAlign: 'center', mb: 3 }}>
                                 <Typography variant="h2" sx={{ mb: 1 }}>
-                                    {requiredPlanMetadata.icon}
+                                    <PlanIcon plan={requiredPlan!} />
                                 </Typography>
                                 <Typography variant="h5" sx={{ fontWeight: 'bold', color: requiredPlanMetadata.color }}>
                   Plano Necessário
@@ -247,12 +247,7 @@ export function SubscriptionGuard({
                                     sx={{
                                         py: 1.5,
                                         fontSize: '1.1rem',
-                                        fontWeight: 'bold',
-                                        bgcolor: requiredPlanMetadata.color,
-                                        '&:hover': {
-                                            bgcolor: requiredPlanMetadata.color,
-                                            filter: 'brightness(0.9)'
-                                        }
+                                        fontWeight: 'bold'
                                     }}
                                 >
                   Fazer Upgrade para {requiredPlanMetadata.name}

@@ -1,15 +1,15 @@
 'use client';
 
 import { useCampaignCurrentCharsheetContext } from '@contexts';
-import { Add, Remove, Tune } from '@mui/icons-material';
+import { color as tokenColor } from '@themes/tokens'
+import { Add, Remove } from '@mui/icons-material';
 import {
     alpha,
     Box,
     Chip,
-    Divider,
+    getContrastRatio,
     IconButton,
     LinearProgress,
-    Paper,
     TextField,
     Tooltip,
     Typography
@@ -17,6 +17,13 @@ import {
 import { useEffect, useState, type ReactElement } from 'react';
 import type { CustomResource, RPGSystem } from '@models/entities';
 import { getActiveResolvedThreshold, resolveThresholds } from '@utils/resourceThresholds';
+
+/** Texto legível sobre uma cor de faixa escolhida pelo mestre: o que contrasta mais, tinta clara ou escura */
+function textOn(background: string): string {
+    return getContrastRatio(background, tokenColor.ink) >= getContrastRatio(background, tokenColor.canvas)
+        ? tokenColor.ink
+        : tokenColor.canvas;
+}
 
 export default function CampaignCustomResources(): ReactElement | null {
     const { charsheet, updateCharsheet } = useCampaignCurrentCharsheetContext();
@@ -58,21 +65,7 @@ export default function CampaignCustomResources(): ReactElement | null {
     const resources: Record<string, number> = charsheet.customResources ?? {};
 
     return (
-        <Paper
-            elevation={2}
-            sx={{
-                p: 3,
-                borderRadius: 2,
-                transition: 'all 0.3s ease',
-                '&:hover': { boxShadow: 4 }
-            }}
-        >
-            <Box display="flex" alignItems="center" gap={1} mb={2}>
-                <Tune sx={{ color: 'warning.main' }} />
-                <Typography variant="h6" fontFamily="Sakana">Recursos</Typography>
-            </Box>
-            <Divider sx={{ mb: 2 }} />
-
+        <Box>
             <Box display="flex" flexDirection="column" gap={2.5}>
                 {resourceDefs.map(def => {
                     const personalMax = personalMaxOf(def);
@@ -81,7 +74,7 @@ export default function CampaignCustomResources(): ReactElement | null {
                     const pct = range > 0 ? ((value - def.min) / range) * 100 : 0;
                     const resolvedThresholds = resolveThresholds(def, personalMax);
                     const activeThreshold = getActiveResolvedThreshold(def, value, personalMax);
-                    const barColor = activeThreshold?.color ?? def.color ?? '#1976d2';
+                    const barColor = activeThreshold?.color ?? def.color ?? tokenColor.amber;
 
                     return (
                         <Box key={def.key}>
@@ -104,7 +97,7 @@ export default function CampaignCustomResources(): ReactElement | null {
                                             size="small"
                                             variant="outlined"
                                             sx={{
-                                                fontSize: '0.65rem',
+                                                fontSize: '0.75rem',
                                                 height: 20,
                                                 borderColor: barColor,
                                                 color: barColor
@@ -117,9 +110,9 @@ export default function CampaignCustomResources(): ReactElement | null {
                                             size="small"
                                             sx={{
                                                 bgcolor: activeThreshold.color,
-                                                color: 'white',
+                                                color: textOn(activeThreshold.color),
                                                 fontWeight: 'bold',
-                                                fontSize: '0.65rem',
+                                                fontSize: '0.75rem',
                                                 height: 20
                                             }}
                                         />
@@ -214,7 +207,7 @@ export default function CampaignCustomResources(): ReactElement | null {
                                                     transform: 'translateX(-50%)',
                                                     color: t.color,
                                                     fontWeight: activeThreshold?.value === t.value ? 'bold' : 'normal',
-                                                    fontSize: '0.6rem',
+                                                    fontSize: '0.75rem',
                                                     lineHeight: 1,
                                                     whiteSpace: 'nowrap',
                                                     userSelect: 'none'
@@ -230,6 +223,6 @@ export default function CampaignCustomResources(): ReactElement | null {
                     );
                 })}
             </Box>
-        </Paper>
+        </Box>
     );
 }

@@ -13,8 +13,8 @@ import {
     Typography
 } from '@mui/material';
 import FlagIcon from '@mui/icons-material/Flag';
-import { orange } from '@mui/material/colors';
 import { useSnackbar } from 'notistack';
+import { errorMessage } from '@utils/errors';
 
 interface FinishCampaignDialogProps {
     open: boolean;
@@ -44,12 +44,12 @@ export default function FinishCampaignDialog({
                 throw new Error(data.error || 'Erro ao finalizar campanha');
             }
 
-            enqueueSnackbar('Campanha finalizada! 🏆', { variant: 'success' });
+            enqueueSnackbar('Campanha finalizada!', { variant: 'success' });
             onClose();
             onFinished?.();
-        } catch (error: any) {
+        } catch (error) {
             console.error('Erro ao finalizar campanha:', error);
-            enqueueSnackbar(error.message || 'Erro ao finalizar campanha', { variant: 'error' });
+            enqueueSnackbar(errorMessage(error, 'Erro ao finalizar campanha'), { variant: 'error' });
         } finally {
             setIsFinishing(false);
         }
@@ -58,7 +58,7 @@ export default function FinishCampaignDialog({
     return (
         <Dialog open={open} onClose={isFinishing ? undefined : onClose} maxWidth="sm" fullWidth>
             <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <FlagIcon sx={{ color: orange[500] }} />
+                <FlagIcon sx={{ color: 'text.secondary' }} />
                 Finalizar Campanha
             </DialogTitle>
             <DialogContent>

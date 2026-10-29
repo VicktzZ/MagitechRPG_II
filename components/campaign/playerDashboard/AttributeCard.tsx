@@ -14,8 +14,9 @@ export function AttributeCard({
 }) {
     return (
         <Paper sx={{
-            bgcolor: 'rgba(30, 41, 59, 0.4)',
-            border: '1px solid rgba(71, 85, 105, 0.5)',
+            bgcolor: 'background.raised',
+            border: '1px solid',
+            borderColor: 'divider',
             borderRadius: 2,
             p: 1.5,
             position: 'relative',
@@ -35,11 +36,11 @@ export function AttributeCard({
                     {icon}
                 </Box>
                 <Typography variant="caption" sx={{
-                    color: '#fbbf24',
+                    color: 'primary.main',
                     fontWeight: 700,
                     textTransform: 'uppercase',
                     letterSpacing: '0.05em',
-                    fontSize: '11px'
+                    fontSize: '12px'
                 }}>
                     {label}
                 </Typography>
@@ -53,12 +54,12 @@ export function AttributeCard({
                         sx={{
                             height: '4px',
                             '& .MuiLinearProgress-bar': {
-                                bgcolor: '#64748b'
+                                bgcolor: 'text.secondary'
                             }
                         }}
                     />
                 </Box>
-                <Typography sx={{ fontSize: '24px', fontWeight: 700, color: 'white' }}>
+                <Typography sx={{ fontSize: '24px', fontWeight: 700, color: 'text.primary' }}>
                     {value}
                 </Typography>
             </Box>

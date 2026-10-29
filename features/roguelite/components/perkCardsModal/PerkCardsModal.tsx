@@ -1,5 +1,5 @@
 import { Box, Button, Grid, Stack, Typography, keyframes, useMediaQuery, useTheme } from '@mui/material'
-import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
+import StarIcon from '@mui/icons-material/Star'
 import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment'
 import WhatshotIcon from '@mui/icons-material/Whatshot'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
@@ -8,6 +8,7 @@ import { iconForRarity } from '@features/roguelite/utils'
 import type { RarityType } from '@models/types/string'
 import { PerkCard, SpellCard } from '../perkCardModule'
 import { PerkTypeEnum } from '@enums/rogueliteEnum'
+import { color } from '@themes/tokens'
 import { usePerkCards } from './hooks/usePerkCards'
 import { FilterControls } from './components/FilterControls'
 import { VisibilityToggle } from './components/VisibilityToggle'
@@ -60,14 +61,14 @@ interface PerkCardsModalProps {
 
 function getIcon(rarity: string) {
     switch (iconForRarity(rarity as RarityType)) {
-    case 'AutoAwesome':
-        return <AutoAwesomeIcon />
+    case 'Star':
+        return <StarIcon />
     case 'LocalFireDepartment':
         return <LocalFireDepartmentIcon />
     case 'Whatshot':
         return <WhatshotIcon />
     default:
-        return <AutoAwesomeIcon />
+        return <StarIcon />
     }
 }
 
@@ -342,8 +343,7 @@ export function PerkCardsModal({
                         p: '0 !important',
                         width: '100vw',
                         height: '100dvh',
-                        bgcolor: 'rgba(0, 0, 0, 0.75)',
-                        backdropFilter: 'blur(8px)',
+                        bgcolor: 'background.default',
                         zIndex: 9998,
                         display: 'flex',
                         flexDirection: 'column',
@@ -364,7 +364,7 @@ export function PerkCardsModal({
                         <Typography 
                             variant={isMobile ? 'h6' : 'h5'} 
                             fontWeight={700} 
-                            color="white"
+                            color="text.primary"
                             sx={{ fontSize: { xs: '1rem', sm: '1.25rem', md: '1.5rem' } }}
                         >
                             Escolha sua vantagem
@@ -445,6 +445,7 @@ export function PerkCardsModal({
                                                         level={cardProps.level}
                                                         stages={cardProps.stages}
                                                         mpCost={cardProps.mpCost}
+                                                        mpCostIncrease={cardProps.mpCostIncrease}
                                                         isSelected={isSelected}
                                                         onClick={() => !isConfirming && selectPerk(idx)}
                                                     />
@@ -493,17 +494,16 @@ export function PerkCardsModal({
                                         fontSize: { xs: '0.85rem', sm: '1rem' },
                                         fontWeight: 600,
                                         borderRadius: 2,
-                                        color: 'rgba(255, 255, 255, 0.7)',
-                                        borderColor: 'rgba(255, 255, 255, 0.3)',
-                                        background: 'rgba(255, 255, 255, 0.05)',
-                                        backdropFilter: 'blur(8px)',
+                                        color: 'text.secondary',
+                                        borderColor: color.borderControl,
+                                        bgcolor: 'background.paper',
                                         textTransform: 'none',
                                         flex: { xs: 1, sm: 'none' },
                                         minWidth: { xs: 0, sm: 'auto' },
                                         '&:hover': {
-                                            borderColor: 'rgba(255, 100, 100, 0.6)',
-                                            background: 'rgba(255, 100, 100, 0.1)',
-                                            color: 'rgba(255, 150, 150, 1)'
+                                            borderColor: 'error.main',
+                                            bgcolor: 'background.paper',
+                                            color: 'error.main'
                                         }
                                     }}
                                 >
@@ -513,7 +513,7 @@ export function PerkCardsModal({
                                 {/* Botão de Confirmar (só aparece se tiver seleção) */}
                                 {selectedPerkIndex !== null && (
                                     <Button
-                                        variant="outlined"
+                                        variant="contained"
                                         size={isMobile ? 'medium' : 'large'}
                                         startIcon={!isMobile && <CheckCircleIcon />}
                                         onClick={handleConfirm}
@@ -523,17 +523,9 @@ export function PerkCardsModal({
                                             fontSize: { xs: '0.85rem', sm: '1rem' },
                                             fontWeight: 600,
                                             borderRadius: 2,
-                                            color: 'white',
-                                            borderColor: 'rgba(255, 255, 255, 0.5)',
-                                            background: 'rgba(255, 255, 255, 0.1)',
-                                            backdropFilter: 'blur(8px)',
                                             textTransform: 'none',
                                             flex: { xs: 1, sm: 'none' },
-                                            minWidth: { xs: 0, sm: 'auto' },
-                                            '&:hover': {
-                                                borderColor: 'rgba(255, 255, 255, 0.8)',
-                                                background: 'rgba(255, 255, 255, 0.15)'
-                                            }
+                                            minWidth: { xs: 0, sm: 'auto' }
                                         }}
                                     >
                                         {isMobile ? <CheckCircleIcon /> : 'Confirmar'}

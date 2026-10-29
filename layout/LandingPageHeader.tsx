@@ -34,15 +34,15 @@ import { getProviders, signIn, signOut, useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, type ReactElement } from 'react';
 
-import magitechIcon from '@public/assets/magitech_logo.png';
+import magitechIcon from '@public/icons/magitech_logo.svg';
+import LogoMark from '@components/misc/LogoMark';
 import discordIcon from '@public/icons/discord_icon.svg';
 import googleIcon from '@public/icons/google_icon.svg';
 import Image from 'next/image';
 import { PlanBadge } from '@components/subscription';
-import { useFirestoreRealtime } from '@hooks/useFirestoreRealtime';
+import { useCurrentUserDoc } from '@hooks/useCurrentUserDoc';
+import { color } from '@themes/tokens';
 import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
-import type { User } from '@models/entities';
-import { useMemo } from 'react';
 
 export default function LandingPageHeader(): ReactElement {
     const theme = useTheme();
@@ -56,11 +56,8 @@ export default function LandingPageHeader(): ReactElement {
     const [ scrolled, setScrolled ] = useState<boolean>(false);
     
     // Buscar todos os usuários e encontrar o atual
-    const { data: allUsers } = useFirestoreRealtime('user');
-    const currentUser = useMemo(() => {
-        if (!session?.user?.id || !allUsers) return null;
-        return allUsers.find((u: User) => u.id === session.user.id)! || null;
-    }, [ session?.user?.id, allUsers ]);
+    // Só o próprio documento (antes a landing page baixava todos os usuários, com e-mails)
+    const { user: currentUser } = useCurrentUserDoc();
 
     const handleClose = (): void => { setOpen(false) };
     const handleMobileMenuToggle = () => setMobileOpen(!mobileOpen);
@@ -130,8 +127,7 @@ export default function LandingPageHeader(): ReactElement {
                 sx: {
                     width: 280,
                     backgroundColor: 'background.paper',
-                    backgroundImage: 'linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.9))',
-                    color: 'white'
+                    color: 'text.primary'
                 }
             }}
         >
@@ -141,7 +137,7 @@ export default function LandingPageHeader(): ReactElement {
                 </IconButton>
             </Box>
             
-            <Divider sx={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }} />
+            <Divider />
             
             <List>
                 {navItems.map((item) => (
@@ -159,7 +155,7 @@ export default function LandingPageHeader(): ReactElement {
                     </ListItem>
                 ))}
                 
-                <Divider sx={{ my: 2, backgroundColor: 'rgba(255, 255, 255, 0.2)' }} />
+                <Divider sx={{ my: 2 }} />
                 
                 {!session ? (
                     <>
@@ -201,14 +197,14 @@ export default function LandingPageHeader(): ReactElement {
                                         </Typography>
                                     </Box>
                                 </Box>
-                                {currentUser && currentUser.subscription && (
+                                {currentUser?.subscription && (
                                     <Box sx={{ display: 'flex', justifyContent: 'center', mt: 0.5 }}>
                                         <PlanBadge user={currentUser} size="small" showIcon />
                                     </Box>
                                 )}
                             </Box>
                         </ListItem>
-                        <Divider sx={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }} />
+                        <Divider />
                         <ListItem 
                             button 
                             onClick={() => {
@@ -244,32 +240,23 @@ export default function LandingPageHeader(): ReactElement {
             elevation={0}
             sx={{
                 transition: 'all 0.3s ease',
-                background: scrolled ? 'rgba(0, 0, 0, 0.85)' : 'rgba(0, 0, 0, 0.5)',
-                backdropFilter: 'blur(10px)',
-                boxShadow: scrolled ? '0 4px 20px rgba(0, 0, 0, 0.4)' : 'none',
-                borderBottom: scrolled ? '1px solid rgba(255, 255, 255, 0.15)' : 'none'
+                bgcolor: 'background.paper',
+                borderBottom: scrolled ? '1px solid' : 'none',
+                borderColor: 'divider'
             }}
         >
             <Container maxWidth="xl">
                 <Toolbar sx={{ py: 1, px: { xs: 1, md: 2 } }}>
                     {/* Logo */}
                     <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
-                        <Image 
-                            src={magitechIcon} 
-                            alt="MagitechRPG" 
-                            width={40} 
-                            height={40} 
-                            style={{ marginRight: '0.5rem' }} 
-                        />
+                        <Box sx={{ mr: 1, color: 'text.primary', display: 'flex' }}><LogoMark size={40} title="MagitechRPG" /></Box>
                         <Typography 
                             variant="h6" 
                             component="div" 
                             sx={{ 
                                 fontWeight: 700, 
                                 display: { xs: 'none', sm: 'block' },
-                                background: 'linear-gradient(90deg, #64B5F6 0%, #9575CD 100%)',
-                                WebkitBackgroundClip: 'text',
-                                WebkitTextFillColor: 'transparent'
+                                color: 'text.primary'
                             }}
                         >
                             MagitechRPG
@@ -288,8 +275,7 @@ export default function LandingPageHeader(): ReactElement {
                                     sx={{ 
                                         opacity: 0.9,
                                         '&:hover': { opacity: 1 },
-                                        textShadow: '0 0 10px rgba(255, 255, 255, 0.5)',
-                                        backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                                        backgroundColor: 'background.raised',
                                         borderRadius: '8px',
                                         px: 2
                                     }}
@@ -298,7 +284,7 @@ export default function LandingPageHeader(): ReactElement {
                                 </Button>
                             ))}
                             
-                            <Box sx={{ ml: 2, height: '24px', width: '1px', backgroundColor: 'rgba(255, 255, 255, 0.3)' }} />
+                            <Box sx={{ ml: 2, height: '24px', width: '1px', backgroundColor: 'divider' }} />
                             
                             {!session && providers ? (
                                 <Box sx={{ display: 'flex', gap: 1 }}>
@@ -316,12 +302,13 @@ export default function LandingPageHeader(): ReactElement {
                                             }
                                             sx={{ 
                                                 borderRadius: '8px',
-                                                borderColor: 'rgba(255, 255, 255, 0.3)',
+                                                color: 'text.primary',
+                                                borderColor: color.borderControl,
                                                 px: 2,
                                                 transition: 'all 0.2s',
                                                 '&:hover': {
-                                                    borderColor: 'rgba(255, 255, 255, 0.8)',
-                                                    background: 'rgba(255, 255, 255, 0.1)'
+                                                    borderColor: 'text.secondary',
+                                                    backgroundColor: 'action.hover'
                                                 }
                                             }}
                                         >
@@ -331,7 +318,7 @@ export default function LandingPageHeader(): ReactElement {
                                 </Box>
                             ) : session ? (
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                    {currentUser && currentUser.subscription && (
+                                    {currentUser?.subscription && (
                                         <PlanBadge user={currentUser} size="small" showIcon variant="outlined" />
                                     )}
                                     
@@ -355,10 +342,11 @@ export default function LandingPageHeader(): ReactElement {
                                             }}
                                             sx={{ 
                                                 p: 0.5, 
-                                                border: '2px solid rgba(255, 255, 255, 0.2)',
+                                                border: '2px solid',
+                                                borderColor: 'divider',
                                                 transition: 'all 0.2s',
                                                 '&:hover': {
-                                                    border: '2px solid rgba(255, 255, 255, 0.5)'
+                                                    borderColor: 'text.disabled'
                                                 }
                                             }}
                                         >
@@ -385,7 +373,7 @@ export default function LandingPageHeader(): ReactElement {
                                                 {session.user?.email}
                                             </Typography>
                                         </Box>
-                                        {currentUser && currentUser.subscription && (
+                                        {currentUser?.subscription && (
                                             <Box sx={{ px: 2, py: 1, display: 'flex', justifyContent: 'center' }}>
                                                 <PlanBadge user={currentUser} size="small" showIcon />
                                             </Box>
@@ -417,9 +405,9 @@ export default function LandingPageHeader(): ReactElement {
                             onClick={handleMobileMenuToggle}
                             sx={{ 
                                 ml: 1,
-                                backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                                backgroundColor: 'background.raised',
                                 '&:hover': {
-                                    backgroundColor: 'rgba(255, 255, 255, 0.25)'
+                                    backgroundColor: 'background.overlay'
                                 }
                             }}
                         >

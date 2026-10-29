@@ -1,16 +1,22 @@
 import { PusherEvent } from '@enums';
 import { CreateCustomItemDTO } from '@models/dtos';
 import { campaignRepository } from '@repositories';
-import { findCampaignByCodeOrId } from '@utils/helpers/findCampaignByCodeOrId';
-import { pusherServer } from '@utils/pusher';
+import { triggerPusher } from '@utils/pusher';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { v4 as uuidv4 } from 'uuid';
+import { assertMaxLength, badRequest, handleRouteError, readJsonBody, requireCampaignGM, requireUser, TEXT_LIMITS } from '@utils/api';
+
+const ITEM_TYPES = [ 'weapon', 'armor', 'item' ] as const;
 
 export async function POST(req: Request, { params }: { params: { id: string } }): Promise<Response> {
     try {
         const { id } = params;
-        const body: CreateCustomItemDTO = await req.json();
+        const user = await requireUser();
+        // Itens customizados da campanha são criados pelo mestre
+        const { campaign } = await requireCampaignGM(id, user);
+
+        const body: CreateCustomItemDTO = await readJsonBody(req);
 
         const dto = plainToInstance(CreateCustomItemDTO, body);
         const errors = await validate(dto);
@@ -20,18 +26,17 @@ export async function POST(req: Request, { params }: { params: { id: string } })
         }
 
         const { type, item } = body;
-
-        const campaign = await findCampaignByCodeOrId(id);
-        if (!campaign) {
-            return Response.json({ message: 'Campanha não encontrada' }, { status: 404 });
+        if (!ITEM_TYPES.includes(type)) {
+            throw badRequest('"type" deve ser weapon, armor ou item');
         }
+        assertMaxLength((item as any)?.name, TEXT_LIMITS.name, 'item.name');
 
         const newItem = {
             ...item,
             id: uuidv4()
         };
 
-        await pusherServer.trigger(
+        await triggerPusher(
             `presence-${campaign.campaignCode}`,
             PusherEvent.ITEM_ADDED,
             { type, item: newItem }
@@ -49,11 +54,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
         });
 
         return Response.json(newItem);
-    } catch (error: any) {
-        console.error('Erro ao adicionar item customizado:', error);
-        return Response.json({ 
-            message: 'Erro ao adicionar item customizado', 
-            error: error.message 
-        }, { status: 500 });
+    } catch (error) {
+        return handleRouteError(error, 'Erro ao adicionar item customizado');
     }
 }

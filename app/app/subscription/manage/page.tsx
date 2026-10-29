@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { PlanIcon } from '@components/subscription/PlanIcon';
 import {
     Container,
     Box,
@@ -21,7 +22,7 @@ import {
     DialogActions
 } from '@mui/material';
 import {
-    Stars as StarsIcon,
+    WorkspacePremium as WorkspacePremiumIcon,
     CalendarToday as CalendarIcon,
     CreditCard as CreditCardIcon,
     Storage as StorageIcon,
@@ -131,7 +132,7 @@ export default function ManageSubscriptionPage() {
                     <Paper sx={{ p: 4, mb: 3 }}>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3 }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                <Typography variant="h2">{planMetadata.icon}</Typography>
+                                <Typography variant="h2" component="span" sx={{ display: 'flex' }}><PlanIcon plan={currentPlan} /></Typography>
                                 <Box>
                                     <Typography variant="h5" sx={{ fontWeight: 'bold', color: planMetadata.color }}>
                                         {planMetadata.displayName}
@@ -247,7 +248,7 @@ export default function ManageSubscriptionPage() {
                             {planMetadata.features.map((feature, index) => (
                                 <Grid item xs={12} key={index}>
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                        <StarsIcon sx={{ color: 'success.main', fontSize: '1.25rem' }} />
+                                        <WorkspacePremiumIcon sx={{ color: 'success.main', fontSize: '1.25rem' }} />
                                         <Typography variant="body2">{feature}</Typography>
                                     </Box>
                                 </Grid>

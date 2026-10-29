@@ -1,5 +1,5 @@
 import { charsheetRepository } from '@repositories'
-import { findCampaignByCodeOrId } from '@utils/helpers/findCampaignByCodeOrId'
+import { assertId, campaignHasCharsheet, forbidden, handleRouteError, readJsonBody, requireCampaignMember, requireUser } from '@utils/api'
 import { recordCampaignStats, type StatsEntry } from '@utils/campaignStatsHelper'
 
 interface DonateRequestBody {
@@ -19,7 +19,10 @@ export async function POST(
         console.log('[API Donate] Iniciando requisição de doação')
         
         const { id: campaignId } = params
-        const body: DonateRequestBody = await request.json()
+        const user = await requireUser()
+        const { campaign: donateCampaign, isGM } = await requireCampaignMember(campaignId, user)
+
+        const body: DonateRequestBody = await readJsonBody(request)
         const { donorCharsheetId, targetCharsheetId, targetUserId, itemType, item, donorName } = body
         
         console.log('[API Donate] Dados recebidos:', {
@@ -39,8 +42,30 @@ export async function POST(
                 { status: 400 }
             )
         }
+        if (![ 'weapon', 'armor', 'item' ].includes(itemType)) {
+            return Response.json({ success: false, message: 'Tipo de item inválido' }, { status: 400 })
+        }
 
-        const donateCampaign = await findCampaignByCodeOrId(campaignId)
+        // Destino precisa jogar nesta campanha
+        assertId(targetCharsheetId, 'targetCharsheetId')
+        if (!campaignHasCharsheet(donateCampaign, targetCharsheetId)) {
+            throw forbidden('O personagem de destino não faz parte desta campanha')
+        }
+
+        // Doação de jogador: a ficha doadora precisa ser dele e estar na campanha.
+        // Sem doador, é uma doação do mestre — só o mestre pode.
+        if (donorCharsheetId) {
+            assertId(donorCharsheetId, 'donorCharsheetId')
+            const isOwnDonorSheet = donateCampaign.players?.some(
+                p => p.charsheetId === donorCharsheetId && p.userId === user.id
+            )
+            if (!isOwnDonorSheet && !isGM) {
+                throw forbidden('Você só pode doar itens do seu próprio personagem')
+            }
+        } else if (!isGM) {
+            throw forbidden('Apenas o mestre pode dar itens sem um personagem doador')
+        }
+
         if (donateCampaign?.status === 'finished') {
             return Response.json(
                 { success: false, message: 'Campanha finalizada — doações bloqueadas' },
@@ -65,13 +90,19 @@ export async function POST(
             armorsCount: targetCharsheet.inventory?.armors?.length || 0
         })
 
-        // Verifica limites de peso do destinatário
+        // Verifica limites de peso do destinatário.
+        // O peso considera a quantidade (o doador perde peso × quantidade) e itens
+        // de "Capacidade" aumentam o peso máximo em vez de ocupar carga
+        const isCapacityItem = itemType === 'item' && item.kind === 'Capacidade'
         const currentCargo = targetCharsheet?.capacity?.cargo || 0
         const maxCargo = targetCharsheet?.capacity?.max || 0
-        const itemWeight = item.weight || 0
-        const newCargo = parseFloat((currentCargo + itemWeight).toFixed(1))
+        const itemWeight = (Number(item.weight) || 0) * (Number(item.quantity) || 1)
+        const newCargo = isCapacityItem ? currentCargo : parseFloat((currentCargo + itemWeight).toFixed(1))
+        const newMaxCargo = isCapacityItem
+            ? parseFloat((maxCargo + Math.abs(Number(item.weight) || 0)).toFixed(1))
+            : maxCargo
         
-        if (maxCargo > 0 && newCargo > maxCargo) {
+        if (!isCapacityItem && maxCargo > 0 && newCargo > maxCargo) {
             return Response.json(
                 { success: false, message: `${targetCharsheet.name || 'O jogador'} não possui capacidade de peso suficiente. (${currentCargo.toFixed(1)}+${itemWeight}>${maxCargo}kg)` },
                 { status: 400 }
@@ -181,7 +212,8 @@ export async function POST(
                 },
                 capacity: {
                     ...targetCharsheet.capacity,
-                    cargo: newCargo
+                    cargo: newCargo,
+                    max: newMaxCargo
                 },
                 notifications: [ ...currentNotifications, notification ]
             })
@@ -219,10 +251,6 @@ export async function POST(
         })
 
     } catch (error) {
-        console.error('[Donate API] Erro:', error)
-        return Response.json(
-            { success: false, message: 'Erro ao processar doação' },
-            { status: 500 }
-        )
+        return handleRouteError(error, 'Erro ao processar doação')
     }
 }

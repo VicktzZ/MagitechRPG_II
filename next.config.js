@@ -6,6 +6,7 @@ const withPWA = require('next-pwa')({
 
 const nextConfig = {
     reactStrictMode: false,
+    poweredByHeader: false,
     productionBrowserSourceMaps: true,
     typescript: {
         ignoreBuildErrors: true
@@ -32,32 +33,27 @@ const nextConfig = {
             }
         ]
     },
+    // CORS da API é tratado no middleware.ts (lista de origens permitidas).
+    // Aqui ficam os cabeçalhos de segurança aplicados a todas as respostas.
     async headers() {
+        const securityHeaders = [
+            { key: 'X-Content-Type-Options', value: 'nosniff' },
+            { key: 'X-Frame-Options', value: 'DENY' },
+            { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+            { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), browsing-topics=()' },
+            // Diretivas que não afetam scripts/estilos (MUI, Firebase, Pusher seguem funcionando):
+            // impede o site de ser embutido em iframes (clickjacking), <base> e plugins
+            { key: 'Content-Security-Policy', value: "frame-ancestors 'none'; base-uri 'self'; object-src 'none'" }
+        ]
+
+        if (process.env.NODE_ENV === 'production') {
+            securityHeaders.push({ key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains' })
+        }
+
         return [
             {
-                source: '/api/:path*',
-                headers: [
-                    {
-                        key: 'Access-Control-Allow-Origin',
-                        value: '*'
-                    },
-                    {
-                        key: 'Access-Control-Allow-Methods',
-                        value: 'GET, POST, PUT, DELETE, OPTIONS'
-                    },
-                    {
-                        key: 'Access-Control-Allow-Headers',
-                        value: 'Content-Type, Authorization, X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Date, X-Api-Version'
-                    },
-                    {
-                        key: 'Access-Control-Allow-Credentials',
-                        value: 'true'
-                    },
-                    {
-                        key: 'Access-Control-Max-Age',
-                        value: '86400'
-                    }
-                ]
+                source: '/:path*',
+                headers: securityHeaders
             }
         ]
     },

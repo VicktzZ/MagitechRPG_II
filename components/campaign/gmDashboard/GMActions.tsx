@@ -17,11 +17,12 @@ import BoltIcon from '@mui/icons-material/Bolt';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import PetsIcon from '@mui/icons-material/Pets';
 import SportsKabaddiIcon from '@mui/icons-material/SportsKabaddi';
-import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import FlagIcon from '@mui/icons-material/Flag';
 import ReplayIcon from '@mui/icons-material/Replay';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import WidgetsIcon from '@mui/icons-material/Widgets';
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 
 import {
     Box,
@@ -29,12 +30,14 @@ import {
     Chip,
     Divider,
     ListItemIcon,
+    ListSubheader,
     Menu,
     MenuItem,
     ListItemText as MenuItemText,
-    Typography
+    Stack,
+    Tooltip,
+    alpha
 } from '@mui/material';
-import { green, orange, red, blue } from '@mui/material/colors';
 import { campaignService } from '@services';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSnackbar } from 'notistack';
@@ -57,6 +60,11 @@ import {
 import CreatureCreator from './CreatureCreator';
 import CampaignStatsModal from '../CampaignStatsModal';
 import WidgetManagerDialog from '../widget/WidgetManagerDialog';
+import { errorMessage } from '@utils/errors';
+import { campaignRevealsSpellStages } from '@utils/spellReveal';
+
+/** Botões da barra de ações: altura mínima de 40px (alvo de toque confortável) */
+const barButtonSx = { minHeight: 40 } as const;
 
 export default function GMActions(): ReactElement {
     const { campaign, isUserGM, users, charsheets } = useCampaignContext();
@@ -83,6 +91,7 @@ export default function GMActions(): ReactElement {
     const [ statsModalOpen, setStatsModalOpen ] = useState(false);
     const [ widgetManagerOpen, setWidgetManagerOpen ] = useState(false);
     const [ isReopening, setIsReopening ] = useState(false);
+    const [ isTogglingReveal, setIsTogglingReveal ] = useState(false);
 
     const isFinished = campaign.status === 'finished';
 
@@ -97,12 +106,12 @@ export default function GMActions(): ReactElement {
         return users.players?.map(player => {
             // campaign.players usa `userId`, não `odacId`
             const playerInCampaign = campaign?.players?.find(p =>
-                (p as any).odacId === player.id || p.userId === player.id
+                (p as { odacId?: string }).odacId === player.id || p.userId === player.id
             );
-            const charsheet = realtimeCharsheets?.find((c: any) => c.id === playerInCampaign?.charsheetId);
+            const charsheet = realtimeCharsheets?.find(c => c.id === playerInCampaign?.charsheetId);
             // Vantagens adquiridas nesta campanha (sessão correspondente ao campaignCode)
             const campaignPerks = charsheet?.session?.find(
-                (s: any) => s.campaignCode === campaign.campaignCode
+                s => s.campaignCode === campaign.campaignCode
             )?.perks ?? [];
 
             return {
@@ -178,6 +187,11 @@ export default function GMActions(): ReactElement {
         handleCloseMenu();
     };
 
+    const openWidgetManager = () => {
+        setWidgetManagerOpen(true);
+        handleCloseMenu();
+    };
+
     const openEffectsCatalog = () => {
         setEffectsCatalogOpen(true);
         handleCloseMenu();
@@ -204,19 +218,37 @@ export default function GMActions(): ReactElement {
             }
             enqueueSnackbar('Campanha reaberta!', { variant: 'success' });
             await queryClient.invalidateQueries({ queryKey: [ 'campaignData', campaign.campaignCode ] });
-        } catch (error: any) {
+        } catch (error) {
             console.error('Erro ao reabrir campanha:', error);
-            enqueueSnackbar(error.message || 'Erro ao reabrir campanha', { variant: 'error' });
+            enqueueSnackbar(errorMessage(error, 'Erro ao reabrir campanha'), { variant: 'error' });
         } finally {
             setIsReopening(false);
         }
     };
 
+    // Revelar os estágios de todas as magias aos jogadores (só visualização; ver utils/spellReveal.ts). Grava só este campo da campanha
+    const revealStages = campaignRevealsSpellStages(campaign) || campaign.revealSpellStages === true;
+    const handleToggleRevealStages = async () => {
+        setIsTogglingReveal(true);
+        try {
+            await campaignService.updateFields(campaign.id, { revealSpellStages: !revealStages });
+            await queryClient.invalidateQueries({ queryKey: [ 'campaignData', campaign.campaignCode ] });
+            enqueueSnackbar(revealStages ? 'Os estágios das magias voltaram a seguir o desbloqueio de cada jogador.' : 'Os jogadores agora veem todos os estágios das magias.', { variant: 'success' });
+        } catch (error) {
+            console.error('Erro ao alterar a revelação dos estágios:', error);
+            enqueueSnackbar(errorMessage(error, 'Não foi possível alterar a revelação dos estágios.'), { variant: 'error' });
+        } finally {
+            setIsTogglingReveal(false);
+        }
+    };
+    // A regra de estágios só existe no Magitech padrão: no Roguelite e em sistema customizado os estágios já ficam todos abertos
+    const showRevealStages = campaign.mode !== 'Roguelite' && !campaign.systemId;
+
     // Custom item handler
     const handleAddCustomItem = async (created: Weapon | Armor | Item) => {
         try {
-            const isWeapon = (it: any): it is Weapon => it && 'hit' in it && 'effect' in it && 'ammo' in it;
-            const isArmor = (it: any): it is Armor => it && 'displacementPenalty' in it && 'value' in it && 'categ' in it;
+            const isWeapon = (it: object): it is Weapon => it && 'hit' in it && 'effect' in it && 'ammo' in it;
+            const isArmor = (it: object): it is Armor => it && 'displacementPenalty' in it && 'value' in it && 'categ' in it;
 
             const type: 'weapon' | 'armor' | 'item' = isWeapon(created) ? 'weapon' : isArmor(created) ? 'armor' : 'item';
 
@@ -235,206 +267,233 @@ export default function GMActions(): ReactElement {
 
     if (!isUserGM) return <></>;
 
-    return (
-        <Box>
-            {/* Botão do Menu */}
-            <Button
-                variant="outlined"
-                onClick={handleOpenMenu}
-                sx={{
-                    borderColor: 'primary.main',
-                    color: 'primary.main',
-                    fontWeight: 600,
-                    '&:hover': {
-                        borderColor: 'primary.dark',
-                        bgcolor: 'primary.main',
-                        color: 'white'
-                    }
-                }}
-            >
-                AÇÕES DO GAME MASTER
-            </Button>
+    const isCombatActive = Boolean(campaign.session?.combat?.isActive);
+    const widgetsCount = campaign.widgets?.length ?? 0;
 
-            {/* Menu de Ações */}
+    return (
+        <Box sx={{ width: '100%' }}>
+            {/* Barra de ações rápidas: o que o mestre usa a toda hora fica a um clique */}
+            <Stack
+                direction="row"
+                flexWrap="wrap"
+                alignItems="center"
+                gap={1}
+                role="group"
+                aria-label="Ações do mestre"
+            >
+                <Button
+                    variant="contained"
+                    startIcon={<SportsKabaddiIcon />}
+                    onClick={openCombat}
+                    sx={barButtonSx}
+                >
+                    {isCombatActive ? `Combate · R${campaign.session?.combat?.round}` : 'Iniciar combate'}
+                </Button>
+
+                <Button
+                    variant="outlined"
+                    color="secondary"
+                    startIcon={<StorefrontIcon />}
+                    onClick={openShop}
+                    sx={barButtonSx}
+                >
+                    Loja
+                    {campaign.shop?.isOpen && (
+                        <Chip
+                            label="Aberta"
+                            size="small"
+                            sx={{
+                                ml: 1,
+                                height: 20,
+                                bgcolor: (theme) => alpha(theme.palette.success.main, 0.14),
+                                color: 'success.main'
+                            }}
+                        />
+                    )}
+                </Button>
+
+                <Button
+                    variant="outlined"
+                    color="secondary"
+                    startIcon={<CardGiftcardIcon />}
+                    onClick={openOfferPerks}
+                    sx={barButtonSx}
+                >
+                    Vantagens
+                </Button>
+
+                <Button
+                    variant="outlined"
+                    color="secondary"
+                    startIcon={<NoteAddIcon />}
+                    onClick={openAddNote}
+                    sx={barButtonSx}
+                >
+                    Nova nota
+                </Button>
+
+                {showRevealStages && (
+                    <Tooltip
+                        title="Mostra aos jogadores o texto e o custo de MP de todos os estágios de todas as magias, mesmo os que eles ainda não desbloquearam, na campanha e na ficha. É só leitura: para conjurar um estágio, o jogador ainda precisa evoluir a magia."
+                        arrow
+                    >
+                        <span>
+                            <Button
+                                variant={revealStages ? 'contained' : 'outlined'}
+                                color={revealStages ? 'primary' : 'secondary'}
+                                startIcon={<VisibilityIcon />}
+                                onClick={() => { void handleToggleRevealStages() }}
+                                disabled={isTogglingReveal || isFinished}
+                                aria-pressed={revealStages}
+                                sx={barButtonSx}
+                            >
+                                {revealStages ? 'Estágios revelados' : 'Revelar estágios'}
+                            </Button>
+                        </span>
+                    </Tooltip>
+                )}
+
+                <Button
+                    id="gm-more-actions-button"
+                    variant="outlined"
+                    color="secondary"
+                    endIcon={<ArrowDropDownIcon />}
+                    onClick={handleOpenMenu}
+                    aria-haspopup="menu"
+                    aria-expanded={menuOpen}
+                    aria-controls={menuOpen ? 'gm-more-actions-menu' : undefined}
+                    sx={barButtonSx}
+                >
+                    Mais ações
+                </Button>
+            </Stack>
+
+            {/* Mais ações: o restante, com "Finalizar campanha" separado do resto */}
             <Menu
+                id="gm-more-actions-menu"
                 anchorEl={anchorEl}
                 open={menuOpen}
                 onClose={handleCloseMenu}
                 anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                 transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                MenuListProps={{ 'aria-labelledby': 'gm-more-actions-button' }}
                 slotProps={{
                     paper: {
-                        sx: { minWidth: 280, mt: 1 }
+                        sx: {
+                            minWidth: 280,
+                            mt: 1,
+                            '& .MuiListItemIcon-root': { color: 'text.secondary' }
+                        }
                     }
                 }}
             >
-                {/* Ações Básicas */}
-                <MenuItem onClick={openAddNote} disabled={!isUserGM}>
-                    <ListItemIcon>
-                        <NoteAddIcon fontSize="small" />
-                    </ListItemIcon>
-                    <MenuItemText>Adicionar nota da campanha</MenuItemText>
-                </MenuItem>
-
-                <MenuItem onClick={openLevelUp} disabled={!isUserGM}>
+                <MenuItem onClick={openLevelUp}>
                     <ListItemIcon>
                         <TrendingUpIcon fontSize="small" />
                     </ListItemIcon>
-                    <MenuItemText>Aumentar Nível de Jogadores</MenuItemText>
+                    <MenuItemText>Aumentar nível de jogadores</MenuItemText>
                 </MenuItem>
 
                 {campaign.mode === 'Roguelite' && (
-                    <MenuItem onClick={openRogueliteLevelUp} disabled={!isUserGM}>
+                    <MenuItem onClick={openRogueliteLevelUp}>
                         <ListItemIcon>
-                            <AutoGraphIcon fontSize="small" sx={{ color: green[500] }} />
+                            <AutoGraphIcon fontSize="small" />
                         </ListItemIcon>
-                        <MenuItemText>
-                            Evolução Roguelite (+5)
-                            <Chip 
-                                label="Roguelite" 
-                                size="small" 
-                                sx={{ ml: 1, height: 18, fontSize: '0.65rem', bgcolor: green[100], color: green[800] }}
-                            />
-                        </MenuItemText>
+                        <MenuItemText>Evolução Roguelite (+5)</MenuItemText>
                     </MenuItem>
                 )}
 
                 <Divider />
 
-                {/* Itens e Criaturas */}
-                <MenuItem onClick={openAddItem} disabled={!isUserGM}>
+                <MenuItem onClick={openAddItem}>
                     <ListItemIcon>
                         <AddCircleOutlineIcon fontSize="small" />
                     </ListItemIcon>
-                    <MenuItemText>Adicionar Item customizado</MenuItemText>
+                    <MenuItemText>Adicionar item customizado</MenuItemText>
                 </MenuItem>
 
-                <MenuItem onClick={openCreatureCreator} disabled={!isUserGM}>
+                <MenuItem onClick={openCreatureCreator}>
                     <ListItemIcon>
-                        <PetsIcon fontSize="small" sx={{ color: orange[600] }} />
+                        <PetsIcon fontSize="small" />
                     </ListItemIcon>
-                    <MenuItemText>Adicionar Criatura</MenuItemText>
+                    <MenuItemText>Adicionar criatura</MenuItemText>
                 </MenuItem>
 
-                <MenuItem onClick={() => { setWidgetManagerOpen(true); handleCloseMenu(); }} disabled={!isUserGM}>
+                <MenuItem onClick={openWidgetManager}>
                     <ListItemIcon>
-                        <WidgetsIcon fontSize="small" sx={{ color: blue[400] }} />
+                        <WidgetsIcon fontSize="small" />
                     </ListItemIcon>
                     <MenuItemText>
-                        {(campaign.widgets?.length ?? 0) > 0 ? 'Administrar Widgets' : 'Criar Widget da Campanha'}
-                        {(campaign.widgets?.length ?? 0) > 0 && (
+                        {widgetsCount > 0 ? 'Administrar widgets' : 'Criar widget da campanha'}
+                        {widgetsCount > 0 && (
                             <Chip
-                                label={campaign.widgets!.length}
+                                label={widgetsCount}
                                 size="small"
-                                sx={{ ml: 1, height: 18, fontSize: '0.65rem' }}
+                                sx={{ ml: 1, height: 18, fontSize: 12 }}
                             />
                         )}
                     </MenuItemText>
                 </MenuItem>
 
-                <Divider />
-
-                {/* Vantagens e Loja */}
-                <MenuItem onClick={openOfferPerks} disabled={!isUserGM}>
+                <MenuItem onClick={openEffectsCatalog}>
                     <ListItemIcon>
-                        <CardGiftcardIcon fontSize="small" />
+                        <BoltIcon fontSize="small" />
                     </ListItemIcon>
-                    <MenuItemText>Oferecer Vantagens</MenuItemText>
-                </MenuItem>
-
-                <MenuItem onClick={openShop} disabled={!isUserGM}>
-                    <ListItemIcon>
-                        <StorefrontIcon fontSize="small" />
-                    </ListItemIcon>
-                    <MenuItemText>
-                        Gerenciar Loja
-                        {campaign.shop?.isOpen && (
-                            <Chip 
-                                label="Aberta" 
-                                size="small" 
-                                sx={{ ml: 1, height: 20, bgcolor: green[100], color: green[800] }}
-                            />
-                        )}
-                    </MenuItemText>
+                    <MenuItemText>Efeitos de combate</MenuItemText>
                 </MenuItem>
 
                 <Divider />
 
-                {/* Combate */}
-                <MenuItem onClick={openCombat} disabled={!isUserGM}>
+                <ListSubheader disableSticky sx={{ bgcolor: 'transparent', lineHeight: '32px', fontSize: 12 }}>
+                    Ações em massa
+                </ListSubheader>
+
+                <MenuItem onClick={() => openMassAction('restoreLP')}>
                     <ListItemIcon>
-                        <SportsKabaddiIcon fontSize="small" sx={{ color: red[500] }} />
-                    </ListItemIcon>
-                    <MenuItemText>
-                        {campaign.session?.combat?.isActive ? 'Gerenciar Combate' : 'Iniciar Combate'}
-                        {campaign.session?.combat?.isActive && (
-                            <Chip 
-                                label={`R${campaign.session.combat.round}`}
-                                size="small" 
-                                sx={{ ml: 1, height: 20, bgcolor: red[100], color: red[800] }}
-                            />
-                        )}
-                    </MenuItemText>
-                </MenuItem>
-
-                <MenuItem onClick={openEffectsCatalog} disabled={!isUserGM}>
-                    <ListItemIcon>
-                        <AutoFixHighIcon fontSize="small" sx={{ color: blue[500] }} />
-                    </ListItemIcon>
-                    <MenuItemText>Efeitos de Combate</MenuItemText>
-                </MenuItem>
-
-                <Divider />
-
-                {/* Ações em Massa */}
-                <Typography variant="caption" sx={{ px: 2, py: 0.5, color: 'text.secondary' }}>
-                    Ações em Massa
-                </Typography>
-
-                <MenuItem onClick={() => openMassAction('restoreLP')} disabled={!isUserGM}>
-                    <ListItemIcon>
-                        <FavoriteIcon fontSize="small" sx={{ color: red[500] }} />
+                        <FavoriteIcon fontSize="small" />
                     </ListItemIcon>
                     <MenuItemText>Restaurar LP</MenuItemText>
                 </MenuItem>
 
-                <MenuItem onClick={() => openMassAction('restoreMP')} disabled={!isUserGM}>
+                <MenuItem onClick={() => openMassAction('restoreMP')}>
                     <ListItemIcon>
-                        <BoltIcon fontSize="small" sx={{ color: blue[500] }} />
+                        <BoltIcon fontSize="small" />
                     </ListItemIcon>
                     <MenuItemText>Restaurar MP</MenuItemText>
                 </MenuItem>
 
-                <MenuItem onClick={() => openMassAction('addMoney')} disabled={!isUserGM}>
+                <MenuItem onClick={() => openMassAction('addMoney')}>
                     <ListItemIcon>
-                        <AttachMoneyIcon fontSize="small" sx={{ color: green[500] }} />
+                        <AttachMoneyIcon fontSize="small" />
                     </ListItemIcon>
-                    <MenuItemText>Adicionar Dinheiro</MenuItemText>
+                    <MenuItemText>Adicionar dinheiro</MenuItemText>
                 </MenuItem>
 
                 <Divider />
 
-                {/* Ciclo de vida da campanha */}
                 <MenuItem onClick={openStatsModal}>
                     <ListItemIcon>
-                        <EmojiEventsIcon fontSize="small" sx={{ color: orange[400] }} />
+                        <EmojiEventsIcon fontSize="small" />
                     </ListItemIcon>
-                    <MenuItemText>Ver Estatísticas da Campanha</MenuItemText>
+                    <MenuItemText>Ver estatísticas da campanha</MenuItemText>
                 </MenuItem>
 
+                <Divider />
+
+                {/* Ciclo de vida da campanha: o item destrutivo fica isolado no fim do menu */}
                 {!isFinished ? (
-                    <MenuItem onClick={openFinishDialog} disabled={!isUserGM}>
+                    <MenuItem onClick={openFinishDialog}>
                         <ListItemIcon>
-                            <FlagIcon fontSize="small" sx={{ color: orange[600] }} />
+                            <FlagIcon fontSize="small" />
                         </ListItemIcon>
-                        <MenuItemText>Finalizar Campanha</MenuItemText>
+                        <MenuItemText sx={{ color: 'error.light' }}>Finalizar campanha</MenuItemText>
                     </MenuItem>
                 ) : (
-                    <MenuItem onClick={handleReopenCampaign} disabled={!isUserGM || isReopening}>
+                    <MenuItem onClick={handleReopenCampaign} disabled={isReopening}>
                         <ListItemIcon>
-                            <ReplayIcon fontSize="small" sx={{ color: green[500] }} />
+                            <ReplayIcon fontSize="small" />
                         </ListItemIcon>
-                        <MenuItemText>Reabrir Campanha</MenuItemText>
+                        <MenuItemText>Reabrir campanha</MenuItemText>
                     </MenuItem>
                 )}
             </Menu>

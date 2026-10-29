@@ -1,60 +1,55 @@
 import { PusherEvent } from '@enums';
 import { JoinCampaignDTO } from '@models/dtos';
 import type { SessionInfo } from '@models/types/misc';
-import { campaignRepository, charsheetRepository } from '@repositories';
-import { pusherServer } from '@utils/pusher';
+import type { Campaign } from '@models/entities';
+import { charsheetRepository } from '@repositories';
+import { triggerPusher } from '@utils/pusher';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
+import { adminUpdateDoc, adminUpdateDocInTransaction } from '@utils/firestore/adminDocs';
+import { connectFields } from '@utils/campaignPresence';
+import { assertId, campaignForRole, findCampaignOrThrow, forbidden, getCampaignRole, handleRouteError, readJsonBody, requireUser } from '@utils/api';
 
 export async function POST(req: Request): Promise<Response> {
     try {
-        const body: JoinCampaignDTO = await req.json();
-        const dto = plainToInstance(JoinCampaignDTO, body);
+        const user = await requireUser();
+        const body: JoinCampaignDTO = await readJsonBody(req);
+
+        // Quem conecta é sempre o usuário logado, e ser mestre é decidido pela
+        // campanha — userId/isGM do body são ignorados
+        const userId = user.id;
+        const dto = plainToInstance(JoinCampaignDTO, { ...body, userId });
         const errors = await validate(dto);
 
         if (errors.length > 0) {
             return Response.json({ message: 'BAD REQUEST', errors }, { status: 400 });
         }
 
-        const { campaignCode, userId, isGM, charsheetId } = body;
+        const { campaignCode, charsheetId } = body;
 
-        let campaign = await campaignRepository.whereEqualTo('campaignCode', campaignCode).findOne();
-        if (!campaign) { 
-            return Response.json({ message: 'Campanha não encontrada' }, { status: 400 });
-        }
+        let campaign = await findCampaignOrThrow(String(campaignCode));
+        const { isGM } = getCampaignRole(campaign, user);
 
-        const updatePayload: Record<string, any> = {};
-
-        if (!campaign.session.users.includes(userId)) {
-            updatePayload['session'] = {
-                ...campaign.session,
-                users: [
-                    ...campaign.session.users,
-                    userId
-                ]
-            };
-        }
+        let charsheetPlayer: { charsheetId: string } | undefined;
 
         if (!isGM) {
+            assertId(charsheetId, 'charsheetId');
             const userCharsheet = await charsheetRepository.whereEqualTo('id', charsheetId).findOne();
             if (!userCharsheet) {
                 return Response.json({ message: 'Charsheet não encontrada' }, { status: 400 });
             }
-
-            const isAlreadyPlayer = campaign.players?.some(player => player.userId === userId);
-
-            if (!isAlreadyPlayer) {
-                updatePayload['players'] = [
-                    ...campaign.players,
-                    { userId, charsheetId }
-                ];
+            if (userCharsheet.userId !== userId) {
+                throw forbidden('Você só pode entrar com uma ficha sua');
             }
 
+            charsheetPlayer = { charsheetId };
+
             // Preserva os perks existentes da sessão atual
-            const existingSession = userCharsheet.session.find(s => s.campaignCode === campaignCode);
-            
+            const sessions = (userCharsheet.session ?? []) as SessionInfo[];
+            const existingSession = sessions.find(s => s.campaignCode === campaign.campaignCode);
+
             const sessionInfo: SessionInfo = {
-                campaignCode,
+                campaignCode: campaign.campaignCode,
                 stats: {
                     maxLp: userCharsheet.stats.maxLp,
                     maxMp: userCharsheet.stats.maxMp,
@@ -66,15 +61,13 @@ export async function POST(req: Request): Promise<Response> {
                 perks: existingSession?.perks || [] // Preserva os perks adquiridos, usa array vazio se não houver
             };
 
-            const userSession = [ ...userCharsheet.session.filter(s => s.campaignCode !== campaignCode), sessionInfo ];
+            const userSession = [ ...sessions.filter(s => s.campaignCode !== campaign.campaignCode), sessionInfo ];
 
-            await charsheetRepository.update({
-                ...userCharsheet,
-                session: userSession
-            });
+            // Só o campo `session` da ficha: regravar a ficha inteira desfazia edições feitas ao mesmo tempo
+            await adminUpdateDoc('charsheets', userCharsheet.id, { session: userSession });
 
-            await pusherServer.trigger(
-                `presence-${campaignCode}`,
+            await triggerPusher(
+                `presence-${campaign.campaignCode}`,
                 PusherEvent.USER_ENTER,
                 {
                     userId,
@@ -84,20 +77,17 @@ export async function POST(req: Request): Promise<Response> {
             );
         }
 
-        if (Object.keys(updatePayload).length > 0) {
-            await campaignRepository.update({
-                ...campaign,
-                ...updatePayload
-            });
-        }
+        // Só `session.users` e `players` mudam, dentro de uma transação: entrar não reescreve a campanha
+        // inteira e dois jogadores entrando juntos não se sobrescrevem
+        await adminUpdateDocInTransaction<null, Campaign>('campaigns', campaign.id, data => ({
+            fields: connectFields(data, userId, charsheetPlayer),
+            result: null
+        }));
 
-        if (isGM) {
-            campaign = await campaignRepository.whereEqualTo('campaignCode', campaignCode).findOne();
-        }
+        campaign = await findCampaignOrThrow(campaign.campaignCode);
 
-        return Response.json({ campaign });
-    } catch (error: any) {
-        console.error('Erro ao conectar à sessão:', error);
-        return Response.json({ message: 'Erro ao conectar à sessão', error: error.message }, { status: 500 });
+        return Response.json({ campaign: campaignForRole(campaign, { isGM }) });
+    } catch (error) {
+        return handleRouteError(error, 'Erro ao conectar à sessão');
     }
 }

@@ -57,9 +57,6 @@ export function DonationReceivedModal({
             PaperProps={{
                 sx: {
                     borderRadius: 3,
-                    background: theme.palette.mode === 'dark'
-                        ? 'linear-gradient(145deg, #1e3a5f 0%, #2d4a6f 100%)'
-                        : 'linear-gradient(145deg, #e3f2fd 0%, #bbdefb 100%)',
                     border: '2px solid',
                     borderColor: alpha(theme.palette.info.main, 0.5)
                 }

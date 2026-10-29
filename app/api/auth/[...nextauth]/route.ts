@@ -60,11 +60,18 @@ export const authOptions: NextAuthOptions = {
             }
         },
 
-        signIn: async ({ profile, user }) => {
+        signIn: async ({ profile, user, account }) => {
             try {
                 const p: any = profile ?? user;
                 const email = p?.email?.toLowerCase();
-                
+
+                // A conta do app é identificada pelo e-mail. Sem exigir e-mail verificado,
+                // alguém poderia criar uma conta no Discord/Google com o e-mail de outra
+                // pessoa (sem confirmar) e entrar como ela — inclusive como admin.
+                if (!email) return false;
+                if (account?.provider === 'discord' && p?.verified !== true) return false;
+                if (account?.provider === 'google' && p?.email_verified !== true) return false;
+
                 const existingUser = await userRepository
                     .whereEqualTo('email', email)
                     .findOne();
@@ -72,7 +79,9 @@ export const authOptions: NextAuthOptions = {
                 const newImage = p?.picture ?? p?.image_url;
 
                 if (existingUser) {
-                    if (existingUser.image !== newImage) {
+                    // Sem foto no perfil não há o que atualizar: gravar `image: undefined` o Firestore recusa
+                    // e o login falhava com AccessDenied
+                    if (newImage && existingUser.image !== newImage) {
                         await userRepository.update({
                             ...existingUser,
                             image: newImage
@@ -83,8 +92,8 @@ export const authOptions: NextAuthOptions = {
 
                 const newUser = new User()
                 newUser.email = email;
-                newUser.name = p?.name?.replace(' ', '').toLowerCase() ?? p?.username?.replace(' ', '').toLowerCase();
-                newUser.image = newImage;
+                newUser.name = p?.name?.replace(' ', '').toLowerCase() ?? p?.username?.replace(' ', '').toLowerCase() ?? email.split('@')[0];
+                if (newImage) newUser.image = newImage;
                 newUser.charsheets = [];
 
                 await userRepository.create(newUser);

@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { itemAttributes, rarityColor, toastDefault } from '@constants'
+import { color, font } from '@themes/tokens'
 import { WarningModal } from '@layout'
 import {
     ArrowDropDown,
@@ -36,7 +37,7 @@ import { useCharsheetSystem } from '@hooks/useCharsheetSystem'
 import type { ItemTyping } from '@models/types/item'
 import type { MergedItems } from '@models/types/misc'
 import type { Charsheet } from '@models/entities'
-import type { Inventory } from '@models'
+import { computeCargo, removeInventoryEntry } from '@utils/cargo'
 
 /**
  * Converte um valor para string renderizável
@@ -46,7 +47,10 @@ function toRenderableString(value: any, defaultValue: string = 'N/A'): string {
     if (!value) return defaultValue;
     if (typeof value === 'string') return value;
     if (typeof value === 'number') return String(value);
-    if (Array.isArray(value)) return value.join(', ');
+    if (Array.isArray(value)) {
+        const parts = value.map(part => String(part ?? '').trim()).filter(part => part !== '');
+        return parts.length > 0 ? parts.join(', ') : defaultValue;
+    }
     if (typeof value === 'object') {
         // Se é um objeto com propriedades simples, tentar formatar
         try {
@@ -73,6 +77,10 @@ function ItemComponent(props: ItemTyping<'item'>): ReactElement {
         return props.quantity ? `${props.quantity}x` : '1x'
     }, [ props.quantity ])
 
+    const noEffectsText = 'Este item não possui efeitos especiais.'
+    const effectsText = toRenderableString(props.effects, noEffectsText)
+    const hasEffects = effectsText !== noEffectsText
+
     return (
         <Box height='100%' display='flex' flexDirection='column' justifyContent='space-between'>
             {/* Seção principal de informações */}
@@ -82,7 +90,7 @@ function ItemComponent(props: ItemTyping<'item'>): ReactElement {
                     p: 2,
                     backgroundColor: alpha(theme.palette.background.paper, 0.3),
                     borderRadius: 2,
-                    border: `1px solid ${alpha('#66bb6a', 0.2)}`
+                    border: `1px solid ${alpha(theme.palette.success.main, 0.2)}`
                 }}
             >
                 <Stack direction="row" justifyContent="space-between" mb={1}>
@@ -91,6 +99,8 @@ function ItemComponent(props: ItemTyping<'item'>): ReactElement {
                     </Typography>
                     <IconButton
                         size="small"
+                        aria-label={showDescription ? 'Ocultar efeitos do item' : 'Mostrar efeitos do item'}
+                        aria-expanded={showDescription}
                         onClick={() => setShowDescription(!showDescription)}
                         sx={{
                             transform: showDescription ? 'rotate(180deg)' : 'rotate(0deg)',
@@ -140,7 +150,7 @@ function ItemComponent(props: ItemTyping<'item'>): ReactElement {
                             sx={{
                                 width: 48,
                                 height: 48,
-                                backgroundColor: alpha(theme.palette.grey[500], 0.1)
+                                backgroundColor: alpha(theme.palette.text.secondary, 0.1)
                             }}
                         >
                             <FitnessCenter color="action" />
@@ -157,8 +167,8 @@ function ItemComponent(props: ItemTyping<'item'>): ReactElement {
                         border={`1px dashed ${alpha(theme.palette.success.main, 0.3)}`}
                         mb={1}
                     >
-                        <Typography variant="body2" color="textSecondary" sx={{ fontStyle: props.effects ? 'normal' : 'italic' }}>
-                            {toRenderableString(props.effects, 'Este item não possui efeitos especiais.')}
+                        <Typography variant="body2" color="textSecondary" sx={{ fontStyle: hasEffects ? 'normal' : 'italic' }}>
+                            {effectsText}
                         </Typography>
                     </Box>
                 </Collapse>
@@ -186,16 +196,21 @@ function ItemComponent(props: ItemTyping<'item'>): ReactElement {
     )
 }
 
+/** O que o ItemWrapper sabe do item: o `id` (BaseItem) identifica qual excluir */
+type WrapperItem = MergedItems<'Leve' | 'Pesada'> & { id?: string }
+
 function ItemWrapper({
     children,
-    title
-    ,
-    item
+    title,
+    item,
+    inventoryIndex
 }: {
     children: ReactElement,
     title: string,
     description: string,
-    item: MergedItems<'Leve' | 'Pesada'>
+    item: WrapperItem,
+    /** Posição do item na lista do inventário: desempata itens sem `id` e de mesmo nome */
+    inventoryIndex?: number
 }): ReactElement {
     const theme = useTheme()
     const { getValues, setValue } = useFormContext<Charsheet>()
@@ -203,9 +218,7 @@ function ItemWrapper({
     const weightUnit = customSystem ? (customSystem.weightConfig?.unit ?? '') : 'kg'
 
     const [ open, setOpen ] = useState(false)
-    const [ , setShowTooltip ] = useState(false)
     const [ confirmModalOpen, setConfirmModalOpen ] = useState(false)
-    const [ hovered, setHovered ] = useState(false)
 
     const { enqueueSnackbar } = useSnackbar()
 
@@ -218,14 +231,22 @@ function ItemWrapper({
     // Obtém os atributos visuais do tipo de item
     const itemAttr = itemAttributes[itemType]
 
-    // Função para excluir o item
+    // Exclui só o item clicado (por id; sem id, pela posição) e recalcula a carga do inventário
     const onConfirm = async (): Promise<void> => {
-        const currentValues = getValues()
-        const inventoryKey = `${itemType}s` as keyof Inventory
-        const currentItems = [ ...currentValues.inventory[inventoryKey] as any[] ]
-        const updatedItems = currentItems.filter((i: any) => i.name !== item.name)
+        const inventoryKey = `${itemType}s` as 'weapons' | 'armors' | 'items'
+        const currentInventory = getValues('inventory')
+        const updatedItems = removeInventoryEntry(currentInventory?.[inventoryKey], {
+            id: item.id,
+            index: inventoryIndex,
+            name: item.name
+        })
 
-        setValue(`inventory.${inventoryKey}`, updatedItems, { shouldValidate: true })
+        setValue(`inventory.${inventoryKey}`, updatedItems as any, { shouldValidate: true, shouldDirty: true })
+        setValue(
+            'capacity.cargo',
+            computeCargo({ ...currentInventory, [inventoryKey]: updatedItems }),
+            { shouldValidate: true, shouldDirty: true }
+        )
 
         setConfirmModalOpen(false)
         setOpen(false)
@@ -237,75 +258,27 @@ function ItemWrapper({
 
     // Obtém a cor da raridade ou usa um fallback
     const getItemRarityColor = () => {
-        return rarityColor[item.rarity] || '#9e9e9e' // Usa cinza como fallback
-    }
-
-    const rarityGlowAnimation = {
-        '@keyframes rarityGlow': {
-            '0%': {
-                boxShadow: `0 0 5px ${alpha(getItemRarityColor(), 0.4)}, 
-                   0 0 10px ${alpha(getItemRarityColor(), 0.2)}`
-            },
-            '50%': {
-                boxShadow: `0 0 15px ${alpha(getItemRarityColor(), 0.6)}, 
-                    0 0 20px ${alpha(getItemRarityColor(), 0.3)}`
-            },
-            '100%': {
-                boxShadow: `0 0 5px ${alpha(getItemRarityColor(), 0.4)}, 
-                    0 0 10px ${alpha(getItemRarityColor(), 0.2)}`
-            }
-        }
-    }
-
-    // Efeito de iluminação para o cartão do item
-    const getCardGlow = () => {
-        if (item.rarity === 'Comum' || item.rarity === 'Amaldiçoado') {
-            return {}
-        }
-
-        return {
-            animation: hovered ? 'rarityGlow 2s infinite' : 'none'
-        }
+        return rarityColor[item.rarity] || rarityColor.Comum // Usa a cor de Comum como fallback
     }
 
     return (
         <>
             <Paper
-                elevation={hovered ? 12 : 4}
-                onMouseEnter={() => { setHovered(true); setTimeout(() => setShowTooltip(true), 600) }}
-                onMouseLeave={() => { setHovered(false); setShowTooltip(false) }}
+                elevation={0}
                 sx={{
                     display: 'flex',
                     flexDirection: 'column',
                     minHeight: '22rem',
                     width: { xs: '100%', sm: '18rem' },
-                    backgroundColor: alpha(theme.palette.background.paper, 0.7),
-                    border: `2px solid ${alpha(getItemRarityColor(), hovered ? 0.8 : 0.4)}`,
+                    bgcolor: 'background.raised',
+                    border: `2px solid ${alpha(getItemRarityColor(), 0.4)}`,
                     borderRadius: 4,
                     p: 2,
                     gap: 2,
-                    transition: 'all .3s cubic-bezier(0.34, 1.56, 0.64, 1)',
-                    transform: hovered ? 'translateY(-8px) scale(1.03)' : 'translateY(0) scale(1)',
+                    transition: 'border-color 120ms',
                     position: 'relative',
                     overflow: 'hidden',
-                    ...getCardGlow(),
-                    ...rarityGlowAnimation,
-                    '&::before': item.rarity !== 'Comum' && item.rarity !== 'Amaldiçoado' ? {
-                        content: '""',
-                        position: 'absolute',
-                        top: 0,
-                        left: -100,
-                        width: '50px',
-                        height: '100%',
-                        background: `linear-gradient(to right, transparent, ${alpha(getItemRarityColor(), 0.3)}, transparent)`,
-                        transform: 'skewX(-25deg)',
-                        animation: hovered ? 'shine 2.5s infinite' : 'none',
-                        '@keyframes shine': {
-                            '0%': { left: '-100px' },
-                            '50%': { left: '200%' },
-                            '100%': { left: '200%' }
-                        }
-                    } : {}
+                    '&:hover': { borderColor: alpha(getItemRarityColor(), 0.8) }
                 }}
             >
                 {/* Badge de tipo de item */}
@@ -315,7 +288,7 @@ function ItemWrapper({
                         top: 12,
                         right: 12,
                         backgroundColor: itemAttr.color,
-                        color: '#fff',
+                        color: color.canvas,
                         fontSize: '0.65rem',
                         fontWeight: 'bold',
                         borderRadius: '10px',
@@ -332,24 +305,13 @@ function ItemWrapper({
                 <Box
                     py={0.5}
                     px={1}
-                    sx={{
-                        background: `linear-gradient(90deg, 
-                ${alpha(getItemRarityColor(), 0)} 0%, 
-                ${alpha(getItemRarityColor(), 0.15)} 50%, 
-                ${alpha(getItemRarityColor(), 0)} 100%)`,
-                        borderRadius: 2
-                    }}
                 >
                     <Typography
-                        fontFamily='Sakana'
+                        fontFamily={font.display}
                         width='100%'
                         textAlign='center'
                         fontSize="1rem"
                         color={getItemRarityColor()}
-                        sx={{
-                            textShadow: hovered ? `0 0 8px ${alpha(getItemRarityColor(), 0.7)}` : 'none',
-                            transition: 'text-shadow 0.3s ease'
-                        }}
                     >
                         {item.rarity?.toUpperCase()}
                     </Typography>
@@ -379,13 +341,13 @@ function ItemWrapper({
                     <IconButton
                         onClick={() => { setOpen(true) }}
                         size="small"
+                        aria-label={`Ver detalhes de ${title}`}
                         sx={{
                             border: `1px solid ${alpha(itemAttr.color, 0.3)}`,
                             color: itemAttr.color,
-                            transition: 'all 0.2s',
+                            transition: 'background-color 120ms',
                             '&:hover': {
-                                backgroundColor: alpha(itemAttr.color, 0.05),
-                                transform: 'scale(1.1)'
+                                backgroundColor: alpha(itemAttr.color, 0.05)
                             }
                         }}
                     >
@@ -684,20 +646,24 @@ export default function Item<C extends 'weapon' | 'armor' | 'item'>({
     name,
     description,
     as,
+    inventoryIndex,
     ...props
 }: {
     name: string,
     description: string,
     as?: C,
+    /** Posição do item na lista do inventário (para excluir só este, mesmo sem `id`) */
+    inventoryIndex?: number,
 } & ItemTyping<C>): ReactElement {
-    // Seleciona o componente interno baseado no tipo de item
-    const Component = as === 'weapon' ? Weapon : as === 'armor' ? Armor : ItemComponent
+    // Seleciona o componente interno baseado no tipo de item (cada um recebe as props do seu tipo)
+    const Component = (as === 'weapon' ? Weapon : as === 'armor' ? Armor : ItemComponent) as (componentProps: any) => ReactElement
 
     return (
         <ItemWrapper
             description={description}
             title={name}
-            item={{ name, description, ...props } }
+            item={{ name, description, ...props } as unknown as WrapperItem}
+            inventoryIndex={inventoryIndex}
         >
             <Component {...props } />
         </ItemWrapper>

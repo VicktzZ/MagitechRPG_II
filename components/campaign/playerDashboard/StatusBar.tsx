@@ -1,194 +1,115 @@
-import { Box, Button, Typography } from '@mui/material';
-import { indigo, lime, orange } from '@mui/material/colors';
-import { useState } from 'react';
+import { Add, Remove } from '@mui/icons-material';
+import { alpha, Box, IconButton, Stack, Typography, type Theme } from '@mui/material';
+import { NumberField } from '@components/misc';
+import { color as tokenColor, font } from '@themes/tokens';
+import { type ReactNode, useState } from 'react';
 
-export function StatusBar({
-    label,
-    current,
-    max,
-    color,
-    icon,
-    onIncrease,
-    onDecrease
-}: {
-    label: string,
-    current: number,
-    max: number,
-    color: string,
-    icon: string,
-    onIncrease: (value: number) => void,
-    onDecrease: (value: number) => void
-}) {
+interface StatusBarProps {
+    label: string;
+    current: number;
+    max: number;
+    color: string;
+    icon: ReactNode;
+    onIncrease: (value: number) => void;
+    onDecrease: (value: number) => void;
+}
+
+/** Lado do botão de − e +: alvo de toque confortável durante o combate */
+const BUTTON_SIZE = 36;
+
+/**
+ * Medidor de um ponto vital (vida, mana, armadura) com os controles de dano e cura. A barra é um
+ * `meter` acessível (valor, mínimo e máximo anunciados) e a quantidade usa o campo numérico do app
+ * (dá para apagar e digitar um valor novo; o foco seleciona o que já está lá).
+ */
+export function StatusBar({ label, current, max, color, icon, onIncrease, onDecrease }: StatusBarProps) {
+    const [ amount, setAmount ] = useState(1);
+
     const isOverhealed = current > max;
     const overValue = Math.max(0, current - max);
+    // Máximo zero (ex.: sistema customizado sem armadura) não pode dividir por zero
+    const safeMax = Math.max(max, 1);
+    const normalPercentage = Math.min((current / safeMax) * 100, 100);
+    const overPercentage = Math.min((overValue / safeMax) * 100, 100);
 
-    const overPercentage = (overValue / max) * 100; // Percentual do overheal
-    const normalPercentage = (current / max) * 100; // Percentual normal quando não tem overheal
+    const tint = (role: 'error' | 'success', opacity: number) => (theme: Theme) => alpha(theme.palette[role].main, opacity);
 
-    const [ inputValue, setInputValue ] = useState(1);
-
-    const handleInputChange = (e: any) => {
-        const value = parseInt(e.target.value) || 1;
-        setInputValue(Math.max(1, value));
-    };
-
-    const getOverhealColor = (baseColor: string) => {
-        const colorMap: Record<string, string> = {
-            '#ef4444': orange.A700,
-            '#3b82f6': indigo.A700,
-            '#eab308': lime.A700
-        };
-        return colorMap[baseColor] || baseColor;
-    };
-
-    const overhealColor = getOverhealColor(color);
+    const stepButton = (role: 'error' | 'success') => ({
+        width: BUTTON_SIZE,
+        height: BUTTON_SIZE,
+        borderRadius: 1,
+        color: 'text.primary',
+        border: '1px solid',
+        borderColor: tint(role, 0.4),
+        bgcolor: tint(role, 0.16),
+        '&:hover': { bgcolor: tint(role, 0.28) },
+        '&.Mui-disabled': { opacity: 0.35, color: 'text.primary' }
+    });
 
     return (
-        <Box sx={{ mb: 3 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5, flexWrap: 'wrap', gap: 1 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <span style={{ fontSize: '16px' }}>{icon}</span>
-                    <Typography variant="caption" sx={{ color: '#d1d5db', fontWeight: 500, fontSize: { xs: '10px', sm: '12px' } }}>
-                        {label}
-                    </Typography>
-                    <Typography
-                        variant="caption"
-                        sx={{
-                            fontWeight: 700,
-                            ml: 0.5,
-                            color: 'white' // Sempre branco para boa legibilidade
-                        }}
-                    >
+        <Box sx={{ mb: 2.5 }}>
+            <Stack direction="row" alignItems="center" justifyContent="space-between" flexWrap="wrap" columnGap={2} rowGap={1} sx={{ mb: 1 }}>
+                <Stack direction="row" alignItems="center" spacing={1} sx={{ minWidth: 0 }}>
+                    <Box component="span" aria-hidden sx={{ display: 'inline-flex', fontSize: 18, color }}>{icon}</Box>
+                    <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 500 }}>{label}</Typography>
+                    <Typography variant="body2" sx={{ fontFamily: font.mono, fontWeight: 700 }}>
                         {current}/{max}
                         {isOverhealed && (
-                            <span style={{
-                                fontSize: '10px',
-                                marginLeft: '4px',
-                                color: '#fbbf24', // Amarelo para destacar o overheal
-                                fontWeight: 600
-                            }}>
+                            <Box component="span" sx={{ ml: 0.5, color: 'primary.main', fontWeight: 600 }}>
                                 (+{overValue})
-                            </span>
+                            </Box>
                         )}
                     </Typography>
-                </Box>
-                <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
-                    <Box>
-                        <Button
-                            onClick={() => onDecrease(inputValue)}
-                            disabled={current <= 0}
-                            sx={{
-                                width: '40px',
-                                height: '24px',
-                                minWidth: 'unset',
-                                bgcolor: 'rgba(239, 68, 68, 0.2)',
-                                color: '#f87171',
-                                border: '1px solid rgba(239, 68, 68, 0.3)',
-                                '&:hover': {
-                                    bgcolor: 'rgba(239, 68, 68, 0.3)'
-                                },
-                                '&:disabled': {
-                                    opacity: 0.3
-                                }
-                            }}
-                        >
-                            −
-                        </Button>
-                    </Box>
-                    <input
-                        type="number"
-                        min="1"
-                        value={inputValue}
-                        onChange={handleInputChange}
-                        style={{
-                            width: '40px',
-                            height: '24px',
-                            textAlign: 'center',
-                            backgroundColor: 'rgba(71, 85, 105, 0.3)',
-                            border: '1px solid rgba(71, 85, 105, 0.5)',
-                            borderRadius: '4px',
-                            color: 'white',
-                            fontSize: '12px',
-                            fontWeight: 600
+                </Stack>
+
+                <Stack direction="row" alignItems="center" spacing={0.75}>
+                    <IconButton
+                        aria-label={`Diminuir ${label} em ${amount}`}
+                        onClick={() => { onDecrease(amount); }}
+                        disabled={current <= 0}
+                        sx={stepButton('error')}
+                    >
+                        <Remove fontSize="small" />
+                    </IconButton>
+                    <NumberField
+                        value={amount}
+                        onChange={setAmount}
+                        min={1}
+                        size="small"
+                        onFocus={(event) => { event.target.select(); }}
+                        inputProps={{ 'aria-label': `Quantidade de ${label} a somar ou tirar`, style: { textAlign: 'center' } }}
+                        sx={{
+                            width: 60,
+                            '& .MuiInputBase-root': { height: BUTTON_SIZE, bgcolor: 'background.raised', fontFamily: font.mono, fontWeight: 600 },
+                            '& .MuiInputBase-input': { py: 0, px: 0.5 }
                         }}
                     />
-                    <Button
-                        onClick={() => onIncrease(inputValue)}
+                    <IconButton
+                        aria-label={`Aumentar ${label} em ${amount}`}
+                        onClick={() => { onIncrease(amount); }}
                         disabled={current >= max * 2}
-                        sx={{
-                            width: '40px',
-                            height: '24px',
-                            minWidth: 'unset',
-                            bgcolor: 'rgba(34, 197, 94, 0.2)',
-                            color: '#4ade80',
-                            border: '1px solid rgba(34, 197, 94, 0.3)',
-                            '&:hover': {
-                                bgcolor: 'rgba(34, 197, 94, 0.3)'
-                            },
-                            '&:disabled': {
-                                opacity: 0.3
-                            }
-                        }}
+                        sx={stepButton('success')}
                     >
-                        +
-                    </Button>
-                </Box>
-            </Box>
+                        <Add fontSize="small" />
+                    </IconButton>
+                </Stack>
+            </Stack>
 
-            <Box sx={{ position: 'relative', height: '6px', bgcolor: 'rgba(71, 85, 105, 0.5)', borderRadius: '3px', overflow: 'hidden' }}>
-                {isOverhealed ? (
-                    <>
-                        {/* Barra base completa (100%) */}
-                        <Box sx={{
-                            position: 'absolute',
-                            top: 0,
-                            left: 0,
-                            height: '100%',
-                            width: '100%',
-                            bgcolor: color,
-                            zIndex: 1
-                        }} />
-
-                        {/* Barra de overheal por cima (começa do 0 novamente) */}
-                        <Box sx={{
-                            position: 'absolute',
-                            top: 0,
-                            left: 0,
-                            height: '100%',
-                            width: `${Math.min(overPercentage, 100)}%`,
-                            bgcolor: overhealColor,
-                            transition: 'width 0.3s ease',
-                            zIndex: 2,
-                            boxShadow: `0 0 8px ${overhealColor}`
-                        }} />
-                    </>
-                ) : (
-                    /* Barra normal (0-100%) */
-                    <Box sx={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        height: '100%',
-                        width: `${Math.min(normalPercentage, 100)}%`,
-                        bgcolor: color,
-                        transition: 'width 0.3s ease',
-                        zIndex: 1
-                    }} />
+            <Box
+                role="meter"
+                aria-label={label}
+                aria-valuemin={0}
+                aria-valuemax={max}
+                aria-valuenow={current}
+                aria-valuetext={`${current} de ${max}${isOverhealed ? `, ${overValue} acima do máximo` : ''}`}
+                sx={{ position: 'relative', height: 8, bgcolor: 'divider', borderRadius: '4px', overflow: 'hidden' }}
+            >
+                {/* Acima do máximo: a barra fica cheia na cor do ponto e o excesso é desenhado por cima, em âmbar */}
+                <Box sx={{ position: 'absolute', inset: 0, right: 'auto', width: `${isOverhealed ? 100 : normalPercentage}%`, bgcolor: color, transition: 'width 0.3s ease' }} />
+                {isOverhealed && (
+                    <Box sx={{ position: 'absolute', inset: 0, right: 'auto', width: `${overPercentage}%`, bgcolor: tokenColor.amber, transition: 'width 0.3s ease' }} />
                 )}
-            </Box>
-            <Box display='flex' justifyContent='flex-end'>
-                <Typography
-                    variant="caption"
-                    sx={{
-                        fontSize: '9px',
-                        fontWeight: 700,
-                        color: 'rgba(255,255,255,0.7)', // Mais visível
-                        zIndex: 3
-                    }}
-                >
-                    {isOverhealed ? `${Math.round((current / max) * 100)}%` : `${Math.round(normalPercentage)}%`}
-                </Typography>
             </Box>
         </Box>
     );
-};
+}

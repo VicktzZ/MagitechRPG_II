@@ -1,5 +1,6 @@
 'use client';
 
+import CampaignUnavailable from '@components/campaign/CampaignUnavailable';
 import { CharsheetCard } from '@components/charsheet';
 import { usePusher } from '@hooks';
 import { useCampaignData } from '@hooks/useCampaignData';
@@ -22,13 +23,16 @@ import {
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, useMemo, useCallback, type ReactElement } from 'react';
-import { campaignContext, campaignMessagesContext, type CampaignContextValue } from './campaignContext';
-import { campaignEntity } from '@utils/firestoreEntities';
+import { campaignChatContext, campaignContext, campaignMessagesContext, type CampaignContextValue } from './campaignContext';
+import { campaignService } from '@services';
 import type { Campaign, RPGSystem } from '@models/entities';
 import { useSnackbar } from 'notistack';
+import { errorMessage } from '@utils/errors';
 
 export function CampaignProvider({ children, code }: { children: ReactElement, code: string }) {
-    document.title = 'Campaign - ' + code;
+    useEffect(() => {
+        document.title = 'Campaign - ' + code;
+    }, [ code ]);
 
     const router = useRouter();
     const { data: session } = useSession();
@@ -48,7 +52,7 @@ export function CampaignProvider({ children, code }: { children: ReactElement, c
     const [ rpgSystem, setRpgSystem ] = useState<RPGSystem | null>(null);
     const [ loadingSystem, setLoadingSystem ] = useState(false);
 
-    const { data: campaignData, messages } = useCampaignData({
+    const { data: campaignData, messages, chat, status } = useCampaignData({
         campaignCode: code,
         userId: session?.user?.id
     });
@@ -94,12 +98,13 @@ export function CampaignProvider({ children, code }: { children: ReactElement, c
     usePusher(code, isUserGM, session)
 
     // Contexto principal memoizado: só muda quando a campanha (sem mensagens),
-    // fichas, usuários ou sistema realmente mudam — nunca por estado local
-    // deste provider (formulário roguelite, seleção de ficha etc.).
+    // fichas, usuários, sistema ou a ficha escolhida na entrada (uma vez só) mudam —
+    // nunca por outro estado local deste provider (formulário roguelite etc.).
     const updateCampaign = useCallback(async (data: Partial<Campaign>) => {
         const id = campaignData?.campaign?.id;
         if (!id) return;
-        await campaignEntity.update(id, data);
+        // Pela API (somente mestre): clientes não escrevem direto em `campaigns` nas regras do Firestore
+        await campaignService.updateFields(id, data as Record<string, unknown>);
     }, [ campaignData?.campaign?.id ]);
 
     const contextValue = useMemo((): CampaignContextValue | null => {
@@ -109,9 +114,10 @@ export function CampaignProvider({ children, code }: { children: ReactElement, c
             updateCampaign,
             rpgSystem,
             loadingSystem,
-            isDefaultSystem: !campaignData.campaign.systemId
+            isDefaultSystem: !campaignData.campaign.systemId,
+            selectedCharsheetId: charsheetId
         };
-    }, [ campaignData, updateCampaign, rpgSystem, loadingSystem ]);
+    }, [ campaignData, updateCampaign, rpgSystem, loadingSystem, charsheetId ]);
 
     // Função para criar ficha roguelite
     const handleCreateRogueliteCharsheet = async () => {
@@ -140,19 +146,30 @@ export function CampaignProvider({ children, code }: { children: ReactElement, c
 
             if (!response.ok) {
                 const error = await response.json();
-                throw new Error(error.message || 'Erro ao criar ficha');
+                throw new Error(errorMessage(error, 'Erro ao criar ficha'));
             }
 
             const data = await response.json();
             enqueueSnackbar('Ficha criada com sucesso!', { variant: 'success' });
             setCharsheetId(data.charsheet.id);
-        } catch (error: any) {
+        } catch (error) {
             console.error('Erro ao criar ficha roguelite:', error);
-            enqueueSnackbar(error.message || 'Erro ao criar ficha', { variant: 'error' });
+            enqueueSnackbar(errorMessage(error, 'Erro ao criar ficha'), { variant: 'error' });
         } finally {
             setIsCreating(false);
         }
     };
+
+    if (status === 'not-found' || status === 'error') {
+        return (
+            <CampaignUnavailable
+                reason={status}
+                code={code}
+                onBack={() => { router.push('/app/campaign'); }}
+                onRetry={() => { window.location.reload(); }}
+            />
+        )
+    }
 
     if (!campaignData) {
         return (
@@ -162,32 +179,16 @@ export function CampaignProvider({ children, code }: { children: ReactElement, c
         )
     }
 
-    if (campaignData === null) {
-        return (
-            <Box
-                sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    height: '100vh',
-                    width: '100vw'
-                }}
-            >
-                <Typography variant='h5'>Campanha não encontrada</Typography>
-            </Box>
-        )
-    }
-
     const hasOwnCharsheet = !!campaignData.charsheets.find(c => c.userId === session?.user?.id);
     const hasSelectedCharsheet = campaignData.charsheets.map(c => c.id).includes(charsheetId);
 
     if (contextValue && (isUserGM || hasOwnCharsheet || hasSelectedCharsheet || !!charsheetId)) {
-        localStorage.setItem('currentCharsheet', (charsheetId || campaignData?.charsheets.find(f => f.userId === session?.user?.id)?.id) ?? '');
-
         return (
             <campaignContext.Provider value={contextValue}>
                 <campaignMessagesContext.Provider value={messages}>
-                    {children}
+                    <campaignChatContext.Provider value={chat}>
+                        {children}
+                    </campaignChatContext.Provider>
                 </campaignMessagesContext.Provider>
             </campaignContext.Provider>
         )
@@ -220,7 +221,7 @@ export function CampaignProvider({ children, code }: { children: ReactElement, c
                 >
                     <Box>
                         <Typography variant='h5' fontWeight={600} gutterBottom>
-                            🎲 Criar Personagem Roguelite
+                            Criar Personagem Roguelite
                         </Typography>
                         <Typography variant='body2' color='text.secondary'>
                             Preencha os dados básicos do seu personagem. Você começará do zero e evoluirá durante a campanha!
@@ -320,9 +321,9 @@ export function CampaignProvider({ children, code }: { children: ReactElement, c
                         <Typography variant='h6'>Escolha uma ficha para ingressar</Typography>
                     </Box>
                     <Grid minHeight='100%' overflow='auto' gap={2} container>
-                        {loading ? [ 0, 1, 2 ].map(() => (
+                        {loading ? [ 0, 1, 2 ].map(index => (
                             <Skeleton
-                                variant='rectangular' key={Math.random()} width='20rem' height='15rem'
+                                variant='rectangular' key={index} width='20rem' height='15rem'
                             />
                         )) : charsheetsResponse?.map(c => (
                             <CharsheetCard

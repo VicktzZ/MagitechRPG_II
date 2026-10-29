@@ -22,10 +22,9 @@ export default function Footer(): ReactElement {
         <Box 
             component="footer" 
             sx={{ 
-                bgcolor: alpha(theme.palette.background.paper, 0.5), 
+                bgcolor: 'background.paper', 
                 pt: 6,
                 pb: 3,
-                backdropFilter: 'blur(10px)',
                 borderTop: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`
             }}
         >
@@ -41,7 +40,7 @@ export default function Footer(): ReactElement {
                                     mt: 2, 
                                     maxWidth: '300px',
                                     textAlign: matches ? 'center' : 'left',
-                                    color: alpha('#fff', 0.7)
+                                    color: 'text.secondary'
                                 }}>
                                 O sistema de RPG Magitech II traz uma experiência única onde magia e tecnologia se fundem em um mundo de possibilidades fantásticas.
                             </Typography>
@@ -51,10 +50,11 @@ export default function Footer(): ReactElement {
                                     aria-label="GitHub"
                                     size="small"
                                     sx={{ 
-                                        color: '#fff',
-                                        bgcolor: alpha('#000', 0.3),
+                                        color: 'text.secondary',
+                                        bgcolor: 'background.raised',
                                         '&:hover': {
-                                            bgcolor: theme.palette.primary.main
+                                            color: 'primary.main',
+                                            bgcolor: 'background.overlay'
                                         },
                                         transition: 'all 0.3s ease'
                                     }}
@@ -67,10 +67,11 @@ export default function Footer(): ReactElement {
                                     aria-label="LinkedIn"
                                     size="small"
                                     sx={{ 
-                                        color: '#fff',
-                                        bgcolor: alpha('#000', 0.3),
+                                        color: 'text.secondary',
+                                        bgcolor: 'background.raised',
                                         '&:hover': {
-                                            bgcolor: '#0077B5'
+                                            color: 'primary.main',
+                                            bgcolor: 'background.overlay'
                                         },
                                         transition: 'all 0.3s ease'
                                     }}
@@ -83,10 +84,11 @@ export default function Footer(): ReactElement {
                                     aria-label="Email"
                                     size="small"
                                     sx={{ 
-                                        color: '#fff',
-                                        bgcolor: alpha('#000', 0.3),
+                                        color: 'text.secondary',
+                                        bgcolor: 'background.raised',
                                         '&:hover': {
-                                            bgcolor: '#EA4335'
+                                            color: 'primary.main',
+                                            bgcolor: 'background.overlay'
                                         },
                                         transition: 'all 0.3s ease'
                                     }}
@@ -116,7 +118,7 @@ export default function Footer(): ReactElement {
                                     height: '2px',
                                     bottom: '-6px',
                                     left: 0,
-                                    background: `linear-gradient(90deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`
+                                    bgcolor: 'primary.main'
                                 }
                             }}
                         >
@@ -127,7 +129,7 @@ export default function Footer(): ReactElement {
                                 href="#home" 
                                 underline="hover"
                                 sx={{ 
-                                    color: alpha('#fff', 0.7), 
+                                    color: 'text.secondary', 
                                     display: 'flex', 
                                     alignItems: 'center',
                                     gap: 1,
@@ -144,7 +146,7 @@ export default function Footer(): ReactElement {
                                 href="#sobre" 
                                 underline="hover"
                                 sx={{ 
-                                    color: alpha('#fff', 0.7), 
+                                    color: 'text.secondary', 
                                     display: 'flex', 
                                     alignItems: 'center',
                                     gap: 1,
@@ -161,7 +163,7 @@ export default function Footer(): ReactElement {
                                 href="#quem-somos" 
                                 underline="hover"
                                 sx={{ 
-                                    color: alpha('#fff', 0.7), 
+                                    color: 'text.secondary', 
                                     display: 'flex', 
                                     alignItems: 'center',
                                     gap: 1,
@@ -178,7 +180,7 @@ export default function Footer(): ReactElement {
                                 href="#guia" 
                                 underline="hover"
                                 sx={{ 
-                                    color: alpha('#fff', 0.7), 
+                                    color: 'text.secondary', 
                                     display: 'flex', 
                                     alignItems: 'center',
                                     gap: 1,
@@ -195,7 +197,7 @@ export default function Footer(): ReactElement {
                                 href="#doacao" 
                                 underline="hover"
                                 sx={{ 
-                                    color: alpha('#fff', 0.7), 
+                                    color: 'text.secondary', 
                                     display: 'flex', 
                                     alignItems: 'center',
                                     gap: 1,
@@ -229,33 +231,33 @@ export default function Footer(): ReactElement {
                                     height: '2px',
                                     bottom: '-6px',
                                     left: 0,
-                                    background: `linear-gradient(90deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`
+                                    bgcolor: 'primary.main'
                                 }
                             }}
                         >
                             Contato
                         </Typography>
                         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: matches ? 'center' : 'flex-start', gap: 1.5 }}>
-                            <Typography sx={{ color: alpha('#fff', 0.7) }}>
+                            <Typography sx={{ color: 'text.secondary' }}>
                                 Email: vitorhugo.rdossantos@gmail.com
                             </Typography>
-                            <Typography sx={{ color: alpha('#fff', 0.7) }}>
+                            <Typography sx={{ color: 'text.secondary' }}>
                                 GitHub: github.com/VicktzZ
                             </Typography>
-                            <Typography sx={{ color: alpha('#fff', 0.7) }}>
+                            <Typography sx={{ color: 'text.secondary' }}>
                                 LinkedIn: vitor-hugo-rodrigues-dos-santos
                             </Typography>
                         </Box>
                     </Grid>
                 </Grid>
                 
-                <Divider sx={{ mt: 5, mb: 3, borderColor: alpha('#fff', 0.1) }} />
+                <Divider sx={{ mt: 5, mb: 3, borderColor: 'divider' }} />
                 
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', flexDirection: matches ? 'column' : 'row', alignItems: 'center', gap: 2 }}>
                     <Typography 
                         variant="body2" 
                         sx={{ 
-                            color: alpha('#fff', 0.5),
+                            color: 'text.disabled',
                             textAlign: matches ? 'center' : 'left'
                         }}
                     >
@@ -264,7 +266,7 @@ export default function Footer(): ReactElement {
                     <Typography 
                         variant="body2" 
                         sx={{ 
-                            color: alpha('#fff', 0.5),
+                            color: 'text.disabled',
                             textAlign: matches ? 'center' : 'right',
                             fontWeight: 500
                         }}

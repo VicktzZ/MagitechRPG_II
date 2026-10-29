@@ -4,6 +4,8 @@ import { CombatEffectEntity } from '@models/entities'
 import type { CombatEffectScope, CombatEffectCategory, CombatEffectTiming, CombatEffectModifier } from '@models'
 import { v4 as uuidv4 } from 'uuid'
 import { stripUndefined } from '@utils/firestore/stripUndefined'
+import { color } from '@themes/tokens'
+import { assertId, assertMaxLength, forbidden, handleRouteError, readJsonBody, requireCampaignMember, requireCampaignGM, requireUser, TEXT_LIMITS } from '@utils/api'
 
 /**
  * GET /api/combat-effects
@@ -23,6 +25,12 @@ export async function GET(request: NextRequest) {
         const scopeParam = (searchParams.get('scope') ?? 'global') as CombatEffectScope | 'all'
         const campaignId = searchParams.get('campaignId') ?? undefined
         const category = searchParams.get('category') as CombatEffectCategory | null
+
+        // Efeitos de campanha só para quem participa dela
+        if (campaignId) {
+            const user = await requireUser()
+            await requireCampaignMember(campaignId, user)
+        }
 
         const all = await combatEffectRepository.find()
 
@@ -45,8 +53,7 @@ export async function GET(request: NextRequest) {
 
         return NextResponse.json({ success: true, effects: filtered, count: filtered.length })
     } catch (error) {
-        console.error('[CombatEffects API] Erro no GET:', error)
-        return NextResponse.json({ error: 'Erro interno ao listar efeitos' }, { status: 500 })
+        return handleRouteError(error, 'Erro interno ao listar efeitos')
     }
 }
 
@@ -75,12 +82,13 @@ interface CreateCombatEffectBody {
 
 /**
  * POST /api/combat-effects
- *  Cria um efeito. Por padrão scope='global'.
- *  NOTE: Em produção, criação global deveria ser gated por admin. Deixado aberto em dev para facilitar o seed.
+ *  Cria um efeito. Por padrão scope='global' (somente administradores).
+ *  Com scope='campaign', exige ser o mestre de `campaignId`.
  */
 export async function POST(request: NextRequest) {
     try {
-        const body: CreateCombatEffectBody = await request.json()
+        const user = await requireUser()
+        const body: CreateCombatEffectBody = await readJsonBody(request)
 
         if (!body?.name) {
             return NextResponse.json({ error: 'Nome do efeito é obrigatório' }, { status: 400 })
@@ -88,8 +96,16 @@ export async function POST(request: NextRequest) {
         if (!Array.isArray(body.levels) || body.levels.length === 0) {
             return NextResponse.json({ error: 'Ao menos um nível é obrigatório' }, { status: 400 })
         }
+        assertMaxLength(body.name, TEXT_LIMITS.name, 'name')
+        assertMaxLength(body.description, TEXT_LIMITS.description, 'description')
 
         const scope: CombatEffectScope = body.scope === 'campaign' ? 'campaign' : 'global'
+        if (scope === 'global' && !user.isAdmin) {
+            throw forbidden('Apenas administradores podem criar efeitos globais')
+        }
+        if (scope === 'campaign') {
+            await requireCampaignGM(assertId(body.campaignId, 'campaignId'), user)
+        }
 
         const entity = new CombatEffectEntity(stripUndefined({
             id: uuidv4(),
@@ -98,7 +114,7 @@ export async function POST(request: NextRequest) {
             category: body.category ?? 'damage',
             timing: body.timing ?? 'turn',
             element: body.element,
-            color: body.color ?? '#ff5722',
+            color: body.color ?? color.warning,
             icon: body.icon ?? '💥',
             levels: body.levels.map(l => stripUndefined({
                 level: Math.max(1, Math.floor(Number(l.level) || 1)),
@@ -112,7 +128,7 @@ export async function POST(request: NextRequest) {
             customLabels: body.customLabels,
             scope,
             campaignId: scope === 'campaign' ? body.campaignId : undefined,
-            createdBy: body.createdBy ?? 'system',
+            createdBy: user.id,
             createdAt: new Date().toISOString()
         }))
 
@@ -120,7 +136,6 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({ success: true, effect: created }, { status: 201 })
     } catch (error) {
-        console.error('[CombatEffects API] Erro no POST:', error)
-        return NextResponse.json({ error: 'Erro interno ao criar efeito' }, { status: 500 })
+        return handleRouteError(error, 'Erro interno ao criar efeito')
     }
 }

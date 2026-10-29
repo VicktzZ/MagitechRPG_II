@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import {
+    alpha,
     Avatar,
     Box,
     Button,
@@ -20,11 +21,20 @@ import {
     Typography
 } from '@mui/material';
 import StorefrontIcon from '@mui/icons-material/Storefront';
-import { green, orange, red } from '@mui/material/colors';
+import { color } from '@themes/tokens';
 import { useSnackbar } from 'notistack';
 import { PerkTypeEnum } from '@enums/rogueliteEnum';
 import type { PlayerInfo, ShopConfig } from './types';
 import { RARITY_OPTIONS, DEFAULT_SHOP_CONFIG } from './constants';
+
+/** Item da loja como a lista do mestre o mostra (nome, tipo, raridade e preço) */
+interface ShopItemSummary {
+    id: string
+    name: string
+    perkType: string
+    rarity: string
+    price: number
+}
 
 interface ShopDialogProps {
     open: boolean;
@@ -44,7 +54,7 @@ export default function ShopDialog({
     const { enqueueSnackbar } = useSnackbar();
     const [ shopConfig, setShopConfig ] = useState<ShopConfig>(DEFAULT_SHOP_CONFIG);
     const [ isUpdating, setIsUpdating ] = useState(false);
-    const [ shopItems, setShopItems ] = useState<any[]>([]);
+    const [ shopItems, setShopItems ] = useState<ShopItemSummary[]>([]);
     const [ isLoadingItems, setIsLoadingItems ] = useState(false);
     const isShopOpen = existingShop?.isOpen ?? false;
 
@@ -134,10 +144,10 @@ export default function ShopDialog({
     return (
         <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
             <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <StorefrontIcon sx={{ color: orange[500] }} />
+                <StorefrontIcon sx={{ color: 'text.secondary' }} />
                 Gerenciar Loja
                 {isShopOpen && (
-                    <Chip label="Aberta" size="small" sx={{ ml: 1, bgcolor: green[100], color: green[800] }} />
+                    <Chip label="Aberta" size="small" sx={{ ml: 1, bgcolor: (theme) => alpha(theme.palette.success.main, 0.14), color: 'success.main' }} />
                 )}
             </DialogTitle>
             <DialogContent>
@@ -146,10 +156,10 @@ export default function ShopDialog({
                     <Box 
                         sx={{ 
                             p: 2, 
-                            bgcolor: isShopOpen ? 'rgba(76, 175, 80, 0.1)' : 'rgba(158, 158, 158, 0.1)',
+                            bgcolor: isShopOpen ? alpha(color.success, 0.1) : 'background.raised',
                             borderRadius: 2,
                             border: '1px solid',
-                            borderColor: isShopOpen ? green[500] : 'divider'
+                            borderColor: isShopOpen ? 'success.main' : 'divider'
                         }}
                     >
                         <Typography 
@@ -157,10 +167,10 @@ export default function ShopDialog({
                             sx={{ 
                                 mb: 1, 
                                 fontWeight: 700, 
-                                color: isShopOpen ? green[400] : 'text.primary' 
+                                color: isShopOpen ? 'success.main' : 'text.primary' 
                             }}
                         >
-                            {isShopOpen ? '🟢' : '🔴'} Status da Loja
+                            Status da Loja: {isShopOpen ? 'aberta' : 'fechada'}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
                             {isShopOpen 
@@ -182,7 +192,7 @@ export default function ShopDialog({
                             step={1}
                             marks
                             valueLabelDisplay="auto"
-                            sx={{ color: orange[500] }}
+                            sx={{ color: 'primary.main' }}
                         />
                     </Box>
 
@@ -204,7 +214,7 @@ export default function ShopDialog({
                                 { value: 3, label: '3x' }
                             ]}
                             valueLabelDisplay="auto"
-                            sx={{ color: orange[500] }}
+                            sx={{ color: 'primary.main' }}
                         />
                     </Box>
 
@@ -219,10 +229,10 @@ export default function ShopDialog({
                                 onClick={() => setShopConfig(prev => ({ ...prev, currency: 'SCRAP' }))}
                                 sx={{
                                     cursor: 'pointer',
-                                    bgcolor: currency === 'SCRAP' ? 'rgba(76, 175, 80, 0.2)' : 'rgba(158, 158, 158, 0.2)',
-                                    color: currency === 'SCRAP' ? green[800] : 'text.secondary',
+                                    bgcolor: currency === 'SCRAP' ? color.amberSubtle : 'background.raised',
+                                    color: currency === 'SCRAP' ? 'text.primary' : 'text.secondary',
                                     border: '1px solid',
-                                    borderColor: currency === 'SCRAP' ? green[500] : 'transparent'
+                                    borderColor: currency === 'SCRAP' ? color.amberLine : 'transparent'
                                 }}
                             />
                             <Chip
@@ -231,10 +241,10 @@ export default function ShopDialog({
                                 onClick={() => setShopConfig(prev => ({ ...prev, currency: 'YEN' }))}
                                 sx={{
                                     cursor: 'pointer',
-                                    bgcolor: currency === 'YEN' ? 'rgba(76, 175, 80, 0.2)' : 'rgba(158, 158, 158, 0.2)',
-                                    color: currency === 'YEN' ? green[800] : 'text.secondary',
+                                    bgcolor: currency === 'YEN' ? color.amberSubtle : 'background.raised',
+                                    color: currency === 'YEN' ? 'text.primary' : 'text.secondary',
                                     border: '1px solid',
-                                    borderColor: currency === 'YEN' ? green[500] : 'transparent'
+                                    borderColor: currency === 'YEN' ? color.amberLine : 'transparent'
                                 }}
                             />
                         </Box>
@@ -259,13 +269,13 @@ export default function ShopDialog({
                                     }}
                                     sx={{
                                         bgcolor: shopConfig.rarities.includes(rarity) 
-                                            ? 'rgba(255, 152, 0, 0.2)' 
-                                            : 'rgba(158, 158, 158, 0.2)',
-                                        color: shopConfig.rarities.includes(rarity) ? orange[300] : 'text.secondary',
+                                            ? color.amberSubtle 
+                                            : 'background.raised',
+                                        color: shopConfig.rarities.includes(rarity) ? 'text.primary' : 'text.secondary',
                                         fontWeight: shopConfig.rarities.includes(rarity) ? 600 : 400,
                                         cursor: 'pointer',
                                         border: '1px solid',
-                                        borderColor: shopConfig.rarities.includes(rarity) ? orange[500] : 'transparent'
+                                        borderColor: shopConfig.rarities.includes(rarity) ? color.amberLine : 'transparent'
                                     }}
                                 />
                             ))}
@@ -308,13 +318,13 @@ export default function ShopDialog({
                                         }}
                                         sx={{
                                             bgcolor: shopConfig.types.includes(value) 
-                                                ? 'rgba(33, 150, 243, 0.2)' 
-                                                : 'rgba(158, 158, 158, 0.2)',
-                                            color: shopConfig.types.includes(value) ? 'primary.light' : 'text.secondary',
+                                                ? color.amberSubtle 
+                                                : 'background.raised',
+                                            color: shopConfig.types.includes(value) ? 'text.primary' : 'text.secondary',
                                             fontWeight: shopConfig.types.includes(value) ? 600 : 400,
                                             cursor: 'pointer',
                                             border: '1px solid',
-                                            borderColor: shopConfig.types.includes(value) ? 'primary.main' : 'transparent'
+                                            borderColor: shopConfig.types.includes(value) ? color.amberLine : 'transparent'
                                         }}
                                     />
                                 ))}
@@ -371,7 +381,7 @@ export default function ShopDialog({
                         <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, p: 2 }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
                                 <Typography variant="subtitle2" fontWeight={600}>
-                                    👁️ Itens na Loja ({shopItems.length})
+                                    Itens na Loja ({shopItems.length})
                                 </Typography>
                                 <Button 
                                     size="small" 
@@ -393,7 +403,7 @@ export default function ShopDialog({
                                 </Typography>
                             ) : (
                                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, maxHeight: 200, overflow: 'auto' }}>
-                                    {shopItems.map((item: any) => (
+                                    {shopItems.map(item => (
                                         <Box 
                                             key={item.id}
                                             sx={{ 
@@ -402,7 +412,7 @@ export default function ShopDialog({
                                                 justifyContent: 'space-between',
                                                 p: 1, 
                                                 borderRadius: 1,
-                                                bgcolor: 'rgba(255, 152, 0, 0.05)',
+                                                bgcolor: 'background.raised',
                                                 border: '1px solid',
                                                 borderColor: 'divider'
                                             }}
@@ -412,14 +422,14 @@ export default function ShopDialog({
                                                     {item.name}
                                                 </Typography>
                                                 <Box sx={{ display: 'flex', gap: 0.5, mt: 0.5 }}>
-                                                    <Chip label={item.perkType} size="small" sx={{ height: 18, fontSize: '0.65rem' }} />
-                                                    <Chip label={item.rarity} size="small" sx={{ height: 18, fontSize: '0.65rem' }} />
+                                                    <Chip label={item.perkType} size="small" sx={{ height: 18, fontSize: '0.75rem' }} />
+                                                    <Chip label={item.rarity} size="small" sx={{ height: 18, fontSize: '0.75rem' }} />
                                                 </Box>
                                             </Box>
                                             <Chip 
                                                 label={`${currencySymbol}${displayPrice(item.price)}`}
                                                 size="small"
-                                                sx={{ fontWeight: 700, bgcolor: green[100], color: green[800] }}
+                                                sx={{ fontWeight: 700, bgcolor: (theme) => alpha(theme.palette.success.main, 0.14), color: 'success.main' }}
                                             />
                                         </Box>
                                     ))}
@@ -439,7 +449,7 @@ export default function ShopDialog({
                         variant="contained"
                         disabled={isUpdating}
                         startIcon={isUpdating ? <CircularProgress size={20} /> : <StorefrontIcon />}
-                        sx={{ bgcolor: red[600], '&:hover': { bgcolor: red[700] } }}
+                        sx={{ bgcolor: 'error.main', color: 'error.contrastText', '&:hover': { bgcolor: 'error.dark' } }}
                     >
                         {isUpdating ? 'Fechando...' : 'Fechar Loja'}
                     </Button>
@@ -449,7 +459,7 @@ export default function ShopDialog({
                         variant="contained"
                         disabled={isUpdating}
                         startIcon={isUpdating ? <CircularProgress size={20} /> : <StorefrontIcon />}
-                        sx={{ bgcolor: green[600], '&:hover': { bgcolor: green[700] } }}
+                        sx={{ bgcolor: 'success.main', color: 'success.contrastText', '&:hover': { bgcolor: 'success.dark' } }}
                     >
                         {isUpdating ? 'Abrindo...' : 'Abrir Loja'}
                     </Button>

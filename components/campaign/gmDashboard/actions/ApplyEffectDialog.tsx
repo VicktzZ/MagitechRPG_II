@@ -22,11 +22,12 @@ import {
     TextField,
     Typography
 } from '@mui/material'
-import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh'
+import BoltIcon from '@mui/icons-material/Bolt'
 import { useSnackbar } from 'notistack'
 import type { CombatEffect, CombatEffectCategory } from '@models'
 import { campaignService } from '@services'
 import { getCategoryLabel, getEffectDisplayName } from '@utils/combatEffectLabels'
+import { errorMessage } from '@utils/errors';
 
 interface ApplyEffectDialogProps {
     open: boolean
@@ -153,9 +154,9 @@ export default function ApplyEffectDialog({
             enqueueSnackbar(`Efeito ${getEffectDisplayName(selectedEffect, level)} aplicado em ${target.name}`, { variant: 'success' })
             onApplied?.()
             onClose()
-        } catch (err: any) {
+        } catch (err) {
             console.error('Erro ao aplicar efeito:', err)
-            enqueueSnackbar(err?.response?.data?.error ?? 'Erro ao aplicar efeito', { variant: 'error' })
+            enqueueSnackbar(errorMessage(err, 'Erro ao aplicar efeito'), { variant: 'error' })
         } finally {
             setApplying(false)
         }
@@ -164,7 +165,7 @@ export default function ApplyEffectDialog({
     return (
         <Dialog open={open} onClose={applying ? undefined : onClose} maxWidth="sm" fullWidth>
             <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <AutoFixHighIcon color="secondary" />
+                <BoltIcon color="secondary" />
                 Aplicar efeito {target ? `em ${target.name}` : ''}
             </DialogTitle>
             <DialogContent>
@@ -213,7 +214,7 @@ export default function ApplyEffectDialog({
                                     <Chip
                                         label={eff.scope === 'global' ? 'Global' : 'Campanha'}
                                         size="small"
-                                        sx={{ height: 18, fontSize: '0.6rem', ml: 1 }}
+                                        sx={{ height: 18, fontSize: '0.75rem', ml: 1 }}
                                     />
                                 </Stack>
                             </MenuItem>
@@ -240,7 +241,13 @@ export default function ApplyEffectDialog({
                             )}
                             <Chip
                                 label={selectedEffect.usesLevels === false ? selectedEffect.name : getEffectDisplayName(selectedEffect, level)}
-                                sx={{ bgcolor: selectedEffect.color, color: '#fff', fontWeight: 700 }}
+                                sx={{
+                                    bgcolor: selectedEffect.color,
+                                    color: theme => (selectedEffect.color
+                                        ? theme.palette.getContrastText(selectedEffect.color)
+                                        : theme.palette.text.primary),
+                                    fontWeight: 700
+                                }}
                             />
                         </Box>
 
@@ -367,7 +374,7 @@ export default function ApplyEffectDialog({
 
                             {!indefiniteOverride && timingOverride === 'turn' && (selectedEffect.category === 'damage' || selectedEffect.category === 'heal') && (
                                 <Typography variant="caption" sx={{ color: 'warning.main', mt: 0.5 }}>
-                                    ⚠️ Efeitos por turno de dano/cura aplicam o primeiro tick imediatamente ao serem atribuídos.
+                                    Efeitos por turno de dano/cura aplicam o primeiro tick imediatamente ao serem atribuídos.
                                 </Typography>
                             )}
                         </Stack>
@@ -383,7 +390,7 @@ export default function ApplyEffectDialog({
                     variant="contained"
                     color="secondary"
                     disabled={applying || !selectedEffect || !target}
-                    startIcon={applying ? <CircularProgress size={18} /> : <AutoFixHighIcon />}
+                    startIcon={applying ? <CircularProgress size={18} /> : <BoltIcon />}
                 >
                     {applying ? 'Aplicando...' : 'Aplicar'}
                 </Button>

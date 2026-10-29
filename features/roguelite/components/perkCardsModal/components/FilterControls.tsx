@@ -2,6 +2,7 @@ import { Box, Button, Checkbox, Chip, FormControl, InputLabel, ListItemText, Men
 import ShuffleIcon from '@mui/icons-material/Shuffle'
 import { PerkTypeEnum } from '@enums/rogueliteEnum'
 import type { RarityType } from '@models/types/string'
+import { color } from '@themes/tokens'
 
 interface FilterControlsProps {
     selectedRarities: RarityType[]
@@ -41,30 +42,30 @@ const elementOptions = [
 
 const spellLevelOptions = [ '1', '2', '3', '4' ]
 
-const executionOptions = [ 'Livre', 'Completa', 'Padrão', 'Movimento', 'Reação', 'Bônus' ]
+const executionOptions = [ 'Completa', 'Padrão', 'Movimento', 'Reação', 'Bônus' ]
 
 const itemKindOptions = [ 'Especial', 'Utilidade', 'Consumível', 'Item Chave', 'Munição', 'Capacidade', 'Padrão', 'Arremessável', 'Equipamento' ]
 
 const selectSx = {
-    color: 'white',
-    borderColor: 'rgba(255, 255, 255, 0.3)',
+    color: 'text.primary',
+    borderColor: color.borderControl,
     '& .MuiOutlinedInput-notchedOutline': {
-        borderColor: 'rgba(255, 255, 255, 0.3)'
+        borderColor: color.borderControl
     },
     '&:hover .MuiOutlinedInput-notchedOutline': {
-        borderColor: 'rgba(255, 255, 255, 0.5)'
+        borderColor: 'text.secondary'
     },
     '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-        borderColor: 'rgba(255, 255, 255, 0.7)'
+        borderColor: 'primary.main'
     },
     '& .MuiSvgIcon-root': {
-        color: 'rgba(255, 255, 255, 0.7)'
+        color: 'text.secondary'
     }
 }
 
 const labelSx = {
-    color: 'rgba(255, 255, 255, 0.7)',
-    '&.Mui-focused': { color: 'rgba(255, 255, 255, 0.9)' }
+    color: 'text.secondary',
+    '&.Mui-focused': { color: 'primary.main' }
 }
 
 function getTypeLabel(type: string): string {
@@ -243,11 +244,11 @@ export function FilterControls({
                 startIcon={<ShuffleIcon />}
                 onClick={onReroll}
                 sx={{
-                    color: 'white',
-                    borderColor: 'rgba(255, 255, 255, 0.3)',
+                    color: 'text.primary',
+                    borderColor: 'divider',
                     '&:hover': {
-                        borderColor: 'rgba(255, 255, 255, 0.5)',
-                        bgcolor: 'rgba(255, 255, 255, 0.1)'
+                        borderColor: color.borderStrong,
+                        bgcolor: 'action.hover'
                     }
                 }}
             >

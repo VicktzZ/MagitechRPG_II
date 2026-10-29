@@ -4,14 +4,21 @@ import { charsheetRepository } from '@repositories';
 import { validate } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
 import type { NextRequest } from 'next/server';
+import { assertId, forbidden, handleRouteError, readJsonBody, requireUser } from '@utils/api';
+import { toSpellIds } from '@utils/charsheetDiff';
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(req: NextRequest): Promise<Response> {
     try {
+        const user = await requireUser();
         const userId = req.nextUrl.searchParams.get('userId');
         if (!userId) {
             return Response.json({ message: 'BAD REQUEST', error: 'Missing userId' }, { status: 400 });
+        }
+        assertId(userId, 'userId');
+        if (userId !== user.id && !user.isAdmin) {
+            throw forbidden('Você só pode listar as suas próprias fichas');
         }
 
         const charsheets = await charsheetRepository
@@ -19,14 +26,15 @@ export async function GET(req: NextRequest): Promise<Response> {
             .find();
             
         return Response.json(charsheets);
-    } catch (error: any) {
-        return Response.json({ message: 'NOT FOUND', error: error.message }, { status: 404 });
+    } catch (error) {
+        return handleRouteError(error, 'Erro ao buscar fichas');
     }
 }
 
 export async function POST(req: NextRequest): Promise<Response> {
     try {
-        const body: CharsheetDTO = await req.json();
+        const user = await requireUser();
+        const body: CharsheetDTO = await readJsonBody(req);
         const dto = plainToInstance(CharsheetDTO, body, { excludeExtraneousValues: true });
         const errors = await validate(dto, { skipMissingProperties: true }); // Remover em produção
         
@@ -35,15 +43,23 @@ export async function POST(req: NextRequest): Promise<Response> {
             return Response.json({ message: 'BAD REQUEST', errors }, { status: 400 });
         }
 
-        const newCharsheet = new Charsheet(body as any);
+        // A ficha sempre pertence a quem cria — nunca ao userId enviado no body.
+        // O id também é descartado: com id definido o FireORM faz set() e
+        // sobrescreveria uma ficha existente de outra pessoa.
+        const { id: _ignoredId, ...charsheetData } = body as any;
+        // A data de criação é a do servidor: a do navegador vinha da hora em que a página foi aberta
+        const newCharsheet = new Charsheet({ ...charsheetData, userId: user.id, createdAt: new Date().toISOString() });
 
-        newCharsheet.skills.powers = body.skills.powers?.map((power) => power?.id ?? '');
-        newCharsheet.spells = body.spells?.map((spell) => spell?.id ?? ''); 
+        // Poder mágico do catálogo fica como id; habilidade de sistema customizado não existe no catálogo e fica como objeto
+        newCharsheet.skills.powers = (body.skills.powers ?? [])
+            .filter(Boolean)
+            .map((power) => power.type === 'Poder Mágico' ? (power.id ?? '') : power) as unknown as typeof newCharsheet.skills.powers;
+        newCharsheet.spells = toSpellIds(body.spells);
         
         const createdCharsheet = await charsheetRepository.create(newCharsheet);
     
         return Response.json(createdCharsheet, { status: 201 });
-    } catch (error: any) {
-        return Response.json({ message: 'BAD REQUEST', error: error.message }, { status: 400 });
+    } catch (error) {
+        return handleRouteError(error, 'Erro ao criar ficha');
     }
 }

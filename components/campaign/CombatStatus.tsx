@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef, memo } from 'react';
 import {
+    alpha,
     Box,
     Paper,
     Typography,
@@ -16,7 +17,6 @@ import {
     DialogActions,
     Alert,
     Collapse,
-    IconButton,
     Tooltip,
     Divider,
     TextField,
@@ -33,12 +33,27 @@ import CasinoIcon from '@mui/icons-material/Casino';
 import WhatshotIcon from '@mui/icons-material/Whatshot';
 import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
 import SkipNextIcon from '@mui/icons-material/SkipNext';
-import { red, green, blue, orange, grey, yellow } from '@mui/material/colors';
+import { color, duration, easing } from '@themes/tokens';
 import { useSnackbar } from 'notistack';
+import { handleHealingBlocked } from './healBlocked';
 import { useCampaignContext } from '@contexts';
 import { useSession } from 'next-auth/react';
-import type { Combat } from '@models';
+import type { Attributes, Combat } from '@models';
+import { campaignService } from '@services';
+import { asRequestError, errorMessage } from '@utils/errors';
+import { SLOT_EXECUTION } from '@utils/combat/actionBudgets';
+import { effectiveBudget } from '@utils/combat/actionFlags';
+import type { ActionSlot } from '@utils/combat/engine/actionBudget';
+import { opportunitiesForReactor } from '@utils/combat/opportunities';
+import { sheetExpertisePenalty } from '@utils/combat/sheetOverweight';
+import { incomingAttacks } from '@utils/combat/pendingAttacks';
+import ActionPips from './ActionPips';
 import EffectBadges from './gmDashboard/actions/EffectBadges';
+import HiddenFromNotice from './awareness/HiddenFromNotice';
+import LeaveReachButton from './opportunity/LeaveReachButton';
+import OpportunityOffers from './opportunity/OpportunityOffers';
+import ReactionOffers from './reaction/ReactionOffers';
+import IncomingAttacks from './playerDashboard/attacks/IncomingAttacks';
 
 interface CombatStatusProps {
     campaignId: string;
@@ -47,19 +62,20 @@ interface CombatStatusProps {
     onActionComplete?: () => void;
 }
 
-export default function CombatStatus({ 
-    campaignId, 
-    combat, 
+function CombatStatus({
+    campaignId,
+    combat,
     userCharsheetId,
-    onActionComplete 
+    onActionComplete
 }: CombatStatusProps) {
-    const { enqueueSnackbar } = useSnackbar();
+    const { enqueueSnackbar, closeSnackbar } = useSnackbar();
     const { data: session } = useSession();
     const { campaign, charsheets } = useCampaignContext();
     const theme = useTheme();
-    const isDarkMode = theme.palette.mode === 'dark';
     
-    const [ expanded, setExpanded ] = useState(true);
+    // Começa recolhido (só o cabeçalho, que já diz de quem é a vez): o card flutua sobre a ficha
+    // e abre sozinho quando chega o turno do jogador
+    const [ expanded, setExpanded ] = useState(false);
     const [ initiativeDialogOpen, setInitiativeDialogOpen ] = useState(false);
     const [ isRolling, setIsRolling ] = useState(false);
     const [ actionDialogOpen, setActionDialogOpen ] = useState(false);
@@ -69,6 +85,7 @@ export default function CombatStatus({
     const [ isApplying, setIsApplying ] = useState(false);
     const [ turnNotificationShown, setTurnNotificationShown ] = useState(false);
     const [ isPassingTurn, setIsPassingTurn ] = useState(false);
+    const [ isSpendingAction, setIsSpendingAction ] = useState(false);
 
     const isGM = campaign?.admin?.includes(session?.user?.id || '');
 
@@ -82,20 +99,21 @@ export default function CombatStatus({
     const initiativeFormula = useMemo(() => {
         if (!userCombatant || !charsheets?.length) return null;
 
-        const charsheet = charsheets.find((c: any) => 
+        const charsheet = charsheets.find(c => 
             c.id === userCombatant.id || c.id === userCombatant.odacId
         );
 
         if (!charsheet) return null;
 
-        const agiExpertise = (charsheet as any).expertises?.Agilidade;
+        const agiExpertise = charsheet.expertises?.Agilidade;
         const expertiseValue = Number(agiExpertise?.value ?? 0) || 0;
 
         const defaultAttrKey = (agiExpertise?.defaultAttribute ?? 'des') as string;
-        let modsValue = Number((charsheet as any).mods?.attributes?.[defaultAttrKey] ?? 1);
+        let modsValue = Number(charsheet.mods?.attributes?.[defaultAttrKey as keyof Attributes] ?? 1);
         if (!Number.isFinite(modsValue) || modsValue < 1) modsValue = 1;
 
-        return { numDice: modsValue, expertiseValue };
+        // Agilidade é perícia de DES: o Sobrepeso (−1 por kg excedido) também tira da iniciativa
+        return { numDice: modsValue, expertiseValue: expertiseValue + sheetExpertisePenalty(charsheet, defaultAttrKey) };
     }, [ charsheets, userCombatant ]);
 
     // Encontra o combatente do usuário atual - busca por charsheetId, odacId ou session user id
@@ -114,7 +132,7 @@ export default function CombatStatus({
         
     // Função para obter LP/MP da charsheet para jogadores
     const getPlayerStats = useCallback((combatantId: string, odacId?: string) => {
-        const charsheet = charsheets?.find((c: any) => 
+        const charsheet = charsheets?.find(c => 
             c.id === combatantId || c.id === odacId
         );
         
@@ -129,6 +147,48 @@ export default function CombatStatus({
         
         return null;
     }, [ charsheets ]);
+
+    useEffect(() => {
+        if (isUserTurn) setExpanded(true);
+    }, [ isUserTurn ]);
+
+    // Ataque assistido contra o personagem do jogador: abre o card e avisa uma vez por ataque, para ele escolher a defesa (ver IncomingAttacks)
+    const awaitingDefense = isGM ? [] : incomingAttacks(combat?.pendingAttacks, userCombatant?.id).awaiting;
+    const awaitingIds = awaitingDefense.map(attack => attack.id).join(',');
+    const notifiedAttacks = useRef<Set<string>>(new Set());
+    useEffect(() => {
+        const fresh = awaitingDefense.filter(attack => !notifiedAttacks.current.has(attack.id));
+        if (fresh.length === 0) return;
+
+        fresh.forEach(attack => notifiedAttacks.current.add(attack.id));
+        setExpanded(true);
+        enqueueSnackbar(`${fresh[0].attackerName} atacou você! Escolha a sua defesa.`, {
+            variant: 'warning',
+            autoHideDuration: 6000,
+            anchorOrigin: { vertical: 'top', horizontal: 'center' }
+        });
+        // awaitingDefense muda de identidade a cada render; o que interessa são os ids
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [ awaitingIds, enqueueSnackbar ]);
+
+    // Ataque de oportunidade: um inimigo saiu do alcance do personagem do jogador. Abre o card e avisa uma vez por oportunidade
+    const offers = isGM ? [] : opportunitiesForReactor(combat?.opportunities, userCombatant?.id);
+    const offerIds = offers.map(offer => offer.id).join(',');
+    const notifiedOffers = useRef<Set<string>>(new Set());
+    useEffect(() => {
+        const fresh = offers.filter(offer => !notifiedOffers.current.has(offer.id));
+        if (fresh.length === 0) return;
+
+        fresh.forEach(offer => notifiedOffers.current.add(offer.id));
+        setExpanded(true);
+        enqueueSnackbar(`${fresh[0].moverName} está saindo do seu alcance! Dá para fazer um ataque de oportunidade.`, {
+            variant: 'info',
+            autoHideDuration: 6000,
+            anchorOrigin: { vertical: 'top', horizontal: 'center' }
+        });
+        // offers muda de identidade a cada render; o que interessa são os ids
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [ offerIds, enqueueSnackbar ]);
 
     // Notifica quando é o turno do jogador
     useEffect(() => {
@@ -147,7 +207,6 @@ export default function CombatStatus({
     // Abre dialog de iniciativa automaticamente se precisar rolar
     useEffect(() => {
         if (needsToRollInitiative && !initiativeDialogOpen) {
-            console.log('[CombatStatus] Abrindo dialog de iniciativa automaticamente');
             setInitiativeDialogOpen(true);
         }
     }, [ needsToRollInitiative, initiativeDialogOpen ]);
@@ -157,7 +216,6 @@ export default function CombatStatus({
         if (needsToRollInitiative && !initiativeDialogOpen) {
             const timer = setTimeout(() => {
                 if (needsToRollInitiative) {
-                    console.log('[CombatStatus] Reabrindo dialog de iniciativa (timeout)');
                     setInitiativeDialogOpen(true);
                 }
             }, 1000);
@@ -198,6 +256,23 @@ export default function CombatStatus({
         }
     }, [ campaignId, userCombatant, enqueueSnackbar, onActionComplete ]);
 
+    // Marcar uma ação da rodada como usada (o jogador só gasta; quem devolve é o mestre)
+    const handleSpendAction = useCallback(async (slot: ActionSlot, available: boolean) => {
+        if (!userCombatant || !available) return;
+
+        setIsSpendingAction(true);
+        try {
+            await campaignService.spendCombatAction(campaignId, { combatantId: userCombatant.id, execution: SLOT_EXECUTION[slot] });
+            onActionComplete?.();
+        } catch (error) {
+            const { response } = asRequestError(error);
+            const unavailable = response?.status === 409 && response.data?.code === 'ACTION_UNAVAILABLE';
+            enqueueSnackbar(errorMessage(error, 'Erro ao gastar a ação'), { variant: unavailable ? 'warning' : 'error' });
+        } finally {
+            setIsSpendingAction(false);
+        }
+    }, [ campaignId, userCombatant, enqueueSnackbar, onActionComplete ]);
+
     // Passar turno
     const handlePassTurn = useCallback(async () => {
         setIsPassingTurn(true);
@@ -227,7 +302,7 @@ export default function CombatStatus({
     }, [ campaignId, enqueueSnackbar, onActionComplete ]);
 
     // Aplicar dano/cura
-    const handleApplyAction = useCallback(async () => {
+    const applyAction = useCallback(async (force: boolean) => {
         if (!targetId || actionValue <= 0) {
             enqueueSnackbar('Selecione um alvo e um valor válido', { variant: 'warning' });
             return;
@@ -247,11 +322,15 @@ export default function CombatStatus({
                     action: actionType === 'damage' ? 'apply_damage' : 'apply_heal',
                     combatantId: actorId,
                     targetId,
-                    value: actionValue
+                    value: actionValue,
+                    ...(force ? { force: true } : {})
                 })
             });
 
             const result = await response.json();
+
+            // Necrose, Incurável...: o alvo não recebe cura. O mestre pode curar mesmo assim
+            if (!response.ok && handleHealingBlocked(result, { enqueueSnackbar, closeSnackbar }, () => { void applyAction(true); })) return;
 
             if (!response.ok) {
                 throw new Error(result.error || 'Erro ao aplicar ação');
@@ -274,37 +353,53 @@ export default function CombatStatus({
         } finally {
             setIsApplying(false);
         }
-    }, [ campaignId, targetId, actionValue, actionType, isGM, currentCombatant, userCombatant, enqueueSnackbar, onActionComplete ]);
+    }, [ campaignId, targetId, actionValue, actionType, isGM, currentCombatant, userCombatant, enqueueSnackbar, closeSnackbar, onActionComplete ]);
+
+    const handleApplyAction = useCallback(async () => { await applyAction(false); }, [ applyAction ]);
 
     // Não mostra nada se não houver combate ativo
     if (!combat?.isActive) return null;
 
     const showEnemyLp = combat.showEnemyLp || isGM;
 
+    // Linha do cabeçalho: a informação que o jogador quer sem expandir o card
+    const turnSummary = combat.phase === 'INITIATIVE'
+        ? 'Rolando iniciativa'
+        : isUserTurn ? 'É a sua vez' : currentCombatant ? `Vez de ${currentCombatant.name}` : '';
+
     return (
         <>
             <Paper 
-                elevation={3}
+                elevation={0}
                 sx={{
-                    position: 'fixed',
-                    bottom: 80,
-                    left: 16,
+                    // Vive no FloatingDock (canto inferior direito, ao lado do chat): aqui só o tamanho.
+                    // Superfície plana; o combate é marcado pelo filete vermelho, não por um cartão cheio
                     width: 340,
-                    maxHeight: expanded ? 450 : 56,
+                    maxWidth: '100%',
+                    maxHeight: expanded ? 450 : 68,
                     overflow: 'hidden',
-                    transition: 'max-height 0.3s ease',
-                    zIndex: 1200,
-                    border: '2px solid',
-                    borderColor: red[500],
-                    bgcolor: isDarkMode ? 'background.paper' : 'background.default'
+                    transition: `max-height ${duration.slow}ms ${easing.standard}`,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    borderLeft: '3px solid',
+                    borderLeftColor: 'error.main',
+                    bgcolor: 'background.raised'
                 }}
             >
                 {/* Header */}
                 <Box 
+                    component="button"
+                    type="button"
+                    aria-expanded={expanded}
+                    aria-label={expanded ? 'Recolher o combate' : 'Expandir o combate'}
                     sx={{ 
                         p: 1.5, 
-                        bgcolor: red[600], 
-                        color: 'white',
+                        width: '100%',
+                        border: 0,
+                        bgcolor: 'transparent',
+                        color: 'text.primary',
+                        font: 'inherit',
+                        textAlign: 'left',
                         display: 'flex',
                         alignItems: 'center',
                         gap: 1,
@@ -312,22 +407,27 @@ export default function CombatStatus({
                     }}
                     onClick={() => setExpanded(!expanded)}
                 >
-                    <SportsKabaddiIcon />
-                    <Typography variant="subtitle1" sx={{ fontWeight: 700, flex: 1 }}>
-                        Combate - Round {combat.round}
-                    </Typography>
+                    <SportsKabaddiIcon sx={{ color: 'error.light' }} />
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                        <Typography variant="subtitle1" sx={{ fontWeight: 700, lineHeight: 1.25 }}>
+                            Combate - Round {combat.round}
+                        </Typography>
+                        {turnSummary && (
+                            <Typography variant="caption" noWrap component="div" sx={{ color: 'text.secondary', lineHeight: 1.3 }}>
+                                {turnSummary}
+                            </Typography>
+                        )}
+                    </Box>
                     <Chip 
                         label={combat.phase === 'INITIATIVE' ? 'Iniciativa' : 'Ação'}
                         size="small"
                         sx={{ 
-                            bgcolor: combat.phase === 'INITIATIVE' ? yellow[700] : green[600],
-                            color: 'white',
+                            bgcolor: combat.phase === 'INITIATIVE' ? 'primary.main' : 'success.main',
+                            color: combat.phase === 'INITIATIVE' ? 'primary.contrastText' : 'success.contrastText',
                             fontWeight: 600
                         }}
                     />
-                    <IconButton size="small" sx={{ color: 'white' }}>
-                        {expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-                    </IconButton>
+                    {expanded ? <ExpandLessIcon sx={{ color: 'text.secondary' }} /> : <ExpandMoreIcon sx={{ color: 'text.secondary' }} />}
                 </Box>
 
                 <Collapse in={expanded}>
@@ -341,11 +441,56 @@ export default function CombatStatus({
                             >
                                 <Typography variant="body2" sx={{ fontWeight: 600 }}>
                                     {isUserTurn 
-                                        ? '🎯 É sua vez de agir!' 
+                                        ? 'É sua vez de agir!' 
                                         : `Vez de ${currentCombatant.name}`
                                     }
                                 </Typography>
                             </Alert>
+                        )}
+
+                        {/* Ataques ao personagem do jogador: escolher e rolar a defesa */}
+                        {combat.phase === 'ACTION' && userCombatant && !isGM && (
+                            <IncomingAttacks combat={combat} combatantId={userCombatant.id} />
+                        )}
+
+                        {/* Reação aberta (o mestre abriu, ou o ataque resolvido abriu): o que aconteceu e as magias de Reação que combinam */}
+                        {combat.phase === 'ACTION' && userCombatant && !isGM && (
+                            <ReactionOffers
+                                combat={combat}
+                                combatantId={userCombatant.id}
+                                onFresh={(text) => {
+                                    setExpanded(true);
+                                    enqueueSnackbar(`${text}. Dá para reagir.`, { variant: 'info', autoHideDuration: 6000, anchorOrigin: { vertical: 'top', horizontal: 'center' } });
+                                }}
+                            />
+                        )}
+
+                        {/* Quem se esconde sabe de quem (a matriz de percepção é do mestre) */}
+                        {combat.phase === 'ACTION' && userCombatant && !isGM && (
+                            <HiddenFromNotice combat={combat} combatantId={userCombatant.id} />
+                        )}
+
+                        {/* Ataque de oportunidade: ofertas para reagir e a declaração de saída do alcance */}
+                        {combat.phase === 'ACTION' && userCombatant && !isGM && (
+                            <>
+                                <OpportunityOffers combat={combat} combatantId={userCombatant.id} />
+                                <LeaveReachButton combat={combat} combatantId={userCombatant.id} />
+                            </>
+                        )}
+
+                        {/* Ações da rodada do próprio personagem (Padrão, Bônus, Movimento, Reação) */}
+                        {combat.phase === 'ACTION' && userCombatant && !isGM && (
+                            <Box sx={{ mb: 1.5 }}>
+                                <Typography variant="caption" component="div" sx={{ color: 'text.secondary', mb: 0.5 }}>
+                                    Suas ações nesta rodada
+                                </Typography>
+                                <ActionPips
+                                    budget={effectiveBudget(userCombatant)}
+                                    onSelect={handleSpendAction}
+                                    disableSpent
+                                    busy={isSpendingAction}
+                                />
+                            </Box>
                         )}
 
                         {/* Fase de Iniciativa - Alerta para rolar */}
@@ -359,7 +504,7 @@ export default function CombatStatus({
                                     variant="contained"
                                     startIcon={<CasinoIcon />}
                                     onClick={() => setInitiativeDialogOpen(true)}
-                                    sx={{ mt: 1, bgcolor: orange[600] }}
+                                    sx={{ mt: 1, bgcolor: 'warning.main', color: 'warning.contrastText', '&:hover': { bgcolor: 'warning.light' } }}
                                 >
                                     Rolar Iniciativa
                                 </Button>
@@ -377,7 +522,7 @@ export default function CombatStatus({
                                         setActionType('damage');
                                         setActionDialogOpen(true);
                                     }}
-                                    sx={{ flex: 1, bgcolor: red[600], minWidth: 80 }}
+                                    sx={{ flex: 1, bgcolor: 'error.main', color: 'error.contrastText', '&:hover': { bgcolor: 'error.light' }, minWidth: 80 }}
                                 >
                                     Dano
                                 </Button>
@@ -389,7 +534,7 @@ export default function CombatStatus({
                                         setActionType('heal');
                                         setActionDialogOpen(true);
                                     }}
-                                    sx={{ flex: 1, bgcolor: green[600], minWidth: 80 }}
+                                    sx={{ flex: 1, bgcolor: 'success.main', color: 'success.contrastText', '&:hover': { bgcolor: 'success.light' }, minWidth: 80 }}
                                 >
                                     Cura
                                 </Button>
@@ -439,16 +584,14 @@ export default function CombatStatus({
                                             alignItems: 'center',
                                             gap: 1,
                                             bgcolor: isCurrentTurn 
-                                                ? (isDarkMode 
-                                                    ? (isUser ? 'rgba(255, 193, 7, 0.2)' : 'rgba(33, 150, 243, 0.2)')
-                                                    : (isUser ? yellow[100] : blue[50]))
+                                                ? (isUser ? alpha(theme.palette.primary.main, 0.2) : alpha(theme.palette.info.main, 0.2))
                                                 : combatant.hasActed 
-                                                    ? (isDarkMode ? 'rgba(158, 158, 158, 0.1)' : grey[100])
-                                                    : (isDarkMode ? 'background.paper' : 'white'),
+                                                    ? 'action.hover'
+                                                    : 'background.paper',
                                             border: isCurrentTurn ? '2px solid' : '1px solid',
                                             borderColor: isCurrentTurn 
-                                                ? (isUser ? yellow[600] : blue[400])
-                                                : (isDarkMode ? 'rgba(255, 255, 255, 0.12)' : grey[300]),
+                                                ? (isUser ? 'primary.main' : 'info.main')
+                                                : 'divider',
                                             opacity: combatant.hasActed && !isCurrentTurn ? 0.6 : 1
                                         }}
                                     >
@@ -457,7 +600,7 @@ export default function CombatStatus({
                                             sx={{ 
                                                 width: 32, 
                                                 height: 32,
-                                                bgcolor: isPlayer ? blue[500] : orange[500]
+                                                bgcolor: isPlayer ? 'info.main' : 'warning.main'
                                             }}
                                         >
                                             {isPlayer 
@@ -486,7 +629,7 @@ export default function CombatStatus({
                                                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.3, mt: 0.5 }}>
                                                     {/* LP */}
                                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                                        <FavoriteIcon sx={{ fontSize: 10, color: red[400] }} />
+                                                        <FavoriteIcon sx={{ fontSize: 12, color: color.lp }} />
                                                         <LinearProgress
                                                             variant="determinate"
                                                             value={lpPercent}
@@ -494,24 +637,24 @@ export default function CombatStatus({
                                                                 flex: 1,
                                                                 height: 5,
                                                                 borderRadius: 1,
-                                                                bgcolor: isDarkMode ? 'rgba(255,255,255,0.1)' : grey[300],
+                                                                bgcolor: 'divider',
                                                                 '& .MuiLinearProgress-bar': {
                                                                     bgcolor: lpPercent > 50 
-                                                                        ? green[500] 
+                                                                        ? color.success 
                                                                         : lpPercent > 25 
-                                                                            ? orange[500] 
-                                                                            : red[500]
+                                                                            ? color.warning 
+                                                                            : color.lp
                                                                 }
                                                             }}
                                                         />
-                                                        <Typography variant="caption" sx={{ minWidth: 36, textAlign: 'right', fontSize: '0.65rem', color: 'text.secondary' }}>
+                                                        <Typography variant="caption" sx={{ minWidth: 36, textAlign: 'right', fontSize: '0.75rem', color: 'text.secondary' }}>
                                                             {currentLp}/{maxLp}
                                                         </Typography>
                                                     </Box>
                                                     {/* MP (apenas se tiver) */}
                                                     {maxMp > 0 && (
                                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                                            <BoltIcon sx={{ fontSize: 10, color: blue[400] }} />
+                                                            <BoltIcon sx={{ fontSize: 12, color: color.mp }} />
                                                             <LinearProgress
                                                                 variant="determinate"
                                                                 value={mpPercent}
@@ -519,13 +662,13 @@ export default function CombatStatus({
                                                                     flex: 1,
                                                                     height: 5,
                                                                     borderRadius: 1,
-                                                                    bgcolor: isDarkMode ? 'rgba(255,255,255,0.1)' : grey[300],
+                                                                    bgcolor: 'divider',
                                                                     '& .MuiLinearProgress-bar': {
-                                                                        bgcolor: blue[500]
+                                                                        bgcolor: color.mp
                                                                     }
                                                                 }}
                                                             />
-                                                            <Typography variant="caption" sx={{ minWidth: 36, textAlign: 'right', fontSize: '0.65rem', color: 'text.secondary' }}>
+                                                            <Typography variant="caption" sx={{ minWidth: 36, textAlign: 'right', fontSize: '0.75rem', color: 'text.secondary' }}>
                                                                 {currentMp}/{maxMp}
                                                             </Typography>
                                                         </Box>
@@ -549,8 +692,8 @@ export default function CombatStatus({
                                                     size="small"
                                                     sx={{ 
                                                         height: 20,
-                                                        fontSize: '0.7rem',
-                                                        bgcolor: isDarkMode ? 'rgba(255,255,255,0.1)' : grey[200]
+                                                        fontSize: '0.75rem',
+                                                        bgcolor: 'action.hover'
                                                     }}
                                                 />
                                             </Tooltip>
@@ -564,10 +707,10 @@ export default function CombatStatus({
                                                 sx={{
                                                     height: 20,
                                                     width: 20,
-                                                    fontSize: '0.7rem',
+                                                    fontSize: '0.75rem',
                                                     bgcolor: combatant.hasActed 
-                                                        ? (isDarkMode ? 'rgba(76, 175, 80, 0.3)' : green[100])
-                                                        : (isDarkMode ? 'rgba(255,255,255,0.1)' : grey[100])
+                                                        ? alpha(theme.palette.success.main, 0.3)
+                                                        : 'action.hover'
                                                 }}
                                             />
                                         )}
@@ -582,12 +725,12 @@ export default function CombatStatus({
             {/* Dialog de Iniciativa */}
             <Dialog open={initiativeDialogOpen} onClose={() => !isRolling && setInitiativeDialogOpen(false)}>
                 <DialogTitle sx={{ 
-                    bgcolor: isDarkMode ? 'rgba(255, 152, 0, 0.15)' : orange[50], 
+                    bgcolor: alpha(theme.palette.warning.main, 0.15), 
                     display: 'flex', 
                     alignItems: 'center', 
                     gap: 1 
                 }}>
-                    <CasinoIcon sx={{ color: orange[600] }} />
+                    <CasinoIcon sx={{ color: 'text.secondary' }} />
                     Teste de Iniciativa
                 </DialogTitle>
                 <DialogContent sx={{ mt: 2 }}>
@@ -599,7 +742,7 @@ export default function CombatStatus({
                             {initiativeFormula
                                 ? (
                                     <>
-                                        Sua rolagem: <strong>{initiativeFormula.numDice}d20 + {initiativeFormula.expertiseValue}</strong> (Agilidade)
+                                        Sua rolagem: <strong>{initiativeFormula.numDice}d20 {initiativeFormula.expertiseValue >= 0 ? '+' : '−'} {Math.abs(initiativeFormula.expertiseValue)}</strong> (Agilidade)
                                     </>
                                 ) : (
                                     <>
@@ -618,7 +761,7 @@ export default function CombatStatus({
                         onClick={handleRollInitiative}
                         disabled={isRolling}
                         startIcon={<CasinoIcon />}
-                        sx={{ bgcolor: orange[600] }}
+                        sx={{ bgcolor: 'warning.main', color: 'warning.contrastText', '&:hover': { bgcolor: 'warning.light' } }}
                     >
                         {isRolling ? 'Rolando...' : 'Rolar Iniciativa'}
                     </Button>
@@ -633,26 +776,24 @@ export default function CombatStatus({
                 fullWidth
                 PaperProps={{
                     sx: {
-                        bgcolor: isDarkMode ? 'background.paper' : undefined
+                        bgcolor: 'background.paper'
                     }
                 }}
             >
                 <DialogTitle sx={{ 
-                    bgcolor: isDarkMode 
-                        ? (actionType === 'damage' ? 'rgba(244, 67, 54, 0.2)' : 'rgba(76, 175, 80, 0.2)')
-                        : (actionType === 'damage' ? red[50] : green[50]),
-                    color: isDarkMode ? 'text.primary' : undefined,
+                    bgcolor: actionType === 'damage' ? alpha(theme.palette.error.main, 0.2) : alpha(theme.palette.success.main, 0.2),
+                    color: 'text.primary',
                     display: 'flex',
                     alignItems: 'center',
                     gap: 1
                 }}>
                     {actionType === 'damage' 
-                        ? <WhatshotIcon sx={{ color: isDarkMode ? red[400] : red[600] }} />
-                        : <LocalHospitalIcon sx={{ color: isDarkMode ? green[400] : green[600] }} />
+                        ? <WhatshotIcon sx={{ color: 'error.main' }} />
+                        : <LocalHospitalIcon sx={{ color: 'success.main' }} />
                     }
                     {actionType === 'damage' ? 'Aplicar Dano' : 'Aplicar Cura'}
                 </DialogTitle>
-                <DialogContent sx={{ mt: 2, bgcolor: isDarkMode ? 'background.paper' : undefined }}>
+                <DialogContent sx={{ mt: 2, bgcolor: 'background.paper' }}>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                         {/* Valor */}
                         <TextField
@@ -664,7 +805,7 @@ export default function CombatStatus({
                             fullWidth
                             sx={{
                                 '& .MuiOutlinedInput-root': {
-                                    bgcolor: isDarkMode ? 'rgba(255,255,255,0.05)' : undefined
+                                    bgcolor: 'background.raised'
                                 }
                             }}
                         />
@@ -695,22 +836,20 @@ export default function CombatStatus({
                                                 gap: 1,
                                                 cursor: 'pointer',
                                                 bgcolor: isSelected 
-                                                    ? (isDarkMode
-                                                        ? (actionType === 'damage' ? 'rgba(244, 67, 54, 0.2)' : 'rgba(76, 175, 80, 0.2)')
-                                                        : (actionType === 'damage' ? red[50] : green[50]))
+                                                    ? (actionType === 'damage' ? alpha(theme.palette.error.main, 0.2) : alpha(theme.palette.success.main, 0.2))
                                                     : 'background.paper',
                                                 border: '2px solid',
                                                 borderColor: isSelected
-                                                    ? (actionType === 'damage' ? red[400] : green[400])
-                                                    : (isDarkMode ? 'rgba(255,255,255,0.12)' : grey[200]),
+                                                    ? (actionType === 'damage' ? 'error.main' : 'success.main')
+                                                    : 'divider',
                                                 '&:hover': {
-                                                    bgcolor: isDarkMode ? 'rgba(255,255,255,0.05)' : grey[50]
+                                                    bgcolor: 'action.hover'
                                                 }
                                             }}
                                         >
                                             <Avatar
                                                 src={combatant.avatar}
-                                                sx={{ width: 28, height: 28, bgcolor: isPlayer ? blue[500] : orange[500] }}
+                                                sx={{ width: 28, height: 28, bgcolor: isPlayer ? 'info.main' : 'warning.main' }}
                                             >
                                                 {isPlayer ? <PersonIcon fontSize="small" /> : <PetsIcon fontSize="small" />}
                                             </Avatar>
@@ -731,12 +870,12 @@ export default function CombatStatus({
                 </DialogContent>
                 <DialogActions sx={{ 
                     p: 2, 
-                    bgcolor: isDarkMode ? 'background.paper' : undefined 
+                    bgcolor: 'background.paper' 
                 }}>
                     <Button 
                         onClick={() => setActionDialogOpen(false)} 
                         disabled={isApplying}
-                        sx={{ color: isDarkMode ? 'text.secondary' : undefined }}
+                        sx={{ color: 'text.secondary' }}
                     >
                         Cancelar
                     </Button>
@@ -745,13 +884,10 @@ export default function CombatStatus({
                         onClick={handleApplyAction}
                         disabled={!targetId || actionValue <= 0 || isApplying}
                         sx={{ 
-                            bgcolor: actionType === 'damage' 
-                                ? (isDarkMode ? red[700] : red[600]) 
-                                : (isDarkMode ? green[700] : green[600]),
+                            bgcolor: actionType === 'damage' ? 'error.main' : 'success.main',
+                            color: actionType === 'damage' ? 'error.contrastText' : 'success.contrastText',
                             '&:hover': {
-                                bgcolor: actionType === 'damage'
-                                    ? (isDarkMode ? red[600] : red[700])
-                                    : (isDarkMode ? green[600] : green[700])
+                                bgcolor: actionType === 'damage' ? 'error.light' : 'success.light'
                             }
                         }}
                     >
@@ -762,3 +898,5 @@ export default function CombatStatus({
         </>
     );
 }
+
+export default memo(CombatStatus);

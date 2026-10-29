@@ -1,5 +1,7 @@
-import { Gavel, Inventory2, Shield } from '@mui/icons-material'
-import { amber, blue, blueGrey, cyan, deepPurple, green, grey, indigo, lightBlue, lightGreen, orange, pink, purple, red, teal } from '@mui/material/colors'
+import { SECONDARY_ELEMENTS } from './secondaryElements'
+import { Inventory2, Shield } from '@mui/icons-material'
+import WeaponIcon from '@components/misc/WeaponIcon'
+import { classMark, color, element, rarity } from '@themes/tokens'
 import type { ItemAttributes } from '@models/types/item'
 import type { ClassNames, RarityType } from '@models/types/string'
 
@@ -17,7 +19,7 @@ export {
 } from './defaultMagitechSystem'
 
 /* eslint-disable max-len */
-export const intro = `agia. Algo que só era possível em contos de fadas agora é possível no final do século XXI graças a tecnologia. Depois da drástica queda de temperatura que o mundo sofreu em 2025, a fome subiu e a economia mundial quebrou, quando em 2030, a terceira guerra mundial eclodiu, como consequência dos atos anteriores. A guerra termonuclear reduziu a população mundial para 3 bilhões, além de deixar muitas partes do mundo inabitadas com uma radiação que só se dissiparia depois de séculos.
+export const intro = `Magia. Algo que só era possível em contos de fadas agora é possível no final do século XXI graças a tecnologia. Depois da drástica queda de temperatura que o mundo sofreu em 2025, a fome subiu e a economia mundial quebrou, quando em 2030, a terceira guerra mundial eclodiu, como consequência dos atos anteriores. A guerra termonuclear reduziu a população mundial para 3 bilhões, além de deixar muitas partes do mundo inabitadas com uma radiação que só se dissiparia depois de séculos.
 
 Até 2045, o planeta terra viveu incontáveis crises, tantas crises que esse período ficou marcado para a história. Conhecido como "Apocalipse", o fim deste período de 15 anos de terror trouxe um marco muito importante para toda a humanidade, algo que revolucionou a vida na Terra: A Magia. Durante o período do apocalipse, a humanidade estava acabada, uma verdadeira civilização pós-apocalíptica. A moeda desvalorizou em todo o mundo, então as pessoas começaram a saquear espólios e sobreviver por elas mesmas até a moeda ser completamente abolida, e a partir daí só foi piorando. Guerras, doenças aplicadas por conta da radiação, pragas... Muitas pessoas se esconderam em bunkers até este período acabar, porém muitas pessoas não conseguiram resistir durante estes 15 anos...
 
@@ -30,9 +32,8 @@ Em 2052, O Primeiro Colégio da Universidade Federal de Magia (UFEM), cuja é a 
 A Magia é na verdade um grande e complexo sistema de códigos que são transmitidos via satélite e processados por ORM's (Objeto Receptor de Magia ou Magic Receiver Object). Todo mago possui um ORM, sendo que este pode ser literalmente qualquer coisa, desde que tenha um chip microscópico chamado Zeptachip embutido no objeto que consiga interpretar e decodificar os códigos. Quando você tem os códigos decriptografados em mãos, você pode realinhar e reorganizar esses códigos (por meio do ORM) criando uma Sequência Mágica. Uma sequência mágica pode ser desde uma magia medíocre até uma catástrofe dependendo de como esses códigos forem organizados. Uma vez tendo decodificado uma magia, não será necessário realizar o processo de reorganização do código para utilizá-la novamente. Por conta de existir infinitas possibilidades de rearranjar esses códigos, a possibilidade de criar magias também é infinita.
 `
 export const about = 'Magitech RPG é um sistema de RPG de mesa feito por Vitor Hugo Rodrigues dos Santos inspirado em D&D, Tormenta, Order & Chaos, Ordem Paranormal, entre outros sistemas de RPG. Para quem não sabe, RPG (abreviação de Role Playing Game), é um jogo de interpretação de papéis, onde aqueles que participam são divididos entre o Mestre e os Jogadores. O Mestre é responsável por criar histórias interativas e dinâmicas, ambos parte do universo proposto feito do mesmo ou adaptado de um existente. Ele tem de liderar jogadores de forma autônoma e julgar suas ações e diálogos dentro deste sistema de regras do jogo. Manter a coerência e o equilíbrio e toda a história por trás da aventura. As palavras do Mestre são universais, desde que seja justo e todos se divirtam, mesmo quando as coisas dão errado para a equipe. O Jogador, que é sujeito a todas e quaisquer consequências da história, que nem sempre estão sob seu controle, possuem o dom de enriquecer história. O papel dos jogadores, é desempenhar consequências que guiarão a aventura e si mesmos, seja essas consequências boas ou ruins O Sistema Magitech RPG não é um sistema complicado quando se trata de jogabilidade, sendo o mais complexo a criação de personagens e a manipulação de magias.'
-export const landingPageBg = 'https://cdn.leonardo.ai/users/09bf7b68-cc31-4280-b643-f788807fe7cd/generations/c793f097-4dd2-4508-ba53-9de8a93d5f50/AlbedoBase_XL_an_epic_battle_between_a_man_with_a_school_unifo_0.jpg'
-export const landingPageSynopse = 'm um mundo devastado por uma guerra nuclear, a humanidade descobre a magia artificial, uma tecnologia que permite manipular a matéria e a energia com códigos transmitidos por satélite. Agora, os países disputam pelo controle da magia, formando esquadrões de magos, soldados que usam objetos receptores de magia para criar sequências mágicas. Você é um estudante da UFEM, a mais renomada escola de magia do mundo, onde você aprende a usar a magia para ajudar o estado, seja para fins militares, governamentais ou científicos. Você também enfrenta os perigos e os mistérios da sequela de um mundo pós-apocalíptico, onde a magia é a maior arma e a maior esperança.'
-export const landingPageGrimoire = 'agia artificial é uma tecnologia que permite manipular a matéria e a energia com códigos transmitidos por satélite. Esses códigos são processados por objetos receptores de magia, chamados de ORM, que podem ser qualquer coisa que tenha um chip microscópico chamado Zeptachip. Os magos usam esses objetos para criar sequências mágicas, que são combinações de códigos que geram efeitos variados, como fogo, luz, sombra, etc. A magia artificial é a maior descoberta da humanidade, que revolucionou o mundo após o Apocalipse, uma guerra nuclear que devastou o planeta. A magia artificial é a maior arma e a maior esperança da humanidade, mas também é a fonte de muitos conflitos, mistérios e perigos.'
+export const landingPageSynopse = 'Em um mundo devastado por uma guerra nuclear, a humanidade descobre a magia artificial, uma tecnologia que permite manipular a matéria e a energia com códigos transmitidos por satélite. Agora, os países disputam pelo controle da magia, formando esquadrões de magos, soldados que usam objetos receptores de magia para criar sequências mágicas. Você é um estudante da UFEM, a mais renomada escola de magia do mundo, onde você aprende a usar a magia para ajudar o estado, seja para fins militares, governamentais ou científicos. Você também enfrenta os perigos e os mistérios da sequela de um mundo pós-apocalíptico, onde a magia é a maior arma e a maior esperança.'
+export const landingPageGrimoire = 'Magia artificial é uma tecnologia que permite manipular a matéria e a energia com códigos transmitidos por satélite. Esses códigos são processados por objetos receptores de magia, chamados de ORM, que podem ser qualquer coisa que tenha um chip microscópico chamado Zeptachip. Os magos usam esses objetos para criar sequências mágicas, que são combinações de códigos que geram efeitos variados, como fogo, luz, sombra, etc. A magia artificial é a maior descoberta da humanidade, que revolucionou o mundo após o Apocalipse, uma guerra nuclear que devastou o planeta. A magia artificial é a maior arma e a maior esperança da humanidade, mas também é a fonte de muitos conflitos, mistérios e perigos.'
 export const HOST = ''
 export const PUSHER_KEY = 'e058916b3ab024829e9c'
 export const NODE_ENV: 'production' | 'devlopment' = 'production' // process.env.NODE_ENV
@@ -61,102 +62,42 @@ export const elements = [
     'Não-Elemental'
 ]
 
-export const specialElements = [
-    'Sangue',
-    'Vácuo',
-    'Psíquico',
-    'Radiação',
-    'Explosão'
-]
+/** Elementos secundários (ver `SECONDARY_ELEMENTS`); o nome antigo segue nos filtros de magia */
+export { SECONDARY_ELEMENTS }
 
-export const elementColor = {
-    'FOGO': red[500],
-    'ÁGUA': blue[600],
-    'AR': grey[300],
-    'TERRA': green[500],
-    'PLANTA': green[200],
-    'ELETRICIDADE': indigo[300],
-    'GELO': blue[300],
-    'METAL': grey[500],
-    'LUZ': amber[400],
-    'TREVAS': blueGrey[400],
-    'NÃO-ELEMENTAL': grey[100],
-    
-    'SANGUE': red[900],
-    'VÁCUO': '#555',
-    'PSÍQUICO': pink[500],
-    'RADIAÇÃO': purple[500],
-    'EXPLOSÃO': amber[900],
-    'TÓXICO': green[600]
-}
+export const specialElements: string[] = [ ...SECONDARY_ELEMENTS ]
 
 /**
- * Cores vibrantes para cards de magia - mais saturadas e distintas
+ * Cor de marca de cada elemento (chave em maiúsculas, como no banco). Gerada de `themes/tokens.ts`:
+ * é o único mapa de elementos do projeto.
  */
-export const spellElementColor: Record<string, string> = {
-    // Elementos básicos
-    'FOGO': '#ff4d2a',           // Laranja-vermelho vibrante
-    'ÁGUA': '#00b8ff',           // Azul ciano brilhante
-    'AR': '#a8e6ff',             // Azul celeste claro (diferente de água)
-    'TERRA': '#8b5a2b',          // Marrom terra (diferente de verde)
-    'ELETRICIDADE': '#ffeb3b',   // Amarelo elétrico
-    'LUZ': '#fff176',            // Amarelo dourado claro
-    'TREVAS': '#7c4dff',         // Roxo profundo
-    'NÃO-ELEMENTAL': '#90a4ae',  // Lilás mágico (não branco!)
-    
-    // Elementos especiais
-    'SANGUE': '#b71c1c',         // Vermelho sangue escuro
-    'VÁCUO': '#4b2bda',          // Roxo escuro profundo
-    'PSÍQUICO': '#e040fb',       // Magenta vibrante
-    'RADIAÇÃO': '#76ff03',       // Verde neon radioativo
-    'EXPLOSÃO': '#ff6d00',       // Laranja explosivo
-    'TÓXICO': '#00e676',         // Verde tóxico brilhante
-    
-    // Extras
-    'GELO': '#4fc3f7',           // Azul gelo
-    'PLANTA': '#69f0ae',         // Verde natureza
-    'METAL': '#90a4ae'           // Cinza metálico
-}
+export const elementColor: Record<string, string> = { ...element }
 
-export const rarityColor: Record<RarityType, string> = {
-    'Comum': grey[400],
-    'Incomum': green[400],
-    'Raro': blue[400],
-    'Épico': deepPurple[400],
-    'Lendário': orange[400],
-    'Único': red[400],
-    'Mágico': cyan[400],
-    'Especial': indigo[400],
-    'Amaldiçoado': pink[400]
-}
+/** @deprecated Use `elementColor`: o mapa neon foi unificado a ele. */
+export const spellElementColor: Record<string, string> = elementColor
 
-export const classColor: Record<ClassNames, string> = {
-    'Combatente': red[500],
-    'Especialista': blue[600],
-    'Feiticeiro': teal[400],
-    'Bruxo': deepPurple[400],
-    'Monge': lightBlue[300],
-    'Druida': lightGreen[500],
-    'Arcano': pink[500],
-    'Ladino': grey[500]
-}
+/** Cor de cada raridade; gerada de `themes/tokens.ts` */
+export const rarityColor: Record<RarityType, string> = { ...rarity }
+
+/** Cor de cada classe; gerada de `themes/tokens.ts` */
+export const classColor: Record<ClassNames, string> = { ...classMark }
 
 export const itemAttributes: ItemAttributes = {
     weapon: {
-        icon: Gavel,
-        color: '#ef5350',
+        icon: WeaponIcon,
+        color: color.danger,
         label: 'Arma',
         badgeColor: 'error.main'
     },
     armor: {
         icon: Shield,
-        color: '#42a5f5',
+        color: color.ap,
         label: 'Armadura',
         badgeColor: 'info.main'
     },
     item: {
         icon: Inventory2,
-        color: '#66bb6a',
+        color: color.success,
         label: 'Item',
         badgeColor: 'success.main'
     }

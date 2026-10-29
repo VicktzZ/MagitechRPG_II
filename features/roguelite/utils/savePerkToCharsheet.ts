@@ -157,6 +157,11 @@ interface SavePerkOptions {
     campaignMode?: string // Mode da campanha (Roguelite, Classic, etc.)
     currentCharsheet: any // Dados atuais do charsheet para fazer merge
     replacedItemId?: string // ID do item a ser substituído (quando não há espaço)
+    /**
+     * Como gravar a ficha. Padrão: SDK do navegador (o jogador grava a própria ficha).
+     * No servidor (compra na loja) a rota passa uma gravação pelo Admin SDK.
+     */
+    updateCharsheet?: (charsheetId: string, data: Record<string, any>) => Promise<void>
 }
 
 /**
@@ -180,6 +185,7 @@ function extractPerkForSession(perk: any): { id: string; rarity: string; name: s
  */
 export async function savePerkToCharsheet(options: SavePerkOptions): Promise<SavePerkResult> {
     const { perk, charsheetId, campaignCode , currentCharsheet, replacedItemId } = options
+    const updateCharsheet = options.updateCharsheet ?? (async (id: string, data: Record<string, any>) => { await charsheetEntity.update(id, data) })
 
     // Removida a verificação de modo da campanha - perks podem ser salvos em qualquer campanha
 
@@ -451,7 +457,7 @@ export async function savePerkToCharsheet(options: SavePerkOptions): Promise<Sav
         const cleanUpdateData = removeUndefined(updateData)
         
         // Salva no Firestore
-        await charsheetEntity.update(charsheetId, cleanUpdateData)
+        await updateCharsheet(charsheetId, cleanUpdateData)
         console.log('[savePerkToCharsheet] Salvo no Firestore:', cleanUpdateData)
 
         return {

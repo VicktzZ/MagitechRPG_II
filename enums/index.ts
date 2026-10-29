@@ -24,8 +24,6 @@ export enum PusherEvent {
     CAMPAIGN_UPDATED = 'campaign:updated',
     CHARSHEET_UPDATED = 'charsheet:updated',
     NOTES_UPDATED = 'notes:updated',
-    TEST_REQUEST = 'test:requested',
-    TEST_RESULT = 'test:responded',
     SESSION_USERS_UPDATED = 'client-session_users_updated',
     USER_ENTER = 'client-user_enter',
     ITEM_ADDED = 'client-item_added',

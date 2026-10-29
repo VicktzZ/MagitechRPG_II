@@ -56,7 +56,7 @@ export default function AddNoteDialog({ open, onClose, campaignId }: AddNoteDial
     return (
         <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
             <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <NoteAddIcon color="primary" />
+                <NoteAddIcon sx={{ color: 'text.secondary' }} />
                 Adicionar Nota da Campanha
             </DialogTitle>
             <DialogContent>

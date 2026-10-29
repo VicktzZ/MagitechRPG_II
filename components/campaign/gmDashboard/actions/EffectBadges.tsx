@@ -1,6 +1,7 @@
 'use client'
 
 import { Box, Chip, Stack, Tooltip, Typography } from '@mui/material'
+import { color } from '@themes/tokens'
 import CloseIcon from '@mui/icons-material/Close'
 import type { AppliedEffect, CombatEffectModifier } from '@models'
 import { getCategoryLabel, getEffectDisplayName } from '@utils/combatEffectLabels'
@@ -19,20 +20,20 @@ function formatModifier(mod: CombatEffectModifier): string {
     const ele = mod.element ? ` [${mod.element}]` : ''
 
     switch (mod.kind) {
-    case 'stat_bonus':            return `⬆️${tgt}${val ? ` ${val}` : ''}`
-    case 'stat_penalty':          return `⬇️${tgt}${val ? ` ${val}` : ''}`
-    case 'damage_resistance':     return `🛡️ resiste${ele}${val ? ` ${val}` : ''}`
-    case 'damage_vulnerability':  return `💥 vulnerável${ele}${val ? ` ${val}` : ''}`
-    case 'damage_dealt_bonus':    return `⚔️ dano causado ${val || '+'}`
-    case 'damage_dealt_penalty':  return `⚔️ dano causado ${val || '-'}`
-    case 'advantage':             return `✨ vantagem${tgt}`
-    case 'disadvantage':          return `⚠️ desvantagem${tgt}`
-    case 'skip_turn':             return '⏭️ pula turno'
-    case 'no_healing':            return '🚫 cura bloqueada'
-    case 'no_actions':            return '🚫 não pode agir'
-    case 'no_spells':             return '🚫 sem magias'
-    case 'overflow_stat':         return `💗${tgt} pode ultrapassar${val ? ` ${val}` : ''}`
-    case 'flag':                  return `🏷️${tgt}${val ? ` (${val})` : ''}`
+    case 'stat_bonus':            return `aumenta${tgt}${val ? ` ${val}` : ''}`
+    case 'stat_penalty':          return `reduz${tgt}${val ? ` ${val}` : ''}`
+    case 'damage_resistance':     return `resiste${ele}${val ? ` ${val}` : ''}`
+    case 'damage_vulnerability':  return `vulnerável${ele}${val ? ` ${val}` : ''}`
+    case 'damage_dealt_bonus':    return `dano causado ${val || '+'}`
+    case 'damage_dealt_penalty':  return `dano causado ${val || '-'}`
+    case 'advantage':             return `vantagem${tgt}`
+    case 'disadvantage':          return `desvantagem${tgt}`
+    case 'skip_turn':             return 'pula turno'
+    case 'no_healing':            return 'cura bloqueada'
+    case 'no_actions':            return 'não pode agir'
+    case 'no_spells':             return 'sem magias'
+    case 'overflow_stat':         return `${tgt} pode ultrapassar${val ? ` ${val}` : ''}`.trim()
+    case 'flag':                  return `marca${tgt}${val ? ` (${val})` : ''}`
     default:                      return `${mod.kind}${tgt}${val ? ` ${val}` : ''}`
     }
 }
@@ -98,7 +99,7 @@ export default function EffectBadges({
                         </Typography>
 
                         {modifiers.length > 0 && (
-                            <Box sx={{ mt: 0.75, pt: 0.5, borderTop: '1px solid rgba(255,255,255,0.2)' }}>
+                            <Box sx={{ mt: 0.75, pt: 0.5, borderTop: `1px solid ${color.borderStrong}` }}>
                                 <Typography variant="caption" sx={{ display: 'block', fontWeight: 600, mb: 0.25 }}>
                                     Modificadores
                                 </Typography>
@@ -137,12 +138,13 @@ export default function EffectBadges({
                             deleteIcon={canRemove ? <CloseIcon fontSize="small" /> : undefined}
                             sx={{
                                 bgcolor: effect.color,
-                                color: '#fff',
+                                color: theme => (effect.color ? theme.palette.getContrastText(effect.color) : theme.palette.text.primary),
                                 fontWeight: 600,
                                 height: size === 'small' ? 22 : 28,
                                 '& .MuiChip-deleteIcon': {
-                                    color: 'rgba(255,255,255,0.85)',
-                                    '&:hover': { color: '#fff' }
+                                    color: 'inherit',
+                                    opacity: 0.85,
+                                    '&:hover': { color: 'inherit', opacity: 1 }
                                 }
                             }}
                         />

@@ -2,9 +2,10 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { combatEffectRepository } from '@repositories'
 import { CombatEffectEntity } from '@models/entities'
 import type { CombatEffectCategory, CombatEffectModifier, CombatEffectTiming } from '@models'
-import { findCampaignByCodeOrId } from '@utils/helpers/findCampaignByCodeOrId'
+import { assertId, assertMaxLength, handleRouteError, readJsonBody, requireCampaignGM, requireCampaignMember, requireUser, TEXT_LIMITS } from '@utils/api'
 import { v4 as uuidv4 } from 'uuid'
 import { stripUndefined } from '@utils/firestore/stripUndefined'
+import { color } from '@themes/tokens'
 
 /**
  * GET /api/campaign/[id]/custom/effects
@@ -20,10 +21,8 @@ export async function GET(
         const { searchParams } = new URL(request.url)
         const includeGlobal = searchParams.get('includeGlobal') === 'true'
 
-        const campaign = await findCampaignByCodeOrId(id)
-        if (!campaign) {
-            return NextResponse.json({ error: 'Campanha não encontrada' }, { status: 404 })
-        }
+        const user = await requireUser()
+        const { campaign } = await requireCampaignMember(id, user)
 
         const all = await combatEffectRepository.find()
 
@@ -39,8 +38,7 @@ export async function GET(
             effects: [ ...globalEffects, ...campaignEffects ]
         })
     } catch (error) {
-        console.error('[Campaign Custom Effects] Erro no GET:', error)
-        return NextResponse.json({ error: 'Erro interno' }, { status: 500 })
+        return handleRouteError(error, 'Erro ao listar efeitos da campanha')
     }
 }
 
@@ -77,17 +75,19 @@ export async function POST(
 ) {
     try {
         const { id } = await params
-        const body: CreateBody = await request.json()
+        const user = await requireUser()
+        const { campaign } = await requireCampaignGM(id, user)
 
-        const campaign = await findCampaignByCodeOrId(id)
-        if (!campaign) {
-            return NextResponse.json({ error: 'Campanha não encontrada' }, { status: 404 })
-        }
+        const body: CreateBody = await readJsonBody(request)
+        assertMaxLength(body.name, TEXT_LIMITS.name, 'name')
+        assertMaxLength(body.description, TEXT_LIMITS.description, 'description')
 
         let base: Partial<CombatEffectEntity> | null = null
         if (body.cloneFromId) {
-            const source = await combatEffectRepository.findById(body.cloneFromId)
-            if (source) {
+            const source = await combatEffectRepository.findById(assertId(body.cloneFromId, 'cloneFromId'))
+            // Só clona efeitos globais ou desta própria campanha
+            const canClone = source && (source.scope === 'global' || source.campaignId === campaign.id)
+            if (source && canClone) {
                 base = {
                     name: source.name,
                     description: source.description,
@@ -120,7 +120,7 @@ export async function POST(
             category: body.category ?? base?.category ?? 'damage',
             timing: body.timing ?? base?.timing ?? 'turn',
             element: body.element ?? base?.element,
-            color: body.color ?? base?.color ?? '#ff5722',
+            color: body.color ?? base?.color ?? color.warning,
             icon: body.icon ?? base?.icon ?? '💥',
             levels: levels.map((l: any) => stripUndefined({
                 level: Math.max(1, Math.floor(Number(l.level) || 1)),
@@ -134,7 +134,7 @@ export async function POST(
             customLabels: body.customLabels ?? base?.customLabels,
             scope: 'campaign',
             campaignId: campaign.id,
-            createdBy: body.createdBy ?? 'gm',
+            createdBy: user.id,
             createdAt: new Date().toISOString()
         }))
 
@@ -142,7 +142,6 @@ export async function POST(
 
         return NextResponse.json({ success: true, effect: created }, { status: 201 })
     } catch (error) {
-        console.error('[Campaign Custom Effects] Erro no POST:', error)
-        return NextResponse.json({ error: 'Erro interno' }, { status: 500 })
+        return handleRouteError(error, 'Erro ao criar efeito da campanha')
     }
 }

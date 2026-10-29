@@ -33,7 +33,7 @@ export function Armor(props: ItemTyping<'armor'>): ReactElement {
                     p: 2,
                     backgroundColor: alpha(theme.palette.background.paper, 0.3),
                     borderRadius: 2,
-                    border: `1px solid ${alpha('#42a5f5', 0.2)}`
+                    border: `1px solid ${alpha(theme.palette.info.main, 0.2)}`
                 }}
             >
                 <Stack direction="row" justifyContent="space-between" mb={1}>
@@ -42,6 +42,8 @@ export function Armor(props: ItemTyping<'armor'>): ReactElement {
                     </Typography>
                     <IconButton
                         size="small"
+                        aria-label={showStats ? 'Ocultar detalhes da armadura' : 'Mostrar detalhes da armadura'}
+                        aria-expanded={showStats}
                         onClick={() => setShowStats(!showStats)}
                         sx={{
                             transform: showStats ? 'rotate(180deg)' : 'rotate(0deg)',

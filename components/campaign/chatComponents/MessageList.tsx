@@ -1,10 +1,13 @@
 'use client';
 
-import { forwardRef } from 'react';
+import { forwardRef, memo, useMemo } from 'react';
 import {
+    alpha,
     Avatar,
     Box,
+    Button,
     Chip,
+    CircularProgress,
     Paper,
     Stack,
     Typography,
@@ -13,7 +16,7 @@ import {
 import { Chat, SmartToy, AdminPanelSettings, Casino } from '@mui/icons-material';
 import { DiceMessage } from '@components/misc';
 import { MessageType } from '@enums';
-import { blue, green, orange, purple, grey } from '@mui/material/colors';
+import { color } from '@themes/tokens';
 import type { Message } from '@models';
 
 interface ExtendedMessage extends Message {
@@ -26,13 +29,32 @@ interface MessageListProps {
     currentUserId?: string;
     adminIds: string[];
     onScroll: () => void;
+    /** Há mensagens mais antigas que as carregadas */
+    hasMore?: boolean;
+    loadingOlder?: boolean;
+    onLoadOlder?: () => void;
+    /** Falha ao ler o histórico */
+    loadError?: boolean;
 }
 
-const MessageList = forwardRef<HTMLDivElement, MessageListProps>(function MessageList(
-    { messages, currentUserId, adminIds, onScroll },
+const MessageList = memo(forwardRef<HTMLDivElement, MessageListProps>(function MessageList(
+    { messages, currentUserId, adminIds, onScroll, hasMore = false, loadingOlder = false, onLoadOlder, loadError = false },
     ref
 ) {
     const theme = useTheme();
+
+    // useMemo em vez de .sort() direto no render: .sort() muta o array e é
+    // O(n log n) — refazer isso em TODO render (ex: ao só abrir/fechar o
+    // chat, sem nenhuma mensagem nova) é desperdício, especialmente com
+    // muitas mensagens.
+    const sortedMessages = useMemo(
+        () => [ ...messages ].sort((a, b) => {
+            const timeA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+            const timeB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+            return timeA - timeB;
+        }),
+        [ messages ]
+    );
 
     return (
         <Box 
@@ -42,26 +64,42 @@ const MessageList = forwardRef<HTMLDivElement, MessageListProps>(function Messag
                 overflowY: 'auto',
                 overflowX: 'hidden',
                 p: 2,
-                background: theme.palette.mode === 'dark' 
-                    ? 'rgba(0,0,0,0.2)' 
-                    : 'rgba(255,255,255,0.3)',
+                bgcolor: 'background.paper',
                 '&::-webkit-scrollbar': {
                     width: '8px'
                 },
                 '&::-webkit-scrollbar-track': {
-                    background: 'rgba(0,0,0,0.1)',
+                    background: color.canvas,
                     borderRadius: '4px'
                 },
                 '&::-webkit-scrollbar-thumb': {
-                    background: 'rgba(0,0,0,0.3)',
+                    background: color.borderStrong,
                     borderRadius: '4px',
                     '&:hover': {
-                        background: 'rgba(0,0,0,0.5)'
+                        background: color.borderControl
                     }
                 }
             }} 
             onScroll={onScroll}
         >
+            {loadError && (
+                <Typography role="alert" variant="caption" sx={{ display: 'block', textAlign: 'center', color: 'error.light', mb: 1 }}>
+                    Não foi possível carregar parte do histórico do chat.
+                </Typography>
+            )}
+            {hasMore && onLoadOlder && (
+                <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+                    <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={onLoadOlder}
+                        disabled={loadingOlder}
+                        startIcon={loadingOlder ? <CircularProgress size={14} color="inherit" /> : undefined}
+                    >
+                        Carregar mensagens anteriores
+                    </Button>
+                </Box>
+            )}
             {messages.length === 0 ? (
                 <Box 
                     sx={{
@@ -74,7 +112,7 @@ const MessageList = forwardRef<HTMLDivElement, MessageListProps>(function Messag
                         p: 4
                     }}
                 >
-                    <Chat sx={{ fontSize: '4rem', color: grey[400], mb: 2 }} />
+                    <Chat sx={{ fontSize: '4rem', color: 'text.disabled', mb: 2 }} />
                     <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
                         Nenhuma mensagem ainda
                     </Typography>
@@ -83,12 +121,7 @@ const MessageList = forwardRef<HTMLDivElement, MessageListProps>(function Messag
                     </Typography>
                 </Box>
             ) : (
-                messages
-                    .sort((a, b) => {
-                        const timeA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
-                        const timeB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
-                        return timeA - timeB;
-                    })
+                sortedMessages
                     .map((msg, index) => {
                         const isOwnMessage = msg.by.id === currentUserId;
                         const isGM = adminIds?.includes(msg.by.id);
@@ -112,37 +145,29 @@ const MessageList = forwardRef<HTMLDivElement, MessageListProps>(function Messag
                                         maxWidth: '85%',
                                         minWidth: '200px',
                                         bgcolor: isCombatLog
-                                            ? theme.palette.mode === 'dark' ? 'rgba(244, 67, 54, 0.15)' : 'rgba(244, 67, 54, 0.1)'
+                                            ? alpha(theme.palette.error.main, 0.15)
                                             : isOwnMessage 
-                                                ? blue[900]
+                                                ? color.amberSubtle
                                                 : isBot 
-                                                    ? theme.palette.mode === 'dark' ? 'rgba(76, 175, 80, 0.2)' : green[100]
-                                                    : isGM 
-                                                        ? purple[900]
-                                                        : 'background.paper',
-                                        color: isOwnMessage || isGM
-                                            ? 'white'
-                                            : 'text.primary',
+                                                    ? alpha(theme.palette.success.main, 0.2)
+                                                    : 'background.raised',
+                                        color: 'text.primary',
                                         borderRadius: isOwnMessage 
                                             ? '16px 4px 16px 16px'
                                             : '4px 16px 16px 16px',
-                                        border: isCombatLog
+                                        border: isCombatLog || isDiceMessage
                                             ? '2px solid'
-                                            : isDiceMessage 
-                                                ? `2px solid ${orange[400]}`
-                                                : '1px solid',
+                                            : '1px solid',
                                         borderColor: isCombatLog
-                                            ? theme.palette.mode === 'dark' ? 'rgba(244, 67, 54, 0.5)' : 'rgba(244, 67, 54, 0.3)'
+                                            ? alpha(theme.palette.error.main, 0.5)
                                             : isDiceMessage 
-                                                ? orange[400]
-                                                : 'divider',
+                                                ? 'primary.main'
+                                                : isOwnMessage
+                                                    ? color.amberLine
+                                                    : 'divider',
                                         opacity: msg.isPending ? 0.6 : 1,
                                         transition: 'all 0.3s ease',
-                                        position: 'relative',
-                                        '&:hover': {
-                                            transform: 'translateY(-1px)',
-                                            boxShadow: 3
-                                        }
+                                        position: 'relative'
                                     }}
                                 >
                                     {/* Header da Mensagem */}
@@ -153,11 +178,9 @@ const MessageList = forwardRef<HTMLDivElement, MessageListProps>(function Messag
                                             sx={{ 
                                                 width: 28, 
                                                 height: 28,
-                                                border: isOwnMessage 
-                                                    ? '2px solid rgba(255,255,255,0.3)'
-                                                    : '2px solid',
+                                                border: '2px solid',
                                                 borderColor: isOwnMessage 
-                                                    ? 'rgba(255,255,255,0.3)'
+                                                    ? color.amberLine
                                                     : 'divider'
                                             }}
                                         />
@@ -165,9 +188,7 @@ const MessageList = forwardRef<HTMLDivElement, MessageListProps>(function Messag
                                             variant="subtitle2" 
                                             sx={{ 
                                                 fontWeight: 600,
-                                                color: isOwnMessage || isGM
-                                                    ? 'rgba(255,255,255,0.9)'
-                                                    : 'text.primary'
+                                                color: 'text.primary'
                                             }}
                                         >
                                             {msg.by.name}
@@ -180,10 +201,11 @@ const MessageList = forwardRef<HTMLDivElement, MessageListProps>(function Messag
                                                 label="BOT"
                                                 size="small"
                                                 sx={{
-                                                    bgcolor: green[500],
-                                                    color: 'white',
+                                                    bgcolor: 'info.main',
+                                                    color: 'info.contrastText',
+                                                    '& .MuiChip-icon': { color: 'inherit' },
                                                     fontWeight: 600,
-                                                    fontSize: '0.7rem',
+                                                    fontSize: '0.75rem',
                                                     height: 20
                                                 }}
                                             />
@@ -194,10 +216,13 @@ const MessageList = forwardRef<HTMLDivElement, MessageListProps>(function Messag
                                                 label="GM"
                                                 size="small"
                                                 sx={{
-                                                    bgcolor: purple[500],
-                                                    color: 'white',
+                                                    bgcolor: 'background.overlay',
+                                                    color: 'text.primary',
+                                                    border: '1px solid',
+                                                    borderColor: color.borderStrong,
+                                                    '& .MuiChip-icon': { color: 'inherit' },
                                                     fontWeight: 600,
-                                                    fontSize: '0.7rem',
+                                                    fontSize: '0.75rem',
                                                     height: 20
                                                 }}
                                             />
@@ -208,10 +233,11 @@ const MessageList = forwardRef<HTMLDivElement, MessageListProps>(function Messag
                                                 label="DADOS"
                                                 size="small"
                                                 sx={{
-                                                    bgcolor: orange[500],
-                                                    color: 'white',
+                                                    bgcolor: 'primary.main',
+                                                    color: 'primary.contrastText',
+                                                    '& .MuiChip-icon': { color: 'inherit' },
                                                     fontWeight: 600,
-                                                    fontSize: '0.7rem',
+                                                    fontSize: '0.75rem',
                                                     height: 20
                                                 }}
                                             />
@@ -223,10 +249,8 @@ const MessageList = forwardRef<HTMLDivElement, MessageListProps>(function Messag
                                                 variant="caption" 
                                                 sx={{ 
                                                     ml: 'auto',
-                                                    color: isOwnMessage || isGM
-                                                        ? 'rgba(255,255,255,0.7)'
-                                                        : 'text.secondary',
-                                                    fontSize: '0.7rem'
+                                                    color: 'text.secondary',
+                                                    fontSize: '0.75rem'
                                                 }}
                                             >
                                                 {new Date(msg.timestamp).toLocaleString('pt-BR', {
@@ -248,6 +272,6 @@ const MessageList = forwardRef<HTMLDivElement, MessageListProps>(function Messag
             )}
         </Box>
     );
-});
+}));
 
 export default MessageList;

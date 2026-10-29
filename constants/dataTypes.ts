@@ -47,7 +47,7 @@ export const effects: string[] = [
     // Buff
     'Velocidade',
     'Invisível',
-    'Visão na Penumbra',
+    'Visão Aprimorada',
     'Visão Verdadeira',
     'Resistência',
     'Sobrecura',

@@ -1,27 +1,22 @@
-import { CreateCustomItemDTO } from '@models/dtos';
 import type { Campaign } from '@models/entities/Campaign';
 import { campaignRepository } from '@repositories';
-import { findCampaignByCodeOrId } from '@utils/helpers/findCampaignByCodeOrId';
-import { plainToInstance } from 'class-transformer';
-import { validate } from 'class-validator';
+import { assertId, badRequest, handleRouteError, readJsonBody, requireCampaignGM, requireUser } from '@utils/api';
+
+const ITEM_TYPES = [ 'weapon', 'armor', 'item' ];
 
 export async function DELETE(req: Request, { params }: { params: { id: string, ItemId: string } }) {
     try {
-        const { id, ItemId } = params;
-        const body = await req.json();
+        const { id } = params;
+        const ItemId = assertId(params.ItemId, 'ItemId');
+        const user = await requireUser();
+        const { campaign } = await requireCampaignGM(id, user);
 
-        const dto = plainToInstance(CreateCustomItemDTO, { type: body.type || body }, { excludeExtraneousValues: true });
-        const errors = await validate(dto, { skipMissingProperties: true, whitelist: false });
+        // O cliente envia { type } ou só a string do tipo como body
+        const body = await readJsonBody<{ type?: string } | string>(req);
+        const type = typeof body === 'string' ? body : body?.type;
 
-        if (errors.length > 0) {
-            return Response.json({ message: 'BAD REQUEST', errors }, { status: 400 });
-        }
-
-        const { type } = body;
-        const campaign = await findCampaignByCodeOrId(id);
-
-        if (!campaign) {
-            return Response.json({ message: 'Campanha não encontrada' }, { status: 404 });
+        if (!type || !ITEM_TYPES.includes(type)) {
+            throw badRequest('"type" deve ser weapon, armor ou item');
         }
         
         const itemsArray = (campaign.custom?.items?.[type as keyof Campaign['custom']['items']] || []) as Array<{ id: string }>;
@@ -39,11 +34,7 @@ export async function DELETE(req: Request, { params }: { params: { id: string, I
         });
         
         return Response.json({ type, ItemId });
-    } catch (error: any) {
-        console.error('Erro ao excluir item customizado:', error);
-        return Response.json({ 
-            message: 'Erro ao excluir item customizado', 
-            error: error.message 
-        }, { status: 500 });
+    } catch (error) {
+        return handleRouteError(error, 'Erro ao excluir item customizado');
     }
 }

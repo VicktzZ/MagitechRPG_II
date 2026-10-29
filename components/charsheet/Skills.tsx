@@ -12,12 +12,12 @@ import {
     FormHelperText,
     Button
 } from '@mui/material'
-import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh'
+import StarIcon from '@mui/icons-material/Star'
+import { color, font } from '@themes/tokens'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
     useState, 
     type ReactElement, 
-    type MouseEvent, 
     useRef, 
     useMemo, 
     useCallback, 
@@ -29,30 +29,9 @@ import type { CharsheetDTO } from '@models/dtos';
 import type { Power } from '@models/entities';
 import type { Skill } from '@models';
 import { useCharsheetSystem } from '@hooks/useCharsheetSystem';
+import { normalizeToArray } from '@utils/normalizeToArray';
 
 type SkillsFilterType = 'all' | 'class' | 'subclass' | 'lineage' | 'powers' | 'bonus' | 'race'
-
-/**
- * Normaliza um valor que pode ser um array ou um objeto com chaves numéricas
- */
-function normalizeToArray<T>(value: any): T[] {
-    if (!value) return [];
-    if (Array.isArray(value)) return value;
-    
-    // Se é um objeto com chaves numéricas, converter para array
-    if (typeof value === 'object') {
-        const keys = Object.keys(value);
-        const isNumericKeys = keys.every(key => !isNaN(Number(key)));
-        if (isNumericKeys) {
-            return keys
-                .map(key => Number(key))
-                .sort((a, b) => a - b)
-                .map(key => value[key]);
-        }
-    }
-    
-    return [];
-}
 
 export default function Skills(): ReactElement {
     const { control, setValue, getValues, formState: { errors } } = useFormContext<CharsheetDTO>()
@@ -104,15 +83,10 @@ export default function Skills(): ReactElement {
             minWidth: 80,
             fontSize: '0.8rem',
             fontWeight: 500,
-            transition: 'all 0.2s ease-in-out',
+            transition: 'background-color 120ms, color 120ms',
             '&:hover': {
-                transform: 'translateY(-2px)',
-                boxShadow: 2,
                 backgroundColor: 'primary.main',
                 color: 'primary.contrastText'
-            },
-            '&.MuiChip-clickable:active': {
-                transform: 'translateY(0)'
             },
             [theme.breakpoints.down('md')]: {
                 height: 32,
@@ -123,7 +97,7 @@ export default function Skills(): ReactElement {
         }
     }), [ theme ])
 
-    const handleSkillClick = useCallback((event: MouseEvent<HTMLSpanElement>, skill: Skill): void => {
+    const handleSkillClick = useCallback((event: { currentTarget: HTMLElement }, skill: Skill): void => {
         if (skillRef.current) {
             const element = skillRef.current as HTMLElement
             element.style.backgroundColor = 'transparent'
@@ -177,21 +151,14 @@ export default function Skills(): ReactElement {
                     textAlign: 'center',
                     minHeight: 120,
                     height: '100%',
-                    transition: 'all 0.2s ease-in-out',
-                    backgroundColor: 'background.paper',
+                    transition: 'border-color 120ms, background-color 120ms',
+                    backgroundColor: 'background.raised',
                     border: '1px solid',
                     borderColor: 'divider',
                     position: 'relative',
                     overflow: 'hidden',
                     '&:hover': {
-                        transform: 'translateY(-3px)',
-                        boxShadow: 2,
-                        borderColor: 'primary.main',
-                        backgroundColor: 'background.default',
-                        zIndex: 1
-                    },
-                    '&:active': {
-                        transform: 'translateY(-1px)'
+                        borderColor: color.borderStrong
                     },
                     '&::before': {
                         content: '""',
@@ -211,7 +178,16 @@ export default function Skills(): ReactElement {
                         opacity: 1
                     }
                 }}
+                role='button'
+                tabIndex={0}
+                aria-pressed={selectedSkill?.name === skill.name}
                 onClick={e => { handleSkillClick(e, skill) }}
+                onKeyDown={e => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        handleSkillClick(e, skill)
+                    }
+                }}
             >
                 <Box sx={{ 
                     width: '100%',
@@ -296,18 +272,18 @@ export default function Skills(): ReactElement {
 
         if (skillsFilter === 'all') {
             return [
-                ...normalizeToArray(formSkills?.class),
-                ...(showSubclass ? normalizeToArray(formSkills?.subclass) : []),
-                ...normalizeToArray(formSkills?.bonus),
-                ...(showPowers ? normalizeToArray(formSkills?.powers) : []),
-                ...(showLineage ? normalizeToArray(formSkills?.lineage) : []),
-                ...(showRace ? normalizeToArray(formSkills?.race) : [])
+                ...normalizeToArray<Skill>(formSkills?.class),
+                ...(showSubclass ? normalizeToArray<Skill>(formSkills?.subclass) : []),
+                ...normalizeToArray<Skill>(formSkills?.bonus),
+                ...(showPowers ? normalizeToArray<Skill>(formSkills?.powers) : []),
+                ...(showLineage ? normalizeToArray<Skill>(formSkills?.lineage) : []),
+                ...(showRace ? normalizeToArray<Skill>(formSkills?.race) : [])
             ].map(renderSkill)
         } else {
             const filteredSkills = formSkills?.[skillsFilter as keyof typeof formSkills]
-            return normalizeToArray(filteredSkills).map(renderSkill)
+            return normalizeToArray<Skill>(filteredSkills).map(renderSkill)
         }
-    }, [ formSkills, skills, skillsFilter, getValues, setValue, handleSkillClick, showRace, showLineage, showSubclass, showPowers ])
+    }, [ formSkills, skills, skillsFilter, selectedSkill, getValues, setValue, handleSkillClick, showRace, showLineage, showSubclass, showPowers ])
     
     // Exibe erros de validação se houver
     const renderErrors = () => {
@@ -328,7 +304,6 @@ export default function Skills(): ReactElement {
     
     // Verifica se a habilidade selecionada é um poder mágico e corresponde à maestria elemental
     const canShowMasteryDescription = useMemo(() => {
-        console.log({ selectedSkill, elementalMastery })
         if (!selectedSkill || !elementalMastery || selectedSkill.type !== 'Poder Mágico') return false
         return selectedSkill.element === elementalMastery?.toUpperCase()
     }, [ selectedSkill, elementalMastery ])
@@ -348,7 +323,7 @@ export default function Skills(): ReactElement {
                 px={2} 
                 pt={1}
             >
-                <Typography variant="h6" fontWeight={600}>
+                <Typography variant="h6" component="h3" fontWeight={600}>
                     Habilidades
                 </Typography>
                 <Chip 
@@ -453,7 +428,7 @@ export default function Skills(): ReactElement {
                     error={!!errors.skills}
                     sx={{
                         width: '100%',
-                        bgcolor: 'background.paper3',
+                        bgcolor: 'background.default',
                         borderRadius: 2,
                         p: 2,
                         border: errors.skills ? '1px solid' : 'none',
@@ -492,7 +467,7 @@ export default function Skills(): ReactElement {
 
                 {selectedSkill && (
                     <Box 
-                        bgcolor='background.paper3' 
+                        bgcolor='background.default' 
                         borderRadius={2} 
                         p={3}
                         flex={1}
@@ -502,14 +477,15 @@ export default function Skills(): ReactElement {
                         <Box display='flex' flexDirection='column' gap={2}>
                             <Box>
                                 <Typography 
-                                    fontWeight={900} 
-                                    fontFamily='Inter' 
+                                    fontWeight={700} 
+                                    fontFamily={font.display} 
                                     variant='h4'
+                                    component='h4'
                                     color='primary.main'
                                 >
                                     {selectedSkill.name}
                                 </Typography>
-                                <Typography variant='subtitle1' color='text.secondary'>
+                                <Typography variant='subtitle1' component='p' color='text.secondary'>
                                     {selectedSkill.type}
                                     {selectedSkill.origin && ` • ${selectedSkill.origin}`}
                                     {(selectedSkill?.level || selectedSkill?.level === 0) && (
@@ -558,7 +534,7 @@ export default function Skills(): ReactElement {
                                                     variant="outlined"
                                                     size="small"
                                                     color="secondary"
-                                                    startIcon={<AutoFixHighIcon />}
+                                                    startIcon={<StarIcon />}
                                                     onClick={() => setShowMasteryDescription(prev => !prev)}
                                                     sx={{
                                                         borderRadius: 4,
@@ -601,11 +577,11 @@ export default function Skills(): ReactElement {
                         gap={2}
                         textAlign='center'
                         p={4}
-                        bgcolor='background.paper3'
+                        bgcolor='background.default'
                         borderRadius={2}
                         flex={1}
                     >
-                        <Typography variant='h6' color='text.secondary'>
+                        <Typography variant='h6' component='p' color='text.secondary'>
                             Selecione uma habilidade para ver os detalhes
                         </Typography>
                         <Typography variant='body2' color='text.disabled'>

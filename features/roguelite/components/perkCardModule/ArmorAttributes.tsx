@@ -1,10 +1,8 @@
 import { Box, Grid, Typography } from '@mui/material'
 import type { ArmorAttributesProps } from './types'
-import { getAttributeBoxSx, getAttributeLabelSx, attributeValueSx, attributeValueBoldSx } from './styles'
+import { attributeBoxSx, attributeLabelSx, attributeValueSx, attributeValueBoldSx } from './styles'
 
-export function ArmorAttributes({ armor, borderColor }: ArmorAttributesProps) {
-    const boxSx = getAttributeBoxSx(borderColor)
-    const labelSx = getAttributeLabelSx(borderColor)
+export function ArmorAttributes({ armor }: ArmorAttributesProps) {
     const armorData = armor as any
 
     const renderDefenseValue = () => {
@@ -18,7 +16,7 @@ export function ArmorAttributes({ armor, borderColor }: ArmorAttributesProps) {
                     <Typography
                         component="span"
                         sx={{
-                            color: '#60a5fa',
+                            color: 'info.main',
                             fontSize: '0.75rem',
                             ml: 0.5,
                             fontWeight: 600
@@ -36,8 +34,8 @@ export function ArmorAttributes({ armor, borderColor }: ArmorAttributesProps) {
             <Grid container spacing={0.5} columns={{ xs: 8, sm: 12 }}>
                 {/* Defesa */}
                 <Grid item xs={4} sm={4} md={4}>
-                    <Box sx={boxSx}>
-                        <Typography variant="caption" sx={labelSx}>Defesa</Typography>
+                    <Box sx={attributeBoxSx}>
+                        <Typography variant="caption" sx={attributeLabelSx}>Defesa</Typography>
                         <Typography variant="body2" sx={attributeValueBoldSx}>
                             {renderDefenseValue()}
                         </Typography>
@@ -46,8 +44,8 @@ export function ArmorAttributes({ armor, borderColor }: ArmorAttributesProps) {
 
                 {/* Tipo */}
                 <Grid item xs={4} sm={4} md={4}>
-                    <Box sx={boxSx}>
-                        <Typography variant="caption" sx={labelSx}>Tipo</Typography>
+                    <Box sx={attributeBoxSx}>
+                        <Typography variant="caption" sx={attributeLabelSx}>Tipo</Typography>
                         <Typography variant="body2" sx={attributeValueSx}>
                             {armor.kind ?? '-'}
                         </Typography>
@@ -56,8 +54,8 @@ export function ArmorAttributes({ armor, borderColor }: ArmorAttributesProps) {
 
                 {/* Categoria */}
                 <Grid item xs={4} sm={4} md={4}>
-                    <Box sx={boxSx}>
-                        <Typography variant="caption" sx={labelSx}>Categoria</Typography>
+                    <Box sx={attributeBoxSx}>
+                        <Typography variant="caption" sx={attributeLabelSx}>Categoria</Typography>
                         <Typography variant="body2" sx={attributeValueSx}>
                             {armor.categ ?? '-'}
                         </Typography>
@@ -66,8 +64,8 @@ export function ArmorAttributes({ armor, borderColor }: ArmorAttributesProps) {
 
                 {/* Penalidade */}
                 <Grid item xs={4} sm={4} md={4}>
-                    <Box sx={boxSx}>
-                        <Typography variant="caption" sx={labelSx}>Penalidade</Typography>
+                    <Box sx={attributeBoxSx}>
+                        <Typography variant="caption" sx={attributeLabelSx}>Penalidade</Typography>
                         <Typography variant="body2" sx={attributeValueSx}>
                             {armor.displacementPenalty != null ? `${armor.displacementPenalty}m` : '-'}
                         </Typography>
@@ -76,8 +74,8 @@ export function ArmorAttributes({ armor, borderColor }: ArmorAttributesProps) {
 
                 {/* Peso */}
                 <Grid item xs={4} sm={4} md={4}>
-                    <Box sx={boxSx}>
-                        <Typography variant="caption" sx={labelSx}>Peso</Typography>
+                    <Box sx={attributeBoxSx}>
+                        <Typography variant="caption" sx={attributeLabelSx}>Peso</Typography>
                         <Typography variant="body2" sx={attributeValueSx}>
                             {armor.weight != null ? `${armor.weight} kg` : '-'}
                         </Typography>

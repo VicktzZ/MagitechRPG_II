@@ -1,7 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import { rarityColor } from '@constants';
 import {
+    alpha,
     Avatar,
     Box,
     Button,
@@ -32,8 +34,7 @@ import CardGiftcardIcon from '@mui/icons-material/CardGiftcard';
 import LinkIcon from '@mui/icons-material/Link';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
-import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
-import { purple } from '@mui/material/colors';
+import StarIcon from '@mui/icons-material/Star';
 import { useSnackbar } from 'notistack';
 import { campaignService } from '@services';
 import { PerkTypeEnum, type SkillTypeEnum } from '@enums/rogueliteEnum';
@@ -49,17 +50,7 @@ import {
     DEFAULT_PERK_FILTERS
 } from './constants';
 
-const PERK_RARITY_COLORS: Record<string, string> = {
-    'Comum': '#9e9e9e',
-    'Incomum': '#4caf50',
-    'Raro': '#2196f3',
-    'Épico': '#9c27b0',
-    'Lendário': '#ff9800',
-    'Único': '#f44336',
-    'Mágico': '#00bcd4',
-    'Amaldiçoado': '#880e4f',
-    'Especial': '#ffd700'
-};
+const PERK_RARITY_COLORS: Record<string, string> = rarityColor;
 
 const PERK_TYPE_LABELS: Record<string, string> = {
     'WEAPON': 'Arma',
@@ -153,7 +144,7 @@ export default function OfferPerksDialog({
     return (
         <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
             <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <CardGiftcardIcon sx={{ color: purple[500] }} />
+                <CardGiftcardIcon sx={{ color: 'text.secondary' }} />
                 Oferecer Vantagens
             </DialogTitle>
             <DialogContent>
@@ -298,7 +289,7 @@ export default function OfferPerksDialog({
                             checked={useSharedSeed}
                             onChange={(e) => setUseSharedSeed(e.target.checked)}
                         />
-                        <LinkIcon sx={{ color: purple[400] }} />
+                        <LinkIcon sx={{ color: 'text.secondary' }} />
                         <Box>
                             <Typography variant="body2" fontWeight={600}>
                                 Usar Seed Compartilhada
@@ -322,7 +313,7 @@ export default function OfferPerksDialog({
                             </Button>
                         </Box>
                         <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
-                            <AutoAwesomeIcon sx={{ fontSize: '0.9rem', color: purple[400] }} />
+                            <StarIcon sx={{ fontSize: '0.9rem', color: 'primary.main' }} />
                             O contador mostra as vantagens que cada jogador já recebeu nesta campanha — clique para ver quais.
                         </Typography>
                         <Box sx={{ maxHeight: 300, overflow: 'auto', border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
@@ -353,7 +344,7 @@ export default function OfferPerksDialog({
                                                 />
                                                 <Tooltip title={perks.length > 0 ? 'Ver vantagens recebidas' : 'Nenhuma vantagem recebida ainda'}>
                                                     <Chip
-                                                        icon={<AutoAwesomeIcon sx={{ fontSize: '0.85rem !important' }} />}
+                                                        icon={<StarIcon sx={{ fontSize: '0.85rem !important' }} />}
                                                         label={perks.length}
                                                         size="small"
                                                         onClick={(e) => {
@@ -362,11 +353,11 @@ export default function OfferPerksDialog({
                                                         }}
                                                         sx={{
                                                             mr: 0.5,
-                                                            bgcolor: perks.length > 0 ? purple[50] : 'action.hover',
-                                                            color: perks.length > 0 ? purple[700] : 'text.secondary',
+                                                            bgcolor: (theme) => perks.length > 0 ? alpha(theme.palette.primary.main, 0.14) : theme.palette.action.hover,
+                                                            color: perks.length > 0 ? 'primary.main' : 'text.secondary',
                                                             cursor: perks.length > 0 ? 'pointer' : 'default',
                                                             fontWeight: 600,
-                                                            '& .MuiChip-icon': { color: perks.length > 0 ? purple[500] : 'text.disabled' }
+                                                            '& .MuiChip-icon': { color: perks.length > 0 ? 'primary.main' : 'text.disabled' }
                                                         }}
                                                     />
                                                 </Tooltip>
@@ -416,13 +407,13 @@ export default function OfferPerksDialog({
                                                                             <Chip
                                                                                 label={PERK_TYPE_LABELS[perk.perkType ?? ''] || perk.perkType || 'Bônus'}
                                                                                 size="small"
-                                                                                sx={{ height: 18, fontSize: '0.6rem', bgcolor: `${color}20`, color }}
+                                                                                sx={{ height: 18, fontSize: '0.75rem', bgcolor: `${color}20`, color }}
                                                                             />
                                                                             <Chip
                                                                                 label={perk.rarity || 'Comum'}
                                                                                 size="small"
                                                                                 variant="outlined"
-                                                                                sx={{ height: 18, fontSize: '0.6rem', borderColor: `${color}80`, color }}
+                                                                                sx={{ height: 18, fontSize: '0.75rem', borderColor: `${color}80`, color }}
                                                                             />
                                                                         </Box>
                                                                     </Tooltip>
@@ -449,7 +440,6 @@ export default function OfferPerksDialog({
                     variant="contained"
                     disabled={selectedPlayers.length === 0 || isOffering}
                     startIcon={isOffering ? <CircularProgress size={20} /> : <CardGiftcardIcon />}
-                    sx={{ bgcolor: purple[600], '&:hover': { bgcolor: purple[700] } }}
                 >
                     {isOffering ? 'Oferecendo...' : 'Oferecer Vantagens'}
                 </Button>

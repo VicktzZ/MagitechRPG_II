@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { PlanIcon } from './PlanIcon';
 import {
     Box,
     Typography,
@@ -12,6 +13,7 @@ import {
     TableRow,
     Paper,
     Chip,
+    alpha,
     useTheme,
     useMediaQuery
 } from '@mui/material';
@@ -167,7 +169,7 @@ export function PlanComparison() {
                     return (
                         <Paper key={plan} sx={{ mb: 3, p: 2 }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                                <Typography variant="h4">{metadata.icon}</Typography>
+                                <Typography variant="h4" component="span" sx={{ display: 'flex' }}><PlanIcon plan={plan} /></Typography>
                                 <Box>
                                     <Typography variant="h6" sx={{ fontWeight: 'bold', color: metadata.color }}>
                                         {metadata.displayName}
@@ -231,12 +233,12 @@ export function PlanComparison() {
                                         sx={{
                                             fontWeight: 'bold',
                                             backgroundColor: metadata.color,
-                                            color: 'white',
+                                            color: 'primary.contrastText',
                                             minWidth: 150
                                         }}
                                     >
                                         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-                                            <Typography variant="h4">{metadata.icon}</Typography>
+                                            <Typography variant="h4" component="span" sx={{ display: 'flex' }}><PlanIcon plan={plan} /></Typography>
                                             <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
                                                 {metadata.displayName}
                                             </Typography>
@@ -248,8 +250,8 @@ export function PlanComparison() {
                                                     label={metadata.badge}
                                                     size="small"
                                                     sx={{
-                                                        backgroundColor: 'rgba(255,255,255,0.2)',
-                                                        color: 'white',
+                                                        backgroundColor: alpha(theme.palette.primary.contrastText, 0.16),
+                                                        color: 'primary.contrastText',
                                                         fontWeight: 'bold'
                                                     }}
                                                 />

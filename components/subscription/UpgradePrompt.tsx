@@ -1,12 +1,14 @@
 'use client';
 
 import React from 'react';
+import { PlanIcon } from './PlanIcon';
 import {
     Box,
     Typography,
     Button,
     Card,
     CardContent,
+    Divider,
     List,
     ListItem,
     ListItemIcon,
@@ -18,11 +20,12 @@ import {
     Lock as LockIcon,
     CheckCircle as CheckCircleIcon,
     ArrowForward as ArrowForwardIcon,
-    Stars as StarsIcon
+    WorkspacePremium as WorkspacePremiumIcon
 } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
 import type { Permission, SubscriptionPlan } from '@enums/subscriptionEnum';
 import { SubscriptionPlanMetadata } from '@enums/subscriptionEnum';
+import { color } from '@themes/tokens';
 
 interface UpgradePromptProps {
   requiredPlan: SubscriptionPlan;
@@ -69,10 +72,9 @@ export function UpgradePrompt({
                     border: 1,
                     borderColor: () => alpha(planMetadata.color, 0.3),
                     cursor: 'pointer',
-                    transition: 'all 0.2s',
+                    transition: 'border-color 120ms, background-color 120ms',
                     '&:hover': {
-                        bgcolor: () => alpha(planMetadata.color, 0.15),
-                        transform: 'translateY(-2px)'
+                        bgcolor: () => alpha(planMetadata.color, 0.15)
                     }
                 }}
                 onClick={handleUpgrade}
@@ -91,8 +93,8 @@ export function UpgradePrompt({
             <Card
                 sx={{
                     border: 2,
-                    borderColor: planMetadata.color,
-                    bgcolor: () => alpha(planMetadata.color, 0.05)
+                    borderColor: color.amberLine,
+                    bgcolor: color.amberSubtle
                 }}
             >
                 <CardContent sx={{ p: 3, '&:last-child': { pb: 3 } }}>
@@ -107,7 +109,7 @@ export function UpgradePrompt({
                                 size="small"
                                 sx={{
                                     bgcolor: planMetadata.color,
-                                    color: 'white',
+                                    color: 'primary.contrastText',
                                     fontWeight: 'bold',
                                     mt: 0.5
                                 }}
@@ -125,13 +127,6 @@ export function UpgradePrompt({
                             size="small"
                             onClick={handleUpgrade}
                             fullWidth
-                            sx={{
-                                bgcolor: planMetadata.color,
-                                '&:hover': {
-                                    bgcolor: planMetadata.color,
-                                    filter: 'brightness(0.9)'
-                                }
-                            }}
                         >
               Assinar {planMetadata.priceFormatted}
                         </Button>
@@ -154,10 +149,8 @@ export function UpgradePrompt({
             sx={{
                 position: 'relative',
                 border: 3,
-                borderColor: planMetadata.color,
-                boxShadow: 8,
-                background: (theme) =>
-                    `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(planMetadata.color, 0.1)} 100%)`
+                borderColor: color.amberLine,
+                bgcolor: color.amberSubtle
             }}
         >
             {/* Badge "Necessário" */}
@@ -171,11 +164,11 @@ export function UpgradePrompt({
                 }}
             >
                 <Chip
-                    icon={<StarsIcon />}
+                    icon={<WorkspacePremiumIcon />}
                     label="UPGRADE NECESSÁRIO"
                     sx={{
                         bgcolor: planMetadata.color,
-                        color: 'white',
+                        color: 'primary.contrastText',
                         fontWeight: 'bold',
                         fontSize: '0.75rem',
                         px: 2
@@ -187,7 +180,7 @@ export function UpgradePrompt({
                 {/* Header */}
                 <Box sx={{ textAlign: 'center', mb: 4 }}>
                     <Typography variant="h2" sx={{ mb: 2 }}>
-                        {planMetadata.icon}
+                        <PlanIcon plan={requiredPlan} />
                     </Typography>
                     <Typography variant="h4" sx={{ fontWeight: 'bold', color: planMetadata.color, mb: 1 }}>
                         {title}
@@ -249,12 +242,7 @@ export function UpgradePrompt({
                         sx={{
                             py: 1.5,
                             fontSize: '1.1rem',
-                            fontWeight: 'bold',
-                            bgcolor: planMetadata.color,
-                            '&:hover': {
-                                bgcolor: planMetadata.color,
-                                filter: 'brightness(0.9)'
-                            }
+                            fontWeight: 'bold'
                         }}
                     >
             Assinar {planMetadata.name} - {planMetadata.priceFormatted}

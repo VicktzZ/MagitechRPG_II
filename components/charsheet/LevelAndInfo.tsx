@@ -3,22 +3,22 @@ import { subclasses } from '@constants/subclasses'
 import { negativeTraits, positiveTraits } from '@constants/traits'
 import { useAudio } from '@hooks'
 import useNumbersWithSpaces from '@hooks/useNumbersWithSpace'
-import { AttachMoney, AutoAwesome, DirectionsRun, Psychology } from '@mui/icons-material'
+import { AttachMoney, Casino, DirectionsRun, Lock, Psychology, Star } from '@mui/icons-material'
 import { Box, Button, Chip, FormControl, IconButton, InputLabel, ListSubheader, MenuItem, OutlinedInput, Select, TextField, Typography, useMediaQuery } from '@mui/material'
 import { alpha, useTheme } from '@mui/material/styles'
-import { green, orange, purple } from '@mui/material/colors'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useId, useState } from 'react'
 import { Controller, useFormContext, useWatch } from 'react-hook-form'
+import ElementIcon from '@components/misc/ElementIcon'
 import ElementalMasteryModal from './dialogs/ElementalMasteryModal'
 import SubclassModal from './dialogs/SubclassModal'
 import TraitsModal from './dialogs/TraitsModal'
 import LevelProgress from './subcomponents/LevelProgress'
 import { skills } from '@constants/skills'
 import { resolveTraitTargetLabel } from '@utils/systemLookups'
+import { useCharsheetSystem } from '@hooks/useCharsheetSystem'
 import type { CharsheetDTO } from '@models/dtos'
 import type { Class, Expertises, Lineage, Subclass, Trait } from '@models'
 import { type Element } from '@models/types/string'
-import type { RPGSystem } from '@models/entities'
 
 export default function LevelAndInfo() {
     const { control, getValues, setValue , formState: { errors } } = useFormContext<CharsheetDTO>()
@@ -27,8 +27,7 @@ export default function LevelAndInfo() {
     const [ subclassModalOpen, setSubclassModalOpen ] = useState<boolean>(false)
     const [ elementalMasteryModalOpen, setElementalMasteryModalOpen ] = useState<boolean>(false)
     const [ selectedSubclass, setSelectedSubclass ] = useState<Subclass['name'] | null>(null)
-    const [ customSystem, setCustomSystem ] = useState<RPGSystem | null>(null)
-    const traitsRef = useRef<Trait[]>([])
+    const fieldId = useId()
     const audio = useAudio('/sounds/sci-fi-positive-notification.wav')
     const audio2 = useAudio('/sounds/fast-sci-fi-bleep.wav')
     
@@ -40,16 +39,8 @@ export default function LevelAndInfo() {
     const numberWithSpaces = useNumbersWithSpaces()
     const charsheet = getValues()
 
-    useEffect(() => {
-        if (charsheet.systemId) {
-            fetch(`/api/rpg-system/${charsheet.systemId}`)
-                .then(async res => await res.json())
-                .then((data: RPGSystem) => setCustomSystem(data))
-                .catch(() => setCustomSystem(null))
-        } else {
-            setCustomSystem(null)
-        }
-    }, [ charsheet.systemId ])
+    // Sistema customizado (cache compartilhado; resposta de erro não vira "sistema")
+    const { system: customSystem } = useCharsheetSystem(charsheet.systemId)
 
     const isCustomSystem = !!customSystem
 
@@ -115,12 +106,20 @@ export default function LevelAndInfo() {
     const handleTraitsChange = useCallback((selectedTraitNames: string[]): void => {
         const currentExpertises = { ...getValues('expertises') };
         const traitPool = availableTraits();
+        const findTrait = (traitName: string) =>
+            [ ...traitPool.positive, ...traitPool.negative ].find(item => item.name === traitName);
 
-        const previousTraits = [ ...traitsRef.current ];
-        const newTraits: Trait[] = [];
+        // Traços atuais vêm do próprio formulário (e não de um ref em memória),
+        // para que um rascunho restaurado também tenha seus efeitos revertidos
+        const currentTraitValues = (getValues('traits') ?? []) as unknown[];
+        const previousTraits = currentTraitValues
+            .map(t => findTrait(typeof t === 'string' ? t : (t as Trait)?.name))
+            .filter((t): t is Trait => !!t);
 
         // Aplica o efeito de um traço: perícia via objeto local,
-        // atributo diretamente no form (suporta keys de sistemas customizados)
+        // atributo diretamente no form (suporta keys de sistemas customizados).
+        // Sem limitar em 0: a reversão precisa ser exata, senão marcar/desmarcar
+        // um traço negativo gerava pontos.
         const applyTraitEffect = (trait: Trait, sign: 1 | -1) => {
             if (!trait.target?.name || !trait.value) return;
             const delta = sign * trait.value;
@@ -128,13 +127,13 @@ export default function LevelAndInfo() {
             if (trait.target.kind === 'attribute') {
                 const attrKey = trait.target.name;
                 const currentValue = (getValues(`attributes.${attrKey}` as any) as unknown as number) || 0;
-                setValue(`attributes.${attrKey}` as any, Math.max(0, currentValue + delta) as any);
+                setValue(`attributes.${attrKey}` as any, (currentValue + delta) as any);
             } else {
                 const expertiseName = trait.target.name as keyof Expertises;
                 const currentValue = currentExpertises[expertiseName]?.value || 0;
                 currentExpertises[expertiseName] = {
                     ...currentExpertises[expertiseName],
-                    value: Math.max(0, currentValue + delta)
+                    value: currentValue + delta
                 };
             }
         };
@@ -142,19 +141,16 @@ export default function LevelAndInfo() {
         previousTraits.forEach(trait => applyTraitEffect(trait, -1));
 
         selectedTraitNames.forEach(traitName => {
-            const trait = [ ...traitPool.positive, ...traitPool.negative ].find(item => item.name === traitName);
+            const trait = findTrait(traitName);
             if (trait) {
                 applyTraitEffect(trait, 1);
-                newTraits.push(trait);
             }
         });
-
-        traitsRef.current = newTraits;
 
         setValue('expertises', currentExpertises, { shouldValidate: true });
         setValue('traits', selectedTraitNames as unknown as Trait[], { shouldValidate: true });
         audio?.play()
-    }, [ getValues, setValue, traitsRef, availableTraits ])
+    }, [ getValues, setValue, availableTraits ])
     
     // Handler para confirmar seleção de subclasse
     const handleSubclassConfirm = useCallback((subclass: Subclass['name']) => {
@@ -187,13 +183,13 @@ export default function LevelAndInfo() {
                     p: 0,
                     borderRadius: 2,
                     overflow: 'hidden',
-                    bgcolor: 'background.paper3',
+                    bgcolor: 'background.default',
                     border: '1px solid',
                     borderColor: 'divider'
                 }}
             >
                 <Box sx={{ p: matches ? 1 : 2, pb: 0 }}>
-                    <Typography variant={matches ? 'subtitle1' : 'h6'} fontWeight="bold" color="primary" mb={2}>
+                    <Typography variant={matches ? 'subtitle1' : 'h6'} component='h3' fontWeight="bold" color="primary" mb={2}>
                         Níveis e Informações
                     </Typography>
                 </Box>
@@ -240,6 +236,7 @@ export default function LevelAndInfo() {
                     >
                         <Typography
                             variant="subtitle1"
+                            component='h4'
                             fontWeight="500"
                             sx={{
                                 color: theme.palette.text.secondary,
@@ -292,7 +289,7 @@ export default function LevelAndInfo() {
                                     name='displacement'
                                     control={control}
                                     render={({ field }) => (
-                                        <Typography variant="h6" fontWeight="bold" color="text.primary">
+                                        <Typography variant="h6" component="p" fontWeight="bold" color="text.primary">
                                             {field.value}m
                                         </Typography>
                                     )}
@@ -316,7 +313,7 @@ export default function LevelAndInfo() {
                                     transition: 'all 0.2s ease',
                                     '&:hover': {
                                         bgcolor: alpha(theme.palette.background.paper, 0.8),
-                                        borderColor: alpha(green[500], 0.3)
+                                        borderColor: alpha(theme.palette.success.main, 0.3)
                                     }
                                 }}
                             >
@@ -328,8 +325,8 @@ export default function LevelAndInfo() {
                                         width: 40,
                                         height: 40,
                                         borderRadius: '50%',
-                                        bgcolor: alpha(green[500], 0.1),
-                                        color: green[500]
+                                        bgcolor: alpha(theme.palette.success.main, 0.1),
+                                        color: 'success.main'
                                     }}
                                 >
                                     <AttachMoney />
@@ -375,6 +372,7 @@ export default function LevelAndInfo() {
                                                         error={!!error}
                                                         helperText={error?.message}
                                                         inputProps={{
+                                                            'aria-label': (isCustomSystem && customSystem?.currency?.name) || 'Dinheiro',
                                                             min: 0,
                                                             onWheel: (e) => (e.target as HTMLElement).blur()
                                                         }}
@@ -405,7 +403,7 @@ export default function LevelAndInfo() {
                                     transition: 'all 0.2s ease',
                                     '&:hover': {
                                         bgcolor: alpha(theme.palette.background.paper, 0.8),
-                                        borderColor: alpha(purple[500], 0.3)
+                                        borderColor: alpha(theme.palette.primary.main, 0.3)
                                     }
                                 }}
                             >
@@ -417,11 +415,11 @@ export default function LevelAndInfo() {
                                         width: 40,
                                         height: 40,
                                         borderRadius: '50%',
-                                        bgcolor: alpha(purple[500], 0.1),
-                                        color: purple[500]
+                                        bgcolor: alpha(theme.palette.primary.main, 0.1),
+                                        color: 'primary.main'
                                     }}
                                 >
-                                    <AutoAwesome />
+                                    <Star />
                                 </Box>
                                 <Box sx={{ flex: 1 }}>
                                     <Typography variant="caption" color="text.secondary" display="block">
@@ -438,6 +436,7 @@ export default function LevelAndInfo() {
                                                 <Box display='flex' alignItems='center' gap={1} flexWrap='wrap'>
                                                     <IconButton
                                                         size="small"
+                                                        aria-label={`Diminuir ${resource.name}`}
                                                         onClick={() => onChange(Math.max(0, current - 1))}
                                                         sx={{ width: 26, height: 26 }}
                                                     >
@@ -451,6 +450,7 @@ export default function LevelAndInfo() {
                                                     />
                                                     <IconButton
                                                         size="small"
+                                                        aria-label={`Aumentar ${resource.name}`}
                                                         onClick={() => onChange(current + 1)}
                                                         sx={{ width: 26, height: 26 }}
                                                     >
@@ -473,25 +473,26 @@ export default function LevelAndInfo() {
                         minWidth: 0,
                         p: matches ? 1 : 2,
                         borderRadius: 2,
-                        bgcolor: 'background.paper3',
+                        bgcolor: 'background.default',
                         border: '1px solid',
                         borderColor: 'divider'
                     }}
                 >
-                    <Typography variant={matches ? 'subtitle1' : 'h6'} fontWeight="bold" color="primary" mb={2}>
+                    <Typography variant={matches ? 'subtitle1' : 'h6'} component='h3' fontWeight="bold" color="primary" mb={2}>
                         Outras informações
                     </Typography>
 
                     <Box display='flex' flexDirection='column' gap={2}>
                         {/* Traços */}
                         <FormControl fullWidth size={matches ? 'small' : 'medium'}>
-                            <InputLabel>Traços *</InputLabel>
+                            <InputLabel htmlFor={`${fieldId}-traits`}>Traços *</InputLabel>
                             <Controller
                                 name='traits'
                                 control={control}
                                 render={({ field }) => (
                                     <>
                                         <OutlinedInput
+                                            id={`${fieldId}-traits`}
                                             label="Traços"
                                             readOnly
                                             value={Array.isArray(field.value) && field.value.length > 0 ?
@@ -579,6 +580,7 @@ export default function LevelAndInfo() {
                             <>
                                 <Typography
                                     variant="subtitle1"
+                                    component='h4'
                                     fontWeight="500"
                                     sx={{
                                         color: theme.palette.text.secondary,
@@ -607,7 +609,7 @@ export default function LevelAndInfo() {
                                             transition: 'all 0.2s ease',
                                             '&:hover': {
                                                 bgcolor: alpha(theme.palette.background.paper, 0.8),
-                                                borderColor: alpha(purple[500], 0.3)
+                                                borderColor: alpha(theme.palette.primary.main, 0.3)
                                             }
                                         }}
                                     >
@@ -619,11 +621,11 @@ export default function LevelAndInfo() {
                                                 width: 40,
                                                 height: 40,
                                                 borderRadius: '50%',
-                                                bgcolor: alpha(purple[500], 0.1),
-                                                color: purple[500]
+                                                bgcolor: alpha(theme.palette.primary.main, 0.1),
+                                                color: 'primary.main'
                                             }}
                                         >
-                                            <AutoAwesome />
+                                            <ElementIcon element={currentElementalMastery} colored={Boolean(currentElementalMastery)} />
                                         </Box>
                                         <Box sx={{ flex: 1 }}>
                                             <Typography variant="caption" color="text.secondary" display="block">
@@ -636,6 +638,7 @@ export default function LevelAndInfo() {
                                                     <FormControl fullWidth size="small" disabled={!(isElementalMasteryLocked || !canEditMasteryFields)}>
                                                         <Select
                                                             {...field}
+                                                            inputProps={{ 'aria-label': 'Maestria Elemental' }}
                                                             displayEmpty
                                                             value={field.value || ''}
                                                             onChange={() => {
@@ -667,8 +670,8 @@ export default function LevelAndInfo() {
                                                 </Typography>
                                             )}
                                             {isElementalMasteryLocked && (
-                                                <Typography variant="caption" color="warning.main" display="block" mt={0.5}>
-                                                🔒 Maestria não pode ser alterada
+                                                <Typography variant="caption" color="warning.main" display="flex" alignItems="center" gap={0.5} mt={0.5}>
+                                                    <Lock fontSize="inherit" /> Maestria não pode ser alterada
                                                 </Typography>
                                             )}
                                         </Box>
@@ -691,7 +694,7 @@ export default function LevelAndInfo() {
                                             transition: 'all 0.2s ease',
                                             '&:hover': {
                                                 bgcolor: alpha(theme.palette.background.paper, 0.8),
-                                                borderColor: alpha(orange[500], 0.3)
+                                                borderColor: alpha(theme.palette.info.main, 0.3)
                                             }
                                         }}
                                     >
@@ -703,8 +706,8 @@ export default function LevelAndInfo() {
                                                 width: 40,
                                                 height: 40,
                                                 borderRadius: '50%',
-                                                bgcolor: alpha(orange[500], 0.1),
-                                                color: orange[500]
+                                                bgcolor: alpha(theme.palette.info.main, 0.1),
+                                                color: 'info.main'
                                             }}
                                         >
                                             <Psychology />
@@ -720,6 +723,7 @@ export default function LevelAndInfo() {
                                                     <FormControl fullWidth size="small" disabled={!(isSubclassLocked || !canEditMasteryFields)}>
                                                         <Select
                                                             {...field}
+                                                            inputProps={{ 'aria-label': 'Subclasse' }}
                                                             displayEmpty
                                                             value={typeof field.value === 'string' ? field.value : field.value?.name || ''}
                                                             onChange={() => {
@@ -751,8 +755,8 @@ export default function LevelAndInfo() {
                                                 </Typography>
                                             )}
                                             {isSubclassLocked && (
-                                                <Typography variant="caption" color="warning.main" display="block" mt={0.5}>
-                                                🔒 Subclasse não pode ser alterada
+                                                <Typography variant="caption" color="warning.main" display="flex" alignItems="center" gap={0.5} mt={0.5}>
+                                                    <Lock fontSize="inherit" /> Subclasse não pode ser alterada
                                                 </Typography>
                                             )}
                                             {currentSubclass && (
@@ -772,13 +776,14 @@ export default function LevelAndInfo() {
                         {/* Condição Financeira */}
                         {(!isCustomSystem || customSystem?.enabledFields?.financialCondition) && (
                             <FormControl fullWidth size={matches ? 'small' : 'medium'}>
-                                <InputLabel>Condição financeira *</InputLabel>
+                                <InputLabel id={`${fieldId}-financial-label`}>Condição financeira *</InputLabel>
                                 <Controller
                                     name='financialCondition'
                                     control={control}
                                     render={({ field }) => (
                                         <Select
                                             {...field}
+                                            labelId={`${fieldId}-financial-label`}
                                             label='Condição financeira'
                                             required
                                             disabled={!!charsheet.id}
@@ -828,6 +833,7 @@ export default function LevelAndInfo() {
                                 variant='outlined'
                                 color="primary"
                                 fullWidth
+                                startIcon={<Casino />}
                                 size={matches ? 'small' : 'medium'}
                                 sx={{
                                     mt: 1,
@@ -839,7 +845,7 @@ export default function LevelAndInfo() {
                                     }
                                 }}
                             >
-                                🎲 Rolar Dados da Condição Financeira
+                                Rolar Dados da Condição Financeira
                             </Button>
                         )}
                     </Box>

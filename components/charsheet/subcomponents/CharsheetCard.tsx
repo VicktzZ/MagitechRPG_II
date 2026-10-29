@@ -9,6 +9,7 @@ import {
     Star
 } from '@mui/icons-material';
 import {
+    alpha,
     Avatar,
     Box,
     Card,
@@ -25,6 +26,7 @@ import type { Charsheet } from '@models/entities';
 import { useRouter } from 'next/navigation';
 import { useSnackbar } from 'notistack';
 import { useState, type ReactElement } from 'react';
+import { color } from '@themes/tokens';
 import { useCharsheetSystem } from '@hooks/useCharsheetSystem';
 
 export default function CharsheetCard({ charsheet, onClick, disableDeleteButton }: { charsheet: Charsheet, onClick?: () => void, disableDeleteButton?: boolean }): ReactElement {
@@ -71,23 +73,16 @@ export default function CharsheetCard({ charsheet, onClick, disableDeleteButton 
                     width: !matches ? 320 : '100%',
                     maxWidth: 360,
                     borderRadius: 3,
-                    background: theme.palette.mode === 'dark'
-                        ? 'linear-gradient(160deg, #1a2234 0%, #2a3441 100%)'
-                        : 'linear-gradient(160deg, #f8fafc 0%, #edf2f7 100%)',
+                    bgcolor: 'background.paper',
                     border: '1px solid',
-                    borderColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
-                    boxShadow: theme.palette.mode === 'dark' 
-                        ? '0 8px 16px rgba(0,0,0,0.3)'
-                        : '0 8px 16px rgba(0,0,0,0.08)',
+                    borderColor: 'divider',
+                    boxShadow: 'none',
                     cursor: 'pointer',
-                    transition: 'all 0.2s ease',
+                    transition: 'border-color 120ms, background-color 120ms',
                     overflow: 'hidden',
                     '&:hover': {
-                        transform: 'translateY(-6px)',
-                        boxShadow: theme.palette.mode === 'dark'
-                            ? '0 12px 20px rgba(0,0,0,0.4)'
-                            : '0 12px 20px rgba(0,0,0,0.12)',
-                        borderColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.12)'
+                        bgcolor: 'background.raised',
+                        borderColor: color.borderStrong
                     },
                     '&:before': {
                         content: '""',
@@ -111,7 +106,7 @@ export default function CharsheetCard({ charsheet, onClick, disableDeleteButton 
                                 background: theme.palette.primary.main,
                                 fontSize: '1.2rem',
                                 fontWeight: 'bold',
-                                boxShadow: 1
+                                boxShadow: 'none'
                             }}
                         >
                             {charsheet.name.charAt(0).toUpperCase()}
@@ -148,12 +143,8 @@ export default function CharsheetCard({ charsheet, onClick, disableDeleteButton 
                                         px: 1,
                                         py: 0.2,
                                         borderRadius: 1,
-                                        bgcolor: theme.palette.mode === 'dark'
-                                            ? 'rgba(144, 202, 249, 0.08)'
-                                            : 'rgba(25, 118, 210, 0.08)',
-                                        color: theme.palette.mode === 'dark'
-                                            ? 'rgba(144, 202, 249, 0.9)'
-                                            : theme.palette.primary.main,
+                                        bgcolor: alpha(theme.palette.info.main, 0.12),
+                                        color: theme.palette.info.main,
                                         fontWeight: 500
                                     }}
                                 >
@@ -245,7 +236,7 @@ export default function CharsheetCard({ charsheet, onClick, disableDeleteButton 
                                 sx={{
                                     px: 0.8,
                                     py: 0.2,
-                                    bgcolor: theme.palette.mode === 'dark' ? 'rgba(255, 167, 38, 0.15)' : 'rgba(255, 167, 38, 0.08)',
+                                    bgcolor: alpha(theme.palette.warning.main, 0.15),
                                     borderRadius: 1.5,
                                     gap: 0.5
                                 }}
@@ -285,9 +276,9 @@ export default function CharsheetCard({ charsheet, onClick, disableDeleteButton 
                                 size='small'
                                 sx={{
                                     color: theme.palette.primary.main,
-                                    bgcolor: theme.palette.mode === 'dark' ? 'rgba(144, 202, 249, 0.12)' : 'rgba(25, 118, 210, 0.08)',
+                                    bgcolor: alpha(theme.palette.primary.main, 0.12),
                                     '&:hover': {
-                                        bgcolor: theme.palette.mode === 'dark' ? 'rgba(144, 202, 249, 0.2)' : 'rgba(25, 118, 210, 0.12)'
+                                        bgcolor: alpha(theme.palette.primary.main, 0.2)
                                     }
                                 }}
                             >

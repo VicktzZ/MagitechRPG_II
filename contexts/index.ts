@@ -7,8 +7,7 @@ import { chatContext } from './chatContext';
 import { savingSpinnerContext, useSavingSpinner } from './savingSpinnerContext';
 import { useCampaignContext } from './campaignContext';
 import { campaignCurrentCharsheetContext, useCampaignCurrentCharsheetContext } from './campaignCurrentCharsheetContext';
-import { ThemeProvider, useThemeContext } from './themeContext';
-import CharsheetFormProvider, { useCharsheetForm } from './CharsheetFormProvider';
+import CharsheetFormProvider, { useCharsheetBaseline, useCharsheetForm } from './CharsheetFormProvider';
 import { rpgSystemContext, useRPGSystemContext } from './rpgSystemContext';
 import { RPGSystemProvider } from './RPGSystemProvider';
 import { SelectedSystemProvider, useSelectedSystem } from './SelectedSystemContext';
@@ -25,10 +24,9 @@ export {
     useCampaignContext,
     campaignCurrentCharsheetContext,
     useCampaignCurrentCharsheetContext,
-    ThemeProvider,
-    useThemeContext,
     CharsheetFormProvider,
     useCharsheetForm,
+    useCharsheetBaseline,
     rpgSystemContext,
     useRPGSystemContext,
     RPGSystemProvider,

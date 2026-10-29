@@ -5,7 +5,7 @@ import { SystemBuilder } from '@components/admin/systems/SystemBuilder'
 import { Box, Typography, Button, Paper, Grid, CircularProgress, Container, Alert } from '@mui/material'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import NoteAddIcon from '@mui/icons-material/NoteAdd'
-import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh'
+import TuneIcon from '@mui/icons-material/Tune'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import type { RPGSystem } from '@models/entities'
@@ -69,7 +69,7 @@ function CreateSystemContent() {
                             border: '1px solid',
                             borderColor: 'divider',
                             transition: 'all 0.2s ease',
-                            '&:hover': { borderColor: 'primary.main', boxShadow: 3 }
+                            '&:hover': { borderColor: 'primary.main' }
                         }}
                         onClick={startBlank}
                     >
@@ -89,11 +89,11 @@ function CreateSystemContent() {
                             border: '1px solid',
                             borderColor: 'divider',
                             transition: 'all 0.2s ease',
-                            '&:hover': { borderColor: 'secondary.main', boxShadow: 3 }
+                            '&:hover': { borderColor: 'text.secondary' }
                         }}
                         onClick={startFromMagitech}
                     >
-                        <AutoFixHighIcon sx={{ fontSize: 56, color: 'secondary.main', mb: 2 }} />
+                        <TuneIcon sx={{ fontSize: 56, color: 'secondary.main', mb: 2 }} />
                         <Typography variant="h6" gutterBottom>Baseado no Magitech</Typography>
                         <Typography variant="body2" color="text.secondary">
                             Comece com todos os atributos, perícias, classes, raças e traços do Magitech RPG e personalize a partir daí.
@@ -139,7 +139,7 @@ export default function CreateSystemPage() {
                 </Button>
                 <Box>
                     <Typography variant="h4" fontWeight={700}>
-                        ✨ Criar Novo Sistema
+                        Criar Novo Sistema
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
                         Configure todos os aspectos do seu sistema de RPG customizado

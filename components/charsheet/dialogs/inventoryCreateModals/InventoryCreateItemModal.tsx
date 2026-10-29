@@ -9,6 +9,8 @@ import InventoryCreateModalWrapper, { mapArrayToOptions } from './InventoryCreat
 import { zodResolver } from '@hookform/resolvers/zod';
 import { itemSchema, type ItemFormFields } from '@schemas/itemsSchemas';
 import { useCharsheetForm } from '@contexts/CharsheetFormProvider';
+import { computeCargo } from '@utils/cargo';
+import { v4 as uuidv4 } from 'uuid';
 import { defaultItems, defaultItem } from '@constants/defaultItems';
 import type { Item } from '@models';
 import { useCampaignContext } from '@contexts';
@@ -66,28 +68,24 @@ export const InventoryCreateItemModal = memo(({
     }
 
     const create = useCallback((data: ItemFormFields) => {
+        // `id` próprio: é ele que identifica o item ao excluir (dois itens podem ter o mesmo nome)
         const payload = {
+            id: uuidv4(),
+            type: 'item' as const,
             name: data.name,
             description: data.description,
             rarity: data.rarity as any,
             weight: Number(data.weight) || 0,
             quantity: Number(data.quantity) || 1,
             kind: data.kind as any,
-            level: Number(data.level) || 1
+            level: Number(data.level) || 1,
+            effects: []
         };
         const current = charsheetForm.getValues('inventory.items') ?? [];
         charsheetForm.setValue('inventory.items', [ ...current, payload ], { shouldValidate: true, shouldDirty: true });
         
-        // Atualizar capacity.cargo
-        const weapons = charsheetForm.getValues('inventory.weapons') ?? [];
-        const armors = charsheetForm.getValues('inventory.armors') ?? [];
-        const items = charsheetForm.getValues('inventory.items') ?? [];
-        const totalWeight = [
-            ...(Array.isArray(weapons) ? weapons : []),
-            ...(Array.isArray(armors) ? armors : []),
-            ...(Array.isArray(items) ? items : [])
-        ].reduce((sum, item) => sum + (Number(item.weight) || 0) * (Number(item.quantity) || 1), 0);
-        charsheetForm.setValue('capacity.cargo', totalWeight, { shouldValidate: true, shouldDirty: true });
+        // Recalcula capacity.cargo a partir do inventário inteiro (utils/cargo.ts)
+        charsheetForm.setValue('capacity.cargo', computeCargo(charsheetForm.getValues('inventory')), { shouldValidate: true, shouldDirty: true });
         
         enqueueSnackbar(`${data.name} criado com sucesso!`, toastDefault('itemCreated', 'success'));
         action();

@@ -11,8 +11,9 @@ import type { Charsheet, RPGSystem } from '@models/entities';
 import type { ClassNames, LineageNames } from '@models/types/string';
 import { Box, FormControl, FormHelperText, InputLabel, MenuItem, Select, TextField, Typography, useMediaQuery, useTheme, type SelectChangeEvent } from '@mui/material';
 import { NumberField } from '@components/misc';
-import { blue, green, red, yellow } from '@mui/material/colors';
-import { useCallback, useMemo, useState, useEffect, type ReactElement } from 'react';
+import { color } from '@themes/tokens';
+import { useCharsheetSystem } from '@hooks/useCharsheetSystem';
+import { useCallback, useId, useMemo, type ReactElement } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
 
 export default function Characteristics(): ReactElement {
@@ -24,28 +25,9 @@ export default function Characteristics(): ReactElement {
     const audio = useAudio('/sounds/cybernetic-technology-affirmation.wav')
     const disabled = !!charsheet.id
     
-    // Estado para sistema customizado
-    const [ customSystem, setCustomSystem ] = useState<RPGSystem | null>(null)
-    const [ , setLoadingSystem ] = useState(false)
-    
-    // Carregar sistema se houver systemId
-    useEffect(() => {
-        if (charsheet.systemId) {
-            setLoadingSystem(true)
-            fetch(`/api/rpg-system/${charsheet.systemId}`)
-                .then(async res => await res.json())
-                .then((data: RPGSystem) => {
-                    setCustomSystem(data)
-                })
-                .catch(err => {
-                    console.error('Erro ao carregar sistema:', err)
-                    setCustomSystem(null)
-                })
-                .finally(() => setLoadingSystem(false))
-        } else {
-            setCustomSystem(null)
-        }
-    }, [ charsheet.systemId ])
+    // Sistema customizado (cache compartilhado; resposta de erro não vira "sistema")
+    const { system: customSystem } = useCharsheetSystem(charsheet.systemId)
+    const fieldId = useId()
     
     const isCustomSystem = !!customSystem
     
@@ -67,36 +49,50 @@ export default function Characteristics(): ReactElement {
     const customInitialFields = (isCustomSystem && customSystem?.initialFields?.customInitialFields) || []
 
     /**
-     * Aplica (sign=1) ou reverte (sign=-1) as concessões de uma classe
-     * customizada: pontos, bônus de atributos/perícias e itens iniciais.
+     * Aplica (sign=1) ou reverte (sign=-1) bônus diretos de atributos/perícias.
+     * A reversão é exata (sem limitar em 0): limitar "perdoava" pontos já
+     * gastos e permitia ganhar pontos infinitos trocando a escolha.
      */
-    const applyCustomClassGrants = (cls: NonNullable<RPGSystem['classes']>[number], sign: 1 | -1): void => {
-        if (cls.expertisePoints) {
-            setValue('points.expertises', Math.max(0, (getValues('points.expertises') || 0) + sign * cls.expertisePoints));
-        }
-        if (cls.attributePoints) {
-            setValue('points.attributes', Math.max(0, (getValues('points.attributes') || 0) + sign * cls.attributePoints));
-        }
-
-        if (cls.attributeBonus) {
-            Object.entries(cls.attributeBonus).forEach(([ attrKey, bonus ]) => {
+    const applyBonusMaps = (
+        bonuses: { attributeBonus?: Record<string, number>; expertiseBonus?: Record<string, number> },
+        sign: 1 | -1
+    ): void => {
+        if (bonuses.attributeBonus) {
+            Object.entries(bonuses.attributeBonus).forEach(([ attrKey, bonus ]) => {
                 const current = (getValues(`attributes.${attrKey}` as any) as unknown as number) || 0;
-                setValue(`attributes.${attrKey}` as any, Math.max(0, current + sign * bonus) as any);
+                setValue(`attributes.${attrKey}` as any, (current + sign * bonus) as any);
             });
         }
 
-        if (cls.expertiseBonus) {
-            Object.entries(cls.expertiseBonus).forEach(([ expKey, bonus ]) => {
+        if (bonuses.expertiseBonus) {
+            Object.entries(bonuses.expertiseBonus).forEach(([ expKey, bonus ]) => {
                 const currentExpertise = getValues(`expertises.${expKey}` as any) ;
                 if (!currentExpertise) {
                     if (sign > 0) {
                         setValue(`expertises.${expKey}` as any, { value: bonus, defaultAttribute: null } as any);
                     }
                 } else {
-                    setValue(`expertises.${expKey}.value` as any, Math.max(0, (currentExpertise.value || 0) + sign * bonus));
+                    setValue(`expertises.${expKey}.value` as any, (currentExpertise.value || 0) + sign * bonus);
                 }
             });
         }
+    };
+
+    /**
+     * Aplica (sign=1) ou reverte (sign=-1) as concessões de uma classe
+     * customizada: pontos, bônus de atributos/perícias e itens iniciais.
+     * Pontos podem ficar negativos ao reverter (pontos já gastos): a validação
+     * da ficha avisa "você gastou X ponto(s) a mais".
+     */
+    const applyCustomClassGrants = (cls: NonNullable<RPGSystem['classes']>[number], sign: 1 | -1): void => {
+        if (cls.expertisePoints) {
+            setValue('points.expertises', (getValues('points.expertises') || 0) + sign * cls.expertisePoints, { shouldValidate: true });
+        }
+        if (cls.attributePoints) {
+            setValue('points.attributes', (getValues('points.attributes') || 0) + sign * cls.attributePoints, { shouldValidate: true });
+        }
+
+        applyBonusMaps(cls, sign);
 
         if (cls.grantedItems) {
             const inventory = getValues('inventory');
@@ -171,10 +167,20 @@ export default function Characteristics(): ReactElement {
         const selectedLineage = e.target.value;
         
         if (isCustomSystem) {
-            // Sistema customizado - lógica simplificada
+            // Sistema customizado: reverte os bônus da linhagem anterior e aplica os da nova
+            const previousCustomLineage = customSystem?.lineages?.find(
+                l => l.name === (previousLineage as unknown as string) || l.key === (previousLineage as unknown as string)
+            );
+            if (previousCustomLineage) {
+                applyBonusMaps(previousCustomLineage, -1);
+            }
+
             setValue('lineage', selectedLineage, { shouldValidate: true });
             
             const customLineage = customSystem?.lineages?.find(l => l.name === selectedLineage);
+            if (customLineage) {
+                applyBonusMaps(customLineage, 1);
+            }
             if (customLineage?.skills && customLineage.skills.length > 0) {
                 setValue('skills.lineage', [ customLineage.skills[0] ] as any);
             } else {
@@ -201,7 +207,8 @@ export default function Characteristics(): ReactElement {
                     const currentExpertise = getValues(`expertises.${ex}`) as any;
                     const currentValue = currentExpertise?.value || 0;
                     
-                    setValue(`expertises.${ex}.value`, Math.max(0, currentValue - bonus));
+                    // Reversão exata: limitar em 0 permitia gerar pontos trocando de linhagem
+                    setValue(`expertises.${ex}.value`, currentValue - bonus);
                 });
             }
             
@@ -227,10 +234,10 @@ export default function Characteristics(): ReactElement {
         setValue('lineage', selectedLineage, { shouldValidate: true });
         setValue('skills.lineage', [ antecedentSkills.find(skill => skill.origin === selectedLineage)! ]);
         
-        // Adicionar itens da nova linhagem
+        // Adicionar itens da nova linhagem (cópias: não muta o array do formulário)
         if (antecedentItems) {
-            const currentItems = getValues('inventory.items');
-            const currentWeapons = getValues('inventory.weapons');
+            const currentItems = [ ...(getValues('inventory.items') ?? []) ];
+            const currentWeapons = [ ...(getValues('inventory.weapons') ?? []) ];
             
             antecedentItems.forEach(item => {
                 if (item.type === 'weapon') {
@@ -266,11 +273,11 @@ export default function Characteristics(): ReactElement {
             setValue('points.expertises', currentPoints + lineageBonus.points);
         }
 
-        // Bônus de linhagem
+        // Bônus de linhagem (lê o valor atual do formulário, não o snapshot do render)
         if (selectedLineage === 'Artista') {
-            setValue('mods.attributes.car', (charsheet.mods.attributes.car || 0) + 1);
+            setValue('mods.attributes.car', (getValues('mods.attributes.car') || 0) + 1);
         } else if (previousLineage === 'Artista') {
-            setValue('mods.attributes.car', Math.max(0, (charsheet.mods.attributes.car || 0) - 1));
+            setValue('mods.attributes.car', (getValues('mods.attributes.car') || 0) - 1);
         }
 
         audio.play();
@@ -306,7 +313,7 @@ export default function Characteristics(): ReactElement {
             if (prevOcc?.expertiseBonus) {
                 Object.entries(prevOcc.expertiseBonus).forEach(([ expKey, bonus ]) => {
                     const current = (getValues(`expertises.${expKey}` as any) )?.value || 0;
-                    setValue(`expertises.${expKey}.value` as any, Math.max(0, current - bonus));
+                    setValue(`expertises.${expKey}.value` as any, current - bonus);
                 });
             }
             if (prevOcc?.startingMoney) {
@@ -388,7 +395,7 @@ export default function Characteristics(): ReactElement {
             >
                 <Box>
                     <Typography>{lineage}</Typography>
-                    <Typography noWrap whiteSpace='pre-wrap' color={green[500]} variant='caption'>
+                    <Typography noWrap whiteSpace='pre-wrap' color='success.main' variant='caption'>
                         {lineagePoints(expertises)}
                     </Typography>
                 </Box>
@@ -421,13 +428,13 @@ export default function Characteristics(): ReactElement {
                         {classesModel[classe as keyof typeof classesModel].name}
                     </Typography>
                     <Box display='flex' gap={2}>
-                        <Typography fontWeight={900} variant='caption' color={red[500]}>
+                        <Typography fontWeight={900} variant='caption' color={color.lp}>
                             LP: {classesModel[classe as keyof typeof classesModel].stats.lp}
                         </Typography>
-                        <Typography fontWeight={900} variant='caption' color={blue[300]}>
+                        <Typography fontWeight={900} variant='caption' color={color.mp}>
                             MP: {classesModel[classe as keyof typeof classesModel].stats.mp}
                         </Typography>
-                        <Typography fontWeight={900} variant='caption' color={yellow[500]}>
+                        <Typography fontWeight={900} variant='caption' color={color.ap}>
                             AP: {classesModel[classe as keyof typeof classesModel].stats.ap}
                         </Typography>
                     </Box>
@@ -437,9 +444,9 @@ export default function Characteristics(): ReactElement {
     }, [ isCustomSystem, customSystem ])
 
     return (
-        <Box display='flex' gap={3} width='100%'>
-            {/* Coluna esquerda */}
-            <Box display='flex' flexDirection='column' gap={2} width='65%'>
+        <Box display='flex' flexDirection={{ xs: 'column', md: 'row' }} gap={3} width='100%'>
+            {/* Coluna esquerda (empilha acima do breakpoint md) */}
+            <Box display='flex' flexDirection='column' gap={2} width={{ xs: '100%', md: '65%' }}>
                 {/* Nome */}
                 <Controller
                     name='name'
@@ -464,9 +471,10 @@ export default function Characteristics(): ReactElement {
                         control={control}
                         render={({ field, fieldState: { error } }) => (
                             <FormControl fullWidth error={!!error} disabled={disabled}>
-                                <InputLabel>{classLabel} *</InputLabel>
+                                <InputLabel id={`${fieldId}-class-label`}>{classLabel} *</InputLabel>
                                 <Select
                                     {...field}
+                                    labelId={`${fieldId}-class-label`}
                                     label={`${classLabel} *`}
                                     required
                                     fullWidth
@@ -493,9 +501,10 @@ export default function Characteristics(): ReactElement {
                             control={control}
                             render={({ field, fieldState: { error } }) => (
                                 <FormControl sx={{ width: '50%' }} error={!!error} disabled={disabled}>
-                                    <InputLabel>{lineageLabel} *</InputLabel>
+                                    <InputLabel id={`${fieldId}-lineage-label`}>{lineageLabel} *</InputLabel>
                                     <Select
                                         {...field}
+                                        labelId={`${fieldId}-lineage-label`}
                                         label={`${lineageLabel} *`}
                                         required
                                         fullWidth
@@ -526,10 +535,11 @@ export default function Characteristics(): ReactElement {
                         control={control}
                         render={({ field, fieldState: { error } }) => (
                             <FormControl sx={{ width: '100%' }} error={!!error} disabled={disabled}>
-                                <InputLabel>{charsheet.mode === 'Classic' ? 'Linhagem' : 'Profissão'} *</InputLabel>
+                                <InputLabel id={`${fieldId}-lineage-mobile-label`}>{lineageLabel} *</InputLabel>
                                 <Select
                                     {...field}
-                                    label='Linhagem'
+                                    labelId={`${fieldId}-lineage-mobile-label`}
+                                    label={lineageLabel}
                                     required
                                     fullWidth
                                     onChange={(e) => {
@@ -558,9 +568,10 @@ export default function Characteristics(): ReactElement {
                         control={control}
                         render={({ field, fieldState: { error } }) => (
                             <FormControl fullWidth error={!!error} disabled={disabled}>
-                                <InputLabel>{occupationLabel}</InputLabel>
+                                <InputLabel id={`${fieldId}-occupation-label`}>{occupationLabel}</InputLabel>
                                 <Select
                                     {...field}
+                                    labelId={`${fieldId}-occupation-label`}
                                     value={field.value || ''}
                                     label={occupationLabel}
                                     fullWidth
@@ -583,7 +594,7 @@ export default function Characteristics(): ReactElement {
                                                     </Typography>
                                                 )}
                                                 {(occ.startingMoney ?? 0) > 0 && (
-                                                    <Typography variant='caption' color={green[500]} display='block'>
+                                                    <Typography variant='caption' color='success.main' display='block'>
                                                         +{occ.startingMoney} de dinheiro inicial
                                                     </Typography>
                                                 )}
@@ -601,7 +612,7 @@ export default function Characteristics(): ReactElement {
             </Box>
 
             {/* Coluna direita */}
-            <Box display='flex' flexDirection='column' gap={2} width='35%'>
+            <Box display='flex' flexDirection='column' gap={2} width={{ xs: '100%', md: '35%' }}>
                 {/* Raça */}
                 {(!isCustomSystem || customSystem?.enabledFields?.race) && (
                     <Controller
@@ -609,9 +620,10 @@ export default function Characteristics(): ReactElement {
                         control={control}
                         render={({ field, fieldState: { error } }) => (
                             <FormControl error={!!error} disabled={disabled}>
-                                <InputLabel>{raceLabel} *</InputLabel>
+                                <InputLabel id={`${fieldId}-race-label`}>{raceLabel} *</InputLabel>
                                 <Select
                                     {...field}
+                                    labelId={`${fieldId}-race-label`}
                                     label={`${raceLabel} *`}
                                     required
                                     fullWidth
@@ -639,27 +651,29 @@ export default function Characteristics(): ReactElement {
                                             <MenuItem key={raceName} value={raceName}>
                                                 <Box display='flex' flexDirection='column'>
                                                     <Typography>{raceName}</Typography>
-                                                    {raceName === 'Humano' ? (
-                                                        <Typography variant='caption' color={green[500]}>+1 Ponto de Atributo</Typography>
+                                                    {raceData.stats.pda > 0 ? (
+                                                        <Typography variant='caption' color='success.main'>
+                                                            +{raceData.stats.pda} {raceData.stats.pda === 1 ? 'Ponto' : 'Pontos'} de Atributo
+                                                        </Typography>
                                                     ) : (
                                                         <>
                                                             {raceData.stats.lp > 0 && (
-                                                                <Typography variant='caption' color={green[500]}>+{raceData.stats.lp} LP</Typography>
+                                                                <Typography variant='caption' color='success.main'>+{raceData.stats.lp} LP</Typography>
                                                             )}
                                                             {raceData.stats.lp < 0 && (
-                                                                <Typography variant='caption' color={red[500]}>{raceData.stats.lp} LP</Typography>
+                                                                <Typography variant='caption' color='error.main'>{raceData.stats.lp} LP</Typography>
                                                             )}
                                                             {raceData.stats.mp > 0 && (
-                                                                <Typography variant='caption' color={green[500]}>+{raceData.stats.mp} MP</Typography>
+                                                                <Typography variant='caption' color='success.main'>+{raceData.stats.mp} MP</Typography>
                                                             )}
                                                             {raceData.stats.mp < 0 && (
-                                                                <Typography variant='caption' color={red[500]}>{raceData.stats.mp} MP</Typography>
+                                                                <Typography variant='caption' color='error.main'>{raceData.stats.mp} MP</Typography>
                                                             )}
                                                             {raceData.stats.ap > 0 && (
-                                                                <Typography variant='caption' color={green[500]}>+{raceData.stats.ap} AP</Typography>
+                                                                <Typography variant='caption' color='success.main'>+{raceData.stats.ap} AP</Typography>
                                                             )}
                                                             {raceData.stats.ap < 0 && (
-                                                                <Typography variant='caption' color={red[500]}>{raceData.stats.ap} AP</Typography>
+                                                                <Typography variant='caption' color='error.main'>{raceData.stats.ap} AP</Typography>
                                                             )}
                                                         </>
                                                     )}
@@ -703,7 +717,7 @@ export default function Characteristics(): ReactElement {
 
                         {!matches && showGender && (
                             <FormControl sx={{ width: showAge ? '50%' : '100%' }}>
-                                <InputLabel>{customSystem?.initialFields?.gender?.label || 'Gênero'} *</InputLabel>
+                                <InputLabel id={`${fieldId}-gender-label`}>{customSystem?.initialFields?.gender?.label || 'Gênero'} *</InputLabel>
                                 <Controller
                                     name='gender'
                                     control={control}
@@ -711,6 +725,7 @@ export default function Characteristics(): ReactElement {
                                         <>
                                             <Select
                                                 {...field}
+                                                labelId={`${fieldId}-gender-label`}
                                                 label={`${customSystem?.initialFields?.gender?.label || 'Gênero'} *`}
                                                 error={!!error}
                                                 required
@@ -734,7 +749,7 @@ export default function Characteristics(): ReactElement {
                 {/* Gênero (mobile) */}
                 {matches && showGender && (
                     <FormControl sx={{ width: '100%' }}>
-                        <InputLabel>{customSystem?.initialFields?.gender?.label || 'Gênero'}</InputLabel>
+                        <InputLabel id={`${fieldId}-gender-mobile-label`}>{customSystem?.initialFields?.gender?.label || 'Gênero'} *</InputLabel>
                         <Controller
                             name='gender'
                             control={control}
@@ -742,7 +757,8 @@ export default function Characteristics(): ReactElement {
                                 <>
                                     <Select
                                         {...field}
-                                        label={`${customSystem?.initialFields?.gender?.label || 'Gênero'} *`}
+                                        labelId={`${fieldId}-gender-mobile-label`}
+                                        label={customSystem?.initialFields?.gender?.label || 'Gênero'}
                                         error={!!error}
                                         required
                                         fullWidth
@@ -770,9 +786,10 @@ export default function Characteristics(): ReactElement {
                             if (fieldDef.type === 'select') {
                                 return (
                                     <FormControl fullWidth error={!!error} disabled={disabled}>
-                                        <InputLabel>{fieldDef.label}{fieldDef.required ? ' *' : ''}</InputLabel>
+                                        <InputLabel id={`${fieldId}-${fieldDef.key}-label`}>{fieldDef.label}{fieldDef.required ? ' *' : ''}</InputLabel>
                                         <Select
                                             {...field}
+                                            labelId={`${fieldId}-${fieldDef.key}-label`}
                                             value={(value as string) ?? ''}
                                             label={`${fieldDef.label}${fieldDef.required ? ' *' : ''}`}
                                             onChange={(e) => onChange(e.target.value)}
@@ -789,9 +806,10 @@ export default function Characteristics(): ReactElement {
                             if (fieldDef.type === 'boolean') {
                                 return (
                                     <FormControl fullWidth error={!!error} disabled={disabled}>
-                                        <InputLabel>{fieldDef.label}</InputLabel>
+                                        <InputLabel id={`${fieldId}-${fieldDef.key}-label`}>{fieldDef.label}</InputLabel>
                                         <Select
                                             {...field}
+                                            labelId={`${fieldId}-${fieldDef.key}-label`}
                                             value={value === true ? 'true' : value === false ? 'false' : ''}
                                             label={fieldDef.label}
                                             onChange={(e) => onChange(e.target.value === 'true')}

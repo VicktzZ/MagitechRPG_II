@@ -1,7 +1,7 @@
 import { PusherEvent } from '@enums';
-import { campaignRepository } from '@repositories';
-import { findCampaignByCodeOrId } from '@utils/helpers/findCampaignByCodeOrId';
-import { pusherServer } from '@utils/pusher';
+import { assertIdList, assertMaxLength, forbidden, handleRouteError, readJsonBody, requireCampaignGM, requireUser } from '@utils/api';
+import { triggerPusher } from '@utils/pusher';
+import { adminUpdateDoc } from '@utils/firestore/adminDocs';
 import type { PerkFilters } from '@models';
 
 interface OfferPerksBody {
@@ -13,40 +13,32 @@ interface OfferPerksBody {
 export async function POST(req: Request, { params }: { params: { id: string } }) {
     try {
         const { id } = params;
-        const body: OfferPerksBody = await req.json();
+        const user = await requireUser();
+        const { campaign } = await requireCampaignGM(id, user);
+        const body: OfferPerksBody = await readJsonBody(req);
 
-        if (!body.userIds || !Array.isArray(body.userIds) || body.userIds.length === 0) {
-            return Response.json({ message: 'Lista de usuários é obrigatória' }, { status: 400 });
+        const userIds = assertIdList(body.userIds, 'userIds');
+        assertMaxLength(body.sharedSeed, 200, 'sharedSeed');
+        if (userIds.some(uid => !campaign.players?.some(p => p.userId === uid))) {
+            throw forbidden('Só é possível oferecer perks a jogadores desta campanha');
         }
 
-        const campaign = await findCampaignByCodeOrId(id);
-        if (!campaign) {
-            return Response.json({ message: 'Campanha não encontrada' }, { status: 404 });
-        }
-
-        // Atualiza a session com os pending users, filtros e seed compartilhada
-        const updatedSession = {
-            ...campaign.session,
-            pendingPerkUsers: body.userIds,
-            perkFilters: body.filters,
-            sharedPerkSeed: body.sharedSeed || null
-        };
-
-        await campaignRepository.update({
-            ...campaign,
-            session: updatedSession
+        // Só os campos da oferta (caminhos de campo): não regrava a campanha inteira
+        await adminUpdateDoc('campaigns', campaign.id, {
+            'session.pendingPerkUsers': userIds,
+            'session.perkFilters': body.filters ?? null,
+            'session.sharedPerkSeed': body.sharedSeed || null
         });
 
         // Notifica os clientes via Pusher
-        await pusherServer.trigger(
+        await triggerPusher(
             `presence-${campaign.campaignCode}`,
             PusherEvent.PERKS_OFFERED,
-            { userIds: body.userIds, filters: body.filters, sharedSeed: body.sharedSeed }
+            { userIds, filters: body.filters, sharedSeed: body.sharedSeed }
         );
 
-        return Response.json({ success: true, pendingPerkUsers: body.userIds, sharedSeed: body.sharedSeed });
+        return Response.json({ success: true, pendingPerkUsers: userIds, sharedSeed: body.sharedSeed });
     } catch (error) {
-        console.error('Erro ao oferecer perks:', error);
-        return Response.json({ message: 'Erro ao oferecer perks' }, { status: 500 });
+        return handleRouteError(error, 'Erro ao oferecer perks');
     }
 }

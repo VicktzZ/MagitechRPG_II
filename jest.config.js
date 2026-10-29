@@ -19,6 +19,8 @@ module.exports = {
         "json"
     ],
     moduleNameMapper: {
-        "^@/(.*)$": "<rootDir>/$1"
+        "^@/(.*)$": "<rootDir>/$1",
+        // aliases do tsconfig ("@*": ["./*"]) que o jest não resolve sozinho
+        "^@(components|themes|constants|enums|models|utils|hooks|contexts|layout|public|features|services|schemas|repositories|lib)(/(.*))?$": "<rootDir>/$1/$3"
     }
 };

@@ -8,6 +8,7 @@ import { Skill } from './Skill'
 import { Stats } from './Stats'
 import type { Effect } from '@features/pipelines/types/effects'
 import type { Element } from './types/string'
+import type { DamageModifierData } from '../utils/combat/creatureDefense'
 
 export class Creature {
     @IsString() id: string = uuidv4()
@@ -41,7 +42,21 @@ export class Creature {
     @Type(() => Stats)
         stats: Stats;
     
+    /**
+     * Elemento da criatura: dá a ela a fraqueza do elemento que o vence (ver `utils/combat/engine/weakness.ts`). **Segredo do mestre**: não vem no
+     * documento da campanha (mora em `campaigns/{id}/gmData`, ver `utils/combat/creatureSecrets.ts`); o navegador do mestre o junta de volta.
+     * Na criatura que veio do documento da campanha o campo não existe, apesar do tipo.
+     */
     @IsString() elementalMastery: Element = '' as unknown as Element;
+
+    /**
+     * Fraquezas declaradas (elementos ou tipos físicos como "Cortante"); somam-se à do elemento (`utils/combat/creatureDefense.ts`).
+     * Segredo do mestre, como o elemento.
+     */
+    @IsArray() @IsOptional() weaknesses?: string[];
+
+    /** Resistências e vulnerabilidades ao dano recebido (`{ kind, element?, value: '25%' | '3' }`). Segredo do mestre, como o elemento */
+    @IsArray() @IsOptional() damageModifiers?: DamageModifierData[];
     
     @IsArray()
     @IsOptional()

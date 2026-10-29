@@ -1,49 +1,28 @@
 import { PusherEvent } from '@enums';
-import { JoinCampaignDTO as LeaveCampaignDTO } from '@models/dtos';
-import { campaignRepository, charsheetRepository } from '@repositories';
-import { pusherServer } from '@utils/pusher';
-import { plainToInstance } from 'class-transformer';
-import { validate } from 'class-validator';
+import type { Campaign } from '@models/entities';
+import { charsheetRepository } from '@repositories';
+import { triggerPusher } from '@utils/pusher';
+import { adminUpdateDocInTransaction } from '@utils/firestore/adminDocs';
+import { disconnectFields } from '@utils/campaignPresence';
+import { findCampaignOrThrow, getCampaignRole, handleRouteError, readJsonBody, requireUser, toCampaignPreview } from '@utils/api';
 
 export async function POST(req: Request): Promise<Response> {
     try {
-        const body = await req.json();
-        const dto = plainToInstance(LeaveCampaignDTO, body, { excludeExtraneousValues: true });
-        const errors = await validate(dto, { skipMissingProperties: true, whitelist: false });
+        const user = await requireUser();
+        const body = await readJsonBody<{ campaignCode?: unknown }>(req);
 
-        if (errors.length > 0) {
-            return Response.json({ message: 'BAD REQUEST', errors }, { status: 400 });
-        }
-        
-        const { campaignCode, userId } = body;
+        // Só é possível desconectar a si mesmo — userId do body é ignorado
+        const userId = user.id;
+        const campaign = await findCampaignOrThrow(String(body.campaignCode ?? ''));
 
-        const campaign = await campaignRepository
-            .whereEqualTo('campaignCode', campaignCode)
-            .findOne();
+        // Só `session.users` muda, dentro de uma transação: sair não reescreve a campanha inteira
+        // (o que desfazia entradas e alterações simultâneas)
+        await adminUpdateDocInTransaction<null, Campaign>('campaigns', campaign.id, data => ({
+            fields: disconnectFields(data, userId),
+            result: null
+        }));
 
-        if (!campaign) {
-            return Response.json(
-                { message: 'Campanha não encontrada' },
-                { status: 400 }
-            );
-        }
-
-        await campaignRepository.update({
-            ...campaign,
-            session: {
-                ...campaign.session,
-                users: campaign.session.users.filter(u => u !== userId)
-            }
-        });
-
-        const updatedCampaign = await campaignRepository.whereEqualTo('campaignCode', campaignCode).findOne();
-        
-        if (!updatedCampaign) {
-            return Response.json(
-                { message: 'Falha ao atualizar sessão' },
-                { status: 500 }
-            );
-        }
+        const updatedCampaign = await findCampaignOrThrow(campaign.campaignCode);
 
         const userInfo = updatedCampaign.players.find(p => p.userId === userId);
         let userName = 'Unknown';
@@ -52,9 +31,9 @@ export async function POST(req: Request): Promise<Response> {
             const userSheet = await charsheetRepository.findById(userInfo.charsheetId);
             if (userSheet) userName = userSheet.name;
         }
-        
-        await pusherServer.trigger(
-            'presence-' + campaignCode,
+
+        await triggerPusher(
+            'presence-' + campaign.campaignCode,
             PusherEvent.USER_EXIT,
             {
                 userId,
@@ -63,12 +42,11 @@ export async function POST(req: Request): Promise<Response> {
             }
         );
 
-        return Response.json(updatedCampaign, { status: 200 });
-    } catch (error: any) {
-        console.error('Erro ao desconectar usuário:', error);
         return Response.json(
-            { message: 'Erro interno ao processar desconexão', error: error.message },
-            { status: 500 }
+            getCampaignRole(updatedCampaign, user).isMember ? updatedCampaign : toCampaignPreview(updatedCampaign),
+            { status: 200 }
         );
+    } catch (error) {
+        return handleRouteError(error, 'Erro interno ao processar desconexão');
     }
 }

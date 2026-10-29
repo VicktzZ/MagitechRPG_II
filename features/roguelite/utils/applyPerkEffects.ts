@@ -56,8 +56,6 @@ export function applyPerkEffects(options: ApplyEffectsOptions): ApplyEffectsResu
         const { type, target, value  } = effect
         const numericValue = parseEffectValue(value)
         
-        console.log(`[applyPerkEffects] Processando efeito: type=${type}, target=${target}, value=${value}`)
-        
         try {
             switch (type) {
             case 'add': {
@@ -123,9 +121,6 @@ export function applyPerkEffects(options: ApplyEffectsOptions): ApplyEffectsResu
             console.error('[applyPerkEffects] Erro ao processar efeito:', error)
         }
     }
-    
-    console.log('[applyPerkEffects] Updates gerados:', updates)
-    console.log('[applyPerkEffects] Mensagens:', messages)
     
     return { updates, messages }
 }
@@ -197,12 +192,12 @@ function processAddEffect(
             }
         },
         
-        // Limite de MP
+        // Bônus ao limite de MP por turno (o limite base é calculado em utils/mpLimit.ts)
         'mpLimit': () => {
             const current = charsheet?.mpLimit || 0
-            return { 
-                update: { mpLimit: current + value }, 
-                message: `+${value} de limite de MP` 
+            return {
+                update: { mpLimit: current + value },
+                message: `+${value} de limite de MP por turno`
             }
         }
     }

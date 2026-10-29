@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { PlanIcon } from './PlanIcon';
 import { Chip, Tooltip } from '@mui/material';
 import { SubscriptionPlan, SubscriptionPlanMetadata } from '@enums/subscriptionEnum';
 import type { User } from '@models/entities';
@@ -34,7 +35,7 @@ export function PlanBadge({
                 label={
                     showIcon ? (
                         <>
-                            <span style={{ marginRight: '4px' }}>{metadata.icon}</span>
+                            <PlanIcon plan={plan} sx={{ mr: 0.5, verticalAlign: 'middle' }} />
                             {metadata.name}
                         </>
                     ) : (
@@ -45,7 +46,7 @@ export function PlanBadge({
                 variant={variant}
                 sx={{
                     backgroundColor: variant === 'filled' ? metadata.color : 'transparent',
-                    color: variant === 'filled' ? 'white' : metadata.color,
+                    color: variant === 'filled' ? 'primary.contrastText' : metadata.color,
                     borderColor: metadata.color,
                     fontWeight: 'bold',
                     fontSize: size === 'small' ? '0.75rem' : '0.875rem'

@@ -1,14 +1,17 @@
 'use client';
 
 import { IconButton, type IconButtonProps, useTheme } from '@mui/material';
-import type { ReactElement } from 'react';
+import { forwardRef } from 'react';
 
-export default function CustomIconButton(props: IconButtonProps): ReactElement {
+// forwardRef: o Tooltip do MUI precisa da ref do filho para posicionar a dica
+const CustomIconButton = forwardRef<HTMLButtonElement, IconButtonProps>(function CustomIconButton(props, ref) {
     const theme = useTheme()
-    
+
     return (
-        <IconButton {...props} sx={{ border: `1px solid ${theme.palette.primary.main}50`, p: 1.25, ...props.sx }}>
+        <IconButton ref={ref} {...props} sx={{ border: `1px solid ${theme.palette.primary.main}50`, p: 1.25, ...props.sx }}>
             {props.children}
         </IconButton>
     )
-}
+})
+
+export default CustomIconButton

@@ -85,6 +85,13 @@ export class Campaign {
 
     /** Data de finalização da campanha */
     finishedAt?: string;
+
+    /**
+     * Opção do mestre: mostra aos jogadores o texto e o custo de TODOS os estágios de TODAS as magias, inclusive os ainda
+     * bloqueados (na tela da campanha e na ficha de quem joga nela). Só a visualização muda: conjurar continua exigindo evoluir
+     * a magia. Ver `utils/spellReveal.ts`.
+     */
+    revealSpellStages?: boolean;
     
     constructor(campaign?: Partial<Campaign>) {
         Object.assign(this, campaign)

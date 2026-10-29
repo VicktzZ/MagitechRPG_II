@@ -472,7 +472,8 @@ const SEED_EFFECTS: Partial<CombatEffect>[] = [
     },
     {
         id: 'seed-visao-penumbra',
-        name: 'Visão na Penumbra',
+        // Antes "Visão na Penumbra" (o id fica, é ele que identifica o efeito); a regra é a visão aprimorada do combate (flag `dim_vision`)
+        name: 'Visão Aprimorada',
         description: 'O alvo enxerga em locais de pouca luz sem penalidade.',
         category: 'buff',
         timing: 'round',

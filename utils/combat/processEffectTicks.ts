@@ -3,6 +3,8 @@ import { CombatLog } from '@models'
 import { charsheetRepository } from '@repositories'
 import { rollDice } from '@utils/diceRoller'
 import { getEffectDisplayName } from '@utils/combatEffectLabels'
+import { vitalCeiling } from './effectStats'
+import { collectModifiers } from './engine/modifiers'
 
 export type TickTrigger =
     | {
@@ -36,6 +38,9 @@ function shouldTick(
     combatant: Combatant,
     trigger: TickTrigger
 ): boolean {
+    // Magia sustentada não tica: o MP dela é cobrado na virada da rodada (utils/combat/sustainedUpkeep.ts)
+    if (applied.sustained) return false
+
     // Efeitos indefinidos continuam ticando (para aplicar dano/cura por tick),
     // só não expiram. Se não for indefinido e remaining esgotou, pula.
     if (!applied.indefinite && applied.remaining <= 0) return false
@@ -104,8 +109,12 @@ function applyValueToCombatant(
 
     if (category === 'heal') {
         const lp = typeof combatant.currentLp === 'number' ? combatant.currentLp : 0
-        const maxLp = typeof combatant.maxLp === 'number' && combatant.maxLp > 0 ? combatant.maxLp : Number.MAX_SAFE_INTEGER
-        combatant.currentLp = Math.min(maxLp, lp + rolled)
+        // O teto de agora: o máximo depois dos efeitos (Fragilidade) mais a margem de Sobrecura
+        const maxLp = typeof combatant.maxLp === 'number' && combatant.maxLp > 0
+            ? vitalCeiling(combatant.maxLp, collectModifiers(combatant.effects), 'lp')
+            : Number.MAX_SAFE_INTEGER
+        // Cura nunca reduz o LP (ex: jogador com LP acima do máximo por overheal)
+        combatant.currentLp = Math.max(lp, Math.min(maxLp, lp + rolled))
     }
 }
 
@@ -206,6 +215,29 @@ export function processEffectTicks(combat: Combat, trigger: TickTrigger): Proces
     }
 
     return { outcomes, charsheetsToSync }
+}
+
+/**
+ * Atualiza o LP dos combatentes jogadores a partir das fichas reais.
+ * O LP guardado no combatente é um snapshot do início do combate: sem isso,
+ * dano/cura aplicados no combate partiam de um valor antigo e sobrescreviam
+ * o que o jogador recuperou/perdeu fora do combate (poções, barra de status etc.).
+ */
+export async function refreshPlayerCombatantsLp(combat: Combat, onlyIds?: Iterable<string>): Promise<void> {
+    const filter = onlyIds ? new Set(onlyIds) : null
+    for (const combatant of combat.combatants) {
+        if (combatant.type !== 'player') continue
+        if (filter && !filter.has(combatant.id)) continue
+
+        try {
+            const charsheet = await charsheetRepository.findById(combatant.id)
+            if (!charsheet?.stats) continue
+            if (typeof charsheet.stats.lp === 'number') combatant.currentLp = charsheet.stats.lp
+            if (typeof charsheet.stats.maxLp === 'number') combatant.maxLp = charsheet.stats.maxLp
+        } catch (error) {
+            console.error('[processEffectTicks] Erro ao ler LP da ficha:', combatant.id, error)
+        }
+    }
 }
 
 /**

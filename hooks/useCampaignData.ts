@@ -1,8 +1,14 @@
 import type { FirestoreOnChange } from '@models/types/firestoreRealtime';
 import type { CampaignData } from '@models/types/session';
 import type { Message } from '@models';
-import { useMemo } from 'react';
+import type { User } from '@models/entities';
+import { useQuery } from '@tanstack/react-query';
+import { useMemo, useState } from 'react';
+import { CampaignLookupError, resolveCampaignLoadStatus, type CampaignLoadStatus } from '@utils/campaignLoadStatus';
+import { useCampaignChatFeed, type CampaignChat } from './useCampaignChatFeed';
+import { attachCreatureDefenses } from '@utils/combat/creatureSecrets';
 import { useFirestoreRealtime } from './useFirestoreRealtime';
+import { useGmData } from './useGmData';
 import { useStableArrayItems, useStableValue } from './useStableValue';
 
 interface UseCampaignDataOptions {
@@ -18,8 +24,16 @@ interface UseCampaignDataResult {
      * qualquer jogador e manterí-las dentro de `data.campaign` invalidava a
      * identidade da campanha inteira (e todos os consumidores do contexto)
      * a cada mensagem. `data.campaign.session.messages` vem sempre vazio.
+     * Vêm da subcoleção do chat, mais as antigas que ainda estão na campanha.
      */
     messages: Message[];
+    /** Paginação e erro do chat (carregar mensagens anteriores) */
+    chat: CampaignChat;
+    /**
+     * `loading` enquanto busca; `not-found` (código inexistente ou campanha
+     * excluída) e `error` (falha de rede ou de permissão) deixam o spinner.
+     */
+    status: CampaignLoadStatus;
 }
 
 const EMPTY_MESSAGES: Message[] = [];
@@ -29,12 +43,38 @@ export function useCampaignData({
     userId,
     onChange
 }: UseCampaignDataOptions): UseCampaignDataResult {
-    const { data: campaign, loading } = useFirestoreRealtime('campaign', {
-        filters: [
-            { field: 'campaignCode', operator: '==', value: campaignCode }
-        ],
+    // O código vira o ID pela API (o código é o convite da campanha). Com o ID, a
+    // campanha é lida direto pelo documento: as regras do Firestore não deixam
+    // listar/consultar a coleção de campanhas, só ler uma campanha conhecida.
+    const { data: campaignRef, error: lookupError } = useQuery({
+        queryKey: [ 'campaign-ref', campaignCode ],
+        queryFn: async () => {
+            const response = await fetch(`/api/campaign/${encodeURIComponent(campaignCode)}`);
+            if (!response.ok) throw new CampaignLookupError(`Falha ao buscar a campanha (${response.status})`, response.status);
+            return await response.json() as { id: string };
+        },
+        enabled: !!campaignCode,
+        staleTime: Infinity,
+        // Código inexistente não melhora com nova tentativa; falha de rede, sim
+        retry: (failureCount, error) => !(error instanceof CampaignLookupError && error.status === 404) && failureCount < 1
+    });
+    const campaignId = campaignRef?.id;
+
+    // O listener é recriado quando o ID chega; `loading` do hook fica falso por um
+    // render antes disso, então só consideramos a resposta válida para o ID atual
+    const [ settledId, setSettledId ] = useState<string>();
+
+    const { data: campaign, loading, error: realtimeError } = useFirestoreRealtime('campaign', {
+        filters: campaignId ? [ { field: 'id', operator: '==', value: campaignId } ] : undefined,
+        enabled: !!campaignId,
         onChange(type, doc) {
             onChange?.(type, doc);
+        },
+        onNext() {
+            setSettledId(campaignId);
+        },
+        onError() {
+            setSettledId(campaignId);
         }
     });
 
@@ -47,11 +87,21 @@ export function useCampaignData({
         ]
     });
 
-    const { data: campaignUsers } = useFirestoreRealtime('user', {
-        enabled: !loading && !!c && (c.players.length > 0 || c.admin.length > 0),
-        filters: [
-            { field: 'id', operator: 'in', value: [ ...(c?.players.map(p => p.userId) || []), ...(c?.admin || []) ] }
-        ]
+    // Perfis públicos (id, nome, imagem) dos membros vêm da API — os documentos
+    // `users` têm e-mail e assinatura e só são legíveis pelo próprio dono.
+    // Recarrega quando alguém entra ou sai da campanha.
+    const memberIds = useMemo(
+        () => [ ...new Set([ ...(c?.players.map(p => p.userId) ?? []), ...(c?.admin ?? []) ]) ].sort(),
+        [ c?.players, c?.admin ]
+    );
+    const { data: campaignUsers } = useQuery({
+        queryKey: [ 'campaign-users', c?.id, memberIds.join(',') ],
+        queryFn: async () => {
+            const response = await fetch(`/api/campaign/${c.id}/users`);
+            if (!response.ok) throw new Error(`Erro ao buscar membros da campanha (${response.status})`);
+            return await response.json() as User[];
+        },
+        enabled: !loading && !!c && memberIds.length > 0
     });
 
     // Estabilidade referencial item a item: uma mudança na ficha de UM jogador
@@ -60,14 +110,30 @@ export function useCampaignData({
     const stableCharsheets = useStableArrayItems(campaignCharsheets ?? [], cs => cs.id ?? '');
     const stableUsers = useStableArrayItems(campaignUsers ?? [], u => u.id ?? '');
 
-    const messages = useStableValue(c?.session?.messages ?? EMPTY_MESSAGES);
+    // Mensagens antigas, ainda dentro do documento da campanha (a lista só diminui com a migração)
+    const legacyMessages = useStableValue(c?.session?.messages ?? EMPTY_MESSAGES);
+
+    // O chat só abre para membros: quem ainda escolhe a ficha para entrar não precisa do histórico
+    const isMember = !!userId && !!c && (c.admin?.includes(userId) || c.players?.some(player => player.userId === userId));
+    const { messages, chat } = useCampaignChatFeed({ campaignId: c?.id, enabled: !!isMember, legacyMessages });
+
+    // Dados que só o mestre vê (defesas das criaturas): moram à parte, nunca no documento da campanha, e o navegador do mestre os junta de volta
+    // nas criaturas, então o resto da tela continua lendo `campaign.custom.creatures` como sempre. Os jogadores não abrem esse listener.
+    const isGM = !!userId && !!c?.admin?.includes(userId);
+    const { creatureDefenses } = useGmData({ campaignId: c?.id, enabled: isGM });
 
     // Campanha sem as mensagens, estabilizada por conteúdo: um snapshot que só
     // acrescentou mensagem mantém a MESMA referência de campanha.
     const campaignSansMessages = useMemo(() => {
         if (!c) return null;
-        return { ...c, session: { ...c.session, messages: EMPTY_MESSAGES } };
-    }, [ c ]);
+        const stored = c.custom?.creatures;
+        const creatures = isGM && Array.isArray(stored) ? attachCreatureDefenses(stored, creatureDefenses) : stored;
+        return {
+            ...c,
+            ...(creatures !== stored ? { custom: { ...c.custom, creatures: creatures as typeof stored } } : {}),
+            session: { ...c.session, messages: EMPTY_MESSAGES }
+        };
+    }, [ c, isGM, creatureDefenses ]);
     const stableCampaign = useStableValue(campaignSansMessages);
 
     const campaignData = useMemo((): CampaignData | null => {
@@ -95,5 +161,14 @@ export function useCampaignData({
         };
     }, [ stableCampaign, stableUsers, stableCharsheets, userId ]);
 
-    return { data: campaignData, messages };
+    const status = resolveCampaignLoadStatus({
+        lookup: { pending: !campaignRef && !lookupError, error: lookupError },
+        realtime: {
+            settled: !!campaignId && settledId === campaignId && !loading,
+            error: realtimeError,
+            found: !!c
+        }
+    });
+
+    return { data: campaignData, messages, chat, status };
 }

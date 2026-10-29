@@ -6,6 +6,7 @@ import { useFirestoreRealtime } from '@hooks/useFirestoreRealtime';
 import { Add } from '@mui/icons-material';
 import { Avatar, Box, Card, Grid, Skeleton, Typography, useMediaQuery, useTheme } from '@mui/material';
 import { QueryBuilder } from '@utils/queryBuilder';
+import { color } from '@themes/tokens';
 import { motion } from 'framer-motion';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
@@ -67,38 +68,18 @@ export default function App(): ReactElement {
                                 height: !matches ? 290 : 320,
                                 width: !matches ? 320 : '100%',
                                 maxWidth: 360,
-                                background: theme.palette.mode === 'dark'
-                                    ? 'linear-gradient(160deg, #1e293b 0%, #0f172a 100%)'
-                                    : 'linear-gradient(160deg, #f8fafc 0%, #e2e8f0 100%)',
+                                bgcolor: 'background.paper',
                                 cursor: 'pointer',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
                                 borderRadius: 3,
                                 border: '1px solid',
-                                borderColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
-                                boxShadow: theme.palette.mode === 'dark' 
-                                    ? '0 8px 16px rgba(0,0,0,0.3)'
-                                    : '0 8px 16px rgba(0,0,0,0.08)',
-                                transition: 'all 0.2s ease',
-                                overflow: 'hidden',
-                                position: 'relative',
+                                borderColor: 'divider',
+                                transition: 'border-color 120ms, background-color 120ms',
                                 '&:hover': {
-                                    transform: 'translateY(-6px)',
-                                    boxShadow: theme.palette.mode === 'dark'
-                                        ? '0 12px 20px rgba(0,0,0,0.4)'
-                                        : '0 12px 20px rgba(0,0,0,0.12)',
-                                    borderColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.12)'
-                                },
-                                '&:before': {
-                                    content: '""',
-                                    position: 'absolute',
-                                    top: 0,
-                                    left: 0,
-                                    right: 0,
-                                    height: 3,
-                                    background: 'linear-gradient(90deg, #3b82f6 0%, #8b5cf6 100%)',
-                                    opacity: 0.9
+                                    bgcolor: 'background.raised',
+                                    borderColor: color.borderStrong
                                 }
                             }}
                             onClick={() => { router.push('/app/charsheet/create') }}
@@ -114,8 +95,7 @@ export default function App(): ReactElement {
                                     sx={{
                                         width: 56, 
                                         height: 56, 
-                                        bgcolor: 'primary.main',
-                                        boxShadow: 1
+                                        bgcolor: 'primary.main'
                                     }}
                                 >
                                     <Add />

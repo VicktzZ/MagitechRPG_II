@@ -1,272 +1,204 @@
 'use client'
 
-import { CustomDices } from '@components/charsheet'
 import { useCampaignContext } from '@contexts'
 import type { User } from '@models/entities'
-import { Casino as DiceIcon, Notes } from '@mui/icons-material'
+import { ContentCopy, MoreVert } from '@mui/icons-material'
 import {
     Avatar,
     Badge,
     Box,
     Button,
     Divider,
+    IconButton,
+    Menu,
+    MenuItem,
     Paper,
+    Stack,
     Tooltip,
-    Typography,
-    useMediaQuery,
-    type Theme
+    Typography
 } from '@mui/material'
-import { grey } from '@mui/material/colors'
-import { campaignService, sessionService } from '@services'
-import { motion } from 'framer-motion'
+import { campaignService } from '@services'
+import { font } from '@themes/tokens'
 import { useSession } from 'next-auth/react'
-import Image from 'next/image'
 import { useRouter } from 'next/navigation'
+import { useSnackbar } from 'notistack'
 import { useState, type ReactElement } from 'react'
-import Section from './Section'
-import NotesSection from './playerDashboard/NotesSection'
+import LeaveCampaignDialog from './LeaveCampaignDialog'
 
+interface PersonProps {
+    name: string
+    caption: string
+    image?: string
+    online: boolean
+}
+
+/**
+ * Participante da campanha. A presença não depende só da cor: o ponto é cheio quando está online e vazado
+ * quando não está, a foto fica em tons de cinza e o texto diz "online" ou "offline" (leitor de tela inclusive).
+ */
+function Person({ name, caption, image, online }: PersonProps): ReactElement {
+    const status = online ? 'online' : 'offline'
+
+    return (
+        <Stack direction="row" spacing={1.25} alignItems="center" role="listitem" aria-label={`${name}, ${caption}, ${status}`}>
+            <Badge
+                overlap="circular"
+                variant="dot"
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                sx={{
+                    '& .MuiBadge-badge': {
+                        width: 12,
+                        height: 12,
+                        minWidth: 12,
+                        borderRadius: '50%',
+                        border: '2px solid',
+                        borderColor: online ? 'background.raised' : 'text.disabled',
+                        bgcolor: online ? 'success.main' : 'background.raised'
+                    }
+                }}
+            >
+                <Avatar
+                    src={image || undefined}
+                    alt=""
+                    sx={{ width: 36, height: 36, filter: online ? 'none' : 'grayscale(100%)', opacity: online ? 1 : 0.75 }}
+                >
+                    {name.charAt(0).toUpperCase()}
+                </Avatar>
+            </Badge>
+            <Box sx={{ minWidth: 0 }}>
+                <Typography variant="body2" noWrap sx={{ fontWeight: 600 }}>{name}</Typography>
+                <Typography variant="caption" color="text.secondary" noWrap component="div">
+                    {caption} · {status}
+                </Typography>
+            </Box>
+        </Stack>
+    )
+}
+
+/** Faixa no topo da campanha: título, código, mestre e jogadores (quem está online) */
 export default function CampaignHeader(): ReactElement {
     const { campaign, users, charsheets, isUserGM } = useCampaignContext()
-    const [ copiedCode, setCopiedCode ] = useState<boolean>(false)
     const { data: session } = useSession()
-    
+    const { enqueueSnackbar } = useSnackbar()
     const router = useRouter()
-    const isMobile = useMediaQuery((theme: Theme) => theme.breakpoints.down('sm'))
 
-    const renderUserAvatar = (user: User, isAdmin: boolean = false) => {
-        return (
-            <motion.div
-                key={`${user.id}-${charsheets.find(c => c.userId === user.id)?.name ?? ''}-${campaign.session.users.includes(user.id)}`}
-                initial={{ x: -100, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                transition={{
-                    type: 'spring',
-                    damping: 10,
-                    stiffness: 100
-                }}
+    const [ copiedCode, setCopiedCode ] = useState(false)
+    const [ menuAnchor, setMenuAnchor ] = useState<HTMLElement | null>(null)
+    const [ leaveOpen, setLeaveOpen ] = useState(false)
+    const [ leaving, setLeaving ] = useState(false)
 
-                style={{
-                    display: 'flex', 
-                    gap: 2 
-                }} 
-            >
-                <Badge 
-                    badgeContent={''} 
-                    color={campaign.session.users.includes(user.id) ? 'success' : 'error'}
-                    sx={{
-                        '& .MuiBadge-badge': {
-                            height: '15px',
-                            minWidth: '15px'
-                        }
-                    }}  
-                >
-                    <Avatar sx={{ height: '3rem', width: '3rem' }}>
-                        <Image
-                            height={250}
-                            width={250}
-                            src={user?.image ?? '/'}
-                            alt={user.name ?? 'User Avatar'}
-                            style={{
-                                height: '100%',
-                                width: '100%',
-                                filter: campaign.session.users.includes(user.id) ? 'none' : 'grayscale(100%)',
-                                transition: 'filter 0.3s ease-in-out'
-                            }}
-                        />
-                    </Avatar>
-                </Badge>
-                <Box paddingLeft={2}>
-                    <Typography>
-                        {isAdmin ? 'Game Master' : charsheets.find(c => c.userId === user.id)?.name}
-                    </Typography>
-                    <Typography color={grey[500]} variant="caption">
-                        {user.name}
-                    </Typography>
-                </Box>
-            </motion.div>
+    const isOnline = (userId?: string): boolean => !!userId && campaign.session.users.includes(userId)
+    const onlineCount = users.all.filter(user => isOnline(user.id)).length
+
+    const copyCode = () => {
+        navigator.clipboard.writeText(campaign.campaignCode).then(
+            () => {
+                setCopiedCode(true)
+                window.setTimeout(() => { setCopiedCode(false) }, 1500)
+            },
+            () => { enqueueSnackbar('Não foi possível copiar o código', { variant: 'error' }) }
         )
     }
 
+    // A remoção e o disconnect reescrevem a campanha inteira: disparados juntos, o último a gravar
+    // pode devolver o jogador à lista. Por isso só a remoção, aguardada; o disconnect roda ao sair da tela.
+    const handleLeave = async () => {
+        const userId = session?.user?.id
+        if (!userId || !campaign.id || leaving) return
+
+        setLeaving(true)
+        try {
+            await campaignService.removeUser(campaign.id, userId)
+            router.push('/app/campaign')
+        } catch (error) {
+            console.error('Erro ao sair da campanha:', error)
+            enqueueSnackbar('Não foi possível sair da campanha. Tente de novo.', { variant: 'error' })
+            setLeaving(false)
+        }
+    }
+
+    const playerCaption = (user: User): string => user.name ?? 'jogador'
+
     return (
-        <Box display="flex" flexDirection="column" width={ isMobile ? '100%' : '25%' } borderRadius={1} gap={2}>
-            <Paper
-                sx={{
-                    p: { xs: 1, sm: 2 },
-                    bgcolor: 'background.paper2',
-                    borderRadius: 2
-                }}
-            >
-                <Box
-                    sx={{
-                        display: 'flex',
-                        flexDirection: { xs: 'column', sm: 'row' },
-                        alignItems: { xs: 'flex-start', sm: 'center' },
-                        gap: { xs: 1, sm: 2 }
-                    }}
-                >
-                    <Box
-                        sx={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            flex: 1
-                        }}
-                    >
-                        <Typography variant="h5" gutterBottom={isMobile}>
-                            {campaign.title}
-                        </Typography>
-                        <Typography mt={2} variant="body2" color="text.secondary">
+        <Paper
+            component="header"
+            sx={{ p: { xs: 2, sm: 2.5 }, bgcolor: 'background.raised', borderRadius: 2 }}
+        >
+            <Stack direction="row" alignItems="flex-start" spacing={2}>
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography variant="h5" component="h1">{campaign.title}</Typography>
+                    {campaign.description && (
+                        <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            title={campaign.description}
+                            sx={{ mt: 0.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}
+                        >
                             {campaign.description}
                         </Typography>
-                    </Box>
+                    )}
+                </Box>
 
-                    <Box
-                        sx={{
-                            display: 'flex',
-                            flexDirection: { xs: 'column', sm: 'column' },
-                            gap: 2
-                        }}
-                    >
-                        <Box
-                            sx={{
-                                display: 'flex',
-                                flexDirection: { xs: 'column', sm: 'row' },
-                                gap: 2,
-                                alignItems: { xs: 'stretch', sm: 'center' },
-                                width: { xs: '100%', sm: 'auto' }
-                            }}
+                <Stack direction="row" spacing={0.5} alignItems="center" sx={{ flexShrink: 0 }}>
+                    <Tooltip open={copiedCode} title="Copiado!" placement="top" disableHoverListener disableFocusListener disableTouchListener>
+                        <Button
+                            variant="outlined"
+                            size="small"
+                            startIcon={<ContentCopy fontSize="small" />}
+                            onClick={copyCode}
+                            aria-label={`Copiar o código da campanha, ${campaign.campaignCode}`}
+                            sx={{ fontFamily: font.mono, letterSpacing: '0.04em' }}
                         >
-                            <Box
-                                sx={{
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    alignItems: { xs: 'flex-start', sm: 'flex-end' }
-                                }}
+                            {campaign.campaignCode}
+                        </Button>
+                    </Tooltip>
+
+                    {!isUserGM && (
+                        <>
+                            <IconButton
+                                aria-label="Mais opções da campanha"
+                                aria-haspopup="menu"
+                                aria-expanded={!!menuAnchor}
+                                onClick={(event) => { setMenuAnchor(event.currentTarget) }}
                             >
-                                <Typography variant="subtitle2" color="primary">
-                                    Mestre
-                                </Typography>
-                                <Typography variant="body2">{users.admin[0]?.name}</Typography>
-                            </Box>
-                            <Box
-                                sx={{
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    alignItems: { xs: 'flex-start', sm: 'flex-end' }
-                                }}
-                            >
-                                <Typography variant="subtitle2" color="primary">
-                                    Jogadores
-                                </Typography>
-                                <Typography variant="body2">
-                                    {campaign.session.users.length} / {users.all.length}
-                                </Typography>
-                            </Box>
-                        </Box>
-                        <Box mt={2}>
-                            <Tooltip open={copiedCode} title="Copiado!" placement="top">
-                                <Box display="flex" alignItems="center" gap={1}>
-                                    Código:
-                                    <Button
-                                        onClick={() => {
-                                            navigator.clipboard.writeText(campaign.campaignCode)
-                                            setCopiedCode(true)
-                                            setTimeout(() => {
-                                                setCopiedCode(false)
-                                            }, 1000)
-                                        }}
-                                        variant="outlined"
-                                    >
-                                        {campaign.campaignCode}
-                                    </Button>
-                                </Box>
-                            </Tooltip>
-                        </Box>
-                    </Box>
-                </Box>
-            </Paper>
-            <Box
-                display="flex"
-                flexDirection="column"
-                minWidth="40%"
-                minHeight={!isMobile ? '70vh' : '10vh'}
-                bgcolor="background.paper"
-                justifyContent='space-between'
-                borderRadius={1}
-                p={2}
-                mb={6}
-                gap={2}
-            >
-                <Box
-                    display="flex"
-                    flexDirection="column"
-                    justifyContent="center"
-                    gap={2}
-                >
-                    <Box
-                        display="flex"
-                        flexDirection="column"
-                        alignItems={'flex-start'}
-                        justifyContent="center"
-                        gap={3}
-                    >
-                        {users.admin.map(user => renderUserAvatar(user, true))}
-                    </Box>
+                                <MoreVert />
+                            </IconButton>
+                            <Menu anchorEl={menuAnchor} open={!!menuAnchor} onClose={() => { setMenuAnchor(null) }}>
+                                <MenuItem onClick={() => { setMenuAnchor(null); setLeaveOpen(true) }} sx={{ color: 'error.light' }}>
+                                    Sair da campanha
+                                </MenuItem>
+                            </Menu>
+                            <LeaveCampaignDialog
+                                open={leaveOpen}
+                                campaignTitle={campaign.title}
+                                leaving={leaving}
+                                onConfirm={handleLeave}
+                                onCancel={() => { setLeaveOpen(false) }}
+                            />
+                        </>
+                    )}
+                </Stack>
+            </Stack>
 
-                    <Divider />
+            <Divider sx={{ my: 1.5 }} />
 
-                    <Box
-                        display="flex"
-                        flexDirection="column"
-                        alignItems={'flex-start'}
-                        justifyContent="center"
-                        gap={3}
-                    >
-                        {users.players.map(user => (
-                            <Box display="flex" flexDirection="column" gap={2} key={user.id}>
-                                {renderUserAvatar(user)}
-                            </Box>
-                        ))}
-                    </Box>
-                </Box>
-                {!isUserGM && (
-                    <Box>
-                        <Button onClick={() => {
-                            if (!session?.user?.id || !campaign.id) return
-
-                            localStorage.setItem('currentCharsheet', '');
-                            const userId = session?.user?.id;
-                            if (!userId) return;
-                            
-                            sessionService.disconnect({ campaignCode: campaign.campaignCode, userId });
-                            campaignService.removeUser(campaign.id, session.user.id);
-                            router.push('/app/campaign');
-                        }} variant="contained">Sair da campanha</Button>
-                    </Box>
-                )}
-            </Box>
-            {!isUserGM && (
-                <Box mt={-4} mb={2} display='flex' flexDirection='column' gap={2}>
-                    <Section
-                        title="Dados customizados"
-                        icon={<DiceIcon sx={{ color: 'text.secondary' }} />}
-                    >
-                        <CustomDices 
-                            enableChatIntegration={true}
-                            realtime={true}
-                        />
-                    </Section>
-                    <Section 
-                        title="Anotações" 
-                        icon={<Notes sx={{ color: 'text.secondary' }} />}
-                        sx={{ height: '100%' }}
-                    >
-                        <Box>
-                            <NotesSection />
-                        </Box>
-                    </Section>
-                </Box>
-            )}
-        </Box>
+            <Stack direction="row" flexWrap="wrap" alignItems="center" columnGap={3} rowGap={1.5} role="list" aria-label="Participantes da campanha">
+                {users.admin.map(user => (
+                    <Person key={user.id} name={user.name ?? 'Mestre'} caption="mestre" image={user.image} online={isOnline(user.id)} />
+                ))}
+                {users.players.map(user => (
+                    <Person
+                        key={user.id}
+                        name={charsheets.find(sheet => sheet.userId === user.id)?.name ?? playerCaption(user)}
+                        caption={playerCaption(user)}
+                        image={user.image}
+                        online={isOnline(user.id)}
+                    />
+                ))}
+                <Typography variant="caption" color="text.secondary" sx={{ ml: 'auto' }}>
+                    {onlineCount} de {users.all.length} online
+                </Typography>
+            </Stack>
+        </Paper>
     )
 }

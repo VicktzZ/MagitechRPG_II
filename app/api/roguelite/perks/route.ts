@@ -14,6 +14,7 @@ import { NextResponse } from 'next/server'
 import type { ParsedParams, QueryMetadata } from '../types'
 import type { ProcessorFilters } from './processors'
 import { processCollections, processCollectionsFlat } from './processors'
+import { handleRouteError, readJsonBody, requireAdmin } from '@utils/api'
 
 // ============================================================================
 // Request Parsing
@@ -287,17 +288,19 @@ export async function GET(request: NextRequest) {
         return buildCacheResponse(responseData, false)
         
     } catch (error) {
-        console.error('Erro ao buscar dados:', error)
-        return NextResponse.json({
-            error: 'Erro interno do servidor',
-            details: error instanceof Error ? error.message : 'Erro desconhecido'
-        }, { status: 500 })
+        return handleRouteError(error, 'Erro ao buscar perks')
     }
 }
 
+// Adicionar perks ao catálogo global é exclusivo de administradores
 export async function POST(request: NextRequest) {
-    const body = await request.json()
-    const perk = new Perk(body)
-    await perkRepository.create(perk)
-    return NextResponse.json(perk)
+    try {
+        await requireAdmin()
+        const body = await readJsonBody(request)
+        const perk = new Perk(body)
+        await perkRepository.create(perk)
+        return NextResponse.json(perk)
+    } catch (error) {
+        return handleRouteError(error, 'Erro ao criar perk')
+    }
 }

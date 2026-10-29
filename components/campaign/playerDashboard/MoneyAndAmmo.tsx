@@ -15,6 +15,7 @@ import {
     Star
 } from '@mui/icons-material';
 import {
+    alpha,
     Box,
     Button,
     Chip,
@@ -23,19 +24,18 @@ import {
     MenuItem,
     Paper,
     Select,
+    type SelectChangeEvent,
     Stack,
     TextField,
     Tooltip,
-    Typography,
-    useTheme
+    Typography
 } from '@mui/material';
-import { blue, green, orange, purple, red } from '@mui/material/colors';
+import { color } from '@themes/tokens';
 import React, { type ReactElement, useState, useEffect } from 'react';
 import { useCharsheetSystem } from '@hooks/useCharsheetSystem';
 
 export default function MoneyAndAmmo(): ReactElement {
     const { charsheet, updateCharsheet } = useCampaignCurrentCharsheetContext();
-    const theme = useTheme();
     const { system: customSystem } = useCharsheetSystem(charsheet?.systemId);
     const showCurrency = !customSystem || customSystem.currency?.enabled !== false;
     const currencyLabel = customSystem?.currency?.name ?? 'Dinheiro';
@@ -55,7 +55,16 @@ export default function MoneyAndAmmo(): ReactElement {
         setMoney(charsheet.inventory?.money ?? 0);
     }, [ charsheet.inventory?.money ]);
 
-    const ammoPercent = (ammo.current / ammo.max) * 100;
+    // Mantém a munição em sincronia com alterações externas (mestre, outra aba/dispositivo)
+    useEffect(() => {
+        setAmmo(prev => ({
+            ...prev,
+            current: charsheet.ammoCounter?.current ?? 0,
+            max: charsheet.ammoCounter?.max ?? 0
+        }));
+    }, [ charsheet.ammoCounter?.current, charsheet.ammoCounter?.max ]);
+
+    const ammoPercent = ammo.max > 0 ? (ammo.current / ammo.max) * 100 : 0;
 
     const handleAmmoChange = (type: 'increment' | 'decrement') => {
         setAmmo(prev => {
@@ -116,7 +125,7 @@ export default function MoneyAndAmmo(): ReactElement {
         });
     };
 
-    const handleAmmoTypeChange = (event: any) => {
+    const handleAmmoTypeChange = (event: SelectChangeEvent) => {
         setAmmo(prev => ({
             ...prev,
             type: event.target.value
@@ -126,15 +135,15 @@ export default function MoneyAndAmmo(): ReactElement {
     const getAmmoColor = (type: AmmoType) => {
         switch (type) {
         case AmmoType.BULLET:
-            return { color: orange[600], bg: orange[100], icon: FiberManualRecord };
+            return { color: color.warning, bg: alpha(color.warning, 0.14), icon: FiberManualRecord };
         case AmmoType.ARROW:
-            return { color: green[600], bg: green[100], icon: GpsFixed };
+            return { color: color.success, bg: alpha(color.success, 0.14), icon: GpsFixed };
         case AmmoType.ENERGY:
-            return { color: blue[600], bg: blue[100], icon: FlashOn };
+            return { color: color.cyan, bg: alpha(color.cyan, 0.14), icon: FlashOn };
         case AmmoType.SPECIAL:
-            return { color: purple[600], bg: purple[100], icon: Star };
+            return { color: color.amber, bg: alpha(color.amber, 0.14), icon: Star };
         default:
-            return { color: orange[600], bg: orange[100], icon: FiberManualRecord };
+            return { color: color.warning, bg: alpha(color.warning, 0.14), icon: FiberManualRecord };
         }
     };
 
@@ -166,16 +175,9 @@ export default function MoneyAndAmmo(): ReactElement {
                         sx={{
                             p: 3,
                             borderRadius: 3,
-                            background: theme.palette.mode === 'dark'
-                                ? 'linear-gradient(145deg, #1e293b 0%, #334155 100%)'
-                                : 'linear-gradient(145deg, #f8fafc 0%, #e2e8f0 100%)',
+                            bgcolor: 'background.paper',
                             border: '1px solid',
-                            borderColor: 'divider',
-                            transition: 'all 0.3s ease',
-                            '&:hover': {
-                                boxShadow: 4,
-                                transform: 'translateY(-2px)'
-                            }
+                            borderColor: 'divider'
                         }}
                     >
                         <Stack spacing={2}>
@@ -184,12 +186,12 @@ export default function MoneyAndAmmo(): ReactElement {
                                     sx={{
                                         p: 1.5,
                                         borderRadius: 2,
-                                        bgcolor: green[100],
+                                        bgcolor: (theme) => alpha(theme.palette.primary.main, 0.14),
                                         border: '2px solid',
-                                        borderColor: green[200]
+                                        borderColor: (theme) => alpha(theme.palette.primary.main, 0.38)
                                     }}
                                 >
-                                    <AttachMoney sx={{ color: green[700], fontSize: '2rem' }} />
+                                    <AttachMoney sx={{ color: 'primary.main', fontSize: '2rem' }} />
                                 </Box>
                                 <Box flex={1}>
                                     <Typography
@@ -214,7 +216,7 @@ export default function MoneyAndAmmo(): ReactElement {
                                     alignItems: 'center',
                                     gap: 2,
                                     p: 2,
-                                    bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
+                                    bgcolor: 'background.raised',
                                     borderRadius: 2,
                                     border: '1px solid',
                                     borderColor: 'divider'
@@ -225,13 +227,10 @@ export default function MoneyAndAmmo(): ReactElement {
                                     onChange={(e) => {
                                         const value = parseFloat(e.target.value) || 0;
                                         setMoney(value);
-                                        // 🔥 Atualizar no Firestore em tempo real
-                                        updateCharsheet({
-                                            inventory: {
-                                                ...charsheet.inventory,
-                                                money: value
-                                            }
-                                        });
+                                        // Atualizar no Firestore em tempo real — só o dinheiro:
+                                        // gravar o inventário inteiro sobrescrevia itens recebidos
+                                        // ao mesmo tempo (loja, doação, mestre)
+                                        updateCharsheet({ 'inventory.money': value });
                                     }}
                                     type="number"
                                     variant="outlined"
@@ -241,13 +240,13 @@ export default function MoneyAndAmmo(): ReactElement {
                                         flex: 1,
                                         '& .MuiOutlinedInput-root': {
                                             '& fieldset': {
-                                                borderColor: green[300]
+                                                borderColor: color.amberLine
                                             },
                                             '&:hover fieldset': {
-                                                borderColor: green[500]
+                                                borderColor: 'primary.main'
                                             },
                                             '&.Mui-focused fieldset': {
-                                                borderColor: green[600]
+                                                borderColor: 'primary.main'
                                             }
                                         }
                                     }}
@@ -255,8 +254,8 @@ export default function MoneyAndAmmo(): ReactElement {
                                 <Chip
                                     label={currencyAbbreviation}
                                     sx={{
-                                        bgcolor: green[100],
-                                        color: green[800],
+                                        bgcolor: (theme) => alpha(theme.palette.primary.main, 0.14),
+                                        color: 'primary.main',
                                         fontWeight: 600,
                                         fontSize: '0.9rem'
                                     }}
@@ -272,16 +271,9 @@ export default function MoneyAndAmmo(): ReactElement {
                     sx={{ 
                         p: 3, 
                         borderRadius: 3,
-                        background: theme.palette.mode === 'dark'
-                            ? 'linear-gradient(145deg, #1e293b 0%, #334155 100%)'
-                            : 'linear-gradient(145deg, #f8fafc 0%, #e2e8f0 100%)',
+                        bgcolor: 'background.paper',
                         border: '1px solid',
-                        borderColor: 'divider',
-                        transition: 'all 0.3s ease',
-                        '&:hover': {
-                            boxShadow: 4,
-                            transform: 'translateY(-2px)'
-                        }
+                        borderColor: 'divider'
                     }}
                 >
                     <Stack spacing={3}>
@@ -293,7 +285,7 @@ export default function MoneyAndAmmo(): ReactElement {
                                     borderRadius: 2,
                                     bgcolor: ammoConfig.bg,
                                     border: '2px solid',
-                                    borderColor: ammoConfig.color + '40'
+                                    borderColor: alpha(ammoConfig.color, 0.25)
                                 }}
                             >
                                 <AmmoIcon sx={{ color: ammoConfig.color, fontSize: '2rem' }} />
@@ -335,7 +327,7 @@ export default function MoneyAndAmmo(): ReactElement {
                                     sx={{ 
                                         minWidth: 140,
                                         '& .MuiOutlinedInput-notchedOutline': {
-                                            borderColor: ammoConfig.color + '60'
+                                            borderColor: alpha(ammoConfig.color, 0.38)
                                         },
                                         '&:hover .MuiOutlinedInput-notchedOutline': {
                                             borderColor: ammoConfig.color
@@ -347,25 +339,25 @@ export default function MoneyAndAmmo(): ReactElement {
                                 >
                                     <MenuItem value={AmmoType.BULLET}>
                                         <Box display="flex" alignItems="center" gap={1}>
-                                            <FiberManualRecord sx={{ color: orange[600], fontSize: '1rem' }} />
+                                            <FiberManualRecord sx={{ color: 'warning.main', fontSize: '1rem' }} />
                                             Balas
                                         </Box>
                                     </MenuItem>
                                     <MenuItem value={AmmoType.ARROW}>
                                         <Box display="flex" alignItems="center" gap={1}>
-                                            <GpsFixed sx={{ color: green[600], fontSize: '1rem' }} />
+                                            <GpsFixed sx={{ color: 'success.main', fontSize: '1rem' }} />
                                             Flechas
                                         </Box>
                                     </MenuItem>
                                     <MenuItem value={AmmoType.ENERGY}>
                                         <Box display="flex" alignItems="center" gap={1}>
-                                            <FlashOn sx={{ color: blue[600], fontSize: '1rem' }} />
+                                            <FlashOn sx={{ color: 'info.main', fontSize: '1rem' }} />
                                             Energia
                                         </Box>
                                     </MenuItem>
                                     <MenuItem value={AmmoType.SPECIAL}>
                                         <Box display="flex" alignItems="center" gap={1}>
-                                            <Star sx={{ color: purple[600], fontSize: '1rem' }} />
+                                            <Star sx={{ color: 'primary.main', fontSize: '1rem' }} />
                                             Especial
                                         </Box>
                                     </MenuItem>
@@ -385,7 +377,7 @@ export default function MoneyAndAmmo(): ReactElement {
                                         width: 120,
                                         '& .MuiOutlinedInput-root': {
                                             '& fieldset': {
-                                                borderColor: ammoConfig.color + '60'
+                                                borderColor: alpha(ammoConfig.color, 0.38)
                                             },
                                             '&:hover fieldset': {
                                                 borderColor: ammoConfig.color
@@ -399,25 +391,28 @@ export default function MoneyAndAmmo(): ReactElement {
                             </Box>
 
                             <Box sx={{ ml: 'auto' }}>
+                                {/* O span deixa o Tooltip funcionar com o botão desabilitado */}
                                 <Tooltip title="Recarregar munição ao máximo">
-                                    <Button
-                                        variant="contained"
-                                        onClick={handleReload}
-                                        disabled={ammo.current >= ammo.max}
-                                        startIcon={<Refresh />}
-                                        sx={{
-                                            bgcolor: ammoConfig.color,
-                                            '&:hover': {
+                                    <span>
+                                        <Button
+                                            variant="contained"
+                                            onClick={handleReload}
+                                            disabled={ammo.current >= ammo.max}
+                                            startIcon={<Refresh />}
+                                            sx={{
                                                 bgcolor: ammoConfig.color,
-                                                filter: 'brightness(0.9)'
-                                            },
-                                            '&:disabled': {
-                                                bgcolor: 'action.disabledBackground'
-                                            }
-                                        }}
-                                    >
+                                                '&:hover': {
+                                                    bgcolor: ammoConfig.color,
+                                                    filter: 'brightness(0.9)'
+                                                },
+                                                '&:disabled': {
+                                                    bgcolor: 'action.disabledBackground'
+                                                }
+                                            }}
+                                        >
                                         Recarregar
-                                    </Button>
+                                        </Button>
+                                    </span>
                                 </Tooltip>
                             </Box>
                         </Box>
@@ -426,7 +421,7 @@ export default function MoneyAndAmmo(): ReactElement {
                         <Box 
                             sx={{
                                 p: 2,
-                                bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
+                                bgcolor: 'background.raised',
                                 borderRadius: 2,
                                 border: '1px solid',
                                 borderColor: 'divider'
@@ -453,55 +448,60 @@ export default function MoneyAndAmmo(): ReactElement {
                                 sx={{
                                     height: 16,
                                     borderRadius: 8,
-                                    bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+                                    bgcolor: 'divider',
                                     mb: 2,
                                     '& .MuiLinearProgress-bar': {
                                         bgcolor: ammoConfig.color,
-                                        borderRadius: 8,
-                                        boxShadow: `0 0 10px ${ammoConfig.color}40`
+                                        borderRadius: 8
                                     }
                                 }}
                             />
                             
                             <Stack direction="row" spacing={2} justifyContent="center">
                                 <Tooltip title="Usar 1 munição">
-                                    <IconButton 
-                                        onClick={() => handleAmmoChange('decrement')}
-                                        disabled={ammo.current <= 0}
-                                        sx={{
-                                            bgcolor: red[50],
-                                            color: red[600],
-                                            '&:hover': {
-                                                bgcolor: red[100]
-                                            },
-                                            '&:disabled': {
-                                                bgcolor: 'action.disabledBackground',
-                                                color: 'action.disabled'
-                                            }
-                                        }}
-                                    >
-                                        <RemoveIcon />
-                                    </IconButton>
+                                    <span>
+                                        <IconButton 
+                                            aria-label="Usar 1 munição"
+                                            onClick={() => handleAmmoChange('decrement')}
+                                            disabled={ammo.current <= 0}
+                                            sx={{
+                                                bgcolor: (theme) => alpha(theme.palette.error.main, 0.14),
+                                                color: 'error.main',
+                                                '&:hover': {
+                                                    bgcolor: (theme) => alpha(theme.palette.error.main, 0.24)
+                                                },
+                                                '&:disabled': {
+                                                    bgcolor: 'action.disabledBackground',
+                                                    color: 'action.disabled'
+                                                }
+                                            }}
+                                        >
+                                            <RemoveIcon />
+                                        </IconButton>
+                                    </span>
                                 </Tooltip>
                                 
                                 <Tooltip title="Adicionar 1 munição">
-                                    <IconButton 
-                                        onClick={() => handleAmmoChange('increment')}
-                                        disabled={ammo.current >= ammo.max}
-                                        sx={{
-                                            bgcolor: green[50],
-                                            color: green[600],
-                                            '&:hover': {
-                                                bgcolor: green[100]
-                                            },
-                                            '&:disabled': {
-                                                bgcolor: 'action.disabledBackground',
-                                                color: 'action.disabled'
-                                            }
-                                        }}
-                                    >
-                                        <AddIcon />
-                                    </IconButton>
+                                    <span>
+                                        <IconButton 
+                                            aria-label="Adicionar 1 munição"
+                                            onClick={() => handleAmmoChange('increment')}
+                                            disabled={ammo.current >= ammo.max}
+                                            sx={{
+                                                bgcolor: (theme) => alpha(theme.palette.success.main, 0.14),
+                                                color: 'success.main',
+                                                '&:hover': {
+                                                    bgcolor: (theme) => alpha(theme.palette.success.main, 0.24)
+                                                },
+                                                '&:disabled': {
+                                                    bgcolor: 'action.disabledBackground',
+                                                    color: 'action.disabled'
+                                                }
+                                            }}
+                                        >
+                                            <AddIcon />
+                                        </IconButton>
+                                    </span>
                                 </Tooltip>
                             </Stack>
                         </Box>

@@ -157,7 +157,7 @@ export function FieldsConfigTab({ system, updateSystem }: FieldsConfigTabProps) 
                                 transition: 'all 0.2s ease',
                                 cursor: 'pointer',
                                 '&:hover': {
-                                    boxShadow: 2
+                                    bgcolor: 'background.raised'
                                 }
                             }}
                             onClick={() => handleToggle(field.key)}
