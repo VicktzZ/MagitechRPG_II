@@ -72,14 +72,20 @@ export function creatureInitiativeDice(creature: unknown): InitiativeDice {
  * Soma à iniciativa o que os efeitos aplicados dão (Fase 6.3): vantagem e desvantagem em `initiative` mexem nos d20 pelo saldo líquido (`adjustDice`) e o bônus fixo
  * (`stat_bonus`/`stat_penalty` em `initiative`) soma ao total. Sem efeitos devolve os dados como vieram.
  */
-export function initiativeWithEffects(dice: InitiativeDice, effects: readonly AppliedEffect[] | null | undefined): InitiativeDice {
-    if (!effects || effects.length === 0) return dice;
+export function initiativeWithEffects(
+    dice: InitiativeDice,
+    effects: readonly AppliedEffect[] | null | undefined,
+    passives: { advantages: number; notes: string[] } = { advantages: 0, notes: [] }
+): InitiativeDice {
+    if ((!effects || effects.length === 0) && passives.advantages === 0) return dice;
 
-    const balance = effectDice(effects, 'initiative');
+    // As passivas de classe (Reflexos Aumentados: +1 dado) somam às vantagens dos efeitos, pelo mesmo saldo
+    const fromEffects = effectDice(effects ?? [], 'initiative');
+    const balance = { advantages: fromEffects.advantages + passives.advantages, disadvantages: fromEffects.disadvantages, notes: [ ...passives.notes, ...fromEffects.notes ] };
     const plan = adjustDice({ dice: dice.numDice, keep: dice.keep ?? 'highest' }, balance);
     const set = collectModifiers(effects);
     const bonus = initiativeEffectBonus(set);
-    const bonusSources = effects.filter(effect => collectModifiers([ effect ]).stats['initiative']).map(effect => String(effect.snapshot?.name ?? 'Efeito')).join(', ');
+    const bonusSources = (effects ?? []).filter(effect => collectModifiers([ effect ]).stats['initiative']).map(effect => String(effect.snapshot?.name ?? 'Efeito')).join(', ');
     const bonusNotes = bonus === 0 ? [] : [ `${bonus > 0 ? '+' : '−'}${Math.abs(bonus)} de ${bonusSources}` ];
 
     return {

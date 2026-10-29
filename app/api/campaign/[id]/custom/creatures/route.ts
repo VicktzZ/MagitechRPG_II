@@ -3,6 +3,7 @@ import { campaignRepository } from '@repositories'
 import { v4 as uuidv4 } from 'uuid'
 import { Expertises, type Expertise, type Creature } from '@models'
 import { sanitizeDamageModifiers, sanitizeWeaknesses } from '@utils/combat/creatureDefense'
+import { sanitizeCreatureDices } from '@utils/combat/creatureDice'
 import { completeCreatureExpertises } from '@utils/combat/creatureExpertises'
 import {
     attachCreatureDefenses,
@@ -92,7 +93,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
             // Toda criatura tem todas as perícias: as sem bônus nem ônus valem 0 (o editor só manda as que o mestre mexeu)
             expertises: completeCreatureExpertises(plainExpertises),
             skills: body.skills || [],
-            spells: body.spells || []
+            spells: body.spells || [],
+            dices: sanitizeCreatureDices(body.dices)
         }
         // Defesas (só o mestre vê): elemento, fraquezas declaradas e resistências/vulnerabilidades. Ficam num documento privado
         // (`campaigns/{id}/gmData`), nunca na criatura, que qualquer membro lê pelo documento da campanha
@@ -186,7 +188,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
                 body.expertises ?? existingCreatures[creatureIndex].expertises
             ) as unknown as Creature['expertises'],
             skills: body.skills ?? existingCreatures[creatureIndex].skills,
-            spells: body.spells ?? existingCreatures[creatureIndex].spells
+            spells: body.spells ?? existingCreatures[creatureIndex].spells,
+            // Cliente antigo, sem o campo, mantém os dados que a criatura já tinha
+            dices: body.dices !== undefined ? sanitizeCreatureDices(body.dices) : sanitizeCreatureDices((existingCreatures[creatureIndex] as { dices?: unknown }).dices)
         }
         // Só muda o que o editor mandou (criatura salva por um cliente antigo mantém as defesas dela)
         const defenses = {

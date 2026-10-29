@@ -55,6 +55,14 @@ export class BaseCharsheet {
     @IsObject()
         spellStages?: Record<string, number> = {};
 
+    /**
+     * Usos **por dia** das habilidades de classe e subclasse ativadas (ver `utils/combat/passives/abilities.ts`), por chave de armazenamento (`class-cura-interior`).
+     * Só o servidor grava (a rota do combate soma, o mestre renova no descanso); o jogador não edita por aqui.
+     */
+    @IsOptional()
+    @IsObject()
+        abilityUses?: Record<string, number>;
+
     /** Estágio liberado até agora em cada magia, por id: dele e dos anteriores se pode conjurar (ver `utils/spellStages.ts`) */
     @IsOptional()
     @IsObject()

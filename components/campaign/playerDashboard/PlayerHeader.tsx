@@ -1,6 +1,8 @@
 'use client'
 
 import { useCampaignContext } from '@contexts';
+import { withPassiveEffects } from '@utils/combat/passives';
+import { usePassives } from './passives/usePassives';
 import {
     alpha,
     Avatar,
@@ -55,9 +57,12 @@ export default function PlayerHeader({ avatar, rootRef }: { avatar: string | und
         ? combat.combatants?.find(c => c.id === charsheet.id || (c as any).odacId === charsheet.id)
         : undefined;
     const myEffects = myCombatant?.effects;
+    // Passivas de classe e subclasse (Pele Resistente: +2 AP; Trilheiro: terreno difícil não atrapalha) entram como efeitos derivados da ficha, só em combate
+    const { passives, stealthy } = usePassives();
+    const statEffects = myCombatant ? withPassiveEffects(myEffects, passives, { sheet: charsheet, stealthy }) : myEffects;
     // Deslocamento de agora (Velocidade, Congelamento, terreno difícil...): a ficha guarda o base, os efeitos e o terreno só valem em combate
     const inDifficultTerrain = combatantInDifficultTerrain(combat, myCombatant?.id);
-    const displacement = displacementNow(charsheet.displacement, myEffects, inDifficultTerrain);
+    const displacement = displacementNow(charsheet.displacement, statEffects, inDifficultTerrain);
     const displacementChanged = displacement !== Number(charsheet.displacement);
     const isMyTurn = combat?.isActive && combat.phase === 'ACTION'
         && combat.combatants?.[combat.currentTurnIndex]?.id === myCombatant?.id;
@@ -220,14 +225,18 @@ export default function PlayerHeader({ avatar, rootRef }: { avatar: string | und
                         )}
                     </Box>
                     <EffectBadges effects={myEffects} />
-                    <Box sx={{ mt: 1 }}>
-                        <EffectStatsNotice
-                            effects={myEffects}
-                            heading={null}
-                            bases={{ displacement: charsheet.displacement, ap: charsheet.stats?.ap, maxLp: charsheet.stats?.maxLp, maxMp: charsheet.stats?.maxMp }}
-                            options={{ difficultTerrain: inDifficultTerrain }}
-                        />
-                    </Box>
+                </Box>
+            )}
+
+            {/* O que os efeitos e as passivas mudam nas estatísticas de agora (deslocamento, AP, vida e mana máximas) */}
+            {myCombatant && (
+                <Box sx={{ mb: 2 }}>
+                    <EffectStatsNotice
+                        effects={statEffects}
+                        heading={null}
+                        bases={{ displacement: charsheet.displacement, ap: charsheet.stats?.ap, maxLp: charsheet.stats?.maxLp, maxMp: charsheet.stats?.maxMp }}
+                        options={{ difficultTerrain: inDifficultTerrain }}
+                    />
                 </Box>
             )}
 

@@ -40,6 +40,7 @@ const signed = (value: number, suffix = ''): string => `${value >= 0 ? '+' : '�
 
 /** A resistência/vulnerabilidade vale para este dano? Sem elemento vale para todo; "fisico" vale para o dano físico */
 function appliesTo(modifier: TakenModifier, kind: DamageKind, attackType: unknown): boolean {
+    if (modifier.against && modifier.against !== kind) return false;
     if (!modifier.element) return true;
     if (modifier.element === 'fisico') return kind === 'fisico';
     return modifier.element === normalize(attackType);

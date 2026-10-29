@@ -1,5 +1,7 @@
 'use client';
 
+import type { UnseenData } from '@utils/combat/awareness';
+import { awarenessFromDocs } from '@utils/combat/awarenessSecrets';
 import { creatureDefensesFromDocs, type CreatureDefenses, type GmDataDoc } from '@utils/combat/creatureSecrets';
 import { db } from '@utils/database';
 import { collection, onSnapshot } from 'firebase/firestore';
@@ -11,6 +13,8 @@ const NO_DEFENSES: Record<string, CreatureDefenses> = {};
 export interface GmData {
     /** Defesas das criaturas (elemento, fraquezas, resistências), por id da criatura; só as que já têm documento privado */
     creatureDefenses: Record<string, CreatureDefenses>;
+    /** A matriz de percepção (quem não vê quem); `null` se não há documento (matriz vazia, ou combate antigo que ainda a carrega no `session.combat`) */
+    awareness: UnseenData[] | null;
     /** Falha ao ler (sem permissão, sem conexão...): as criaturas ficam com o que o documento da campanha traz */
     error: Error | null;
 }
@@ -44,5 +48,6 @@ export function useGmData({ campaignId, enabled }: { campaignId: string | undefi
     }, [ campaignId, enabled, authReady, uid ]);
 
     const creatureDefenses = useMemo(() => (docs.length === 0 ? NO_DEFENSES : creatureDefensesFromDocs(docs)), [ docs ]);
-    return useMemo(() => ({ creatureDefenses, error }), [ creatureDefenses, error ]);
+    const awareness = useMemo(() => awarenessFromDocs(docs), [ docs ]);
+    return useMemo(() => ({ creatureDefenses, awareness, error }), [ creatureDefenses, awareness, error ]);
 }

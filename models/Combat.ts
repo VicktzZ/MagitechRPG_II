@@ -92,6 +92,17 @@ export class Combatant {
     @IsOptional()
         actions?: ActionBudget;
 
+    /**
+     * Quantas ações de cada tipo o combatente recupera a cada rodada. Sem o campo, 1 de cada. O mestre dá mais (até 9) a um jogador ou a uma criatura e elas voltam
+     * toda rodada até ele mudar (`adjust_actions`); `actions` guarda o que resta agora. Ver utils/combat/actionBudgets.ts.
+     */
+    @IsOptional()
+        actionsPerRound?: ActionBudget;
+
+    /** Usos das habilidades ativadas **neste combate**, por chave de armazenamento (ver `utils/combat/passives/abilities.ts`); recomeça a cada combate */
+    @IsOptional()
+        abilityUses?: Record<string, number>;
+
     @ValidateNested({ each: true })
     @Type(() => AppliedEffect)
     @IsArray()
@@ -193,7 +204,11 @@ export class Combat {
     @IsArray()
         opportunities?: OpportunityData[];
 
-    /** Quem não vê quem (furtivo, invisível...): cada par é "o observador não vê o escondido". Sem o campo, todos se veem. Ver utils/combat/awareness.ts */
+    /**
+     * Quem não vê quem (furtivo, invisível...): cada par é "o observador não vê o escondido". Sem o campo, todos se veem. Ver utils/combat/awareness.ts. **É segredo do mestre e não é
+     * gravado em `session.combat`**: vive em `campaigns/{id}/gmData/awareness` (utils/combat/awarenessSecrets.ts); o servidor o põe aqui só na memória da ação, e o navegador do mestre o
+     * junta de volta. Um combate antigo ainda pode carregá-lo no documento da campanha até a primeira ação depois da mudança.
+     */
     @IsOptional()
     @IsArray()
         unseen?: UnseenData[];

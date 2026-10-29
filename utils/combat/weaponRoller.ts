@@ -4,13 +4,19 @@ import { rollDice, type DiceResult } from '@utils/diceRoller';
 import { buildActionRollText } from './actionRollMessage';
 import { effectDice, type EffectDice } from './effectDice';
 import { rollHitTest, type HitTestResult } from './hitTest';
+import { rollExtraDice } from './passives/roller';
+import { rollSpecs, sumSegments, type ExtraSegment, type ExtraSpec } from './passives/rolls';
 import { STEALTH_DAMAGE_MULTIPLIER, STEALTH_EXTRA_D20 } from './stealth';
 
 export interface WeaponDamageResult {
     notation: string;
     display: string;
-    /** O dano final; com o efeito Furtivo é o dobro do rolado */
+    /** O dano final; com o efeito Furtivo é o dobro do rolado (a arma mais os acréscimos) */
     total: number;
+    /** O dano da arma, rolado, sem os acréscimos e sem o Furtivo */
+    rolled: number;
+    /** Acréscimos das passivas e das habilidades ativadas (Armado +1d8, Bom de Briga +5...), cada um com a origem; já dentro de `total` */
+    extras: ExtraSegment[];
     isCritical: boolean;
     /** Atacou furtivo: `total` já é o dano rolado vezes `STEALTH_DAMAGE_MULTIPLIER` */
     stealth?: boolean;
@@ -19,11 +25,15 @@ export interface WeaponDamageResult {
 export interface WeaponRollOptions {
     /** O atacante está com o efeito Furtivo (ver `stealth.ts`) */
     stealth?: boolean;
+    /** O que as passivas e os efeitos de habilidade somam ao dano (`passives/rolls.ts`); o Furtivo dobra a soma toda */
+    extras?: readonly ExtraSpec[];
 }
 
 export interface WeaponHitOptions extends WeaponRollOptions {
     /** Vantagens e desvantagens de ataque dos efeitos aplicados (`effectDice(efeitos, 'attack')`) */
     effects?: EffectDice;
+    /** Valor fixo somado ao acerto (Ritmo da Batalha) e a origem dele, para o chat */
+    flatBonus?: { flat: number; notes: string[] };
 }
 
 /**
@@ -37,7 +47,8 @@ export function rollWeaponHit(weapon: Weapon, charsheet: CharsheetDTO, options: 
     return rollHitTest(weapon.hit, charsheet, {
         extraDice: stealthDice + effects.advantages,
         lessDice: effects.disadvantages,
-        notes: [ ...(stealthDice > 0 ? [ `furtivo: vantagem, +${stealthDice}d20` ] : []), ...effects.notes ]
+        notes: [ ...(stealthDice > 0 ? [ `furtivo: vantagem, +${stealthDice}d20` ] : []), ...effects.notes, ...(options.flatBonus?.notes ?? []) ],
+        flatBonus: options.flatBonus?.flat
     });
 }
 
@@ -55,26 +66,24 @@ export function rollWeaponDamage(weapon: Weapon, isCritical: boolean, options: W
 
     const result = rollDice(trimmed);
 
-    if (result && !result.error) {
+    // Os acréscimos (passivas e habilidades) entram no dano; o Furtivo dobra a soma toda
+    const withExtras = (rolled: number, notation: string, display: string): WeaponDamageResult => {
+        const extras = rollSpecs(options.extras ?? [], rollExtraDice);
         return {
-            notation: trimmed,
-            display: result.display ?? `[${result.rolls.join(', ')}]`,
-            total: result.total * factor,
+            notation,
+            display,
+            total: (rolled + sumSegments(extras)) * factor,
+            rolled,
+            extras,
             isCritical,
             ...(stealth ? { stealth } : {})
         };
-    }
+    };
+
+    if (result && !result.error) return withExtras(result.total, trimmed, result.display ?? `[${result.rolls.join(', ')}]`);
 
     const numeric = Number(trimmed);
-    if (Number.isFinite(numeric)) {
-        return {
-            notation: trimmed,
-            display: `${numeric}`,
-            total: numeric * factor,
-            isCritical,
-            ...(stealth ? { stealth } : {})
-        };
-    }
+    if (Number.isFinite(numeric)) return withExtras(numeric, trimmed, `${numeric}`);
 
     return null;
 }
@@ -105,7 +114,10 @@ export function buildDamageMessageText(playerName: string, weapon: Weapon, damag
         total: damage.total,
         cost: null,
         dt: null,
-        segments: [ { notation: damage.notation, display: damage.display, total: damage.stealth ? damage.total / STEALTH_DAMAGE_MULTIPLIER : damage.total } ]
+        segments: [
+            { notation: damage.notation, display: damage.display, total: damage.rolled },
+            ...damage.extras.map(({ notation, display, total }) => ({ notation, display, total }))
+        ]
     });
 }
 

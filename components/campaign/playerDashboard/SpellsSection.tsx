@@ -28,7 +28,7 @@ import {
 } from '@mui/material';
 import { color } from '@themes/tokens';
 import { type ReactElement, useState } from 'react';
-import { canEvolve, formatEvolutionPoints, getEvolutionPoints, getSpellProgress, spellStageLabel, withoutSpell } from '@utils/spellStages';
+import { canEvolve, formatEvolutionPoints, getEvolutionPoints, getSpellProgress, spellStageLabel, withoutSpell, type SpellStage } from '@utils/spellStages';
 import { useSpellCasting } from './spells/SpellCastingContext';
 
 /** Nível e estágio são escalas ordenadas: neutros que clareiam até o âmbar no topo (o número vai sempre em texto) */
@@ -52,7 +52,7 @@ export default function SpellsSection(): ReactElement {
     const { enqueueSnackbar } = useSnackbar();
     // Conjurar, efetuar e desconjurar: o estado é do painel inteiro (a seção "Ações" conjura pelos mesmos caminhos)
     const {
-        castingSpellId, effectingSpellId, pendingEffects, clearPending, mpLimitEnforced, mpLimit, mpSpentThisTurn, mpLimitReleased, sustainedActive, exceedsMpLimit, stageRule,
+        castingSpellId, effectingSpellId, pendingEffects, clearPending, mpLimitEnforced, mpLimit, mpSpentThisTurn, mpLimitReleased, sustainedActive, exceedsMpLimit, spellCost, stageRule,
         castSpell: handleCastSpell, endSustained: handleEndSustained, effectSpell: handleEffectSpell
     } = useSpellCasting();
 
@@ -397,6 +397,7 @@ export default function SpellsSection(): ReactElement {
                                                         spell={spell}
                                                         progress={progress}
                                                         revealLocked={progress.enabled && campaignRevealsSpellStages(campaign)}
+                                                        costOf={(stage) => spellCost(spell, stage as SpellStage)}
                                                         evolution={progress.enabled ? { points: evolutionPoints, onEvolve: async () => { await handleEvolve(spell) } } : undefined}
                                                         cast={{
                                                             onCast: async (stage) => { await handleCastSpell(spell, stage) },

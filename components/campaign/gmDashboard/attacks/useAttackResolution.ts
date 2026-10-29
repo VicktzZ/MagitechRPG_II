@@ -7,6 +7,8 @@ import { buildAttackProposal, type AttackProposal, type ProposalChoice, type Pro
 import { attackSurprise, stealthDiceAlreadyRolled, type AttackSurprise } from '@utils/combat/awareness';
 import { rollCreatureExpertise } from '@utils/combat/creatureRoll';
 import { effectDice } from '@utils/combat/effectDice';
+import { ownedPassives, passiveReminders, withPassiveEffects } from '@utils/combat/passives';
+import { hasStealthEffect } from '@utils/combat/stealth';
 import { DODGE_EXPERTISE, type DefenseChoice } from '@utils/combat/engine/defense';
 import { rollD20 } from '@utils/campaignTest';
 import type { DamageKind } from '@utils/combat/engine/types';
@@ -121,7 +123,21 @@ export function useAttackResolution(attack: PendingAttackData): AttackResolution
     const surprise = attackSurprise(campaign.session?.combat?.unseen, attack.attackerId, targetCombatant);
     const surprised = surprisedOverride ?? surprise !== null;
 
-    const target: ProposalTarget = { effects: targetCombatant?.effects, creature, sheet };
+    // Habilidades de classe e subclasse: o AP e as resistências do alvo (Pele Resistente, Imunidade Mágica...) e o que o atacante causa a mais (Muralha) entram como efeitos
+    // derivados da ficha; o que depende de dado fica de lembrete para o mestre
+    const attackerSheet = useMemo<Charsheet | null>(
+        () => (attackerCombatant?.type === 'player' ? charsheets.find(candidate => candidate.id === attackerCombatant.id) ?? null : null),
+        [ attackerCombatant, charsheets ]
+    );
+    const targetPassives = ownedPassives(sheet);
+    const attackerPassives = ownedPassives(attackerSheet);
+    const attackerEffects = withPassiveEffects(attackerCombatant?.effects, attackerPassives, { sheet: attackerSheet, stealthy: hasStealthEffect(attackerCombatant?.effects) });
+    const target: ProposalTarget = {
+        effects: withPassiveEffects(targetCombatant?.effects, targetPassives, { sheet, stealthy: hasStealthEffect(targetCombatant?.effects) }),
+        creature,
+        sheet,
+        reminders: passiveReminders(targetPassives, 'defender')
+    };
     const choice: ProposalChoice = {
         kind,
         defense,
@@ -132,7 +148,7 @@ export function useAttackResolution(attack: PendingAttackData): AttackResolution
         extraRolls,
         hasReaction: (targetCombatant?.actions?.reacao ?? 1) > 0
     };
-    const proposal = buildAttackProposal(attack, attackerCombatant?.effects, target, choice);
+    const proposal = buildAttackProposal(attack, attackerEffects, target, choice);
 
     const hit = hitOverride ?? proposal.hit;
     const typedDamage = toInt(damageOverride);

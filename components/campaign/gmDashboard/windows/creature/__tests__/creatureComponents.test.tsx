@@ -21,6 +21,7 @@ const rawCreature = {
     attributes: { vig: 5, des: 10 },
     stats: { lp: 20, maxLp: 25, mp: 4, maxMp: 6, ap: 2 },
     expertises: { Furtividade: { value: 4, defaultAttribute: 'des' }, Atletismo: { value: 0, defaultAttribute: 'vig' } },
+    dices: [ { id: 'd1', name: 'Mordida', description: 'Dano da mordida', dices: [ { quantity: 2, faces: 6 } ], modifiers: [ { bonus: 3 } ] } ],
     skills: [ { id: 's1', name: 'Emboscada', type: 'Classe', description: 'Ataca primeiro.' } ],
     spells: [ { id: 'm1', name: 'Fagulha', level: 1, element: 'FOGO', cost: 2, description: 'Uma fagulha.' } ]
 };
@@ -68,6 +69,31 @@ describe('CreatureView', () => {
 
     it('perícia sem valor não aparece (só poluiria a janela)', () => {
         expect(view()).not.toContain('Atletismo');
+    });
+
+    it('mostra os dados customizáveis com a expressão e o botão de rolar só quando há como rolar', () => {
+        const html = view();
+        expect(html).toContain('Dados (1)');
+        expect(html).toContain('data-testid="creature-dice-d1"');
+        expect(html).toContain('Mordida');
+        expect(html).toContain('2d6 + 3');
+        expect(html).toContain('Dano da mordida');
+        expect(html).not.toContain('aria-label="Rolar Mordida"');
+
+        const rolling = render(<CreatureView creature={toCreatureCard(creature)} onRollDice={noop} onEdit={noop} onDelete={noop} />);
+        expect(rolling).toContain('aria-label="Rolar Mordida"');
+    });
+
+    it('sem dados a seção some', () => {
+        expect(view({ dices: [] })).not.toContain('Dados (');
+        expect(view({ dices: undefined })).not.toContain('creature-dice');
+    });
+
+    it('dado malformado guardado no banco não quebra a janela (é limpo na leitura)', () => {
+        const html = view({ dices: [ null, { name: 'Sem dados', dices: [] }, { id: 'ok', name: 'Garra', dices: [ { quantity: 1, faces: 8 } ] } ] });
+        expect(html).toContain('Dados (1)');
+        expect(html).toContain('Garra');
+        expect(html).not.toContain('Sem dados');
     });
 
     it('tem as ações de editar e excluir', () => {
@@ -126,6 +152,16 @@ describe('CombatantView', () => {
         const html = view({ combatant: combatant({ currentLp: undefined, maxLp: undefined, currentMp: undefined, maxMp: undefined }) });
         expect(html).toContain('20/25');
         expect(html).toContain('4/6');
+    });
+
+    it('lista os dados da criatura e rola pelo botão quando há como rolar', () => {
+        const html = view();
+        expect(html).toContain('Dados (1)');
+        expect(html).toContain('2d6 + 3');
+        expect(html).not.toContain('aria-label="Rolar Mordida"');
+
+        expect(view({ onRollDice: noop })).toContain('aria-label="Rolar Mordida"');
+        expect(view({ creature: null, onRollDice: noop })).not.toContain('Rolar Mordida');
     });
 
     it('marca de quem é a vez', () => {

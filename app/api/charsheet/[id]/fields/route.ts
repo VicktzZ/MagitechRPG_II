@@ -14,7 +14,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
         const { charsheet } = await requireCharsheetAccess(params.id, user, 'write');
 
         const body = await readJsonBody<{ fields?: unknown }>(req);
-        const fields = assertFieldUpdates(body.fields, { protectedPaths: [ 'id', 'userId', 'createdAt' ] });
+        const fields = assertFieldUpdates(body.fields, { protectedPaths: [ 'id', 'userId', 'createdAt', 'abilityUses' ] });
 
         await adminUpdateDoc('charsheets', charsheet.id, fields);
 

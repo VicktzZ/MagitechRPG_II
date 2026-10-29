@@ -148,11 +148,14 @@ export default function CampaignComponent(): ReactElement {
             {body}
             <SessionChat />
             <FloatingDock>
-                <CombatStatus
-                    campaignId={campaign.id}
-                    combat={campaign.session?.combat ?? null}
-                    userCharsheetId={charsheetId || undefined}
-                />
+                {/* O mestre tem o painel de combate no dashboard (ordem, passar turno, dano e cura): o card do canto é do jogador */}
+                {!effectiveIsUserGM && (
+                    <CombatStatus
+                        campaignId={campaign.id}
+                        combat={campaign.session?.combat ?? null}
+                        userCharsheetId={charsheetId || undefined}
+                    />
+                )}
                 {/* Widgets da campanha: visíveis a todos, empilhados com o combate */}
                 <CampaignWidgetPanel />
             </FloatingDock>

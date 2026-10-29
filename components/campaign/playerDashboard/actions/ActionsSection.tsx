@@ -10,6 +10,7 @@ import ActionBlocksNotice from '../../ActionBlocksNotice';
 import { SHOW_REACTION_TILES_EVENT } from '../../reaction/events';
 import ActionPips from '../../ActionPips';
 import Section from '../../Section';
+import { combatantPerRound } from '@utils/combat/actionBudgets';
 import { actionBlocks, blockReason, effectiveBudget, isBlocked } from '@utils/combat/actionFlags';
 import {
     buildActionTiles,
@@ -23,16 +24,18 @@ import {
     type ActionTile,
     type TileExecution
 } from '@utils/combat/actionTiles';
-import { getSpellMpCost } from '@utils/combat/spellRoller';
 import { findAwaitingDamage } from '@utils/combat/pendingAttacks';
 import { normalizeToArray } from '@utils/normalizeToArray';
+import { abilityCost, describeLimits, exhaustedLimit, limitStatuses, readAbilityDayUses, type PassiveDef } from '@utils/combat/passives';
 import { getSpellProgress, spellStageLabel } from '@utils/spellStages';
 import { useEffect, useMemo, useState, type MouseEvent as ReactMouseEvent, type ReactElement } from 'react';
 import AttackTargetPicker from '../attacks/AttackTargetPicker';
 import { collectEntries } from '../inventory/inventoryList';
 import { useWeaponRolls } from '../inventory/useWeaponRolls';
+import { usePassives } from '../passives/usePassives';
 import { useSpellCasting } from '../spells/SpellCastingContext';
 import ActionTileButton, { type TileState } from './ActionTileButton';
+import { useAbilityUse } from './useAbilityUse';
 import { useItemUse } from './useItemUse';
 
 const spellKey = (spell: Pick<SpellDTO, 'id' | 'name'>): string => spell.id || spell.name;
@@ -49,8 +52,11 @@ export default function ActionsSection(): ReactElement | null {
     const { handleWeaponHit, handleWeaponDamage, targeting } = useWeaponRolls();
     const casting = useSpellCasting();
     const { activateItem } = useItemUse();
+    const { passives } = usePassives();
+    const { busyKey: abilityBusy, activateAbility } = useAbilityUse();
     const [ filter, setFilter ] = useState<TileExecution | null>(null);
     const [ stageMenu, setStageMenu ] = useState<{ anchor: HTMLElement; spell: SpellDTO } | null>(null);
+    const [ abilityMenu, setAbilityMenu ] = useState<{ anchor: HTMLElement; ability: PassiveDef } | null>(null);
 
     // "Ver magias de Reação" (oferta de reação no card de combate): liga o filtro Reação e leva até aqui
     useEffect(() => {
@@ -65,6 +71,11 @@ export default function ActionsSection(): ReactElement | null {
     const combat = campaign?.session?.combat;
     const me = combat?.isActive ? combat.combatants?.find(candidate => candidate.id === charsheet?.id) : undefined;
 
+    // Usos das habilidades: por dia (na ficha) e neste combate (no combatente); o MP que sobra vem da ficha
+    const abilityUses = { day: readAbilityDayUses(charsheet), combat: me?.abilityUses ?? {} };
+    const currentMp = Number(charsheet?.stats?.mp ?? 0);
+    const abilities = useMemo(() => passives.filter(passive => passive.mode === 'ativada'), [ passives ]);
+
     const opportunityActive = targeting.opportunity.active;
     const tiles = useMemo(() => {
         if (!charsheet) return [];
@@ -74,14 +85,21 @@ export default function ActionsSection(): ReactElement | null {
             spells: normalizeToArray<SpellDTO>(charsheet.spells),
             items: entries.filter(entry => entry.type === 'item').map(entry => entry.item as Item),
             opportunityActive,
+            abilities,
+            abilityDetail: (ability) => {
+                const activation = ability.activation;
+                if (!activation) return '';
+                if (activation.cost?.allMp) return 'todo o MP';
+                return activation.cost?.mp ? `${activation.cost.mp} MP` : '';
+            },
             spellDetail: (spell) => {
                 const unlocked = getSpellProgress(spell, charsheet, { enabled: casting.stageRule }).unlocked;
-                const lowest = getSpellMpCost(spell, 1);
-                const highest = getSpellMpCost(spell, unlocked);
+                const lowest = casting.spellCost(spell, 1);
+                const highest = casting.spellCost(spell, unlocked);
                 return lowest === highest ? `${highest} MP` : `${lowest} a ${highest} MP`;
             }
         });
-    }, [ charsheet, casting.stageRule, opportunityActive ]);
+    }, [ charsheet, casting.stageRule, opportunityActive, abilities ]);
 
     if (!charsheet || !combat || !me) return null;
 
@@ -101,17 +119,32 @@ export default function ActionsSection(): ReactElement | null {
     const describe = (tile: ActionTile): { state: TileState; hint: string; active: boolean } => {
         const active = tile.kind === 'spell' && Boolean(casting.sustainedActive[spellKey(tile.spell)]);
         const cost = tile.execution ? `Gasta a ação ${tile.execution}.` : 'A execução desta magia não é reconhecida: nenhuma ação é gasta.';
-        const doing = tile.kind === 'weapon' ? 'Teste de acerto.' : tile.kind === 'spell' ? 'Conjurar.' : 'Usar o item.';
+        const doing = tile.kind === 'weapon' ? 'Teste de acerto.' : tile.kind === 'spell' ? 'Conjurar.' : tile.kind === 'ability' ? 'Usar a habilidade.' : 'Usar o item.';
 
         if (!acting) return { state: 'blocked', hint: 'As ações abrem quando a iniciativa estiver definida.', active };
         if (active) return { state: 'ready', hint: 'Magia sustentada ativa. Clique para desconjurar.', active };
         if (tile.kind === 'spell' && isBlocked(blocks, 'no_spells')) return { state: 'blocked', hint: `${blockReason(blocks, 'no_spells', 'Você')}.`, active };
+        if (tile.kind === 'ability') {
+            const activation = tile.ability.activation;
+            const statuses = activation ? limitStatuses(activation, tile.ability.key, abilityUses) : [];
+            const left = describeLimits(statuses);
+            const exhausted = exhaustedLimit(statuses);
+            const mpCost = activation ? abilityCost(activation, currentMp) : 0;
+            if (exhausted) return { state: 'blocked', hint: `${tile.ability.name}: acabaram os usos ${exhausted.per === 'dia' ? 'do dia' : 'deste combate'}. O mestre renova no descanso.`, active };
+            if (activation?.cost?.allMp ? currentMp <= 0 : mpCost > currentMp) {
+                return { state: 'blocked', hint: `${tile.ability.name}: precisa de ${activation?.cost?.allMp ? 'algum' : mpCost} MP e você tem ${currentMp}.`, active };
+            }
+            if (!noActions && !isTileSpent(tile, budget)) {
+                return { state: 'ready', hint: `${doing} ${mpCost > 0 ? `Gasta ${mpCost} MP e a ação ${tile.execution}.` : `Gasta a ação ${tile.execution}.`}${left ? ` Usos: ${left}.` : ''}`, active };
+            }
+        }
         if (noActions) return { state: 'spent', hint: `${blockReason(blocks, 'no_actions', 'Você')}.`, active };
         if (isTileSpent(tile, budget)) return { state: 'spent', hint: `Sem a ação ${tile.execution} nesta rodada.`, active };
         if (tile.category === 'attack' && !targeting.targetId) {
             return { state: 'blocked', hint: targeting.targets.length > 0 ? 'Defina o alvo do ataque no campo acima.' : 'Não há alvos no combate.', active };
         }
         if (tile.kind === 'spell' && casting.castingSpellId) return { state: 'blocked', hint: 'Conjurando outra magia...', active };
+        if (tile.kind === 'ability' && abilityBusy) return { state: 'blocked', hint: 'Usando outra habilidade...', active };
         return { state: 'ready', hint: `${doing} ${cost}`, active };
     };
 
@@ -129,6 +162,12 @@ export default function ActionsSection(): ReactElement | null {
     };
 
     const activate = (tile: ActionTile, event: ReactMouseEvent<HTMLElement>): void => {
+        if (tile.kind === 'ability') {
+            // Com variações (Postura Bestial) o jogador escolhe qual; senão usa direto
+            if (tile.ability.activation?.choices?.length) setAbilityMenu({ anchor: event.currentTarget, ability: tile.ability });
+            else void activateAbility(tile.ability);
+            return;
+        }
         if (tile.kind === 'weapon') void handleWeaponHit(tile.weapon, event);
         else if (tile.kind === 'spell') castFromTile(tile.spell, event.currentTarget);
         else if (tile.execution) void activateItem(tile.item, tile.execution, tile.category === 'attack' ? target?.name : undefined);
@@ -186,7 +225,7 @@ export default function ActionsSection(): ReactElement | null {
             <Stack spacing={2} data-testid="actions-section">
                 <ActionBlocksNotice blocks={blocks} who="Você" />
                 <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center', flexWrap: 'wrap' }}>
-                    <ActionPips budget={budget} />
+                    <ActionPips budget={budget} perRound={combatantPerRound(me)} />
                     {isMyTurn && <Chip size="small" color="primary" label="Sua vez" />}
                     <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                         {acting ? 'Quadrado cinza: a ação dele já foi gasta nesta rodada.' : 'As ações abrem quando a iniciativa estiver definida.'}
@@ -255,6 +294,21 @@ export default function ActionsSection(): ReactElement | null {
                 ))}
             </Stack>
 
+            <Menu anchorEl={abilityMenu?.anchor} open={Boolean(abilityMenu)} onClose={() => { setAbilityMenu(null); }}>
+                {abilityMenu?.ability.activation?.choices?.map(choice => (
+                    <MenuItem
+                        key={choice.id}
+                        onClick={() => {
+                            const { ability } = abilityMenu;
+                            setAbilityMenu(null);
+                            void activateAbility(ability, choice.id);
+                        }}
+                    >
+                        {choice.label}
+                    </MenuItem>
+                ))}
+            </Menu>
+
             <Menu anchorEl={stageMenu?.anchor} open={Boolean(stageMenu)} onClose={() => { setStageMenu(null); }}>
                 {stageMenu && getSpellProgress(stageMenu.spell, charsheet, { enabled: casting.stageRule }).stages
                     .filter(info => info.status === 'unlocked')
@@ -267,7 +321,7 @@ export default function ActionsSection(): ReactElement | null {
                                 void casting.castSpell(spell, info.stage);
                             }}
                         >
-                            {spellStageLabel(stageMenu.spell.level, info.stage, stageMenu.spell.element)} · {getSpellMpCost(stageMenu.spell, info.stage)} MP
+                            {spellStageLabel(stageMenu.spell.level, info.stage, stageMenu.spell.element)} · {casting.spellCost(stageMenu.spell, info.stage)} MP
                         </MenuItem>
                     ))}
             </Menu>

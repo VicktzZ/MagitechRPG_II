@@ -1,6 +1,9 @@
 import type { Combatant } from '@models';
 import { freshBudget } from '../engine/actionBudget';
-import { applyBudgetPatch, combatantBudget, describeBudget, MAX_ACTIONS_PER_SLOT, normalizeBudget, resetActionBudgets } from '../actionBudgets';
+import {
+    applyBudgetDelta, applyBudgetPatch, combatantBudget, combatantPerRound, describeBudget, describePerRound, hasCustomPerRound, MAX_ACTIONS_PER_SLOT, normalizeBudget, planActionGrant,
+    resetActionBudgets, stepNow, stepPerRound
+} from '../actionBudgets';
 import { resetRoundWindows } from '../roundWindow';
 
 const combatant = (patch: Partial<Combatant>): Combatant => ({ id: 'x', name: 'X', type: 'player', ...patch }) as Combatant;
@@ -92,5 +95,118 @@ describe('applyBudgetPatch (ajuste do mestre)', () => {
 describe('describeBudget', () => {
     it('lista os quatro espaços por extenso', () => {
         expect(describeBudget({ padrao: 1, bonus: 0, movimento: 1, reacao: 2 })).toBe('Padrão 1, Bônus 0, Movimento 1, Reação 2');
+    });
+});
+
+describe('ações por rodada (o mestre dá mais de uma ação de cada tipo)', () => {
+    it('sem o campo vale 1 de cada, e o que o mestre deu é lido de volta (de 0 a 9)', () => {
+        expect(combatantPerRound(combatant({}))).toEqual(freshBudget());
+        expect(hasCustomPerRound(combatant({}))).toBe(false);
+
+        const boss = combatant({ actionsPerRound: { padrao: 2, bonus: 1, movimento: 3, reacao: 1 } });
+        expect(combatantPerRound(boss)).toEqual({ padrao: 2, bonus: 1, movimento: 3, reacao: 1 });
+        expect(hasCustomPerRound(boss)).toBe(true);
+        expect(combatantPerRound(combatant({ actionsPerRound: { padrao: 40 } as never })).padrao).toBe(MAX_ACTIONS_PER_SLOT);
+    });
+
+    it('a rodada que vira devolve as ações até o número por rodada de cada um, não só 1', () => {
+        const combatants = [
+            combatant({ id: 'boss', type: 'creature', actions: { padrao: 0, bonus: 0, movimento: 0, reacao: 0 }, actionsPerRound: { padrao: 2, bonus: 1, movimento: 3, reacao: 1 } }),
+            combatant({ id: 'comum', actions: { padrao: 0, bonus: 0, movimento: 0, reacao: 0 } })
+        ];
+
+        resetActionBudgets(combatants);
+
+        expect(combatants[0]!.actions).toEqual({ padrao: 2, bonus: 1, movimento: 3, reacao: 1 });
+        expect(combatants[1]!.actions).toEqual(freshBudget());
+    });
+
+    it('o orçamento devolvido é uma cópia: gastar não mexe no número por rodada', () => {
+        const boss = combatant({ actionsPerRound: { padrao: 2, bonus: 1, movimento: 1, reacao: 1 } });
+        resetActionBudgets([ boss ]);
+        boss.actions!.padrao = 0;
+        expect(boss.actionsPerRound!.padrao).toBe(2);
+    });
+
+    it('describePerRound lista só o que foge do padrão', () => {
+        expect(describePerRound(freshBudget())).toBe('');
+        expect(describePerRound({ padrao: 2, bonus: 1, movimento: 3, reacao: 1 })).toBe('Padrão 2, Movimento 3');
+        expect(describePerRound({ padrao: 1, bonus: 0, movimento: 1, reacao: 1 })).toBe('Bônus 0');
+    });
+});
+
+describe('applyBudgetDelta (dar ou tirar ações por variação)', () => {
+    const current = { padrao: 1, bonus: 0, movimento: 2, reacao: 1 };
+
+    it('soma ao que o combatente tem e só mexe nos espaços informados', () => {
+        expect(applyBudgetDelta(current, { padrao: 2 })).toEqual({ padrao: 3, bonus: 0, movimento: 2, reacao: 1 });
+        expect(applyBudgetDelta(current, { movimento: -1, bonus: 1 })).toEqual({ padrao: 1, bonus: 1, movimento: 1, reacao: 1 });
+    });
+
+    it('fica sempre entre 0 e 9', () => {
+        expect(applyBudgetDelta(current, { movimento: 9 })).toEqual({ ...current, movimento: MAX_ACTIONS_PER_SLOT });
+        expect(applyBudgetDelta(current, { padrao: -9 })).toEqual({ ...current, padrao: 0 });
+    });
+
+    it('um gasto feito ao mesmo tempo não é desfeito: a variação é somada ao valor de agora', () => {
+        // O mestre abriu o diálogo com 2 Padrão e deu +1; enquanto isso o jogador gastou uma (ficou 1): vira 2, e não 3
+        expect(applyBudgetDelta({ ...current, padrao: 1 }, { padrao: 1 })!.padrao).toBe(2);
+    });
+
+    it('não altera o orçamento recebido', () => {
+        applyBudgetDelta(current, { padrao: 3 });
+        expect(current.padrao).toBe(1);
+    });
+
+    it.each([
+        [ 'sem corpo', undefined ],
+        [ 'vazio', {} ],
+        [ 'lista', [ 1 ] ],
+        [ 'só zeros', { padrao: 0, bonus: 0 } ],
+        [ 'chave desconhecida', { livre: 1 } ],
+        [ 'texto', { padrao: '1' } ],
+        [ 'fracionário', { padrao: 0.5 } ],
+        [ 'acima de 9', { padrao: MAX_ACTIONS_PER_SLOT + 1 } ],
+        [ 'abaixo de -9', { padrao: -MAX_ACTIONS_PER_SLOT - 1 } ]
+    ])('recusa %s', (_nome, delta) => {
+        expect(applyBudgetDelta(current, delta)).toBeNull();
+    });
+});
+
+describe('o diálogo "Dar ações" (stepNow, stepPerRound, planActionGrant)', () => {
+    const start = { now: freshBudget(), perRound: freshBudget() };
+
+    it('subir o por rodada leva o de agora junto (a criatura com 2 Padrão por rodada já tem 2 agora)', () => {
+        const next = stepPerRound(start, 'padrao', 1);
+        expect(next.perRound.padrao).toBe(2);
+        expect(next.now.padrao).toBe(2);
+    });
+
+    it('descer o por rodada também leva o de agora, sem passar de 0', () => {
+        const down = stepPerRound({ now: { ...freshBudget(), bonus: 0 }, perRound: { ...freshBudget(), bonus: 1 } }, 'bonus', -1);
+        expect(down.perRound.bonus).toBe(0);
+        expect(down.now.bonus).toBe(0);
+    });
+
+    it('no teto de 9 o por rodada não sobe e o de agora fica onde estava', () => {
+        const top = { now: { ...freshBudget(), movimento: 9 }, perRound: { ...freshBudget(), movimento: 9 } };
+        expect(stepPerRound(top, 'movimento', 1)).toEqual(top);
+    });
+
+    it('mexer só no de agora é um extra desta rodada: o por rodada não muda', () => {
+        const next = stepNow(start, 'movimento', 2);
+        expect(next.now.movimento).toBe(3);
+        expect(next.perRound).toEqual(freshBudget());
+    });
+
+    it('o plano traz só o que mudou; sem mudança é null', () => {
+        expect(planActionGrant(start, start)).toBeNull();
+        expect(planActionGrant(start, stepNow(start, 'padrao', 1))).toEqual({ delta: { padrao: 1 }, perRound: {} });
+        expect(planActionGrant(start, stepPerRound(start, 'movimento', 2))).toEqual({ delta: { movimento: 2 }, perRound: { movimento: 3 } });
+    });
+
+    it('o plano usa a variação em relação ao que o diálogo abriu (tirar uma ação dá delta negativo)', () => {
+        const before = { now: { padrao: 3, bonus: 1, movimento: 1, reacao: 1 }, perRound: { padrao: 3, bonus: 1, movimento: 1, reacao: 1 } };
+        expect(planActionGrant(before, stepNow(before, 'padrao', -2))).toEqual({ delta: { padrao: -2 }, perRound: {} });
     });
 });

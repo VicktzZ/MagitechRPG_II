@@ -66,6 +66,9 @@ function formatRollDisplay(formula: string, total: number, display?: string): st
     return `${formula} = ${total}`
 }
 
+/** O ícone do efeito e um espaço para abrir a linha do log; vazio quando o efeito não tem ícone (o ícone é escolha do mestre, então pode faltar) */
+export const effectIconPrefix = (effect: { icon?: string | null }): string => (effect.icon ? `${effect.icon} ` : '')
+
 function buildTickMessage(
     combatant: Combatant,
     applied: AppliedEffect,
@@ -86,12 +89,12 @@ function buildTickMessage(
     }
 
     if (effect.category === 'damage') {
-        return `${effect.icon} **${combatant.name}** sofreu ${rolled} de dano por **${fullName}** (${rollText})${remainingTxt}`
+        return `${effectIconPrefix(effect)}**${combatant.name}** sofreu ${rolled} de dano por **${fullName}** (${rollText})${remainingTxt}`
     }
     if (effect.category === 'heal') {
-        return `${effect.icon} **${combatant.name}** recuperou ${rolled} pontos por **${fullName}** (${rollText})${remainingTxt}`
+        return `${effectIconPrefix(effect)}**${combatant.name}** recuperou ${rolled} pontos por **${fullName}** (${rollText})${remainingTxt}`
     }
-    return `${effect.icon} **${combatant.name}** continua sob efeito de **${fullName}**${remainingTxt}`
+    return `${effectIconPrefix(effect)}**${combatant.name}** continua sob efeito de **${fullName}**${remainingTxt}`
 }
 
 function applyValueToCombatant(

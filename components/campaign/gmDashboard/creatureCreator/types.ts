@@ -1,4 +1,5 @@
 import type { DamageModifierData } from '@utils/combat/creatureDefense';
+import type { CreatureDice } from '@utils/combat/creatureDice';
 
 export interface SkillData {
     id: string;
@@ -35,6 +36,8 @@ export interface CreatureData {
     };
     skills: SkillData[];
     spells: SpellData[];
+    /** Dados customizáveis da criatura (rolados pelo mestre no chat) */
+    dices?: CreatureDice[];
     expertises: Record<string, { value: number; defaultAttribute?: string | null }>;
     /** Elemento da criatura (dá a ela a fraqueza do elemento que o vence) */
     elementalMastery?: string;

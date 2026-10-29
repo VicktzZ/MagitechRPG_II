@@ -80,6 +80,13 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // O que só um jogador pode ver (campaigns/{id}/playerData/{userId}, o id do documento é o do usuário): hoje, de quem o jogador escondido está fora da vista (um recorte da matriz de
+    // percepção, que é do mestre e mora em gmData). Lê o próprio usuário (o mestre e o administrador do site também), e só o servidor escreve (Admin SDK).
+    match /campaigns/{campaignId}/playerData/{userId} {
+      allow read: if isAdmin() || isCampaignGM(campaignId) || (signedIn() && request.auth.uid == userId);
+      allow write: if false;
+    }
+
     // Notificações: só as do próprio usuário. Criar/marcar como lida: pela API.
     match /notifications/{notificationId} {
       allow read: if signedIn() && (resource.data.userId == request.auth.uid || isAdmin());

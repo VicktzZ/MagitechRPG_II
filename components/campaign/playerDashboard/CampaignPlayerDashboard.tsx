@@ -23,6 +23,7 @@ import { useState, useEffect, useMemo, type ReactElement } from 'react';
 import { CustomDices, Passives, Skills } from '@components/charsheet';
 import Section from '../Section';
 import NotesSection from './NotesSection';
+import CombatTurnBar from '../combat/CombatTurnBar';
 import PlayerStickyBar, { type PlayerSectionLink } from './PlayerStickyBar';
 import ActionsSection from './actions/ActionsSection';
 import { AttackTargetProvider } from './attacks/AttackTargetContext';
@@ -271,6 +272,14 @@ function PlayerDashboardContent(): ReactElement | null {
         { id: 'anotacoes', label: 'Anotações' }
     ]
 
+    const stickyBar = (
+        <PlayerStickyBar
+            headerElement={headerElement}
+            sections={sections}
+            combatSlot={inCombat ? <CombatTurnBar viewerId={charsheet.id} dense /> : undefined}
+        />
+    )
+
     // Duas seções lado a lado quando a COLUNA (não a janela) comporta; com o chat encaixado a coluna é mais estreita
     const pair = (columns: string): SxProps => ({
         display: 'grid',
@@ -288,14 +297,24 @@ function PlayerDashboardContent(): ReactElement | null {
                 pb: 8,
                 position: 'relative',
                 containerType: 'inline-size',
-                '--campaign-sticky-offset': '120px'
+                // Em combate a barra fixa leva também a faixa de turnos: fica mais alta
+                '--campaign-sticky-offset': inCombat ? '176px' : '120px'
             }}
         >
+            {/* Em combate o que o jogador usa vem primeiro: a barra fixa (com a ordem de turnos) e as Ações; o cabeçalho com a ficha desce para depois */}
+            {inCombat && (
+                <>
+                    {stickyBar}
+                    <Box sx={{ mt: 3, mb: 3 }}>
+                        <ActionsSection />
+                    </Box>
+                </>
+            )}
+
             <PlayerHeader avatar={avatar} rootRef={setHeaderElement} />
-            <PlayerStickyBar headerElement={headerElement} sections={sections} />
+            {!inCombat && stickyBar}
 
             <Stack spacing={3} sx={{ mt: 3 }}>
-                <ActionsSection />
 
                 <Section id="passivas" title="Passivas" icon={<SelfImprovement sx={sectionIcon} />}>
                     <Passives realtime={true} />

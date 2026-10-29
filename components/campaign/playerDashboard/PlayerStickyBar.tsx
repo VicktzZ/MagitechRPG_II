@@ -2,7 +2,7 @@
 
 import { Box, ButtonBase, Chip, Stack, Typography } from '@mui/material';
 import { color as tokenColor, font } from '@themes/tokens';
-import { useEffect, useState, type ReactElement } from 'react';
+import { useEffect, useState, type ReactElement, type ReactNode } from 'react';
 import { usePlayerVitals } from './usePlayerVitals';
 
 export interface PlayerSectionLink {
@@ -55,10 +55,10 @@ const scrollBehavior = (): ScrollBehavior =>
     typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
 
 /**
- * Barra que acompanha o jogador na rolagem: os pontos de vida, mana e armadura (só quando o cabeçalho com os
+ * Barra que acompanha o jogador na rolagem: a faixa do combate (`combatSlot`, só em combate), os pontos de vida, mana e armadura (só quando o cabeçalho com os
  * controles saiu da tela; tocar leva até ele) e os atalhos para cada seção da ficha.
  */
-export default function PlayerStickyBar({ headerElement, sections }: { headerElement: HTMLElement | null; sections: PlayerSectionLink[] }): ReactElement {
+export default function PlayerStickyBar({ headerElement, sections, combatSlot }: { headerElement: HTMLElement | null; sections: PlayerSectionLink[]; combatSlot?: ReactNode }): ReactElement {
     const { charsheet, vitals } = usePlayerVitals();
     const headerVisible = useElementVisible(headerElement);
     const activeId = useActiveSection(sections.map(section => section.id));
@@ -77,6 +77,8 @@ export default function PlayerStickyBar({ headerElement, sections }: { headerEle
                 borderColor: 'divider'
             }}
         >
+            {combatSlot && <Box sx={{ mb: 1 }}>{combatSlot}</Box>}
+
             {!headerVisible && vitals.length > 0 && (
                 <ButtonBase
                     onClick={() => { headerElement?.scrollIntoView({ behavior: scrollBehavior(), block: 'start' }); }}

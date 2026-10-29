@@ -11,6 +11,7 @@ import {
     getExpertiseDefs,
     scaleCreature
 } from './creatureStats';
+import type { CreatureDice } from '@utils/combat/creatureDice';
 import type { CreatureData, SkillData, SpellData } from './types';
 
 interface UseCreatureCreatorParams {
@@ -208,6 +209,10 @@ export function useCreatureCreator({ open, onClose, onSave, editingCreature }: U
         return expertiseDefs.filter(e => e.name.toLowerCase().includes(q));
     }, [ expertiseDefs, expertiseSearch ]);
 
+    const setDices = (dices: CreatureDice[]) => {
+        setCreatureData(prev => ({ ...prev, dices }));
+    };
+
     const clearExpertises = () => {
         setCreatureData(prev => ({ ...prev, expertises: {} }));
     };
@@ -215,6 +220,7 @@ export function useCreatureCreator({ open, onClose, onSave, editingCreature }: U
     return {
         rpgSystem,
         attrDefs,
+        expertiseDefs,
         creatureData,
         setCreatureData,
         activeTab,
@@ -253,6 +259,7 @@ export function useCreatureCreator({ open, onClose, onSave, editingCreature }: U
         handleAddSpellToCreature,
         handleApplyScaling,
         updateExpertise,
-        clearExpertises
+        clearExpertises,
+        setDices
     };
 }

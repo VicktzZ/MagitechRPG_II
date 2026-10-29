@@ -5,10 +5,8 @@ import { Stack } from '@mui/material';
 import type { ReactElement } from 'react';
 import CreatureCreator from './CreatureCreator';
 import CampaignStatsStrip from './CampaignStatsStrip';
-import PendingAttacksPanel from './attacks/PendingAttacksPanel';
 import DeleteCreatureDialog from './DeleteCreatureDialog';
-import EnvironmentPanel from './environment/EnvironmentPanel';
-import CombatCreaturesSection from './dashboard/CombatCreaturesSection';
+import GMCombatPanel from './combatPanel/GMCombatPanel';
 import CustomCreaturesSection from './dashboard/CustomCreaturesSection';
 import PerksSection from './dashboard/PerksSection';
 import PlayersSection from './dashboard/PlayersSection';
@@ -33,17 +31,11 @@ export default function CampaignGMDashboard(): ReactElement | null {
                 loading={isPlayerCharsheetsPending}
             />
 
+            {/* O combate (só com combate ativo): ordem de turnos, combatentes, ataques esperando, ambiente e histórico */}
+            <GMCombatPanel />
+
             {/* Lista de Jogadores */}
             <PlayersSection playerCharsheets={playerCharsheets} pending={isPlayerCharsheetsPending} />
-
-            {/* Ambiente manual: iluminação da cena e terreno difícil (só com combate ativo) */}
-            <EnvironmentPanel />
-
-            {/* Ataques declarados esperando o mestre (só no combate, na fase de ação) */}
-            <PendingAttacksPanel />
-
-            {/* Ficha das criaturas em combate (sempre visível durante combate) */}
-            <CombatCreaturesSection />
 
             {/* Seção de Vantagens Adquiridas — visível no Roguelite (sempre) ou
                 em qualquer modo quando algum jogador já recebeu vantagens */}
@@ -54,6 +46,7 @@ export default function CampaignGMDashboard(): ReactElement | null {
                 onView={creature => openWindow('creature', creature.id)}
                 onEdit={creatureManager.handleEditCreature}
                 onDelete={creatureManager.handleRequestDeleteCreature}
+                onCreate={creatureManager.handleNewCreature}
             />
 
             <CreatureCreator

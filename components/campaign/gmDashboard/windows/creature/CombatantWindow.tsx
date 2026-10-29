@@ -11,7 +11,9 @@ import { errorMessage, asRequestError } from '@utils/errors';
 import { getCreatureMpLimit, isCreatureMpLimitEnforced } from '@utils/mpLimit';
 import { enqueueSnackbar } from 'notistack';
 import { useSetMpSpent } from '../../actions/useSetMpSpent';
+import { useGrantActions } from '../../actions/useGrantActions';
 import { useToggleCombatAction } from '../../actions/useToggleCombatAction';
+import { useCreatureDiceRoll } from '../../dashboard/useCreatureDiceRoll';
 import { useCreatureExpertiseRoll } from '../../dashboard/useCreatureExpertiseRoll';
 import { useGMWindowActions } from '../GMWindowProvider';
 import PlayerCombatantWindow from '../combatant/PlayerCombatantWindow';
@@ -25,8 +27,10 @@ export default function CombatantWindow({ combatantId }: { combatantId: string }
     const { campaign } = useCampaignContext();
     const { openWindow } = useGMWindowActions();
     const rollExpertise = useCreatureExpertiseRoll(null);
+    const rollCreatureDice = useCreatureDiceRoll();
     const { openSetMpSpent, setMpSpentDialog } = useSetMpSpent(campaign.id);
     const { toggleAction } = useToggleCombatAction(campaign.id);
+    const { openGrantActions, grantActionsDialog } = useGrantActions(campaign.id);
 
     const combat = campaign.session?.combat;
     const combatant = combat?.isActive ? combat.combatants?.find(candidate => candidate.id === combatantId) : undefined;
@@ -103,11 +107,14 @@ export default function CombatantWindow({ combatantId }: { combatantId: string }
                 onCastSpell={spell => { void castSpell(spell); }}
                 onResetMpLimit={() => { void resetMpLimit(); }}
                 onToggleAction={(slot, available) => { void toggleAction(combatant.id, slot, available); }}
+                onGrantActions={() => { openGrantActions(combatant); }}
+                onRollDice={creature ? dice => { void rollCreatureDice(creature, dice, combatant.name); } : undefined}
                 onSetMpSpent={() => {
                     openSetMpSpent({ id: combatant.id, name: combatant.name, spent: combatant.mpSpentThisTurn ?? 0, limit: mpLimit });
                 }}
             />
             {setMpSpentDialog}
+            {grantActionsDialog}
         </>
     );
 }

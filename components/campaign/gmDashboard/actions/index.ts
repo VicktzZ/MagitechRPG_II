@@ -5,7 +5,7 @@ export { default as RogueliteLevelUpDialog } from './RogueliteLevelUpDialog';
 export { default as OfferPerksDialog } from './OfferPerksDialog';
 export { default as ShopDialog } from './ShopDialog';
 export { default as MassActionDialog } from './MassActionDialog';
-export { default as CombatDialog } from './CombatDialog';
+export { default as CombatSetupDialog } from './CombatSetupDialog';
 export { default as ApplyEffectDialog } from './ApplyEffectDialog';
 export { default as CombatEffectsCatalogDialog } from './CombatEffectsCatalogDialog';
 export { default as EffectBadges } from './EffectBadges';

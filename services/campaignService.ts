@@ -4,6 +4,7 @@ import type { ActiveTest, CampaignData, TestData, TestResponse } from '@models/t
 import { Service } from '@utils/apiRequest'
 import type { CreateCombatEffectPayload } from './combatEffectService'
 import type { CombatEventItem } from '@utils/combat/history'
+import type { AbilityUseResponse } from '@utils/combat/passives/types'
 
 class CampaignService extends Service<Campaign, 'code' | 'userId'> {
     async listByUser(userId: string) {
@@ -149,11 +150,45 @@ class CampaignService extends Service<Campaign, 'code' | 'userId'> {
         })).data
     }
 
+    /**
+     * Usa uma habilidade ativada de classe ou subclasse (`abilityKey`: `class:cura interior`). O servidor confere a ficha, os usos e o MP, gasta o MP e a ação e devolve a rolagem da
+     * cura (`ability.heal`) para o chat. 409 `ABILITY_BLOCKED` (com `block`) quando não dá; `force` é do mestre e libera os usos esgotados e a cura bloqueada.
+     */
+    async useAbility(campaignId: string, payload: { combatantId: string; abilityKey: string; choiceId?: string; force?: boolean }): Promise<AbilityUseResponse> {
+        return (await this.post({
+            param: `${campaignId}/combat`,
+            body: { action: 'use_ability', ...payload }
+        })).data as unknown as AbilityUseResponse
+    }
+
+    /** Mestre renova os usos por dia das habilidades (descanso) das fichas indicadas, ou de todos os jogadores da campanha */
+    async restPlayers(campaignId: string, charsheetIds?: string[]) {
+        return (await this.post({
+            param: `${campaignId}/rest`,
+            body: charsheetIds ? { charsheetIds } : {}
+        })).data
+    }
+
     /** Mestre ajusta as ações que restam a um combatente ({ reacao: 1 } devolve a Reação); só os espaços informados mudam */
     async setCombatActions(campaignId: string, payload: { combatantId: string; actions: Partial<Record<'padrao' | 'bonus' | 'movimento' | 'reacao', number>> }) {
         return (await this.post({
             param: `${campaignId}/combat`,
             body: { action: 'set_actions', ...payload }
+        })).data
+    }
+
+    /**
+     * Mestre dá (ou tira) ações a um combatente: `delta` soma às ações de agora ({ padrao: 1 } dá uma Padrão extra, { movimento: -1 } tira uma de Movimento; sempre de 0 a 9) e
+     * `perRound` muda quantas ele recupera a cada rodada ({ padrao: 2 }). O servidor soma a variação ao que o combatente tem, então um gasto simultâneo não se perde.
+     */
+    async adjustCombatActions(campaignId: string, payload: {
+        combatantId: string;
+        delta?: Partial<Record<'padrao' | 'bonus' | 'movimento' | 'reacao', number>>;
+        perRound?: Partial<Record<'padrao' | 'bonus' | 'movimento' | 'reacao', number>>;
+    }) {
+        return (await this.post({
+            param: `${campaignId}/combat`,
+            body: { action: 'adjust_actions', ...payload }
         })).data
     }
 
@@ -272,6 +307,31 @@ class CampaignService extends Service<Campaign, 'code' | 'userId'> {
             param: `${campaignId}/combat`,
             body: { action: 'add_combatants', join }
         })).data as unknown as { success: boolean; message: string; warnings?: string[] }
+    }
+
+    /** Mestre: inicia o combate com os participantes escolhidos (o formato de `buildStartPlayers` e `buildStartCreatures`); `showEnemyLp` deixa a vida das criaturas à mostra dos jogadores */
+    async startCombat(campaignId: string, payload: { players: object[]; creatures: object[]; showEnemyLp?: boolean }) {
+        return (await this.post({ param: `${campaignId}/combat`, body: { action: 'start', ...payload } })).data as unknown as { success: boolean; message?: string }
+    }
+
+    /** Mestre: encerra o combate (zera os limites de MP e devolve as ações; o histórico fica para o "Desfazer") */
+    async endCombat(campaignId: string) {
+        return (await this.post({ param: `${campaignId}/combat`, body: { action: 'end' } })).data as unknown as { success: boolean; message?: string }
+    }
+
+    /** Passa o turno (o servidor vira a rodada quando todos já passaram) */
+    async nextTurn(campaignId: string) {
+        return (await this.post({ param: `${campaignId}/combat`, body: { action: 'next_turn' } })).data as unknown as { success: boolean; message?: string }
+    }
+
+    /** Mestre rola a iniciativa de um combatente (com `value` fixa o d20; sem ele o servidor rola) */
+    async rollInitiative(campaignId: string, payload: { combatantId: string; value?: number }) {
+        return (await this.post({ param: `${campaignId}/combat`, body: { action: 'roll_initiative', advantageType: 'normal', ...payload } })).data as unknown as { success: boolean; message?: string }
+    }
+
+    /** Mestre fecha a fase de iniciativa: a ordem de turnos fica definida e começa a fase de ação */
+    async setInitiativeOrder(campaignId: string) {
+        return (await this.post({ param: `${campaignId}/combat`, body: { action: 'set_initiative' } })).data as unknown as { success: boolean; message?: string }
     }
 
     /** Mestre: libera (true) ou restabelece (false) o limite de MP por turno de um jogador */
