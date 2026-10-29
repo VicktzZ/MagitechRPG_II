@@ -268,6 +268,7 @@ antes do código) · 6 (feita) criaturas em janelas: a criatura personalizada (`
 **Ainda em aberto nas criaturas** (perguntar ao dono antes): levar o **editor de criatura** (`CreatureCreator`, ainda um diálogo) para dentro de uma janela, e registrar o ajuste rápido no
 log do combate (hoje só o diálogo de combate narra dano e cura). A ordem das fases pode mudar a pedido do dono.
 
+- **Vantagens adquiridas** (29/10/2026): deixou de ser uma seção fixa do dashboard e virou um **modal** no menu **"Mais ações"** do mestre (`actions/AcquiredPerksDialog`, que lê as fichas do mesmo contexto do dashboard por `useGMDashboardData` e `usePlayersWithPerks`; o item do menu mostra quantos jogadores já receberam). A lista (`dashboard/AcquiredPerksList`, um acordeão por jogador) vale em qualquer modo de campanha e diz "Nenhuma vantagem adquirida ainda" quando vazia. O botão "Vantagens" da barra continua sendo **oferecer** vantagens. O plural do chip era "vantagems"; agora "vantagens".
 - **Peças**: `windowState.ts` (reducer puro: abrir/focar/fechar/recolher/gravar posição, `sanitizeWindows` para o que vem do navegador), `windowGeometry.ts`
   (puro: área, clamp, cascata, mover, redimensionar), `windowKinds.ts` (tipos de janela, tamanhos, limite de 10), `GMWindowProvider` (estado, área útil,
   persistência), `FloatingWindow` (casca: arrastar, redimensionar, recolher, teclado), `GMWindowLayer` (portal no `body`; escolhe o conteúdo por tipo),
