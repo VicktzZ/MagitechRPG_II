@@ -5,28 +5,40 @@ import { Expertises, type Expertise, type Creature } from '@models'
 import { sanitizeDamageModifiers, sanitizeWeaknesses } from '@utils/combat/creatureDefense'
 import { completeCreatureExpertises } from '@utils/combat/creatureExpertises'
 import {
-    attachCreatureDefenses, embeddedDefensesOf, sanitizeCreatureDefenses, sanitizeCreatureElement, stripCreatureDefenses, stripCreatureListDefenses
+    attachCreatureDefenses,
+    embeddedDefensesOf,
+    sanitizeCreatureDefenses,
+    sanitizeCreatureElement,
+    stripCreatureDefenses,
+    stripCreatureListDefenses
 } from '@utils/combat/creatureSecrets'
-import { deleteCreatureDefenses, getCreatureDefenses, readCreatureDefenses, saveCreatureDefenses } from '@utils/firestore/gmData'
-import { assertMaxLength, handleRouteError, readJsonBody, requireCampaignGM, requireCampaignMember, requireUser, TEXT_LIMITS } from '@utils/api'
+import {
+    deleteCreatureDefenses,
+    getCreatureDefenses,
+    readCreatureDefenses,
+    saveCreatureDefenses
+} from '@utils/firestore/gmData'
+import {
+    assertMaxLength,
+    handleRouteError,
+    hasValidApiKey,
+    readJsonBody,
+    requireCampaignGMOrApiKey,
+    requireCampaignMember,
+    requireUser,
+    TEXT_LIMITS
+} from '@utils/api'
 
-export async function POST(
-    request: NextRequest,
-    { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
         const { id } = await params
-        const user = await requireUser()
-        // Criaturas customizadas são criadas pelo mestre
-        const { campaign } = await requireCampaignGM(id, user)
+        // Criaturas customizadas são criadas pelo mestre (ou automação com API key)
+        const { campaign, userId } = await requireCampaignGMOrApiKey(id, request)
 
         const body = await readJsonBody(request)
 
         if (!body.name?.trim()) {
-            return NextResponse.json(
-                { error: 'Nome da criatura é obrigatório' },
-                { status: 400 }
-            )
+            return NextResponse.json({ error: 'Nome da criatura é obrigatório' }, { status: 400 })
         }
         assertMaxLength(body.name, TEXT_LIMITS.name, 'name')
         assertMaxLength(body.description, TEXT_LIMITS.description, 'description')
@@ -37,7 +49,7 @@ export async function POST(
         const plainExpertises: Record<string, { value: number; defaultAttribute: any }> = {}
 
         if (body.expertises && typeof body.expertises === 'object' && Object.keys(body.expertises).length > 0) {
-            Object.entries(body.expertises).forEach(([ key, value ]: any) => {
+            Object.entries(body.expertises).forEach(([key, value]: any) => {
                 const newValue = Number(value?.value ?? 0)
                 plainExpertises[key] = {
                     value: Number.isFinite(newValue) ? newValue : 0,
@@ -46,7 +58,7 @@ export async function POST(
             })
         } else {
             const baseExpertises = new Expertises()
-            Object.entries(baseExpertises as any).forEach(([ key, expertise ]: any) => {
+            Object.entries(baseExpertises as any).forEach(([key, expertise]: any) => {
                 plainExpertises[key] = {
                     value: Number(expertise?.value ?? 0),
                     defaultAttribute: expertise?.defaultAttribute ?? null
@@ -58,7 +70,7 @@ export async function POST(
         // vier, usa os 6 atributos padrão do Magitech em 0.
         const plainAttributes: Record<string, number> =
             body.attributes && typeof body.attributes === 'object' && Object.keys(body.attributes).length > 0
-                ? Object.fromEntries(Object.entries(body.attributes).map(([ k, v ]: any) => [ k, Number(v) || 0 ]))
+                ? Object.fromEntries(Object.entries(body.attributes).map(([k, v]: any) => [k, Number(v) || 0]))
                 : { vig: 0, des: 0, log: 0, car: 0, sab: 0, foc: 0 }
 
         // Cria a nova criatura com dados completos
@@ -87,7 +99,7 @@ export async function POST(
         const defenses = sanitizeCreatureDefenses(body)
 
         // Grava o segredo primeiro: se a campanha falhar sobra um documento sem criatura, que ninguém lê; o contrário deixaria a criatura sem defesas
-        await saveCreatureDefenses(campaign.id, newCreature.id, defenses, user.id)
+        await saveCreatureDefenses(campaign.id, newCreature.id, defenses, userId)
 
         // Adiciona a criatura ao array de criaturas customizadas
         const existingCreatures = campaign.custom?.creatures || []
@@ -95,7 +107,7 @@ export async function POST(
             ...campaign,
             custom: {
                 ...campaign.custom,
-                creatures: [ ...existingCreatures, newCreature ]
+                creatures: [...existingCreatures, newCreature]
             }
         }
 
@@ -106,51 +118,42 @@ export async function POST(
             message: `Criatura "${newCreature.name}" criada com sucesso!`,
             creature: { ...newCreature, ...defenses }
         })
-
     } catch (error) {
         return handleRouteError(error, 'Erro ao criar criatura')
     }
 }
 
-export async function GET(
-    request: NextRequest,
-    { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
         const { id } = await params
-        const user = await requireUser()
-        const { campaign, isGM } = await requireCampaignMember(id, user)
+        const { campaign, isGM } = hasValidApiKey(request)
+            ? await requireCampaignGMOrApiKey(id, request)
+            : await requireCampaignMember(id, await requireUser())
 
         // As defesas são do mestre: ele as recebe juntadas, os jogadores não recebem nada delas
         const stored = campaign.custom?.creatures || []
-        const creatures = isGM ? attachCreatureDefenses(stored, await readCreatureDefenses(campaign.id)) : stripCreatureListDefenses(stored)
+        const creatures = isGM
+            ? attachCreatureDefenses(stored, await readCreatureDefenses(campaign.id))
+            : stripCreatureListDefenses(stored)
 
         return NextResponse.json({
             success: true,
             creatures
         })
-
     } catch (error) {
         return handleRouteError(error, 'Erro ao buscar criaturas')
     }
 }
 
-export async function PUT(
-    request: NextRequest,
-    { params }: { params: Promise<{ id: string }> }
-) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
         const { id } = await params
-        const user = await requireUser()
-        const { campaign } = await requireCampaignGM(id, user)
+        const { campaign, userId } = await requireCampaignGMOrApiKey(id, request)
 
         const body = await readJsonBody(request)
 
         if (!body.id) {
-            return NextResponse.json(
-                { error: 'IDs são obrigatórios' },
-                { status: 400 }
-            )
+            return NextResponse.json({ error: 'IDs são obrigatórios' }, { status: 400 })
         }
         assertMaxLength(body.name, TEXT_LIMITS.name, 'name')
         assertMaxLength(body.description, TEXT_LIMITS.description, 'description')
@@ -159,15 +162,15 @@ export async function PUT(
         const creatureIndex = existingCreatures.findIndex((c: any) => c.id === body.id)
 
         if (creatureIndex === -1) {
-            return NextResponse.json(
-                { error: 'Criatura não encontrada' },
-                { status: 404 }
-            )
+            return NextResponse.json({ error: 'Criatura não encontrada' }, { status: 404 })
         }
 
         // Defesas: o documento privado vale; sem ele, o que a criatura antiga ainda carrega dentro dela
         const existing = existingCreatures[creatureIndex]
-        const currentDefenses = (await getCreatureDefenses(campaign.id, body.id)) ?? embeddedDefensesOf(existing) ?? sanitizeCreatureDefenses(null)
+        const currentDefenses =
+            (await getCreatureDefenses(campaign.id, body.id)) ??
+            embeddedDefensesOf(existing) ??
+            sanitizeCreatureDefenses(null)
 
         // Atualiza a criatura (sem os campos de defesa: eles vão para o documento privado)
         const updatedCreature = {
@@ -179,19 +182,28 @@ export async function PUT(
             level: body.level ?? existingCreatures[creatureIndex].level,
             attributes: body.attributes ?? existingCreatures[creatureIndex].attributes,
             stats: body.stats ?? existingCreatures[creatureIndex].stats,
-            expertises: completeCreatureExpertises<Expertise>(body.expertises ?? existingCreatures[creatureIndex].expertises) as unknown as Creature['expertises'],
+            expertises: completeCreatureExpertises<Expertise>(
+                body.expertises ?? existingCreatures[creatureIndex].expertises
+            ) as unknown as Creature['expertises'],
             skills: body.skills ?? existingCreatures[creatureIndex].skills,
             spells: body.spells ?? existingCreatures[creatureIndex].spells
         }
         // Só muda o que o editor mandou (criatura salva por um cliente antigo mantém as defesas dela)
         const defenses = {
-            elementalMastery: typeof body.elementalMastery === 'string' ? sanitizeCreatureElement(body.elementalMastery) : currentDefenses.elementalMastery,
-            weaknesses: body.weaknesses !== undefined ? sanitizeWeaknesses(body.weaknesses) : currentDefenses.weaknesses,
-            damageModifiers: body.damageModifiers !== undefined ? sanitizeDamageModifiers(body.damageModifiers) : currentDefenses.damageModifiers
+            elementalMastery:
+                typeof body.elementalMastery === 'string'
+                    ? sanitizeCreatureElement(body.elementalMastery)
+                    : currentDefenses.elementalMastery,
+            weaknesses:
+                body.weaknesses !== undefined ? sanitizeWeaknesses(body.weaknesses) : currentDefenses.weaknesses,
+            damageModifiers:
+                body.damageModifiers !== undefined
+                    ? sanitizeDamageModifiers(body.damageModifiers)
+                    : currentDefenses.damageModifiers
         }
-        await saveCreatureDefenses(campaign.id, body.id, defenses, user.id)
+        await saveCreatureDefenses(campaign.id, body.id, defenses, userId)
 
-        const updatedCreatures = [ ...existingCreatures ]
+        const updatedCreatures = [...existingCreatures]
         // Sem os campos de defesa (o tipo `Creature` os exige, mas no documento da campanha eles não existem mais)
         updatedCreatures[creatureIndex] = updatedCreature as unknown as Creature
 
@@ -210,28 +222,20 @@ export async function PUT(
             message: `Criatura "${updatedCreature.name}" atualizada com sucesso!`,
             creature: { ...updatedCreature, ...defenses }
         })
-
     } catch (error) {
         return handleRouteError(error, 'Erro ao atualizar criatura')
     }
 }
 
-export async function DELETE(
-    request: NextRequest,
-    { params }: { params: Promise<{ id: string }> }
-) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
         const { id } = await params
-        const user = await requireUser()
-        const { campaign } = await requireCampaignGM(id, user)
+        const { campaign } = await requireCampaignGMOrApiKey(id, request)
 
         const { creatureId } = await readJsonBody(request)
 
         if (!creatureId) {
-            return NextResponse.json(
-                { error: 'IDs são obrigatórios' },
-                { status: 400 }
-            )
+            return NextResponse.json({ error: 'IDs são obrigatórios' }, { status: 400 })
         }
 
         const existingCreatures = campaign.custom?.creatures || []
@@ -258,7 +262,6 @@ export async function DELETE(
             success: true,
             message: 'Criatura removida com sucesso!'
         })
-
     } catch (error) {
         return handleRouteError(error, 'Erro ao remover criatura')
     }

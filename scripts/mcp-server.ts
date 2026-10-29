@@ -1,13 +1,19 @@
+import 'dotenv/config'
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { z } from 'zod'
 
 const BASE_URL = process.env.MCP_RPG_BASE_URL || 'http://localhost:3000'
+const API_KEY = process.env.INTERNAL_API_KEY
 
 async function callApi(path: string, init?: RequestInit) {
     const res = await fetch(`${BASE_URL}${path}`, {
         ...init,
-        headers: { 'Content-Type': 'application/json', ...init?.headers }
+        headers: {
+            'Content-Type': 'application/json',
+            ...(API_KEY ? { 'x-api-key': API_KEY } : {}),
+            ...init?.headers
+        }
     })
     const text = await res.text()
     let body: unknown
@@ -41,6 +47,16 @@ server.registerTool(
         inputSchema: { userId: z.string().optional() }
     },
     async ({ userId }) => callApi(`/api/campaign${toQuery({ userId })}`)
+)
+
+server.registerTool(
+    'list_charsheets',
+    {
+        description:
+            'Lista as fichas de personagem dos jogadores de uma campanha (pra ver atributos/stats reais e calibrar criaturas).',
+        inputSchema: { campaignId: z.string() }
+    },
+    async ({ campaignId }) => callApi(`/api/campaign/${encodeURIComponent(campaignId)}/fichas`)
 )
 
 server.registerTool(
@@ -107,6 +123,44 @@ server.registerTool(
     async body => callApi('/api/spell', { method: 'POST', body: JSON.stringify(body) })
 )
 
+const damageModifierSchema = z.object({
+    kind: z.enum(['resistance', 'vulnerability']),
+    element: z
+        .string()
+        .optional()
+        .describe('Elemento/tipo de dano ("Fogo", "Cortante") ou "Físico"; vazio = todo dano'),
+    value: z.string().describe('"25%" (percentual) ou "3" (fixo)')
+})
+
+const defensesSchema = {
+    elementalMastery: z
+        .string()
+        .optional()
+        .describe(
+            'Elemento da criatura (ex.: "Água"); dá a ela a fraqueza do elemento que vence este. Segredo do mestre.'
+        ),
+    weaknesses: z
+        .array(z.string())
+        .optional()
+        .describe(
+            'Fraquezas declaradas: elementos ou tipos físicos ("Cortante", "Perfurante", "Impactante"). Segredo do mestre.'
+        ),
+    damageModifiers: z
+        .array(damageModifierSchema)
+        .optional()
+        .describe('Resistências/vulnerabilidades ao dano recebido. Segredo do mestre.')
+}
+
+server.registerTool(
+    'list_creatures',
+    {
+        description:
+            'Lista as criaturas customizadas de uma campanha (painel do mestre), com defesas (elemento/fraquezas/resistências) já juntadas.',
+        inputSchema: { campaignId: z.string() }
+    },
+    async ({ campaignId }) => callApi(`/api/campaign/${encodeURIComponent(campaignId)}/custom/creatures`)
+)
+
 server.registerTool(
     'create_creature',
     {
@@ -131,12 +185,49 @@ server.registerTool(
                 .optional(),
             expertises: z.record(z.any()).optional(),
             skills: z.array(z.any()).optional(),
-            spells: z.array(z.any()).optional()
+            spells: z.array(z.any()).optional(),
+            ...defensesSchema
         }
     },
     async ({ campaignId, ...body }) =>
         callApi(`/api/campaign/${encodeURIComponent(campaignId)}/custom/creatures`, {
             method: 'POST',
+            body: JSON.stringify(body)
+        })
+)
+
+server.registerTool(
+    'update_creature',
+    {
+        description:
+            'Atualiza campos de uma criatura customizada já existente numa campanha (ex.: troncar spells/skills, ajustar stats). Só os campos enviados são sobrescritos; o resto é mantido.',
+        inputSchema: {
+            campaignId: z.string(),
+            id: z.string().describe('id da criatura (retornado por create_creature ou pela listagem)'),
+            name: z.string().optional(),
+            description: z.string().optional(),
+            type: z.string().optional(),
+            imageUrl: z.string().optional(),
+            level: z.number().optional(),
+            attributes: z.record(z.number()).optional(),
+            stats: z
+                .object({
+                    lp: z.number().optional(),
+                    maxLp: z.number().optional(),
+                    mp: z.number().optional(),
+                    maxMp: z.number().optional(),
+                    ap: z.number().optional()
+                })
+                .optional(),
+            expertises: z.record(z.any()).optional(),
+            skills: z.array(z.any()).optional(),
+            spells: z.array(z.any()).optional(),
+            ...defensesSchema
+        }
+    },
+    async ({ campaignId, ...body }) =>
+        callApi(`/api/campaign/${encodeURIComponent(campaignId)}/custom/creatures`, {
+            method: 'PUT',
             body: JSON.stringify(body)
         })
 )
