@@ -30,6 +30,7 @@ import type { Power } from '@models/entities';
 import type { Skill } from '@models';
 import { useCharsheetSystem } from '@hooks/useCharsheetSystem';
 import { normalizeToArray } from '@utils/normalizeToArray';
+import SkillMode, { skillModeOf, skillModeTag } from './subcomponents/SkillMode';
 
 type SkillsFilterType = 'all' | 'class' | 'subclass' | 'lineage' | 'powers' | 'bonus' | 'race'
 
@@ -264,7 +265,7 @@ export default function Skills(): ReactElement {
                             lineHeight: 1.2
                         }}
                     >
-                        {getOriginLabel(skill.type)}
+                        {[ getOriginLabel(skill.type), skillModeTag(skillModeOf(formSkills, systemId, skill.name)) ].filter(Boolean).join(' · ')}
                     </Typography>
                 </Box>
             </Box>
@@ -283,7 +284,7 @@ export default function Skills(): ReactElement {
             const filteredSkills = formSkills?.[skillsFilter as keyof typeof formSkills]
             return normalizeToArray<Skill>(filteredSkills).map(renderSkill)
         }
-    }, [ formSkills, skills, skillsFilter, selectedSkill, getValues, setValue, handleSkillClick, showRace, showLineage, showSubclass, showPowers ])
+    }, [ formSkills, systemId, skills, skillsFilter, selectedSkill, getValues, setValue, handleSkillClick, showRace, showLineage, showSubclass, showPowers ])
     
     // Exibe erros de validação se houver
     const renderErrors = () => {
@@ -495,6 +496,8 @@ export default function Skills(): ReactElement {
                                     )}
                                 </Typography>
                             </Box>
+
+                            <SkillMode info={skillModeOf(formSkills, systemId, selectedSkill.name)} />
                     
                             <AnimatePresence mode='wait'>
                                 <motion.div
