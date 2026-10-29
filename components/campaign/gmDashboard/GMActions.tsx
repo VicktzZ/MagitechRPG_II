@@ -51,13 +51,14 @@ import {
     OfferPerksDialog,
     ShopDialog,
     MassActionDialog,
-    CombatDialog,
+    CombatSetupDialog,
     CombatEffectsCatalogDialog,
     FinishCampaignDialog,
     type PlayerInfo,
     type MassActionType
 } from './actions';
 import CreatureCreator from './CreatureCreator';
+import { buildPlayerInfos } from './playerInfos';
 import CampaignStatsModal from '../CampaignStatsModal';
 import WidgetManagerDialog from '../widget/WidgetManagerDialog';
 import { errorMessage } from '@utils/errors';
@@ -102,34 +103,10 @@ export default function GMActions(): ReactElement {
     });
 
     // Memoized player list with charsheet data
-    const players: PlayerInfo[] = useMemo(() => {
-        return users.players?.map(player => {
-            // campaign.players usa `userId`, não `odacId`
-            const playerInCampaign = campaign?.players?.find(p =>
-                (p as { odacId?: string }).odacId === player.id || p.userId === player.id
-            );
-            const charsheet = realtimeCharsheets?.find(c => c.id === playerInCampaign?.charsheetId);
-            // Vantagens adquiridas nesta campanha (sessão correspondente ao campaignCode)
-            const campaignPerks = charsheet?.session?.find(
-                s => s.campaignCode === campaign.campaignCode
-            )?.perks ?? [];
-
-            return {
-                id: player.id,
-                name: player.name || 'Jogador',
-                avatar: player.image,
-                charsheet: charsheet ? {
-                    id: charsheet.id,
-                    name: charsheet.name,
-                    level: charsheet.level,
-                    stats: charsheet.stats,
-                    inventory: charsheet.inventory,
-                    attributes: charsheet.attributes,
-                    perks: campaignPerks
-                } : undefined
-            };
-        }) || [];
-    }, [ users.players, campaign?.players, campaign.campaignCode, realtimeCharsheets ]);
+    const players: PlayerInfo[] = useMemo(
+        () => buildPlayerInfos(users.players, campaign, realtimeCharsheets),
+        [ users.players, campaign, realtimeCharsheets ]
+    );
 
     // Menu handlers
     const handleOpenMenu = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -182,9 +159,14 @@ export default function GMActions(): ReactElement {
         handleCloseMenu();
     };
 
+    // Com combate em andamento o botão leva ao painel de combate (fixo no dashboard); sem combate abre o diálogo de início
     const openCombat = () => {
-        setCombatDialogOpen(true);
         handleCloseMenu();
+        if (campaign.session?.combat?.isActive) {
+            document.getElementById('combate')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            return;
+        }
+        setCombatDialogOpen(true);
     };
 
     const openWidgetManager = () => {
@@ -555,15 +537,12 @@ export default function GMActions(): ReactElement {
                 campaignId={campaign.id}
             />
 
-            <CombatDialog
+            <CombatSetupDialog
                 open={combatDialogOpen}
                 onClose={() => setCombatDialogOpen(false)}
                 campaignId={campaign.id}
-                campaignCode={campaign.campaignCode}
                 players={players}
                 creatures={campaign.custom?.creatures || []}
-                charsheets={realtimeCharsheets || []}
-                existingCombat={campaign.session?.combat}
             />
 
             <CombatEffectsCatalogDialog

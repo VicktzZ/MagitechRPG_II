@@ -9,7 +9,6 @@ import { useLeaveReach } from '../../opportunity/useLeaveReach';
 import OpenReactionDialog from '../../reaction/OpenReactionDialog';
 import ReactionsList from '../../reaction/ReactionsList';
 import { useReactions } from '../../reaction/useReactions';
-import Section from '../../Section';
 import HideDialog from './HideDialog';
 import ManualAttackForm from './ManualAttackForm';
 import OpportunitiesList from './OpportunitiesList';
@@ -18,8 +17,9 @@ import UnseenList from './UnseenList';
 import { useAwareness } from './useAwareness';
 
 /**
- * Ataques declarados que o mestre ainda não resolveu (ataque assistido), com o ataque manual para as criaturas. Só aparece com combate na fase de ação.
- * O jogador declara pelo "Acerto" da arma; cada ataque abre a proposta do motor para o mestre confirmar ou trocar.
+ * Ataques declarados que o mestre ainda não resolveu (ataque assistido), com o ataque manual para as criaturas e as ferramentas da luta (furtividade, reação, saída
+ * de alcance). Só aparece com combate na fase de ação; mora na aba "Ataques" do painel de combate. O jogador declara pelo "Acerto" da arma; cada ataque abre a
+ * proposta do motor para o mestre confirmar ou trocar.
  */
 export default function PendingAttacksPanel(): ReactElement | null {
     const { campaign } = useCampaignContext();
@@ -36,50 +36,45 @@ export default function PendingAttacksPanel(): ReactElement | null {
     const pending = combat.pendingAttacks ?? [];
 
     return (
-        <Section
-            id="ataques"
-            title="Ataques"
-            action={(
-                <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                    <Button
-                        size="small"
-                        variant="outlined"
-                        startIcon={<VisibilityOff fontSize="small" />}
-                        onClick={() => { setHideOpen(true); }}
-                        sx={{ textTransform: 'none' }}
-                    >
+        <Stack spacing={1.5} id="ataques">
+            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                <Button
+                    size="small"
+                    variant="outlined"
+                    startIcon={<VisibilityOff fontSize="small" />}
+                    onClick={() => { setHideOpen(true); }}
+                    sx={{ textTransform: 'none' }}
+                >
                         Furtividade
-                    </Button>
-                    <Button
-                        size="small"
-                        variant="outlined"
-                        startIcon={<Bolt fontSize="small" />}
-                        onClick={() => { setReactionOpen(true); }}
-                        sx={{ textTransform: 'none' }}
-                    >
+                </Button>
+                <Button
+                    size="small"
+                    variant="outlined"
+                    startIcon={<Bolt fontSize="small" />}
+                    onClick={() => { setReactionOpen(true); }}
+                    sx={{ textTransform: 'none' }}
+                >
                         Abrir reação
-                    </Button>
-                    <Button
-                        size="small"
-                        variant="outlined"
-                        startIcon={<DirectionsRun fontSize="small" />}
-                        onClick={() => { setLeaveOpen(true); }}
-                        sx={{ textTransform: 'none' }}
-                    >
+                </Button>
+                <Button
+                    size="small"
+                    variant="outlined"
+                    startIcon={<DirectionsRun fontSize="small" />}
+                    onClick={() => { setLeaveOpen(true); }}
+                    sx={{ textTransform: 'none' }}
+                >
                         Saída de alcance
-                    </Button>
-                    <Button
-                        size="small"
-                        variant="outlined"
-                        startIcon={manualOpen ? <Close fontSize="small" /> : <Add fontSize="small" />}
-                        onClick={() => { setManualOpen(open => !open); }}
-                        sx={{ textTransform: 'none' }}
-                    >
-                        {manualOpen ? 'Fechar' : 'Ataque manual'}
-                    </Button>
-                </Stack>
-            )}
-        >
+                </Button>
+                <Button
+                    size="small"
+                    variant="outlined"
+                    startIcon={manualOpen ? <Close fontSize="small" /> : <Add fontSize="small" />}
+                    onClick={() => { setManualOpen(open => !open); }}
+                    sx={{ textTransform: 'none' }}
+                >
+                    {manualOpen ? 'Fechar' : 'Ataque manual'}
+                </Button>
+            </Stack>
             <Stack spacing={1.5}>
                 <LeaveReachDialog
                     open={leaveOpen}
@@ -113,6 +108,6 @@ export default function PendingAttacksPanel(): ReactElement | null {
                 )}
                 {pending.map(attack => <PendingAttackCard key={attack.id} attack={attack} />)}
             </Stack>
-        </Section>
+        </Stack>
     );
 }

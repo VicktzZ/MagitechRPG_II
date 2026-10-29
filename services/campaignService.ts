@@ -274,6 +274,31 @@ class CampaignService extends Service<Campaign, 'code' | 'userId'> {
         })).data as unknown as { success: boolean; message: string; warnings?: string[] }
     }
 
+    /** Mestre: inicia o combate com os participantes escolhidos (o formato de `buildStartPlayers` e `buildStartCreatures`); `showEnemyLp` deixa a vida das criaturas à mostra dos jogadores */
+    async startCombat(campaignId: string, payload: { players: object[]; creatures: object[]; showEnemyLp?: boolean }) {
+        return (await this.post({ param: `${campaignId}/combat`, body: { action: 'start', ...payload } })).data as unknown as { success: boolean; message?: string }
+    }
+
+    /** Mestre: encerra o combate (zera os limites de MP e devolve as ações; o histórico fica para o "Desfazer") */
+    async endCombat(campaignId: string) {
+        return (await this.post({ param: `${campaignId}/combat`, body: { action: 'end' } })).data as unknown as { success: boolean; message?: string }
+    }
+
+    /** Passa o turno (o servidor vira a rodada quando todos já passaram) */
+    async nextTurn(campaignId: string) {
+        return (await this.post({ param: `${campaignId}/combat`, body: { action: 'next_turn' } })).data as unknown as { success: boolean; message?: string }
+    }
+
+    /** Mestre rola a iniciativa de um combatente (com `value` fixa o d20; sem ele o servidor rola) */
+    async rollInitiative(campaignId: string, payload: { combatantId: string; value?: number }) {
+        return (await this.post({ param: `${campaignId}/combat`, body: { action: 'roll_initiative', advantageType: 'normal', ...payload } })).data as unknown as { success: boolean; message?: string }
+    }
+
+    /** Mestre fecha a fase de iniciativa: a ordem de turnos fica definida e começa a fase de ação */
+    async setInitiativeOrder(campaignId: string) {
+        return (await this.post({ param: `${campaignId}/combat`, body: { action: 'set_initiative' } })).data as unknown as { success: boolean; message?: string }
+    }
+
     /** Mestre: libera (true) ou restabelece (false) o limite de MP por turno de um jogador */
     async setCombatMpLimitOverride(campaignId: string, payload: { combatantId: string; enabled: boolean }) {
         return (await this.post({

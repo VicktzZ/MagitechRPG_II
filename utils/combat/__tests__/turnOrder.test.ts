@@ -23,6 +23,8 @@ describe('iniciais do retrato', () => {
         expect(initialsOf('Aria Valen')).toBe('AV');
         expect(initialsOf('Maria da Silva Souza')).toBe('MS');
         expect(initialsOf('goblin')).toBe('GO');
+        expect(initialsOf('Goblin Saqueador (2)')).toBe('GS');
+        expect(initialsOf('(2)')).toBe('(2');
         expect(initialsOf('  ')).toBe('?');
     });
 });

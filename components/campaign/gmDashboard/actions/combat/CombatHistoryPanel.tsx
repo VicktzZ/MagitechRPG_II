@@ -17,8 +17,12 @@ interface CombatHistoryPanelProps {
     campaignId: string;
     /** Algo que muda a cada ação do combate; refaz a consulta do histórico */
     signature: string;
-    /** O combate mudou (um evento foi desfeito): o diálogo busca o estado de novo */
+    /** O combate mudou (um evento foi desfeito): quem usa o painel busca o estado de novo */
     onChanged: () => void;
+    /** Abre já com a lista de eventos à mostra (a aba do painel de combate) */
+    defaultOpen?: boolean;
+    /** Sem margem em cima, e sem eventos diz que não há o que desfazer em vez de sumir */
+    flush?: boolean;
 }
 
 interface PendingConflict {
@@ -36,15 +40,16 @@ const timeOf = (iso: string): string => {
  * encerrar) aparece com o que mudou. Desfazer devolve só os campos que o evento mexeu; se algum já mudou de novo depois, o servidor avisa e o
  * mestre decide se desfaz mesmo assim. Não reverte as estatísticas da campanha nem apaga as mensagens do chat (o chat ganha um aviso).
  */
-export default function CombatHistoryPanel({ campaignId, signature, onChanged }: CombatHistoryPanelProps): ReactElement | null {
+export default function CombatHistoryPanel({ campaignId, signature, onChanged, defaultOpen = false, flush = false }: CombatHistoryPanelProps): ReactElement | null {
     const { enqueueSnackbar } = useSnackbar();
-    const [ open, setOpen ] = useState(false);
+    const [ open, setOpen ] = useState(defaultOpen);
     const [ busyId, setBusyId ] = useState<string | null>(null);
     const [ conflict, setConflict ] = useState<PendingConflict | null>(null);
     const { events, failed } = useCombatHistory(campaignId, signature, true);
 
-    if (failed && !events) return null;
-    if (!events || events.length === 0) return null;
+    const nothing = (message: string): ReactElement | null => (flush ? <Typography variant="body2" color="text.secondary">{message}</Typography> : null);
+    if (failed && !events) return nothing('Não foi possível carregar o histórico agora.');
+    if (!events || events.length === 0) return nothing('Nada para desfazer ainda: as ações importantes do combate aparecem aqui.');
 
     const latest = events.find(event => !event.undone);
 
@@ -68,7 +73,7 @@ export default function CombatHistoryPanel({ campaignId, signature, onChanged }:
     };
 
     return (
-        <Box sx={{ mt: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1, bgcolor: 'background.raised' }}>
+        <Box sx={{ mt: flush ? 0 : 2, border: '1px solid', borderColor: 'divider', borderRadius: 1, bgcolor: 'background.raised' }}>
             <Stack direction="row" alignItems="center" spacing={1} sx={{ px: 1.5, py: 0.75 }}>
                 <Typography variant="subtitle2" sx={{ flex: 1 }}>
                     Histórico do combate

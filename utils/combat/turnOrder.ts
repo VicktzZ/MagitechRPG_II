@@ -56,9 +56,11 @@ export interface TurnOrderOptions {
 
 const finite = (value: unknown): number | null => (typeof value === 'number' && Number.isFinite(value) ? value : null);
 
-/** "Aria Valen" → "AV"; "Goblin" → "GO" */
+/** "Aria Valen" → "AV"; "Goblin" → "GO"; a cópia "Goblin Saqueador (2)" → "GS" (o "(2)" não é uma palavra do nome) */
 export function initialsOf(name: string): string {
-    const words = name.trim().split(/\s+/).filter(Boolean);
+    const all = name.trim().split(/\s+/).filter(Boolean);
+    const named = all.filter(word => /^[\p{L}\p{N}]/u.test(word));
+    const words = named.length > 0 ? named : all;
     if (words.length === 0) return '?';
     if (words.length === 1) return words[0]!.slice(0, 2).toUpperCase();
     return `${words[0]![0]}${words[words.length - 1]![0]}`.toUpperCase();

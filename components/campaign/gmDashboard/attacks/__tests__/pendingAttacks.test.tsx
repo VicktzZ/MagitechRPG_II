@@ -341,7 +341,8 @@ describe('PendingAttacksPanel', () => {
         mockContext.mockReturnValue(campaignWith({ pendingAttacks: [] }));
         const html = render(<PendingAttacksPanel />);
 
-        expect(html).toContain('Ataques');
+        // o título "Ataques" agora é a aba do painel de combate; aqui ficam as ferramentas e o estado vazio
+        expect(html).toContain('id="ataques"');
         expect(html).toContain('Nenhum ataque esperando');
         expect(html).toContain('Ataque manual');
     });

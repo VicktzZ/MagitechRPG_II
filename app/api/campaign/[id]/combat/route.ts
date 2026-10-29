@@ -4,7 +4,7 @@ import { adminUpdateDoc } from '@utils/firestore/adminDocs'
 import { Combat, Combatant, CombatLog, AppliedEffect, Message, type Creature } from '@models'
 import { triggerPusher } from '@utils/pusher'
 import { PusherEvent } from '@enums'
-import { processEffectTicks, refreshPlayerCombatantsLp, syncPlayerCharsheets } from '@utils/combat/processEffectTicks'
+import { effectIconPrefix, processEffectTicks, refreshPlayerCombatantsLp, syncPlayerCharsheets } from '@utils/combat/processEffectTicks'
 import { getEffectDisplayName } from '@utils/combatEffectLabels'
 import { v4 as uuidv4 } from 'uuid'
 import { stripUndefined } from '@utils/firestore/stripUndefined'
@@ -1131,7 +1131,7 @@ export async function POST(
                 actorName: appliedByName || 'GM',
                 targetId: target.id,
                 targetName: target.name,
-                message: `${effect.icon} **${target.name}** ganhou o efeito **${fullName}** (${formulaTxt}${durationTxt})${customTag}.`
+                message: `${effectIconPrefix(effect)}**${target.name}** ganhou o efeito **${fullName}** (${formulaTxt}${durationTxt})${customTag}.`
             }))
 
             // timing='turn' aplica o primeiro tick imediatamente
