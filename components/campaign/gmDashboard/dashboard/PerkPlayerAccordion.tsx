@@ -64,7 +64,7 @@ export default function PerkPlayerAccordion({ player, expanded, onChange }: Perk
                         </Typography>
                     </Box>
                     <Chip 
-                        label={`${player.perks.length} vantagem${player.perks.length !== 1 ? 's' : ''}`}
+                        label={`${player.perks.length} ${player.perks.length === 1 ? 'vantagem' : 'vantagens'}`}
                         size="small"
                         sx={{ 
                             bgcolor: (theme) => alpha(theme.palette.primary.main, 0.14), 

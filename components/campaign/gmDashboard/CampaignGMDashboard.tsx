@@ -8,7 +8,6 @@ import CampaignStatsStrip from './CampaignStatsStrip';
 import DeleteCreatureDialog from './DeleteCreatureDialog';
 import GMCombatPanel from './combatPanel/GMCombatPanel';
 import CustomCreaturesSection from './dashboard/CustomCreaturesSection';
-import PerksSection from './dashboard/PerksSection';
 import PlayersSection from './dashboard/PlayersSection';
 import { useCreatureManager } from './dashboard/useCreatureManager';
 import { useGMDashboardData } from './dashboard/useGMDashboardData';
@@ -36,10 +35,6 @@ export default function CampaignGMDashboard(): ReactElement | null {
 
             {/* Lista de Jogadores */}
             <PlayersSection playerCharsheets={playerCharsheets} pending={isPlayerCharsheetsPending} />
-
-            {/* Seção de Vantagens Adquiridas — visível no Roguelite (sempre) ou
-                em qualquer modo quando algum jogador já recebeu vantagens */}
-            <PerksSection playerCharsheets={playerCharsheets} pending={isPlayerCharsheetsPending} />
 
             {/* Seção de Criaturas Customizadas */}
             <CustomCreaturesSection

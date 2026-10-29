@@ -36,6 +36,7 @@ const actions: CombatantActions = {
     toggleAction: jest.fn(),
     grantActions: jest.fn(),
     openWindow: jest.fn(),
+    toggleSide: jest.fn(),
     rollCreatureExpertise: jest.fn(),
     togglingAction: false,
     dialogs: null

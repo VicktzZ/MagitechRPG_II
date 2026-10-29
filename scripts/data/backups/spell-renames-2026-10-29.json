@@ -1,0 +1,212 @@
+[
+  {
+    "id": "67806103878f9dc617521f18",
+    "name": "Dança das Brisas",
+    "from": "Dança das Brisas",
+    "to": "Corpo de Brisa"
+  },
+  {
+    "id": "68afec438f3889f0ef902333",
+    "name": "Dança das Brasas",
+    "from": "Dança das Brasas",
+    "to": "Rastro de Brasas"
+  },
+  {
+    "id": "67806103878f9dc617521f01",
+    "name": "Tsunami Congelante",
+    "from": "Tsunami Congelante",
+    "to": "Varredura Glacial"
+  },
+  {
+    "id": "67806103878f9dc617521f1e",
+    "name": "Tsunami Aéreo",
+    "from": "Tsunami Aéreo",
+    "to": "Vagalhão de Ar"
+  },
+  {
+    "id": "67806103878f9dc617521f5a",
+    "name": "Tsunami Elétrico",
+    "from": "Tsunami Elétrico",
+    "to": "Enchente Elétrica"
+  },
+  {
+    "id": "67806103878f9dc617521ee7",
+    "name": "Onda",
+    "from": "Onda",
+    "to": "Golpe de Onda"
+  },
+  {
+    "id": "67806103878f9dc617521f5c",
+    "name": "Sobrecarga Neural Massiva",
+    "from": "Sobrecarga Neural Massiva",
+    "to": "Apagão Neural"
+  },
+  {
+    "id": "67806103878f9dc617521f20",
+    "name": "Implosão",
+    "from": "Implosão",
+    "to": "Asfixia Implosiva"
+  },
+  {
+    "id": "68b7c8a851f884cd85067a14",
+    "name": "Implosão de Pressão",
+    "from": "Implosão de Pressão",
+    "to": "Compressão Abissal"
+  },
+  {
+    "id": "68b7c8a851f884cd85067a37",
+    "name": "Implosão de Energia",
+    "from": "Implosão de Energia",
+    "to": "Colapso Energético"
+  },
+  {
+    "id": "67806103878f9dc617521f06",
+    "name": "Voo",
+    "from": "Voo",
+    "to": "Rajada Repulsiva"
+  },
+  {
+    "id": "67806103878f9dc617521ee8",
+    "name": "Bolha",
+    "from": "Bolha",
+    "to": "Bolha Protetora"
+  },
+  {
+    "id": "67806103878f9dc617521f27",
+    "name": "Rocha",
+    "from": "Rocha",
+    "to": "Pedrada Atordoante"
+  },
+  {
+    "id": "67806103878f9dc617521f32",
+    "name": "Espinhos",
+    "from": "Espinhos",
+    "to": "Tríade de Espinhos"
+  },
+  {
+    "id": "67806103878f9dc617521f30",
+    "name": "Frutos",
+    "from": "Frutos",
+    "to": "Árvore Frutífera"
+  },
+  {
+    "id": "67806103878f9dc617521f3a",
+    "name": "Floresta",
+    "from": "Floresta",
+    "to": "Bosque Encantado"
+  },
+  {
+    "id": "67806103878f9dc617521fb3",
+    "name": "Caos",
+    "from": "Caos",
+    "to": "Entropia Selvagem"
+  },
+  {
+    "id": "67806103878f9dc617521f91",
+    "name": "Flash",
+    "from": "Flash",
+    "to": "Lampejo Cegante"
+  },
+  {
+    "id": "67806103878f9dc617521f8d",
+    "name": "Prisma",
+    "from": "Prisma",
+    "to": "Espelho de Luz"
+  },
+  {
+    "id": "67806103878f9dc617521f48",
+    "name": "Condução",
+    "from": "Condução",
+    "to": "Projéteis Eletrizados"
+  },
+  {
+    "id": "67806103878f9dc617521fac",
+    "name": "Imunidade",
+    "from": "Imunidade",
+    "to": "Imunidade a Estados"
+  },
+  {
+    "id": "67806103878f9dc617521fab",
+    "name": "Habilidoso",
+    "from": "Habilidoso",
+    "to": "Impulso de Perícia"
+  },
+  {
+    "id": "67806103878f9dc617521fb6",
+    "name": "Estabilização",
+    "from": "Estabilização",
+    "to": "Golpe Reforçado"
+  },
+  {
+    "id": "67806103878f9dc617521f92",
+    "name": "Aurora",
+    "from": "Aurora",
+    "to": "Aurora Inspiradora"
+  },
+  {
+    "id": "67806103878f9dc617521f6a",
+    "name": "Penumbra",
+    "from": "Penumbra",
+    "to": "Escuridão Conjurada"
+  },
+  {
+    "id": "67806103878f9dc617521ee5",
+    "name": "Chama essencial",
+    "from": "Chama essencial",
+    "to": "Chama Essencial"
+  },
+  {
+    "id": "67806103878f9dc617521ecc",
+    "name": "Consumir em chamas",
+    "from": "Consumir em chamas",
+    "to": "Consumir em Chamas"
+  },
+  {
+    "id": "67806103878f9dc617521fa6",
+    "name": "Aprimorar alcance",
+    "from": "Aprimorar alcance",
+    "to": "Aprimorar Alcance"
+  },
+  {
+    "id": "67806103878f9dc617521f60",
+    "name": "Campo Plasmático",
+    "from": "Campo Plasmático",
+    "to": "Plasma Detonante"
+  },
+  {
+    "id": "seed-rx-sombra-vingativa",
+    "name": "Sombra Vingativa",
+    "from": "Sombra Vingativa",
+    "to": "Retaliação Sombria"
+  },
+  {
+    "id": "67806103878f9dc617521ef6",
+    "name": "Lâmina Congelante",
+    "from": "Lâmina Congelante",
+    "to": "Arma Enregelada"
+  },
+  {
+    "id": "68b7c8a851f884cd85067a21",
+    "name": "Telecinese Aprimorada",
+    "from": "Telecinese Aprimorada",
+    "to": "Arremesso Telecinético"
+  },
+  {
+    "id": "seed-tmp-meia-vida-vital",
+    "name": "Meia-Vida Vital",
+    "from": "Meia-Vida Vital",
+    "to": "Isótopo Revigorante"
+  },
+  {
+    "id": "seed-mp-pacto-carmesim",
+    "name": "Pacto Carmesim",
+    "from": "Pacto Carmesim",
+    "to": "Sangria de Mana"
+  },
+  {
+    "id": "67806103878f9dc617521f59",
+    "name": "Corrente Condutora",
+    "from": "Corrente Condutora",
+    "to": "Raio Saltitante"
+  }
+]

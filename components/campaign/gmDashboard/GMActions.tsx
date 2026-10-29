@@ -49,6 +49,7 @@ import {
     LevelUpDialog,
     RogueliteLevelUpDialog,
     OfferPerksDialog,
+    AcquiredPerksDialog,
     ShopDialog,
     MassActionDialog,
     CombatSetupDialog,
@@ -59,6 +60,7 @@ import {
 } from './actions';
 import CreatureCreator from './CreatureCreator';
 import { buildPlayerInfos } from './playerInfos';
+import { usePlayersWithPerks } from './dashboard/usePlayersWithPerks';
 import CampaignStatsModal from '../CampaignStatsModal';
 import WidgetManagerDialog from '../widget/WidgetManagerDialog';
 import { errorMessage } from '@utils/errors';
@@ -83,6 +85,7 @@ export default function GMActions(): ReactElement {
     const [ addItemModalOpen, setAddItemModalOpen ] = useState(false);
     const [ creatureDialogOpen, setCreatureDialogOpen ] = useState(false);
     const [ offerPerksDialogOpen, setOfferPerksDialogOpen ] = useState(false);
+    const [ acquiredPerksOpen, setAcquiredPerksOpen ] = useState(false);
     const [ shopDialogOpen, setShopDialogOpen ] = useState(false);
     const [ massActionDialogOpen, setMassActionDialogOpen ] = useState(false);
     const [ massActionType, setMassActionType ] = useState<MassActionType | null>(null);
@@ -107,6 +110,9 @@ export default function GMActions(): ReactElement {
         () => buildPlayerInfos(users.players, campaign, realtimeCharsheets),
         [ users.players, campaign, realtimeCharsheets ]
     );
+
+    // Quantos jogadores já receberam vantagens (o número do item "Vantagens adquiridas" do menu)
+    const playersWithPerksCount = usePlayersWithPerks(charsheets).length;
 
     // Menu handlers
     const handleOpenMenu = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -145,6 +151,11 @@ export default function GMActions(): ReactElement {
 
     const openOfferPerks = () => {
         setOfferPerksDialogOpen(true);
+        handleCloseMenu();
+    };
+
+    const openAcquiredPerks = () => {
+        setAcquiredPerksOpen(true);
         handleCloseMenu();
     };
 
@@ -453,6 +464,22 @@ export default function GMActions(): ReactElement {
 
                 <Divider />
 
+                <MenuItem onClick={openAcquiredPerks}>
+                    <ListItemIcon>
+                        <CardGiftcardIcon fontSize="small" />
+                    </ListItemIcon>
+                    <MenuItemText>
+                        Vantagens adquiridas
+                        {playersWithPerksCount > 0 && (
+                            <Chip
+                                label={playersWithPerksCount}
+                                size="small"
+                                sx={{ ml: 1, height: 18, fontSize: 12 }}
+                            />
+                        )}
+                    </MenuItemText>
+                </MenuItem>
+
                 <MenuItem onClick={openStatsModal}>
                     <ListItemIcon>
                         <EmojiEventsIcon fontSize="small" />
@@ -519,6 +546,11 @@ export default function GMActions(): ReactElement {
                 onClose={() => setOfferPerksDialogOpen(false)}
                 players={players}
                 campaignId={campaign.id}
+            />
+
+            <AcquiredPerksDialog
+                open={acquiredPerksOpen}
+                onClose={() => setAcquiredPerksOpen(false)}
             />
 
             <ShopDialog

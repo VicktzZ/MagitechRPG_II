@@ -15,11 +15,11 @@ import type { AbilityChoice, AbilityEffect, PassiveDef, PassiveRule } from './ty
  * Objetos simples no formato do catálogo (não as classes dos modelos): o motor só lê os campos, e assim este módulo roda também em teste de componente, onde os decoradores
  * dos modelos não carregam.
  */
-const snapshotOf = (id: string, name: string, description: string, tint: string, level: CombatEffectLevel): CombatEffect => ({
+const snapshotOf = (id: string, name: string, description: string, tint: string, level: CombatEffectLevel, category: CombatEffect['category'] = 'buff'): CombatEffect => ({
     id,
     name,
     description,
-    category: 'buff',
+    category,
     timing: 'round',
     color: tint,
     icon: '',
@@ -29,9 +29,9 @@ const snapshotOf = (id: string, name: string, description: string, tint: string,
     createdAt: new Date(0).toISOString()
 });
 
-const levelOf = (duration: number, indefinite: boolean, modifiers: CombatEffectModifier[]): CombatEffectLevel => ({
+const levelOf = (duration: number, indefinite: boolean, modifiers: CombatEffectModifier[], formula = '0'): CombatEffectLevel => ({
     level: 1,
-    formula: '0',
+    formula,
     duration,
     ...(indefinite ? { indefinite: true } : {}),
     modifiers
@@ -116,7 +116,9 @@ export function buildAbilityEffect(def: PassiveDef, effect: AbilityEffect, choic
     const amount = Math.max(1, Math.floor(effect.duration.amount ?? 1));
     const name = choice ? choice.label : def.name;
 
-    const snapshot = snapshotOf(`ability:${def.key}${choice ? `:${choice.id}` : ''}`, name, effect.description, color.amber, levelOf(untilEnd ? 0 : amount, untilEnd, effect.modifiers));
+    // O tick do efeito (cura ou dano a cada turno ou rodada) é o do catálogo: a categoria do efeito decide e a fórmula do nível é o dado
+    const level = levelOf(untilEnd ? 0 : amount, untilEnd, effect.modifiers, effect.tick?.dice ?? '0');
+    const snapshot = snapshotOf(`ability:${def.key}${choice ? `:${choice.id}` : ''}`, name, effect.description, color.amber, level, effect.tick?.kind ?? 'buff');
     snapshot.timing = effect.duration.unit === 'turnos' ? 'turn' : 'round';
 
     return {

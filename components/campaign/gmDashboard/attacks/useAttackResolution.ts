@@ -161,8 +161,8 @@ export function useAttackResolution(attack: PendingAttackData): AttackResolution
         const skill = defense === 'dodge' ? DODGE_EXPERTISE : proposal.resistanceSkill;
         if (defense === 'none') return;
 
-        // A esquiva do alvo leva as vantagens e desvantagens de esquiva dos efeitos aplicados a ele; a resistência não tem alvo próprio no catálogo
-        const effects = defense === 'dodge' ? effectDice(targetCombatant?.effects, 'dodge') : undefined;
+        // A esquiva do alvo leva as vantagens e desvantagens de esquiva dos efeitos aplicados a ele, e a resistência as de resistência
+        const effects = effectDice(targetCombatant?.effects, defense === 'dodge' ? 'dodge' : 'resistance');
 
         if (creature) {
             const result = rollCreatureExpertise(creature, skill, undefined, effects);

@@ -5,6 +5,7 @@ import type { Combatant, Creature, Expertise } from '@models';
 import { campaignService } from '@services';
 import type { MpLimitView } from '@utils/combat/combatPanel';
 import type { ActionSlot } from '@utils/combat/engine/actionBudget';
+import { combatantSide, oppositeSide, SIDE_LABEL } from '@utils/combat/sides';
 import { errorMessage } from '@utils/errors';
 import { useSnackbar } from 'notistack';
 import { useCallback, type ReactNode } from 'react';
@@ -28,6 +29,8 @@ export interface CombatantActions {
     /** Abre o diálogo para dar ou tirar ações (Padrão, Bônus, Movimento) do combatente */
     grantActions: (combatant: Combatant) => void;
     openWindow: (combatant: Combatant) => void;
+    /** Troca o lado do combatente (aliado ↔ inimigo): auras, curas em grupo e áreas usam o lado */
+    toggleSide: (combatant: Combatant) => Promise<void>;
     /** A rolagem de perícia da criatura (a regra da criatura, não a da ficha) */
     rollCreatureExpertise: (name: string, expertise: Expertise, creature: Creature, combatant: Combatant) => Promise<void>;
     /** Esperando o servidor ao gastar ou devolver uma ação */
@@ -80,6 +83,16 @@ export function useCombatantActions(onDamageHeal: (type: DamageHealKind, targetI
         }
     }, [ campaignId, enqueueSnackbar ]);
 
+    const toggleSide = useCallback(async (combatant: Combatant): Promise<void> => {
+        const side = oppositeSide(combatantSide(combatant));
+        try {
+            await campaignService.setSide(campaignId, { combatantIds: [ combatant.id ], side });
+            enqueueSnackbar(`${combatant.name} agora é ${SIDE_LABEL[side].toLowerCase()}`, { variant: 'success' });
+        } catch (error) {
+            enqueueSnackbar(errorMessage(error, 'Erro ao mudar o lado'), { variant: 'error' });
+        }
+    }, [ campaignId, enqueueSnackbar ]);
+
     return {
         applyEffect: (combatant) => { openEffectFor({ id: combatant.id, name: combatant.name }); },
         damageHeal: (type, combatant) => { onDamageHeal(type, combatant.id); },
@@ -91,6 +104,7 @@ export function useCombatantActions(onDamageHeal: (type: DamageHealKind, targetI
         grantActions: openGrantActions,
         // Jogador em combate abre a janela de combatente (id da ficha); criatura, a do combatente dela
         openWindow: (combatant) => { openWindow('combatant', combatant.id); },
+        toggleSide,
         rollCreatureExpertise: async (name, expertise, creature, combatant) => { await rollExpertise(name, expertise, creature, combatant); },
         togglingAction,
         dialogs: <>{effectDialog}{setMpSpentDialog}{grantActionsDialog}</>

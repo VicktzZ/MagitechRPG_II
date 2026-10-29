@@ -44,7 +44,7 @@ export const MANA_RECOVERY_SPELLS: SeedSpell[] = [
         name: 'Dança do Vento',
         level: 1,
         mpCost: 1,
-        type: 'Recuperação (imediato)',
+        type: 'Recuperação (imediato/Área)',
         execution: 'Reação',
         range: 'Curto',
         stages: [
@@ -138,7 +138,7 @@ export const MANA_RECOVERY_SPELLS: SeedSpell[] = [
         name: 'Maré Cheia',
         level: 2,
         mpCost: 4,
-        type: 'Recuperação (contínuo)',
+        type: 'Recuperação (contínuo/Área)',
         execution: 'Padrão',
         range: 'Médio',
         stages: [
@@ -198,7 +198,7 @@ export const MANA_RECOVERY_SPELLS: SeedSpell[] = [
         name: 'Sombra Glutona',
         level: 2,
         mpCost: 4,
-        type: 'Controle/Recuperação (contínuo)',
+        type: 'Controle/Recuperação (contínuo/Área)',
         execution: 'Padrão',
         range: 'Médio',
         stages: [
@@ -217,7 +217,7 @@ export const MANA_RECOVERY_SPELLS: SeedSpell[] = [
         name: 'Núcleo Geotérmico',
         level: 3,
         mpCost: 6,
-        type: 'Recuperação (contínuo)',
+        type: 'Recuperação (contínuo/Área)',
         execution: 'Padrão',
         range: 'Médio',
         stages: [
@@ -244,7 +244,7 @@ export const MANA_RECOVERY_SPELLS: SeedSpell[] = [
     {
         id: 'seed-mp-pacto-carmesim',
         element: 'SANGUE',
-        name: 'Pacto Carmesim',
+        name: 'Sangria de Mana',
         level: 3,
         mpCost: 6,
         type: 'Recuperação (contínuo)',
@@ -262,7 +262,7 @@ export const MANA_RECOVERY_SPELLS: SeedSpell[] = [
         name: 'Aurora Restauradora',
         level: 3,
         mpCost: 7,
-        type: 'Recuperação (imediato)',
+        type: 'Recuperação (imediato/Área)',
         execution: 'Padrão',
         range: 'Médio',
         stages: [
@@ -311,7 +311,7 @@ export const MANA_RECOVERY_SPELLS: SeedSpell[] = [
         name: 'Fenda Devoradora',
         level: 4,
         mpCost: 10,
-        type: 'Anulação/Recuperação (imediato)',
+        type: 'Controle/Recuperação (imediato)',
         execution: 'Reação',
         range: 'Médio',
         stages: [
@@ -326,7 +326,7 @@ export const MANA_RECOVERY_SPELLS: SeedSpell[] = [
         name: 'Decaimento Benigno',
         level: 4,
         mpCost: 10,
-        type: 'Encantamento/Recuperação (contínuo)',
+        type: 'Encantamento/Recuperação (contínuo/Área)',
         execution: 'Padrão',
         range: 'Longo',
         stages: [
@@ -341,7 +341,7 @@ export const MANA_RECOVERY_SPELLS: SeedSpell[] = [
         name: 'Detonação Capacitora',
         level: 4,
         mpCost: 11,
-        type: 'Ataque/Recuperação (imediato)',
+        type: 'Ataque/Recuperação (imediato/Área)',
         execution: 'Completa',
         range: 'Longo',
         stages: [
@@ -356,7 +356,7 @@ export const MANA_RECOVERY_SPELLS: SeedSpell[] = [
         name: 'Convergência Zepta',
         level: 4,
         mpCost: 12,
-        type: 'Recuperação (contínuo)',
+        type: 'Recuperação (contínuo/Área)',
         execution: 'Padrão',
         range: 'Longo',
         stages: [

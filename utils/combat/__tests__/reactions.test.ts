@@ -140,7 +140,7 @@ describe('magias de Reação que combinam com o gatilho', () => {
     const triggersOf = (name: string) => reactionTriggersOf(byName(name));
 
     it('lê o gatilho de cada magia do lote de reações', () => {
-        expect(triggersOf('Sombra Vingativa')).toEqual([ 'miss' ]);
+        expect(triggersOf('Retaliação Sombria')).toEqual([ 'miss' ]);
         expect(triggersOf('Couraça Adaptativa')).toEqual([ 'critical' ]);
         expect(triggersOf('Último Suspiro')).toEqual([ 'downed' ]);
         expect(triggersOf('Recusa Derradeira')).toEqual([ 'downed' ]);
@@ -176,7 +176,7 @@ describe('magias de Reação que combinam com o gatilho', () => {
     });
 
     it('o jogador só vê a oferta em que há o que fazer (magia que combina, ou gatilho livre do mestre)', () => {
-        const spells = [ byName('Sombra Vingativa'), byName('Meia-Vida') ];
+        const spells = [ byName('Retaliação Sombria'), byName('Meia-Vida') ];
         const list = [
             offer({ id: 'm', trigger: 'miss', reactorId: 'cs-bia' }),
             offer({ id: 'c', trigger: 'critical', reactorId: 'cs-bia' }),
@@ -186,7 +186,7 @@ describe('magias de Reação que combinam com o gatilho', () => {
 
         const entries = reactionEntriesFor(list, 'cs-bia', spells);
         expect(entries.map(entry => entry.offer.id)).toEqual([ 'm', 'o' ]);
-        expect(entries[0]?.spells.map(spell => spell.name)).toEqual([ 'Sombra Vingativa' ]);
+        expect(entries[0]?.spells.map(spell => spell.name)).toEqual([ 'Retaliação Sombria' ]);
         expect(entries[1]?.spells).toHaveLength(2);
         expect(reactionEntriesFor(list, 'cs-bia', [])).toHaveLength(1);
     });

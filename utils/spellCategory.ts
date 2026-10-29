@@ -11,6 +11,10 @@
  *  - "(Reação)" no `type` de duas magias: Reação é uma EXECUÇÃO (campo `execution`), não um
  *    subtipo, então esse texto é ignorado aqui e o filtro "Execução" é que lista as reações.
  *
+ * Categorias e subtipos **removidos** (decisão do dono, 29/10/2026): Buff virou Suporte; Debuff, Ilusão e Anulação viraram Controle; os subtipos Sacrifício, Multiplicador, Condicional e
+ * Adjacente deixaram de existir. O catálogo foi migrado (`scripts/migrateSpellTypes.ts`), e aqui o texto antigo (magia criada à mão, cópia velha) também é tratado:
+ * a categoria removida vira a nova e o subtipo removido some, então o filtro nunca os oferece.
+ *
  * "Recuperação" é a categoria das magias que devolvem MP (ao conjurador ou a aliados). Quando a
  * magia só faz isso, o `type` é "Recuperação (subtipo)"; quando recuperar MP é um efeito além de
  * outro (dano, cura, defesa...), a categoria é somada: "Ataque/Recuperação (imediato)". Em qualquer
@@ -19,16 +23,12 @@
 
 /** Categorias conhecidas do catálogo. Categorias novas aparecem no filtro conforme são carregadas. */
 export const SPELL_CATEGORIES = [
-    'Anulação',
     'Ataque',
-    'Buff',
     'Controle',
     'Cura',
-    'Debuff',
     'Defesa',
     'Drenagem',
     'Encantamento',
-    'Ilusão',
     'Mentalização',
     'Movimento',
     'Recuperação',
@@ -55,6 +55,17 @@ const FALLBACK_CATEGORY = 'Outro';
 
 const normalizeKey = (value: string): string =>
     value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+
+/** Categorias que deixaram de existir e a que cada uma virou (chave sem acento nem caixa): Buff → Suporte; Debuff, Ilusão e Anulação → Controle */
+export const REMOVED_CATEGORY_REPLACEMENT: Readonly<Record<string, string>> = {
+    buff: 'Suporte',
+    debuff: 'Controle',
+    ilusao: 'Controle',
+    anulacao: 'Controle'
+};
+
+/** Subtipos que deixaram de existir (chave sem acento nem caixa): o texto antigo de uma magia que ainda os tenha é ignorado */
+export const REMOVED_SUBTYPES: readonly string[] = [ 'sacrificio', 'sacrificial', 'multiplicador', 'condicional', 'adjacente' ];
 
 /** Forma canônica das categorias conhecidas, indexada pela chave sem acento/caixa ("recuperacao" → "Recuperação") */
 const CATEGORY_ALIASES: Record<string, string> = Object.fromEntries(
@@ -99,7 +110,7 @@ export function getSpellCategories(type?: string | null): string[] {
         .split('/')
         .map(part => part.trim())
         .filter(Boolean)
-        .map(part => CATEGORY_ALIASES[normalizeKey(part)] ?? capitalize(part));
+        .map(part => REMOVED_CATEGORY_REPLACEMENT[normalizeKey(part)] ?? CATEGORY_ALIASES[normalizeKey(part)] ?? capitalize(part));
 
     return categories.length > 0 ? unique(categories) : [ FALLBACK_CATEGORY ];
 }
@@ -115,7 +126,7 @@ export function getSpellSubtypes(type?: string | null): string[] {
     const subtypes = getSubtypeText(type)
         .split(/[/,]/)
         .map(part => part.trim())
-        .filter(part => Boolean(part) && normalizeKey(part) !== 'reacao')
+        .filter(part => Boolean(part) && normalizeKey(part) !== 'reacao' && !REMOVED_SUBTYPES.includes(normalizeKey(part)))
         .map(part => SUBTYPE_ALIASES[normalizeKey(part)] ?? capitalize(part));
 
     return unique(subtypes);
@@ -168,5 +179,21 @@ export const SPELL_EXECUTION_FILTER = {
     options: SPELL_EXECUTIONS
 };
 
-/** Menus de filtro das listas de magias, na ordem em que aparecem: Tipo (com Subtipo) e Execução */
-export const SPELL_FILTERS = [ SPELL_TYPE_FILTER, SPELL_EXECUTION_FILTER ];
+/** Níveis das magias, na ordem do filtro "Nível" */
+export const SPELL_LEVELS = [ '1', '2', '3', '4' ];
+
+/** O nível da magia como texto do filtro ("3"); sem nível válido a magia não entra em nenhuma opção */
+export function getSpellLevel(level?: number | string | null): string[] {
+    const value = Math.trunc(Number(level));
+    return Number.isFinite(value) && value > 0 ? [ String(value) ] : [];
+}
+
+/** Configuração do menu "Nível" para listas de magias: só as de nível 1, só as de nível 2... (várias opções: OU entre elas) */
+export const SPELL_LEVEL_FILTER = {
+    label: 'Nível',
+    getValue: (spell: { level?: number | string | null }) => getSpellLevel(spell.level),
+    options: SPELL_LEVELS
+};
+
+/** Menus de filtro das listas de magias, na ordem em que aparecem: Tipo (com Subtipo), Execução e Nível */
+export const SPELL_FILTERS = [ SPELL_TYPE_FILTER, SPELL_EXECUTION_FILTER, SPELL_LEVEL_FILTER ];

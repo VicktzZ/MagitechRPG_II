@@ -3,7 +3,7 @@
 > Arquivo gerado por `scripts/generatePassivesDoc.ts` a partir de `utils/combat/passives/catalog.ts`. Não edite à mão.
 
 Total: **120** habilidades (48 de classe e 72 de subclasse).
-**25** automáticas · **11** ativadas · **84** só texto.
+**25** automáticas · **13** ativadas · **82** só texto.
 
 - **Automática**: vale sozinha (dano a mais, custo de MP, AP, resistência, iniciativa, regeneração...), sem o jogador acionar.
 - **Ativada**: o jogador aciona pela seção Ações (quadrado da habilidade): o app confere MP e usos, gasta a ação (aviso, nunca trava), cura ou põe o efeito sobre o personagem.
@@ -117,7 +117,7 @@ A coluna "Fora do automático" lista o que da descrição o app **não** faz soz
 | --- | --- | --- | --- |
 | Liderar | Só texto |  |  |
 | Postura Defensiva | Ativada | Bônus · 5 MP · 3 de 3 por dia | Os aliados a 6m recebem o mesmo efeito pelo mestre; +3 de Agilidade e −1d8 nos seus ataques são na mão; a ação gasta é premissa minha. |
-| Chamado à Glória | Só texto |  |  |
+| Chamado à Glória | Ativada | Padrão · 12 MP · 3 de 3 por dia · 1 de 1 por combate | Os aliados são os que você marca (o app não mede os 15m); o +2 nas resistências e os +1d4 MP por turno são na mão; a cura vem no começo do turno de cada um; a ação é premissa minha. |
 
 ### Aniquilador
 
@@ -219,7 +219,7 @@ A coluna "Fora do automático" lista o que da descrição o app **não** faz soz
 
 | Habilidade | Modo | Ativação | Fora do automático |
 | --- | --- | --- | --- |
-| Maldição Debilitante | Só texto |  |  |
+| Maldição Debilitante | Ativada | Padrão · 8 MP | O alvo precisa estar visível (é do mestre); só uma criatura de cada vez (o app tira a maldição do alvo anterior). |
 | Vínculo Doloroso | Só texto |  |  |
 | Ceifar a Essência | Só texto |  |  |
 

@@ -4,9 +4,14 @@ import {
     getSpellCategory,
     getSpellExecution,
     getSpellSubtypes,
+    getSpellLevel,
+    REMOVED_CATEGORY_REPLACEMENT,
+    REMOVED_SUBTYPES,
     SPELL_CATEGORIES,
     SPELL_EXECUTION_FILTER,
     SPELL_FILTERS,
+    SPELL_LEVEL_FILTER,
+    SPELL_LEVELS,
     SPELL_SUBTYPES,
     SPELL_TYPE_FILTER
 } from '../spellCategory'
@@ -60,7 +65,8 @@ describe('getSpellSubtypes — variações reais do catálogo', () => {
     it('combinações viram vários subtipos', () => {
         expect(getSpellSubtypes('Cura (Conjurado, Contínuo)')).toEqual([ 'Conjurado', 'Contínuo' ])
         expect(getSpellSubtypes('Ataque (Imediato/Área)')).toEqual([ 'Imediato', 'Área' ])
-        expect(getSpellSubtypes('Ataque (Área/Sacrifício)')).toEqual([ 'Área', 'Sacrifício' ])
+        expect(getSpellSubtypes('Ataque (imediato/Área)')).toEqual([ 'Imediato', 'Área' ])
+        expect(getSpellSubtypes('Ataque (imediato/Invocação)')).toEqual([ 'Imediato', 'Invocação' ])
     })
 
     it('ignora o texto que sobra depois do parêntese', () => {
@@ -123,7 +129,8 @@ describe('filtro Execução combinado com Tipo e Subtipo', () => {
         { name: 'Ataque minúsculo', type: 'Ataque (conjurado)', execution: 'padrão' },
         { name: 'Ataque completo', type: 'Ataque (imediato)', execution: 'Completa' }
     ]
-    const [ typeMenu, executionMenu ] = SPELL_FILTERS
+    const typeMenu = SPELL_TYPE_FILTER
+    const executionMenu = SPELL_EXECUTION_FILTER
     const apply = (types: string[], subtypes: string[], executions: string[]) => filterBySelections(spells, [
         { getValue: typeMenu.getValue, selected: types },
         { getValue: SPELL_TYPE_FILTER.subFilter.getValue, selected: subtypes },
@@ -212,7 +219,7 @@ describe('categoria Recuperação (magias que devolvem MP)', () => {
         expect(getSpellCategories('recuperacao (imediato)')).toEqual([ 'Recuperação' ])
         expect(getSpellCategories('RECUPERAÇÃO (imediato)')).toEqual([ 'Recuperação' ])
         expect(getSpellCategories('ataque/Recuperacao (imediato)')).toEqual([ 'Ataque', 'Recuperação' ])
-        expect(getSpellCategories('ilusao (contínuo)')).toEqual([ 'Ilusão' ])
+        expect(getSpellCategories('suporte (contínuo)')).toEqual([ 'Suporte' ])
     })
 
     it('categoria desconhecida continua só com a inicial maiúscula', () => {
@@ -249,6 +256,137 @@ describe('categoria Recuperação (magias que devolvem MP)', () => {
 
         it('Recuperação ou Ataque: OU entre as categorias', () => {
             expect(apply([ 'Recuperação', 'Ataque' ])).toEqual([ 'Só recupera', 'Ataque que recupera', 'Cura que recupera', 'Ataque comum' ])
+        })
+    })
+})
+
+describe('categorias removidas: Buff, Debuff, Ilusão e Anulação', () => {
+    it('não estão mais na lista do filtro Tipo', () => {
+        for (const removed of [ 'Buff', 'Debuff', 'Ilusão', 'Anulação' ]) {
+            expect(SPELL_CATEGORIES).not.toContain(removed)
+            expect(SPELL_TYPE_FILTER.options).not.toContain(removed)
+        }
+        expect(SPELL_CATEGORIES).toEqual(expect.arrayContaining([ 'Suporte', 'Controle', 'Utilidade', 'Movimento' ]))
+    })
+
+    it('o texto antigo vale como a categoria nova: Buff → Suporte; Debuff, Ilusão e Anulação → Controle', () => {
+        expect(getSpellCategories('Buff (contínuo)')).toEqual([ 'Suporte' ])
+        expect(getSpellCategories('debuff (imediato)')).toEqual([ 'Controle' ])
+        expect(getSpellCategories('Ilusão (contínuo)')).toEqual([ 'Controle' ])
+        expect(getSpellCategories('ilusao (contínuo)')).toEqual([ 'Controle' ])
+        expect(getSpellCategories('Anulação (imediato)')).toEqual([ 'Controle' ])
+        expect(getSpellCategories('ANULACAO (Reação)')).toEqual([ 'Controle' ])
+        expect(REMOVED_CATEGORY_REPLACEMENT).toEqual({ buff: 'Suporte', debuff: 'Controle', ilusao: 'Controle', anulacao: 'Controle' })
+    })
+
+    it('combinações não repetem a categoria: Controle/Debuff → Controle; Suporte/Buff → Suporte', () => {
+        expect(getSpellCategories('Controle/Debuff (imediato)')).toEqual([ 'Controle' ])
+        expect(getSpellCategories('Suporte/Buff (contínuo)')).toEqual([ 'Suporte' ])
+        expect(getSpellCategories('Ataque/Debuff (imediato)')).toEqual([ 'Ataque', 'Controle' ])
+    })
+
+    it('o filtro "Controle" encontra o que era Debuff, Ilusão e Anulação, e "Suporte" o que era Buff', () => {
+        const spells = [
+            { name: 'A', type: 'Debuff (imediato)' },
+            { name: 'B', type: 'Ilusão (contínuo)' },
+            { name: 'C', type: 'Anulação (imediato)' },
+            { name: 'D', type: 'Buff (contínuo)' },
+            { name: 'E', type: 'Controle (imediato)' },
+            { name: 'F', type: 'Ataque (imediato)' }
+        ]
+        const apply = (types: string[]) => filterBySelections(spells, [ { getValue: SPELL_TYPE_FILTER.getValue, selected: types } ]).map(spell => spell.name)
+
+        expect(apply([ 'Controle' ])).toEqual([ 'A', 'B', 'C', 'E' ])
+        expect(apply([ 'Suporte' ])).toEqual([ 'D' ])
+        expect(apply([ 'Buff' ])).toEqual([])
+    })
+})
+
+describe('subtipos removidos: Sacrifício, Multiplicador, Condicional e Adjacente', () => {
+    it.each([
+        [ 'Ataque (Sacrifício)' ],
+        [ 'Ataque (sacrificial)' ],
+        [ 'Ataque (Multiplicador)' ],
+        [ 'Controle (condicional)' ],
+        [ 'Defesa (Adjacente)' ]
+    ])('%s não tem subtipo', (type) => {
+        expect(getSpellSubtypes(type)).toEqual([])
+    })
+
+    it('some do meio de uma combinação e o resto fica', () => {
+        expect(getSpellSubtypes('Ataque (Área/Sacrifício)')).toEqual([ 'Área' ])
+        expect(getSpellSubtypes('Controle (imediato/Condicional)')).toEqual([ 'Imediato' ])
+        expect(getSpellSubtypes('Ataque (Conjurado, Multiplicador, Contínuo)')).toEqual([ 'Conjurado', 'Contínuo' ])
+        expect(REMOVED_SUBTYPES).toEqual([ 'sacrificio', 'sacrificial', 'multiplicador', 'condicional', 'adjacente' ])
+    })
+
+    it('o filtro Subtipo oferece só os subtipos vigentes, sem depender do que foi carregado', () => {
+        expect(SPELL_SUBTYPES).toEqual([ 'Imediato', 'Conjurado', 'Contínuo', 'Sustentado', 'Área', 'Completo', 'Invocação' ])
+        expect(SPELL_TYPE_FILTER.subFilter.options).toEqual(SPELL_SUBTYPES)
+    })
+})
+
+describe('filtro Nível', () => {
+    it('as opções são os níveis 1 a 4 e o rótulo é "Nível"', () => {
+        expect(SPELL_LEVELS).toEqual([ '1', '2', '3', '4' ])
+        expect(SPELL_LEVEL_FILTER.label).toBe('Nível')
+        expect(SPELL_LEVEL_FILTER.options).toEqual(SPELL_LEVELS)
+    })
+
+    it.each([
+        [ 3, [ '3' ] ],
+        [ '2', [ '2' ] ],
+        [ 1.9, [ '1' ] ],
+        [ 0, [] ],
+        [ -1, [] ],
+        [ 'abc', [] ],
+        [ undefined, [] ],
+        [ null, [] ]
+    ])('getSpellLevel(%p)', (level, expected) => {
+        expect(getSpellLevel(level)).toEqual(expected)
+    })
+
+    it('está nos menus de filtro das listas de magias, depois de Tipo e Execução', () => {
+        expect(SPELL_FILTERS.map(menu => menu.label)).toEqual([ 'Tipo', 'Execução', 'Nível' ])
+    })
+
+    describe('combinado com os outros filtros', () => {
+        const spells = [
+            { name: 'N1 Ataque', type: 'Ataque (imediato)', level: 1, execution: 'Padrão' },
+            { name: 'N1 Defesa', type: 'Defesa (contínuo)', level: '1', execution: 'Reação' },
+            { name: 'N2 Ataque', type: 'Ataque (conjurado)', level: 2, execution: 'Padrão' },
+            { name: 'N3 Cura', type: 'Cura (imediato)', level: 3, execution: 'Completa' },
+            { name: 'N4 Ataque', type: 'Ataque (imediato)', level: 4, execution: 'Padrão' },
+            { name: 'Sem nível', type: 'Ataque (imediato)', execution: 'Padrão' }
+        ]
+        const apply = (levels: string[], types: string[] = [], executions: string[] = []) => filterBySelections(spells, [
+            { getValue: SPELL_TYPE_FILTER.getValue, selected: types },
+            { getValue: SPELL_EXECUTION_FILTER.getValue, selected: executions },
+            { getValue: SPELL_LEVEL_FILTER.getValue, selected: levels }
+        ]).map(spell => spell.name)
+
+        it('só nível 1 lista só as de nível 1 (número ou texto)', () => {
+            expect(apply([ '1' ])).toEqual([ 'N1 Ataque', 'N1 Defesa' ])
+        })
+
+        it('só nível 2, só nível 3, só nível 4', () => {
+            expect(apply([ '2' ])).toEqual([ 'N2 Ataque' ])
+            expect(apply([ '3' ])).toEqual([ 'N3 Cura' ])
+            expect(apply([ '4' ])).toEqual([ 'N4 Ataque' ])
+        })
+
+        it('vários níveis: OU entre eles', () => {
+            expect(apply([ '1', '4' ])).toEqual([ 'N1 Ataque', 'N1 Defesa', 'N4 Ataque' ])
+        })
+
+        it('com Tipo e Execução: precisa passar por todos', () => {
+            expect(apply([ '1' ], [ 'Ataque' ])).toEqual([ 'N1 Ataque' ])
+            expect(apply([ '1', '2', '4' ], [ 'Ataque' ], [ 'Padrão' ])).toEqual([ 'N1 Ataque', 'N2 Ataque', 'N4 Ataque' ])
+            expect(apply([ '3' ], [ 'Ataque' ])).toEqual([])
+        })
+
+        it('sem nível marcado não filtra (a magia sem nível continua aparecendo)', () => {
+            expect(apply([])).toHaveLength(6)
         })
     })
 })

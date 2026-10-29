@@ -27,6 +27,7 @@ import {
 import { findAwaitingDamage } from '@utils/combat/pendingAttacks';
 import { normalizeToArray } from '@utils/normalizeToArray';
 import { abilityCost, describeLimits, exhaustedLimit, limitStatuses, readAbilityDayUses, type PassiveDef } from '@utils/combat/passives';
+import { areaCandidates, combatantSide, defaultAreaSelection } from '@utils/combat/sides';
 import { getSpellProgress, spellStageLabel } from '@utils/spellStages';
 import { useEffect, useMemo, useState, type MouseEvent as ReactMouseEvent, type ReactElement } from 'react';
 import AttackTargetPicker from '../attacks/AttackTargetPicker';
@@ -35,6 +36,7 @@ import { useWeaponRolls } from '../inventory/useWeaponRolls';
 import { usePassives } from '../passives/usePassives';
 import { useSpellCasting } from '../spells/SpellCastingContext';
 import ActionTileButton, { type TileState } from './ActionTileButton';
+import AreaTargetDialog from './AreaTargetDialog';
 import { useAbilityUse } from './useAbilityUse';
 import { useItemUse } from './useItemUse';
 
@@ -57,6 +59,8 @@ export default function ActionsSection(): ReactElement | null {
     const [ filter, setFilter ] = useState<TileExecution | null>(null);
     const [ stageMenu, setStageMenu ] = useState<{ anchor: HTMLElement; spell: SpellDTO } | null>(null);
     const [ abilityMenu, setAbilityMenu ] = useState<{ anchor: HTMLElement; ability: PassiveDef } | null>(null);
+    // Habilidade de área à espera de "quem foi atingido?" (e a variação já escolhida, se ela tem)
+    const [ areaPick, setAreaPick ] = useState<{ ability: PassiveDef; choiceId?: string } | null>(null);
 
     // "Ver magias de Reação" (oferta de reação no card de combate): liga o filtro Reação e leva até aqui
     useEffect(() => {
@@ -161,11 +165,17 @@ export default function ActionsSection(): ReactElement | null {
         void casting.castSpell(spell, 1);
     };
 
+    /** Habilidade de área: abre "quem foi atingido?" antes de usar; as outras vão direto */
+    const startAbility = (ability: PassiveDef, choiceId?: string): void => {
+        if (ability.activation?.area) setAreaPick({ ability, ...(choiceId ? { choiceId } : {}) });
+        else void activateAbility(ability, choiceId);
+    };
+
     const activate = (tile: ActionTile, event: ReactMouseEvent<HTMLElement>): void => {
         if (tile.kind === 'ability') {
-            // Com variações (Postura Bestial) o jogador escolhe qual; senão usa direto
+            // Com variações (Postura Bestial) o jogador escolhe qual; senão usa direto, ou antes marca quem a área atinge
             if (tile.ability.activation?.choices?.length) setAbilityMenu({ anchor: event.currentTarget, ability: tile.ability });
-            else void activateAbility(tile.ability);
+            else startAbility(tile.ability);
             return;
         }
         if (tile.kind === 'weapon') void handleWeaponHit(tile.weapon, event);
@@ -301,13 +311,33 @@ export default function ActionsSection(): ReactElement | null {
                         onClick={() => {
                             const { ability } = abilityMenu;
                             setAbilityMenu(null);
-                            void activateAbility(ability, choice.id);
+                            startAbility(ability, choice.id);
                         }}
                     >
                         {choice.label}
                     </MenuItem>
                 ))}
             </Menu>
+
+            {areaPick?.ability.activation?.area && me && (() => {
+                const spec = areaPick.ability.activation.area;
+                const candidates = areaCandidates(combat.combatants, me.id, spec).map(candidate => ({ id: candidate.id, name: candidate.name, side: combatantSide(candidate), self: candidate.id === me.id }));
+                return (
+                    <AreaTargetDialog
+                        open
+                        abilityName={areaPick.ability.name}
+                        spec={spec}
+                        candidates={candidates}
+                        defaultSelected={defaultAreaSelection(combat.combatants, me.id, spec)}
+                        onClose={() => { setAreaPick(null); }}
+                        onConfirm={(ids) => {
+                            const { ability, choiceId } = areaPick;
+                            setAreaPick(null);
+                            void activateAbility(ability, choiceId, ids);
+                        }}
+                    />
+                );
+            })()}
 
             <Menu anchorEl={stageMenu?.anchor} open={Boolean(stageMenu)} onClose={() => { setStageMenu(null); }}>
                 {stageMenu && getSpellProgress(stageMenu.spell, charsheet, { enabled: casting.stageRule }).stages
