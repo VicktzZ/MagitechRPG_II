@@ -1,11 +1,14 @@
 'use client';
 
 import { useCampaignContext } from '@contexts';
-import { Add, Close, DirectionsRun, VisibilityOff } from '@mui/icons-material';
+import { Add, Bolt, Close, DirectionsRun, VisibilityOff } from '@mui/icons-material';
 import { Button, Stack, Typography } from '@mui/material';
 import { useState, type ReactElement } from 'react';
 import LeaveReachDialog from '../../opportunity/LeaveReachDialog';
 import { useLeaveReach } from '../../opportunity/useLeaveReach';
+import OpenReactionDialog from '../../reaction/OpenReactionDialog';
+import ReactionsList from '../../reaction/ReactionsList';
+import { useReactions } from '../../reaction/useReactions';
 import Section from '../../Section';
 import HideDialog from './HideDialog';
 import ManualAttackForm from './ManualAttackForm';
@@ -23,6 +26,8 @@ export default function PendingAttacksPanel(): ReactElement | null {
     const [ manualOpen, setManualOpen ] = useState(false);
     const [ leaveOpen, setLeaveOpen ] = useState(false);
     const [ hideOpen, setHideOpen ] = useState(false);
+    const [ reactionOpen, setReactionOpen ] = useState(false);
+    const reactions = useReactions();
     const { busy, declare } = useLeaveReach();
     const awareness = useAwareness();
     const combat = campaign.session?.combat;
@@ -44,6 +49,15 @@ export default function PendingAttacksPanel(): ReactElement | null {
                         sx={{ textTransform: 'none' }}
                     >
                         Furtividade
+                    </Button>
+                    <Button
+                        size="small"
+                        variant="outlined"
+                        startIcon={<Bolt fontSize="small" />}
+                        onClick={() => { setReactionOpen(true); }}
+                        sx={{ textTransform: 'none' }}
+                    >
+                        Abrir reação
                     </Button>
                     <Button
                         size="small"
@@ -81,8 +95,16 @@ export default function PendingAttacksPanel(): ReactElement | null {
                     busy={awareness.busy}
                     onConfirm={(hiderId, observerIds, cause) => { void awareness.hide(hiderId, observerIds, cause).then(done => { if (done) setHideOpen(false); }); }}
                 />
+                <OpenReactionDialog
+                    open={reactionOpen}
+                    onClose={() => { setReactionOpen(false); }}
+                    combatants={combat.combatants ?? []}
+                    busy={reactions.busy}
+                    onOpen={(input) => { void reactions.open(input).then(done => { if (done) setReactionOpen(false); }); }}
+                />
                 <UnseenList />
                 <OpportunitiesList />
+                <ReactionsList />
                 {manualOpen && <ManualAttackForm onDone={() => { setManualOpen(false); }} />}
                 {pending.length === 0 && !manualOpen && (
                     <Typography variant="body2" color="text.secondary">

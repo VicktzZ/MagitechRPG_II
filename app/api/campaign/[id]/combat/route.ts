@@ -16,6 +16,9 @@ import { evaluateMpSpend, getCreatureMpLimit, getMpLimit, isCreatureMpLimitEnfor
 import { combatantVitals } from '@utils/combatantVitals'
 import { insertCombatant, nextCreatureInstance } from '@utils/combat/addCombatants'
 import {
+    addReactions, closeReactionsOf, dropReactionsFor, planOpenReaction, reactionsAfterAttack, removeReaction, sanitizeReactionReactorIds, sanitizeReactionText, sanitizeTrigger
+} from '@utils/combat/reactions'
+import {
     LIGHT_LABEL, LIGHT_RULE, defaultEnvironment, dropTerrainFor, readEnvironment, sanitizeLight, sanitizeTerrainIds, setTerrain
 } from '@utils/combat/environment'
 import {
@@ -42,7 +45,7 @@ import { undoCombatEvent } from '@utils/firestore/combatUndo'
 /** Ações que conduzem o combate — exclusivas do mestre */
 const GM_ONLY_ACTIONS: CombatAction[] = [
     'start', 'end', 'set_initiative', 'add_creature', 'add_combatants', 'remove_combatant', 'apply_effect', 'remove_effect',
-    'set_mp_limit_override', 'reset_mp_limit', 'set_mp_spent', 'set_actions', 'undo', 'resolve_attack', 'set_unseen', 'reveal_unseen', 'set_light', 'set_terrain'
+    'set_mp_limit_override', 'reset_mp_limit', 'set_mp_spent', 'set_actions', 'undo', 'resolve_attack', 'set_unseen', 'reveal_unseen', 'set_light', 'set_terrain', 'open_reaction'
 ]
 
 /** Ações que entram no histórico do combate (o mestre pode desfazê-las): as que mudam o rumo da luta, não o controle de MP e de ações */
@@ -58,7 +61,7 @@ const OWN_TURN_ACTIONS: CombatAction[] = [ 'next_turn', 'apply_damage', 'apply_h
 
 const KNOWN_ACTIONS: CombatAction[] = [
     ...GM_ONLY_ACTIONS, ...OWN_TURN_ACTIONS, 'roll_initiative', 'spend_mp', 'spend_action', 'sustain_start', 'sustain_end', 'declare_attack', 'attack_damage', 'dismiss_attack', 'declare_defense',
-    'declare_leave', 'dismiss_opportunity'
+    'declare_leave', 'dismiss_opportunity', 'dismiss_reaction'
 ]
 
 type CombatAction = 
@@ -94,6 +97,8 @@ type CombatAction =
     | 'reveal_unseen'   // Mestre revela o combatente escondido a alguns observadores, ou a todos
     | 'set_light'       // Mestre define a iluminação da cena (claro, penumbra ou escuridão): ambiente manual
     | 'set_terrain'     // Mestre marca (ou desmarca) combatentes em terreno difícil: ambiente manual
+    | 'open_reaction'   // Mestre abre uma reação: o que aconteceu e quem pode reagir (cada reator com a Reação disponível ganha uma oferta)
+    | 'dismiss_reaction' // Dispensa uma oferta de reação (quem ia reagir ou o mestre)
 
 interface CombatRequest {
     action: CombatAction
@@ -165,8 +170,15 @@ interface CombatRequest {
     attackId?: string
     /** Para declare_defense: a escolha e o teste rolado; o servidor limpa (`sanitizeDefenseDeclaration`) */
     defense?: unknown
-    /** Para declare_leave: quem estava ao alcance corpo a corpo e pode reagir (`combatantId` é quem saiu) */
+    /** Para declare_leave: quem estava ao alcance corpo a corpo e pode reagir (`combatantId` é quem saiu); para open_reaction: quem pode reagir */
     reactorIds?: unknown
+    /** Para open_reaction: o que disparou a reação ("attacked", "hit", "miss", "critical", "damaged", "downed", "cast", "status", "moved" ou "other"), quem sofreu ou fez
+     *  (`subjectId`, dispensável no "other") e um detalhe em texto */
+    trigger?: unknown
+    subjectId?: string
+    text?: unknown
+    /** Para dismiss_reaction: a oferta aberta */
+    reactionId?: string
     /** Para set_light: a iluminação da cena ("claro", "penumbra" ou "escuridao") */
     light?: unknown
     /** Para set_terrain: os combatentes marcados e se estão (true) ou saíram (false) do terreno difícil */
@@ -271,7 +283,9 @@ function getActionMessage(action: CombatAction): string {
         set_unseen: 'Percepção atualizada',
         reveal_unseen: 'Escondido revelado',
         set_light: 'Iluminação atualizada',
-        set_terrain: 'Terreno atualizado'
+        set_terrain: 'Terreno atualizado',
+        open_reaction: 'Reação aberta',
+        dismiss_reaction: 'Reação dispensada'
     }
     return messages[action] || 'Ação executada'
 }
@@ -392,6 +406,14 @@ export async function POST(
                 }
             }
 
+            if (action === 'dismiss_reaction') {
+                const reaction = combat.reactions?.find(entry => entry.id === body.reactionId)
+                const reactor = reaction && combat.combatants?.find(c => c.id === reaction.reactorId)
+                if (reaction && !ownsCombatant(reactor)) {
+                    throw forbidden('Essa reação não é do seu personagem')
+                }
+            }
+
             if (action === 'sustain_start' || action === 'sustain_end') {
                 const target = combat.combatants?.find(c => c.id === body.combatantId || c.odacId === body.combatantId)
                 if (target && !ownsCombatant(target)) {
@@ -469,6 +491,7 @@ export async function POST(
             combat.pendingAttacks = []
             combat.opportunities = []
             combat.unseen = []
+            combat.reactions = []
             combat.environment = defaultEnvironment()
             combat.startedAt = new Date().toISOString()
             combat.showEnemyLp = body.showEnemyLp ?? false
@@ -506,6 +529,7 @@ export async function POST(
             combat.pendingAttacks = []
             combat.opportunities = []
             combat.unseen = []
+            combat.reactions = []
             combat.environment = defaultEnvironment()
 
             combat.logs.push(new CombatLog({
@@ -649,8 +673,9 @@ export async function POST(
             if (currentCombatant) {
                 currentCombatant.hasActed = true
             }
-            // As oportunidades de ataque só duram o turno de quem se moveu
+            // As oportunidades de ataque só duram o turno de quem se moveu, e as ofertas de reação o turno em andamento
             combat.opportunities = []
+            combat.reactions = []
 
             // Verifica se todos agiram (recalcula após marcar o atual)
             const allActed = combat.combatants.every(c => c.hasActed)
@@ -992,6 +1017,7 @@ export async function POST(
             combat.opportunities = dropOpportunitiesFor(combat.opportunities, removed.id)
             combat.unseen = dropUnseenFor(combat.unseen, removed.id)
             combat.environment = dropTerrainFor(combat.environment, removed.id)
+            combat.reactions = dropReactionsFor(combat.reactions, removed.id)
             
             // Ajusta índice atual se necessário
             if (combat.currentTurnIndex >= combat.combatants.length) {
@@ -1295,6 +1321,8 @@ export async function POST(
             }
 
             combatant.actions = spent.budget
+            // Gastou a Reação: as ofertas de reação dele se fecham (ele já reagiu, ou esquivou)
+            if (slot === 'reacao') combat.reactions = closeReactionsOf(combat.reactions, combatant.id)
 
             break
         }
@@ -1793,6 +1821,55 @@ export async function POST(
 
             combat.pendingAttacks = removePendingAttack(combat.pendingAttacks, pending.id)
 
+            // Reações que a resolução entrega de graça (errou, sofreu dano, aliado caiu): quem tem a Reação ganha a oferta; nada trava
+            const downed = Boolean(change && change.oldLp > 0 && change.target.currentLp === 0)
+            const autoNow = new Date().toISOString()
+            for (const auto of reactionsAfterAttack(combat.combatants, { targetId: pending.targetId, hit: body.hit, dealt, downed })) {
+                const plan = planOpenReaction(combat.combatants, { trigger: auto.trigger, subjectId: auto.subjectId, reactorIds: auto.reactorIds })
+                combat.reactions = addReactions(combat.reactions, plan.offers.map(offer => ({ ...offer, id: uuidv4(), createdAt: autoNow })))
+            }
+
+            break
+        }
+
+        case 'open_reaction': {
+            if (!combat.isActive || combat.phase !== 'ACTION') {
+                return NextResponse.json({ error: 'Só dá para abrir uma reação na fase de ação' }, { status: 400 })
+            }
+
+            const trigger = sanitizeTrigger(body.trigger)
+            if (!trigger) {
+                throw badRequest('Escolha o que disparou a reação')
+            }
+
+            const detail = sanitizeReactionText(body.text)
+            if (trigger === 'other' && detail === '') {
+                throw badRequest('Descreva o que aconteceu')
+            }
+
+            if (trigger !== 'other' && !combat.combatants.some(c => c.id === body.subjectId)) {
+                return NextResponse.json({ error: 'Quem sofreu ou fez isso não está no combate' }, { status: 404 })
+            }
+
+            const reactorIds = sanitizeReactionReactorIds(body.reactorIds)
+            if (reactorIds.length === 0) {
+                throw badRequest('Escolha quem pode reagir')
+            }
+
+            const plan = planOpenReaction(combat.combatants, { trigger, subjectId: body.subjectId, reactorIds, text: detail })
+            const nowReaction = new Date().toISOString()
+            combat.reactions = addReactions(combat.reactions, plan.offers.map(offer => ({ ...offer, id: uuidv4(), createdAt: nowReaction })))
+            warnings.push(...plan.warnings)
+
+            break
+        }
+
+        case 'dismiss_reaction': {
+            if (!combat.reactions?.some(entry => entry.id === body.reactionId)) {
+                return NextResponse.json({ error: 'Reação não encontrada (ela pode já ter sido usada)' }, { status: 404 })
+            }
+            combat.reactions = removeReaction(combat.reactions, String(body.reactionId))
+
             break
         }
 
@@ -1807,7 +1884,8 @@ export async function POST(
         // `sustain_end` só gera log quando alguma magia estava ativa.
         const logsGrew = combat.logs.length > logsBefore
         const silentActions: CombatAction[] = [
-            'spend_mp', 'spend_action', 'declare_attack', 'attack_damage', 'dismiss_attack', 'declare_defense', 'declare_leave', 'dismiss_opportunity', 'set_unseen', 'reveal_unseen'
+            'spend_mp', 'spend_action', 'declare_attack', 'attack_damage', 'dismiss_attack', 'declare_defense', 'declare_leave', 'dismiss_opportunity', 'set_unseen', 'reveal_unseen',
+            'open_reaction', 'dismiss_reaction'
         ]
         // Estas só falam no chat quando de fato geraram um log (mesma luz ou terreno já marcado não repostam o último log antigo)
         const logOnlyIfGrew: CombatAction[] = [ 'sustain_end', 'set_light', 'set_terrain' ]
