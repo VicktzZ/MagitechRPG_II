@@ -18,13 +18,13 @@ describe('ReactionOffersPanel', () => {
 
     it('diz o que aconteceu, as magias de Reação que combinam e os dois botões', () => {
         const html = render(
-            <ReactionOffersPanel entries={[ { offer: offer(), spells: [ { name: 'Sombra Vingativa' }, { name: 'Fio da Sorte' } ] } ]} onReact={() => undefined} onDismiss={() => undefined} />
+            <ReactionOffersPanel entries={[ { offer: offer(), spells: [ { name: 'Retaliação Sombria' }, { name: 'Fio da Sorte' } ] } ]} onReact={() => undefined} onDismiss={() => undefined} />
         );
 
         expect(html).toContain('data-testid="reaction-offers"');
         expect(html).toContain('data-testid="reaction-offer-r1"');
         expect(html).toContain('Um ataque contra Borin errou');
-        expect(html).toContain('Magias de Reação que combinam: Sombra Vingativa, Fio da Sorte.');
+        expect(html).toContain('Magias de Reação que combinam: Retaliação Sombria, Fio da Sorte.');
         expect(html).toContain('Ver magias de Reação');
         expect(html).toContain('Deixar passar');
     });
@@ -43,7 +43,7 @@ describe('ReactionOffersPanel', () => {
     it('uma oferta por linha', () => {
         const html = render(
             <ReactionOffersPanel
-                entries={[ { offer: offer({ id: 'a' }), spells: [ { name: 'Sombra Vingativa' } ] }, { offer: offer({ id: 'b', text: 'Aria caiu a 0 LP' }), spells: [ { name: 'Último Suspiro' } ] } ]}
+                entries={[ { offer: offer({ id: 'a' }), spells: [ { name: 'Retaliação Sombria' } ] }, { offer: offer({ id: 'b', text: 'Aria caiu a 0 LP' }), spells: [ { name: 'Último Suspiro' } ] } ]}
                 onReact={() => undefined}
                 onDismiss={() => undefined}
             />

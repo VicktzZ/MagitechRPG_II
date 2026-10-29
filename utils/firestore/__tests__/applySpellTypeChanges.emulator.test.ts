@@ -87,3 +87,59 @@ describeEmulator('troca do type das magias de Recuperação', () => {
         expect((await read('tipo-b'))?.['type']).toBe('Suporte (contínuo)')
     })
 })
+
+describeEmulator('renomear magias pelo mesmo script (campo name) e leitura em fatias', () => {
+    let script: typeof Script
+    let db: admin.firestore.Firestore
+    const bulkIds = Array.from({ length: 305 }, (_unused, index) => `renomear-lote-${index}`)
+    const spell = (name: string, type = 'Ataque (imediato)') => ({ name, type, level: '1', mpCost: '1', element: 'FOGO', execution: 'Padrão', range: 'Curto', stages: [ 'um', 'dois', 'três' ] })
+    const read = async (id: string) => (await db.collection('spells').doc(id).get()).data() as Record<string, unknown> | undefined
+
+    beforeAll(() => {
+        initFirebaseAdmin()
+        script = jest.requireActual('../../../scripts/applySpellTypeChanges')
+        db = admin.firestore()
+    })
+
+    afterAll(async () => {
+        await Promise.all([ 'renomear-a', 'renomear-b', ...bulkIds ].map(async id => await db.collection('spells').doc(id).delete()))
+        await Promise.all(admin.apps.map(async app => await app?.delete()))
+    })
+
+    test('com field "name" só o nome muda: o type fica como está, e quem foi editado à mão é conflito', async () => {
+        await db.collection('spells').doc('renomear-a').set(spell('Voo', 'Ataque (imediato/Área)'))
+        await db.collection('spells').doc('renomear-b').set(spell('Nome editado à mão'))
+        const changes = [
+            { id: 'renomear-a', name: 'Voo', from: 'Voo', to: 'Rajada Repulsiva' },
+            { id: 'renomear-b', name: 'Onda', from: 'Onda', to: 'Golpe de Onda' }
+        ]
+
+        const simulation = await script.applySpellTypeChanges({ changes, field: 'name' })
+        expect(simulation.plan.update.map(change => change.id)).toEqual([ 'renomear-a' ])
+        expect(simulation.plan.conflicts.map(change => change.id)).toEqual([ 'renomear-b' ])
+        expect((await read('renomear-a'))?.['name']).toBe('Voo')
+
+        const applied = await script.applySpellTypeChanges({ changes, field: 'name', apply: true })
+        expect(applied.applied.map(change => change.id)).toEqual([ 'renomear-a' ])
+        expect(await read('renomear-a')).toMatchObject({ name: 'Rajada Repulsiva', type: 'Ataque (imediato/Área)', level: '1', element: 'FOGO' })
+        expect((await read('renomear-b'))?.['name']).toBe('Nome editado à mão')
+
+        // rodar de novo não faz mal, e desfazer devolve o nome
+        expect((await script.applySpellTypeChanges({ changes, field: 'name', apply: true })).applied).toEqual([])
+        const undo = await script.applySpellTypeChanges({ changes: invertSpellTypeChanges(applied.applied), field: 'name', apply: true })
+        expect(undo.applied.map(change => change.id)).toEqual([ 'renomear-a' ])
+        expect((await read('renomear-a'))?.['name']).toBe('Voo')
+    })
+
+    test('mais de 300 trocas de uma vez: a leitura em lote vai em fatias e todas são vistas', async () => {
+        const batch = db.batch()
+        for (const id of bulkIds) batch.set(db.collection('spells').doc(id), spell(`Antigo ${id}`))
+        await batch.commit()
+        const changes = bulkIds.map(id => ({ id, name: `Antigo ${id}`, from: `Antigo ${id}`, to: `Novo ${id}` }))
+
+        const report = await script.applySpellTypeChanges({ changes, field: 'name', apply: true })
+        expect(report.plan.update).toHaveLength(305)
+        expect(report.applied).toHaveLength(305)
+        expect((await read(bulkIds[304]!))?.['name']).toBe(`Novo ${bulkIds[304]}`)
+    })
+})

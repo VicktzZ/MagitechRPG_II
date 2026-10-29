@@ -51,7 +51,7 @@ export const REACTION_SPELLS: SeedSpell[] = [
     {
         id: 'seed-rx-sombra-vingativa',
         element: 'TREVAS',
-        name: 'Sombra Vingativa',
+        name: 'Retaliação Sombria',
         level: 1,
         mpCost: 2,
         type: 'Ataque (imediato)',

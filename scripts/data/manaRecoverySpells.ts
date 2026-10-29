@@ -244,7 +244,7 @@ export const MANA_RECOVERY_SPELLS: SeedSpell[] = [
     {
         id: 'seed-mp-pacto-carmesim',
         element: 'SANGUE',
-        name: 'Pacto Carmesim',
+        name: 'Sangria de Mana',
         level: 3,
         mpCost: 6,
         type: 'Recuperação (contínuo)',
