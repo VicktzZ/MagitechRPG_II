@@ -67,7 +67,7 @@ export default function EffectBadges({
                 const tooltipContent = (
                     <Box sx={{ p: 0.5, maxWidth: 300 }}>
                         <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 0.5 }}>
-                            {effect.icon} {fullName}
+                            {effect.icon ? `${effect.icon} ` : ''}{fullName}
                         </Typography>
                         {effect.description && (
                             <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
@@ -120,9 +120,11 @@ export default function EffectBadges({
                     </Box>
                 )
 
+                // O ícone é opcional (efeito do mestre sem ícone): sem ele o rótulo não leva "undefined"
+                const mark = effect.icon ? `${effect.icon} ` : ''
                 const label = isIndefinite
-                    ? `${effect.icon} ${fullName} · ∞`
-                    : `${effect.icon} ${fullName} · ${applied.remaining}${effect.timing === 'turn' ? 't' : 'r'}`
+                    ? `${mark}${fullName} · ∞`
+                    : `${mark}${fullName} · ${applied.remaining}${effect.timing === 'turn' ? 't' : 'r'}`
 
                 return (
                     <Tooltip
