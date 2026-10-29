@@ -19,8 +19,8 @@ const players = [
 const creatures = [ { id: 'goblin', name: 'Goblin Saqueador', stats: { lp: 20 }, expertises: { Agilidade: { value: 2 } } } ] as unknown as Creature[]
 
 const selection = (overrides: Partial<ParticipantSelection> = {}): ParticipantSelection => ({
-    selectedPlayers: [], selectedCreatures: [], creatureQuantities: {},
-    togglePlayer: noop, toggleCreature: noop, setCreatureQuantity: noop, clear: noop, ...overrides
+    selectedPlayers: [], selectedCreatures: [], creatureQuantities: {}, creatureControllers: {},
+    togglePlayer: noop, toggleCreature: noop, setCreatureQuantity: noop, setCreatureController: noop, clear: noop, ...overrides
 })
 
 describe('ParticipantPicker', () => {
@@ -45,6 +45,17 @@ describe('ParticipantPicker', () => {
     it('mostra a marcação e a quantidade da seleção', () => {
         const html = render(<ParticipantPicker players={players} creatures={creatures} selection={selection({ selectedCreatures: [ 'goblin' ], creatureQuantities: { goblin: 4 } })} />)
         expect(html).toMatch(/value="4"/)
+    })
+
+    it('cada criatura tem o seletor de quem a controla: o mestre por padrão e os jogadores com ficha como invocador', () => {
+        const html = render(<ParticipantPicker players={players} creatures={creatures} selection={selection()} />)
+        expect(html).toContain('aria-label="Quem controla Goblin Saqueador"')
+        expect(html).toContain('Mestre')
+    })
+
+    it('o controlador escolhido aparece no seletor da criatura', () => {
+        const html = render(<ParticipantPicker players={players} creatures={creatures} selection={selection({ selectedCreatures: [ 'goblin' ], creatureControllers: { goblin: players[0]!.id } })} />)
+        expect(html).toContain(players[0]!.charsheet?.name ?? players[0]!.name)
     })
 
     it('sem criaturas nem jogadores, diz que não há nenhum', () => {

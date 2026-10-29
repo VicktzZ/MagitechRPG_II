@@ -37,6 +37,7 @@ const actions: CombatantActions = {
     grantActions: jest.fn(),
     openWindow: jest.fn(),
     toggleSide: jest.fn(),
+    setController: jest.fn(),
     rollCreatureExpertise: jest.fn(),
     togglingAction: false,
     dialogs: null
@@ -65,6 +66,24 @@ describe('CombatantRow', () => {
         expect(html).toContain('aria-label="Aplicar dano em Aria"');
         expect(html).toContain('aria-label="Aplicar cura em Aria"');
         expect(html).toContain('aria-label="Abrir Aria em janela"');
+    });
+
+    it('invocado: o chip diz de quem é e o seletor de controle aparece só na criatura', () => {
+        const summon = { id: 'golem-1', name: 'Golem Arcano', type: 'creature', controllerId: 'u-aria', summonerId: 'aria', effects: [] } as unknown as Combatant;
+        const controllers = [ { id: 'u-aria', name: 'Aria' }, { id: 'u-borin', name: 'Borin' } ];
+
+        const html = row({ combatant: summon, controllers });
+        expect(html).toContain('Invocado por Aria');
+        expect(html).toContain('aria-label="Quem controla Golem Arcano"');
+        expect(html).toContain('Controle: Aria');
+
+        // criatura comum: "Criatura" e o seletor em "mestre"; jogador não tem seletor
+        const common = row({ combatant: { ...summon, controllerId: undefined } as unknown as Combatant, controllers });
+        expect(common).toContain('>Criatura<');
+        expect(common).toContain('Controle: mestre');
+        expect(row({ controllers })).not.toContain('Quem controla');
+        // sem jogadores para escolher, o seletor some
+        expect(row({ combatant: summon })).not.toContain('Quem controla');
     });
 
     it('fora do turno não leva o destaque, e jogador não tem "Perícias" nem chip de criatura', () => {

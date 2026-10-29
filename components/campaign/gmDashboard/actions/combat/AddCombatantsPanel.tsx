@@ -29,7 +29,7 @@ export default function AddCombatantsPanel({ players, creatures, inCombat, phase
     const [ open, setOpen ] = useState(false);
     const selection = useParticipantSelection();
 
-    const payload = buildJoinPayload(players, selection.selectedPlayers, selection.selectedCreatures, selection.creatureQuantities);
+    const payload = buildJoinPayload(players, selection.selectedPlayers, selection.selectedCreatures, selection.creatureQuantities, selection.creatureControllers);
     const count = countJoining(payload);
 
     const handleAdd = async (): Promise<void> => {

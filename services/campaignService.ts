@@ -251,6 +251,11 @@ class CampaignService extends Service<Campaign, 'code' | 'userId'> {
         return (await this.post({ param: `${campaignId}/combat`, body: { action: 'set_side', ...payload } })).data as unknown as { warnings?: string[] }
     }
 
+    /** Mestre põe um jogador no controle de uma criatura do combate (o invocado), ou devolve a criatura ao mestre com `controllerId: null` (`utils/combat/summons.ts`) */
+    async setController(campaignId: string, payload: { combatantId: string; controllerId: string | null }) {
+        return (await this.post({ param: `${campaignId}/combat`, body: { action: 'set_controller', ...payload } })).data as unknown as { warnings?: string[] }
+    }
+
     /** Mestre abre uma reação: o que aconteceu (`trigger`, e `subjectId` quem sofreu ou fez) e quem pode reagir; cada reator com a Reação disponível ganha uma oferta (`utils/combat/reactions.ts`). Silencioso */
     async openReaction(campaignId: string, payload: { trigger: string; subjectId?: string; text?: string; reactorIds: string[] }) {
         return (await this.post({ param: `${campaignId}/combat`, body: { action: 'open_reaction', ...payload } })).data as unknown as { warnings?: string[] }
@@ -307,7 +312,7 @@ class CampaignService extends Service<Campaign, 'code' | 'userId'> {
      * Mestre: adiciona jogadores (por ficha) e criaturas (por id, com cópias) a um combate em andamento. O servidor lê os dados da ficha e
      * da criatura, rola a iniciativa na fase de ação e põe cada um no lugar dela na ordem. Devolve `warnings` do que ficou de fora.
      */
-    async addCombatants(campaignId: string, join: { players?: Array<{ charsheetId: string; avatar?: string }>; creatures?: Array<{ id: string; quantity?: number }> }) {
+    async addCombatants(campaignId: string, join: { players?: Array<{ charsheetId: string; avatar?: string }>; creatures?: Array<{ id: string; quantity?: number; controllerId?: string }> }) {
         return (await this.post({
             param: `${campaignId}/combat`,
             body: { action: 'add_combatants', join }

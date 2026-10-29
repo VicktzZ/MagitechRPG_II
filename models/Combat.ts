@@ -112,6 +112,19 @@ export class Combatant {
     @IsString()
         side?: CombatSide;
 
+    /**
+     * **Invocado**: o ID do usuário (jogador) que controla este combatente-criatura. Entra no combate como qualquer criatura, com iniciativa própria, mas quem age por ele (passar o
+     * turno, gastar ações, atacar) é o jogador, e não o mestre. Sem o campo é uma criatura comum, do mestre. Ver `utils/combat/summons.ts`.
+     */
+    @IsOptional()
+    @IsString()
+        controllerId?: string;
+
+    /** O invocador: o ID da ficha (combatente) do jogador que controla; só para dizer "invocado por X" na tela */
+    @IsOptional()
+    @IsString()
+        summonerId?: string;
+
     @ValidateNested({ each: true })
     @Type(() => AppliedEffect)
     @IsArray()

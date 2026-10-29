@@ -26,6 +26,8 @@ export default function CombatantsTab({ combat, players, creatures, controls, on
     const { campaign, charsheets } = useCampaignContext();
     const actions = useCombatantActions(onDamageHeal);
     const combatants = combat.combatants ?? [];
+    // Quem pode controlar um invocado: cada jogador com ficha (o ID é o do usuário)
+    const controllers = players.filter(player => player.charsheet).map(player => ({ id: player.id, name: player.charsheet?.name || player.name }));
 
     return (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
@@ -52,6 +54,7 @@ export default function CombatantsTab({ combat, players, creatures, controls, on
                             mp={mpLimitView(combatant, { charsheets, creatures, mode: campaign.mode })}
                             creature={combatant.type === 'creature' ? findBaseCreature(combatant.id, creatures) : undefined}
                             actions={actions}
+                            controllers={controllers}
                             busy={controls.busy}
                             onRollInitiative={(id, value) => { void controls.rollInitiative(id, value); }}
                         />

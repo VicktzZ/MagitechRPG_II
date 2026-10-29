@@ -3,10 +3,11 @@ import type { Creature } from '@models';
 import { Add, Pets } from '@mui/icons-material';
 import { Box, Button, Typography } from '@mui/material';
 import { creatureCopiesInCombat, creatureTypeCounts, filterAndSortCreatures, summarizeCreatures } from '@utils/creatureList';
-import { useMemo, type ReactElement } from 'react';
+import { useMemo, useState, type ReactElement } from 'react';
 import Section from '../../Section';
 import CustomCreatureCard from './CustomCreatureCard';
 import CreatureToolbar from './creatures/CreatureToolbar';
+import SummonTemplatesDialog from './creatures/SummonTemplatesDialog';
 import { useCreatureActions } from './creatures/useCreatureActions';
 import { useCreatureListState } from './creatures/useCreatureListState';
 import { useCreatureDiceRoll } from './useCreatureDiceRoll';
@@ -31,6 +32,7 @@ export default function CustomCreaturesSection({ onView, onEdit, onDelete, onCre
     const state = useCreatureListState();
     const actions = useCreatureActions();
     const rollDice = useCreatureDiceRoll();
+    const [ templatesOpen, setTemplatesOpen ] = useState(false);
 
     const creatures = useMemo(() => campaign.custom?.creatures ?? [], [ campaign.custom?.creatures ]);
     const visible = useMemo(() => filterAndSortCreatures(creatures, { query: state.query, type: state.type, sort: state.sort }), [ creatures, state.query, state.type, state.sort ]);
@@ -42,8 +44,19 @@ export default function CustomCreaturesSection({ onView, onEdit, onDelete, onCre
         <Section
             title="Criaturas customizadas"
             icon={<Pets sx={{ color: 'text.secondary' }} />}
-            action={<Button size="small" variant="contained" startIcon={<Add />} onClick={onCreate} sx={{ textTransform: 'none' }}>Nova criatura</Button>}
+            action={(
+                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                    <Button size="small" variant="outlined" color="secondary" startIcon={<Pets />} onClick={() => { setTemplatesOpen(true); }} sx={{ textTransform: 'none' }} data-testid="open-summon-templates">Modelos de invocação</Button>
+                    <Button size="small" variant="contained" startIcon={<Add />} onClick={onCreate} sx={{ textTransform: 'none' }}>Nova criatura</Button>
+                </Box>
+            )}
         >
+            <SummonTemplatesDialog
+                open={templatesOpen}
+                onClose={() => { setTemplatesOpen(false); }}
+                creatingId={actions.creatingSummonId}
+                onCreate={(template) => { void actions.createSummon(template); }}
+            />
             {creatures.length === 0 ? (
                 <Box sx={{ py: 2 }} data-testid="creatures-empty">
                     <Typography color="text.secondary">Nenhuma criatura criada para esta campanha ainda.</Typography>
