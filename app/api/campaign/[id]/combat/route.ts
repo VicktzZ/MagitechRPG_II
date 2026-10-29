@@ -46,13 +46,14 @@ import { deleteCombatEvents, getCombatEvent, isCombatEventId, markCombatEventUnd
 import { undoCombatEvent } from '@utils/firestore/combatUndo'
 import { initiativeAdvantages, ownedPassives, type AbilityUseResult } from '@utils/combat/passives'
 import { runAbilityUse } from '@utils/combat/abilityUse'
+import { applySide, isCombatSide, sanitizeAreaIds, SIDE_LABEL } from '@utils/combat/sides'
 import { applyStealthEntryPassives, applyTurnStartPassives } from '@utils/combat/turnPassives'
 import { isStealthEffect } from '@utils/combat/stealth'
 
 /** Ações que conduzem o combate — exclusivas do mestre */
 const GM_ONLY_ACTIONS: CombatAction[] = [
     'start', 'end', 'set_initiative', 'add_creature', 'add_combatants', 'remove_combatant', 'apply_effect', 'remove_effect',
-    'set_mp_limit_override', 'reset_mp_limit', 'set_mp_spent', 'set_actions', 'adjust_actions', 'undo', 'resolve_attack', 'set_unseen', 'reveal_unseen', 'set_light', 'set_terrain', 'open_reaction'
+    'set_mp_limit_override', 'reset_mp_limit', 'set_mp_spent', 'set_actions', 'adjust_actions', 'undo', 'resolve_attack', 'set_unseen', 'reveal_unseen', 'set_light', 'set_terrain', 'set_side', 'open_reaction'
 ]
 
 /** Ações que entram no histórico do combate (o mestre pode desfazê-las): as que mudam o rumo da luta, não o controle de MP e de ações */
@@ -105,6 +106,7 @@ type CombatAction =
     | 'reveal_unseen'   // Mestre revela o combatente escondido a alguns observadores, ou a todos
     | 'set_light'       // Mestre define a iluminação da cena (claro, penumbra ou escuridão): ambiente manual
     | 'set_terrain'     // Mestre marca (ou desmarca) combatentes em terreno difícil: ambiente manual
+    | 'set_side'        // Mestre marca o lado (aliado ou inimigo) de combatentes: auras, curas em grupo e áreas usam o lado
     | 'open_reaction'   // Mestre abre uma reação: o que aconteceu e quem pode reagir (cada reator com a Reação disponível ganha uma oferta)
     | 'dismiss_reaction' // Dispensa uma oferta de reação (quem ia reagir ou o mestre)
     | 'use_ability'     // O jogador usa uma habilidade ativada de classe ou subclasse: gasta MP e ação, conta o uso, cura ou põe o efeito sobre ele
@@ -194,8 +196,9 @@ interface CombatRequest {
     reactionId?: string
     /** Para set_light: a iluminação da cena ("claro", "penumbra" ou "escuridao") */
     light?: unknown
-    /** Para set_terrain: os combatentes marcados e se estão (true) ou saíram (false) do terreno difícil */
+    /** Para set_terrain: os combatentes marcados e se estão (true) ou saíram (false) do terreno difícil; para set_side, os combatentes e o lado */
     combatantIds?: unknown
+    side?: unknown
     difficult?: unknown
     /** Para set_unseen e reveal_unseen: quem não vê o combatente (`combatantId` é quem está escondido). Em reveal_unseen, sem a lista revela a todos */
     observerIds?: unknown
@@ -301,6 +304,7 @@ function getActionMessage(action: CombatAction): string {
         reveal_unseen: 'Escondido revelado',
         set_light: 'Iluminação atualizada',
         set_terrain: 'Terreno atualizado',
+        set_side: 'Lado atualizado',
         open_reaction: 'Reação aberta',
         dismiss_reaction: 'Reação dispensada',
         use_ability: 'Habilidade usada'
@@ -1395,7 +1399,8 @@ export async function POST(
                 abilityKey: body.abilityKey,
                 choiceId: typeof body.choiceId === 'string' ? body.choiceId.slice(0, 60) : null,
                 isGM,
-                force: body.force === true
+                force: body.force === true,
+                targetIds: body.targetIds
             })
             if (!outcome.ok) {
                 return NextResponse.json(outcome.body, { status: outcome.status })
@@ -1870,6 +1875,41 @@ export async function POST(
             break
         }
 
+        case 'set_side': {
+            if (!combat.isActive) {
+                return NextResponse.json({ error: 'Não há combate ativo' }, { status: 400 })
+            }
+            if (!isCombatSide(body.side)) {
+                throw badRequest('Diga o lado: "ally" (aliado) ou "enemy" (inimigo)')
+            }
+
+            const requested = sanitizeAreaIds(body.combatantIds)
+            if (requested.length === 0) {
+                throw badRequest('Escolha quem muda de lado')
+            }
+
+            const inCombat = requested.filter(requestedId => combat.combatants.some(c => c.id === requestedId))
+            if (inCombat.length < requested.length) warnings.push('Um dos combatentes escolhidos não está mais no combate.')
+            if (inCombat.length === 0) {
+                throw badRequest('Escolha quem muda de lado')
+            }
+
+            // Só quem muda de fato entra no log (marcar de novo o mesmo lado não diz nada)
+            const changed = applySide(combat.combatants, inCombat, body.side)
+            if (changed.length > 0) {
+                const names = changed.map(c => c.name).join(', ')
+                combat.logs.push(new CombatLog({
+                    round: combat.round,
+                    type: 'action',
+                    actorId: 'gm',
+                    actorName: 'Mestre',
+                    message: `🏳️ O mestre marcou **${names}** como ${SIDE_LABEL[body.side].toLowerCase()}${changed.length > 1 ? 's' : ''}.`
+                }))
+            }
+
+            break
+        }
+
         case 'set_terrain': {
             if (!combat.isActive) {
                 return NextResponse.json({ error: 'Não há combate ativo' }, { status: 400 })
@@ -2026,7 +2066,7 @@ export async function POST(
             'open_reaction', 'dismiss_reaction'
         ]
         // Estas só falam no chat quando de fato geraram um log (mesma luz ou terreno já marcado não repostam o último log antigo)
-        const logOnlyIfGrew: CombatAction[] = [ 'sustain_end', 'set_light', 'set_terrain' ]
+        const logOnlyIfGrew: CombatAction[] = [ 'sustain_end', 'set_light', 'set_terrain', 'set_side' ]
         if (!silentActions.includes(action) && (!logOnlyIfGrew.includes(action) || logsGrew) && combat.logs.length > 0) {
             const lastLog = combat.logs[combat.logs.length - 1]
             combatMessage = new Message({

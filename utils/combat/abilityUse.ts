@@ -7,6 +7,7 @@ import { executionSlot, spendAction } from '@utils/combat/engine/actionBudget';
 import { abilityStorageKey, describeAbilityUse, planAbility, buildAbilityEffect, ownedPassives, readAbilityDayUses, sheetFoc, type AbilityBlock, type AbilityEffect, type AbilityUseResult, type AbilityUses, type PassiveSheet } from '@utils/combat/passives';
 import { endSustained } from '@utils/combat/sustainedEffect';
 import { closeReactionsOf } from '@utils/combat/reactions';
+import { sanitizeAreaTargets } from '@utils/combat/sides';
 import { AbilityDayLimitReached, consumeAbilityDayUse, refundAbilityDayUse } from '@utils/firestore/abilityUses';
 import { adminGetDoc } from '@utils/firestore/adminDocs';
 import { adjustCharsheetStats } from '@utils/firestore/charsheetStats';
@@ -27,6 +28,8 @@ export interface AbilityUseParams {
     isGM: boolean;
     /** O mestre libera os usos esgotados e a cura bloqueada */
     force: boolean;
+    /** Habilidade de área: quem foi atingido, como o jogador marcou (o servidor confere o lado e o combate; ver `sides.ts`) */
+    targetIds?: unknown;
 }
 
 export type AbilityUseOutcome =
@@ -42,7 +45,7 @@ interface SheetDoc extends PassiveSheet {
     stats?: { lp?: unknown; maxLp?: unknown; mp?: unknown } | null;
 }
 
-export async function runAbilityUse({ combat, combatant, abilityKey, choiceId, isGM, force }: AbilityUseParams): Promise<AbilityUseOutcome> {
+export async function runAbilityUse({ combat, combatant, abilityKey, choiceId, isGM, force, targetIds }: AbilityUseParams): Promise<AbilityUseOutcome> {
     const sheet = await adminGetDoc<SheetDoc>('charsheets', combatant.id);
     if (!sheet) return failure(404, 'Ficha não encontrada', 'SHEET_NOT_FOUND');
 
@@ -59,12 +62,32 @@ export async function runAbilityUse({ combat, combatant, abilityKey, choiceId, i
     const { def, cost, choice } = plan;
     const activation = def.activation!;
 
-    // Necrose, Incurável...: quem recebe a cura (aqui, ele mesmo) não a recebe. O mestre cura mesmo assim (`force`)
+    // Habilidade de área: quem foi atingido é o que o jogador marcou, conferido pelo lado e pelo combate (o app não mede distância). Sem área, só quem usa
+    const warnings: string[] = [];
+    let affected: Combatant[] = [ combatant ];
+    if (activation.area) {
+        const picked = sanitizeAreaTargets(combat.combatants, combatant.id, activation.area, targetIds);
+        if (picked.ids.length === 0) {
+            return failure(400, `${def.name}: marque quem foi atingido.`, 'AREA_TARGETS_REQUIRED');
+        }
+        affected = picked.ids.map(id => combat.combatants.find(candidate => candidate.id === id)).filter((candidate): candidate is Combatant => Boolean(candidate));
+        for (const id of picked.dropped) {
+            const name = combat.combatants.find(candidate => candidate.id === id)?.name;
+            warnings.push(name ? `${name} não pode ser atingido por ${def.name} (lado errado ou passou do limite de alvos).` : 'Um dos alvos marcados não está mais no combate.');
+        }
+    }
+
+    // Necrose, Incurável...: quem recebe a cura não a recebe. O mestre cura mesmo assim (`force`). Em área, quem tem o bloqueio fica sem a cura (aviso) e o resto recebe
+    let healable = affected;
     if (activation.heal) {
-        const blocks = actionBlocks(combatant.effects);
-        if (isBlocked(blocks, 'no_healing') && !(isGM && force)) {
+        const forced = isGM && force;
+        const blockedTargets = forced ? [] : affected.filter(target => isBlocked(actionBlocks(target.effects), 'no_healing'));
+        if (!activation.area && blockedTargets.length > 0) {
+            const blocks = actionBlocks(combatant.effects);
             return failure(409, `${blockReason(blocks, 'no_healing', combatant.name)}.${isGM ? '' : ' Peça ao mestre.'}`, 'HEALING_BLOCKED', { blockedBy: blocks.no_healing, canForce: isGM });
         }
+        healable = affected.filter(target => !blockedTargets.includes(target));
+        for (const target of blockedTargets) warnings.push(`${blockReason(actionBlocks(target.effects), 'no_healing', target.name)}: ele não recebeu a cura.`);
     }
 
     // O uso do dia é somado primeiro, numa transação (dois cliques seguidos não passam do limite); se algo falhar depois, ele é devolvido
@@ -83,7 +106,6 @@ export async function runAbilityUse({ combat, combatant, abilityKey, choiceId, i
     }
 
     try {
-        const warnings: string[] = [];
         const stats: StatsEntry[] = [];
 
         // MP: sai da ficha (a conta do MP é a da ficha); zerar o MP acaba com as magias sustentadas, como em qualquer gasto
@@ -106,35 +128,56 @@ export async function runAbilityUse({ combat, combatant, abilityKey, choiceId, i
         const storage = abilityStorageKey(def.key);
         combatant.abilityUses = { ...(combatant.abilityUses ?? {}), [storage]: (combatant.abilityUses?.[storage] ?? 0) + 1 };
 
-        // Cura em si mesmo: os dados são rolados aqui (o servidor decide), e a vida sobe até o máximo de agora
+        // Cura: os dados são rolados aqui (o servidor decide), uma rolagem por alvo, e a vida sobe até o máximo de agora
         let heal: AbilityUseResult['heal'] = null;
+        const heals: NonNullable<AbilityUseResult['heals']> = [];
+        const healedBy = new Map<string, number>();
         if (activation.heal) {
             const foc = activation.heal.plusFoc ? sheetFoc(sheet) : 0;
             const notation = `${activation.heal.dice}${foc > 0 ? `+${foc}` : ''}`;
-            const rolled = rollDice(notation);
-            if (!rolled || rolled.error) throw new Error(`Fórmula de cura inválida em ${def.name}: ${notation}`);
 
-            const change = await healCombatant(combat, combatant.id, rolled.total);
-            const applied = change ? Math.max(0, (change.target.currentLp ?? 0) - change.oldLp) : 0;
-            heal = { notation, display: rolled.display ?? `[${rolled.rolls.join(', ')}]`, total: rolled.total, applied };
-            if (change) stats.push(...healStats(combatant, change));
+            for (const target of healable) {
+                const rolled = rollDice(notation);
+                if (!rolled || rolled.error) throw new Error(`Fórmula de cura inválida em ${def.name}: ${notation}`);
+
+                const change = await healCombatant(combat, target.id, rolled.total);
+                const applied = change ? Math.max(0, (change.target.currentLp ?? 0) - change.oldLp) : 0;
+                const display = rolled.display ?? `[${rolled.rolls.join(', ')}]`;
+                healedBy.set(target.id, applied);
+                heals.push({ id: target.id, name: target.name, notation, display, total: rolled.total, applied });
+                if (change) stats.push(...healStats(combatant, change));
+            }
+            // Habilidade de uma pessoa só: a cura é a dela (o cartão do chat); em área, cada alvo tem a sua em `heals`
+            if (!activation.area && heals[0]) heal = { notation, display: heals[0].display, total: heals[0].total, applied: heals[0].applied };
         }
 
-        // Efeito sobre o personagem; usar de novo a mesma habilidade troca o efeito anterior
+        // Efeito sobre cada alvo (quem usa, se não houver área); usar de novo a mesma habilidade troca o efeito anterior que o mesmo personagem pôs ali
         const effect: AbilityEffect | undefined = choice?.effect ?? activation.effect;
         if (effect) {
-            combatant.effects = (combatant.effects ?? []).filter(applied => applied.ability?.key !== def.key);
-            combatant.effects.push(buildAbilityEffect(def, effect, choice, combat.round, combatant.name, combatant.id));
+            // "Só um alvo de cada vez": o efeito que o mesmo personagem pôs antes sai de quem o tinha, seja quem for
+            if (effect.exclusive) {
+                for (const other of combat.combatants) {
+                    other.effects = (other.effects ?? []).filter(applied => !(applied.ability?.key === def.key && (applied.appliedById ?? combatant.id) === combatant.id));
+                }
+            }
+            for (const target of affected) {
+                target.effects = (target.effects ?? []).filter(applied => !(applied.ability?.key === def.key && (applied.appliedById ?? combatant.id) === combatant.id));
+                target.effects.push(buildAbilityEffect(def, effect, choice, combat.round, combatant.name, combatant.id));
+            }
         }
 
-        const message = describeAbilityUse({ actor: combatant.name, ability: def.name, choice: choice?.label, cost, heal, effect });
+        const targetNames = activation.area ? affected.map(target => target.name) : [];
+        const message = describeAbilityUse({
+            actor: combatant.name, ability: def.name, choice: choice?.label, cost, heal, effect,
+            ...(activation.area ? { targets: targetNames, healed: [ ...healedBy ].map(([ id, applied ]) => ({ name: affected.find(target => target.id === id)?.name ?? id, applied })) } : {})
+        });
         combat.logs.push(new CombatLog({
             round: combat.round,
-            type: heal ? 'heal' : effect ? 'effect_applied' : 'action',
+            type: heal || heals.length > 0 ? 'heal' : effect ? 'effect_applied' : 'action',
             actorId: combatant.id,
             actorName: combatant.name,
-            targetId: combatant.id,
-            targetName: combatant.name,
+            targetId: affected.length === 1 ? affected[0]!.id : combatant.id,
+            targetName: affected.length === 1 ? affected[0]!.name : combatant.name,
             ...(heal ? { value: heal.applied } : {}),
             message
         }));
@@ -151,6 +194,7 @@ export async function runAbilityUse({ combat, combatant, abilityKey, choiceId, i
                 execution: activation.execution,
                 heal,
                 effect: effect ? { name: choice?.label ?? def.name, description: effect.description } : null,
+                ...(activation.area ? { targets: affected.map(target => ({ id: target.id, name: target.name, ...(healedBy.has(target.id) ? { healed: healedBy.get(target.id) } : {}) })), heals } : {}),
                 message
             }
         };

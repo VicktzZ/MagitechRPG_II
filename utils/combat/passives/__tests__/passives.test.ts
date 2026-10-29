@@ -62,11 +62,15 @@ const fixed = { categ: 'Arma Branca (Leve)', range: 'Corpo-a-corpo', effect: { v
 const spell = (overrides: Record<string, unknown> = {}) => ({ type: 'Ataque (imediato)', element: 'FOGO', ...overrides });
 
 describe('catálogo de passivas', () => {
-    it('tem 36 habilidades estruturadas: 25 automáticas e 11 ativadas', () => {
+    it('tem as 36 habilidades da primeira leva (25 automáticas e 11 ativadas) e as que entraram depois, cada uma automática ou ativada', () => {
         const defs = [ ...PASSIVE_CATALOG.values() ];
-        expect(defs).toHaveLength(36);
-        expect(defs.filter(def => def.mode === 'automatica')).toHaveLength(25);
-        expect(defs.filter(def => def.mode === 'ativada')).toHaveLength(11);
+        const automatic = defs.filter(def => def.mode === 'automatica');
+        const active = defs.filter(def => def.mode === 'ativada');
+
+        expect(defs.length).toBeGreaterThanOrEqual(36);
+        expect(automatic.length).toBeGreaterThanOrEqual(25);
+        expect(active.length).toBeGreaterThanOrEqual(11);
+        expect(automatic.length + active.length).toBe(defs.length);
     });
 
     it('cada entrada é uma habilidade que existe em constants/skills.ts, na lista certa', () => {

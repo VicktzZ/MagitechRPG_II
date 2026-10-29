@@ -1,4 +1,5 @@
 import type { CombatEffectModifier } from '@models';
+import type { AreaSpec } from '../sides';
 
 /**
  * Passivas de classe e subclasse no combate assistido. As 120 habilidades de `constants/skills.ts` (48 de classe, 72 de subclasse) são só prosa; este catálogo diz o que o
@@ -96,6 +97,10 @@ export interface AbilityEffect {
     description: string;
     /** Modificadores no formato do catálogo de efeitos (`damage_dealt_bonus`, `stat_bonus`, `advantage`, `flag`...) */
     modifiers: CombatEffectModifier[];
+    /** Cura ou dano a cada tick do efeito (o mesmo tick dos efeitos do catálogo: no começo do turno de quem o tem, nos que duram rodadas ou o combate) */
+    tick?: { kind: 'heal' | 'damage'; dice: string };
+    /** Só um alvo de cada vez: usar a habilidade de novo tira o efeito dos alvos anteriores (Maldição Debilitante: "apenas uma criatura por vez") */
+    exclusive?: boolean;
 }
 
 export interface AbilityChoice {
@@ -108,10 +113,15 @@ export interface AbilityActivation {
     execution: AbilityExecution;
     cost?: { mp?: number; allMp?: boolean };
     limits?: AbilityLimit[];
-    /** Cura o próprio personagem: `dice` e, opcionalmente, o valor do atributo Foco */
+    /** Cura o próprio personagem: `dice` e, opcionalmente, o valor do atributo Foco. Com `area`, cura cada alvo marcado, com a própria rolagem */
     heal?: { dice: string; plusFoc?: boolean };
-    /** Efeito sobre o personagem (se não houver `choices`) */
+    /** Efeito sobre o personagem (se não houver `choices`). Com `area`, sobre cada alvo marcado */
     effect?: AbilityEffect;
+    /**
+     * A habilidade pega outros combatentes (aura, cura em grupo, maldição num alvo): quem usa marca quem foi atingido, o servidor confere o lado (`sides.ts`) e aplica a cura e o
+     * efeito a cada um. O app não mede distância. Sem `area` a habilidade é só de quem a usa.
+     */
+    area?: AreaSpec;
     /** O jogador escolhe uma das variações (Postura Bestial) */
     choices?: AbilityChoice[];
 }
@@ -140,6 +150,10 @@ export interface AbilityUseResult {
     execution: string;
     heal: { notation: string; display: string; total: number; applied: number } | null;
     effect: { name: string; description: string } | null;
+    /** Em habilidade de área: quem foi atingido e quanto cada um recuperou (a cura é rolada por alvo) */
+    targets?: Array<{ id: string; name: string; healed?: number }>;
+    /** Em habilidade de área com cura: a rolagem de cada alvo, para o cliente mandar um cartão de dados por alvo ao chat */
+    heals?: Array<{ id: string; name: string; notation: string; display: string; total: number; applied: number }>;
     message: string;
 }
 

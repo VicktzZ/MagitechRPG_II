@@ -123,21 +123,32 @@ export interface AbilityUseSummary {
     /** O que a cura rendeu: o rolado e o que de fato entrou (a vida não passa do máximo) */
     heal?: { total: number; applied: number } | null;
     effect?: AbilityEffect | null;
+    /** Habilidade de área: quem foi atingido (nomes) */
+    targets?: readonly string[];
+    /** Habilidade de área com cura: quanto cada um recuperou */
+    healed?: ReadonlyArray<{ name: string; applied: number }>;
 }
 
-/** A linha do log e do chat quando o jogador usa a habilidade (sem o valor da vida de ninguém) */
-export function describeAbilityUse({ actor, ability, choice, cost, heal, effect }: AbilityUseSummary): string {
-    const head = `**${actor}** usou **${ability}**${choice ? ` (${choice})` : ''}${cost > 0 ? ` gastando ${cost} MP` : ''}${heal ? ` e curou **${heal.applied} de LP**` : ''}`;
+/** "Borin, Caio e Dara" */
+export const joinNames = (names: readonly string[]): string => (names.length <= 1 ? (names[0] ?? '') : `${names.slice(0, -1).join(', ')} e ${names[names.length - 1]}`);
+
+/** A linha do log e do chat quando o jogador usa a habilidade (sem o valor da vida de ninguém, salvo o que a própria cura rendeu) */
+export function describeAbilityUse({ actor, ability, choice, cost, heal, effect, targets, healed }: AbilityUseSummary): string {
+    const onTargets = targets && targets.length > 0 ? ` em ${joinNames(targets)}` : '';
+    const cure = healed && healed.length > 0
+        ? ` e curou ${joinNames(healed.map(entry => `${entry.name} (**${entry.applied}**)`))}`
+        : heal ? ` e curou **${heal.applied} de LP**` : '';
+    const head = `**${actor}** usou **${ability}**${choice ? ` (${choice})` : ''}${cost > 0 ? ` gastando ${cost} MP` : ''}${onTargets}${cure}`;
     return effect ? `${head}. ${effect.description} (${describeDuration(effect.duration)}).` : `${head}.`;
 }
 
 /** O cartão de dados da cura da habilidade (o mesmo cartão do efeito da magia: total à vista e os dados no dropdown) */
-export function buildAbilityHealText(player: string, ability: string, heal: { notation: string; display: string; total: number }): string {
+export function buildAbilityHealText(player: string, ability: string, heal: { notation: string; display: string; total: number }, targetName?: string): string {
     return buildActionRollText({
         kind: 'efeito',
         player,
         title: ability,
-        detail: 'Habilidade · Cura',
+        detail: targetName ? `Habilidade · Cura em ${targetName}` : 'Habilidade · Cura',
         critical: false,
         total: heal.total,
         cost: null,

@@ -2,6 +2,7 @@ import { IsArray, IsBoolean, IsNumber, IsOptional, IsString, ValidateNested } fr
 import { Type } from 'class-transformer';
 import { AppliedEffect } from './AppliedEffect';
 import type { UnseenData } from '../utils/combat/awareness';
+import type { CombatSide } from '../utils/combat/sides';
 import type { ActionBudget } from '../utils/combat/engine/actionBudget';
 import type { CombatEnvironment } from '../utils/combat/environment';
 import type { OpportunityData } from '../utils/combat/opportunities';
@@ -102,6 +103,14 @@ export class Combatant {
     /** Usos das habilidades ativadas **neste combate**, por chave de armazenamento (ver `utils/combat/passives/abilities.ts`); recomeça a cada combate */
     @IsOptional()
         abilityUses?: Record<string, number>;
+
+    /**
+     * Aliado ou inimigo (o mestre marca; ver `utils/combat/sides.ts`). Sem o campo vale o padrão do tipo: jogador é aliado e criatura é inimigo, então combate antigo não precisa
+     * de migração. Auras, curas em grupo e magias de área usam o lado para saber quem pode ser atingido.
+     */
+    @IsOptional()
+    @IsString()
+        side?: CombatSide;
 
     @ValidateNested({ each: true })
     @Type(() => AppliedEffect)

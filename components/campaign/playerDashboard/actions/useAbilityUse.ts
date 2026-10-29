@@ -15,7 +15,7 @@ export interface AbilityUse {
     /** Chave da habilidade em uso (os quadrados ficam sem clique enquanto a rota responde) */
     busyKey: string | null;
     /** Usa a habilidade: o servidor confere os usos e o MP, gasta o MP e a ação e cura ou põe o efeito; a cura vai ao chat como cartão de dados */
-    activateAbility: (ability: PassiveDef, choiceId?: string) => Promise<void>;
+    activateAbility: (ability: PassiveDef, choiceId?: string, targetIds?: string[]) => Promise<void>;
 }
 
 /**
@@ -30,29 +30,40 @@ export function useAbilityUse(): AbilityUse {
     const { enqueueSnackbar } = useSnackbar();
     const [ busyKey, setBusyKey ] = useState<string | null>(null);
 
-    const activateAbility: AbilityUse['activateAbility'] = async (ability, choiceId) => {
+    const activateAbility: AbilityUse['activateAbility'] = async (ability, choiceId, targetIds) => {
         if (!campaign?.id || !charsheet?.id || busyKey) return;
 
         try {
             setBusyKey(ability.key);
-            const data = await campaignService.useAbility(campaign.id, { combatantId: charsheet.id, abilityKey: ability.key, ...(choiceId ? { choiceId } : {}) });
+            const data = await campaignService.useAbility(campaign.id, {
+                combatantId: charsheet.id,
+                abilityKey: ability.key,
+                ...(choiceId ? { choiceId } : {}),
+                ...(targetIds ? { targetIds } : {})
+            });
             for (const warning of data.warnings ?? []) enqueueSnackbar(warning, { variant: 'warning' });
 
-            const heal = data.ability?.heal;
-            if (heal && session?.user) {
-                await handleSendMessage(new Message({
-                    text: buildAbilityHealText(charsheet.name || session.user.name || 'Jogador', ability.name, heal),
-                    type: MessageType.DICE,
-                    by: { id: session.user.id ?? '', name: session.user.name ?? '', image: session.user.image ?? '' },
-                    timestamp: new Date().toISOString(),
-                    isHTML: true
-                }));
+            // A cura em si mesmo vem em `heal`; em habilidade de área, cada alvo tem a sua rolagem em `heals`. Um cartão de dados por rolagem
+            const rolls = data.ability?.heals && data.ability.heals.length > 0
+                ? data.ability.heals.map(roll => ({ roll, target: roll.name }))
+                : data.ability?.heal ? [ { roll: data.ability.heal, target: undefined } ] : [];
+            if (rolls.length > 0 && session?.user) {
+                for (const { roll, target } of rolls) {
+                    await handleSendMessage(new Message({
+                        text: buildAbilityHealText(charsheet.name || session.user.name || 'Jogador', ability.name, roll, target),
+                        type: MessageType.DICE,
+                        by: { id: session.user.id ?? '', name: session.user.name ?? '', image: session.user.image ?? '' },
+                        timestamp: new Date().toISOString(),
+                        isHTML: true
+                    }));
+                }
                 if (!isChatOpen) setIsChatOpen(true);
             }
         } catch (error) {
             const { response } = asRequestError(error);
             const code = response?.data?.code;
-            if (response?.status === 409 && (code === 'ABILITY_BLOCKED' || code === 'HEALING_BLOCKED')) {
+            const rule = (response?.status === 409 && (code === 'ABILITY_BLOCKED' || code === 'HEALING_BLOCKED')) || (response?.status === 400 && code === 'AREA_TARGETS_REQUIRED');
+            if (response && rule) {
                 enqueueSnackbar(String(response.data?.error ?? 'Não deu para usar a habilidade'), { variant: 'warning' });
             } else {
                 console.error('Erro ao usar a habilidade:', error);

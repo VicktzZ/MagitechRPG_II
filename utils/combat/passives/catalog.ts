@@ -15,7 +15,7 @@ const add = (source: PassiveSource, name: string, entry: PassiveEntry): void => 
 const auto = (rules: PassiveRule[], pending?: string): PassiveEntry => ({ mode: 'automatica', rules, ...(pending ? { pending } : {}) });
 const active = (activation: NonNullable<PassiveDef['activation']>, pending?: string): PassiveEntry => ({ mode: 'ativada', activation, ...(pending ? { pending } : {}) });
 
-const effect = (duration: AbilityEffect['duration'], description: string, modifiers: AbilityEffect['modifiers'] = []): AbilityEffect => ({ duration, description, modifiers });
+const effect = (duration: AbilityEffect['duration'], description: string, modifiers: AbilityEffect['modifiers'] = [], extra: Pick<AbilityEffect, 'tick' | 'exclusive'> = {}): AbilityEffect => ({ duration, description, modifiers, ...extra });
 
 // ─── Classe ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
@@ -92,6 +92,18 @@ add('subclass', 'Postura Defensiva', active({
     effect: effect({ unit: 'turnos', amount: 2 }, 'Postura defensiva: +3 AP.', [ { kind: 'stat_bonus', target: 'ap', value: 3 } ])
 }, 'Os aliados a 6m recebem o mesmo efeito pelo mestre; +3 de Agilidade e −1d8 nos seus ataques são na mão; a ação gasta é premissa minha.'));
 
+add('subclass', 'Chamado à Glória', active({
+    execution: 'Padrão',
+    cost: { mp: 12 },
+    limits: [ { per: 'dia', max: 3 }, { per: 'combate', max: 1 } ],
+    area: { affects: 'allies' },
+    effect: effect({ unit: 'combate' }, 'Chamado à glória: vantagem (+1d20) e +2 nos ataques, vantagem (+1d20) nas resistências e cura de 1d6 LP a cada turno.', [
+        { kind: 'advantage', target: 'attack' },
+        { kind: 'advantage', target: 'resistance' },
+        { kind: 'stat_bonus', target: 'hit', value: 2 }
+    ], { tick: { kind: 'heal', dice: '1d6' } })
+}, 'Os aliados são os que você marca (o app não mede os 15m); o +2 nas resistências e os +1d4 MP por turno são na mão; a cura vem no começo do turno de cada um; a ação é premissa minha.'));
+
 // Aniquilador
 add('subclass', 'Avatar da Destruição', active({
     execution: 'Completa',
@@ -140,6 +152,14 @@ add('subclass', 'Aura Decadente', auto([
     { kind: 'weaponDamage', extra: { dice: [ '1d6' ] } },
     { kind: 'spellEffect', spell: { element: 'trevas' }, extra: { dice: [ '1d6' ] } }
 ], 'Impedir ressurreição, −2 de resistência física e 1d4 de dano por turno nos inimigos a 5m são do mestre.'));
+
+// Arauto
+add('subclass', 'Maldição Debilitante', active({
+    execution: 'Padrão',
+    cost: { mp: 8 },
+    area: { affects: 'enemies', max: 1 },
+    effect: effect({ unit: 'turnos', amount: 3 }, 'Maldição debilitante: desvantagem (−1d20) em todos os testes de resistência.', [ { kind: 'disadvantage', target: 'resistance' } ], { exclusive: true })
+}, 'O alvo precisa estar visível (é do mestre); só uma criatura de cada vez (o app tira a maldição do alvo anterior).'));
 
 // Guardião
 add('subclass', 'Postura Bestial', active({

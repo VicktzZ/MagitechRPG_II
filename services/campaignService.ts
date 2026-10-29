@@ -154,7 +154,7 @@ class CampaignService extends Service<Campaign, 'code' | 'userId'> {
      * Usa uma habilidade ativada de classe ou subclasse (`abilityKey`: `class:cura interior`). O servidor confere a ficha, os usos e o MP, gasta o MP e a ação e devolve a rolagem da
      * cura (`ability.heal`) para o chat. 409 `ABILITY_BLOCKED` (com `block`) quando não dá; `force` é do mestre e libera os usos esgotados e a cura bloqueada.
      */
-    async useAbility(campaignId: string, payload: { combatantId: string; abilityKey: string; choiceId?: string; force?: boolean }): Promise<AbilityUseResponse> {
+    async useAbility(campaignId: string, payload: { combatantId: string; abilityKey: string; choiceId?: string; force?: boolean; targetIds?: string[] }): Promise<AbilityUseResponse> {
         return (await this.post({
             param: `${campaignId}/combat`,
             body: { action: 'use_ability', ...payload }
@@ -244,6 +244,11 @@ class CampaignService extends Service<Campaign, 'code' | 'userId'> {
     /** Mestre marca (`difficult: true`) ou desmarca combatentes em terreno difícil: o deslocamento deles cai pela metade, salvo imunidade */
     async setTerrain(campaignId: string, payload: { combatantIds: string[]; difficult: boolean }) {
         return (await this.post({ param: `${campaignId}/combat`, body: { action: 'set_terrain', ...payload } })).data as unknown as { warnings?: string[] }
+    }
+
+    /** Mestre marca o lado (`ally` aliado ou `enemy` inimigo) de combatentes: auras, curas em grupo e áreas usam o lado (`utils/combat/sides.ts`) */
+    async setSide(campaignId: string, payload: { combatantIds: string[]; side: 'ally' | 'enemy' }) {
+        return (await this.post({ param: `${campaignId}/combat`, body: { action: 'set_side', ...payload } })).data as unknown as { warnings?: string[] }
     }
 
     /** Mestre abre uma reação: o que aconteceu (`trigger`, e `subjectId` quem sofreu ou fez) e quem pode reagir; cada reator com a Reação disponível ganha uma oferta (`utils/combat/reactions.ts`). Silencioso */

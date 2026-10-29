@@ -11,6 +11,7 @@ import type { Combatant, Creature } from '@models';
 import { color, font } from '@themes/tokens';
 import type { MpLimitView } from '@utils/combat/combatPanel';
 import { combatantBudget, combatantPerRound } from '@utils/combat/actionBudgets';
+import { combatantSide, SIDE_LABEL } from '@utils/combat/sides';
 import { initialsOf } from '@utils/combat/turnOrder';
 import type { CombatantVitals } from '@utils/combatantVitals';
 import { useState, type ReactElement } from 'react';
@@ -43,6 +44,7 @@ interface CombatantRowProps {
 export default function CombatantRow({ combatant, phase, current, vitals, mp, creature, actions, busy, onRollInitiative }: CombatantRowProps): ReactElement {
     const [ skillsOpen, setSkillsOpen ] = useState(false);
     const isPlayer = combatant.type === 'player';
+    const side = combatantSide(combatant);
     const hasEffects = Array.isArray(combatant.effects) && combatant.effects.length > 0;
     const mpSpentColor = mp.released ? 'success.main' : mp.spent >= mp.limit ? 'error.light' : 'text.secondary';
 
@@ -86,6 +88,18 @@ export default function CombatantRow({ combatant, phase, current, vitals, mp, cr
                     <Typography sx={{ fontWeight: 700 }}>{combatant.name}</Typography>
                     {current && <Chip size="small" label="Em turno" sx={{ height: 20, fontSize: 12, fontWeight: 700, bgcolor: 'primary.main', color: color.onAmber }} />}
                     {!isPlayer && <Chip size="small" variant="outlined" label="Criatura" sx={{ height: 20, fontSize: 12 }} />}
+                    <Tooltip title="Lado no combate. Auras, curas em grupo e áreas usam o lado. Clique para trocar.">
+                        <Chip
+                            size="small"
+                            variant="outlined"
+                            color={side === 'ally' ? 'success' : 'error'}
+                            label={SIDE_LABEL[side]}
+                            data-testid={`combatant-side-${combatant.id}`}
+                            onClick={() => { void actions.toggleSide(combatant); }}
+                            aria-label={`Lado de ${combatant.name}: ${SIDE_LABEL[side]}. Trocar`}
+                            sx={{ height: 20, fontSize: 12 }}
+                        />
+                    </Tooltip>
                 </Box>
 
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, ml: 'auto' }}>

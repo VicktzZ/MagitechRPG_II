@@ -40,8 +40,8 @@ export function useDefenseDeclaration(): DefenseDeclaration {
         if (busyId || !campaign?.id) return;
 
         const skill = choice === 'none' ? '' : defenseSkillFor(attack, choice);
-        // Esquivar leva as vantagens e desvantagens de esquiva dos efeitos (Atordoamento, Evasão...); resistir não tem alvo próprio no catálogo
-        const effects = choice === 'dodge' ? effectDice(combatantEffects(campaign.session?.combat, charsheet?.id), 'dodge') : undefined;
+        // Esquivar leva as vantagens e desvantagens de esquiva dos efeitos (Atordoamento, Evasão...) e resistir as de resistência (Chamado à Glória, Maldição Debilitante...)
+        const effects = choice === 'none' ? undefined : effectDice(combatantEffects(campaign.session?.combat, charsheet?.id), choice === 'dodge' ? 'dodge' : 'resistance');
         const plan = choice === 'none' ? null : planSheetRoll(charsheet, skill, rpgSystem, effects);
         if (choice !== 'none' && !plan) {
             enqueueSnackbar(`Não deu para rolar ${skill} pela ficha. Peça ao mestre para rolar por você.`, { variant: 'warning' });
