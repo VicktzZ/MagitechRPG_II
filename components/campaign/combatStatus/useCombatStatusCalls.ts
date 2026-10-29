@@ -7,7 +7,10 @@ import type { ActionSlot } from '@utils/combat/engine/actionBudget';
 import { asRequestError, errorMessage } from '@utils/errors';
 import { useSnackbar } from 'notistack';
 import { useCallback, useState } from 'react';
-import { handleHealingBlocked } from '../healBlocked';
+import { failure, post } from './combatRequest';
+import { useDamageHeal, type DamageHealInput } from './useDamageHeal';
+
+export type { DamageHealInput };
 
 interface CallsOptions {
     campaignId: string;
@@ -19,30 +22,12 @@ interface CallsOptions {
     onActionComplete?: () => void;
 }
 
-export interface DamageHealInput {
-    type: 'damage' | 'heal';
-    targetId: string;
-    value: number;
-}
-
-const post = async (campaignId: string, body: Record<string, unknown>): Promise<{ ok: boolean; result: Record<string, unknown> }> => {
-    const response = await fetch(`/api/campaign/${campaignId}/combat`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-    });
-    return { ok: response.ok, result: await response.json() as Record<string, unknown> };
-};
-
-const failure = (result: Record<string, unknown>, fallback: string): Error => new Error(typeof result['error'] === 'string' && result['error'] ? result['error'] : fallback);
-
 /** As chamadas do card de combate do jogador à rota de combate: rolar iniciativa, gastar ação, passar o turno e aplicar dano ou cura. Cada uma com o seu "ocupado". */
 export function useCombatStatusCalls({ campaignId, userCombatant, isGM, currentCombatant, onActionComplete }: CallsOptions) {
-    const { enqueueSnackbar, closeSnackbar } = useSnackbar();
+    const { enqueueSnackbar } = useSnackbar();
     const [ isRolling, setIsRolling ] = useState(false);
     const [ isPassingTurn, setIsPassingTurn ] = useState(false);
     const [ isSpendingAction, setIsSpendingAction ] = useState(false);
-    const [ isApplying, setIsApplying ] = useState(false);
 
     /** Devolve `true` se rolou (o diálogo fecha) */
     const rollInitiative = useCallback(async (): Promise<boolean> => {
@@ -98,42 +83,12 @@ export function useCombatStatusCalls({ campaignId, userCombatant, isGM, currentC
         }
     }, [ campaignId, enqueueSnackbar, onActionComplete ]);
 
-    /** Devolve `true` se aplicou (o diálogo fecha). `force` é a cura do mestre em quem tem Necrose, Incurável... */
-    const applyDamageHeal = useCallback(async ({ type, targetId, value }: DamageHealInput, force = false): Promise<boolean> => {
-        if (!targetId || value <= 0) {
-            enqueueSnackbar('Selecione um alvo e um valor válido', { variant: 'warning' });
-            return false;
-        }
-
-        setIsApplying(true);
-        try {
-            // Se for GM, usa o combatente do turno atual; se for jogador, usa o próprio combatente
-            const actorId = isGM && currentCombatant ? currentCombatant.id : userCombatant?.id;
-
-            const { ok, result } = await post(campaignId, {
-                action: type === 'damage' ? 'apply_damage' : 'apply_heal',
-                combatantId: actorId,
-                targetId,
-                value,
-                ...(force ? { force: true } : {})
-            });
-
-            // Necrose, Incurável...: o alvo não recebe cura. O mestre pode curar mesmo assim
-            const forceHeal = (): void => { void applyDamageHeal({ type, targetId, value }, true); };
-            if (!ok && handleHealingBlocked(result as { code?: string; error?: string; canForce?: boolean }, { enqueueSnackbar, closeSnackbar }, forceHeal)) return false;
-            if (!ok) throw failure(result, 'Erro ao aplicar ação');
-
-            enqueueSnackbar(type === 'damage' ? `${value} de dano aplicado!` : `${value} de cura aplicada!`, { variant: 'success' });
-            onActionComplete?.();
-            return true;
-        } catch (error) {
-            console.error('Erro ao aplicar ação:', error);
-            enqueueSnackbar(error instanceof Error ? error.message : 'Erro ao aplicar ação', { variant: 'error' });
-            return false;
-        } finally {
-            setIsApplying(false);
-        }
-    }, [ campaignId, isGM, currentCombatant, userCombatant, enqueueSnackbar, closeSnackbar, onActionComplete ]);
+    // Dano e cura: se for GM, quem causa é o combatente do turno atual; se for jogador, o próprio combatente
+    const { isApplying, applyDamageHeal } = useDamageHeal({
+        campaignId,
+        defaultActorId: isGM && currentCombatant ? currentCombatant.id : userCombatant?.id,
+        onActionComplete
+    });
 
     return { isRolling, rollInitiative, isSpendingAction, spendAction, isPassingTurn, passTurn, isApplying, applyDamageHeal };
 }

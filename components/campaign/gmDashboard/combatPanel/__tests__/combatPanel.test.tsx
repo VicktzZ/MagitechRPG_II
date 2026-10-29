@@ -28,6 +28,7 @@ const goblinCreature = {
 
 const actions: CombatantActions = {
     applyEffect: jest.fn(),
+    damageHeal: jest.fn(),
     removeEffect: jest.fn(),
     setMpSpent: jest.fn(),
     resetMpLimit: jest.fn(),
@@ -59,6 +60,8 @@ describe('CombatantRow', () => {
         expect(html).toContain('data-testid="action-pip-padrao"');
         expect(html).toContain('data-testid="action-pip-reacao"');
         expect(html).toContain('aria-label="Aplicar efeito em Aria"');
+        expect(html).toContain('aria-label="Aplicar dano em Aria"');
+        expect(html).toContain('aria-label="Aplicar cura em Aria"');
         expect(html).toContain('aria-label="Abrir Aria em janela"');
     });
 
@@ -179,6 +182,9 @@ describe('GMCombatPanel', () => {
         expect(html).toContain('Borin Pedraferro');
         expect(html).toContain('Passar turno');
         expect(html).toContain('Encerrar combate');
+        // dano e cura narrados ficam no topo fixo, à mão sem rolar até a linha do alvo
+        expect(html).toContain('>Dano<');
+        expect(html).toContain('>Cura<');
         expect(html).not.toContain('Definir ordem');
         // a faixa de ordem do topo, com todos
         expect(html).toContain('aria-label="Ordem de turnos"');

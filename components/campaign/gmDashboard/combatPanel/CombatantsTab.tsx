@@ -9,20 +9,22 @@ import type { ReactElement } from 'react';
 import AddCombatantsPanel from '../actions/combat/AddCombatantsPanel';
 import type { PlayerInfo } from '../actions/types';
 import CombatantRow from './CombatantRow';
-import type { GmCombatControls } from './useGmCombat';
+import type { DamageHealKind } from './useDamageHealDialog';
 import { useCombatantActions } from './useCombatantActions';
+import type { GmCombatControls } from './useGmCombat';
 
 interface CombatantsTabProps {
     combat: Combat;
     players: PlayerInfo[];
     creatures: Creature[];
     controls: GmCombatControls;
+    onDamageHeal: (type: DamageHealKind, targetId: string) => void;
 }
 
 /** A lista de combatentes na ordem do combate, com o "Adicionar ao combate" em cima. Os diálogos das ações (efeito, MP gasto) são um só para a lista inteira */
-export default function CombatantsTab({ combat, players, creatures, controls }: CombatantsTabProps): ReactElement {
+export default function CombatantsTab({ combat, players, creatures, controls, onDamageHeal }: CombatantsTabProps): ReactElement {
     const { campaign, charsheets } = useCampaignContext();
-    const actions = useCombatantActions();
+    const actions = useCombatantActions(onDamageHeal);
     const combatants = combat.combatants ?? [];
 
     return (

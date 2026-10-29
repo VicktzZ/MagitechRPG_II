@@ -1,28 +1,33 @@
 'use client';
 
+import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import SkipNextIcon from '@mui/icons-material/SkipNext';
 import SportsKabaddiIcon from '@mui/icons-material/SportsKabaddi';
 import StopIcon from '@mui/icons-material/Stop';
-import { Box, Button, Chip, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, LinearProgress, Typography } from '@mui/material';
+import WhatshotIcon from '@mui/icons-material/Whatshot';
+import { Box, Button, Chip, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, IconButton, LinearProgress, Tooltip, Typography } from '@mui/material';
 import type { Combat } from '@models';
 import { font } from '@themes/tokens';
 import { pendingInitiative } from '@utils/combat/combatPanel';
 import { useState, type ReactElement } from 'react';
 import TurnOrderStrip from '../../combat/TurnOrderStrip';
 import { useTurnOrder } from '../../combat/useTurnOrder';
+import type { DamageHealKind } from './useDamageHealDialog';
 import type { GmCombatControls } from './useGmCombat';
 
 interface CombatPanelHeaderProps {
     combat: Combat;
     controls: GmCombatControls;
+    /** Abre o diálogo de dano ou de cura (o alvo se escolhe nele) */
+    onDamageHeal: (type: DamageHealKind) => void;
 }
 
 /**
  * O topo do painel de combate do mestre, que fica à vista enquanto a lista rola: a rodada, a fase, de quem é a vez, os comandos (passar o turno, definir a ordem,
  * encerrar) e a faixa da ordem de turnos. Encerrar pede confirmação (o painel é permanente, o clique errado custa mais que no antigo diálogo).
  */
-export default function CombatPanelHeader({ combat, controls }: CombatPanelHeaderProps): ReactElement {
+export default function CombatPanelHeader({ combat, controls, onDamageHeal }: CombatPanelHeaderProps): ReactElement {
     const summary = useTurnOrder();
     const [ confirmEnd, setConfirmEnd ] = useState(false);
     const initiative = combat.phase === 'INITIATIVE';
@@ -73,14 +78,29 @@ export default function CombatPanelHeader({ combat, controls }: CombatPanelHeade
                             Definir ordem
                         </Button>
                     )}
+                    <Button size="small" variant="outlined" color="secondary" startIcon={<WhatshotIcon sx={{ color: 'error.main' }} />} onClick={() => { onDamageHeal('damage'); }}>
+                        Dano
+                    </Button>
+                    <Button size="small" variant="outlined" color="secondary" startIcon={<LocalHospitalIcon sx={{ color: 'success.main' }} />} onClick={() => { onDamageHeal('heal'); }}>
+                        Cura
+                    </Button>
                     {!initiative && (
                         <Button variant="contained" startIcon={<SkipNextIcon />} disabled={controls.busy} onClick={() => { void controls.nextTurn(); }}>
                             Passar turno
                         </Button>
                     )}
-                    <Button variant="outlined" color="secondary" startIcon={<StopIcon />} disabled={controls.busy} onClick={() => { setConfirmEnd(true); }}>
-                        Encerrar combate
-                    </Button>
+                    <Tooltip title="Encerrar combate">
+                        <span>
+                            <IconButton
+                                aria-label="Encerrar combate"
+                                disabled={controls.busy}
+                                onClick={() => { setConfirmEnd(true); }}
+                                sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1 }}
+                            >
+                                <StopIcon />
+                            </IconButton>
+                        </span>
+                    </Tooltip>
                 </Box>
             </Box>
 

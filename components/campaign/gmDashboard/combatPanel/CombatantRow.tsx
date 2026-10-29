@@ -3,7 +3,9 @@
 import BoltIcon from '@mui/icons-material/Bolt';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import WhatshotIcon from '@mui/icons-material/Whatshot';
 import { alpha, Avatar, Box, Button, Chip, Collapse, IconButton, Tooltip, Typography } from '@mui/material';
 import type { Combatant, Creature } from '@models';
 import { color, font } from '@themes/tokens';
@@ -98,6 +100,16 @@ export default function CombatantRow({ combatant, phase, current, vitals, mp, cr
                     ) : (
                         <Typography sx={{ fontSize: 12, fontFamily: font.mono, color: 'text.secondary', mr: 0.5 }}>Init {combatant.initiativeTotal}</Typography>
                     )}
+                    <Tooltip title="Dano">
+                        <IconButton size="small" aria-label={`Aplicar dano em ${combatant.name}`} onClick={() => { actions.damageHeal('damage', combatant); }}>
+                            <WhatshotIcon fontSize="small" sx={{ color: 'error.main' }} />
+                        </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Cura">
+                        <IconButton size="small" aria-label={`Aplicar cura em ${combatant.name}`} onClick={() => { actions.damageHeal('heal', combatant); }}>
+                            <LocalHospitalIcon fontSize="small" sx={{ color: 'success.main' }} />
+                        </IconButton>
+                    </Tooltip>
                     <Tooltip title="Aplicar efeito">
                         <IconButton size="small" aria-label={`Aplicar efeito em ${combatant.name}`} onClick={() => { actions.applyEffect(combatant); }}>
                             <BoltIcon fontSize="small" />

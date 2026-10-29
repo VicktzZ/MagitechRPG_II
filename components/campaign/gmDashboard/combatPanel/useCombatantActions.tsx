@@ -13,9 +13,12 @@ import { useSetMpSpent } from '../actions/useSetMpSpent';
 import { useToggleCombatAction } from '../actions/useToggleCombatAction';
 import { useCreatureExpertiseRoll } from '../dashboard/useCreatureExpertiseRoll';
 import { useGMWindowActions } from '../windows/GMWindowProvider';
+import type { DamageHealKind } from './useDamageHealDialog';
 
 export interface CombatantActions {
     applyEffect: (combatant: Combatant) => void;
+    /** Dano ou cura narrados neste combatente (abre o diálogo com ele como alvo) */
+    damageHeal: (type: DamageHealKind, combatant: Combatant) => void;
     removeEffect: (combatantId: string, appliedEffectId: string) => Promise<void>;
     setMpSpent: (combatant: Combatant, mp: MpLimitView) => void;
     resetMpLimit: (combatantId: string) => Promise<void>;
@@ -34,7 +37,7 @@ export interface CombatantActions {
  * As ações do mestre sobre um combatente (efeito, limite de MP, ações da rodada, janela, rolagem da criatura), numa instância só para a lista inteira: os diálogos
  * (`dialogs`) são um só e as linhas apenas chamam, em vez de cada uma montar o seu.
  */
-export function useCombatantActions(): CombatantActions {
+export function useCombatantActions(onDamageHeal: (type: DamageHealKind, targetId: string) => void): CombatantActions {
     const { campaign } = useCampaignContext();
     const { enqueueSnackbar } = useSnackbar();
     const { openWindow } = useGMWindowActions();
@@ -75,6 +78,7 @@ export function useCombatantActions(): CombatantActions {
 
     return {
         applyEffect: (combatant) => { openEffectFor({ id: combatant.id, name: combatant.name }); },
+        damageHeal: (type, combatant) => { onDamageHeal(type, combatant.id); },
         removeEffect,
         setMpSpent: (combatant, mp) => { openSetMpSpent({ id: combatant.id, name: combatant.name, spent: mp.spent, limit: mp.limit }); },
         resetMpLimit,

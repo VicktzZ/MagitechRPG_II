@@ -803,13 +803,15 @@ export async function POST(
             const { target } = change
 
             // Mensagem de dano - não revela LP restante para ninguém
-            const damageMessage = `⚔️ **${attacker?.name || 'Desconhecido'}** causou **${damage} de dano** em **${target.name}**!`
+            // O mestre pode aplicar sem escolher um personagem (pelo painel de combate): o log diz "O mestre"
+            const damageActor = attacker?.name || (isGM ? 'O mestre' : 'Desconhecido')
+            const damageMessage = `⚔️ **${damageActor}** causou **${damage} de dano** em **${target.name}**!`
 
             combat.logs.push(new CombatLog({
                 round: combat.round,
                 type: 'damage',
                 actorId: attacker?.id || 'unknown',
-                actorName: attacker?.name || 'Desconhecido',
+                actorName: damageActor,
                 targetId: target.id,
                 targetName: target.name,
                 value: damage,
@@ -852,13 +854,14 @@ export async function POST(
             const healTarget = healChange.target
 
             // Mensagem de cura - não revela LP restante para ninguém
-            const healMessage = `💚 **${healer?.name || 'Desconhecido'}** curou **${heal} de LP** em **${healTarget.name}**!`
+            const healActor = healer?.name || (isGM ? 'O mestre' : 'Desconhecido')
+            const healMessage = `💚 **${healActor}** curou **${heal} de LP** em **${healTarget.name}**!`
 
             combat.logs.push(new CombatLog({
                 round: combat.round,
                 type: 'heal',
                 actorId: healer?.id || 'unknown',
-                actorName: healer?.name || 'Desconhecido',
+                actorName: healActor,
                 targetId: healTarget.id,
                 targetName: healTarget.name,
                 value: heal,

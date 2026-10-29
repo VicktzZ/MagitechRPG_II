@@ -11,6 +11,7 @@ import AttentionNotice from './AttentionNotice';
 import CombatPanelHeader from './CombatPanelHeader';
 import CombatantsTab from './CombatantsTab';
 import HistoryTab from './HistoryTab';
+import { useDamageHealDialog } from './useDamageHealDialog';
 import { useGmCombat } from './useGmCombat';
 
 type TabId = 'combatentes' | 'ataques' | 'ambiente' | 'historico';
@@ -31,6 +32,7 @@ export default function GMCombatPanel(): ReactElement | null {
     const { campaign } = useCampaignContext();
     const players = usePlayerInfos();
     const controls = useGmCombat(campaign.id);
+    const damageHeal = useDamageHealDialog();
     const [ tab, setTab ] = useState<TabId>('combatentes');
     const combat = campaign.session?.combat;
 
@@ -41,7 +43,7 @@ export default function GMCombatPanel(): ReactElement | null {
 
     return (
         <Paper id="combate" component="section" elevation={2} sx={{ p: { xs: 2, sm: 3 }, pt: { xs: 0, sm: 0 }, borderRadius: 2, scrollMarginTop: 'var(--campaign-sticky-offset, 16px)' }}>
-            <CombatPanelHeader combat={combat} controls={controls} />
+            <CombatPanelHeader combat={combat} controls={controls} onDamageHeal={(type) => { damageHeal.openDamageHeal(type); }} />
 
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, pt: 1.5 }}>
                 {tab !== 'ataques' && inAction && <AttentionNotice attention={attention} onSee={() => { setTab('ataques'); }} />}
@@ -71,7 +73,13 @@ export default function GMCombatPanel(): ReactElement | null {
             </Box>
 
             <TabPanel tab="combatentes" active={tab}>
-                <CombatantsTab combat={combat} players={players} creatures={campaign.custom?.creatures ?? []} controls={controls} />
+                <CombatantsTab
+                    combat={combat}
+                    players={players}
+                    creatures={campaign.custom?.creatures ?? []}
+                    controls={controls}
+                    onDamageHeal={damageHeal.openDamageHeal}
+                />
             </TabPanel>
             <TabPanel tab="ataques" active={tab}>
                 {inAction ? (
@@ -86,6 +94,8 @@ export default function GMCombatPanel(): ReactElement | null {
             <TabPanel tab="historico" active={tab}>
                 <HistoryTab campaignId={campaign.id} combat={combat} />
             </TabPanel>
+
+            {damageHeal.damageHealDialog}
         </Paper>
     );
 }
