@@ -25,6 +25,8 @@ export interface ApplySpellTypeOptions {
     apply?: boolean
     /** Trocas a aplicar (padrão: as de Recuperação) */
     changes?: SpellTypeChange[]
+    /** O campo da magia que as trocas mexem: `type` (padrão) ou `name` (renomear, `scripts/applySpellRenames.ts`). Só ele é lido e gravado */
+    field?: 'type' | 'name'
 }
 
 export interface ApplySpellTypeReport {
@@ -35,14 +37,18 @@ export interface ApplySpellTypeReport {
     skipped: SpellTypeChange[]
 }
 
-export async function applySpellTypeChanges({ apply = false, changes = MANA_RECOVERY_TYPE_CHANGES }: ApplySpellTypeOptions = {}): Promise<ApplySpellTypeReport> {
+export async function applySpellTypeChanges({ apply = false, changes = MANA_RECOVERY_TYPE_CHANGES, field = 'type' }: ApplySpellTypeOptions = {}): Promise<ApplySpellTypeReport> {
     initFirebaseAdmin()
     const db = admin.firestore()
     const collection = db.collection('spells')
 
-    const snapshots = await db.getAll(...changes.map(change => collection.doc(change.id)))
+    // O Firestore limita a leitura em lote; vai em fatias
+    const snapshots: admin.firestore.DocumentSnapshot[] = []
+    for (let start = 0; start < changes.length; start += 300) {
+        snapshots.push(...await db.getAll(...changes.slice(start, start + 300).map(change => collection.doc(change.id))))
+    }
     const currentTypes = new Map<string, string | undefined>(
-        snapshots.filter(snapshot => snapshot.exists).map(snapshot => [ snapshot.id, (snapshot.data() as { type?: string }).type ])
+        snapshots.filter(snapshot => snapshot.exists).map(snapshot => [ snapshot.id, (snapshot.data() as Record<string, string | undefined>)[field] ])
     )
 
     const plan = planSpellTypeChanges(changes, currentTypes)
@@ -52,9 +58,9 @@ export async function applySpellTypeChanges({ apply = false, changes = MANA_RECO
     for (const change of plan.update) {
         const ref = collection.doc(change.id)
         const done = await db.runTransaction(async (transaction) => {
-            const current = (await transaction.get(ref)).data() as { type?: string } | undefined
-            if (current?.type !== change.from) return false
-            transaction.update(ref, { type: change.to })
+            const current = (await transaction.get(ref)).data() as Record<string, string | undefined> | undefined
+            if (current?.[field] !== change.from) return false
+            transaction.update(ref, { [field]: change.to })
             return true
         })
         ;(done ? report.applied : report.skipped).push(change)
@@ -63,9 +69,9 @@ export async function applySpellTypeChanges({ apply = false, changes = MANA_RECO
     return report
 }
 
-function printReport(report: ApplySpellTypeReport, apply: boolean): void {
+export function printReport(report: ApplySpellTypeReport, apply: boolean, field: 'type' | 'name' = 'type'): void {
     const { plan } = report
-    const row = (change: SpellTypeChange): { magia: string; de: string; para: string } => ({ magia: change.name, de: change.from, para: change.to })
+    const row = (change: SpellTypeChange): { magia: string; de: string; para: string } => ({ magia: field === 'name' ? change.id : change.name, de: change.from, para: change.to })
 
     if (plan.update.length > 0) {
         console.log(apply ? 'Trocadas:' : 'Seriam trocadas:')
@@ -79,11 +85,11 @@ function printReport(report: ApplySpellTypeReport, apply: boolean): void {
         `${report.skipped.length} pulada(s) no meio da gravação`
     ]
     console.log(counts.join(' · '))
-    plan.conflicts.forEach(change => console.log(`  CONFLITO ${change.name}: o type agora é "${change.current}" (esperado "${change.from}" ou "${change.to}"); não foi mexida`))
+    plan.conflicts.forEach(change => console.log(`  CONFLITO ${change.name}: o ${field} agora é "${change.current}" (esperado "${change.from}" ou "${change.to}"); não foi mexida`))
     plan.missing.forEach(change => console.log(`  INEXISTENTE ${change.name} (${change.id})`))
 }
 
-function valueOf(argv: string[], flag: string): string | undefined {
+export function valueOf(argv: string[], flag: string): string | undefined {
     const index = argv.indexOf(flag)
     return index >= 0 ? argv[index + 1] : undefined
 }

@@ -133,7 +133,7 @@ export const REACTION_SPELLS: SeedSpell[] = [
         name: 'Orvalho Purificador',
         level: 2,
         mpCost: 4,
-        type: 'Utilidade (imediato)',
+        type: 'Utilidade (imediato/Área)',
         execution: 'Reação',
         range: 'Curto',
         stages: [
@@ -163,7 +163,7 @@ export const REACTION_SPELLS: SeedSpell[] = [
         name: 'Tremor Disruptivo',
         level: 2,
         mpCost: 4,
-        type: 'Debuff (imediato)',
+        type: 'Controle (imediato)',
         execution: 'Reação',
         range: 'Médio',
         stages: [
@@ -257,7 +257,7 @@ export const REACTION_SPELLS: SeedSpell[] = [
         name: 'Inversão Necrótica',
         level: 3,
         mpCost: 6,
-        type: 'Debuff (imediato)',
+        type: 'Controle (imediato)',
         execution: 'Reação',
         range: 'Médio',
         stages: [
@@ -291,7 +291,7 @@ export const REACTION_SPELLS: SeedSpell[] = [
         name: 'Recusa Derradeira',
         level: 4,
         mpCost: 10,
-        type: 'Defesa (imediato)',
+        type: 'Defesa (imediato/Área)',
         execution: 'Reação',
         range: 'Médio',
         stages: [
