@@ -29,6 +29,7 @@ import {
 import { color } from '@themes/tokens';
 import { type ReactElement, useState } from 'react';
 import { canEvolve, formatEvolutionPoints, getEvolutionPoints, getSpellProgress, spellStageLabel, withoutSpell, type SpellStage } from '@utils/spellStages';
+import CastModifiersPanel from './spells/CastModifiersPanel';
 import { useSpellCasting } from './spells/SpellCastingContext';
 
 /** Nível e estágio são escalas ordenadas: neutros que clareiam até o âmbar no topo (o número vai sempre em texto) */
@@ -52,8 +53,8 @@ export default function SpellsSection(): ReactElement {
     const { enqueueSnackbar } = useSnackbar();
     // Conjurar, efetuar e desconjurar: o estado é do painel inteiro (a seção "Ações" conjura pelos mesmos caminhos)
     const {
-        castingSpellId, effectingSpellId, pendingEffects, clearPending, mpLimitEnforced, mpLimit, mpSpentThisTurn, mpLimitReleased, sustainedActive, exceedsMpLimit, spellCost, stageRule,
-        castSpell: handleCastSpell, endSustained: handleEndSustained, effectSpell: handleEffectSpell
+        castingSpellId, effectingSpellId, pendingEffects, clearPending, mpLimitEnforced, mpLimit, mpSpentThisTurn, mpLimitReleased, sustainedActive, exceedsMpLimit, stageRule,
+        castSpell: handleCastSpell, endSustained: handleEndSustained, effectSpell: handleEffectSpell, planFor, fixationStage
     } = useSpellCasting();
 
     const [ expandedSpell, setExpandedSpell ] = useState<string | false>(false)
@@ -237,6 +238,8 @@ export default function SpellsSection(): ReactElement {
                             </Paper>
                         ) : (
                             <Stack spacing={2}>
+                                {/* Metamagia, Teia da Realidade, Fixação Mágica: o que vale para a próxima conjuração (some sem essas habilidades) */}
+                                <CastModifiersPanel />
                                 {allSpells.map(spell => {
                                     const levelConfig = getSpellLevelColor(Number(spell.level));
                                     const spellId = spell.id || spell.name
@@ -397,11 +400,13 @@ export default function SpellsSection(): ReactElement {
                                                         spell={spell}
                                                         progress={progress}
                                                         revealLocked={progress.enabled && campaignRevealsSpellStages(campaign)}
-                                                        costOf={(stage) => spellCost(spell, stage as SpellStage)}
+                                                        // O custo que se cobra: o do estágio mais a metamagia e a Teia da Realidade que estão ligadas
+                                                        costOf={(stage) => planFor(spell, stage as SpellStage).cost}
                                                         evolution={progress.enabled ? { points: evolutionPoints, onEvolve: async () => { await handleEvolve(spell) } } : undefined}
                                                         cast={{
                                                             onCast: async (stage) => { await handleCastSpell(spell, stage) },
                                                             isCasting: castingSpellId === spellId,
+                                                            fixation: fixationStage(spell) !== null ? { stage: fixationStage(spell)! } : undefined,
                                                             currentMp,
                                                             sustained: isSustainedSpell(spell.type) && sustainedActive[spellId]
                                                                 ? { activeStage: sustainedActive[spellId], onEnd: async () => { await handleEndSustained(spell) } }

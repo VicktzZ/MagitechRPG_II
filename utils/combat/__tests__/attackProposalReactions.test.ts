@@ -73,3 +73,30 @@ describe('a proposta do mestre com as reações do alvo', () => {
         expect(proposal.lines.find(entry => entry.label === 'Contra-ataque: Xeque-Mate')).toMatchObject({ detail: 'crítico garantido, +6d6 de dano, qualquer arma', visibility: 'all' });
     });
 });
+
+describe('a proposta do mestre com a Fixação Mágica do alvo', () => {
+    const fixed = { ...aria, invulnerableTo: 'Brasa Voraz' };
+    const spell = (patch: Partial<PendingAttackData> = {}) => attack({ source: 'spell', kind: 'magico', name: 'Brasa Voraz', attackTotal: 30, ...patch });
+
+    it('a magia fixada do alvo erra sozinha, sem calcular dano, e o motivo é só do mestre', () => {
+        const proposal = buildAttackProposal(spell(), [], fixed, { defense: 'none' });
+        expect(proposal).toMatchObject({ hit: false, finalDamage: 0, resolution: null });
+        expect(proposal.lines.find(entry => entry.label === 'Fixação Mágica do alvo')).toMatchObject({ visibility: 'gm' });
+        expect(proposal.lines.at(-1)).toMatchObject({ label: 'Acerto', detail: 'errou' });
+    });
+
+    it('outra magia acerta normalmente', () => {
+        const proposal = buildAttackProposal(spell({ name: 'Raio Gélido' }), [], fixed, { defense: 'none' });
+        expect(proposal.hit).toBe(true);
+    });
+
+    it('arma com o mesmo nome da magia fixada não é barrada (só magia)', () => {
+        const proposal = buildAttackProposal(attack({ source: 'weapon', name: 'Brasa Voraz', attackTotal: 30 }), [], fixed, { defense: 'none' });
+        expect(proposal.hit).toBe(true);
+    });
+
+    it('sem Fixação Mágica o alvo não é invulnerável', () => {
+        expect(buildAttackProposal(spell(), [], { ...aria, invulnerableTo: null }, { defense: 'none' }).hit).toBe(true);
+        expect(buildAttackProposal(spell(), [], aria, { defense: 'none' }).hit).toBe(true);
+    });
+});

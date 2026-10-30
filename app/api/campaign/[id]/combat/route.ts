@@ -47,6 +47,7 @@ import { undoCombatEvent } from '@utils/firestore/combatUndo'
 import { initiativeAdvantages, ownedPassives, type AbilityUseResult } from '@utils/combat/passives'
 import { runAbilityUse } from '@utils/combat/abilityUse'
 import { applyCounterOnHit, runAttackReaction, settleAttackReactions } from '@utils/combat/attackReactionUse'
+import { applyGuidedHits } from '@utils/combat/guidedHits'
 import { controlsSummon, isSummon, resolveController, summonFields } from '@utils/combat/summons'
 import { applySide, isCombatSide, sanitizeAreaIds, SIDE_LABEL } from '@utils/combat/sides'
 import { applyStealthEntryPassives, applyTurnStartPassives } from '@utils/combat/turnPassives'
@@ -170,6 +171,8 @@ interface CombatRequest {
 
     /** Para spend_action: a execução que gasta a ação ("Padrão", "Bônus"/"Livre", "Movimento", "Reação", "Completa") */
     execution?: string
+    /** Para spend_action: a ação Bônus é a da Conjuração Rápida (marca a rodada: uma vez por turno) */
+    quickCast?: boolean
     /** Para set_actions: as ações que restam, por espaço ({ padrao: 0, bonus: 1, movimento: 1, reacao: 1 }); só os espaços informados mudam */
     actions?: Record<string, number>
     /** Para adjust_actions: a variação das ações de agora por espaço ({ padrao: 1, movimento: -1 }), somada ao que o combatente tem (de 0 a 9) */
@@ -1402,6 +1405,8 @@ export async function POST(
             }
 
             combatant.actions = spent.budget
+            // Conjuração Rápida (magia de nível 1 como Bônus, uma vez por turno): a rodada fica marcada; o cliente confere a habilidade, o servidor só guarda a marca
+            if (slot === 'bonus' && body.quickCast === true) combatant.quickCastRound = combat.round
             // Gastou a Reação: as ofertas de reação dele se fecham (ele já reagiu, ou esquivou)
             if (slot === 'reacao') combat.reactions = closeReactionsOf(combat.reactions, combatant.id)
 
@@ -2121,6 +2126,9 @@ export async function POST(
                     }))
                 }
             }
+
+            // Magia Guiada: a sequência de acertos da mesma magia no mesmo alvo anda (ou zera)
+            await applyGuidedHits(combat, pending, { hit: body.hit, dealt })
 
             combat.pendingAttacks = removePendingAttack(combat.pendingAttacks, pending.id)
 

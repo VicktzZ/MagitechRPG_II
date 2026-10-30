@@ -100,6 +100,17 @@ export class Combatant {
     @IsOptional()
         actionsPerRound?: ActionBudget;
 
+    /**
+     * A rodada em que o personagem usou a **Conjuração Rápida** (magia de nível 1 como ação Bônus, uma vez por turno; ver `utils/combat/passives/casting.ts`). Vale como usada
+     * enquanto for a rodada atual; sem o campo, ainda não usou.
+     */
+    @IsOptional()
+        quickCastRound?: number;
+
+    /** A sequência de acertos de magia da **Magia Guiada**: quem foi acertado, com qual magia (o nome) e quantas vezes seguidas. Só o servidor grava (`resolve_attack`); zera ao errar, atacar com outra coisa ou sofrer dano */
+    @IsOptional()
+        guided?: { targetId: string; spellKey: string; hits: number };
+
     /** Usos das habilidades ativadas **neste combate**, por chave de armazenamento (ver `utils/combat/passives/abilities.ts`); recomeça a cada combate */
     @IsOptional()
         abilityUses?: Record<string, number>;

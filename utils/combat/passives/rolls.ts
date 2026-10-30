@@ -91,7 +91,7 @@ export function spellMatches(filter: SpellFilter | undefined, spell: SpellLike, 
 }
 
 /** Os acréscimos que uma regra faz, com os valores da ficha já lidos (Luta, Foco, LP) */
-function specFromExtra(source: string, extra: PassiveExtra, context: PassiveContext, weapon?: WeaponLike): ExtraSpec | null {
+export function specFromExtra(source: string, extra: PassiveExtra, context: PassiveContext, weapon?: WeaponLike): ExtraSpec | null {
     const dice = [ ...(extra.dice ?? []) ];
     let flat = extra.flat ?? 0;
     let sameDie = 0;
@@ -114,7 +114,7 @@ function specFromExtra(source: string, extra: PassiveExtra, context: PassiveCont
     return { source, dice, flat, sameDie };
 }
 
-const rulesOf = <K extends PassiveRule['kind']>(passives: readonly PassiveDef[], kind: K): Array<{ passive: PassiveDef; rule: Extract<PassiveRule, { kind: K }> }> =>
+export const rulesOf = <K extends PassiveRule['kind']>(passives: readonly PassiveDef[], kind: K): Array<{ passive: PassiveDef; rule: Extract<PassiveRule, { kind: K }> }> =>
     passives.flatMap(passive => (passive.rules ?? []).filter((rule): rule is Extract<PassiveRule, { kind: K }> => rule.kind === kind).map(rule => ({ passive, rule })));
 
 /** O que as passivas somam ao dano da arma que acabou de acertar */

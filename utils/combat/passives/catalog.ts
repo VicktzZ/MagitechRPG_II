@@ -58,6 +58,15 @@ add('class', 'Concentração', active({
 add('class', 'Magia Resiliente', auto([ { kind: 'spellEffect', extra: { plus: 'attr:foc' } } ], 'Forçar novo teste de resistência (3 MP) é na mão.'));
 add('class', 'Ascensão Arcana', auto([ { kind: 'defense', against: 'magico', pct: 50 }, { kind: 'critMargin', delta: -1, scope: 'spell' } ]));
 
+add('class', 'Fixação Mágica', auto(
+    [ { kind: 'fixation', testDice: '1d6', maxStageDamage: 5 } ],
+    'Escolher a magia fixada é na ficha (o painel de conjuração tem o seletor). A magia vale um estágio à frente só para conjurar (não para evoluir). A invulnerabilidade a ela vale só contra magia atacando o personagem: o cartão do mestre faz a magia fixada errar sozinha; dano de área ou efeito que não passa pelo ataque assistido é do mestre.'
+));
+add('class', 'Magia Guiada', auto(
+    [ { kind: 'guidedHits', die: '1d4', maxHits: 3 } ],
+    'O texto ("+1d4 para cada acerto, sucessivamente; não é cumulativo; limite de três") é lido como +1d4 por acerto consecutivo anterior, até 3d4 (premissa minha). A sequência zera quando o personagem sofre dano ou ataca outro alvo, outra magia ou com arma, e quando um ataque erra.'
+));
+
 // Ladino
 add('class', 'Disfarce', auto([ { kind: 'stealthActions', on: 'enter', add: { padrao: 1 } } ], 'Vale quando o efeito Furtivo é aplicado no turno dele.'));
 add('class', 'Ligeireza', auto([ { kind: 'stealthActions', on: 'turnStart', add: { movimento: 2 } } ], 'Andar sem alertar criaturas é do mestre.'));
@@ -171,6 +180,18 @@ add('subclass', 'Xeque-Mate', active({
     }
 }, 'A duração do choque (até o fim do próximo turno de quem o aplicou) é de 1 rodada: premissa minha.'));
 
+// Metamágico
+add('subclass', 'Conjuração Rápida', auto([ { kind: 'quickCast', maxLevel: 1 } ], 'A ação Bônus só se gasta se ela estiver disponível; vale uma vez por turno (rodada, para quem age uma vez por rodada). Magia de Reação ou de Movimento não muda.'));
+add('subclass', 'Intensificação Mágica', auto([
+    { kind: 'castOption', id: 'intensify', label: 'Intensificação Mágica', hint: '+2 MP e +2d8 no dano ou na cura da magia', mp: 2, effect: { dice: [ '2d8' ] } }
+], 'O jogador liga a opção a cada conjuração; só entra se o estágio tem dano ou cura.'));
+add('subclass', 'Estágio Quatro', auto([
+    {
+        kind: 'castOption', id: 'stageFour', label: 'Estágio Quatro', hint: '+12 MP (20 no nível 4): +3d10 de dano, margem de crítico 18', mp: 12, mpLevel4: 20, lastStageOnly: true,
+        effect: { dice: [ '3d10' ] }, critMarginDelta: -2, note: 'Estágio Quatro: a área dobrada e a duração maior das magias sustentadas são do mestre.'
+    }
+], 'Vale sobre o último estágio da magia (premissa minha: o texto não diz qual estágio recebe os efeitos); a DT é a desse estágio. Área ×2 e a duração maior das sustentadas são do mestre.'));
+
 // Conjurador
 add('subclass', 'Conjuração', auto([ { kind: 'spellEffect', spell: { subtype: 'conjurado' }, extra: { dice: [ '3d8' ] } } ], 'Ignorar 3 de resistência mágica e +1 turno de conjuração são do mestre.'));
 
@@ -225,6 +246,9 @@ add('subclass', 'Postura Bestial', active({
 
 // Arquimago
 add('subclass', 'Manipulação Elemental', auto([ { kind: 'spellEffect', extra: { dice: [ '1d8' ] } } ], 'Trocar o elemento da magia antes de lançar é na mão.'));
+
+// Arquimago
+add('subclass', 'Teia da Realidade', auto([ { kind: 'twinCast', maxLevel: 2, extraMp: 1 } ], 'As duas conjurações gastam uma ação só (a da primeira) e cada uma paga +1 MP e o limite de MP por turno; o par pendente só vale na tela atual (recarregar a página o esquece).'));
 
 // Espectro
 add('subclass', 'Desvanecer', active({

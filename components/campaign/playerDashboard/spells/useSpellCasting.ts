@@ -8,12 +8,16 @@ import { Message } from '@models';
 import type { SpellDTO } from '@models/dtos';
 import { campaignService } from '@services';
 import { postCampaignStats } from '@utils/campaignStatsClient';
+import { combatantBudget } from '@utils/combat/actionBudgets';
 import { executionSlot } from '@utils/combat/engine/actionBudget';
 import { critMargin, critMultiplier } from '@utils/combat/critical';
 import { rollSpellTest } from '@utils/combat/hitTest';
 import { blockReason, combatantActionBlocks, isBlocked } from '@utils/combat/actionFlags';
 import { combatantAttackDice } from '@utils/combat/environment';
-import { critMarginReduction, critMultiplierSources, effectCritMarginReduction, effectDamageSpecs, effectHitBonus, spellEffectSpecs, spellHitExtras } from '@utils/combat/passives';
+import {
+    critMarginReduction, critMultiplierSources, effectCritMarginReduction, effectDamageSpecs, effectHitBonus, guidedBonusDice, isFixedSpell, planCast, quickCastUsed, spellEffectSpecs, spellHitExtras,
+    twinCastAllows, twinCastRule, type CastPlan, type TwinRole
+} from '@utils/combat/passives';
 import { isOpportunitySpell, OPPORTUNITY_SPELL_HELP } from '@utils/combat/opportunities';
 import {
     buildSpellCastMessage,
@@ -27,7 +31,7 @@ import { isSustainedSpell, sustainedEffects } from '@utils/combat/sustainedSpell
 import { asRequestError } from '@utils/errors';
 import { getMpLimit, isMpLimitEnforced } from '@utils/mpLimit';
 import { spellCastDifficulty, spellCastSucceeded } from '@utils/spellDifficulty';
-import { getSpellProgress, usesStageUnlock, type SpellStage } from '@utils/spellStages';
+import { getSpellProgress, spellStageCount, usesStageUnlock, type SpellStage } from '@utils/spellStages';
 import { useSession } from 'next-auth/react';
 import { useSnackbar } from 'notistack';
 import { useState } from 'react';
@@ -60,6 +64,24 @@ export interface SpellCasting {
     castSpell: (spell: SpellDTO, stage: SpellStage) => Promise<void>;
     endSustained: (spell: SpellDTO) => Promise<void>;
     effectSpell: (spell: SpellDTO, stage: SpellStage) => Promise<void>;
+    /** Metamagia e Teia da Realidade ligadas para a próxima conjuração (ver `utils/combat/passives/casting.ts`) */
+    cast: CastModifiersState;
+    /** O plano desta conjuração (custo, ação, dados a mais...) com o que está ligado agora; é o que as telas mostram e o que `castSpell` cobra */
+    planFor: (spell: SpellDTO, stage: SpellStage) => CastPlan;
+    /** O estágio que a Fixação Mágica deixa conjurar além do liberado (o próximo), ou `null` se a magia não é a fixada ou não há o que pular */
+    fixationStage: (spell: SpellDTO) => SpellStage | null;
+}
+
+export interface CastModifiersState {
+    /** Opções de metamagia ligadas (Intensificação Mágica, Estágio Quatro) */
+    selected: readonly string[];
+    toggleOption: (id: string) => void;
+    /** Teia da Realidade: `armed` = a próxima magia abre o par; `waitingSecond` = a primeira já foi, falta a segunda (sem ação) */
+    twin: { available: boolean; armed: boolean; waitingSecond: boolean };
+    armTwin: (armed: boolean) => void;
+    cancelTwin: () => void;
+    /** Conjuração Rápida: dá para usar agora (ação Bônus livre e ainda não usada nesta rodada) */
+    quickCastReady: boolean;
 }
 
 /**
@@ -80,7 +102,11 @@ export function useSpellCastingState(): SpellCasting {
     const [ castingSpellId, setCastingSpellId ] = useState<string | null>(null)
     const [ effectingSpellId, setEffectingSpellId ] = useState<string | null>(null)
     // Conjurações com sucesso que ainda esperam o botão "Efetuar" (rolar dano, cura, duração...)
-    const { pending: pendingEffects, criticals: pendingCriticals, markPending, clearPending } = usePendingSpellEffects(campaign?.id, charsheet?.id)
+    const { pending: pendingEffects, criticals: pendingCriticals, extras: pendingExtras, markPending, clearPending } = usePendingSpellEffects(campaign?.id, charsheet?.id)
+    // Metamagia ligada para a próxima conjuração e o par da Teia da Realidade: estado desta tela (recarregar a página esquece)
+    const [ selectedOptions, setSelectedOptions ] = useState<string[]>([])
+    const [ twinArmed, setTwinArmed ] = useState(false)
+    const [ twinSecond, setTwinSecond ] = useState(false)
 
     // Limite de MP por turno: só vale em combate ativo, para quem participa dele (utils/mpLimit.ts)
     const combat = campaign?.session?.combat
@@ -116,6 +142,35 @@ export function useSpellCastingState(): SpellCasting {
     // Desbloqueio de estágios (ver utils/spellStages.ts): vale no Magitech padrão, não em sistema customizado nem no Roguelite
     const stageRule = usesStageUnlock(charsheet ?? {}, campaign?.mode);
 
+    // Habilidades de conjuração: o plano diz o custo, a ação, os dados a mais e o que entra no efeito (ver `utils/combat/passives/casting.ts`)
+    const twinAvailable = twinCastRule(passives) !== null;
+    const quickCastReady = Boolean(myCombatant) && combat?.phase === 'ACTION' && combatantBudget(myCombatant).bonus > 0 && !quickCastUsed(myCombatant?.quickCastRound, combat?.round ?? 0);
+    const fixationStage = (spell: SpellDTO): SpellStage | null => {
+        if (!charsheet || !isFixedSpell(passives, charsheet, spell.id || spell.name)) return null;
+        const progress = getSpellProgress(spell, charsheet, { enabled: stageRule });
+        return progress.enabled && progress.next !== null && !progress.needsMastery ? progress.next : null;
+    };
+    const planFor = (spell: SpellDTO, stage: SpellStage): CastPlan => {
+        const spellKey = spell.id || spell.name;
+        const fixed = Boolean(charsheet) && isFixedSpell(passives, charsheet, spellKey);
+        const twin: TwinRole = !twinCastAllows(passives, spell) ? 'none' : twinSecond ? 'second' : twinArmed ? 'first' : 'none';
+        return planCast({
+            spell,
+            stage,
+            stageCount: spellStageCount(spell),
+            passives,
+            context: contextFor(spellAttack.targeting.targetId),
+            selected: selectedOptions,
+            baseCost: spellCost(spell, stage),
+            twin,
+            quickCastReady,
+            fixed,
+            // Sem estágio para pular (a magia já está no máximo que dá para conjurar): a Fixação soma o dano
+            fixedAtMaxStage: fixed && fixationStage(spell) === null,
+            guidedDice: isAttackSpell(spell) ? guidedBonusDice(passives, myCombatant?.guided, spellAttack.targeting.targetId, spell.name) : 0
+        });
+    };
+
     const castSpell = async (spell: SpellDTO, stage: SpellStage) => {
         if (!charsheet?.id) return;
         const spellKey = spell.id || spell.name;
@@ -129,9 +184,15 @@ export function useSpellCastingState(): SpellCasting {
         }
 
         const progress = getSpellProgress(spell, charsheet, { enabled: stageRule });
-        if (stage > progress.unlocked) {
+        // Fixação Mágica: a magia fixada vale um estágio à frente do liberado, só para conjurar
+        if (stage > progress.unlocked && fixationStage(spell) !== stage) {
             enqueueSnackbar(`O estágio ${stage} de ${spell.name} ainda está bloqueado. Evolua a magia primeiro.`, { variant: 'warning' });
             return;
+        }
+
+        // A Teia da Realidade só vale com magia de nível 2 ou menos: com o par armado e uma magia maior, o aviso diz e a conjuração segue comum
+        if ((twinArmed || twinSecond) && !twinCastAllows(passives, spell)) {
+            enqueueSnackbar(`${spell.name}: a Teia da Realidade só vale para magia de nível 2 ou menos. A conjuração segue comum e o par continua à espera.`, { variant: 'info' });
         }
 
         // Ataque de oportunidade em curso (um inimigo saiu do alcance dele): a magia de ataque tem de ser de Reação e alcance Curto. Antes de gastar o MP.
@@ -141,7 +202,11 @@ export function useSpellCastingState(): SpellCasting {
             return;
         }
 
-        const mpCost = spellCost(spell, stage);
+        // O que as habilidades de conjuração mudam nesta conjuração (metamagia, Teia da Realidade, Conjuração Rápida, Fixação Mágica, Magia Guiada)
+        const plan = planFor(spell, stage);
+        const mpCost = plan.cost;
+        const stageCost = spellCost(spell, stage);
+        const twinRole: TwinRole = !twinCastAllows(passives, spell) ? 'none' : twinSecond ? 'second' : twinArmed ? 'first' : 'none';
         const playerName = charsheet.name || session?.user?.name || 'Jogador';
         const currentMp = Number(charsheet.stats?.mp ?? 0);
 
@@ -185,28 +250,30 @@ export function useSpellCastingState(): SpellCasting {
             const test = rollSpellTest(charsheet, {
                 extraDice: (effects?.advantages ?? 0) + fromPassives.advantages,
                 lessDice: effects?.disadvantages,
-                notes: [ ...(effects?.notes ?? []), ...fromPassives.notes, ...fromAbilities.notes, ...(marginCut?.fromPassives.notes ?? []), ...(marginCut?.fromEffects.notes ?? []) ],
+                notes: [ ...(effects?.notes ?? []), ...fromPassives.notes, ...fromAbilities.notes, ...(marginCut?.fromPassives.notes ?? []), ...(marginCut?.fromEffects.notes ?? []), ...plan.notes ],
                 flatBonus: fromPassives.flat + fromAbilities.flat,
-                critMargin: critMargin(20, (marginCut?.fromPassives.reduction ?? 0) + (marginCut?.fromEffects.reduction ?? 0))
+                bonusDice: plan.testDice,
+                critMargin: critMargin(20, (marginCut?.fromPassives.reduction ?? 0) + (marginCut?.fromEffects.reduction ?? 0) + (attacking ? plan.critMarginReduction : 0))
             });
             const succeeded = spellCastSucceeded(test.total, spellCastDifficulty(spell.level, stage));
             // Acerto crítico: só a magia de ataque conjurada com sucesso (cura, defesa e controle não atacam); o dano dela sai vezes o multiplicador ao efetuar
             const critical = attacking && succeeded && test.critical;
             // Só uma conjuração com sucesso deixa efetuar a magia; o botão já está lá quando o cartão aparece no chat
-            if (succeeded && hasSpellEffectDice(spell, stage)) markPending(spellKey, stage, critical);
+            if (succeeded && hasSpellEffectDice(spell, stage)) markPending(spellKey, stage, critical, plan.effectSpecs);
             await sendCombatChatMessage(buildSpellCastMessage(playerName, spell, stage, test, mpCost, { critical }), MessageType.DICE);
             // Conjuração com sucesso de magia de ataque: o teste de magia é o acerto e o mestre confirma o resultado contra o alvo
             if (succeeded) await spellAttack.declareSpell(spell, test, { opportunity, critical });
 
             // Gasta a ação da rodada que a magia pede (Padrão, Bônus, Movimento, Reação, Completa). É aviso, nunca trava: o mestre decide
             // o que vale quando a ação já tinha acabado.
-            if (myCombatant && combat?.phase === 'ACTION' && executionSlot(spell.execution)) {
+            // A Conjuração Rápida troca a ação por Bônus; a segunda magia da Teia da Realidade não gasta ação (a da primeira já pagou pelas duas)
+            if (myCombatant && combat?.phase === 'ACTION' && plan.execution !== null && executionSlot(plan.execution)) {
                 try {
-                    await campaignService.spendCombatAction(campaign.id, { combatantId: charsheet.id, execution: String(spell.execution) })
+                    await campaignService.spendCombatAction(campaign.id, { combatantId: charsheet.id, execution: plan.execution, ...(plan.quickCast ? { quickCast: true } : {}) })
                 } catch (actionError) {
                     const { response: actionResponse } = asRequestError(actionError)
                     if (actionResponse?.status === 409 && actionResponse.data?.code === 'ACTION_UNAVAILABLE') {
-                        enqueueSnackbar(`Você já não tinha a ação ${String(spell.execution)} disponível nesta rodada. Avise o mestre.`, { variant: 'warning' })
+                        enqueueSnackbar(`Você já não tinha a ação ${plan.execution} disponível nesta rodada. Avise o mestre.`, { variant: 'warning' })
                     } else {
                         console.error('Erro ao gastar a ação da magia:', actionError)
                     }
@@ -220,7 +287,8 @@ export function useSpellCastingState(): SpellCasting {
                     if (newMp <= 0) {
                         await campaignService.endSustainedSpells(campaign.id, { combatantId: charsheet.id })
                     } else if (succeeded && isSustainedSpell(spell.type)) {
-                        await campaignService.startSustainedSpell(campaign.id, { combatantId: charsheet.id, spellKey, spellName: spell.name, stage, cost: mpCost })
+                        // A manutenção é metade do custo do estágio: a metamagia e o +1 da Teia da Realidade são pagamento único
+                        await campaignService.startSustainedSpell(campaign.id, { combatantId: charsheet.id, spellKey, spellName: spell.name, stage, cost: stageCost })
                     }
                 } catch (sustainError) {
                     console.error('Erro ao atualizar a magia sustentada:', sustainError)
@@ -238,6 +306,10 @@ export function useSpellCastingState(): SpellCasting {
                     'resources.mpSpent': mpCost
                 }
             } ]);
+
+            // O que foi ligado vale só para esta conjuração; a Teia da Realidade abre o par na primeira magia e fecha na segunda
+            setSelectedOptions([]);
+            if (twinRole === 'first') { setTwinArmed(false); setTwinSecond(true); } else if (twinRole === 'second') setTwinSecond(false);
 
             if (!succeeded) {
                 enqueueSnackbar(`A conjuração de ${spell.name} falhou no teste (${test.total} contra DT ${spellCastDifficulty(spell.level, stage)}). O MP foi gasto.`, { variant: 'warning' });
@@ -287,7 +359,8 @@ export function useSpellCastingState(): SpellCasting {
             const effect = rollSpellEffect(
                 spell,
                 stage,
-                [ ...spellEffectSpecs(passives, context, spell), ...effectDamageSpecs(myEffects, context, 'spell') ],
+                // Os acréscimos da conjuração (metamagia, Fixação no estágio máximo, Magia Guiada) ficaram guardados com ela
+                [ ...spellEffectSpecs(passives, context, spell), ...effectDamageSpecs(myEffects, context, 'spell'), ...(pendingExtras[spellKey] ?? []) ],
                 pendingCriticals[spellKey] ? { critMultiplier: critMultiplier(critMultiplierSources(passives, context, 'spell', spell)) } : {}
             );
             // O botão "Efetuar" permanece depois de apertado (decisão do dono): só sai ao descartar a conjuração (X) ou quando uma nova conjuração da magia o troca
@@ -320,6 +393,16 @@ export function useSpellCastingState(): SpellCasting {
         stageRule,
         castSpell,
         endSustained,
-        effectSpell
+        effectSpell,
+        planFor,
+        fixationStage,
+        cast: {
+            selected: selectedOptions,
+            toggleOption: (id) => { setSelectedOptions(current => (current.includes(id) ? current.filter(entry => entry !== id) : [ ...current, id ])); },
+            twin: { available: twinAvailable, armed: twinArmed, waitingSecond: twinSecond },
+            armTwin: (armed) => { setTwinArmed(armed); },
+            cancelTwin: () => { setTwinArmed(false); setTwinSecond(false); },
+            quickCastReady
+        }
     };
 }

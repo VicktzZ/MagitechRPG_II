@@ -42,6 +42,8 @@ export interface ProposalTarget {
     sheet?: TargetSheet | null;
     /** Lembretes das habilidades do alvo que dependem de dado ou de escolha do mestre (Resiliência Inata: reduza 1d8+1); só o mestre vê */
     reminders?: readonly string[];
+    /** O nome da magia a que o alvo é **invulnerável** (a magia fixada da Fixação Mágica dele): a magia de mesmo nome erra sozinha */
+    invulnerableTo?: string | null;
 }
 
 export interface ProposalChoice {
@@ -142,11 +144,14 @@ export function buildAttackProposal(
     const resistanceMod = expertiseValue(target, resistanceSkill);
     const areaMeters = choice.areaMeters ?? attack.areaMeters ?? null;
     const dodge = dodgeEligibility({ kind, areaMeters, surprised: choice.surprised, hasReaction: choice.hasReaction ?? true });
-    const hit = reactions.autoMiss ? false : hits(attackTotal, targetAp);
+    // Fixação Mágica do alvo: a magia fixada dele não o atinge
+    const invulnerable = attack.source === 'spell' && Boolean(target.invulnerableTo) && target.invulnerableTo === attack.name;
+    const hit = reactions.autoMiss || invulnerable ? false : hits(attackTotal, targetAp);
 
     const header: ExplainLine[] = [];
     for (const source of reactions.sources) header.push(line(`Reação: ${source.name}`, source.text));
     for (const note of reactions.notes) header.push(line(`Reação: ${note.name}`, note.text, 'gm'));
+    if (invulnerable) header.push(line('Fixação Mágica do alvo', `o alvo é invulnerável a ${attack.name}: a magia erra`, 'gm'));
     if (attack.counter) header.push(line(`Contra-ataque: ${attack.counter.source}`, describeCounter(attack.counter)));
     if (ignoresAp) header.push(line('Ignora a armadura', `habilidade do atacante: o AP do alvo (${armor}) não conta`));
     else if (apPierced > 0) header.push(line('Fura a armadura', `habilidade do atacante: ${Math.min(apPierced, armor)} pontos do AP do alvo não contam`));
@@ -163,13 +168,13 @@ export function buildAttackProposal(
     }
     if (extraRolls.length > 0) header.push(line('d20 extra', `[${extraRolls.join(', ')}]: total ${attackTotal}`));
 
-    // O ataque erra sozinho (Xeque-Mate): não há o que calcular, qualquer dano rolado cai
-    if (reactions.autoMiss) {
+    // O ataque erra sozinho (Xeque-Mate, ou a magia fixada do alvo): não há o que calcular, qualquer dano rolado cai
+    if (reactions.autoMiss || invulnerable) {
         return {
             kind, weak: weakness.weak, extraDiceOwed, extraDiceSources, attackTotal, targetAp, hit: false, resistanceSkill, resistanceMod, dodge,
             resolution: null,
             finalDamage: 0,
-            lines: [ ...header, line('Acerto', 'errou automaticamente') ]
+            lines: [ ...header, line('Acerto', reactions.autoMiss ? 'errou automaticamente' : 'errou') ]
         };
     }
 

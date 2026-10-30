@@ -62,6 +62,11 @@ export interface StageLadderProps {
             onEnd: () => void | Promise<void>;
             busy?: boolean;
         };
+        /**
+         * Fixação Mágica: esta é a magia fixada e o `stage` (o próximo, ainda bloqueado) pode ser conjurado, só para conjurar: a linha dele mostra o texto e o botão. Evoluir continua
+         * comprando o mesmo estágio com pontos.
+         */
+        fixation?: { stage: SpellStage };
         /** Conjuração com sucesso: o botão "Efetuar" aparece no estágio `pendingStage` e **permanece depois de apertado** (sai ao descartar ou com uma nova conjuração) */
         effect?: {
             pendingStage?: SpellStage;
@@ -130,6 +135,73 @@ export default function StageLadder({ spell, progress, revealLocked, costOf: cos
 
     const blockReason = evolution ? evolutionBlockReason(progress, evolution.points, spell.element) : null;
     const canPay = evolution !== undefined && progress.nextCost !== null && evolution.points >= progress.nextCost;
+
+    /** Os botões de conjurar, efetuar e descartar de um estágio: o mesmo conjunto serve ao estágio liberado e ao liberado só pela Fixação Mágica */
+    const castControls = (info: StageInfo, cost: number, castBlocked: string | undefined, sustainedActive: boolean, sustainedLocked: boolean): ReactElement => (
+        <>
+            {cast && (
+                <Tooltip
+                    title={sustainedActive
+                        ? 'Encerrar a magia sustentada (o MP já pago não volta)'
+                        : sustainedLocked
+                            ? 'Desconjure esta magia antes de conjurar outro estágio'
+                            : cast.currentMp !== undefined && cast.currentMp < cost
+                                ? `MP insuficiente (precisa de ${cost})`
+                                : castBlocked ?? `Conjurar o ${info.label} — gasta ${cost} MP`}
+                >
+                    <span>
+                        <Button
+                            size="small"
+                            variant={sustainedActive ? 'outlined' : 'contained'}
+                            startIcon={sustainedActive ? <Close fontSize="small" /> : <Bolt fontSize="small" />}
+                            disabled={sustainedActive
+                                ? cast.sustained?.busy
+                                : cast.isCasting || sustainedLocked || (cast.currentMp !== undefined && cast.currentMp < cost)}
+                            onClick={() => { void (sustainedActive ? cast.sustained?.onEnd() : cast.onCast(info.stage)) }}
+                            aria-label={sustainedActive
+                                ? `Desconjurar ${spell.name ?? 'a magia'}`
+                                : `Conjurar ${spell.name ?? 'a magia'} no ${info.label}`}
+                            data-testid={`stage-cast-${info.stage}`}
+                            sx={{ textTransform: 'none', fontWeight: 700, opacity: castBlocked && !sustainedActive ? 0.55 : 1 }}
+                        >
+                            {sustainedActive ? 'Desconjurar' : 'Conjurar'}
+                        </Button>
+                    </span>
+                </Tooltip>
+            )}
+
+            {cast?.effect && cast.effect.pendingStage === info.stage && (
+                <>
+                    <Tooltip title={`Conjuração com sucesso: rolar os dados do efeito do ${info.label} (dano, cura, duração...)`}>
+                        <span>
+                            <Button
+                                size="small"
+                                variant="outlined"
+                                startIcon={<Casino fontSize="small" />}
+                                disabled={cast.effect.busy}
+                                onClick={() => { void cast.effect?.onEffect(info.stage) }}
+                                aria-label={`Efetuar ${spell.name ?? 'a magia'} no ${info.label}`}
+                                data-testid={`stage-effect-${info.stage}`}
+                                sx={{ textTransform: 'none', fontWeight: 700 }}
+                            >
+                                                    Efetuar
+                            </Button>
+                        </span>
+                    </Tooltip>
+                    <Tooltip title="Tirar o botão Efetuar desta conjuração (o MP já foi gasto)">
+                        <IconButton
+                            size="small"
+                            onClick={cast.effect.onDismiss}
+                            aria-label={`Descartar a conjuração de ${spell.name ?? 'a magia'}`}
+                            data-testid={`stage-effect-dismiss-${info.stage}`}
+                        >
+                            <Close fontSize="small" />
+                        </IconButton>
+                    </Tooltip>
+                </>
+            )}
+        </>
+    );
 
     return (
         <Stack spacing={1} data-testid="stage-ladder">
@@ -226,67 +298,7 @@ export default function StageLadder({ spell, progress, revealLocked, costOf: cos
                                             />
                                         </Tooltip>
 
-                                        {cast && (
-                                            <Tooltip
-                                                title={sustainedActive
-                                                    ? 'Encerrar a magia sustentada (o MP já pago não volta)'
-                                                    : sustainedLocked
-                                                        ? 'Desconjure esta magia antes de conjurar outro estágio'
-                                                        : cast.currentMp !== undefined && cast.currentMp < cost
-                                                            ? `MP insuficiente (precisa de ${cost})`
-                                                            : castBlocked ?? `Conjurar o ${info.label} — gasta ${cost} MP`}
-                                            >
-                                                <span>
-                                                    <Button
-                                                        size="small"
-                                                        variant={sustainedActive ? 'outlined' : 'contained'}
-                                                        startIcon={sustainedActive ? <Close fontSize="small" /> : <Bolt fontSize="small" />}
-                                                        disabled={sustainedActive
-                                                            ? cast.sustained?.busy
-                                                            : cast.isCasting || sustainedLocked || (cast.currentMp !== undefined && cast.currentMp < cost)}
-                                                        onClick={() => { void (sustainedActive ? cast.sustained?.onEnd() : cast.onCast(info.stage)) }}
-                                                        aria-label={sustainedActive
-                                                            ? `Desconjurar ${spell.name ?? 'a magia'}`
-                                                            : `Conjurar ${spell.name ?? 'a magia'} no ${info.label}`}
-                                                        data-testid={`stage-cast-${info.stage}`}
-                                                        sx={{ textTransform: 'none', fontWeight: 700, opacity: castBlocked && !sustainedActive ? 0.55 : 1 }}
-                                                    >
-                                                        {sustainedActive ? 'Desconjurar' : 'Conjurar'}
-                                                    </Button>
-                                                </span>
-                                            </Tooltip>
-                                        )}
-
-                                        {cast?.effect && cast.effect.pendingStage === info.stage && (
-                                            <>
-                                                <Tooltip title={`Conjuração com sucesso: rolar os dados do efeito do ${info.label} (dano, cura, duração...)`}>
-                                                    <span>
-                                                        <Button
-                                                            size="small"
-                                                            variant="outlined"
-                                                            startIcon={<Casino fontSize="small" />}
-                                                            disabled={cast.effect.busy}
-                                                            onClick={() => { void cast.effect?.onEffect(info.stage) }}
-                                                            aria-label={`Efetuar ${spell.name ?? 'a magia'} no ${info.label}`}
-                                                            data-testid={`stage-effect-${info.stage}`}
-                                                            sx={{ textTransform: 'none', fontWeight: 700 }}
-                                                        >
-                                                            Efetuar
-                                                        </Button>
-                                                    </span>
-                                                </Tooltip>
-                                                <Tooltip title="Tirar o botão Efetuar desta conjuração (o MP já foi gasto)">
-                                                    <IconButton
-                                                        size="small"
-                                                        onClick={cast.effect.onDismiss}
-                                                        aria-label={`Descartar a conjuração de ${spell.name ?? 'a magia'}`}
-                                                        data-testid={`stage-effect-dismiss-${info.stage}`}
-                                                    >
-                                                        <Close fontSize="small" />
-                                                    </IconButton>
-                                                </Tooltip>
-                                            </>
-                                        )}
+                                        {castControls(info, cost, castBlocked, sustainedActive, sustainedLocked)}
                                     </Box>
 
                                     <Collapse in={open} unmountOnExit>
@@ -349,6 +361,15 @@ export default function StageLadder({ spell, progress, revealLocked, costOf: cos
                                                 </Button>
                                             </span>
                                         </Tooltip>
+                                    )}
+                                    {cast?.fixation?.stage === info.stage && (
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', flexBasis: '100%' }} data-testid={`stage-fixation-${info.stage}`}>
+                                            <Chip size="small" color="primary" variant="outlined" label="Fixação Mágica: dá para conjurar" />
+                                            {castControls(info, cost, cast.blockedReason?.(info.stage, cost), false, false)}
+                                            {texts[info.stage - 1] && (
+                                                <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', flexBasis: '100%' }}>{texts[info.stage - 1]}</Typography>
+                                            )}
+                                        </Box>
                                     )}
                                     {isNext && evolution && progress.nextCost !== null && blockReason && (
                                         <Typography variant="caption" color="text.secondary" sx={{ flexBasis: '100%' }} data-testid="stage-evolve-reason">

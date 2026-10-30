@@ -3,7 +3,7 @@
 > Arquivo gerado por `scripts/generatePassivesDoc.ts` a partir de `utils/combat/passives/catalog.ts`. Não edite à mão.
 
 Total: **120** habilidades (48 de classe e 72 de subclasse).
-**25** automáticas · **18** ativadas · **77** só texto.
+**31** automáticas · **18** ativadas · **71** só texto.
 
 - **Automática**: vale sozinha (dano a mais, custo de MP, AP, resistência, iniciativa, regeneração...), sem o jogador acionar.
 - **Ativada**: o jogador aciona pela seção Ações (quadrado da habilidade): o app confere MP e usos, gasta a ação (aviso, nunca trava), cura ou põe o efeito sobre o personagem. As de **reação a ataque** (Barreira de Ki, Metamorfose Adaptativa, Resposta Tática, Reflexos Táticos, Xeque-Mate) não têm quadrado: usam-se em "Reagir", no cartão do ataque recebido, antes de o mestre resolver; a armada só se paga se a condição se cumprir.
@@ -41,8 +41,8 @@ A coluna "Fora do automático" lista o que da descrição o app **não** faz soz
 | --- | --- | --- | --- |
 | Feitiçaria | Automática |  | Escolher a magia de nível 1 ao adquirir a habilidade é na ficha. |
 | Prevenção Mágica | Só texto |  |  |
-| Magia Guiada | Só texto |  |  |
-| Fixação Mágica | Só texto |  |  |
+| Magia Guiada | Automática |  | O texto ("+1d4 para cada acerto, sucessivamente; não é cumulativo; limite de três") é lido como +1d4 por acerto consecutivo anterior, até 3d4 (premissa minha). A sequência zera quando o personagem sofre dano ou ataca outro alvo, outra magia ou com arma, e quando um ataque erra. |
+| Fixação Mágica | Automática |  | Escolher a magia fixada é na ficha (o painel de conjuração tem o seletor). A magia vale um estágio à frente só para conjurar (não para evoluir). A invulnerabilidade a ela vale só contra magia atacando o personagem: o cartão do mestre faz a magia fixada errar sozinha; dano de área ou efeito que não passa pelo ataque assistido é do mestre. |
 | Imunidade Mágica | Automática |  |  |
 | Magismo Total | Automática |  |  |
 
@@ -251,7 +251,7 @@ A coluna "Fora do automático" lista o que da descrição o app **não** faz soz
 
 | Habilidade | Modo | Ativação | Fora do automático |
 | --- | --- | --- | --- |
-| Teia da Realidade | Só texto |  |  |
+| Teia da Realidade | Automática |  | As duas conjurações gastam uma ação só (a da primeira) e cada uma paga +1 MP e o limite de MP por turno; o par pendente só vale na tela atual (recarregar a página o esquece). |
 | Anulação Mágica | Só texto |  |  |
 | Manipulação Elemental | Automática |  | Trocar o elemento da magia antes de lançar é na mão. |
 
@@ -259,9 +259,9 @@ A coluna "Fora do automático" lista o que da descrição o app **não** faz soz
 
 | Habilidade | Modo | Ativação | Fora do automático |
 | --- | --- | --- | --- |
-| Intensificação Mágica | Só texto |  |  |
-| Conjuração Rápida | Só texto |  |  |
-| Estágio Quatro | Só texto |  |  |
+| Intensificação Mágica | Automática |  | O jogador liga a opção a cada conjuração; só entra se o estágio tem dano ou cura. |
+| Conjuração Rápida | Automática |  | A ação Bônus só se gasta se ela estiver disponível; vale uma vez por turno (rodada, para quem age uma vez por rodada). Magia de Reação ou de Movimento não muda. |
+| Estágio Quatro | Automática |  | Vale sobre o último estágio da magia (premissa minha: o texto não diz qual estágio recebe os efeitos); a DT é a desse estágio. Área ×2 e a duração maior das sustentadas são do mestre. |
 
 ### Glifomante
 

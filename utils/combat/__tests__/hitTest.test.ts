@@ -213,3 +213,38 @@ describe('acerto crítico no teste (rollHitTest)', () => {
         expect(rollSpellTest(sheet()).critical).toBe(false);
     });
 });
+
+describe('dados a mais no teste (Fixação Mágica +1d6)', () => {
+    afterEach(() => jest.restoreAllMocks());
+
+    it('somam ao total, entram nas notas e não mexem nos d20 nem no crítico', () => {
+        // mod de Foco 3: 4 d20 (11, 3, 7, 9 → vale o 11) e um d6 de 0.5 → 4
+        const rolls = [ 0.5, 0.1, 0.3, 0.4, 0.5 ];
+        jest.spyOn(Math, 'random').mockImplementation(() => rolls.shift() ?? 0);
+
+        const test = rollSpellTest(sheet(), { bonusDice: [ '1d6' ], notes: [ 'Fixação Mágica: +1d6 no teste' ] });
+
+        expect(test.rolls).toHaveLength(4);
+        expect(test.bonusRolled).toBe(4);
+        expect(test.total).toBe(test.bestRoll + 6 + 4);
+        expect(test.notes).toEqual([ 'Fixação Mágica: +1d6 no teste', '+1d6: [4]' ]);
+        expect(test.critical).toBe(false);
+    });
+
+    it('vários grupos de dados somam todos, e expressão que não vale é ignorada', () => {
+        jest.spyOn(Math, 'random').mockReturnValue(0.99);
+
+        const test = rollSpellTest(sheet(), { bonusDice: [ '2d4', 'lixo', '0d6', '1d1' ] });
+
+        // 2d4 com 0.99 = 4 + 4; as outras não valem
+        expect(test.bonusRolled).toBe(8);
+        expect(test.notes).toEqual([ '+2d4: [4, 4]' ]);
+    });
+
+    it('sem dados a mais o total é o de sempre', () => {
+        jest.spyOn(Math, 'random').mockReturnValue(0.5);
+        const test = rollSpellTest(sheet());
+        expect(test.bonusRolled).toBe(0);
+        expect(test.total).toBe(test.bestRoll + 6);
+    });
+});

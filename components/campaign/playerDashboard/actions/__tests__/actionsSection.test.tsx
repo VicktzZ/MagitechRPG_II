@@ -64,7 +64,11 @@ const setup = (options: { combat?: Record<string, unknown> | null; me?: Record<s
     mockCasting.mockReturnValue({
         stageRule: false, sustainedActive: {}, pendingEffects: {}, castingSpellId: null, effectingSpellId: null,
         spellCost: (candidate: { mpCost?: unknown }) => Number(candidate.mpCost) || 0,
-        castSpell: jest.fn(), endSustained: jest.fn(), effectSpell: jest.fn()
+        castSpell: jest.fn(), endSustained: jest.fn(), effectSpell: jest.fn(),
+        // Metamagia e habilidades de conjuração (a ficha de teste não tem nenhuma: o painel não desenha nada)
+        cast: { selected: [], toggleOption: jest.fn(), twin: { available: false, armed: false, waitingSecond: false }, armTwin: jest.fn(), cancelTwin: jest.fn(), quickCastReady: false },
+        planFor: (candidate: { mpCost?: unknown }) => ({ cost: Number(candidate.mpCost) || 0 }),
+        fixationStage: () => null
     });
 };
 

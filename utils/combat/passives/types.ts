@@ -84,7 +84,20 @@ export type PassiveRule =
     /** Sobe o multiplicador do crítico (×3 do Furtivo do ladino); só vale onde o crítico é multiplicador: magia e arma sem fórmula própria de crítico (`effect.critValue`) */
     | { kind: 'critMultiplier'; value: number; scope?: 'weapon' | 'spell'; spell?: SpellFilter; when?: PassiveCondition }
     /** Lembrete que o mestre vê na resolução do ataque (a regra depende de dado ou de escolha dele) */
-    | { kind: 'reminder'; side: 'defender' | 'attacker'; text: string };
+    | { kind: 'reminder'; side: 'defender' | 'attacker'; text: string }
+    /**
+     * Metamagia: opção que o jogador **liga na hora de conjurar** (Intensificação Mágica, Estágio Quatro). Paga `mp` a mais (`mpLevel4` no nível 4), soma `effect` ao dano ou à cura do
+     * efeito (ao "Efetuar") e baixa a margem de crítico da conjuração em `critMarginDelta` (negativo). `lastStageOnly` só vale no último estágio da magia; `maxSpellLevel` limita o nível.
+     */
+    | { kind: 'castOption'; id: string; label: string; hint: string; mp: number; mpLevel4?: number; lastStageOnly?: boolean; maxSpellLevel?: number; effect?: PassiveExtra; critMarginDelta?: number; note?: string }
+    /** Conjuração Rápida: a magia de nível até `maxLevel` (Padrão ou Completa) gasta a ação Bônus, uma vez por turno */
+    | { kind: 'quickCast'; maxLevel: number }
+    /** Teia da Realidade: duas magias de nível até `maxLevel` com uma ação só; cada uma custa `extraMp` a mais e gasta o limite de MP por turno */
+    | { kind: 'twinCast'; maxLevel: number; extraMp: number }
+    /** Fixação Mágica: a magia fixada pode ser conjurada um estágio à frente do liberado, com `testDice` no teste; no estágio máximo soma `maxStageDamage` ao dano. O alvo é invulnerável a ela */
+    | { kind: 'fixation'; testDice: string; maxStageDamage: number }
+    /** Magia Guiada: `die` de dano por acerto consecutivo da mesma magia no mesmo alvo, até `maxHits` acertos */
+    | { kind: 'guidedHits'; die: string; maxHits: number };
 
 export type AbilityExecution = 'Padrão' | 'Bônus' | 'Movimento' | 'Reação' | 'Completa';
 

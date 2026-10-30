@@ -173,4 +173,30 @@ describe('StageLadder', () => {
         expect(html).not.toContain('Custa');
         expect(html).not.toContain('Bloqueado');
     });
+
+    it('Fixação Mágica: o estágio ainda bloqueado da magia fixada ganha texto e botão de conjurar, sem liberar o Evoluir', () => {
+        const html = ladder(water3, { spellUnlocked: { w3: 1 } }, { cast: { onCast: noop, currentMp: 30, fixation: { stage: 2 } }, evolution: { points: 2, onEvolve: noop } });
+        expect(html).toContain('data-testid="stage-fixation-2"');
+        expect(html).toContain('Fixação Mágica: dá para conjurar');
+        // o texto do estágio 2 aparece (3d6) e ele tem o próprio botão de conjurar, com o custo do estágio (9 MP)
+        expect(html).toContain('3d6');
+        expect(html).toContain('data-testid="stage-cast-2"');
+        expect(html).toContain('aria-label="Conjurar Maré Alta no Estágio 2"');
+        // o estágio seguinte continua bloqueado e o Evoluir segue comprando o mesmo estágio com pontos
+        expect(html).not.toContain('data-testid="stage-fixation-3"');
+        expect(html).toContain('data-testid="stage-evolve"');
+        expect(html).toContain('Evoluir (2 pontos)');
+    });
+
+    it('sem a fixação o estágio bloqueado não tem botão de conjurar', () => {
+        const html = ladder(water3, { spellUnlocked: { w3: 1 } }, { cast: { onCast: noop, currentMp: 30 } });
+        expect(html).not.toContain('data-testid="stage-fixation-2"');
+        expect(html).not.toContain('data-testid="stage-cast-2"');
+        expect(html).not.toContain('3d6');
+    });
+
+    it('a fixação confere o MP do estágio à frente', () => {
+        const html = ladder(water3, { spellUnlocked: { w3: 1 } }, { cast: { onCast: noop, currentMp: 8, fixation: { stage: 2 } } });
+        expect(html).toMatch(/<button[^>]*disabled[^>]*data-testid="stage-cast-2"|<button[^>]*data-testid="stage-cast-2"[^>]*disabled/);
+    });
 });

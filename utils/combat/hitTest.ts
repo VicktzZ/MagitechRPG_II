@@ -25,6 +25,8 @@ export interface HitTestResult {
     critical: boolean;
     /** A margem usada: 20 por padrão, a da arma e as reduções das passivas e dos efeitos */
     critMargin: number;
+    /** O que os dados a mais do teste somaram (Fixação Mágica +1d6); 0 sem eles. Já está dentro de `total` */
+    bonusRolled?: number;
 }
 
 export interface RollHitOptions {
@@ -38,6 +40,19 @@ export interface RollHitOptions {
     flatBonus?: number;
     /** A margem de crítico já calculada (`critMargin` de `critical.ts`); sem ela vale 20 (só o 20 natural) */
     critMargin?: number;
+    /** Dados a mais somados ao total ("1d6": Fixação Mágica); não são d20 e não entram na regra de d20 nem no crítico. O que saiu vai em `notes` */
+    bonusDice?: readonly string[];
+}
+
+/** Rola "XdY" (no máximo 20 dados de até 1000 faces); `null` se a expressão não vale */
+function rollBonusDie(notation: string): { total: number; rolls: number[] } | null {
+    const match = /^(\d{1,2})d(\d{1,4})$/i.exec(notation.trim());
+    if (!match) return null;
+    const count = Number(match[1]);
+    const sides = Number(match[2]);
+    if (count < 1 || count > 20 || sides < 2 || sides > 1000) return null;
+    const rolls = Array.from({ length: count }, () => Math.floor(Math.random() * sides) + 1);
+    return { total: rolls.reduce((sum, roll) => sum + roll, 0), rolls };
 }
 
 export interface ResolvedHitBonus {
@@ -108,7 +123,16 @@ export function rollHitTest(hitAttr: keyof Attributes | undefined, charsheet: Ch
     const { value: skillBonus, label: bonusLabel } = resolveHitBonus(hitAttr, charsheet);
     const flatBonus = Number.isFinite(Number(options.flatBonus)) ? Math.trunc(Number(options.flatBonus)) : 0;
     const bonus = skillBonus + flatBonus;
-    const total = bestRoll + bonus;
+    // Dados a mais (Fixação Mágica +1d6): somam ao total, com o que saiu dito nas notas
+    const extraNotes: string[] = [];
+    let bonusRolled = 0;
+    for (const notation of options.bonusDice ?? []) {
+        const rolled = rollBonusDie(notation);
+        if (!rolled) continue;
+        bonusRolled += rolled.total;
+        extraNotes.push(`+${notation}: [${rolled.rolls.join(', ')}]`);
+    }
+    const total = bestRoll + bonus + bonusRolled;
     const margin = options.critMargin ?? DEFAULT_CRIT_MARGIN;
 
     return {
@@ -121,9 +145,10 @@ export function rollHitTest(hitAttr: keyof Attributes | undefined, charsheet: Ch
         extraDice,
         lessDice,
         keep,
-        notes: options.notes ?? [],
+        notes: [ ...(options.notes ?? []), ...extraNotes ],
         critical: isCriticalRoll(bestRoll, margin),
-        critMargin: margin
+        critMargin: margin,
+        bonusRolled
     };
 }
 

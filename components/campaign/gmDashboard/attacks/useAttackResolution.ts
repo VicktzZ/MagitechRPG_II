@@ -7,7 +7,7 @@ import { buildAttackProposal, type AttackProposal, type ProposalChoice, type Pro
 import { attackSurprise, stealthDiceAlreadyRolled, type AttackSurprise } from '@utils/combat/awareness';
 import { rollCreatureExpertise } from '@utils/combat/creatureRoll';
 import { effectDice } from '@utils/combat/effectDice';
-import { ownedPassives, passiveReminders, withPassiveEffects } from '@utils/combat/passives';
+import { invulnerableSpellName, ownedPassives, passiveReminders, withPassiveEffects } from '@utils/combat/passives';
 import { hasStealthEffect } from '@utils/combat/stealth';
 import { DODGE_EXPERTISE, type DefenseChoice } from '@utils/combat/engine/defense';
 import { rollD20 } from '@utils/campaignTest';
@@ -136,7 +136,9 @@ export function useAttackResolution(attack: PendingAttackData): AttackResolution
         effects: withPassiveEffects(targetCombatant?.effects, targetPassives, { sheet, stealthy: hasStealthEffect(targetCombatant?.effects) }),
         creature,
         sheet,
-        reminders: passiveReminders(targetPassives, 'defender')
+        reminders: passiveReminders(targetPassives, 'defender'),
+        // Fixação Mágica do alvo: a magia que ele fixou não o atinge
+        invulnerableTo: invulnerableSpellName(sheet, targetPassives)
     };
     const choice: ProposalChoice = {
         kind,

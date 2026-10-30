@@ -142,8 +142,8 @@ class CampaignService extends Service<Campaign, 'code' | 'userId'> {
         })).data
     }
 
-    /** Gasta uma ação da rodada do combatente (`execution`: Padrão, Bônus/Livre, Movimento, Reação ou Completa); 409 `ACTION_UNAVAILABLE` se não tem */
-    async spendCombatAction(campaignId: string, payload: { combatantId: string; execution: string }) {
+    /** Gasta uma ação da rodada do combatente (`execution`: Padrão, Bônus/Livre, Movimento, Reação ou Completa); 409 `ACTION_UNAVAILABLE` se não tem. `quickCast` marca a Conjuração Rápida na rodada */
+    async spendCombatAction(campaignId: string, payload: { combatantId: string; execution: string; quickCast?: boolean }) {
         return (await this.post({
             param: `${campaignId}/combat`,
             body: { action: 'spend_action', ...payload }
