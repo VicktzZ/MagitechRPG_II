@@ -49,3 +49,30 @@ export function migrateSpellType(type: string, flags: SpellTaxonomyFlags = {}): 
     const head = categories.length > 0 ? categories.join('/') : categoryText.trim();
     return `${head}${subtypes.length > 0 ? ` (${subtypes.join(separator)})` : ''}${trailing}`;
 }
+
+/**
+ * Definição do dono (29/10/2026): **imediato** é o mesmo que instantâneo, o que é executado na hora; **tudo que dura é contínuo**. Esta função troca o subtipo "imediato" de uma
+ * magia que dura por "contínuo", mantendo a categoria, a caixa da primeira letra ("Imediato" → "Contínuo"), os outros subtipos ("imediato/Área" → "contínuo/Área") e o texto depois do
+ * parêntese. Pura e idempotente: sem o subtipo "imediato" devolve o mesmo texto, e se a magia já tinha "contínuo" ele não se repete.
+ */
+export function toContinuousSubtype(type: string): string {
+    const match = SPLIT.exec(type);
+    if (!match) return type;
+    const [ , categoryText = '', subtypeText, trailing = '' ] = match;
+    if (subtypeText === undefined) return type;
+
+    const parts = subtypeText.split(/[/,]/).map(entry => entry.trim()).filter(entry => entry !== '');
+    if (!parts.some(entry => normalizeKey(entry) === 'imediato')) return type;
+
+    const seen = new Set<string>();
+    const subtypes: string[] = [];
+    for (const part of parts) {
+        const next = normalizeKey(part) === 'imediato' ? (part.charAt(0) === part.charAt(0).toUpperCase() ? 'Contínuo' : 'contínuo') : part;
+        const key = normalizeKey(next);
+        if (seen.has(key)) continue;
+        seen.add(key);
+        subtypes.push(next);
+    }
+
+    return `${categoryText}(${subtypes.join(joinWith(subtypeText))})${trailing}`;
+}

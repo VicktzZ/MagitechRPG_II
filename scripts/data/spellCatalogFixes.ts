@@ -24,7 +24,7 @@ export const ELEMENT_CASE_FIXES: SpellTypeChange[] = [
 /**
  * Definição do dono (29/10/2026): **imediato** é o mesmo que instantâneo, o que é executado na hora; **tudo que dura é contínuo**.
  * Das 30 magias do lote `utilitySupportMovementSpells.ts`, estas 7 têm algum estágio com duração (minutos, horas ou turnos) e estavam `(imediato)`.
- * Só o lote novo: o resto do catálogo não foi reclassificado (depende de decisão do dono, ver CLAUDE.md).
+ * Só o lote novo: o resto do catálogo foi reclassificado em 30/10/2026 por `scripts/applySpellDurationTypes.ts` (`data/spellDurationTypeChanges.ts`).
  */
 export const BATCH_DURATION_TYPE_FIXES: SpellTypeChange[] = [
     { id: 'seed-ut-vigia-luminoso', name: 'Vigia Luminoso', from: 'Utilidade (imediato)', to: 'Utilidade (contínuo)' },

@@ -104,7 +104,7 @@ export const MANA_RECOVERY_SPELLS: SeedSpell[] = [
         name: 'Pedra de Foco',
         level: 1,
         mpCost: 1,
-        type: 'Recuperação (imediato)',
+        type: 'Recuperação (contínuo)',
         execution: 'Completa',
         range: 'Pessoal',
         stages: [
@@ -311,7 +311,7 @@ export const MANA_RECOVERY_SPELLS: SeedSpell[] = [
         name: 'Fenda Devoradora',
         level: 4,
         mpCost: 10,
-        type: 'Controle/Recuperação (imediato)',
+        type: 'Controle/Recuperação (contínuo)',
         execution: 'Reação',
         range: 'Médio',
         stages: [

@@ -54,7 +54,7 @@ export const REACTION_SPELLS: SeedSpell[] = [
         name: 'Retaliação Sombria',
         level: 1,
         mpCost: 2,
-        type: 'Ataque (imediato)',
+        type: 'Ataque (contínuo)',
         execution: 'Reação',
         range: 'Curto',
         stages: [
@@ -69,7 +69,7 @@ export const REACTION_SPELLS: SeedSpell[] = [
         name: 'Estaca Súbita',
         level: 1,
         mpCost: 1,
-        type: 'Controle (imediato)',
+        type: 'Controle (contínuo)',
         execution: 'Reação',
         range: 'Curto',
         stages: [
@@ -118,7 +118,7 @@ export const REACTION_SPELLS: SeedSpell[] = [
         name: 'Passo Guardião',
         level: 2,
         mpCost: 4,
-        type: 'Movimento (imediato)',
+        type: 'Movimento (contínuo)',
         execution: 'Reação',
         range: 'Médio',
         stages: [
@@ -133,7 +133,7 @@ export const REACTION_SPELLS: SeedSpell[] = [
         name: 'Orvalho Purificador',
         level: 2,
         mpCost: 4,
-        type: 'Utilidade (imediato/Área)',
+        type: 'Utilidade (contínuo/Área)',
         execution: 'Reação',
         range: 'Curto',
         stages: [
@@ -163,7 +163,7 @@ export const REACTION_SPELLS: SeedSpell[] = [
         name: 'Tremor Disruptivo',
         level: 2,
         mpCost: 4,
-        type: 'Controle (imediato)',
+        type: 'Controle (contínuo)',
         execution: 'Reação',
         range: 'Médio',
         stages: [
@@ -197,7 +197,7 @@ export const REACTION_SPELLS: SeedSpell[] = [
         name: 'Couraça Adaptativa',
         level: 3,
         mpCost: 6,
-        type: 'Defesa (imediato)',
+        type: 'Defesa (contínuo)',
         execution: 'Reação',
         range: 'Pessoal',
         stages: [
@@ -212,7 +212,7 @@ export const REACTION_SPELLS: SeedSpell[] = [
         name: 'Decodificação Reativa',
         level: 3,
         mpCost: 6,
-        type: 'Mentalização (imediato)',
+        type: 'Mentalização (contínuo)',
         execution: 'Reação',
         range: 'Médio',
         stages: [
@@ -227,7 +227,7 @@ export const REACTION_SPELLS: SeedSpell[] = [
         name: 'Último Suspiro',
         level: 3,
         mpCost: 6,
-        type: 'Suporte (imediato)',
+        type: 'Suporte (contínuo)',
         execution: 'Reação',
         range: 'Curto',
         stages: [
@@ -242,7 +242,7 @@ export const REACTION_SPELLS: SeedSpell[] = [
         name: 'Frequência Dissonante',
         level: 3,
         mpCost: 6,
-        type: 'Controle (imediato)',
+        type: 'Controle (contínuo)',
         execution: 'Reação',
         range: 'Médio',
         stages: [
@@ -257,7 +257,7 @@ export const REACTION_SPELLS: SeedSpell[] = [
         name: 'Inversão Necrótica',
         level: 3,
         mpCost: 6,
-        type: 'Controle (imediato)',
+        type: 'Controle (contínuo)',
         execution: 'Reação',
         range: 'Médio',
         stages: [
@@ -291,7 +291,7 @@ export const REACTION_SPELLS: SeedSpell[] = [
         name: 'Recusa Derradeira',
         level: 4,
         mpCost: 10,
-        type: 'Defesa (imediato/Área)',
+        type: 'Defesa (contínuo/Área)',
         execution: 'Reação',
         range: 'Médio',
         stages: [
@@ -321,7 +321,7 @@ export const REACTION_SPELLS: SeedSpell[] = [
         name: 'Laço Gravitacional',
         level: 4,
         mpCost: 10,
-        type: 'Controle (imediato)',
+        type: 'Controle (contínuo)',
         execution: 'Reação',
         range: 'Longo',
         stages: [
