@@ -24,7 +24,7 @@ import { line, type DamageKind, type ExplainLine } from './types';
  */
 
 export interface AttackDiceInput {
-    /** Dados base do teste (o mod do atributo, mínimo 1) */
+    /** Dados base do teste (o mod do atributo + 1, regra única de d20) */
     baseDice?: number;
     /** Efeitos de quem ataca */
     attacker?: ModifierSet;

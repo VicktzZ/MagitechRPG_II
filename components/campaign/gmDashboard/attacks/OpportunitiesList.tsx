@@ -25,7 +25,7 @@ export default function OpportunitiesList(): ReactElement | null {
                 return (
                     <Box key={entry.id} sx={{ display: 'flex', alignItems: 'center', gap: 1 }} data-testid={`opportunity-${entry.id}`}>
                         <Typography variant="body2" sx={{ flex: 1 }}>
-                            {entry.moverName} saiu do alcance de {entry.reactorName}
+                            {entry.counter ? `${entry.reactorName} ganhou um contra-ataque contra ${entry.moverName} (${entry.counter.source})` : `${entry.moverName} saiu do alcance de ${entry.reactorName}`}
                             <Typography component="span" variant="caption" sx={{ color: 'text.secondary' }}>
                                 {reactorIsCreature ? ' (criatura: declare o ataque em "Ataque manual")' : ' (o jogador decide se ataca)'}
                             </Typography>

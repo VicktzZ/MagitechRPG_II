@@ -4,6 +4,7 @@ import { AutoStories, ExpandMore, Shield } from '@mui/icons-material'
 import { useState } from 'react'
 import { color, font } from '@themes/tokens'
 import { rollModifier, rollNumbers, type ActionRoll, type ActionRollSegment } from '@utils/combat/actionRollMessage'
+import { critDamageText } from '@utils/combat/critical'
 import { STEALTH_DAMAGE_MULTIPLIER } from '@utils/combat/stealth'
 import WeaponIcon from './WeaponIcon'
 
@@ -70,6 +71,8 @@ export function ActionRollDetails({ action }: { action: ActionRoll }) {
     const testName = action.kind === 'defesa' ? 'Teste de defesa' : 'Teste de magia'
     const allRolls = action.segments.flatMap(segment => rollNumbers(segment.display))
     const subtotal = allRolls.reduce((sum, value) => sum + value, 0)
+    // A soma das expressões rolada (cada `-` do cartão): o crítico por multiplicador e o Furtivo dobram em cima dela
+    const rolledSum = action.segments.reduce((sum, segment) => sum + segment.total, 0)
 
     return (
         <>
@@ -80,9 +83,14 @@ export function ActionRollDetails({ action }: { action: ActionRoll }) {
                 {isTest && (action.notes ?? []).map(note => (
                     <Typography key={note} variant="body2" color="text.secondary" data-testid="action-roll-note">{note}</Typography>
                 ))}
+                {action.multiplier && action.total !== null && (
+                    <Typography variant="body2" color="text.secondary" data-testid="action-roll-crit">
+                        {critDamageText(rolledSum, action.multiplier, rolledSum * action.multiplier)}
+                    </Typography>
+                )}
                 {action.stealth && action.total !== null && (
                     <Typography variant="body2" color="text.secondary" data-testid="action-roll-stealth">
-                        {stealthDamageText(action.segments.reduce((sum, segment) => sum + segment.total, 0), action.total)}
+                        {stealthDamageText(rolledSum * (action.multiplier ?? 1), action.total)}
                     </Typography>
                 )}
                 {isTest && action.dt !== null && action.total !== null && (
@@ -150,7 +158,7 @@ export function ActionRollCard({ action }: { action: ActionRoll }) {
                 {action.dt !== null && (
                     <Chip size="small" color={passed ? 'success' : 'error'} label={passed ? 'Sucesso' : 'Falhou'} data-testid="action-roll-result" />
                 )}
-                {action.critical && <Chip size="small" color="warning" label="Crítico" />}
+                {action.critical && <Chip size="small" color="warning" label={action.multiplier ? `Crítico ×${action.multiplier}` : 'Crítico'} data-testid="action-roll-critical-chip" />}
                 {action.stealth && <Chip size="small" variant="outlined" label={`Furtivo ×${STEALTH_DAMAGE_MULTIPLIER}`} data-testid="action-roll-stealth-chip" />}
                 {action.total !== null && <Chip size="small" color="primary" label={`Total ${action.total}`} />}
                 {hasDetails && (

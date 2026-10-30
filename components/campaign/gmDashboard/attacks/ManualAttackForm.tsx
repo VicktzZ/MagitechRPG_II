@@ -31,6 +31,8 @@ export default function ManualAttackForm({ onDone }: { onDone: () => void }): Re
     const [ attackType, setAttackType ] = useState('');
     const [ total, setTotal ] = useState('');
     const [ damage, setDamage ] = useState('');
+    // Corpo a corpo: as reações Resposta Tática e Retaliação do alvo só valem contra ele (o app não mede o alcance)
+    const [ melee, setMelee ] = useState(false);
     const [ busy, setBusy ] = useState(false);
     // Ataque de oportunidade: o atacante tem uma saída de alcance aberta contra esse alvo. Marcado de início; o mestre desmarca para um ataque comum
     // Os efeitos aplicados ao atacante (Cegueira, Precisão...) e a luz da cena dão vantagem ou desvantagem no acerto: o mestre rola a criatura fora do app, então o formulário lembra
@@ -52,7 +54,7 @@ export default function ManualAttackForm({ onDone }: { onDone: () => void }): Re
             await campaignService.declareAttack(campaign.id, {
                 combatantId: attackerId,
                 targetId,
-                attack: { source: 'manual', name: name.trim(), kind, attackType: attackType.trim() || undefined, attackTotal: totalNumber, rolls: [], bonus: 0 },
+                attack: { source: 'manual', name: name.trim(), kind, attackType: attackType.trim() || undefined, attackTotal: totalNumber, rolls: [], bonus: 0, ...(melee ? { melee: true } : {}) },
                 ...(damageNumber !== undefined ? { damage: damageNumber } : {}),
                 ...(extras.length > 0 ? { targetIds: extras } : {}),
                 ...(useOpportunity && opportunity ? { opportunityId: opportunity.id } : {})
@@ -106,6 +108,10 @@ export default function ManualAttackForm({ onDone }: { onDone: () => void }): Re
             />
             <TextField size="small" type="number" label="Total do acerto" value={total} onChange={(event) => { setTotal(event.target.value); }} sx={{ width: 140 }} />
             <TextField size="small" type="number" label="Dano rolado" value={damage} onChange={(event) => { setDamage(event.target.value); }} sx={{ width: 130 }} />
+            <FormControlLabel
+                control={<Checkbox size="small" checked={melee} onChange={(event) => { setMelee(event.target.checked); }} />}
+                label="Corpo a corpo"
+            />
             {attackerNotes.length > 0 && (
                 <Typography variant="caption" sx={{ color: 'text.secondary', flexBasis: '100%' }} data-testid="manual-attack-effects">
                     Efeitos do atacante no acerto: {attackerNotes.join('; ')}. O total é o que você digita: role os d20 já com isso.

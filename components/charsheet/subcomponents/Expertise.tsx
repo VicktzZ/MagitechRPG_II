@@ -1,5 +1,6 @@
 'use client';
 
+import { d20Pool } from '@utils/d20Rule';
 import { 
     Box, 
     Grid, 
@@ -117,10 +118,10 @@ export default function Expertise({
 
     // Quantidade de dados:
     // - Custom: 1 + dados extras da influência do atributo
-    // - Magitech: -1: Desvantagem (2 dados), 0: Normal (1 dado), +N: Vantagem (N+1 dados)
+    // - Magitech (regra única de d20, `utils/d20Rule.ts`): -1: Desvantagem (2 dados, vale o menor), 0: Normal (1 dado), +N: Vantagem (N+1 dados)
     const diceQuantity = customInfluence
         ? 1 + customInfluence.extraDice
-        : (attrModifier < 0 ? 2 : attrModifier + 1);
+        : d20Pool(attrModifier).dice;
 
     // Sobrepeso (condição do inventário): −1 no modificador para cada kg acima da capacidade, nas perícias de DES e VIG. Não vale no sistema customizado.
     const overweightPenalty = customInfluence ? 0 : sheetExpertisePenalty(getValues(), expertise.defaultAttribute);

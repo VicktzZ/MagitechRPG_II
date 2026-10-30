@@ -60,11 +60,15 @@ const setup = (options: { combat?: Record<string, unknown> | null; me?: Record<s
         pending: [],
         opportunity: { current: null, active: false, setUse: jest.fn() }
     };
-    mockWeaponRolls.mockReturnValue({ handleWeaponHit: jest.fn(), handleWeaponDamage: jest.fn(), targeting });
+    mockWeaponRolls.mockReturnValue({ handleWeaponHit: jest.fn(), handleWeaponDamage: jest.fn(), isWeaponCritical: () => false, targeting });
     mockCasting.mockReturnValue({
         stageRule: false, sustainedActive: {}, pendingEffects: {}, castingSpellId: null, effectingSpellId: null,
         spellCost: (candidate: { mpCost?: unknown }) => Number(candidate.mpCost) || 0,
-        castSpell: jest.fn(), endSustained: jest.fn(), effectSpell: jest.fn()
+        castSpell: jest.fn(), endSustained: jest.fn(), effectSpell: jest.fn(),
+        // Metamagia e habilidades de conjuração (a ficha de teste não tem nenhuma: o painel não desenha nada)
+        cast: { selected: [], toggleOption: jest.fn(), twin: { available: false, armed: false, waitingSecond: false }, armTwin: jest.fn(), cancelTwin: jest.fn(), quickCastReady: false },
+        planFor: (candidate: { mpCost?: unknown }) => ({ cost: Number(candidate.mpCost) || 0 }),
+        fixationStage: () => null
     });
 };
 
@@ -163,6 +167,16 @@ describe('ActionsSection', () => {
         expect(html).toContain('>Dano<');
         expect(html).toContain('>Crítico<');
         expect(html).toContain('aria-label="Efetuar Brasa Voraz"');
+    });
+
+    it('acerto crítico: o botão de dano do quadrado vira "Dano crítico" (rola o crítico sozinho)', () => {
+        setup({ targetId: 'goblin-1', combat: { pendingAttacks: [ { id: 'p1', attackerId: 'aria', source: 'weapon', name: 'Espada Longa', targetId: 'goblin-1', critical: true, createdAt: 'x' } ] } });
+        mockWeaponRolls.mockReturnValue({ ...mockWeaponRolls(), isWeaponCritical: () => true });
+        const html = render(<ActionsSection />);
+
+        expect(html).toContain('>Dano crítico<');
+        expect(html).not.toContain('>Dano<');
+        expect(html).toContain('>Crítico<');
     });
 
     it('a vez do personagem aparece marcada', () => {

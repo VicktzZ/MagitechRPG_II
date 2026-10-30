@@ -10,6 +10,7 @@ import {
     MAX_ATTACK_TARGETS,
     MAX_PENDING_ATTACKS,
     removePendingAttack,
+    addPendingReaction,
     sanitizeAttackDeclaration,
     sanitizeDefenseDeclaration,
     sanitizeExplainLines,
@@ -307,5 +308,31 @@ describe('ataque com vários alvos', () => {
         const updated = setPendingDamage(list, 'a1', 5)!;
 
         expect(updated.map(entry => entry.damageRolled)).toEqual([ 5, undefined ]);
+    });
+});
+
+describe('corpo a corpo e reações no ataque pendente', () => {
+    const valid = { source: 'weapon', name: 'Espada', kind: 'fisico', attackTotal: 17, rolls: [ 12 ], bonus: 5 };
+
+    it('o ataque declarado leva o corpo a corpo só quando é verdadeiro', () => {
+        expect(sanitizeAttackDeclaration({ ...valid, melee: true })).toMatchObject({ melee: true });
+        expect(sanitizeAttackDeclaration({ ...valid, melee: false })).not.toHaveProperty('melee');
+        expect(sanitizeAttackDeclaration({ ...valid, melee: 'sim' })).not.toHaveProperty('melee');
+        expect(sanitizeAttackDeclaration(valid)).not.toHaveProperty('melee');
+    });
+
+    it('a reação do alvo vai para o ataque certo e os outros ficam como estavam', () => {
+        const base = { attackerId: 'g', attackerName: 'Goblin', targetId: 'aria', targetName: 'Aria', source: 'weapon' as const, name: 'Machado', kind: 'fisico' as const, attackTotal: 12, rolls: [ 10 ], bonus: 2, createdAt: 'agora' };
+        const list = [ { ...base, id: 'a1' }, { ...base, id: 'a2' } ];
+        const reaction = { id: 'r1', key: 'subclass:barreira de ki', name: 'Barreira de Ki', by: 'aria', byName: 'Aria', when: [ 'now' as const ], armed: false, effects: [], createdAt: 'agora' };
+
+        const updated = addPendingReaction(list, 'a2', reaction)!;
+        expect(updated[0]?.reactions).toBeUndefined();
+        expect(updated[1]?.reactions).toEqual([ reaction ]);
+        // uma segunda reação se soma à primeira
+        expect(addPendingReaction(updated, 'a2', { ...reaction, id: 'r2' })![1]?.reactions).toHaveLength(2);
+        // ataque que não existe
+        expect(addPendingReaction(list, 'nada', reaction)).toBeNull();
+        expect(addPendingReaction(undefined, 'a1', reaction)).toBeNull();
     });
 });

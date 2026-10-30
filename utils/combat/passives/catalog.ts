@@ -56,7 +56,16 @@ add('class', 'Concentração', active({
     heal: { dice: '2d6', plusFoc: true }
 }, 'O limite é "uma vez por cena": o app conta uma vez por combate.'));
 add('class', 'Magia Resiliente', auto([ { kind: 'spellEffect', extra: { plus: 'attr:foc' } } ], 'Forçar novo teste de resistência (3 MP) é na mão.'));
-add('class', 'Ascensão Arcana', auto([ { kind: 'defense', against: 'magico', pct: 50 } ], 'Margem de crítico de magias em 19: o crítico é marcado na mão.'));
+add('class', 'Ascensão Arcana', auto([ { kind: 'defense', against: 'magico', pct: 50 }, { kind: 'critMargin', delta: -1, scope: 'spell' } ]));
+
+add('class', 'Fixação Mágica', auto(
+    [ { kind: 'fixation', testDice: '1d6', maxStageDamage: 5 } ],
+    'Escolher a magia fixada é na ficha (o painel de conjuração tem o seletor). A magia vale um estágio à frente só para conjurar (não para evoluir). A invulnerabilidade a ela vale só contra magia atacando o personagem: o cartão do mestre faz a magia fixada errar sozinha; dano de área ou efeito que não passa pelo ataque assistido é do mestre.'
+));
+add('class', 'Magia Guiada', auto(
+    [ { kind: 'guidedHits', die: '1d4', maxHits: 3 } ],
+    'O texto ("+1d4 para cada acerto, sucessivamente; não é cumulativo; limite de três") é lido como +1d4 por acerto consecutivo anterior, até 3d4 (premissa minha). A sequência zera quando o personagem sofre dano ou ataca outro alvo, outra magia ou com arma, e quando um ataque erra.'
+));
 
 // Ladino
 add('class', 'Disfarce', auto([ { kind: 'stealthActions', on: 'enter', add: { padrao: 1 } } ], 'Vale quando o efeito Furtivo é aplicado no turno dele.'));
@@ -81,8 +90,18 @@ add('subclass', 'Forma Primordial', active({
     execution: 'Bônus',
     cost: { allMp: true },
     limits: [ { per: 'dia', max: 1 } ],
-    effect: effect({ unit: 'combate' }, 'Brutamonte: ignora o AP do alvo até o fim do combate.', [ { kind: 'flag', target: 'ignore_ap' } ])
-}, 'Margem de crítico −2 é na mão; a ação gasta é premissa minha (o texto não diz).'));
+    effect: effect({ unit: 'combate' }, 'Brutamonte: ignora o AP do alvo e a margem de crítico cai 2 (18) até o fim do combate.', [
+        { kind: 'flag', target: 'ignore_ap' },
+        { kind: 'stat_bonus', target: 'critMargin', value: -2 }
+    ])
+}, 'A ação gasta é premissa minha (o texto não diz).'));
+
+add('subclass', 'Metamorfose Adaptativa', active({
+    execution: 'Reação',
+    cost: { mp: 3 },
+    limits: [ { per: 'combate', max: 3 } ],
+    reaction: { when: 'damaged', effects: [ { kind: 'damagePct', pct: 50 } ] }
+}, 'A ação é premissa minha (o texto só diz "sempre que você sofre dano"): o app a trata como Reação; só se paga se o ataque causar dano.'));
 
 // Comandante
 add('subclass', 'Postura Defensiva', active({
@@ -131,6 +150,48 @@ add('subclass', 'Analisar Oponente', active({
     effect: effect({ unit: 'turnos', amount: 3 }, 'Vantagem (+1d20) nos testes de ataque contra o alvo analisado.', [ { kind: 'advantage', target: 'attack' } ])
 }, 'Revelar a resistência ou vulnerabilidade do alvo é do mestre; o d20 vale para todo ataque, não só contra o alvo analisado.'));
 
+add('subclass', 'Resposta Tática', active({
+    execution: 'Reação',
+    reaction: { when: 'missMelee', effects: [ { kind: 'counter', counter: { hitBonus: 5, meleeOnly: true } } ] }
+}, '"Uma vez por rodada" é a própria Reação (uma por rodada); só se paga se o ataque corpo a corpo errar.'));
+add('subclass', 'Xeque-Mate', active({
+    execution: 'Reação',
+    cost: { mp: 20 },
+    limits: [ { per: 'dia', max: 1 } ],
+    reaction: {
+        when: 'now',
+        effects: [
+            { kind: 'autoMiss' },
+            {
+                kind: 'counter',
+                counter: {
+                    guaranteedCrit: true,
+                    extraDice: '6d6',
+                    meleeOnly: false,
+                    onHit: {
+                        duration: { unit: 'rodadas', amount: 1 },
+                        description: 'Estado de choque (Xeque-Mate): desvantagem (−1d20) nos testes de ataque e de resistência até o fim do próximo turno de quem o aplicou.',
+                        modifiers: [ { kind: 'disadvantage', target: 'attack' }, { kind: 'disadvantage', target: 'resistance' } ]
+                    }
+                }
+            },
+            { kind: 'note', text: 'Só vale contra um inimigo sob Analisar Oponente do jogador (o app não sabe quem foi analisado): confira antes de resolver.' }
+        ]
+    }
+}, 'A duração do choque (até o fim do próximo turno de quem o aplicou) é de 1 rodada: premissa minha.'));
+
+// Metamágico
+add('subclass', 'Conjuração Rápida', auto([ { kind: 'quickCast', maxLevel: 1 } ], 'A ação Bônus só se gasta se ela estiver disponível; vale uma vez por turno (rodada, para quem age uma vez por rodada). Magia de Reação ou de Movimento não muda.'));
+add('subclass', 'Intensificação Mágica', auto([
+    { kind: 'castOption', id: 'intensify', label: 'Intensificação Mágica', hint: '+2 MP e +2d8 no dano ou na cura da magia', mp: 2, effect: { dice: [ '2d8' ] } }
+], 'O jogador liga a opção a cada conjuração; só entra se o estágio tem dano ou cura.'));
+add('subclass', 'Estágio Quatro', auto([
+    {
+        kind: 'castOption', id: 'stageFour', label: 'Estágio Quatro', hint: '+12 MP (20 no nível 4): +3d10 de dano, margem de crítico 18', mp: 12, mpLevel4: 20, lastStageOnly: true,
+        effect: { dice: [ '3d10' ] }, critMarginDelta: -2, note: 'Estágio Quatro: a área dobrada e a duração maior das magias sustentadas são do mestre.'
+    }
+], 'Vale sobre o último estágio da magia (premissa minha: o texto não diz qual estágio recebe os efeitos); a DT é a desse estágio. Área ×2 e a duração maior das sustentadas são do mestre.'));
+
 // Conjurador
 add('subclass', 'Conjuração', auto([ { kind: 'spellEffect', spell: { subtype: 'conjurado' }, extra: { dice: [ '3d8' ] } } ], 'Ignorar 3 de resistência mágica e +1 turno de conjuração são do mestre.'));
 
@@ -146,6 +207,18 @@ add('subclass', 'Golpe de Ki', active({
     cost: { mp: 4 },
     effect: effect({ unit: 'turnos', amount: 3 }, 'Golpe de Ki: +2d8 de dano Não-Elemental nos ataques corpo a corpo.', [ { kind: 'damage_dealt_bonus', value: '2d8', target: 'melee' } ])
 }, 'O alcance de 3m do ataque desarmado é do mestre; o dano vale para arma branca (o ataque desarmado do Monge entra na ficha como arma); a ação gasta é premissa minha.'));
+
+add('subclass', 'Barreira de Ki', active({
+    execution: 'Reação',
+    cost: { mp: 8 },
+    reaction: {
+        when: 'now',
+        effects: [
+            { kind: 'apBonus', value: 10 },
+            { kind: 'note', text: 'Se o ataque era corpo a corpo e foi completamente absorvido (errou por causa dos +10 de AP), o atacante é empurrado 3 m para trás.' }
+        ]
+    }
+}, 'O empurrão de 3m é do mestre (o app não move ninguém).'));
 
 // Necromante
 add('subclass', 'Aura Decadente', auto([
@@ -174,6 +247,9 @@ add('subclass', 'Postura Bestial', active({
 // Arquimago
 add('subclass', 'Manipulação Elemental', auto([ { kind: 'spellEffect', extra: { dice: [ '1d8' ] } } ], 'Trocar o elemento da magia antes de lançar é na mão.'));
 
+// Arquimago
+add('subclass', 'Teia da Realidade', auto([ { kind: 'twinCast', maxLevel: 2, extraMp: 1 } ], 'As duas conjurações gastam uma ação só (a da primeira) e cada uma paga +1 MP e o limite de MP por turno; o par pendente só vale na tela atual (recarregar a página o esquece).'));
+
 // Espectro
 add('subclass', 'Desvanecer', active({
     execution: 'Bônus',
@@ -191,6 +267,11 @@ add('subclass', 'Ataque Calculado', auto([
     { kind: 'weaponDamage', extra: { dice: [ '3d8' ] }, when: { targetNotActed: true } },
     { kind: 'spellEffect', spell: { attack: true }, extra: { dice: [ '3d8' ] }, when: { targetNotActed: true } }
 ], 'Vale só na primeira rodada, contra o alvo escolhido que ainda não agiu.'));
+add('subclass', 'Reflexos Táticos', active({
+    execution: 'Reação',
+    limits: [ { per: 'combate', max: 1 } ],
+    reaction: { when: [ 'dodged', 'damagedMeleeNoDodge' ], effects: [ { kind: 'counter', counter: { meleeOnly: true } } ] }
+}, 'A esquiva em si é a de sempre (Reflexos); a habilidade dá o contra-ataque quando ela anula o dano e a Retaliação quando o personagem leva dano corpo a corpo sem esquivar. O texto limita só a esquiva ("um primeiro ataque, uma vez por combate"); o app conta os dois no mesmo uso por combate (premissa minha).'));
 add('subclass', 'Ritmo da Batalha', active({
     execution: 'Bônus',
     cost: { mp: 10 },

@@ -63,6 +63,14 @@ export class BaseCharsheet {
     @IsObject()
         abilityUses?: Record<string, number>;
 
+    /**
+     * A magia que o jogador **fixou** com a Fixação Mágica (ver `utils/combat/passives/casting.ts`): o id da magia e o nome (o mestre reconhece o ataque pelo nome). Sem a habilidade
+     * na ficha o campo não vale nada. O jogador escolhe no painel de conjuração da campanha.
+     */
+    @IsOptional()
+    @IsObject()
+        fixedSpell?: { key: string; name: string };
+
     /** Estágio liberado até agora em cada magia, por id: dele e dos anteriores se pode conjurar (ver `utils/spellStages.ts`) */
     @IsOptional()
     @IsObject()

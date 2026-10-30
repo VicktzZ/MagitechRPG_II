@@ -1,6 +1,8 @@
 import type { CharsheetDTO } from '@models/dtos';
 import type { Attributes } from '@models/Attributes';
 import type { Expertises } from '@models/Expertises';
+import { d20Pool, SINGLE_D20 } from '../d20Rule';
+import { DEFAULT_CRIT_MARGIN, isCriticalRoll } from './critical';
 import { adjustDice, keptDie } from './effectDice';
 import { sheetExpertisePenalty } from './sheetOverweight';
 
@@ -19,6 +21,12 @@ export interface HitTestResult {
     keep: 'highest' | 'lowest';
     /** De onde vieram as vantagens e desvantagens, para o chat dizer ("furtivo: vantagem, +1d20", "Cegueira: desvantagem, −1d20") */
     notes: string[];
+    /** O d20 natural que valeu passou da margem de crítico (`critMargin`): acerto crítico, marcado sozinho (ver `critical.ts`) */
+    critical: boolean;
+    /** A margem usada: 20 por padrão, a da arma e as reduções das passivas e dos efeitos */
+    critMargin: number;
+    /** O que os dados a mais do teste somaram (Fixação Mágica +1d6); 0 sem eles. Já está dentro de `total` */
+    bonusRolled?: number;
 }
 
 export interface RollHitOptions {
@@ -30,6 +38,21 @@ export interface RollHitOptions {
     notes?: string[];
     /** Valor fixo somado ao teste (passivas e habilidades: Domínio Elemental +2, Ritmo da Batalha +2); a origem vai em `notes` */
     flatBonus?: number;
+    /** A margem de crítico já calculada (`critMargin` de `critical.ts`); sem ela vale 20 (só o 20 natural) */
+    critMargin?: number;
+    /** Dados a mais somados ao total ("1d6": Fixação Mágica); não são d20 e não entram na regra de d20 nem no crítico. O que saiu vai em `notes` */
+    bonusDice?: readonly string[];
+}
+
+/** Rola "XdY" (no máximo 20 dados de até 1000 faces); `null` se a expressão não vale */
+function rollBonusDie(notation: string): { total: number; rolls: number[] } | null {
+    const match = /^(\d{1,2})d(\d{1,4})$/i.exec(notation.trim());
+    if (!match) return null;
+    const count = Number(match[1]);
+    const sides = Number(match[2]);
+    if (count < 1 || count > 20 || sides < 2 || sides > 1000) return null;
+    const rolls = Array.from({ length: count }, () => Math.floor(Math.random() * sides) + 1);
+    return { total: rolls.reduce((sum, roll) => sum + roll, 0), rolls };
 }
 
 export interface ResolvedHitBonus {
@@ -81,16 +104,15 @@ export function resolveHitBonus(hitAttr: keyof Attributes | undefined, charsheet
 }
 
 /**
- * Rola um teste de acerto. O numero de d20s vem de mods.attributes[atributo] (>=1), vale o maior (o menor se as desvantagens passarem das vantagens), e soma o bonus da
+ * Rola um teste de acerto. O numero de d20s segue a regra unica (`d20Rule.ts`): mods.attributes[atributo] + 1, vale o maior (o menor se o modificador for negativo ou se as desvantagens passarem das vantagens), e soma o bonus da
  * pericia/atributo equivalente. E o teste do botao "Acerto" da arma e o teste de magia ao conjurar.
  */
 export function rollHitTest(hitAttr: keyof Attributes | undefined, charsheet: CharsheetDTO, options: RollHitOptions = {}): HitTestResult {
-    let numDice = Number(hitAttr ? charsheet.mods?.attributes?.[hitAttr] : 1);
-    if (!Number.isFinite(numDice) || numDice < 1) numDice = 1;
+    const pool = hitAttr ? d20Pool(charsheet.mods?.attributes?.[hitAttr]) : SINGLE_D20;
     const extraDice = Math.max(0, Math.floor(Number(options.extraDice) || 0));
     const lessDice = Math.max(0, Math.floor(Number(options.lessDice) || 0));
-    // Os d20 do mod do atributo são vantagens "de graça": o saldo com as vantagens e desvantagens dá a quantidade de dados e qual vale
-    const { dice, keep } = adjustDice({ dice: numDice, keep: 'highest' }, { advantages: extraDice, disadvantages: lessDice });
+    // Os d20 do mod do atributo (mod + 1) são vantagens "de graça": o saldo com as vantagens e desvantagens dá a quantidade de dados e qual vale
+    const { dice, keep } = adjustDice(pool, { advantages: extraDice, disadvantages: lessDice });
 
     const rolls: number[] = [];
     for (let i = 0; i < dice; i++) {
@@ -101,7 +123,17 @@ export function rollHitTest(hitAttr: keyof Attributes | undefined, charsheet: Ch
     const { value: skillBonus, label: bonusLabel } = resolveHitBonus(hitAttr, charsheet);
     const flatBonus = Number.isFinite(Number(options.flatBonus)) ? Math.trunc(Number(options.flatBonus)) : 0;
     const bonus = skillBonus + flatBonus;
-    const total = bestRoll + bonus;
+    // Dados a mais (Fixação Mágica +1d6): somam ao total, com o que saiu dito nas notas
+    const extraNotes: string[] = [];
+    let bonusRolled = 0;
+    for (const notation of options.bonusDice ?? []) {
+        const rolled = rollBonusDie(notation);
+        if (!rolled) continue;
+        bonusRolled += rolled.total;
+        extraNotes.push(`+${notation}: [${rolled.rolls.join(', ')}]`);
+    }
+    const total = bestRoll + bonus + bonusRolled;
+    const margin = options.critMargin ?? DEFAULT_CRIT_MARGIN;
 
     return {
         notation: `${dice}d20${bonus >= 0 ? '+' : ''}${bonus}`,
@@ -113,7 +145,10 @@ export function rollHitTest(hitAttr: keyof Attributes | undefined, charsheet: Ch
         extraDice,
         lessDice,
         keep,
-        notes: options.notes ?? []
+        notes: [ ...(options.notes ?? []), ...extraNotes ],
+        critical: isCriticalRoll(bestRoll, margin),
+        critMargin: margin,
+        bonusRolled
     };
 }
 

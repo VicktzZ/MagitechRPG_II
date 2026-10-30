@@ -1,15 +1,15 @@
 import type { RPGSystem } from '@models/entities';
 import { MAX_TEST_DICE, rollD20, type TestCharsheet } from './campaignTest';
+import { d20Pool } from './d20Rule';
 import { adjustDice, type EffectDice } from './combat/effectDice';
 import { sheetExpertisePenalty } from './combat/sheetOverweight';
 import { computeAttributeInfluence, findSystemAttribute } from './systemLookups';
 
 /**
- * Rolagem de perícia pela regra do **botão da perícia na ficha** (`subcomponents/Expertise.tsx`), usada quando o
- * mestre rola pelo jogador: o modificador do atributo padrão dá os d20 (`mod + 1`; modificador negativo rola 2 e
+ * Rolagem de perícia pela **regra única de d20** (`d20Rule.ts`, a do botão da perícia na ficha `subcomponents/Expertise.tsx`), usada quando o
+ * mestre rola pelo jogador e na defesa: o modificador do atributo padrão dá os d20 (`mod + 1`; modificador negativo rola 2 e
  * vale o menor) e soma-se o valor da perícia. Em sistema customizado, a influência do atributo (dados extras e
- * bônus fixo) vem da configuração dele. Esta NÃO é a regra do teste pedido pelo mestre nem a da criatura: a regra
- * única é decisão pendente do dono (ver CLAUDE.md).
+ * bônus fixo) vem da configuração dele.
  */
 
 export interface SheetRollPlan {
@@ -74,8 +74,8 @@ export function planSheetRoll(
     // Sobrepeso: −1 por kg excedido nas perícias de DES e VIG (só no Magitech padrão; o sistema customizado voltou acima)
     const bonus = base + sheetExpertisePenalty(charsheet, attrRef);
 
-    if (attributeMod < 0) return withEffects({ dice: 2, keep: 'lowest', bonus }, effects);
-    return withEffects({ dice: clampDice(attributeMod + 1), keep: 'highest', bonus }, effects);
+    // A regra única de d20 (`d20Rule.ts`): mod + 1 d20 e vale o maior; mod negativo rola 2 e vale o menor
+    return withEffects({ ...d20Pool(attributeMod), bonus }, effects);
 }
 
 /** Rola os d20 do plano e aplica a regra de qual vale */

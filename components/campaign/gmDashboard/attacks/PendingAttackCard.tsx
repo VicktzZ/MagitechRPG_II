@@ -3,6 +3,7 @@
 import { Casino } from '@mui/icons-material';
 import { Box, Button, Checkbox, Chip, FormControlLabel, MenuItem, Paper, Stack, TextField, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
 import { font } from '@themes/tokens';
+import { describeCounter, describeReaction } from '@utils/combat/attackReactions';
 import { HIDDEN_CAUSE_LABEL } from '@utils/combat/awareness';
 import { resistanceExpertise, DODGE_BLOCK_TEXT, type DefenseChoice } from '@utils/combat/engine/defense';
 import type { DamageKind } from '@utils/combat/engine/types';
@@ -33,7 +34,12 @@ export default function PendingAttackCard({ attack }: { attack: PendingAttackDat
                 <Typography sx={{ fontFamily: font.display, fontWeight: 600 }}>{attack.attackerName} → {attack.targetName}</Typography>
                 <Chip size="small" label={`${attack.name}${attack.attackType ? ` · ${attack.attackType}` : ''}`} />
                 {attack.critical && <Chip size="small" color="warning" label="Crítico" />}
-                {attack.opportunity && <Chip size="small" color="info" variant="outlined" label="Ataque de oportunidade" />}
+                {attack.opportunity && !attack.counter && <Chip size="small" color="info" variant="outlined" label="Ataque de oportunidade" />}
+                {attack.counter && <Chip size="small" color="info" label={`Contra-ataque (${attack.counter.source}): ${describeCounter(attack.counter)}`} />}
+                {attack.melee && <Chip size="small" variant="outlined" label="Corpo a corpo" />}
+                {(attack.reactions ?? []).map(reaction => (
+                    <Chip key={reaction.id} size="small" color="success" variant="outlined" label={`Reação de ${reaction.byName}: ${describeReaction(reaction)}`} data-testid={`attack-reaction-${reaction.key}`} />
+                ))}
                 {attack.keep === 'lowest' && <Chip size="small" color="warning" variant="outlined" label="Acerto com desvantagem: vale o menor d20" />}
                 {attack.groupSize !== undefined && attack.groupSize > 1 && (
                     <Chip size="small" variant="outlined" label={`Ataque em área: ${attack.groupSize} alvos, um cartão por alvo`} />

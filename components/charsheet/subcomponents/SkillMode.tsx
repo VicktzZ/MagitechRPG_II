@@ -15,6 +15,9 @@ export const SKILL_MODE_LABEL: Record<PassiveMode, { label: string; hint: string
     texto: { label: 'Só texto', hint: 'O app só mostra a descrição; quem aplica é o mestre.' }
 };
 
+/** Habilidade de reação a ataque (Barreira de Ki...): não tem quadrado; usa-se em "Reagir", no cartão do ataque recebido, antes de o mestre resolver */
+export const REACTION_HINT = 'Reação a ataque: use "Reagir" no cartão do ataque recebido, antes de o mestre resolver. O app gasta o MP e a Reação e conta os usos.';
+
 interface SkillModeInfo {
     source: PassiveSource;
     mode: PassiveMode;
@@ -46,13 +49,14 @@ export const skillModeTag = (info: SkillModeInfo | null): string => (info && inf
 export default function SkillMode({ info }: { info: SkillModeInfo | null }): ReactElement | null {
     if (!info) return null;
     const config = SKILL_MODE_LABEL[info.mode];
+    const hint = info.mode === 'ativada' && info.def?.activation?.reaction ? REACTION_HINT : config.hint;
 
     return (
         <Box data-testid="skill-mode-detail">
-            <Tooltip title={config.hint}>
+            <Tooltip title={hint}>
                 <Chip size="small" variant="outlined" label={config.label} data-testid="skill-mode" sx={{ fontWeight: 600 }} />
             </Tooltip>
-            <Typography variant="body2" component="p" sx={{ color: 'text.secondary', mt: 0.75 }}>{config.hint}</Typography>
+            <Typography variant="body2" component="p" sx={{ color: 'text.secondary', mt: 0.75 }}>{hint}</Typography>
             {info.def?.pending && (
                 <Typography variant="body2" component="p" sx={{ color: 'text.secondary', mt: 0.75 }}>
                     Fora do automático: {info.def.pending}

@@ -4,6 +4,7 @@ import { calculateTotalManaCost } from '@utils/roguelite/spellCost';
 import { spellStageLabel, type SpellStage } from '@utils/spellStages';
 import { spellCastDifficulty } from '@utils/spellDifficulty';
 import { buildActionRollText } from './actionRollMessage';
+import { applyCritMultiplier, critMarginLabel } from './critical';
 import type { HitTestResult } from './hitTest';
 import { rollExtraDice } from './passives/roller';
 import { firstDie, isDurationExpression, rollSpecs, sumSegments, type ExtraSegment, type ExtraSpec, type SpellCostAdjustment } from './passives/rolls';
@@ -22,6 +23,13 @@ export interface SpellEffectResult {
     totalDamage: number;
     /** Os acréscimos das passivas e das habilidades ativadas ao dano ou à cura (já dentro de `segments` e `totalDamage`) */
     extras?: ExtraSegment[];
+    /** A magia de ataque foi conjurada em crítico: o dano (nunca a duração) já está vezes isto em `totalDamage`; as rolagens de `segments` mostram os valores sem multiplicar */
+    critMultiplier?: number;
+}
+
+export interface SpellEffectOptions {
+    /** O multiplicador do crítico (`critMultiplier` de `critical.ts`), para a magia de ataque conjurada com o d20 natural na margem; sem ele o efeito sai normal */
+    critMultiplier?: number;
 }
 
 const DICE_REGEX = /(\d+d\d+(?:\s*[+-]\s*\d+)?)/gi;
@@ -67,9 +75,10 @@ export function hasSpellEffectDice(spell: SpellDTO, stage: SpellStage): boolean 
  * `extras` são os acréscimos das passivas e das habilidades ativadas (Feitiçaria +1, Manipulação Elemental +1d8...): entram no dano ou na cura, nunca numa duração, e viram
  * segmentos à parte no cartão, com a origem no nome. Sem dado de dano ou cura no estágio não há acréscimo.
  */
-export function rollSpellEffect(spell: SpellDTO, stage: SpellStage, extras: readonly ExtraSpec[] = []): SpellEffectResult {
+export function rollSpellEffect(spell: SpellDTO, stage: SpellStage, extras: readonly ExtraSpec[] = [], options: SpellEffectOptions = {}): SpellEffectResult {
     const segments: SpellRollSegment[] = [];
-    let totalDamage = 0;
+    let damageTotal = 0;
+    let durationTotal = 0;
     let die: { sides: number } | null = null;
     const text = stageText(spell, stage);
 
@@ -81,19 +90,28 @@ export function rollSpellEffect(spell: SpellDTO, stage: SpellStage, extras: read
             total: result.total,
             display: result.display ?? `[${result.rolls.join(', ')}]`
         });
-        totalDamage += result.total;
-        if (!die && !isDurationExpression(text, expr)) die = firstDie(expr);
+        if (isDurationExpression(text, expr)) {
+            durationTotal += result.total;
+        } else {
+            damageTotal += result.total;
+            if (!die) die = firstDie(expr);
+        }
     }
 
     // Os acréscimos valem só se o estágio tem dado de dano ou cura (a duração em turnos não recebe nada)
+    let added: ExtraSegment[] | undefined;
     if (die && extras.length > 0) {
-        const added = rollSpecs(extras, rollExtraDice, die);
+        added = rollSpecs(extras, rollExtraDice, die);
         for (const { notation, display, total } of added) segments.push({ notation, display, total });
-        totalDamage += sumSegments(added);
-        return { spell, stage, segments, totalDamage, extras: added };
+        damageTotal += sumSegments(added);
     }
 
-    return { spell, stage, segments, totalDamage };
+    // Crítico: o dano e a cura do estágio (com os acréscimos) saem vezes o multiplicador; a duração em turnos não dobra
+    const multiplier = die && options.critMultiplier && options.critMultiplier > 1 ? options.critMultiplier : undefined;
+    const result: SpellEffectResult = { spell, stage, segments, totalDamage: applyCritMultiplier(damageTotal, multiplier ?? 1) + durationTotal };
+    if (added) result.extras = added;
+    if (multiplier) result.critMultiplier = multiplier;
+    return result;
 }
 
 const spellDetail = (spell: SpellDTO, stage: SpellStage, phase: string): string =>
@@ -103,17 +121,20 @@ const spellDetail = (spell: SpellDTO, stage: SpellStage, phase: string): string 
  * Texto da conjuração para o chat (mensagem de dados, ver `actionRollMessage.ts`): o teste de magia do jogador, que
  * é o resultado à vista, e o custo de MP gasto. As rolagens do efeito vêm depois, ao efetuar a magia.
  */
-export function buildSpellCastMessage(playerName: string, spell: SpellDTO, stage: SpellStage, test: HitTestResult, mpCost: number): string {
+export function buildSpellCastMessage(playerName: string, spell: SpellDTO, stage: SpellStage, test: HitTestResult, mpCost: number, options: { critical?: boolean } = {}): string {
     const label = test.bonusLabel === '—' ? '' : ` ${test.bonusLabel}`;
+    // Acerto crítico: o d20 natural que valeu passou da margem (só na magia de ataque conjurada com sucesso; quem chama decide)
+    const critical = Boolean(options.critical);
+    const notes = [ ...(test.notes ?? []), ...(critical ? [ `Acerto crítico (${critMarginLabel(test.critMargin)}): o efeito sai em dobro` ] : []) ];
 
     return buildActionRollText({
         kind: 'conjuração',
         player: playerName,
         title: spell.name,
         detail: spellDetail(spell, stage, 'Conjuração'),
-        critical: false,
+        critical,
         ...(test.keep === 'lowest' ? { keepLowest: true } : {}),
-        ...(test.notes && test.notes.length > 0 ? { notes: test.notes } : {}),
+        ...(notes.length > 0 ? { notes } : {}),
         total: test.total,
         cost: mpCost,
         dt: spellCastDifficulty(spell.level, stage),
@@ -132,7 +153,8 @@ export function buildSpellEffectMessage(playerName: string, result: SpellEffectR
         player: playerName,
         title: result.spell.name,
         detail: spellDetail(result.spell, result.stage, 'Efeito'),
-        critical: false,
+        critical: result.critMultiplier !== undefined,
+        ...(result.critMultiplier ? { multiplier: result.critMultiplier } : {}),
         total: result.segments.length > 0 ? result.totalDamage : null,
         cost: null,
         dt: null,

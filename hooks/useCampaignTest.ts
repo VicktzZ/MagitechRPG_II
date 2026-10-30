@@ -122,11 +122,12 @@ export function useCampaignTest({ notify, sendMessage }: UseCampaignTestOptions)
             }
 
             // Uma rolagem só: o servidor confere, refaz a conta e devolve o resultado que todos veem
-            const { dice, bonus } = resolveTestModifiers(charsheet, request.expertise, rpgSystem);
+            const { dice, keep, bonus } = resolveTestModifiers(charsheet, request.expertise, rpgSystem);
             const { response } = await campaignService.respondTest(campaign.id, {
                 requestId: request.id,
                 rolls: rollDice(dice),
-                bonus
+                bonus,
+                ...(keep === 'lowest' ? { keep } : {})
             });
 
             const text = formatTestRollText(response, request.expertise);

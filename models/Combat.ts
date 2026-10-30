@@ -100,6 +100,17 @@ export class Combatant {
     @IsOptional()
         actionsPerRound?: ActionBudget;
 
+    /**
+     * A rodada em que o personagem usou a **Conjuração Rápida** (magia de nível 1 como ação Bônus, uma vez por turno; ver `utils/combat/passives/casting.ts`). Vale como usada
+     * enquanto for a rodada atual; sem o campo, ainda não usou.
+     */
+    @IsOptional()
+        quickCastRound?: number;
+
+    /** A sequência de acertos de magia da **Magia Guiada**: quem foi acertado, com qual magia (o nome) e quantas vezes seguidas. Só o servidor grava (`resolve_attack`); zera ao errar, atacar com outra coisa ou sofrer dano */
+    @IsOptional()
+        guided?: { targetId: string; spellKey: string; hits: number };
+
     /** Usos das habilidades ativadas **neste combate**, por chave de armazenamento (ver `utils/combat/passives/abilities.ts`); recomeça a cada combate */
     @IsOptional()
         abilityUses?: Record<string, number>;
@@ -111,6 +122,19 @@ export class Combatant {
     @IsOptional()
     @IsString()
         side?: CombatSide;
+
+    /**
+     * **Invocado**: o ID do usuário (jogador) que controla este combatente-criatura. Entra no combate como qualquer criatura, com iniciativa própria, mas quem age por ele (passar o
+     * turno, gastar ações, atacar) é o jogador, e não o mestre. Sem o campo é uma criatura comum, do mestre. Ver `utils/combat/summons.ts`.
+     */
+    @IsOptional()
+    @IsString()
+        controllerId?: string;
+
+    /** O invocador: o ID da ficha (combatente) do jogador que controla; só para dizer "invocado por X" na tela */
+    @IsOptional()
+    @IsString()
+        summonerId?: string;
 
     @ValidateNested({ each: true })
     @Type(() => AppliedEffect)

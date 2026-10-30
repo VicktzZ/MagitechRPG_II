@@ -34,6 +34,7 @@ import AttackTargetPicker from '../attacks/AttackTargetPicker';
 import { collectEntries } from '../inventory/inventoryList';
 import { useWeaponRolls } from '../inventory/useWeaponRolls';
 import { usePassives } from '../passives/usePassives';
+import CastModifiersPanel from '../spells/CastModifiersPanel';
 import { useSpellCasting } from '../spells/SpellCastingContext';
 import ActionTileButton, { type TileState } from './ActionTileButton';
 import AreaTargetDialog from './AreaTargetDialog';
@@ -51,7 +52,7 @@ const spellKey = (spell: Pick<SpellDTO, 'id' | 'name'>): string => spell.id || s
 export default function ActionsSection(): ReactElement | null {
     const { campaign } = useCampaignContext();
     const { charsheet } = useCampaignCurrentCharsheetContext();
-    const { handleWeaponHit, handleWeaponDamage, targeting } = useWeaponRolls();
+    const { handleWeaponHit, handleWeaponDamage, isWeaponCritical, targeting } = useWeaponRolls();
     const casting = useSpellCasting();
     const { activateItem } = useItemUse();
     const { passives } = usePassives();
@@ -81,6 +82,8 @@ export default function ActionsSection(): ReactElement | null {
     const abilities = useMemo(() => passives.filter(passive => passive.mode === 'ativada'), [ passives ]);
 
     const opportunityActive = targeting.opportunity.active;
+    const counterSpec = targeting.opportunity.current?.counter;
+    const counterAnyWeapon = counterSpec ? counterSpec.meleeOnly === false : null;
     const tiles = useMemo(() => {
         if (!charsheet) return [];
         const entries = collectEntries(charsheet.inventory);
@@ -89,6 +92,7 @@ export default function ActionsSection(): ReactElement | null {
             spells: normalizeToArray<SpellDTO>(charsheet.spells),
             items: entries.filter(entry => entry.type === 'item').map(entry => entry.item as Item),
             opportunityActive,
+            counter: counterAnyWeapon === null ? null : { anyWeapon: counterAnyWeapon },
             abilities,
             abilityDetail: (ability) => {
                 const activation = ability.activation;
@@ -103,7 +107,7 @@ export default function ActionsSection(): ReactElement | null {
                 return lowest === highest ? `${highest} MP` : `${lowest} a ${highest} MP`;
             }
         });
-    }, [ charsheet, casting.stageRule, opportunityActive, abilities ]);
+    }, [ charsheet, casting.stageRule, opportunityActive, counterAnyWeapon, abilities ]);
 
     if (!charsheet || !combat || !me) return null;
 
@@ -122,7 +126,9 @@ export default function ActionsSection(): ReactElement | null {
     /** O estado do quadrado e o texto da dica: o que ele faz, ou por que não dá para usar agora */
     const describe = (tile: ActionTile): { state: TileState; hint: string; active: boolean } => {
         const active = tile.kind === 'spell' && Boolean(casting.sustainedActive[spellKey(tile.spell)]);
-        const cost = tile.execution ? `Gasta a ação ${tile.execution}.` : 'A execução desta magia não é reconhecida: nenhuma ação é gasta.';
+        const cost = tile.execution
+            ? `Gasta a ação ${tile.execution}.`
+            : tile.kind === 'weapon' ? 'Contra-ataque: não gasta ação (a reação já gastou a sua Reação).' : 'A execução desta magia não é reconhecida: nenhuma ação é gasta.';
         const doing = tile.kind === 'weapon' ? 'Teste de acerto.' : tile.kind === 'spell' ? 'Conjurar.' : tile.kind === 'ability' ? 'Usar a habilidade.' : 'Usar o item.';
 
         if (!acting) return { state: 'blocked', hint: 'As ações abrem quando a iniciativa estiver definida.', active };
@@ -157,8 +163,8 @@ export default function ActionsSection(): ReactElement | null {
             void casting.endSustained(spell);
             return;
         }
-        // Mais de um estágio liberado: o jogador escolhe qual conjurar (pode ser qualquer um dos liberados)
-        if (getSpellProgress(spell, charsheet, { enabled: casting.stageRule }).unlocked > 1) {
+        // Mais de um estágio liberado (ou o estágio que a Fixação Mágica deixa conjurar): o jogador escolhe qual conjurar
+        if (getSpellProgress(spell, charsheet, { enabled: casting.stageRule }).unlocked > 1 || casting.fixationStage(spell) !== null) {
             setStageMenu({ anchor, spell });
             return;
         }
@@ -190,12 +196,12 @@ export default function ActionsSection(): ReactElement | null {
                 <>
                     <Button
                         size="small"
-                        variant="outlined"
-                        color="secondary"
+                        variant={isWeaponCritical(tile.weapon) ? 'contained' : 'outlined'}
+                        color={isWeaponCritical(tile.weapon) ? 'primary' : 'secondary'}
                         onClick={(event) => { void handleWeaponDamage(tile.weapon, false, event); }}
                         sx={{ textTransform: 'none', minWidth: 0, px: 1 }}
                     >
-                        Dano
+                        {isWeaponCritical(tile.weapon) ? 'Dano crítico' : 'Dano'}
                     </Button>
                     <Button
                         size="small"
@@ -264,6 +270,9 @@ export default function ActionsSection(): ReactElement | null {
                         />
                     ))}
                 </Box>
+
+                {/* Metamagia, Teia da Realidade, Fixação Mágica: o que vale para a próxima conjuração (some sem essas habilidades) */}
+                <CastModifiersPanel />
 
                 {TILE_CATEGORIES.map(category => (
                     <Box key={category} data-testid={`actions-group-${category}`}>
@@ -341,7 +350,7 @@ export default function ActionsSection(): ReactElement | null {
 
             <Menu anchorEl={stageMenu?.anchor} open={Boolean(stageMenu)} onClose={() => { setStageMenu(null); }}>
                 {stageMenu && getSpellProgress(stageMenu.spell, charsheet, { enabled: casting.stageRule }).stages
-                    .filter(info => info.status === 'unlocked')
+                    .filter(info => info.status === 'unlocked' || casting.fixationStage(stageMenu.spell) === info.stage)
                     .map(info => (
                         <MenuItem
                             key={info.stage}
@@ -351,7 +360,7 @@ export default function ActionsSection(): ReactElement | null {
                                 void casting.castSpell(spell, info.stage);
                             }}
                         >
-                            {spellStageLabel(stageMenu.spell.level, info.stage, stageMenu.spell.element)} · {casting.spellCost(stageMenu.spell, info.stage)} MP
+                            {spellStageLabel(stageMenu.spell.level, info.stage, stageMenu.spell.element)} · {casting.planFor(stageMenu.spell, info.stage).cost} MP{info.status === 'unlocked' ? '' : ' · Fixação Mágica'}
                         </MenuItem>
                     ))}
             </Menu>

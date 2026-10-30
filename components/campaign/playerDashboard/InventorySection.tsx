@@ -24,7 +24,7 @@ export default function InventorySection(): ReactElement {
     const weightUnitSuffix = weightUnit ? ` ${weightUnit}` : '';
 
     const view = useInventoryView();
-    const { handleWeaponHit, handleWeaponDamage } = useWeaponRolls();
+    const { handleWeaponHit, handleWeaponDamage, isWeaponCritical } = useWeaponRolls();
     const sessionPlayers = useSessionPlayers();
     const { donationModal, handleOpenDonationModal, handleCloseDonationModal, handleDonate, handleDeleteItem } = useInventoryActions();
 
@@ -83,6 +83,7 @@ export default function InventorySection(): ReactElement {
                 canDonate={sessionPlayers.length > 0}
                 onWeaponHit={handleWeaponHit}
                 onWeaponDamage={handleWeaponDamage}
+                isWeaponCritical={isWeaponCritical}
                 onDonate={handleOpenDonationModal}
                 onRemove={requestRemoval}
             />

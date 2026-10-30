@@ -6,7 +6,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import WhatshotIcon from '@mui/icons-material/Whatshot';
-import { alpha, Avatar, Box, Button, Chip, Collapse, IconButton, Tooltip, Typography } from '@mui/material';
+import { alpha, Avatar, Box, Button, Chip, Collapse, IconButton, MenuItem, TextField, Tooltip, Typography } from '@mui/material';
 import type { Combatant, Creature } from '@models';
 import { color, font } from '@themes/tokens';
 import type { MpLimitView } from '@utils/combat/combatPanel';
@@ -32,6 +32,8 @@ interface CombatantRowProps {
     /** A criatura de origem, só no combatente que é criatura (habilita as perícias) */
     creature?: Creature;
     actions: CombatantActions;
+    /** Os jogadores que podem controlar um invocado (ID do usuário e nome); vazio esconde o seletor */
+    controllers?: ReadonlyArray<{ id: string; name: string }>;
     /** Esperando o servidor (iniciativa): os botões de rolar ficam desabilitados */
     busy: boolean;
     onRollInitiative: (combatantId: string, value?: number) => void;
@@ -41,11 +43,12 @@ interface CombatantRowProps {
  * Um combatente na lista do painel do mestre, numa linha enxuta: retrato, nome, vida e mana, o gasto do limite de MP, as ações da rodada e os efeitos. Quem tem a vez
  * leva o filete âmbar. A criatura tem as perícias recolhidas ("Perícias"): são 44 botões, abertos só quando o mestre precisa rolar uma.
  */
-export default function CombatantRow({ combatant, phase, current, vitals, mp, creature, actions, busy, onRollInitiative }: CombatantRowProps): ReactElement {
+export default function CombatantRow({ combatant, phase, current, vitals, mp, creature, actions, controllers = [], busy, onRollInitiative }: CombatantRowProps): ReactElement {
     const [ skillsOpen, setSkillsOpen ] = useState(false);
     const isPlayer = combatant.type === 'player';
     const side = combatantSide(combatant);
     const hasEffects = Array.isArray(combatant.effects) && combatant.effects.length > 0;
+    const controller = controllers.find(option => option.id === combatant.controllerId);
     const mpSpentColor = mp.released ? 'success.main' : mp.spent >= mp.limit ? 'error.light' : 'text.secondary';
 
     return (
@@ -87,7 +90,7 @@ export default function CombatantRow({ combatant, phase, current, vitals, mp, cr
                 <Box sx={{ flex: 1, minWidth: 140, display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
                     <Typography sx={{ fontWeight: 700 }}>{combatant.name}</Typography>
                     {current && <Chip size="small" label="Em turno" sx={{ height: 20, fontSize: 12, fontWeight: 700, bgcolor: 'primary.main', color: color.onAmber }} />}
-                    {!isPlayer && <Chip size="small" variant="outlined" label="Criatura" sx={{ height: 20, fontSize: 12 }} />}
+                    {!isPlayer && <Chip size="small" variant="outlined" label={combatant.controllerId ? `Invocado por ${controller?.name ?? 'um jogador'}` : 'Criatura'} data-testid={`combatant-kind-${combatant.id}`} sx={{ height: 20, fontSize: 12 }} />}
                     <Tooltip title="Lado no combate. Auras, curas em grupo e áreas usam o lado. Clique para trocar.">
                         <Chip
                             size="small"
@@ -103,6 +106,21 @@ export default function CombatantRow({ combatant, phase, current, vitals, mp, cr
                 </Box>
 
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, ml: 'auto' }}>
+                    {!isPlayer && controllers.length > 0 && (
+                        <TextField
+                            select
+                            size="small"
+                            value={combatant.controllerId ?? ''}
+                            onChange={(event) => { const id = event.target.value; void actions.setController(combatant, id || null, controllers.find(option => option.id === id)?.name); }}
+                            SelectProps={{ displayEmpty: true, renderValue: (value) => (value ? `Controle: ${controllers.find(option => option.id === value)?.name ?? 'jogador'}` : 'Controle: mestre') }}
+                            inputProps={{ 'aria-label': `Quem controla ${combatant.name}` }}
+                            sx={{ width: 170, '& .MuiSelect-select': { py: 0.5, fontSize: 12 } }}
+                            data-testid={`combatant-controller-${combatant.id}`}
+                        >
+                            <MenuItem value="">Mestre</MenuItem>
+                            {controllers.map(option => <MenuItem key={option.id} value={option.id}>{`Invocado por ${option.name}`}</MenuItem>)}
+                        </TextField>
+                    )}
                     {phase === 'INITIATIVE' ? (
                         <InitiativeControl
                             name={combatant.name}

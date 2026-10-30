@@ -26,6 +26,7 @@ import NotesSection from './NotesSection';
 import CombatTurnBar from '../combat/CombatTurnBar';
 import PlayerStickyBar, { type PlayerSectionLink } from './PlayerStickyBar';
 import ActionsSection from './actions/ActionsSection';
+import SummonsPanel from './summons/SummonsPanel';
 import { AttackTargetProvider } from './attacks/AttackTargetContext';
 import ExpertiseSection from './ExpertiseSection';
 import InventorySection from './InventorySection';
@@ -307,6 +308,10 @@ function PlayerDashboardContent(): ReactElement | null {
                     {stickyBar}
                     <Box sx={{ mt: 3, mb: 3 }}>
                         <ActionsSection />
+                    </Box>
+                    {/* Quem tem invocado controla por aqui (a seção some para os demais) */}
+                    <Box sx={{ mb: 3 }}>
+                        <SummonsPanel />
                     </Box>
                 </>
             )}

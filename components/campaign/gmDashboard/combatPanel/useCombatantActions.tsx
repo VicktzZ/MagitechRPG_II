@@ -31,6 +31,8 @@ export interface CombatantActions {
     openWindow: (combatant: Combatant) => void;
     /** Troca o lado do combatente (aliado ↔ inimigo): auras, curas em grupo e áreas usam o lado */
     toggleSide: (combatant: Combatant) => Promise<void>;
+    /** Põe um jogador (ID do usuário) no controle da criatura, ou devolve ao mestre com `null` (invocado) */
+    setController: (combatant: Combatant, controllerId: string | null, controllerName?: string) => Promise<void>;
     /** A rolagem de perícia da criatura (a regra da criatura, não a da ficha) */
     rollCreatureExpertise: (name: string, expertise: Expertise, creature: Creature, combatant: Combatant) => Promise<void>;
     /** Esperando o servidor ao gastar ou devolver uma ação */
@@ -93,6 +95,15 @@ export function useCombatantActions(onDamageHeal: (type: DamageHealKind, targetI
         }
     }, [ campaignId, enqueueSnackbar ]);
 
+    const setController = useCallback(async (combatant: Combatant, controllerId: string | null, controllerName?: string): Promise<void> => {
+        try {
+            await campaignService.setController(campaignId, { combatantId: combatant.id, controllerId });
+            enqueueSnackbar(controllerId ? `${combatant.name} agora é controlado por ${controllerName ?? 'um jogador'}` : `${combatant.name} voltou a ser do mestre`, { variant: 'success' });
+        } catch (error) {
+            enqueueSnackbar(errorMessage(error, 'Erro ao mudar quem controla'), { variant: 'error' });
+        }
+    }, [ campaignId, enqueueSnackbar ]);
+
     return {
         applyEffect: (combatant) => { openEffectFor({ id: combatant.id, name: combatant.name }); },
         damageHeal: (type, combatant) => { onDamageHeal(type, combatant.id); },
@@ -105,6 +116,7 @@ export function useCombatantActions(onDamageHeal: (type: DamageHealKind, targetI
         // Jogador em combate abre a janela de combatente (id da ficha); criatura, a do combatente dela
         openWindow: (combatant) => { openWindow('combatant', combatant.id); },
         toggleSide,
+        setController,
         rollCreatureExpertise: async (name, expertise, creature, combatant) => { await rollExpertise(name, expertise, creature, combatant); },
         togglingAction,
         dialogs: <>{effectDialog}{setMpSpentDialog}{grantActionsDialog}</>

@@ -120,6 +120,16 @@ describe('buildTestResponse', () => {
         expect(respond({ requestId: 'teste-1', rolls: [ 7, 12, 3 ], bonus: 2 }).success).toBe(false)
     })
 
+    it('modificador negativo (regra única de d20): com keep lowest vale o menor d20, e a resposta guarda isso', () => {
+        const response = respond({ requestId: 'teste-1', rolls: [ 12, 7 ], bonus: 3, keep: 'lowest' })
+        expect(response).toMatchObject({ rolls: [ 12, 7 ], dice: 2, usedRoll: 7, total: 10, success: false, keep: 'lowest' })
+        // sem keep (ou com qualquer outro valor) vale o maior, e a resposta não leva o campo
+        const normal = respond({ requestId: 'teste-1', rolls: [ 12, 7 ], bonus: 3, keep: 'highest' })
+        expect(normal).toMatchObject({ usedRoll: 12, total: 15, success: true })
+        expect(normal.keep).toBeUndefined()
+        expect(respond({ requestId: 'teste-1', rolls: [ 12, 7 ], bonus: 3, keep: 'lixo' }).usedRoll).toBe(12)
+    })
+
     it('ignora total, veredito e dado usado vindos do navegador', () => {
         const response = respond({ requestId: 'teste-1', rolls: [ 2 ], bonus: 0, total: 99, success: true, usedRoll: 20 })
         expect(response.total).toBe(2)

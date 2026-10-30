@@ -8,7 +8,7 @@ interface InitiativeDialogProps {
     open: boolean;
     rolling: boolean;
     /** Quantos d20 e o bônus de Agilidade (já com o Sobrepeso); `null` se a ficha não foi achada */
-    formula: { numDice: number; expertiseValue: number } | null;
+    formula: { numDice: number; expertiseValue: number; keep?: 'highest' | 'lowest' } | null;
     onClose: () => void;
     onRoll: () => void;
 }
@@ -32,7 +32,7 @@ export default function InitiativeDialog({ open, rolling, formula, onClose, onRo
                         {formula
                             ? (
                                 <>
-                                    Sua rolagem: <strong>{formula.numDice}d20 {formula.expertiseValue >= 0 ? '+' : '−'} {Math.abs(formula.expertiseValue)}</strong> (Agilidade)
+                                    Sua rolagem: <strong>{formula.numDice}d20 {formula.expertiseValue >= 0 ? '+' : '−'} {Math.abs(formula.expertiseValue)}</strong> (Agilidade{formula.keep === 'lowest' ? '; vale o menor d20' : ''})
                                 </>
                             ) : (
                                 <>

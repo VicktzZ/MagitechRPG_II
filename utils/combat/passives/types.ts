@@ -79,8 +79,25 @@ export type PassiveRule =
     | { kind: 'turnRegen'; stat: 'lp'; dice: string; when: PassiveCondition; untilPct: number }
     /** Ação extra enquanto furtivo: ao entrar em furtividade no turno dele (`enter`) ou no começo do turno (`turnStart`) */
     | { kind: 'stealthActions'; on: 'enter' | 'turnStart'; add: { padrao?: number; movimento?: number } }
+    /** Baixa a margem de crítico do ataque do personagem (`delta` negativo: −1 faz a margem 19; ver `critical.ts`); `scope` limita à arma ou à magia, sem ele vale nas duas */
+    | { kind: 'critMargin'; delta: number; scope?: 'weapon' | 'spell'; spell?: SpellFilter; when?: PassiveCondition }
+    /** Sobe o multiplicador do crítico (×3 do Furtivo do ladino); só vale onde o crítico é multiplicador: magia e arma sem fórmula própria de crítico (`effect.critValue`) */
+    | { kind: 'critMultiplier'; value: number; scope?: 'weapon' | 'spell'; spell?: SpellFilter; when?: PassiveCondition }
     /** Lembrete que o mestre vê na resolução do ataque (a regra depende de dado ou de escolha dele) */
-    | { kind: 'reminder'; side: 'defender' | 'attacker'; text: string };
+    | { kind: 'reminder'; side: 'defender' | 'attacker'; text: string }
+    /**
+     * Metamagia: opção que o jogador **liga na hora de conjurar** (Intensificação Mágica, Estágio Quatro). Paga `mp` a mais (`mpLevel4` no nível 4), soma `effect` ao dano ou à cura do
+     * efeito (ao "Efetuar") e baixa a margem de crítico da conjuração em `critMarginDelta` (negativo). `lastStageOnly` só vale no último estágio da magia; `maxSpellLevel` limita o nível.
+     */
+    | { kind: 'castOption'; id: string; label: string; hint: string; mp: number; mpLevel4?: number; lastStageOnly?: boolean; maxSpellLevel?: number; effect?: PassiveExtra; critMarginDelta?: number; note?: string }
+    /** Conjuração Rápida: a magia de nível até `maxLevel` (Padrão ou Completa) gasta a ação Bônus, uma vez por turno */
+    | { kind: 'quickCast'; maxLevel: number }
+    /** Teia da Realidade: duas magias de nível até `maxLevel` com uma ação só; cada uma custa `extraMp` a mais e gasta o limite de MP por turno */
+    | { kind: 'twinCast'; maxLevel: number; extraMp: number }
+    /** Fixação Mágica: a magia fixada pode ser conjurada um estágio à frente do liberado, com `testDice` no teste; no estágio máximo soma `maxStageDamage` ao dano. O alvo é invulnerável a ela */
+    | { kind: 'fixation'; testDice: string; maxStageDamage: number }
+    /** Magia Guiada: `die` de dano por acerto consecutivo da mesma magia no mesmo alvo, até `maxHits` acertos */
+    | { kind: 'guidedHits'; die: string; maxHits: number };
 
 export type AbilityExecution = 'Padrão' | 'Bônus' | 'Movimento' | 'Reação' | 'Completa';
 
@@ -109,8 +126,53 @@ export interface AbilityChoice {
     effect: AbilityEffect;
 }
 
+/**
+ * Quando a reação vale, em relação ao ataque que o personagem sofre. `now` vale já (paga ao reagir); as outras são **armadas**: o jogador declara antes de o mestre resolver e
+ * o custo só é pago se a condição se cumprir na resolução (senão a reação some sem gastar nada).
+ *  - `miss`: o ataque errou · `missMelee`: errou e era corpo a corpo · `damaged`: o dano passou de zero · `dodged`: a esquiva anulou o dano ·
+ *  - `damagedMeleeNoDodge`: levou dano corpo a corpo sem esquivar (não se defendeu ou resistiu)
+ */
+export type ReactionWhen = 'now' | 'miss' | 'missMelee' | 'damaged' | 'dodged' | 'damagedMeleeNoDodge';
+
+/** Um contra-ataque: o personagem ganha uma oportunidade de atacar quem o atacou, com bônus (ver `Combat.opportunities`) */
+export interface CounterSpec {
+    /** Soma ao acerto */
+    hitBonus?: number;
+    /** O acerto vale como crítico garantido */
+    guaranteedCrit?: boolean;
+    /** Dados a mais no dano ("6d6") */
+    extraDice?: string;
+    /** Só arma branca (corpo a corpo), como o ataque de oportunidade de sempre; `false` deixa qualquer arma */
+    meleeOnly?: boolean;
+    /** Efeito que o alvo do contra-ataque recebe quando ele acerta (Xeque-Mate: estado de choque) */
+    onHit?: AbilityEffect;
+}
+
+/** O que a reação faz no ataque (copiado do catálogo para o ataque pendente pelo servidor: o cliente não manda efeito nenhum) */
+export type ReactionEffect =
+    /** AP a mais contra este ataque (Barreira de Ki: +10) */
+    | { kind: 'apBonus'; value: number }
+    /** Reduz o dano que o ataque causa, em % (Metamorfose Adaptativa: 50) */
+    | { kind: 'damagePct'; pct: number }
+    /** O ataque erra automaticamente (Xeque-Mate) */
+    | { kind: 'autoMiss' }
+    /** Abre um contra-ataque contra quem atacou */
+    | { kind: 'counter'; counter: CounterSpec }
+    /** Lembrete que só o mestre vê (o que o app não faz sozinho) */
+    | { kind: 'note'; text: string };
+
+export interface ReactionSpec {
+    when: ReactionWhen | ReactionWhen[];
+    effects: ReactionEffect[];
+}
+
 export interface AbilityActivation {
     execution: AbilityExecution;
+    /**
+     * A habilidade é uma **reação a um ataque** ("reagir" no cartão do jogador atacado, `react_attack`): não se ativa pelo quadrado da seção Ações, só enquanto um ataque contra
+     * o personagem espera o mestre. O custo, a ação e os limites são os de sempre.
+     */
+    reaction?: ReactionSpec;
     cost?: { mp?: number; allMp?: boolean };
     limits?: AbilityLimit[];
     /** Cura o próprio personagem: `dice` e, opcionalmente, o valor do atributo Foco. Com `area`, cura cada alvo marcado, com a própria rolagem */

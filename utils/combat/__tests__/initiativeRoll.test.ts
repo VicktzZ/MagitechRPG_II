@@ -2,11 +2,17 @@ import type { AppliedEffect } from '@models'
 import { creatureInitiativeDice, describeInitiativeEffects, describeInitiativeRolls, initiativeWithEffects, playerInitiativeDice, resolveInitiative } from '../initiativeRoll'
 
 describe('playerInitiativeDice', () => {
-    it('usa o modificador do atributo padrão da Agilidade (mínimo 1) e o valor da perícia', () => {
+    it('regra única de d20: modificador do atributo padrão da Agilidade + 1 dados, e o valor da perícia', () => {
         const sheet = { expertises: { Agilidade: { value: 3, defaultAttribute: 'des' } }, mods: { attributes: { des: 2, vig: 4 } } }
-        expect(playerInitiativeDice(sheet)).toEqual({ numDice: 2, expertiseValue: 3 })
+        expect(playerInitiativeDice(sheet)).toEqual({ numDice: 3, expertiseValue: 3 })
         expect(playerInitiativeDice({ ...sheet, mods: { attributes: { des: 0 } } })).toEqual({ numDice: 1, expertiseValue: 3 })
-        expect(playerInitiativeDice({ expertises: { Agilidade: { value: 1, defaultAttribute: 'vig' } }, mods: { attributes: { vig: 4 } } })).toEqual({ numDice: 4, expertiseValue: 1 })
+        expect(playerInitiativeDice({ expertises: { Agilidade: { value: 1, defaultAttribute: 'vig' } }, mods: { attributes: { vig: 4 } } })).toEqual({ numDice: 5, expertiseValue: 1 })
+    })
+
+    it('modificador negativo rola 2 d20 e vale o menor', () => {
+        const sheet = { expertises: { Agilidade: { value: 3, defaultAttribute: 'des' } }, mods: { attributes: { des: -1 } } }
+        expect(playerInitiativeDice(sheet)).toEqual({ numDice: 2, expertiseValue: 3, keep: 'lowest' })
+        expect(resolveInitiative(playerInitiativeDice(sheet), { d20: (() => { const v = [ 15, 4 ]; let i = 0; return () => v[i++] ?? 1 })() })).toEqual({ rolls: [ 15, 4 ], roll: 4, total: 7 })
     })
 
     it('ficha sem os dados cai em 1d20 +0', () => {
@@ -17,13 +23,17 @@ describe('playerInitiativeDice', () => {
 })
 
 describe('creatureInitiativeDice', () => {
-    it('⌊atributo ÷ 5⌋ d20, de 1 a 5', () => {
+    it('regra única de d20 sobre o modificador da criatura (⌊atributo ÷ 5⌋, até 5): modificador + 1 dados', () => {
         const at = (des: number) => creatureInitiativeDice({ expertises: { Agilidade: { value: 2, defaultAttribute: 'des' } }, attributes: { des } })
-        expect(at(0)).toEqual({ numDice: 1, expertiseValue: 2 })
         expect(at(4)).toEqual({ numDice: 1, expertiseValue: 2 })
-        expect(at(10)).toEqual({ numDice: 2, expertiseValue: 2 })
-        expect(at(15)).toEqual({ numDice: 3, expertiseValue: 2 })
-        expect(at(99)).toEqual({ numDice: 5, expertiseValue: 2 })
+        expect(at(5)).toEqual({ numDice: 2, expertiseValue: 2 })
+        expect(at(10)).toEqual({ numDice: 3, expertiseValue: 2 })
+        expect(at(15)).toEqual({ numDice: 4, expertiseValue: 2 })
+        expect(at(99)).toEqual({ numDice: 6, expertiseValue: 2 })
+    })
+
+    it('atributo zero (modificador −1) rola 2 d20 e vale o menor', () => {
+        expect(creatureInitiativeDice({ expertises: { Agilidade: { value: 2, defaultAttribute: 'des' } }, attributes: { des: 0 } })).toEqual({ numDice: 2, expertiseValue: 2, keep: 'lowest' })
     })
 
     it('criatura que não existe mais rola 1d20 +0', () => {
@@ -65,12 +75,12 @@ describe('playerInitiativeDice com Sobrepeso', () => {
     const sheet = { expertises: { Agilidade: { value: 3, defaultAttribute: 'des' } }, mods: { attributes: { des: 2 } }, ...{ capacity: { max: 8 }, inventory: { weapons: [ { id: 'w1', name: 'Marreta', weight: 10 } ] } } }
 
     it('Agilidade é perícia de DES: 2 kg acima da capacidade tiram 2 do bônus da iniciativa', () => {
-        expect(playerInitiativeDice(sheet)).toEqual({ numDice: 2, expertiseValue: 1 })
+        expect(playerInitiativeDice(sheet)).toEqual({ numDice: 3, expertiseValue: 1 })
     })
 
     it('sem excesso de peso, ou com a perícia ligada a outro atributo, nada muda', () => {
-        expect(playerInitiativeDice({ ...sheet, capacity: { max: 40 } })).toEqual({ numDice: 2, expertiseValue: 3 })
-        expect(playerInitiativeDice({ ...sheet, expertises: { Agilidade: { value: 3, defaultAttribute: 'foc' } }, mods: { attributes: { foc: 2 } } })).toEqual({ numDice: 2, expertiseValue: 3 })
+        expect(playerInitiativeDice({ ...sheet, capacity: { max: 40 } })).toEqual({ numDice: 3, expertiseValue: 3 })
+        expect(playerInitiativeDice({ ...sheet, expertises: { Agilidade: { value: 3, defaultAttribute: 'foc' } }, mods: { attributes: { foc: 2 } } })).toEqual({ numDice: 3, expertiseValue: 3 })
     })
 })
 

@@ -91,7 +91,7 @@ export function spellMatches(filter: SpellFilter | undefined, spell: SpellLike, 
 }
 
 /** Os acréscimos que uma regra faz, com os valores da ficha já lidos (Luta, Foco, LP) */
-function specFromExtra(source: string, extra: PassiveExtra, context: PassiveContext, weapon?: WeaponLike): ExtraSpec | null {
+export function specFromExtra(source: string, extra: PassiveExtra, context: PassiveContext, weapon?: WeaponLike): ExtraSpec | null {
     const dice = [ ...(extra.dice ?? []) ];
     let flat = extra.flat ?? 0;
     let sameDie = 0;
@@ -114,7 +114,7 @@ function specFromExtra(source: string, extra: PassiveExtra, context: PassiveCont
     return { source, dice, flat, sameDie };
 }
 
-const rulesOf = <K extends PassiveRule['kind']>(passives: readonly PassiveDef[], kind: K): Array<{ passive: PassiveDef; rule: Extract<PassiveRule, { kind: K }> }> =>
+export const rulesOf = <K extends PassiveRule['kind']>(passives: readonly PassiveDef[], kind: K): Array<{ passive: PassiveDef; rule: Extract<PassiveRule, { kind: K }> }> =>
     passives.flatMap(passive => (passive.rules ?? []).filter((rule): rule is Extract<PassiveRule, { kind: K }> => rule.kind === kind).map(rule => ({ passive, rule })));
 
 /** O que as passivas somam ao dano da arma que acabou de acertar */
@@ -163,6 +163,40 @@ export function spellHitExtras(passives: readonly PassiveDef[], context: Passive
         }
     }
     return result;
+}
+
+export interface CritMarginReduction {
+    /** Quanto a margem de crítico desce (0 = nada; a margem de 20 com redução 1 fica 19) */
+    reduction: number;
+    /** De onde vem, para o chat: "Ascensão Arcana: margem −1" */
+    notes: string[];
+}
+
+type CritScope = 'weapon' | 'spell';
+
+const critScopeMatches = (rule: { scope?: CritScope; spell?: SpellFilter }, scope: CritScope, spell: SpellLike | undefined, context: PassiveContext): boolean => {
+    if (rule.scope && rule.scope !== scope) return false;
+    return scope === 'spell' && rule.spell && spell ? spellMatches(rule.spell, spell, context) : true;
+};
+
+/** O que as passivas baixam da margem de crítico do ataque (arma ou magia): soma das reduções, margem aumentada (`delta` positivo) não existe */
+export function critMarginReduction(passives: readonly PassiveDef[], context: PassiveContext, scope: CritScope, spell?: SpellLike): CritMarginReduction {
+    const result: CritMarginReduction = { reduction: 0, notes: [] };
+    for (const { passive, rule } of rulesOf(passives, 'critMargin')) {
+        if (!critScopeMatches(rule, scope, spell, context) || !conditionMet(rule.when, context)) continue;
+        const cut = Math.max(0, -Math.trunc(rule.delta));
+        if (cut === 0) continue;
+        result.reduction += cut;
+        result.notes.push(`${passive.name}: margem de crítico −${cut}`);
+    }
+    return result;
+}
+
+/** Os multiplicadores de crítico que as passivas oferecem agora (o maior vence, ver `critMultiplier` de `critical.ts`) */
+export function critMultiplierSources(passives: readonly PassiveDef[], context: PassiveContext, scope: CritScope, spell?: SpellLike): number[] {
+    return rulesOf(passives, 'critMultiplier')
+        .filter(({ rule }) => critScopeMatches(rule, scope, spell, context) && conditionMet(rule.when, context))
+        .map(({ rule }) => rule.value);
 }
 
 export interface SpellCostAdjustment {
@@ -256,6 +290,25 @@ export function effectHitBonus(effects: readonly AppliedEffect[] | null | undefi
         }
     }
     return { flat, notes };
+}
+
+/**
+ * O que os efeitos aplicados baixam da margem de crítico (`stat_bonus` em `critMargin` com valor negativo: Forma Primordial −2). Positivo não faz nada: a margem nunca passa de 20
+ * (e um `stat_penalty` de 2 vale −2, como nos outros alvos).
+ */
+export function effectCritMarginReduction(effects: readonly AppliedEffect[] | null | undefined): CritMarginReduction {
+    const result: CritMarginReduction = { reduction: 0, notes: [] };
+    for (const effect of effects ?? []) {
+        for (const modifier of appliedModifiers(effect)) {
+            if ((modifier.kind !== 'stat_bonus' && modifier.kind !== 'stat_penalty') || normalizeSearchText(modifier.target) !== 'critmargin') continue;
+            const signed = modifier.kind === 'stat_penalty' ? -Math.abs(Number(modifier.value) || 0) : Number(modifier.value) || 0;
+            const cut = Math.max(0, -Math.trunc(signed));
+            if (cut === 0) continue;
+            result.reduction += cut;
+            result.notes.push(`${String(effect.snapshot?.name ?? 'Efeito')}: margem de crítico −${cut}`);
+        }
+    }
+    return result;
 }
 
 // ─── Rolar os acréscimos ──────────────────────────────────────────────────────────────────────────────────────────────────

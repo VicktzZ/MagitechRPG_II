@@ -96,3 +96,17 @@ describe('SkillMode', () => {
         expect(render(null)).toBe('')
     })
 })
+
+describe('habilidade de reação a ataque', () => {
+    it('o detalhe explica que se usa em "Reagir" no cartão do ataque, e não como quadrado', () => {
+        const html = render(skillModeOf({ class: [], subclass: [ { name: 'Barreira de Ki' } ] }, undefined, 'Barreira de Ki'))
+
+        expect(html).toContain('Ativada')
+        expect(html).toContain('Reagir')
+        expect(html).not.toContain('Aparece como quadrado')
+    })
+
+    it('a ativada comum continua dizendo que é um quadrado', () => {
+        expect(render(skillModeOf(skills, undefined, 'Cura Interior'))).toContain('Aparece como quadrado')
+    })
+})

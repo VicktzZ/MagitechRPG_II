@@ -2,6 +2,7 @@ import type { Weapon } from '@models';
 import type { CharsheetDTO } from '@models/dtos';
 import { rollDice, type DiceResult } from '@utils/diceRoller';
 import { buildActionRollText } from './actionRollMessage';
+import { applyCritMultiplier, critMargin, critMarginLabel, DEFAULT_CRIT_MULTIPLIER } from './critical';
 import { effectDice, type EffectDice } from './effectDice';
 import { rollHitTest, type HitTestResult } from './hitTest';
 import { rollExtraDice } from './passives/roller';
@@ -18,6 +19,11 @@ export interface WeaponDamageResult {
     /** Acréscimos das passivas e das habilidades ativadas (Armado +1d8, Bom de Briga +5...), cada um com a origem; já dentro de `total` */
     extras: ExtraSegment[];
     isCritical: boolean;
+    /**
+     * O crítico saiu do multiplicador (a arma não tem fórmula própria de crítico, `effect.critValue`): `total` já é a soma (dano rolado e acréscimos) vezes isto.
+     * Arma com fórmula própria de crítico rola a fórmula e não tem multiplicador
+     */
+    critMultiplier?: number;
     /** Atacou furtivo: `total` já é o dano rolado vezes `STEALTH_DAMAGE_MULTIPLIER` */
     stealth?: boolean;
 }
@@ -27,6 +33,8 @@ export interface WeaponRollOptions {
     stealth?: boolean;
     /** O que as passivas e os efeitos de habilidade somam ao dano (`passives/rolls.ts`); o Furtivo dobra a soma toda */
     extras?: readonly ExtraSpec[];
+    /** O multiplicador do crítico quando a arma não tem fórmula própria (`critMultiplier` de `critical.ts`: ×2, ou o que uma habilidade sobe); sem ele vale ×2 */
+    critMultiplier?: number;
 }
 
 export interface WeaponHitOptions extends WeaponRollOptions {
@@ -34,10 +42,12 @@ export interface WeaponHitOptions extends WeaponRollOptions {
     effects?: EffectDice;
     /** Valor fixo somado ao acerto (Ritmo da Batalha) e a origem dele, para o chat */
     flatBonus?: { flat: number; notes: string[] };
+    /** Quanto as passivas e os efeitos baixam a margem de crítico da arma (Forma Primordial −2); a margem sai de `effect.critChance` (20 se vazia) */
+    critMarginReduction?: number;
 }
 
 /**
- * Rola o teste de acerto da arma. Numero de d20s vem de mods.attributes[hit] (>=1)
+ * Rola o teste de acerto da arma. Numero de d20s: regra unica (`d20Rule.ts`), mods.attributes[hit] + 1
  * e o bonus do atributo/pericia equivalente. Furtivo: 1d20 a mais (vantagem, vale o maior). Os efeitos aplicados somam vantagens e
  * desvantagens (`effectDice.ts`): o saldo líquido decide quantos d20 rolar e se vale o maior ou o menor.
  */
@@ -48,7 +58,8 @@ export function rollWeaponHit(weapon: Weapon, charsheet: CharsheetDTO, options: 
         extraDice: stealthDice + effects.advantages,
         lessDice: effects.disadvantages,
         notes: [ ...(stealthDice > 0 ? [ `furtivo: vantagem, +${stealthDice}d20` ] : []), ...effects.notes, ...(options.flatBonus?.notes ?? []) ],
-        flatBonus: options.flatBonus?.flat
+        flatBonus: options.flatBonus?.flat,
+        critMargin: critMargin(weapon.effect?.critChance, options.critMarginReduction)
     });
 }
 
@@ -60,8 +71,12 @@ export function rollWeaponHit(weapon: Weapon, charsheet: CharsheetDTO, options: 
 export function rollWeaponDamage(weapon: Weapon, isCritical: boolean, options: WeaponRollOptions = {}): WeaponDamageResult | null {
     const stealth = Boolean(options.stealth);
     const factor = stealth ? STEALTH_DAMAGE_MULTIPLIER : 1;
-    const formula = (isCritical ? weapon.effect?.critValue : weapon.effect?.value) ?? '';
-    const trimmed = String(formula).trim();
+    // Crítico: a arma rola a fórmula própria (`critValue`); sem ela, o crítico é o dano normal vezes o multiplicador (×2, ou o que uma habilidade sobe)
+    const ownCritFormula = isCritical ? String(weapon.effect?.critValue ?? '').trim() : '';
+    const byMultiplier = isCritical && ownCritFormula === '';
+    const multiplier = byMultiplier ? (options.critMultiplier ?? DEFAULT_CRIT_MULTIPLIER) : 1;
+    const formula = isCritical ? (byMultiplier ? weapon.effect?.value : ownCritFormula) : weapon.effect?.value;
+    const trimmed = String(formula ?? '').trim();
     if (!trimmed) return null;
 
     const result = rollDice(trimmed);
@@ -72,10 +87,11 @@ export function rollWeaponDamage(weapon: Weapon, isCritical: boolean, options: W
         return {
             notation,
             display,
-            total: (rolled + sumSegments(extras)) * factor,
+            total: applyCritMultiplier(rolled + sumSegments(extras), multiplier) * factor,
             rolled,
             extras,
             isCritical,
+            ...(byMultiplier ? { critMultiplier: multiplier } : {}),
             ...(stealth ? { stealth } : {})
         };
     };
@@ -88,7 +104,7 @@ export function rollWeaponDamage(weapon: Weapon, isCritical: boolean, options: W
     return null;
 }
 
-export function buildHitMessageText(playerName: string, weapon: Weapon, hit: HitTestResult): string {
+export function buildHitMessageText(playerName: string, weapon: Weapon, hit: HitTestResult, guaranteedBy?: string): string {
     const rollPart = hit.rolls.length > 1
         ? `${hit.rolls.join(', ')}: ${hit.bestRoll}`
         : `${hit.bestRoll}`;
@@ -96,7 +112,11 @@ export function buildHitMessageText(playerName: string, weapon: Weapon, hit: Hit
     // Furtivo e efeitos que dão vantagem ou desvantagem, e qual d20 vale quando a desvantagem passa das vantagens
     const notes = hit.notes ?? (hit.extraDice > 0 ? [ `furtivo: vantagem, +${hit.extraDice}d20` ] : []);
     const detail = [ ...notes, ...(hit.keep === 'lowest' ? [ 'vale o menor' ] : []) ].map(note => `, ${note}`).join('');
-    return `🎯 ${playerName} testou acerto com **${weapon.name}** (${hit.bonusLabel}${detail}): [${rollPart}] ${sign}${hit.bonus} = **${hit.total}**`;
+    // Crítico garantido por uma habilidade (Xeque-Mate): vale mesmo que o d20 não tenha passado da margem
+    const critical = hit.critical
+        ? ` — **ACERTO CRÍTICO** (${critMarginLabel(hit.critMargin)})`
+        : guaranteedBy ? ` — **ACERTO CRÍTICO** (garantido por ${guaranteedBy})` : '';
+    return `🎯 ${playerName} testou acerto com **${weapon.name}** (${hit.bonusLabel}${detail}): [${rollPart}] ${sign}${hit.bonus} = **${hit.total}**${critical}`;
 }
 
 /**
@@ -110,6 +130,7 @@ export function buildDamageMessageText(playerName: string, weapon: Weapon, damag
         title: weapon.name,
         detail: [ damage.isCritical ? 'Dano crítico' : 'Dano', weapon.effect?.effectType ].filter(Boolean).join(' · '),
         critical: damage.isCritical,
+        ...(damage.critMultiplier ? { multiplier: damage.critMultiplier } : {}),
         ...(damage.stealth ? { stealth: true } : {}),
         total: damage.total,
         cost: null,

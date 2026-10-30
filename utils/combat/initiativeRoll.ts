@@ -4,6 +4,7 @@
  */
 
 import type { AppliedEffect } from '@models';
+import { creatureD20Pool, d20Pool, type D20Pool } from '../d20Rule';
 import { adjustDice, effectDice } from './effectDice';
 import { initiativeEffectBonus } from './effectStats';
 import { collectModifiers } from './engine/modifiers';
@@ -30,11 +31,6 @@ interface AgilitySource {
 
 const asSource = (value: unknown): AgilitySource | null => (value !== null && typeof value === 'object' ? value as AgilitySource : null);
 
-const finiteOr = (value: unknown, fallback: number): number => {
-    const number = Number(value);
-    return Number.isFinite(number) ? number : fallback;
-};
-
 const agility = (source: AgilitySource): { expertiseValue: number; attributeKey: string } => {
     const expertise = source.expertises?.Agilidade;
     return {
@@ -43,29 +39,30 @@ const agility = (source: AgilitySource): { expertiseValue: number; attributeKey:
     };
 };
 
-const sanitize = (numDice: number, expertiseValue: number): InitiativeDice => ({
-    numDice: Number.isFinite(numDice) && numDice >= 1 ? numDice : 1,
-    expertiseValue: Number.isFinite(expertiseValue) ? expertiseValue : 0
+/** `keep` só vai quando é o menor (modificador negativo): sem ele vale o maior, como sempre */
+const sanitize = (pool: D20Pool, expertiseValue: number): InitiativeDice => ({
+    numDice: Number.isFinite(pool.dice) && pool.dice >= 1 ? pool.dice : 1,
+    expertiseValue: Number.isFinite(expertiseValue) ? expertiseValue : 0,
+    ...(pool.keep === 'lowest' ? { keep: 'lowest' as const } : {})
 });
 
-/** Jogador: o número de d20 é o modificador do atributo padrão da Agilidade (mínimo 1) */
+const SINGLE: D20Pool = { dice: 1, keep: 'highest' };
+
+/** Jogador: a regra única de d20 (`d20Rule.ts`) sobre o modificador do atributo padrão da Agilidade: mod + 1 d20 e vale o maior (mod negativo rola 2 e vale o menor) */
 export function playerInitiativeDice(charsheet: unknown): InitiativeDice {
     const source = asSource(charsheet);
-    if (!source) return sanitize(1, 0);
+    if (!source) return sanitize(SINGLE, 0);
     const { expertiseValue, attributeKey } = agility(source);
-    const mod = finiteOr(source.mods?.attributes?.[attributeKey] ?? 1, 1);
     // Agilidade é perícia de DES: o Sobrepeso (−1 por kg excedido) também tira da iniciativa
-    return sanitize(mod < 1 ? 1 : mod, expertiseValue + sheetExpertisePenalty(charsheet, attributeKey));
+    return sanitize(d20Pool(source.mods?.attributes?.[attributeKey]), expertiseValue + sheetExpertisePenalty(charsheet, attributeKey));
 }
 
-/** Criatura: ⌊atributo ÷ 5⌋ d20 (mínimo 1, máximo 5; atributo 0 vale o mínimo) */
+/** Criatura: a mesma regra sobre o modificador dela (`⌊atributo ÷ 5⌋`, 0 vale −1, até 5): atributo 5 rola 2d20, 10 rola 3d20, 0 rola 2d20 e vale o menor */
 export function creatureInitiativeDice(creature: unknown): InitiativeDice {
     const source = asSource(creature);
-    if (!source) return sanitize(1, 0);
+    if (!source) return sanitize(SINGLE, 0);
     const { expertiseValue, attributeKey } = agility(source);
-    const attribute = Number(source.attributes?.[attributeKey] ?? 0) || 0;
-    const mod = attribute === 0 ? -1 : Math.min(5, Math.floor(attribute / 5));
-    return sanitize(mod < 1 ? 1 : mod, expertiseValue);
+    return sanitize(creatureD20Pool(source.attributes?.[attributeKey]), expertiseValue);
 }
 
 /**

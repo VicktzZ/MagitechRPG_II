@@ -1,7 +1,7 @@
 /**
  * Vantagem e desvantagem (regras do dono): elas se ACUMULAM, uma fonte de vantagem vale +1d20 e uma de desvantagem −1d20, pelo saldo líquido.
  *
- * O teste de acerto já rola um d20 por ponto do mod do atributo (mínimo 1) e vale o maior; esses dados a mais são vantagens "de graça".
+ * O teste de acerto já rola o mod do atributo + 1 d20 (regra única, `utils/d20Rule.ts`) e vale o maior; esses dados a mais são vantagens "de graça".
  * Por isso tudo cabe numa conta só: `saldo = (dados base − 1) + vantagens − desvantagens`.
  *  - saldo ≥ 0: rola 1 + saldo dados e vale o MAIOR;
  *  - saldo < 0: rola 1 + |saldo| dados e vale o MENOR.
@@ -9,7 +9,7 @@
  */
 
 export interface DicePoolInput {
-    /** Dados base do teste (o mod do atributo, mínimo 1); 1 num teste comum */
+    /** Dados base do teste (o mod do atributo + 1); 1 num teste comum */
     baseDice?: number;
     advantages?: number;
     disadvantages?: number;

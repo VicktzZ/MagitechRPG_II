@@ -34,7 +34,7 @@ import { findBaseCreature } from '@utils/combatCreatureLookup'
 import { damageCombatant, damageStats, healCombatant, healStats } from '@utils/firestore/combatDamage'
 import {
     addPendingAttacks, buildAttackLogMessage, dropPendingFor, removePendingAttack, sanitizeAttackDeclaration, sanitizeDefenseDeclaration, sanitizeExplainLines, sanitizeTargetIds, setPendingDamage,
-    setPendingDefense, MAX_ATTACK_TARGETS
+    setPendingDefense, MAX_ATTACK_TARGETS, type PendingAttackData
 } from '@utils/combat/pendingAttacks'
 import { addUnseen, dropUnseenFor, planHide, revealUnseen, sanitizeHiddenCause, sanitizeObserverIds, surprisedField } from '@utils/combat/awareness'
 import { combatWithoutUnseen, hiddenNoticesByUser, resolveUnseen, sameUnseen } from '@utils/combat/awarenessSecrets'
@@ -46,6 +46,9 @@ import { deleteCombatEvents, getCombatEvent, isCombatEventId, markCombatEventUnd
 import { undoCombatEvent } from '@utils/firestore/combatUndo'
 import { initiativeAdvantages, ownedPassives, type AbilityUseResult } from '@utils/combat/passives'
 import { runAbilityUse } from '@utils/combat/abilityUse'
+import { applyCounterOnHit, runAttackReaction, settleAttackReactions } from '@utils/combat/attackReactionUse'
+import { applyGuidedHits } from '@utils/combat/guidedHits'
+import { controlsSummon, isSummon, resolveController, summonFields } from '@utils/combat/summons'
 import { applySide, isCombatSide, sanitizeAreaIds, SIDE_LABEL } from '@utils/combat/sides'
 import { applyStealthEntryPassives, applyTurnStartPassives } from '@utils/combat/turnPassives'
 import { isStealthEffect } from '@utils/combat/stealth'
@@ -53,7 +56,7 @@ import { isStealthEffect } from '@utils/combat/stealth'
 /** Ações que conduzem o combate — exclusivas do mestre */
 const GM_ONLY_ACTIONS: CombatAction[] = [
     'start', 'end', 'set_initiative', 'add_creature', 'add_combatants', 'remove_combatant', 'apply_effect', 'remove_effect',
-    'set_mp_limit_override', 'reset_mp_limit', 'set_mp_spent', 'set_actions', 'adjust_actions', 'undo', 'resolve_attack', 'set_unseen', 'reveal_unseen', 'set_light', 'set_terrain', 'set_side', 'open_reaction'
+    'set_mp_limit_override', 'reset_mp_limit', 'set_mp_spent', 'set_actions', 'adjust_actions', 'undo', 'resolve_attack', 'set_unseen', 'reveal_unseen', 'set_light', 'set_terrain', 'set_side', 'set_controller', 'open_reaction'
 ]
 
 /** Ações que entram no histórico do combate (o mestre pode desfazê-las): as que mudam o rumo da luta, não o controle de MP e de ações */
@@ -69,7 +72,7 @@ const OWN_TURN_ACTIONS: CombatAction[] = [ 'next_turn', 'apply_damage', 'apply_h
 
 const KNOWN_ACTIONS: CombatAction[] = [
     ...GM_ONLY_ACTIONS, ...OWN_TURN_ACTIONS, 'roll_initiative', 'spend_mp', 'spend_action', 'sustain_start', 'sustain_end', 'declare_attack', 'attack_damage', 'dismiss_attack', 'declare_defense',
-    'declare_leave', 'dismiss_opportunity', 'dismiss_reaction', 'use_ability'
+    'declare_leave', 'dismiss_opportunity', 'dismiss_reaction', 'use_ability', 'react_attack'
 ]
 
 type CombatAction = 
@@ -107,9 +110,11 @@ type CombatAction =
     | 'set_light'       // Mestre define a iluminação da cena (claro, penumbra ou escuridão): ambiente manual
     | 'set_terrain'     // Mestre marca (ou desmarca) combatentes em terreno difícil: ambiente manual
     | 'set_side'        // Mestre marca o lado (aliado ou inimigo) de combatentes: auras, curas em grupo e áreas usam o lado
+    | 'set_controller'  // Mestre põe (ou tira) um jogador no controle de uma criatura do combate: o invocado age pelas mãos do jogador
     | 'open_reaction'   // Mestre abre uma reação: o que aconteceu e quem pode reagir (cada reator com a Reação disponível ganha uma oferta)
     | 'dismiss_reaction' // Dispensa uma oferta de reação (quem ia reagir ou o mestre)
     | 'use_ability'     // O jogador usa uma habilidade ativada de classe ou subclasse: gasta MP e ação, conta o uso, cura ou põe o efeito sobre ele
+    | 'react_attack'    // O jogador atacado reage ao ataque pendente com uma habilidade de reação (Barreira de Ki...) antes de o mestre resolver
 
 interface CombatRequest {
     action: CombatAction
@@ -143,7 +148,7 @@ interface CombatRequest {
     /** Para add_combatants: quem entra no combate em andamento (os dados vêm da campanha e das fichas, não do cliente) */
     join?: {
         players?: Array<{ charsheetId: string; avatar?: string }>
-        creatures?: Array<{ id: string; quantity?: number }>
+        creatures?: Array<{ id: string; quantity?: number; controllerId?: unknown }>
     }
     showEnemyLp?: boolean     // Se mostra LP dos inimigos para jogadores
     advantageType?: 'normal' | 'advantage' | 'disadvantage' // Para rolagem de iniciativa
@@ -166,6 +171,8 @@ interface CombatRequest {
 
     /** Para spend_action: a execução que gasta a ação ("Padrão", "Bônus"/"Livre", "Movimento", "Reação", "Completa") */
     execution?: string
+    /** Para spend_action: a ação Bônus é a da Conjuração Rápida (marca a rodada: uma vez por turno) */
+    quickCast?: boolean
     /** Para set_actions: as ações que restam, por espaço ({ padrao: 0, bonus: 1, movimento: 1, reacao: 1 }); só os espaços informados mudam */
     actions?: Record<string, number>
     /** Para adjust_actions: a variação das ações de agora por espaço ({ padrao: 1, movimento: -1 }), somada ao que o combatente tem (de 0 a 9) */
@@ -183,7 +190,8 @@ interface CombatRequest {
     attack?: unknown
     /** Para attack_damage, dismiss_attack, declare_defense e resolve_attack: o ataque pendente */
     attackId?: string
-    /** Para declare_defense: a escolha e o teste rolado; o servidor limpa (`sanitizeDefenseDeclaration`) */
+    /** Para declare_defense: a escolha e o teste rolado; o servidor limpa (`sanitizeDefenseDeclaration`). Em resolve_attack, só a defesa que valeu ("dodge", "resist" ou "none"):
+     *  as reações armadas (Reflexos Táticos...) leem se o alvo esquivou */
     defense?: unknown
     /** Para declare_leave: quem estava ao alcance corpo a corpo e pode reagir (`combatantId` é quem saiu); para open_reaction: quem pode reagir */
     reactorIds?: unknown
@@ -213,6 +221,9 @@ interface CombatRequest {
     damage?: number
     reactionSpent?: boolean
     lines?: unknown
+
+    /** Para set_controller: o ID do usuário (jogador da campanha) que passa a controlar a criatura; vazio devolve a criatura ao mestre */
+    controllerId?: unknown
 
     /** Para use_ability: a chave da habilidade no catálogo (`class:cura interior`) e, quando ela tem variações, a escolhida */
     abilityKey?: string
@@ -259,12 +270,16 @@ function joinCombat(combat: Combat, newcomers: Newcomer[]): void {
                 ? `e age logo depois de **${combat.combatants[combat.currentTurnIndex]?.name ?? 'quem está agindo'}**.`
                 : `e age na posição ${index + 1} da ordem.`
 
+        // Invocado: o log diz de quem é (o invocador costuma estar no combate; senão, só "um jogador")
+        const summoner = combatant.summonerId ? combat.combatants.find(c => c.id === combatant.summonerId) : undefined
+        const who = isSummon(combatant) ? `**${combatant.name}**, invocado por **${summoner?.name ?? 'um jogador'}**,` : `**${combatant.name}**`
+
         combat.logs.push(new CombatLog({
             round: combat.round,
             type: 'action',
             actorId: 'system',
             actorName: 'Sistema',
-            message: `➕ **${combatant.name}** entrou no combate ${where}`
+            message: `➕ ${who} entrou no combate ${where}`
         }))
     }
 }
@@ -304,10 +319,12 @@ function getActionMessage(action: CombatAction): string {
         reveal_unseen: 'Escondido revelado',
         set_light: 'Iluminação atualizada',
         set_terrain: 'Terreno atualizado',
+        set_controller: 'Controle do invocado atualizado',
         set_side: 'Lado atualizado',
         open_reaction: 'Reação aberta',
         dismiss_reaction: 'Reação dispensada',
-        use_ability: 'Habilidade usada'
+        use_ability: 'Habilidade usada',
+        react_attack: 'Reação declarada'
     }
     return messages[action] || 'Ação executada'
 }
@@ -371,11 +388,11 @@ export async function POST(
         const unseenBefore = [ ...combat.unseen ]
 
         if (!isGM) {
-            // Combatente de jogador pertence ao usuário se a ficha dele está na campanha
-            const ownsCombatant = (c?: Combatant) => Boolean(c && c.type === 'player' && (
+            // Combatente de jogador pertence ao usuário se a ficha dele está na campanha; o invocado (criatura com jogador no controle) pertence a quem o controla
+            const ownsCombatant = (c?: Combatant) => Boolean(c && ((c.type === 'player' && (
                 c.odacId === user.id ||
                 campaign.players?.some(p => p.userId === user.id && p.charsheetId === c.id)
-            ))
+            )) || controlsSummon(c, user.id)))
 
             if (action === 'roll_initiative') {
                 const target = combat.combatants?.find(c => c.id === body.combatantId || c.odacId === body.combatantId)
@@ -418,6 +435,14 @@ export async function POST(
                 const defender = pending && combat.combatants?.find(c => c.id === pending.targetId)
                 if (pending && !ownsCombatant(defender)) {
                     throw forbidden('Você só pode se defender dos ataques ao seu personagem')
+                }
+            }
+
+            if (action === 'react_attack') {
+                const pending = combat.pendingAttacks?.find(entry => entry.id === body.attackId)
+                const defender = pending && combat.combatants?.find(c => c.id === pending.targetId)
+                if (pending && !ownsCombatant(defender)) {
+                    throw forbidden('Você só pode reagir aos ataques ao seu personagem')
                 }
             }
 
@@ -1016,6 +1041,11 @@ export async function POST(
                         throw badRequest(`A quantidade de ${base.name} deve ficar entre 1 e ${MAX_CREATURE_COPIES}`)
                     }
                     const dice = creatureInitiativeDice(base)
+                    // Invocado: o jogador que controla (opcional). O servidor só aceita quem joga a campanha, nunca o que o cliente diz
+                    const controller = entry.controllerId === undefined || entry.controllerId === null || entry.controllerId === ''
+                        ? null
+                        : resolveController(entry.controllerId, campaign.players)
+                    if (entry.controllerId && !controller) throw badRequest('O controlador do invocado precisa ser um jogador da campanha')
                     for (let copy = 0; copy < quantity; copy++) {
                         const { id: instanceId, name } = nextCreatureInstance([ ...combat.combatants, ...planned ], base.id, base.name)
                         const combatant = new Combatant({
@@ -1028,7 +1058,8 @@ export async function POST(
                             maxLp: base.stats?.maxLp ?? base.stats?.lp,
                             currentMp: base.stats?.mp,
                             maxMp: base.stats?.maxMp ?? base.stats?.mp,
-                            effects: []
+                            effects: [],
+                            ...summonFields(controller)
                         })
                         planned.push(combatant)
                         newcomers.push({ combatant, dice })
@@ -1374,6 +1405,8 @@ export async function POST(
             }
 
             combatant.actions = spent.budget
+            // Conjuração Rápida (magia de nível 1 como Bônus, uma vez por turno): a rodada fica marcada; o cliente confere a habilidade, o servidor só guarda a marca
+            if (slot === 'bonus' && body.quickCast === true) combatant.quickCastRound = combat.round
             // Gastou a Reação: as ofertas de reação dele se fecham (ele já reagiu, ou esquivou)
             if (slot === 'reacao') combat.reactions = closeReactionsOf(combat.reactions, combatant.id)
 
@@ -1683,12 +1716,13 @@ export async function POST(
                 throw badRequest('Ataque inválido')
             }
 
-            // O mestre declarando um ataque manual (de criatura) já traz o dano; o do jogador chega depois, em attack_damage
+            // O mestre declarando um ataque manual (de criatura) já traz o dano, e o jogador que controla um invocado também; o do próprio personagem chega depois, em attack_damage
             const rolledDamage = typeof body.damage === 'number' && Number.isInteger(body.damage) && body.damage >= 0 && body.damage <= 100_000 ? body.damage : undefined
 
             // Ataque de oportunidade: precisa de uma oportunidade aberta desse atacante contra esse alvo; ela se consome. A Reação é gasta por quem declara
             // (o jogador, pela arma ou pela magia de Reação; o mestre, pelo ataque manual), como os outros gastos de ação.
             let opportunity = false
+            let counter: PendingAttackData['counter']
             if (body.opportunityId !== undefined) {
                 const open = findOpportunity(combat.opportunities, attacker.id, target.id)
                 if (!open || open.id !== body.opportunityId) {
@@ -1696,6 +1730,8 @@ export async function POST(
                 }
                 combat.opportunities = removeOpportunity(combat.opportunities, open.id)
                 opportunity = true
+                // Contra-ataque dado por uma reação (Xeque-Mate, Resposta Tática...): os bônus seguem para o ataque, que o mestre vê e cujo efeito (choque) o servidor aplica ao resolver
+                counter = open.counter
             }
 
             // Um ataque pendente por alvo, todos do mesmo grupo e com o mesmo acerto: o mestre resolve cada um (AP, fraqueza e defesa são do alvo) e o dano rolado vale para todos
@@ -1703,8 +1739,9 @@ export async function POST(
             const createdAt = new Date().toISOString()
             combat.pendingAttacks = addPendingAttacks(combat.pendingAttacks, targets.map(each => ({
                 ...declaration,
-                ...(isGM && rolledDamage !== undefined ? { damageRolled: rolledDamage } : {}),
+                ...((isGM || controlsSummon(attacker, user.id)) && rolledDamage !== undefined ? { damageRolled: rolledDamage } : {}),
                 ...(opportunity ? { opportunity: true } : {}),
+                ...(counter ? { counter } : {}),
                 // O jogador alvo que não via o atacante (a matriz é do mestre, o jogador não a lê): a tela dele só desabilita a esquiva ("ataque de surpresa não se esquiva")
                 ...surprisedField(combat.unseen, attacker.id, each),
                 ...(groupId ? { groupId, groupSize: targets.length } : {}),
@@ -1760,6 +1797,32 @@ export async function POST(
             }
 
             combat.pendingAttacks = setPendingDefense(combat.pendingAttacks, pending.id, defense) ?? combat.pendingAttacks
+
+            break
+        }
+
+        case 'react_attack': {
+            if (!combat.isActive || combat.phase !== 'ACTION') {
+                return NextResponse.json({ error: 'Só dá para reagir a um ataque na fase de ação' }, { status: 400 })
+            }
+
+            const pending = combat.pendingAttacks?.find(entry => entry.id === body.attackId)
+            if (!pending) {
+                return NextResponse.json({ error: 'Ataque pendente não encontrado (o mestre pode já tê-lo resolvido)' }, { status: 404 })
+            }
+            const reactor = combat.combatants.find(c => c.id === pending.targetId)
+            if (!reactor || reactor.type !== 'player') {
+                return NextResponse.json({ error: 'Só um jogador reage com habilidade de classe' }, { status: 400 })
+            }
+            if (typeof body.abilityKey !== 'string' || body.abilityKey.length === 0 || body.abilityKey.length > 120) {
+                throw badRequest('abilityKey é obrigatório')
+            }
+
+            const outcome = await runAttackReaction({ combat, pending, reactor, abilityKey: body.abilityKey, isGM, force: body.force === true })
+            if (!outcome.ok) {
+                return NextResponse.json(outcome.body, { status: outcome.status })
+            }
+            warnings.push(...outcome.warnings)
 
             break
         }
@@ -1910,6 +1973,53 @@ export async function POST(
             break
         }
 
+        case 'set_controller': {
+            if (!combat.isActive) {
+                return NextResponse.json({ error: 'Não há combate ativo' }, { status: 400 })
+            }
+
+            const summon = combat.combatants.find(c => c.id === body.combatantId)
+            if (!summon) {
+                return NextResponse.json({ error: 'Combatente não encontrado' }, { status: 404 })
+            }
+            if (summon.type !== 'creature') {
+                throw badRequest('Só uma criatura pode ficar sob o controle de um jogador')
+            }
+
+            const clearing = body.controllerId === undefined || body.controllerId === null || body.controllerId === ''
+            const controller = clearing ? null : resolveController(body.controllerId, campaign.players)
+            if (!clearing && !controller) {
+                throw badRequest('O controlador precisa ser um jogador da campanha')
+            }
+
+            // Mesmo controlador: nada muda e nada vai ao log
+            if ((controller?.userId ?? undefined) !== summon.controllerId) {
+                if (controller) {
+                    Object.assign(summon, summonFields(controller))
+                    const controllerName = combat.combatants.find(c => c.id === controller.charsheetId)?.name ?? 'um jogador'
+                    combat.logs.push(new CombatLog({
+                        round: combat.round,
+                        type: 'action',
+                        actorId: 'gm',
+                        actorName: 'Mestre',
+                        message: `🧿 **${summon.name}** passou para o controle de **${controllerName}**.`
+                    }))
+                } else {
+                    summon.controllerId = undefined
+                    summon.summonerId = undefined
+                    combat.logs.push(new CombatLog({
+                        round: combat.round,
+                        type: 'action',
+                        actorId: 'gm',
+                        actorName: 'Mestre',
+                        message: `🧿 **${summon.name}** voltou a ser conduzido pelo mestre.`
+                    }))
+                }
+            }
+
+            break
+        }
+
         case 'set_terrain': {
             if (!combat.isActive) {
                 return NextResponse.json({ error: 'Não há combate ativo' }, { status: 400 })
@@ -1997,6 +2107,29 @@ export async function POST(
                 message: buildAttackLogMessage(pending, body.hit, dealt, lines)
             }))
 
+            // Reações que o alvo declarou antes (Barreira de Ki, Resposta Tática...): as armadas que se cumpriram pagam agora e as que dão contra-ataque abrem a oportunidade
+            const settled = await settleAttackReactions(combat, pending, {
+                hit: body.hit,
+                dealt,
+                defense: body.defense === 'dodge' || body.defense === 'resist' || body.defense === 'none' ? body.defense : undefined,
+                melee: pending.melee === true
+            })
+            warnings.push(...settled.warnings)
+
+            // Um contra-ataque que acertou: o efeito da habilidade (choque do Xeque-Mate) vai para quem foi contra-atacado
+            if (body.hit) {
+                const counterNote = applyCounterOnHit(combat, pending)
+                if (counterNote) {
+                    combat.logs.push(new CombatLog({
+                        round: combat.round, type: 'effect_applied', actorId: pending.attackerId, actorName: pending.attackerName,
+                        targetId: pending.targetId, targetName: pending.targetName, message: counterNote
+                    }))
+                }
+            }
+
+            // Magia Guiada: a sequência de acertos da mesma magia no mesmo alvo anda (ou zera)
+            await applyGuidedHits(combat, pending, { hit: body.hit, dealt })
+
             combat.pendingAttacks = removePendingAttack(combat.pendingAttacks, pending.id)
 
             // Reações que a resolução entrega de graça (errou, sofreu dano, aliado caiu): quem tem a Reação ganha a oferta; nada trava
@@ -2066,7 +2199,7 @@ export async function POST(
             'open_reaction', 'dismiss_reaction'
         ]
         // Estas só falam no chat quando de fato geraram um log (mesma luz ou terreno já marcado não repostam o último log antigo)
-        const logOnlyIfGrew: CombatAction[] = [ 'sustain_end', 'set_light', 'set_terrain', 'set_side' ]
+        const logOnlyIfGrew: CombatAction[] = [ 'sustain_end', 'set_light', 'set_terrain', 'set_side', 'set_controller' ]
         if (!silentActions.includes(action) && (!logOnlyIfGrew.includes(action) || logsGrew) && combat.logs.length > 0) {
             const lastLog = combat.logs[combat.logs.length - 1]
             combatMessage = new Message({

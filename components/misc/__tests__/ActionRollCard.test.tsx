@@ -231,3 +231,40 @@ describe('DiceMessage com o texto da ação', () => {
         expect(expertise).toContain('Total 15');
     });
 });
+
+
+describe('crítico por multiplicador', () => {
+    const critAction: ActionRoll = {
+        kind: 'arma', player: 'Aria', title: 'Clava', detail: 'Dano crítico · Esmagante', critical: true, multiplier: 2, total: 18, cost: null, dt: null,
+        segments: [ { notation: '2d6', display: '[4, 5]', total: 9 } ]
+    }
+    const html = (node: React.ReactElement): string => renderToStaticMarkup(node)
+
+    it('o chip diz o multiplicador e o dropdown mostra a conta (9 × 2 = 18)', () => {
+        const card = html(<ActionRollCard action={critAction} />)
+        expect(card).toContain('Crítico ×2')
+        expect(card).toContain('data-testid="action-roll-critical-chip"')
+
+        const details = html(<ActionRollDetails action={critAction} />)
+        expect(details).toContain('Crítico: dano ×2 (9 × 2 = 18)')
+        expect(details).toContain('data-testid="action-roll-crit"')
+    })
+
+    it('com Furtivo junto, o Furtivo dobra o dano já multiplicado pelo crítico', () => {
+        const details = html(<ActionRollDetails action={{ ...critAction, stealth: true, total: 36 }} />)
+        expect(details).toContain('Crítico: dano ×2 (9 × 2 = 18)')
+        expect(details).toContain('Furtivo: dano dobrado (18 × 2 = 36)')
+    })
+
+    it('crítico com fórmula própria (sem multiplicador) segue como antes: chip "Crítico" e nenhuma conta', () => {
+        const own: ActionRoll = { ...critAction, multiplier: undefined, total: 9 }
+        expect(html(<ActionRollCard action={own} />)).toContain('>Crítico<')
+        expect(html(<ActionRollDetails action={own} />)).not.toContain('action-roll-crit"')
+    })
+
+    it('acerto crítico na conjuração mostra o chip, e o texto do chat volta do avesso', () => {
+        const cast: ActionRoll = { kind: 'conjuração', player: 'Aria', title: 'Brasa', detail: 'FOGO · Estágio 1 · Conjuração', critical: true, total: 27, cost: 4, dt: 18, segments: [ { notation: '2d20+6', display: '[20, 3] + 6', total: 27 } ] }
+        expect(html(<ActionRollCard action={cast} />)).toContain('>Crítico<')
+        expect(buildActionRollText(cast).split('\n')[0]).toBe('[AÇÃO] conjuração crítico')
+    })
+})

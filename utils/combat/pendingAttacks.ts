@@ -1,3 +1,4 @@
+import type { AttackCounter, AttackReaction } from './attackReactions';
 import { DODGE_EXPERTISE, effectiveDamageKind, resistanceExpertise, type DefenseChoice } from './engine/defense';
 import type { DamageKind, ExplainLine } from './engine/types';
 
@@ -30,6 +31,8 @@ export interface AttackDeclaration {
     critical?: boolean;
     /** Tamanho da área do ataque em metros; vazio = alvo único */
     areaMeters?: number;
+    /** O ataque é corpo a corpo (arma branca): as reações Resposta Tática e Retaliação só valem contra ele. Quem declara a arma sabe; sem isto vale "não é" */
+    melee?: boolean;
 }
 
 /** A defesa do jogador atacado (esquiva, resistência ou nenhuma) e o teste que ele rolou */
@@ -62,6 +65,10 @@ export interface PendingAttackData extends AttackDeclaration {
      * só quando o alvo é jogador: a tela dele desabilita a esquiva ("ataque de surpresa não se esquiva"). O mestre decide pelo cartão dele, não por este campo.
      */
     surprised?: boolean;
+    /** Reações do alvo declaradas antes de o mestre resolver (Barreira de Ki, Metamorfose Adaptativa...): ver `attackReactions.ts`. Só o servidor grava, copiando do catálogo */
+    reactions?: AttackReaction[];
+    /** Este ataque é um contra-ataque dado por uma reação (Xeque-Mate, Resposta Tática...): o servidor copia da oportunidade que ele consumiu */
+    counter?: AttackCounter;
     /** Ataque com vários alvos: um ataque pendente por alvo, todos com o mesmo `groupId` e o mesmo acerto; o dano rolado vale para o grupo todo */
     groupId?: string;
     /** Quantos alvos o ataque do grupo tem (para o mestre ver que há outros cartões do mesmo ataque) */
@@ -116,7 +123,8 @@ export function sanitizeAttackDeclaration(raw: unknown): AttackDeclaration | nul
         ...(entry['keep'] === 'lowest' ? { keep: 'lowest' as const } : {}),
         ...(attackType ? { attackType } : {}),
         ...(entry['critical'] === true ? { critical: true } : {}),
-        ...(areaMeters ? { areaMeters } : {})
+        ...(areaMeters ? { areaMeters } : {}),
+        ...(entry['melee'] === true ? { melee: true } : {})
     };
 }
 
@@ -208,6 +216,13 @@ export function describeDefense(defense: PendingDefense): string {
     if (defense.choice === 'none') return 'sem defesa';
     const dice = `${defense.rolls.join(', ')}${defense.rolls.length > 1 ? `: ${defense.used}` : ''}`;
     return `${defense.skill}: [${dice}] ${defense.bonus >= 0 ? '+' : '−'} ${Math.abs(defense.bonus)} = ${defense.total}`;
+}
+
+/** Guarda a reação do alvo no ataque; `null` se o ataque não existe */
+export function addPendingReaction(list: readonly PendingAttackData[] | undefined, attackId: string, reaction: AttackReaction): PendingAttackData[] | null {
+    const entries = list ?? [];
+    if (!entries.some(entry => entry.id === attackId)) return null;
+    return entries.map(entry => (entry.id === attackId ? { ...entry, reactions: [ ...(entry.reactions ?? []), reaction ] } : entry));
 }
 
 export const removePendingAttack = (list: readonly PendingAttackData[] | undefined, attackId: string): PendingAttackData[] =>

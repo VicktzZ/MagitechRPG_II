@@ -11,9 +11,9 @@ export const isAttackSpell = (spell: Pick<SpellDTO, 'type'>): boolean => getSpel
 export interface SpellAttackApi {
     targeting: AttackTargetingApi['targeting'];
     /** Conjuração com sucesso de uma magia de ataque: declara o ataque ao alvo escolhido (o teste de magia é o acerto, que também passa pelo AP) */
-    declareSpell: (spell: SpellDTO, test: HitTestResult, options?: { opportunity?: boolean }) => Promise<void>;
-    /** "Efetuar": o dano rolado da magia se junta ao ataque que ela declarou */
-    attachSpellDamage: (spell: SpellDTO, damage: number) => Promise<void>;
+    declareSpell: (spell: SpellDTO, test: HitTestResult, options?: { opportunity?: boolean; critical?: boolean }) => Promise<void>;
+    /** "Efetuar": o dano rolado da magia se junta ao ataque que ela declarou (`critical`: foi conjurada em crítico) */
+    attachSpellDamage: (spell: SpellDTO, damage: number, critical?: boolean) => Promise<void>;
 }
 
 /** Ataque assistido das magias: o alvo é o mesmo do inventário, mas cada seção guarda o seu. A ação da magia já foi gasta ao conjurar */
@@ -32,12 +32,14 @@ export function useSpellAttack(): SpellAttackApi {
                 attackTotal: test.total,
                 rolls: test.rolls,
                 bonus: test.bonus,
-                ...(test.keep === 'lowest' ? { keep: 'lowest' } : {})
+                ...(test.keep === 'lowest' ? { keep: 'lowest' } : {}),
+                ...(options?.critical ? { critical: true } : {})
             }, options);
         },
-        attachSpellDamage: async (spell, damage) => {
+        attachSpellDamage: async (spell, damage, critical) => {
             if (!isAttackSpell(spell) || damage <= 0) return;
-            await attachDamage(spell.name, 'spell', damage);
+            if (critical) await attachDamage(spell.name, 'spell', damage, true);
+            else await attachDamage(spell.name, 'spell', damage);
         }
     };
 }

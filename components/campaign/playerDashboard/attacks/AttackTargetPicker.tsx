@@ -1,4 +1,5 @@
 import { Autocomplete, Box, Checkbox, FormControlLabel, MenuItem, TextField, Typography } from '@mui/material';
+import { describeCounter } from '@utils/combat/attackReactions';
 import type { ReactElement } from 'react';
 import type { AttackTargeting } from './useAttackTargeting';
 
@@ -60,9 +61,13 @@ export default function AttackTargetPicker({ targeting }: { targeting: AttackTar
                     )}
                     label={(
                         <Typography variant="body2">
-                            Ataque de oportunidade contra {targeting.opportunity.current.moverName}
+                            {targeting.opportunity.current.counter
+                                ? `Contra-ataque (${targeting.opportunity.current.counter.source}) contra ${targeting.opportunity.current.moverName}`
+                                : `Ataque de oportunidade contra ${targeting.opportunity.current.moverName}`}
                             <Typography component="span" variant="caption" sx={{ display: 'block', color: 'text.secondary' }}>
-                                Gasta a Reação. Só arma branca ou magia de Reação de alcance Curto.
+                                {targeting.opportunity.current.counter
+                                    ? `${describeCounter(targeting.opportunity.current.counter)}. A reação já gastou a sua Reação.`
+                                    : 'Gasta a Reação. Só arma branca ou magia de Reação de alcance Curto.'}
                             </Typography>
                         </Typography>
                     )}

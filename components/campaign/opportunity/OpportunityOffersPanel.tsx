@@ -1,6 +1,7 @@
 'use client';
 
 import { Alert, Box, Button, Stack, Typography } from '@mui/material';
+import { describeCounter } from '@utils/combat/attackReactions';
 import type { OpportunityData } from '@utils/combat/opportunities';
 import type { ReactElement } from 'react';
 
@@ -25,14 +26,16 @@ export default function OpportunityOffersPanel({ offers, provoked, onDismiss }: 
             {offers.map(offer => (
                 <Alert key={offer.id} severity="info" icon={false} sx={{ py: 0.5 }} data-testid={`opportunity-offer-${offer.id}`}>
                     <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                        {offer.moverName} está saindo do seu alcance
+                        {offer.counter ? `Contra-ataque contra ${offer.moverName} (${offer.counter.source})` : `${offer.moverName} está saindo do seu alcance`}
                     </Typography>
                     <Typography variant="caption" component="div" sx={{ color: 'text.secondary', mb: 1 }}>
-                        Ataque de oportunidade, antes de ele andar (gasta a Reação): escolha {offer.moverName} como alvo e use uma arma branca ou uma magia de Reação de alcance Curto.
+                        {offer.counter
+                            ? `${describeCounter(offer.counter)}. Escolha ${offer.moverName} como alvo e ataque com a arma: a reação já gastou a sua Reação.`
+                            : `Ataque de oportunidade, antes de ele andar (gasta a Reação): escolha ${offer.moverName} como alvo e use uma arma branca ou uma magia de Reação de alcance Curto.`}
                     </Typography>
                     <Box>
                         <Button size="small" color="inherit" onClick={() => { onDismiss(offer.id); }} sx={{ textTransform: 'none' }}>
-                            Deixar passar
+                            {offer.counter ? 'Abrir mão do contra-ataque' : 'Deixar passar'}
                         </Button>
                     </Box>
                 </Alert>

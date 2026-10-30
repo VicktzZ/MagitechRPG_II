@@ -49,7 +49,8 @@ export function buildStartCreatures(creatures: readonly Creature[], selectedIds:
 
 export interface JoinPayload {
     players: Array<{ charsheetId: string; avatar?: string }>;
-    creatures: Array<{ id: string; quantity: number }>;
+    /** `controllerId` (ID do usuário do jogador) faz da criatura um invocado, controlado por ele */
+    creatures: Array<{ id: string; quantity: number; controllerId?: string }>;
 }
 
 /**
@@ -60,7 +61,8 @@ export function buildJoinPayload(
     players: readonly PlayerInfo[],
     selectedPlayerIds: readonly string[],
     selectedCreatureIds: readonly string[],
-    quantities: Readonly<Record<string, number>>
+    quantities: Readonly<Record<string, number>>,
+    controllers: Readonly<Record<string, string>> = {}
 ): JoinPayload {
     return {
         players: selectedPlayerIds.flatMap(id => {
@@ -68,7 +70,7 @@ export function buildJoinPayload(
             const charsheetId = player?.charsheet?.id;
             return charsheetId ? [ { charsheetId, ...(player?.avatar ? { avatar: player.avatar } : {}) } ] : [];
         }),
-        creatures: selectedCreatureIds.map(id => ({ id, quantity: clampQuantity(quantities[id]) }))
+        creatures: selectedCreatureIds.map(id => ({ id, quantity: clampQuantity(quantities[id]), ...(controllers[id] ? { controllerId: controllers[id] } : {}) }))
     };
 }
 

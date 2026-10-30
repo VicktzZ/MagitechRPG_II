@@ -61,3 +61,15 @@ describe('buildJoinPayload', () => {
         expect(countJoining({ players: [], creatures: [] })).toBe(0)
     })
 })
+
+describe('buildJoinPayload com invocados', () => {
+    it('a criatura com controlador leva o ID do usuário; sem controlador segue do mestre', () => {
+        const payload = buildJoinPayload(players, [], [ 'goblin', 'lobo' ], { goblin: 1, lobo: 2 }, { goblin: 'u-ana' })
+        expect(payload.creatures).toEqual([ { id: 'goblin', quantity: 1, controllerId: 'u-ana' }, { id: 'lobo', quantity: 2 } ])
+        expect(buildJoinPayload(players, [], [ 'lobo' ], { lobo: 1 }).creatures).toEqual([ { id: 'lobo', quantity: 1 } ])
+    })
+
+    it('controlador vazio é ignorado', () => {
+        expect(buildJoinPayload(players, [], [ 'lobo' ], { lobo: 1 }, { lobo: '' }).creatures).toEqual([ { id: 'lobo', quantity: 1 } ])
+    })
+})
