@@ -113,8 +113,53 @@ export interface AbilityChoice {
     effect: AbilityEffect;
 }
 
+/**
+ * Quando a reação vale, em relação ao ataque que o personagem sofre. `now` vale já (paga ao reagir); as outras são **armadas**: o jogador declara antes de o mestre resolver e
+ * o custo só é pago se a condição se cumprir na resolução (senão a reação some sem gastar nada).
+ *  - `miss`: o ataque errou · `missMelee`: errou e era corpo a corpo · `damaged`: o dano passou de zero · `dodged`: a esquiva anulou o dano ·
+ *  - `damagedMeleeNoDodge`: levou dano corpo a corpo sem esquivar (não se defendeu ou resistiu)
+ */
+export type ReactionWhen = 'now' | 'miss' | 'missMelee' | 'damaged' | 'dodged' | 'damagedMeleeNoDodge';
+
+/** Um contra-ataque: o personagem ganha uma oportunidade de atacar quem o atacou, com bônus (ver `Combat.opportunities`) */
+export interface CounterSpec {
+    /** Soma ao acerto */
+    hitBonus?: number;
+    /** O acerto vale como crítico garantido */
+    guaranteedCrit?: boolean;
+    /** Dados a mais no dano ("6d6") */
+    extraDice?: string;
+    /** Só arma branca (corpo a corpo), como o ataque de oportunidade de sempre; `false` deixa qualquer arma */
+    meleeOnly?: boolean;
+    /** Efeito que o alvo do contra-ataque recebe quando ele acerta (Xeque-Mate: estado de choque) */
+    onHit?: AbilityEffect;
+}
+
+/** O que a reação faz no ataque (copiado do catálogo para o ataque pendente pelo servidor: o cliente não manda efeito nenhum) */
+export type ReactionEffect =
+    /** AP a mais contra este ataque (Barreira de Ki: +10) */
+    | { kind: 'apBonus'; value: number }
+    /** Reduz o dano que o ataque causa, em % (Metamorfose Adaptativa: 50) */
+    | { kind: 'damagePct'; pct: number }
+    /** O ataque erra automaticamente (Xeque-Mate) */
+    | { kind: 'autoMiss' }
+    /** Abre um contra-ataque contra quem atacou */
+    | { kind: 'counter'; counter: CounterSpec }
+    /** Lembrete que só o mestre vê (o que o app não faz sozinho) */
+    | { kind: 'note'; text: string };
+
+export interface ReactionSpec {
+    when: ReactionWhen | ReactionWhen[];
+    effects: ReactionEffect[];
+}
+
 export interface AbilityActivation {
     execution: AbilityExecution;
+    /**
+     * A habilidade é uma **reação a um ataque** ("reagir" no cartão do jogador atacado, `react_attack`): não se ativa pelo quadrado da seção Ações, só enquanto um ataque contra
+     * o personagem espera o mestre. O custo, a ação e os limites são os de sempre.
+     */
+    reaction?: ReactionSpec;
     cost?: { mp?: number; allMp?: boolean };
     limits?: AbilityLimit[];
     /** Cura o próprio personagem: `dice` e, opcionalmente, o valor do atributo Foco. Com `area`, cura cada alvo marcado, com a própria rolagem */

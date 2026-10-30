@@ -192,13 +192,16 @@ export function useAttackResolution(attack: PendingAttackData): AttackResolution
             if (typedDamage !== null || hitOverride !== null) {
                 lines.push({ label: 'Ajuste do mestre', detail: hit ? `dano final ${finalDamage}` : 'errou', visibility: 'all' });
             }
-            await campaignService.resolveAttack(campaign.id, {
+            const response = await campaignService.resolveAttack(campaign.id, {
                 attackId: attack.id,
                 hit,
                 damage: finalDamage,
                 reactionSpent: hit && proposal.resolution?.targetSpentReaction === true,
+                // A defesa que valeu: as reações armadas do alvo (Reflexos Táticos...) leem se ele esquivou
+                defense,
                 lines
             });
+            for (const warning of response.warnings ?? []) enqueueSnackbar(warning, { variant: 'warning' });
         } catch (error) {
             enqueueSnackbar(errorMessage(error, 'Erro ao resolver o ataque'), { variant: 'error' });
         } finally {

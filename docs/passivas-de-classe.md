@@ -3,10 +3,10 @@
 > Arquivo gerado por `scripts/generatePassivesDoc.ts` a partir de `utils/combat/passives/catalog.ts`. Não edite à mão.
 
 Total: **120** habilidades (48 de classe e 72 de subclasse).
-**25** automáticas · **13** ativadas · **82** só texto.
+**25** automáticas · **18** ativadas · **77** só texto.
 
 - **Automática**: vale sozinha (dano a mais, custo de MP, AP, resistência, iniciativa, regeneração...), sem o jogador acionar.
-- **Ativada**: o jogador aciona pela seção Ações (quadrado da habilidade): o app confere MP e usos, gasta a ação (aviso, nunca trava), cura ou põe o efeito sobre o personagem.
+- **Ativada**: o jogador aciona pela seção Ações (quadrado da habilidade): o app confere MP e usos, gasta a ação (aviso, nunca trava), cura ou põe o efeito sobre o personagem. As de **reação a ataque** (Barreira de Ki, Metamorfose Adaptativa, Resposta Tática, Reflexos Táticos, Xeque-Mate) não têm quadrado: usam-se em "Reagir", no cartão do ataque recebido, antes de o mestre resolver; a armada só se paga se a condição se cumprir.
 - **Só texto**: o app mostra a descrição; quem aplica é o mestre. Entra no catálogo uma de cada vez, acrescentando uma entrada em `catalog.ts`.
 
 A coluna "Fora do automático" lista o que da descrição o app **não** faz sozinho nas habilidades já estruturadas.
@@ -107,7 +107,7 @@ A coluna "Fora do automático" lista o que da descrição o app **não** faz soz
 
 | Habilidade | Modo | Ativação | Fora do automático |
 | --- | --- | --- | --- |
-| Metamorfose Adaptativa | Só texto |  |  |
+| Metamorfose Adaptativa | Ativada | Reação · 3 MP · 3 de 3 por combate · reação a ataque, armada | A ação é premissa minha (o texto só diz "sempre que você sofre dano"): o app a trata como Reação; só se paga se o ataque causar dano. |
 | Pele Resistente | Automática |  |  |
 | Forma Primordial | Ativada | Bônus · todo o MP · 1 de 1 por dia | A ação gasta é premissa minha (o texto não diz). |
 
@@ -148,8 +148,8 @@ A coluna "Fora do automático" lista o que da descrição o app **não** faz soz
 | Habilidade | Modo | Ativação | Fora do automático |
 | --- | --- | --- | --- |
 | Analisar Oponente | Ativada | Padrão · 8 MP | Revelar a resistência ou vulnerabilidade do alvo é do mestre; o d20 vale para todo ataque, não só contra o alvo analisado. |
-| Resposta Tática | Só texto |  |  |
-| Xeque-Mate | Só texto |  |  |
+| Resposta Tática | Ativada | Reação · sem MP · reação a ataque, armada | "Uma vez por rodada" é a própria Reação (uma por rodada); só se paga se o ataque corpo a corpo errar. |
+| Xeque-Mate | Ativada | Reação · 20 MP · 1 de 1 por dia · reação a ataque | A duração do choque (até o fim do próximo turno de quem o aplicou) é de 1 rodada: premissa minha. |
 
 ### Conjurador
 
@@ -196,7 +196,7 @@ A coluna "Fora do automático" lista o que da descrição o app **não** faz soz
 | Habilidade | Modo | Ativação | Fora do automático |
 | --- | --- | --- | --- |
 | Golpe de Ki | Ativada | Bônus · 4 MP | O alcance de 3m do ataque desarmado é do mestre; o dano vale para arma branca (o ataque desarmado do Monge entra na ficha como arma); a ação gasta é premissa minha. |
-| Barreira de Ki | Só texto |  |  |
+| Barreira de Ki | Ativada | Reação · 8 MP · reação a ataque | O empurrão de 3m é do mestre (o app não move ninguém). |
 | Canhão de Ki Devastador | Só texto |  |  |
 
 ### Necromante
@@ -284,7 +284,7 @@ A coluna "Fora do automático" lista o que da descrição o app **não** faz soz
 | Habilidade | Modo | Ativação | Fora do automático |
 | --- | --- | --- | --- |
 | Ataque Calculado | Automática |  | Vale só na primeira rodada, contra o alvo escolhido que ainda não agiu. |
-| Reflexos Táticos | Só texto |  |  |
+| Reflexos Táticos | Ativada | Reação · sem MP · 1 de 1 por combate · reação a ataque, armada | A esquiva em si é a de sempre (Reflexos); a habilidade dá o contra-ataque quando ela anula o dano e a Retaliação quando o personagem leva dano corpo a corpo sem esquivar. O texto limita só a esquiva ("um primeiro ataque, uma vez por combate"); o app conta os dois no mesmo uso por combate (premissa minha). |
 | Ritmo da Batalha | Ativada | Bônus · 10 MP · 1 de 1 por combate | Dois ataques numa só ação e a desvantagem dos inimigos no turno seguinte são do mestre; a ação gasta é premissa minha. |
 
 ### Embusteiro

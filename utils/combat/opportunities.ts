@@ -1,4 +1,5 @@
 import { combatantBudget } from './actionBudgets';
+import type { AttackCounter } from './attackReactions';
 import { combatantVision, observerBlocked, unseenEntry, type UnseenData } from './awareness';
 import { isOpportunitySpell, meleeReach, opportunityCheck, type OpportunityBlock } from './engine/opportunity';
 
@@ -17,6 +18,8 @@ export interface OpportunityData {
     /** Quem pode reagir com um ataque */
     reactorId: string;
     reactorName: string;
+    /** É um contra-ataque dado por uma reação (Xeque-Mate, Resposta Tática...): leva bônus no acerto, crítico garantido, dano a mais (ver `attackReactions.ts`) */
+    counter?: AttackCounter;
     createdAt: string;
 }
 

@@ -272,8 +272,16 @@ class CampaignService extends Service<Campaign, 'code' | 'userId'> {
     }
 
     /** Mestre confirma o ataque: aplica o dano final, gasta a Reação de quem esquivou e registra no log (só as linhas públicas do cálculo vão ao chat) */
-    async resolveAttack(campaignId: string, payload: { attackId: string; hit: boolean; damage: number; reactionSpent?: boolean; lines?: Array<{ label: string; detail?: string; visibility: 'all' | 'gm' }> }) {
-        return (await this.post({ param: `${campaignId}/combat`, body: { action: 'resolve_attack', ...payload } })).data
+    async resolveAttack(campaignId: string, payload: { attackId: string; hit: boolean; damage: number; reactionSpent?: boolean; defense?: 'dodge' | 'resist' | 'none'; lines?: Array<{ label: string; detail?: string; visibility: 'all' | 'gm' }> }) {
+        return (await this.post({ param: `${campaignId}/combat`, body: { action: 'resolve_attack', ...payload } })).data as unknown as { warnings?: string[] }
+    }
+
+    /**
+     * O jogador atacado reage ao ataque pendente com uma habilidade de reação (`abilityKey`: `subclass:barreira de ki`), antes de o mestre resolver. O servidor confere a habilidade, os
+     * usos e o MP e copia os efeitos do catálogo para o ataque; a reação imediata paga já e a armada (Resposta Tática...) só se a condição se cumprir. 409 `REACTION_BLOCKED` quando não dá.
+     */
+    async reactToAttack(campaignId: string, payload: { attackId: string; abilityKey: string; force?: boolean }) {
+        return (await this.post({ param: `${campaignId}/combat`, body: { action: 'react_attack', ...payload } })).data as unknown as { warnings?: string[] }
     }
 
     /** Histórico do combate (só o mestre): os últimos eventos, o mais novo primeiro */

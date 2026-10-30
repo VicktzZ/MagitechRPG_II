@@ -34,7 +34,7 @@ import { findBaseCreature } from '@utils/combatCreatureLookup'
 import { damageCombatant, damageStats, healCombatant, healStats } from '@utils/firestore/combatDamage'
 import {
     addPendingAttacks, buildAttackLogMessage, dropPendingFor, removePendingAttack, sanitizeAttackDeclaration, sanitizeDefenseDeclaration, sanitizeExplainLines, sanitizeTargetIds, setPendingDamage,
-    setPendingDefense, MAX_ATTACK_TARGETS
+    setPendingDefense, MAX_ATTACK_TARGETS, type PendingAttackData
 } from '@utils/combat/pendingAttacks'
 import { addUnseen, dropUnseenFor, planHide, revealUnseen, sanitizeHiddenCause, sanitizeObserverIds, surprisedField } from '@utils/combat/awareness'
 import { combatWithoutUnseen, hiddenNoticesByUser, resolveUnseen, sameUnseen } from '@utils/combat/awarenessSecrets'
@@ -46,6 +46,7 @@ import { deleteCombatEvents, getCombatEvent, isCombatEventId, markCombatEventUnd
 import { undoCombatEvent } from '@utils/firestore/combatUndo'
 import { initiativeAdvantages, ownedPassives, type AbilityUseResult } from '@utils/combat/passives'
 import { runAbilityUse } from '@utils/combat/abilityUse'
+import { applyCounterOnHit, runAttackReaction, settleAttackReactions } from '@utils/combat/attackReactionUse'
 import { controlsSummon, isSummon, resolveController, summonFields } from '@utils/combat/summons'
 import { applySide, isCombatSide, sanitizeAreaIds, SIDE_LABEL } from '@utils/combat/sides'
 import { applyStealthEntryPassives, applyTurnStartPassives } from '@utils/combat/turnPassives'
@@ -70,7 +71,7 @@ const OWN_TURN_ACTIONS: CombatAction[] = [ 'next_turn', 'apply_damage', 'apply_h
 
 const KNOWN_ACTIONS: CombatAction[] = [
     ...GM_ONLY_ACTIONS, ...OWN_TURN_ACTIONS, 'roll_initiative', 'spend_mp', 'spend_action', 'sustain_start', 'sustain_end', 'declare_attack', 'attack_damage', 'dismiss_attack', 'declare_defense',
-    'declare_leave', 'dismiss_opportunity', 'dismiss_reaction', 'use_ability'
+    'declare_leave', 'dismiss_opportunity', 'dismiss_reaction', 'use_ability', 'react_attack'
 ]
 
 type CombatAction = 
@@ -112,6 +113,7 @@ type CombatAction =
     | 'open_reaction'   // Mestre abre uma reação: o que aconteceu e quem pode reagir (cada reator com a Reação disponível ganha uma oferta)
     | 'dismiss_reaction' // Dispensa uma oferta de reação (quem ia reagir ou o mestre)
     | 'use_ability'     // O jogador usa uma habilidade ativada de classe ou subclasse: gasta MP e ação, conta o uso, cura ou põe o efeito sobre ele
+    | 'react_attack'    // O jogador atacado reage ao ataque pendente com uma habilidade de reação (Barreira de Ki...) antes de o mestre resolver
 
 interface CombatRequest {
     action: CombatAction
@@ -185,7 +187,8 @@ interface CombatRequest {
     attack?: unknown
     /** Para attack_damage, dismiss_attack, declare_defense e resolve_attack: o ataque pendente */
     attackId?: string
-    /** Para declare_defense: a escolha e o teste rolado; o servidor limpa (`sanitizeDefenseDeclaration`) */
+    /** Para declare_defense: a escolha e o teste rolado; o servidor limpa (`sanitizeDefenseDeclaration`). Em resolve_attack, só a defesa que valeu ("dodge", "resist" ou "none"):
+     *  as reações armadas (Reflexos Táticos...) leem se o alvo esquivou */
     defense?: unknown
     /** Para declare_leave: quem estava ao alcance corpo a corpo e pode reagir (`combatantId` é quem saiu); para open_reaction: quem pode reagir */
     reactorIds?: unknown
@@ -317,7 +320,8 @@ function getActionMessage(action: CombatAction): string {
         set_side: 'Lado atualizado',
         open_reaction: 'Reação aberta',
         dismiss_reaction: 'Reação dispensada',
-        use_ability: 'Habilidade usada'
+        use_ability: 'Habilidade usada',
+        react_attack: 'Reação declarada'
     }
     return messages[action] || 'Ação executada'
 }
@@ -428,6 +432,14 @@ export async function POST(
                 const defender = pending && combat.combatants?.find(c => c.id === pending.targetId)
                 if (pending && !ownsCombatant(defender)) {
                     throw forbidden('Você só pode se defender dos ataques ao seu personagem')
+                }
+            }
+
+            if (action === 'react_attack') {
+                const pending = combat.pendingAttacks?.find(entry => entry.id === body.attackId)
+                const defender = pending && combat.combatants?.find(c => c.id === pending.targetId)
+                if (pending && !ownsCombatant(defender)) {
+                    throw forbidden('Você só pode reagir aos ataques ao seu personagem')
                 }
             }
 
@@ -1705,6 +1717,7 @@ export async function POST(
             // Ataque de oportunidade: precisa de uma oportunidade aberta desse atacante contra esse alvo; ela se consome. A Reação é gasta por quem declara
             // (o jogador, pela arma ou pela magia de Reação; o mestre, pelo ataque manual), como os outros gastos de ação.
             let opportunity = false
+            let counter: PendingAttackData['counter']
             if (body.opportunityId !== undefined) {
                 const open = findOpportunity(combat.opportunities, attacker.id, target.id)
                 if (!open || open.id !== body.opportunityId) {
@@ -1712,6 +1725,8 @@ export async function POST(
                 }
                 combat.opportunities = removeOpportunity(combat.opportunities, open.id)
                 opportunity = true
+                // Contra-ataque dado por uma reação (Xeque-Mate, Resposta Tática...): os bônus seguem para o ataque, que o mestre vê e cujo efeito (choque) o servidor aplica ao resolver
+                counter = open.counter
             }
 
             // Um ataque pendente por alvo, todos do mesmo grupo e com o mesmo acerto: o mestre resolve cada um (AP, fraqueza e defesa são do alvo) e o dano rolado vale para todos
@@ -1721,6 +1736,7 @@ export async function POST(
                 ...declaration,
                 ...((isGM || controlsSummon(attacker, user.id)) && rolledDamage !== undefined ? { damageRolled: rolledDamage } : {}),
                 ...(opportunity ? { opportunity: true } : {}),
+                ...(counter ? { counter } : {}),
                 // O jogador alvo que não via o atacante (a matriz é do mestre, o jogador não a lê): a tela dele só desabilita a esquiva ("ataque de surpresa não se esquiva")
                 ...surprisedField(combat.unseen, attacker.id, each),
                 ...(groupId ? { groupId, groupSize: targets.length } : {}),
@@ -1776,6 +1792,32 @@ export async function POST(
             }
 
             combat.pendingAttacks = setPendingDefense(combat.pendingAttacks, pending.id, defense) ?? combat.pendingAttacks
+
+            break
+        }
+
+        case 'react_attack': {
+            if (!combat.isActive || combat.phase !== 'ACTION') {
+                return NextResponse.json({ error: 'Só dá para reagir a um ataque na fase de ação' }, { status: 400 })
+            }
+
+            const pending = combat.pendingAttacks?.find(entry => entry.id === body.attackId)
+            if (!pending) {
+                return NextResponse.json({ error: 'Ataque pendente não encontrado (o mestre pode já tê-lo resolvido)' }, { status: 404 })
+            }
+            const reactor = combat.combatants.find(c => c.id === pending.targetId)
+            if (!reactor || reactor.type !== 'player') {
+                return NextResponse.json({ error: 'Só um jogador reage com habilidade de classe' }, { status: 400 })
+            }
+            if (typeof body.abilityKey !== 'string' || body.abilityKey.length === 0 || body.abilityKey.length > 120) {
+                throw badRequest('abilityKey é obrigatório')
+            }
+
+            const outcome = await runAttackReaction({ combat, pending, reactor, abilityKey: body.abilityKey, isGM, force: body.force === true })
+            if (!outcome.ok) {
+                return NextResponse.json(outcome.body, { status: outcome.status })
+            }
+            warnings.push(...outcome.warnings)
 
             break
         }
@@ -2059,6 +2101,26 @@ export async function POST(
                 value: dealt,
                 message: buildAttackLogMessage(pending, body.hit, dealt, lines)
             }))
+
+            // Reações que o alvo declarou antes (Barreira de Ki, Resposta Tática...): as armadas que se cumpriram pagam agora e as que dão contra-ataque abrem a oportunidade
+            const settled = await settleAttackReactions(combat, pending, {
+                hit: body.hit,
+                dealt,
+                defense: body.defense === 'dodge' || body.defense === 'resist' || body.defense === 'none' ? body.defense : undefined,
+                melee: pending.melee === true
+            })
+            warnings.push(...settled.warnings)
+
+            // Um contra-ataque que acertou: o efeito da habilidade (choque do Xeque-Mate) vai para quem foi contra-atacado
+            if (body.hit) {
+                const counterNote = applyCounterOnHit(combat, pending)
+                if (counterNote) {
+                    combat.logs.push(new CombatLog({
+                        round: combat.round, type: 'effect_applied', actorId: pending.attackerId, actorName: pending.attackerName,
+                        targetId: pending.targetId, targetName: pending.targetName, message: counterNote
+                    }))
+                }
+            }
 
             combat.pendingAttacks = removePendingAttack(combat.pendingAttacks, pending.id)
 

@@ -67,7 +67,9 @@ export function useWeaponRolls() {
         e.stopPropagation();
         // Ataque de oportunidade (um inimigo saiu do alcance dele): só arma branca, e a ação gasta é a Reação. Antes de rolar, para não deixar rolagem solta no chat
         const opportunity = targeting.opportunity.active;
-        if (opportunity && !isOpportunityWeapon(weapon)) {
+        // Contra-ataque dado por uma reação (Xeque-Mate, Resposta Tática...): bônus no acerto, crítico garantido; a habilidade já gastou a Reação e pode liberar qualquer arma
+        const counter = opportunity ? targeting.opportunity.current?.counter : undefined;
+        if (opportunity && counter?.meleeOnly !== false && !isOpportunityWeapon(weapon)) {
             enqueueSnackbar(OPPORTUNITY_WEAPON_HELP, { variant: 'warning' });
             return;
         }
@@ -77,15 +79,25 @@ export function useWeaponRolls() {
         // A margem de crítico da arma (`effect.critChance`, 20 se vazia) cai com as passivas e as habilidades ativadas (Forma Primordial −2)
         const marginCut = { fromPassives: critMarginReduction(passives, contextFor(targeting.targetId), 'weapon'), fromEffects: effectCritMarginReduction(myEffects) };
         const hitBonus = effectHitBonus(myEffects);
+        const counterBonus = counter?.hitBonus ?? 0;
         const hit = rollWeaponHit(weapon, charsheet, {
             stealth: isCombatantStealthy(campaign?.session?.combat, charsheet?.id),
             effects,
-            flatBonus: { flat: hitBonus.flat, notes: [ ...hitBonus.notes, ...marginCut.fromPassives.notes, ...marginCut.fromEffects.notes ] },
+            flatBonus: {
+                flat: hitBonus.flat + counterBonus,
+                notes: [
+                    ...hitBonus.notes,
+                    ...(counter && counterBonus !== 0 ? [ `${counter.source}: ${counterBonus > 0 ? '+' : '−'}${Math.abs(counterBonus)} no acerto` ] : []),
+                    ...marginCut.fromPassives.notes,
+                    ...marginCut.fromEffects.notes
+                ]
+            },
             critMarginReduction: marginCut.fromPassives.reduction + marginCut.fromEffects.reduction
         });
-        setHitCritical(markKey(weapon), hit.critical);
+        const critical = hit.critical || counter?.guaranteedCrit === true;
+        setHitCritical(markKey(weapon), critical);
         const playerName = charsheet?.name || session?.user?.name || 'Jogador';
-        await sendCombatChatMessage(buildHitMessageText(playerName, weapon, hit));
+        await sendCombatChatMessage(buildHitMessageText(playerName, weapon, hit, counter?.guaranteedCrit ? counter.source : undefined));
 
         // Refazer o acerto da mesma arma troca o ataque que ainda espera o dano e não gasta outra ação
         const { declared, isNew } = await declare({
@@ -97,11 +109,14 @@ export function useWeaponRolls() {
             rolls: hit.rolls,
             bonus: hit.bonus,
             ...(hit.keep === 'lowest' ? { keep: 'lowest' } : {}),
-            ...(hit.critical ? { critical: true } : {})
+            ...(critical ? { critical: true } : {}),
+            // Corpo a corpo (arma branca): as reações do alvo Resposta Tática e Retaliação só valem contra ele
+            ...(isOpportunityWeapon(weapon) ? { melee: true } : {})
         }, { opportunity });
         if (!declared || !isNew || !campaign?.id || !charsheet?.id) return;
 
-        // Atacar gasta a ação Padrão (a Reação, no ataque de oportunidade): é aviso, nunca trava (o mestre decide)
+        // Atacar gasta a ação Padrão (a Reação, no ataque de oportunidade): é aviso, nunca trava (o mestre decide). O contra-ataque não gasta ação: a reação que o deu já gastou a Reação
+        if (counter) return;
         const execution = opportunity ? 'Reação' : 'Padrão';
         try {
             await campaignService.spendCombatAction(campaign.id, { combatantId: charsheet.id, execution });
@@ -120,7 +135,10 @@ export function useWeaponRolls() {
         // O botão "Dano" rola crítico sozinho quando o acerto foi crítico; "Crítico" continua forçando o crítico na mão
         const critical = isCritical || isWeaponCritical(weapon);
         const context = contextFor(targeting.targetId);
-        const extras = [ ...weaponDamageSpecs(passives, context, weapon), ...effectDamageSpecs(myEffects, context, 'weapon', weapon) ];
+        // Contra-ataque dado por uma reação: o ataque pendente guarda os dados a mais (Xeque-Mate: +6d6)
+        const awaiting = charsheet?.id ? findAwaitingDamage(campaign?.session?.combat?.pendingAttacks, charsheet.id, weapon.name, 'weapon') : undefined;
+        const counterExtras = awaiting?.counter?.extraDice ? [ { source: awaiting.counter.source, dice: [ awaiting.counter.extraDice ], flat: 0, sameDie: 0 } ] : [];
+        const extras = [ ...weaponDamageSpecs(passives, context, weapon), ...effectDamageSpecs(myEffects, context, 'weapon', weapon), ...counterExtras ];
         const result = rollWeaponDamage(weapon, critical, {
             stealth: isCombatantStealthy(campaign?.session?.combat, charsheet?.id),
             extras,

@@ -104,7 +104,7 @@ export function rollWeaponDamage(weapon: Weapon, isCritical: boolean, options: W
     return null;
 }
 
-export function buildHitMessageText(playerName: string, weapon: Weapon, hit: HitTestResult): string {
+export function buildHitMessageText(playerName: string, weapon: Weapon, hit: HitTestResult, guaranteedBy?: string): string {
     const rollPart = hit.rolls.length > 1
         ? `${hit.rolls.join(', ')}: ${hit.bestRoll}`
         : `${hit.bestRoll}`;
@@ -112,7 +112,10 @@ export function buildHitMessageText(playerName: string, weapon: Weapon, hit: Hit
     // Furtivo e efeitos que dão vantagem ou desvantagem, e qual d20 vale quando a desvantagem passa das vantagens
     const notes = hit.notes ?? (hit.extraDice > 0 ? [ `furtivo: vantagem, +${hit.extraDice}d20` ] : []);
     const detail = [ ...notes, ...(hit.keep === 'lowest' ? [ 'vale o menor' ] : []) ].map(note => `, ${note}`).join('');
-    const critical = hit.critical ? ` — **ACERTO CRÍTICO** (${critMarginLabel(hit.critMargin)})` : '';
+    // Crítico garantido por uma habilidade (Xeque-Mate): vale mesmo que o d20 não tenha passado da margem
+    const critical = hit.critical
+        ? ` — **ACERTO CRÍTICO** (${critMarginLabel(hit.critMargin)})`
+        : guaranteedBy ? ` — **ACERTO CRÍTICO** (garantido por ${guaranteedBy})` : '';
     return `🎯 ${playerName} testou acerto com **${weapon.name}** (${hit.bonusLabel}${detail}): [${rollPart}] ${sign}${hit.bonus} = **${hit.total}**${critical}`;
 }
 

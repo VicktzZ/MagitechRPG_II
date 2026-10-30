@@ -98,6 +98,8 @@ export interface BuildTilesInput {
     items: readonly Item[];
     /** Há um ataque de oportunidade em curso: a arma branca gasta a Reação no lugar da Padrão */
     opportunityActive?: boolean;
+    /** O ataque de oportunidade é um contra-ataque dado por uma reação (`attackReactions.ts`): o quadrado da arma não gasta ação (a reação já gastou a Reação); `anyWeapon` deixa qualquer arma */
+    counter?: { anyWeapon: boolean } | null;
     /** O texto curto sob o nome da magia (o custo de MP dos estágios liberados) */
     spellDetail?: (spell: SpellDTO) => string;
     /** As habilidades ativadas de classe e subclasse que a ficha tem (`ownedPassives` filtrado por `mode: 'ativada'`) */
@@ -109,18 +111,20 @@ export interface BuildTilesInput {
 const slug = (value: unknown): string => String(value ?? '').trim() || 'sem-nome';
 
 /** Todos os quadrados do personagem: armas, depois magias, depois itens (cada um na ordem em que aparece na ficha) */
-export function buildActionTiles({ weapons, spells, items, opportunityActive = false, spellDetail, abilities = [], abilityDetail }: BuildTilesInput): ActionTile[] {
+export function buildActionTiles({ weapons, spells, items, opportunityActive = false, counter = null, spellDetail, abilities = [], abilityDetail }: BuildTilesInput): ActionTile[] {
     const tiles: ActionTile[] = [];
 
     weapons.forEach((weapon, index) => {
         if (!weapon) return;
         const reaction = opportunityActive && isOpportunityWeapon(weapon);
+        // Contra-ataque: não gasta ação (a reação que o deu já gastou a Reação), com a arma branca ou, se a habilidade deixa, qualquer arma
+        const freeCounter = opportunityActive && counter !== null && (counter.anyWeapon || isOpportunityWeapon(weapon));
         tiles.push({
             id: `weapon:${slug(weapon.id || weapon.name)}:${index}`,
             kind: 'weapon',
             category: 'attack',
             name: weapon.name,
-            execution: reaction ? 'Reação' : 'Padrão',
+            execution: freeCounter ? null : reaction ? 'Reação' : 'Padrão',
             detail: weapon.effect?.value ? String(weapon.effect.value) : '',
             weapon
         });
@@ -159,7 +163,8 @@ export function buildActionTiles({ weapons, spells, items, opportunityActive = f
 
     // Habilidades ativadas de classe e subclasse: as que curam entram em Cura, as outras em Outros
     for (const ability of abilities) {
-        if (ability.mode !== 'ativada' || !ability.activation) continue;
+        // Habilidade de reação a ataque não é um quadrado: ela aparece no cartão do ataque ("Reagir")
+        if (ability.mode !== 'ativada' || !ability.activation || ability.activation.reaction) continue;
         tiles.push({
             id: `ability:${ability.key}`,
             kind: 'ability',

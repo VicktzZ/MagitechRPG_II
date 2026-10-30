@@ -81,6 +81,8 @@ export default function ActionsSection(): ReactElement | null {
     const abilities = useMemo(() => passives.filter(passive => passive.mode === 'ativada'), [ passives ]);
 
     const opportunityActive = targeting.opportunity.active;
+    const counterSpec = targeting.opportunity.current?.counter;
+    const counterAnyWeapon = counterSpec ? counterSpec.meleeOnly === false : null;
     const tiles = useMemo(() => {
         if (!charsheet) return [];
         const entries = collectEntries(charsheet.inventory);
@@ -89,6 +91,7 @@ export default function ActionsSection(): ReactElement | null {
             spells: normalizeToArray<SpellDTO>(charsheet.spells),
             items: entries.filter(entry => entry.type === 'item').map(entry => entry.item as Item),
             opportunityActive,
+            counter: counterAnyWeapon === null ? null : { anyWeapon: counterAnyWeapon },
             abilities,
             abilityDetail: (ability) => {
                 const activation = ability.activation;
@@ -103,7 +106,7 @@ export default function ActionsSection(): ReactElement | null {
                 return lowest === highest ? `${highest} MP` : `${lowest} a ${highest} MP`;
             }
         });
-    }, [ charsheet, casting.stageRule, opportunityActive, abilities ]);
+    }, [ charsheet, casting.stageRule, opportunityActive, counterAnyWeapon, abilities ]);
 
     if (!charsheet || !combat || !me) return null;
 
@@ -122,7 +125,9 @@ export default function ActionsSection(): ReactElement | null {
     /** O estado do quadrado e o texto da dica: o que ele faz, ou por que não dá para usar agora */
     const describe = (tile: ActionTile): { state: TileState; hint: string; active: boolean } => {
         const active = tile.kind === 'spell' && Boolean(casting.sustainedActive[spellKey(tile.spell)]);
-        const cost = tile.execution ? `Gasta a ação ${tile.execution}.` : 'A execução desta magia não é reconhecida: nenhuma ação é gasta.';
+        const cost = tile.execution
+            ? `Gasta a ação ${tile.execution}.`
+            : tile.kind === 'weapon' ? 'Contra-ataque: não gasta ação (a reação já gastou a sua Reação).' : 'A execução desta magia não é reconhecida: nenhuma ação é gasta.';
         const doing = tile.kind === 'weapon' ? 'Teste de acerto.' : tile.kind === 'spell' ? 'Conjurar.' : tile.kind === 'ability' ? 'Usar a habilidade.' : 'Usar o item.';
 
         if (!acting) return { state: 'blocked', hint: 'As ações abrem quando a iniciativa estiver definida.', active };

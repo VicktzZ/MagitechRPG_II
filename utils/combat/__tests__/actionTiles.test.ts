@@ -229,3 +229,34 @@ describe('quadrados das habilidades ativadas', () => {
         expect(isTileSpent(complete, { ...freshBudget(), movimento: 0 })).toBe(true);
     });
 });
+
+describe('habilidades de reação e contra-ataques nos quadrados', () => {
+    it('habilidade de reação a ataque não vira quadrado (ela aparece no cartão do ataque)', () => {
+        const reactions = [ 'Barreira de Ki', 'Xeque-Mate', 'Resposta Tática' ].map(name => findPassive('subclass', name)!);
+        const tiles = buildActionTiles({ weapons: [], spells: [], items: [], abilities: [ ...reactions, findPassive('class', 'Cura Interior')! ] });
+        expect(tiles.map(tile => tile.name)).toEqual([ 'Cura Interior' ]);
+    });
+
+    it('contra-ataque: a arma branca não gasta ação; as outras só se a habilidade deixa qualquer arma', () => {
+        const sword = weapon();
+        const pistol = weapon({ id: 'w2', name: 'Pistola', categ: 'Arma de Fogo', range: 'Médio' } as unknown as Partial<Weapon>);
+
+        const melee = buildActionTiles({ weapons: [ sword, pistol ], spells: [], items: [], opportunityActive: true, counter: { anyWeapon: false } });
+        expect(melee.map(tile => [ tile.name, tile.execution ])).toEqual([ [ 'Espada Longa', null ], [ 'Pistola', 'Padrão' ] ]);
+
+        const any = buildActionTiles({ weapons: [ sword, pistol ], spells: [], items: [], opportunityActive: true, counter: { anyWeapon: true } });
+        expect(any.map(tile => [ tile.name, tile.execution ])).toEqual([ [ 'Espada Longa', null ], [ 'Pistola', null ] ]);
+        // sem ação a gastar, o quadrado nunca fica apagado
+        expect(isTileSpent(any[0]!, { padrao: 0, bonus: 0, movimento: 0, reacao: 0 })).toBe(false);
+    });
+
+    it('sem contra-ataque o ataque de oportunidade segue gastando a Reação', () => {
+        const tiles = buildActionTiles({ weapons: [ weapon() ], spells: [], items: [], opportunityActive: true });
+        expect(tiles[0]?.execution).toBe('Reação');
+    });
+
+    it('contra-ataque inativo (a oportunidade não está em uso) não muda os quadrados', () => {
+        const tiles = buildActionTiles({ weapons: [ weapon() ], spells: [], items: [], opportunityActive: false, counter: { anyWeapon: true } });
+        expect(tiles[0]?.execution).toBe('Padrão');
+    });
+});

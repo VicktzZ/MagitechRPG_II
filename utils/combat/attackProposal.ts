@@ -1,4 +1,5 @@
 import type { AppliedEffect } from '@models';
+import { describeCounter, reactionAdjustments } from './attackReactions';
 import { HIDDEN_CAUSE_LABEL, surpriseDiceOwed, type AttackSurprise } from './awareness';
 import { creatureTakenModifiers, creatureWeaknessProfile } from './creatureDefense';
 import { dodgeEligibility, effectiveDamageKind, hits, resistanceExpertise, type DefenseChoice, type DodgeEligibility } from './engine/defense';
@@ -121,22 +122,32 @@ export function buildAttackProposal(
 
     const targetModifiers = collectModifiers(target.effects);
     const baseAp = asNumber(target.creature?.stats?.ap ?? target.sheet?.stats?.ap);
-    const taken = [ ...(target.creature ? creatureTakenModifiers(target.creature) : []), ...targetModifiers.taken ];
+    // Reações do alvo declaradas antes de o mestre resolver (Barreira de Ki: +AP; Metamorfose Adaptativa: dano −%; Xeque-Mate: o ataque erra): ver `attackReactions.ts`
+    const reactions = reactionAdjustments(attack.reactions);
+    const taken = [
+        ...(target.creature ? creatureTakenModifiers(target.creature) : []),
+        ...targetModifiers.taken,
+        // resistência entra com o sinal já aplicado (negativo reduz), como `collectModifiers` faz
+        ...(reactions.damagePct > 0 ? [ { kind: 'resistance' as const, pct: -reactions.damagePct, flat: 0 } ] : [])
+    ];
     const attackerModifiers = collectModifiers(attackerEffects);
     const dealt = attackerModifiers.dealt;
     // Habilidades do atacante que furam a armadura: ignorar todo o AP (Forma Primordial, Avatar da Destruição) ou parte dele (Ritmo da Batalha: 2 pontos)
     const ignoresAp = hasFlag(attackerModifiers, 'ignore_ap');
     const apPierced = Math.max(0, statShift(attackerModifiers, 'apIgnore'));
-    const armor = modifiedStat(targetModifiers, 'ap', baseAp);
+    const armor = modifiedStat(targetModifiers, 'ap', baseAp) + reactions.apBonus;
     const targetAp = ignoresAp ? 0 : Math.max(0, armor - apPierced);
 
     const resistanceSkill = resistanceExpertise(kind);
     const resistanceMod = expertiseValue(target, resistanceSkill);
     const areaMeters = choice.areaMeters ?? attack.areaMeters ?? null;
     const dodge = dodgeEligibility({ kind, areaMeters, surprised: choice.surprised, hasReaction: choice.hasReaction ?? true });
-    const hit = hits(attackTotal, targetAp);
+    const hit = reactions.autoMiss ? false : hits(attackTotal, targetAp);
 
     const header: ExplainLine[] = [];
+    for (const source of reactions.sources) header.push(line(`Reação: ${source.name}`, source.text));
+    for (const note of reactions.notes) header.push(line(`Reação: ${note.name}`, note.text, 'gm'));
+    if (attack.counter) header.push(line(`Contra-ataque: ${attack.counter.source}`, describeCounter(attack.counter)));
     if (ignoresAp) header.push(line('Ignora a armadura', `habilidade do atacante: o AP do alvo (${armor}) não conta`));
     else if (apPierced > 0) header.push(line('Fura a armadura', `habilidade do atacante: ${Math.min(apPierced, armor)} pontos do AP do alvo não contam`));
     for (const reminder of target.reminders ?? []) header.push(line('Habilidade do alvo', reminder, 'gm'));
@@ -151,6 +162,16 @@ export function buildAttackProposal(
         header.push(line('Alvo desprevenido', `não via o atacante (${HIDDEN_CAUSE_LABEL[cause].toLowerCase()}): ${dice}sem esquiva`));
     }
     if (extraRolls.length > 0) header.push(line('d20 extra', `[${extraRolls.join(', ')}]: total ${attackTotal}`));
+
+    // O ataque erra sozinho (Xeque-Mate): não há o que calcular, qualquer dano rolado cai
+    if (reactions.autoMiss) {
+        return {
+            kind, weak: weakness.weak, extraDiceOwed, extraDiceSources, attackTotal, targetAp, hit: false, resistanceSkill, resistanceMod, dodge,
+            resolution: null,
+            finalDamage: 0,
+            lines: [ ...header, line('Acerto', 'errou automaticamente') ]
+        };
+    }
 
     if (attack.damageRolled === undefined) {
         return {

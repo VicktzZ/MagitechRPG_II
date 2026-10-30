@@ -4,8 +4,11 @@ import { Casino } from '@mui/icons-material';
 import { Alert, Box, Button, Stack, Tooltip, Typography } from '@mui/material';
 import { font } from '@themes/tokens';
 import { DODGE_BLOCK_TEXT, dodgeEligibility, effectiveDamageKind, type DefenseChoice } from '@utils/combat/engine/defense';
+import type { ReactionOption } from '@utils/combat/attackReactions';
+import type { PassiveDef } from '@utils/combat/passives';
 import { defenseSkillFor, describeDefense, type PendingAttackData } from '@utils/combat/pendingAttacks';
 import type { ReactElement } from 'react';
+import AttackReactionBar from './AttackReactionBar';
 
 interface IncomingAttacksPanelProps {
     /** Ataques ao personagem que esperam a defesa dele */
@@ -18,6 +21,10 @@ interface IncomingAttacksPanelProps {
     isSurprised?: (attack: PendingAttackData) => boolean;
     busyId: string | null;
     onDefend: (attack: PendingAttackData, choice: DefenseChoice) => void;
+    /** As habilidades de reação da ficha para esse ataque ("Reagir", antes de o mestre resolver); sem isto o painel não oferece reação */
+    reactionsFor?: (attack: PendingAttackData) => readonly ReactionOption[];
+    reactBusyKey?: string | null;
+    onReact?: (attack: PendingAttackData, ability: PassiveDef) => void;
 }
 
 const attackLabel = (attack: PendingAttackData): string => `${attack.name}${attack.attackType ? ` · ${attack.attackType}` : ''}`;
@@ -26,8 +33,14 @@ const attackLabel = (attack: PendingAttackData): string => `${attack.name}${atta
  * "Você foi atacado": o jogador alvo de um ataque assistido escolhe a defesa e rola na hora (esquiva, resistência ou nenhuma). Mostra só o que ele já viu no chat
  * (quem atacou, o ataque e o total): fraqueza e resistências são do mestre, então não há DT aqui. Quem decide o resultado é o mestre.
  */
-export default function IncomingAttacksPanel({ awaiting, answered, hasReaction, isSurprised, busyId, onDefend }: IncomingAttacksPanelProps): ReactElement | null {
+export default function IncomingAttacksPanel({
+    awaiting, answered, hasReaction, isSurprised, busyId, onDefend, reactionsFor, reactBusyKey = null, onReact
+}: IncomingAttacksPanelProps): ReactElement | null {
     if (awaiting.length === 0 && answered.length === 0) return null;
+
+    const reactionBar = (attack: PendingAttackData): ReactElement | null => (reactionsFor && onReact
+        ? <AttackReactionBar attack={attack} options={reactionsFor(attack)} busyKey={reactBusyKey} onReact={onReact} />
+        : null);
 
     return (
         <Stack spacing={1} sx={{ mb: 1.5 }} data-testid="incoming-attacks">
@@ -88,14 +101,18 @@ export default function IncomingAttacksPanel({ awaiting, answered, hasReaction, 
                                 Não me defender
                             </Button>
                         </Box>
+                        {reactionBar(attack)}
                     </Alert>
                 );
             })}
 
             {answered.map(attack => (
-                <Typography key={attack.id} variant="caption" component="div" sx={{ color: 'text.secondary' }} data-testid={`answered-attack-${attack.id}`}>
-                    {attack.attackerName} · {attackLabel(attack)}: sua defesa ({attack.defense ? describeDefense(attack.defense) : ''}), aguardando o mestre.
-                </Typography>
+                <Box key={attack.id}>
+                    <Typography variant="caption" component="div" sx={{ color: 'text.secondary' }} data-testid={`answered-attack-${attack.id}`}>
+                        {attack.attackerName} · {attackLabel(attack)}: sua defesa ({attack.defense ? describeDefense(attack.defense) : ''}), aguardando o mestre.
+                    </Typography>
+                    {reactionBar(attack)}
+                </Box>
             ))}
         </Stack>
     );

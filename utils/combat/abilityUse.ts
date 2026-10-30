@@ -61,6 +61,8 @@ export async function runAbilityUse({ combat, combatant, abilityKey, choiceId, i
 
     const { def, cost, choice } = plan;
     const activation = def.activation!;
+    // Habilidade de reação só se usa contra um ataque (`react_attack`), não pelo quadrado da seção Ações
+    if (activation.reaction) return failure(400, `${def.name} é uma reação: use-a quando um ataque contra o personagem esperar o mestre.`, 'REACTION_ONLY');
 
     // Habilidade de área: quem foi atingido é o que o jogador marcou, conferido pelo lado e pelo combate (o app não mede distância). Sem área, só quem usa
     const warnings: string[] = [];

@@ -35,7 +35,9 @@ function describeActivation(def: PassiveDef): string {
     if (!activation) return ''
     const cost = activation.cost?.allMp ? 'todo o MP' : activation.cost?.mp ? `${activation.cost.mp} MP` : 'sem MP'
     const limits = describeLimits(limitStatuses(activation, def.key, NO_USES))
-    return [ activation.execution, cost, limits ].filter(Boolean).join(' · ')
+    // Reação a ataque: não é um quadrado, usa-se no cartão do ataque recebido ("Reagir"); a armada só se paga se a condição se cumprir na resolução
+    const reaction = activation.reaction ? (activation.reaction.when === 'now' ? 'reação a ataque' : 'reação a ataque, armada') : ''
+    return [ activation.execution, cost, limits, reaction ].filter(Boolean).join(' · ')
 }
 
 export function buildDoc(): string {
@@ -50,7 +52,7 @@ export function buildDoc(): string {
         `**${count('automatica')}** automáticas · **${count('ativada')}** ativadas · **${count('texto')}** só texto.`,
         '',
         '- **Automática**: vale sozinha (dano a mais, custo de MP, AP, resistência, iniciativa, regeneração...), sem o jogador acionar.',
-        '- **Ativada**: o jogador aciona pela seção Ações (quadrado da habilidade): o app confere MP e usos, gasta a ação (aviso, nunca trava), cura ou põe o efeito sobre o personagem.',
+        '- **Ativada**: o jogador aciona pela seção Ações (quadrado da habilidade): o app confere MP e usos, gasta a ação (aviso, nunca trava), cura ou põe o efeito sobre o personagem. As de **reação a ataque** (Barreira de Ki, Metamorfose Adaptativa, Resposta Tática, Reflexos Táticos, Xeque-Mate) não têm quadrado: usam-se em "Reagir", no cartão do ataque recebido, antes de o mestre resolver; a armada só se paga se a condição se cumprir.',
         '- **Só texto**: o app mostra a descrição; quem aplica é o mestre. Entra no catálogo uma de cada vez, acrescentando uma entrada em `catalog.ts`.',
         '',
         'A coluna "Fora do automático" lista o que da descrição o app **não** faz sozinho nas habilidades já estruturadas.',

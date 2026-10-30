@@ -87,6 +87,13 @@ add('subclass', 'Forma Primordial', active({
     ])
 }, 'A ação gasta é premissa minha (o texto não diz).'));
 
+add('subclass', 'Metamorfose Adaptativa', active({
+    execution: 'Reação',
+    cost: { mp: 3 },
+    limits: [ { per: 'combate', max: 3 } ],
+    reaction: { when: 'damaged', effects: [ { kind: 'damagePct', pct: 50 } ] }
+}, 'A ação é premissa minha (o texto só diz "sempre que você sofre dano"): o app a trata como Reação; só se paga se o ataque causar dano.'));
+
 // Comandante
 add('subclass', 'Postura Defensiva', active({
     execution: 'Bônus',
@@ -134,6 +141,36 @@ add('subclass', 'Analisar Oponente', active({
     effect: effect({ unit: 'turnos', amount: 3 }, 'Vantagem (+1d20) nos testes de ataque contra o alvo analisado.', [ { kind: 'advantage', target: 'attack' } ])
 }, 'Revelar a resistência ou vulnerabilidade do alvo é do mestre; o d20 vale para todo ataque, não só contra o alvo analisado.'));
 
+add('subclass', 'Resposta Tática', active({
+    execution: 'Reação',
+    reaction: { when: 'missMelee', effects: [ { kind: 'counter', counter: { hitBonus: 5, meleeOnly: true } } ] }
+}, '"Uma vez por rodada" é a própria Reação (uma por rodada); só se paga se o ataque corpo a corpo errar.'));
+add('subclass', 'Xeque-Mate', active({
+    execution: 'Reação',
+    cost: { mp: 20 },
+    limits: [ { per: 'dia', max: 1 } ],
+    reaction: {
+        when: 'now',
+        effects: [
+            { kind: 'autoMiss' },
+            {
+                kind: 'counter',
+                counter: {
+                    guaranteedCrit: true,
+                    extraDice: '6d6',
+                    meleeOnly: false,
+                    onHit: {
+                        duration: { unit: 'rodadas', amount: 1 },
+                        description: 'Estado de choque (Xeque-Mate): desvantagem (−1d20) nos testes de ataque e de resistência até o fim do próximo turno de quem o aplicou.',
+                        modifiers: [ { kind: 'disadvantage', target: 'attack' }, { kind: 'disadvantage', target: 'resistance' } ]
+                    }
+                }
+            },
+            { kind: 'note', text: 'Só vale contra um inimigo sob Analisar Oponente do jogador (o app não sabe quem foi analisado): confira antes de resolver.' }
+        ]
+    }
+}, 'A duração do choque (até o fim do próximo turno de quem o aplicou) é de 1 rodada: premissa minha.'));
+
 // Conjurador
 add('subclass', 'Conjuração', auto([ { kind: 'spellEffect', spell: { subtype: 'conjurado' }, extra: { dice: [ '3d8' ] } } ], 'Ignorar 3 de resistência mágica e +1 turno de conjuração são do mestre.'));
 
@@ -149,6 +186,18 @@ add('subclass', 'Golpe de Ki', active({
     cost: { mp: 4 },
     effect: effect({ unit: 'turnos', amount: 3 }, 'Golpe de Ki: +2d8 de dano Não-Elemental nos ataques corpo a corpo.', [ { kind: 'damage_dealt_bonus', value: '2d8', target: 'melee' } ])
 }, 'O alcance de 3m do ataque desarmado é do mestre; o dano vale para arma branca (o ataque desarmado do Monge entra na ficha como arma); a ação gasta é premissa minha.'));
+
+add('subclass', 'Barreira de Ki', active({
+    execution: 'Reação',
+    cost: { mp: 8 },
+    reaction: {
+        when: 'now',
+        effects: [
+            { kind: 'apBonus', value: 10 },
+            { kind: 'note', text: 'Se o ataque era corpo a corpo e foi completamente absorvido (errou por causa dos +10 de AP), o atacante é empurrado 3 m para trás.' }
+        ]
+    }
+}, 'O empurrão de 3m é do mestre (o app não move ninguém).'));
 
 // Necromante
 add('subclass', 'Aura Decadente', auto([
@@ -194,6 +243,11 @@ add('subclass', 'Ataque Calculado', auto([
     { kind: 'weaponDamage', extra: { dice: [ '3d8' ] }, when: { targetNotActed: true } },
     { kind: 'spellEffect', spell: { attack: true }, extra: { dice: [ '3d8' ] }, when: { targetNotActed: true } }
 ], 'Vale só na primeira rodada, contra o alvo escolhido que ainda não agiu.'));
+add('subclass', 'Reflexos Táticos', active({
+    execution: 'Reação',
+    limits: [ { per: 'combate', max: 1 } ],
+    reaction: { when: [ 'dodged', 'damagedMeleeNoDodge' ], effects: [ { kind: 'counter', counter: { meleeOnly: true } } ] }
+}, 'A esquiva em si é a de sempre (Reflexos); a habilidade dá o contra-ataque quando ela anula o dano e a Retaliação quando o personagem leva dano corpo a corpo sem esquivar. O texto limita só a esquiva ("um primeiro ataque, uma vez por combate"); o app conta os dois no mesmo uso por combate (premissa minha).'));
 add('subclass', 'Ritmo da Batalha', active({
     execution: 'Bônus',
     cost: { mp: 10 },
